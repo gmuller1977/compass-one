@@ -105,6 +105,7 @@ function ordenarCats(cats: Cat[]) {
 }
 
 const NAV_ITEMS = [
+  { label:'⚙ Config', path:'/configuracoes' },
   { label:'Dashboard',    path:'/dashboard' },
   { label:'Planejamento', path:'/planejamento' },
   { label:'Lançamentos',  path:'/novo-lancamento' },

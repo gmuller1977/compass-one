@@ -8,8 +8,14 @@ const COR = {
   verde: '#16a34a', vermelho: '#dc2626',
 }
 
-type TipoLanc = 'entrada' | 'saida'
-type FormaPag = 'debito' | 'credito'
+type TipoLanc  = 'entrada' | 'saida'
+type FormaPag  = 'debito' | 'credito'
+type TipoConta = 'corrente' | 'poupanca' | 'cartao'
+
+type Conta = {
+  id: string; nome: string; banco: string
+  tipo: TipoConta; cartaoNum?: 1|2|3; icone: string
+}
 
 type ContaFixa = {
   id: string; nome: string; categoria: string
@@ -25,41 +31,40 @@ type Lancamento = {
 }
 
 type MesData = {
-  fixasConfirmadas: string[]   // ids das fixas confirmadas
-  lancamentos: Lancamento[]    // todas as transações do mês
-  saldoBanco: string           // saldo do extrato (texto)
+  fixasConfirmadas: string[]
+  lancamentos: Lancamento[]
+  saldoBanco: string
 }
+
+// ── Contas cadastradas ───────────────────────────────────────────────
+const CONTAS: Conta[] = [
+  { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  tipo:'corrente', icone:'🏦' },
+  { id:'c1', nome:'Cartão 1',       banco:'Nubank',   tipo:'cartao',   icone:'💳', cartaoNum:1 },
+  { id:'c2', nome:'Cartão 2',       banco:'Itaú',     tipo:'cartao',   icone:'💳', cartaoNum:2 },
+  { id:'c3', nome:'Cartão 3',       banco:'Bradesco', tipo:'cartao',   icone:'💳', cartaoNum:3 },
+  { id:'cp', nome:'Poupança',       banco:'Sicredi',  tipo:'poupanca', icone:'🏧' },
+]
 
 // ── Contas fixas mensais ─────────────────────────────────────────────
 const CONTAS_FIXAS: ContaFixa[] = [
   { id:'f01', nome:'Prestação Casa',  categoria:'Prestação Casa',  valor:826,     tipo:'saida', formaPagamento:'debito'           },
   { id:'f02', nome:'Prestação Carro', categoria:'Prestação Carro', valor:1149.72, tipo:'saida', formaPagamento:'debito'           },
-  { id:'f03', nome:'Consórcio',       categoria:'Consórcio',       valor:460.94,  tipo:'saida', formaPagamento:'credito', cartao:1 },
-  { id:'f04', nome:'Plano de Saúde',  categoria:'Plano de Saúde',  valor:324.16,  tipo:'saida', formaPagamento:'debito'           },
-  { id:'f05', nome:'Internet',        categoria:'Internet',        valor:100,     tipo:'saida', formaPagamento:'debito'           },
-  { id:'f06', nome:'Celular',         categoria:'Celular',         valor:133.23,  tipo:'saida', formaPagamento:'debito'           },
-  { id:'f07', nome:'Igreja',          categoria:'Igreja',          valor:50,      tipo:'saida', formaPagamento:'debito'           },
-  { id:'f08', nome:'AABB',            categoria:'AABB',            valor:120,     tipo:'saida', formaPagamento:'debito'           },
+  { id:'f03', nome:'Plano de Saúde',  categoria:'Plano de Saúde',  valor:324.16,  tipo:'saida', formaPagamento:'debito'           },
+  { id:'f04', nome:'Internet',        categoria:'Internet',        valor:100,     tipo:'saida', formaPagamento:'debito'           },
+  { id:'f05', nome:'Celular',         categoria:'Celular',         valor:133.23,  tipo:'saida', formaPagamento:'debito'           },
+  { id:'f06', nome:'Igreja',          categoria:'Igreja',          valor:50,      tipo:'saida', formaPagamento:'debito'           },
+  { id:'f07', nome:'AABB',            categoria:'AABB',            valor:120,     tipo:'saida', formaPagamento:'debito'           },
+  { id:'f08', nome:'Consórcio',       categoria:'Consórcio',       valor:460.94,  tipo:'saida', formaPagamento:'credito', cartao:1 },
   { id:'f09', nome:'Seguro Civic',    categoria:'Seguro Civic',    valor:193.65,  tipo:'saida', formaPagamento:'credito', cartao:2 },
   { id:'f10', nome:'Seguro March',    categoria:'Seguro March',    valor:94.72,   tipo:'saida', formaPagamento:'credito', cartao:2 },
 ]
 
-const CAT_SAIDA = [
-  'Alimentação Pri','Água','Combustível','Cuidados Pessoais','Cursos',
-  'Lazer','Luz','Manutenção Carro','Manutenção Casa','Meninos',
-  'Outros','Presente','Supermercado','Vestuário','Viagens','Aluguel',
-]
-const CAT_ENTRADA = [
-  'Clientes a Receber','Salário Pri','Salário Gui',
-  '13º Salário / Férias','Outros',
-]
-
-const NOMES_MESES = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
-]
+const CAT_SAIDA   = ['Alimentação Pri','Água','Combustível','Cuidados Pessoais','Cursos','Lazer','Luz','Manutenção Carro','Manutenção Casa','Meninos','Outros','Presente','Supermercado','Vestuário','Viagens','Aluguel']
+const CAT_ENTRADA = ['Clientes a Receber','Salário Pri','Salário Gui','13º Salário / Férias','Outros']
+const NOMES_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 const NAV_ITEMS = [
+  { label:'⚙ Config', path:'/configuracoes' },
   { label:'Dashboard',    path:'/dashboard'       },
   { label:'Planejamento', path:'/planejamento'    },
   { label:'Lançamentos',  path:'/novo-lancamento' },
@@ -72,46 +77,53 @@ function fmt(v: number) {
 function parseBRL(s: string): number {
   return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0
 }
-function mesKey(mes: number, ano: number) { return `${ano}-${String(mes+1).padStart(2,'0')}` }
 function dataHoje() { return new Date().toISOString().split('T')[0] }
+function dataOntem() {
+  const d = new Date(); d.setDate(d.getDate()-1)
+  return d.toISOString().split('T')[0]
+}
 function fmtDataBR(iso: string) {
-  const [,m,d] = iso.split('-'); return `${d}/${m}`
+  if (!iso) return ''
+  const [,m,d] = iso.split('-')
+  return `${d}/${m}`
+}
+function mesKey(conta: string, mes: number, ano: number) {
+  return `${conta}-${ano}-${String(mes+1).padStart(2,'0')}`
 }
 
-// ── Dados de demo ─────────────────────────────────────────────────────
-const hoje = dataHoje()
-const ontem = (() => { const d = new Date(); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0] })()
-
+// ── Dados demo ───────────────────────────────────────────────────────
 function dadosIniciais(): Record<string, MesData> {
-  const key = mesKey(new Date().getMonth(), new Date().getFullYear())
+  const hoje  = dataHoje()
+  const ontem = dataOntem()
+  const key   = mesKey('cc', new Date().getMonth(), new Date().getFullYear())
   return {
     [key]: {
-      fixasConfirmadas: ['f01','f02','f04','f05'],
+      fixasConfirmadas: ['f01','f02','f03','f04'],
       saldoBanco: '',
       lancamentos: [
-        { id:'v1', tipo:'saida',   descricao:'Supermercado Extra', categoria:'Supermercado', valor:284.90, data:hoje,   formaPagamento:'credito', cartao:1, tipoLanc:'variavel' },
-        { id:'v2', tipo:'saida',   descricao:'Posto Shell',        categoria:'Combustível',  valor:180.00, data:hoje,   formaPagamento:'debito',            tipoLanc:'variavel' },
-        { id:'v3', tipo:'entrada', descricao:'Salário Pri',        categoria:'Salário Pri',  valor:11548,  data:ontem,  formaPagamento:'debito',            tipoLanc:'variavel' },
-        { id:'v4', tipo:'saida',   descricao:'Netflix',            categoria:'Lazer',        valor:44.90,  data:ontem,  formaPagamento:'credito', cartao:1, tipoLanc:'variavel' },
-        // Fixas já confirmadas aparecem na lista
+        { id:'v1', tipo:'saida',   descricao:'Supermercado Extra', categoria:'Supermercado',  valor:284.90,  data:hoje,  formaPagamento:'debito',           tipoLanc:'variavel' },
+        { id:'v2', tipo:'saida',   descricao:'Posto Shell',        categoria:'Combustível',   valor:180.00,  data:hoje,  formaPagamento:'debito',           tipoLanc:'variavel' },
+        { id:'v3', tipo:'entrada', descricao:'Salário Pri',        categoria:'Salário Pri',   valor:11548,   data:ontem, formaPagamento:'debito',           tipoLanc:'variavel' },
+        { id:'v4', tipo:'saida',   descricao:'Netflix',            categoria:'Lazer',         valor:44.90,   data:ontem, formaPagamento:'credito', cartao:1, tipoLanc:'variavel' },
         { id:'f01-conf', tipo:'saida', descricao:'Prestação Casa',  categoria:'Prestação Casa',  valor:826,    data:ontem, formaPagamento:'debito', tipoLanc:'fixa' },
         { id:'f02-conf', tipo:'saida', descricao:'Prestação Carro', categoria:'Prestação Carro', valor:1149.72,data:ontem, formaPagamento:'debito', tipoLanc:'fixa' },
-        { id:'f04-conf', tipo:'saida', descricao:'Plano de Saúde',  categoria:'Plano de Saúde',  valor:324.16, data:ontem, formaPagamento:'debito', tipoLanc:'fixa' },
-        { id:'f05-conf', tipo:'saida', descricao:'Internet',        categoria:'Internet',        valor:100,    data:ontem, formaPagamento:'debito', tipoLanc:'fixa' },
+        { id:'f03-conf', tipo:'saida', descricao:'Plano de Saúde',  categoria:'Plano de Saúde',  valor:324.16, data:ontem, formaPagamento:'debito', tipoLanc:'fixa' },
+        { id:'f04-conf', tipo:'saida', descricao:'Internet',        categoria:'Internet',        valor:100,    data:ontem, formaPagamento:'debito', tipoLanc:'fixa' },
       ],
     }
   }
 }
 
-// ── Componente principal ──────────────────────────────────────────────
+// ── Componente ───────────────────────────────────────────────────────
 export default function NovoLancamento() {
-  const navigate = useNavigate()
-  const agora    = new Date()
+  const navigate   = useNavigate()
+  const agora      = new Date()
 
-  const [mesAtual, setMesAtual] = useState(agora.getMonth())
-  const [anoAtual, setAnoAtual] = useState(agora.getFullYear())
-  const [dados,    setDados]    = useState<Record<string, MesData>>(dadosIniciais)
-  const [busca,    setBusca]    = useState('')
+  const [mesAtual,    setMesAtual]    = useState(agora.getMonth())
+  const [anoAtual,    setAnoAtual]    = useState(agora.getFullYear())
+  const [contaAtual,  setContaAtual]  = useState('cc')
+  const [dados,       setDados]       = useState<Record<string, MesData>>(dadosIniciais)
+  const [busca,       setBusca]       = useState('')
 
   // Formulário
   const [fTipo,      setFTipo]      = useState<TipoLanc>('saida')
@@ -123,33 +135,47 @@ export default function NovoLancamento() {
   const [fCartao,    setFCartao]    = useState<1|2|3>(1)
   const [erroForm,   setErroForm]   = useState('')
 
-  // ── Dados do mês atual ──
-  const key = mesKey(mesAtual, anoAtual)
+  // ── Key do mês + conta ──
+  const key       = mesKey(contaAtual, mesAtual, anoAtual)
   const mesDados: MesData = dados[key] ?? { fixasConfirmadas:[], lancamentos:[], saldoBanco:'' }
+  const contaInfo = CONTAS.find(c => c.id === contaAtual)!
+
+  // ── Fixas filtradas pela conta selecionada ──
+  const fixasDaConta = useMemo(() => {
+    if (contaInfo.tipo === 'cartao') {
+      return CONTAS_FIXAS.filter(f => f.formaPagamento === 'credito' && f.cartao === contaInfo.cartaoNum)
+    }
+    if (contaInfo.tipo === 'corrente' || contaInfo.tipo === 'poupanca') {
+      return CONTAS_FIXAS.filter(f => f.formaPagamento === 'debito')
+    }
+    return []
+  }, [contaAtual])
 
   // ── Cálculos ──
   const { totalEntradas, totalSaidas, totalFixas, totalVariaveis, saldoMes } = useMemo(() => {
-    const lancs = mesDados.lancamentos
-    const totalEntradas  = lancs.filter(l => l.tipo === 'entrada').reduce((s,l) => s+l.valor, 0)
-    const totalSaidas    = lancs.filter(l => l.tipo === 'saida').reduce((s,l) => s+l.valor, 0)
-    const totalFixas     = lancs.filter(l => l.tipoLanc === 'fixa').reduce((s,l) => s+l.valor, 0)
-    const totalVariaveis = lancs.filter(l => l.tipoLanc === 'variavel' && l.tipo === 'saida').reduce((s,l) => s+l.valor, 0)
-    const saldoMes       = totalEntradas - totalSaidas
-    return { totalEntradas, totalSaidas, totalFixas, totalVariaveis, saldoMes }
+    const ls = mesDados.lancamentos
+    const totalEntradas  = ls.filter(l => l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
+    const totalSaidas    = ls.filter(l => l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
+    const totalFixas     = ls.filter(l => l.tipoLanc==='fixa').reduce((s,l)=>s+l.valor,0)
+    const totalVariaveis = ls.filter(l => l.tipoLanc==='variavel' && l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
+    return { totalEntradas, totalSaidas, totalFixas, totalVariaveis, saldoMes: totalEntradas - totalSaidas }
   }, [mesDados])
 
   const saldoBancoNum = parseBRL(mesDados.saldoBanco)
-  const diferenca     = saldoBancoNum > 0 ? saldoBancoNum - saldoMes : null
+  const diferenca     = mesDados.saldoBanco ? saldoBancoNum - saldoMes : null
+  const conciliado    = diferenca !== null && Math.abs(diferenca) < 0.01
+
+  const fixasPct = fixasDaConta.length > 0
+    ? Math.round((mesDados.fixasConfirmadas.filter(id => fixasDaConta.some(f=>f.id===id)).length / fixasDaConta.length)*100)
+    : 0
+  const fixasConf = fixasDaConta.filter(f => mesDados.fixasConfirmadas.includes(f.id)).length
 
   // ── Helpers de update ──
   function updateMes(fn: (prev: MesData) => MesData) {
-    setDados(prev => ({
-      ...prev,
-      [key]: fn(prev[key] ?? { fixasConfirmadas:[], lancamentos:[], saldoBanco:'' })
-    }))
+    setDados(prev => ({ ...prev, [key]: fn(prev[key] ?? { fixasConfirmadas:[], lancamentos:[], saldoBanco:'' }) }))
   }
 
-  // ── Navegação de mês ──
+  // ── Navegar mês ──
   function navegarMes(delta: number) {
     let m = mesAtual + delta, a = anoAtual
     if (m < 0)  { m = 11; a-- }
@@ -157,27 +183,21 @@ export default function NovoLancamento() {
     setMesAtual(m); setAnoAtual(a)
   }
 
-  // ── Contas fixas ──
+  // ── Toggle conta fixa ──
   function toggleFixa(conta: ContaFixa) {
-    const jaConfirmada = mesDados.fixasConfirmadas.includes(conta.id)
-    if (jaConfirmada) {
-      // Remove confirmação e remove da lista de lançamentos
+    const confirmada = mesDados.fixasConfirmadas.includes(conta.id)
+    if (confirmada) {
       updateMes(prev => ({
         ...prev,
         fixasConfirmadas: prev.fixasConfirmadas.filter(id => id !== conta.id),
         lancamentos: prev.lancamentos.filter(l => l.id !== `${conta.id}-conf`),
       }))
     } else {
-      // Confirma e adiciona lançamento
       const novoLanc: Lancamento = {
-        id: `${conta.id}-conf`,
-        tipo: conta.tipo,
-        descricao: conta.nome,
-        categoria: conta.categoria,
-        valor: conta.valor,
-        data: dataHoje(),
-        formaPagamento: conta.formaPagamento,
-        cartao: conta.cartao,
+        id: `${conta.id}-conf`, tipo: conta.tipo,
+        descricao: conta.nome, categoria: conta.categoria,
+        valor: conta.valor, data: dataHoje(),
+        formaPagamento: conta.formaPagamento, cartao: conta.cartao,
         tipoLanc: 'fixa',
       }
       updateMes(prev => ({
@@ -188,22 +208,17 @@ export default function NovoLancamento() {
     }
   }
 
-  // ── Lançamento variável ──
+  // ── Lançar variável ──
   function lancar() {
     const valor = parseBRL(fValor)
-    if (!fDesc.trim())  return setErroForm('Informe uma descrição')
-    if (!fCat)          return setErroForm('Selecione uma categoria')
-    if (valor <= 0)     return setErroForm('Informe um valor válido')
-    if (!fData)         return setErroForm('Informe uma data')
+    if (!fDesc.trim()) return setErroForm('Informe uma descrição')
+    if (!fCat)         return setErroForm('Selecione uma categoria')
+    if (valor <= 0)    return setErroForm('Informe um valor válido')
     setErroForm('')
-
     const novoLanc: Lancamento = {
-      id: `v-${Date.now()}`,
-      tipo: fTipo,
-      descricao: fDesc.trim(),
-      categoria: fCat,
-      valor,
-      data: fData,
+      id: `v-${Date.now()}`, tipo: fTipo,
+      descricao: fDesc.trim(), categoria: fCat,
+      valor, data: fData,
       formaPagamento: fPagamento,
       cartao: fPagamento === 'credito' ? fCartao : undefined,
       tipoLanc: 'variavel',
@@ -212,7 +227,7 @@ export default function NovoLancamento() {
     setFDesc(''); setFValor(''); setFCat('')
   }
 
-  // ── Excluir lançamento ──
+  // ── Excluir ──
   function excluir(l: Lancamento) {
     if (!window.confirm(`Excluir "${l.descricao}"?`)) return
     updateMes(prev => ({
@@ -224,43 +239,33 @@ export default function NovoLancamento() {
     }))
   }
 
-  // ── Lista filtrada e agrupada por data ──
+  // ── Lista filtrada e agrupada ──
   const lancamentosFiltrados = useMemo(() => {
     const termo = busca.toLowerCase()
     return mesDados.lancamentos
       .filter(l => !termo || l.descricao.toLowerCase().includes(termo) || l.categoria.toLowerCase().includes(termo))
-      .sort((a, b) => b.data.localeCompare(a.data))
+      .sort((a,b) => b.data.localeCompare(a.data))
   }, [mesDados.lancamentos, busca])
 
   const grupos = useMemo(() => {
     const g: Record<string, Lancamento[]> = {}
-    lancamentosFiltrados.forEach(l => {
-      if (!g[l.data]) g[l.data] = []
-      g[l.data].push(l)
-    })
+    lancamentosFiltrados.forEach(l => { if (!g[l.data]) g[l.data]=[]; g[l.data].push(l) })
     return g
   }, [lancamentosFiltrados])
 
   const datasOrdenadas = Object.keys(grupos).sort((a,b) => b.localeCompare(a))
 
-  // ── Badge de pagamento ──
+  // ── Estilos ──
+  const inputStyle: React.CSSProperties = {
+    border:`1.5px solid ${COR.borda}`, borderRadius:7,
+    padding:'7px 10px', fontSize:12, outline:'none',
+    background:'#f8fafc', fontFamily:'inherit', color:COR.texto, width:'100%',
+  }
+
   function BadgePag({ l }: { l: Lancamento }) {
     if (l.formaPagamento === 'debito')
       return <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:700, background:'#fef9c3', color:'#92400e' }}>D</span>
     return <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:700, background:'#eff6ff', color:COR.azul }}>C{l.cartao}</span>
-  }
-
-  // ── Progress das fixas ──
-  const fixasProgress = mesDados.fixasConfirmadas.length
-  const fixasTotal    = CONTAS_FIXAS.length
-  const fixasPct      = Math.round((fixasProgress / fixasTotal) * 100)
-
-  // ── Input estilo ──
-  const inputStyle: React.CSSProperties = {
-    border:`1.5px solid ${COR.borda}`, borderRadius:7,
-    padding:'7px 10px', fontSize:12, outline:'none',
-    background:'#f8fafc', fontFamily:'inherit', color:COR.texto,
-    width:'100%',
   }
 
   return (
@@ -269,7 +274,7 @@ export default function NovoLancamento() {
 
       {/* ── HEADER ── */}
       <div style={{ background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding:'18px 28px', display:'flex', alignItems:'center',
+        padding:'16px 28px', display:'flex', alignItems:'center',
         justifyContent:'space-between', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:24 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
@@ -304,56 +309,120 @@ export default function NovoLancamento() {
           color:'#fff', fontSize:14, fontWeight:600 }}>G</div>
       </div>
 
+      {/* ── SUB-HEADER: Contas + Mês + Saldo ── */}
+      <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`, flexShrink:0 }}>
+
+        {/* Abas de conta */}
+        <div style={{ display:'flex', padding:'10px 16px 0', gap:4, overflowX:'auto' }}>
+          {CONTAS.map(c => {
+            const ativa = c.id === contaAtual
+            return (
+              <button key={c.id} onClick={() => setContaAtual(c.id)} style={{
+                padding:'7px 14px', borderRadius:'8px 8px 0 0',
+                border:`1px solid ${ativa ? COR.azul : COR.borda}`,
+                borderBottom: ativa ? `1px solid ${COR.branco}` : `1px solid ${COR.borda}`,
+                cursor:'pointer', fontSize:12, fontWeight:500,
+                fontFamily:'inherit', whiteSpace:'nowrap',
+                background: ativa ? COR.branco : '#f8faff',
+                color: ativa ? COR.azul : COR.textoSuave,
+                marginBottom: ativa ? -1 : 0, position:'relative', zIndex: ativa ? 1 : 0,
+              }}>
+                {c.icone} {c.nome}
+                <span style={{ fontSize:10, color: ativa ? COR.azulMedio : '#94a3b8',
+                  marginLeft:4, fontWeight:400 }}>
+                  {c.banco}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Mês + Saldo extrato */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'8px 16px 10px', borderTop:`1px solid ${COR.borda}` }}>
+
+          {/* Navegação de mês */}
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <button onClick={() => navegarMes(-1)} style={{ border:'none',
+              background:'#f0f4ff', borderRadius:6, padding:'4px 10px',
+              cursor:'pointer', fontSize:14, color:COR.textoSuave }}>←</button>
+            <span style={{ fontSize:14, fontWeight:700, color:COR.texto }}>
+              {NOMES_MESES[mesAtual]} {anoAtual}
+            </span>
+            <button onClick={() => navegarMes(+1)} style={{ border:'none',
+              background:'#f0f4ff', borderRadius:6, padding:'4px 10px',
+              cursor:'pointer', fontSize:14, color:COR.textoSuave }}>→</button>
+          </div>
+
+          {/* Saldo extrato + status conciliação */}
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:12, color:COR.textoSuave }}>Saldo extrato:</span>
+            <input
+              value={mesDados.saldoBanco}
+              onChange={e => updateMes(prev => ({ ...prev, saldoBanco:e.target.value }))}
+              placeholder="R$ 0,00"
+              style={{ border:`1.5px solid ${COR.azul}`, borderRadius:7,
+                padding:'5px 10px', fontSize:13, fontWeight:600,
+                color:COR.azul, background:'#eff6ff', outline:'none',
+                width:140, textAlign:'right', fontFamily:'inherit' }}
+            />
+            {diferenca !== null && (
+              <div style={{ padding:'5px 12px', borderRadius:7, fontSize:12, fontWeight:600,
+                background: conciliado ? '#dcfce7' : '#fee2e2',
+                color: conciliado ? '#166534' : '#991b1b',
+                border:`1px solid ${conciliado ? '#86efac' : '#fca5a5'}` }}>
+                {conciliado ? '✓ Conciliado' : `Dif. ${fmt(Math.abs(diferenca))}`}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* ── BODY ── */}
       <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
 
-        {/* ══════════════════════════════════════
-            PAINEL ESQUERDO — Contas Fixas
-        ══════════════════════════════════════ */}
-        <div style={{ width:270, flexShrink:0, background:COR.branco,
+        {/* ═══════════════════════════
+            PAINEL ESQUERDO — Fixas
+        ═══════════════════════════ */}
+        <div style={{ width:260, flexShrink:0, background:COR.branco,
           borderRight:`1px solid ${COR.borda}`, display:'flex',
           flexDirection:'column', overflow:'hidden' }}>
 
-          {/* Header fixas */}
           <div style={{ padding:'12px 14px', borderBottom:`1px solid ${COR.borda}`, flexShrink:0 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:2 }}>
-              <span style={{ fontSize:12, fontWeight:700, color:COR.texto }}>
-                📌 Contas Fixas
-              </span>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+              <span style={{ fontSize:12, fontWeight:700, color:COR.texto }}>📌 Contas Fixas</span>
               <span style={{ fontSize:11, color:COR.textoSuave }}>
-                {fixasProgress}/{fixasTotal}
+                {fixasConf}/{fixasDaConta.length}
               </span>
             </div>
-            <div style={{ fontSize:11, color:COR.textoSuave, marginBottom:7 }}>
-              {NOMES_MESES[mesAtual]} {anoAtual}
-            </div>
-            {/* Barra de progresso */}
             <div style={{ height:5, background:'#e2e8f0', borderRadius:3, overflow:'hidden' }}>
-              <div style={{ height:'100%', borderRadius:3,
-                width:`${fixasPct}%`, transition:'width .3s',
+              <div style={{ height:'100%', borderRadius:3, transition:'width .3s',
+                width:`${fixasPct}%`,
                 background: fixasPct === 100 ? COR.verde : COR.azul }} />
             </div>
-            {fixasPct === 100 && (
+            {fixasPct === 100 && fixasDaConta.length > 0 && (
               <div style={{ fontSize:10, color:COR.verde, fontWeight:600, marginTop:4 }}>
-                ✓ Todas as contas fixas confirmadas!
+                ✓ Todas confirmadas!
+              </div>
+            )}
+            {fixasDaConta.length === 0 && (
+              <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                Sem contas fixas para esta conta.
               </div>
             )}
           </div>
 
-          {/* Lista de fixas */}
+          {/* Lista fixas */}
           <div style={{ flex:1, overflowY:'auto', padding:8 }}>
-            {CONTAS_FIXAS.map(conta => {
+            {fixasDaConta.map(conta => {
               const confirmada = mesDados.fixasConfirmadas.includes(conta.id)
               return (
-                <div key={conta.id}
-                  onClick={() => toggleFixa(conta)}
+                <div key={conta.id} onClick={() => toggleFixa(conta)}
                   style={{ display:'flex', alignItems:'center', gap:8,
-                    padding:'9px 10px', borderRadius:8, border:`1px solid ${COR.borda}`,
-                    marginBottom:4, cursor:'pointer', transition:'all .15s',
-                    background: confirmada ? '#f0fdf4' : COR.branco,
-                    borderColor: confirmada ? '#86efac' : COR.borda,
-                  }}>
-                  {/* Checkbox */}
+                    padding:'9px 10px', borderRadius:8, marginBottom:4,
+                    cursor:'pointer', transition:'all .15s',
+                    border:`1px solid ${confirmada ? '#86efac' : COR.borda}`,
+                    background: confirmada ? '#f0fdf4' : COR.branco }}>
                   <div style={{ width:18, height:18, borderRadius:5, flexShrink:0,
                     border:`2px solid ${confirmada ? COR.verde : '#cbd5e1'}`,
                     background: confirmada ? COR.verde : 'transparent',
@@ -361,153 +430,107 @@ export default function NovoLancamento() {
                     fontSize:10, color:'#fff', transition:'all .15s' }}>
                     {confirmada ? '✓' : ''}
                   </div>
-                  {/* Info */}
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:12, fontWeight:500,
-                      color: confirmada ? '#15803d' : COR.texto,
-                      textDecoration: confirmada ? 'none' : 'none' }}>
+                      color: confirmada ? '#15803d' : COR.texto }}>
                       {conta.nome}
                     </div>
                     <div style={{ fontSize:11, color:COR.textoSuave, marginTop:1 }}>
                       {fmt(conta.valor)}
                     </div>
                   </div>
-                  {/* Badge */}
                   {conta.formaPagamento === 'debito'
-                    ? <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:700, background:'#fef9c3', color:'#92400e', flexShrink:0 }}>D</span>
-                    : <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:700, background:'#eff6ff', color:COR.azul, flexShrink:0 }}>C{conta.cartao}</span>
+                    ? <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:700, background:'#fef9c3', color:'#92400e' }}>D</span>
+                    : <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:700, background:'#eff6ff', color:COR.azul }}>C{conta.cartao}</span>
                   }
                 </div>
               )
             })}
           </div>
 
-          {/* Conciliação */}
+          {/* Resumo conciliação no rodapé */}
           <div style={{ padding:'10px 14px', borderTop:`1px solid ${COR.borda}`,
             background:'#f8faff', flexShrink:0 }}>
             <div style={{ fontSize:11, fontWeight:700, color:COR.texto, marginBottom:8 }}>
-              Conciliação
+              Resumo do mês
             </div>
             {[
-              { label:'Fixas confirmadas', val: -CONTAS_FIXAS.filter(c => mesDados.fixasConfirmadas.includes(c.id)).reduce((s,c)=>s+c.valor,0), cor:COR.vermelho },
-              { label:'Variáveis lançadas', val: -totalVariaveis, cor:COR.vermelho },
-              { label:'Entradas', val: totalEntradas, cor:COR.verde },
+              { label:'Entradas',           val:totalEntradas,   cor:COR.verde,    sinal:'+' },
+              { label:'Saídas fixas',       val:totalFixas,      cor:COR.azul,     sinal:'-' },
+              { label:'Saídas variáveis',   val:totalVariaveis,  cor:COR.vermelho, sinal:'-' },
             ].map(r => (
               <div key={r.label} style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                 <span style={{ fontSize:10, color:COR.textoSuave }}>{r.label}</span>
-                <span style={{ fontSize:11, fontWeight:600, color:r.cor }}>{fmt(Math.abs(r.val))}</span>
+                <span style={{ fontSize:11, fontWeight:600, color:r.cor }}>
+                  {r.sinal}{fmt(r.val)}
+                </span>
               </div>
             ))}
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-              marginTop:6, paddingTop:6, borderTop:`1px solid ${COR.borda}` }}>
-              <span style={{ fontSize:10, color:COR.textoSuave }}>Saldo extrato</span>
-              <input
-                value={mesDados.saldoBanco}
-                onChange={e => updateMes(prev => ({ ...prev, saldoBanco:e.target.value }))}
-                placeholder="R$ 0,00"
-                style={{ border:`1.5px solid ${COR.azul}`, borderRadius:5,
-                  padding:'3px 7px', fontSize:11, fontWeight:600, color:COR.azul,
-                  background:'#eff6ff', outline:'none', width:100, textAlign:'right',
-                  fontFamily:'inherit' }}
-              />
+            <div style={{ display:'flex', justifyContent:'space-between',
+              paddingTop:6, marginTop:4, borderTop:`1px solid ${COR.borda}` }}>
+              <span style={{ fontSize:11, fontWeight:700, color:COR.texto }}>Saldo</span>
+              <span style={{ fontSize:13, fontWeight:700,
+                color: saldoMes >= 0 ? COR.verde : COR.vermelho }}>
+                {fmt(saldoMes)}
+              </span>
             </div>
-            {/* Diferença */}
-            {diferenca !== null && (
-              <div style={{ marginTop:6, padding:'6px 8px', borderRadius:7,
-                background: Math.abs(diferenca) < 0.01 ? '#dcfce7' : '#fee2e2',
-                border:`1px solid ${Math.abs(diferenca) < 0.01 ? '#86efac' : '#fca5a5'}`,
-                display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:11, fontWeight:600,
-                  color: Math.abs(diferenca) < 0.01 ? '#166534' : '#991b1b' }}>
-                  {Math.abs(diferenca) < 0.01 ? '✓ Conciliado' : 'Diferença'}
-                </span>
-                <span style={{ fontSize:12, fontWeight:700,
-                  color: Math.abs(diferenca) < 0.01 ? '#166534' : '#991b1b' }}>
-                  {Math.abs(diferenca) < 0.01 ? 'R$ 0,00' : fmt(Math.abs(diferenca))}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* ══════════════════════════════════════
+        {/* ═══════════════════════════════════════
             PAINEL DIREITO — Lançamentos variáveis
-        ══════════════════════════════════════ */}
+        ═══════════════════════════════════════ */}
         <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-
-          {/* Navegação de mês */}
-          <div style={{ padding:'10px 16px', borderBottom:`1px solid ${COR.borda}`,
-            display:'flex', alignItems:'center', justifyContent:'space-between',
-            background:COR.branco, flexShrink:0 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <button onClick={() => navegarMes(-1)} style={{ border:'none',
-                background:'#f0f4ff', borderRadius:6, padding:'4px 10px',
-                cursor:'pointer', fontSize:14, color:COR.textoSuave }}>←</button>
-              <span style={{ fontSize:13, fontWeight:700, color:COR.texto }}>
-                {NOMES_MESES[mesAtual]} {anoAtual}
-              </span>
-              <button onClick={() => navegarMes(+1)} style={{ border:'none',
-                background:'#f0f4ff', borderRadius:6, padding:'4px 10px',
-                cursor:'pointer', fontSize:14, color:COR.textoSuave }}>→</button>
-            </div>
-            <input
-              value={busca} onChange={e => setBusca(e.target.value)}
-              placeholder="🔍 Buscar lançamento..."
-              style={{ border:`1px solid ${COR.borda}`, borderRadius:7,
-                padding:'5px 10px', fontSize:12, outline:'none',
-                background:'#f8faff', width:190, fontFamily:'inherit' }}
-            />
-          </div>
 
           {/* Cards de resumo */}
           <div style={{ display:'flex', gap:8, padding:'8px 16px',
             background:'#f8faff', flexShrink:0 }}>
             {[
-              { label:'Entradas', val:totalEntradas, cor:COR.verde   },
-              { label:'Saídas fixas', val:totalFixas, cor:COR.azul   },
-              { label:'Saídas variáveis', val:totalVariaveis, cor:COR.vermelho },
-              { label:'Saldo do mês', val:saldoMes, cor: saldoMes >= 0 ? COR.verde : COR.vermelho },
+              { label:'Entradas',         val:totalEntradas,  cor:COR.verde,    sinal:'+' },
+              { label:'Saídas fixas',     val:totalFixas,     cor:COR.azul,     sinal:'-' },
+              { label:'Saídas variáveis', val:totalVariaveis, cor:COR.vermelho, sinal:'-' },
+              { label:'Saldo do mês',     val:saldoMes,       cor: saldoMes >= 0 ? COR.verde : COR.vermelho, sinal: saldoMes >= 0 ? '+' : '' },
             ].map(c => (
               <div key={c.label} style={{ flex:1, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:8, padding:'8px 12px' }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, marginBottom:3 }}>{c.label}</div>
                 <div style={{ fontSize:14, fontWeight:700, color:c.cor }}>
-                  {c.val >= 0 ? '+' : ''}{fmt(c.val)}
+                  {c.sinal}{fmt(Math.abs(c.val))}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Formulário rápido */}
+          {/* Formulário */}
           <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
             padding:'10px 16px', flexShrink:0 }}>
             <div style={{ fontSize:11, fontWeight:700, color:COR.texto, marginBottom:8 }}>
-              Novo lançamento variável
+              Novo lançamento — {contaInfo.icone} {contaInfo.nome} ({contaInfo.banco})
             </div>
 
-            {/* Toggle tipo */}
-            <div style={{ display:'flex', gap:10, marginBottom:10, flexWrap:'wrap' }}>
-              <div style={{ display:'flex', background:'#f1f5f9', borderRadius:7,
-                padding:3, alignSelf:'flex-end' }}>
-                {([['entrada','↑ Entrada'], ['saida','↓ Saída']] as const).map(([t, label]) => (
+            <div style={{ display:'flex', gap:6, alignItems:'flex-end', flexWrap:'wrap', marginBottom:8 }}>
+              {/* Toggle */}
+              <div style={{ display:'flex', background:'#f1f5f9', borderRadius:7, padding:3, alignSelf:'flex-end' }}>
+                {(['entrada','saida'] as const).map(t => (
                   <button key={t} onClick={() => { setFTipo(t); setFCat('') }} style={{
                     padding:'5px 12px', border:'none', borderRadius:5, cursor:'pointer',
                     fontSize:12, fontWeight:500, fontFamily:'inherit', transition:'all .15s',
                     background: fTipo === t ? COR.branco : 'transparent',
-                    color: fTipo === t ? (t === 'entrada' ? COR.verde : COR.vermelho) : COR.textoSuave,
+                    color: fTipo === t ? (t==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave,
                     boxShadow: fTipo === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  }}>{label}</button>
+                  }}>
+                    {t === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                  </button>
                 ))}
               </div>
-
               {/* Descrição */}
               <div style={{ flex:2, minWidth:120 }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, marginBottom:3 }}>Descrição</div>
                 <input value={fDesc} onChange={e => setFDesc(e.target.value)}
-                  placeholder="Ex: Mercado, Farmácia..." style={inputStyle}
+                  placeholder="Ex: Mercado, Farmácia..."
+                  style={inputStyle}
                   onKeyDown={e => e.key === 'Enter' && lancar()} />
               </div>
-
               {/* Categoria */}
               <div style={{ flex:1.5, minWidth:120 }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, marginBottom:3 }}>Categoria</div>
@@ -518,7 +541,6 @@ export default function NovoLancamento() {
                   ))}
                 </select>
               </div>
-
               {/* Valor */}
               <div style={{ width:110 }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, marginBottom:3 }}>Valor</div>
@@ -526,46 +548,40 @@ export default function NovoLancamento() {
                   placeholder="R$ 0,00" style={inputStyle}
                   onKeyDown={e => e.key === 'Enter' && lancar()} />
               </div>
-
               {/* Data */}
               <div style={{ width:120 }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, marginBottom:3 }}>Data</div>
-                <input type="date" value={fData} onChange={e => setFData(e.target.value)}
-                  style={inputStyle} />
+                <input type="date" value={fData}
+                  onChange={e => setFData(e.target.value)} style={inputStyle} />
               </div>
             </div>
 
-            {/* Pagamento */}
-            <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-              <div style={{ fontSize:11, color:COR.textoSuave }}>Pagamento:</div>
+            {/* Forma de pagamento */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+              <span style={{ fontSize:11, color:COR.textoSuave }}>Pagamento:</span>
               {(['debito','credito'] as const).map(p => (
                 <button key={p} onClick={() => setFPagamento(p)} style={{
-                  padding:'4px 12px', border:`1.5px solid ${fPagamento === p ? COR.azul : COR.borda}`,
+                  padding:'4px 12px', border:`1.5px solid ${fPagamento===p ? COR.azul : COR.borda}`,
                   borderRadius:6, cursor:'pointer', fontSize:11, fontWeight:500,
-                  background: fPagamento === p ? '#eff6ff' : COR.branco,
-                  color: fPagamento === p ? COR.azul : COR.textoSuave,
+                  background: fPagamento===p ? '#eff6ff' : COR.branco,
+                  color: fPagamento===p ? COR.azul : COR.textoSuave,
                   fontFamily:'inherit' }}>
                   {p === 'debito' ? 'Débito' : 'Crédito'}
                 </button>
               ))}
-
               {fPagamento === 'credito' && (
                 <>
-                  <div style={{ fontSize:11, color:COR.textoSuave }}>Cartão:</div>
+                  <span style={{ fontSize:11, color:COR.textoSuave }}>Cartão:</span>
                   {([1,2,3] as const).map(c => (
                     <button key={c} onClick={() => setFCartao(c)} style={{
-                      padding:'4px 12px', border:`1.5px solid ${fCartao === c ? COR.azul : COR.borda}`,
+                      padding:'4px 12px', border:`1.5px solid ${fCartao===c ? COR.azul : COR.borda}`,
                       borderRadius:6, cursor:'pointer', fontSize:11, fontWeight:500,
-                      background: fCartao === c ? '#eff6ff' : COR.branco,
-                      color: fCartao === c ? COR.azul : COR.textoSuave,
-                      fontFamily:'inherit' }}>
-                      Cartão {c}
-                    </button>
+                      background: fCartao===c ? '#eff6ff' : COR.branco,
+                      color: fCartao===c ? COR.azul : COR.textoSuave,
+                      fontFamily:'inherit' }}>Cartão {c}</button>
                   ))}
                 </>
               )}
-
-              {/* Botão lançar */}
               <button onClick={lancar} style={{ marginLeft:'auto',
                 padding:'7px 20px', border:'none', borderRadius:8,
                 background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
@@ -574,8 +590,6 @@ export default function NovoLancamento() {
                 + Lançar
               </button>
             </div>
-
-            {/* Erro */}
             {erroForm && (
               <div style={{ marginTop:6, fontSize:11, color:COR.vermelho,
                 background:'#fee2e2', padding:'4px 10px', borderRadius:6 }}>
@@ -584,82 +598,77 @@ export default function NovoLancamento() {
             )}
           </div>
 
-          {/* Lista de lançamentos */}
+          {/* Busca + lista */}
+          <div style={{ padding:'8px 16px 4px', background:COR.branco,
+            borderBottom:`1px solid ${COR.borda}`, flexShrink:0 }}>
+            <input value={busca} onChange={e => setBusca(e.target.value)}
+              placeholder="🔍 Buscar lançamento..."
+              style={{ ...inputStyle, background:'#f8faff' }} />
+          </div>
+
           <div style={{ flex:1, overflowY:'auto', padding:'8px 16px' }}>
             {datasOrdenadas.length === 0 && (
               <div style={{ textAlign:'center', padding:'40px 0',
                 color:COR.textoSuave, fontSize:13 }}>
-                Nenhum lançamento encontrado.
+                Nenhum lançamento para {contaInfo.nome} em {NOMES_MESES[mesAtual]}.
               </div>
             )}
             {datasOrdenadas.map(data => (
               <div key={data}>
-                {/* Cabeçalho do dia */}
                 <div style={{ display:'flex', alignItems:'center', gap:8,
                   margin:'10px 0 5px 2px' }}>
                   <span style={{ fontSize:10, color:'#94a3b8', fontWeight:600,
-                    textTransform:'uppercase', letterSpacing:.5 }}>
-                    {data === dataHoje() ? 'Hoje' : data === ontem ? 'Ontem' : ''}
-                    {' '}{fmtDataBR(data)}
+                    textTransform:'uppercase', letterSpacing:.5, whiteSpace:'nowrap' }}>
+                    {data === dataHoje() ? 'Hoje' : data === dataOntem() ? 'Ontem' : ''}{' '}{fmtDataBR(data)}
                   </span>
                   <div style={{ flex:1, height:1, background:COR.borda }} />
-                  <span style={{ fontSize:10, color:'#94a3b8' }}>
-                    {grupos[data].length} lançamento{grupos[data].length > 1 ? 's' : ''}
+                  <span style={{ fontSize:10, color:'#94a3b8', whiteSpace:'nowrap' }}>
+                    {grupos[data].length} lançamento{grupos[data].length>1?'s':''}
                   </span>
                 </div>
 
-                {/* Lançamentos do dia */}
                 {grupos[data].map(l => (
                   <div key={l.id}
                     style={{ display:'flex', alignItems:'center', gap:8,
                       padding:'8px 10px', borderRadius:8, marginBottom:3,
-                      background: l.tipoLanc === 'fixa' ? '#f0f9ff' : COR.branco,
-                      border:`1px solid ${l.tipoLanc === 'fixa' ? '#bae6fd' : COR.borda}`,
-                      transition:'background .15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = l.tipoLanc === 'fixa' ? '#e0f2fe' : '#f8faff')}
-                    onMouseLeave={e => (e.currentTarget.style.background = l.tipoLanc === 'fixa' ? '#f0f9ff' : COR.branco)}>
+                      background: l.tipoLanc==='fixa' ? '#f0f9ff' : COR.branco,
+                      border:`1px solid ${l.tipoLanc==='fixa' ? '#bae6fd' : COR.borda}` }}
+                    onMouseEnter={e=>(e.currentTarget.style.background=l.tipoLanc==='fixa'?'#e0f2fe':'#f8faff')}
+                    onMouseLeave={e=>(e.currentTarget.style.background=l.tipoLanc==='fixa'?'#f0f9ff':COR.branco)}>
 
-                    {/* Ícone */}
                     <div style={{ width:30, height:30, borderRadius:8, flexShrink:0,
                       display:'flex', alignItems:'center', justifyContent:'center', fontSize:13,
-                      background: l.tipoLanc === 'fixa' ? '#e0f2fe' : l.tipo === 'entrada' ? '#f0fdf4' : '#fff1f2' }}>
-                      {l.tipoLanc === 'fixa' ? '📌' : l.tipo === 'entrada' ? '↑' : '↓'}
+                      background: l.tipoLanc==='fixa' ? '#e0f2fe' : l.tipo==='entrada' ? '#f0fdf4' : '#fff1f2' }}>
+                      {l.tipoLanc==='fixa' ? '📌' : l.tipo==='entrada' ? '↑' : '↓'}
                     </div>
 
-                    {/* Info */}
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:12, fontWeight:500, color:COR.texto,
-                        display:'flex', alignItems:'center', gap:5 }}>
+                        display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
                         {l.descricao}
-                        <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3,
-                          fontWeight:600, flexShrink:0,
-                          background: l.tipoLanc === 'fixa' ? '#e0f2fe' : '#f1f5f9',
-                          color: l.tipoLanc === 'fixa' ? '#0369a1' : '#64748b' }}>
-                          {l.tipoLanc === 'fixa' ? 'fixa ✓' : 'variável'}
+                        <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, fontWeight:600,
+                          background: l.tipoLanc==='fixa' ? '#e0f2fe' : '#f1f5f9',
+                          color: l.tipoLanc==='fixa' ? '#0369a1' : '#64748b' }}>
+                          {l.tipoLanc==='fixa' ? 'fixa ✓' : 'variável'}
                         </span>
                       </div>
                       <div style={{ fontSize:10, color:'#94a3b8', marginTop:1,
                         display:'flex', alignItems:'center', gap:4 }}>
-                        {l.categoria}
-                        <BadgePag l={l} />
+                        {l.categoria} <BadgePag l={l} />
                       </div>
                     </div>
 
-                    {/* Valor */}
                     <div style={{ fontSize:13, fontWeight:600, whiteSpace:'nowrap',
-                      color: l.tipo === 'entrada' ? COR.verde : COR.texto }}>
-                      {l.tipo === 'entrada' ? '+' : '-'}{fmt(l.valor)}
+                      color: l.tipo==='entrada' ? COR.verde : COR.texto }}>
+                      {l.tipo==='entrada' ? '+' : '-'}{fmt(l.valor)}
                     </div>
 
-                    {/* Excluir */}
                     <button onClick={() => excluir(l)} title="Excluir"
-                      style={{ border:'none', background:'transparent',
-                        cursor:'pointer', color:'#cbd5e1', fontSize:14,
-                        padding:'2px 4px', borderRadius:4, flexShrink:0 }}
-                      onMouseEnter={e => (e.currentTarget.style.color = COR.vermelho)}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#cbd5e1')}>
-                      ✕
-                    </button>
+                      style={{ border:'none', background:'transparent', cursor:'pointer',
+                        color:'#cbd5e1', fontSize:14, padding:'2px 4px',
+                        borderRadius:4, flexShrink:0 }}
+                      onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
+                      onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                   </div>
                 ))}
               </div>
