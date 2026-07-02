@@ -152,7 +152,7 @@ export default function NovoLancamento() {
   }, [contaAtual])
 
   // ── Cálculos ──
-  const { totalEntradas, totalSaidas, totalFixas, totalVariaveis, saldoMes } = useMemo(() => {
+  const { totalEntradas, totalFixas, totalVariaveis, saldoMes } = useMemo(() => {
     const ls = mesDados.lancamentos
     const totalEntradas  = ls.filter(l => l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
     const totalSaidas    = ls.filter(l => l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
