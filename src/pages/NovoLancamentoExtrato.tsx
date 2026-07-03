@@ -5,7 +5,7 @@ const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
   fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
   textoSuave: '#64748b', borda: '#e2e8f0',
-  verde: '#16a34a', vermelho: '#dc2626', amarelo: '#d97706',
+  verde: '#16a34a', vermelho: '#dc2626',
 }
 
 type TipoLanc = 'entrada' | 'saida'
@@ -57,10 +57,10 @@ const FIXAS: Record<string, CatFixa[]> = {
     { id:'f08', nome:'AABB',            categoria:'AABB',            valor:120,     tipo:'saida',   formaPagamento:'debito', diaVencimento:5  },
   ],
   cp: [],
-  c1: [{ id:'f09', nome:'Consórcio',   categoria:'Consórcio',   valor:460.94, tipo:'saida', formaPagamento:'credito', cartao:1, diaVencimento:5  }],
+  c1: [{ id:'f09', nome:'Consórcio',  categoria:'Consórcio',  valor:460.94, tipo:'saida', formaPagamento:'credito', cartao:1, diaVencimento:5  }],
   c2: [
-    { id:'f10', nome:'Seguro Civic',  categoria:'Seguro Civic',  valor:193.65, tipo:'saida', formaPagamento:'credito', cartao:2, diaVencimento:15 },
-    { id:'f11', nome:'Seguro March',  categoria:'Seguro March',  valor:94.72,  tipo:'saida', formaPagamento:'credito', cartao:2, diaVencimento:15 },
+    { id:'f10', nome:'Seguro Civic', categoria:'Seguro Civic', valor:193.65, tipo:'saida', formaPagamento:'credito', cartao:2, diaVencimento:15 },
+    { id:'f11', nome:'Seguro March', categoria:'Seguro March', valor:94.72,  tipo:'saida', formaPagamento:'credito', cartao:2, diaVencimento:15 },
   ],
   c3: [],
 }
@@ -70,7 +70,6 @@ const CAT_ENTRADA = ['Clientes a Receber','Salário Pri','Salário Gui','13º Sa
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-
 const SALDO_INICIAL = 5000
 
 const NAV = [
@@ -80,42 +79,35 @@ const NAV = [
   { label:'⚙ Config',    path:'/configuracoes'   },
 ]
 
-function fmt(v: number) {
-  return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
-}
-function parseBRL(s: string) {
-  return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0
-}
-function diasNoMes(mes: number, ano: number) {
-  return new Date(ano, mes+1, 0).getDate()
-}
-function diaSemana(d: number, m: number, a: number) {
-  return DIAS_SEM[new Date(a,m,d).getDay()]
-}
+function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+function parseBRL(s: string) { return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0 }
+function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
+function diaSemana(d: number, m: number, a: number) { return DIAS_SEM[new Date(a,m,d).getDay()] }
 function mesKey(conta: string, ano: number, mes: number) {
   return `${conta}-${ano}-${String(mes+1).padStart(2,'0')}`
 }
 
 export default function NovoLancamentoExtrato() {
-  const navigate   = useNavigate()
-  const hoje       = new Date()
-  const diaHoje    = hoje.getDate()
-  const mesHoje    = hoje.getMonth()
-  const anoHoje    = hoje.getFullYear()
+  const navigate  = useNavigate()
+  const hoje      = new Date()
+  const diaHoje   = hoje.getDate()
+  const mesHoje   = hoje.getMonth()
+  const anoHoje   = hoje.getFullYear()
 
-  const [contaId,     setContaId]     = useState('cc')
-  const [mes,         setMes]         = useState(mesHoje)
-  const [ano]         = useState(anoHoje)
-  const [dados,       setDados]       = useState<Record<string, DadosMes>>({})
-  const [formAberto,  setFormAberto]  = useState<number|null>(null)
-  const [fTipo,       setFTipo]       = useState<TipoLanc>('saida')
-  const [fCat,        setFCat]        = useState('')
-  const [fDesc,       setFDesc]       = useState('')
-  const [fValor,      setFValor]      = useState('')
-  const [fPag,        setFPag]        = useState<FormaPag>('debito')
-  const [fCartao,     setFCartao]     = useState<1|2|3>(1)
+  const [contaId,  setContaId]  = useState('cc')
+  const [mes,      setMes]      = useState(mesHoje)
+  const [ano]                    = useState(anoHoje)
+  const [dados,    setDados]    = useState<Record<string, DadosMes>>({})
+  const [diaSel,   setDiaSel]   = useState<number|null>(null)
+  const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
+  const [fCat,     setFCat]     = useState('')
+  const [fDesc,    setFDesc]    = useState('')
+  const [fValor,   setFValor]   = useState('')
+  const [fPag,     setFPag]     = useState<FormaPag>('debito')
+  const [fCartao,  setFCartao]  = useState<1|2|3>(1)
 
   const hojeRef    = useRef<HTMLDivElement>(null)
+  const formRef    = useRef<HTMLDivElement>(null)
   const fixas      = FIXAS[contaId] ?? []
   const totalDias  = diasNoMes(mes, ano)
   const eMesAtual  = mes===mesHoje && ano===anoHoje
@@ -123,59 +115,60 @@ export default function NovoLancamentoExtrato() {
   const mesDados   = dados[key] ?? { lancamentos:{}, saldoBanco:'' }
   const saldoExtNum = parseBRL(mesDados.saldoBanco)
 
-  // ── Auto-scroll no dia de hoje ──
+  // ── Auto-scroll hoje ──
   useEffect(() => {
     if (eMesAtual) {
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
     }
   }, [contaId, mes, ano])
 
-  // ── Helpers de update ──
+  // ── Scroll para o form quando abre ──
+  useEffect(() => {
+    if (diaSel !== null) {
+      setTimeout(() => formRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}), 80)
+    }
+  }, [diaSel])
+
   function updateMes(fn: (prev: DadosMes) => DadosMes) {
     setDados(prev => ({ ...prev, [key]: fn(prev[key] ?? { lancamentos:{}, saldoBanco:'' }) }))
   }
-  function setSaldoBanco(v: string) {
-    updateMes(prev => ({ ...prev, saldoBanco:v }))
-  }
 
-  // ── Fixas do dia ──
-  function fixasDia(dia: number): CatFixa[] {
-    return fixas.filter(f => f.diaVencimento===dia)
-  }
-
-  // ── Lançamentos variáveis do dia ──
-  function lancsDia(dia: number): Lancamento[] {
-    return mesDados.lancamentos[dia] ?? []
-  }
-
-  // ── Saldo acumulado por dia ──
+  // ── Saldo acumulado em cascata ──
   const saldosDia = useMemo(() => {
+    const lancs  = (dados[key] ?? { lancamentos:{} }).lancamentos
+    const fixasConta = FIXAS[contaId] ?? []
     let saldo = SALDO_INICIAL
     const res: Record<number, number> = {}
     for (let d=1; d<=totalDias; d++) {
-      fixasDia(d).forEach(f => { saldo += f.tipo==='entrada' ? f.valor : -f.valor })
-      lancsDia(d).forEach(l => { saldo += l.tipo==='entrada' ? l.valor : -l.valor })
+      fixasConta.filter(f=>f.diaVencimento===d)
+        .forEach(f => { saldo += f.tipo==='entrada' ? f.valor : -f.valor })
+      ;(lancs[d]??[])
+        .forEach(l => { saldo += l.tipo==='entrada' ? l.valor : -l.valor })
       res[d] = saldo
     }
     return res
-  }, [dados, contaId, mes, ano, totalDias])
+  }, [dados, key, contaId, totalDias])
 
-  // ── Totais do mês ──
+  // ── Totais ──
   const { totalEntradas, totalSaidas } = useMemo(() => {
+    const lancs  = (dados[key] ?? { lancamentos:{} }).lancamentos
+    const fixasConta = FIXAS[contaId] ?? []
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
-      fixasDia(d).forEach(f => { f.tipo==='entrada' ? te+=f.valor : ts+=f.valor })
-      lancsDia(d).forEach(l => { l.tipo==='entrada' ? te+=l.valor : ts+=l.valor })
+      fixasConta.filter(f=>f.diaVencimento===d)
+        .forEach(f => { f.tipo==='entrada'?te+=f.valor:ts+=f.valor })
+      ;(lancs[d]??[])
+        .forEach(l => { l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
     }
     return { totalEntradas:te, totalSaidas:ts }
-  }, [dados, contaId, mes, ano, totalDias])
+  }, [dados, key, contaId, totalDias])
 
   const saldoMes   = SALDO_INICIAL + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
 
-  // ── Lançar ──
-  function lancar(dia: number) {
+  function lancar() {
+    if (!diaSel) return
     const valor = parseBRL(fValor)
     if (!fCat || valor <= 0) return
     const novoLanc: Lancamento = {
@@ -189,11 +182,12 @@ export default function NovoLancamentoExtrato() {
       ...prev,
       lancamentos: {
         ...prev.lancamentos,
-        [dia]: [...(prev.lancamentos[dia]??[]), novoLanc],
+        [diaSel]: [...(prev.lancamentos[diaSel]??[]), novoLanc],
       }
     }))
-    // Limpa campos mas mantém o form aberto
     setFCat(''); setFDesc(''); setFValor('')
+    // Mantém form aberto e rola para ele
+    setTimeout(() => formRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}), 80)
   }
 
   function excluir(dia: number, id: string) {
@@ -201,7 +195,7 @@ export default function NovoLancamentoExtrato() {
       ...prev,
       lancamentos: {
         ...prev.lancamentos,
-        [dia]: (prev.lancamentos[dia]??[]).filter(l => l.id!==id),
+        [dia]: (prev.lancamentos[dia]??[]).filter(l=>l.id!==id),
       }
     }))
   }
@@ -210,12 +204,6 @@ export default function NovoLancamentoExtrato() {
     if (fp==='debito')
       return <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,background:'#fef9c3',color:'#92400e'}}>D</span>
     return <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,background:'#eff6ff',color:COR.azul}}>C{cartao}</span>
-  }
-
-  const inputSt: React.CSSProperties = {
-    border:`1.5px solid ${COR.borda}`, borderRadius:7,
-    padding:'7px 10px', fontSize:12, outline:'none',
-    background:'#f8fafc', fontFamily:'inherit', color:COR.texto,
   }
 
   return (
@@ -266,7 +254,7 @@ export default function NovoLancamentoExtrato() {
         {CONTAS.map(c => {
           const ativa = c.id===contaId
           return (
-            <button key={c.id} onClick={() => setContaId(c.id)} style={{
+            <button key={c.id} onClick={() => { setContaId(c.id); setDiaSel(null) }} style={{
               display:'flex',alignItems:'center',gap:6,
               padding:'7px 14px',borderRadius:'8px 8px 0 0',
               border:`1px solid ${ativa?c.cor:COR.borda}`,
@@ -293,7 +281,7 @@ export default function NovoLancamentoExtrato() {
           const isAtual = i===mesHoje && ano===anoHoje
           const ativo   = i===mes
           return (
-            <button key={m} onClick={() => setMes(i)} style={{
+            <button key={m} onClick={() => { setMes(i); setDiaSel(null) }} style={{
               padding:'5px 11px',
               border:`1px solid ${ativo?COR.azul:'transparent'}`,
               borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:ativo?700:400,
@@ -311,22 +299,19 @@ export default function NovoLancamentoExtrato() {
         })}
       </div>
 
-      {/* ── BARRA DE SALDO E DIFERENÇA ── */}
+      {/* ── BARRA DE SALDO ── */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
         padding:'8px 16px',flexShrink:0,display:'flex',
         alignItems:'center',gap:10,flexWrap:'wrap'}}>
-
         <span style={{fontSize:12,fontWeight:600,color:COR.texto}}>
           {NOMES_MESES[mes]} {ano}
         </span>
         <span style={{color:COR.borda,fontSize:16}}>|</span>
-
-        {/* Saldo extrato */}
         <div style={{display:'flex',alignItems:'center',gap:6}}>
           <span style={{fontSize:11,color:COR.textoSuave}}>Extrato:</span>
           <input
             value={mesDados.saldoBanco}
-            onChange={e => setSaldoBanco(e.target.value)}
+            onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
             placeholder="R$ 0,00"
             style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,
               padding:'5px 10px',fontSize:12,fontWeight:600,
@@ -334,122 +319,121 @@ export default function NovoLancamentoExtrato() {
               width:130,textAlign:'right',fontFamily:'inherit'}}
           />
         </div>
-
-        {/* Diferença — sempre visível */}
         <div style={{display:'flex',alignItems:'center',gap:6}}>
           <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
           <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
-            background: diferenca===null ? '#f1f5f9'
-              : conciliado ? '#dcfce7' : '#fee2e2',
-            color: diferenca===null ? COR.textoSuave
-              : conciliado ? '#166534' : '#991b1b',
-            border:`1px solid ${diferenca===null ? COR.borda
-              : conciliado ? '#86efac' : '#fca5a5'}`,
-            minWidth:100,textAlign:'center'}}>
-            {diferenca===null
-              ? 'Digite o extrato'
-              : conciliado
-                ? '✓ Conciliado'
-                : `${diferenca > 0 ? '+' : '-'}${fmt(Math.abs(diferenca))}`}
+            background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+            color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+            border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+            minWidth:110,textAlign:'center'}}>
+            {diferenca===null?'Digite o extrato'
+              :conciliado?'✓ Conciliado'
+              :`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
           </div>
         </div>
-
         <span style={{color:COR.borda,fontSize:16}}>|</span>
-        <span style={{fontSize:11,color:COR.verde,fontWeight:500}}>↑ {fmt(totalEntradas)}</span>
+        <span style={{fontSize:11,color:COR.azul,fontWeight:500}}>↑ {fmt(totalEntradas)}</span>
         <span style={{fontSize:11,color:COR.vermelho,fontWeight:500}}>↓ {fmt(totalSaidas)}</span>
         <span style={{fontSize:11,color:COR.azul,fontWeight:700}}>= {fmt(saldoMes)}</span>
       </div>
 
       {/* ── EXTRATO ── */}
-      <div style={{flex:1,overflowY:'auto',padding:'12px 16px',
-        display:'flex',flexDirection:'column',gap:8}}>
+      <div style={{flex:1,overflowY:'auto',padding:'10px 16px',
+        display:'flex',flexDirection:'column',gap:6}}>
 
         {Array.from({length:totalDias},(_,i) => i+1).map(dia => {
-          const ehHoje   = eMesAtual && dia===diaHoje
-          const passado  = eMesAtual ? dia < diaHoje
-            : ano < anoHoje || (ano===anoHoje && mes < mesHoje)
-          const semana   = diaSemana(dia, mes, ano)
-          const fs       = fixasDia(dia)
-          const ls       = lancsDia(dia)
-          const temItens = fs.length > 0 || ls.length > 0
-          const saldoDia = saldosDia[dia]
-          const formDia  = formAberto===dia
+          const ehHoje    = eMesAtual && dia===diaHoje
+          const passado   = eMesAtual ? dia<diaHoje
+            : ano<anoHoje || (ano===anoHoje && mes<mesHoje)
+          const semana    = diaSemana(dia, mes, ano)
+          const fs        = fixas.filter(f=>f.diaVencimento===dia)
+          const ls        = mesDados.lancamentos[dia] ?? []
+          const temItens  = fs.length>0 || ls.length>0
+          const saldoDia  = saldosDia[dia]
+          const saldoIni  = dia===1 ? SALDO_INICIAL : (saldosDia[dia-1] ?? SALDO_INICIAL)
+          const formAberto = diaSel===dia
+
+          // Cor do saldo: passado e futuro = cinza, hoje = azul
+          const corSaldo = saldoDia < 0
+            ? COR.vermelho
+            : ehHoje
+              ? COR.azul
+              : '#94a3b8'  // cinza para passado e previsto
 
           return (
             <div key={dia}
               ref={ehHoje ? hojeRef : undefined}
-              style={{borderRadius:12,overflow:'hidden',
-                border:`1.5px solid ${ehHoje ? COR.azul : COR.borda}`,
+              style={{borderRadius:12,overflow:'hidden',flexShrink:0,
+                border:`1.5px solid ${formAberto?COR.azul:ehHoje?'#93c5fd':COR.borda}`,
                 background:COR.branco,
-                boxShadow: ehHoje ? `0 0 0 3px rgba(26,86,219,0.1)` : 'none',
+                boxShadow: formAberto
+                  ? `0 0 0 3px rgba(26,86,219,0.12)`
+                  : ehHoje ? `0 0 0 2px rgba(147,197,253,0.3)` : 'none',
               }}>
 
-              {/* ── Cabeçalho do dia ── */}
+              {/* Cabeçalho do dia */}
               <div style={{display:'flex',alignItems:'center',gap:10,
-                padding:'12px 16px',
-                background: ehHoje ? '#eff6ff'
-                  : passado && temItens ? COR.branco
-                  : passado ? '#fafbff'
-                  : '#fafcff',
-                borderBottom: temItens||formDia
-                  ? `1px solid ${ehHoje?'#bfdbfe':COR.borda}` : 'none',
-                minHeight:56}}>
+                padding:'12px 16px',minHeight:58,
+                background:formAberto?'#eff6ff':ehHoje?'#f0f7ff':'#fafbff',
+                borderBottom:temItens||formAberto
+                  ?`1px solid ${formAberto?'#bfdbfe':ehHoje?'#bfdbfe':COR.borda}`:'none'}}>
 
-                {/* Data */}
+                {/* Data + dia da semana */}
                 <div style={{display:'flex',flexDirection:'column',
                   alignItems:'center',minWidth:36}}>
                   <span style={{fontSize:18,fontWeight:700,lineHeight:1,
-                    color:ehHoje?COR.azul:passado?COR.texto:'#94a3b8'}}>
+                    color:formAberto||ehHoje?COR.azul:COR.texto}}>
                     {String(dia).padStart(2,'0')}
                   </span>
-                  <span style={{fontSize:9,color:ehHoje?COR.azulMedio:'#94a3b8',
+                  <span style={{fontSize:9,
+                    color:formAberto||ehHoje?COR.azulMedio:'#94a3b8',
                     fontWeight:600,textTransform:'uppercase',letterSpacing:.3,marginTop:2}}>
                     {semana}
                   </span>
                 </div>
 
-                {/* Badge hoje */}
                 {ehHoje && (
                   <span style={{fontSize:10,background:COR.azul,color:'#fff',
-                    padding:'2px 8px',borderRadius:5,fontWeight:600}}>
-                    Hoje
-                  </span>
+                    padding:'2px 8px',borderRadius:5,fontWeight:600}}>Hoje</span>
                 )}
 
                 <div style={{flex:1,height:1,
-                  background:ehHoje?'#bfdbfe':COR.borda,margin:'0 4px'}}/>
+                  background:formAberto||ehHoje?'#bfdbfe':COR.borda,margin:'0 4px'}}/>
 
-                {/* Saldo do dia */}
-                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
-                  <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-                    textTransform:'uppercase',letterSpacing:.4}}>
-                    {passado ? 'Saldo' : ehHoje ? 'Saldo atual' : 'Saldo previsto'}
-                  </span>
-                  <span style={{fontSize:15,fontWeight:700,letterSpacing:-.4,
-                    color: saldoDia < 0 ? COR.vermelho
-                      : ehHoje ? COR.azul
-                      : passado ? COR.verde
-                      : '#94a3b8'}}>
-                    {fmt(saldoDia)}
-                  </span>
+                {/* Saldo inicial → final */}
+                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:9,color:'#94a3b8',fontWeight:500}}>Inicial:</span>
+                    <span style={{fontSize:11,fontWeight:600,color:'#94a3b8'}}>
+                      {fmt(saldoIni)}
+                    </span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
+                      textTransform:'uppercase',letterSpacing:.4}}>
+                      {ehHoje?'Atual':'Final'}:
+                    </span>
+                    <span style={{fontSize:15,fontWeight:700,letterSpacing:-.4,
+                      color:corSaldo}}>
+                      {fmt(saldoDia)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* ── Contas fixas do dia ── */}
+              {/* ── Fixas do dia ── */}
               {fs.map(f => (
                 <div key={f.id} style={{display:'flex',alignItems:'center',gap:10,
                   padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
                   <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                     display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
-                    background:passado
-                      ? (f.tipo==='entrada'?'#f0fdf4':'#f0f9ff')
-                      : '#f1f5f9'}}>
+                    background:passado?(f.tipo==='entrada'?'#eff6ff':'#f0f9ff'):'#f1f5f9'}}>
                     {passado?(f.tipo==='entrada'?'↑':'📌'):'📌'}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:500,
                       color:passado?COR.texto:'#94a3b8',
-                      display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+                      display:'flex',alignItems:'center',gap:5}}>
                       {f.nome}
                       <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                         background:passado?'#e0f2fe':'#f1f5f9',
@@ -463,16 +447,15 @@ export default function NovoLancamentoExtrato() {
                       <BadgePag fp={f.formaPagamento} cartao={f.cartao}/>
                     </div>
                   </div>
+                  {/* Entrada = azul, Saída = vermelho */}
                   <div style={{fontSize:13,fontWeight:600,
-                    color:passado
-                      ? (f.tipo==='entrada'?COR.verde:COR.texto)
-                      : '#94a3b8'}}>
+                    color:f.tipo==='entrada'?COR.azul:COR.vermelho}}>
                     {f.tipo==='entrada'?'+':'-'}{fmt(f.valor)}
                   </div>
                 </div>
               ))}
 
-              {/* ── Lançamentos variáveis do dia ── */}
+              {/* ── Lançamentos variáveis ── */}
               {ls.map(l => (
                 <div key={l.id}
                   style={{display:'flex',alignItems:'center',gap:10,
@@ -481,62 +464,62 @@ export default function NovoLancamentoExtrato() {
                   onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                   <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                     display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
-                    background:l.tipo==='entrada'?'#f0fdf4':'#fff1f2'}}>
+                    background:l.tipo==='entrada'?'#eff6ff':'#fff1f2'}}>
                     {l.tipo==='entrada'?'↑':'↓'}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:500,color:COR.texto}}>
-                      {l.descricao}
-                    </div>
+                    <div style={{fontSize:12,fontWeight:500,color:COR.texto}}>{l.descricao}</div>
                     <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
                       display:'flex',alignItems:'center',gap:4}}>
                       {l.categoria}
                       <BadgePag fp={l.formaPagamento} cartao={l.cartao}/>
                     </div>
                   </div>
+                  {/* Entrada = azul, Saída = vermelho */}
                   <div style={{fontSize:13,fontWeight:600,
-                    color:l.tipo==='entrada'?COR.verde:COR.texto}}>
+                    color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
                     {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
                   </div>
                   <button onClick={() => excluir(dia, l.id)}
                     style={{border:'none',background:'transparent',cursor:'pointer',
-                      color:'#cbd5e1',fontSize:14,padding:'2px 5px',
-                      borderRadius:4,flexShrink:0}}
+                      color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
                     onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
                     onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                 </div>
               ))}
 
-              {/* ── BOTÃO + LANÇAMENTO ── */}
+              {/* ── Botão + ── */}
               <button
                 onClick={() => {
-                  if (formDia) {
-                    setFormAberto(null)
+                  if (formAberto) {
+                    setDiaSel(null)
                   } else {
-                    setFormAberto(dia)
+                    setDiaSel(dia)
                     setFTipo('saida'); setFCat(''); setFDesc(''); setFValor('')
                   }
                 }}
                 style={{display:'flex',alignItems:'center',justifyContent:'center',
-                  gap:6,padding:'10px 16px',fontSize:12,fontWeight:500,
-                  color: formDia ? COR.textoSuave : COR.azul,
+                  gap:6,padding:'9px 16px',fontSize:12,fontWeight:500,
+                  color:formAberto?COR.textoSuave:COR.azul,
                   cursor:'pointer',border:'none',
-                  background: formDia ? '#f8faff' : ehHoje ? '#f0f7ff' : '#fafbff',
+                  background:formAberto?'#f0f7ff':'#fafbff',
                   width:'100%',
-                  borderTop:`1px dashed ${ehHoje?'#bfdbfe':COR.borda}`,
+                  borderTop:`1px dashed ${formAberto?'#bfdbfe':COR.borda}`,
                   transition:'background .15s'}}>
                 <span style={{fontSize:16,fontWeight:700,lineHeight:1}}>
-                  {formDia ? '▲' : '+'}
+                  {formAberto?'▲':'+'}
                 </span>
-                {formDia ? 'Fechar' : 'Adicionar lançamento neste dia'}
+                {formAberto?'Fechar':'Adicionar lançamento neste dia'}
               </button>
 
-              {/* ── FORMULÁRIO ACORDEÃO ── */}
-              {formDia && (
-                <div style={{background:'#f0f9ff',borderTop:`1px solid #bae6fd`,
-                  padding:'14px 16px'}}>
+              {/* ── FORMULÁRIO ACORDEÃO — abre abaixo do botão ── */}
+              {formAberto && (
+                <div ref={formRef}
+                  style={{background:'#f0f9ff',
+                    borderTop:`1px solid #bae6fd`,
+                    padding:'14px 16px'}}>
 
-                  {/* Toggle entrada/saída */}
+                  {/* Toggle */}
                   <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
                     padding:3,marginBottom:12,width:'fit-content'}}>
                     {(['saida','entrada'] as const).map(t => (
@@ -545,9 +528,7 @@ export default function NovoLancamentoExtrato() {
                         cursor:'pointer',fontSize:12,fontWeight:500,
                         fontFamily:'inherit',transition:'all .15s',
                         background:fTipo===t?COR.branco:'transparent',
-                        color:fTipo===t
-                          ?(t==='entrada'?COR.verde:COR.vermelho)
-                          :'#0369a1',
+                        color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
                         boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
                         {t==='entrada'?'↑ Entrada':'↓ Saída'}
                       </button>
@@ -562,7 +543,10 @@ export default function NovoLancamentoExtrato() {
                         Categoria *
                       </div>
                       <select value={fCat} onChange={e=>setFCat(e.target.value)}
-                        style={{...inputSt,width:'100%',borderColor:'#bae6fd',background:'#fff'}}>
+                        style={{border:`1.5px solid #bae6fd`,borderRadius:7,
+                          padding:'7px 10px',fontSize:12,outline:'none',
+                          background:'#fff',fontFamily:'inherit',
+                          color:COR.texto,width:'100%'}}>
                         <option value="">Selecione...</option>
                         {(fTipo==='entrada'?CAT_ENTRADA:CAT_SAIDA).map(c=>(
                           <option key={c} value={c}>{c}</option>
@@ -575,7 +559,10 @@ export default function NovoLancamentoExtrato() {
                       </div>
                       <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
                         placeholder="Ex: Mercado Extra, Farmácia..."
-                        style={{...inputSt,width:'100%',borderColor:'#bae6fd',background:'#fff'}}/>
+                        style={{border:`1.5px solid #bae6fd`,borderRadius:7,
+                          padding:'7px 10px',fontSize:12,outline:'none',
+                          background:'#fff',fontFamily:'inherit',
+                          color:COR.texto,width:'100%'}}/>
                     </div>
                     <div style={{flex:'0 0 110px'}}>
                       <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>
@@ -583,14 +570,16 @@ export default function NovoLancamentoExtrato() {
                       </div>
                       <input value={fValor} onChange={e=>setFValor(e.target.value)}
                         placeholder="R$ 0,00"
-                        style={{...inputSt,width:'100%',borderColor:'#bae6fd',background:'#fff'}}
-                        onKeyDown={e=>e.key==='Enter'&&lancar(dia)}/>
+                        style={{border:`1.5px solid #bae6fd`,borderRadius:7,
+                          padding:'7px 10px',fontSize:12,outline:'none',
+                          background:'#fff',fontFamily:'inherit',
+                          color:COR.texto,width:'100%'}}
+                        onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                     </div>
                   </div>
 
-                  {/* Forma de pagamento */}
-                  <div style={{display:'flex',alignItems:'center',gap:8,
-                    marginBottom:12,flexWrap:'wrap'}}>
+                  {/* Pagamento + Salvar */}
+                  <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
                     <span style={{fontSize:11,color:'#0369a1',fontWeight:500}}>Pagamento:</span>
                     {(['debito','credito'] as const).map(p=>(
                       <button key={p} onClick={()=>setFPag(p)} style={{
@@ -612,20 +601,16 @@ export default function NovoLancamentoExtrato() {
                         Cartão {c}
                       </button>
                     ))}
-                  </div>
-
-                  {/* Botão salvar */}
-                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                    <button onClick={()=>lancar(dia)} style={{
-                      padding:'8px 24px',border:'none',borderRadius:8,
+                    <button onClick={lancar} style={{
+                      marginLeft:'auto',padding:'8px 24px',border:'none',borderRadius:8,
                       background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
                       color:'#fff',fontSize:13,fontWeight:600,
-                      cursor:'pointer',fontFamily:'inherit'}}>
-                      ✓ Salvar lançamento
+                      cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                      ✓ Salvar
                     </button>
-                    <span style={{fontSize:10,color:'#0369a1'}}>
-                      Enter para salvar · formulário fica aberto para novo lançamento
-                    </span>
+                  </div>
+                  <div style={{fontSize:10,color:'#0369a1',marginTop:8}}>
+                    Pressione Enter ou clique em Salvar · formulário fica aberto para próximo lançamento
                   </div>
                 </div>
               )}
@@ -634,7 +619,7 @@ export default function NovoLancamentoExtrato() {
         })}
 
         {/* Saldo final do mês */}
-        <div style={{borderRadius:12,padding:'14px 16px',
+        <div style={{borderRadius:12,padding:'14px 16px',flexShrink:0,
           background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
           display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
@@ -644,7 +629,6 @@ export default function NovoLancamentoExtrato() {
             {fmt(saldosDia[totalDias] ?? saldoMes)}
           </span>
         </div>
-
       </div>
     </div>
   )
