@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getLayoutPref, setLayoutPref, type LayoutLancamentos } from '../utils/prefs'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -37,7 +38,10 @@ const ICONES_CAT   = [
   '🍽️','🎁','🏋️','🐾','📺','🎮','🏥','📌','🔧','☕',
   '🎵','📚','🏖️','💐','🧴','💈','🐶','🎯',
 ]
-const BANCOS = ['Sicredi','Nubank','Itaú','Bradesco','Banco do Brasil','Caixa','Santander','Inter','C6 Bank','Outro']
+const BANCOS = [
+  'Sicredi','Nubank','Itaú','Bradesco','Banco do Brasil',
+  'Caixa','Santander','Inter','C6 Bank','Outro',
+]
 
 const CONTAS_INICIAIS: Conta[] = [
   { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  tipo:'corrente', saldoInicial:28183.77, cor:'#1a56db', icone:'🏦' },
@@ -56,7 +60,7 @@ const CATS_INICIAIS: Categoria[] = [
   { id:'s1',  nome:'Supermercado',    tipo:'saida', fixa:false, formaPagamento:'credito', cor:'#dc2626', icone:'🛒', ativa:true },
   { id:'s2',  nome:'Combustível',     tipo:'saida', fixa:false, formaPagamento:'ambos',   cor:'#ea580c', icone:'⛽', ativa:true },
   { id:'s3',  nome:'Prestação Casa',  tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0f172a', icone:'🏠', ativa:true, diaVencimento:10, descricao:'Financiamento habitacional' },
-  { id:'s4',  nome:'Prestação Carro', tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0f172a', icone:'🚗', ativa:true, diaVencimento:15, descricao:'Financiamento veículo' },
+  { id:'s4',  nome:'Prestação Carro', tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0f172a', icone:'🚗', ativa:true, diaVencimento:15, descricao:'Financiamento veículo'      },
   { id:'s5',  nome:'Plano de Saúde',  tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#db2777', icone:'💊', ativa:true, diaVencimento:8  },
   { id:'s6',  nome:'Internet',        tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0891b2', icone:'📱', ativa:true, diaVencimento:20 },
   { id:'s7',  nome:'Luz',             tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#d97706', icone:'💡', ativa:true, diaVencimento:12 },
@@ -73,7 +77,9 @@ const CATS_INICIAIS: Categoria[] = [
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })
 }
-function gerarId() { return `id-${Date.now()}-${Math.random().toString(36).slice(2,6)}` }
+function gerarId() {
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2,6)}`
+}
 
 const NAV_ITEMS = [
   { label:'Dashboard',    path:'/dashboard'       },
@@ -99,15 +105,18 @@ function ColorPicker({ valor, onChange }: { valor:string; onChange:(c:string)=>v
 }
 
 // ── Picker de ícone ──────────────────────────────────────────────────
-function IconPicker({ icones, valor, onChange }: { icones:string[]; valor:string; onChange:(i:string)=>void }) {
+function IconPicker({ icones, valor, onChange }: {
+  icones:string[]; valor:string; onChange:(i:string)=>void
+}) {
   return (
     <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
       {icones.map(ic => (
         <button key={ic} onClick={() => onChange(ic)} style={{
-          width:34, height:34, border:`2px solid ${valor===ic ? COR.azul : COR.borda}`,
+          width:34, height:34,
+          border:`2px solid ${valor===ic ? COR.azul : COR.borda}`,
           borderRadius:8, background: valor===ic ? '#eff6ff' : COR.branco,
-          cursor:'pointer', fontSize:16, display:'flex',
-          alignItems:'center', justifyContent:'center',
+          cursor:'pointer', fontSize:16,
+          display:'flex', alignItems:'center', justifyContent:'center',
         }}>{ic}</button>
       ))}
     </div>
@@ -116,10 +125,9 @@ function IconPicker({ icones, valor, onChange }: { icones:string[]; valor:string
 
 // ── Card de categoria ────────────────────────────────────────────────
 function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
-  c: Categoria
-  editCatId: string|null
-  toggleAtiva: (id:string) => void
-  editarCategoria: (c:Categoria) => void
+  c: Categoria; editCatId: string|null
+  toggleAtiva: (id:string)=>void
+  editarCategoria: (c:Categoria)=>void
 }) {
   return (
     <div style={{
@@ -130,37 +138,36 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
       opacity: c.ativa ? 1 : 0.5,
       boxShadow: editCatId===c.id ? `0 0 0 2px ${COR.azul}` : 'none',
     }}>
-      {/* Ícone */}
       <div style={{ width:36, height:36, borderRadius:9, background:c.cor,
         display:'flex', alignItems:'center', justifyContent:'center',
         fontSize:17, flexShrink:0 }}>
         {c.icone}
       </div>
-      {/* Info */}
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:COR.texto }}>{c.nome}</div>
         {c.descricao && (
           <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2,
-            whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-            maxWidth:300 }}>
+            whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:300 }}>
             {c.descricao}
           </div>
         )}
         <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
           <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
-            background: c.formaPagamento==='debito' ? '#fef9c3' : c.formaPagamento==='credito' ? '#eff6ff' : '#f1f5f9',
-            color: c.formaPagamento==='debito' ? '#92400e' : c.formaPagamento==='credito' ? COR.azul : COR.textoSuave }}>
-            {c.formaPagamento==='debito' ? 'Débito' : c.formaPagamento==='credito' ? 'Crédito' : 'Ambos'}
+            background: c.formaPagamento==='debito' ? '#fef9c3'
+              : c.formaPagamento==='credito' ? '#eff6ff' : '#f1f5f9',
+            color: c.formaPagamento==='debito' ? '#92400e'
+              : c.formaPagamento==='credito' ? COR.azul : COR.textoSuave }}>
+            {c.formaPagamento==='debito' ? 'Débito'
+              : c.formaPagamento==='credito' ? 'Crédito' : 'Ambos'}
           </span>
           {c.fixa && c.diaVencimento && (
-            <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
-              background:'#e0f2fe', color:'#0369a1' }}>
+            <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4,
+              fontWeight:600, background:'#e0f2fe', color:'#0369a1' }}>
               Vence dia {c.diaVencimento}
             </span>
           )}
         </div>
       </div>
-      {/* Toggle ativo */}
       <button onClick={() => toggleAtiva(c.id)} style={{
         border:`1px solid ${c.ativa ? COR.verde : COR.borda}`,
         borderRadius:6, padding:'3px 9px', cursor:'pointer', fontSize:11,
@@ -169,7 +176,6 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
         fontFamily:'inherit', fontWeight:500 }}>
         {c.ativa ? '✓ Ativa' : 'Inativa'}
       </button>
-      {/* Editar */}
       <button onClick={() => editarCategoria(c)} style={{
         border:`1px solid ${COR.borda}`, background:COR.branco,
         borderRadius:7, padding:'5px 10px', cursor:'pointer',
@@ -183,10 +189,12 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
   const navigate = useNavigate()
+
   const [aba,        setAba]        = useState<Aba>('contas')
   const [contas,     setContas]     = useState<Conta[]>(CONTAS_INICIAIS)
   const [categorias, setCategorias] = useState<Categoria[]>(CATS_INICIAIS)
   const [abaCat,     setAbaCat]     = useState<TipoCategoria>('saida')
+  const [layoutPref, setLayoutPrefState] = useState<LayoutLancamentos>(getLayoutPref)
 
   const contaVazia: Omit<Conta,'id'> = {
     nome:'', banco:'', tipo:'corrente', saldoInicial:0,
@@ -246,10 +254,19 @@ export default function Configuracoes() {
   function salvarCategoria() {
     if (!formCat.nome.trim()) return setErroCat('Informe o nome da categoria')
     setErroCat('')
+    const nome = formCat.nome.trim()
+    const nomeFormatado = nome.charAt(0).toUpperCase() + nome.slice(1)
+    const catFinal = { ...formCat, nome: nomeFormatado }
     if (editCatId) {
-      setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...formCat} : c))
+      setCategorias(prev => {
+        const atualizado = prev.map(c => c.id===editCatId ? {id:editCatId,...catFinal} : c)
+        return atualizado.sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+      })
     } else {
-      setCategorias(prev => [...prev, {id:gerarId(),...formCat}])
+      setCategorias(prev => {
+        const novo = [...prev, {id:gerarId(),...catFinal}]
+        return novo.sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+      })
     }
     setPainelCat(false); setEditCatId(null); setFormCat(catVazia)
   }
@@ -260,6 +277,12 @@ export default function Configuracoes() {
   }
   function toggleAtiva(id: string) {
     setCategorias(prev => prev.map(c => c.id===id ? {...c, ativa:!c.ativa} : c))
+  }
+
+  // ── Layout preference ──
+  function mudarLayout(l: LayoutLancamentos) {
+    setLayoutPrefState(l)
+    setLayoutPref(l)
   }
 
   const inputSt: React.CSSProperties = {
@@ -281,7 +304,7 @@ export default function Configuracoes() {
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
       background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
 
-      {/* HEADER */}
+      {/* ── HEADER ── */}
       <div style={{ background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
         padding:'16px 28px', display:'flex', alignItems:'center',
         justifyContent:'space-between', flexShrink:0 }}>
@@ -318,10 +341,14 @@ export default function Configuracoes() {
           color:'#fff', fontSize:14, fontWeight:600 }}>G</div>
       </div>
 
-      {/* ABAS PRINCIPAIS */}
+      {/* ── ABAS PRINCIPAIS ── */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
         padding:'0 24px', display:'flex', gap:4, flexShrink:0 }}>
-        {([['contas','🏦 Contas e Cartões'],['categorias','🏷 Categorias'],['perfil','👤 Perfil']] as const).map(([v,l]) => (
+        {([
+          ['contas',     '🏦 Contas e Cartões'],
+          ['categorias', '🏷 Categorias'      ],
+          ['perfil',     '👤 Perfil'          ],
+        ] as const).map(([v,l]) => (
           <button key={v} onClick={() => setAba(v)} style={{
             padding:'12px 16px', border:'none',
             borderBottom:`2px solid ${aba===v ? COR.azul : 'transparent'}`,
@@ -333,10 +360,10 @@ export default function Configuracoes() {
         ))}
       </div>
 
-      {/* CONTEÚDO */}
+      {/* ── CONTEÚDO ── */}
       <div style={{ flex:1, overflow:'hidden', display:'flex', padding:20, gap:16 }}>
 
-        {/* ══ ABA CONTAS ══ */}
+        {/* ══════════ ABA CONTAS ══════════ */}
         {aba==='contas' && (
           <>
             <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
@@ -439,7 +466,6 @@ export default function Configuracoes() {
                     cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
                 </div>
 
-                {/* Preview */}
                 <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
                   <div style={{ width:56, height:56, borderRadius:16, background:formConta.cor,
                     display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>
@@ -451,13 +477,13 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Nome da conta</label>
                     <input value={formConta.nome}
-                      onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
+                      onChange={e => setFormConta(p=>({...p,nome:e.target.value}))}
                       placeholder="Ex: Conta Sicredi, Nubank..." style={inputSt} />
                   </div>
                   <div>
                     <label style={labelSt}>Banco</label>
                     <select value={formConta.banco}
-                      onChange={e => setFormConta(p=>({...p, banco:e.target.value}))}
+                      onChange={e => setFormConta(p=>({...p,banco:e.target.value}))}
                       style={inputSt}>
                       <option value="">Selecione...</option>
                       {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
@@ -471,8 +497,8 @@ export default function Configuracoes() {
                           flex:1, padding:'7px 0', fontFamily:'inherit',
                           border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                          background: formConta.tipo===v ? '#eff6ff' : COR.branco,
-                          color: formConta.tipo===v ? COR.azul : COR.textoSuave }}>
+                          background:formConta.tipo===v?'#eff6ff':COR.branco,
+                          color:formConta.tipo===v?COR.azul:COR.textoSuave }}>
                           {l}
                         </button>
                       ))}
@@ -482,8 +508,8 @@ export default function Configuracoes() {
                     <div>
                       <label style={labelSt}>Saldo inicial</label>
                       <input
-                        value={formConta.saldoInicial===0 ? '' : String(formConta.saldoInicial)}
-                        onChange={e => setFormConta(p=>({...p, saldoInicial:parseFloat(e.target.value.replace(',','.'))||0}))}
+                        value={formConta.saldoInicial===0?'':String(formConta.saldoInicial)}
+                        onChange={e => setFormConta(p=>({...p,saldoInicial:parseFloat(e.target.value.replace(',','.'))||0}))}
                         placeholder="R$ 0,00" style={inputSt} />
                     </div>
                   )}
@@ -492,8 +518,8 @@ export default function Configuracoes() {
                       <div>
                         <label style={labelSt}>Limite do cartão</label>
                         <input
-                          value={formConta.limiteCartao===undefined ? '' : String(formConta.limiteCartao)}
-                          onChange={e => setFormConta(p=>({...p, limiteCartao:parseFloat(e.target.value)||0}))}
+                          value={formConta.limiteCartao===undefined?'':String(formConta.limiteCartao)}
+                          onChange={e => setFormConta(p=>({...p,limiteCartao:parseFloat(e.target.value)||0}))}
                           placeholder="R$ 0,00" style={inputSt} />
                       </div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -501,14 +527,14 @@ export default function Configuracoes() {
                           <label style={labelSt}>Dia fechamento</label>
                           <input type="number" min="1" max="31"
                             value={formConta.diaFechamento||''}
-                            onChange={e => setFormConta(p=>({...p, diaFechamento:parseInt(e.target.value)||undefined}))}
+                            onChange={e => setFormConta(p=>({...p,diaFechamento:parseInt(e.target.value)||undefined}))}
                             placeholder="Dia" style={inputSt} />
                         </div>
                         <div>
                           <label style={labelSt}>Dia vencimento</label>
                           <input type="number" min="1" max="31"
                             value={formConta.diaVencimento||''}
-                            onChange={e => setFormConta(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
+                            onChange={e => setFormConta(p=>({...p,diaVencimento:parseInt(e.target.value)||undefined}))}
                             placeholder="Dia" style={inputSt} />
                         </div>
                       </div>
@@ -517,12 +543,12 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Ícone</label>
                     <IconPicker icones={ICONES_CONTA} valor={formConta.icone}
-                      onChange={i => setFormConta(p=>({...p, icone:i}))} />
+                      onChange={i => setFormConta(p=>({...p,icone:i}))} />
                   </div>
                   <div>
                     <label style={labelSt}>Cor</label>
                     <ColorPicker valor={formConta.cor}
-                      onChange={c => setFormConta(p=>({...p, cor:c}))} />
+                      onChange={c => setFormConta(p=>({...p,cor:c}))} />
                   </div>
                   {erroConta && (
                     <div style={{ background:'#fee2e2', color:COR.vermelho,
@@ -553,7 +579,7 @@ export default function Configuracoes() {
           </>
         )}
 
-        {/* ══ ABA CATEGORIAS ══ */}
+        {/* ══════════ ABA CATEGORIAS ══════════ */}
         {aba==='categorias' && (
           <>
             <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
@@ -574,7 +600,6 @@ export default function Configuracoes() {
                 </button>
               </div>
 
-              {/* Sub-abas */}
               <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8,
                 padding:3, marginBottom:14, alignSelf:'flex-start' }}>
                 {([['entrada','↑ Entradas'],['saida','↓ Saídas']] as const).map(([v,l]) => (
@@ -637,7 +662,6 @@ export default function Configuracoes() {
                     cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
                 </div>
 
-                {/* Preview */}
                 <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
                   <div style={{ width:56, height:56, borderRadius:16, background:formCat.cor,
                     display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>
@@ -649,7 +673,7 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Nome da categoria</label>
                     <input value={formCat.nome}
-                      onChange={e => setFormCat(p=>({...p, nome:e.target.value}))}
+                      onChange={e => setFormCat(p=>({...p,nome:e.target.value}))}
                       placeholder="Ex: Supermercado, Lazer..." style={inputSt} />
                   </div>
                   <div>
@@ -658,10 +682,13 @@ export default function Configuracoes() {
                       {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l]) => (
                         <button key={v} onClick={() => setFormCat(p=>({...p,tipo:v}))} style={{
                           flex:1, padding:'7px 0', fontFamily:'inherit',
-                          border:`1.5px solid ${formCat.tipo===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.borda}`,
+                          border:`1.5px solid ${formCat.tipo===v
+                            ? (v==='entrada'?COR.verde:COR.vermelho) : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                          background: formCat.tipo===v ? (v==='entrada' ? '#f0fdf4' : '#fff1f2') : COR.branco,
-                          color: formCat.tipo===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave }}>
+                          background:formCat.tipo===v
+                            ? (v==='entrada'?'#f0fdf4':'#fff1f2') : COR.branco,
+                          color:formCat.tipo===v
+                            ? (v==='entrada'?COR.verde:COR.vermelho) : COR.textoSuave }}>
                           {l}
                         </button>
                       ))}
@@ -675,42 +702,37 @@ export default function Configuracoes() {
                           flex:1, padding:'7px 0', fontFamily:'inherit',
                           border:`1.5px solid ${formCat.fixa===v ? COR.azul : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                          background: formCat.fixa===v ? '#eff6ff' : COR.branco,
-                          color: formCat.fixa===v ? COR.azul : COR.textoSuave }}>
+                          background:formCat.fixa===v?'#eff6ff':COR.branco,
+                          color:formCat.fixa===v?COR.azul:COR.textoSuave }}>
                           {l}
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  {/* Dia vencimento — só fixa */}
                   {formCat.fixa && (
                     <div>
                       <label style={labelSt}>Dia de vencimento</label>
                       <input type="number" min="1" max="31"
                         value={formCat.diaVencimento||''}
-                        onChange={e => setFormCat(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
+                        onChange={e => setFormCat(p=>({...p,diaVencimento:parseInt(e.target.value)||undefined}))}
                         placeholder="Ex: 10" style={inputSt} />
                     </div>
                   )}
-
-                  {/* Descrição — só saída fixa */}
                   {formCat.fixa && formCat.tipo==='saida' && (
                     <div>
                       <label style={labelSt}>Descrição</label>
                       <textarea
                         value={(formCat as any).descricao||''}
-                        onChange={e => setFormCat(p=>({...p, descricao:e.target.value}))}
+                        onChange={e => setFormCat(p=>({...p,descricao:e.target.value}))}
                         placeholder="Ex: Parcela do financiamento, vence todo dia 10..."
                         rows={3}
-                        style={{ ...inputSt, resize:'vertical', lineHeight:1.5 }}
+                        style={{...inputSt, resize:'vertical', lineHeight:1.5}}
                       />
                       <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
                         Aparece como observação no lançamento automático desta conta fixa.
                       </div>
                     </div>
                   )}
-
                   <div>
                     <label style={labelSt}>Forma de pagamento padrão</label>
                     <div style={{ display:'flex', gap:6 }}>
@@ -719,8 +741,8 @@ export default function Configuracoes() {
                           flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:11,
                           border:`1.5px solid ${formCat.formaPagamento===v ? COR.azul : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontWeight:500,
-                          background: formCat.formaPagamento===v ? '#eff6ff' : COR.branco,
-                          color: formCat.formaPagamento===v ? COR.azul : COR.textoSuave }}>
+                          background:formCat.formaPagamento===v?'#eff6ff':COR.branco,
+                          color:formCat.formaPagamento===v?COR.azul:COR.textoSuave }}>
                           {l}
                         </button>
                       ))}
@@ -765,32 +787,35 @@ export default function Configuracoes() {
           </>
         )}
 
-        {/* ══ ABA PERFIL ══ */}
+        {/* ══════════ ABA PERFIL ══════════ */}
         {aba==='perfil' && (
           <div style={{ flex:1, display:'flex', alignItems:'flex-start',
-            justifyContent:'center', paddingTop:20 }}>
+            justifyContent:'center', paddingTop:10, overflowY:'auto' }}>
             <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
-              borderRadius:14, padding:28, width:'100%', maxWidth:480 }}>
+              borderRadius:14, padding:28, width:'100%', maxWidth:520 }}>
               <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 6px' }}>Perfil</h2>
               <p style={{ fontSize:12, color:COR.textoSuave, marginBottom:24 }}>
                 Informações da sua conta
               </p>
+
               <div style={{ display:'flex', justifyContent:'center', marginBottom:24 }}>
                 <div style={{ width:72, height:72, borderRadius:'50%',
                   background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
                   display:'flex', alignItems:'center', justifyContent:'center',
                   fontSize:28, color:'#fff', fontWeight:700 }}>G</div>
               </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
                 {[
-                  { label:'Nome completo', placeholder:'Seu nome',       value:'Guilherme Müller'    },
-                  { label:'E-mail',        placeholder:'seu@email.com',  value:'guilherme@gmail.com' },
+                  { label:'Nome completo', placeholder:'Seu nome',      value:'Guilherme Müller'    },
+                  { label:'E-mail',        placeholder:'seu@email.com', value:'guilherme@gmail.com' },
                 ].map(f => (
                   <div key={f.label}>
                     <label style={labelSt}>{f.label}</label>
                     <input defaultValue={f.value} placeholder={f.placeholder} style={inputSt} />
                   </div>
                 ))}
+
                 <div>
                   <label style={labelSt}>Moeda padrão</label>
                   <select style={inputSt} defaultValue="BRL">
@@ -799,12 +824,53 @@ export default function Configuracoes() {
                     <option value="EUR">🇪🇺 Euro (€)</option>
                   </select>
                 </div>
+
+                {/* ── SELETOR DE LAYOUT ── */}
+                <div>
+                  <label style={labelSt}>Layout da tela de Lançamentos</label>
+                  <div style={{ display:'flex', gap:10 }}>
+                    {([
+                      ['classico', '📋', 'Formulário Clássico',
+                       'Painel lateral com checklist de contas fixas'],
+                      ['extrato',  '🏦', 'Extrato Bancário',
+                       'Dias do mês com saldo diário e lançamento por data'],
+                    ] as const).map(([v, emoji, titulo, desc]) => (
+                      <div key={v} onClick={() => mudarLayout(v)}
+                        style={{
+                          flex:1, padding:'14px', borderRadius:10, cursor:'pointer',
+                          border:`2px solid ${layoutPref===v ? COR.azul : COR.borda}`,
+                          background: layoutPref===v ? '#eff6ff' : COR.branco,
+                          transition:'all .15s',
+                        }}>
+                        <div style={{ fontSize:22, marginBottom:6 }}>{emoji}</div>
+                        <div style={{ fontSize:13, fontWeight:600,
+                          color:layoutPref===v ? COR.azul : COR.texto,
+                          marginBottom:4 }}>
+                          {titulo}
+                        </div>
+                        <div style={{ fontSize:11, color:COR.textoSuave, lineHeight:1.5 }}>
+                          {desc}
+                        </div>
+                        {layoutPref===v && (
+                          <div style={{ fontSize:11, color:COR.azul, fontWeight:600, marginTop:8 }}>
+                            ✓ Ativo
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>
+                    A mudança tem efeito imediato ao navegar para Lançamentos.
+                  </div>
+                </div>
+
                 <button style={{ padding:'10px 0', border:'none', borderRadius:8,
                   background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
                   color:'#fff', fontSize:13, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
+                  cursor:'pointer', fontFamily:'inherit' }}>
                   Salvar perfil
                 </button>
+
                 <div style={{ padding:14, background:'#f8faff', borderRadius:9,
                   border:`1px solid ${COR.borda}`, textAlign:'center' }}>
                   <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:4 }}>Versão do app</div>
