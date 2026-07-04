@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import type { Conta, Categoria, TipoCategoria } from '../context/AppContext'
+import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
 
@@ -26,6 +26,38 @@ const ICONES_CAT   = [
   '🎵','📚','🏖️','💐','🧴','💈','🐶','🎯',
 ]
 const BANCOS = ['Sicredi','Nubank','Itaú','Bradesco','Banco do Brasil','Caixa','Santander','Inter','C6 Bank','Outro']
+
+const TIPOS_MOVIMENTO: { id: TipoMovimento; label: string }[] = [
+  { id:'banco',    label:'Banco' },
+  { id:'cartao',   label:'Cartão de Crédito' },
+  { id:'dinheiro', label:'Dinheiro' },
+]
+const FORMAS_PAG_BANCO: { id: FormaPagamentoCategoria; label: string }[] = [
+  { id:'automatico',    label:'Débito Automático' },
+  { id:'pix',           label:'Pix' },
+  { id:'boleto',        label:'Boleto' },
+  { id:'transferencia', label:'Transferência' },
+]
+const FORMAS_PAG_CARTAO: { id: FormaPagamentoCategoria; label: string }[] = [
+  { id:'avista',    label:'À Vista' },
+  { id:'parcelado', label:'Parcelado' },
+]
+const CORES_FORMA_PAG: Record<string,{bg:string;cor:string}> = {
+  automatico:    { bg:'#e0f2fe', cor:'#0369a1' },
+  pix:           { bg:'#d1fae5', cor:'#065f46' },
+  boleto:        { bg:'#fef9c3', cor:'#92400e' },
+  transferencia: { bg:'#eff6ff', cor:'#1a56db' },
+  avista:        { bg:'#f3e8ff', cor:'#7c3aed' },
+  parcelado:     { bg:'#fce7f3', cor:'#be185d' },
+  dinheiro:      { bg:'#f1f5f9', cor:'#475569' },
+}
+function labelCobranca(c: Categoria): { label: string; bg: string; cor: string } {
+  if (c.tipoMovimento === 'dinheiro') return { label:'Dinheiro', ...CORES_FORMA_PAG.dinheiro }
+  const lista = c.tipoMovimento === 'cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO
+  const f = lista.find(x => x.id === c.formaPagamento)
+  const cores = CORES_FORMA_PAG[c.formaPagamento ?? ''] ?? { bg:'#f1f5f9', cor:'#64748b' }
+  return { label: f?.label ?? (c.tipoMovimento==='cartao' ? 'Cartão' : 'Banco'), ...cores }
+}
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })
@@ -104,11 +136,15 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
           </div>
         )}
         <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
-          <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
-            background: c.formaPagamento==='debito' ? '#fef9c3' : c.formaPagamento==='credito' ? '#eff6ff' : '#f1f5f9',
-            color: c.formaPagamento==='debito' ? '#92400e' : c.formaPagamento==='credito' ? COR.azul : COR.textoSuave }}>
-            {c.formaPagamento==='debito' ? 'Débito' : c.formaPagamento==='credito' ? 'Crédito' : 'Ambos'}
-          </span>
+          {(() => {
+            const tc = labelCobranca(c)
+            return (
+              <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
+                background:tc.bg, color:tc.cor }}>
+                {tc.label}
+              </span>
+            )
+          })()}
           {c.fixa && c.diaVencimento && (
             <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
               background:'#e0f2fe', color:'#0369a1' }}>
@@ -160,8 +196,8 @@ export default function Configuracoes() {
   const [erroConta,   setErroConta]   = useState('')
 
   const catVazia: Omit<Categoria,'id'> = {
-    nome:'', tipo:'saida', fixa:false, formaPagamento:'debito',
-    cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true, tipoCobranca:'boleto',
+    nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'boleto',
+    cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true,
   }
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
   const [editCatId, setEditCatId] = useState<string|null>(null)
@@ -656,27 +692,61 @@ export default function Configuracoes() {
                     </div>
                   )}
 
-                  {/* Forma de cobrança — só saída fixa */}
-                  {formCat.fixa && formCat.tipo==='saida' && (
+                  {/* Tipo de movimento — todas as categorias */}
+                  <div>
+                    <label style={labelSt}>Tipo de movimento</label>
+                    <div style={{ display:'flex', gap:6 }}>
+                      {TIPOS_MOVIMENTO.map(t => (
+                        <button key={t.id} onClick={() => setFormCat(p=>({
+                          ...p, tipoMovimento:t.id,
+                          formaPagamento: t.id==='dinheiro' ? undefined
+                            : t.id==='cartao' ? 'avista' : 'automatico',
+                        }))} style={{
+                          flex:1, padding:'7px 0', fontFamily:'inherit',
+                          border:`1.5px solid ${formCat.tipoMovimento===t.id ? COR.azul : COR.borda}`,
+                          borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                          background: formCat.tipoMovimento===t.id ? '#eff6ff' : COR.branco,
+                          color: formCat.tipoMovimento===t.id ? COR.azul : COR.textoSuave }}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Forma de pagamento — depende do tipo de movimento */}
+                  {formCat.tipoMovimento!=='dinheiro' && (
                     <div>
-                      <label style={labelSt}>Forma de cobrança</label>
-                      <div style={{ display:'flex', gap:6 }}>
-                        {([['automatico','Débito Automático'],['boleto','Boleto']] as const).map(([v,l]) => (
-                          <button key={v} onClick={() => setFormCat(p=>({...p,tipoCobranca:v}))} style={{
-                            flex:1, padding:'7px 0', fontFamily:'inherit',
-                            border:`1.5px solid ${formCat.tipoCobranca===v ? COR.azul : COR.borda}`,
-                            borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                            background: formCat.tipoCobranca===v ? '#eff6ff' : COR.branco,
-                            color: formCat.tipoCobranca===v ? COR.azul : COR.textoSuave }}>
-                            {l}
+                      <label style={labelSt}>Forma de pagamento</label>
+                      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                        {(formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO).map(f => (
+                          <button key={f.id} onClick={() => setFormCat(p=>({...p,formaPagamento:f.id}))} style={{
+                            padding:'7px 10px', fontFamily:'inherit',
+                            border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
+                            borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                            background: formCat.formaPagamento===f.id ? '#eff6ff' : COR.branco,
+                            color: formCat.formaPagamento===f.id ? COR.azul : COR.textoSuave }}>
+                            {f.label}
                           </button>
                         ))}
                       </div>
-                      <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
-                        {formCat.tipoCobranca==='automatico'
-                          ? 'Se vencer em dia não útil, o sistema desloca sozinho para o próximo dia útil.'
-                          : 'Ao consolidar o lançamento, você informa o dia em que o pagamento foi realizado.'}
-                      </div>
+                      {formCat.fixa && formCat.tipoMovimento==='banco' && (
+                        <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                          {formCat.formaPagamento==='automatico'
+                            ? 'Se vencer em dia não útil, o sistema desloca sozinho para o próximo dia útil.'
+                            : 'Ao consolidar o lançamento, você informa o dia em que foi realizado.'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Número de parcelas — só cartão parcelado */}
+                  {formCat.tipoMovimento==='cartao' && formCat.formaPagamento==='parcelado' && (
+                    <div>
+                      <label style={labelSt}>Número de parcelas</label>
+                      <input type="number" min="2" max="48"
+                        value={formCat.numeroParcelas||''}
+                        onChange={e => setFormCat(p=>({...p, numeroParcelas:parseInt(e.target.value)||undefined}))}
+                        placeholder="Ex: 12" style={inputSt} />
                     </div>
                   )}
 
@@ -697,21 +767,6 @@ export default function Configuracoes() {
                     </div>
                   )}
 
-                  <div>
-                    <label style={labelSt}>Forma de pagamento padrão</label>
-                    <div style={{ display:'flex', gap:6 }}>
-                      {([['debito','Débito'],['credito','Crédito'],['ambos','Ambos']] as const).map(([v,l]) => (
-                        <button key={v} onClick={() => setFormCat(p=>({...p,formaPagamento:v}))} style={{
-                          flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:11,
-                          border:`1.5px solid ${formCat.formaPagamento===v ? COR.azul : COR.borda}`,
-                          borderRadius:7, cursor:'pointer', fontWeight:500,
-                          background: formCat.formaPagamento===v ? '#eff6ff' : COR.branco,
-                          color: formCat.formaPagamento===v ? COR.azul : COR.textoSuave }}>
-                          {l}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                   <div>
                     <label style={labelSt}>Ícone</label>
                     <IconPicker icones={ICONES_CAT} valor={formCat.icone}

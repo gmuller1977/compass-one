@@ -1,4 +1,4 @@
-import type { Categoria, TipoCobranca } from '../context/AppContext'
+import type { Categoria } from '../context/AppContext'
 
 function normalizar(s: string) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
@@ -14,7 +14,12 @@ export function iconeCategoria(categorias: Categoria[], nome: string): { icone: 
   return achada ? { icone: achada.icone, cor: achada.cor } : { icone: '📁', cor: '#94a3b8' }
 }
 
-export function tipoCobrancaCategoria(categorias: Categoria[], nome: string): TipoCobranca {
+export function ehAutomaticoCategoria(categorias: Categoria[], nome: string): boolean {
   const achada = buscarCategoria(categorias, nome)
-  return achada?.tipoCobranca ?? 'boleto'
+  return achada?.tipoMovimento === 'banco' && achada?.formaPagamento === 'automatico'
+}
+
+export function ehCartaoCategoria(categorias: Categoria[], nome: string): boolean {
+  const achada = buscarCategoria(categorias, nome)
+  return achada?.tipoMovimento === 'cartao'
 }

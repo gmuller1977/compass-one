@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { iconeCategoria, tipoCobrancaCategoria } from '../utils/categoriaIcone'
+import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -11,7 +11,7 @@ const COR = {
 }
 
 type TipoLanc = 'entrada' | 'saida'
-type FormaPag = 'debito' | 'pix' | 'transferencia'
+type FormaPag = 'debito' | 'pix' | 'transferencia' | 'dinheiro'
 
 type CatFixa = {
   id: string; nome: string; categoria: string
@@ -83,6 +83,7 @@ const FORMAS_PAG: { id: FormaPag; label: string }[] = [
   { id:'debito',        label:'Débito'        },
   { id:'pix',           label:'Pix'           },
   { id:'transferencia', label:'Transferência' },
+  { id:'dinheiro',      label:'Dinheiro'      },
 ]
 
 function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
@@ -125,7 +126,7 @@ export default function NovoLancamentoExtrato() {
   const formRef = useRef<HTMLDivElement>(null)
   const { contas, categorias } = useApp()
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-  const fixas         = FIXAS[contaId] ?? []
+  const fixas         = (FIXAS[contaId] ?? []).filter(f => !ehCartaoCategoria(categorias, f.categoria))
   const contaInfo     = contas.find(c => c.id === contaId)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
   const totalDias = diasNoMes(mes, ano)
@@ -151,8 +152,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function ehAutomatico(f: CatFixa) {
-    if (f.tipo === 'entrada') return true
-    return tipoCobrancaCategoria(categorias, f.categoria) === 'automatico'
+    return ehAutomaticoCategoria(categorias, f.categoria)
   }
 
   function desconsolidarFixa(fixaId: string) {
@@ -180,7 +180,7 @@ export default function NovoLancamentoExtrato() {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = FIXAS[contaId] ?? []
+    const fc    = (FIXAS[contaId] ?? []).filter(f => !ehCartaoCategoria(categorias, f.categoria))
     let saldo = SALDO_INICIAL
     const res: Record<number,number> = {}
     for (let d=1; d<=totalDias; d++) {
@@ -196,7 +196,7 @@ export default function NovoLancamentoExtrato() {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = FIXAS[contaId] ?? []
+    const fc    = (FIXAS[contaId] ?? []).filter(f => !ehCartaoCategoria(categorias, f.categoria))
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
       fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
@@ -241,6 +241,7 @@ export default function NovoLancamentoExtrato() {
       debito:        {bg:'#fef9c3',cor:'#92400e',label:'D'},
       pix:           {bg:'#d1fae5',cor:'#065f46',label:'Pix'},
       transferencia: {bg:'#eff6ff',cor:'#1a56db',label:'TED'},
+      dinheiro:      {bg:'#f1f5f9',cor:'#475569',label:'$'},
     }
     const s = map[fp]
     return <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,background:s.bg,color:s.cor}}>{s.label}</span>
@@ -675,7 +676,7 @@ export default function NovoLancamentoExtrato() {
                   </div>
 
                   <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                    <span style={{fontSize:11,color:'#0369a1',fontWeight:500}}>Pagamento:</span>
+                    <span style={{fontSize:11,color:'#0369a1',fontWeight:500}}>Forma de pagamento:</span>
                     {FORMAS_PAG.map(p=>(
                       <button key={p.id} onClick={()=>setFPag(p.id)} style={{
                         padding:'4px 12px',
