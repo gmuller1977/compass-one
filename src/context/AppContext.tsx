@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, Dispatch, SetStateAction } from 'react'
 
 // ── Types compartilhados ─────────────────────────────────────────────
 export type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
@@ -89,8 +89,8 @@ type AppCtx = {
   contas:     Conta[]
   categorias: Categoria[]
   extratoData: Record<string, DadosMes>
-  setContas:      (v: Conta[]) => void
-  setCategorias:  (v: Categoria[]) => void
+  setContas:      Dispatch<SetStateAction<Conta[]>>
+  setCategorias:  Dispatch<SetStateAction<Categoria[]>>
   updateExtratoMes: (key: string, fn: (prev: DadosMes) => DadosMes) => void
   setExtratoData: (v: Record<string, DadosMes>) => void
 }
@@ -107,8 +107,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { save(KEYS.categorias, categorias)  }, [categorias])
   useEffect(() => { save(KEYS.extrato,    extratoData) }, [extratoData])
 
-  function setContas(v: Conta[])           { setContasState(v) }
-  function setCategorias(v: Categoria[])   { setCategoriasState(v) }
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
 
   function updateExtratoMes(key: string, fn: (prev: DadosMes) => DadosMes) {
@@ -121,7 +119,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       contas, categorias, extratoData,
-      setContas, setCategorias, setExtratoData, updateExtratoMes,
+      setContas: setContasState, setCategorias: setCategoriasState,
+      setExtratoData, updateExtratoMes,
     }}>
       {children}
     </Ctx.Provider>

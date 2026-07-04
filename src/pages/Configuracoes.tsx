@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import type { Conta, Categoria, TipoCategoria } from '../context/AppContext'
+import { getLayoutPref, setLayoutPref } from '../utils/prefs'
+import type { LayoutLancamentos } from '../utils/prefs'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -8,23 +12,7 @@ const COR = {
   verde: '#16a34a', vermelho: '#dc2626',
 }
 
-type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
-type TipoCategoria = 'entrada' | 'saida'
-type FormaPag      = 'debito' | 'credito' | 'ambos'
-type Aba           = 'contas' | 'categorias' | 'perfil'
-
-type Conta = {
-  id: string; nome: string; banco: string; tipo: TipoConta
-  saldoInicial: number; cor: string; icone: string
-  limiteCartao?: number; diaVencimento?: number; diaFechamento?: number
-}
-
-type Categoria = {
-  id: string; nome: string; tipo: TipoCategoria
-  fixa: boolean; formaPagamento: FormaPag
-  cor: string; icone: string; ativa: boolean
-  diaVencimento?: number; descricao?: string
-}
+type Aba = 'contas' | 'categorias' | 'perfil'
 
 const CORES_PRESET = [
   '#1a56db','#16a34a','#dc2626','#d97706','#7c3aed',
@@ -38,37 +26,6 @@ const ICONES_CAT   = [
   '🎵','📚','🏖️','💐','🧴','💈','🐶','🎯',
 ]
 const BANCOS = ['Sicredi','Nubank','Itaú','Bradesco','Banco do Brasil','Caixa','Santander','Inter','C6 Bank','Outro']
-
-const CONTAS_INICIAIS: Conta[] = [
-  { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  tipo:'corrente', saldoInicial:28183.77, cor:'#1a56db', icone:'🏦' },
-  { id:'c1', nome:'Cartão 1',       banco:'Nubank',   tipo:'cartao',   saldoInicial:0, cor:'#7c3aed', icone:'💳', limiteCartao:5000,  diaVencimento:10, diaFechamento:3  },
-  { id:'c2', nome:'Cartão 2',       banco:'Itaú',     tipo:'cartao',   saldoInicial:0, cor:'#ea580c', icone:'💳', limiteCartao:8000,  diaVencimento:15, diaFechamento:8  },
-  { id:'c3', nome:'Cartão 3',       banco:'Bradesco', tipo:'cartao',   saldoInicial:0, cor:'#16a34a', icone:'💳', limiteCartao:3000,  diaVencimento:20, diaFechamento:13 },
-  { id:'cp', nome:'Poupança',       banco:'Sicredi',  tipo:'poupanca', saldoInicial:5000, cor:'#0891b2', icone:'🏧' },
-]
-
-const CATS_INICIAIS: Categoria[] = [
-  { id:'e1', nome:'Salário Pri',          tipo:'entrada', fixa:true,  formaPagamento:'debito',  cor:'#16a34a', icone:'💰', ativa:true, diaVencimento:5  },
-  { id:'e2', nome:'Salário Gui',          tipo:'entrada', fixa:true,  formaPagamento:'debito',  cor:'#16a34a', icone:'💰', ativa:true, diaVencimento:5  },
-  { id:'e3', nome:'Clientes a Receber',   tipo:'entrada', fixa:false, formaPagamento:'debito',  cor:'#0891b2', icone:'📊', ativa:true },
-  { id:'e4', nome:'13º Salário / Férias', tipo:'entrada', fixa:false, formaPagamento:'debito',  cor:'#d97706', icone:'🎁', ativa:true },
-  { id:'e5', nome:'Outros Entradas',      tipo:'entrada', fixa:false, formaPagamento:'ambos',   cor:'#6b7280', icone:'📌', ativa:true },
-  { id:'s1',  nome:'Supermercado',    tipo:'saida', fixa:false, formaPagamento:'credito', cor:'#dc2626', icone:'🛒', ativa:true },
-  { id:'s2',  nome:'Combustível',     tipo:'saida', fixa:false, formaPagamento:'ambos',   cor:'#ea580c', icone:'⛽', ativa:true },
-  { id:'s3',  nome:'Prestação Casa',  tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0f172a', icone:'🏠', ativa:true, diaVencimento:10, descricao:'Financiamento habitacional' },
-  { id:'s4',  nome:'Prestação Carro', tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0f172a', icone:'🚗', ativa:true, diaVencimento:15, descricao:'Financiamento veículo' },
-  { id:'s5',  nome:'Plano de Saúde',  tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#db2777', icone:'💊', ativa:true, diaVencimento:8  },
-  { id:'s6',  nome:'Internet',        tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0891b2', icone:'📱', ativa:true, diaVencimento:20 },
-  { id:'s7',  nome:'Luz',             tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#d97706', icone:'💡', ativa:true, diaVencimento:12 },
-  { id:'s8',  nome:'Água',            tipo:'saida', fixa:true,  formaPagamento:'debito',  cor:'#0891b2', icone:'💧', ativa:true, diaVencimento:15 },
-  { id:'s9',  nome:'Consórcio',       tipo:'saida', fixa:true,  formaPagamento:'credito', cor:'#1a56db', icone:'💎', ativa:true, diaVencimento:5  },
-  { id:'s10', nome:'Lazer',           tipo:'saida', fixa:false, formaPagamento:'credito', cor:'#7c3aed', icone:'🎭', ativa:true },
-  { id:'s11', nome:'Vestuário',       tipo:'saida', fixa:false, formaPagamento:'credito', cor:'#db2777', icone:'👕', ativa:true },
-  { id:'s12', nome:'Alimentação',     tipo:'saida', fixa:false, formaPagamento:'ambos',   cor:'#d97706', icone:'🍽️', ativa:true },
-  { id:'s13', nome:'Cursos',          tipo:'saida', fixa:false, formaPagamento:'credito', cor:'#16a34a', icone:'🎓', ativa:true },
-  { id:'s14', nome:'Viagens',         tipo:'saida', fixa:false, formaPagamento:'credito', cor:'#ea580c', icone:'✈️', ativa:true },
-  { id:'s15', nome:'Outros Saídas',   tipo:'saida', fixa:false, formaPagamento:'ambos',   cor:'#6b7280', icone:'📌', ativa:true },
-]
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })
@@ -183,10 +140,15 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
   const navigate = useNavigate()
-  const [aba,        setAba]        = useState<Aba>('contas')
-  const [contas,     setContas]     = useState<Conta[]>(CONTAS_INICIAIS)
-  const [categorias, setCategorias] = useState<Categoria[]>(CATS_INICIAIS)
-  const [abaCat,     setAbaCat]     = useState<TipoCategoria>('saida')
+  const [aba,    setAba]    = useState<Aba>('contas')
+  const { contas, categorias, setContas, setCategorias } = useApp()
+  const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
+  const [layout, setLayout] = useState<LayoutLancamentos>(getLayoutPref)
+
+  function escolherLayout(l: LayoutLancamentos) {
+    setLayoutPref(l)
+    setLayout(l)
+  }
 
   const contaVazia: Omit<Conta,'id'> = {
     nome:'', banco:'', tipo:'corrente', saldoInicial:0,
@@ -798,6 +760,24 @@ export default function Configuracoes() {
                     <option value="USD">🇺🇸 Dólar Americano ($)</option>
                     <option value="EUR">🇪🇺 Euro (€)</option>
                   </select>
+                </div>
+                <div>
+                  <label style={labelSt}>Layout de lançamentos</label>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {([['classico','📋 Clássico'],['extrato','🏦 Extrato']] as const).map(([v,l]) => (
+                      <button key={v} onClick={() => escolherLayout(v)} style={{
+                        flex:1, padding:'8px 0', fontFamily:'inherit',
+                        border:`1.5px solid ${layout===v ? COR.azul : COR.borda}`,
+                        borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                        background: layout===v ? '#eff6ff' : COR.branco,
+                        color: layout===v ? COR.azul : COR.textoSuave }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:6 }}>
+                    Define como a tela de Lançamentos é exibida.
+                  </div>
                 </div>
                 <button style={{ padding:'10px 0', border:'none', borderRadius:8,
                   background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,

@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
@@ -39,19 +39,19 @@ type DadosMes = {
 }
 
 const CONTAS: ContaConfig[] = [
-  { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  icone:'ðŸ¦', cor:'#1a56db', tipo:'corrente'           },
-  { id:'c1', nome:'CartÃ£o 1',       banco:'Nubank',   icone:'ðŸ’³', cor:'#7c3aed', tipo:'cartao', cartaoNum:1 },
-  { id:'c2', nome:'CartÃ£o 2',       banco:'ItaÃº',     icone:'ðŸ’³', cor:'#ea580c', tipo:'cartao', cartaoNum:2 },
-  { id:'c3', nome:'CartÃ£o 3',       banco:'Bradesco', icone:'ðŸ’³', cor:'#16a34a', tipo:'cartao', cartaoNum:3 },
-  { id:'cp', nome:'PoupanÃ§a',       banco:'Sicredi',  icone:'ðŸ§', cor:'#0891b2', tipo:'poupanca'            },
+  { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  icone:'🏦', cor:'#1a56db', tipo:'corrente'           },
+  { id:'c1', nome:'Cartão 1',       banco:'Nubank',   icone:'💳', cor:'#7c3aed', tipo:'cartao', cartaoNum:1 },
+  { id:'c2', nome:'Cartão 2',       banco:'Itaú',     icone:'💳', cor:'#ea580c', tipo:'cartao', cartaoNum:2 },
+  { id:'c3', nome:'Cartão 3',       banco:'Bradesco', icone:'💳', cor:'#16a34a', tipo:'cartao', cartaoNum:3 },
+  { id:'cp', nome:'Poupança',       banco:'Sicredi',  icone:'🏧', cor:'#0891b2', tipo:'poupanca'            },
 ]
 
 const FIXAS: Record<string, CatFixa[]> = {
   cc: [
-    { id:'f01', nome:'SalÃ¡rio Pri',     categoria:'SalÃ¡rio Pri',     valor:11548,   tipo:'entrada', formaPagamento:'transferencia', diaVencimento:1  },
-    { id:'f02', nome:'PrestaÃ§Ã£o Casa',  categoria:'PrestaÃ§Ã£o Casa',  valor:826,     tipo:'saida',   formaPagamento:'debito',        diaVencimento:10 },
-    { id:'f03', nome:'PrestaÃ§Ã£o Carro', categoria:'PrestaÃ§Ã£o Carro', valor:1149.72, tipo:'saida',   formaPagamento:'debito',        diaVencimento:15 },
-    { id:'f04', nome:'Plano de SaÃºde',  categoria:'Plano de SaÃºde',  valor:324.16,  tipo:'saida',   formaPagamento:'debito',        diaVencimento:8  },
+    { id:'f01', nome:'Salário Pri',     categoria:'Salário Pri',     valor:11548,   tipo:'entrada', formaPagamento:'transferencia', diaVencimento:1  },
+    { id:'f02', nome:'Prestação Casa',  categoria:'Prestação Casa',  valor:826,     tipo:'saida',   formaPagamento:'debito',        diaVencimento:10 },
+    { id:'f03', nome:'Prestação Carro', categoria:'Prestação Carro', valor:1149.72, tipo:'saida',   formaPagamento:'debito',        diaVencimento:15 },
+    { id:'f04', nome:'Plano de Saúde',  categoria:'Plano de Saúde',  valor:324.16,  tipo:'saida',   formaPagamento:'debito',        diaVencimento:8  },
     { id:'f05', nome:'Internet',        categoria:'Internet',        valor:100,     tipo:'saida',   formaPagamento:'debito',        diaVencimento:20 },
     { id:'f06', nome:'Celular',         categoria:'Celular',         valor:133.23,  tipo:'saida',   formaPagamento:'debito',        diaVencimento:5  },
     { id:'f07', nome:'Igreja',          categoria:'Igreja',          valor:50,      tipo:'saida',   formaPagamento:'pix',           diaVencimento:10 },
@@ -60,24 +60,24 @@ const FIXAS: Record<string, CatFixa[]> = {
   cp: [], c1: [], c2: [], c3: [],
 }
 
-const CAT_SAIDA   = ['AlimentaÃ§Ã£o','Ãgua','CombustÃ­vel','Cuidados Pessoais','Cursos','Lazer','Luz','ManutenÃ§Ã£o Carro','ManutenÃ§Ã£o Casa','Meninos','Outros','Presente','Supermercado','VestuÃ¡rio','Viagens','Aluguel']
-const CAT_ENTRADA = ['Clientes a Receber','SalÃ¡rio Pri','SalÃ¡rio Gui','13Âº SalÃ¡rio / FÃ©rias','Outros']
-const NOMES_MESES  = ['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const CAT_SAIDA   = ['Alimentação','Água','Combustível','Cuidados Pessoais','Cursos','Lazer','Luz','Manutenção Carro','Manutenção Casa','Meninos','Outros','Presente','Supermercado','Vestuário','Viagens','Aluguel']
+const CAT_ENTRADA = ['Clientes a Receber','Salário Pri','Salário Gui','13º Salário / Férias','Outros']
+const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b']
+const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 const STORAGE_KEY   = 'compass_extrato_dados'
 
 const NAV = [
   { label:'Dashboard',    path:'/dashboard'       },
   { label:'Planejamento', path:'/planejamento'    },
-  { label:'LanÃ§amentos',  path:'/novo-lancamento' },
-  { label:'âš™ Config',    path:'/configuracoes'   },
+  { label:'Lançamentos',  path:'/novo-lancamento' },
+  { label:'⚙ Config',    path:'/configuracoes'   },
 ]
 
 const FORMAS_PAG: { id: FormaPag; label: string }[] = [
-  { id:'debito',        label:'DÃ©bito'        },
+  { id:'debito',        label:'Débito'        },
   { id:'pix',           label:'Pix'           },
-  { id:'transferencia', label:'TransferÃªncia' },
+  { id:'transferencia', label:'Transferência' },
 ]
 
 function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
@@ -270,7 +270,7 @@ export default function NovoLancamentoExtrato() {
         })}
       </div>
 
-      {/* ABAS DE MÃŠS */}
+      {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'7px 16px',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
@@ -309,22 +309,22 @@ export default function NovoLancamentoExtrato() {
               outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>DiferenÃ§a:</span>
+          <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
           <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
             background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
             color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
             border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
             minWidth:110,textAlign:'center'}}>
-            {diferenca===null?'Digite o extrato':conciliado?'âœ“ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+            {diferenca===null?'Digite o extrato':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
           </div>
         </div>
         <span style={{color:COR.borda}}>|</span>
-        <span style={{fontSize:11,color:COR.azul,fontWeight:500}}>â†‘ {fmt(totalEntradas)}</span>
-        <span style={{fontSize:11,color:COR.vermelho,fontWeight:500}}>â†“ {fmt(totalSaidas)}</span>
+        <span style={{fontSize:11,color:COR.azul,fontWeight:500}}>↑ {fmt(totalEntradas)}</span>
+        <span style={{fontSize:11,color:COR.vermelho,fontWeight:500}}>↓ {fmt(totalSaidas)}</span>
         <span style={{fontSize:11,color:COR.azul,fontWeight:700}}>= {fmt(saldoMes)}</span>
       </div>
 
-      {/* OVERLAY â€” fecha form ao clicar fora */}
+      {/* OVERLAY — fecha form ao clicar fora */}
       {diaSel !== null && (
         <div onClick={() => setDiaSel(null)}
           style={{position:'fixed',inset:0,zIndex:5,background:'transparent'}}/>
@@ -358,7 +358,7 @@ export default function NovoLancamentoExtrato() {
                   ehHoje?`0 0 0 2px rgba(147,197,253,0.3)`:'none',
               }}>
 
-              {/* CabeÃ§alho */}
+              {/* Cabeçalho */}
               <div style={{display:'flex',alignItems:'center',gap:12,
                 padding:'10px 16px',minHeight:54,
                 background:formAberto?'#eff6ff':ehHoje?'#f0f7ff':'#fafbff',
@@ -381,7 +381,7 @@ export default function NovoLancamentoExtrato() {
                     padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Hoje</span>
                 )}
 
-                {/* Inicial | MovimentaÃ§Ã£o | Final */}
+                {/* Inicial | Movimentação | Final */}
                 <div style={{flex:1,display:'flex',alignItems:'center',
                   justifyContent:'flex-end',gap:6}}>
 
@@ -400,11 +400,11 @@ export default function NovoLancamentoExtrato() {
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
                       color:delta===0?'#94a3b8':delta>0?COR.verde:COR.vermelho}}>
-                      MovimentaÃ§Ã£o
+                      Movimentação
                     </span>
                     <span style={{fontSize:12,fontWeight:700,
                       color:delta===0?'#94a3b8':delta>0?COR.verde:COR.vermelho}}>
-                      {delta===0?'â€”':`${delta>0?'+':''}${fmt(delta)}`}
+                      {delta===0?'—':`${delta>0?'+':''}${fmt(delta)}`}
                     </span>
                   </div>
 
@@ -428,7 +428,7 @@ export default function NovoLancamentoExtrato() {
                   <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                     display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
                     background:passado?(f.tipo==='entrada'?'#eff6ff':'#f0f9ff'):'#f1f5f9'}}>
-                    {passado?(f.tipo==='entrada'?'â†‘':'ðŸ“Œ'):'ðŸ“Œ'}
+                    {passado?(f.tipo==='entrada'?'↑':'📌'):'📌'}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:500,
@@ -438,7 +438,7 @@ export default function NovoLancamentoExtrato() {
                       <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                         background:passado?'#e0f2fe':'#f1f5f9',
                         color:passado?'#0369a1':'#94a3b8'}}>
-                        {passado?'fixa âœ“':'previsto'}
+                        {passado?'fixa ✓':'previsto'}
                       </span>
                     </div>
                     <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
@@ -453,7 +453,7 @@ export default function NovoLancamentoExtrato() {
                 </div>
               ))}
 
-              {/* LanÃ§amentos variÃ¡veis */}
+              {/* Lançamentos variáveis */}
               {ls.map(l => (
                 <div key={l.id}
                   style={{display:'flex',alignItems:'center',gap:10,
@@ -463,7 +463,7 @@ export default function NovoLancamentoExtrato() {
                   <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                     display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
                     background:l.tipo==='entrada'?'#eff6ff':'#fff1f2'}}>
-                    {l.tipo==='entrada'?'â†‘':'â†“'}
+                    {l.tipo==='entrada'?'↑':'↓'}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:500,color:COR.texto}}>{l.descricao}</div>
@@ -480,11 +480,11 @@ export default function NovoLancamentoExtrato() {
                     style={{border:'none',background:'transparent',cursor:'pointer',
                       color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
                     onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                    onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>âœ•</button>
+                    onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                 </div>
               ))}
 
-              {/* BotÃ£o + */}
+              {/* Botão + */}
               <button
                 onClick={() => {
                   if (formAberto) { setDiaSel(null) }
@@ -498,11 +498,11 @@ export default function NovoLancamentoExtrato() {
                   width:'100%',
                   borderTop:`1px dashed ${formAberto?'#bfdbfe':COR.borda}`,
                   transition:'background .15s'}}>
-                <span style={{fontSize:16,fontWeight:700,lineHeight:1}}>{formAberto?'â–²':'+'}</span>
-                {formAberto?'Fechar':'Adicionar lanÃ§amento neste dia'}
+                <span style={{fontSize:16,fontWeight:700,lineHeight:1}}>{formAberto?'▲':'+'}</span>
+                {formAberto?'Fechar':'Adicionar lançamento neste dia'}
               </button>
 
-              {/* FormulÃ¡rio acordeÃ£o */}
+              {/* Formulário acordeão */}
               {formAberto && (
                 <div ref={formRef}
                   style={{background:'#f0f9ff',borderTop:`1px solid #bae6fd`,padding:'14px 16px'}}>
@@ -517,7 +517,7 @@ export default function NovoLancamentoExtrato() {
                         background:fTipo===t?COR.branco:'transparent',
                         color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
                         boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-                        {t==='entrada'?'â†‘ Entrada':'â†“ SaÃ­da'}
+                        {t==='entrada'?'↑ Entrada':'↓ Saída'}
                       </button>
                     ))}
                   </div>
@@ -536,9 +536,9 @@ export default function NovoLancamentoExtrato() {
                       </select>
                     </div>
                     <div style={{flex:'2 1 160px'}}>
-                      <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>DescriÃ§Ã£o</div>
+                      <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
                       <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-                        placeholder="Ex: Mercado Extra, FarmÃ¡cia..."
+                        placeholder="Ex: Mercado Extra, Farmácia..."
                         style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
                           fontSize:12,outline:'none',background:'#fff',
                           fontFamily:'inherit',color:COR.texto,width:'100%'}}/>
@@ -567,7 +567,7 @@ export default function NovoLancamentoExtrato() {
                       </button>
                     ))}
                     <span style={{fontSize:10,color:'#94a3b8',marginLeft:4}}>
-                      Enter para salvar Â· form fica aberto para prÃ³ximo lanÃ§amento
+                      Enter para salvar · form fica aberto para próximo lançamento
                     </span>
                   </div>
                 </div>
@@ -581,7 +581,7 @@ export default function NovoLancamentoExtrato() {
           background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
           display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
-            Saldo final previsto â€” {NOMES_MESES[mes]} {ano}
+            Saldo final previsto — {NOMES_MESES[mes]} {ano}
           </span>
           <span style={{fontSize:18,fontWeight:700,color:'#fff'}}>
             {fmt(saldosDia[totalDias] ?? saldoMes)}
