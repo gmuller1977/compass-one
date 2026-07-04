@@ -1,4 +1,5 @@
 import { useApp } from '../context/AppContext'
+import type { Categoria } from '../context/AppContext'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -82,6 +83,14 @@ function primeiraMaiuscula(s: string) {
   const t = s.trim() || 'Sem nome'
   return t.charAt(0).toUpperCase() + t.slice(1)
 }
+function normalizar(s: string) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+function iconeCategoria(categorias: Categoria[], nome: string): { icone: string; cor: string } {
+  const alvo = normalizar(nome)
+  const achada = categorias.find(c => normalizar(c.nome) === alvo)
+  return achada ? { icone: achada.icone, cor: achada.cor } : { icone: '📁', cor: '#94a3b8' }
+}
 function calcSaldos(data: AnoData) {
   const totalE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
@@ -114,10 +123,11 @@ const NAV_ITEMS = [
 
 export default function Planejamento() {
   const navigate    = useNavigate()
-  const { contas } = useApp()
-  const SALDO_INICIAL_FIXO = contas
-  .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-  .reduce((s, c) => s + c.saldoInicial, 0)
+  const { contas, setContas, categorias } = useApp()
+  const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+  const SALDO_INICIAL_FIXO = contasSaldoIni
+    .filter(c => c.incluirNoSaldoInicial !== false)
+    .reduce((s, c) => s + c.saldoInicial, 0)
   const anoCorrente = new Date().getFullYear()
   const mesAtual    = new Date().getMonth()
 
@@ -132,6 +142,7 @@ export default function Planejamento() {
   const [hoverCat,      setHoverCat]      = useState<HoverCat>(null)
   const [entradaAberta, setEntradaAberta] = useState(false)
   const [saidaAberta,   setSaidaAberta]   = useState(false)
+  const [saldoAberto,   setSaldoAberto]   = useState(false)
 
   const dadosAno = anos[anoAtual]
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
@@ -146,6 +157,16 @@ export default function Planejamento() {
   }
   function setSaidas(fn: (prev: Cat[]) => Cat[]) {
     updateAno(d => ({ ...d, saidas: fn(d.saidas) }))
+  }
+  function toggleContaNoSaldoInicial(id: string) {
+    const novasContas = contas.map(c => c.id === id
+      ? { ...c, incluirNoSaldoInicial: c.incluirNoSaldoInicial === false ? true : false }
+      : c)
+    setContas(novasContas)
+    const novoSaldo = novasContas
+      .filter(c => (c.tipo === 'corrente' || c.tipo === 'poupanca') && c.incluirNoSaldoInicial !== false)
+      .reduce((s, c) => s + c.saldoInicial, 0)
+    updateAno(d => ({ ...d, saldoInicialJan: novoSaldo }))
   }
 
   // ── Navegação de ano ──
@@ -268,6 +289,7 @@ export default function Planejamento() {
   ) {
     const editandoEste = isEditNome(tipo, ri)
     const hover        = isHover(tipo, ri)
+    const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
 
     return (
       <td key="nome"
@@ -310,6 +332,9 @@ export default function Planejamento() {
         ) : (
           // Modo normal — nome + lápis ao hover
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:11, flexShrink:0 }}>{icone}</div>
             {badge}
             <span style={{ fontSize:12, color:COR.texto, flex:1 }}>{nome}</span>
             {hover && (
@@ -438,22 +463,74 @@ export default function Planejamento() {
 
             <tbody>
 
-              {/* SALDO INICIAL */}
-              <tr>
+              {/* SALDO INICIAL — linha clicável */}
+              <tr onClick={() => setSaldoAberto(a => !a)} style={{ cursor:'pointer' }}>
                 <td style={{ position:'sticky', left:0, zIndex:2, background:'#e8f0fe',
                   padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.azul,
-                  borderBottom:`1px solid ${COR.borda}`, whiteSpace:'nowrap' }}>
+                  borderBottom:`1px solid ${COR.borda}`,
+                  borderTop: saldoAberto ? `2px solid ${COR.azul}` : undefined,
+                  whiteSpace:'nowrap' }}>
+                  <span style={{ fontSize:9, marginRight:6, display:'inline-block',
+                    transition:'transform .2s',
+                    transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
                   Saldo Inicial
                 </td>
                 {saldoInicial.map((v, i) => (
                   <td key={i} style={{ width:COL_MES, padding:'10px 12px', textAlign:'right',
                     fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.azul,
                     background: i === mesAtual ? '#c7d9f8' : '#e8f0fe',
-                    borderBottom:`1px solid ${COR.borda}` }}>
+                    borderBottom:`1px solid ${COR.borda}`,
+                    borderTop: saldoAberto ? `2px solid ${COR.azul}` : undefined }}>
                     {fmt(v, true)}
                   </td>
                 ))}
               </tr>
+
+              {/* PAINEL SALDO INICIAL */}
+              {saldoAberto && (
+                <tr>
+                  <td colSpan={13} style={{ padding:'10px 16px 12px 28px',
+                    background:'#eff6ff', borderBottom:`1px solid #bfdbfe` }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:COR.azul,
+                      textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
+                      Contas consideradas no saldo inicial
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:520 }}>
+                      {contasSaldoIni.length === 0 && (
+                        <div style={{ fontSize:12, color:COR.textoSuave }}>
+                          Nenhuma conta corrente ou poupança cadastrada.
+                        </div>
+                      )}
+                      {contasSaldoIni.map(c => {
+                        const incluida = c.incluirNoSaldoInicial !== false
+                        return (
+                          <label key={c.id} style={{ display:'flex', alignItems:'center', gap:10,
+                            padding:'7px 12px', background:COR.branco, borderRadius:8,
+                            border:`1px solid ${COR.borda}`, cursor:'pointer',
+                            opacity: incluida ? 1 : 0.55 }}>
+                            <input type="checkbox" checked={incluida}
+                              onChange={() => toggleContaNoSaldoInicial(c.id)}
+                              style={{ cursor:'pointer' }} />
+                            <div style={{ width:26, height:26, borderRadius:7, background:c.cor,
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                              fontSize:13, flexShrink:0 }}>{c.icone}</div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:12, fontWeight:500, color:COR.texto }}>{c.nome}</div>
+                              <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>
+                                {c.banco} · {c.tipo === 'corrente' ? 'Conta corrente' : 'Poupança'}
+                              </div>
+                            </div>
+                            <div style={{ fontSize:12, fontWeight:600,
+                              color: incluida ? COR.azul : COR.textoSuave }}>
+                              {fmt(c.saldoInicial, true)}
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              )}
 
               {/* ENTRADAS — linha clicável */}
               <tr onClick={() => setEntradaAberta(a => !a)} style={{ cursor:'pointer' }}>

@@ -12,6 +12,7 @@ export type Conta = {
   id: string; nome: string; banco: string; tipo: TipoConta
   saldoInicial: number; cor: string; icone: string
   limiteCartao?: number; diaVencimento?: number; diaFechamento?: number
+  incluirNoSaldoInicial?: boolean
 }
 
 export type Categoria = {
