@@ -16,6 +16,7 @@ export type Conta = {
   saldoInicial: number; cor: string; icone: string
   limiteCartao?: number; diaVencimento?: number; diaFechamento?: number
   incluirNoSaldoInicial?: boolean
+  agencia?: string; numeroConta?: string
 }
 
 export type Categoria = {

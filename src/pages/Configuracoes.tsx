@@ -12,7 +12,7 @@ const COR = {
   verde: '#16a34a', vermelho: '#dc2626',
 }
 
-type Aba = 'contas' | 'categorias' | 'perfil'
+type Aba = 'bancos' | 'cartoes' | 'categorias' | 'perfil'
 
 const CORES_PRESET = [
   '#1a56db','#16a34a','#dc2626','#d97706','#7c3aed',
@@ -25,7 +25,7 @@ const ICONES_CAT   = [
   '🍽️','🎁','🏋️','🐾','📺','🎮','🏥','📌','🔧','☕',
   '🎵','📚','🏖️','💐','🧴','💈','🐶','🎯',
 ]
-const BANCOS = ['Sicredi','Nubank','Itaú','Bradesco','Banco do Brasil','Caixa','Santander','Inter','C6 Bank','Outro']
+const BANCOS = ['Banco do Brasil','Bradesco','C6 Bank','Caixa','Inter','Itaú','Nubank','Santander','Sicredi','Outro']
 
 const TIPOS_MOVIMENTO: { id: TipoMovimento; label: string }[] = [
   { id:'banco',    label:'Banco' },
@@ -111,9 +111,9 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
   editarCategoria: (c:Categoria) => void
 }) {
   return (
-    <div style={{
+    <div onClick={() => editarCategoria(c)} style={{
       background:COR.branco, border:`1px solid ${COR.borda}`,
-      borderRadius:10, padding:'11px 14px',
+      borderRadius:10, padding:'11px 14px', cursor:'pointer',
       display:'flex', alignItems:'center', gap:12,
       borderLeft:`4px solid ${c.cor}`,
       opacity: c.ativa ? 1 : 0.5,
@@ -154,20 +154,13 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
         </div>
       </div>
       {/* Toggle ativo */}
-      <button onClick={() => toggleAtiva(c.id)} style={{
+      <button onClick={e => { e.stopPropagation(); toggleAtiva(c.id) }} style={{
         border:`1px solid ${c.ativa ? COR.verde : COR.borda}`,
         borderRadius:6, padding:'3px 9px', cursor:'pointer', fontSize:11,
         background: c.ativa ? '#f0fdf4' : COR.branco,
         color: c.ativa ? COR.verde : COR.textoSuave,
         fontFamily:'inherit', fontWeight:500 }}>
         {c.ativa ? '✓ Ativa' : 'Inativa'}
-      </button>
-      {/* Editar */}
-      <button onClick={() => editarCategoria(c)} style={{
-        border:`1px solid ${COR.borda}`, background:COR.branco,
-        borderRadius:7, padding:'5px 10px', cursor:'pointer',
-        fontSize:12, color:COR.textoSuave, fontFamily:'inherit' }}>
-        ✏
       </button>
     </div>
   )
@@ -176,7 +169,7 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
   const navigate = useNavigate()
-  const [aba,    setAba]    = useState<Aba>('contas')
+  const [aba,    setAba]    = useState<Aba>('bancos')
   const { contas, categorias, setContas, setCategorias } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
   const [layout, setLayout] = useState<LayoutLancamentos>(getLayoutPref)
@@ -192,7 +185,6 @@ export default function Configuracoes() {
   }
   const [formConta,   setFormConta]   = useState<Omit<Conta,'id'>>(contaVazia)
   const [editContaId, setEditContaId] = useState<string|null>(null)
-  const [painelConta, setPainelConta] = useState(false)
   const [erroConta,   setErroConta]   = useState('')
 
   const catVazia: Omit<Categoria,'id'> = {
@@ -201,18 +193,18 @@ export default function Configuracoes() {
   }
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
   const [editCatId, setEditCatId] = useState<string|null>(null)
-  const [painelCat, setPainelCat] = useState(false)
   const [erroCat,   setErroCat]   = useState('')
 
   // ── Ações Conta ──
-  function novaConta() {
-    setFormConta({...contaVazia}); setEditContaId(null)
-    setErroConta(''); setPainelConta(true)
+  function novaConta(tipoAba: Aba = aba) {
+    setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
+    setEditContaId(null)
+    setErroConta('')
   }
   function editarConta(c: Conta) {
     const { id, ...rest } = c
     setFormConta(rest); setEditContaId(id)
-    setErroConta(''); setPainelConta(true)
+    setErroConta('')
   }
   function salvarConta() {
     if (!formConta.nome.trim()) return setErroConta('Informe o nome da conta')
@@ -223,23 +215,23 @@ export default function Configuracoes() {
     } else {
       setContas(prev => [...prev, {id:gerarId(),...formConta}])
     }
-    setPainelConta(false); setEditContaId(null); setFormConta(contaVazia)
+    novaConta()
   }
   function excluirConta(id: string) {
     if (!window.confirm('Excluir esta conta?')) return
     setContas(prev => prev.filter(c => c.id!==id))
-    if (editContaId===id) setPainelConta(false)
+    if (editContaId===id) novaConta()
   }
 
   // ── Ações Categoria ──
   function novaCategoria() {
     setFormCat({...catVazia, tipo:abaCat}); setEditCatId(null)
-    setErroCat(''); setPainelCat(true)
+    setErroCat('')
   }
   function editarCategoria(c: Categoria) {
     const { id, ...rest } = c
     setFormCat(rest); setEditCatId(id)
-    setErroCat(''); setPainelCat(true)
+    setErroCat('')
   }
   function salvarCategoria() {
     if (!formCat.nome.trim()) return setErroCat('Informe o nome da categoria')
@@ -249,12 +241,12 @@ export default function Configuracoes() {
     } else {
       setCategorias(prev => [...prev, {id:gerarId(),...formCat}])
     }
-    setPainelCat(false); setEditCatId(null); setFormCat(catVazia)
+    setEditCatId(null); setFormCat({...catVazia, tipo:abaCat})
   }
   function excluirCategoria(id: string) {
     if (!window.confirm('Excluir esta categoria?')) return
     setCategorias(prev => prev.filter(c => c.id!==id))
-    if (editCatId===id) setPainelCat(false)
+    if (editCatId===id) { setEditCatId(null); setFormCat({...catVazia, tipo:abaCat}) }
   }
   function toggleAtiva(id: string) {
     setCategorias(prev => prev.map(c => c.id===id ? {...c, ativa:!c.ativa} : c))
@@ -319,8 +311,8 @@ export default function Configuracoes() {
       {/* ABAS PRINCIPAIS */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
         padding:'0 24px', display:'flex', gap:4, flexShrink:0 }}>
-        {([['contas','🏦 Contas e Cartões'],['categorias','🏷 Categorias'],['perfil','👤 Perfil']] as const).map(([v,l]) => (
-          <button key={v} onClick={() => setAba(v)} style={{
+        {([['bancos','🏦 Cadastro de Bancos'],['cartoes','💳 Cadastro de Cartões'],['categorias','🏷 Cadastro de Categorias'],['perfil','👤 Perfil']] as const).map(([v,l]) => (
+          <button key={v} onClick={() => { setAba(v); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
             padding:'12px 16px', border:'none',
             borderBottom:`2px solid ${aba===v ? COR.azul : 'transparent'}`,
             background:'transparent', cursor:'pointer', fontSize:13, fontWeight:500,
@@ -334,31 +326,29 @@ export default function Configuracoes() {
       {/* CONTEÚDO */}
       <div style={{ flex:1, overflow:'hidden', display:'flex', padding:20, gap:16 }}>
 
-        {/* ══ ABA CONTAS ══ */}
-        {aba==='contas' && (
+        {/* ══ ABA BANCOS / CARTÕES ══ */}
+        {(aba==='bancos' || aba==='cartoes') && (
           <>
             <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
               <div style={{ display:'flex', justifyContent:'space-between',
                 alignItems:'center', marginBottom:14 }}>
                 <div>
                   <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>
-                    Contas e Cartões
+                    {aba==='bancos' ? 'Cadastro de Bancos' : 'Cadastro de Cartões'}
                   </h2>
                   <p style={{ fontSize:12, color:COR.textoSuave, margin:'3px 0 0' }}>
-                    {contas.length} conta{contas.length!==1?'s':''} cadastrada{contas.length!==1?'s':''}
+                    {(() => {
+                      const n = contas.filter(c => aba==='bancos' ? c.tipo!=='cartao' : c.tipo==='cartao').length
+                      return aba==='bancos'
+                        ? `${n} conta${n!==1?'s':''} cadastrada${n!==1?'s':''}`
+                        : `${n} cartão${n!==1?'ões':''} cadastrado${n!==1?'s':''}`
+                    })()}
                   </p>
                 </div>
-                <button onClick={novaConta} style={{
-                  padding:'8px 16px', border:'none', borderRadius:8,
-                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                  color:'#fff', fontSize:13, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit' }}>
-                  + Nova conta
-                </button>
               </div>
 
               <div style={{ overflowY:'auto', flex:1 }}>
-                {(['corrente','poupanca','cartao'] as const).map(tipo => {
+                {(aba==='bancos' ? (['corrente','poupanca'] as const) : (['cartao'] as const)).map(tipo => {
                   const grupo = contas.filter(c => c.tipo===tipo)
                   if (!grupo.length) return null
                   const titulo = tipo==='corrente' ? '🏦 Contas Correntes'
@@ -371,9 +361,9 @@ export default function Configuracoes() {
                       </div>
                       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                         {grupo.map(c => (
-                          <div key={c.id} style={{
+                          <div key={c.id} onClick={() => editarConta(c)} style={{
                             background:COR.branco, border:`1px solid ${COR.borda}`,
-                            borderRadius:12, padding:'14px 16px',
+                            borderRadius:12, padding:'14px 16px', cursor:'pointer',
                             display:'flex', alignItems:'center', gap:14,
                             borderLeft:`4px solid ${c.cor}`,
                             boxShadow: editContaId===c.id ? `0 0 0 2px ${COR.azul}` : 'none' }}>
@@ -384,7 +374,11 @@ export default function Configuracoes() {
                             </div>
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>{c.nome}</div>
-                              <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>{c.banco}</div>
+                              <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>
+                                {c.banco}
+                                {c.agencia && ` · Ag ${c.agencia}`}
+                                {c.numeroConta && ` · CC ${c.numeroConta}`}
+                              </div>
                             </div>
                             <div style={{ textAlign:'right', flexShrink:0 }}>
                               {c.tipo==='cartao' ? (
@@ -407,12 +401,6 @@ export default function Configuracoes() {
                                 </>
                               )}
                             </div>
-                            <button onClick={() => editarConta(c)} style={{
-                              border:`1px solid ${COR.borda}`, background:COR.branco,
-                              borderRadius:7, padding:'5px 10px', cursor:'pointer',
-                              fontSize:12, color:COR.textoSuave, fontFamily:'inherit' }}>
-                              ✏ Editar
-                            </button>
                           </div>
                         ))}
                       </div>
@@ -423,8 +411,7 @@ export default function Configuracoes() {
             </div>
 
             {/* Formulário conta */}
-            {painelConta && (
-              <div style={{ width:340, flexShrink:0, background:COR.branco,
+            <div style={{ width:340, flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
                 padding:20, overflowY:'auto' }}>
                 <div style={{ display:'flex', justifyContent:'space-between',
@@ -432,9 +419,11 @@ export default function Configuracoes() {
                   <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
                     {editContaId ? 'Editar conta' : 'Nova conta'}
                   </h3>
-                  <button onClick={() => setPainelConta(false)} style={{
-                    border:'none', background:'transparent',
-                    cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
+                  {editContaId && (
+                    <button onClick={() => novaConta()} title="Cancelar edição" style={{
+                      border:'none', background:'transparent',
+                      cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
+                  )}
                 </div>
 
                 {/* Preview */}
@@ -461,21 +450,44 @@ export default function Configuracoes() {
                       {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label style={labelSt}>Tipo</label>
-                    <div style={{ display:'flex', gap:6 }}>
-                      {([['corrente','Corrente'],['poupanca','Poupança'],['cartao','Cartão']] as const).map(([v,l]) => (
-                        <button key={v} onClick={() => setFormConta(p=>({...p,tipo:v}))} style={{
-                          flex:1, padding:'7px 0', fontFamily:'inherit',
-                          border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
-                          borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                          background: formConta.tipo===v ? '#eff6ff' : COR.branco,
-                          color: formConta.tipo===v ? COR.azul : COR.textoSuave }}>
-                          {l}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {aba==='bancos' && (
+                    <>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                        <div>
+                          <label style={labelSt}>Agência</label>
+                          <input
+                            value={formConta.agencia||''}
+                            onChange={e => setFormConta(p=>({...p, agencia:e.target.value}))}
+                            placeholder="Ex: 0001" style={inputSt} />
+                        </div>
+                        <div>
+                          <label style={labelSt}>Conta</label>
+                          <input
+                            value={formConta.numeroConta||''}
+                            onChange={e => setFormConta(p=>({...p, numeroConta:e.target.value}))}
+                            placeholder="Ex: 12345-6" style={inputSt} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize:10, color:'#94a3b8', marginTop:-8 }}>
+                        Agência e conta são apenas informativas, não são obrigatórias.
+                      </div>
+                      <div>
+                        <label style={labelSt}>Tipo</label>
+                        <div style={{ display:'flex', gap:6 }}>
+                          {([['corrente','Corrente'],['poupanca','Poupança']] as const).map(([v,l]) => (
+                            <button key={v} onClick={() => setFormConta(p=>({...p,tipo:v}))} style={{
+                              flex:1, padding:'7px 0', fontFamily:'inherit',
+                              border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
+                              borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                              background: formConta.tipo===v ? '#eff6ff' : COR.branco,
+                              color: formConta.tipo===v ? COR.azul : COR.textoSuave }}>
+                              {l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                   {formConta.tipo!=='cartao' && (
                     <div>
                       <label style={labelSt}>Saldo inicial</label>
@@ -547,7 +559,6 @@ export default function Configuracoes() {
                   </div>
                 </div>
               </div>
-            )}
           </>
         )}
 
@@ -558,18 +569,11 @@ export default function Configuracoes() {
               <div style={{ display:'flex', justifyContent:'space-between',
                 alignItems:'center', marginBottom:14 }}>
                 <div>
-                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>Categorias</h2>
+                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>Cadastro de Categorias</h2>
                   <p style={{ fontSize:12, color:COR.textoSuave, margin:'3px 0 0' }}>
                     {categorias.filter(c=>c.ativa).length} ativas de {categorias.length}
                   </p>
                 </div>
-                <button onClick={novaCategoria} style={{
-                  padding:'8px 16px', border:'none', borderRadius:8,
-                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                  color:'#fff', fontSize:13, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit' }}>
-                  + Nova categoria
-                </button>
               </div>
 
               {/* Sub-abas */}
@@ -621,8 +625,7 @@ export default function Configuracoes() {
             </div>
 
             {/* Formulário categoria */}
-            {painelCat && (
-              <div style={{ width:340, flexShrink:0, background:COR.branco,
+            <div style={{ width:340, flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
                 padding:20, overflowY:'auto' }}>
                 <div style={{ display:'flex', justifyContent:'space-between',
@@ -630,9 +633,11 @@ export default function Configuracoes() {
                   <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
                     {editCatId ? 'Editar categoria' : 'Nova categoria'}
                   </h3>
-                  <button onClick={() => setPainelCat(false)} style={{
-                    border:'none', background:'transparent',
-                    cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
+                  {editCatId && (
+                    <button onClick={novaCategoria} title="Cancelar edição" style={{
+                      border:'none', background:'transparent',
+                      cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
+                  )}
                 </div>
 
                 {/* Preview */}
@@ -802,7 +807,6 @@ export default function Configuracoes() {
                   </div>
                 </div>
               </div>
-            )}
           </>
         )}
 
