@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext'
-import type { Categoria } from '../context/AppContext'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { iconeCategoria } from '../utils/categoriaIcone'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -82,14 +82,6 @@ function corSaldo(v: number) {
 function primeiraMaiuscula(s: string) {
   const t = s.trim() || 'Sem nome'
   return t.charAt(0).toUpperCase() + t.slice(1)
-}
-function normalizar(s: string) {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-}
-function iconeCategoria(categorias: Categoria[], nome: string): { icone: string; cor: string } {
-  const alvo = normalizar(nome)
-  const achada = categorias.find(c => normalizar(c.nome) === alvo)
-  return achada ? { icone: achada.icone, cor: achada.cor } : { icone: '📁', cor: '#94a3b8' }
 }
 function calcSaldos(data: AnoData) {
   const totalE = Array.from({ length: 12 }, (_, i) =>

@@ -7,6 +7,7 @@ export type TipoCategoria = 'entrada' | 'saida'
 export type FormaPagCat   = 'debito' | 'credito' | 'ambos'
 export type FormaPagLanc  = 'debito' | 'pix' | 'transferencia'
 export type TipoLanc      = 'entrada' | 'saida'
+export type TipoCobranca  = 'automatico' | 'boleto'
 
 export type Conta = {
   id: string; nome: string; banco: string; tipo: TipoConta
@@ -21,6 +22,7 @@ export type Categoria = {
   cor: string; icone: string; ativa: boolean
   diaVencimento?: number; descricao?: string
   valorPadrao?: number
+  tipoCobranca?: TipoCobranca
 }
 
 export type Lancamento = {

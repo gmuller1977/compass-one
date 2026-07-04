@@ -161,7 +161,7 @@ export default function Configuracoes() {
 
   const catVazia: Omit<Categoria,'id'> = {
     nome:'', tipo:'saida', fixa:false, formaPagamento:'debito',
-    cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true,
+    cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true, tipoCobranca:'boleto',
   }
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
   const [editCatId, setEditCatId] = useState<string|null>(null)
@@ -653,6 +653,30 @@ export default function Configuracoes() {
                         value={formCat.diaVencimento||''}
                         onChange={e => setFormCat(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
                         placeholder="Ex: 10" style={inputSt} />
+                    </div>
+                  )}
+
+                  {/* Forma de cobrança — só saída fixa */}
+                  {formCat.fixa && formCat.tipo==='saida' && (
+                    <div>
+                      <label style={labelSt}>Forma de cobrança</label>
+                      <div style={{ display:'flex', gap:6 }}>
+                        {([['automatico','Débito Automático'],['boleto','Boleto']] as const).map(([v,l]) => (
+                          <button key={v} onClick={() => setFormCat(p=>({...p,tipoCobranca:v}))} style={{
+                            flex:1, padding:'7px 0', fontFamily:'inherit',
+                            border:`1.5px solid ${formCat.tipoCobranca===v ? COR.azul : COR.borda}`,
+                            borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                            background: formCat.tipoCobranca===v ? '#eff6ff' : COR.branco,
+                            color: formCat.tipoCobranca===v ? COR.azul : COR.textoSuave }}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                        {formCat.tipoCobranca==='automatico'
+                          ? 'Se vencer em dia não útil, o sistema desloca sozinho para o próximo dia útil.'
+                          : 'Ao consolidar o lançamento, você informa o dia em que o pagamento foi realizado.'}
+                      </div>
                     </div>
                   )}
 

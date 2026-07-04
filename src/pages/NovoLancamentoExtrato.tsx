@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { iconeCategoria, tipoCobrancaCategoria } from '../utils/categoriaIcone'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -11,13 +12,6 @@ const COR = {
 
 type TipoLanc = 'entrada' | 'saida'
 type FormaPag = 'debito' | 'pix' | 'transferencia'
-
-type ContaConfig = {
-  id: string; nome: string; banco: string
-  icone: string; cor: string
-  tipo: 'corrente' | 'poupanca' | 'cartao'
-  cartaoNum?: 1|2|3
-}
 
 type CatFixa = {
   id: string; nome: string; categoria: string
@@ -36,15 +30,26 @@ type Lancamento = {
 type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   saldoBanco: string
+  fixasConsolidadas?: Record<string, boolean>
+  fixasMovidas?: Record<string, number>
 }
 
-const CONTAS: ContaConfig[] = [
-  { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  icone:'🏦', cor:'#1a56db', tipo:'corrente'           },
-  { id:'c1', nome:'Cartão 1',       banco:'Nubank',   icone:'💳', cor:'#7c3aed', tipo:'cartao', cartaoNum:1 },
-  { id:'c2', nome:'Cartão 2',       banco:'Itaú',     icone:'💳', cor:'#ea580c', tipo:'cartao', cartaoNum:2 },
-  { id:'c3', nome:'Cartão 3',       banco:'Bradesco', icone:'💳', cor:'#16a34a', tipo:'cartao', cartaoNum:3 },
-  { id:'cp', nome:'Poupança',       banco:'Sicredi',  icone:'🏧', cor:'#0891b2', tipo:'poupanca'            },
-]
+function ehFimDeSemana(dia: number, mes: number, ano: number) {
+  const dow = new Date(ano, mes, dia).getDay()
+  return dow === 0 || dow === 6
+}
+function diaUtilOuProximo(dia: number, mes: number, ano: number, totalDias: number) {
+  let d = dia
+  while (d <= totalDias && ehFimDeSemana(d, mes, ano)) d++
+  return Math.min(d, totalDias)
+}
+function diaEfetivoFixa(
+  f: CatFixa, overrides: Record<string, number> | undefined,
+  automatico: boolean, mes: number, ano: number, totalDias: number,
+) {
+  if (automatico) return diaUtilOuProximo(f.diaVencimento, mes, ano, totalDias)
+  return overrides?.[f.id] ?? f.diaVencimento
+}
 
 const FIXAS: Record<string, CatFixa[]> = {
   cc: [
@@ -113,10 +118,13 @@ export default function NovoLancamentoExtrato() {
   const [fDesc,   setFDesc]   = useState('')
   const [fValor,  setFValor]  = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
+  const [confirmandoFixaId, setConfirmandoFixaId] = useState<string|null>(null)
+  const [diaConfirmacao,    setDiaConfirmacao]     = useState('')
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const formRef = useRef<HTMLDivElement>(null)
-  const { contas } = useApp()
+  const { contas, categorias } = useApp()
+  const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const fixas         = FIXAS[contaId] ?? []
   const contaInfo     = contas.find(c => c.id === contaId)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
@@ -142,29 +150,61 @@ export default function NovoLancamentoExtrato() {
     setDados(prev => ({ ...prev, [key]: fn(prev[key] ?? { lancamentos:{}, saldoBanco:'' }) }))
   }
 
+  function ehAutomatico(f: CatFixa) {
+    if (f.tipo === 'entrada') return true
+    return tipoCobrancaCategoria(categorias, f.categoria) === 'automatico'
+  }
+
+  function desconsolidarFixa(fixaId: string) {
+    updateMes(prev => ({
+      ...prev,
+      fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: false },
+    }))
+  }
+
+  function confirmarBoleto(f: CatFixa, diaPago: number) {
+    updateMes(prev => {
+      const fixasMovidas = { ...prev.fixasMovidas }
+      if (diaPago === f.diaVencimento) delete fixasMovidas[f.id]
+      else fixasMovidas[f.id] = diaPago
+      return {
+        ...prev,
+        fixasMovidas,
+        fixasConsolidadas: { ...prev.fixasConsolidadas, [f.id]: true },
+      }
+    })
+    setConfirmandoFixaId(null)
+  }
+
   const saldosDia = useMemo(() => {
-    const lancs = (dados[key] ?? { lancamentos:{} }).lancamentos
+    const dadosMesAtual = dados[key]
+    const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
+    const overrides = dadosMesAtual?.fixasMovidas
     const fc    = FIXAS[contaId] ?? []
     let saldo = SALDO_INICIAL
     const res: Record<number,number> = {}
     for (let d=1; d<=totalDias; d++) {
-      fc.filter(f=>f.diaVencimento===d).forEach(f=>{ saldo += f.tipo==='entrada'?f.valor:-f.valor })
+      fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
+        .forEach(f=>{ saldo += f.tipo==='entrada'?f.valor:-f.valor })
       ;(lancs[d]??[]).forEach(l=>{ saldo += l.tipo==='entrada'?l.valor:-l.valor })
       res[d] = saldo
     }
     return res
-  }, [dados, key, contaId, totalDias])
+  }, [dados, key, contaId, totalDias, mes, ano, categorias])
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
-    const lancs = (dados[key] ?? { lancamentos:{} }).lancamentos
+    const dadosMesAtual = dados[key]
+    const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
+    const overrides = dadosMesAtual?.fixasMovidas
     const fc    = FIXAS[contaId] ?? []
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
-      fc.filter(f=>f.diaVencimento===d).forEach(f=>{ f.tipo==='entrada'?te+=f.valor:ts+=f.valor })
+      fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
+        .forEach(f=>{ f.tipo==='entrada'?te+=f.valor:ts+=f.valor })
       ;(lancs[d]??[]).forEach(l=>{ l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
     }
     return { totalEntradas:te, totalSaidas:ts }
-  }, [dados, key, contaId, totalDias])
+  }, [dados, key, contaId, totalDias, mes, ano, categorias])
 
   const saldoMes   = SALDO_INICIAL + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
@@ -251,20 +291,19 @@ export default function NovoLancamentoExtrato() {
       {/* ABAS DE BANCO */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-        {CONTAS.map(c => {
+        {contasExtrato.map(c => {
           const ativa = c.id===contaId
           return (
             <button key={c.id} onClick={() => { setContaId(c.id); setDiaSel(null) }} style={{
               display:'flex',alignItems:'center',gap:6,
               padding:'7px 14px',borderRadius:'8px 8px 0 0',
-              border:`1px solid ${ativa?c.cor:COR.borda}`,
-              borderBottom:ativa?`1px solid ${COR.branco}`:`1px solid ${COR.borda}`,
-              cursor:'pointer',fontSize:12,fontWeight:500,fontFamily:'inherit',whiteSpace:'nowrap',
-              background:ativa?COR.branco:'#f8faff',color:ativa?c.cor:COR.textoSuave,
-              marginBottom:ativa?-1:0,position:'relative',zIndex:ativa?1:0}}>
-              <div style={{width:7,height:7,borderRadius:'50%',background:c.cor}}/>
+              border:`1px solid ${ativa?COR.azul:COR.borda}`,
+              cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
+              background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
+              position:'relative',zIndex:ativa?1:0}}>
+              <div style={{width:7,height:7,borderRadius:'50%',background:ativa?'#fff':c.cor}}/>
               {c.icone} {c.nome}
-              <span style={{fontSize:9,color:ativa?c.cor:'#94a3b8',fontWeight:400,marginLeft:2}}>{c.banco}</span>
+              <span style={{fontSize:9,color:ativa?'rgba(255,255,255,0.8)':'#94a3b8',fontWeight:400,marginLeft:2}}>{c.banco}</span>
             </button>
           )
         })}
@@ -272,22 +311,23 @@ export default function NovoLancamentoExtrato() {
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'7px 16px',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
+        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
           const isAtual = i===mesHoje && ano===anoHoje
           const ativo   = i===mes
           return (
             <button key={m} onClick={() => { setMes(i); setDiaSel(null) }} style={{
-              padding:'5px 11px',border:`1px solid ${ativo?COR.azul:'transparent'}`,
-              borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:ativo?700:400,
+              padding:'7px 14px',borderRadius:'8px 8px 0 0',
+              border:`1px solid ${ativo?COR.azul:COR.borda}`,
+              cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,
               fontFamily:'inherit',whiteSpace:'nowrap',
-              background:ativo?'#eff6ff':'transparent',
-              color:ativo?COR.azul:COR.textoSuave,position:'relative'}}>
+              background:ativo?COR.azul:'#f8faff',
+              color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0}}>
               {m}
               {isAtual && (
-                <span style={{position:'absolute',bottom:2,left:'50%',
+                <span style={{position:'absolute',bottom:3,left:'50%',
                   transform:'translateX(-50%)',width:4,height:4,
-                  borderRadius:'50%',background:COR.azul,display:'block'}}/>
+                  borderRadius:'50%',background:ativo?'#fff':COR.azul,display:'block'}}/>
               )}
             </button>
           )
@@ -300,7 +340,7 @@ export default function NovoLancamentoExtrato() {
         <span style={{fontSize:12,fontWeight:600,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
         <span style={{color:COR.borda}}>|</span>
         <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>Extrato:</span>
+          <span style={{fontSize:11,color:COR.textoSuave}}>Extrato atual banco:</span>
           <input value={mesDados.saldoBanco}
             onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
             placeholder="R$ 0,00"
@@ -315,7 +355,7 @@ export default function NovoLancamentoExtrato() {
             color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
             border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
             minWidth:110,textAlign:'center'}}>
-            {diferenca===null?'Digite o extrato':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+            {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
           </div>
         </div>
         <span style={{color:COR.borda}}>|</span>
@@ -338,14 +378,18 @@ export default function NovoLancamentoExtrato() {
           const ehHoje    = eMesAtual && dia===diaHoje
           const passado   = eMesAtual ? dia<diaHoje : ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
           const semana    = diaSemana(dia, mes, ano)
-          const fs        = fixas.filter(f=>f.diaVencimento===dia)
+          const fs        = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
           const ls        = mesDados.lancamentos[dia] ?? []
           const temItens  = fs.length>0 || ls.length>0
           const saldoDia  = saldosDia[dia]
           const saldoIni  = dia===1 ? SALDO_INICIAL : (saldosDia[dia-1] ?? SALDO_INICIAL)
-          const delta     = saldoDia - saldoIni
+          const entradasDia = fs.filter(f=>f.tipo==='entrada').reduce((s,f)=>s+f.valor,0)
+            + ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
+          const saidasDia = fs.filter(f=>f.tipo==='saida').reduce((s,f)=>s+f.valor,0)
+            + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
           const formAberto = diaSel===dia
-          const corSaldo  = saldoDia<0 ? COR.vermelho : ehHoje ? COR.azul : '#94a3b8'
+          const corIni    = saldoIni<0 ? COR.vermelho : COR.verde
+          const corSaldo  = saldoDia<0 ? COR.vermelho : COR.verde
 
           return (
             <div key={dia}
@@ -381,37 +425,53 @@ export default function NovoLancamentoExtrato() {
                     padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Hoje</span>
                 )}
 
-                {/* Inicial | Movimentação | Final */}
+                {/* Inicial | Entradas | Saída | Final */}
                 <div style={{flex:1,display:'flex',alignItems:'center',
                   justifyContent:'flex-end',gap:6}}>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 12px',borderRadius:8,minWidth:110,
-                    background:'#f8faff',border:`1px solid ${COR.borda}`}}>
-                    <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-                      textTransform:'uppercase',letterSpacing:.4,marginBottom:1}}>Inicial</span>
-                    <span style={{fontSize:12,fontWeight:600,color:'#94a3b8'}}>{fmt(saldoIni)}</span>
+                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    background:saldoIni<0?'#fff1f2':'#f0fdf4',
+                    border:`1px solid ${saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
+                    <span style={{fontSize:9,fontWeight:600,
+                      textTransform:'uppercase',letterSpacing:.4,marginBottom:1,color:corIni}}>Inicial</span>
+                    <span style={{fontSize:12,fontWeight:600,color:corIni}}>{fmt(saldoIni)}</span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 12px',borderRadius:8,minWidth:110,
-                    background:delta===0?'#f8faff':delta>0?'#f0fdf4':'#fff1f2',
-                    border:`1px solid ${delta===0?COR.borda:delta>0?'#bbf7d0':'#fecdd3'}`}}>
+                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    background:entradasDia===0?'#f8faff':'#eff6ff',
+                    border:`1px solid ${entradasDia===0?COR.borda:'#bfdbfe'}`}}>
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
-                      color:delta===0?'#94a3b8':delta>0?COR.verde:COR.vermelho}}>
-                      Movimentação
+                      color:entradasDia===0?'#94a3b8':COR.azul}}>
+                      Entradas
                     </span>
                     <span style={{fontSize:12,fontWeight:700,
-                      color:delta===0?'#94a3b8':delta>0?COR.verde:COR.vermelho}}>
-                      {delta===0?'—':`${delta>0?'+':''}${fmt(delta)}`}
+                      color:entradasDia===0?'#94a3b8':COR.azul}}>
+                      {entradasDia===0?'—':`+${fmt(entradasDia)}`}
                     </span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 12px',borderRadius:8,minWidth:110,
-                    background:saldoDia<0?'#fff1f2':ehHoje?'#eff6ff':'#f8faff',
-                    border:`1px solid ${saldoDia<0?'#fecdd3':ehHoje?'#bfdbfe':COR.borda}`}}>
+                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    background:saidasDia===0?'#f8faff':'#fff1f2',
+                    border:`1px solid ${saidasDia===0?COR.borda:'#fecdd3'}`}}>
+                    <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                      letterSpacing:.4,marginBottom:1,
+                      color:saidasDia===0?'#94a3b8':COR.vermelho}}>
+                      Saída
+                    </span>
+                    <span style={{fontSize:12,fontWeight:700,
+                      color:saidasDia===0?'#94a3b8':COR.vermelho}}>
+                      {saidasDia===0?'—':`-${fmt(saidasDia)}`}
+                    </span>
+                  </div>
+
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    background:saldoDia<0?'#fff1f2':'#f0fdf4',
+                    border:`1px solid ${saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,color:corSaldo}}>
                       {passado?'Final':ehHoje?'Atual':'Previsto'}
@@ -422,48 +482,108 @@ export default function NovoLancamentoExtrato() {
               </div>
 
               {/* Fixas */}
-              {fs.map(f => (
-                <div key={f.id} style={{display:'flex',alignItems:'center',gap:10,
-                  padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
-                  <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
-                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
-                    background:passado?(f.tipo==='entrada'?'#eff6ff':'#f0f9ff'):'#f1f5f9'}}>
-                    {passado?(f.tipo==='entrada'?'↑':'📌'):'📌'}
+              {fs.map(f => {
+                const catVisual = iconeCategoria(categorias, f.categoria)
+                const automatico = ehAutomatico(f)
+                const consolidada = automatico ? passado : (mesDados.fixasConsolidadas?.[f.id] ?? false)
+                const corValor = consolidada ? (f.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
+                const confirmando = confirmandoFixaId === f.id
+                return (
+                <div key={f.id}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,
+                    padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
+                    {!automatico && (
+                      <input type="checkbox" checked={consolidada}
+                        onChange={() => {
+                          if (consolidada) desconsolidarFixa(f.id)
+                          else { setConfirmandoFixaId(f.id); setDiaConfirmacao(String(dia)) }
+                        }}
+                        title="Consolidar lançamento"
+                        style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
+                    )}
+                    <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
+                      display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
+                      background:catVisual.cor,opacity:consolidada?1:0.5}}>
+                      {catVisual.icone}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,fontWeight:500,
+                        color:consolidada?COR.texto:'#94a3b8',
+                        display:'flex',alignItems:'center',gap:5}}>
+                        {f.nome}
+                        <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
+                          background:consolidada?'#e0f2fe':'#f1f5f9',
+                          color:consolidada?'#0369a1':'#94a3b8'}}>
+                          {automatico?(passado?'fixa ✓':'previsto'):(consolidada?'consolidado':'previsto')}
+                        </span>
+                        {automatico && f.tipo==='saida' && (
+                          <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
+                            background:'#f1f5f9',color:'#94a3b8'}}>
+                            débito automático
+                          </span>
+                        )}
+                      </div>
+                      <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
+                        display:'flex',alignItems:'center',gap:4}}>
+                        {f.categoria} <BadgePag fp={f.formaPagamento}/>
+                      </div>
+                    </div>
+                    <div style={{fontSize:13,fontWeight:600,color:corValor}}>
+                      {f.tipo==='entrada'?'+':'-'}{fmt(f.valor)}
+                    </div>
                   </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:500,
-                      color:passado?COR.texto:'#94a3b8',
-                      display:'flex',alignItems:'center',gap:5}}>
-                      {f.nome}
-                      <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                        background:passado?'#e0f2fe':'#f1f5f9',
-                        color:passado?'#0369a1':'#94a3b8'}}>
-                        {passado?'fixa ✓':'previsto'}
+
+                  {/* Confirmação inline — boleto */}
+                  {confirmando && (
+                    <div style={{display:'flex',alignItems:'center',gap:8,
+                      padding:'8px 16px',background:'#f0f9ff',borderBottom:'1px solid #bae6fd'}}>
+                      <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>
+                        Pago no dia:
                       </span>
+                      <input type="number" min={1} max={totalDias} autoFocus
+                        value={diaConfirmacao}
+                        onChange={e => setDiaConfirmacao(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            const d = Math.min(Math.max(parseInt(diaConfirmacao)||dia,1),totalDias)
+                            confirmarBoleto(f, d)
+                          }
+                          if (e.key === 'Escape') setConfirmandoFixaId(null)
+                        }}
+                        style={{width:50,border:'1.5px solid #bae6fd',borderRadius:6,
+                          padding:'4px 8px',fontSize:12,outline:'none',background:'#fff',
+                          fontFamily:'inherit',color:COR.texto,textAlign:'center'}} />
+                      <button onClick={() => {
+                        const d = Math.min(Math.max(parseInt(diaConfirmacao)||dia,1),totalDias)
+                        confirmarBoleto(f, d)
+                      }} style={{border:'none',borderRadius:6,padding:'5px 12px',
+                        fontSize:11,fontWeight:600,color:'#fff',background:COR.azul,cursor:'pointer',
+                        fontFamily:'inherit'}}>
+                        Confirmar
+                      </button>
+                      <button onClick={() => setConfirmandoFixaId(null)}
+                        style={{border:'none',background:'transparent',cursor:'pointer',
+                          fontSize:11,color:'#64748b',fontFamily:'inherit'}}>
+                        Cancelar
+                      </button>
                     </div>
-                    <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
-                      display:'flex',alignItems:'center',gap:4}}>
-                      {f.categoria} <BadgePag fp={f.formaPagamento}/>
-                    </div>
-                  </div>
-                  <div style={{fontSize:13,fontWeight:600,
-                    color:f.tipo==='entrada'?COR.azul:COR.vermelho}}>
-                    {f.tipo==='entrada'?'+':'-'}{fmt(f.valor)}
-                  </div>
+                  )}
                 </div>
-              ))}
+              )})}
 
               {/* Lançamentos variáveis */}
-              {ls.map(l => (
+              {ls.map(l => {
+                const catVisual = iconeCategoria(categorias, l.categoria)
+                return (
                 <div key={l.id}
                   style={{display:'flex',alignItems:'center',gap:10,
                     padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}
                   onMouseEnter={e=>(e.currentTarget.style.background='#fafbff')}
                   onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                   <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
-                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,
-                    background:l.tipo==='entrada'?'#eff6ff':'#fff1f2'}}>
-                    {l.tipo==='entrada'?'↑':'↓'}
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
+                    background:catVisual.cor}}>
+                    {catVisual.icone}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:500,color:COR.texto}}>{l.descricao}</div>
@@ -482,7 +602,7 @@ export default function NovoLancamentoExtrato() {
                     onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
                     onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                 </div>
-              ))}
+              )})}
 
               {/* Botão + */}
               <button
