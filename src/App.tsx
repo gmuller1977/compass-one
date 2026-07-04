@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AppProvider } from './context/AppContext'
 import Login          from './pages/Login'
 import Dashboard      from './pages/Dashboard'
 import NovoLancamento from './pages/NovoLancamento'
@@ -7,15 +8,17 @@ import Configuracoes  from './pages/Configuracoes'
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/"                element={<Navigate to="/login" />} />
-        <Route path="/login"           element={<Login />} />
-        <Route path="/dashboard"       element={<Dashboard />} />
-        <Route path="/planejamento"    element={<Planejamento />} />
-        <Route path="/novo-lancamento" element={<NovoLancamento />} />
-        <Route path="/configuracoes"   element={<Configuracoes />} />
-      </Routes>
-    </BrowserRouter>
+    <AppProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/"                element={<Navigate to="/login" />} />
+          <Route path="/login"           element={<Login />} />
+          <Route path="/dashboard"       element={<Dashboard />} />
+          <Route path="/planejamento"    element={<Planejamento />} />
+          <Route path="/novo-lancamento" element={<NovoLancamento />} />
+          <Route path="/configuracoes"   element={<Configuracoes />} />
+        </Routes>
+      </BrowserRouter>
+    </AppProvider>
   )
 }

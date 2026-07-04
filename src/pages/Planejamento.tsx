@@ -1,3 +1,4 @@
+import { useApp } from '../context/AppContext'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -113,11 +114,15 @@ const NAV_ITEMS = [
 
 export default function Planejamento() {
   const navigate    = useNavigate()
+  const { contas } = useApp()
+  const SALDO_INICIAL_FIXO = contas
+  .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+  .reduce((s, c) => s + c.saldoInicial, 0)
   const anoCorrente = new Date().getFullYear()
   const mesAtual    = new Date().getMonth()
 
   const [anos,          setAnos]          = useState<Record<number, AnoData>>({
-    2026: { saldoInicialJan: 28183.77, entradas: ENTRADAS_BASE, saidas: SAIDAS_BASE },
+    2026: { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: ENTRADAS_BASE, saidas: SAIDAS_BASE },
   })
   const [anoAtual,      setAnoAtual]      = useState(2026)
   const [editando,      setEditando]      = useState<Editando>(null)
