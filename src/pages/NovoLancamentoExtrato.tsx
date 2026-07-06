@@ -156,6 +156,13 @@ export default function NovoLancamentoExtrato() {
 
   useEffect(() => { salvarDados(dados) }, [dados])
 
+  // Recarrega quando FaturaCartao sincroniza lançamentos no extrato
+  useEffect(() => {
+    const handler = () => setDados(carregarDados())
+    window.addEventListener('compass:extrato-updated', handler)
+    return () => window.removeEventListener('compass:extrato-updated', handler)
+  }, [])
+
   useEffect(() => {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)

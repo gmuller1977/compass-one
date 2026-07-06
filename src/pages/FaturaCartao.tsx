@@ -122,6 +122,65 @@ export default function FaturaCartao() {
 
   useEffect(() => { salvarDados(dados) }, [dados])
 
+  // Sincroniza totais das faturas como lançamentos previstos no extrato bancário
+  useEffect(() => {
+    const contaBancoId = contas.find(c => c.tipo === 'corrente')?.id
+    if (!contaBancoId) return
+
+    const extratoRaw = localStorage.getItem('compass_extrato_dados')
+    const extrato: Record<string, { lancamentos: Record<number, unknown[]>; saldoBanco: string }> =
+      extratoRaw ? JSON.parse(extratoRaw) : {}
+
+    for (const fatKey of Object.keys(dados)) {
+      const parts = fatKey.split('-')
+      if (parts.length !== 3) continue
+      const [cId, aStr, mStr] = parts
+      const a = parseInt(aStr)
+      const m = parseInt(mStr) - 1
+      if (isNaN(a) || isNaN(m)) continue
+
+      const contaCartao = contas.find(c => c.id === cId && c.tipo === 'cartao')
+      if (!contaCartao) continue
+
+      const dm = dados[fatKey]
+      const nDias = diasNoMes(m, a)
+      let saidas = 0, entradas = 0
+      for (let d = 1; d <= nDias; d++) {
+        ;(dm.lancamentos[d] ?? []).forEach(l => {
+          l.tipo === 'entrada' ? entradas += l.valor : saidas += l.valor
+        })
+      }
+      const total = saidas - entradas
+
+      const diaFech = dm.fechamentoOverride ?? contaCartao.diaFechamento ?? 1
+      const diaVenc = dm.vencimentoOverride ?? contaCartao.diaVencimento ?? 1
+      const mVenc = diaVenc < diaFech ? (m === 11 ? 0 : m + 1) : m
+      const aVenc = diaVenc < diaFech && m === 11 ? a + 1 : a
+
+      const lancId = `fatura-${cId}-${a}-${String(m + 1).padStart(2, '0')}`
+      const extratoKey = `${contaBancoId}-${aVenc}-${String(mVenc + 1).padStart(2, '0')}`
+      const descricao = `Fatura ${contaCartao.banco}`
+
+      const extratoMes = extrato[extratoKey] ?? { lancamentos: {}, saldoBanco: '' }
+      const novaLancs: Record<number, unknown[]> = {}
+      for (const dStr in extratoMes.lancamentos) {
+        const dNum = parseInt(dStr)
+        novaLancs[dNum] = (extratoMes.lancamentos[dNum] ?? []).filter((l: unknown) => (l as { id: string }).id !== lancId)
+      }
+      if (total > 0) {
+        novaLancs[diaVenc] = [
+          ...(novaLancs[diaVenc] ?? []).filter((l: unknown) => (l as { id: string }).id !== lancId),
+          { id: lancId, tipo: 'saida', descricao, categoria: descricao,
+            valor: total, formaPagamento: 'debito', tipoLanc: 'fixa' },
+        ]
+      }
+      extrato[extratoKey] = { ...extratoMes, lancamentos: novaLancs }
+    }
+
+    localStorage.setItem('compass_extrato_dados', JSON.stringify(extrato))
+    window.dispatchEvent(new CustomEvent('compass:extrato-updated'))
+  }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-avança para o próximo mês se hoje já passou da data de fechamento
   useEffect(() => {
     const conta = contas.find(c => c.id === contaId)
