@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { iconeCategoria, ehAutomaticoCategoria } from '../utils/categoriaIcone'
+import { iconeCategoria } from '../utils/categoriaIcone'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -12,12 +12,6 @@ const COR = {
 type TipoLanc = 'entrada' | 'saida'
 type FormaPag = 'credito'
 
-type CatFixa = {
-  id: string; nome: string; categoria: string
-  valor: number; tipo: TipoLanc
-  formaPagamento: FormaPag
-  diaVencimento: number
-}
 
 type Lancamento = {
   id: string; tipo: TipoLanc
