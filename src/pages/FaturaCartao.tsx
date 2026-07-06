@@ -184,6 +184,24 @@ export default function FaturaCartao() {
   const diferenca   = faturaExtNum > 0 ? faturaExtNum - totalFatura : null
   const conciliado  = diferenca !== null && Math.abs(diferenca) < 0.01
 
+  const totaisPorCartao = useMemo(() => {
+    const cartoes = contas.filter(c => c.tipo === 'cartao')
+    const nDias = diasNoMes(mes, ano)
+    return cartoes.map(c => {
+      const k = mesKey(c.id, ano, mes)
+      const dm = dados[k] ?? DADOS_MES_VAZIO
+      let saidas = 0, entradas = 0
+      for (let d = 1; d <= nDias; d++) {
+        ;(dm.lancamentos[d] ?? []).forEach(l => {
+          l.tipo === 'entrada' ? entradas += l.valor : saidas += l.valor
+        })
+      }
+      return { conta: c, total: saidas - entradas }
+    })
+  }, [dados, mes, ano, contas])
+
+  const grandTotalFaturas = totaisPorCartao.reduce((s, x) => s + x.total, 0)
+
   function lancar() {
     const valorTotal  = parseBRL(fValor)
     const nParcelas   = Math.max(1, parseInt(fParcelas) || 1)
@@ -228,7 +246,7 @@ export default function FaturaCartao() {
           while (m > 11) { m -= 12; a++ }
           const k = mesKey(contaId, a, m)
           const dadosMes = result[k] ?? DADOS_MES_VAZIO
-          const desc = `${fDesc.trim()||fCat} (${p}/${nParcelas})`
+          const desc = fDesc.trim() || fCat
           result = {
             ...result,
             [k]: {
@@ -355,6 +373,35 @@ export default function FaturaCartao() {
             </button>
           )
         })}
+      </div>
+
+      {/* TOTAL DE TODAS AS FATURAS */}
+      <div style={{background:'#f8faff',borderBottom:`1px solid ${COR.borda}`,
+        padding:'6px 16px',flexShrink:0,display:'flex',alignItems:'center',gap:0,overflowX:'auto'}}>
+        <span style={{fontSize:10,color:COR.textoSuave,fontWeight:600,marginRight:14,
+          textTransform:'uppercase',letterSpacing:.5,whiteSpace:'nowrap',flexShrink:0}}>
+          Faturas · {NOMES_MESES[mes]}
+        </span>
+        {totaisPorCartao.map(({conta, total}) => (
+          <div key={conta.id} style={{display:'flex',alignItems:'center',gap:6,
+            padding:'3px 12px',borderRight:`1px solid ${COR.borda}`,flexShrink:0}}>
+            <div style={{width:8,height:8,borderRadius:'50%',background:conta.cor,flexShrink:0}}/>
+            <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>{conta.banco}</span>
+            <span style={{fontSize:13,fontWeight:700,
+              color:total>0?COR.vermelho:total<0?COR.verde:COR.textoSuave,
+              whiteSpace:'nowrap'}}>
+              {fmt(total)}
+            </span>
+          </div>
+        ))}
+        <div style={{display:'flex',alignItems:'center',gap:6,padding:'3px 12px',flexShrink:0}}>
+          <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Total</span>
+          <span style={{fontSize:14,fontWeight:700,
+            color:grandTotalFaturas>0?COR.vermelho:grandTotalFaturas<0?COR.verde:COR.textoSuave,
+            whiteSpace:'nowrap'}}>
+            {fmt(grandTotalFaturas)}
+          </span>
+        </div>
       </div>
 
       {/* BARRA DE RESUMO */}
@@ -562,7 +609,7 @@ export default function FaturaCartao() {
                       {l.parcelas && (
                         <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,
                           background:'#ede9fe',color:'#7c3aed'}}>
-                          {l.parcelaAtual}/{l.parcelas}x
+                          {l.parcelaAtual} de {l.parcelas}
                         </span>
                       )}
                       {diaFuturo && (
@@ -699,7 +746,8 @@ export default function FaturaCartao() {
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Parcelas</div>
             <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
               {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => {
-                const ativo = fParcelas===String(n)
+                const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
+                const ativo = parcelasAtual === n
                 return (
                   <button key={n} onClick={()=>setFParcelas(String(n))} style={{
                     padding:'4px 8px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
