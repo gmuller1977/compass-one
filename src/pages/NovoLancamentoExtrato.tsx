@@ -762,8 +762,8 @@ export default function NovoLancamentoExtrato() {
                 const emEdicao = editandoId === l.id
                 return (
                 <div key={l.id}
-                  onClick={e => { e.stopPropagation(); editarLancamento(dia, l) }}
-                  style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
+                  onClick={e => { e.stopPropagation(); if(!l.id.startsWith('fatura-')) editarLancamento(dia, l) }}
+                  style={{display:'flex',alignItems:'center',gap:10,cursor:l.id.startsWith('fatura-')?'default':'pointer',
                     padding:'10px 16px',borderBottom:`1px solid #f1f5f9`,
                     background:emEdicao?'#eff6ff':'transparent'}}
                   onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
@@ -801,11 +801,13 @@ export default function NovoLancamentoExtrato() {
                   <div style={{fontSize:13,fontWeight:600,color:corValor}}>
                     {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
                   </div>
-                  <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                    style={{border:'none',background:'transparent',cursor:'pointer',
-                      color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
-                    onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                    onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
+                  {!l.id.startsWith('fatura-') && (
+                    <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                      style={{border:'none',background:'transparent',cursor:'pointer',
+                        color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
+                      onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
+                      onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
+                  )}
                 </div>
               )})}
 
@@ -932,7 +934,7 @@ export default function NovoLancamentoExtrato() {
         </div>
 
         <div style={{display:'flex',gap:8}}>
-          {editandoId && (
+          {editandoId && !editandoId.startsWith('fatura-') && (
             <button onClick={excluirAtual} style={{
               flex:1,padding:'10px 0',border:`1.5px solid ${COR.borda}`,
               borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,
