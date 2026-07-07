@@ -136,18 +136,35 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
             {c.descricao}
           </div>
         )}
-        <div style={{ display:'flex', gap:5, marginTop:4, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', gap:5, marginTop:5, flexWrap:'wrap', alignItems:'center' }}>
+          {/* Tipo de movimento */}
           {(() => {
+            const cfg: Record<string,{bg:string;cor:string;label:string}> = {
+              banco:    { bg:'#f1f5f9', cor:'#334155', label:'Banco' },
+              cartao:   { bg:'#f3e8ff', cor:'#7c3aed', label:'Cartão' },
+              dinheiro: { bg:'#f0fdf4', cor:'#16a34a', label:'Dinheiro' },
+            }
+            const s = cfg[c.tipoMovimento] ?? cfg.banco
+            return (
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+                background:s.bg, color:s.cor }}>
+                {s.label}
+              </span>
+            )
+          })()}
+          {/* Forma de pagamento — omite para dinheiro (já representa a forma) */}
+          {c.tipoMovimento !== 'dinheiro' && (() => {
             const tc = labelCobranca(c)
             return (
-              <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
                 background:tc.bg, color:tc.cor }}>
                 {tc.label}
               </span>
             )
           })()}
-          {c.fixa && c.diaVencimento && (
-            <span style={{ fontSize:9, padding:'1px 6px', borderRadius:4, fontWeight:600,
+          {/* Vencimento */}
+          {c.diaVencimento && (
+            <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
               background:'#e0f2fe', color:'#0369a1' }}>
               Vence dia {c.diaVencimento}
             </span>
@@ -173,7 +190,7 @@ export default function Configuracoes() {
   const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { contas, categorias, setContas, setCategorias,
-          planejamentoLockado, setPlanejamentoLockado, limparDados } = useApp()
+          planejamentoLockado, setPlanejamentoLockado } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
 
   useEffect(() => {
@@ -917,16 +934,7 @@ export default function Configuracoes() {
                   cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
                   Salvar perfil
                 </button>
-                <button onClick={async () => {
-                  if (window.confirm('Apagar TODOS os dados (contas, categorias, lançamentos, planejamento)? Esta ação não pode ser desfeita.')) {
-                    await limparDados()
-                  }
-                }} style={{
-                  padding:'10px 0', border:`1.5px solid #fecdd3`, borderRadius:8,
-                  background:'#fff1f2', color:COR.vermelho, fontSize:13, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit' }}>
-                  Limpar todos os dados
-                </button>
+
                 <button onClick={() => supabase.auth.signOut()} style={{
                   padding:'10px 0', border:`1.5px solid ${COR.borda}`, borderRadius:8,
                   background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600,

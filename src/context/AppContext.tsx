@@ -91,7 +91,9 @@ export const useApp = () => useContext(Ctx)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user,       setUserState]  = useState<User | null>(null)
   const [carregando, setCarregando] = useState(true)
-  const userIdRef = useRef<string | null>(null)
+  const userIdRef      = useRef<string | null>(null)
+  const dataLoadedRef  = useRef(false)
+  const wasLoggedOutRef = useRef(false)
 
   const [contas,      setContasState]     = useState<Conta[]>(CONTAS_INICIAIS)
   const [categorias,  setCategoriasState] = useState<Categoria[]>(CATS_INICIAIS)
@@ -114,7 +116,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const u = session?.user ?? null
       userIdRef.current = u?.id ?? null
       setUserState(u)
-      if (!u) { resetState(); setCarregando(false) }
+      if (!u) {
+        wasLoggedOutRef.current = true
+        resetState()
+        setCarregando(false)
+      } else if (wasLoggedOutRef.current) {
+        wasLoggedOutRef.current = false
+        loadData(u.id)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -122,6 +131,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function loadData(userId: string) {
     setCarregando(true)
+    dataLoadedRef.current = false
     const { data } = await supabase
       .from('user_data')
       .select('key, value')
@@ -136,9 +146,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
     setCarregando(false)
+    dataLoadedRef.current = true
   }
 
   function resetState() {
+    dataLoadedRef.current = false
     setContasState(CONTAS_INICIAIS)
     setCategoriasState(CATS_INICIAIS)
     setExtratoState({})
@@ -150,7 +162,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Auto-save para Supabase ──────────────────────────────────────────
   function saveKey(key: string, val: unknown) {
     const uid = userIdRef.current
-    if (!uid) return
+    if (!uid || !dataLoadedRef.current) return
     supabase.from('user_data')
       .upsert({ user_id: uid, key, value: val })
       .then(({ error }) => { if (error) console.error('Supabase save error:', key, error) })
