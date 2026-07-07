@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { supabase } from '../lib/supabase'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
@@ -915,6 +916,12 @@ export default function Configuracoes() {
                   color:'#fff', fontSize:13, fontWeight:600,
                   cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
                   Salvar perfil
+                </button>
+                <button onClick={() => supabase.auth.signOut()} style={{
+                  padding:'10px 0', border:`1.5px solid ${COR.borda}`, borderRadius:8,
+                  background:COR.branco, color:COR.vermelho, fontSize:13, fontWeight:600,
+                  cursor:'pointer', fontFamily:'inherit' }}>
+                  Sair da conta
                 </button>
                 <div style={{ padding:14, background:'#f8faff', borderRadius:9,
                   border:`1px solid ${COR.borda}`, textAlign:'center' }}>
