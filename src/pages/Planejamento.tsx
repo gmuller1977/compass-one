@@ -134,7 +134,7 @@ export default function Planejamento() {
   const [saidaAberta,   setSaidaAberta]   = useState(false)
   const [saldoAberto,   setSaldoAberto]   = useState(false)
 
-  const dadosBase: AnoData = { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: ENTRADAS_BASE, saidas: SAIDAS_BASE }
+  const dadosBase: AnoData = { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: [], saidas: [] }
   const realExiste = !!planosReal[anoAtual]
   const dadosAno: AnoData = aba === 'previsto'
     ? ((planos[anoAtual] as AnoData | undefined) ?? dadosBase)
