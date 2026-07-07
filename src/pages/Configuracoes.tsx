@@ -173,7 +173,7 @@ export default function Configuracoes() {
   const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { contas, categorias, setContas, setCategorias,
-          planejamentoLockado, setPlanejamentoLockado } = useApp()
+          planejamentoLockado, setPlanejamentoLockado, limparDados } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
 
   useEffect(() => {
@@ -917,9 +917,19 @@ export default function Configuracoes() {
                   cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
                   Salvar perfil
                 </button>
+                <button onClick={async () => {
+                  if (window.confirm('Apagar TODOS os dados (contas, categorias, lançamentos, planejamento)? Esta ação não pode ser desfeita.')) {
+                    await limparDados()
+                  }
+                }} style={{
+                  padding:'10px 0', border:`1.5px solid #fecdd3`, borderRadius:8,
+                  background:'#fff1f2', color:COR.vermelho, fontSize:13, fontWeight:600,
+                  cursor:'pointer', fontFamily:'inherit' }}>
+                  Limpar todos os dados
+                </button>
                 <button onClick={() => supabase.auth.signOut()} style={{
                   padding:'10px 0', border:`1.5px solid ${COR.borda}`, borderRadius:8,
-                  background:COR.branco, color:COR.vermelho, fontSize:13, fontWeight:600,
+                  background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600,
                   cursor:'pointer', fontFamily:'inherit' }}>
                   Sair da conta
                 </button>

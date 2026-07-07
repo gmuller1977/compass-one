@@ -82,6 +82,7 @@ type AppCtx = {
   finalizarPlanejamento:  (ano: number, dados: PlanoAnoData) => void
   updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
   setPlanejamentoLockado: (v: boolean) => void
+  limparDados: () => Promise<void>
 }
 
 const Ctx = createContext<AppCtx>({} as AppCtx)
@@ -186,6 +187,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function setPlanejamentoLockado(v: boolean) { setPlanejamentoLockadoState(v) }
 
+  async function limparDados() {
+    const uid = userIdRef.current
+    if (!uid) return
+    await supabase.from('user_data').delete().eq('user_id', uid)
+    resetState()
+  }
+
   return (
     <Ctx.Provider value={{
       user, carregando,
@@ -193,7 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado,
+      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, limparDados,
     }}>
       {children}
     </Ctx.Provider>
