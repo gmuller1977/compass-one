@@ -270,7 +270,7 @@ export default function Configuracoes() {
     } else {
       setCategorias(prev => [...prev, {id:gerarId(),...formCat}])
     }
-    setEditCatId(null); setFormCat({...catVazia, tipo:abaCat})
+    novaCategoria()
   }
   function excluirCategoria(id: string) {
     if (!window.confirm('Excluir esta categoria?')) return
