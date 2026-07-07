@@ -43,6 +43,11 @@ export type Lancamento = {
 export type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   saldoBanco: string
+  fixasConsolidadas?: Record<string, boolean>
+  fixasMovidas?: Record<string, number>
+  fixasValorOverride?: Record<string, number>
+  fixasDescOverride?: Record<string, string>
+  fixasPagOverride?: Record<string, string>
 }
 
 // ── Dados iniciais (novos usuários começam em branco) ─────────────────

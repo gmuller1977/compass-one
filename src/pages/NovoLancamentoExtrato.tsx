@@ -56,24 +56,10 @@ function diaEfetivoFixa(
   return overrides?.[f.id] ?? f.diaVencimento
 }
 
-const FIXAS: Record<string, CatFixa[]> = {
-  cc: [
-    { id:'f01', nome:'Salário Pri',     categoria:'Salário Pri',     valor:11548,   tipo:'entrada', formaPagamento:'transferencia', diaVencimento:1  },
-    { id:'f02', nome:'Prestação Casa',  categoria:'Prestação Casa',  valor:826,     tipo:'saida',   formaPagamento:'debito',        diaVencimento:10 },
-    { id:'f03', nome:'Prestação Carro', categoria:'Prestação Carro', valor:1149.72, tipo:'saida',   formaPagamento:'debito',        diaVencimento:15 },
-    { id:'f04', nome:'Plano de Saúde',  categoria:'Plano de Saúde',  valor:324.16,  tipo:'saida',   formaPagamento:'debito',        diaVencimento:8  },
-    { id:'f05', nome:'Internet',        categoria:'Internet',        valor:100,     tipo:'saida',   formaPagamento:'debito',        diaVencimento:20 },
-    { id:'f06', nome:'Celular',         categoria:'Celular',         valor:133.23,  tipo:'saida',   formaPagamento:'debito',        diaVencimento:5  },
-    { id:'f07', nome:'Igreja',          categoria:'Igreja',          valor:50,      tipo:'saida',   formaPagamento:'pix',           diaVencimento:10 },
-    { id:'f08', nome:'AABB',            categoria:'AABB',            valor:120,     tipo:'saida',   formaPagamento:'debito',        diaVencimento:5  },
-  ],
-  cp: [], c1: [], c2: [], c3: [],
-}
 
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-const STORAGE_KEY   = 'compass_extrato_dados'
 
 const NAV = [
   { label:'Dashboard',    path:'/dashboard'       },
@@ -105,12 +91,11 @@ function mesKey(conta: string, ano: number, mes: number) {
   return `${conta}-${ano}-${String(mes+1).padStart(2,'0')}`
 }
 
-function carregarDados(): Record<string, DadosMes> {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {} }
-  catch { return {} }
-}
-function salvarDados(d: Record<string, DadosMes>) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch { /* silent */ }
+function formaPagCategoria(fp: string | undefined, mov: string): FormaPag {
+  if (mov === 'dinheiro') return 'dinheiro'
+  if (fp === 'pix') return 'pix'
+  if (fp === 'transferencia') return 'transferencia'
+  return 'debito'
 }
 
 export default function NovoLancamentoExtrato() {
@@ -120,10 +105,9 @@ export default function NovoLancamentoExtrato() {
   const mesHoje   = hoje.getMonth()
   const anoHoje   = hoje.getFullYear()
 
-  const [contaId, setContaId] = useState('cc')
+  const [contaId, setContaId] = useState('')
   const [mes,     setMes]     = useState(mesHoje)
   const [ano]                  = useState(anoHoje)
-  const [dados,   setDados]   = useState<Record<string, DadosMes>>(carregarDados)
   const [diaSel,  setDiaSel]  = useState<number>(diaHoje)
   const [editandoId, setEditandoId] = useState<string|null>(null)
   const [editandoDiaOriginal, setEditandoDiaOriginal] = useState<number|null>(null)
@@ -140,28 +124,28 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes } = useApp()
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-  const fixas         = (FIXAS[contaId] ?? []).filter(f => !ehCartaoCategoria(categorias, f.categoria))
+  const contaIdEfetivo = contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? ''
+  const dados = extratoData as Record<string, DadosMes>
+  const fixas = categorias
+    .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao')
+    .map(c => ({
+      id: c.id, nome: c.nome, categoria: c.nome,
+      valor: c.valorPadrao ?? 0, tipo: c.tipo as TipoLanc,
+      formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
+      diaVencimento: c.diaVencimento ?? 1,
+    }))
   const categoriasVariaveis = categorias
     .filter(c => c.tipo === fTipo)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
-  const contaInfo     = contas.find(c => c.id === contaId)
+  const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
   const totalDias = diasNoMes(mes, ano)
   const eMesAtual = mes===mesHoje && ano===anoHoje
-  const key       = mesKey(contaId, ano, mes)
+  const key       = mesKey(contaIdEfetivo, ano, mes)
   const mesDados  = dados[key] ?? { lancamentos:{}, saldoBanco:'' }
   const saldoExtNum = parseBRL(mesDados.saldoBanco)
-
-  useEffect(() => { salvarDados(dados) }, [dados])
-
-  // Recarrega quando FaturaCartao sincroniza lançamentos no extrato
-  useEffect(() => {
-    const handler = () => setDados(carregarDados())
-    window.addEventListener('compass:extrato-updated', handler)
-    return () => window.removeEventListener('compass:extrato-updated', handler)
-  }, [])
 
   useEffect(() => {
     if (eMesAtual)
@@ -201,7 +185,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function updateMes(fn: (prev: DadosMes) => DadosMes) {
-    setDados(prev => ({ ...prev, [key]: fn(prev[key] ?? { lancamentos:{}, saldoBanco:'' }) }))
+    updateExtratoMes(key, fn as unknown as (prev: import('../context/AppContext').DadosMes) => import('../context/AppContext').DadosMes)
   }
 
   function ehAutomatico(f: CatFixa) {
@@ -233,7 +217,7 @@ export default function NovoLancamentoExtrato() {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = (FIXAS[contaId] ?? []).filter(f => !ehCartaoCategoria(categorias, f.categoria))
+    const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
     let saldo = SALDO_INICIAL
     const res: Record<number,number> = {}
     for (let d=1; d<=totalDias; d++) {
@@ -249,7 +233,7 @@ export default function NovoLancamentoExtrato() {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = (FIXAS[contaId] ?? []).filter(f => !ehCartaoCategoria(categorias, f.categoria))
+    const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
       fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
@@ -440,7 +424,7 @@ export default function NovoLancamentoExtrato() {
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {contasExtrato.map(c => {
-          const ativa = c.id===contaId
+          const ativa = c.id===contaIdEfetivo
           return (
             <button key={c.id} onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }} style={{
               display:'flex',alignItems:'center',gap:6,
