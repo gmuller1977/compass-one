@@ -205,6 +205,8 @@ export default function Configuracoes() {
   const [formConta,   setFormConta]   = useState<Omit<Conta,'id'>>(contaVazia)
   const [editContaId, setEditContaId] = useState<string|null>(null)
   const [erroConta,   setErroConta]   = useState('')
+  const [saldoStr,    setSaldoStr]    = useState('')
+  const [limiteStr,   setLimiteStr]   = useState('')
 
   const catVazia: Omit<Categoria,'id'> = {
     nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'boleto',
@@ -219,11 +221,14 @@ export default function Configuracoes() {
     setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
     setEditContaId(null)
     setErroConta('')
+    setSaldoStr(''); setLimiteStr('')
   }
   function editarConta(c: Conta) {
     const { id, ...rest } = c
     setFormConta(rest); setEditContaId(id)
     setErroConta('')
+    setSaldoStr(c.saldoInicial ? String(c.saldoInicial).replace('.', ',') : '')
+    setLimiteStr(c.limiteCartao ? String(c.limiteCartao).replace('.', ',') : '')
   }
   function salvarConta() {
     if (!formConta.nome.trim()) return setErroConta('Informe o nome da conta')
@@ -519,8 +524,12 @@ export default function Configuracoes() {
                     <div>
                       <label style={labelSt}>Saldo inicial</label>
                       <input
-                        value={formConta.saldoInicial===0 ? '' : String(formConta.saldoInicial)}
-                        onChange={e => setFormConta(p=>({...p, saldoInicial:parseFloat(e.target.value.replace(',','.'))||0}))}
+                        value={saldoStr}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/[^0-9.,]/g, '')
+                          setSaldoStr(raw)
+                          setFormConta(p=>({...p, saldoInicial:parseFloat(raw.replace(',','.'))||0}))
+                        }}
                         placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
                     </div>
                   )}
@@ -529,8 +538,12 @@ export default function Configuracoes() {
                       <div>
                         <label style={labelSt}>Limite do cartão</label>
                         <input
-                          value={formConta.limiteCartao===undefined ? '' : String(formConta.limiteCartao)}
-                          onChange={e => setFormConta(p=>({...p, limiteCartao:parseFloat(e.target.value)||0}))}
+                          value={limiteStr}
+                          onChange={e => {
+                            const raw = e.target.value.replace(/[^0-9.,]/g, '')
+                            setLimiteStr(raw)
+                            setFormConta(p=>({...p, limiteCartao:parseFloat(raw.replace(',','.'))||0}))
+                          }}
                           placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
                       </div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
