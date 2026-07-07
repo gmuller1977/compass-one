@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
@@ -168,10 +168,29 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
 
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
+  const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
-  const { contas, categorias, setContas, setCategorias } = useApp()
+  const { contas, categorias, setContas, setCategorias,
+          planejamentoLockado, setPlanejamentoLockado } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
+
+  useEffect(() => {
+    const st = location.state as { aba?: string; catNome?: string } | null
+    if (!st) return
+    if (st.aba === 'categorias') {
+      setAba('categorias')
+      if (st.catNome) {
+        const cat = categorias.find(c => c.nome === st.catNome)
+        if (cat) {
+          setAbaCat(cat.tipo)
+          editarCategoria(cat)
+        } else {
+          novaCategoria()
+        }
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [layout, setLayout] = useState<LayoutLancamentos>(getLayoutPref)
 
   function escolherLayout(l: LayoutLancamentos) {
@@ -874,6 +893,41 @@ export default function Configuracoes() {
                   <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>Compass One v0.1.0</div>
                   <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>MVP — em desenvolvimento</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── PLANEJAMENTO (sub-seção dentro do Perfil) ─── */}
+        {aba==='perfil' && (
+          <div style={{ display:'flex', alignItems:'flex-start',
+            justifyContent:'center', paddingTop:12 }}>
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
+              borderRadius:14, padding:28, width:'100%', maxWidth:480 }}>
+              <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 6px' }}>Planejamento</h2>
+              <p style={{ fontSize:12, color:COR.textoSuave, marginBottom:20 }}>
+                Configurações do planejamento financeiro
+              </p>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'12px 14px', borderRadius:9,
+                background: planejamentoLockado ? '#fff7ed' : '#f0fdf4',
+                border:`1px solid ${planejamentoLockado ? '#fed7aa' : '#bbf7d0'}` }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>
+                    {planejamentoLockado ? '🔒 Planejamento bloqueado' : '🔓 Planejamento desbloqueado'}
+                  </div>
+                  <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
+                    {planejamentoLockado
+                      ? 'Desbloqueie para editar o previsto, o real ou refinalizar.'
+                      : 'Edição livre. Finalize o planejamento para bloqueá-lo novamente.'}
+                  </div>
+                </div>
+                <button onClick={() => setPlanejamentoLockado(!planejamentoLockado)} style={{
+                  padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+                  fontFamily:'inherit', fontSize:12, fontWeight:600,
+                  background: planejamentoLockado ? '#ea580c' : '#16a34a', color:'#fff' }}>
+                  {planejamentoLockado ? 'Desbloquear' : 'Bloquear'}
+                </button>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useApp } from '../context/AppContext'
+import type { PlanoAnoData } from '../context/AppContext'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
@@ -15,11 +16,16 @@ const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov'
 const COL_CAT = 210
 const COL_MES = 112
 
+const BADGE_MOV: Record<string, { label: string; bg: string; cor: string }> = {
+  banco:    { label: 'B', bg: '#eff6ff', cor: '#1a56db' },
+  cartao:   { label: 'C', bg: '#f3e8ff', cor: '#7c3aed' },
+  dinheiro: { label: 'D', bg: '#f0fdf4', cor: '#16a34a' },
+}
+
 type Cat     = { nome: string; t?: string; v: number[] }
 type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
-type Editando     = { tipo: 'e'|'s'; row: number; col: number } | null
-type EditandoNome = { tipo: 'e'|'s'; ri: number } | null
-type HoverCat     = { tipo: 'e'|'s'; ri: number } | null
+type Editando = { tipo: 'e'|'s'; row: number; col: number } | null
+type HoverCat = { tipo: 'e'|'s'; ri: number } | null
 
 const ENTRADAS_BASE: Cat[] = [
   { nome:'Clientes a Receber',   v:[0,0,0,918,3266,3399.11,3382.11,3671.15,3671.15,3671.15,3671.15,3671.15] },
@@ -115,7 +121,10 @@ const NAV_ITEMS = [
 
 export default function Planejamento() {
   const navigate    = useNavigate()
-  const { contas, setContas, categorias } = useApp()
+  const { contas, setContas, categorias, extratoData,
+          planos, setPlanos,
+          planosReal, planejamentoLockado,
+          finalizarPlanejamento, updatePlanoReal } = useApp()
   const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const SALDO_INICIAL_FIXO = contasSaldoIni
     .filter(c => c.incluirNoSaldoInicial !== false)
@@ -123,26 +132,62 @@ export default function Planejamento() {
   const anoCorrente = new Date().getFullYear()
   const mesAtual    = new Date().getMonth()
 
-  const [anos,          setAnos]          = useState<Record<number, AnoData>>({
-    2026: { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: ENTRADAS_BASE, saidas: SAIDAS_BASE },
-  })
   const [anoAtual,      setAnoAtual]      = useState(2026)
+  const [aba,           setAba]           = useState<'previsto' | 'real'>('previsto')
   const [editando,      setEditando]      = useState<Editando>(null)
   const [valorTemp,     setValorTemp]     = useState('')
-  const [editandoNome,  setEditandoNome]  = useState<EditandoNome>(null)
-  const [nomeTemp,      setNomeTemp]      = useState('')
   const [hoverCat,      setHoverCat]      = useState<HoverCat>(null)
   const [entradaAberta, setEntradaAberta] = useState(false)
   const [saidaAberta,   setSaidaAberta]   = useState(false)
   const [saldoAberto,   setSaldoAberto]   = useState(false)
 
-  const dadosAno = anos[anoAtual]
+  const dadosBase: AnoData = { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: ENTRADAS_BASE, saidas: SAIDAS_BASE }
+  const realExiste = !!planosReal[anoAtual]
+  const dadosAno: AnoData = aba === 'previsto'
+    ? ((planos[anoAtual] as AnoData | undefined) ?? dadosBase)
+    : (planosReal[anoAtual] as AnoData | undefined) ?? { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: [], saidas: [] }
+
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAno), [dadosAno])
 
+  // Saldo inicial real: substitui pelos valores consolidados do extrato onde disponíveis
+  const saldoInicialReal = useMemo(() => {
+    if (aba !== 'real') return saldoInicial
+    const result = [...saldoInicial]
+    const contasBanco = contasSaldoIni.filter(c => c.incluirNoSaldoInicial !== false)
+    for (let mes = 1; mes < 12; mes++) {
+      let total = 0, found = false
+      for (const conta of contasBanco) {
+        const key = `${conta.id}-${anoAtual}-${String(mes).padStart(2, '0')}`
+        const d = extratoData[key]
+        if (d?.saldoBanco) {
+          const n = parseFloat(d.saldoBanco.replace(/\./g, '').replace(',', '.'))
+          if (!isNaN(n)) { total += n; found = true }
+        }
+      }
+      if (found) result[mes] = total
+    }
+    return result
+  }, [aba, anoAtual, extratoData, contasSaldoIni, saldoInicial])
+
+  // Quais meses têm saldo real do extrato
+  const mesTemSaldoReal = useMemo(() => Array.from({ length: 12 }, (_, mes) => {
+    if (aba !== 'real' || mes === 0) return false
+    const contasBanco = contasSaldoIni.filter(c => c.incluirNoSaldoInicial !== false)
+    return contasBanco.some(c => {
+      const key = `${c.id}-${anoAtual}-${String(mes).padStart(2, '0')}`
+      return !!extratoData[key]?.saldoBanco
+    })
+  }), [aba, anoAtual, extratoData, contasSaldoIni])
+
   // ── Helpers de update ──
   function updateAno(fn: (d: AnoData) => AnoData) {
-    setAnos(prev => ({ ...prev, [anoAtual]: fn(prev[anoAtual]) }))
+    if (planejamentoLockado) return
+    if (aba === 'previsto') {
+      setPlanos(prev => ({ ...prev, [anoAtual]: fn((prev[anoAtual] as AnoData | undefined) ?? dadosBase) as PlanoAnoData }))
+    } else {
+      updatePlanoReal(anoAtual, prev => fn(prev as AnoData) as PlanoAnoData)
+    }
   }
   function setEntradas(fn: (prev: Cat[]) => Cat[]) {
     updateAno(d => ({ ...d, entradas: fn(d.entradas) }))
@@ -164,15 +209,14 @@ export default function Planejamento() {
   // ── Navegação de ano ──
   function navegarAno(delta: number) {
     const novoAno = anoAtual + delta
-    if (!anos[novoAno]) {
+    if (!planos[novoAno]) {
       let saldoIni = 0
-      const ant = anos[novoAno - 1]
+      const ant = planos[novoAno - 1] as AnoData | undefined
       if (ant) { const { saldoFinal: sf } = calcSaldos(ant); saldoIni = sf[11] }
-      setAnos(prev => ({ ...prev, [novoAno]: criarAnoZerado(dadosAno, saldoIni) }))
+      setPlanos(prev => ({ ...prev, [novoAno]: criarAnoZerado(dadosAno, saldoIni) as PlanoAnoData }))
     }
     setAnoAtual(novoAno)
     setEditando(null)
-    setEditandoNome(null)
   }
 
   // ── Edição de valores ──
@@ -193,48 +237,9 @@ export default function Planejamento() {
     setEditando(null)
   }
 
-  // ── Edição de nomes ──
-  function iniciarNome(tipo: 'e'|'s', ri: number, nome: string) {
-    setEditandoNome({ tipo, ri })
-    setNomeTemp(nome)
-  }
-  function confirmarNome() {
-    if (!editandoNome) return
-    const nome = primeiraMaiuscula(nomeTemp)
-    if (editandoNome.tipo === 'e') {
-      setEntradas(prev => ordenarCats(prev.map((c, ri) =>
-        ri === editandoNome.ri ? { ...c, nome } : c)))
-    } else {
-      setSaidas(prev => ordenarCats(prev.map((c, ri) =>
-        ri === editandoNome.ri ? { ...c, nome } : c)))
-    }
-    setEditandoNome(null)
-  }
-  function cancelarNome() { setEditandoNome(null) }
-
-  // ── Excluir categoria ──
-  function excluir(tipo: 'e'|'s', ri: number, nome: string) {
-    if (!window.confirm(`Excluir a categoria "${nome}"?\nEsta ação não pode ser desfeita.`)) return
-    if (tipo === 'e') setEntradas(prev => prev.filter((_, i) => i !== ri))
-    else              setSaidas(prev   => prev.filter((_, i) => i !== ri))
-    setEditandoNome(null)
-  }
-
-  // ── Adicionar categoria ──
-  function adicionarCategoria(tipo: 'e'|'s') {
-    const lista = tipo === 'e' ? dadosAno.entradas : dadosAno.saidas
-    const novaRi = lista.length
-    const nova: Cat = { nome: 'Nova categoria', v: new Array(12).fill(0), ...(tipo === 's' ? { t: 'C' } : {}) }
-    if (tipo === 'e') setEntradas(prev => [...prev, nova])
-    else              setSaidas(prev   => [...prev, nova])
-    setTimeout(() => { setEditandoNome({ tipo, ri: novaRi }); setNomeTemp('Nova categoria') }, 50)
-  }
-
-  const isEditVal  = (tipo: 'e'|'s', r: number, c: number) =>
+  const isEditVal = (tipo: 'e'|'s', r: number, c: number) =>
     editando?.tipo === tipo && editando.row === r && editando.col === c
-  const isEditNome = (tipo: 'e'|'s', ri: number) =>
-    editandoNome?.tipo === tipo && editandoNome.ri === ri
-  const isHover    = (tipo: 'e'|'s', ri: number) =>
+  const isHover   = (tipo: 'e'|'s', ri: number) =>
     hoverCat?.tipo === tipo && hoverCat.ri === ri
 
   function bgNormal(ri: number, col: number) {
@@ -274,73 +279,32 @@ export default function Planejamento() {
     )
   }
 
-  // ── Célula de nome (inline, sem sub-componente) ──
+  // ── Célula de nome — clique navega para Configurações (Cadastro de Categorias) ──
   function renderNome(
     tipo: 'e'|'s', ri: number, nome: string,
     bgBase: string, badge?: React.ReactNode
   ) {
-    const editandoEste = isEditNome(tipo, ri)
-    const hover        = isHover(tipo, ri)
+    const hover = isHover(tipo, ri)
     const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
 
     return (
       <td key="nome"
+        onClick={() => navigate('/configuracoes', { state: { aba: 'categorias', catNome: nome } })}
         onMouseEnter={() => setHoverCat({ tipo, ri })}
         onMouseLeave={() => setHoverCat(null)}
-        style={{ position:'sticky', left:0, zIndex:2,
-          background: bgBase,
+        style={{ position:'sticky', left:0, zIndex:2, cursor:'pointer',
+          background: hover ? '#f8faff' : bgBase,
           borderBottom:`1px solid ${COR.borda}`,
-          borderLeft:`3px solid ${tipo === 'e' ? '#86efac' : '#fca5a5'}`,
+          borderLeft:`3px solid ${tipo === 'e' ? '#93c5fd' : '#fca5a5'}`,
           height:36, verticalAlign:'middle', whiteSpace:'nowrap',
           padding:'0 12px 0 24px' }}>
-
-        {editandoEste ? (
-          // Modo edição — input + lixeira
-          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <input
-              autoFocus
-              value={nomeTemp}
-              onChange={e => setNomeTemp(e.target.value)}
-              onBlur={confirmarNome}
-              onKeyDown={e => {
-                if (e.key === 'Enter') confirmarNome()
-                if (e.key === 'Escape') cancelarNome()
-              }}
-              style={{ flex:1, fontSize:12, border:`1.5px solid ${COR.azul}`,
-                borderRadius:5, padding:'3px 8px', outline:'none',
-                fontFamily:'inherit', background:'#eff6ff', color:COR.azulEscuro }}
-            />
-            <button
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => excluir(tipo, ri, nome)}
-              title="Excluir categoria"
-              style={{ border:'none', background:'#fef2f2', cursor:'pointer',
-                padding:'4px 7px', borderRadius:5, fontSize:13,
-                color:'#ef4444', lineHeight:1, flexShrink:0 }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#fee2e2')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#fef2f2')}
-            >🗑</button>
-          </div>
-        ) : (
-          // Modo normal — nome + lápis ao hover
-          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:11, flexShrink:0 }}>{icone}</div>
-            {badge}
-            <span style={{ fontSize:12, color:COR.texto, flex:1 }}>{nome}</span>
-            {hover && (
-              <button
-                onClick={() => iniciarNome(tipo, ri, nome)}
-                title="Renomear"
-                style={{ border:'none', background:'transparent', cursor:'pointer',
-                  padding:'2px 5px', borderRadius:4, fontSize:13,
-                  color:COR.textoSuave, lineHeight:1, flexShrink:0 }}>
-                ✏
-              </button>
-            )}
-          </div>
-        )}
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:11, flexShrink:0 }}>{icone}</div>
+          {badge}
+          <span style={{ fontSize:12, color:COR.texto, flex:1 }}>{nome}</span>
+        </div>
       </td>
     )
   }
@@ -387,7 +351,7 @@ export default function Planejamento() {
       </div>
 
       {/* TÍTULO + NAVEGAÇÃO DE ANO */}
-      <div style={{ padding:'14px 24px 10px', flexShrink:0,
+      <div style={{ padding:'14px 24px 6px', flexShrink:0,
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>
@@ -425,273 +389,349 @@ export default function Planejamento() {
         </div>
       </div>
 
+      {/* ABAS + BOTÃO FINALIZAR */}
+      <div style={{ padding:'0 24px 8px', flexShrink:0,
+        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', gap:4,
+          background:COR.branco, border:`1px solid ${COR.borda}`,
+          borderRadius:9, padding:3 }}>
+          {(['previsto','real'] as const).map(v => (
+            <button key={v} onClick={() => { setAba(v); setEditando(null) }} style={{
+              padding:'5px 18px', borderRadius:6, border:'none', cursor:'pointer',
+              fontFamily:'inherit', fontSize:12, fontWeight:600,
+              background: aba === v ? COR.azul : 'transparent',
+              color:       aba === v ? '#fff'   : COR.textoSuave,
+              transition:'all .15s' }}>
+              {v === 'previsto' ? 'Previsto' : 'Real'}
+            </button>
+          ))}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {planejamentoLockado && (
+            <span style={{ fontSize:11, color:COR.textoSuave, display:'flex', alignItems:'center', gap:4 }}>
+              🔒 Bloqueado · desbloqueie em <strong>Configurações → Perfil</strong>
+            </span>
+          )}
+          {!planejamentoLockado && aba === 'previsto' && (
+            <button onClick={() => finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData)}
+              style={{ padding:'6px 16px', border:'none', borderRadius:8, cursor:'pointer',
+                fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff',
+                background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
+              {realExiste ? '↺ Refazer planejamento real' : '✓ Finalizar planejamento'}
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* TABELA */}
-      <div style={{ flex:1, padding:'0 24px 12px', minHeight:0 }}>
-        <div style={{ height:'100%', overflow:'auto',
-          border:`1px solid ${COR.borda}`, borderRadius:12, background:COR.branco }}>
-          <table style={{ borderCollapse:'collapse',
-            minWidth: COL_CAT + COL_MES * 12, width:'100%' }}>
+      <div style={{ flex:1, padding:'0 24px', minHeight:0 }}>
 
-            {/* CABEÇALHO */}
-            <thead>
-              <tr>
-                <th style={{ position:'sticky', top:0, left:0, zIndex:30,
-                  width:COL_CAT, minWidth:COL_CAT, padding:'10px 16px', textAlign:'left',
-                  fontSize:11, fontWeight:600, color:COR.textoSuave,
-                  textTransform:'uppercase', letterSpacing:.5,
-                  background:'#e2e8f6', borderBottom:`2px solid ${COR.borda}`,
-                  whiteSpace:'nowrap' }}>Categoria</th>
-                {MESES.map((m, i) => (
-                  <th key={m} style={{ position:'sticky', top:0, zIndex:20,
-                    width:COL_MES, minWidth:COL_MES, padding:'10px 12px', textAlign:'right',
-                    fontSize:12, fontWeight:600,
-                    color:      i === mesAtual ? COR.azul : COR.textoSuave,
-                    background: i === mesAtual ? '#c7d9f8' : '#e2e8f6',
-                    borderBottom:`2px solid ${i === mesAtual ? COR.azul : COR.borda}`,
-                    whiteSpace:'nowrap' }}>{m}</th>
-                ))}
-              </tr>
-            </thead>
+        {/* Placeholder: aba Real ainda não finalizada */}
+        {aba === 'real' && !realExiste && (
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
+            justifyContent:'center', height:'100%', gap:16, paddingBottom:40 }}>
+            <div style={{ fontSize:40 }}>📋</div>
+            <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
+              Planejamento real não iniciado
+            </div>
+            <div style={{ fontSize:13, color:COR.textoSuave, textAlign:'center', maxWidth:380 }}>
+              Vá para a aba <strong>Previsto</strong>, revise os valores e clique em{' '}
+              <strong>Finalizar planejamento</strong> para criar uma cópia do planejamento real.
+            </div>
+            <button onClick={() => setAba('previsto')} style={{
+              padding:'8px 20px', border:`1.5px solid ${COR.azul}`, borderRadius:8,
+              background:'#eff6ff', color:COR.azul, fontSize:13, fontWeight:600,
+              cursor:'pointer', fontFamily:'inherit' }}>
+              Ir para Previsto
+            </button>
+          </div>
+        )}
 
-            <tbody>
+        {/* container único de scroll — todos os cards rolam juntos */}
+        {(aba === 'previsto' || realExiste) && (
+        <div style={{ flex:1, overflow:'auto', paddingBottom:12 }}>
+          <div style={{ minWidth: COL_CAT + COL_MES * 12 + 2 }}>
 
-              {/* SALDO INICIAL — linha clicável */}
-              <tr onClick={() => setSaldoAberto(a => !a)} style={{ cursor:'pointer' }}>
-                <td style={{ position:'sticky', left:0, zIndex:2, background:'#e8f0fe',
-                  padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.azul,
-                  borderBottom:`1px solid ${COR.borda}`,
-                  borderTop: saldoAberto ? `2px solid ${COR.azul}` : undefined,
-                  whiteSpace:'nowrap' }}>
-                  <span style={{ fontSize:9, marginRight:6, display:'inline-block',
-                    transition:'transform .2s',
-                    transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  Saldo Inicial
-                </td>
-                {saldoInicial.map((v, i) => (
-                  <td key={i} style={{ width:COL_MES, padding:'10px 12px', textAlign:'right',
-                    fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.azul,
-                    background: i === mesAtual ? '#c7d9f8' : '#e8f0fe',
-                    borderBottom:`1px solid ${COR.borda}`,
-                    borderTop: saldoAberto ? `2px solid ${COR.azul}` : undefined }}>
-                    {fmt(v, true)}
-                  </td>
-                ))}
-              </tr>
+            {/* CABEÇALHO FIXO */}
+            <div style={{ position:'sticky', top:0, zIndex:30 }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                <colgroup>
+                  <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                  {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th style={{ padding:'10px 16px', textAlign:'left',
+                      fontSize:11, fontWeight:600, color:COR.textoSuave,
+                      textTransform:'uppercase', letterSpacing:.5,
+                      background:'#e2e8f6', borderBottom:`2px solid ${COR.borda}`,
+                      whiteSpace:'nowrap' }}>Categoria</th>
+                    {MESES.map((m, i) => (
+                      <th key={m} style={{ padding:'10px 12px', textAlign:'right',
+                        fontSize:12, fontWeight:600,
+                        color:      i === mesAtual ? COR.azul : COR.textoSuave,
+                        background: i === mesAtual ? '#c7d9f8' : '#e2e8f6',
+                        borderBottom:`2px solid ${i === mesAtual ? COR.azul : COR.borda}`,
+                        whiteSpace:'nowrap' }}>{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+              </table>
+            </div>
 
-              {/* PAINEL SALDO INICIAL */}
-              {saldoAberto && (
-                <tr>
-                  <td colSpan={13} style={{ padding:'10px 16px 12px 28px',
-                    background:'#eff6ff', borderBottom:`1px solid #bfdbfe` }}>
-                    <div style={{ fontSize:10, fontWeight:600, color:COR.azul,
-                      textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
-                      Contas consideradas no saldo inicial
-                    </div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:520 }}>
-                      {contasSaldoIni.length === 0 && (
-                        <div style={{ fontSize:12, color:COR.textoSuave }}>
-                          Nenhuma conta corrente ou poupança cadastrada.
-                        </div>
-                      )}
-                      {contasSaldoIni.map(c => {
-                        const incluida = c.incluirNoSaldoInicial !== false
-                        return (
-                          <label key={c.id} style={{ display:'flex', alignItems:'center', gap:10,
-                            padding:'7px 12px', background:COR.branco, borderRadius:8,
-                            border:`1px solid ${COR.borda}`, cursor:'pointer',
-                            opacity: incluida ? 1 : 0.55 }}>
-                            <input type="checkbox" checked={incluida}
-                              onChange={() => toggleContaNoSaldoInicial(c.id)}
-                              style={{ cursor:'pointer' }} />
-                            <div style={{ width:26, height:26, borderRadius:7, background:c.cor,
-                              display:'flex', alignItems:'center', justifyContent:'center',
-                              fontSize:13, flexShrink:0 }}>{c.icone}</div>
-                            <div style={{ flex:1, minWidth:0 }}>
-                              <div style={{ fontSize:12, fontWeight:500, color:COR.texto }}>{c.nome}</div>
-                              <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>
-                                {c.banco} · {c.tipo === 'corrente' ? 'Conta corrente' : 'Poupança'}
+            {/* CARDS */}
+            <div style={{ display:'flex', flexDirection:'column', gap:8, padding:'8px 0 0' }}>
+
+              {/* ── CARD: SALDO INICIAL ── */}
+              <div style={{ background:COR.branco, borderRadius:12,
+                border:`1px solid ${COR.borda}`, overflow:'clip' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                  <colgroup>
+                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+                  </colgroup>
+                  <tbody>
+                    <tr onClick={() => setSaldoAberto(a => !a)} style={{ cursor:'pointer' }}>
+                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#e8f0fe',
+                        padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.azul,
+                        borderBottom: saldoAberto ? `1px solid ${COR.borda}` : 'none',
+                        whiteSpace:'nowrap' }}>
+                        <span style={{ fontSize:9, marginRight:6, display:'inline-block',
+                          transition:'transform .2s',
+                          transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                        Saldo Inicial
+                      </td>
+                      {saldoInicialReal.map((v, i) => (
+                        <td key={i} style={{ padding:'10px 12px', textAlign:'right',
+                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:corSaldo(v),
+                          background: i === mesAtual ? '#c7d9f8' : '#e8f0fe',
+                          borderBottom: saldoAberto ? `1px solid ${COR.borda}` : 'none',
+                          borderTop: mesTemSaldoReal[i] ? `2px solid #16a34a` : undefined }}>
+                          {fmt(v, true)}
+                          {mesTemSaldoReal[i] && (
+                            <div style={{ fontSize:8, color:'#16a34a', fontWeight:600, marginTop:1 }}>extrato</div>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                    {saldoAberto && (
+                      <tr>
+                        <td colSpan={13} style={{ padding:'10px 16px 12px 28px',
+                          background:'#eff6ff' }}>
+                          <div style={{ fontSize:10, fontWeight:600, color:COR.azul,
+                            textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
+                            Contas consideradas no saldo inicial
+                          </div>
+                          <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:520 }}>
+                            {contasSaldoIni.length === 0 && (
+                              <div style={{ fontSize:12, color:COR.textoSuave }}>
+                                Nenhuma conta corrente ou poupança cadastrada.
                               </div>
-                            </div>
-                            <div style={{ fontSize:12, fontWeight:600,
-                              color: incluida ? COR.azul : COR.textoSuave }}>
-                              {fmt(c.saldoInicial, true)}
-                            </div>
-                          </label>
+                            )}
+                            {contasSaldoIni.map(c => {
+                              const incluida = c.incluirNoSaldoInicial !== false
+                              return (
+                                <label key={c.id} style={{ display:'flex', alignItems:'center', gap:10,
+                                  padding:'7px 12px', background:COR.branco, borderRadius:8,
+                                  border:`1px solid ${COR.borda}`, cursor:'pointer',
+                                  opacity: incluida ? 1 : 0.55 }}>
+                                  <input type="checkbox" checked={incluida}
+                                    onChange={() => toggleContaNoSaldoInicial(c.id)}
+                                    style={{ cursor:'pointer' }} />
+                                  <div style={{ width:26, height:26, borderRadius:7, background:c.cor,
+                                    display:'flex', alignItems:'center', justifyContent:'center',
+                                    fontSize:13, flexShrink:0 }}>{c.icone}</div>
+                                  <div style={{ flex:1, minWidth:0 }}>
+                                    <div style={{ fontSize:12, fontWeight:500, color:COR.texto }}>{c.nome}</div>
+                                    <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>
+                                      {c.banco} · {c.tipo === 'corrente' ? 'Conta corrente' : 'Poupança'}
+                                    </div>
+                                  </div>
+                                  <div style={{ fontSize:12, fontWeight:600,
+                                    color: incluida ? COR.azul : COR.textoSuave }}>
+                                    {fmt(c.saldoInicial, true)}
+                                  </div>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── CARD: ENTRADAS ── */}
+              <div style={{ background:'#dbeafe', borderRadius:12,
+                border:`1px solid #93c5fd`, overflow:'clip' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                  <colgroup>
+                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+                  </colgroup>
+                  <tbody>
+                    <tr onClick={() => setEntradaAberta(a => !a)} style={{ cursor:'pointer' }}>
+                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#dbeafe',
+                        padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.azul,
+                        borderBottom: entradaAberta ? `1px solid #93c5fd` : 'none',
+                        whiteSpace:'nowrap' }}>
+                        <span style={{ fontSize:9, marginRight:6, display:'inline-block',
+                          transition:'transform .2s',
+                          transform: entradaAberta ? 'rotate(180deg)' : 'none' }}>▼</span>
+                        (+) Entradas
+                      </td>
+                      {totalEntradas.map((v, i) => (
+                        <td key={i} style={{ padding:'10px 12px', textAlign:'right',
+                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.azul,
+                          background: i === mesAtual ? '#93c5fd' : '#dbeafe',
+                          borderBottom: entradaAberta ? `1px solid #93c5fd` : 'none' }}>
+                          {fmt(v, true)}
+                        </td>
+                      ))}
+                    </tr>
+                    {entradaAberta && <>
+                      <tr>
+                        <td colSpan={13} style={{ padding:'5px 16px 5px 28px',
+                          background:'#eff6ff', fontSize:10, fontWeight:600, color:COR.azul,
+                          textTransform:'uppercase', letterSpacing:.6,
+                          borderBottom:`1px solid #bfdbfe` }}>
+                          Categorias de entrada
+                        </td>
+                      </tr>
+                      {dadosAno.entradas.map((cat, ri) => {
+                        const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento
+                          ?? (cat.t === 'D' ? 'banco' : cat.t === 'C' ? 'cartao' : undefined)
+                        const bm = tm ? BADGE_MOV[tm] : null
+                        return (
+                          <tr key={`e-${ri}`}>
+                            {renderNome('e', ri, cat.nome, ri % 2 === 0 ? '#eff6ff' : '#e8f0fe',
+                              bm && <span style={{ display:'inline-flex', alignItems:'center',
+                                justifyContent:'center', width:16, height:16, borderRadius:3,
+                                fontSize:9, fontWeight:700, flexShrink:0,
+                                background:bm.bg, color:bm.cor }}>{bm.label}</span>
+                            )}
+                            {cat.v.map((v, ci) => renderCelula('e', ri, ci, v, COR.texto, ri))}
+                          </tr>
                         )
                       })}
-                    </div>
-                  </td>
-                </tr>
-              )}
+                      <tr>
+                        <td colSpan={13} style={{ padding:'6px 16px 6px 28px',
+                          background:'#eff6ff', borderBottom:`1px solid #bfdbfe` }}>
+                          <button onClick={() => navigate('/configuracoes', { state: { aba: 'categorias' } })} style={{
+                            border:`1px dashed #93c5fd`, background:'transparent',
+                            borderRadius:6, padding:'4px 12px', cursor:'pointer',
+                            fontSize:11, color:COR.azul, fontFamily:'inherit' }}>
+                            + Adicionar categoria de entrada
+                          </button>
+                        </td>
+                      </tr>
+                    </>}
+                  </tbody>
+                </table>
+              </div>
 
-              {/* ENTRADAS — linha clicável */}
-              <tr onClick={() => setEntradaAberta(a => !a)} style={{ cursor:'pointer' }}>
-                <td style={{ position:'sticky', left:0, zIndex:2, background:'#e6f4ea',
-                  padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.verde,
-                  borderBottom:`1px solid ${COR.borda}`,
-                  borderTop: entradaAberta ? `2px solid ${COR.verde}` : undefined,
-                  whiteSpace:'nowrap' }}>
-                  <span style={{ fontSize:9, marginRight:6, display:'inline-block',
-                    transition:'transform .2s',
-                    transform: entradaAberta ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  (+) Entradas
-                </td>
-                {totalEntradas.map((v, i) => (
-                  <td key={i} style={{ width:COL_MES, padding:'10px 12px', textAlign:'right',
-                    fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.verde,
-                    background: i === mesAtual ? '#c7d9f8' : '#e6f4ea',
-                    borderBottom:`1px solid ${COR.borda}`,
-                    borderTop: entradaAberta ? `2px solid ${COR.verde}` : undefined }}>
-                    {fmt(v, true)}
-                  </td>
-                ))}
-              </tr>
+              {/* ── CARD: SAÍDAS ── */}
+              <div style={{ background:COR.branco, borderRadius:12,
+                border:`1px solid ${COR.borda}`, overflow:'clip' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                  <colgroup>
+                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+                  </colgroup>
+                  <tbody>
+                    <tr onClick={() => setSaidaAberta(a => !a)} style={{ cursor:'pointer' }}>
+                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#fce8e6',
+                        padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.vermelho,
+                        borderBottom: saidaAberta ? `1px solid #fecdd3` : 'none',
+                        whiteSpace:'nowrap' }}>
+                        <span style={{ fontSize:9, marginRight:6, display:'inline-block',
+                          transition:'transform .2s',
+                          transform: saidaAberta ? 'rotate(180deg)' : 'none' }}>▼</span>
+                        (-) Saídas
+                      </td>
+                      {totalSaidas.map((v, i) => (
+                        <td key={i} style={{ padding:'10px 12px', textAlign:'right',
+                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.vermelho,
+                          background: i === mesAtual ? '#c7d9f8' : '#fce8e6',
+                          borderBottom: saidaAberta ? `1px solid #fecdd3` : 'none' }}>
+                          {fmt(v, true)}
+                        </td>
+                      ))}
+                    </tr>
+                    {saidaAberta && <>
+                      <tr>
+                        <td colSpan={13} style={{ padding:'5px 16px 5px 28px',
+                          background:'#fff1f2', fontSize:10, fontWeight:600, color:'#be123c',
+                          textTransform:'uppercase', letterSpacing:.6,
+                          borderBottom:`1px solid #fecdd3` }}>
+                          Categorias de saída
+                        </td>
+                      </tr>
+                      {dadosAno.saidas.map((cat, ri) => {
+                        const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento
+                          ?? (cat.t === 'D' ? 'banco' : cat.t === 'C' ? 'cartao' : undefined)
+                        const bm = tm ? BADGE_MOV[tm] : null
+                        return (
+                          <tr key={`s-${ri}`}>
+                            {renderNome('s', ri, cat.nome, ri % 2 === 0 ? '#fff8f8' : '#fff1f2',
+                              bm && <span style={{ display:'inline-flex', alignItems:'center',
+                                justifyContent:'center', width:16, height:16, borderRadius:3,
+                                fontSize:9, fontWeight:700, flexShrink:0,
+                                background:bm.bg, color:bm.cor }}>{bm.label}</span>
+                            )}
+                            {cat.v.map((v, ci) => renderCelula('s', ri, ci, v, COR.texto, ri))}
+                          </tr>
+                        )
+                      })}
+                      <tr>
+                        <td colSpan={13} style={{ padding:'6px 16px 6px 28px',
+                          background:'#fff1f2', borderBottom:`1px solid #fecdd3` }}>
+                          <button onClick={() => navigate('/configuracoes', { state: { aba: 'categorias' } })} style={{
+                            border:`1px dashed #fca5a5`, background:'transparent',
+                            borderRadius:6, padding:'4px 12px', cursor:'pointer',
+                            fontSize:11, color:'#be123c', fontFamily:'inherit' }}>
+                            + Adicionar categoria de saída
+                          </button>
+                        </td>
+                      </tr>
+                    </>}
+                  </tbody>
+                </table>
+              </div>
 
-              {/* PAINEL ENTRADAS */}
-              {entradaAberta && <>
-                <tr>
-                  <td colSpan={13} style={{ padding:'5px 16px 5px 28px',
-                    background:'#f0fdf4', fontSize:10, fontWeight:600, color:'#15803d',
-                    textTransform:'uppercase', letterSpacing:.6,
-                    borderBottom:`1px solid #bbf7d0` }}>
-                    Categorias de entrada
-                  </td>
-                </tr>
-                {dadosAno.entradas.map((cat, ri) => (
-                  <tr key={`e-${ri}`}>
-                    {renderNome('e', ri, cat.nome, ri % 2 === 0 ? '#f0fdf4' : '#e6f9ee')}
-                    {cat.v.map((v, ci) => renderCelula('e', ri, ci, v, COR.verde, ri))}
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={13} style={{ padding:'6px 16px 6px 28px',
-                    background:'#f0fdf4', borderBottom:`1px solid #bbf7d0` }}>
-                    <button onClick={() => adicionarCategoria('e')} style={{
-                      border:`1px dashed #86efac`, background:'transparent',
-                      borderRadius:6, padding:'4px 12px', cursor:'pointer',
-                      fontSize:11, color:'#15803d', fontFamily:'inherit' }}>
-                      + Adicionar categoria de entrada
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ position:'sticky', left:0, zIndex:2, background:'#e6f4ea',
-                    padding:'9px 16px 9px 28px', fontWeight:700, fontSize:12, color:COR.verde,
-                    borderBottom:`2px solid ${COR.verde}`, borderTop:`1px solid #bbf7d0`,
-                    borderLeft:`3px solid ${COR.verde}`, whiteSpace:'nowrap' }}>
-                    Total Entradas
-                  </td>
-                  {totalEntradas.map((v, i) => (
-                    <td key={i} style={{ width:COL_MES, padding:'9px 12px', textAlign:'right',
-                      fontSize:12, fontWeight:700, color:COR.verde, whiteSpace:'nowrap',
-                      background: i === mesAtual ? '#dbeafe' : '#e6f4ea',
-                      borderBottom:`2px solid ${COR.verde}`, borderTop:`1px solid #bbf7d0` }}>
-                      {fmt(v, true)}
-                    </td>
-                  ))}
-                </tr>
-              </>}
+              {/* ── CARD: SALDO DISPONÍVEL ── */}
+              <div style={{ background:'#e8eaf6', borderRadius:12,
+                border:`1px solid #c7d2f5`, overflow:'clip' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                  <colgroup>
+                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+                  </colgroup>
+                  <tbody>
+                    <tr>
+                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#e8eaf6',
+                        padding:'11px 16px', fontWeight:700, fontSize:12, color:COR.texto,
+                        borderLeft:`3px solid #4f46e5`, whiteSpace:'nowrap' }}>
+                        Saldo Disponível
+                      </td>
+                      {saldoFinal.map((v, i) => (
+                        <td key={i} style={{ padding:'11px 12px', textAlign:'right',
+                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:corSaldo(v),
+                          background: i === mesAtual ? '#c7d9f8' : '#e8eaf6' }}>
+                          {fmt(v, true)}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-              {/* SAÍDAS — linha clicável */}
-              <tr onClick={() => setSaidaAberta(a => !a)} style={{ cursor:'pointer' }}>
-                <td style={{ position:'sticky', left:0, zIndex:2, background:'#fce8e6',
-                  padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.vermelho,
-                  borderBottom:`1px solid ${COR.borda}`,
-                  borderTop: saidaAberta ? `2px solid ${COR.vermelho}` : undefined,
-                  whiteSpace:'nowrap' }}>
-                  <span style={{ fontSize:9, marginRight:6, display:'inline-block',
-                    transition:'transform .2s',
-                    transform: saidaAberta ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  (-) Saídas
-                </td>
-                {totalSaidas.map((v, i) => (
-                  <td key={i} style={{ width:COL_MES, padding:'10px 12px', textAlign:'right',
-                    fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.vermelho,
-                    background: i === mesAtual ? '#c7d9f8' : '#fce8e6',
-                    borderBottom:`1px solid ${COR.borda}`,
-                    borderTop: saidaAberta ? `2px solid ${COR.vermelho}` : undefined }}>
-                    {fmt(v, true)}
-                  </td>
-                ))}
-              </tr>
-
-              {/* PAINEL SAÍDAS */}
-              {saidaAberta && <>
-                <tr>
-                  <td colSpan={13} style={{ padding:'5px 16px 5px 28px',
-                    background:'#fff1f2', fontSize:10, fontWeight:600, color:'#be123c',
-                    textTransform:'uppercase', letterSpacing:.6,
-                    borderBottom:`1px solid #fecdd3` }}>
-                    Categorias de saída
-                  </td>
-                </tr>
-                {dadosAno.saidas.map((cat, ri) => (
-                  <tr key={`s-${ri}`}>
-                    {renderNome('s', ri, cat.nome, ri % 2 === 0 ? '#fff8f8' : '#fff1f2',
-                      <span style={{ display:'inline-flex', alignItems:'center',
-                        justifyContent:'center', width:16, height:16, borderRadius:3,
-                        fontSize:9, fontWeight:700, flexShrink:0,
-                        background: cat.t === 'D' ? '#fef9c3' : '#eff6ff',
-                        color:       cat.t === 'D' ? '#92400e' : COR.azul }}>
-                        {cat.t ?? 'C'}
-                      </span>
-                    )}
-                    {cat.v.map((v, ci) => renderCelula('s', ri, ci, v, COR.texto, ri))}
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={13} style={{ padding:'6px 16px 6px 28px',
-                    background:'#fff1f2', borderBottom:`1px solid #fecdd3` }}>
-                    <button onClick={() => adicionarCategoria('s')} style={{
-                      border:`1px dashed #fca5a5`, background:'transparent',
-                      borderRadius:6, padding:'4px 12px', cursor:'pointer',
-                      fontSize:11, color:'#be123c', fontFamily:'inherit' }}>
-                      + Adicionar categoria de saída
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ position:'sticky', left:0, zIndex:2, background:'#fce8e6',
-                    padding:'9px 16px 9px 28px', fontWeight:700, fontSize:12, color:COR.vermelho,
-                    borderBottom:`2px solid ${COR.vermelho}`, borderTop:`1px solid #fecdd3`,
-                    borderLeft:`3px solid ${COR.vermelho}`, whiteSpace:'nowrap' }}>
-                    Total Saídas
-                  </td>
-                  {totalSaidas.map((v, i) => (
-                    <td key={i} style={{ width:COL_MES, padding:'9px 12px', textAlign:'right',
-                      fontSize:12, fontWeight:700, color:COR.vermelho, whiteSpace:'nowrap',
-                      background: i === mesAtual ? '#dbeafe' : '#fce8e6',
-                      borderBottom:`2px solid ${COR.vermelho}`, borderTop:`1px solid #fecdd3` }}>
-                      {fmt(v, true)}
-                    </td>
-                  ))}
-                </tr>
-              </>}
-
-              {/* SALDO DISPONÍVEL — sticky bottom */}
-              <tr>
-                <td style={{ position:'sticky', bottom:0, left:0, zIndex:15,
-                  background:'#e8eaf6', padding:'10px 16px', fontWeight:700,
-                  fontSize:12, color:COR.texto,
-                  borderTop:`2px solid ${COR.borda}`,
-                  boxShadow:'0 -3px 8px rgba(0,0,0,0.08)', whiteSpace:'nowrap' }}>
-                  Saldo Disponível
-                </td>
-                {saldoFinal.map((v, i) => (
-                  <td key={i} style={{ position:'sticky', bottom:0, zIndex:10,
-                    width:COL_MES, minWidth:COL_MES, padding:'10px 12px', textAlign:'right',
-                    fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:corSaldo(v),
-                    background: i === mesAtual ? '#c7d9f8' : '#e8eaf6',
-                    borderTop:`2px solid ${COR.borda}`,
-                    boxShadow:'0 -3px 8px rgba(0,0,0,0.08)' }}>
-                    {fmt(v, true)}
-                  </td>
-                ))}
-              </tr>
-
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
+        )}
+
       </div>
 
       {/* LEGENDA */}
@@ -699,14 +739,19 @@ export default function Planejamento() {
         fontSize:11, color:COR.textoSuave, flexWrap:'wrap',
         flexShrink:0, alignItems:'center' }}>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}>
-          <span style={{ background:'#fef9c3', color:'#92400e',
-            padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>D</span>
-          Débito direto
+          <span style={{ background:'#eff6ff', color:'#1a56db',
+            padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>B</span>
+          Banco
         </span>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}>
-          <span style={{ background:'#eff6ff', color:COR.azul,
+          <span style={{ background:'#f3e8ff', color:'#7c3aed',
             padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>C</span>
-          Cartão de crédito
+          Cartão
+        </span>
+        <span style={{ display:'flex', alignItems:'center', gap:5 }}>
+          <span style={{ background:'#f0fdf4', color:'#16a34a',
+            padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>D</span>
+          Dinheiro
         </span>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}>
           <span style={{ width:10, height:10, borderRadius:2, background:'#dbeafe',

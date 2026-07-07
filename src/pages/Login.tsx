@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
 const COR = {
   azul: '#1a56db',
@@ -49,25 +50,54 @@ export default function Login() {
   const [aba, setAba] = useState<'login' | 'cadastro'>('login')
   const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmar: '' })
   const [carregando, setCarregando] = useState(false)
-  const [sucesso, setSucesso] = useState('')
+  const [sucesso,    setSucesso]    = useState('')
+  const [erro,       setErro]       = useState('')
 
   const set = (campo: keyof typeof form) => (valor: string) =>
     setForm(f => ({ ...f, [campo]: valor }))
 
   const isLogin = aba === 'login'
 
-  function handleSubmit() {
+  function traduzirErro(msg: string) {
+    if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos'
+    if (msg.includes('Email not confirmed'))        return 'Confirme seu e-mail antes de entrar'
+    if (msg.includes('User already registered'))    return 'Este e-mail já está cadastrado'
+    if (msg.includes('Password should be'))         return 'A senha deve ter pelo menos 6 caracteres'
+    if (msg.includes('Unable to validate'))         return 'Erro de validação — tente novamente'
+    if (msg.includes('coincidem'))                  return msg
+    return msg
+  }
+
+  async function handleSubmit() {
     setCarregando(true)
+    setErro('')
     setSucesso('')
-    setTimeout(() => {
-      setCarregando(false)
+    try {
       if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: form.email,
+          password: form.senha,
+        })
+        if (error) throw error
         navigate('/dashboard')
       } else {
-        setSucesso('✓ Conta criada! Bem-vindo ao Compass One!')
+        if (form.senha !== form.confirmar) throw new Error('As senhas não coincidem')
+        if (form.senha.length < 6) throw new Error('Password should be at least 6 characters')
+        const { error } = await supabase.auth.signUp({
+          email: form.email,
+          password: form.senha,
+          options: { data: { nome: form.nome } },
+        })
+        if (error) throw error
+        setSucesso('✓ Conta criada! Verifique seu e-mail para confirmar o cadastro.')
         setAba('login')
       }
-    }, 1200)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erro desconhecido'
+      setErro(traduzirErro(msg))
+    } finally {
+      setCarregando(false)
+    }
   }
 
   return (
@@ -174,10 +204,15 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Sucesso */}
+          {/* Sucesso / Erro */}
           {sucesso && (
-            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#1e40af', marginBottom: 14, textAlign: 'center' }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#15803d', marginBottom: 14, textAlign: 'center' }}>
               {sucesso}
+            </div>
+          )}
+          {erro && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 14, textAlign: 'center' }}>
+              {erro}
             </div>
           )}
 
