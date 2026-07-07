@@ -85,10 +85,6 @@ function corSaldo(v: number) {
   if (v < 1000) return '#d97706'
   return COR.verde
 }
-function primeiraMaiuscula(s: string) {
-  const t = s.trim() || 'Sem nome'
-  return t.charAt(0).toUpperCase() + t.slice(1)
-}
 function calcSaldos(data: AnoData) {
   const totalE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
@@ -107,9 +103,6 @@ function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
     entradas: template.entradas.map(c => ({ ...c, v: new Array(12).fill(0) })),
     saidas:   template.saidas.map(c =>   ({ ...c, v: new Array(12).fill(0) })),
   }
-}
-function ordenarCats(cats: Cat[]) {
-  return [...cats].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
 const NAV_ITEMS = [
