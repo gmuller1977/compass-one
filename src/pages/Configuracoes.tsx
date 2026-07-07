@@ -343,7 +343,7 @@ export default function Configuracoes() {
       </div>
 
       {/* CONTEÚDO */}
-      <div style={{ flex:1, overflow:'hidden', display:'flex', padding:20, gap:16 }}>
+      <div style={{ flex:1, overflowY:'auto', display:'flex', padding:20, gap:16 }}>
 
         {/* ══ ABA BANCOS / CARTÕES ══ */}
         {(aba==='bancos' || aba==='cartoes') && (
