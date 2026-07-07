@@ -289,6 +289,14 @@ export default function Configuracoes() {
   return (
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
       background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      <style>{`
+        .campo-cfg:focus {
+          border-color: #1a56db !important;
+          background: #ffffff !important;
+          box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+          outline: none;
+        }
+      `}</style>
 
       {/* HEADER */}
       <div style={{ background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
@@ -458,13 +466,13 @@ export default function Configuracoes() {
                     <label style={labelSt}>Nome da conta</label>
                     <input value={formConta.nome}
                       onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
-                      placeholder="Ex: Conta Sicredi, Nubank..." style={inputSt} />
+                      placeholder="Ex: Conta Sicredi, Nubank..." className="campo-cfg" style={inputSt} />
                   </div>
                   <div>
                     <label style={labelSt}>Banco</label>
                     <select value={formConta.banco}
                       onChange={e => setFormConta(p=>({...p, banco:e.target.value}))}
-                      style={inputSt}>
+                      className="campo-cfg" style={inputSt}>
                       <option value="">Selecione...</option>
                       {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
@@ -477,14 +485,14 @@ export default function Configuracoes() {
                           <input
                             value={formConta.agencia||''}
                             onChange={e => setFormConta(p=>({...p, agencia:e.target.value}))}
-                            placeholder="Ex: 0001" style={inputSt} />
+                            placeholder="Ex: 0001" className="campo-cfg" style={inputSt} />
                         </div>
                         <div>
                           <label style={labelSt}>Conta</label>
                           <input
                             value={formConta.numeroConta||''}
                             onChange={e => setFormConta(p=>({...p, numeroConta:e.target.value}))}
-                            placeholder="Ex: 12345-6" style={inputSt} />
+                            placeholder="Ex: 12345-6" className="campo-cfg" style={inputSt} />
                         </div>
                       </div>
                       <div style={{ fontSize:10, color:'#94a3b8', marginTop:-8 }}>
@@ -513,7 +521,7 @@ export default function Configuracoes() {
                       <input
                         value={formConta.saldoInicial===0 ? '' : String(formConta.saldoInicial)}
                         onChange={e => setFormConta(p=>({...p, saldoInicial:parseFloat(e.target.value.replace(',','.'))||0}))}
-                        placeholder="R$ 0,00" style={inputSt} />
+                        placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
                     </div>
                   )}
                   {formConta.tipo==='cartao' && (
@@ -523,7 +531,7 @@ export default function Configuracoes() {
                         <input
                           value={formConta.limiteCartao===undefined ? '' : String(formConta.limiteCartao)}
                           onChange={e => setFormConta(p=>({...p, limiteCartao:parseFloat(e.target.value)||0}))}
-                          placeholder="R$ 0,00" style={inputSt} />
+                          placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
                       </div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                         <div>
@@ -531,14 +539,14 @@ export default function Configuracoes() {
                           <input type="number" min="1" max="31"
                             value={formConta.diaFechamento||''}
                             onChange={e => setFormConta(p=>({...p, diaFechamento:parseInt(e.target.value)||undefined}))}
-                            placeholder="Dia" style={inputSt} />
+                            placeholder="Dia" className="campo-cfg" style={inputSt} />
                         </div>
                         <div>
                           <label style={labelSt}>Dia vencimento</label>
                           <input type="number" min="1" max="31"
                             value={formConta.diaVencimento||''}
                             onChange={e => setFormConta(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
-                            placeholder="Dia" style={inputSt} />
+                            placeholder="Dia" className="campo-cfg" style={inputSt} />
                         </div>
                       </div>
                     </>
@@ -674,7 +682,7 @@ export default function Configuracoes() {
                     <label style={labelSt}>Nome da categoria</label>
                     <input value={formCat.nome}
                       onChange={e => setFormCat(p=>({...p, nome:e.target.value}))}
-                      placeholder="Ex: Supermercado, Lazer..." style={inputSt} />
+                      placeholder="Ex: Supermercado, Lazer..." className="campo-cfg" style={inputSt} />
                   </div>
                   <div>
                     <label style={labelSt}>Tipo</label>
@@ -714,7 +722,7 @@ export default function Configuracoes() {
                       <input type="number" min="1" max="31"
                         value={formCat.diaVencimento||''}
                         onChange={e => setFormCat(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
-                        placeholder="Ex: 10" style={inputSt} />
+                        placeholder="Ex: 10" className="campo-cfg" style={inputSt} />
                     </div>
                   )}
 
@@ -772,7 +780,7 @@ export default function Configuracoes() {
                       <input type="number" min="2" max="48"
                         value={formCat.numeroParcelas||''}
                         onChange={e => setFormCat(p=>({...p, numeroParcelas:parseInt(e.target.value)||undefined}))}
-                        placeholder="Ex: 12" style={inputSt} />
+                        placeholder="Ex: 12" className="campo-cfg" style={inputSt} />
                     </div>
                   )}
 
@@ -785,7 +793,7 @@ export default function Configuracoes() {
                         onChange={e => setFormCat(p=>({...p, descricao:e.target.value}))}
                         placeholder="Ex: Parcela do financiamento, vence todo dia 10..."
                         rows={3}
-                        style={{ ...inputSt, resize:'vertical', lineHeight:1.5 }}
+                        className="campo-cfg" style={{ ...inputSt, resize:'vertical', lineHeight:1.5 }}
                       />
                       <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
                         Aparece como observação no lançamento automático desta conta fixa.
@@ -854,12 +862,12 @@ export default function Configuracoes() {
                 ].map(f => (
                   <div key={f.label}>
                     <label style={labelSt}>{f.label}</label>
-                    <input defaultValue={f.value} placeholder={f.placeholder} style={inputSt} />
+                    <input defaultValue={f.value} placeholder={f.placeholder} className="campo-cfg" style={inputSt} />
                   </div>
                 ))}
                 <div>
                   <label style={labelSt}>Moeda padrão</label>
-                  <select style={inputSt} defaultValue="BRL">
+                  <select className="campo-cfg" style={inputSt} defaultValue="BRL">
                     <option value="BRL">🇧🇷 Real Brasileiro (R$)</option>
                     <option value="USD">🇺🇸 Dólar Americano ($)</option>
                     <option value="EUR">🇪🇺 Euro (€)</option>
