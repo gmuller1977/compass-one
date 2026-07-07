@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
@@ -207,6 +207,7 @@ export default function Configuracoes() {
   const [erroConta,   setErroConta]   = useState('')
   const [saldoStr,    setSaldoStr]    = useState('')
   const [limiteStr,   setLimiteStr]   = useState('')
+  const nomeContaRef = useRef<HTMLInputElement>(null)
 
   const catVazia: Omit<Categoria,'id'> = {
     nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'boleto',
@@ -215,6 +216,7 @@ export default function Configuracoes() {
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
   const [editCatId, setEditCatId] = useState<string|null>(null)
   const [erroCat,   setErroCat]   = useState('')
+  const nomeCatRef = useRef<HTMLInputElement>(null)
 
   // ── Ações Conta ──
   function novaConta(tipoAba: Aba = aba) {
@@ -222,6 +224,7 @@ export default function Configuracoes() {
     setEditContaId(null)
     setErroConta('')
     setSaldoStr(''); setLimiteStr('')
+    setTimeout(() => nomeContaRef.current?.focus(), 0)
   }
   function editarConta(c: Conta) {
     const { id, ...rest } = c
@@ -251,6 +254,7 @@ export default function Configuracoes() {
   function novaCategoria() {
     setFormCat({...catVazia, tipo:abaCat}); setEditCatId(null)
     setErroCat('')
+    setTimeout(() => nomeCatRef.current?.focus(), 0)
   }
   function editarCategoria(c: Categoria) {
     const { id, ...rest } = c
@@ -470,7 +474,7 @@ export default function Configuracoes() {
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                   <div>
                     <label style={labelSt}>Nome da conta</label>
-                    <input value={formConta.nome}
+                    <input ref={nomeContaRef} value={formConta.nome}
                       onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
                       placeholder="Ex: Conta Sicredi, Nubank..." className="campo-cfg" style={inputSt} />
                   </div>
@@ -695,7 +699,7 @@ export default function Configuracoes() {
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                   <div>
                     <label style={labelSt}>Nome da categoria</label>
-                    <input value={formCat.nome}
+                    <input ref={nomeCatRef} value={formCat.nome}
                       onChange={e => setFormCat(p=>({...p, nome:e.target.value}))}
                       placeholder="Ex: Supermercado, Lazer..." className="campo-cfg" style={inputSt} />
                   </div>
