@@ -45,40 +45,9 @@ export type DadosMes = {
   saldoBanco: string
 }
 
-// ── Dados iniciais ───────────────────────────────────────────────────
-const CONTAS_INICIAIS: Conta[] = [
-  { id:'cc', nome:'Conta Corrente', banco:'Sicredi',  tipo:'corrente', saldoInicial:5000,  cor:'#1a56db', icone:'🏦' },
-  { id:'c1', nome:'Cartão 1',       banco:'Nubank',   tipo:'cartao',   saldoInicial:0,     cor:'#7c3aed', icone:'💳', limiteCartao:5000,  diaVencimento:10, diaFechamento:3  },
-  { id:'c2', nome:'Cartão 2',       banco:'Itaú',     tipo:'cartao',   saldoInicial:0,     cor:'#ea580c', icone:'💳', limiteCartao:8000,  diaVencimento:15, diaFechamento:8  },
-  { id:'c3', nome:'Cartão 3',       banco:'Bradesco', tipo:'cartao',   saldoInicial:0,     cor:'#16a34a', icone:'💳', limiteCartao:3000,  diaVencimento:20, diaFechamento:13 },
-  { id:'cp', nome:'Poupança',       banco:'Sicredi',  tipo:'poupanca', saldoInicial:5000,  cor:'#0891b2', icone:'🏧' },
-]
-
-const CATS_INICIAIS: Categoria[] = [
-  { id:'e1', nome:'Salário Pri',          tipo:'entrada', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#16a34a', icone:'💰', ativa:true, diaVencimento:1,  valorPadrao:11548   },
-  { id:'e2', nome:'Salário Gui',          tipo:'entrada', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#16a34a', icone:'💰', ativa:true, diaVencimento:5,  valorPadrao:0       },
-  { id:'e3', nome:'Clientes a Receber',   tipo:'entrada', fixa:false, tipoMovimento:'banco', formaPagamento:'automatico', cor:'#0891b2', icone:'📊', ativa:true },
-  { id:'e4', nome:'13º Salário / Férias', tipo:'entrada', fixa:false, tipoMovimento:'banco', formaPagamento:'automatico', cor:'#d97706', icone:'🎁', ativa:true },
-  { id:'e5', nome:'Outras Entradas',      tipo:'entrada', fixa:false, tipoMovimento:'banco', formaPagamento:'automatico', cor:'#6b7280', icone:'📌', ativa:true },
-  { id:'s1',  nome:'Supermercado',    tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'avista', cor:'#dc2626', icone:'🛒', ativa:true },
-  { id:'s2',  nome:'Combustível',     tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'avista', cor:'#ea580c', icone:'⛽', ativa:true },
-  { id:'s3',  nome:'Prestação Casa',  tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#0f172a', icone:'🏠', ativa:true, diaVencimento:10, valorPadrao:826,    descricao:'Financiamento habitacional' },
-  { id:'s4',  nome:'Prestação Carro', tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#0f172a', icone:'🚗', ativa:true, diaVencimento:15, valorPadrao:1149.72,descricao:'Financiamento veículo'      },
-  { id:'s5',  nome:'Plano de Saúde',  tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#db2777', icone:'💊', ativa:true, diaVencimento:8,  valorPadrao:324.16  },
-  { id:'s6',  nome:'Internet',        tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#0891b2', icone:'📱', ativa:true, diaVencimento:20, valorPadrao:100     },
-  { id:'s7',  nome:'Luz',             tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#d97706', icone:'💡', ativa:true, diaVencimento:12, valorPadrao:350     },
-  { id:'s8',  nome:'Água',            tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#0891b2', icone:'💧', ativa:true, diaVencimento:15, valorPadrao:145     },
-  { id:'s9',  nome:'Consórcio',       tipo:'saida', fixa:true,  tipoMovimento:'cartao', formaPagamento:'avista', cor:'#1a56db', icone:'💎', ativa:true, diaVencimento:5,  valorPadrao:460.94  },
-  { id:'s10', nome:'Celular',         tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#6b7280', icone:'📱', ativa:true, diaVencimento:5,  valorPadrao:133.23  },
-  { id:'s11', nome:'Igreja',          tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'pix', cor:'#16a34a', icone:'⛪', ativa:true, diaVencimento:10, valorPadrao:50      },
-  { id:'s12', nome:'AABB',            tipo:'saida', fixa:true,  tipoMovimento:'banco', formaPagamento:'automatico', cor:'#1a56db', icone:'🏢', ativa:true, diaVencimento:5,  valorPadrao:120     },
-  { id:'s13', nome:'Lazer',           tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'parcelado', cor:'#7c3aed', icone:'🎭', ativa:true },
-  { id:'s14', nome:'Vestuário',       tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'parcelado', cor:'#db2777', icone:'👕', ativa:true },
-  { id:'s15', nome:'Alimentação',     tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'avista', cor:'#d97706', icone:'🍽️', ativa:true },
-  { id:'s16', nome:'Cursos',          tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'parcelado', cor:'#16a34a', icone:'🎓', ativa:true },
-  { id:'s17', nome:'Viagens',         tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'parcelado', cor:'#ea580c', icone:'✈️', ativa:true },
-  { id:'s18', nome:'Outras Saídas',   tipo:'saida', fixa:false, tipoMovimento:'cartao', formaPagamento:'avista', cor:'#6b7280', icone:'📌', ativa:true },
-]
+// ── Dados iniciais (novos usuários começam em branco) ─────────────────
+const CONTAS_INICIAIS: Conta[]     = []
+const CATS_INICIAIS:   Categoria[] = []
 
 // ── Chaves Supabase ──────────────────────────────────────────────────
 const KEYS = {
