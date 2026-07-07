@@ -860,8 +860,8 @@ export default function Configuracoes() {
 
         {/* ══ ABA PERFIL ══ */}
         {aba==='perfil' && (
-          <div style={{ flex:1, display:'flex', alignItems:'flex-start',
-            justifyContent:'center', paddingTop:20 }}>
+          <div style={{ flex:1, display:'flex', flexDirection:'column', overflowY:'auto', gap:16 }}>
+            <div style={{ display:'flex', justifyContent:'center', paddingTop:20 }}>
             <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
               borderRadius:14, padding:28, width:'100%', maxWidth:480 }}>
               <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 6px' }}>Perfil</h2>
@@ -924,13 +924,10 @@ export default function Configuracoes() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+            </div>
 
-        {/* ─── PLANEJAMENTO (sub-seção dentro do Perfil) ─── */}
-        {aba==='perfil' && (
-          <div style={{ display:'flex', alignItems:'flex-start',
-            justifyContent:'center', paddingTop:12 }}>
+            {/* ─── PLANEJAMENTO (sub-seção dentro do Perfil) ─── */}
+            <div style={{ display:'flex', justifyContent:'center', paddingBottom:20 }}>
             <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
               borderRadius:14, padding:28, width:'100%', maxWidth:480 }}>
               <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 6px' }}>Planejamento</h2>
@@ -958,6 +955,7 @@ export default function Configuracoes() {
                   {planejamentoLockado ? 'Desbloquear' : 'Bloquear'}
                 </button>
               </div>
+            </div>
             </div>
           </div>
         )}
