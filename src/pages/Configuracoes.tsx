@@ -595,21 +595,23 @@ export default function Configuracoes() {
                 </div>
               </div>
 
-              {/* Sub-abas */}
-              <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8,
-                padding:3, marginBottom:14, alignSelf:'flex-start' }}>
-                {([['entrada','↑ Entradas'],['saida','↓ Saídas']] as const).map(([v,l]) => (
-                  <button key={v} onClick={() => setAbaCat(v)} style={{
-                    padding:'6px 20px', border:'none', borderRadius:6,
-                    cursor:'pointer', fontSize:13, fontWeight:500,
-                    fontFamily:'inherit', transition:'all .15s',
-                    background: abaCat===v ? COR.branco : 'transparent',
-                    color: abaCat===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave,
-                    boxShadow: abaCat===v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
-                    {l}
-                  </button>
-                ))}
-              </div>
+              {/* Sub-abas — só aparece quando há pelo menos uma categoria */}
+              {categorias.length > 0 && (
+                <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8,
+                  padding:3, marginBottom:14, alignSelf:'flex-start' }}>
+                  {([['entrada','↑ Entradas'],['saida','↓ Saídas']] as const).map(([v,l]) => (
+                    <button key={v} onClick={() => setAbaCat(v)} style={{
+                      padding:'6px 20px', border:'none', borderRadius:6,
+                      cursor:'pointer', fontSize:13, fontWeight:500,
+                      fontFamily:'inherit', transition:'all .15s',
+                      background: abaCat===v ? COR.branco : 'transparent',
+                      color: abaCat===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave,
+                      boxShadow: abaCat===v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div style={{ overflowY:'auto', flex:1 }}>
                 {catsFiltradas.some(c=>c.fixa) && (
