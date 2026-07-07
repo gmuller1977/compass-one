@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { supabase } from '../lib/supabase'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
@@ -190,7 +189,7 @@ export default function Configuracoes() {
   const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { contas, categorias, setContas, setCategorias,
-          planejamentoLockado, setPlanejamentoLockado } = useApp()
+          planejamentoLockado, setPlanejamentoLockado, sairDaConta } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
 
   useEffect(() => {
@@ -935,7 +934,7 @@ export default function Configuracoes() {
                   Salvar perfil
                 </button>
 
-                <button onClick={() => supabase.auth.signOut()} style={{
+                <button onClick={() => sairDaConta()} style={{
                   padding:'10px 0', border:`1.5px solid ${COR.borda}`, borderRadius:8,
                   background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600,
                   cursor:'pointer', fontFamily:'inherit' }}>

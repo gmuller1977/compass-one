@@ -83,6 +83,7 @@ type AppCtx = {
   updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
   setPlanejamentoLockado: (v: boolean) => void
   limparDados: () => Promise<void>
+  sairDaConta: () => Promise<void>
 }
 
 const Ctx = createContext<AppCtx>({} as AppCtx)
@@ -91,9 +92,10 @@ export const useApp = () => useContext(Ctx)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user,       setUserState]  = useState<User | null>(null)
   const [carregando, setCarregando] = useState(true)
-  const userIdRef      = useRef<string | null>(null)
-  const dataLoadedRef  = useRef(false)
-  const wasLoggedOutRef = useRef(false)
+  const userIdRef       = useRef<string | null>(null)
+  const dataLoadedRef   = useRef(false)   // bloqueia saves enquanto loadData roda ou após reset
+  const everLoadedRef   = useRef(false)   // true após primeiro loadData — evita double-load
+  const wasLoggedOutRef = useRef(false)   // true após logout explícito — garante reload no login
 
   const [contas,      setContasState]     = useState<Conta[]>(CONTAS_INICIAIS)
   const [categorias,  setCategoriasState] = useState<Categoria[]>(CATS_INICIAIS)
@@ -108,8 +110,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const u = session?.user ?? null
       userIdRef.current = u?.id ?? null
       setUserState(u)
-      if (u) loadData(u.id)
-      else    setCarregando(false)
+      if (u) {
+        everLoadedRef.current = true
+        loadData(u.id)
+      } else {
+        setCarregando(false)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
@@ -120,8 +126,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         wasLoggedOutRef.current = true
         resetState()
         setCarregando(false)
-      } else if (wasLoggedOutRef.current) {
+      } else if (wasLoggedOutRef.current || !everLoadedRef.current) {
+        // login após logout explícito OU primeiro login (página abriu sem sessão)
         wasLoggedOutRef.current = false
+        everLoadedRef.current = true
         loadData(u.id)
       }
     })
@@ -206,6 +214,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     resetState()
   }
 
+  async function sairDaConta() {
+    const uid = userIdRef.current
+    if (uid && dataLoadedRef.current) {
+      await Promise.all([
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.contas,              value: contas }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.categorias,          value: categorias }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.extrato,             value: extratoData }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planos,              value: planos }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planosReal,          value: planosReal }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planejamentoLockado, value: planejamentoLockado }),
+      ])
+    }
+    await supabase.auth.signOut()
+  }
+
   return (
     <Ctx.Provider value={{
       user, carregando,
@@ -213,7 +236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, limparDados,
+      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, limparDados, sairDaConta,
     }}>
       {children}
     </Ctx.Provider>
