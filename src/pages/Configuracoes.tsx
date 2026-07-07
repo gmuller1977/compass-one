@@ -443,7 +443,8 @@ export default function Configuracoes() {
             </div>
 
             {/* Formulário conta */}
-            <div style={{ width:340, flexShrink:0, background:COR.branco,
+            <div onKeyDown={e => { if (e.key==='Enter' && (e.target as HTMLElement).tagName==='INPUT') salvarConta() }}
+              style={{ width:340, flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
                 padding:20, overflowY:'auto' }}>
                 <div style={{ display:'flex', justifyContent:'space-between',
@@ -667,7 +668,8 @@ export default function Configuracoes() {
             </div>
 
             {/* Formulário categoria */}
-            <div style={{ width:340, flexShrink:0, background:COR.branco,
+            <div onKeyDown={e => { if (e.key==='Enter' && (e.target as HTMLElement).tagName==='INPUT') salvarCategoria() }}
+              style={{ width:340, flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
                 padding:20, overflowY:'auto' }}>
                 <div style={{ display:'flex', justifyContent:'space-between',
