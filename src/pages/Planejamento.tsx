@@ -89,7 +89,15 @@ export default function Planejamento() {
   const [saidaAberta,   setSaidaAberta]   = useState(false)
   const [saldoAberto,   setSaldoAberto]   = useState(false)
 
-  const dadosBase: AnoData = { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: [], saidas: [] }
+  const dadosBase: AnoData = useMemo(() => ({
+    saldoInicialJan: SALDO_INICIAL_FIXO,
+    entradas: categorias
+      .filter(c => c.tipo === 'entrada' && c.ativa)
+      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) })),
+    saidas: categorias
+      .filter(c => c.tipo === 'saida' && c.ativa)
+      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) })),
+  }), [SALDO_INICIAL_FIXO, categorias])
   const realExiste = !!planosReal[anoAtual]
   const dadosAno: AnoData = aba === 'previsto'
     ? ((planos[anoAtual] as AnoData | undefined) ?? dadosBase)
