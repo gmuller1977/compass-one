@@ -127,9 +127,24 @@ export default function Planejamento() {
     categorias.some(c => (c.valorPadrao ?? 0) > 0 && c.ativa), [categorias])
 
   const realExiste = !!planosReal[anoAtual]
-  const dadosAno: AnoData = aba === 'previsto'
-    ? ((planos[anoAtual] as AnoData | undefined) ?? dadosBase)
-    : (planosReal[anoAtual] as AnoData | undefined) ?? { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: [], saidas: [] }
+  const dadosAno: AnoData = useMemo(() => {
+    if (aba === 'real') {
+      return (planosReal[anoAtual] as AnoData | undefined)
+        ?? { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: [], saidas: [] }
+    }
+    const salvo = planos[anoAtual] as AnoData | undefined
+    if (!salvo) return dadosBase
+    const merge = (base: Cat[], saved: Cat[]) =>
+      base.map(cat => {
+        const found = saved.find(c => c.nome === cat.nome)
+        return found ? { ...cat, v: found.v } : cat
+      })
+    return {
+      ...salvo,
+      entradas: merge(dadosBase.entradas, salvo.entradas),
+      saidas:   merge(dadosBase.saidas,   salvo.saidas),
+    }
+  }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
 
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAno), [dadosAno])
