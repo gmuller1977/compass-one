@@ -258,21 +258,14 @@ export default function NovoLancamentoExtrato() {
     const valor = parseBRL(fValor)
     if (editandoFixaId) {
       if (valor <= 0) return
-      updateMes(prev => {
-        const newMovidas = { ...prev.fixasMovidas }
-        const fixa = fixas.find(f => f.id === editandoFixaId)
-        if (fixa) {
-          const diaAtual = diaEfetivoFixa(fixa, prev.fixasMovidas, ehAutomatico(fixa), mes, ano, totalDias)
-          if (diaSel !== diaAtual) newMovidas[editandoFixaId] = diaSel
-        }
-        return {
-          ...prev,
-          fixasMovidas: newMovidas,
-          fixasValorOverride: { ...prev.fixasValorOverride, [editandoFixaId]: valor },
-          fixasDescOverride: { ...prev.fixasDescOverride, [editandoFixaId]: fDesc.trim() },
-          fixasPagOverride: { ...prev.fixasPagOverride, [editandoFixaId]: fPag },
-        }
-      })
+      const diaAlvo = diaSel
+      updateMes(prev => ({
+        ...prev,
+        fixasMovidas:       { ...prev.fixasMovidas,       [editandoFixaId]: diaAlvo },
+        fixasValorOverride: { ...prev.fixasValorOverride, [editandoFixaId]: valor },
+        fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
+        fixasPagOverride:   { ...prev.fixasPagOverride,   [editandoFixaId]: fPag },
+      }))
       setEditandoFixaId(null)
       setFCat(''); setFDesc(''); setFValor('')
       setTimeout(() => categoriaSelectRef.current?.focus(), 80)
