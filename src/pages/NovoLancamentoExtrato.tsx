@@ -230,9 +230,15 @@ export default function NovoLancamentoExtrato() {
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
+    const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
+    const dPassado = (d: number) => mesPast || (eMesAtual && d < diaHoje)
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
-      fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
+      fc.filter(f => diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
+        .filter(f => {
+          const c = dadosMesAtual?.fixasConsolidadas?.[f.id]
+          return c !== undefined ? c : (ehAutomatico(f) && dPassado(d))
+        })
         .forEach(f=>{ const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor; f.tipo==='entrada'?te+=v:ts+=v })
       ;(lancs[d]??[]).forEach(l=>{ l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
     }
@@ -513,22 +519,29 @@ export default function NovoLancamentoExtrato() {
           const saidasDia = fs.filter(f=>f.tipo==='saida')
             .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
             + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
-          // Cor dos boxes: apenas itens consolidados (hoje e futuros filtram; passado = tudo consolidado)
-          const entradasColor = passado ? entradasDia
-            : fs.filter(f=>f.tipo==='entrada'&&(mesDados.fixasConsolidadas?.[f.id]??false))
-                .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-              + ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
-          const saidasColor = passado ? saidasDia
-            : fs.filter(f=>f.tipo==='saida'&&(mesDados.fixasConsolidadas?.[f.id]??false))
-                .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-              + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
-          // ATUAL: tem consolidados hoje → exibe só confirmados; PREVISTO → exibe projeção total
-          const temConsolidado = ehHoje && (entradasColor > 0 || saidasColor > 0)
-          const entradasBoxVal = temConsolidado ? entradasColor : entradasDia
-          const saidasBoxVal   = temConsolidado ? saidasColor   : saidasDia
-          const saldoDia = temConsolidado
-            ? saldoIni + entradasColor - saidasColor
-            : saldosDia[dia]
+          // Confirmados: fixas consolidadas (ou automáticas em dia passado) + lancamentos manuais
+          const entradasConf =
+            fs.filter(f => f.tipo==='entrada' && (
+              mesDados.fixasConsolidadas?.[f.id] !== undefined
+                ? mesDados.fixasConsolidadas[f.id]
+                : (ehAutomatico(f) && passado)
+            ))
+            .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
+            + ls.filter(l => l.tipo==='entrada').reduce((s,l) => s + l.valor, 0)
+          const saidasConf =
+            fs.filter(f => f.tipo==='saida' && (
+              mesDados.fixasConsolidadas?.[f.id] !== undefined
+                ? mesDados.fixasConsolidadas[f.id]
+                : (ehAutomatico(f) && passado)
+            ))
+            .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
+            + ls.filter(l => l.tipo==='saida').reduce((s,l) => s + l.valor, 0)
+          const temConf = entradasConf > 0 || saidasConf > 0
+          const entradasBoxVal = temConf ? entradasConf : entradasDia
+          const saidasBoxVal   = temConf ? saidasConf   : saidasDia
+          const saldoDia = temConf
+            ? saldoIni + entradasConf - saidasConf
+            : saldosDia[dia] ?? saldoIni
           const selecionado = diaSel===dia
           const corIni    = saldoIni<0 ? COR.vermelho : COR.verde
           const corSaldo  = saldoDia<0 ? COR.vermelho : COR.verde
@@ -583,30 +596,30 @@ export default function NovoLancamentoExtrato() {
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:96,
-                    background:entradasColor===0?'#f8faff':'#eff6ff',
-                    border:`1px solid ${entradasColor===0?COR.borda:'#bfdbfe'}`}}>
+                    background:entradasConf>0?'#eff6ff':'#f8faff',
+                    border:`1px solid ${entradasConf>0?'#bfdbfe':COR.borda}`}}>
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
-                      color:entradasColor===0?'#94a3b8':COR.azul}}>
+                      color:entradasConf>0?COR.azul:'#94a3b8'}}>
                       Entradas
                     </span>
                     <span style={{fontSize:12,fontWeight:700,
-                      color:entradasColor===0?'#94a3b8':COR.azul}}>
+                      color:entradasConf>0?COR.azul:entradasDia>0?'#94a3b8':'#94a3b8'}}>
                       {entradasBoxVal===0?'—':`+${fmt(entradasBoxVal)}`}
                     </span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:96,
-                    background:saidasColor===0?'#f8faff':'#fff1f2',
-                    border:`1px solid ${saidasColor===0?COR.borda:'#fecdd3'}`}}>
+                    background:saidasConf>0?'#fff1f2':'#f8faff',
+                    border:`1px solid ${saidasConf>0?'#fecdd3':COR.borda}`}}>
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
-                      color:saidasColor===0?'#94a3b8':COR.vermelho}}>
+                      color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
                       Saída
                     </span>
                     <span style={{fontSize:12,fontWeight:700,
-                      color:saidasColor===0?'#94a3b8':COR.vermelho}}>
+                      color:saidasConf>0?COR.vermelho:saidasDia>0?'#94a3b8':'#94a3b8'}}>
                       {saidasBoxVal===0?'—':`-${fmt(saidasBoxVal)}`}
                     </span>
                   </div>
@@ -617,7 +630,7 @@ export default function NovoLancamentoExtrato() {
                     border:`1px solid ${saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,color:corSaldo}}>
-                      {passado?'Final':temConsolidado?'Atual':'Previsto'}
+                      {passado?'Final':temConf?'Atual':'Previsto'}
                     </span>
                     <span style={{fontSize:12,fontWeight:700,color:corSaldo}}>{fmt(saldoDia)}</span>
                   </div>
