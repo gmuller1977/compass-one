@@ -12,7 +12,7 @@ const COR = {
 }
 
 type TipoLanc = 'entrada' | 'saida'
-type FormaPag = 'debito' | 'pix' | 'transferencia' | 'dinheiro'
+type FormaPag = 'debito' | 'credito' | 'pix' | 'transferencia' | 'dinheiro'
 
 type CatFixa = {
   id: string; nome: string; categoria: string
@@ -62,8 +62,14 @@ const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
 
-const FORMAS_PAG: { id: FormaPag; label: string }[] = [
+const FORMAS_SAI: { id: FormaPag; label: string }[] = [
   { id:'debito',        label:'Débito'        },
+  { id:'pix',           label:'Pix'           },
+  { id:'transferencia', label:'Transferência' },
+  { id:'dinheiro',      label:'Dinheiro'      },
+]
+const FORMAS_ENT: { id: FormaPag; label: string }[] = [
+  { id:'credito',       label:'Crédito'       },
   { id:'pix',           label:'Pix'           },
   { id:'transferencia', label:'Transferência' },
   { id:'dinheiro',      label:'Dinheiro'      },
@@ -85,11 +91,17 @@ function mesKey(conta: string, ano: number, mes: number) {
   return `${conta}-${ano}-${String(mes+1).padStart(2,'0')}`
 }
 
-function formaPagCategoria(fp: string | undefined, mov: string): FormaPag {
+function formaPagCategoria(fp: string | undefined, mov: string | undefined): FormaPag {
   if (mov === 'dinheiro') return 'dinheiro'
   if (fp === 'pix') return 'pix'
   if (fp === 'transferencia') return 'transferencia'
   return 'debito'
+}
+function formaRecebCategoria(fp: string | undefined, mov: string | undefined): FormaPag {
+  if (mov === 'dinheiro') return 'dinheiro'
+  if (fp === 'pix') return 'pix'
+  if (fp === 'transferencia') return 'transferencia'
+  return 'credito'
 }
 
 export default function NovoLancamentoExtrato() {
@@ -346,10 +358,11 @@ export default function NovoLancamentoExtrato() {
 
   function BadgePag({ fp }: { fp: FormaPag }) {
     const map: Record<FormaPag,{bg:string;cor:string;label:string}> = {
-      debito:        {bg:'#fef9c3',cor:'#92400e',label:'D'},
-      pix:           {bg:'#d1fae5',cor:'#065f46',label:'Pix'},
-      transferencia: {bg:'#eff6ff',cor:'#1a56db',label:'TED'},
-      dinheiro:      {bg:'#f1f5f9',cor:'#475569',label:'$'},
+      debito:        {bg:'#fef9c3',cor:'#92400e', label:'Déb'},
+      credito:       {bg:'#eff6ff',cor:'#1a56db', label:'Créd'},
+      pix:           {bg:'#d1fae5',cor:'#065f46', label:'Pix'},
+      transferencia: {bg:'#e0f2fe',cor:'#0369a1', label:'TED'},
+      dinheiro:      {bg:'#f1f5f9',cor:'#475569', label:'Din'},
     }
     const s = map[fp]
     return <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,background:s.bg,color:s.cor}}>{s.label}</span>
@@ -696,9 +709,7 @@ export default function NovoLancamentoExtrato() {
               {/* Lançamentos variáveis */}
               {ls.map(l => {
                 const catVisual = iconeCategoria(categorias, l.categoria)
-                const diaFuturo = !passado && !ehHoje
-                const consolidado = diaFuturo ? (l.consolidado === true) : true
-                const mostrarCheckbox = diaFuturo
+                const consolidado = l.consolidado !== false
                 const corValor = consolidado ? (l.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
                 const emEdicao = editandoId === l.id
                 return (
@@ -709,8 +720,8 @@ export default function NovoLancamentoExtrato() {
                     background:emEdicao?'#eff6ff':'transparent'}}
                   onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
                   onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background='transparent' }}>
-                  {mostrarCheckbox && (
-                    <input type="checkbox" checked={!!consolidado}
+                  {!l.id.startsWith('fatura-') && (
+                    <input type="checkbox" checked={consolidado}
                       onClick={e => e.stopPropagation()}
                       onChange={() => toggleConsolidarLancamento(dia, l.id)}
                       title="Consolidar lançamento"
@@ -722,21 +733,19 @@ export default function NovoLancamentoExtrato() {
                     {catVisual.icone}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:500,
+                    <div style={{fontSize:12,fontWeight:600,
                       color:consolidado?COR.texto:'#94a3b8',
                       display:'flex',alignItems:'center',gap:5}}>
-                      {l.descricao}
-                      {mostrarCheckbox && (
-                        <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                          background:consolidado?'#e0f2fe':'#f1f5f9',
-                          color:consolidado?'#0369a1':'#94a3b8'}}>
-                          {consolidado?'consolidado':'não consolidado'}
-                        </span>
-                      )}
+                      {l.categoria}
+                      <BadgePag fp={l.formaPagamento}/>
+                      <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
+                        background:consolidado?'#e0f2fe':'#f1f5f9',
+                        color:consolidado?'#0369a1':'#94a3b8'}}>
+                        {consolidado?'consolidado':'não consolidado'}
+                      </span>
                     </div>
-                    <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
-                      display:'flex',alignItems:'center',gap:4}}>
-                      {l.categoria} <BadgePag fp={l.formaPagamento}/>
+                    <div style={{fontSize:11,color:'#64748b',marginTop:1}}>
+                      {l.descricao}
                     </div>
                   </div>
                   <div style={{fontSize:13,fontWeight:600,color:corValor}}>
@@ -800,7 +809,7 @@ export default function NovoLancamentoExtrato() {
         <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
           padding:3,marginBottom:12,width:'fit-content'}}>
           {(['saida','entrada'] as const).map(t => (
-            <button key={t} onClick={() => setFTipo(t)} style={{
+            <button key={t} onClick={() => { setFTipo(t); setFPag(t === 'entrada' ? 'credito' : 'debito') }} style={{
               padding:'5px 14px',border:'none',borderRadius:5,
               cursor:'pointer',fontSize:12,fontWeight:500,
               fontFamily:'inherit',transition:'all .15s',
@@ -823,7 +832,14 @@ export default function NovoLancamentoExtrato() {
               </div>
             ) : (
             <select ref={categoriaSelectRef} autoFocus value={fCat}
-              onChange={e=>setFCat(e.target.value)}
+              onChange={e => {
+                const nome = e.target.value
+                setFCat(nome)
+                const cat = categorias.find(c => c.nome === nome)
+                if (cat) setFPag(fTipo === 'entrada'
+                  ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
+                  : formaPagCategoria(cat.formaPagamento, cat.tipoMovimento))
+              }}
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
@@ -858,8 +874,10 @@ export default function NovoLancamentoExtrato() {
         </div>
 
         <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:4}}>
-          <span style={{fontSize:11,color:'#0369a1',fontWeight:500,width:'100%'}}>Forma de pagamento:</span>
-          {FORMAS_PAG.map(p=>(
+          <span style={{fontSize:11,color:'#0369a1',fontWeight:500,width:'100%'}}>
+            {fTipo === 'entrada' ? 'Forma de recebimento:' : 'Forma de pagamento:'}
+          </span>
+          {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).map(p=>(
             <button key={p.id} onClick={()=>setFPag(p.id)} style={{
               padding:'4px 12px',
               border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
