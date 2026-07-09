@@ -259,6 +259,9 @@ export default function NovoLancamentoExtrato() {
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
 
+  const catEditandoFixa = editandoFixaId ? categorias.find(c => c.id === editandoFixaId) : null
+  const fixaEhAutomatica = catEditandoFixa?.tipoMovimento === 'banco' && catEditandoFixa?.formaPagamento === 'automatico'
+
   function lancar() {
     const valor = parseBRL(fValor)
     if (editandoFixaId) {
@@ -530,11 +533,11 @@ export default function NovoLancamentoExtrato() {
           const entradasColor = passado ? entradasDia
             : fs.filter(f=>f.tipo==='entrada'&&(mesDados.fixasConsolidadas?.[f.id]??false))
                 .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-              + ls.filter(l=>l.tipo==='entrada'&&(diaFuturo?l.consolidado===true:true)).reduce((s,l)=>s+l.valor,0)
+              + ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
           const saidasColor = passado ? saidasDia
             : fs.filter(f=>f.tipo==='saida'&&(mesDados.fixasConsolidadas?.[f.id]??false))
                 .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-              + ls.filter(l=>l.tipo==='saida'&&(diaFuturo?l.consolidado===true:true)).reduce((s,l)=>s+l.valor,0)
+              + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
           // ATUAL: tem consolidados hoje → exibe só confirmados; PREVISTO → exibe projeção total
           const temConsolidado = ehHoje && (entradasColor > 0 || saidasColor > 0)
           const entradasBoxVal = temConsolidado ? entradasColor : entradasDia
@@ -746,8 +749,7 @@ export default function NovoLancamentoExtrato() {
               {/* Lançamentos variáveis */}
               {ls.map(l => {
                 const catVisual = iconeCategoria(categorias, l.categoria)
-                const consolidado = l.consolidado !== false
-                const corValor = consolidado ? (l.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
+                const corValor = l.tipo==='entrada' ? COR.azul : COR.vermelho
                 const emEdicao = editandoId === l.id
                 return (
                 <div key={l.id}
@@ -757,29 +759,16 @@ export default function NovoLancamentoExtrato() {
                     background:emEdicao?'#eff6ff':'transparent'}}
                   onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
                   onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background='transparent' }}>
-                  {!l.id.startsWith('fatura-') && (
-                    <input type="checkbox" checked={consolidado}
-                      onClick={e => e.stopPropagation()}
-                      onChange={() => toggleConsolidarLancamento(dia, l.id)}
-                      title="Consolidar lançamento"
-                      style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
-                  )}
                   <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                     display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
-                    background:catVisual.cor,opacity:consolidado?1:0.5}}>
+                    background:catVisual.cor}}>
                     {catVisual.icone}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:600,
-                      color:consolidado?COR.texto:'#94a3b8',
+                    <div style={{fontSize:12,fontWeight:600,color:COR.texto,
                       display:'flex',alignItems:'center',gap:5}}>
                       {l.categoria}
                       <BadgePag fp={l.formaPagamento}/>
-                      <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                        background:consolidado?'#e0f2fe':'#f1f5f9',
-                        color:consolidado?'#0369a1':'#94a3b8'}}>
-                        {consolidado?'consolidado':'não consolidado'}
-                      </span>
                     </div>
                     <div style={{fontSize:11,color:'#64748b',marginTop:1}}>
                       {l.descricao}
@@ -830,12 +819,20 @@ export default function NovoLancamentoExtrato() {
         <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:14}}>
           <div style={{flex:'0 0 64px'}}>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Dia</div>
-            <input type="number" min={1} max={totalDias} value={diaSel}
-              onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
-              onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}} />
+            {editandoFixaId && fixaEhAutomatica ? (
+              <div style={{border:'1.5px solid #e2e8f0',borderRadius:7,padding:'7px 10px',
+                fontSize:12,background:'#f8faff',color:'#64748b',textAlign:'center',
+                fontFamily:'inherit'}}>
+                {diaSel}
+              </div>
+            ) : (
+              <input type="number" min={1} max={totalDias} value={diaSel}
+                onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
+                onFocus={realcarFoco} onBlur={removerRealce}
+                style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+                  fontSize:12,outline:'none',background:'#fff',
+                  fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}} />
+            )}
           </div>
           <div style={{fontSize:11,color:'#94a3b8',paddingBottom:8}}>
             {NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}
@@ -862,8 +859,8 @@ export default function NovoLancamentoExtrato() {
         </div>
         )}
 
-        {/* FORMA DE PAGAMENTO — acima da categoria */}
-        {!editandoFixaId && (
+        {/* FORMA DE PAGAMENTO — acima da categoria; também para fixas não-automáticas */}
+        {(!editandoFixaId || (editandoFixaId && !fixaEhAutomatica)) && (
         <div style={{marginBottom:12}}>
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
             {fTipo === 'entrada' ? 'Forma de recebimento:' : 'Forma de pagamento:'}
@@ -938,6 +935,7 @@ export default function NovoLancamentoExtrato() {
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}
               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
           </div>
+          {!(editandoFixaId && fixaEhAutomatica) && (
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
@@ -948,6 +946,7 @@ export default function NovoLancamentoExtrato() {
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}
               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
           </div>
+          )}
         </div>
 
         <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>
