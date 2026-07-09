@@ -568,6 +568,18 @@ export default function Configuracoes() {
                             placeholder="Dia" className="campo-cfg" style={inputSt} />
                         </div>
                       </div>
+                      <div>
+                        <label style={labelSt}>Conta de pagamento</label>
+                        <select
+                          value={formConta.contaPagamentoId ?? ''}
+                          onChange={e => setFormConta(p=>({...p, contaPagamentoId: e.target.value || undefined}))}
+                          className="campo-cfg" style={inputSt}>
+                          <option value="">Selecione a conta...</option>
+                          {contas.filter(c => c.tipo !== 'cartao' && c.id !== editContaId).map(c => (
+                            <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                          ))}
+                        </select>
+                      </div>
                     </>
                   )}
                   <div>

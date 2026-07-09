@@ -19,6 +19,7 @@ type CatFixa = {
   valor: number; tipo: TipoLanc
   formaPagamento: FormaPag
   diaVencimento: number
+  ehFaturaCartao?: boolean
 }
 
 type Lancamento = {
@@ -134,7 +135,7 @@ export default function NovoLancamentoExtrato() {
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const contaIdEfetivo = contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? ''
   const dados = extratoData as Record<string, DadosMes>
-  const fixas = categorias
+  const fixasCategoria = categorias
     .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
       && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
     .map(c => ({
@@ -143,6 +144,36 @@ export default function NovoLancamentoExtrato() {
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
       diaVencimento: c.diaVencimento ?? 1,
     }))
+  const fixasCartao: CatFixa[] = useMemo(() => {
+    let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
+    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /**/ }
+    return contas
+      .filter(c => c.tipo === 'cartao' && c.contaPagamentoId === contaIdEfetivo && c.diaVencimento)
+      .map(c => {
+        const fatKey = mesKey(c.id, ano, mes)
+        const dm = faturasDados[fatKey]
+        let total = 0
+        if (dm) {
+          const nDias = new Date(ano, mes + 1, 0).getDate()
+          for (let d = 1; d <= nDias; d++) {
+            ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+              l.tipo === 'saida' ? total += l.valor : total -= l.valor
+            })
+          }
+        }
+        return {
+          id: `cartao-${c.id}`,
+          nome: `Fatura ${c.banco}`,
+          categoria: `Fatura ${c.banco}`,
+          valor: total,
+          tipo: 'saida' as TipoLanc,
+          formaPagamento: 'debito' as FormaPag,
+          diaVencimento: c.diaVencimento!,
+          ehFaturaCartao: true,
+        }
+      })
+  }, [contas, contaIdEfetivo, ano, mes])
+  const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
     .filter(c => c.tipo === fTipo)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
@@ -199,7 +230,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function ehAutomatico(f: CatFixa) {
-    return ehAutomaticoCategoria(categorias, f.categoria)
+    return f.ehFaturaCartao === true || ehAutomaticoCategoria(categorias, f.categoria)
   }
 
   function desconsolidarFixa(fixaId: string) {
@@ -653,7 +684,7 @@ export default function NovoLancamentoExtrato() {
                   <div onClick={() => editarFixa(dia, f)}
                     style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
                     padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
-                    {!passado && (
+                    {!(passado && (automatico || consolidada)) && (
                       <input type="checkbox" checked={consolidada}
                         onClick={e => e.stopPropagation()}
                         onChange={() => {

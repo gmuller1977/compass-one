@@ -19,6 +19,7 @@ export type Conta = {
   limiteCartao?: number; diaVencimento?: number; diaFechamento?: number
   incluirNoSaldoInicial?: boolean
   agencia?: string; numeroConta?: string
+  contaPagamentoId?: string
 }
 
 export type Categoria = {
