@@ -708,12 +708,12 @@ export default function NovoLancamentoExtrato() {
                     </div>
                   </div>
 
-                  {/* Confirmação inline — boleto */}
+                  {/* Confirmação inline */}
                   {confirmando && (
                     <div style={{display:'flex',alignItems:'center',gap:8,
                       padding:'8px 16px',background:'#f0f9ff',borderBottom:'1px solid #bae6fd'}}>
                       <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>
-                        Pago no dia:
+                        {f.tipo==='entrada' ? 'Recebido no dia:' : 'Pago no dia:'}
                       </span>
                       <input type="number" min={1} max={totalDias} autoFocus
                         value={diaConfirmacao}
