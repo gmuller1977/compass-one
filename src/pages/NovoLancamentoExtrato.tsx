@@ -52,8 +52,10 @@ function diaEfetivoFixa(
   f: CatFixa, overrides: Record<string, number> | undefined,
   automatico: boolean, mes: number, ano: number, totalDias: number,
 ) {
+  const override = overrides?.[f.id]
+  if (override !== undefined) return override
   if (automatico) return diaUtilOuProximo(f.diaVencimento, mes, ano, totalDias)
-  return overrides?.[f.id] ?? f.diaVencimento
+  return f.diaVencimento
 }
 
 
