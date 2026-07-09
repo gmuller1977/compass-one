@@ -109,11 +109,12 @@ function IconPicker({ icones, valor, onChange }: { icones:string[]; valor:string
 }
 
 // ── Card de categoria ────────────────────────────────────────────────
-function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
+function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
   c: Categoria
   editCatId: string|null
   toggleAtiva: (id:string) => void
   editarCategoria: (c:Categoria) => void
+  contas: Conta[]
 }) {
   return (
     <div onClick={() => editarCategoria(c)} style={{
@@ -173,6 +174,16 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
               Vence dia {c.diaVencimento}
             </span>
           )}
+          {/* Conta de débito vinculada */}
+          {c.contaDebitoId && (() => {
+            const conta = contas.find(x => x.id === c.contaDebitoId)
+            return conta ? (
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+                background:'#f0f4ff', color:'#1a56db' }}>
+                {conta.icone} {conta.nome}
+              </span>
+            ) : null
+          })()}
         </div>
       </div>
       {/* Toggle ativo */}
@@ -639,7 +650,7 @@ export default function Configuracoes() {
                     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                       {catsFiltradas.filter(c=>c.fixa).map(c => (
                         <CatCard key={c.id} c={c} editCatId={editCatId}
-                          toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} />
+                          toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} contas={contas} />
                       ))}
                     </div>
                   </div>
@@ -653,7 +664,7 @@ export default function Configuracoes() {
                     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                       {catsFiltradas.filter(c=>!c.fixa).map(c => (
                         <CatCard key={c.id} c={c} editCatId={editCatId}
-                          toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} />
+                          toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} contas={contas} />
                       ))}
                     </div>
                   </div>
@@ -744,6 +755,7 @@ export default function Configuracoes() {
                           ...p, tipoMovimento:t.id,
                           formaPagamento: t.id==='dinheiro' ? undefined
                             : t.id==='cartao' ? 'avista' : 'automatico',
+                          contaDebitoId: undefined,
                         }))} style={{
                           flex:1, padding:'7px 0', fontFamily:'inherit',
                           border:`1.5px solid ${formCat.tipoMovimento===t.id ? COR.azul : COR.borda}`,
@@ -762,7 +774,10 @@ export default function Configuracoes() {
                       <label style={labelSt}>Forma de pagamento</label>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                         {(formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO).map(f => (
-                          <button key={f.id} onClick={() => setFormCat(p=>({...p,formaPagamento:f.id}))} style={{
+                          <button key={f.id} onClick={() => setFormCat(p=>({
+                            ...p, formaPagamento:f.id,
+                            contaDebitoId: f.id === 'automatico' ? p.contaDebitoId : undefined,
+                          }))} style={{
                             padding:'7px 10px', fontFamily:'inherit',
                             border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
                             borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
@@ -779,6 +794,21 @@ export default function Configuracoes() {
                             : 'Ao consolidar o lançamento, você informa o dia em que foi realizado.'}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Conta de débito — só quando débito automático em banco */}
+                  {formCat.tipoMovimento==='banco' && formCat.formaPagamento==='automatico' && (
+                    <div>
+                      <label style={labelSt}>Conta de débito</label>
+                      <select value={formCat.contaDebitoId ?? ''}
+                        onChange={e => setFormCat(p=>({...p, contaDebitoId: e.target.value || undefined}))}
+                        className="campo-cfg" style={inputSt}>
+                        <option value="">Selecione a conta...</option>
+                        {contas.filter(c => c.tipo !== 'cartao').map(c => (
+                          <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
 

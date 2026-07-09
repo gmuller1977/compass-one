@@ -28,6 +28,7 @@ export type Categoria = {
   cor: string; icone: string; ativa: boolean
   diaVencimento?: number; descricao?: string
   valorPadrao?: number; numeroParcelas?: number
+  contaDebitoId?: string
 }
 
 export type PlanoCat     = { nome: string; t?: string; v: number[] }
