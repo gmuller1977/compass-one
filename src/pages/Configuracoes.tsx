@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
@@ -190,11 +190,10 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria }: {
 
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
-  const navigate  = useNavigate()
   const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { user, contas, categorias, setContas, setCategorias,
-          planejamentoLockado, setPlanejamentoLockado, sairDaConta } = useApp()
+          planejamentoLockado, setPlanejamentoLockado } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
 
   useEffect(() => {

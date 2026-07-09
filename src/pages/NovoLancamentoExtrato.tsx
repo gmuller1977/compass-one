@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
@@ -94,7 +93,6 @@ function formaPagCategoria(fp: string | undefined, mov: string): FormaPag {
 }
 
 export default function NovoLancamentoExtrato() {
-  const navigate  = useNavigate()
   const hoje      = new Date()
   const diaHoje   = hoje.getDate()
   const mesHoje   = hoje.getMonth()

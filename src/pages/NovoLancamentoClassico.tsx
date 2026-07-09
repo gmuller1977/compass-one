@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 
 const COR = {
@@ -88,7 +87,6 @@ function dadosIniciais(): Record<string, MesData> {
 }
 
 export default function NovoLancamentoClassico() {
-  const navigate   = useNavigate()
   const agora      = new Date()
 
   const [mesAtual,    setMesAtual]    = useState(agora.getMonth())

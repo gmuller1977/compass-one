@@ -24,8 +24,6 @@ export default function Dashboard() {
   const hoje = new Date()
   const mes  = hoje.getMonth()
   const ano  = hoje.getFullYear()
-  const hojeStr = hoje.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})
-
   // ── Calcula totais do mês atual para conta corrente ──
   const { totalEntradas, totalSaidas, saldoDisponivel, topCategorias } = useMemo(() => {
     let te = 0, ts = 0
