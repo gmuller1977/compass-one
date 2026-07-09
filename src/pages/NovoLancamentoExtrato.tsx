@@ -125,8 +125,6 @@ export default function NovoLancamentoExtrato() {
   const [fValor,  setFValor]  = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
   const [modo, setModo] = useState<'banco'|'cartao'>('banco')
-  const [confirmandoFixaId, setConfirmandoFixaId] = useState<string|null>(null)
-  const [diaConfirmacao,    setDiaConfirmacao]     = useState('')
   const [fContaDestino,     setFContaDestino]      = useState('')
 
   const hojeRef = useRef<HTMLDivElement>(null)
@@ -209,20 +207,6 @@ export default function NovoLancamentoExtrato() {
       ...prev,
       fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: false },
     }))
-  }
-
-  function confirmarBoleto(f: CatFixa, diaPago: number) {
-    updateMes(prev => {
-      const fixasMovidas = { ...prev.fixasMovidas }
-      if (diaPago === f.diaVencimento) delete fixasMovidas[f.id]
-      else fixasMovidas[f.id] = diaPago
-      return {
-        ...prev,
-        fixasMovidas,
-        fixasConsolidadas: { ...prev.fixasConsolidadas, [f.id]: true },
-      }
-    })
-    setConfirmandoFixaId(null)
   }
 
   const saldosDia = useMemo(() => {
@@ -648,7 +632,6 @@ export default function NovoLancamentoExtrato() {
                   ? mesDados.fixasConsolidadas[f.id]
                   : (automatico ? passado : false)
                 const corValor = consolidada ? (f.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
-                const confirmando = confirmandoFixaId === f.id
                 const emEdicaoFixa = editandoFixaId === f.id
                 const valorMostrado = mesDados.fixasValorOverride?.[f.id] ?? f.valor
                 return (
@@ -663,14 +646,11 @@ export default function NovoLancamentoExtrato() {
                         onChange={() => {
                           if (consolidada) {
                             desconsolidarFixa(f.id)
-                          } else if (automatico) {
+                          } else {
                             updateMes(prev => ({
                               ...prev,
                               fixasConsolidadas: { ...prev.fixasConsolidadas, [f.id]: true }
                             }))
-                          } else {
-                            setConfirmandoFixaId(f.id)
-                            setDiaConfirmacao(String(dia))
                           }
                         }}
                         title="Consolidar lançamento"
@@ -708,41 +688,6 @@ export default function NovoLancamentoExtrato() {
                     </div>
                   </div>
 
-                  {/* Confirmação inline */}
-                  {confirmando && (
-                    <div style={{display:'flex',alignItems:'center',gap:8,
-                      padding:'8px 16px',background:'#f0f9ff',borderBottom:'1px solid #bae6fd'}}>
-                      <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>
-                        {f.tipo==='entrada' ? 'Recebido no dia:' : 'Pago no dia:'}
-                      </span>
-                      <input type="number" min={1} max={totalDias} autoFocus
-                        value={diaConfirmacao}
-                        onChange={e => setDiaConfirmacao(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            const d = Math.min(Math.max(parseInt(diaConfirmacao)||dia,1),totalDias)
-                            confirmarBoleto(f, d)
-                          }
-                          if (e.key === 'Escape') setConfirmandoFixaId(null)
-                        }}
-                        style={{width:50,border:'1.5px solid #bae6fd',borderRadius:6,
-                          padding:'4px 8px',fontSize:12,outline:'none',background:'#fff',
-                          fontFamily:'inherit',color:COR.texto,textAlign:'center'}} />
-                      <button onClick={() => {
-                        const d = Math.min(Math.max(parseInt(diaConfirmacao)||dia,1),totalDias)
-                        confirmarBoleto(f, d)
-                      }} style={{border:'none',borderRadius:6,padding:'5px 12px',
-                        fontSize:11,fontWeight:600,color:'#fff',background:COR.azul,cursor:'pointer',
-                        fontFamily:'inherit'}}>
-                        Confirmar
-                      </button>
-                      <button onClick={() => setConfirmandoFixaId(null)}
-                        style={{border:'none',background:'transparent',cursor:'pointer',
-                          fontSize:11,color:'#64748b',fontFamily:'inherit'}}>
-                        Cancelar
-                      </button>
-                    </div>
-                  )}
                 </div>
               )})}
 
