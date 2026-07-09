@@ -3,6 +3,7 @@ import type { PlanoAnoData } from '../context/AppContext'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
+import AppHeader from '../components/AppHeader'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -60,12 +61,33 @@ function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
   }
 }
 
-const NAV_ITEMS = [
-  { label:'⚙ Config', path:'/configuracoes' },
-  { label:'Dashboard',    path:'/dashboard' },
-  { label:'Planejamento', path:'/planejamento' },
-  { label:'Lançamentos',  path:'/novo-lancamento' },
-]
+function SaldoMiniChart({ saldos, ma }: { saldos: number[]; ma: number }) {
+  const max = Math.max(...saldos.map(Math.abs), 1)
+  const barW = 10, gap = 5, H = 48
+  const W = 12 * (barW + gap) - gap
+  return (
+    <svg width={W} height={H + 13} style={{ display: 'block' }}>
+      {saldos.map((v, i) => {
+        const pos = v >= 0
+        const h = Math.max(3, (Math.abs(v) / max) * H * 0.88)
+        const x = i * (barW + gap)
+        const y = H - h
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={barW} height={h} rx={2}
+              fill={i === ma ? '#1a56db' : (pos ? '#86efac' : '#fca5a5')} />
+            <text x={x + barW / 2} y={H + 11} textAnchor="middle"
+              fontSize={7} fill={i === ma ? '#1a56db' : '#94a3b8'}
+              fontWeight={i === ma ? '700' : '400'}>
+              {MESES[i].charAt(0)}
+            </text>
+          </g>
+        )
+      })}
+      <line x1={0} y1={H} x2={W} y2={H} stroke="#e2e8f0" strokeWidth={1} />
+    </svg>
+  )
+}
 
 export default function Planejamento() {
   const navigate    = useNavigate()
@@ -88,6 +110,8 @@ export default function Planejamento() {
   const [entradaAberta, setEntradaAberta] = useState(false)
   const [saidaAberta,   setSaidaAberta]   = useState(false)
   const [saldoAberto,   setSaldoAberto]   = useState(false)
+  const [showBannerCopiar, setShowBannerCopiar] = useState(false)
+  const [reajustePerc,  setReajustePerc]  = useState('0')
 
   const dadosBase: AnoData = useMemo(() => ({
     saldoInicialJan: SALDO_INICIAL_FIXO,
@@ -98,6 +122,10 @@ export default function Planejamento() {
       .filter(c => c.tipo === 'saida' && c.ativa)
       .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) })),
   }), [SALDO_INICIAL_FIXO, categorias])
+
+  const temValoresPadrao = useMemo(() =>
+    categorias.some(c => (c.valorPadrao ?? 0) > 0 && c.ativa), [categorias])
+
   const realExiste = !!planosReal[anoAtual]
   const dadosAno: AnoData = aba === 'previsto'
     ? ((planos[anoAtual] as AnoData | undefined) ?? dadosBase)
@@ -162,6 +190,51 @@ export default function Planejamento() {
     updateAno(d => ({ ...d, saldoInicialJan: novoSaldo }))
   }
 
+  // ── Atalhos de planejamento ──
+  function preencherValoresPadrao() {
+    updateAno(d => ({
+      ...d,
+      entradas: d.entradas.map(cat => {
+        const vp = categorias.find(c => c.nome === cat.nome)?.valorPadrao ?? 0
+        return vp > 0 ? { ...cat, v: new Array(12).fill(vp) } : cat
+      }),
+      saidas: d.saidas.map(cat => {
+        const vp = categorias.find(c => c.nome === cat.nome)?.valorPadrao ?? 0
+        return vp > 0 ? { ...cat, v: new Array(12).fill(vp) } : cat
+      }),
+    }))
+  }
+  function replicarJaneiroParaAno() {
+    updateAno(d => ({
+      ...d,
+      entradas: d.entradas.map(cat => ({ ...cat, v: new Array(12).fill(cat.v[0]) })),
+      saidas:   d.saidas.map(cat =>   ({ ...cat, v: new Array(12).fill(cat.v[0]) })),
+    }))
+  }
+  function replicarLinha(tipo: 'e'|'s', ri: number) {
+    if (tipo === 'e') {
+      setEntradas(prev => prev.map((c, i) =>
+        i === ri ? { ...c, v: new Array(12).fill(c.v[0]) } : c))
+    } else {
+      setSaidas(prev => prev.map((c, i) =>
+        i === ri ? { ...c, v: new Array(12).fill(c.v[0]) } : c))
+    }
+  }
+  function copiarAnoAnteriorComReajuste(anoBase: number, anoNovo: number, percReaj: number) {
+    const base = planos[anoBase] as AnoData | undefined
+    if (!base) return
+    const fator = 1 + percReaj / 100
+    const round = (v: number) => Math.round(v * fator * 100) / 100
+    setPlanos(prev => ({
+      ...prev,
+      [anoNovo]: {
+        saldoInicialJan: base.saldoInicialJan,
+        entradas: base.entradas.map(c => ({ ...c, v: c.v.map(round) })),
+        saidas:   base.saidas.map(c =>   ({ ...c, v: c.v.map(round) })),
+      } as PlanoAnoData,
+    }))
+  }
+
   // ── Navegação de ano ──
   function navegarAno(delta: number) {
     const novoAno = anoAtual + delta
@@ -170,6 +243,10 @@ export default function Planejamento() {
       const ant = planos[novoAno - 1] as AnoData | undefined
       if (ant) { const { saldoFinal: sf } = calcSaldos(ant); saldoIni = sf[11] }
       setPlanos(prev => ({ ...prev, [novoAno]: criarAnoZerado(dadosAno, saldoIni) as PlanoAnoData }))
+      setShowBannerCopiar(!!planos[novoAno - 1])
+      setReajustePerc('0')
+    } else {
+      setShowBannerCopiar(false)
     }
     setAnoAtual(novoAno)
     setEditando(null)
@@ -252,7 +329,7 @@ export default function Planejamento() {
           background: hover ? '#f8faff' : bgBase,
           borderBottom:`1px solid ${COR.borda}`,
           borderLeft:`3px solid ${tipo === 'e' ? '#93c5fd' : '#fca5a5'}`,
-          height:36, verticalAlign:'middle', whiteSpace:'nowrap',
+          height:40, verticalAlign:'middle', whiteSpace:'nowrap',
           padding:'0 12px 0 24px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
@@ -260,6 +337,16 @@ export default function Planejamento() {
             fontSize:11, flexShrink:0 }}>{icone}</div>
           {badge}
           <span style={{ fontSize:12, color:COR.texto, flex:1 }}>{nome}</span>
+          {hover && aba === 'previsto' && !planejamentoLockado && (
+            <button
+              onClick={e => { e.stopPropagation(); replicarLinha(tipo, ri) }}
+              title="Replicar valor de Janeiro para todos os meses"
+              style={{ border:'none', background:'#dbeafe', cursor:'pointer',
+                borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
+                fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4 }}>
+              Jan→
+            </button>
+          )}
         </div>
       </td>
     )
@@ -269,42 +356,7 @@ export default function Planejamento() {
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
       background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
 
-      {/* HEADER */}
-      <div style={{ background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding:'18px 28px', display:'flex', alignItems:'center',
-        justifyContent:'space-between', flexShrink:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:24 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
-            onClick={() => navigate('/dashboard')}>
-            <div style={{ width:32, height:32, borderRadius:8,
-              background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)',
-              display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-                <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-                <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-              </svg>
-            </div>
-            <span style={{ color:'#fff', fontWeight:700, fontSize:17 }}>
-              Compass <span style={{ fontWeight:300, opacity:.75 }}>One</span>
-            </span>
-          </div>
-          <nav style={{ display:'flex', gap:2 }}>
-            {NAV_ITEMS.map(n => (
-              <button key={n.path} onClick={() => navigate(n.path)} style={{
-                padding:'6px 14px', borderRadius:8, border:'none', cursor:'pointer',
-                fontSize:13, fontWeight:500, fontFamily:'inherit',
-                background: n.path === '/planejamento' ? 'rgba(255,255,255,0.2)' : 'transparent',
-                color:      n.path === '/planejamento' ? '#fff' : 'rgba(255,255,255,0.6)',
-              }}>{n.label}</button>
-            ))}
-          </nav>
-        </div>
-        <div style={{ width:34, height:34, borderRadius:'50%',
-          background:'rgba(255,255,255,0.15)', display:'flex',
-          alignItems:'center', justifyContent:'center',
-          color:'#fff', fontSize:14, fontWeight:600 }}>G</div>
-      </div>
+      <AppHeader currentPath="/planejamento" />
 
       {/* TÍTULO + NAVEGAÇÃO DE ANO */}
       <div style={{ padding:'14px 24px 6px', flexShrink:0,
@@ -378,6 +430,118 @@ export default function Planejamento() {
           )}
         </div>
       </div>
+
+      {/* ATALHOS DE PLANEJAMENTO */}
+      {aba === 'previsto' && !planejamentoLockado && (
+        <div style={{ margin:'0 24px 8px', flexShrink:0,
+          background:'#e8edf8', border:`1px solid #c7d2f5`, borderRadius:10,
+          padding:'8px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+          <span style={{ fontSize:11, color:COR.azulEscuro, fontWeight:700,
+            textTransform:'uppercase', letterSpacing:.5, marginRight:4 }}>
+            Atalhos
+          </span>
+          {temValoresPadrao && (
+            <button onClick={preencherValoresPadrao} style={{
+              border:`1px solid ${COR.azul}`, background:COR.branco, borderRadius:7,
+              padding:'5px 12px', cursor:'pointer', fontSize:12,
+              color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
+              ✦ Preencher valores padrão
+            </button>
+          )}
+          <button onClick={replicarJaneiroParaAno} style={{
+            border:`1px solid ${COR.azul}`, background:COR.branco, borderRadius:7,
+            padding:'5px 12px', cursor:'pointer', fontSize:12,
+            color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
+            ↦ Replicar Jan → ano todo
+          </button>
+          {!!planos[anoAtual - 1] && (
+            <button onClick={() => { setShowBannerCopiar(true); setReajustePerc('0') }} style={{
+              border:`1px solid ${COR.azul}`, background:COR.branco, borderRadius:7,
+              padding:'5px 12px', cursor:'pointer', fontSize:12,
+              color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
+              ↺ Copiar {anoAtual - 1}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* BANNER COPIAR ANO ANTERIOR */}
+      {showBannerCopiar && aba === 'previsto' && !planejamentoLockado && (
+        <div style={{ margin:'0 24px 8px', flexShrink:0,
+          background:'#fffbeb', border:'1px solid #fcd34d',
+          borderRadius:10, padding:'10px 16px',
+          display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+          <span style={{ fontSize:12, color:'#92400e', fontWeight:600, flex:1, minWidth:200 }}>
+            Copiar planejamento de <strong>{anoAtual - 1}</strong> para {anoAtual}?
+          </span>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:12, color:'#92400e' }}>Reajuste:</span>
+            <input value={reajustePerc}
+              onChange={e => setReajustePerc(e.target.value)}
+              style={{ width:56, padding:'4px 8px', border:'1px solid #fcd34d',
+                borderRadius:6, fontSize:12, textAlign:'right',
+                fontFamily:'inherit', background:'#fff', color:'#92400e' }} />
+            <span style={{ fontSize:12, color:'#92400e' }}>%</span>
+            <button onClick={() => {
+              copiarAnoAnteriorComReajuste(anoAtual - 1, anoAtual, parseFloat(reajustePerc) || 0)
+              setShowBannerCopiar(false)
+            }} style={{ padding:'5px 14px', border:'none', borderRadius:7, cursor:'pointer',
+              fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff',
+              background:'#d97706' }}>
+              Aplicar
+            </button>
+            <button onClick={() => setShowBannerCopiar(false)} style={{
+              padding:'5px 12px', border:'1px solid #fcd34d', borderRadius:7, cursor:'pointer',
+              fontFamily:'inherit', fontSize:12, fontWeight:500, color:'#92400e',
+              background:'transparent' }}>
+              Manter em branco
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SUMÁRIO ANUAL */}
+      {(aba === 'previsto' || realExiste) && (() => {
+        const totalE   = totalEntradas.reduce((a, b) => a + b, 0)
+        const totalS   = totalSaidas.reduce((a, b) => a + b, 0)
+        const resultado = totalE - totalS
+        const metrics: { label: string; valor: number; cor: string; bg: string; icon: string }[] = [
+          { label: 'Entradas anuais', valor: totalE,         cor: '#16a34a',                             bg: '#f0fdf4', icon: '↑' },
+          { label: 'Saídas anuais',   valor: totalS,         cor: COR.vermelho,                          bg: '#fff5f5', icon: '↓' },
+          { label: 'Resultado',       valor: resultado,      cor: resultado >= 0 ? '#16a34a' : COR.vermelho, bg: resultado >= 0 ? '#f0fdf4' : '#fff5f5', icon: resultado >= 0 ? '↗' : '↘' },
+          { label: 'Saldo em Dez',    valor: saldoFinal[11], cor: corSaldo(saldoFinal[11]),              bg: saldoFinal[11] >= 0 ? '#eff6ff' : '#fff5f5', icon: '◎' },
+        ]
+        return (
+          <div style={{ margin: '0 24px 10px', flexShrink: 0,
+            background: COR.branco, border: `1px solid ${COR.borda}`,
+            borderRadius: 14, padding: '14px 18px',
+            display: 'flex', alignItems: 'center',
+            boxShadow: '0 2px 8px rgba(15,40,120,0.07)' }}>
+            {metrics.map((m, i) => (
+              <div key={m.label} style={{ flex: 1, padding: '0 16px',
+                borderRight: i < 3 ? `1px solid ${COR.borda}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, background: m.bg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, color: m.cor, fontWeight: 700, flexShrink: 0 }}>{m.icon}</div>
+                  <span style={{ fontSize: 10, color: COR.textoSuave, fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: .5 }}>{m.label}</span>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: m.cor, paddingLeft: 28 }}>
+                  {m.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </div>
+              </div>
+            ))}
+            <div style={{ flexShrink: 0, paddingLeft: 18, borderLeft: `1px solid ${COR.borda}` }}>
+              <div style={{ fontSize: 10, color: COR.textoSuave, fontWeight: 600,
+                textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>
+                Saldo mensal
+              </div>
+              <SaldoMiniChart saldos={saldoFinal} ma={mesAtual} />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* TABELA */}
       <div style={{ flex:1, padding:'0 24px', minHeight:0 }}>

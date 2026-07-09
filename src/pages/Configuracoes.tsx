@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import AppHeader from '../components/AppHeader'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
@@ -12,7 +13,7 @@ const COR = {
   verde: '#16a34a', vermelho: '#dc2626',
 }
 
-type Aba = 'bancos' | 'cartoes' | 'categorias' | 'perfil'
+type Aba = 'bancos' | 'cartoes' | 'categorias' | 'perfil' | 'preferencias'
 
 const CORES_PRESET = [
   '#1a56db','#16a34a','#dc2626','#d97706','#7c3aed',
@@ -64,12 +65,16 @@ function fmt(v: number) {
 }
 function gerarId() { return `id-${Date.now()}-${Math.random().toString(36).slice(2,6)}` }
 
-const NAV_ITEMS = [
-  { label:'Dashboard',    path:'/dashboard'       },
-  { label:'Planejamento', path:'/planejamento'    },
-  { label:'Lançamentos',  path:'/novo-lancamento' },
-  { label:'⚙ Config',    path:'/configuracoes'   },
-]
+function EmBreve() {
+  return (
+    <span style={{ fontSize:9, padding:'2px 7px', borderRadius:4,
+      background:'#fef9c3', color:'#92400e', fontWeight:700,
+      textTransform:'uppercase', letterSpacing:.5, flexShrink:0 }}>
+      Em breve
+    </span>
+  )
+}
+
 
 // ── Picker de cor ────────────────────────────────────────────────────
 function ColorPicker({ valor, onChange }: { valor:string; onChange:(c:string)=>void }) {
@@ -188,7 +193,7 @@ export default function Configuracoes() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
-  const { contas, categorias, setContas, setCategorias,
+  const { user, contas, categorias, setContas, setCategorias,
           planejamentoLockado, setPlanejamentoLockado, sairDaConta } = useApp()
   const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
 
@@ -206,8 +211,12 @@ export default function Configuracoes() {
           novaCategoria()
         }
       }
+    } else if (st.aba === 'perfil') {
+      setAba('perfil')
+    } else if (st.aba === 'preferencias') {
+      setAba('preferencias')
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
   const [layout, setLayout] = useState<LayoutLancamentos>(getLayoutPref)
 
   function escolherLayout(l: LayoutLancamentos) {
@@ -324,47 +333,12 @@ export default function Configuracoes() {
         }
       `}</style>
 
-      {/* HEADER */}
-      <div style={{ background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding:'16px 28px', display:'flex', alignItems:'center',
-        justifyContent:'space-between', flexShrink:0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:24 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}
-            onClick={() => navigate('/dashboard')}>
-            <div style={{ width:32, height:32, borderRadius:8,
-              background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)',
-              display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-                <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-                <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-              </svg>
-            </div>
-            <span style={{ color:'#fff', fontWeight:700, fontSize:17 }}>
-              Compass <span style={{ fontWeight:300, opacity:.75 }}>One</span>
-            </span>
-          </div>
-          <nav style={{ display:'flex', gap:2 }}>
-            {NAV_ITEMS.map(n => (
-              <button key={n.path} onClick={() => navigate(n.path)} style={{
-                padding:'6px 14px', borderRadius:8, border:'none', cursor:'pointer',
-                fontSize:13, fontWeight:500, fontFamily:'inherit',
-                background: n.path==='/configuracoes' ? 'rgba(255,255,255,0.2)' : 'transparent',
-                color:      n.path==='/configuracoes' ? '#fff' : 'rgba(255,255,255,0.6)',
-              }}>{n.label}</button>
-            ))}
-          </nav>
-        </div>
-        <div style={{ width:34, height:34, borderRadius:'50%',
-          background:'rgba(255,255,255,0.15)', display:'flex',
-          alignItems:'center', justifyContent:'center',
-          color:'#fff', fontSize:14, fontWeight:600 }}>G</div>
-      </div>
+      <AppHeader currentPath="/configuracoes" />
 
       {/* ABAS PRINCIPAIS */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
         padding:'0 24px', display:'flex', gap:4, flexShrink:0 }}>
-        {([['bancos','🏦 Cadastro de Bancos'],['cartoes','💳 Cadastro de Cartões'],['categorias','🏷 Cadastro de Categorias'],['perfil','👤 Perfil']] as const).map(([v,l]) => (
+        {([['bancos','🏦 Cadastro de Bancos'],['cartoes','💳 Cadastro de Cartões'],['categorias','🏷 Cadastro de Categorias']] as const).map(([v,l]) => (
           <button key={v} onClick={() => { setAba(v); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
             padding:'12px 16px', border:'none',
             borderBottom:`2px solid ${aba===v ? COR.azul : 'transparent'}`,
@@ -877,40 +851,115 @@ export default function Configuracoes() {
 
         {/* ══ ABA PERFIL ══ */}
         {aba==='perfil' && (
-          <div style={{ flex:1, display:'flex', flexDirection:'column', overflowY:'auto', gap:16 }}>
-            <div style={{ display:'flex', justifyContent:'center', paddingTop:20 }}>
-            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
-              borderRadius:14, padding:28, width:'100%', maxWidth:480 }}>
-              <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 6px' }}>Perfil</h2>
-              <p style={{ fontSize:12, color:COR.textoSuave, marginBottom:24 }}>
-                Informações da sua conta
-              </p>
-              <div style={{ display:'flex', justifyContent:'center', marginBottom:24 }}>
-                <div style={{ width:72, height:72, borderRadius:'50%',
-                  background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  fontSize:28, color:'#fff', fontWeight:700 }}>G</div>
+          <div style={{ flex:1, overflowY:'auto' }}>
+          <div style={{ display:'flex', justifyContent:'center', padding:'20px 0 28px' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:14, width:'100%', maxWidth:500 }}>
+
+            {/* Dados pessoais */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:28 }}>
+              <h2 style={{ fontSize:15, fontWeight:700, color:COR.texto, margin:'0 0 20px' }}>Perfil</h2>
+
+              {/* Avatar */}
+              <div style={{ display:'flex', justifyContent:'center', marginBottom:20 }}>
+                <div style={{ position:'relative' }}>
+                  <div style={{ width:80, height:80, borderRadius:'50%',
+                    background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontSize:30, color:'#fff', fontWeight:700 }}>G</div>
+                  <div title="Em breve" style={{ position:'absolute', bottom:0, right:0,
+                    width:24, height:24, borderRadius:'50%', background:'#e2e8f0',
+                    border:`2px solid ${COR.branco}`, display:'flex', alignItems:'center',
+                    justifyContent:'center', fontSize:11, cursor:'not-allowed' }}>✏</div>
+                </div>
               </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+              {/* Mini-stats */}
+              <div style={{ display:'flex', marginBottom:22, border:`1px solid ${COR.borda}`, borderRadius:10, overflow:'hidden' }}>
                 {[
-                  { label:'Nome completo', placeholder:'Seu nome',       value:'Guilherme Müller'    },
-                  { label:'E-mail',        placeholder:'seu@email.com',  value:'guilherme@gmail.com' },
-                ].map(f => (
-                  <div key={f.label}>
-                    <label style={labelSt}>{f.label}</label>
-                    <input defaultValue={f.value} placeholder={f.placeholder} className="campo-cfg" style={inputSt} />
+                  { label:'Contas',       valor: String(contas.length) },
+                  { label:'Categorias',   valor: String(categorias.length) },
+                  { label:'Membro desde', valor: '2025' },
+                ].map((s, i) => (
+                  <div key={s.label} style={{ flex:1, padding:'10px 0', textAlign:'center',
+                    borderLeft: i > 0 ? `1px solid ${COR.borda}` : 'none' }}>
+                    <div style={{ fontSize:17, fontWeight:700, color:COR.azul }}>{s.valor}</div>
+                    <div style={{ fontSize:10, color:COR.textoSuave, marginTop:2 }}>{s.label}</div>
                   </div>
                 ))}
+              </div>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 <div>
-                  <label style={labelSt}>Moeda padrão</label>
-                  <select className="campo-cfg" style={inputSt} defaultValue="BRL">
-                    <option value="BRL">🇧🇷 Real Brasileiro (R$)</option>
-                    <option value="USD">🇺🇸 Dólar Americano ($)</option>
-                    <option value="EUR">🇪🇺 Euro (€)</option>
-                  </select>
+                  <label style={labelSt}>Nome completo</label>
+                  <input defaultValue="Guilherme Müller" placeholder="Seu nome" className="campo-cfg" style={inputSt} />
                 </div>
+                <div style={{ opacity:.6 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5 }}>
+                    <span style={labelSt}>E-mail</span>
+                    <EmBreve />
+                  </div>
+                  <input disabled value={user?.email ?? 'seu@email.com'}
+                    style={{ ...inputSt, cursor:'not-allowed', background:'#f8fafc' }} />
+                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                    Vinculado à sua conta de login. Não editável aqui.
+                  </div>
+                </div>
+                <button style={{ padding:'10px 0', border:'none', borderRadius:8,
+                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                  color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer',
+                  fontFamily:'inherit', marginTop:2 }}>
+                  Salvar perfil
+                </button>
+              </div>
+            </div>
+
+            {/* Segurança */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24, opacity:.6 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
+                <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>Segurança</h3>
+                <EmBreve />
+              </div>
+              <button disabled style={{ width:'100%', padding:'10px 0',
+                border:`1.5px solid ${COR.borda}`, borderRadius:8,
+                background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600,
+                cursor:'not-allowed', fontFamily:'inherit' }}>
+                🔑 Trocar senha
+              </button>
+              <div style={{ fontSize:10, color:'#94a3b8', marginTop:6, textAlign:'center' }}>
+                Um e-mail de redefinição será enviado para o endereço cadastrado.
+              </div>
+            </div>
+
+            {/* Versão */}
+            <div style={{ padding:14, background:'#f8faff', borderRadius:10,
+              border:`1px solid ${COR.borda}`, textAlign:'center' }}>
+              <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:4 }}>Versão do app</div>
+              <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>Compass One v0.1.0</div>
+              <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>MVP — em desenvolvimento</div>
+            </div>
+
+          </div>
+          </div>
+          </div>
+        )}
+
+        {/* ══ ABA PREFERÊNCIAS ══ */}
+        {aba==='preferencias' && (
+          <div style={{ flex:1, overflowY:'auto' }}>
+          <div style={{ display:'flex', justifyContent:'center', padding:'20px 0 28px' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:14, width:'100%', maxWidth:500 }}>
+
+            {/* Card: Exibição */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
+              <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Exibição</h3>
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+
+                {/* Layout — funcional */}
                 <div>
-                  <label style={labelSt}>Layout de lançamentos</label>
+                  <label style={{ display:'block', fontSize:11, fontWeight:600,
+                    color:COR.textoSuave, marginBottom:6, textTransform:'uppercase', letterSpacing:.5 }}>
+                    Layout de lançamentos
+                  </label>
                   <div style={{ display:'flex', gap:6 }}>
                     {([['classico','📋 Clássico'],['extrato','🏦 Extrato']] as const).map(([v,l]) => (
                       <button key={v} onClick={() => escolherLayout(v)} style={{
@@ -923,41 +972,99 @@ export default function Configuracoes() {
                       </button>
                     ))}
                   </div>
-                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:6 }}>
+                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
                     Define como a tela de Lançamentos é exibida.
                   </div>
                 </div>
-                <button style={{ padding:'10px 0', border:'none', borderRadius:8,
-                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                  color:'#fff', fontSize:13, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
-                  Salvar perfil
-                </button>
 
-                <button onClick={() => sairDaConta()} style={{
-                  padding:'10px 0', border:`1.5px solid ${COR.borda}`, borderRadius:8,
-                  background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit' }}>
-                  Sair da conta
-                </button>
-                <div style={{ padding:14, background:'#f8faff', borderRadius:9,
-                  border:`1px solid ${COR.borda}`, textAlign:'center' }}>
-                  <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:4 }}>Versão do app</div>
-                  <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>Compass One v0.1.0</div>
-                  <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>MVP — em desenvolvimento</div>
+                {/* Moeda — desabilitado */}
+                <div style={{ opacity:.6 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
+                    <label style={{ fontSize:11, fontWeight:600, color:COR.textoSuave,
+                      textTransform:'uppercase', letterSpacing:.5 }}>Moeda padrão</label>
+                    <EmBreve />
+                  </div>
+                  <select disabled defaultValue="BRL" style={{ ...inputSt, cursor:'not-allowed', background:'#f8fafc' }}>
+                    <option value="BRL">🇧🇷 Real Brasileiro (R$)</option>
+                    <option value="USD">🇺🇸 Dólar Americano ($)</option>
+                    <option value="EUR">🇪🇺 Euro (€)</option>
+                  </select>
+                </div>
+
+                {/* Casas decimais — desabilitado */}
+                <div style={{ opacity:.6 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
+                    <label style={{ fontSize:11, fontWeight:600, color:COR.textoSuave,
+                      textTransform:'uppercase', letterSpacing:.5 }}>Casas decimais</label>
+                    <EmBreve />
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {([['2','R$ 1.500,00'],['0','R$ 1.500']] as const).map(([v,l]) => (
+                      <button disabled key={v} style={{ flex:1, padding:'7px 0', fontFamily:'inherit',
+                        border:`1.5px solid ${v==='2' ? COR.azul : COR.borda}`, borderRadius:7,
+                        cursor:'not-allowed', fontSize:12, fontWeight:500,
+                        background: v==='2' ? '#eff6ff' : COR.branco,
+                        color: v==='2' ? COR.azul : COR.textoSuave }}>{l}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Card: Ciclo financeiro — desabilitado */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24, opacity:.6 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
+                <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>Ciclo financeiro</h3>
+                <EmBreve />
+              </div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600,
+                color:COR.textoSuave, marginBottom:6, textTransform:'uppercase', letterSpacing:.5 }}>
+                Dia de início do mês
+              </label>
+              <select disabled defaultValue="1" style={{ ...inputSt, cursor:'not-allowed', background:'#f8fafc' }}>
+                {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={d}>Dia {d}</option>
+                ))}
+              </select>
+              <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
+                Define quando começa o ciclo mensal para relatórios e dashboards.
+              </div>
             </div>
 
-            {/* ─── PLANEJAMENTO (sub-seção dentro do Perfil) ─── */}
-            <div style={{ display:'flex', justifyContent:'center', paddingBottom:20 }}>
-            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
-              borderRadius:14, padding:28, width:'100%', maxWidth:480 }}>
-              <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 6px' }}>Planejamento</h2>
-              <p style={{ fontSize:12, color:COR.textoSuave, marginBottom:20 }}>
-                Configurações do planejamento financeiro
-              </p>
+            {/* Card: Alertas de saldo — desabilitado */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24, opacity:.6 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
+                <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>Alertas de saldo</h3>
+                <EmBreve />
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'10px 14px', borderRadius:9, background:'#f8fafc', border:`1px solid ${COR.borda}` }}>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:500, color:COR.texto }}>Alertar quando saldo abaixo de</div>
+                    <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>Destaca em vermelho no dashboard</div>
+                  </div>
+                  <div style={{ width:36, height:20, borderRadius:10, background:'#cbd5e1',
+                    position:'relative', cursor:'not-allowed', flexShrink:0 }}>
+                    <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff',
+                      position:'absolute', top:2, left:2, boxShadow:'0 1px 3px rgba(0,0,0,.2)' }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display:'block', fontSize:11, fontWeight:600,
+                    color:COR.textoSuave, marginBottom:6, textTransform:'uppercase', letterSpacing:.5 }}>
+                    Valor mínimo
+                  </label>
+                  <input disabled type="text" defaultValue="R$ 1.000,00"
+                    style={{ ...inputSt, cursor:'not-allowed', background:'#f8fafc' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Card: Planejamento — funcional */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
+              <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 12px' }}>Planejamento</h3>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                 padding:'12px 14px', borderRadius:9,
                 background: planejamentoLockado ? '#fff7ed' : '#f0fdf4',
@@ -974,13 +1081,15 @@ export default function Configuracoes() {
                 </div>
                 <button onClick={() => setPlanejamentoLockado(!planejamentoLockado)} style={{
                   padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
-                  fontFamily:'inherit', fontSize:12, fontWeight:600,
+                  fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
                   background: planejamentoLockado ? '#ea580c' : '#16a34a', color:'#fff' }}>
                   {planejamentoLockado ? 'Desbloquear' : 'Bloquear'}
                 </button>
               </div>
             </div>
-            </div>
+
+          </div>
+          </div>
           </div>
         )}
 

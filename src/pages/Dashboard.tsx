@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import AppHeader from '../components/AppHeader'
 
 const COR = {
   azul:'#1a56db', azulEscuro:'#0f2878', azulMedio:'#2563eb',
@@ -9,12 +10,6 @@ const COR = {
   verde:'#16a34a', vermelho:'#dc2626', amarelo:'#d97706',
 }
 
-const NAV = [
-  { label:'Dashboard',    path:'/dashboard'       },
-  { label:'Planejamento', path:'/planejamento'    },
-  { label:'Lançamentos',  path:'/novo-lancamento' },
-  { label:'⚙ Config',    path:'/configuracoes'   },
-]
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
@@ -92,42 +87,7 @@ export default function Dashboard() {
   return (
     <div style={{minHeight:'100vh',background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
 
-      {/* HEADER */}
-      <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},#2563eb)`,
-        padding:'20px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:28}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}
-            onClick={()=>navigate('/dashboard')}>
-            <div style={{width:32,height:32,borderRadius:8,background:'rgba(255,255,255,0.15)',
-              border:'1px solid rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-                <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-                <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-              </svg>
-            </div>
-            <span style={{color:'#fff',fontWeight:700,fontSize:18,letterSpacing:-.3}}>
-              Compass <span style={{fontWeight:300,opacity:.75}}>One</span>
-            </span>
-          </div>
-          <nav style={{display:'flex',gap:2}}>
-            {NAV.map(n=>(
-              <button key={n.path} onClick={()=>navigate(n.path)} style={{
-                padding:'6px 14px',borderRadius:8,border:'none',cursor:'pointer',
-                fontSize:13,fontWeight:500,fontFamily:'inherit',
-                background:n.path==='/dashboard'?'rgba(255,255,255,0.2)':'transparent',
-                color:n.path==='/dashboard'?'#fff':'rgba(255,255,255,0.6)'}}>
-                {n.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <span style={{color:'rgba(255,255,255,0.7)',fontSize:13,textTransform:'capitalize'}}>{hojeStr}</span>
-          <div style={{width:34,height:34,borderRadius:'50%',background:'rgba(255,255,255,0.15)',
-            display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:14,fontWeight:600}}>G</div>
-        </div>
-      </div>
+      <AppHeader currentPath="/dashboard" />
 
       <div style={{maxWidth:900,margin:'0 auto',padding:'28px 24px'}}>
 

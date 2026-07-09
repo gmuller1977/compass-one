@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import AppHeader from '../components/AppHeader'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
 
@@ -61,12 +62,6 @@ const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Jul
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
-const NAV = [
-  { label:'Dashboard',    path:'/dashboard'       },
-  { label:'Planejamento', path:'/planejamento'    },
-  { label:'Lançamentos',  path:'/novo-lancamento' },
-  { label:'⚙ Config',    path:'/configuracoes'   },
-]
 
 const FORMAS_PAG: { id: FormaPag; label: string }[] = [
   { id:'debito',        label:'Débito'        },
@@ -366,43 +361,7 @@ export default function NovoLancamentoExtrato() {
     <div style={{height:'100vh',display:'flex',flexDirection:'column',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",overflow:'hidden'}}>
 
-      {/* HEADER */}
-      <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding:'14px 24px',display:'flex',alignItems:'center',
-        justifyContent:'space-between',flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:20}}>
-          <div style={{display:'flex',alignItems:'center',gap:9,cursor:'pointer'}}
-            onClick={() => navigate('/dashboard')}>
-            <div style={{width:30,height:30,borderRadius:8,
-              background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.2)',
-              display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-                <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-                <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-              </svg>
-            </div>
-            <span style={{color:'#fff',fontWeight:700,fontSize:16}}>
-              Compass <span style={{fontWeight:300,opacity:.75}}>One</span>
-            </span>
-          </div>
-          <nav style={{display:'flex',gap:2}}>
-            {NAV.map(n => (
-              <button key={n.path} onClick={() => navigate(n.path)} style={{
-                padding:'5px 12px',borderRadius:7,border:'none',cursor:'pointer',
-                fontSize:12,fontWeight:500,fontFamily:'inherit',
-                background:n.path==='/novo-lancamento'?'rgba(255,255,255,0.2)':'transparent',
-                color:n.path==='/novo-lancamento'?'#fff':'rgba(255,255,255,0.6)'}}>
-                {n.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div style={{width:32,height:32,borderRadius:'50%',
-          background:'rgba(255,255,255,0.15)',display:'flex',
-          alignItems:'center',justifyContent:'center',
-          color:'#fff',fontSize:13,fontWeight:600}}>G</div>
-      </div>
+      <AppHeader currentPath="/novo-lancamento" />
 
       {/* MODO: Extrato bancário vs Fatura cartão */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
