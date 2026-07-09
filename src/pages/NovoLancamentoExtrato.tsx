@@ -127,6 +127,7 @@ export default function NovoLancamentoExtrato() {
   const [modo, setModo] = useState<'banco'|'cartao'>('banco')
   const [confirmandoFixaId, setConfirmandoFixaId] = useState<string|null>(null)
   const [diaConfirmacao,    setDiaConfirmacao]     = useState('')
+  const [fContaDestino,     setFContaDestino]      = useState('')
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
@@ -171,7 +172,7 @@ export default function NovoLancamentoExtrato() {
 
   function resetarParaNovo(novoDia: number) {
     setDiaSel(novoDia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(null)
-    setFTipo('saida'); setFCat(''); setFDesc(''); setFValor('')
+    setFTipo('saida'); setFCat(''); setFDesc(''); setFValor(''); setFContaDestino('')
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
 
@@ -193,6 +194,9 @@ export default function NovoLancamentoExtrato() {
 
   function updateMes(fn: (prev: DadosMes) => DadosMes) {
     updateExtratoMes(key, fn as unknown as (prev: import('../context/AppContext').DadosMes) => import('../context/AppContext').DadosMes)
+  }
+  function updateMesPorKey(targetKey: string, fn: (prev: DadosMes) => DadosMes) {
+    updateExtratoMes(targetKey, fn as unknown as (prev: import('../context/AppContext').DadosMes) => import('../context/AppContext').DadosMes)
   }
 
   function ehAutomatico(f: CatFixa) {
@@ -271,6 +275,43 @@ export default function NovoLancamentoExtrato() {
       setTimeout(() => categoriaSelectRef.current?.focus(), 80)
       return
     }
+    if (fPag === 'transferencia' && !editandoId) {
+      if (valor <= 0 || !fContaDestino) return
+      const diaFuturoAlvo = ehDiaFuturo(diaSel)
+      const contaDestNome = contasExtrato.find(c => c.id === fContaDestino)?.nome ?? ''
+      const contaOriNome  = contaInfo?.nome ?? ''
+      const tipoOposto: TipoLanc = fTipo === 'saida' ? 'entrada' : 'saida'
+      const descPrimaria = fDesc.trim() || (fTipo === 'saida' ? `→ ${contaDestNome}` : `← ${contaDestNome}`)
+      const descEspelho  = fDesc.trim() || (tipoOposto === 'entrada' ? `← ${contaOriNome}` : `→ ${contaOriNome}`)
+      updateMes(prev => ({
+        ...prev,
+        lancamentos: {
+          ...prev.lancamentos,
+          [diaSel]: [...(prev.lancamentos[diaSel] ?? []), {
+            id: `v-${Date.now()}`, tipo: fTipo,
+            descricao: descPrimaria, categoria: 'Transferência',
+            valor, formaPagamento: 'transferencia' as FormaPag,
+            tipoLanc: 'variavel' as const, consolidado: !diaFuturoAlvo,
+          }],
+        },
+      }))
+      updateMesPorKey(mesKey(fContaDestino, ano, mes), prev => ({
+        ...prev,
+        lancamentos: {
+          ...prev.lancamentos,
+          [diaSel]: [...(prev.lancamentos[diaSel] ?? []), {
+            id: `v-${Date.now() + 1}`, tipo: tipoOposto,
+            descricao: descEspelho, categoria: 'Transferência',
+            valor, formaPagamento: 'transferencia' as FormaPag,
+            tipoLanc: 'variavel' as const, consolidado: !diaFuturoAlvo,
+          }],
+        },
+      }))
+      setFCat(''); setFDesc(''); setFValor(''); setFContaDestino('')
+      setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+      return
+    }
+
     if (!fCat || valor <= 0) return
     const diaFuturoAlvo = ehDiaFuturo(diaSel)
     if (editandoId) {
@@ -802,9 +843,12 @@ export default function NovoLancamentoExtrato() {
 
         {!editandoFixaId && (
         <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
-          padding:3,marginBottom:12,width:'fit-content'}}>
+          padding:3,marginBottom:10,width:'fit-content'}}>
           {(['saida','entrada'] as const).map(t => (
-            <button key={t} onClick={() => { setFTipo(t); setFPag(t === 'entrada' ? 'credito' : 'debito') }} style={{
+            <button key={t} onClick={() => {
+              setFTipo(t)
+              if (fPag !== 'transferencia') setFPag(t === 'entrada' ? 'credito' : 'debito')
+            }} style={{
               padding:'5px 14px',border:'none',borderRadius:5,
               cursor:'pointer',fontSize:12,fontWeight:500,
               fontFamily:'inherit',transition:'all .15s',
@@ -817,14 +861,51 @@ export default function NovoLancamentoExtrato() {
         </div>
         )}
 
+        {/* FORMA DE PAGAMENTO — acima da categoria */}
+        {!editandoFixaId && (
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
+            {fTipo === 'entrada' ? 'Forma de recebimento:' : 'Forma de pagamento:'}
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+            {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).map(p=>(
+              <button key={p.id} onClick={()=>{ setFPag(p.id); if(p.id!=='transferencia') setFContaDestino('') }} style={{
+                padding:'4px 12px',
+                border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
+                borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
+                background:fPag===p.id?'#eff6ff':'#fff',
+                color:fPag===p.id?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        )}
+
         <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
           <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>
+              {fPag === 'transferencia' && !editandoId
+                ? (fTipo === 'saida' ? 'Transferir para:' : 'Receber de:')
+                : 'Categoria'}
+            </div>
             {editandoFixaId ? (
               <div style={{border:'1.5px solid #e2e8f0',borderRadius:7,padding:'7px 10px',
                 fontSize:12,background:'#f8faff',color:'#64748b',fontFamily:'inherit'}}>
                 {fCat}
               </div>
+            ) : fPag === 'transferencia' && !editandoId ? (
+              <select ref={categoriaSelectRef} value={fContaDestino}
+                onChange={e => setFContaDestino(e.target.value)}
+                onFocus={realcarFoco} onBlur={removerRealce}
+                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                  fontSize:12,outline:'none',background:'#fff',
+                  fontFamily:'inherit',color:COR.texto,width:'100%'}}>
+                <option value="">Selecione a conta...</option>
+                {contasExtrato.filter(c => c.id !== contaIdEfetivo).map(c=>(
+                  <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                ))}
+              </select>
             ) : (
             <select ref={categoriaSelectRef} autoFocus value={fCat}
               onChange={e => {
@@ -859,7 +940,7 @@ export default function NovoLancamentoExtrato() {
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-              placeholder="Ex: Mercado Extra, Farmácia..."
+              placeholder={fPag==='transferencia'&&!editandoId?'Opcional — ex: Reserva emergência':'Ex: Mercado Extra, Farmácia...'}
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
@@ -868,21 +949,6 @@ export default function NovoLancamentoExtrato() {
           </div>
         </div>
 
-        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginBottom:4}}>
-          <span style={{fontSize:11,color:'#0369a1',fontWeight:500,width:'100%'}}>
-            {fTipo === 'entrada' ? 'Forma de recebimento:' : 'Forma de pagamento:'}
-          </span>
-          {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).map(p=>(
-            <button key={p.id} onClick={()=>setFPag(p.id)} style={{
-              padding:'4px 12px',
-              border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
-              borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
-              background:fPag===p.id?'#eff6ff':'#fff',
-              color:fPag===p.id?COR.azul:'#0369a1',fontFamily:'inherit'}}>
-              {p.label}
-            </button>
-          ))}
-        </div>
         <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>
           Enter no valor ou na descrição para salvar
         </div>
