@@ -137,7 +137,8 @@ export default function NovoLancamentoExtrato() {
   const contaIdEfetivo = contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? ''
   const dados = extratoData as Record<string, DadosMes>
   const fixas = categorias
-    .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao')
+    .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
+      && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
       valor: c.valorPadrao ?? 0, tipo: c.tipo as TipoLanc,
