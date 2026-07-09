@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
-import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
+import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
 
@@ -264,7 +264,11 @@ export default function Configuracoes() {
   }
   function editarConta(c: Conta) {
     const { id, ...rest } = c
-    setFormConta(rest); setEditContaId(id)
+    // Compat: cartão com contaPagamentoId mas sem formaPagamentoFatura → débito automático
+    const restFinal = (rest.tipo === 'cartao' && rest.contaPagamentoId && !rest.formaPagamentoFatura)
+      ? { ...rest, formaPagamentoFatura: 'automatico' as FormaPagamentoFatura }
+      : rest
+    setFormConta(restFinal); setEditContaId(id)
     setErroConta('')
     setSaldoStr(c.saldoInicial ? String(c.saldoInicial).replace('.', ',') : '')
     setLimiteStr(c.limiteCartao ? String(c.limiteCartao).replace('.', ',') : '')
@@ -474,10 +478,11 @@ export default function Configuracoes() {
 
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                   <div>
-                    <label style={labelSt}>Nome da conta</label>
+                    <label style={labelSt}>{formConta.tipo==='cartao' ? 'Apelido do cartão' : 'Nome da conta'}</label>
                     <input ref={nomeContaRef} value={formConta.nome}
                       onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
-                      placeholder="Ex: Conta Sicredi, Nubank..." className="campo-cfg" style={inputSt} />
+                      placeholder={formConta.tipo==='cartao' ? 'Ex: Nubank, XP Visa...' : 'Ex: Conta Sicredi, Nubank...'}
+                      className="campo-cfg" style={inputSt} />
                   </div>
                   <div>
                     <label style={labelSt}>Banco</label>
@@ -569,17 +574,44 @@ export default function Configuracoes() {
                         </div>
                       </div>
                       <div>
-                        <label style={labelSt}>Conta de pagamento</label>
-                        <select
-                          value={formConta.contaPagamentoId ?? ''}
-                          onChange={e => setFormConta(p=>({...p, contaPagamentoId: e.target.value || undefined}))}
-                          className="campo-cfg" style={inputSt}>
-                          <option value="">Selecione a conta...</option>
-                          {contas.filter(c => c.tipo !== 'cartao' && c.id !== editContaId).map(c => (
-                            <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                        <label style={labelSt}>Pagamento da fatura</label>
+                        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                          {([
+                            { id:'automatico',    label:'Débito automático' },
+                            { id:'pix',           label:'Pix'               },
+                            { id:'boleto',        label:'Boleto'            },
+                            { id:'transferencia', label:'Transferência'     },
+                          ] as { id: FormaPagamentoFatura; label: string }[]).map(f => (
+                            <button key={f.id} onClick={() => setFormConta(p=>({
+                              ...p,
+                              formaPagamentoFatura: f.id,
+                              contaPagamentoId: f.id !== 'automatico' ? undefined : p.contaPagamentoId,
+                            }))} style={{
+                              padding:'6px 12px', fontFamily:'inherit', borderRadius:7,
+                              cursor:'pointer', fontSize:12, fontWeight:500,
+                              border:`1.5px solid ${formConta.formaPagamentoFatura===f.id ? COR.azul : COR.borda}`,
+                              background: formConta.formaPagamentoFatura===f.id ? '#eff6ff' : COR.branco,
+                              color: formConta.formaPagamentoFatura===f.id ? COR.azul : COR.textoSuave,
+                            }}>
+                              {f.label}
+                            </button>
                           ))}
-                        </select>
+                        </div>
                       </div>
+                      {formConta.formaPagamentoFatura === 'automatico' && (
+                        <div>
+                          <label style={labelSt}>Conta de pagamento</label>
+                          <select
+                            value={formConta.contaPagamentoId ?? ''}
+                            onChange={e => setFormConta(p=>({...p, contaPagamentoId: e.target.value || undefined}))}
+                            className="campo-cfg" style={inputSt}>
+                            <option value="">Selecione a conta...</option>
+                            {contas.filter(c => c.tipo !== 'cartao' && c.id !== editContaId).map(c => (
+                              <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </>
                   )}
                   <div>

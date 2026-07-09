@@ -13,12 +13,15 @@ export type FormaPagamentoBanco  = 'automatico' | 'pix' | 'boleto' | 'transferen
 export type FormaPagamentoCartao = 'avista' | 'parcelado'
 export type FormaPagamentoCategoria = FormaPagamentoBanco | FormaPagamentoCartao
 
+export type FormaPagamentoFatura = 'automatico' | 'pix' | 'boleto' | 'transferencia'
+
 export type Conta = {
   id: string; nome: string; banco: string; tipo: TipoConta
   saldoInicial: number; cor: string; icone: string
   limiteCartao?: number; diaVencimento?: number; diaFechamento?: number
   incluirNoSaldoInicial?: boolean
   agencia?: string; numeroConta?: string
+  formaPagamentoFatura?: FormaPagamentoFatura
   contaPagamentoId?: string
 }
 

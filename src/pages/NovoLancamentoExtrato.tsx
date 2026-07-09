@@ -136,8 +136,18 @@ export default function NovoLancamentoExtrato() {
   const contaIdEfetivo = contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? ''
   const dados = extratoData as Record<string, DadosMes>
   const fixasCategoria = categorias
-    .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
-      && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
+    .filter(c => {
+      if (!c.fixa || !c.ativa || c.tipoMovimento === 'cartao') return false
+      if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
+      // Sem conta específica: some se já consolidada em outro banco no mesmo mês
+      if (!c.contaDebitoId) {
+        const jaPaga = contasExtrato
+          .filter(ct => ct.id !== contaIdEfetivo)
+          .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[c.id] === true)
+        if (jaPaga) return false
+      }
+      return true
+    })
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
       valor: c.valorPadrao ?? 0, tipo: c.tipo as TipoLanc,
@@ -147,32 +157,53 @@ export default function NovoLancamentoExtrato() {
   const fixasCartao: CatFixa[] = useMemo(() => {
     let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
     try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /**/ }
-    return contas
-      .filter(c => c.tipo === 'cartao' && c.contaPagamentoId === contaIdEfetivo && c.diaVencimento)
-      .map(c => {
-        const fatKey = mesKey(c.id, ano, mes)
-        const dm = faturasDados[fatKey]
-        let total = 0
-        if (dm) {
-          const nDias = new Date(ano, mes + 1, 0).getDate()
-          for (let d = 1; d <= nDias; d++) {
-            ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-              l.tipo === 'saida' ? total += l.valor : total -= l.valor
-            })
-          }
+
+    const result: CatFixa[] = []
+    contas.filter(c => c.tipo === 'cartao' && c.diaVencimento).forEach(c => {
+      const isAutomatico = c.formaPagamentoFatura === 'automatico'
+        || (!c.formaPagamentoFatura && !!c.contaPagamentoId)
+
+      if (isAutomatico) {
+        // Débito automático: só aparece no banco vinculado
+        if (c.contaPagamentoId !== contaIdEfetivo) return
+      } else {
+        // Outras formas: aparece em todos os bancos, mas some se já paga em outro
+        const jaPaga = contasExtrato
+          .filter(ct => ct.id !== contaIdEfetivo)
+          .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[`cartao-${c.id}`] === true)
+        if (jaPaga) return
+      }
+
+      const fatKey = mesKey(c.id, ano, mes)
+      const dm = faturasDados[fatKey]
+      let total = 0
+      if (dm) {
+        const nDias = new Date(ano, mes + 1, 0).getDate()
+        for (let d = 1; d <= nDias; d++) {
+          ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+            l.tipo === 'saida' ? total += l.valor : total -= l.valor
+          })
         }
-        return {
-          id: `cartao-${c.id}`,
-          nome: `Fatura ${c.banco}`,
-          categoria: `Fatura ${c.banco}`,
-          valor: total,
-          tipo: 'saida' as TipoLanc,
-          formaPagamento: 'debito' as FormaPag,
-          diaVencimento: c.diaVencimento!,
-          ehFaturaCartao: true,
-        }
+      }
+
+      const fp = c.formaPagamentoFatura
+      const formaPagamento: FormaPag =
+        !fp || fp === 'automatico' || fp === 'boleto' ? 'debito' :
+        fp === 'pix' ? 'pix' : 'transferencia'
+
+      result.push({
+        id: `cartao-${c.id}`,
+        nome: c.nome,
+        categoria: c.banco,
+        valor: total,
+        tipo: 'saida' as TipoLanc,
+        formaPagamento,
+        diaVencimento: c.diaVencimento!,
+        ehFaturaCartao: isAutomatico,
       })
-  }, [contas, contaIdEfetivo, ano, mes])
+    })
+    return result
+  }, [contas, contaIdEfetivo, ano, mes, dados, contasExtrato])
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
     .filter(c => c.tipo === fTipo)
@@ -245,16 +276,28 @@ export default function NovoLancamentoExtrato() {
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
+    const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
     let saldo = SALDO_INICIAL
     const res: Record<number,number> = {}
     for (let d=1; d<=totalDias; d++) {
+      const dPast = mesPast || (eMesAtual && d < diaHoje)
+      const dHoje = eMesAtual && d === diaHoje
       fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
-        .forEach(f=>{ const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor; saldo += f.tipo==='entrada'?v:-v })
+        .forEach(f => {
+          if (dPast || dHoje) {
+            // passado/hoje: só fixas confirmadas entram no saldo acumulado
+            const conf = dadosMesAtual?.fixasConsolidadas?.[f.id]
+            const confirmada = conf !== undefined ? conf : (ehAutomatico(f) && dPast)
+            if (!confirmada) return
+          }
+          const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor
+          saldo += f.tipo==='entrada' ? v : -v
+        })
       ;(lancs[d]??[]).forEach(l=>{ saldo += l.tipo==='entrada'?l.valor:-l.valor })
       res[d] = saldo
     }
     return res
-  }, [dados, key, contaId, totalDias, mes, ano, categorias])
+  }, [dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
     const dadosMesAtual = dados[key]
@@ -570,9 +613,10 @@ export default function NovoLancamentoExtrato() {
           const temConf = entradasConf > 0 || saidasConf > 0
           const entradasBoxVal = temConf ? entradasConf : entradasDia
           const saidasBoxVal   = temConf ? saidasConf   : saidasDia
-          const saldoDia = temConf
-            ? saldoIni + entradasConf - saidasConf
-            : saldosDia[dia] ?? saldoIni
+          // Futuro: projeção total. Hoje/passado: só confirmados
+          const saldoDia = diaFuturo
+            ? saldosDia[dia] ?? saldoIni
+            : saldoIni + entradasConf - saidasConf
           const selecionado = diaSel===dia
           const corIni    = saldoIni<0 ? COR.vermelho : COR.verde
           const corSaldo  = saldoDia<0 ? COR.vermelho : COR.verde
@@ -657,13 +701,15 @@ export default function NovoLancamentoExtrato() {
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:96,
-                    background:saldoDia<0?'#fff1f2':'#f0fdf4',
-                    border:`1px solid ${saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
+                    background:diaFuturo?'#f8faff':saldoDia<0?'#fff1f2':'#f0fdf4',
+                    border:`1px solid ${diaFuturo?COR.borda:saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
-                      letterSpacing:.4,marginBottom:1,color:corSaldo}}>
-                      {passado?'Final':temConf?'Atual':'Previsto'}
+                      letterSpacing:.4,marginBottom:1,
+                      color:diaFuturo?'#94a3b8':corSaldo}}>
+                      {diaFuturo?'Previsto':passado?'Final':'Atual'}
                     </span>
-                    <span style={{fontSize:12,fontWeight:700,color:corSaldo}}>{fmt(saldoDia)}</span>
+                    <span style={{fontSize:12,fontWeight:700,
+                      color:diaFuturo?'#64748b':corSaldo}}>{fmt(saldoDia)}</span>
                   </div>
                 </div>
               </div>
@@ -684,7 +730,7 @@ export default function NovoLancamentoExtrato() {
                   <div onClick={() => editarFixa(dia, f)}
                     style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
                     padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
-                    {!(passado && (automatico || consolidada)) && (
+                    {!(passado && automatico) && (
                       <input type="checkbox" checked={consolidada}
                         onClick={e => e.stopPropagation()}
                         onChange={() => {
@@ -817,7 +863,7 @@ export default function NovoLancamentoExtrato() {
             ) : (
               <input type="number" min={1} max={totalDias} value={diaSel}
                 onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
-                onFocus={realcarFoco} onBlur={removerRealce}
+                onFocus={e => { realcarFoco(e); e.currentTarget.select() }} onBlur={removerRealce}
                 style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
                   fontSize:12,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}} />
