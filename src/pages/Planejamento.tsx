@@ -986,7 +986,7 @@ export default function Planejamento() {
                             : 0
                           const lancado = aba === 'real'
                             ? ehFatura
-                              ? (mi > 0 ? lancadoCartaoMes[mi - 1] : 0)
+                              ? (mi > 0 ? lancadoCartaoMes[mi - 1] : 0) + (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
                               : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
                             : 0
                           const prevAbs = Math.abs(previsto)
