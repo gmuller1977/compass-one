@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData } from '../context/AppContext'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import AppHeader from '../components/AppHeader'
@@ -91,6 +91,8 @@ export default function Planejamento() {
   const [hoverCat,      setHoverCat]      = useState<HoverCat>(null)
   const [entradaAberta, setEntradaAberta] = useState(false)
   const [saidaAberta,   setSaidaAberta]   = useState(false)
+  const scrollBodyRef = useRef<HTMLDivElement>(null)
+  const scrollFootRef = useRef<HTMLDivElement>(null)
   const [saldoAberto,   setSaldoAberto]   = useState(false)
   const [showBannerCopiar, setShowBannerCopiar] = useState(false)
   const [reajustePerc,  setReajustePerc]  = useState('0')
@@ -611,7 +613,8 @@ export default function Planejamento() {
 
         {/* container único de scroll — todos os cards rolam juntos */}
         {(aba === 'previsto' || realExiste) && (
-        <div style={{ height:'100%', overflow:'auto', paddingBottom:12 }}>
+        <div ref={scrollBodyRef} style={{ flex:1, overflow:'auto', paddingBottom:12 }}
+          onScroll={e => { if (scrollFootRef.current) scrollFootRef.current.scrollLeft = e.currentTarget.scrollLeft }}>
           <div style={{ minWidth: COL_CAT + COL_MES * 12 + 2 }}>
 
             {/* CABEÇALHO FIXO */}
@@ -869,37 +872,40 @@ export default function Planejamento() {
 
             </div>
 
-            {/* SALDO FINAL — sticky no rodapé do scroll */}
-            <div style={{ position:'sticky', bottom:0, zIndex:20,
-              borderTop:`2px solid #0f2878` }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                <colgroup>
-                  <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                  {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-                </colgroup>
-                <tbody>
-                  <tr>
-                    <td style={{ position:'sticky', left:0, zIndex:21,
-                      background:COR.azul, padding:'11px 16px',
-                      fontWeight:700, fontSize:12, color:'#fff',
-                      borderLeft:`3px solid #0f2878`, whiteSpace:'nowrap' }}>
-                      Saldo Final
-                    </td>
-                    {saldoFinal.map((v, i) => (
-                      <td key={i} style={{ padding:'11px 12px', textAlign:'right',
-                        fontSize:12, fontWeight:700, whiteSpace:'nowrap',
-                        color: v < 0 ? '#fca5a5' : '#fff',
-                        background: i === mesAtual ? '#1244a8' : COR.azul }}>
-                        {fmt(v, true)}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
           </div>
         </div>
+        )}
+
+        {/* SALDO FINAL — fora do scroll, sempre visível */}
+        {(aba === 'previsto' || realExiste) && (
+          <div ref={scrollFootRef} style={{ flexShrink:0, overflow:'hidden',
+            borderTop:`2px solid #0f2878` }}>
+            <table style={{ borderCollapse:'collapse', tableLayout:'fixed',
+              minWidth: COL_CAT + COL_MES * 12 + 2 }}>
+              <colgroup>
+                <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+              </colgroup>
+              <tbody>
+                <tr>
+                  <td style={{ position:'sticky', left:0, zIndex:2,
+                    background:COR.azul, padding:'11px 16px',
+                    fontWeight:700, fontSize:12, color:'#fff',
+                    borderLeft:`3px solid #0f2878`, whiteSpace:'nowrap' }}>
+                    Saldo Final
+                  </td>
+                  {saldoFinal.map((v, i) => (
+                    <td key={i} style={{ padding:'11px 12px', textAlign:'right',
+                      fontSize:12, fontWeight:700, whiteSpace:'nowrap',
+                      color: v < 0 ? '#fca5a5' : '#fff',
+                      background: i === mesAtual ? '#1244a8' : COR.azul }}>
+                      {fmt(v, true)}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         )}
 
       </div>
