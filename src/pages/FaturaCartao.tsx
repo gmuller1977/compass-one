@@ -392,11 +392,16 @@ export default function FaturaCartao() {
               display:'flex',alignItems:'center',gap:6,
               padding:'7px 14px',borderRadius:'8px 8px 0 0',
               border:`1px solid ${ativa?COR.azul:COR.borda}`,
-              cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
+              cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',
               background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
-              position:'relative',zIndex:ativa?1:0}}>
-              <div style={{width:7,height:7,borderRadius:'50%',background:ativa?'#fff':c.cor}}/>
-              {c.icone} {c.banco}{c.apelido ? ` · ${c.apelido}` : ''}
+              position:'relative',zIndex:ativa?1:0,textAlign:'left'}}>
+              <div style={{width:7,height:7,borderRadius:'50%',flexShrink:0,background:ativa?'#fff':c.cor}}/>
+              <div>
+                <div style={{fontSize:12,fontWeight:ativa?700:600}}>💳 Cartão de Crédito</div>
+                <div style={{fontSize:10,fontWeight:400,color:ativa?'rgba(255,255,255,0.75)':'#94a3b8',marginTop:1}}>
+                  {c.banco}{c.apelido ? ` · ${c.apelido}` : ''}
+                </div>
+              </div>
             </button>
           )
         })}
