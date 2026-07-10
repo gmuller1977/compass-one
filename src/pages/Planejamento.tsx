@@ -209,7 +209,8 @@ export default function Planejamento() {
   function updateAno(fn: (d: AnoData) => AnoData) {
     if (planejamentoLockado && aba === 'previsto') return
     if (aba === 'previsto') {
-      setPlanos(prev => ({ ...prev, [anoAtual]: fn((prev[anoAtual] as AnoData | undefined) ?? dadosBase) as PlanoAnoData }))
+      // usa dadosAno (merged) como base — garante que categorias novas existam e índices batam
+      setPlanos(prev => ({ ...prev, [anoAtual]: fn(dadosAno) as PlanoAnoData }))
     } else {
       updatePlanoReal(anoAtual, prev => fn(prev as AnoData) as PlanoAnoData)
     }
