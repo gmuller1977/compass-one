@@ -289,6 +289,19 @@ export default function Planejamento() {
     Array.from({ length: 12 }, (_, mi) => saldoInicialReal[mi] + totaisReais.te[mi] - totaisReais.ts[mi])
   , [saldoInicialReal, totaisReais])
 
+  // Indica quais meses têm dados reais lançados (para fallback ao previsto em cinza)
+  const mesTemDadosReais = useMemo(() => Array.from({ length: 12 }, (_, mes) => {
+    if (aba !== 'real') return false
+    return contas.filter(c => c.tipo !== 'cartao').some(conta => {
+      const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+      const dados = extratoData[key]
+      if (!dados) return false
+      const temLanc = Object.values(dados.lancamentos).some(arr => (arr as unknown[]).length > 0)
+      const temConsolidados = !!dados.fixasConsolidadas && Object.values(dados.fixasConsolidadas).some(v => v)
+      return temLanc || temConsolidados
+    })
+  }), [aba, contas, extratoData, anoAtual])
+
   // Objetivos mensais — sempre lidos do previsto
   const objetivosAno: number[] = (planos[anoAtual] as PlanoAnoData | undefined)?.objetivos ?? new Array(12).fill(0)
 
@@ -729,9 +742,11 @@ export default function Planejamento() {
             {MESES_FULL.map((nomeMes, mi) => {
               const aberto  = mesesAbertos.has(mi)
               const ehAtual = mi === mesAtual && anoAtual === anoCorrente
-              const te = aba === 'real' ? totaisReais.te[mi] : totalEntradas[mi]
-              const ts = aba === 'real' ? totaisReais.ts[mi] : totalSaidas[mi]
-              const sf = aba === 'real' ? saldoFinalReal[mi] : saldoFinal[mi]
+              const temReal = aba === 'real' && mesTemDadosReais[mi]
+              const cinza = { bg:'#f8fafc', bd:'#e2e8f0', txt:'#94a3b8' }
+              const te = temReal ? totaisReais.te[mi] : totalEntradas[mi]
+              const ts = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
+              const sf = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
               const si = saldoInicialReal[mi]
               const obj = objetivosAno[mi]
               const dif = obj > 0 ? sf - obj : null
@@ -771,24 +786,28 @@ export default function Planejamento() {
                       <div style={{ flex:1, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
 
                         {/* Entradas */}
-                        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0',
-                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                          <div style={{ fontSize:9, color:'#16a34a', fontWeight:700,
-                            textTransform:'uppercase', letterSpacing:.4 }}>Entradas</div>
-                          <div style={{ fontSize:13, fontWeight:700, color:'#16a34a', whiteSpace:'nowrap', marginTop:1 }}>
-                            {te === 0 ? '—' : te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                        {(() => { const usaCinza = aba==='real' && !temReal; const cor = usaCinza ? cinza.txt : '#16a34a'; return (
+                          <div style={{ background: usaCinza ? cinza.bg : '#f0fdf4', border:`1px solid ${usaCinza ? cinza.bd : '#bbf7d0'}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                            <div style={{ fontSize:9, color:cor, fontWeight:700,
+                              textTransform:'uppercase', letterSpacing:.4 }}>Entradas</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:cor, whiteSpace:'nowrap', marginTop:1 }}>
+                              {te === 0 ? '—' : te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
                           </div>
-                        </div>
+                        )})()}
 
                         {/* Saídas */}
-                        <div style={{ background:'#fff5f5', border:'1px solid #fecaca',
-                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                          <div style={{ fontSize:9, color:COR.vermelho, fontWeight:700,
-                            textTransform:'uppercase', letterSpacing:.4 }}>Saídas</div>
-                          <div style={{ fontSize:13, fontWeight:700, color:COR.vermelho, whiteSpace:'nowrap', marginTop:1 }}>
-                            {ts === 0 ? '—' : ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                        {(() => { const usaCinza = aba==='real' && !temReal; const cor = usaCinza ? cinza.txt : COR.vermelho; return (
+                          <div style={{ background: usaCinza ? cinza.bg : '#fff5f5', border:`1px solid ${usaCinza ? cinza.bd : '#fecaca'}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                            <div style={{ fontSize:9, color:cor, fontWeight:700,
+                              textTransform:'uppercase', letterSpacing:.4 }}>Saídas</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:cor, whiteSpace:'nowrap', marginTop:1 }}>
+                              {ts === 0 ? '—' : ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
                           </div>
-                        </div>
+                        )})()}
 
                         {/* Meta (sempre editável) */}
                         <div
@@ -842,21 +861,21 @@ export default function Planejamento() {
                         </div>
 
                         {/* Saldo Final */}
-                        <div style={{ background: sf<0 ? '#fff5f5' : sf<1000 ? '#fffbeb' : '#f0fdf4',
-                          border:`1px solid ${sf<0?'#fecaca':sf<1000?'#fde68a':'#bbf7d0'}`,
-                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                          <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                            letterSpacing:.4, color:corSaldo(sf) }}>Saldo Final</div>
-                          <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1,
-                            color:corSaldo(sf) }}>
-                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                        {(() => { const usaCinza = aba==='real' && !temReal; const c = usaCinza ? cinza : { bg: sf<0?'#fff5f5':sf<1000?'#fffbeb':'#f0fdf4', bd: sf<0?'#fecaca':sf<1000?'#fde68a':'#bbf7d0', txt: corSaldo(sf) }; return (
+                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                              letterSpacing:.4, color:c.txt }}>Saldo Final</div>
+                            <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1, color:c.txt }}>
+                              {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
                           </div>
-                        </div>
+                        )})()}
                       </div>
                     ) : (
                       /* ── FECHADO: saldo inicial · movimentação · saldo final (caixas) ── */
                       <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end' }}>
-                        {(() => { const c = caixaCor(si); return (
+                        {(() => { const c = (aba==='real' && !temReal) ? cinza : caixaCor(si); return (
                           <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
                             borderRadius:8, padding:'6px 14px', minWidth:110 }}>
                             <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
@@ -866,7 +885,7 @@ export default function Planejamento() {
                             </div>
                           </div>
                         )})()}
-                        {(() => { const mov = te-ts; const c = caixaCor(mov); return (
+                        {(() => { const mov = te-ts; const c = (aba==='real' && !temReal) ? cinza : caixaCor(mov); return (
                           <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
                             borderRadius:8, padding:'6px 14px', minWidth:110 }}>
                             <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
@@ -876,7 +895,7 @@ export default function Planejamento() {
                             </div>
                           </div>
                         )})()}
-                        {(() => { const c = caixaCor(sf); return (
+                        {(() => { const c = (aba==='real' && !temReal) ? cinza : caixaCor(sf); return (
                           <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
                             borderRadius:8, padding:'6px 14px', minWidth:110 }}>
                             <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
