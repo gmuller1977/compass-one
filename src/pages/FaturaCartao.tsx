@@ -396,7 +396,7 @@ export default function FaturaCartao() {
               background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
               position:'relative',zIndex:ativa?1:0}}>
               <div style={{width:7,height:7,borderRadius:'50%',background:ativa?'#fff':c.cor}}/>
-              {c.icone} {c.banco}
+              {c.icone} {c.banco}{c.apelido ? ` · ${c.apelido}` : ''}
             </button>
           )
         })}

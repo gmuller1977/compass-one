@@ -23,6 +23,7 @@ export type Conta = {
   agencia?: string; numeroConta?: string
   formaPagamentoFatura?: FormaPagamentoFatura
   contaPagamentoId?: string
+  apelido?: string
 }
 
 export type Categoria = {

@@ -243,6 +243,7 @@ export default function Configuracoes() {
   const [erroConta,   setErroConta]   = useState('')
   const [saldoStr,    setSaldoStr]    = useState('')
   const [limiteStr,   setLimiteStr]   = useState('')
+  const [bancoCustom, setBancoCustom] = useState('')
   const nomeContaRef = useRef<HTMLInputElement>(null)
 
   const catVazia: Omit<Categoria,'id'> = {
@@ -259,28 +260,42 @@ export default function Configuracoes() {
     setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
     setEditContaId(null)
     setErroConta('')
-    setSaldoStr(''); setLimiteStr('')
+    setSaldoStr(''); setLimiteStr(''); setBancoCustom('')
     setTimeout(() => nomeContaRef.current?.focus(), 0)
   }
   function editarConta(c: Conta) {
     const { id, ...rest } = c
-    // Compat: cartão com contaPagamentoId mas sem formaPagamentoFatura → débito automático
     const restFinal = (rest.tipo === 'cartao' && rest.contaPagamentoId && !rest.formaPagamentoFatura)
       ? { ...rest, formaPagamentoFatura: 'automatico' as FormaPagamentoFatura }
       : rest
-    setFormConta(restFinal); setEditContaId(id)
+    // Se banco não está na lista, seleciona "Outro" e guarda o valor real em bancoCustom
+    const bancoNaLista = BANCOS.includes(c.banco)
+    if (c.tipo === 'cartao' && !bancoNaLista && c.banco) {
+      setFormConta({ ...restFinal, banco: 'Outro' })
+      setBancoCustom(c.banco)
+    } else {
+      setFormConta(restFinal)
+      setBancoCustom('')
+    }
+    setEditContaId(id)
     setErroConta('')
     setSaldoStr(c.saldoInicial ? String(c.saldoInicial).replace('.', ',') : '')
     setLimiteStr(c.limiteCartao ? String(c.limiteCartao).replace('.', ',') : '')
   }
   function salvarConta() {
-    if (!formConta.nome.trim()) return setErroConta('Informe o nome da conta')
-    if (!formConta.banco)       return setErroConta('Selecione o banco')
+    const ehCartao = formConta.tipo === 'cartao'
+    const bancoEfetivo = (ehCartao && formConta.banco === 'Outro') ? bancoCustom.trim() : formConta.banco
+    if (!ehCartao && !formConta.nome.trim()) return setErroConta('Informe o nome da conta')
+    if (!bancoEfetivo) return setErroConta(ehCartao ? 'Selecione ou informe o banco' : 'Selecione o banco')
+    const nomeEfetivo = ehCartao
+      ? (formConta.apelido?.trim() || bancoEfetivo)
+      : formConta.nome.trim()
+    const contaFinal = { ...formConta, nome: nomeEfetivo, banco: bancoEfetivo }
     setErroConta('')
     if (editContaId) {
-      setContas(prev => prev.map(c => c.id===editContaId ? {id:editContaId,...formConta} : c))
+      setContas(prev => prev.map(c => c.id===editContaId ? {id:editContaId,...contaFinal} : c))
     } else {
-      setContas(prev => [...prev, {id:gerarId(),...formConta}])
+      setContas(prev => [...prev, {id:gerarId(),...contaFinal}])
     }
     novaConta()
   }
@@ -414,11 +429,13 @@ export default function Configuracoes() {
                               {c.icone}
                             </div>
                             <div style={{ flex:1, minWidth:0 }}>
-                              <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>{c.nome}</div>
+                              <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>
+                                {c.tipo==='cartao' ? 'Cartão de Crédito' : c.nome}
+                              </div>
                               <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>
-                                {c.banco}
-                                {c.agencia && ` · Ag ${c.agencia}`}
-                                {c.numeroConta && ` · CC ${c.numeroConta}`}
+                                {c.tipo==='cartao'
+                                  ? `${c.banco}${c.apelido ? ` · ${c.apelido}` : ''}`
+                                  : `${c.banco}${c.agencia ? ` · Ag ${c.agencia}` : ''}${c.numeroConta ? ` · CC ${c.numeroConta}` : ''}`}
                               </div>
                             </div>
                             <div style={{ textAlign:'right', flexShrink:0 }}>
@@ -477,79 +494,29 @@ export default function Configuracoes() {
                 </div>
 
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                  <div>
-                    <label style={labelSt}>{formConta.tipo==='cartao' ? 'Apelido do cartão' : 'Nome da conta'}</label>
-                    <input ref={nomeContaRef} value={formConta.nome}
-                      onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
-                      placeholder={formConta.tipo==='cartao' ? 'Ex: Nubank, XP Visa...' : 'Ex: Conta Sicredi, Nubank...'}
-                      className="campo-cfg" style={inputSt} />
-                  </div>
-                  <div>
-                    <label style={labelSt}>Banco</label>
-                    <select value={formConta.banco}
-                      onChange={e => setFormConta(p=>({...p, banco:e.target.value}))}
-                      className="campo-cfg" style={inputSt}>
-                      <option value="">Selecione...</option>
-                      {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
-                  </div>
-                  {aba==='bancos' && (
+                  {/* ── BANCO (primeiro para cartão, com opção Outro) ── */}
+                  {formConta.tipo === 'cartao' ? (
                     <>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                        <div>
-                          <label style={labelSt}>Agência</label>
-                          <input
-                            value={formConta.agencia||''}
-                            onChange={e => setFormConta(p=>({...p, agencia:e.target.value}))}
-                            placeholder="Ex: 0001" className="campo-cfg" style={inputSt} />
-                        </div>
-                        <div>
-                          <label style={labelSt}>Conta</label>
-                          <input
-                            value={formConta.numeroConta||''}
-                            onChange={e => setFormConta(p=>({...p, numeroConta:e.target.value}))}
-                            placeholder="Ex: 12345-6" className="campo-cfg" style={inputSt} />
-                        </div>
-                      </div>
-                      <div style={{ fontSize:10, color:'#94a3b8', marginTop:-8 }}>
-                        Agência e conta são apenas informativas, não são obrigatórias.
-                      </div>
                       <div>
-                        <label style={labelSt}>Tipo</label>
-                        <div style={{ display:'flex', gap:6 }}>
-                          {([['corrente','Corrente'],['poupanca','Poupança']] as const).map(([v,l]) => (
-                            <button key={v} onClick={() => setFormConta(p=>({...p,tipo:v}))} style={{
-                              flex:1, padding:'7px 0', fontFamily:'inherit',
-                              border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
-                              borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                              background: formConta.tipo===v ? '#eff6ff' : COR.branco,
-                              color: formConta.tipo===v ? COR.azul : COR.textoSuave }}>
-                              {l}
-                            </button>
-                          ))}
-                        </div>
+                        <label style={labelSt}>Banco</label>
+                        <select value={formConta.banco}
+                          onChange={e => { setFormConta(p=>({...p, banco:e.target.value})); if (e.target.value !== 'Outro') setBancoCustom('') }}
+                          className="campo-cfg" style={inputSt}>
+                          <option value="">Selecione...</option>
+                          {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
                       </div>
-                    </>
-                  )}
-                  {formConta.tipo!=='cartao' && (
-                    <div>
-                      <label style={labelSt}>Saldo inicial</label>
-                      <input
-                        value={saldoStr}
-                        onChange={e => {
-                          const raw = e.target.value.replace(/[^0-9.,]/g, '')
-                          setSaldoStr(raw)
-                          setFormConta(p=>({...p, saldoInicial:parseFloat(raw.replace(',','.'))||0}))
-                        }}
-                        placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
-                    </div>
-                  )}
-                  {formConta.tipo==='cartao' && (
-                    <>
+                      {formConta.banco === 'Outro' && (
+                        <div>
+                          <label style={labelSt}>Qual banco?</label>
+                          <input ref={nomeContaRef} value={bancoCustom}
+                            onChange={e => setBancoCustom(e.target.value)}
+                            placeholder="Nome do banco" className="campo-cfg" style={inputSt} />
+                        </div>
+                      )}
                       <div>
                         <label style={labelSt}>Limite do cartão</label>
-                        <input
-                          value={limiteStr}
+                        <input value={limiteStr}
                           onChange={e => {
                             const raw = e.target.value.replace(/[^0-9.,]/g, '')
                             setLimiteStr(raw)
@@ -612,6 +579,81 @@ export default function Configuracoes() {
                           </select>
                         </div>
                       )}
+                      <div>
+                        <label style={labelSt}>Apelido do cartão <span style={{ fontWeight:400, color:COR.textoSuave }}>(opcional)</span></label>
+                        <input value={formConta.apelido||''}
+                          onChange={e => setFormConta(p=>({...p, apelido:e.target.value||undefined}))}
+                          placeholder="Ex: Nubank Gold, Itaú Família..."
+                          className="campo-cfg" style={inputSt} />
+                        <div style={{ fontSize:10, color:'#94a3b8', marginTop:3 }}>
+                          Se não informado, o banco será usado como identificador do cartão.
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={labelSt}>Nome da conta</label>
+                        <input ref={nomeContaRef} value={formConta.nome}
+                          onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
+                          placeholder="Ex: Conta Sicredi, Nubank..."
+                          className="campo-cfg" style={inputSt} />
+                      </div>
+                      <div>
+                        <label style={labelSt}>Banco</label>
+                        <select value={formConta.banco}
+                          onChange={e => setFormConta(p=>({...p, banco:e.target.value}))}
+                          className="campo-cfg" style={inputSt}>
+                          <option value="">Selecione...</option>
+                          {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      </div>
+                      {aba==='bancos' && (
+                        <>
+                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                            <div>
+                              <label style={labelSt}>Agência</label>
+                              <input value={formConta.agencia||''}
+                                onChange={e => setFormConta(p=>({...p, agencia:e.target.value}))}
+                                placeholder="Ex: 0001" className="campo-cfg" style={inputSt} />
+                            </div>
+                            <div>
+                              <label style={labelSt}>Conta</label>
+                              <input value={formConta.numeroConta||''}
+                                onChange={e => setFormConta(p=>({...p, numeroConta:e.target.value}))}
+                                placeholder="Ex: 12345-6" className="campo-cfg" style={inputSt} />
+                            </div>
+                          </div>
+                          <div style={{ fontSize:10, color:'#94a3b8', marginTop:-8 }}>
+                            Agência e conta são apenas informativas, não são obrigatórias.
+                          </div>
+                          <div>
+                            <label style={labelSt}>Tipo</label>
+                            <div style={{ display:'flex', gap:6 }}>
+                              {([['corrente','Corrente'],['poupanca','Poupança']] as const).map(([v,l]) => (
+                                <button key={v} onClick={() => setFormConta(p=>({...p,tipo:v}))} style={{
+                                  flex:1, padding:'7px 0', fontFamily:'inherit',
+                                  border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
+                                  borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                                  background: formConta.tipo===v ? '#eff6ff' : COR.branco,
+                                  color: formConta.tipo===v ? COR.azul : COR.textoSuave }}>
+                                  {l}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <div>
+                        <label style={labelSt}>Saldo inicial</label>
+                        <input value={saldoStr}
+                          onChange={e => {
+                            const raw = e.target.value.replace(/[^0-9.,]/g, '')
+                            setSaldoStr(raw)
+                            setFormConta(p=>({...p, saldoInicial:parseFloat(raw.replace(',','.'))||0}))
+                          }}
+                          placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
+                      </div>
                     </>
                   )}
                   <div>
