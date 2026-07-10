@@ -536,18 +536,38 @@ export default function Planejamento() {
             <div style={{ background:COR.branco, borderRadius:12,
               border:`1px solid ${COR.borda}`, overflow:'hidden' }}>
               <div onClick={() => setSaldoAberto(a => !a)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                  padding:'11px 16px', cursor:'pointer', gap:12 }}
+                style={{ display:'flex', alignItems:'center',
+                  padding:'10px 14px', cursor:'pointer', gap:10 }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#f8faff'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
-                <span style={{ fontSize:12, fontWeight:700, color:COR.azulEscuro }}>
-                  <span style={{ fontSize:9, marginRight:6, display:'inline-block',
+                {/* Label — mesma largura mínima que o nome do mês */}
+                <div style={{ minWidth:96, display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+                  <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
                     transition:'transform .2s', transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  Saldo Inicial de Janeiro
-                </span>
-                <span style={{ fontSize:13, fontWeight:700, color:corSaldo(SALDO_INICIAL_FIXO) }}>
-                  {fmt(SALDO_INICIAL_FIXO, true)}
-                </span>
+                  <span style={{ fontSize:13, fontWeight:700, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
+                    Saldo Inicial de Janeiro
+                  </span>
+                </div>
+                {/* 3 colunas — mesma estrutura das linhas de mês */}
+                <div style={{ flex:1, display:'flex', alignItems:'center', gap:24 }}>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                    <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
+                      letterSpacing:.4, fontWeight:600 }}>Saldo Inicial</span>
+                    <span style={{ fontSize:13, fontWeight:700, color:corSaldo(SALDO_INICIAL_FIXO) }}>
+                      {fmt(SALDO_INICIAL_FIXO, true)}
+                    </span>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                    <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
+                      letterSpacing:.4, fontWeight:600 }}>Movimentação</span>
+                    <span style={{ fontSize:13, color:'#cbd5e1' }}>—</span>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                    <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
+                      letterSpacing:.4, fontWeight:600 }}>Saldo Final</span>
+                    <span style={{ fontSize:13, color:'#cbd5e1' }}>—</span>
+                  </div>
+                </div>
               </div>
               {saldoAberto && (
                 <div style={{ padding:'10px 16px 14px 28px', background:'#eff6ff',
