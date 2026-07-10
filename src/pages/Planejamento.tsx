@@ -147,20 +147,25 @@ export default function Planejamento() {
 
   // Total de saídas lançadas em contas cartão por mês (para fatura na aba Realizado)
   const lancadoCartaoMes = useMemo(() => {
+    let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
+    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /* */ }
     const result: Record<number, number> = {}
     for (let mes = 0; mes < 12; mes++) {
       result[mes] = 0
       contas.filter(c => c.tipo === 'cartao').forEach(conta => {
         const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
-        const dados = extratoData[key]
-        if (!dados) return
-        Object.values(dados.lancamentos).flat().forEach(l => {
-          if (l.tipo === 'saida') result[mes] += l.valor
-        })
+        const dm = faturasDados[key]
+        if (!dm) return
+        const nDias = new Date(anoAtual, mes + 1, 0).getDate()
+        for (let d = 1; d <= nDias; d++) {
+          ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+            if (l.tipo === 'saida') result[mes] += l.valor
+          })
+        }
       })
     }
     return result
-  }, [contas, extratoData, anoAtual])
+  }, [contas, anoAtual])
 
   // Lançamentos reais somados por categoria e mês (para a aba Realizado)
   const lancadoPorCatMes = useMemo(() => {
