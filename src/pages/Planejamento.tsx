@@ -324,6 +324,7 @@ export default function Planejamento() {
         {ativo && !bloqueado ? (
           <input autoFocus value={valorTemp}
             onChange={e => setValorTemp(e.target.value)}
+            onFocus={e => e.target.select()}
             onBlur={confirmarValor}
             onKeyDown={e => {
               if (e.key === 'Enter') confirmarValor()
