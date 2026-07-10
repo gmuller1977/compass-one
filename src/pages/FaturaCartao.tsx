@@ -397,10 +397,12 @@ export default function FaturaCartao() {
               position:'relative',zIndex:ativa?1:0,textAlign:'left'}}>
               <div style={{width:7,height:7,borderRadius:'50%',flexShrink:0,background:ativa?'#fff':c.cor}}/>
               <div>
-                <div style={{fontSize:12,fontWeight:ativa?700:600}}>💳 Cartão de Crédito</div>
-                <div style={{fontSize:10,fontWeight:400,color:ativa?'rgba(255,255,255,0.75)':'#94a3b8',marginTop:1}}>
-                  {c.banco}{c.apelido ? ` · ${c.apelido}` : ''}
-                </div>
+                <div style={{fontSize:12,fontWeight:ativa?700:600}}>{c.banco}</div>
+                {c.apelido && (
+                  <div style={{fontSize:10,fontWeight:400,color:ativa?'rgba(255,255,255,0.75)':'#94a3b8',marginTop:1}}>
+                    {c.apelido}
+                  </div>
+                )}
               </div>
             </button>
           )
