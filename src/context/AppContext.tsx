@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 // ── Types compartilhados ─────────────────────────────────────────────
 export type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
 export type TipoCategoria = 'entrada' | 'saida'
-export type FormaPagLanc  = 'debito' | 'pix' | 'transferencia'
+export type FormaPagLanc  = 'debito' | 'pix' | 'transferencia' | 'dinheiro'
 export type TipoLanc      = 'entrada' | 'saida'
 export type TipoMovimento = 'banco' | 'cartao' | 'dinheiro'
 export type FormaPagamentoBanco  = 'automatico' | 'pix' | 'boleto' | 'transferencia'

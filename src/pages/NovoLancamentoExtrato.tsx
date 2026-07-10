@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
+import ExtratoDinheiro from './ExtratoDinheiro'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -125,7 +126,7 @@ export default function NovoLancamentoExtrato() {
   const [fDesc,   setFDesc]   = useState('')
   const [fValor,  setFValor]  = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
-  const [modo, setModo] = useState<'banco'|'cartao'>('banco')
+  const [modo, setModo] = useState<'banco'|'cartao'|'dinheiro'>('banco')
   const [fContaDestino,     setFContaDestino]      = useState('')
 
   const hojeRef = useRef<HTMLDivElement>(null)
@@ -504,7 +505,7 @@ export default function NovoLancamentoExtrato() {
       {/* MODO: Extrato bancário vs Fatura cartão */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px',flexShrink:0,display:'flex',gap:6}}>
-        {([['banco','🏦 Extrato Bancário'],['cartao','💳 Fatura Cartão']] as const).map(([v,l]) => (
+        {([['banco','🏦 Extrato Bancário'],['cartao','💳 Fatura Cartão'],['dinheiro','💵 Dinheiro']] as const).map(([v,l]) => (
           <button key={v} onClick={() => setModo(v)} style={{
             padding:'7px 16px',borderRadius:8,
             border:`1.5px solid ${modo===v?COR.azul:COR.borda}`,
@@ -515,7 +516,7 @@ export default function NovoLancamentoExtrato() {
         ))}
       </div>
 
-      {modo==='cartao' ? <FaturaCartao /> : (
+      {modo==='cartao' ? <FaturaCartao /> : modo==='dinheiro' ? <ExtratoDinheiro /> : (
       <>
       {/* ABAS DE BANCO */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
