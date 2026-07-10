@@ -553,7 +553,6 @@ export default function Planejamento() {
                     Saldo a ser considerado no planejamento
                   </span>
                 </div>
-                <div style={{ flex:1 }}/>
                 {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
                   <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
                     borderRadius:8, padding:'5px 14px', flexShrink:0 }}>
