@@ -553,10 +553,7 @@ export default function Planejamento() {
                     Saldo a ser considerado no planejamento
                   </span>
                 </div>
-                {/* Espaçadores invisíveis para alinhar com a 3ª caixa (Saldo Final) dos meses */}
-                <div style={{ flex:1, display:'flex', alignItems:'center', gap:8 }}>
-                  <div style={{ minWidth:110, flexShrink:0 }}/>
-                  <div style={{ minWidth:110, flexShrink:0 }}/>
+                <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end' }}>
                   {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
                     <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
                       borderRadius:8, padding:'5px 14px', minWidth:110, flexShrink:0 }}>
@@ -741,7 +738,7 @@ export default function Planejamento() {
                       </div>
                     ) : (
                       /* ── FECHADO: saldo inicial · movimentação · saldo final (caixas) ── */
-                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end' }}>
                         {(() => { const c = caixaCor(si); return (
                           <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
                             borderRadius:8, padding:'6px 14px', minWidth:110 }}>
