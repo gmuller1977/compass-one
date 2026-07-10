@@ -91,7 +91,7 @@ export default function Planejamento() {
   const [saldoAberto,      setSaldoAberto]     = useState(false)
   const [showBannerCopiar, setShowBannerCopiar]= useState(false)
   const [reajustePerc,     setReajustePerc]    = useState('0')
-  const [mesesAbertos,     setMesesAbertos]    = useState<Set<number>>(() => new Set([mesAtual]))
+  const [mesesAbertos,     setMesesAbertos]    = useState<Set<number>>(() => new Set<number>())
 
   // ── Dados base (categorias ativas zeradas) ──
   const dadosBase: AnoData = useMemo(() => ({
