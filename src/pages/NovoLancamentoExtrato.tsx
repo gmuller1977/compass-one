@@ -754,7 +754,7 @@ export default function NovoLancamentoExtrato() {
                   <div onClick={() => editarFixa(dia, f)}
                     style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
                     padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
-                    {!(passado && automatico) && (
+                    {(ehFaturaFixa || !(passado && automatico)) && (
                       <input type="checkbox" checked={consolidada}
                         onClick={e => e.stopPropagation()}
                         onChange={() => {
