@@ -145,8 +145,6 @@ export default function Planejamento() {
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAnoFinal, true), [dadosAnoFinal])
 
-  const maxAbsSF = useMemo(() => Math.max(1, ...saldoFinal.map(v => Math.abs(v))), [saldoFinal])
-
   // Lançamentos reais somados por categoria e mês (para a aba Realizado)
   const lancadoPorCatMes = useMemo(() => {
     const result: Record<number, Record<string, number>> = {}
@@ -644,7 +642,6 @@ export default function Planejamento() {
               const si = saldoInicialReal[mi]
               const obj = objetivosAno[mi]
               const dif = obj > 0 ? sf - obj : null
-              const corHeader = ehAtual ? '#dbeafe' : COR.branco
               const bordaHeader = ehAtual ? COR.azul : COR.borda
 
               return (

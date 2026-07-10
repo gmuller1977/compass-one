@@ -472,16 +472,6 @@ export default function NovoLancamentoExtrato() {
     setFCat(''); setFDesc(''); setFValor('')
   }
 
-  function toggleConsolidarLancamento(dia: number, id: string) {
-    updateMes(prev => ({
-      ...prev,
-      lancamentos: {
-        ...prev.lancamentos,
-        [dia]: (prev.lancamentos[dia]??[]).map(l => l.id===id ? {...l, consolidado:!l.consolidado} : l),
-      },
-    }))
-  }
-
   function excluir(dia: number, id: string) {
     updateMes(prev => ({
       ...prev,
