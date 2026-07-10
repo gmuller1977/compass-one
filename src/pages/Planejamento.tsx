@@ -145,6 +145,23 @@ export default function Planejamento() {
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAnoFinal, true), [dadosAnoFinal])
 
+  // Total de saídas lançadas em contas cartão por mês (para fatura na aba Realizado)
+  const lancadoCartaoMes = useMemo(() => {
+    const result: Record<number, number> = {}
+    for (let mes = 0; mes < 12; mes++) {
+      result[mes] = 0
+      contas.filter(c => c.tipo === 'cartao').forEach(conta => {
+        const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+        const dados = extratoData[key]
+        if (!dados) return
+        Object.values(dados.lancamentos).flat().forEach(l => {
+          if (l.tipo === 'saida') result[mes] += l.valor
+        })
+      })
+    }
+    return result
+  }, [contas, extratoData, anoAtual])
+
   // Lançamentos reais somados por categoria e mês (para a aba Realizado)
   const lancadoPorCatMes = useMemo(() => {
     const result: Record<number, Record<string, number>> = {}
@@ -967,7 +984,11 @@ export default function Planejamento() {
                           const previsto = aba === 'real'
                             ? ((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
                             : 0
-                          const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) : 0
+                          const lancado = aba === 'real'
+                            ? ehFatura
+                              ? (mi > 0 ? lancadoCartaoMes[mi - 1] : 0)
+                              : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
+                            : 0
                           const prevAbs = Math.abs(previsto)
                           const lancAbs = Math.abs(lancado)
                           const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
