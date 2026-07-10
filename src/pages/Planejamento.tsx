@@ -137,10 +137,13 @@ export default function Planejamento() {
   }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
 
   // Soma mensal de todas as categorias cartão (para auto-calcular "Cartão de Crédito")
-  // Fatura do cartão cai no mês seguinte (compras de Jan são pagas em Fev)
+  // Fatura do cartão cai no mês seguinte (compras de Jan são pagas em Fev).
+  // Exclui a própria categoria fatura para evitar dupla contagem caso ela tenha t='cartao'.
   const somaCartaoMes = useMemo(() =>
-    MESES.map((_, i) => i === 0 ? 0 : dadosAno.saidas.filter(c => c.t === 'cartao').reduce((s, c) => s + c.v[i - 1], 0)),
-    [dadosAno])
+    MESES.map((_, i) => i === 0 ? 0 : dadosAno.saidas
+      .filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
+      .reduce((s, c) => s + c.v[i - 1], 0)),
+    [dadosAno, cartaoNomes])
 
   // dadosAno com a categoria "Cartão de Crédito" substituída pela soma das categorias cartão
   const dadosAnoFinal: AnoData = useMemo(() => ({
