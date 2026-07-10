@@ -549,7 +549,7 @@ export default function Planejamento() {
                 <div style={{ minWidth:96, display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                   <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
                     transition:'transform .2s', transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  <span style={{ fontSize:12, fontWeight:600, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
+                  <span style={{ fontSize:16, fontWeight:700, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
                     Saldo a ser considerado no planejamento
                   </span>
                 </div>
