@@ -720,37 +720,31 @@ export default function Planejamento() {
                         </div>
                       </div>
                     ) : (
-                      /* ── FECHADO: visão compacta ── */
-                      <>
-                        {/* Barra proporcional ao saldo final */}
-                        <div style={{ flex:1, display:'flex', alignItems:'center', gap:10 }}>
-                          <div style={{ flex:1, maxWidth:200, height:6, background:'#f1f5f9',
-                            borderRadius:3, overflow:'hidden' }}>
-                            <div style={{
-                              height:'100%', borderRadius:3, transition:'width .3s',
-                              background: sf<0 ? COR.vermelho : sf<1000 ? '#d97706' : '#16a34a',
-                              width:`${Math.round((Math.abs(sf) / maxAbsSF) * 100)}%`
-                            }}/>
-                          </div>
-                          {/* Saldo Final */}
-                          <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap',
-                            color:corSaldo(sf), minWidth:110, textAlign:'right' }}>
-                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                          </div>
-                          {/* Diferença vs meta (quando definida) */}
-                          {dif !== null ? (
-                            <div style={{ fontSize:12, fontWeight:600, whiteSpace:'nowrap',
-                              minWidth:110, textAlign:'right',
-                              color: dif>=0 ? '#16a34a' : COR.vermelho }}>
-                              {dif>=0?'▲ ':'▼ '}{Math.abs(dif).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                              <span style={{ fontSize:10, fontWeight:400,
-                                color:COR.textoSuave, marginLeft:3 }}>vs meta</span>
-                            </div>
-                          ) : (
-                            <div style={{ minWidth:110 }}/>
-                          )}
+                      /* ── FECHADO: saldo inicial · movimentação · saldo final ── */
+                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:24 }}>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                          <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
+                            letterSpacing:.4, fontWeight:600 }}>Saldo Inicial</span>
+                          <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si) }}>
+                            {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </span>
                         </div>
-                      </>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                          <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
+                            letterSpacing:.4, fontWeight:600 }}>Movimentação</span>
+                          <span style={{ fontSize:13, fontWeight:600,
+                            color: (te-ts) >= 0 ? '#16a34a' : COR.vermelho }}>
+                            {(te-ts) >= 0 ? '+' : ''}{(te-ts).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </span>
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                          <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
+                            letterSpacing:.4, fontWeight:600 }}>Saldo Final</span>
+                          <span style={{ fontSize:13, fontWeight:700, color:corSaldo(sf) }}>
+                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
 
