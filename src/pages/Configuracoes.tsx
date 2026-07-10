@@ -285,7 +285,7 @@ export default function Configuracoes() {
   function salvarConta() {
     const ehCartao = formConta.tipo === 'cartao'
     const bancoEfetivo = (ehCartao && formConta.banco === 'Outro') ? bancoCustom.trim() : formConta.banco
-    if (!ehCartao && !formConta.nome.trim()) return setErroConta('Informe o nome da conta')
+    if (!ehCartao && !formConta.nome.trim()) return setErroConta('Informe o titular da conta')
     if (!bancoEfetivo) return setErroConta(ehCartao ? 'Selecione ou informe o banco' : 'Selecione o banco')
     const nomeEfetivo = ehCartao
       ? (formConta.apelido?.trim() || bancoEfetivo)
@@ -430,12 +430,12 @@ export default function Configuracoes() {
                             </div>
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>
-                                {c.tipo==='cartao' ? 'Cartão de Crédito' : c.nome}
+                                {c.tipo==='cartao' ? 'Cartão de Crédito' : c.banco}
                               </div>
                               <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>
                                 {c.tipo==='cartao'
                                   ? `${c.banco}${c.apelido ? ` · ${c.apelido}` : ''}`
-                                  : `${c.banco}${c.agencia ? ` · Ag ${c.agencia}` : ''}${c.numeroConta ? ` · CC ${c.numeroConta}` : ''}`}
+                                  : `${c.nome}${c.agencia ? ` · Ag ${c.agencia}` : ''}${c.numeroConta ? ` · CC ${c.numeroConta}` : ''}`}
                               </div>
                             </div>
                             <div style={{ textAlign:'right', flexShrink:0 }}>
@@ -593,13 +593,6 @@ export default function Configuracoes() {
                   ) : (
                     <>
                       <div>
-                        <label style={labelSt}>Nome da conta</label>
-                        <input ref={nomeContaRef} value={formConta.nome}
-                          onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
-                          placeholder="Ex: Conta Sicredi, Nubank..."
-                          className="campo-cfg" style={inputSt} />
-                      </div>
-                      <div>
                         <label style={labelSt}>Banco</label>
                         <select value={formConta.banco}
                           onChange={e => setFormConta(p=>({...p, banco:e.target.value}))}
@@ -607,6 +600,13 @@ export default function Configuracoes() {
                           <option value="">Selecione...</option>
                           {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
+                      </div>
+                      <div>
+                        <label style={labelSt}>Titular da conta</label>
+                        <input ref={nomeContaRef} value={formConta.nome}
+                          onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
+                          placeholder="Ex: João Silva, Maria Souza..."
+                          className="campo-cfg" style={inputSt} />
                       </div>
                       {aba==='bancos' && (
                         <>
