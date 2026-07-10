@@ -838,10 +838,11 @@ export default function Planejamento() {
                             <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
                             <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
                             <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                            <div style={{ flex:1, paddingLeft:8 }}>Consumo</div>
+                            <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Saldo</div>
+                            <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
                           </div>
                         )}
-                        {dadosAno.entradas.map((cat, ri) => {
+                        {(aba === 'real' ? dadosBase.entradas : dadosAno.entradas).map((cat, ri) => {
                           const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                           const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
                           const bm = tm ? BADGE_MOV[tm] : null
@@ -849,17 +850,22 @@ export default function Planejamento() {
                             ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
                             : 0
                           const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) : 0
-                          const pct = previsto > 0 ? Math.min(150, (lancado / previsto) * 100) : (lancado > 0 ? 100 : 0)
+                          const pct = previsto > 0 ? Math.min(100, (lancado / previsto) * 100) : (lancado > 0 ? 100 : 0)
+                          const saldo = lancado - previsto
                           return (
                             <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
                               padding:'5px 0', borderBottom:'1px solid #f8faff' }}>
                               <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                 display:'flex', alignItems:'center', justifyContent:'center',
                                 fontSize:12, flexShrink:0 }}>{icone}</div>
-                              {bm && <span style={{ display:'inline-flex', alignItems:'center',
-                                justifyContent:'center', width:16, height:16, borderRadius:3,
-                                fontSize:9, fontWeight:700, flexShrink:0,
-                                background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                              {aba === 'real'
+                                ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                    background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                    visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
+                                : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                    background:bm.bg, color:bm.cor }}>{bm.label}</span>}
                               <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
                                 style={{ fontSize:13, color:COR.texto, cursor:'pointer',
                                   textDecoration:'none', minWidth:140, flexShrink:0 }}
@@ -878,11 +884,15 @@ export default function Planejamento() {
                                     color: lancado >= previsto && previsto > 0 ? '#16a34a' : lancado > 0 ? COR.azul : COR.textoSuave }}>
                                     {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                   </span>
-                                  <div style={{ flex:1, display:'flex', alignItems:'center', gap:6, paddingLeft:8 }}>
-                                    <div style={{ flex:1, height:5, background:'#e2e8f0', borderRadius:3, overflow:'hidden' }}>
-                                      <div style={{ height:'100%', borderRadius:3, transition:'width .3s',
+                                  <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
+                                    color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
+                                    {(previsto > 0 || lancado > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                  <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
+                                    <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
+                                      <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
                                         background: pct >= 100 ? '#16a34a' : pct >= 60 ? COR.azul : '#94a3b8',
-                                        width:`${Math.min(100, pct)}%` }}/>
+                                        width:`${pct}%` }}/>
                                     </div>
                                     <span style={{ fontSize:10, color:COR.textoSuave,
                                       minWidth:28, textAlign:'right', flexShrink:0 }}>
@@ -945,10 +955,11 @@ export default function Planejamento() {
                             <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
                             <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
                             <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                            <div style={{ flex:1, paddingLeft:8 }}>Consumo</div>
+                            <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Saldo</div>
+                            <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
                           </div>
                         )}
-                        {dadosAnoFinal.saidas.map((cat, ri) => {
+                        {(aba === 'real' ? dadosBase.saidas : dadosAnoFinal.saidas).map((cat, ri) => {
                           const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                           const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
                           const bm = tm ? BADGE_MOV[tm] : null
@@ -959,17 +970,22 @@ export default function Planejamento() {
                           const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) : 0
                           const prevAbs = Math.abs(previsto)
                           const lancAbs = Math.abs(lancado)
-                          const pct = prevAbs > 0 ? Math.min(150, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
+                          const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
+                          const saldo = prevAbs - lancAbs
                           return (
                             <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
                               padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
                               <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                 display:'flex', alignItems:'center', justifyContent:'center',
                                 fontSize:12, flexShrink:0 }}>{icone}</div>
-                              {bm && <span style={{ display:'inline-flex', alignItems:'center',
-                                justifyContent:'center', width:16, height:16, borderRadius:3,
-                                fontSize:9, fontWeight:700, flexShrink:0,
-                                background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                              {aba === 'real'
+                                ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                    background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                    visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
+                                : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                    background:bm.bg, color:bm.cor }}>{bm.label}</span>}
                               <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
                                 style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
                                   cursor:'pointer', flexShrink:0, minWidth:140 }}
@@ -982,18 +998,22 @@ export default function Planejamento() {
                                 <>
                                   <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
                                     fontSize:12, color:COR.textoSuave }}>
-                                    {prevAbs > 0 ? Math.abs(previsto).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                    {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                   </span>
                                   <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
                                     fontSize:12, fontWeight:700,
                                     color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
                                     {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                   </span>
-                                  <div style={{ flex:1, display:'flex', alignItems:'center', gap:6, paddingLeft:8 }}>
-                                    <div style={{ flex:1, height:5, background:'#e2e8f0', borderRadius:3, overflow:'hidden' }}>
-                                      <div style={{ height:'100%', borderRadius:3, transition:'width .3s',
+                                  <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
+                                    color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
+                                    {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                  <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
+                                    <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
+                                      <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
                                         background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
-                                        width:`${Math.min(100, pct)}%` }}/>
+                                        width:`${pct}%` }}/>
                                     </div>
                                     <span style={{ fontSize:10, color:COR.textoSuave,
                                       minWidth:28, textAlign:'right', flexShrink:0 }}>
