@@ -553,16 +553,21 @@ export default function Planejamento() {
                     Saldo a ser considerado no planejamento
                   </span>
                 </div>
-                {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
-                  <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                    borderRadius:8, padding:'5px 14px', flexShrink:0 }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                      letterSpacing:.4, color:c.txt }}>Valor</div>
-                    <div style={{ fontSize:13, fontWeight:700, color:c.txt }}>
-                      {fmt(SALDO_INICIAL_FIXO, true)}
+                {/* Espaçadores invisíveis para alinhar com a 3ª caixa (Saldo Final) dos meses */}
+                <div style={{ flex:1, display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ minWidth:110, flexShrink:0 }}/>
+                  <div style={{ minWidth:110, flexShrink:0 }}/>
+                  {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
+                    <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                      borderRadius:8, padding:'5px 14px', minWidth:110, flexShrink:0 }}>
+                      <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                        letterSpacing:.4, color:c.txt }}>Valor</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:c.txt }}>
+                        {fmt(SALDO_INICIAL_FIXO, true)}
+                      </div>
                     </div>
-                  </div>
-                )})()}
+                  )})()}
+                </div>
               </div>
               {saldoAberto && (
                 <div style={{ padding:'10px 16px 14px 28px', background:'#eff6ff',
