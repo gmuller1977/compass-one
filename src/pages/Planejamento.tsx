@@ -392,7 +392,7 @@ export default function Planejamento() {
               fontFamily:'inherit', fontSize:12, fontWeight:600,
               background: aba === v ? COR.azul : 'transparent',
               color:       aba === v ? '#fff'   : COR.textoSuave, transition:'all .15s' }}>
-              {v === 'previsto' ? 'Previsto' : 'Real'}
+              {v === 'previsto' ? 'Previsto' : 'Realizado'}
             </button>
           ))}
         </div>
@@ -519,11 +519,11 @@ export default function Planejamento() {
             justifyContent:'center', height:'100%', gap:16, paddingBottom:40 }}>
             <div style={{ fontSize:40 }}>📋</div>
             <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
-              Planejamento real não iniciado
+              Planejamento realizado não iniciado
             </div>
             <div style={{ fontSize:13, color:COR.textoSuave, textAlign:'center', maxWidth:380 }}>
               Vá para a aba <strong>Previsto</strong>, revise os valores e clique em{' '}
-              <strong>Finalizar planejamento</strong> para criar uma cópia do planejamento real.
+              <strong>Finalizar planejamento</strong> para criar uma cópia do planejamento realizado.
             </div>
             <button onClick={() => setAba('previsto')} style={{
               padding:'8px 20px', border:`1.5px solid ${COR.azul}`, borderRadius:8,
