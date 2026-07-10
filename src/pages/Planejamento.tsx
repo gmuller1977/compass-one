@@ -69,33 +69,7 @@ function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
   }
 }
 
-function SaldoMiniChart({ saldos, ma }: { saldos: number[]; ma: number }) {
-  const max = Math.max(...saldos.map(Math.abs), 1)
-  const barW = 10, gap = 5, H = 48
-  const W = 12 * (barW + gap) - gap
-  return (
-    <svg width={W} height={H + 13} style={{ display: 'block' }}>
-      {saldos.map((v, i) => {
-        const pos = v >= 0
-        const h = Math.max(3, (Math.abs(v) / max) * H * 0.88)
-        const x = i * (barW + gap)
-        const y = H - h
-        return (
-          <g key={i}>
-            <rect x={x} y={y} width={barW} height={h} rx={2}
-              fill={i === ma ? '#1a56db' : (pos ? '#86efac' : '#fca5a5')} />
-            <text x={x + barW / 2} y={H + 11} textAnchor="middle"
-              fontSize={7} fill={i === ma ? '#1a56db' : '#94a3b8'}
-              fontWeight={i === ma ? '700' : '400'}>
-              {MESES[i].charAt(0)}
-            </text>
-          </g>
-        )
-      })}
-      <line x1={0} y1={H} x2={W} y2={H} stroke="#e2e8f0" strokeWidth={1} />
-    </svg>
-  )
-}
+
 
 export default function Planejamento() {
   const navigate    = useNavigate()
@@ -125,10 +99,12 @@ export default function Planejamento() {
     saldoInicialJan: SALDO_INICIAL_FIXO,
     entradas: categorias
       .filter(c => c.tipo === 'entrada' && c.ativa)
-      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) })),
+      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
     saidas: categorias
       .filter(c => c.tipo === 'saida' && c.ativa)
-      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) })),
+      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
   }), [SALDO_INICIAL_FIXO, categorias])
 
   const cartaoNomes = useMemo(() =>
@@ -159,8 +135,9 @@ export default function Planejamento() {
   }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
 
   // Soma mensal de todas as categorias cartão (para auto-calcular "Cartão de Crédito")
+  // Fatura do cartão cai no mês seguinte (compras de Jan são pagas em Fev)
   const somaCartaoMes = useMemo(() =>
-    MESES.map((_, i) => dadosAno.saidas.filter(c => c.t === 'cartao').reduce((s, c) => s + c.v[i], 0)),
+    MESES.map((_, i) => i === 0 ? 0 : dadosAno.saidas.filter(c => c.t === 'cartao').reduce((s, c) => s + c.v[i - 1], 0)),
     [dadosAno])
 
   // dadosAno com a categoria "Cartão de Crédito" substituída pela soma das categorias cartão
@@ -302,14 +279,25 @@ export default function Planejamento() {
   function confirmarValor() {
     if (!editando) return
     const novo = parseBRL(valorTemp)
-    if (editando.tipo === 'e') {
+    const { tipo, row, col } = editando
+    if (tipo === 'e') {
       setEntradas(prev => prev.map((c, ri) =>
-        ri === editando.row ? { ...c, v: c.v.map((v, ci) => ci === editando.col ? novo : v) } : c))
+        ri === row ? { ...c, v: c.v.map((v, ci) => ci === col ? novo : v) } : c))
     } else {
       setSaidas(prev => prev.map((c, ri) =>
-        ri === editando.row ? { ...c, v: c.v.map((v, ci) => ci === editando.col ? novo : v) } : c))
+        ri === row ? { ...c, v: c.v.map((v, ci) => ci === col ? novo : v) } : c))
     }
-    setEditando(null)
+    // Avança para a próxima linha editável da mesma coluna
+    const lista = tipo === 'e' ? dadosAno.entradas : dadosAnoFinal.saidas
+    let next = row + 1
+    while (next < lista.length && tipo === 's' && nomeFaturaCartao(lista[next].nome, cartaoNomes)) next++
+    if (next < lista.length) {
+      const v = lista[next].v[col]
+      setEditando({ tipo, row: next, col })
+      setValorTemp(v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
+    } else {
+      setEditando(null)
+    }
   }
 
   const isEditVal = (tipo: 'e'|'s', r: number, c: number) =>
@@ -562,49 +550,43 @@ export default function Planejamento() {
 
       {/* SUMÁRIO ANUAL */}
       {(aba === 'previsto' || realExiste) && (() => {
-        const totalE   = totalEntradas.reduce((a, b) => a + b, 0)
-        const totalS   = totalSaidas.reduce((a, b) => a + b, 0)
+        const totalE    = totalEntradas.reduce((a, b) => a + b, 0)
+        const totalS    = totalSaidas.reduce((a, b) => a + b, 0)
         const resultado = totalE - totalS
-        const metrics: { label: string; valor: number; cor: string; bg: string; icon: string }[] = [
-          { label: 'Entradas anuais', valor: totalE,         cor: '#16a34a',                             bg: '#f0fdf4', icon: '↑' },
-          { label: 'Saídas anuais',   valor: totalS,         cor: COR.vermelho,                          bg: '#fff5f5', icon: '↓' },
-          { label: 'Resultado',       valor: resultado,      cor: resultado >= 0 ? '#16a34a' : COR.vermelho, bg: resultado >= 0 ? '#f0fdf4' : '#fff5f5', icon: resultado >= 0 ? '↗' : '↘' },
-          { label: 'Saldo em Dez',    valor: saldoFinal[11], cor: corSaldo(saldoFinal[11]),              bg: saldoFinal[11] >= 0 ? '#eff6ff' : '#fff5f5', icon: '◎' },
+        const itens = [
+          { label: 'Entrada anual',  valor: totalE,         cor: '#16a34a',    bg: '#f0fdf4', borda: '#bbf7d0', icon: '↑' },
+          { label: 'Saída anual',    valor: totalS,         cor: COR.vermelho, bg: '#fff5f5', borda: '#fecaca', icon: '↓' },
+          { label: 'Resultado',      valor: resultado,
+            cor:   resultado >= 0 ? '#16a34a' : COR.vermelho,
+            bg:    resultado >= 0 ? '#f0fdf4' : '#fff5f5',
+            borda: resultado >= 0 ? '#bbf7d0' : '#fecaca', icon: resultado >= 0 ? '↗' : '↘' },
+          { label: 'Saldo dezembro', valor: saldoFinal[11],
+            cor:   corSaldo(saldoFinal[11]),
+            bg:    saldoFinal[11] >= 0 ? '#eff6ff' : '#fff5f5',
+            borda: saldoFinal[11] >= 0 ? '#bfdbfe' : '#fecaca', icon: '◎' },
         ]
         return (
-          <div style={{ margin: '0 24px 10px', flexShrink: 0,
-            background: COR.branco, border: `1px solid ${COR.borda}`,
-            borderRadius: 14, padding: '14px 18px',
-            display: 'flex', alignItems: 'center',
-            boxShadow: '0 2px 8px rgba(15,40,120,0.07)' }}>
-            {metrics.map((m, i) => (
-              <div key={m.label} style={{ flex: 1, padding: '0 16px',
-                borderRight: i < 3 ? `1px solid ${COR.borda}` : 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, background: m.bg,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, color: m.cor, fontWeight: 700, flexShrink: 0 }}>{m.icon}</div>
-                  <span style={{ fontSize: 10, color: COR.textoSuave, fontWeight: 600,
-                    textTransform: 'uppercase', letterSpacing: .5 }}>{m.label}</span>
+          <div style={{ margin:'0 24px 10px', flexShrink:0, display:'flex', gap:8 }}>
+            {itens.map(m => (
+              <div key={m.label} style={{ flex:1, background:m.bg,
+                border:`1.5px solid ${m.borda}`, borderRadius:12, padding:'10px 14px',
+                boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
+                  textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
+                  display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:13, color:m.cor }}>{m.icon}</span> {m.label}
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: m.cor, paddingLeft: 28 }}>
-                  {m.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                <div style={{ fontSize:16, fontWeight:700, color:m.cor }}>
+                  {m.valor.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })}
                 </div>
               </div>
             ))}
-            <div style={{ flexShrink: 0, paddingLeft: 18, borderLeft: `1px solid ${COR.borda}` }}>
-              <div style={{ fontSize: 10, color: COR.textoSuave, fontWeight: 600,
-                textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5 }}>
-                Saldo mensal
-              </div>
-              <SaldoMiniChart saldos={saldoFinal} ma={mesAtual} />
-            </div>
           </div>
         )
       })()}
 
       {/* TABELA */}
-      <div style={{ flex:1, padding:'0 24px', minHeight:0 }}>
+      <div style={{ flex:1, padding:'0 24px', minHeight:0, display:'flex', flexDirection:'column' }}>
 
         {/* Placeholder: aba Real ainda não finalizada */}
         {aba === 'real' && !realExiste && (
@@ -885,34 +867,37 @@ export default function Planejamento() {
                 </table>
               </div>
 
-              {/* ── CARD: SALDO DISPONÍVEL ── */}
-              <div style={{ background:'#e8eaf6', borderRadius:12,
-                border:`1px solid #c7d2f5`, overflow:'clip' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                  <colgroup>
-                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-                  </colgroup>
-                  <tbody>
-                    <tr>
-                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#e8eaf6',
-                        padding:'11px 16px', fontWeight:700, fontSize:12, color:COR.texto,
-                        borderLeft:`3px solid #4f46e5`, whiteSpace:'nowrap' }}>
-                        Saldo Disponível
-                      </td>
-                      {saldoFinal.map((v, i) => (
-                        <td key={i} style={{ padding:'11px 12px', textAlign:'right',
-                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:corSaldo(v),
-                          background: i === mesAtual ? '#c7d9f8' : '#e8eaf6' }}>
-                          {fmt(v, true)}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
             </div>
+
+            {/* SALDO FINAL — sticky no rodapé do scroll */}
+            <div style={{ position:'sticky', bottom:0, zIndex:20,
+              borderTop:`2px solid #0f2878` }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                <colgroup>
+                  <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
+                  {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
+                </colgroup>
+                <tbody>
+                  <tr>
+                    <td style={{ position:'sticky', left:0, zIndex:21,
+                      background:COR.azul, padding:'11px 16px',
+                      fontWeight:700, fontSize:12, color:'#fff',
+                      borderLeft:`3px solid #0f2878`, whiteSpace:'nowrap' }}>
+                      Saldo Final
+                    </td>
+                    {saldoFinal.map((v, i) => (
+                      <td key={i} style={{ padding:'11px 12px', textAlign:'right',
+                        fontSize:12, fontWeight:700, whiteSpace:'nowrap',
+                        color: v < 0 ? '#fca5a5' : '#fff',
+                        background: i === mesAtual ? '#1244a8' : COR.azul }}>
+                        {fmt(v, true)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
           </div>
         </div>
         )}
