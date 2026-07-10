@@ -131,7 +131,35 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, updatePlanoReal } = useApp()
+
+  // Valor planejado (previsto) para uma categoria fixa no mês/ano atual
+  function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
+    const planoAno = planos[ano] as typeof planos[number] | undefined
+    if (!planoAno) return 0
+    const lista = tipoLanc === 'entrada' ? planoAno.entradas : planoAno.saidas
+    const found = lista.find(c => (catId && c.id === catId) || c.nome === catNome)
+    return found?.v[mes] ?? 0
+  }
+
+  // Grava no planosReal o valor realizado de uma categoria fixa para o mês atual
+  function atualizarRealFixa(catId: string, catNome: string, tipoLanc: TipoLanc, valor: number) {
+    updatePlanoReal(ano, prev => {
+      const campo = tipoLanc === 'entrada' ? 'entradas' : 'saidas'
+      const lista = campo === 'entradas' ? prev.entradas : prev.saidas
+      const existe = lista.some(c => (catId && c.id === catId) || c.nome === catNome)
+      const novaLista = existe
+        ? lista.map(c => ((catId && c.id === catId) || c.nome === catNome)
+            ? { ...c, v: c.v.map((v, i) => i === mes ? valor : v) }
+            : c)
+        : (() => {
+            const cat = categorias.find(c => c.id === catId || c.nome === catNome)
+            const newV = new Array(12).fill(0); newV[mes] = valor
+            return [...lista, { id: catId, nome: catNome, t: cat?.tipoMovimento, v: newV }]
+          })()
+      return campo === 'entradas' ? { ...prev, entradas: novaLista } : { ...prev, saidas: novaLista }
+    })
+  }
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const contaIdEfetivo = contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? ''
   const dados = extratoData as Record<string, DadosMes>
@@ -150,7 +178,8 @@ export default function NovoLancamentoExtrato() {
     })
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
-      valor: c.valorPadrao ?? 0, tipo: c.tipo as TipoLanc,
+      valor: (() => { const vp = valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc); return vp > 0 ? vp : (c.valorPadrao ?? 0) })(),
+      tipo: c.tipo as TipoLanc,
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
       diaVencimento: c.diaVencimento ?? 1,
     }))
@@ -338,6 +367,10 @@ export default function NovoLancamentoExtrato() {
         fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
         fixasPagOverride:   { ...prev.fixasPagOverride,   [editandoFixaId]: fPag },
       }))
+      if (mesDados.fixasConsolidadas?.[editandoFixaId] === true) {
+        const f = fixasCategoria.find(f => f.id === editandoFixaId)
+        if (f) atualizarRealFixa(editandoFixaId, f.nome, f.tipo, valor)
+      }
       setEditandoFixaId(null)
       setFCat(''); setFDesc(''); setFValor('')
       setTimeout(() => categoriaSelectRef.current?.focus(), 80)
@@ -736,11 +769,13 @@ export default function NovoLancamentoExtrato() {
                         onChange={() => {
                           if (consolidada) {
                             desconsolidarFixa(f.id)
+                            atualizarRealFixa(f.id, f.nome, f.tipo, valorPrevistoCat(f.id, f.nome, f.tipo))
                           } else {
                             updateMes(prev => ({
                               ...prev,
                               fixasConsolidadas: { ...prev.fixasConsolidadas, [f.id]: true }
                             }))
+                            atualizarRealFixa(f.id, f.nome, f.tipo, mesDados.fixasValorOverride?.[f.id] ?? f.valor)
                           }
                         }}
                         title="Consolidar lançamento"

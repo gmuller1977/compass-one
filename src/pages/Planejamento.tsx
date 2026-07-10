@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData } from '../context/AppContext'
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import AppHeader from '../components/AppHeader'
@@ -10,12 +10,10 @@ const COR = {
   fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
   textoSuave: '#64748b', borda: '#e2e8f0',
   verde: '#16a34a', vermelho: '#dc2626',
-  limp: '#ffffff', listrado: '#edf1fb',
 }
 
-const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const COL_CAT = 210
-const COL_MES = 112
+const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 const BADGE_MOV: Record<string, { label: string; bg: string; cor: string }> = {
   banco:    { label: 'B', bg: '#eff6ff', cor: '#1a56db' },
@@ -23,11 +21,9 @@ const BADGE_MOV: Record<string, { label: string; bg: string; cor: string }> = {
   dinheiro: { label: 'D', bg: '#f0fdf4', cor: '#16a34a' },
 }
 
-type Cat     = { id?: string; nome: string; t?: string; v: number[] }
-type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
-type Editando = { tipo: 'e'|'s'; row: number; col: number } | null
-type HoverCat = { tipo: 'e'|'s'; ri: number } | null
-
+type Cat      = { id?: string; nome: string; t?: string; v: number[] }
+type AnoData  = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
+type Editando = { tipo: 'e'|'s'; row: number; mes: number } | null
 
 function parseBRL(s: string): number {
   return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
@@ -54,11 +50,9 @@ function calcSaldos(data: AnoData, exclCartao = false) {
   }
   return { totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf }
 }
-
 function nomeFaturaCartao(nome: string, cartaoNomes: Set<string>): boolean {
   if (cartaoNomes.has(nome.toLowerCase())) return true
   const n = nome.toLowerCase()
-  // 'cart' bate em 'cartão', 'cartao'; /cr[eé]d/ bate em 'cred' e 'créd'
   return n.includes('cart') && (/cr[eé]d/.test(n) || n.includes('fatura'))
 }
 function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
@@ -69,14 +63,13 @@ function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
   }
 }
 
-
-
 export default function Planejamento() {
   const navigate    = useNavigate()
   const { contas, setContas, categorias, extratoData,
           planos, setPlanos,
           planosReal, planejamentoLockado,
           finalizarPlanejamento, updatePlanoReal } = useApp()
+
   const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const SALDO_INICIAL_FIXO = contasSaldoIni
     .filter(c => c.incluirNoSaldoInicial !== false)
@@ -84,19 +77,18 @@ export default function Planejamento() {
   const anoCorrente = new Date().getFullYear()
   const mesAtual    = new Date().getMonth()
 
-  const [anoAtual,      setAnoAtual]      = useState(2026)
-  const [aba,           setAba]           = useState<'previsto' | 'real'>('previsto')
-  const [editando,      setEditando]      = useState<Editando>(null)
-  const [valorTemp,     setValorTemp]     = useState('')
-  const [hoverCat,      setHoverCat]      = useState<HoverCat>(null)
-  const [entradaAberta, setEntradaAberta] = useState(false)
-  const [saidaAberta,   setSaidaAberta]   = useState(false)
-  const scrollBodyRef = useRef<HTMLDivElement>(null)
-  const scrollFootRef = useRef<HTMLDivElement>(null)
-  const [saldoAberto,   setSaldoAberto]   = useState(false)
-  const [showBannerCopiar, setShowBannerCopiar] = useState(false)
-  const [reajustePerc,  setReajustePerc]  = useState('0')
+  const [anoAtual,         setAnoAtual]        = useState(2026)
+  const [aba,              setAba]             = useState<'previsto' | 'real'>('previsto')
+  const [editando,         setEditando]        = useState<Editando>(null)
+  const [valorTemp,        setValorTemp]       = useState('')
+  const [editandoObj,      setEditandoObj]     = useState<number | null>(null)
+  const [objTemp,          setObjTemp]         = useState('')
+  const [saldoAberto,      setSaldoAberto]     = useState(false)
+  const [showBannerCopiar, setShowBannerCopiar]= useState(false)
+  const [reajustePerc,     setReajustePerc]    = useState('0')
+  const [mesesAbertos,     setMesesAbertos]    = useState<Set<number>>(() => new Set([mesAtual]))
 
+  // ── Dados base (categorias ativas zeradas) ──
   const dadosBase: AnoData = useMemo(() => ({
     saldoInicialJan: SALDO_INICIAL_FIXO,
     entradas: categorias
@@ -110,13 +102,13 @@ export default function Planejamento() {
   }), [SALDO_INICIAL_FIXO, categorias])
 
   const cartaoNomes = useMemo(() =>
-    new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())),
-    [contas])
+    new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())), [contas])
 
   const temValoresPadrao = useMemo(() =>
     categorias.some(c => (c.valorPadrao ?? 0) > 0 && c.ativa), [categorias])
 
   const realExiste = !!planosReal[anoAtual]
+
   const dadosAno: AnoData = useMemo(() => {
     if (aba === 'real') {
       return (planosReal[anoAtual] as AnoData | undefined)
@@ -129,23 +121,15 @@ export default function Planejamento() {
         const found = saved.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)
         return found ? { ...cat, v: found.v } : cat
       })
-    return {
-      ...salvo,
-      entradas: merge(dadosBase.entradas, salvo.entradas),
-      saidas:   merge(dadosBase.saidas,   salvo.saidas),
-    }
+    return { ...salvo, saldoInicialJan: SALDO_INICIAL_FIXO, entradas: merge(dadosBase.entradas, salvo.entradas), saidas: merge(dadosBase.saidas, salvo.saidas) }
   }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
 
-  // Soma mensal de todas as categorias cartão (para auto-calcular "Cartão de Crédito")
-  // Fatura do cartão cai no mês seguinte (compras de Jan são pagas em Fev).
-  // Exclui a própria categoria fatura para evitar dupla contagem caso ela tenha t='cartao'.
   const somaCartaoMes = useMemo(() =>
     MESES.map((_, i) => i === 0 ? 0 : dadosAno.saidas
       .filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
       .reduce((s, c) => s + c.v[i - 1], 0)),
     [dadosAno, cartaoNomes])
 
-  // dadosAno com a categoria "Cartão de Crédito" substituída pela soma das categorias cartão
   const dadosAnoFinal: AnoData = useMemo(() => ({
     ...dadosAno,
     saidas: dadosAno.saidas.map(cat =>
@@ -153,11 +137,11 @@ export default function Planejamento() {
     ),
   }), [dadosAno, somaCartaoMes, cartaoNomes])
 
-  // Saldos excluem categorias cartão individualmente (evita dupla contagem com a fatura)
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAnoFinal, true), [dadosAnoFinal])
 
-  // Saldo inicial real: substitui pelos valores consolidados do extrato onde disponíveis
+  const maxAbsSF = useMemo(() => Math.max(1, ...saldoFinal.map(v => Math.abs(v))), [saldoFinal])
+
   const saldoInicialReal = useMemo(() => {
     if (aba !== 'real') return saldoInicial
     const result = [...saldoInicial]
@@ -177,21 +161,19 @@ export default function Planejamento() {
     return result
   }, [aba, anoAtual, extratoData, contasSaldoIni, saldoInicial])
 
-  // Quais meses têm saldo real do extrato
   const mesTemSaldoReal = useMemo(() => Array.from({ length: 12 }, (_, mes) => {
     if (aba !== 'real' || mes === 0) return false
-    const contasBanco = contasSaldoIni.filter(c => c.incluirNoSaldoInicial !== false)
-    return contasBanco.some(c => {
-      const key = `${c.id}-${anoAtual}-${String(mes).padStart(2, '0')}`
-      return !!extratoData[key]?.saldoBanco
-    })
+    return contasSaldoIni.filter(c => c.incluirNoSaldoInicial !== false)
+      .some(c => !!extratoData[`${c.id}-${anoAtual}-${String(mes).padStart(2, '0')}`]?.saldoBanco)
   }), [aba, anoAtual, extratoData, contasSaldoIni])
+
+  // Objetivos mensais — sempre lidos do previsto
+  const objetivosAno: number[] = (planos[anoAtual] as PlanoAnoData | undefined)?.objetivos ?? new Array(12).fill(0)
 
   // ── Helpers de update ──
   function updateAno(fn: (d: AnoData) => AnoData) {
     if (planejamentoLockado && aba === 'previsto') return
     if (aba === 'previsto') {
-      // usa dadosAno (merged) como base — garante que categorias novas existam e índices batam
       setPlanos(prev => ({ ...prev, [anoAtual]: fn(dadosAno) as PlanoAnoData }))
     } else {
       updatePlanoReal(anoAtual, prev => fn(prev as AnoData) as PlanoAnoData)
@@ -205,13 +187,20 @@ export default function Planejamento() {
   }
   function toggleContaNoSaldoInicial(id: string) {
     const novasContas = contas.map(c => c.id === id
-      ? { ...c, incluirNoSaldoInicial: c.incluirNoSaldoInicial === false ? true : false }
-      : c)
+      ? { ...c, incluirNoSaldoInicial: c.incluirNoSaldoInicial === false ? true : false } : c)
     setContas(novasContas)
     const novoSaldo = novasContas
       .filter(c => (c.tipo === 'corrente' || c.tipo === 'poupanca') && c.incluirNoSaldoInicial !== false)
       .reduce((s, c) => s + c.saldoInicial, 0)
     updateAno(d => ({ ...d, saldoInicialJan: novoSaldo }))
+  }
+  function updateObjetivo(mes: number, valor: number) {
+    if (planejamentoLockado) return
+    setPlanos(prev => {
+      const atual = (prev[anoAtual] ?? { saldoInicialJan: 0, entradas: [], saidas: [] }) as PlanoAnoData
+      const objs = atual.objetivos ?? new Array(12).fill(0)
+      return { ...prev, [anoAtual]: { ...atual, objetivos: objs.map((v, i) => i === mes ? valor : v) } }
+    })
   }
 
   // ── Atalhos de planejamento ──
@@ -235,13 +224,14 @@ export default function Planejamento() {
       saidas:   d.saidas.map(cat =>   ({ ...cat, v: new Array(12).fill(cat.v[0]) })),
     }))
   }
-  function replicarLinha(tipo: 'e'|'s', ri: number) {
+  function replicarLinhaMes(tipo: 'e'|'s', ri: number, mesOrigem: number) {
+    const valor = tipo === 'e'
+      ? dadosAno.entradas[ri]?.v[mesOrigem] ?? 0
+      : dadosAnoFinal.saidas[ri]?.v[mesOrigem] ?? 0
     if (tipo === 'e') {
-      setEntradas(prev => prev.map((c, i) =>
-        i === ri ? { ...c, v: new Array(12).fill(c.v[0]) } : c))
+      setEntradas(prev => prev.map((c, i) => i === ri ? { ...c, v: new Array(12).fill(valor) } : c))
     } else {
-      setSaidas(prev => prev.map((c, i) =>
-        i === ri ? { ...c, v: new Array(12).fill(c.v[0]) } : c))
+      setSaidas(prev => prev.map((c, i) => i === ri ? { ...c, v: new Array(12).fill(valor) } : c))
     }
   }
   function copiarAnoAnteriorComReajuste(anoBase: number, anoNovo: number, percReaj: number) {
@@ -258,14 +248,12 @@ export default function Planejamento() {
       } as PlanoAnoData,
     }))
   }
-
-  // ── Navegação de ano ──
   function navegarAno(delta: number) {
     const novoAno = anoAtual + delta
     if (!planos[novoAno]) {
       let saldoIni = 0
       const ant = planos[novoAno - 1] as AnoData | undefined
-      if (ant) { const { saldoFinal: sf } = calcSaldos(ant); saldoIni = sf[11] }
+      if (ant) { const { saldoFinal: sf } = calcSaldos(ant as AnoData); saldoIni = sf[11] }
       setPlanos(prev => ({ ...prev, [novoAno]: criarAnoZerado(dadosAno, saldoIni) as PlanoAnoData }))
       setShowBannerCopiar(!!planos[novoAno - 1])
       setReajustePerc('0')
@@ -275,134 +263,79 @@ export default function Planejamento() {
     setAnoAtual(novoAno)
     setEditando(null)
   }
+  function toggleMes(i: number) {
+    setMesesAbertos(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
 
   // ── Edição de valores ──
-  function iniciarValor(tipo: 'e'|'s', row: number, col: number, valor: number) {
-    setEditando({ tipo, row, col })
+  function iniciarValor(tipo: 'e'|'s', row: number, mes: number, valor: number) {
+    setEditando({ tipo, row, mes })
     setValorTemp(valor === 0 ? '' : valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
   }
   function confirmarValor() {
     if (!editando) return
     const novo = parseBRL(valorTemp)
-    const { tipo, row, col } = editando
+    const { tipo, row, mes } = editando
     if (tipo === 'e') {
       setEntradas(prev => prev.map((c, ri) =>
-        ri === row ? { ...c, v: c.v.map((v, ci) => ci === col ? novo : v) } : c))
+        ri === row ? { ...c, v: c.v.map((v, ci) => ci === mes ? novo : v) } : c))
     } else {
       setSaidas(prev => prev.map((c, ri) =>
-        ri === row ? { ...c, v: c.v.map((v, ci) => ci === col ? novo : v) } : c))
+        ri === row ? { ...c, v: c.v.map((v, ci) => ci === mes ? novo : v) } : c))
     }
-    // Avança para a próxima linha editável da mesma coluna
+    // Avança para a próxima linha editável do mesmo mês
     const lista = tipo === 'e' ? dadosAno.entradas : dadosAnoFinal.saidas
     let next = row + 1
     while (next < lista.length && tipo === 's' && nomeFaturaCartao(lista[next].nome, cartaoNomes)) next++
     if (next < lista.length) {
-      const v = lista[next].v[col]
-      setEditando({ tipo, row: next, col })
+      const v = lista[next].v[mes]
+      setEditando({ tipo, row: next, mes })
       setValorTemp(v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
     } else {
       setEditando(null)
     }
   }
 
-  const isEditVal = (tipo: 'e'|'s', r: number, c: number) =>
-    editando?.tipo === tipo && editando.row === r && editando.col === c
-  const isHover   = (tipo: 'e'|'s', ri: number) =>
-    hoverCat?.tipo === tipo && hoverCat.ri === ri
+  const bloqueado = planejamentoLockado && aba === 'previsto'
 
-  function bgNormal(ri: number, col: number) {
-    if (col === mesAtual) return '#dbeafe'
-    return ri % 2 === 0 ? COR.limp : COR.listrado
-  }
-
-  // ── Célula de valor editável ──
-  function renderCelula(tipo: 'e'|'s', row: number, col: number, valor: number, corTexto: string, ri: number) {
-    const ativo = isEditVal(tipo, row, col)
-    // Bloqueia edição no previsto quando planejamento está travado
-    const bloqueado = planejamentoLockado && aba === 'previsto'
+  // ── Renderização de célula de valor (dentro do accordion) ──
+  function renderValor(tipo: 'e'|'s', row: number, mes: number, valor: number, readOnly = false) {
+    const ativo = editando?.tipo === tipo && editando.row === row && editando.mes === mes
+    if (ativo && !bloqueado) {
+      return (
+        <input autoFocus value={valorTemp}
+          onChange={e => setValorTemp(e.target.value)}
+          onFocus={e => e.target.select()}
+          onBlur={confirmarValor}
+          onKeyDown={e => {
+            if (e.key === 'Enter')  confirmarValor()
+            if (e.key === 'Escape') setEditando(null)
+          }}
+          style={{ width:110, padding:'4px 8px', textAlign:'right', border:'none', outline:'none',
+            background:'#dbeafe', color:COR.azulEscuro, fontSize:13, fontFamily:'inherit',
+            fontWeight:600, borderRadius:6, boxShadow:`inset 0 -2px 0 ${COR.azul}` }} />
+      )
+    }
+    const corVal = readOnly
+      ? (valor === 0 ? '#c4b5fd' : '#7c3aed')
+      : (valor === 0 ? '#c0cce0' : COR.texto)
     return (
-      <td key={col} style={{ padding:0, background:bgNormal(ri, col),
-        borderBottom:`1px solid ${COR.borda}`,
-        width:COL_MES, minWidth:COL_MES, cursor: bloqueado ? 'default' : 'pointer' }}>
-        {ativo && !bloqueado ? (
-          <input autoFocus value={valorTemp}
-            onChange={e => setValorTemp(e.target.value)}
-            onFocus={e => e.target.select()}
-            onBlur={confirmarValor}
-            onKeyDown={e => {
-              if (e.key === 'Enter') confirmarValor()
-              if (e.key === 'Escape') setEditando(null)
-            }}
-            style={{ width:'100%', minHeight:34, padding:'6px 10px', textAlign:'right',
-              border:'none', outline:'none', background:'#dbeafe', color:COR.azulEscuro,
-              fontSize:12, fontFamily:'inherit', fontWeight:500,
-              boxShadow:`inset 0 -2px 0 ${COR.azul}` }}
-          />
-        ) : (
-          <div onClick={bloqueado ? undefined : () => iniciarValor(tipo, row, col, valor)}
-            style={{ padding:'7px 12px', textAlign:'right', fontSize:12,
-              color: valor === 0 ? '#c0cce0' : corTexto,
-              fontWeight:400, whiteSpace:'nowrap', userSelect:'none' }}>
-            {fmt(valor)}
-          </div>
-        )}
-      </td>
-    )
-  }
-
-  // ── Célula read-only para categoria de fatura cartão ──
-  function renderCelulaFatura(valor: number, ri: number, ci: number) {
-    return (
-      <td key={ci} style={{ padding:0,
-        background: ci === mesAtual ? '#ede9fe' : (ri % 2 === 0 ? '#faf5ff' : '#f5f3ff'),
-        borderBottom:`1px solid ${COR.borda}`,
-        width:COL_MES, minWidth:COL_MES }}>
-        <div style={{ padding:'7px 12px', textAlign:'right', fontSize:12,
-          color: valor === 0 ? '#c4b5fd' : '#7c3aed',
-          fontWeight:500, whiteSpace:'nowrap', userSelect:'none' }}>
-          {fmt(valor)}
-        </div>
-      </td>
-    )
-  }
-
-  // ── Célula de nome — clique navega para Configurações (Cadastro de Categorias) ──
-  function renderNome(
-    tipo: 'e'|'s', ri: number, nome: string,
-    bgBase: string, badge?: React.ReactNode, ehReadOnly = false
-  ) {
-    const hover = isHover(tipo, ri)
-    const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
-
-    return (
-      <td key="nome"
-        onClick={() => navigate('/configuracoes', { state: { aba: 'categorias', catNome: nome } })}
-        onMouseEnter={() => setHoverCat({ tipo, ri })}
-        onMouseLeave={() => setHoverCat(null)}
-        style={{ position:'sticky', left:0, zIndex:2, cursor:'pointer',
-          background: hover ? '#f8faff' : bgBase,
-          borderBottom:`1px solid ${COR.borda}`,
-          borderLeft:`3px solid ${tipo === 'e' ? '#93c5fd' : '#fca5a5'}`,
-          height:40, verticalAlign:'middle', whiteSpace:'nowrap',
-          padding:'0 12px 0 24px' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:11, flexShrink:0 }}>{icone}</div>
-          {badge}
-          <span style={{ fontSize:12, color:COR.texto, flex:1 }}>{nome}</span>
-          {hover && aba === 'previsto' && !planejamentoLockado && !ehReadOnly && (
-            <button
-              onClick={e => { e.stopPropagation(); replicarLinha(tipo, ri) }}
-              title="Replicar valor de Janeiro para todos os meses"
-              style={{ border:'none', background:'#dbeafe', cursor:'pointer',
-                borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
-                fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4 }}>
-              Jan→
-            </button>
-          )}
-        </div>
-      </td>
+      <div
+        onClick={readOnly || bloqueado ? undefined : () => iniciarValor(tipo, row, mes, valor)}
+        style={{ padding:'4px 8px', textAlign:'right', fontSize:13, color:corVal,
+          fontWeight: readOnly ? 600 : 400, whiteSpace:'nowrap', userSelect:'none',
+          cursor: readOnly || bloqueado ? 'default' : 'pointer',
+          borderRadius:6, minWidth:110,
+          background: ativo ? '#dbeafe' : 'transparent',
+          transition:'background .1s' }}
+        onMouseEnter={e => { if (!readOnly && !bloqueado) (e.currentTarget as HTMLElement).style.background='#f1f5fb' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background='transparent' }}>
+        {fmt(valor)}
+      </div>
     )
   }
 
@@ -416,25 +349,18 @@ export default function Planejamento() {
       <div style={{ padding:'14px 24px 6px', flexShrink:0,
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>
-            Planejamento
-          </h1>
+          <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>Planejamento</h1>
           <p style={{ fontSize:12, color:COR.textoSuave, marginTop:3 }}>
-            Fluxo de caixa ·{' '}
-            <span style={{ color:COR.azul }}>Mês atual destacado</span>
-            {' · '}Passe o mouse sobre uma categoria para renomear
+            Fluxo de caixa mensal · Abra um ou vários meses para planejar
           </p>
         </div>
-
-        {/* Navegação de ano */}
         <div style={{ display:'flex', alignItems:'center', gap:0,
           background:COR.branco, border:`1px solid ${COR.borda}`,
           borderRadius:10, overflow:'hidden', flexShrink:0 }}>
-          <button onClick={() => navegarAno(-1)} style={{
-            border:'none', background:'transparent', cursor:'pointer',
-            padding:'8px 14px', fontSize:16, color:COR.textoSuave }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f0f4ff')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>←</button>
+          <button onClick={() => navegarAno(-1)} style={{ border:'none', background:'transparent',
+            cursor:'pointer', padding:'8px 14px', fontSize:16, color:COR.textoSuave }}
+            onMouseEnter={e => (e.currentTarget.style.background='#f0f4ff')}
+            onMouseLeave={e => (e.currentTarget.style.background='transparent')}>←</button>
           <div style={{ padding:'8px 16px', borderLeft:`1px solid ${COR.borda}`,
             borderRight:`1px solid ${COR.borda}`, textAlign:'center', minWidth:80 }}>
             <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>{anoAtual}</div>
@@ -443,27 +369,24 @@ export default function Planejamento() {
                 textTransform:'uppercase', letterSpacing:.5 }}>Ano atual</div>
             )}
           </div>
-          <button onClick={() => navegarAno(+1)} style={{
-            border:'none', background:'transparent', cursor:'pointer',
-            padding:'8px 14px', fontSize:16, color:COR.textoSuave }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f0f4ff')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>→</button>
+          <button onClick={() => navegarAno(+1)} style={{ border:'none', background:'transparent',
+            cursor:'pointer', padding:'8px 14px', fontSize:16, color:COR.textoSuave }}
+            onMouseEnter={e => (e.currentTarget.style.background='#f0f4ff')}
+            onMouseLeave={e => (e.currentTarget.style.background='transparent')}>→</button>
         </div>
       </div>
 
       {/* ABAS + BOTÃO FINALIZAR */}
       <div style={{ padding:'0 24px 8px', flexShrink:0,
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', gap:4,
-          background:COR.branco, border:`1px solid ${COR.borda}`,
-          borderRadius:9, padding:3 }}>
+        <div style={{ display:'flex', gap:4, background:COR.branco,
+          border:`1px solid ${COR.borda}`, borderRadius:9, padding:3 }}>
           {(['previsto','real'] as const).map(v => (
             <button key={v} onClick={() => { setAba(v); setEditando(null) }} style={{
               padding:'5px 18px', borderRadius:6, border:'none', cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600,
               background: aba === v ? COR.azul : 'transparent',
-              color:       aba === v ? '#fff'   : COR.textoSuave,
-              transition:'all .15s' }}>
+              color:       aba === v ? '#fff'   : COR.textoSuave, transition:'all .15s' }}>
               {v === 'previsto' ? 'Previsto' : 'Real'}
             </button>
           ))}
@@ -485,27 +408,23 @@ export default function Planejamento() {
         </div>
       </div>
 
-      {/* ATALHOS DE PLANEJAMENTO */}
+      {/* ATALHOS */}
       {aba === 'previsto' && !planejamentoLockado && (
-        <div style={{ margin:'0 24px 8px', flexShrink:0,
-          background:'#e8edf8', border:`1px solid #c7d2f5`, borderRadius:10,
+        <div style={{ margin:'0 24px 8px', flexShrink:0, background:'#e8edf8',
+          border:`1px solid #c7d2f5`, borderRadius:10,
           padding:'8px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
           <span style={{ fontSize:11, color:COR.azulEscuro, fontWeight:700,
-            textTransform:'uppercase', letterSpacing:.5, marginRight:4 }}>
-            Atalhos
-          </span>
+            textTransform:'uppercase', letterSpacing:.5, marginRight:4 }}>Atalhos</span>
           {temValoresPadrao && (
-            <button onClick={preencherValoresPadrao} style={{
-              border:`1px solid ${COR.azul}`, background:COR.branco, borderRadius:7,
-              padding:'5px 12px', cursor:'pointer', fontSize:12,
-              color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
+            <button onClick={preencherValoresPadrao} style={{ border:`1px solid ${COR.azul}`,
+              background:COR.branco, borderRadius:7, padding:'5px 12px', cursor:'pointer',
+              fontSize:12, color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
               ✦ Preencher valores padrão
             </button>
           )}
-          <button onClick={replicarJaneiroParaAno} style={{
-            border:`1px solid ${COR.azul}`, background:COR.branco, borderRadius:7,
-            padding:'5px 12px', cursor:'pointer', fontSize:12,
-            color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
+          <button onClick={replicarJaneiroParaAno} style={{ border:`1px solid ${COR.azul}`,
+            background:COR.branco, borderRadius:7, padding:'5px 12px', cursor:'pointer',
+            fontSize:12, color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
             ↦ Replicar Jan → ano todo
           </button>
           {!!planos[anoAtual - 1] && (
@@ -521,17 +440,15 @@ export default function Planejamento() {
 
       {/* BANNER COPIAR ANO ANTERIOR */}
       {showBannerCopiar && aba === 'previsto' && !planejamentoLockado && (
-        <div style={{ margin:'0 24px 8px', flexShrink:0,
-          background:'#fffbeb', border:'1px solid #fcd34d',
-          borderRadius:10, padding:'10px 16px',
+        <div style={{ margin:'0 24px 8px', flexShrink:0, background:'#fffbeb',
+          border:'1px solid #fcd34d', borderRadius:10, padding:'10px 16px',
           display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
           <span style={{ fontSize:12, color:'#92400e', fontWeight:600, flex:1, minWidth:200 }}>
             Copiar planejamento de <strong>{anoAtual - 1}</strong> para {anoAtual}?
           </span>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <span style={{ fontSize:12, color:'#92400e' }}>Reajuste:</span>
-            <input value={reajustePerc}
-              onChange={e => setReajustePerc(e.target.value)}
+            <input value={reajustePerc} onChange={e => setReajustePerc(e.target.value)}
               style={{ width:56, padding:'4px 8px', border:'1px solid #fcd34d',
                 borderRadius:6, fontSize:12, textAlign:'right',
                 fontFamily:'inherit', background:'#fff', color:'#92400e' }} />
@@ -540,14 +457,12 @@ export default function Planejamento() {
               copiarAnoAnteriorComReajuste(anoAtual - 1, anoAtual, parseFloat(reajustePerc) || 0)
               setShowBannerCopiar(false)
             }} style={{ padding:'5px 14px', border:'none', borderRadius:7, cursor:'pointer',
-              fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff',
-              background:'#d97706' }}>
+              fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff', background:'#d97706' }}>
               Aplicar
             </button>
             <button onClick={() => setShowBannerCopiar(false)} style={{
               padding:'5px 12px', border:'1px solid #fcd34d', borderRadius:7, cursor:'pointer',
-              fontFamily:'inherit', fontSize:12, fontWeight:500, color:'#92400e',
-              background:'transparent' }}>
+              fontFamily:'inherit', fontSize:12, fontWeight:500, color:'#92400e', background:'transparent' }}>
               Manter em branco
             </button>
           </div>
@@ -560,23 +475,22 @@ export default function Planejamento() {
         const totalS    = totalSaidas.reduce((a, b) => a + b, 0)
         const resultado = totalE - totalS
         const itens = [
-          { label: 'Entrada anual',  valor: totalE,         cor: '#16a34a',    bg: '#f0fdf4', borda: '#bbf7d0', icon: '↑' },
-          { label: 'Saída anual',    valor: totalS,         cor: COR.vermelho, bg: '#fff5f5', borda: '#fecaca', icon: '↓' },
-          { label: 'Resultado',      valor: resultado,
+          { label:'Entrada anual',  valor:totalE,         cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
+          { label:'Saída anual',    valor:totalS,         cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
+          { label:'Resultado',      valor:resultado,
             cor:   resultado >= 0 ? '#16a34a' : COR.vermelho,
             bg:    resultado >= 0 ? '#f0fdf4' : '#fff5f5',
             borda: resultado >= 0 ? '#bbf7d0' : '#fecaca', icon: resultado >= 0 ? '↗' : '↘' },
-          { label: 'Saldo dezembro', valor: saldoFinal[11],
+          { label:'Saldo dezembro', valor:saldoFinal[11],
             cor:   corSaldo(saldoFinal[11]),
             bg:    saldoFinal[11] >= 0 ? '#eff6ff' : '#fff5f5',
-            borda: saldoFinal[11] >= 0 ? '#bfdbfe' : '#fecaca', icon: '◎' },
+            borda: saldoFinal[11] >= 0 ? '#bfdbfe' : '#fecaca', icon:'◎' },
         ]
         return (
           <div style={{ margin:'0 24px 10px', flexShrink:0, display:'flex', gap:8 }}>
             {itens.map(m => (
-              <div key={m.label} style={{ flex:1, background:m.bg,
-                border:`1.5px solid ${m.borda}`, borderRadius:12, padding:'10px 14px',
-                boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+              <div key={m.label} style={{ flex:1, background:m.bg, border:`1.5px solid ${m.borda}`,
+                borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
                   textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
                   display:'flex', alignItems:'center', gap:4 }}>
@@ -591,8 +505,8 @@ export default function Planejamento() {
         )
       })()}
 
-      {/* TABELA */}
-      <div style={{ flex:1, padding:'0 24px', minHeight:0, display:'flex', flexDirection:'column' }}>
+      {/* ÁREA PRINCIPAL: accordion de meses */}
+      <div style={{ flex:1, overflow:'auto', padding:'0 24px 24px', minHeight:0 }}>
 
         {/* Placeholder: aba Real ainda não finalizada */}
         {aba === 'real' && !realExiste && (
@@ -615,309 +529,393 @@ export default function Planejamento() {
           </div>
         )}
 
-        {/* container único de scroll — todos os cards rolam juntos */}
         {(aba === 'previsto' || realExiste) && (
-        <div ref={scrollBodyRef} style={{ flex:1, overflow:'auto', paddingBottom:12 }}
-          onScroll={e => { if (scrollFootRef.current) scrollFootRef.current.scrollLeft = e.currentTarget.scrollLeft }}>
-          <div style={{ minWidth: COL_CAT + COL_MES * 12 + 2 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, paddingTop:4 }}>
 
-            {/* CABEÇALHO FIXO */}
-            <div style={{ position:'sticky', top:0, zIndex:30 }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                <colgroup>
-                  <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                  {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th style={{ padding:'10px 16px', textAlign:'left',
-                      fontSize:11, fontWeight:600, color:COR.textoSuave,
-                      textTransform:'uppercase', letterSpacing:.5,
-                      background:'#e2e8f6', borderBottom:`2px solid ${COR.borda}`,
-                      whiteSpace:'nowrap' }}>Categoria</th>
-                    {MESES.map((m, i) => (
-                      <th key={m} style={{ padding:'10px 12px', textAlign:'right',
-                        fontSize:12, fontWeight:600,
-                        color:      i === mesAtual ? COR.azul : COR.textoSuave,
-                        background: i === mesAtual ? '#c7d9f8' : '#e2e8f6',
-                        borderBottom:`2px solid ${i === mesAtual ? COR.azul : COR.borda}`,
-                        whiteSpace:'nowrap' }}>{m}</th>
-                    ))}
-                  </tr>
-                </thead>
-              </table>
-            </div>
-
-            {/* CARDS */}
-            <div style={{ display:'flex', flexDirection:'column', gap:8, padding:'8px 0 0' }}>
-
-              {/* ── CARD: SALDO INICIAL ── */}
-              <div style={{ background:COR.branco, borderRadius:12,
-                border:`1px solid ${COR.borda}`, overflow:'clip' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                  <colgroup>
-                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-                  </colgroup>
-                  <tbody>
-                    <tr onClick={() => setSaldoAberto(a => !a)} style={{ cursor:'pointer' }}>
-                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#e8f0fe',
-                        padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.azul,
-                        borderBottom: saldoAberto ? `1px solid ${COR.borda}` : 'none',
-                        whiteSpace:'nowrap' }}>
-                        <span style={{ fontSize:9, marginRight:6, display:'inline-block',
-                          transition:'transform .2s',
-                          transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                        Saldo Inicial
-                      </td>
-                      {saldoInicialReal.map((v, i) => (
-                        <td key={i} style={{ padding:'10px 12px', textAlign:'right',
-                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:corSaldo(v),
-                          background: i === mesAtual ? '#c7d9f8' : '#e8f0fe',
-                          borderBottom: saldoAberto ? `1px solid ${COR.borda}` : 'none',
-                          borderTop: mesTemSaldoReal[i] ? `2px solid #16a34a` : undefined }}>
-                          {fmt(v, true)}
-                          {mesTemSaldoReal[i] && (
-                            <div style={{ fontSize:8, color:'#16a34a', fontWeight:600, marginTop:1 }}>extrato</div>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                    {saldoAberto && (
-                      <tr>
-                        <td colSpan={13} style={{ padding:'10px 16px 12px 28px',
-                          background:'#eff6ff' }}>
-                          <div style={{ fontSize:10, fontWeight:600, color:COR.azul,
-                            textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
-                            Contas consideradas no saldo inicial
-                          </div>
-                          <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:520 }}>
-                            {contasSaldoIni.length === 0 && (
-                              <div style={{ fontSize:12, color:COR.textoSuave }}>
-                                Nenhuma conta corrente ou poupança cadastrada.
-                              </div>
-                            )}
-                            {contasSaldoIni.map(c => {
-                              const incluida = c.incluirNoSaldoInicial !== false
-                              return (
-                                <label key={c.id} style={{ display:'flex', alignItems:'center', gap:10,
-                                  padding:'7px 12px', background:COR.branco, borderRadius:8,
-                                  border:`1px solid ${COR.borda}`, cursor:'pointer',
-                                  opacity: incluida ? 1 : 0.55 }}>
-                                  <input type="checkbox" checked={incluida}
-                                    onChange={() => toggleContaNoSaldoInicial(c.id)}
-                                    style={{ cursor:'pointer' }} />
-                                  <div style={{ width:26, height:26, borderRadius:7, background:c.cor,
-                                    display:'flex', alignItems:'center', justifyContent:'center',
-                                    fontSize:13, flexShrink:0 }}>{c.icone}</div>
-                                  <div style={{ flex:1, minWidth:0 }}>
-                                    <div style={{ fontSize:12, fontWeight:500, color:COR.texto }}>{c.nome}</div>
-                                    <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>
-                                      {c.banco} · {c.tipo === 'corrente' ? 'Conta corrente' : 'Poupança'}
-                                    </div>
-                                  </div>
-                                  <div style={{ fontSize:12, fontWeight:600,
-                                    color: incluida ? COR.azul : COR.textoSuave }}>
-                                    {fmt(c.saldoInicial, true)}
-                                  </div>
-                                </label>
-                              )
-                            })}
-                          </div>
-                        </td>
-                      </tr>
+            {/* ── SALDO INICIAL ── */}
+            <div style={{ background:COR.branco, borderRadius:12,
+              border:`1px solid ${COR.borda}`, overflow:'hidden' }}>
+              <div onClick={() => setSaldoAberto(a => !a)}
+                style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'11px 16px', cursor:'pointer', gap:12 }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#f8faff'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
+                <span style={{ fontSize:12, fontWeight:700, color:COR.azulEscuro }}>
+                  <span style={{ fontSize:9, marginRight:6, display:'inline-block',
+                    transition:'transform .2s', transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                  Saldo Inicial de Janeiro
+                </span>
+                <span style={{ fontSize:13, fontWeight:700, color:corSaldo(SALDO_INICIAL_FIXO) }}>
+                  {fmt(SALDO_INICIAL_FIXO, true)}
+                </span>
+              </div>
+              {saldoAberto && (
+                <div style={{ padding:'10px 16px 14px 28px', background:'#eff6ff',
+                  borderTop:`1px solid ${COR.borda}` }}>
+                  <div style={{ fontSize:10, fontWeight:600, color:COR.azul,
+                    textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
+                    Contas consideradas no saldo inicial
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:6, maxWidth:520 }}>
+                    {contasSaldoIni.length === 0 && (
+                      <div style={{ fontSize:12, color:COR.textoSuave }}>
+                        Nenhuma conta corrente ou poupança cadastrada.
+                      </div>
                     )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* ── CARD: ENTRADAS ── */}
-              <div style={{ background:'#dbeafe', borderRadius:12,
-                border:`1px solid #93c5fd`, overflow:'clip' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                  <colgroup>
-                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-                  </colgroup>
-                  <tbody>
-                    <tr onClick={() => setEntradaAberta(a => !a)} style={{ cursor:'pointer' }}>
-                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#dbeafe',
-                        padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.azul,
-                        borderBottom: entradaAberta ? `1px solid #93c5fd` : 'none',
-                        whiteSpace:'nowrap' }}>
-                        <span style={{ fontSize:9, marginRight:6, display:'inline-block',
-                          transition:'transform .2s',
-                          transform: entradaAberta ? 'rotate(180deg)' : 'none' }}>▼</span>
-                        (+) Entradas
-                      </td>
-                      {totalEntradas.map((v, i) => (
-                        <td key={i} style={{ padding:'10px 12px', textAlign:'right',
-                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.azul,
-                          background: i === mesAtual ? '#93c5fd' : '#dbeafe',
-                          borderBottom: entradaAberta ? `1px solid #93c5fd` : 'none' }}>
-                          {fmt(v, true)}
-                        </td>
-                      ))}
-                    </tr>
-                    {entradaAberta && <>
-                      <tr>
-                        <td colSpan={13} style={{ padding:'5px 16px 5px 28px',
-                          background:'#eff6ff', fontSize:10, fontWeight:600, color:COR.azul,
-                          textTransform:'uppercase', letterSpacing:.6,
-                          borderBottom:`1px solid #bfdbfe` }}>
-                          Categorias de entrada
-                        </td>
-                      </tr>
-                      {dadosAno.entradas.map((cat, ri) => {
-                        const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento
-                          ?? (cat.t === 'D' ? 'banco' : cat.t === 'C' ? 'cartao' : undefined)
-                        const bm = tm ? BADGE_MOV[tm] : null
-                        return (
-                          <tr key={`e-${ri}`}>
-                            {renderNome('e', ri, cat.nome, ri % 2 === 0 ? '#eff6ff' : '#e8f0fe',
-                              bm && <span style={{ display:'inline-flex', alignItems:'center',
-                                justifyContent:'center', width:16, height:16, borderRadius:3,
-                                fontSize:9, fontWeight:700, flexShrink:0,
-                                background:bm.bg, color:bm.cor }}>{bm.label}</span>
-                            )}
-                            {cat.v.map((v, ci) => renderCelula('e', ri, ci, v, COR.texto, ri))}
-                          </tr>
-                        )
-                      })}
-                      <tr>
-                        <td colSpan={13} style={{ padding:'6px 16px 6px 28px',
-                          background:'#eff6ff', borderBottom:`1px solid #bfdbfe` }}>
-                          <button onClick={() => navigate('/configuracoes', { state: { aba: 'categorias' } })} style={{
-                            border:`1px dashed #93c5fd`, background:'transparent',
-                            borderRadius:6, padding:'4px 12px', cursor:'pointer',
-                            fontSize:11, color:COR.azul, fontFamily:'inherit' }}>
-                            + Adicionar categoria de entrada
-                          </button>
-                        </td>
-                      </tr>
-                    </>}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* ── CARD: SAÍDAS ── */}
-              <div style={{ background:COR.branco, borderRadius:12,
-                border:`1px solid ${COR.borda}`, overflow:'clip' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                  <colgroup>
-                    <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                    {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-                  </colgroup>
-                  <tbody>
-                    <tr onClick={() => setSaidaAberta(a => !a)} style={{ cursor:'pointer' }}>
-                      <td style={{ position:'sticky', left:0, zIndex:2, background:'#fce8e6',
-                        padding:'10px 16px', fontWeight:700, fontSize:12, color:COR.vermelho,
-                        borderBottom: saidaAberta ? `1px solid #fecdd3` : 'none',
-                        whiteSpace:'nowrap' }}>
-                        <span style={{ fontSize:9, marginRight:6, display:'inline-block',
-                          transition:'transform .2s',
-                          transform: saidaAberta ? 'rotate(180deg)' : 'none' }}>▼</span>
-                        (-) Saídas
-                      </td>
-                      {totalSaidas.map((v, i) => (
-                        <td key={i} style={{ padding:'10px 12px', textAlign:'right',
-                          fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:COR.vermelho,
-                          background: i === mesAtual ? '#c7d9f8' : '#fce8e6',
-                          borderBottom: saidaAberta ? `1px solid #fecdd3` : 'none' }}>
-                          {fmt(v, true)}
-                        </td>
-                      ))}
-                    </tr>
-                    {saidaAberta && <>
-                      <tr>
-                        <td colSpan={13} style={{ padding:'5px 16px 5px 28px',
-                          background:'#fff1f2', fontSize:10, fontWeight:600, color:'#be123c',
-                          textTransform:'uppercase', letterSpacing:.6,
-                          borderBottom:`1px solid #fecdd3` }}>
-                          Categorias de saída
-                        </td>
-                      </tr>
-                      {dadosAnoFinal.saidas.map((cat, ri) => {
-                        const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento
-                          ?? (cat.t === 'D' ? 'banco' : cat.t === 'C' ? 'cartao' : undefined)
-                        const bm = tm ? BADGE_MOV[tm] : null
-                        const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
-                        return (
-                          <tr key={`s-${ri}`}>
-                            {renderNome('s', ri, cat.nome, ri % 2 === 0 ? '#fff8f8' : '#fff1f2',
-                              bm && <span style={{ display:'inline-flex', alignItems:'center',
-                                justifyContent:'center', width:16, height:16, borderRadius:3,
-                                fontSize:9, fontWeight:700, flexShrink:0,
-                                background:bm.bg, color:bm.cor }}>{bm.label}</span>,
-                              ehFatura
-                            )}
-                            {cat.v.map((v, ci) => ehFatura
-                              ? renderCelulaFatura(v, ri, ci)
-                              : renderCelula('s', ri, ci, v, COR.texto, ri)
-                            )}
-                          </tr>
-                        )
-                      })}
-                      <tr>
-                        <td colSpan={13} style={{ padding:'6px 16px 6px 28px',
-                          background:'#fff1f2', borderBottom:`1px solid #fecdd3` }}>
-                          <button onClick={() => navigate('/configuracoes', { state: { aba: 'categorias' } })} style={{
-                            border:`1px dashed #fca5a5`, background:'transparent',
-                            borderRadius:6, padding:'4px 12px', cursor:'pointer',
-                            fontSize:11, color:'#be123c', fontFamily:'inherit' }}>
-                            + Adicionar categoria de saída
-                          </button>
-                        </td>
-                      </tr>
-                    </>}
-                  </tbody>
-                </table>
-              </div>
-
+                    {contasSaldoIni.map(c => {
+                      const incluida = c.incluirNoSaldoInicial !== false
+                      return (
+                        <label key={c.id} style={{ display:'flex', alignItems:'center', gap:10,
+                          padding:'7px 12px', background:COR.branco, borderRadius:8,
+                          border:`1px solid ${COR.borda}`, cursor:'pointer', opacity: incluida ? 1 : 0.55 }}>
+                          <input type="checkbox" checked={incluida}
+                            onChange={() => toggleContaNoSaldoInicial(c.id)} style={{ cursor:'pointer' }} />
+                          <div style={{ width:26, height:26, borderRadius:7, background:c.cor,
+                            display:'flex', alignItems:'center', justifyContent:'center',
+                            fontSize:13, flexShrink:0 }}>{c.icone}</div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:12, fontWeight:500, color:COR.texto }}>{c.nome}</div>
+                            <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>
+                              {c.banco} · {c.tipo === 'corrente' ? 'Conta corrente' : 'Poupança'}
+                            </div>
+                          </div>
+                          <div style={{ fontSize:12, fontWeight:600, color: incluida ? COR.azul : COR.textoSuave }}>
+                            {fmt(c.saldoInicial, true)}
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
-          </div>
-        </div>
-        )}
+            {/* ── ACCORDION DE MESES ── */}
+            {MESES_FULL.map((nomeMes, mi) => {
+              const aberto  = mesesAbertos.has(mi)
+              const ehAtual = mi === mesAtual && anoAtual === anoCorrente
+              const te = totalEntradas[mi]
+              const ts = totalSaidas[mi]
+              const sf = saldoFinal[mi]
+              const si = saldoInicialReal[mi]
+              const obj = objetivosAno[mi]
+              const dif = obj > 0 ? sf - obj : null
+              const corHeader = ehAtual ? '#dbeafe' : COR.branco
+              const bordaHeader = ehAtual ? COR.azul : COR.borda
 
-        {/* SALDO FINAL — fora do scroll, sempre visível */}
-        {(aba === 'previsto' || realExiste) && (
-          <div ref={scrollFootRef} style={{ flexShrink:0, overflow:'hidden',
-            borderTop:`2px solid #0f2878` }}>
-            <table style={{ borderCollapse:'collapse', tableLayout:'fixed',
-              minWidth: COL_CAT + COL_MES * 12 + 2 }}>
-              <colgroup>
-                <col style={{ width:COL_CAT, minWidth:COL_CAT }} />
-                {MESES.map((_,i) => <col key={i} style={{ width:COL_MES, minWidth:COL_MES }} />)}
-              </colgroup>
-              <tbody>
-                <tr>
-                  <td style={{ position:'sticky', left:0, zIndex:2,
-                    background:COR.azul, padding:'11px 16px',
-                    fontWeight:700, fontSize:12, color:'#fff',
-                    borderLeft:`3px solid #0f2878`, whiteSpace:'nowrap' }}>
-                    Saldo Final
-                  </td>
-                  {saldoFinal.map((v, i) => (
-                    <td key={i} style={{ padding:'11px 12px', textAlign:'right',
-                      fontSize:12, fontWeight:700, whiteSpace:'nowrap',
-                      color: v < 0 ? '#fca5a5' : '#fff',
-                      background: i === mesAtual ? '#1244a8' : COR.azul }}>
-                      {fmt(v, true)}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+              return (
+                <div key={mi} style={{ borderRadius:12,
+                  border:`1.5px solid ${aberto ? bordaHeader : COR.borda}`,
+                  transition:'border-color .15s', background:COR.branco }}>
+
+                  {/* ── CABEÇALHO DO MÊS (sticky) ── */}
+                  <div onClick={() => toggleMes(mi)}
+                    style={{ position:'sticky', top:0, zIndex:10,
+                      display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
+                      cursor:'pointer',
+                      background: ehAtual ? '#dbeafe' : COR.branco,
+                      borderRadius: aberto ? '10px 10px 0 0' : 10,
+                      borderBottom: aberto ? `1px solid ${COR.borda}` : 'none',
+                      boxShadow:'0 2px 6px rgba(0,0,0,0.06)' }}>
+
+                    {/* Nome do mês */}
+                    <div style={{ minWidth:96, display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+                      <span style={{ fontSize:8, color: aberto ? COR.azul : COR.textoSuave,
+                        display:'inline-block', transition:'transform .2s',
+                        transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                      <span style={{ fontSize:13, fontWeight:700,
+                        color: ehAtual ? COR.azul : COR.texto }}>{nomeMes}</span>
+                      {ehAtual && (
+                        <span style={{ fontSize:8, background:COR.azul, color:'#fff',
+                          padding:'1px 5px', borderRadius:10, fontWeight:700,
+                          textTransform:'uppercase', letterSpacing:.3, flexShrink:0 }}>atual</span>
+                      )}
+                    </div>
+
+                    {aberto ? (
+                      /* ── ABERTO: boxes completos ── */
+                      <div style={{ flex:1, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+
+                        {/* Entradas */}
+                        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0',
+                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                          <div style={{ fontSize:9, color:'#16a34a', fontWeight:700,
+                            textTransform:'uppercase', letterSpacing:.4 }}>Entradas</div>
+                          <div style={{ fontSize:13, fontWeight:700, color:'#16a34a', whiteSpace:'nowrap', marginTop:1 }}>
+                            {te === 0 ? '—' : te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </div>
+                        </div>
+
+                        {/* Saídas */}
+                        <div style={{ background:'#fff5f5', border:'1px solid #fecaca',
+                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                          <div style={{ fontSize:9, color:COR.vermelho, fontWeight:700,
+                            textTransform:'uppercase', letterSpacing:.4 }}>Saídas</div>
+                          <div style={{ fontSize:13, fontWeight:700, color:COR.vermelho, whiteSpace:'nowrap', marginTop:1 }}>
+                            {ts === 0 ? '—' : ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </div>
+                        </div>
+
+                        {/* Meta (sempre editável) */}
+                        <div
+                          onClick={e => {
+                            e.stopPropagation()
+                            setEditandoObj(mi)
+                            setObjTemp(obj === 0 ? '' : obj.toLocaleString('pt-BR',{minimumFractionDigits:2}))
+                          }}
+                          style={{ background:'#faf5ff',
+                            border:`1px solid ${editandoObj === mi ? '#a855f7' : '#ddd6fe'}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110,
+                            cursor:'pointer' }}>
+                          <div style={{ fontSize:9, color:'#7c3aed', fontWeight:700,
+                            textTransform:'uppercase', letterSpacing:.4 }}>Meta</div>
+                          {editandoObj === mi ? (
+                            <input autoFocus value={objTemp}
+                              onChange={e => setObjTemp(e.target.value)}
+                              onFocus={e => e.target.select()}
+                              onClick={e => e.stopPropagation()}
+                              onBlur={() => { updateObjetivo(mi, parseBRL(objTemp)); setEditandoObj(null) }}
+                              onKeyDown={e => {
+                                e.stopPropagation()
+                                if (e.key === 'Enter' || e.key === 'Escape') {
+                                  if (e.key === 'Enter') updateObjetivo(mi, parseBRL(objTemp))
+                                  setEditandoObj(null)
+                                }
+                              }}
+                              style={{ width:100, padding:0, border:'none', outline:'none',
+                                background:'transparent', color:'#7c3aed',
+                                fontSize:13, fontFamily:'inherit', fontWeight:700, marginTop:1 }} />
+                          ) : (
+                            <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1,
+                              color: obj === 0 ? '#c4b5fd' : '#7c3aed' }}>
+                              {obj === 0 ? 'Definir…' : obj.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Diferença */}
+                        <div style={{ background: dif===null ? '#f8fafc' : dif>=0 ? '#f0fdf4' : '#fff5f5',
+                          border:`1px solid ${dif===null ? COR.borda : dif>=0 ? '#bbf7d0' : '#fecaca'}`,
+                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                          <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                            letterSpacing:.4, color:dif===null ? COR.textoSuave : dif>=0?'#16a34a':COR.vermelho }}>
+                            Diferença
+                          </div>
+                          <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1,
+                            color:dif===null ? '#cbd5e1' : dif>=0?'#16a34a':COR.vermelho }}>
+                            {dif===null ? '—' : `${dif>=0?'+':''}${dif.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`}
+                          </div>
+                        </div>
+
+                        {/* Saldo Final */}
+                        <div style={{ background: sf<0 ? '#fff5f5' : sf<1000 ? '#fffbeb' : '#f0fdf4',
+                          border:`1px solid ${sf<0?'#fecaca':sf<1000?'#fde68a':'#bbf7d0'}`,
+                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                          <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                            letterSpacing:.4, color:corSaldo(sf) }}>Saldo Final</div>
+                          <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1,
+                            color:corSaldo(sf) }}>
+                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* ── FECHADO: visão compacta ── */
+                      <>
+                        {/* Barra proporcional ao saldo final */}
+                        <div style={{ flex:1, display:'flex', alignItems:'center', gap:10 }}>
+                          <div style={{ flex:1, maxWidth:200, height:6, background:'#f1f5f9',
+                            borderRadius:3, overflow:'hidden' }}>
+                            <div style={{
+                              height:'100%', borderRadius:3, transition:'width .3s',
+                              background: sf<0 ? COR.vermelho : sf<1000 ? '#d97706' : '#16a34a',
+                              width:`${Math.round((Math.abs(sf) / maxAbsSF) * 100)}%`
+                            }}/>
+                          </div>
+                          {/* Saldo Final */}
+                          <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap',
+                            color:corSaldo(sf), minWidth:110, textAlign:'right' }}>
+                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </div>
+                          {/* Diferença vs meta (quando definida) */}
+                          {dif !== null ? (
+                            <div style={{ fontSize:12, fontWeight:600, whiteSpace:'nowrap',
+                              minWidth:110, textAlign:'right',
+                              color: dif>=0 ? '#16a34a' : COR.vermelho }}>
+                              {dif>=0?'▲ ':'▼ '}{Math.abs(dif).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                              <span style={{ fontSize:10, fontWeight:400,
+                                color:COR.textoSuave, marginLeft:3 }}>vs meta</span>
+                            </div>
+                          ) : (
+                            <div style={{ minWidth:110 }}/>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ── CORPO DO MÊS (quando aberto) ── */}
+                  {aberto && (
+                    <div style={{ borderTop:`1px solid ${COR.borda}` }}>
+
+                      {/* Saldo Inicial do mês */}
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                        padding:'8px 16px', background:'#f8faff',
+                        borderBottom:`1px solid ${COR.borda}` }}>
+                        <span style={{ fontSize:11, color:COR.textoSuave, fontWeight:600 }}>
+                          Saldo Inicial{mi === 0 ? ' de Janeiro' : ` (Saldo Final de ${MESES[mi-1]})`}
+                        </span>
+                        <span style={{ fontSize:12, fontWeight:700, color:corSaldo(si),
+                          display:'flex', alignItems:'center', gap:6 }}>
+                          {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          {mesTemSaldoReal[mi] && (
+                            <span style={{ fontSize:10, background:'#f0fdf4', color:'#16a34a',
+                              border:'1px solid #bbf7d0', borderRadius:4, padding:'0 4px' }}>extrato</span>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* ── ENTRADAS ── */}
+                      <div style={{ borderBottom:`1px solid ${COR.borda}` }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:'#166534',
+                          textTransform:'uppercase', letterSpacing:.6,
+                          padding:'7px 16px', background:'#dcfce7',
+                          borderBottom:'1px solid #bbf7d0', display:'flex',
+                          alignItems:'center', justifyContent:'space-between' }}>
+                          <span>↑ Entradas</span>
+                          <span>{te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                        </div>
+                        <div style={{ padding:'4px 16px 0' }}>
+                        {dadosAno.entradas.map((cat, ri) => {
+                          const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                          const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
+                          const bm = tm ? BADGE_MOV[tm] : null
+                          return (
+                            <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
+                              padding:'5px 0', borderBottom:'1px solid #f8faff' }}>
+                              <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                display:'flex', alignItems:'center', justifyContent:'center',
+                                fontSize:12, flexShrink:0 }}>{icone}</div>
+                              {bm && <span style={{ display:'inline-flex', alignItems:'center',
+                                justifyContent:'center', width:16, height:16, borderRadius:3,
+                                fontSize:9, fontWeight:700, flexShrink:0,
+                                background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                              <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                style={{ fontSize:13, color:COR.texto, cursor:'pointer',
+                                  textDecoration:'none', minWidth:140, flexShrink:0 }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
+                                {cat.nome}
+                              </span>
+                              {renderValor('e', ri, mi, cat.v[mi])}
+                              <div style={{ flex:1 }}/>
+                              {!bloqueado && (
+                                <button onClick={() => replicarLinhaMes('e', ri, mi)}
+                                  title={`Replicar ${MESES[mi]} para todos os meses`}
+                                  style={{ border:'none', background:'#dbeafe', cursor:'pointer',
+                                    borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
+                                    fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
+                                    opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
+                                  →12
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                        {dadosAno.entradas.length === 0 && (
+                          <div style={{ fontSize:12, color:COR.textoSuave, padding:'8px 0' }}>
+                            Nenhuma categoria de entrada.
+                          </div>
+                        )}
+                        <div style={{ padding:'6px 0' }}>
+                          <button onClick={() => navigate('/configuracoes', { state:{ aba:'categorias' } })}
+                            style={{ border:'1px dashed #93c5fd', background:'transparent',
+                              borderRadius:6, padding:'3px 10px', cursor:'pointer',
+                              fontSize:11, color:COR.azul, fontFamily:'inherit' }}>
+                            + Categoria de entrada
+                          </button>
+                        </div>
+                        </div>{/* fecha padding interno */}
+                      </div>
+
+                      {/* ── SAÍDAS ── */}
+                      <div>
+                        <div style={{ fontSize:11, fontWeight:700, color:'#7f1d1d',
+                          textTransform:'uppercase', letterSpacing:.6,
+                          padding:'7px 16px', background:'#fee2e2',
+                          borderBottom:'1px solid #fecaca', display:'flex',
+                          alignItems:'center', justifyContent:'space-between' }}>
+                          <span>↓ Saídas</span>
+                          <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                        </div>
+                        <div style={{ padding:'4px 16px 0' }}>
+                        {dadosAnoFinal.saidas.map((cat, ri) => {
+                          const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                          const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
+                          const bm = tm ? BADGE_MOV[tm] : null
+                          const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
+                          return (
+                            <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
+                              padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
+                              <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                display:'flex', alignItems:'center', justifyContent:'center',
+                                fontSize:12, flexShrink:0 }}>{icone}</div>
+                              {bm && <span style={{ display:'inline-flex', alignItems:'center',
+                                justifyContent:'center', width:16, height:16, borderRadius:3,
+                                fontSize:9, fontWeight:700, flexShrink:0,
+                                background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                              <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
+                                  cursor:'pointer', flexShrink:0, minWidth:140 }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
+                                {cat.nome}
+                                {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                              </span>
+                              {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
+                              <div style={{ flex:1 }}/>
+                              {!bloqueado && !ehFatura && (
+                                <button onClick={() => replicarLinhaMes('s', ri, mi)}
+                                  title={`Replicar ${MESES[mi]} para todos os meses`}
+                                  style={{ border:'none', background:'#fee2e2', cursor:'pointer',
+                                    borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.vermelho,
+                                    fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
+                                    opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
+                                  →12
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                        {dadosAnoFinal.saidas.length === 0 && (
+                          <div style={{ fontSize:12, color:COR.textoSuave, padding:'8px 0' }}>
+                            Nenhuma categoria de saída.
+                          </div>
+                        )}
+                        <div style={{ padding:'6px 0' }}>
+                          <button onClick={() => navigate('/configuracoes', { state:{ aba:'categorias' } })}
+                            style={{ border:'1px dashed #fca5a5', background:'transparent',
+                              borderRadius:6, padding:'3px 10px', cursor:'pointer',
+                              fontSize:11, color:'#be123c', fontFamily:'inherit' }}>
+                            + Categoria de saída
+                          </button>
+                        </div>
+                        </div>{/* fecha padding interno */}
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
-
       </div>
 
       {/* LEGENDA */}
       <div style={{ display:'flex', gap:20, padding:'6px 24px 12px',
         fontSize:11, color:COR.textoSuave, flexWrap:'wrap',
-        flexShrink:0, alignItems:'center' }}>
+        flexShrink:0, alignItems:'center', borderTop:`1px solid ${COR.borda}` }}>
         <span style={{ display:'flex', alignItems:'center', gap:5 }}>
           <span style={{ background:'#eff6ff', color:'#1a56db',
             padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>B</span>
@@ -933,12 +931,8 @@ export default function Planejamento() {
             padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>D</span>
           Dinheiro
         </span>
-        <span style={{ display:'flex', alignItems:'center', gap:5 }}>
-          <span style={{ width:10, height:10, borderRadius:2, background:'#dbeafe',
-            border:`1px solid ${COR.azul}`, display:'inline-block' }} />
-          Mês atual
-        </span>
-        <span>✏ Passe o mouse na categoria para renomear ou excluir</span>
+        <span>→12 Replicar valor do mês para o ano todo</span>
+        <span style={{ color:'#7c3aed' }}>(auto) Fatura calculada automaticamente do mês anterior</span>
       </div>
 
     </div>

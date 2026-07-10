@@ -36,7 +36,7 @@ export type Categoria = {
 }
 
 export type PlanoCat     = { id?: string; nome: string; t?: string; v: number[] }
-export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[] }
+export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[] }
 
 export type Lancamento = {
   id: string; tipo: TipoLanc
