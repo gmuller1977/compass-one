@@ -37,6 +37,11 @@ function corSaldo(v: number) {
   if (v < 1000) return '#d97706'
   return COR.verde
 }
+function caixaCor(v: number) {
+  if (v > 0) return { bg:'#eff6ff', bd:'#bfdbfe', txt:'#1a56db' }
+  if (v < 0) return { bg:'#fff5f5', bd:'#fecaca', txt:'#dc2626' }
+  return { bg:'#f8fafc', bd:'#e2e8f0', txt:'#94a3b8' }
+}
 function calcSaldos(data: AnoData, exclCartao = false) {
   const totalE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
@@ -545,27 +550,32 @@ export default function Planejamento() {
                   <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
                     transition:'transform .2s', transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
                   <span style={{ fontSize:13, fontWeight:700, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
-                    Saldo Inicial de Janeiro
+                    Saldo Inicial {anoAtual}
                   </span>
                 </div>
-                {/* 3 colunas — mesma estrutura das linhas de mês */}
-                <div style={{ flex:1, display:'flex', alignItems:'center', gap:24 }}>
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                    <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
-                      letterSpacing:.4, fontWeight:600 }}>Saldo Inicial</span>
-                    <span style={{ fontSize:13, fontWeight:700, color:corSaldo(SALDO_INICIAL_FIXO) }}>
-                      {fmt(SALDO_INICIAL_FIXO, true)}
-                    </span>
+                {/* 3 caixas — mesma estrutura das linhas de mês */}
+                <div style={{ flex:1, display:'flex', alignItems:'center', gap:8 }}>
+                  {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
+                    <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                      borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                      <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                        letterSpacing:.4, color:c.txt }}>Saldo Inicial</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
+                        {fmt(SALDO_INICIAL_FIXO, true)}
+                      </div>
+                    </div>
+                  )})()}
+                  <div style={{ background:'#f8fafc', border:`1px solid ${COR.borda}`,
+                    borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                      letterSpacing:.4, color:'#94a3b8' }}>Movimentação</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#cbd5e1', marginTop:1 }}>—</div>
                   </div>
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                    <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
-                      letterSpacing:.4, fontWeight:600 }}>Movimentação</span>
-                    <span style={{ fontSize:13, color:'#cbd5e1' }}>—</span>
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                    <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
-                      letterSpacing:.4, fontWeight:600 }}>Saldo Final</span>
-                    <span style={{ fontSize:13, color:'#cbd5e1' }}>—</span>
+                  <div style={{ background:'#f8fafc', border:`1px solid ${COR.borda}`,
+                    borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                      letterSpacing:.4, color:'#94a3b8' }}>Saldo Final</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#cbd5e1', marginTop:1 }}>—</div>
                   </div>
                 </div>
               </div>
@@ -740,30 +750,38 @@ export default function Planejamento() {
                         </div>
                       </div>
                     ) : (
-                      /* ── FECHADO: saldo inicial · movimentação · saldo final ── */
-                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:24 }}>
-                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                          <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
-                            letterSpacing:.4, fontWeight:600 }}>Saldo Inicial</span>
-                          <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si) }}>
-                            {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                          </span>
-                        </div>
-                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                          <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
-                            letterSpacing:.4, fontWeight:600 }}>Movimentação</span>
-                          <span style={{ fontSize:13, fontWeight:600,
-                            color: (te-ts) >= 0 ? '#16a34a' : COR.vermelho }}>
-                            {(te-ts) >= 0 ? '+' : ''}{(te-ts).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                          </span>
-                        </div>
-                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
-                          <span style={{ fontSize:9, color:COR.textoSuave, textTransform:'uppercase',
-                            letterSpacing:.4, fontWeight:600 }}>Saldo Final</span>
-                          <span style={{ fontSize:13, fontWeight:700, color:corSaldo(sf) }}>
-                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                          </span>
-                        </div>
+                      /* ── FECHADO: saldo inicial · movimentação · saldo final (caixas) ── */
+                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:8 }}>
+                        {(() => { const c = caixaCor(si); return (
+                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                              letterSpacing:.4, color:c.txt }}>Saldo Inicial</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
+                              {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                          </div>
+                        )})()}
+                        {(() => { const mov = te-ts; const c = caixaCor(mov); return (
+                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                              letterSpacing:.4, color:c.txt }}>Movimentação</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
+                              {mov >= 0 ? '+' : ''}{mov.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                          </div>
+                        )})()}
+                        {(() => { const c = caixaCor(sf); return (
+                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
+                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                              letterSpacing:.4, color:c.txt }}>Saldo Final</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
+                              {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                          </div>
+                        )})()}
                       </div>
                     )}
                   </div>
