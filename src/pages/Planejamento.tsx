@@ -549,35 +549,21 @@ export default function Planejamento() {
                 <div style={{ minWidth:96, display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                   <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
                     transition:'transform .2s', transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
-                    Saldo Inicial {anoAtual}
+                  <span style={{ fontSize:12, fontWeight:600, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
+                    Saldo a ser considerado no planejamento
                   </span>
                 </div>
-                {/* 3 caixas — mesma estrutura das linhas de mês */}
-                <div style={{ flex:1, display:'flex', alignItems:'center', gap:8 }}>
-                  {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
-                    <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                      borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                      <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                        letterSpacing:.4, color:c.txt }}>Saldo Inicial</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
-                        {fmt(SALDO_INICIAL_FIXO, true)}
-                      </div>
+                <div style={{ flex:1 }}/>
+                {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
+                  <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
+                    borderRadius:8, padding:'5px 14px', flexShrink:0 }}>
+                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                      letterSpacing:.4, color:c.txt }}>Valor</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:c.txt }}>
+                      {fmt(SALDO_INICIAL_FIXO, true)}
                     </div>
-                  )})()}
-                  <div style={{ background:'#f8fafc', border:`1px solid ${COR.borda}`,
-                    borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                      letterSpacing:.4, color:'#94a3b8' }}>Movimentação</div>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#cbd5e1', marginTop:1 }}>—</div>
                   </div>
-                  <div style={{ background:'#f8fafc', border:`1px solid ${COR.borda}`,
-                    borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                      letterSpacing:.4, color:'#94a3b8' }}>Saldo Final</div>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#cbd5e1', marginTop:1 }}>—</div>
-                  </div>
-                </div>
+                )})()}
               </div>
               {saldoAberto && (
                 <div style={{ padding:'10px 16px 14px 28px', background:'#eff6ff',
