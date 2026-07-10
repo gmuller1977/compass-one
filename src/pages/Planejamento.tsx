@@ -23,7 +23,7 @@ const BADGE_MOV: Record<string, { label: string; bg: string; cor: string }> = {
   dinheiro: { label: 'D', bg: '#f0fdf4', cor: '#16a34a' },
 }
 
-type Cat     = { nome: string; t?: string; v: number[] }
+type Cat     = { id?: string; nome: string; t?: string; v: number[] }
 type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 type Editando = { tipo: 'e'|'s'; row: number; col: number } | null
 type HoverCat = { tipo: 'e'|'s'; ri: number } | null
@@ -101,11 +101,11 @@ export default function Planejamento() {
     saldoInicialJan: SALDO_INICIAL_FIXO,
     entradas: categorias
       .filter(c => c.tipo === 'entrada' && c.ativa)
-      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) }))
+      .map(c => ({ id: c.id, nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
     saidas: categorias
       .filter(c => c.tipo === 'saida' && c.ativa)
-      .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) }))
+      .map(c => ({ id: c.id, nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
   }), [SALDO_INICIAL_FIXO, categorias])
 
@@ -126,7 +126,7 @@ export default function Planejamento() {
     if (!salvo) return dadosBase
     const merge = (base: Cat[], saved: Cat[]) =>
       base.map(cat => {
-        const found = saved.find(c => c.nome === cat.nome)
+        const found = saved.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)
         return found ? { ...cat, v: found.v } : cat
       })
     return {

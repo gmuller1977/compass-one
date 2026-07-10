@@ -35,7 +35,7 @@ export type Categoria = {
   contaDebitoId?: string
 }
 
-export type PlanoCat     = { nome: string; t?: string; v: number[] }
+export type PlanoCat     = { id?: string; nome: string; t?: string; v: number[] }
 export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[] }
 
 export type Lancamento = {
