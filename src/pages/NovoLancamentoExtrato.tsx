@@ -811,6 +811,10 @@ export default function NovoLancamentoExtrato() {
                 const catVisual = iconeCategoria(categorias, l.categoria)
                 const corValor = l.tipo==='entrada' ? COR.azul : COR.vermelho
                 const emEdicao = editandoId === l.id
+                const cartaoNomesExtrato = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
+                const catLower = l.categoria.toLowerCase()
+                const ehFaturaLanc = cartaoNomesExtrato.has(catLower) ||
+                  (catLower.includes('cart') && (/cr[eé]d/.test(catLower) || catLower.includes('fatura')))
                 return (
                 <div key={l.id}
                   onClick={e => { e.stopPropagation(); if(!l.id.startsWith('fatura-')) editarLancamento(dia, l) }}
@@ -827,11 +831,11 @@ export default function NovoLancamentoExtrato() {
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:600,color:COR.texto,
                       display:'flex',alignItems:'center',gap:5}}>
-                      {l.categoria}
+                      {ehFaturaLanc ? 'Cartão de Crédito' : l.categoria}
                       <BadgePag fp={l.formaPagamento}/>
                     </div>
                     <div style={{fontSize:11,color:'#64748b',marginTop:1}}>
-                      {l.descricao}
+                      {ehFaturaLanc ? l.categoria : l.descricao}
                     </div>
                   </div>
                   <div style={{fontSize:13,fontWeight:600,color:corValor}}>
