@@ -236,6 +236,59 @@ export default function Planejamento() {
       .some(c => !!extratoData[`${c.id}-${anoAtual}-${String(mes).padStart(2, '0')}`]?.saldoBanco)
   }), [aba, anoAtual, extratoData, contasSaldoIni])
 
+  // Totais reais (entradas e saídas) por mês — lidos dos lançamentos reais do extrato
+  const totaisReais = useMemo(() => {
+    let fatDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
+    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) fatDados = JSON.parse(r) } catch { /* */ }
+    const te = new Array(12).fill(0)
+    const ts = new Array(12).fill(0)
+    for (let mes = 0; mes < 12; mes++) {
+      contas.filter(c => c.tipo !== 'cartao').forEach(conta => {
+        const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+        const dados = extratoData[key]
+        if (!dados) return
+        Object.values(dados.lancamentos).flat().forEach((l: { tipo: string; valor: number }) => {
+          if (l.tipo === 'entrada') te[mes] += l.valor
+          else ts[mes] += l.valor
+        })
+        if (dados.fixasConsolidadas) {
+          categorias.filter(c => c.fixa && c.ativa).forEach(f => {
+            if (!dados.fixasConsolidadas?.[f.id]) return
+            const val = dados.fixasValorOverride?.[f.id] ?? f.valorPadrao ?? 0
+            if (f.tipo === 'entrada') te[mes] += val
+            else ts[mes] += val
+          })
+          Object.entries(dados.fixasConsolidadas).forEach(([fixaId, consolidada]) => {
+            if (!consolidada || !fixaId.startsWith('cartao-')) return
+            const cardId = fixaId.replace('cartao-', '')
+            const overrideVal = dados.fixasValorOverride?.[fixaId]
+            let val = 0
+            if (overrideVal !== undefined) {
+              val = overrideVal
+            } else {
+              const fatKey = `${cardId}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+              const dm = fatDados[fatKey]
+              if (dm) {
+                const nDias = new Date(anoAtual, mes + 1, 0).getDate()
+                for (let d = 1; d <= nDias; d++) {
+                  ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+                    if (l.tipo === 'saida') val += l.valor
+                  })
+                }
+              }
+            }
+            ts[mes] += val
+          })
+        }
+      })
+    }
+    return { te, ts }
+  }, [contas, categorias, extratoData, anoAtual])
+
+  const saldoFinalReal = useMemo(() =>
+    Array.from({ length: 12 }, (_, mi) => saldoInicialReal[mi] + totaisReais.te[mi] - totaisReais.ts[mi])
+  , [saldoInicialReal, totaisReais])
+
   // Objetivos mensais — sempre lidos do previsto
   const objetivosAno: number[] = (planos[anoAtual] as PlanoAnoData | undefined)?.objetivos ?? new Array(12).fill(0)
 
@@ -540,8 +593,9 @@ export default function Planejamento() {
 
       {/* SUMÁRIO ANUAL */}
       {(aba === 'previsto' || realExiste) && (() => {
-        const totalE    = totalEntradas.reduce((a, b) => a + b, 0)
-        const totalS    = totalSaidas.reduce((a, b) => a + b, 0)
+        const totalE    = aba === 'real' ? totaisReais.te.reduce((a, b) => a + b, 0) : totalEntradas.reduce((a, b) => a + b, 0)
+        const totalS    = aba === 'real' ? totaisReais.ts.reduce((a, b) => a + b, 0) : totalSaidas.reduce((a, b) => a + b, 0)
+        const sfDez     = aba === 'real' ? saldoFinalReal[11] : saldoFinal[11]
         const resultado = totalE - totalS
         const itens = [
           { label:'Entrada anual',  valor:totalE,         cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
@@ -550,10 +604,10 @@ export default function Planejamento() {
             cor:   resultado >= 0 ? '#16a34a' : COR.vermelho,
             bg:    resultado >= 0 ? '#f0fdf4' : '#fff5f5',
             borda: resultado >= 0 ? '#bbf7d0' : '#fecaca', icon: resultado >= 0 ? '↗' : '↘' },
-          { label:'Saldo dezembro', valor:saldoFinal[11],
-            cor:   corSaldo(saldoFinal[11]),
-            bg:    saldoFinal[11] >= 0 ? '#eff6ff' : '#fff5f5',
-            borda: saldoFinal[11] >= 0 ? '#bfdbfe' : '#fecaca', icon:'◎' },
+          { label:'Saldo dezembro', valor:sfDez,
+            cor:   corSaldo(sfDez),
+            bg:    sfDez >= 0 ? '#eff6ff' : '#fff5f5',
+            borda: sfDez >= 0 ? '#bfdbfe' : '#fecaca', icon:'◎' },
         ]
         return (
           <div style={{ margin:'0 24px 10px', flexShrink:0, display:'flex', gap:8 }}>
@@ -675,9 +729,9 @@ export default function Planejamento() {
             {MESES_FULL.map((nomeMes, mi) => {
               const aberto  = mesesAbertos.has(mi)
               const ehAtual = mi === mesAtual && anoAtual === anoCorrente
-              const te = totalEntradas[mi]
-              const ts = totalSaidas[mi]
-              const sf = saldoFinal[mi]
+              const te = aba === 'real' ? totaisReais.te[mi] : totalEntradas[mi]
+              const ts = aba === 'real' ? totaisReais.ts[mi] : totalSaidas[mi]
+              const sf = aba === 'real' ? saldoFinalReal[mi] : saldoFinal[mi]
               const si = saldoInicialReal[mi]
               const obj = objetivosAno[mi]
               const dif = obj > 0 ? sf - obj : null
