@@ -57,9 +57,9 @@ function calcSaldos(data: AnoData, exclCartao = false) {
 
 function nomeFaturaCartao(nome: string, cartaoNomes: Set<string>): boolean {
   if (cartaoNomes.has(nome.toLowerCase())) return true
-  // eslint-disable-next-line no-misleading-character-class
-  const n = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-  return n.includes('cart') && (n.includes('cred') || n.includes('fatura'))
+  const n = nome.toLowerCase()
+  // 'cart' bate em 'cartão', 'cartao'; /cr[eé]d/ bate em 'cred' e 'créd'
+  return n.includes('cart') && (/cr[eé]d/.test(n) || n.includes('fatura'))
 }
 function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
   return {
