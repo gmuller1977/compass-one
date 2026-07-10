@@ -147,6 +147,33 @@ export default function Planejamento() {
 
   const maxAbsSF = useMemo(() => Math.max(1, ...saldoFinal.map(v => Math.abs(v))), [saldoFinal])
 
+  // Lançamentos reais somados por categoria e mês (para a aba Realizado)
+  const lancadoPorCatMes = useMemo(() => {
+    const result: Record<number, Record<string, number>> = {}
+    for (let mes = 0; mes < 12; mes++) {
+      result[mes] = {}
+      contas.forEach(conta => {
+        const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+        const dados = extratoData[key]
+        if (!dados) return
+        Object.values(dados.lancamentos).flat().forEach(l => {
+          result[mes][l.categoria] = (result[mes][l.categoria] ?? 0) + l.valor
+        })
+        // Fixas consolidadas também contam
+        if (dados.fixasConsolidadas) {
+          const fixasAtivas = categorias.filter(c => c.fixa && c.ativa && conta.tipo !== 'cartao')
+          fixasAtivas.forEach(f => {
+            if (dados.fixasConsolidadas?.[f.id]) {
+              const val = dados.fixasValorOverride?.[f.id] ?? f.valorPadrao ?? 0
+              result[mes][f.nome] = (result[mes][f.nome] ?? 0) + val
+            }
+          })
+        }
+      })
+    }
+    return result
+  }, [contas, categorias, extratoData, anoAtual])
+
   const saldoInicialReal = useMemo(() => {
     if (aba !== 'real') return saldoInicial
     const result = [...saldoInicial]
@@ -805,10 +832,27 @@ export default function Planejamento() {
                           <span>{te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
                         </div>
                         <div style={{ padding:'4px 16px 0' }}>
+                        {aba === 'real' && (
+                          <div style={{ display:'flex', alignItems:'center', gap:8,
+                            padding:'4px 0 2px', fontSize:9, fontWeight:700,
+                            color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
+                            <div style={{ width:22, flexShrink:0 }}/>
+                            <div style={{ width:16, flexShrink:0 }}/>
+                            <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
+                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
+                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
+                            <div style={{ flex:1, paddingLeft:8 }}>Consumo</div>
+                          </div>
+                        )}
                         {dadosAno.entradas.map((cat, ri) => {
                           const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                           const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
                           const bm = tm ? BADGE_MOV[tm] : null
+                          const previsto = aba === 'real'
+                            ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
+                            : 0
+                          const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) : 0
+                          const pct = previsto > 0 ? Math.min(150, (lancado / previsto) * 100) : (lancado > 0 ? 100 : 0)
                           return (
                             <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
                               padding:'5px 0', borderBottom:'1px solid #f8faff' }}>
@@ -826,17 +870,44 @@ export default function Planejamento() {
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
                                 {cat.nome}
                               </span>
-                              {renderValor('e', ri, mi, cat.v[mi])}
-                              <div style={{ flex:1 }}/>
-                              {!bloqueado && (
-                                <button onClick={() => replicarLinhaMes('e', ri, mi)}
-                                  title={`Replicar ${MESES[mi]} para todos os meses`}
-                                  style={{ border:'none', background:'#dbeafe', cursor:'pointer',
-                                    borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
-                                    fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
-                                    opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
-                                  →12
-                                </button>
+                              {aba === 'real' ? (
+                                <>
+                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                    fontSize:12, color:COR.textoSuave }}>
+                                    {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                    fontSize:12, fontWeight:700,
+                                    color: lancado >= previsto && previsto > 0 ? '#16a34a' : lancado > 0 ? COR.azul : COR.textoSuave }}>
+                                    {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                  <div style={{ flex:1, display:'flex', alignItems:'center', gap:6, paddingLeft:8 }}>
+                                    <div style={{ flex:1, height:5, background:'#e2e8f0', borderRadius:3, overflow:'hidden' }}>
+                                      <div style={{ height:'100%', borderRadius:3, transition:'width .3s',
+                                        background: pct >= 100 ? '#16a34a' : pct >= 60 ? COR.azul : '#94a3b8',
+                                        width:`${Math.min(100, pct)}%` }}/>
+                                    </div>
+                                    <span style={{ fontSize:10, color:COR.textoSuave,
+                                      minWidth:28, textAlign:'right', flexShrink:0 }}>
+                                      {Math.round(pct)}%
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {renderValor('e', ri, mi, cat.v[mi])}
+                                  <div style={{ flex:1 }}/>
+                                  {!bloqueado && (
+                                    <button onClick={() => replicarLinhaMes('e', ri, mi)}
+                                      title={`Replicar ${MESES[mi]} para todos os meses`}
+                                      style={{ border:'none', background:'#dbeafe', cursor:'pointer',
+                                        borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
+                                        fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
+                                        opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
+                                      →12
+                                    </button>
+                                  )}
+                                </>
                               )}
                             </div>
                           )
@@ -868,11 +939,30 @@ export default function Planejamento() {
                           <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
                         </div>
                         <div style={{ padding:'4px 16px 0' }}>
+                        {aba === 'real' && (
+                          <div style={{ display:'flex', alignItems:'center', gap:8,
+                            padding:'4px 0 2px', fontSize:9, fontWeight:700,
+                            color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
+                            <div style={{ width:22, flexShrink:0 }}/>
+                            <div style={{ width:16, flexShrink:0 }}/>
+                            <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
+                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
+                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
+                            <div style={{ flex:1, paddingLeft:8 }}>Consumo</div>
+                          </div>
+                        )}
                         {dadosAnoFinal.saidas.map((cat, ri) => {
                           const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                           const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
                           const bm = tm ? BADGE_MOV[tm] : null
                           const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
+                          const previsto = aba === 'real'
+                            ? ((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
+                            : 0
+                          const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) : 0
+                          const prevAbs = Math.abs(previsto)
+                          const lancAbs = Math.abs(lancado)
+                          const pct = prevAbs > 0 ? Math.min(150, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
                           return (
                             <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
                               padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
@@ -891,17 +981,44 @@ export default function Planejamento() {
                                 {cat.nome}
                                 {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
                               </span>
-                              {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
-                              <div style={{ flex:1 }}/>
-                              {!bloqueado && !ehFatura && (
-                                <button onClick={() => replicarLinhaMes('s', ri, mi)}
-                                  title={`Replicar ${MESES[mi]} para todos os meses`}
-                                  style={{ border:'none', background:'#fee2e2', cursor:'pointer',
-                                    borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.vermelho,
-                                    fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
-                                    opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
-                                  →12
-                                </button>
+                              {aba === 'real' ? (
+                                <>
+                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                    fontSize:12, color:COR.textoSuave }}>
+                                    {prevAbs > 0 ? Math.abs(previsto).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                    fontSize:12, fontWeight:700,
+                                    color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
+                                    {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                  <div style={{ flex:1, display:'flex', alignItems:'center', gap:6, paddingLeft:8 }}>
+                                    <div style={{ flex:1, height:5, background:'#e2e8f0', borderRadius:3, overflow:'hidden' }}>
+                                      <div style={{ height:'100%', borderRadius:3, transition:'width .3s',
+                                        background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
+                                        width:`${Math.min(100, pct)}%` }}/>
+                                    </div>
+                                    <span style={{ fontSize:10, color:COR.textoSuave,
+                                      minWidth:28, textAlign:'right', flexShrink:0 }}>
+                                      {Math.round(pct)}%
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
+                                  <div style={{ flex:1 }}/>
+                                  {!bloqueado && !ehFatura && (
+                                    <button onClick={() => replicarLinhaMes('s', ri, mi)}
+                                      title={`Replicar ${MESES[mi]} para todos os meses`}
+                                      style={{ border:'none', background:'#fee2e2', cursor:'pointer',
+                                        borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.vermelho,
+                                        fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
+                                        opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
+                                      →12
+                                    </button>
+                                  )}
+                                </>
                               )}
                             </div>
                           )
