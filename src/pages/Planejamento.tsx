@@ -1006,9 +1006,12 @@ export default function Planejamento() {
                           const previsto = aba === 'real'
                             ? ((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
                             : 0
+                          const totalCartaoConsolidado = ehFatura
+                            ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((s, v) => s + v, 0)
+                            : 0
                           const lancado = aba === 'real'
                             ? ehFatura
-                              ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + (lancadoFaturaConsolidadaMesCat[mi]?.[cat.nome] ?? 0)
+                              ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + totalCartaoConsolidado
                               : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
                             : 0
                           const prevAbs = Math.abs(previsto)
