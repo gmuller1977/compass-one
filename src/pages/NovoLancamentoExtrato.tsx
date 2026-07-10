@@ -739,6 +739,7 @@ export default function NovoLancamentoExtrato() {
 
               {/* Fixas */}
               {fs.map(f => {
+                const ehFaturaFixa = f.id.startsWith('cartao-')
                 const catVisual = iconeCategoria(categorias, f.categoria)
                 const automatico = ehAutomatico(f)
                 const consolidada = mesDados.fixasConsolidadas?.[f.id] !== undefined
@@ -780,7 +781,7 @@ export default function NovoLancamentoExtrato() {
                       <div style={{fontSize:12,fontWeight:500,
                         color:consolidada?COR.texto:'#94a3b8',
                         display:'flex',alignItems:'center',gap:5}}>
-                        {f.nome}
+                        {ehFaturaFixa ? 'Cartão de Crédito' : f.nome}
                         <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                           background:consolidada?'#e0f2fe':'#f1f5f9',
                           color:consolidada?'#0369a1':'#94a3b8'}}>
@@ -795,7 +796,10 @@ export default function NovoLancamentoExtrato() {
                       </div>
                       <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
                         display:'flex',alignItems:'center',gap:4}}>
-                        {f.categoria} <BadgePag fp={f.formaPagamento}/>
+                        {ehFaturaFixa
+                          ? `${f.categoria}${f.nome !== f.categoria ? ' · ' + f.nome : ''}`
+                          : f.categoria
+                        } <BadgePag fp={f.formaPagamento}/>
                       </div>
                     </div>
                     <div style={{fontSize:13,fontWeight:600,color:corValor}}>
