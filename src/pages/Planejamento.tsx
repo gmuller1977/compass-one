@@ -41,17 +41,25 @@ function corSaldo(v: number) {
   if (v < 1000) return '#d97706'
   return COR.verde
 }
-function calcSaldos(data: AnoData) {
+function calcSaldos(data: AnoData, exclCartao = false) {
   const totalE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
   const totalS = Array.from({ length: 12 }, (_, i) =>
-    data.saidas.reduce((s, c) => s + c.v[i], 0))
+    (exclCartao ? data.saidas.filter(c => c.t !== 'cartao') : data.saidas)
+      .reduce((s, c) => s + c.v[i], 0))
   const si: number[] = [], sf: number[] = []
   for (let i = 0; i < 12; i++) {
     const s = i === 0 ? data.saldoInicialJan : sf[i - 1]
     si.push(s); sf.push(s + totalE[i] - totalS[i])
   }
   return { totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf }
+}
+
+function nomeFaturaCartao(nome: string, cartaoNomes: Set<string>): boolean {
+  if (cartaoNomes.has(nome.toLowerCase())) return true
+  // eslint-disable-next-line no-misleading-character-class
+  const n = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return n.includes('cart') && (n.includes('cred') || n.includes('fatura'))
 }
 function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
   return {
@@ -123,6 +131,10 @@ export default function Planejamento() {
       .map(c => ({ nome: c.nome, t: c.tipoMovimento, v: new Array(12).fill(0) })),
   }), [SALDO_INICIAL_FIXO, categorias])
 
+  const cartaoNomes = useMemo(() =>
+    new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())),
+    [contas])
+
   const temValoresPadrao = useMemo(() =>
     categorias.some(c => (c.valorPadrao ?? 0) > 0 && c.ativa), [categorias])
 
@@ -146,8 +158,22 @@ export default function Planejamento() {
     }
   }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
 
+  // Soma mensal de todas as categorias cartão (para auto-calcular "Cartão de Crédito")
+  const somaCartaoMes = useMemo(() =>
+    MESES.map((_, i) => dadosAno.saidas.filter(c => c.t === 'cartao').reduce((s, c) => s + c.v[i], 0)),
+    [dadosAno])
+
+  // dadosAno com a categoria "Cartão de Crédito" substituída pela soma das categorias cartão
+  const dadosAnoFinal: AnoData = useMemo(() => ({
+    ...dadosAno,
+    saidas: dadosAno.saidas.map(cat =>
+      nomeFaturaCartao(cat.nome, cartaoNomes) ? { ...cat, v: somaCartaoMes } : cat
+    ),
+  }), [dadosAno, somaCartaoMes, cartaoNomes])
+
+  // Saldos excluem categorias cartão individualmente (evita dupla contagem com a fatura)
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
-    useMemo(() => calcSaldos(dadosAno), [dadosAno])
+    useMemo(() => calcSaldos(dadosAnoFinal, true), [dadosAnoFinal])
 
   // Saldo inicial real: substitui pelos valores consolidados do extrato onde disponíveis
   const saldoInicialReal = useMemo(() => {
@@ -181,7 +207,7 @@ export default function Planejamento() {
 
   // ── Helpers de update ──
   function updateAno(fn: (d: AnoData) => AnoData) {
-    if (planejamentoLockado) return
+    if (planejamentoLockado && aba === 'previsto') return
     if (aba === 'previsto') {
       setPlanos(prev => ({ ...prev, [anoAtual]: fn((prev[anoAtual] as AnoData | undefined) ?? dadosBase) as PlanoAnoData }))
     } else {
@@ -298,11 +324,13 @@ export default function Planejamento() {
   // ── Célula de valor editável ──
   function renderCelula(tipo: 'e'|'s', row: number, col: number, valor: number, corTexto: string, ri: number) {
     const ativo = isEditVal(tipo, row, col)
+    // Bloqueia edição no previsto quando planejamento está travado
+    const bloqueado = planejamentoLockado && aba === 'previsto'
     return (
       <td key={col} style={{ padding:0, background:bgNormal(ri, col),
         borderBottom:`1px solid ${COR.borda}`,
-        width:COL_MES, minWidth:COL_MES, cursor:'pointer' }}>
-        {ativo ? (
+        width:COL_MES, minWidth:COL_MES, cursor: bloqueado ? 'default' : 'pointer' }}>
+        {ativo && !bloqueado ? (
           <input autoFocus value={valorTemp}
             onChange={e => setValorTemp(e.target.value)}
             onBlur={confirmarValor}
@@ -316,7 +344,7 @@ export default function Planejamento() {
               boxShadow:`inset 0 -2px 0 ${COR.azul}` }}
           />
         ) : (
-          <div onClick={() => iniciarValor(tipo, row, col, valor)}
+          <div onClick={bloqueado ? undefined : () => iniciarValor(tipo, row, col, valor)}
             style={{ padding:'7px 12px', textAlign:'right', fontSize:12,
               color: valor === 0 ? '#c0cce0' : corTexto,
               fontWeight:400, whiteSpace:'nowrap', userSelect:'none' }}>
@@ -327,10 +355,26 @@ export default function Planejamento() {
     )
   }
 
+  // ── Célula read-only para categoria de fatura cartão ──
+  function renderCelulaFatura(valor: number, ri: number, ci: number) {
+    return (
+      <td key={ci} style={{ padding:0,
+        background: ci === mesAtual ? '#ede9fe' : (ri % 2 === 0 ? '#faf5ff' : '#f5f3ff'),
+        borderBottom:`1px solid ${COR.borda}`,
+        width:COL_MES, minWidth:COL_MES }}>
+        <div style={{ padding:'7px 12px', textAlign:'right', fontSize:12,
+          color: valor === 0 ? '#c4b5fd' : '#7c3aed',
+          fontWeight:500, whiteSpace:'nowrap', userSelect:'none' }}>
+          {fmt(valor)}
+        </div>
+      </td>
+    )
+  }
+
   // ── Célula de nome — clique navega para Configurações (Cadastro de Categorias) ──
   function renderNome(
     tipo: 'e'|'s', ri: number, nome: string,
-    bgBase: string, badge?: React.ReactNode
+    bgBase: string, badge?: React.ReactNode, ehReadOnly = false
   ) {
     const hover = isHover(tipo, ri)
     const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
@@ -352,7 +396,7 @@ export default function Planejamento() {
             fontSize:11, flexShrink:0 }}>{icone}</div>
           {badge}
           <span style={{ fontSize:12, color:COR.texto, flex:1 }}>{nome}</span>
-          {hover && aba === 'previsto' && !planejamentoLockado && (
+          {hover && aba === 'previsto' && !planejamentoLockado && !ehReadOnly && (
             <button
               onClick={e => { e.stopPropagation(); replicarLinha(tipo, ri) }}
               title="Replicar valor de Janeiro para todos os meses"
@@ -584,7 +628,7 @@ export default function Planejamento() {
 
         {/* container único de scroll — todos os cards rolam juntos */}
         {(aba === 'previsto' || realExiste) && (
-        <div style={{ flex:1, overflow:'auto', paddingBottom:12 }}>
+        <div style={{ height:'100%', overflow:'auto', paddingBottom:12 }}>
           <div style={{ minWidth: COL_CAT + COL_MES * 12 + 2 }}>
 
             {/* CABEÇALHO FIXO */}
@@ -803,19 +847,24 @@ export default function Planejamento() {
                           Categorias de saída
                         </td>
                       </tr>
-                      {dadosAno.saidas.map((cat, ri) => {
+                      {dadosAnoFinal.saidas.map((cat, ri) => {
                         const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento
                           ?? (cat.t === 'D' ? 'banco' : cat.t === 'C' ? 'cartao' : undefined)
                         const bm = tm ? BADGE_MOV[tm] : null
+                        const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
                         return (
                           <tr key={`s-${ri}`}>
                             {renderNome('s', ri, cat.nome, ri % 2 === 0 ? '#fff8f8' : '#fff1f2',
                               bm && <span style={{ display:'inline-flex', alignItems:'center',
                                 justifyContent:'center', width:16, height:16, borderRadius:3,
                                 fontSize:9, fontWeight:700, flexShrink:0,
-                                background:bm.bg, color:bm.cor }}>{bm.label}</span>
+                                background:bm.bg, color:bm.cor }}>{bm.label}</span>,
+                              ehFatura
                             )}
-                            {cat.v.map((v, ci) => renderCelula('s', ri, ci, v, COR.texto, ri))}
+                            {cat.v.map((v, ci) => ehFatura
+                              ? renderCelulaFatura(v, ri, ci)
+                              : renderCelula('s', ri, ci, v, COR.texto, ri)
+                            )}
                           </tr>
                         )
                       })}
