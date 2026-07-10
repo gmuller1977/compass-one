@@ -640,7 +640,7 @@ export default function Planejamento() {
                       <span style={{ fontSize:8, color: aberto ? COR.azul : COR.textoSuave,
                         display:'inline-block', transition:'transform .2s',
                         transform: aberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                      <span style={{ fontSize:13, fontWeight:700,
+                      <span style={{ fontSize:16, fontWeight:700,
                         color: ehAtual ? COR.azul : COR.texto }}>{nomeMes}</span>
                       {ehAtual && (
                         <span style={{ fontSize:8, background:COR.azul, color:'#fff',
