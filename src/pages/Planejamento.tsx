@@ -145,27 +145,44 @@ export default function Planejamento() {
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAnoFinal, true), [dadosAnoFinal])
 
-  // Total de saídas lançadas em contas cartão por mês (para fatura na aba Realizado)
-  const lancadoCartaoMes = useMemo(() => {
-    let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
-    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /* */ }
-    const result: Record<number, number> = {}
+  // Valor consolidado de cada cartão por mês (fixasCartao conciliados no extrato banco)
+  const lancadoFaturaConsolidadaMesCat = useMemo(() => {
+    let fatDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
+    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) fatDados = JSON.parse(r) } catch { /* */ }
+    const result: Record<number, Record<string, number>> = {}
     for (let mes = 0; mes < 12; mes++) {
-      result[mes] = 0
-      contas.filter(c => c.tipo === 'cartao').forEach(conta => {
+      result[mes] = {}
+      contas.filter(c => c.tipo !== 'cartao').forEach(conta => {
         const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
-        const dm = faturasDados[key]
-        if (!dm) return
-        const nDias = new Date(anoAtual, mes + 1, 0).getDate()
-        for (let d = 1; d <= nDias; d++) {
-          ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-            if (l.tipo === 'saida') result[mes] += l.valor
-          })
-        }
+        const dados = extratoData[key]
+        if (!dados?.fixasConsolidadas) return
+        Object.entries(dados.fixasConsolidadas).forEach(([fixaId, consolidada]) => {
+          if (!consolidada || !fixaId.startsWith('cartao-')) return
+          const cardId = fixaId.replace('cartao-', '')
+          const card = contas.find(c => c.id === cardId)
+          if (!card) return
+          const overrideVal = dados.fixasValorOverride?.[fixaId]
+          let val = 0
+          if (overrideVal !== undefined) {
+            val = overrideVal
+          } else {
+            const fatKey = `${cardId}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+            const dm = fatDados[fatKey]
+            if (dm) {
+              const nDias = new Date(anoAtual, mes + 1, 0).getDate()
+              for (let d = 1; d <= nDias; d++) {
+                ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+                  if (l.tipo === 'saida') val += l.valor
+                })
+              }
+            }
+          }
+          result[mes][card.nome] = (result[mes][card.nome] ?? 0) + val
+        })
       })
     }
     return result
-  }, [contas, anoAtual])
+  }, [contas, extratoData, anoAtual])
 
   // Lançamentos reais somados por categoria e mês (para a aba Realizado)
   const lancadoPorCatMes = useMemo(() => {
@@ -991,7 +1008,7 @@ export default function Planejamento() {
                             : 0
                           const lancado = aba === 'real'
                             ? ehFatura
-                              ? (mi > 0 ? lancadoCartaoMes[mi - 1] : 0) + (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
+                              ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + (lancadoFaturaConsolidadaMesCat[mi]?.[cat.nome] ?? 0)
                               : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
                             : 0
                           const prevAbs = Math.abs(previsto)
