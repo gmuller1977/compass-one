@@ -82,6 +82,7 @@ export default function FaturaCartao() {
   const [ano,      setAno]      = useState(anoHoje)
   const [dados,    setDados]    = useState<Record<string, DadosMes>>(carregarDados)
   const [diaSel,   setDiaSel]   = useState<number>(diaHoje)
+  const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
   const [editandoId,           setEditandoId]           = useState<string|null>(null)
   const [editandoDiaOriginal,  setEditandoDiaOriginal]  = useState<number|null>(null)
   const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
@@ -193,6 +194,7 @@ export default function FaturaCartao() {
   useEffect(() => {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
+    setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
   }, [contaId, mes, ano])
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
@@ -203,6 +205,14 @@ export default function FaturaCartao() {
     const passadoDia = eMesAtual ? dia < diaHoje : (ano<anoHoje || (ano===anoHoje && mes<mesHoje))
     const ehHojeDia  = eMesAtual && dia === diaHoje
     return !passadoDia && !ehHojeDia
+  }
+
+  function toggleDia(dia: number) {
+    setDiasAbertos(prev => {
+      const next = new Set(prev)
+      next.has(dia) ? next.delete(dia) : next.add(dia)
+      return next
+    })
   }
 
   function resetarParaNovo(novoDia: number) {
@@ -465,100 +475,116 @@ export default function FaturaCartao() {
 
       {/* BARRA DE RESUMO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding:'8px 16px',flexShrink:0,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+        padding:'10px 16px',flexShrink:0,display:'flex',flexDirection:'column',gap:8}}>
 
-        <span style={{fontSize:12,fontWeight:600,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
-        <span style={{color:COR.borda}}>|</span>
-
-        {/* Fatura atual */}
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>Fatura atual do cartão:</span>
-          <input value={mesDados.faturaAtual}
-            onChange={e => updateMes(prev=>({...prev,faturaAtual:e.target.value}))}
-            placeholder="R$ 0,00"
-            style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
-              fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
-              outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
-        </div>
-
-        {/* Diferença */}
-        {diferenca !== null && (
-          <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
-            background:conciliado?'#dcfce7':'#fee2e2',
-            color:conciliado?'#166534':'#991b1b',
-            border:`1px solid ${conciliado?'#86efac':'#fca5a5'}`,
-            minWidth:110,textAlign:'center'}}>
-            {conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+        {/* Linha 1: mês + totais */}
+        <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+          <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
+          <span style={{color:COR.borda}}>|</span>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Fatura:</span>
+            <span style={{fontSize:16,fontWeight:800,
+              color:totalFatura>0?COR.vermelho:totalFatura<0?COR.verde:COR.textoSuave}}>{fmt(totalFatura)}</span>
           </div>
-        )}
-
-        <span style={{color:COR.borda}}>|</span>
-
-        {/* Data de fechamento */}
-        <div style={{display:'flex',alignItems:'center',gap:5}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>Fechamento:</span>
-          {editandoFechamento ? (
-            <input type="number" min={1} max={31} autoFocus
-              defaultValue={diaFechamento}
-              onBlur={e => {
-                const v = Math.min(Math.max(parseInt(e.target.value)||diaFechamentoBase,1),31)
-                if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
-                else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
-                setEditandoFechamento(false)
-              }}
-              onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-              style={{width:44,border:`1.5px solid ${COR.azul}`,borderRadius:5,padding:'3px 6px',
-                fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center'}}/>
-          ) : (
-            <span onClick={() => setEditandoFechamento(true)}
-              title="Clique para editar"
-              style={{fontSize:12,fontWeight:700,color:COR.azul,cursor:'pointer',
-                padding:'2px 6px',borderRadius:5,border:`1px dashed ${COR.borda}`,
-                background:'#f8faff'}}>
-              dia {diaFechamento}
-              {mesDados.fechamentoOverride && (
-                <span style={{fontSize:9,color:'#94a3b8',marginLeft:3}}>*</span>
-              )}
-            </span>
+          {contaInfo?.limiteCartao && (
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Crédito disponível:</span>
+              <span style={{fontSize:16,fontWeight:800,
+                color:(contaInfo.limiteCartao-totalFatura)<0?COR.vermelho:COR.verde}}>
+                {fmt(contaInfo.limiteCartao - totalFatura)}
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Data de vencimento */}
-        <div style={{display:'flex',alignItems:'center',gap:5}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>Vencimento:</span>
-          {editandoVencimento ? (
-            <input type="number" min={1} max={31} autoFocus
-              defaultValue={diaVencimento}
-              onBlur={e => {
-                const v = Math.min(Math.max(parseInt(e.target.value)||diaVencimentoBase,1),31)
-                if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
-                else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
-                setEditandoVencimento(false)
-              }}
-              onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-              style={{width:44,border:`1.5px solid ${COR.azul}`,borderRadius:5,padding:'3px 6px',
-                fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center'}}/>
-          ) : (
-            <span onClick={() => setEditandoVencimento(true)}
-              title="Clique para editar"
-              style={{fontSize:12,fontWeight:700,color:COR.vermelho,cursor:'pointer',
-                padding:'2px 6px',borderRadius:5,border:`1px dashed ${COR.borda}`,
-                background:'#fff5f5'}}>
-              {diaVencimento} de {NOMES_MESES[mesVenc]}
-              {mesDados.vencimentoOverride && (
-                <span style={{fontSize:9,color:'#94a3b8',marginLeft:3}}>*</span>
-              )}
+        {/* Linha 2: pill + fatura atual + diferença + fechamento + vencimento */}
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          {contaInfo && (
+            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
+              display:'inline-flex',alignItems:'center',gap:5,
+              background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
+              <span>{contaInfo.icone}</span>
+              <span style={{color:contaInfo.cor,fontWeight:600}}>{contaInfo.banco}</span>
+              <span style={{fontWeight:700,color:totalFatura>0?COR.vermelho:COR.texto}}>{fmt(totalFatura)}</span>
             </span>
           )}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Fatura atual do cartão:</span>
+            <input value={mesDados.faturaAtual}
+              onChange={e => updateMes(prev=>({...prev,faturaAtual:e.target.value}))}
+              onFocus={e => e.target.select()}
+              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,faturaAtual:fmt(n)})) }}
+              placeholder="R$ 0,00"
+              style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
+                fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
+                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
+            <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
+              background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+              border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+              minWidth:110,textAlign:'center'}}>
+              {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+            </div>
+          </div>
+          <span style={{color:COR.borda}}>|</span>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Fechamento:</span>
+            {editandoFechamento ? (
+              <input type="number" min={1} max={31} autoFocus
+                defaultValue={diaFechamento}
+                onBlur={e => {
+                  const v = Math.min(Math.max(parseInt(e.target.value)||diaFechamentoBase,1),31)
+                  if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
+                  else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
+                  setEditandoFechamento(false)
+                }}
+                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
+                style={{width:44,border:`1.5px solid ${COR.azul}`,borderRadius:5,padding:'3px 6px',
+                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center'}}/>
+            ) : (
+              <span onClick={() => setEditandoFechamento(true)}
+                title="Clique para editar"
+                style={{fontSize:12,fontWeight:700,color:COR.azul,cursor:'pointer',
+                  padding:'2px 6px',borderRadius:5,border:`1px dashed ${COR.borda}`,
+                  background:'#f8faff'}}>
+                dia {diaFechamento}
+                {mesDados.fechamentoOverride && (
+                  <span style={{fontSize:9,color:'#94a3b8',marginLeft:3}}>*</span>
+                )}
+              </span>
+            )}
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Vencimento:</span>
+            {editandoVencimento ? (
+              <input type="number" min={1} max={31} autoFocus
+                defaultValue={diaVencimento}
+                onBlur={e => {
+                  const v = Math.min(Math.max(parseInt(e.target.value)||diaVencimentoBase,1),31)
+                  if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
+                  else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
+                  setEditandoVencimento(false)
+                }}
+                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
+                style={{width:44,border:`1.5px solid ${COR.azul}`,borderRadius:5,padding:'3px 6px',
+                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center'}}/>
+            ) : (
+              <span onClick={() => setEditandoVencimento(true)}
+                title="Clique para editar"
+                style={{fontSize:12,fontWeight:700,color:COR.vermelho,cursor:'pointer',
+                  padding:'2px 6px',borderRadius:5,border:`1px dashed ${COR.borda}`,
+                  background:'#fff5f5'}}>
+                {diaVencimento} de {NOMES_MESES[mesVenc]}
+                {mesDados.vencimentoOverride && (
+                  <span style={{fontSize:9,color:'#94a3b8',marginLeft:3}}>*</span>
+                )}
+              </span>
+            )}
+          </div>
         </div>
-
-        <span style={{color:COR.borda}}>|</span>
-        <span style={{fontSize:11,color:COR.vermelho,fontWeight:500}}>Total: {fmt(totalFatura)}</span>
-        {contaInfo?.limiteCartao && (
-          <span style={{fontSize:11,color:COR.verde,fontWeight:500}}>
-            Disponível: {fmt(contaInfo.limiteCartao - totalFatura)}
-          </span>
-        )}
       </div>
 
       {/* CONTEÚDO: lista + painel */}
@@ -574,6 +600,7 @@ export default function FaturaCartao() {
           const ls       = mesDados.lancamentos[dia] ?? []
           const temItens = ls.length > 0
           const selecionado = diaSel===dia
+          const aberto    = diasAbertos.has(dia)
           const diaFuturo = !passado && !ehHoje
 
           const saidasDia  = ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
@@ -587,7 +614,7 @@ export default function FaturaCartao() {
           return (
             <div key={dia}
               ref={ehHoje ? hojeRef : undefined}
-              onClick={() => resetarParaNovo(dia)}
+              onClick={() => { toggleDia(dia); resetarParaNovo(dia) }}
               style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
                 position:'relative',zIndex:selecionado?7:6,
                 border:`1.5px solid ${selecionado?COR.azul:ehHoje?'#93c5fd':COR.borda}`,
@@ -597,25 +624,26 @@ export default function FaturaCartao() {
               }}>
 
               {/* Cabeçalho do dia */}
-              <div style={{display:'flex',alignItems:'center',gap:10,
-                padding:'8px 16px',minHeight:44,
+              <div style={{display:'flex',alignItems:'center',gap:12,
+                padding:'10px 16px',minHeight:54,
                 background:selecionado?'#eff6ff':ehHoje?'#f0f7ff':'#fafbff',
-                borderBottom:temItens||selecionado?`1px solid ${selecionado?'#bfdbfe':COR.borda}`:'none'}}>
+                borderBottom:aberto&&(temItens||selecionado)?`1px solid ${selecionado?'#bfdbfe':COR.borda}`:'none'}}>
 
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center',minWidth:32,flexShrink:0}}>
-                  <span style={{fontSize:17,fontWeight:700,lineHeight:1,
+                  <span style={{fontSize:18,fontWeight:700,lineHeight:1,
                     color:selecionado||ehHoje?COR.azul:COR.texto}}>
                     {String(dia).padStart(2,'0')}
                   </span>
-                  <span style={{fontSize:9,color:selecionado||ehHoje?COR.azulMedio:'#94a3b8',
-                    fontWeight:600,textTransform:'uppercase',letterSpacing:.3,marginTop:2}}>
+                  <span style={{fontSize:10,color:'#94a3b8',
+                    fontWeight:500,textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>
                     {semana}
                   </span>
                 </div>
 
                 {ehHoje && (
-                  <span style={{fontSize:10,background:COR.azul,color:'#fff',
-                    padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Hoje</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',
+                    borderRadius:4,background:'#dbeafe',color:COR.azul,
+                    letterSpacing:.5,textTransform:'uppercase',flexShrink:0}}>Hoje</span>
                 )}
                 {ehFechamento && (
                   <span style={{fontSize:10,background:'#7c3aed',color:'#fff',
@@ -626,16 +654,22 @@ export default function FaturaCartao() {
                     padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Vencimento</span>
                 )}
 
-                {temItens && (
-                  <div style={{marginLeft:'auto',fontSize:12,fontWeight:700,
-                    color:totalDia>0?COR.vermelho:COR.azul}}>
-                    {totalDia>0?`-${fmt(totalDia)}`:`+${fmt(-totalDia)}`}
-                  </div>
-                )}
+                <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:6}}>
+                  {temItens && (
+                    <span style={{fontSize:13,fontWeight:700,
+                      color:totalDia>0?COR.vermelho:COR.azul}}>
+                      {totalDia>0?`-${fmt(totalDia)}`:`+${fmt(-totalDia)}`}
+                    </span>
+                  )}
+                  <span style={{width:18,flexShrink:0,textAlign:'center',fontSize:14,
+                    color:'#94a3b8',opacity:temItens?1:0,userSelect:'none',
+                    display:'inline-block',transition:'transform .15s',
+                    transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
+                </div>
               </div>
 
               {/* Lançamentos */}
-              {ls.map(l => {
+              {aberto && ls.map(l => {
                 const catVisual   = iconeCategoria(categorias, l.categoria)
                 const consolidado = diaFuturo ? (l.consolidado === true) : true
                 const corValor    = consolidado ? (l.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'

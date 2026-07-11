@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
-import ExtratoDinheiro from './ExtratoDinheiro'
+import ExtratoConsolidado from './ExtratoConsolidado'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -126,8 +126,11 @@ export default function NovoLancamentoExtrato() {
   const [fDesc,   setFDesc]   = useState('')
   const [fValor,  setFValor]  = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
-  const [modo, setModo] = useState<'banco'|'cartao'|'dinheiro'>('banco')
+  const [modo, setModo] = useState<'consolidado'|'banco'|'cartao'|'dinheiro'>('consolidado')
   const [fContaDestino,     setFContaDestino]      = useState('')
+  const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
+  const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
+  const [modalSaldoValor, setModalSaldoValor] = useState('')
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
@@ -162,11 +165,15 @@ export default function NovoLancamentoExtrato() {
     })
   }
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-  const contaIdEfetivo = contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? ''
+  const isDinheiro = modo === 'dinheiro'
+  const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   const dados = extratoData as Record<string, DadosMes>
   const fixasCategoria = categorias
     .filter(c => {
-      if (!c.fixa || !c.ativa || c.tipoMovimento === 'cartao') return false
+      if (!c.fixa || !c.ativa) return false
+      if (isDinheiro) return c.tipoMovimento === 'dinheiro'
+      if (c.tipoMovimento === 'cartao') return false
+      if (c.tipoMovimento === 'dinheiro') return false
       if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
       // Sem conta específica: some se já consolidada em outro banco no mesmo mês
       if (!c.contaDebitoId) {
@@ -185,6 +192,7 @@ export default function NovoLancamentoExtrato() {
       diaVencimento: c.diaVencimento ?? 1,
     }))
   const fixasCartao: CatFixa[] = useMemo(() => {
+    if (isDinheiro) return []
     let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
     try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /**/ }
 
@@ -236,7 +244,7 @@ export default function NovoLancamentoExtrato() {
   }, [contas, contaIdEfetivo, ano, mes, dados, contasExtrato])
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
-    .filter(c => c.tipo === fTipo)
+    .filter(c => c.tipo === fTipo && (!isDinheiro || c.tipoMovimento === 'dinheiro'))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
@@ -249,7 +257,19 @@ export default function NovoLancamentoExtrato() {
   useEffect(() => {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
+    setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
   }, [contaId, mes, ano])
+
+  useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [modo])
+
+  useEffect(() => {
+    if (modo !== 'banco') return
+    const conta = contasExtrato.find(c => c.id === contaId) ?? contasExtrato[0]
+    if (!conta) return
+    const k = mesKey(conta.id, ano, mes)
+    setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+    setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
+  }, [modo])
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     return (novoMes===mesHoje && novoAno===anoHoje) ? diaHoje : 1
@@ -259,6 +279,14 @@ export default function NovoLancamentoExtrato() {
     const passadoDia = eMesAtual ? dia < diaHoje : (ano<anoHoje || (ano===anoHoje && mes<mesHoje))
     const ehHojeDia  = eMesAtual && dia === diaHoje
     return !passadoDia && !ehHojeDia
+  }
+
+  function toggleDia(dia: number) {
+    setDiasAbertos(prev => {
+      const next = new Set(prev)
+      next.has(dia) ? next.delete(dia) : next.add(dia)
+      return next
+    })
   }
 
   function resetarParaNovo(novoDia: number) {
@@ -271,6 +299,23 @@ export default function NovoLancamentoExtrato() {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia); setEditandoFixaId(null)
     setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
     setFValor(String(l.valor).replace('.', ',')); setFPag(l.formaPagamento)
+
+    if (l.formaPagamento === 'transferencia') {
+      // Encontra conta espelho: mesmo dia, tipo oposto, mesmo valor, forma transferência
+      const tipoOposto = l.tipo === 'saida' ? 'entrada' : 'saida'
+      const mesStr = String(mes+1).padStart(2,'0')
+      const destino = contasExtrato.find(ct => {
+        if (ct.id === contaIdEfetivo) return false
+        const d = (extratoData as Record<string, DadosMes>)[`${ct.id}-${ano}-${mesStr}`]
+        return d?.lancamentos?.[dia]?.some(
+          lc => lc.valor === l.valor && lc.tipo === tipoOposto && lc.formaPagamento === 'transferencia'
+        )
+      })
+      setFContaDestino(destino?.id ?? '')
+    } else {
+      setFContaDestino('')
+    }
+
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
 
@@ -288,6 +333,15 @@ export default function NovoLancamentoExtrato() {
   }
   function updateMesPorKey(targetKey: string, fn: (prev: DadosMes) => DadosMes) {
     updateExtratoMes(targetKey, fn as unknown as (prev: import('../context/AppContext').DadosMes) => import('../context/AppContext').DadosMes)
+  }
+
+  function confirmarModalSaldo() {
+    if (!modalSaldo) return
+    const n = parseBRL(modalSaldoValor)
+    if (modalSaldoValor.trim()) {
+      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n)}))
+    }
+    setModalSaldo(null)
   }
 
   function ehAutomatico(f: CatFixa) {
@@ -505,7 +559,7 @@ export default function NovoLancamentoExtrato() {
       {/* MODO: Extrato bancário vs Fatura cartão */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px',flexShrink:0,display:'flex',gap:6}}>
-        {([['banco','🏦 Extrato Bancário'],['cartao','💳 Fatura Cartão'],['dinheiro','💵 Dinheiro']] as const).map(([v,l]) => (
+        {([['consolidado','📊 Consolidado'],['banco','🏦 Extrato Bancário'],['cartao','💳 Fatura Cartão'],['dinheiro','💵 Dinheiro']] as const).map(([v,l]) => (
           <button key={v} onClick={() => setModo(v)} style={{
             padding:'7px 16px',borderRadius:8,
             border:`1.5px solid ${modo===v?COR.azul:COR.borda}`,
@@ -516,15 +570,22 @@ export default function NovoLancamentoExtrato() {
         ))}
       </div>
 
-      {modo==='cartao' ? <FaturaCartao /> : modo==='dinheiro' ? <ExtratoDinheiro /> : (
+      {modo==='consolidado' ? <ExtratoConsolidado /> : modo==='cartao' ? <FaturaCartao /> : (
       <>
-      {/* ABAS DE BANCO */}
+      {/* ABAS DE BANCO — ocultas no modo dinheiro */}
+      {!isDinheiro && (
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {contasExtrato.map(c => {
           const ativa = c.id===contaIdEfetivo
           return (
-            <button key={c.id} onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }} style={{
+            <button key={c.id} onClick={() => {
+              setContaId(c.id)
+              resetarParaNovo(diaDefaultPara(mes,ano))
+              const k = mesKey(c.id, ano, mes)
+              setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+              setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
+            }} style={{
               display:'flex',alignItems:'center',gap:6,
               padding:'7px 14px',borderRadius:'8px 8px 0 0',
               border:`1px solid ${ativa?COR.azul:COR.borda}`,
@@ -538,6 +599,7 @@ export default function NovoLancamentoExtrato() {
           )
         })}
       </div>
+      )}
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
@@ -566,32 +628,99 @@ export default function NovoLancamentoExtrato() {
 
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding:'8px 16px',flexShrink:0,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-        <span style={{fontSize:12,fontWeight:600,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
-        <span style={{color:COR.borda}}>|</span>
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>Extrato atual banco:</span>
-          <input value={mesDados.saldoBanco}
-            onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
-            placeholder="R$ 0,00"
-            style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
-              fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
-              outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
-          <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
-            background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
-            color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
-            border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-            minWidth:110,textAlign:'center'}}>
-            {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+        padding:'10px 16px',flexShrink:0,
+        display:'flex',flexDirection:isDinheiro?'column':'row',
+        alignItems:isDinheiro?'flex-start':'center',gap:14,flexWrap:'wrap'}}>
+
+        {isDinheiro ? (<>
+          {/* Dinheiro — linha 1: mês + saldos */}
+          <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+            <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
+            <span style={{color:COR.borda}}>|</span>
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Disponível:</span>
+              <span style={{fontSize:16,fontWeight:800,
+                color:saldoMes<0?COR.vermelho:COR.verde}}>{fmt(saldoMes)}</span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
+              <span style={{fontSize:16,fontWeight:800,
+                color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
+                {fmt(saldosDia[totalDias]??saldoMes)}
+              </span>
+            </div>
           </div>
-        </div>
-        <span style={{color:COR.borda}}>|</span>
-        <span style={{fontSize:11,color:COR.azul,fontWeight:500}}>↑ {fmt(totalEntradas)}</span>
-        <span style={{fontSize:11,color:COR.vermelho,fontWeight:500}}>↓ {fmt(totalSaidas)}</span>
-        <span style={{fontSize:11,color:COR.azul,fontWeight:700}}>= {fmt(saldoMes)}</span>
+          {/* Dinheiro — linha 2: pill + input + diferença */}
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
+              display:'inline-flex',alignItems:'center',gap:5,
+              background:'#16a34a18',border:'1px solid #16a34a55'}}>
+              <span>💵</span>
+              <span style={{color:'#16a34a',fontWeight:600}}>Dinheiro</span>
+              <span style={{fontSize:16,fontWeight:800,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
+            </span>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave}}>Saldo dinheiro atual:</span>
+              <input value={mesDados.saldoBanco}
+                onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
+                onFocus={e => e.target.select()}
+                onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
+                placeholder="R$ 0,00"
+                style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
+                  fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
+                  outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
+              <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
+                background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+                color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+                border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+                minWidth:110,textAlign:'center'}}>
+                {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+              </div>
+            </div>
+          </div>
+        </>) : (<>
+          {/* Banco — linha única */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo atual banco:</span>
+            <input value={mesDados.saldoBanco}
+              onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
+              onFocus={e => e.target.select()}
+              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
+              placeholder="R$ 0,00"
+              style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'4px 10px',
+                fontSize:13,fontWeight:700,color:COR.azul,background:'#eff6ff',
+                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          </div>
+          {contaInfo && (
+            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
+              display:'inline-flex',alignItems:'center',gap:5,
+              background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
+              <span>{contaInfo.icone}</span>
+              <span style={{color:contaInfo.cor,fontWeight:600}}>{contaInfo.banco}</span>
+              <span style={{fontWeight:700,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
+            </span>
+          )}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
+            <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
+              background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+              border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+              minWidth:110,textAlign:'center'}}>
+              {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
+            <span style={{fontSize:16,fontWeight:800,
+              color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
+              {fmt(saldosDia[totalDias]??saldoMes)}
+            </span>
+          </div>
+        </>)}
       </div>
 
       {/* CONTEÚDO: lista + painel de lançamento */}
@@ -642,13 +771,14 @@ export default function NovoLancamentoExtrato() {
             ? saldosDia[dia] ?? saldoIni
             : saldoIni + entradasConf - saidasConf
           const selecionado = diaSel===dia
+          const aberto    = diasAbertos.has(dia)
           const corIni    = saldoIni<0 ? COR.vermelho : COR.verde
           const corSaldo  = saldoDia<0 ? COR.vermelho : COR.verde
 
           return (
             <div key={dia}
               ref={ehHoje ? hojeRef : undefined}
-              onClick={() => resetarParaNovo(dia)}
+              onClick={() => { toggleDia(dia); resetarParaNovo(dia) }}
               style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
                 position:'relative',zIndex:selecionado?7:6,
                 border:`1.5px solid ${selecionado?COR.azul:ehHoje?'#93c5fd':COR.borda}`,
@@ -661,23 +791,24 @@ export default function NovoLancamentoExtrato() {
               <div style={{display:'flex',alignItems:'center',gap:12,
                 padding:'10px 16px',minHeight:54,
                 background:selecionado?'#eff6ff':ehHoje?'#f0f7ff':'#fafbff',
-                borderBottom:temItens||selecionado?`1px solid ${selecionado?'#bfdbfe':COR.borda}`:'none'}}>
+                borderBottom:aberto&&(temItens||selecionado)?`1px solid ${selecionado?'#bfdbfe':COR.borda}`:'none'}}>
 
                 <div style={{display:'flex',flexDirection:'column',
                   alignItems:'center',minWidth:32,flexShrink:0}}>
-                  <span style={{fontSize:17,fontWeight:700,lineHeight:1,
+                  <span style={{fontSize:18,fontWeight:700,lineHeight:1,
                     color:selecionado||ehHoje?COR.azul:COR.texto}}>
                     {String(dia).padStart(2,'0')}
                   </span>
-                  <span style={{fontSize:9,color:selecionado||ehHoje?COR.azulMedio:'#94a3b8',
-                    fontWeight:600,textTransform:'uppercase',letterSpacing:.3,marginTop:2}}>
+                  <span style={{fontSize:10,color:'#94a3b8',
+                    fontWeight:500,textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>
                     {semana}
                   </span>
                 </div>
 
                 {ehHoje && (
-                  <span style={{fontSize:10,background:COR.azul,color:'#fff',
-                    padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Hoje</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',
+                    borderRadius:4,background:'#dbeafe',color:COR.azul,
+                    letterSpacing:.5,textTransform:'uppercase',flexShrink:0}}>Hoje</span>
                 )}
 
                 {/* Inicial | Entradas | Saída | Final */}
@@ -685,61 +816,67 @@ export default function NovoLancamentoExtrato() {
                   justifyContent:'flex-end',gap:6}}>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    padding:'5px 10px',borderRadius:8,minWidth:90,
                     background:saldoIni<0?'#fff1f2':'#f0fdf4',
                     border:`1px solid ${saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
-                    <span style={{fontSize:9,fontWeight:600,
+                    <span style={{fontSize:10,fontWeight:600,
                       textTransform:'uppercase',letterSpacing:.4,marginBottom:1,color:corIni}}>Inicial</span>
-                    <span style={{fontSize:12,fontWeight:600,color:corIni}}>{fmt(saldoIni)}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:corIni}}>{fmt(saldoIni)}</span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    padding:'5px 10px',borderRadius:8,minWidth:90,
                     background:entradasConf>0?'#eff6ff':'#f8faff',
                     border:`1px solid ${entradasConf>0?'#bfdbfe':COR.borda}`}}>
-                    <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
                       color:entradasConf>0?COR.azul:'#94a3b8'}}>
                       Entradas
                     </span>
-                    <span style={{fontSize:12,fontWeight:700,
+                    <span style={{fontSize:13,fontWeight:700,
                       color:entradasConf>0?COR.azul:entradasDia>0?'#94a3b8':'#94a3b8'}}>
                       {entradasBoxVal===0?'—':`+${fmt(entradasBoxVal)}`}
                     </span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    padding:'5px 10px',borderRadius:8,minWidth:90,
                     background:saidasConf>0?'#fff1f2':'#f8faff',
                     border:`1px solid ${saidasConf>0?'#fecdd3':COR.borda}`}}>
-                    <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
                       color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
                       Saída
                     </span>
-                    <span style={{fontSize:12,fontWeight:700,
+                    <span style={{fontSize:13,fontWeight:700,
                       color:saidasConf>0?COR.vermelho:saidasDia>0?'#94a3b8':'#94a3b8'}}>
                       {saidasBoxVal===0?'—':`-${fmt(saidasBoxVal)}`}
                     </span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:96,
+                    padding:'5px 10px',borderRadius:8,minWidth:90,
                     background:diaFuturo?'#f8faff':saldoDia<0?'#fff1f2':'#f0fdf4',
                     border:`1px solid ${diaFuturo?COR.borda:saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
-                    <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
                       color:diaFuturo?'#94a3b8':corSaldo}}>
                       {diaFuturo?'Previsto':passado?'Final':'Atual'}
                     </span>
-                    <span style={{fontSize:12,fontWeight:700,
+                    <span style={{fontSize:13,fontWeight:700,
                       color:diaFuturo?'#64748b':corSaldo}}>{fmt(saldoDia)}</span>
                   </div>
                 </div>
+
+                {/* Chevron */}
+                <span style={{width:18,flexShrink:0,textAlign:'center',fontSize:14,
+                  color:'#94a3b8',opacity:temItens?1:0,userSelect:'none',
+                  display:'inline-block',transition:'transform .15s',
+                  transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
               </div>
 
               {/* Fixas */}
-              {fs.map(f => {
+              {aberto && fs.map(f => {
                 const ehFaturaFixa = f.id.startsWith('cartao-')
                 const catVisual = iconeCategoria(categorias, f.categoria)
                 const automatico = ehAutomatico(f)
@@ -812,7 +949,7 @@ export default function NovoLancamentoExtrato() {
               )})}
 
               {/* Lançamentos variáveis */}
-              {ls.map(l => {
+              {aberto && ls.map(l => {
                 const catVisual = iconeCategoria(categorias, l.categoria)
                 const corValor = l.tipo==='entrada' ? COR.azul : COR.vermelho
                 const emEdicao = editandoId === l.id
@@ -914,7 +1051,7 @@ export default function NovoLancamentoExtrato() {
           {(['saida','entrada'] as const).map(t => (
             <button key={t} onClick={() => {
               setFTipo(t)
-              if (fPag !== 'transferencia') setFPag(t === 'entrada' ? 'credito' : 'debito')
+              if (!isDinheiro && fPag !== 'transferencia') setFPag(t === 'entrada' ? 'credito' : 'debito')
             }} style={{
               padding:'5px 14px',border:'none',borderRadius:5,
               cursor:'pointer',fontSize:12,fontWeight:500,
@@ -929,7 +1066,7 @@ export default function NovoLancamentoExtrato() {
         )}
 
         {/* FORMA DE PAGAMENTO — acima da categoria; também para fixas não-automáticas */}
-        {(!editandoFixaId || (editandoFixaId && !fixaEhAutomatica)) && (
+        {!isDinheiro && (!editandoFixaId || (editandoFixaId && !fixaEhAutomatica)) && (
         <div style={{marginBottom:12}}>
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
             {fTipo === 'entrada' ? 'Forma de recebimento:' : 'Forma de pagamento:'}
@@ -952,7 +1089,7 @@ export default function NovoLancamentoExtrato() {
         <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>
-              {fPag === 'transferencia' && !editandoId
+              {fPag === 'transferencia'
                 ? (fTipo === 'saida' ? 'Transferir para:' : 'Receber de:')
                 : 'Categoria'}
             </div>
@@ -961,7 +1098,7 @@ export default function NovoLancamentoExtrato() {
                 fontSize:12,background:'#f8faff',color:'#64748b',fontFamily:'inherit'}}>
                 {fCat}
               </div>
-            ) : fPag === 'transferencia' && !editandoId ? (
+            ) : fPag === 'transferencia' ? (
               <select ref={categoriaSelectRef} value={fContaDestino}
                 onChange={e => setFContaDestino(e.target.value)}
                 onFocus={realcarFoco} onBlur={removerRealce}
@@ -1008,7 +1145,7 @@ export default function NovoLancamentoExtrato() {
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-              placeholder={fPag==='transferencia'&&!editandoId?'Opcional — ex: Reserva emergência':'Ex: Mercado Extra, Farmácia...'}
+              placeholder={fPag==='transferencia'?'Opcional — ex: Reserva emergência':'Ex: Mercado Extra, Farmácia...'}
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
@@ -1042,6 +1179,58 @@ export default function NovoLancamentoExtrato() {
       </div>
       </div>
       </>
+      )}
+
+      {/* MODAL SALDO BANCO */}
+      {modalSaldo && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
+          display:'flex',alignItems:'center',justifyContent:'center'}}
+          onClick={() => setModalSaldo(null)}>
+          <div style={{background:'#fff',borderRadius:14,padding:'28px 32px',minWidth:360,
+            boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
+            onClick={e => e.stopPropagation()}>
+            <div style={{marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
+                display:'inline-flex',alignItems:'center',gap:6,
+                background:modalSaldo.cor+'18',border:`1px solid ${modalSaldo.cor}55`}}>
+                <span>{modalSaldo.icone}</span>
+                <span style={{color:modalSaldo.cor,fontWeight:700}}>{modalSaldo.banco}</span>
+              </span>
+            </div>
+            <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 6px'}}>
+              Qual é o saldo atual no banco?
+            </p>
+            <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 16px'}}>
+              Informe o saldo para calcular a diferença em relação ao sistema.
+            </p>
+            <input autoFocus
+              value={modalSaldoValor}
+              onChange={e => setModalSaldoValor(e.target.value)}
+              onFocus={e => e.target.select()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') confirmarModalSaldo()
+                if (e.key === 'Escape') setModalSaldo(null)
+              }}
+              placeholder="R$ 0,00"
+              style={{width:'100%',border:`1.5px solid ${modalSaldo.cor}`,borderRadius:8,
+                padding:'10px 14px',fontSize:16,fontWeight:700,color:'#0f172a',
+                outline:'none',textAlign:'right',fontFamily:'inherit',boxSizing:'border-box'}}/>
+            <div style={{display:'flex',gap:10,marginTop:20}}>
+              <button onClick={() => setModalSaldo(null)}
+                style={{flex:1,padding:'10px',borderRadius:8,border:`1.5px solid #e2e8f0`,
+                  background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
+                  cursor:'pointer',fontFamily:'inherit'}}>
+                Pular
+              </button>
+              <button onClick={confirmarModalSaldo}
+                style={{flex:2,padding:'10px',borderRadius:8,border:'none',
+                  background:modalSaldo.cor,color:'#fff',fontSize:13,fontWeight:700,
+                  cursor:'pointer',fontFamily:'inherit'}}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
