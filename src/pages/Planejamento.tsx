@@ -583,28 +583,6 @@ export default function Planejamento() {
         </div>
       </div>
 
-      {/* ATALHOS */}
-      {aba === 'previsto' && !planejamentoLockado && (
-        <div style={{ margin:'0 24px 8px', flexShrink:0, background:'#e8edf8',
-          border:`1px solid #c7d2f5`, borderRadius:10,
-          padding:'8px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-          <span style={{ fontSize:11, color:COR.azulEscuro, fontWeight:700,
-            textTransform:'uppercase', letterSpacing:.5, marginRight:4 }}>Atalhos</span>
-          <button onClick={replicarJaneiroParaAno} style={{ border:`1px solid ${COR.azul}`,
-            background:COR.branco, borderRadius:7, padding:'5px 12px', cursor:'pointer',
-            fontSize:12, color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
-            ↦ Replicar Jan → ano todo
-          </button>
-          {!!planos[anoAtual - 1] && (
-            <button onClick={() => { setShowBannerCopiar(true); setReajustePerc('0') }} style={{
-              border:`1px solid ${COR.azul}`, background:COR.branco, borderRadius:7,
-              padding:'5px 12px', cursor:'pointer', fontSize:12,
-              color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
-              ↺ Copiar {anoAtual - 1}
-            </button>
-          )}
-        </div>
-      )}
 
       {/* BANNER COPIAR ANO ANTERIOR */}
       {showBannerCopiar && aba === 'previsto' && !planejamentoLockado && (
