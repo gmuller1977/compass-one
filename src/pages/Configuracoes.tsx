@@ -1139,29 +1139,6 @@ export default function Configuracoes() {
               <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Exibição</h3>
               <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
-                {/* Layout — funcional */}
-                <div>
-                  <label style={{ display:'block', fontSize:11, fontWeight:600,
-                    color:COR.textoSuave, marginBottom:6, textTransform:'uppercase', letterSpacing:.5 }}>
-                    Layout de lançamentos
-                  </label>
-                  <div style={{ display:'flex', gap:6 }}>
-                    {([['classico','📋 Clássico'],['extrato','🏦 Extrato']] as const).map(([v,l]) => (
-                      <button key={v} onClick={() => escolherLayout(v)} style={{
-                        flex:1, padding:'8px 0', fontFamily:'inherit',
-                        border:`1.5px solid ${layout===v ? COR.azul : COR.borda}`,
-                        borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
-                        background: layout===v ? '#eff6ff' : COR.branco,
-                        color: layout===v ? COR.azul : COR.textoSuave }}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
-                    Define como a tela de Lançamentos é exibida.
-                  </div>
-                </div>
-
                 {/* Moeda — desabilitado */}
                 <div style={{ opacity:.6 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>

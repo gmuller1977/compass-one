@@ -1013,7 +1013,14 @@ export default function Planejamento() {
                           borderBottom:'1px solid #fecaca', display:'flex',
                           alignItems:'center', justifyContent:'space-between' }}>
                           <span>↓ Saídas</span>
-                          <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                            {te > 0 && ts > 0 && (
+                              <span style={{ fontSize:12, fontWeight:400, color:'#b91c1c' }}>
+                                {((ts / te) * 100).toFixed(0)}% da entrada
+                              </span>
+                            )}
+                            <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                          </div>
                         </div>
                         <div style={{ padding:'4px 16px 0' }}>
                         {aba === 'real' && (
@@ -1053,7 +1060,7 @@ export default function Planejamento() {
                                   </span>
                                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                                     {te > 0 && (
-                                      <span style={{ fontSize:9, color:COR.textoSuave }}>
+                                      <span style={{ fontSize:12, color:COR.textoSuave }}>
                                         {pctGrupo.toFixed(0)}% da entrada
                                       </span>
                                     )}
