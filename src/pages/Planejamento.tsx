@@ -87,6 +87,8 @@ export default function Planejamento() {
   const [aba,              setAba]             = useState<'previsto' | 'real'>('previsto')
   const [editando,         setEditando]        = useState<Editando>(null)
   const [valorTemp,        setValorTemp]       = useState('')
+  const [editandoMeta,     setEditandoMeta]    = useState(false)
+  const [metaTemp,         setMetaTemp]        = useState('')
   const [considerarSaldo,  setConsiderarSaldo] = useState(true)
   const [saldoAberto,      setSaldoAberto]     = useState(false)
   const [showBannerCopiar, setShowBannerCopiar]= useState(false)
@@ -335,6 +337,12 @@ export default function Planejamento() {
       updatePlanoReal(anoAtual, prev => fn(prev as AnoData) as PlanoAnoData)
     }
   }
+  function updateMetaAnual(valor: number) {
+    setPlanos(prev => {
+      const atual = (prev[anoAtual] ?? { saldoInicialJan: 0, entradas: [], saidas: [] }) as PlanoAnoData
+      return { ...prev, [anoAtual]: { ...atual, metaAnual: valor } }
+    })
+  }
   function setEntradas(fn: (prev: Cat[]) => Cat[]) {
     updateAno(d => ({ ...d, entradas: fn(d.entradas) }))
   }
@@ -421,7 +429,11 @@ export default function Planejamento() {
           }) }
       })
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-    setPlanos(prev => ({ ...prev, [anoAtual]: { saldoInicialJan: saldoIni, entradas, saidas } as PlanoAnoData }))
+    const metaAnualQuiz = parseBRL(quizMetaStr)
+    setPlanos(prev => ({ ...prev, [anoAtual]: {
+      saldoInicialJan: saldoIni, entradas, saidas,
+      ...(metaAnualQuiz > 0 ? { metaAnual: metaAnualQuiz } : {}),
+    } as PlanoAnoData }))
     setQuizAtivo(false)
   }
 
@@ -610,21 +622,20 @@ export default function Planejamento() {
         const totalS    = aba === 'real' ? totaisReais.ts.reduce((a, b) => a + b, 0) : totalSaidas.reduce((a, b) => a + b, 0)
         const sfDez     = aba === 'real' ? saldoFinalReal[11] : saldoFinal[11]
         const resultado = totalE - totalS
-        const itens = [
-          { label:'Entrada anual',  valor:totalE,         cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
-          { label:'Saída anual',    valor:totalS,         cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
+        const metaAnual = (planos[anoAtual] as PlanoAnoData | undefined)?.metaAnual ?? 0
+        const metaPct   = metaAnual > 0 ? Math.min(100, Math.max(0, (sfDez / metaAnual) * 100)) : 0
+        const metaOk    = sfDez >= metaAnual && metaAnual > 0
+        const fixos = [
+          { label:'Entrada anual',  valor:totalE,   cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
+          { label:'Saída anual',    valor:totalS,   cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
           { label:'Resultado',      valor:resultado,
             cor:   resultado >= 0 ? '#16a34a' : COR.vermelho,
             bg:    resultado >= 0 ? '#f0fdf4' : '#fff5f5',
             borda: resultado >= 0 ? '#bbf7d0' : '#fecaca', icon: resultado >= 0 ? '↗' : '↘' },
-          { label:'Saldo dezembro', valor:sfDez,
-            cor:   corSaldo(sfDez),
-            bg:    sfDez >= 0 ? '#eff6ff' : '#fff5f5',
-            borda: sfDez >= 0 ? '#bfdbfe' : '#fecaca', icon:'◎' },
         ]
         return (
           <div style={{ margin:'0 0 10px', display:'flex', gap:8 }}>
-            {itens.map(m => (
+            {fixos.map(m => (
               <div key={m.label} style={{ flex:1, background:m.bg, border:`1.5px solid ${m.borda}`,
                 borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
@@ -637,6 +648,88 @@ export default function Planejamento() {
                 </div>
               </div>
             ))}
+
+            {/* Card 4: Meta do ano (se definida) ou Saldo dezembro */}
+            {metaAnual > 0 ? (
+              <div
+                onClick={() => { if (!editandoMeta) { setEditandoMeta(true); setMetaTemp(metaAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})) } }}
+                style={{ flex:1, background: metaOk ? '#f0fdf4' : '#faf5ff',
+                  border:`1.5px solid ${metaOk ? '#bbf7d0' : '#ddd6fe'}`,
+                  borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)',
+                  cursor: editandoMeta ? 'default' : 'pointer' }}>
+                <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase',
+                  letterSpacing:.5, marginBottom:4, display:'flex', alignItems:'center', gap:4,
+                  color: metaOk ? '#16a34a' : '#7c3aed' }}>
+                  <span style={{ fontSize:13 }}>{metaOk ? '✓' : '◎'}</span> Meta do ano
+                </div>
+                <div style={{ fontSize:16, fontWeight:700, color: metaOk ? '#16a34a' : '#7c3aed', marginBottom:5 }}>
+                  {sfDez.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                </div>
+                <div style={{ height:4, background: metaOk ? '#bbf7d0' : '#ede9fe', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
+                  <div style={{ height:'100%', borderRadius:2, transition:'width .4s',
+                    background: metaOk ? '#16a34a' : '#7c3aed', width:`${metaPct}%` }}/>
+                </div>
+                {editandoMeta ? (
+                  <input autoFocus value={metaTemp}
+                    onChange={e => setMetaTemp(e.target.value)}
+                    onFocus={e => e.target.select()}
+                    onClick={e => e.stopPropagation()}
+                    onBlur={() => { updateMetaAnual(parseBRL(metaTemp)); setEditandoMeta(false) }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === 'Escape') {
+                        if (e.key === 'Enter') updateMetaAnual(parseBRL(metaTemp))
+                        setEditandoMeta(false)
+                      }
+                    }}
+                    style={{ width:'100%', padding:0, border:'none', outline:'none',
+                      background:'transparent', color:'#7c3aed', fontSize:10,
+                      fontFamily:'inherit', fontWeight:600, boxSizing:'border-box' }}/>
+                ) : (
+                  <div style={{ fontSize:10, color: metaOk ? '#16a34a' : '#7c3aed' }}>
+                    {metaPct.toFixed(0)}% de {metaAnual.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                onClick={() => { setEditandoMeta(true); setMetaTemp('') }}
+                style={{ flex:1, background: sfDez >= 0 ? '#eff6ff' : '#fff5f5',
+                  border:`1.5px solid ${sfDez >= 0 ? '#bfdbfe' : '#fecaca'}`,
+                  borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)',
+                  cursor:'pointer' }}>
+                <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
+                  textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
+                  display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ fontSize:13, color:corSaldo(sfDez) }}>◎</span> Saldo dezembro
+                </div>
+                {editandoMeta ? (
+                  <input autoFocus value={metaTemp}
+                    placeholder="0,00"
+                    onChange={e => setMetaTemp(e.target.value)}
+                    onFocus={e => e.target.select()}
+                    onClick={e => e.stopPropagation()}
+                    onBlur={() => { updateMetaAnual(parseBRL(metaTemp)); setEditandoMeta(false) }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === 'Escape') {
+                        if (e.key === 'Enter') updateMetaAnual(parseBRL(metaTemp))
+                        setEditandoMeta(false)
+                      }
+                    }}
+                    style={{ width:'100%', padding:0, border:'none', outline:'none',
+                      background:'transparent', color:'#7c3aed', fontSize:14,
+                      fontFamily:'inherit', fontWeight:700, boxSizing:'border-box' }}/>
+                ) : (
+                  <>
+                    <div style={{ fontSize:16, fontWeight:700, color:corSaldo(sfDez) }}>
+                      {sfDez.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    </div>
+                    <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                      Clique para definir meta
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )
       })()}
