@@ -515,13 +515,15 @@ export default function Planejamento() {
   }
 
   return (
-    <div style={{ height:'100vh', display:'flex', flexDirection:'column',
-      background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+    <div style={{ minHeight:'100vh', background:COR.fundo,
+      fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
       <AppHeader currentPath="/planejamento" />
 
+      <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 40px' }}>
+
       {/* TÍTULO + NAVEGAÇÃO DE ANO */}
-      <div style={{ padding:'14px 24px 6px', flexShrink:0,
+      <div style={{ padding:'14px 0 6px',
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>Planejamento</h1>
@@ -552,7 +554,7 @@ export default function Planejamento() {
       </div>
 
       {/* ABAS + BOTÃO FINALIZAR */}
-      <div style={{ padding:'0 24px 8px', flexShrink:0,
+      <div style={{ padding:'0 0 8px',
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ display:'flex', gap:4, background:COR.branco,
           border:`1px solid ${COR.borda}`, borderRadius:9, padding:3 }}>
@@ -586,7 +588,7 @@ export default function Planejamento() {
 
       {/* BANNER COPIAR ANO ANTERIOR */}
       {showBannerCopiar && aba === 'previsto' && !planejamentoLockado && (
-        <div style={{ margin:'0 24px 8px', flexShrink:0, background:'#fffbeb',
+        <div style={{ margin:'0 0 8px', background:'#fffbeb',
           border:'1px solid #fcd34d', borderRadius:10, padding:'10px 16px',
           display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
           <span style={{ fontSize:12, color:'#92400e', fontWeight:600, flex:1, minWidth:200 }}>
@@ -634,7 +636,7 @@ export default function Planejamento() {
             borda: sfDez >= 0 ? '#bfdbfe' : '#fecaca', icon:'◎' },
         ]
         return (
-          <div style={{ margin:'0 24px 10px', flexShrink:0, display:'flex', gap:8 }}>
+          <div style={{ margin:'0 0 10px', display:'flex', gap:8 }}>
             {itens.map(m => (
               <div key={m.label} style={{ flex:1, background:m.bg, border:`1.5px solid ${m.borda}`,
                 borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
@@ -653,12 +655,12 @@ export default function Planejamento() {
       })()}
 
       {/* ÁREA PRINCIPAL: accordion de meses */}
-      <div style={{ flex:1, overflow:'auto', padding:'0 24px 24px', minHeight:0 }}>
+      <div style={{ padding:'0 0 8px' }}>
 
         {/* Placeholder: aba Real ainda não finalizada */}
         {aba === 'real' && !realExiste && (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
-            justifyContent:'center', height:'100%', gap:16, paddingBottom:40 }}>
+            justifyContent:'center', minHeight:300, gap:16, paddingBottom:40 }}>
             <div style={{ fontSize:40 }}>📋</div>
             <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
               Planejamento realizado não iniciado
@@ -1253,6 +1255,7 @@ export default function Planejamento() {
           </div>
         )}
       </div>
+      </div>{/* fecha maxWidth wrapper */}
 
       {/* ── QUIZ DE ONBOARDING ── */}
       {quizAtivo && !planos[anoAtual] && (
