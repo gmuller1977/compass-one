@@ -153,11 +153,16 @@ export default function Planejamento() {
     return { ...salvo, saldoInicialJan: SALDO_INICIAL_FIXO, entradas: merge(dadosBase.entradas, salvo.entradas), saidas: merge(dadosBase.saidas, salvo.saidas) }
   }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
 
-  const somaCartaoMes = useMemo(() =>
-    MESES.map((_, i) => i === 0 ? 0 : dadosAno.saidas
-      .filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
-      .reduce((s, c) => s + c.v[i - 1], 0)),
-    [dadosAno, cartaoNomes])
+  const somaCartaoMes = useMemo(() => {
+    const cartCats = dadosAno.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
+    return MESES.map((_, i) => {
+      if (i === 0) return 0
+      const totalPrevMes = cartCats.reduce((s, c) => s + c.v[i - 1], 0)
+      // Mês anterior não planejado (zero): estima pela fatura do mês atual
+      if (totalPrevMes === 0) return cartCats.reduce((s, c) => s + c.v[i], 0)
+      return totalPrevMes
+    })
+  }, [dadosAno, cartaoNomes])
 
   const dadosAnoFinal: AnoData = useMemo(() => ({
     ...dadosAno,
