@@ -32,14 +32,7 @@ export default function Dashboard() {
     const contasPrincipais = contas.filter(c => c.tipo==='corrente' || c.tipo==='poupanca')
     const saldoIni = contasPrincipais.reduce((s,c) => s + c.saldoInicial, 0)
 
-    // Fixas previstas (categorias fixas ativas com valor)
-    const fixas = categorias.filter(c=>c.fixa && c.ativa && c.valorPadrao && c.valorPadrao>0)
-    fixas.forEach(f => {
-      if (f.tipo==='entrada') te += f.valorPadrao ?? 0
-      else                    ts += f.valorPadrao ?? 0
-    })
-
-    // Lançamentos variáveis de todas as contas no mês
+    // Lançamentos de todas as contas no mês
     const gastoPorCat: Record<string, number> = {}
     contas.forEach(conta => {
       const key   = mesKey(conta.id, ano, mes)

@@ -187,7 +187,7 @@ export default function NovoLancamentoExtrato() {
     })
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
-      valor: (() => { const vp = valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc); return vp > 0 ? vp : (c.valorPadrao ?? 0) })(),
+      valor: valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc),
       tipo: c.tipo as TipoLanc,
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
       diaVencimento: c.diaVencimento ?? 1,

@@ -133,9 +133,6 @@ export default function Planejamento() {
   const cartaoNomes = useMemo(() =>
     new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())), [contas])
 
-  const temValoresPadrao = useMemo(() =>
-    categorias.some(c => (c.valorPadrao ?? 0) > 0 && c.ativa), [categorias])
-
   const realExiste = !!planosReal[anoAtual]
 
   const dadosAno: AnoData = useMemo(() => {
@@ -230,7 +227,7 @@ export default function Planejamento() {
           const fixasAtivas = categorias.filter(c => c.fixa && c.ativa && conta.tipo !== 'cartao')
           fixasAtivas.forEach(f => {
             if (dados.fixasConsolidadas?.[f.id]) {
-              const val = dados.fixasValorOverride?.[f.id] ?? f.valorPadrao ?? 0
+              const val = dados.fixasValorOverride?.[f.id] ?? 0
               result[mes][f.nome] = (result[mes][f.nome] ?? 0) + val
             }
           })
@@ -283,7 +280,7 @@ export default function Planejamento() {
         if (dados.fixasConsolidadas) {
           categorias.filter(c => c.fixa && c.ativa).forEach(f => {
             if (!dados.fixasConsolidadas?.[f.id]) return
-            const val = dados.fixasValorOverride?.[f.id] ?? f.valorPadrao ?? 0
+            const val = dados.fixasValorOverride?.[f.id] ?? 0
             if (f.tipo === 'entrada') te[mes] += val
             else ts[mes] += val
           })
@@ -367,20 +364,6 @@ export default function Planejamento() {
     })
   }
 
-  // ── Atalhos de planejamento ──
-  function preencherValoresPadrao() {
-    updateAno(d => ({
-      ...d,
-      entradas: d.entradas.map(cat => {
-        const vp = categorias.find(c => c.nome === cat.nome)?.valorPadrao ?? 0
-        return vp > 0 ? { ...cat, v: new Array(12).fill(vp) } : cat
-      }),
-      saidas: d.saidas.map(cat => {
-        const vp = categorias.find(c => c.nome === cat.nome)?.valorPadrao ?? 0
-        return vp > 0 ? { ...cat, v: new Array(12).fill(vp) } : cat
-      }),
-    }))
-  }
   function replicarJaneiroParaAno() {
     updateAno(d => ({
       ...d,
@@ -607,13 +590,6 @@ export default function Planejamento() {
           padding:'8px 14px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
           <span style={{ fontSize:11, color:COR.azulEscuro, fontWeight:700,
             textTransform:'uppercase', letterSpacing:.5, marginRight:4 }}>Atalhos</span>
-          {temValoresPadrao && (
-            <button onClick={preencherValoresPadrao} style={{ border:`1px solid ${COR.azul}`,
-              background:COR.branco, borderRadius:7, padding:'5px 12px', cursor:'pointer',
-              fontSize:12, color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>
-              ✦ Preencher valores padrão
-            </button>
-          )}
           <button onClick={replicarJaneiroParaAno} style={{ border:`1px solid ${COR.azul}`,
             background:COR.branco, borderRadius:7, padding:'5px 12px', cursor:'pointer',
             fontSize:12, color:COR.azul, fontFamily:'inherit', fontWeight:600 }}>

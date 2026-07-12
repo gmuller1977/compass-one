@@ -93,7 +93,7 @@ export default function ExtratoConsolidado() {
         const v = found?.v[mes] ?? 0
         if (v > 0) return v
       }
-      return categorias.find(c => c.id === catId)?.valorPadrao ?? 0
+      return 0
     }
 
     function ehFimDeSemana(d: number) {
@@ -185,7 +185,7 @@ export default function ExtratoConsolidado() {
         || (isAuto && (isPastMonth || (eMesAtual && dia < diaHoje)))
 
       // Override só vale para fixas já confirmadas (valor efetivamente pago).
-      // Para previsto, ignora override e usa o valor do plano ou valorPadrao.
+      // Para previsto, ignora override e usa o valor do plano.
       const override = confirmado ? fixasOvr[cat.id] : undefined
       const valor = valorFixaCat(cat.id, cat.nome, cat.tipo, override)
       if (valor <= 0) continue

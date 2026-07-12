@@ -34,7 +34,7 @@ export type Categoria = {
   cor: string; icone: string; ativa: boolean
   grupo?: string
   diaVencimento?: number; descricao?: string
-  valorPadrao?: number; numeroParcelas?: number
+  numeroParcelas?: number
   contaDebitoId?: string
 }
 
