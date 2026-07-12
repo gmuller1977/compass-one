@@ -94,6 +94,7 @@ export default function Planejamento() {
   const [showBannerCopiar, setShowBannerCopiar]= useState(false)
   const [reajustePerc,     setReajustePerc]    = useState('0')
   const [mesesAbertos,     setMesesAbertos]    = useState<Set<number>>(() => new Set<number>())
+  const [gruposAbertos,    setGruposAbertos]   = useState<Set<string>>(new Set())
   const [quizAtivo,        setQuizAtivo]       = useState(() => !planos[anoAtual])
   const [quizStep,         setQuizStep]        = useState(0)
   const [quizObjetivo,     setQuizObjetivo]    = useState('')
@@ -441,6 +442,14 @@ export default function Planejamento() {
     setMesesAbertos(prev => {
       const next = new Set(prev)
       if (next.has(i)) next.delete(i); else { next.add(i); setSaldoAberto(false) }
+      return next
+    })
+  }
+  function toggleGrupo(mi: number, grupo: string) {
+    const key = `${mi}-${grupo}`
+    setGruposAbertos(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
       return next
     })
   }
@@ -984,15 +993,25 @@ export default function Planejamento() {
                       </div>
 
                       {/* ── ENTRADAS ── */}
+                      {(() => {
+                        const entradasAberto = gruposAbertos.has(`${mi}-__entradas__`)
+                        return (
                       <div style={{ borderBottom:`1px solid ${COR.borda}` }}>
-                        <div style={{ fontSize:13, fontWeight:600, color:'#166534',
-                          padding:'7px 16px', background:'#dcfce7',
-                          borderBottom:'1px solid #bbf7d0', display:'flex',
-                          alignItems:'center', justifyContent:'space-between' }}>
-                          <span>↑ Entradas</span>
+                        <div
+                          onClick={() => toggleGrupo(mi, '__entradas__')}
+                          style={{ fontSize:13, fontWeight:600, color:'#166534',
+                            padding:'7px 16px', background:'#dcfce7',
+                            borderBottom: entradasAberto ? '1px solid #bbf7d0' : 'none',
+                            display:'flex', alignItems:'center', justifyContent:'space-between',
+                            cursor:'pointer', userSelect:'none' }}>
+                          <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
+                              transform: entradasAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                            ↑ Entradas
+                          </span>
                           <span>{te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
                         </div>
-                        <div style={{ padding:'4px 16px 0' }}>
+                        {entradasAberto && <div style={{ padding:'4px 16px 0' }}>
                         {aba === 'real' && (
                           <div style={{ display:'flex', alignItems:'center', gap:8,
                             padding:'4px 0 2px', fontSize:9, fontWeight:700,
@@ -1096,8 +1115,10 @@ export default function Planejamento() {
                             + Categoria de entrada
                           </button>
                         </div>
-                        </div>{/* fecha padding interno */}
+                        </div>}{/* fecha padding interno condicional */}
                       </div>
+                        )
+                      })()}
 
                       {/* ── SAÍDAS ── */}
                       <div>
@@ -1143,13 +1164,21 @@ export default function Planejamento() {
                             const catsGrupo = saidasPlan.map((cat, idx) => ({ cat, ri: idx })).filter(({ cat }) => getGrupo(cat) === grupo)
                             const totalGrupo = catsGrupo.reduce((s, { cat }) => s + cat.v[mi], 0)
                             const pctGrupo = te > 0 ? (totalGrupo / te) * 100 : 0
+                            const grupoAberto = gruposAbertos.has(`${mi}-${grupo}`)
                             return (
                               <div key={grupo} style={{ marginBottom:2 }}>
-                                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                                  padding:'5px 4px 3px', borderBottom:'1px solid #e8edf8', marginTop:6 }}>
-                                  <span style={{ fontSize:9, fontWeight:700, color:COR.azulEscuro,
-                                    textTransform:'uppercase', letterSpacing:.5 }}>
-                                    {grupo === '__sem_grupo__' ? 'Outras' : grupo}
+                                <div
+                                  onClick={() => toggleGrupo(mi, grupo)}
+                                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                                    padding:'6px 4px', borderBottom:'1px solid #e8edf8', marginTop:6,
+                                    cursor:'pointer', userSelect:'none' }}>
+                                  <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                    <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
+                                      transform: grupoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                                    <span style={{ fontSize:11, fontWeight:700, color:COR.azulEscuro,
+                                      textTransform:'uppercase', letterSpacing:.5 }}>
+                                      {grupo === '__sem_grupo__' ? 'Outras' : grupo}
+                                    </span>
                                   </span>
                                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                                     {te > 0 && (
@@ -1162,7 +1191,7 @@ export default function Planejamento() {
                                     </span>
                                   </div>
                                 </div>
-                                {catsGrupo.map(({ cat, ri }) => {
+                                {grupoAberto && catsGrupo.map(({ cat, ri }) => {
                                   const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                                   const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
                                   const bm = tm ? BADGE_MOV[tm] : null
