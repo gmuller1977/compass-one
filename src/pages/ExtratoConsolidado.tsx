@@ -181,11 +181,14 @@ export default function ExtratoConsolidado() {
         : isAuto ? diaUtil(cat.diaVencimento ?? 1) : (cat.diaVencimento ?? 1)
       const dia = Math.min(Math.max(diaRaw, 1), totalDias)
 
-      const valor = valorFixaCat(cat.id, cat.nome, cat.tipo, fixasOvr[cat.id])
-      if (valor <= 0) continue
-
       const confirmado = fixasConf[cat.id] === true
         || (isAuto && (isPastMonth || (eMesAtual && dia < diaHoje)))
+
+      // Override só vale para fixas já confirmadas (valor efetivamente pago).
+      // Para previsto, ignora override e usa o valor do plano ou valorPadrao.
+      const override = confirmado ? fixasOvr[cat.id] : undefined
+      const valor = valorFixaCat(cat.id, cat.nome, cat.tipo, override)
+      if (valor <= 0) continue
 
       addItem(dia, {
         contaId: ownerContaId, contaBanco: ownerBanco,
