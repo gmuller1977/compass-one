@@ -113,6 +113,7 @@ export default function NovoLancamentoExtrato() {
   const diaHoje   = hoje.getDate()
   const mesHoje   = hoje.getMonth()
   const anoHoje   = hoje.getFullYear()
+  const hojeStr   = hoje.toISOString().slice(0,10)
 
   const [contaId, setContaId] = useState('')
   const [mes,     setMes]     = useState(mesHoje)
@@ -265,6 +266,7 @@ export default function NovoLancamentoExtrato() {
   useEffect(() => {
     if (modo === 'dinheiro') {
       const k = mesKey('dinheiro', ano, mes)
+      if (dados[k]?.saldoBancoData === hojeStr) return
       setModalSaldoValor(dados[k]?.saldoBanco ?? '')
       setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
       return
@@ -273,6 +275,7 @@ export default function NovoLancamentoExtrato() {
     const conta = contasExtrato.find(c => c.id === contaId) ?? contasExtrato[0]
     if (!conta) return
     const k = mesKey(conta.id, ano, mes)
+    if (dados[k]?.saldoBancoData === hojeStr) return
     setModalSaldoValor(dados[k]?.saldoBanco ?? '')
     setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
   }, [modo])
@@ -345,7 +348,9 @@ export default function NovoLancamentoExtrato() {
     if (!modalSaldo) return
     const n = parseBRL(modalSaldoValor)
     if (modalSaldoValor.trim()) {
-      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n)}))
+      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n), saldoBancoData: hojeStr}))
+    } else {
+      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBancoData: hojeStr}))
     }
     setModalSaldo(null)
   }
@@ -589,8 +594,10 @@ export default function NovoLancamentoExtrato() {
               setContaId(c.id)
               resetarParaNovo(diaDefaultPara(mes,ano))
               const k = mesKey(c.id, ano, mes)
-              setModalSaldoValor(dados[k]?.saldoBanco ?? '')
-              setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
+              if (dados[k]?.saldoBancoData !== hojeStr) {
+                setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+                setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
+              }
             }} style={{
               display:'flex',alignItems:'center',gap:6,
               padding:'7px 14px',borderRadius:'8px 8px 0 0',

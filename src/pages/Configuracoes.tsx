@@ -5,6 +5,7 @@ import AppHeader from '../components/AppHeader'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
+import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -188,10 +189,10 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
       </div>
       {/* Toggle ativo */}
       <button onClick={e => { e.stopPropagation(); toggleAtiva(c.id) }} style={{
-        border:`1px solid ${c.ativa ? COR.verde : COR.borda}`,
+        border:`1px solid ${c.ativa ? COR.verde : COR.vermelho}`,
         borderRadius:6, padding:'3px 9px', cursor:'pointer', fontSize:11,
-        background: c.ativa ? '#f0fdf4' : COR.branco,
-        color: c.ativa ? COR.verde : COR.textoSuave,
+        background: c.ativa ? '#f0fdf4' : '#fff1f2',
+        color: c.ativa ? COR.verde : COR.vermelho,
         fontFamily:'inherit', fontWeight:500 }}>
         {c.ativa ? '✓ Ativa' : 'Inativa'}
       </button>
@@ -205,7 +206,8 @@ export default function Configuracoes() {
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { user, contas, categorias, setContas, setCategorias,
           planejamentoLockado, setPlanejamentoLockado } = useApp()
-  const [abaCat, setAbaCat] = useState<TipoCategoria>('saida')
+  const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
+  const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('ativas')
 
   useEffect(() => {
     const st = location.state as { aba?: string; catNome?: string } | null
@@ -320,9 +322,9 @@ export default function Configuracoes() {
     if (!formCat.nome.trim()) return setErroCat('Informe o nome da categoria')
     setErroCat('')
     if (editCatId) {
-      setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...formCat} : c))
+      setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...formCat, ativa:true} : c))
     } else {
-      setCategorias(prev => [...prev, {id:gerarId(),...formCat}])
+      setCategorias(prev => [...prev, {id:gerarId(),...formCat, ativa:true}])
     }
     novaCategoria()
   }
@@ -333,6 +335,16 @@ export default function Configuracoes() {
   }
   function toggleAtiva(id: string) {
     setCategorias(prev => prev.map(c => c.id===id ? {...c, ativa:!c.ativa} : c))
+  }
+  function importarSugestoes() {
+    const nomesExistentes = new Set(categorias.map(c => c.nome.toLowerCase()))
+    const novas = CATEGORIAS_PADRAO
+      .filter(c => !nomesExistentes.has(c.nome.toLowerCase()))
+      .map((c, i) => ({ ...c, ativa: false, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` }))
+    if (novas.length === 0) return
+    setCategorias(prev => [...prev, ...novas])
+    setFiltroAtiva('inativas')
+    setAbaCat(novas[0].tipo)
   }
 
   const inputSt: React.CSSProperties = {
@@ -347,8 +359,13 @@ export default function Configuracoes() {
   }
 
   const catsFiltradas = categorias
-    .filter(c => c.tipo===abaCat)
+    .filter(c => c.tipo === abaCat)
+    .filter(c => filtroAtiva === 'todas' ? true : filtroAtiva === 'ativas' ? c.ativa : !c.ativa)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+
+  const temSugestoesPendentes = CATEGORIAS_PADRAO.some(
+    p => !categorias.some(c => c.nome.toLowerCase() === p.nome.toLowerCase())
+  )
 
   return (
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
@@ -706,23 +723,45 @@ export default function Configuracoes() {
                     {categorias.filter(c=>c.ativa).length} ativas de {categorias.length}
                   </p>
                 </div>
+                {temSugestoesPendentes && (
+                  <button onClick={importarSugestoes} style={{
+                    padding:'7px 14px', border:`1px solid ${COR.borda}`, borderRadius:8,
+                    background:COR.branco, color:COR.textoSuave, fontSize:12, fontWeight:500,
+                    cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5 }}>
+                    ✨ Importar sugestões
+                  </button>
+                )}
               </div>
 
-              {/* Sub-abas — só aparece quando há pelo menos uma categoria */}
+              {/* Sub-abas + filtro ativo/inativo */}
               {categorias.length > 0 && (
-                <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8,
-                  padding:3, marginBottom:14, alignSelf:'flex-start' }}>
-                  {([['entrada','↑ Entradas'],['saida','↓ Saídas']] as const).map(([v,l]) => (
-                    <button key={v} onClick={() => setAbaCat(v)} style={{
-                      padding:'6px 20px', border:'none', borderRadius:6,
-                      cursor:'pointer', fontSize:13, fontWeight:500,
-                      fontFamily:'inherit', transition:'all .15s',
-                      background: abaCat===v ? COR.branco : 'transparent',
-                      color: abaCat===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave,
-                      boxShadow: abaCat===v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
-                      {l}
-                    </button>
-                  ))}
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+                  <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8, padding:3 }}>
+                    {([['entrada','↑ Entradas'],['saida','↓ Saídas']] as const).map(([v,l]) => (
+                      <button key={v} onClick={() => setAbaCat(v)} style={{
+                        padding:'6px 20px', border:'none', borderRadius:6,
+                        cursor:'pointer', fontSize:13, fontWeight:500,
+                        fontFamily:'inherit', transition:'all .15s',
+                        background: abaCat===v ? COR.branco : 'transparent',
+                        color: abaCat===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave,
+                        boxShadow: abaCat===v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8, padding:3 }}>
+                    {([['ativas','Ativas'],['inativas','Inativas'],['todas','Todas']] as const).map(([v,l]) => (
+                      <button key={v} onClick={() => setFiltroAtiva(v)} style={{
+                        padding:'6px 14px', border:'none', borderRadius:6,
+                        cursor:'pointer', fontSize:12, fontWeight:500,
+                        fontFamily:'inherit', transition:'all .15s',
+                        background: filtroAtiva===v ? COR.branco : 'transparent',
+                        color: filtroAtiva===v ? (v==='inativas' ? COR.vermelho : COR.azul) : COR.textoSuave,
+                        boxShadow: filtroAtiva===v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 

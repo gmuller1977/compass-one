@@ -68,6 +68,17 @@ export default function Login() {
     return msg
   }
 
+  async function handleGoogle() {
+    setCarregando(true)
+    setErro('')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/dashboard' },
+    })
+    if (error) setErro(traduzirErro(error.message))
+    setCarregando(false)
+  }
+
   async function handleSubmit() {
     setCarregando(true)
     setErro('')
@@ -248,7 +259,7 @@ export default function Login() {
           </div>
 
           {/* Google */}
-          <button style={{
+          <button onClick={handleGoogle} disabled={carregando} style={{
             width: '100%', padding: '10px 0', borderRadius: 9,
             border: `1.5px solid ${COR.borda}`, background: COR.branco,
             fontSize: 13, fontWeight: 500, color: COR.texto,

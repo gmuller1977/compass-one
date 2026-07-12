@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 
 // ── Types compartilhados ─────────────────────────────────────────────
 export type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
@@ -49,6 +50,7 @@ export type Lancamento = {
 export type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   saldoBanco: string
+  saldoBancoData?: string
   fixasConsolidadas?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
   fixasValorOverride?: Record<string, number>
@@ -153,8 +155,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const map: Record<string, unknown> = data
       ? Object.fromEntries(data.map(r => [r.key, r.value]))
       : {}
-    setContasState((map[KEYS.contas]    as Conta[]      | undefined) ?? CONTAS_INICIAIS)
-    setCategoriasState((map[KEYS.categorias] as Categoria[] | undefined) ?? CATS_INICIAIS)
+    setContasState((map[KEYS.contas] as Conta[] | undefined) ?? CONTAS_INICIAIS)
+    const catsCarregadas = (map[KEYS.categorias] as Categoria[] | undefined) ?? CATS_INICIAIS
+    const catsEfetivas = catsCarregadas.length === 0
+      ? CATEGORIAS_PADRAO.map((c, i) => ({ ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` }))
+      : catsCarregadas
+    setCategoriasState(catsEfetivas)
     setExtratoState((map[KEYS.extrato]  as Record<string, DadosMes> | undefined) ?? {})
     setPlanosState((map[KEYS.planos]    as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
