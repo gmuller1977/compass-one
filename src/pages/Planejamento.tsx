@@ -1137,19 +1137,6 @@ export default function Planejamento() {
                           </div>
                         </div>
                         <div style={{ padding:'4px 16px 0' }}>
-                        {aba === 'real' && (
-                          <div style={{ display:'flex', alignItems:'center', gap:8,
-                            padding:'4px 0 2px', fontSize:9, fontWeight:700,
-                            color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
-                            <div style={{ width:22, flexShrink:0 }}/>
-                            <div style={{ width:16, flexShrink:0 }}/>
-                            <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
-                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
-                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                            <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Saldo</div>
-                            <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
-                          </div>
-                        )}
                         {aba === 'previsto' ? (() => {
                           const saidasPlan = dadosAnoFinal.saidas
                           const getGrupo = (cat: Cat) =>
@@ -1231,67 +1218,131 @@ export default function Planejamento() {
                               </div>
                             )
                           })
-                        })() : dadosBase.saidas.map((cat, ri) => {
-                          const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                          const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
-                          const bm = tm ? BADGE_MOV[tm] : null
-                          const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
-                          const previsto = (planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0
-                          const totalCartaoConsolidado = ehFatura
-                            ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((s, v) => s + v, 0)
-                            : 0
-                          const lancado = ehFatura
-                            ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + totalCartaoConsolidado
-                            : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
-                          const prevAbs = Math.abs(previsto)
-                          const lancAbs = Math.abs(lancado)
-                          const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
-                          const saldo = prevAbs - lancAbs
-                          return (
-                            <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
-                              padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
-                              <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
-                                display:'flex', alignItems:'center', justifyContent:'center',
-                                fontSize:12, flexShrink:0 }}>{icone}</div>
-                              <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                  width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                  background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
-                                  visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
-                              <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
-                                style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
-                                  cursor:'pointer', flexShrink:0, minWidth:140 }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
-                                {cat.nome}
-                                {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
-                              </span>
-                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                fontSize:12, color:COR.textoSuave }}>
-                                {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                              </span>
-                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                fontSize:12, fontWeight:700,
-                                color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
-                                {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                              </span>
-                              <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
-                                color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
-                                {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                              </span>
-                              <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
-                                <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
-                                  <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
-                                    background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
-                                    width:`${pct}%` }}/>
+                        })() : (() => {
+                          const saidasReal = dadosBase.saidas
+                          const getGrupoR = (cat: Cat) =>
+                            categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+                          const gruposUsadosR = new Set(saidasReal.map(getGrupoR))
+                          const gruposOrdenadosR = [
+                            ...GRUPOS_PADRAO.filter(g => gruposUsadosR.has(g)),
+                            ...Array.from(gruposUsadosR).filter(g => !GRUPOS_PADRAO.includes(g) && g !== '__sem_grupo__').sort(),
+                            ...(gruposUsadosR.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
+                          ]
+                          return gruposOrdenadosR.map(grupo => {
+                            const catsGrupoR = saidasReal.map((cat, idx) => ({ cat, ri: idx })).filter(({ cat }) => getGrupoR(cat) === grupo)
+                            const totalLancGrupo = catsGrupoR.reduce((s, { cat }) => {
+                              const ehF = nomeFaturaCartao(cat.nome, cartaoNomes)
+                              const tc = ehF ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0) : 0
+                              return s + Math.abs(ehF ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + tc : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0))
+                            }, 0)
+                            const pctGrupoR = te > 0 ? (totalLancGrupo / te) * 100 : 0
+                            const grupoAberto = gruposAbertos.has(`${mi}-${grupo}`)
+                            return (
+                              <div key={grupo} style={{ marginBottom:2 }}>
+                                <div
+                                  onClick={() => toggleGrupo(mi, grupo)}
+                                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                                    padding:'6px 4px', borderBottom:'1px solid #e8edf8', marginTop:6,
+                                    cursor:'pointer', userSelect:'none' }}>
+                                  <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                    <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
+                                      transform: grupoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                                    <span style={{ fontSize:11, fontWeight:700, color:COR.azulEscuro,
+                                      textTransform:'uppercase', letterSpacing:.5 }}>
+                                      {grupo === '__sem_grupo__' ? 'Outras' : grupo}
+                                    </span>
+                                  </span>
+                                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                    {te > 0 && (
+                                      <span style={{ fontSize:12, color:COR.textoSuave }}>
+                                        {pctGrupoR.toFixed(0)}% da entrada
+                                      </span>
+                                    )}
+                                    <span style={{ fontSize:13, fontWeight:600, color: totalLancGrupo > 0 ? COR.vermelho : COR.textoSuave }}>
+                                      {totalLancGrupo > 0 ? totalLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                    </span>
+                                  </div>
                                 </div>
-                                <span style={{ fontSize:10, color:COR.textoSuave,
-                                  minWidth:28, textAlign:'right', flexShrink:0 }}>
-                                  {Math.round(pct)}%
-                                </span>
+                                {grupoAberto && (
+                                  <>
+                                    <div style={{ display:'flex', alignItems:'center', gap:8,
+                                      padding:'4px 0 2px', fontSize:9, fontWeight:700,
+                                      color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
+                                      <div style={{ width:22, flexShrink:0 }}/>
+                                      <div style={{ width:16, flexShrink:0 }}/>
+                                      <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
+                                      <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
+                                      <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
+                                      <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Saldo</div>
+                                      <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
+                                    </div>
+                                    {catsGrupoR.map(({ cat, ri }) => {
+                                      const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                                      const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
+                                      const bm = tm ? BADGE_MOV[tm] : null
+                                      const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
+                                      const previsto = (planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0
+                                      const totalCartaoConsolidado = ehFatura
+                                        ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0)
+                                        : 0
+                                      const lancado = ehFatura
+                                        ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + totalCartaoConsolidado
+                                        : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
+                                      const prevAbs = Math.abs(previsto)
+                                      const lancAbs = Math.abs(lancado)
+                                      const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
+                                      const saldo = prevAbs - lancAbs
+                                      return (
+                                        <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
+                                          padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
+                                          <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                            display:'flex', alignItems:'center', justifyContent:'center',
+                                            fontSize:12, flexShrink:0 }}>{icone}</div>
+                                          <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                              width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                              background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                              visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
+                                          <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                            style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
+                                              cursor:'pointer', flexShrink:0, minWidth:140 }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
+                                            {cat.nome}
+                                            {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                          </span>
+                                          <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                            fontSize:12, color:COR.textoSuave }}>
+                                            {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                          </span>
+                                          <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                            fontSize:12, fontWeight:700,
+                                            color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
+                                            {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                          </span>
+                                          <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
+                                            color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
+                                            {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                          </span>
+                                          <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
+                                            <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
+                                              <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
+                                                background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
+                                                width:`${pct}%` }}/>
+                                            </div>
+                                            <span style={{ fontSize:10, color:COR.textoSuave,
+                                              minWidth:28, textAlign:'right', flexShrink:0 }}>
+                                              {Math.round(pct)}%
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
+                                  </>
+                                )}
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })
+                        })()}
                         {dadosAnoFinal.saidas.length === 0 && (
                           <div style={{ fontSize:12, color:COR.textoSuave, padding:'8px 0' }}>
                             Nenhuma categoria de saída.
