@@ -1040,8 +1040,8 @@ export default function Planejamento() {
                                 </>
                               ) : (
                                 <>
-                                  {renderValor('e', ri, mi, cat.v[mi])}
                                   <div style={{ flex:1 }}/>
+                                  {renderValor('e', ri, mi, cat.v[mi])}
                                   {!bloqueado && (
                                     <button onClick={() => replicarLinhaMes('e', ri, mi)}
                                       title={`Replicar ${MESES[mi]} para todos os meses`}
@@ -1152,8 +1152,8 @@ export default function Planejamento() {
                                         {cat.nome}
                                         {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
                                       </span>
-                                      {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
                                       <div style={{ flex:1 }}/>
+                                      {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
                                       {!bloqueado && !ehFatura && (
                                         <button onClick={() => replicarLinhaMes('s', ri, mi)}
                                           title={`Replicar ${MESES[mi]} para todos os meses`}
