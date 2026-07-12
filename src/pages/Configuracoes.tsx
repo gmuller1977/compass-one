@@ -5,7 +5,7 @@ import AppHeader from '../components/AppHeader'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { getLayoutPref, setLayoutPref } from '../utils/prefs'
 import type { LayoutLancamentos } from '../utils/prefs'
-import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
+import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -250,7 +250,7 @@ export default function Configuracoes() {
 
   const catVazia: Omit<Categoria,'id'> = {
     nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'boleto',
-    cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true,
+    cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true, grupo: undefined,
   }
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
   const [editCatId, setEditCatId] = useState<string|null>(null)
@@ -766,34 +766,43 @@ export default function Configuracoes() {
               )}
 
               <div style={{ overflowY:'auto', flex:1 }}>
-                {catsFiltradas.some(c=>c.fixa) && (
-                  <div style={{ marginBottom:16 }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
-                      textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
-                      📌 Fixas mensais
-                    </div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                      {catsFiltradas.filter(c=>c.fixa).map(c => (
-                        <CatCard key={c.id} c={c} editCatId={editCatId}
-                          toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} contas={contas} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {catsFiltradas.some(c=>!c.fixa) && (
-                  <div>
-                    <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
-                      textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
-                      📊 Variáveis
-                    </div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                      {catsFiltradas.filter(c=>!c.fixa).map(c => (
-                        <CatCard key={c.id} c={c} editCatId={editCatId}
-                          toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} contas={contas} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const gruposOrdenados = [
+                    ...GRUPOS_PADRAO.filter(g => catsFiltradas.some(c => c.grupo === g)),
+                    ...Array.from(new Set(catsFiltradas.map(c => c.grupo).filter(g => g && !GRUPOS_PADRAO.includes(g)))) as string[],
+                  ]
+                  const semGrupo = catsFiltradas.filter(c => !c.grupo)
+                  return <>
+                    {gruposOrdenados.map(g => (
+                      <div key={g} style={{ marginBottom:16 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
+                          textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
+                          {g}
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                          {catsFiltradas.filter(c => c.grupo === g).map(c => (
+                            <CatCard key={c.id} c={c} editCatId={editCatId}
+                              toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} contas={contas} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {semGrupo.length > 0 && (
+                      <div style={{ marginBottom:16 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
+                          textTransform:'uppercase', letterSpacing:.6, marginBottom:8 }}>
+                          Sem grupo
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                          {semGrupo.map(c => (
+                            <CatCard key={c.id} c={c} editCatId={editCatId}
+                              toggleAtiva={toggleAtiva} editarCategoria={editarCategoria} contas={contas} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                })()}
               </div>
             </div>
 
@@ -858,6 +867,28 @@ export default function Configuracoes() {
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Grupo */}
+                  <div>
+                    <label style={labelSt}>Grupo</label>
+                    <select
+                      value={formCat.grupo && !GRUPOS_PADRAO.includes(formCat.grupo) ? '__outro__' : (formCat.grupo ?? '')}
+                      onChange={e => {
+                        if (e.target.value === '__outro__') setFormCat(p=>({...p, grupo:''}))
+                        else setFormCat(p=>({...p, grupo: e.target.value || undefined}))
+                      }}
+                      className="campo-cfg" style={{...inputSt, cursor:'pointer'}}>
+                      <option value="">Selecione um grupo...</option>
+                      {GRUPOS_PADRAO.map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="__outro__">Outro...</option>
+                    </select>
+                    {formCat.grupo != null && !GRUPOS_PADRAO.includes(formCat.grupo) && (
+                      <input value={formCat.grupo}
+                        onChange={e => setFormCat(p=>({...p, grupo: e.target.value || undefined}))}
+                        placeholder="Nome do grupo personalizado"
+                        className="campo-cfg" style={{...inputSt, marginTop:6}} />
+                    )}
                   </div>
 
                   {/* Dia vencimento — só fixa */}

@@ -32,6 +32,7 @@ export type Categoria = {
   fixa: boolean; tipoMovimento: TipoMovimento
   formaPagamento?: FormaPagamentoCategoria
   cor: string; icone: string; ativa: boolean
+  grupo?: string
   diaVencimento?: number; descricao?: string
   valorPadrao?: number; numeroParcelas?: number
   contaDebitoId?: string

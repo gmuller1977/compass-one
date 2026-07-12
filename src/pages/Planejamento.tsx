@@ -3,6 +3,7 @@ import type { PlanoAnoData } from '../context/AppContext'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
+import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import AppHeader from '../components/AppHeader'
 
 const COR = {
@@ -99,8 +100,21 @@ export default function Planejamento() {
   const [quizConsiderarSaldo, setQuizConsiderarSaldo] = useState<boolean | null>(null)
   const [quizContasExcluidas, setQuizContasExcluidas] = useState<Set<string>>(new Set())
   const [quizTodosMeses,      setQuizTodosMeses]      = useState(false)
+  const [quizMetaStr,         setQuizMetaStr]         = useState('')
   const [quizEntradas,     setQuizEntradas]    = useState<Record<string, string>>({})
   const [quizSaidas,       setQuizSaidas]      = useState<Record<string, string>>({})
+
+  const quizGruposAtivos = useMemo(() => {
+    const saidas = categorias.filter(c => c.tipo === 'saida' && c.ativa)
+    const grupos: string[] = [
+      ...GRUPOS_PADRAO.filter(g => saidas.some(c => c.grupo === g)),
+      ...Array.from(new Set(saidas.map(c => c.grupo).filter((g): g is string => !!g && !GRUPOS_PADRAO.includes(g)))),
+    ]
+    if (saidas.some(c => !c.grupo)) grupos.push('__sem_grupo__')
+    return grupos
+  }, [categorias])
+  const QUIZ_STEP_RESUMO = 4 + quizGruposAtivos.length
+  const QUIZ_TOTAL      = QUIZ_STEP_RESUMO + 1
 
   // ── Dados base (categorias ativas zeradas) ──
   const dadosBase: AnoData = useMemo(() => ({
@@ -1242,17 +1256,23 @@ export default function Planejamento() {
                 display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
               <div style={{fontSize:10,color:'rgba(255,255,255,0.6)',fontWeight:600,
                 textTransform:'uppercase',letterSpacing:.8,marginBottom:6}}>
-                {quizStep < 4 ? `Passo ${quizStep + 1} de 5` : 'Tudo pronto!'}
+                {quizStep < QUIZ_STEP_RESUMO ? `Passo ${quizStep + 1} de ${QUIZ_TOTAL}` : 'Tudo pronto!'}
               </div>
               <div style={{fontSize:17,fontWeight:700,color:'#fff',lineHeight:1.3,paddingRight:32}}>
-                {['Qual é o seu objetivo financeiro?',
+                {([
+                  'Qual é o seu objetivo financeiro?',
+                  quizObjetivo==='guardar' ? 'Quanto deseja economizar este ano?' :
+                  quizObjetivo==='quitar'  ? 'Qual o valor total que deseja quitar?' :
+                  quizObjetivo==='tudo'    ? 'Qual sua meta de economia anual?' :
+                                             'Vamos organizar suas finanças!',
                   'Quer considerar o saldo das suas contas no planejamento?',
                   'Quais são suas receitas mensais?',
-                  'Quais são seus gastos mensais?',
-                  'Seu planejamento está pronto! 🎉'][quizStep]}
+                  ...quizGruposAtivos.map(g => `Despesas com ${g === '__sem_grupo__' ? 'outras categorias' : g}`),
+                  'Seu planejamento está pronto! 🎉',
+                ])[quizStep]}
               </div>
               <div style={{display:'flex',gap:5,marginTop:14}}>
-                {[0,1,2,3,4].map(i => (
+                {Array.from({length: QUIZ_TOTAL}, (_, i) => (
                   <div key={i} style={{height:3,borderRadius:2,transition:'all .3s',
                     background:i<=quizStep?'#fff':'rgba(255,255,255,0.25)',
                     flex:i===quizStep?2:1}}/>
@@ -1285,8 +1305,44 @@ export default function Planejamento() {
                 </div>
               )}
 
-              {/* Passo 1 — Considerar saldo */}
+              {/* Passo 1 — Meta */}
               {quizStep === 1 && (() => {
+                if (quizObjetivo === 'organizar') return (
+                  <div style={{textAlign:'center',padding:'20px 0'}}>
+                    <div style={{fontSize:40,marginBottom:12}}>📋</div>
+                    <div style={{fontSize:14,fontWeight:600,color:COR.texto,marginBottom:8}}>
+                      Ótima decisão!
+                    </div>
+                    <p style={{fontSize:13,color:COR.textoSuave,lineHeight:1.6,margin:0}}>
+                      Vamos mapear todas as suas receitas e despesas para você ter uma visão clara de onde o seu dinheiro está indo.
+                    </p>
+                  </div>
+                )
+                const labelMeta = quizObjetivo==='quitar'
+                  ? 'Valor total das dívidas a quitar'
+                  : 'Meta de economia anual'
+                const dicaMeta = quizObjetivo==='quitar'
+                  ? 'Some todas as dívidas que quer eliminar este ano.'
+                  : 'Quanto quer ter guardado ao final do ano?'
+                return (
+                  <div>
+                    <p style={{fontSize:13,color:COR.textoSuave,marginBottom:6,marginTop:0}}>{dicaMeta}</p>
+                    <input value={quizMetaStr} autoFocus
+                      onChange={e => setQuizMetaStr(e.target.value)}
+                      onFocus={e => e.target.select()}
+                      onBlur={e => { const n=parseBRL(e.target.value); if(n>0) setQuizMetaStr(n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})) }}
+                      placeholder="0,00"
+                      style={{width:'100%',padding:'14px 16px',borderRadius:10,fontSize:22,
+                        fontWeight:700,border:`2px solid ${COR.azul}`,outline:'none',
+                        textAlign:'right',fontFamily:'inherit',color:COR.azulEscuro,
+                        background:'#eff6ff',boxSizing:'border-box'}}/>
+                    <p style={{fontSize:11,color:COR.textoSuave,marginTop:8,marginBottom:0}}>{labelMeta}</p>
+                  </div>
+                )
+              })()}
+
+              {/* Passo 2 — Considerar saldo */}
+              {quizStep === 2 && (() => {
                 const contasBanco = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
                 const totalSaldo  = contasBanco.filter(c => !quizContasExcluidas.has(c.id)).reduce((s, c) => s + c.saldoInicial, 0)
                 const toggleConta = (id: string) => setQuizContasExcluidas(prev => {
@@ -1359,8 +1415,8 @@ export default function Planejamento() {
                 )
               })()}
 
-              {/* Passo 2 — Entradas */}
-              {quizStep === 2 && (() => {
+              {/* Passo 3 — Entradas */}
+              {quizStep === 3 && (() => {
                 const cats = categorias.filter(c => c.tipo==='entrada' && c.ativa).sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
                 if (cats.length === 0) return <p style={{fontSize:13,color:COR.textoSuave}}>Nenhuma categoria de entrada ativa. Cadastre em Configurações.</p>
                 return <div style={{display:'flex',flexDirection:'column',gap:8}}>
@@ -1385,43 +1441,65 @@ export default function Planejamento() {
                 </div>
               })()}
 
-              {/* Passo 3 — Saídas */}
-              {quizStep === 3 && (() => {
-                const fixas    = categorias.filter(c => c.tipo==='saida' && c.ativa && c.fixa)
-                const variaveis= categorias.filter(c => c.tipo==='saida' && c.ativa && !c.fixa)
-                const renderCat = (c: typeof categorias[0]) => {
-                  const {icone,cor} = iconeCategoria(categorias, c.nome)
-                  return <div key={c.id} style={{display:'flex',alignItems:'center',gap:10,
-                    padding:'8px 12px',borderRadius:10,border:`1px solid ${COR.borda}`,background:'#fafafa'}}>
-                    <div style={{width:32,height:32,borderRadius:8,background:cor+'22',
-                      display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icone}</div>
-                    <span style={{flex:1,fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
-                    <input value={quizSaidas[c.id]??''}
-                      onChange={e => setQuizSaidas(p=>({...p,[c.id]:e.target.value}))}
-                      onFocus={e => e.target.select()}
-                      onBlur={e => { const n=parseBRL(e.target.value); if(n>0) setQuizSaidas(p=>({...p,[c.id]:n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})})) }}
-                      placeholder="0,00"
-                      style={{width:120,padding:'6px 10px',borderRadius:8,fontSize:13,fontWeight:600,
-                        border:`1.5px solid ${COR.borda}`,outline:'none',textAlign:'right',
-                        fontFamily:'inherit',color:COR.vermelho}}/>
-                  </div>
-                }
-                if (fixas.length===0 && variaveis.length===0) return <p style={{fontSize:13,color:COR.textoSuave}}>Nenhuma categoria de saída ativa. Cadastre em Configurações.</p>
+              {/* Passos de saídas — um por grupo */}
+              {quizStep >= 4 && quizStep < QUIZ_STEP_RESUMO && (() => {
+                const grupoAtual = quizGruposAtivos[quizStep - 4]
+                const cats = categorias
+                  .filter(c => c.tipo==='saida' && c.ativa && (grupoAtual === '__sem_grupo__' ? !c.grupo : c.grupo === grupoAtual))
+                  .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+                const totalEntradas   = Object.values(quizEntradas).reduce((s,v)=>s+parseBRL(v),0)
+                const totalSaidasTudo = Object.values(quizSaidas).reduce((s,v)=>s+parseBRL(v),0)
+                const totalGrupo      = cats.reduce((s,c)=>s+parseBRL(quizSaidas[c.id]??'0'),0)
+                const percGrupo  = totalEntradas>0 ? totalGrupo/totalEntradas*100 : 0
+                const percTotal  = totalEntradas>0 ? totalSaidasTudo/totalEntradas*100 : 0
+                const corBarra   = percTotal>100?COR.vermelho:percTotal>80?'#f59e0b':COR.verde
                 return <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   <p style={{fontSize:12,color:COR.textoSuave,margin:'0 0 6px'}}>Informe uma média mensal para cada despesa.</p>
-                  {fixas.length>0 && <>
-                    <div style={{fontSize:10,fontWeight:700,color:COR.textoSuave,textTransform:'uppercase',letterSpacing:.6,marginTop:4}}>📌 Fixas mensais</div>
-                    {fixas.map(renderCat)}
-                  </>}
-                  {variaveis.length>0 && <>
-                    <div style={{fontSize:10,fontWeight:700,color:COR.textoSuave,textTransform:'uppercase',letterSpacing:.6,marginTop:8}}>📊 Variáveis</div>
-                    {variaveis.map(renderCat)}
-                  </>}
+                  {cats.map(c => {
+                    const {icone,cor} = iconeCategoria(categorias, c.nome)
+                    return <div key={c.id} style={{display:'flex',alignItems:'center',gap:10,
+                      padding:'8px 12px',borderRadius:10,border:`1px solid ${COR.borda}`,background:'#fafafa'}}>
+                      <div style={{width:32,height:32,borderRadius:8,background:cor+'22',
+                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icone}</div>
+                      <span style={{flex:1,fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                      <input value={quizSaidas[c.id]??''}
+                        onChange={e => setQuizSaidas(p=>({...p,[c.id]:e.target.value}))}
+                        onFocus={e => e.target.select()}
+                        onBlur={e => { const n=parseBRL(e.target.value); if(n>0) setQuizSaidas(p=>({...p,[c.id]:n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})})) }}
+                        placeholder="0,00"
+                        style={{width:120,padding:'6px 10px',borderRadius:8,fontSize:13,fontWeight:600,
+                          border:`1.5px solid ${COR.borda}`,outline:'none',textAlign:'right',
+                          fontFamily:'inherit',color:COR.vermelho}}/>
+                    </div>
+                  })}
+                  {totalEntradas > 0 && (
+                    <div style={{marginTop:4,padding:'10px 14px',borderRadius:10,
+                      background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:3}}>
+                        <span style={{color:COR.textoSuave}}>Este grupo</span>
+                        <span style={{fontWeight:600,color:COR.vermelho}}>
+                          {totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          {percGrupo>0&&<span style={{color:COR.textoSuave,fontWeight:400}}> · {percGrupo.toFixed(0)}% da receita</span>}
+                        </span>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:8}}>
+                        <span style={{color:COR.textoSuave}}>Total comprometido</span>
+                        <span style={{fontWeight:600,color:percTotal>100?COR.vermelho:COR.texto}}>
+                          {totalSaidasTudo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          <span style={{color:COR.textoSuave,fontWeight:400}}> · {percTotal.toFixed(0)}% de {totalEntradas.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                        </span>
+                      </div>
+                      <div style={{height:5,borderRadius:3,background:'#e2e8f0',overflow:'hidden'}}>
+                        <div style={{height:'100%',borderRadius:3,background:corBarra,
+                          width:`${Math.min(percTotal,100)}%`,transition:'width .4s'}}/>
+                      </div>
+                    </div>
+                  )}
                 </div>
               })()}
 
-              {/* Passo 4 — Resumo */}
-              {quizStep === 4 && (() => {
+              {/* Resumo final */}
+              {quizStep === QUIZ_STEP_RESUMO && (() => {
                 const mesAtual  = new Date().getMonth()
                 const mesesRest = 12 - mesAtual
                 const totalE    = Object.values(quizEntradas).reduce((s,v)=>s+parseBRL(v),0)
@@ -1482,14 +1560,14 @@ export default function Planejamento() {
                   background:'#f8faff',color:COR.textoSuave,fontSize:13,fontWeight:600,
                   cursor:'pointer',fontFamily:'inherit'}}>← Voltar</button>
               )}
-              {quizStep < 4 ? (
+              {quizStep < QUIZ_STEP_RESUMO ? (
                 <button onClick={() => setQuizStep(s=>s+1)}
-                  disabled={(quizStep===0 && !quizObjetivo) || (quizStep===1 && quizConsiderarSaldo===null)}
+                  disabled={(quizStep===0 && !quizObjetivo) || (quizStep===2 && quizConsiderarSaldo===null)}
                   style={{flex:2,padding:'10px',borderRadius:9,border:'none',fontFamily:'inherit',
-                    background:((quizStep===0&&!quizObjetivo)||(quizStep===1&&quizConsiderarSaldo===null))?'#e2e8f0':`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                    color:((quizStep===0&&!quizObjetivo)||(quizStep===1&&quizConsiderarSaldo===null))?COR.textoSuave:'#fff',
+                    background:((quizStep===0&&!quizObjetivo)||(quizStep===2&&quizConsiderarSaldo===null))?'#e2e8f0':`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                    color:((quizStep===0&&!quizObjetivo)||(quizStep===2&&quizConsiderarSaldo===null))?COR.textoSuave:'#fff',
                     fontSize:13,fontWeight:700,
-                    cursor:((quizStep===0&&!quizObjetivo)||(quizStep===1&&quizConsiderarSaldo===null))?'default':'pointer'}}>
+                    cursor:((quizStep===0&&!quizObjetivo)||(quizStep===2&&quizConsiderarSaldo===null))?'default':'pointer'}}>
                   Próximo →
                 </button>
               ) : (
