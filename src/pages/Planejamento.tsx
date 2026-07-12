@@ -88,6 +88,7 @@ export default function Planejamento() {
   const [valorTemp,        setValorTemp]       = useState('')
   const [editandoObj,      setEditandoObj]     = useState<number | null>(null)
   const [objTemp,          setObjTemp]         = useState('')
+  const [considerarSaldo,  setConsiderarSaldo] = useState(true)
   const [saldoAberto,      setSaldoAberto]     = useState(false)
   const [showBannerCopiar, setShowBannerCopiar]= useState(false)
   const [reajustePerc,     setReajustePerc]    = useState('0')
@@ -401,7 +402,7 @@ export default function Planejamento() {
   function toggleMes(i: number) {
     setMesesAbertos(prev => {
       const next = new Set(prev)
-      if (next.has(i)) next.delete(i); else next.add(i)
+      if (next.has(i)) next.delete(i); else { next.add(i); setSaldoAberto(false) }
       return next
     })
   }
@@ -671,33 +672,46 @@ export default function Planejamento() {
             {/* ── SALDO INICIAL ── */}
             <div style={{ background:COR.branco, borderRadius:12,
               border:`1px solid ${COR.borda}`, overflow:'hidden' }}>
-              <div onClick={() => setSaldoAberto(a => !a)}
-                style={{ display:'flex', alignItems:'center',
-                  padding:'10px 14px', cursor:'pointer', gap:10 }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#f8faff'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='transparent'}>
-                {/* Label — mesma largura mínima que o nome do mês */}
-                <div style={{ minWidth:96, display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-                  <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
-                    transition:'transform .2s', transform: saldoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  <span style={{ fontSize:16, fontWeight:700, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
-                    Saldo a ser considerado no planejamento
-                  </span>
+              <div style={{ display:'flex', alignItems:'center',
+                padding:'10px 14px', gap:12 }}>
+                <span style={{ fontSize:14, fontWeight:700, color:COR.azulEscuro, whiteSpace:'nowrap' }}>
+                  Considerar saldo inicial no planejamento
+                </span>
+                <div style={{ display:'flex', gap:6 }}>
+                  <button onClick={() => { setConsiderarSaldo(true); setSaldoAberto(true) }} style={{
+                    padding:'5px 14px', borderRadius:7, border:'none', cursor:'pointer',
+                    fontSize:12, fontWeight:600, fontFamily:'inherit', transition:'all .15s',
+                    background: considerarSaldo ? COR.azul : '#f1f5f9',
+                    color: considerarSaldo ? '#fff' : COR.textoSuave }}>
+                    Considerar
+                  </button>
+                  <button onClick={() => {
+                    setConsiderarSaldo(false)
+                    setSaldoAberto(false)
+                    setContas(prev => prev.map(c =>
+                      (c.tipo === 'corrente' || c.tipo === 'poupanca')
+                        ? { ...c, incluirNoSaldoInicial: false } : c))
+                    updateAno(d => ({ ...d, saldoInicialJan: 0 }))
+                  }} style={{
+                    padding:'5px 14px', borderRadius:7, border:'none', cursor:'pointer',
+                    fontSize:12, fontWeight:600, fontFamily:'inherit', transition:'all .15s',
+                    background: !considerarSaldo ? COR.vermelho : '#f1f5f9',
+                    color: !considerarSaldo ? '#fff' : COR.textoSuave }}>
+                    Não considerar
+                  </button>
                 </div>
-                <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end' }}>
-                  {(() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
-                    <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                      borderRadius:8, padding:'5px 14px', minWidth:110, flexShrink:0 }}>
-                      <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                        letterSpacing:.4, color:c.txt }}>Valor</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:c.txt }}>
-                        {fmt(SALDO_INICIAL_FIXO, true)}
-                      </div>
+                {considerarSaldo && (() => { const c = caixaCor(SALDO_INICIAL_FIXO); return (
+                  <div style={{ marginLeft:'auto', background:c.bg, border:`1px solid ${c.bd}`,
+                    borderRadius:8, padding:'5px 14px', minWidth:110, flexShrink:0 }}>
+                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
+                      letterSpacing:.4, color:c.txt }}>Valor</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:c.txt }}>
+                      {fmt(SALDO_INICIAL_FIXO, true)}
                     </div>
-                  )})()}
-                </div>
+                  </div>
+                )})()}
               </div>
-              {saldoAberto && (
+              {saldoAberto && considerarSaldo && (
                 <div style={{ padding:'10px 16px 14px 28px', background:'#eff6ff',
                   borderTop:`1px solid ${COR.borda}` }}>
                   <div style={{ fontSize:10, fontWeight:600, color:COR.azul,
