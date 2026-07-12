@@ -385,7 +385,7 @@ export default function NovoLancamentoExtrato() {
             const confirmada = conf !== undefined ? conf : (ehAutomatico(f) && dPast)
             if (!confirmada) return
           }
-          const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor
+          const v = (dPast || dHoje) ? (dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
           saldo += f.tipo==='entrada' ? v : -v
         })
       ;(lancs[d]??[]).forEach(l=>{ saldo += l.tipo==='entrada'?l.valor:-l.valor })
@@ -742,10 +742,10 @@ export default function NovoLancamentoExtrato() {
           const diaFuturo = !passado && !ehHoje
           // Valor exibido: projeção total (todos os itens do dia)
           const entradasDia = fs.filter(f=>f.tipo==='entrada')
-            .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
+            .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
             + ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
           const saidasDia = fs.filter(f=>f.tipo==='saida')
-            .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
+            .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
             + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
           // Confirmados: fixas consolidadas (ou automáticas em dia passado) + lancamentos manuais
           const entradasConf =
@@ -888,7 +888,7 @@ export default function NovoLancamentoExtrato() {
                   : (automatico ? passado : false)
                 const corValor = consolidada ? (f.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
                 const emEdicaoFixa = editandoFixaId === f.id
-                const valorMostrado = mesDados.fixasValorOverride?.[f.id] ?? f.valor
+                const valorMostrado = consolidada ? (mesDados.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
                 return (
                 <div key={f.id} onClick={e => e.stopPropagation()}
                   style={{background:emEdicaoFixa?'#eff6ff':'transparent'}}>
