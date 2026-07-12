@@ -87,8 +87,6 @@ export default function Planejamento() {
   const [aba,              setAba]             = useState<'previsto' | 'real'>('previsto')
   const [editando,         setEditando]        = useState<Editando>(null)
   const [valorTemp,        setValorTemp]       = useState('')
-  const [editandoObj,      setEditandoObj]     = useState<number | null>(null)
-  const [objTemp,          setObjTemp]         = useState('')
   const [considerarSaldo,  setConsiderarSaldo] = useState(true)
   const [saldoAberto,      setSaldoAberto]     = useState(false)
   const [showBannerCopiar, setShowBannerCopiar]= useState(false)
@@ -328,9 +326,6 @@ export default function Planejamento() {
     })
   }), [aba, contas, extratoData, anoAtual])
 
-  // Objetivos mensais — sempre lidos do previsto
-  const objetivosAno: number[] = (planos[anoAtual] as PlanoAnoData | undefined)?.objetivos ?? new Array(12).fill(0)
-
   // ── Helpers de update ──
   function updateAno(fn: (d: AnoData) => AnoData) {
     if (planejamentoLockado && aba === 'previsto') return
@@ -354,14 +349,6 @@ export default function Planejamento() {
       .filter(c => (c.tipo === 'corrente' || c.tipo === 'poupanca') && c.incluirNoSaldoInicial !== false)
       .reduce((s, c) => s + c.saldoInicial, 0)
     updateAno(d => ({ ...d, saldoInicialJan: novoSaldo }))
-  }
-  function updateObjetivo(mes: number, valor: number) {
-    if (planejamentoLockado) return
-    setPlanos(prev => {
-      const atual = (prev[anoAtual] ?? { saldoInicialJan: 0, entradas: [], saidas: [] }) as PlanoAnoData
-      const objs = atual.objetivos ?? new Array(12).fill(0)
-      return { ...prev, [anoAtual]: { ...atual, objetivos: objs.map((v, i) => i === mes ? valor : v) } }
-    })
   }
 
   function replicarJaneiroParaAno() {
@@ -774,8 +761,6 @@ export default function Planejamento() {
               const ts = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
               const sf = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
               const si = saldoInicialReal[mi]
-              const obj = objetivosAno[mi]
-              const dif = obj > 0 ? sf - obj : null
               const bordaHeader = ehAtual ? COR.azul : COR.borda
 
               return (
@@ -834,57 +819,6 @@ export default function Planejamento() {
                             </div>
                           </div>
                         )})()}
-
-                        {/* Meta (sempre editável) */}
-                        <div
-                          onClick={e => {
-                            e.stopPropagation()
-                            setEditandoObj(mi)
-                            setObjTemp(obj === 0 ? '' : obj.toLocaleString('pt-BR',{minimumFractionDigits:2}))
-                          }}
-                          style={{ background:'#faf5ff',
-                            border:`1px solid ${editandoObj === mi ? '#a855f7' : '#ddd6fe'}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110,
-                            cursor:'pointer' }}>
-                          <div style={{ fontSize:9, color:'#7c3aed', fontWeight:700,
-                            textTransform:'uppercase', letterSpacing:.4 }}>Meta</div>
-                          {editandoObj === mi ? (
-                            <input autoFocus value={objTemp}
-                              onChange={e => setObjTemp(e.target.value)}
-                              onFocus={e => e.target.select()}
-                              onClick={e => e.stopPropagation()}
-                              onBlur={() => { updateObjetivo(mi, parseBRL(objTemp)); setEditandoObj(null) }}
-                              onKeyDown={e => {
-                                e.stopPropagation()
-                                if (e.key === 'Enter' || e.key === 'Escape') {
-                                  if (e.key === 'Enter') updateObjetivo(mi, parseBRL(objTemp))
-                                  setEditandoObj(null)
-                                }
-                              }}
-                              style={{ width:100, padding:0, border:'none', outline:'none',
-                                background:'transparent', color:'#7c3aed',
-                                fontSize:13, fontFamily:'inherit', fontWeight:700, marginTop:1 }} />
-                          ) : (
-                            <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1,
-                              color: obj === 0 ? '#c4b5fd' : '#7c3aed' }}>
-                              {obj === 0 ? 'Definir…' : obj.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Diferença */}
-                        <div style={{ background: dif===null ? '#f8fafc' : dif>=0 ? '#f0fdf4' : '#fff5f5',
-                          border:`1px solid ${dif===null ? COR.borda : dif>=0 ? '#bbf7d0' : '#fecaca'}`,
-                          borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                          <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                            letterSpacing:.4, color:dif===null ? COR.textoSuave : dif>=0?'#16a34a':COR.vermelho }}>
-                            Diferença
-                          </div>
-                          <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1,
-                            color:dif===null ? '#cbd5e1' : dif>=0?'#16a34a':COR.vermelho }}>
-                            {dif===null ? '—' : `${dif>=0?'+':''}${dif.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`}
-                          </div>
-                        </div>
 
                         {/* Saldo Final */}
                         {(() => { const usaCinza = aba==='real' && !temReal; const c = usaCinza ? cinza : { bg: sf<0?'#fff5f5':sf<1000?'#fffbeb':'#f0fdf4', bd: sf<0?'#fecaca':sf<1000?'#fde68a':'#bbf7d0', txt: corSaldo(sf) }; return (
