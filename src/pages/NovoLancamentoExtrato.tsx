@@ -245,7 +245,7 @@ export default function NovoLancamentoExtrato() {
   }, [contas, contaIdEfetivo, ano, mes, dados, contasExtrato])
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
-    .filter(c => c.tipo === fTipo && (!isDinheiro || c.tipoMovimento === 'dinheiro'))
+    .filter(c => c.ativa && c.tipo === fTipo && (!isDinheiro || c.tipoMovimento === 'dinheiro'))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
