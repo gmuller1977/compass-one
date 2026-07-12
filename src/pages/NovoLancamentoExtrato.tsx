@@ -263,6 +263,12 @@ export default function NovoLancamentoExtrato() {
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [modo])
 
   useEffect(() => {
+    if (modo === 'dinheiro') {
+      const k = mesKey('dinheiro', ano, mes)
+      setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+      setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
+      return
+    }
     if (modo !== 'banco') return
     const conta = contasExtrato.find(c => c.id === contaId) ?? contasExtrato[0]
     if (!conta) return
@@ -629,57 +635,45 @@ export default function NovoLancamentoExtrato() {
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
         padding:'10px 16px',flexShrink:0,
-        display:'flex',flexDirection:isDinheiro?'column':'row',
-        alignItems:isDinheiro?'flex-start':'center',gap:14,flexWrap:'wrap'}}>
+        display:'flex',flexDirection:'row',
+        alignItems:'center',gap:14,flexWrap:'wrap'}}>
 
         {isDinheiro ? (<>
-          {/* Dinheiro — linha 1: mês + saldos */}
-          <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
-            <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
-            <span style={{color:COR.borda}}>|</span>
-            <div style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Disponível:</span>
-              <span style={{fontSize:16,fontWeight:800,
-                color:saldoMes<0?COR.vermelho:COR.verde}}>{fmt(saldoMes)}</span>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
-              <span style={{fontSize:16,fontWeight:800,
-                color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
-                {fmt(saldosDia[totalDias]??saldoMes)}
-              </span>
+          {/* Dinheiro — linha única (igual ao banco) */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo dinheiro atual:</span>
+            <input value={mesDados.saldoBanco}
+              onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
+              onFocus={e => e.target.select()}
+              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
+              placeholder="R$ 0,00"
+              style={{border:`1px solid #16a34a55`,borderRadius:6,padding:'4px 10px',
+                fontSize:13,fontWeight:700,color:'#16a34a',background:'#16a34a18',
+                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          </div>
+          <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
+            display:'inline-flex',alignItems:'center',gap:5,
+            background:'#16a34a18',border:'1px solid #16a34a55'}}>
+            <span>💵</span>
+            <span style={{color:'#16a34a',fontWeight:600}}>Dinheiro</span>
+            <span style={{fontWeight:700,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
+          </span>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
+            <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
+              background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+              border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+              minWidth:110,textAlign:'center'}}>
+              {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
             </div>
           </div>
-          {/* Dinheiro — linha 2: pill + input + diferença */}
-          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
-              display:'inline-flex',alignItems:'center',gap:5,
-              background:'#16a34a18',border:'1px solid #16a34a55'}}>
-              <span>💵</span>
-              <span style={{color:'#16a34a',fontWeight:600}}>Dinheiro</span>
-              <span style={{fontSize:16,fontWeight:800,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
+            <span style={{fontSize:16,fontWeight:800,
+              color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
+              {fmt(saldosDia[totalDias]??saldoMes)}
             </span>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span style={{fontSize:11,color:COR.textoSuave}}>Saldo dinheiro atual:</span>
-              <input value={mesDados.saldoBanco}
-                onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
-                onFocus={e => e.target.select()}
-                onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
-                placeholder="R$ 0,00"
-                style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
-                  fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
-                  outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
-              <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
-                background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
-                color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
-                border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-                minWidth:110,textAlign:'center'}}>
-                {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
-              </div>
-            </div>
           </div>
         </>) : (<>
           {/* Banco — linha única */}
@@ -690,8 +684,8 @@ export default function NovoLancamentoExtrato() {
               onFocus={e => e.target.select()}
               onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
               placeholder="R$ 0,00"
-              style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'4px 10px',
-                fontSize:13,fontWeight:700,color:COR.azul,background:'#eff6ff',
+              style={{border:`1px solid ${contaInfo?.cor ?? COR.azul}55`,borderRadius:6,padding:'4px 10px',
+                fontSize:13,fontWeight:700,color:contaInfo?.cor ?? COR.azul,background:`${contaInfo?.cor ?? COR.azul}18`,
                 outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
           </div>
           {contaInfo && (
@@ -816,16 +810,18 @@ export default function NovoLancamentoExtrato() {
                   justifyContent:'flex-end',gap:6}}>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
-                    background:saldoIni<0?'#fff1f2':'#f0fdf4',
-                    border:`1px solid ${saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
+                    background:diaFuturo?'#f8faff':saldoIni<0?'#fff1f2':'#f0fdf4',
+                    border:`1px solid ${diaFuturo?COR.borda:saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:10,fontWeight:600,
-                      textTransform:'uppercase',letterSpacing:.4,marginBottom:1,color:corIni}}>Inicial</span>
-                    <span style={{fontSize:13,fontWeight:700,color:corIni}}>{fmt(saldoIni)}</span>
+                      textTransform:'uppercase',letterSpacing:.4,marginBottom:1,
+                      color:diaFuturo?'#94a3b8':corIni}}>Inicial</span>
+                    <span style={{fontSize:13,fontWeight:700,
+                      color:diaFuturo?'#64748b':corIni}}>{fmt(saldoIni)}</span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:entradasConf>0?'#eff6ff':'#f8faff',
                     border:`1px solid ${entradasConf>0?'#bfdbfe':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -840,7 +836,7 @@ export default function NovoLancamentoExtrato() {
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:saidasConf>0?'#fff1f2':'#f8faff',
                     border:`1px solid ${saidasConf>0?'#fecdd3':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -855,7 +851,7 @@ export default function NovoLancamentoExtrato() {
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saldoDia<0?'#fff1f2':'#f0fdf4',
                     border:`1px solid ${diaFuturo?COR.borda:saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',

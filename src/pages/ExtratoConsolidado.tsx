@@ -435,7 +435,7 @@ export default function ExtratoConsolidado() {
                 <div style={{display:'flex',flexDirection:'column',
                   alignItems:'center',minWidth:32,flexShrink:0}}>
                   <span style={{fontSize:18,fontWeight:700,lineHeight:1,
-                    color:ehHoje?COR.azul:COR.texto}}>{dia}</span>
+                    color:ehHoje?COR.azul:COR.texto}}>{String(dia).padStart(2,'0')}</span>
                   <span style={{fontSize:10,color:'#94a3b8',fontWeight:500,marginTop:1,
                     textTransform:'uppercase'}}>{semana}</span>
                 </div>
@@ -451,17 +451,20 @@ export default function ExtratoConsolidado() {
                 {/* Boxes: INICIAL, ENTRADAS, SAÍDA, FINAL */}
                 <div style={{display:'flex',gap:6}}>
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
-                    background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
+                    background:diaFuturo?'#f8faff':saldoIni<0?'#fff1f2':'#f0fdf4',
+                    border:`1px solid ${diaFuturo?COR.borda:saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                      letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Inicial</span>
-                    <span style={{fontSize:13,fontWeight:700,color:corSaldoIni}}>
+                      letterSpacing:.4,marginBottom:1,
+                      color:diaFuturo?'#94a3b8':corSaldoIni}}>Inicial</span>
+                    <span style={{fontSize:13,fontWeight:700,
+                      color:diaFuturo?'#64748b':corSaldoIni}}>
                       {fmt(saldoIni)}
                     </span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':entradasDia>0?'#eff6ff':'#f8faff',
                     border:`1px solid ${diaFuturo?COR.borda:entradasDia>0?'#bfdbfe':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -474,7 +477,7 @@ export default function ExtratoConsolidado() {
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saidasDia>0?'#fff1f2':'#f8faff',
                     border:`1px solid ${diaFuturo?COR.borda:saidasDia>0?'#fecdd3':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -487,7 +490,7 @@ export default function ExtratoConsolidado() {
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:90,
+                    padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saldoFinal<0?'#fff1f2':'#f0fdf4',
                     border:`1px solid ${diaFuturo?COR.borda:saldoFinal<0?'#fecdd3':'#bbf7d0'}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
