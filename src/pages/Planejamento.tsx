@@ -93,6 +93,14 @@ export default function Planejamento() {
   const [showBannerCopiar, setShowBannerCopiar]= useState(false)
   const [reajustePerc,     setReajustePerc]    = useState('0')
   const [mesesAbertos,     setMesesAbertos]    = useState<Set<number>>(() => new Set<number>())
+  const [quizAtivo,        setQuizAtivo]       = useState(() => !planos[anoAtual])
+  const [quizStep,         setQuizStep]        = useState(0)
+  const [quizObjetivo,     setQuizObjetivo]    = useState('')
+  const [quizConsiderarSaldo, setQuizConsiderarSaldo] = useState<boolean | null>(null)
+  const [quizContasExcluidas, setQuizContasExcluidas] = useState<Set<string>>(new Set())
+  const [quizTodosMeses,      setQuizTodosMeses]      = useState(false)
+  const [quizEntradas,     setQuizEntradas]    = useState<Record<string, string>>({})
+  const [quizSaidas,       setQuizSaidas]      = useState<Record<string, string>>({})
 
   // ── Dados base (categorias ativas zeradas) ──
   const dadosBase: AnoData = useMemo(() => ({
@@ -399,6 +407,25 @@ export default function Planejamento() {
     setAnoAtual(novoAno)
     setEditando(null)
   }
+  function confirmarQuiz() {
+    const mesAtual = new Date().getMonth() // 0 = jan
+    const saldoIni = quizConsiderarSaldo
+      ? contas.filter(c => (c.tipo === 'corrente' || c.tipo === 'poupanca') && !quizContasExcluidas.has(c.id)).reduce((s, c) => s + c.saldoInicial, 0)
+      : 0
+    const entradas = categorias
+      .filter(c => c.tipo === 'entrada' && c.ativa)
+      .map(c => ({ id: c.id, nome: c.nome, t: c.tipoMovimento,
+        v: Array.from({length:12}, (_,i) => (quizTodosMeses || i >= mesAtual) ? parseBRL(quizEntradas[c.id] ?? '0') : 0) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    const saidas = categorias
+      .filter(c => c.tipo === 'saida' && c.ativa)
+      .map(c => ({ id: c.id, nome: c.nome, t: c.tipoMovimento,
+        v: Array.from({length:12}, (_,i) => (quizTodosMeses || i >= mesAtual) ? parseBRL(quizSaidas[c.id] ?? '0') : 0) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    setPlanos(prev => ({ ...prev, [anoAtual]: { saldoInicialJan: saldoIni, entradas, saidas } as PlanoAnoData }))
+    setQuizAtivo(false)
+  }
+
   function toggleMes(i: number) {
     setMesesAbertos(prev => {
       const next = new Set(prev)
@@ -1197,6 +1224,286 @@ export default function Planejamento() {
           </div>
         )}
       </div>
+
+      {/* ── QUIZ DE ONBOARDING ── */}
+      {quizAtivo && !planos[anoAtual] && (
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:300,
+          display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{background:'#fff',borderRadius:20,width:'100%',maxWidth:520,
+            maxHeight:'88vh',overflowY:'auto',boxShadow:'0 25px 60px rgba(0,0,0,0.3)',
+            display:'flex',flexDirection:'column'}}>
+
+            {/* Cabeçalho */}
+            <div style={{background:`linear-gradient(135deg,#0f2878,#1a56db)`,
+              padding:'24px 28px 20px',borderRadius:'20px 20px 0 0',position:'relative',flexShrink:0}}>
+              <button onClick={() => setQuizAtivo(false)} style={{position:'absolute',top:14,right:14,
+                background:'rgba(255,255,255,0.15)',border:'none',borderRadius:8,color:'#fff',
+                width:28,height:28,cursor:'pointer',fontSize:16,fontFamily:'inherit',
+                display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+              <div style={{fontSize:10,color:'rgba(255,255,255,0.6)',fontWeight:600,
+                textTransform:'uppercase',letterSpacing:.8,marginBottom:6}}>
+                {quizStep < 4 ? `Passo ${quizStep + 1} de 5` : 'Tudo pronto!'}
+              </div>
+              <div style={{fontSize:17,fontWeight:700,color:'#fff',lineHeight:1.3,paddingRight:32}}>
+                {['Qual é o seu objetivo financeiro?',
+                  'Quer considerar o saldo das suas contas no planejamento?',
+                  'Quais são suas receitas mensais?',
+                  'Quais são seus gastos mensais?',
+                  'Seu planejamento está pronto! 🎉'][quizStep]}
+              </div>
+              <div style={{display:'flex',gap:5,marginTop:14}}>
+                {[0,1,2,3,4].map(i => (
+                  <div key={i} style={{height:3,borderRadius:2,transition:'all .3s',
+                    background:i<=quizStep?'#fff':'rgba(255,255,255,0.25)',
+                    flex:i===quizStep?2:1}}/>
+                ))}
+              </div>
+            </div>
+
+            {/* Corpo */}
+            <div style={{padding:'22px 28px',flex:1,overflowY:'auto'}}>
+
+              {/* Passo 0 — Objetivo */}
+              {quizStep === 0 && (
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                  {([
+                    {id:'guardar',  icon:'💰', label:'Guardar dinheiro'},
+                    {id:'organizar',icon:'📋', label:'Organizar gastos'},
+                    {id:'quitar',   icon:'💳', label:'Quitar dívidas'},
+                    {id:'tudo',     icon:'🎯', label:'Tudo isso'},
+                  ] as const).map(o => (
+                    <button key={o.id} onClick={() => setQuizObjetivo(o.id)} style={{
+                      padding:'18px 12px',borderRadius:12,cursor:'pointer',fontFamily:'inherit',
+                      border:`2px solid ${quizObjetivo===o.id?COR.azul:COR.borda}`,
+                      background:quizObjetivo===o.id?'#eff6ff':COR.branco,
+                      display:'flex',flexDirection:'column',alignItems:'center',gap:8,transition:'all .15s'}}>
+                      <span style={{fontSize:30}}>{o.icon}</span>
+                      <span style={{fontSize:12,fontWeight:600,
+                        color:quizObjetivo===o.id?COR.azul:COR.texto,textAlign:'center'}}>{o.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Passo 1 — Considerar saldo */}
+              {quizStep === 1 && (() => {
+                const contasBanco = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+                const totalSaldo  = contasBanco.filter(c => !quizContasExcluidas.has(c.id)).reduce((s, c) => s + c.saldoInicial, 0)
+                const toggleConta = (id: string) => setQuizContasExcluidas(prev => {
+                  const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
+                })
+                return (
+                  <div>
+                    <p style={{fontSize:13,color:COR.textoSuave,marginBottom:16,marginTop:0}}>
+                      Suas contas bancárias cadastradas somam:
+                    </p>
+                    <div style={{textAlign:'center',padding:'14px 0 20px',fontSize:26,
+                      fontWeight:700,color:COR.azulEscuro}}>
+                      {totalSaldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    </div>
+                    {contasBanco.length > 0 && (
+                      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:18}}>
+                        {contasBanco.map(c => {
+                          const selecionada = !quizContasExcluidas.has(c.id)
+                          return (
+                            <div key={c.id} onClick={() => toggleConta(c.id)}
+                              style={{display:'flex',alignItems:'center',gap:10,
+                                padding:'8px 12px',borderRadius:8,cursor:'pointer',
+                                background:selecionada?'#f0f9ff':'#f8faff',
+                                border:`1px solid ${selecionada?COR.azul:COR.borda}`,fontSize:13,
+                                transition:'all .15s'}}>
+                              <div style={{width:18,height:18,borderRadius:4,flexShrink:0,
+                                border:`2px solid ${selecionada?COR.azul:COR.borda}`,
+                                background:selecionada?COR.azul:'#fff',
+                                display:'flex',alignItems:'center',justifyContent:'center'}}>
+                                {selecionada && <span style={{color:'#fff',fontSize:11,lineHeight:1}}>✓</span>}
+                              </div>
+                              <span style={{flex:1,color:COR.texto,fontWeight:500}}>{c.banco || c.nome}</span>
+                              <span style={{color:selecionada?COR.azulEscuro:COR.textoSuave,fontWeight:600,
+                                textDecoration:selecionada?'none':'line-through'}}>
+                                {c.saldoInicial.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                    <p style={{fontSize:13,color:COR.textoSuave,marginBottom:12,marginTop:0}}>
+                      Deseja considerar esse saldo no planejamento?
+                    </p>
+                    <div style={{display:'flex',gap:10}}>
+                      <button onClick={() => {
+                        setQuizConsiderarSaldo(true)
+                        setQuizContasExcluidas(new Set())
+                      }} style={{
+                        flex:1,padding:'11px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',
+                        border:`2px solid ${quizConsiderarSaldo===true?COR.azul:COR.borda}`,
+                        background:quizConsiderarSaldo===true?'#eff6ff':COR.branco,
+                        color:quizConsiderarSaldo===true?COR.azul:COR.textoSuave,
+                        fontWeight:600,fontSize:13,transition:'all .15s'}}>
+                        ✓ Sim, considerar
+                      </button>
+                      <button onClick={() => {
+                        setQuizConsiderarSaldo(false)
+                        setQuizContasExcluidas(new Set(contasBanco.map(c => c.id)))
+                      }} style={{
+                        flex:1,padding:'11px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',
+                        border:`2px solid ${quizConsiderarSaldo===false?COR.azul:COR.borda}`,
+                        background:quizConsiderarSaldo===false?'#eff6ff':COR.branco,
+                        color:quizConsiderarSaldo===false?COR.azul:COR.textoSuave,
+                        fontWeight:600,fontSize:13,transition:'all .15s'}}>
+                        ✗ Não considerar
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Passo 2 — Entradas */}
+              {quizStep === 2 && (() => {
+                const cats = categorias.filter(c => c.tipo==='entrada' && c.ativa).sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+                if (cats.length === 0) return <p style={{fontSize:13,color:COR.textoSuave}}>Nenhuma categoria de entrada ativa. Cadastre em Configurações.</p>
+                return <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  <p style={{fontSize:12,color:COR.textoSuave,margin:'0 0 6px'}}>Informe o valor que você recebe mensalmente em cada categoria.</p>
+                  {cats.map(c => {
+                    const {icone,cor} = iconeCategoria(categorias, c.nome)
+                    return <div key={c.id} style={{display:'flex',alignItems:'center',gap:10,
+                      padding:'8px 12px',borderRadius:10,border:`1px solid ${COR.borda}`,background:'#fafafa'}}>
+                      <div style={{width:32,height:32,borderRadius:8,background:cor+'22',
+                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icone}</div>
+                      <span style={{flex:1,fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                      <input value={quizEntradas[c.id]??''}
+                        onChange={e => setQuizEntradas(p=>({...p,[c.id]:e.target.value}))}
+                        onFocus={e => e.target.select()}
+                        onBlur={e => { const n=parseBRL(e.target.value); if(n>0) setQuizEntradas(p=>({...p,[c.id]:n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})})) }}
+                        placeholder="0,00"
+                        style={{width:120,padding:'6px 10px',borderRadius:8,fontSize:13,fontWeight:600,
+                          border:`1.5px solid ${COR.borda}`,outline:'none',textAlign:'right',
+                          fontFamily:'inherit',color:COR.verde}}/>
+                    </div>
+                  })}
+                </div>
+              })()}
+
+              {/* Passo 3 — Saídas */}
+              {quizStep === 3 && (() => {
+                const fixas    = categorias.filter(c => c.tipo==='saida' && c.ativa && c.fixa)
+                const variaveis= categorias.filter(c => c.tipo==='saida' && c.ativa && !c.fixa)
+                const renderCat = (c: typeof categorias[0]) => {
+                  const {icone,cor} = iconeCategoria(categorias, c.nome)
+                  return <div key={c.id} style={{display:'flex',alignItems:'center',gap:10,
+                    padding:'8px 12px',borderRadius:10,border:`1px solid ${COR.borda}`,background:'#fafafa'}}>
+                    <div style={{width:32,height:32,borderRadius:8,background:cor+'22',
+                      display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icone}</div>
+                    <span style={{flex:1,fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                    <input value={quizSaidas[c.id]??''}
+                      onChange={e => setQuizSaidas(p=>({...p,[c.id]:e.target.value}))}
+                      onFocus={e => e.target.select()}
+                      onBlur={e => { const n=parseBRL(e.target.value); if(n>0) setQuizSaidas(p=>({...p,[c.id]:n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})})) }}
+                      placeholder="0,00"
+                      style={{width:120,padding:'6px 10px',borderRadius:8,fontSize:13,fontWeight:600,
+                        border:`1.5px solid ${COR.borda}`,outline:'none',textAlign:'right',
+                        fontFamily:'inherit',color:COR.vermelho}}/>
+                  </div>
+                }
+                if (fixas.length===0 && variaveis.length===0) return <p style={{fontSize:13,color:COR.textoSuave}}>Nenhuma categoria de saída ativa. Cadastre em Configurações.</p>
+                return <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  <p style={{fontSize:12,color:COR.textoSuave,margin:'0 0 6px'}}>Informe uma média mensal para cada despesa.</p>
+                  {fixas.length>0 && <>
+                    <div style={{fontSize:10,fontWeight:700,color:COR.textoSuave,textTransform:'uppercase',letterSpacing:.6,marginTop:4}}>📌 Fixas mensais</div>
+                    {fixas.map(renderCat)}
+                  </>}
+                  {variaveis.length>0 && <>
+                    <div style={{fontSize:10,fontWeight:700,color:COR.textoSuave,textTransform:'uppercase',letterSpacing:.6,marginTop:8}}>📊 Variáveis</div>
+                    {variaveis.map(renderCat)}
+                  </>}
+                </div>
+              })()}
+
+              {/* Passo 4 — Resumo */}
+              {quizStep === 4 && (() => {
+                const mesAtual  = new Date().getMonth()
+                const mesesRest = 12 - mesAtual
+                const totalE    = Object.values(quizEntradas).reduce((s,v)=>s+parseBRL(v),0)
+                const totalS    = Object.values(quizSaidas).reduce((s,v)=>s+parseBRL(v),0)
+                const saldoIni  = quizConsiderarSaldo
+                  ? contas.filter(c=>(c.tipo==='corrente'||c.tipo==='poupanca')&&!quizContasExcluidas.has(c.id)).reduce((s,c)=>s+c.saldoInicial,0)
+                  : 0
+                const saldoMes  = totalE - totalS
+                const nomesMes  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+                const labels: Record<string,string> = {guardar:'💰 Guardar dinheiro',organizar:'📋 Organizar gastos',quitar:'💳 Quitar dívidas',tudo:'🎯 Tudo isso'}
+                return <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                  {quizObjetivo && <div style={{fontSize:13,color:COR.textoSuave,marginBottom:2}}>
+                    Objetivo: <strong style={{color:COR.texto}}>{labels[quizObjetivo]}</strong>
+                  </div>}
+                  <div style={{marginBottom:4}}>
+                    <div style={{fontSize:12,color:COR.texto,fontWeight:600,marginBottom:8}}>
+                      Aplicar valores em quais meses?
+                    </div>
+                    <div style={{display:'flex',gap:8}}>
+                      {([
+                        {v:false, label:`A partir de ${nomesMes[mesAtual]}`, desc:`${mesesRest} ${mesesRest===1?'mês':'meses'}`},
+                        {v:true,  label:'Todos os meses',                    desc:'Janeiro a Dezembro'},
+                      ] as const).map(op => (
+                        <button key={String(op.v)} onClick={() => setQuizTodosMeses(op.v)} style={{
+                          flex:1,padding:'8px 10px',borderRadius:9,cursor:'pointer',fontFamily:'inherit',
+                          border:`2px solid ${quizTodosMeses===op.v?COR.azul:COR.borda}`,
+                          background:quizTodosMeses===op.v?'#eff6ff':COR.branco,
+                          textAlign:'left',transition:'all .15s'}}>
+                          <div style={{fontSize:12,fontWeight:600,color:quizTodosMeses===op.v?COR.azul:COR.texto}}>{op.label}</div>
+                          <div style={{fontSize:10,color:COR.textoSuave,marginTop:2}}>{op.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {([
+                    {label:'Saldo inicial',        v:saldoIni, c:'#1a56db'},
+                    {label:'Receitas / mês',        v:totalE,   c:COR.verde},
+                    {label:'Despesas / mês',        v:totalS,   c:COR.vermelho},
+                    {label:'Resultado mensal',      v:saldoMes, c:saldoMes>=0?COR.verde:COR.vermelho},
+                  ] as const).map(({label,v,c})=>(
+                    <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+                      padding:'10px 14px',borderRadius:10,background:c+'11',border:`1px solid ${c}33`}}>
+                      <span style={{fontSize:12,color:COR.textoSuave,fontWeight:500}}>{label}</span>
+                      <span style={{fontSize:14,fontWeight:700,color:c}}>
+                        {v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              })()}
+            </div>
+
+            {/* Rodapé */}
+            <div style={{padding:'14px 28px 24px',display:'flex',gap:10,borderTop:`1px solid ${COR.borda}`,flexShrink:0}}>
+              {quizStep > 0 && (
+                <button onClick={() => setQuizStep(s=>s-1)} style={{
+                  flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${COR.borda}`,
+                  background:'#f8faff',color:COR.textoSuave,fontSize:13,fontWeight:600,
+                  cursor:'pointer',fontFamily:'inherit'}}>← Voltar</button>
+              )}
+              {quizStep < 4 ? (
+                <button onClick={() => setQuizStep(s=>s+1)}
+                  disabled={(quizStep===0 && !quizObjetivo) || (quizStep===1 && quizConsiderarSaldo===null)}
+                  style={{flex:2,padding:'10px',borderRadius:9,border:'none',fontFamily:'inherit',
+                    background:((quizStep===0&&!quizObjetivo)||(quizStep===1&&quizConsiderarSaldo===null))?'#e2e8f0':`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                    color:((quizStep===0&&!quizObjetivo)||(quizStep===1&&quizConsiderarSaldo===null))?COR.textoSuave:'#fff',
+                    fontSize:13,fontWeight:700,
+                    cursor:((quizStep===0&&!quizObjetivo)||(quizStep===1&&quizConsiderarSaldo===null))?'default':'pointer'}}>
+                  Próximo →
+                </button>
+              ) : (
+                <button onClick={confirmarQuiz} style={{
+                  flex:2,padding:'10px',borderRadius:9,border:'none',
+                  background:`linear-gradient(135deg,${COR.verde},#15803d)`,
+                  color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  ✓ Criar meu planejamento
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* LEGENDA */}
       <div style={{ display:'flex', gap:20, padding:'6px 24px 12px',
