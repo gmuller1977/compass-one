@@ -943,10 +943,10 @@ export default function Planejamento() {
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                         padding:'8px 16px', background:'#f8faff',
                         borderBottom:`1px solid ${COR.borda}` }}>
-                        <span style={{ fontSize:11, color:COR.textoSuave, fontWeight:600 }}>
+                        <span style={{ fontSize:13, color:COR.textoSuave, fontWeight:400 }}>
                           Saldo Inicial{mi === 0 ? ' de Janeiro' : ` (Saldo Final de ${MESES[mi-1]})`}
                         </span>
-                        <span style={{ fontSize:12, fontWeight:700, color:corSaldo(si),
+                        <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si),
                           display:'flex', alignItems:'center', gap:6 }}>
                           {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                           {mesTemSaldoReal[mi] && (
@@ -958,8 +958,7 @@ export default function Planejamento() {
 
                       {/* ── ENTRADAS ── */}
                       <div style={{ borderBottom:`1px solid ${COR.borda}` }}>
-                        <div style={{ fontSize:11, fontWeight:700, color:'#166534',
-                          textTransform:'uppercase', letterSpacing:.6,
+                        <div style={{ fontSize:13, fontWeight:600, color:'#166534',
                           padding:'7px 16px', background:'#dcfce7',
                           borderBottom:'1px solid #bbf7d0', display:'flex',
                           alignItems:'center', justifyContent:'space-between' }}>
@@ -1075,8 +1074,7 @@ export default function Planejamento() {
 
                       {/* ── SAÍDAS ── */}
                       <div>
-                        <div style={{ fontSize:11, fontWeight:700, color:'#7f1d1d',
-                          textTransform:'uppercase', letterSpacing:.6,
+                        <div style={{ fontSize:13, fontWeight:600, color:'#7f1d1d',
                           padding:'7px 16px', background:'#fee2e2',
                           borderBottom:'1px solid #fecaca', display:'flex',
                           alignItems:'center', justifyContent:'space-between' }}>
@@ -1125,7 +1123,7 @@ export default function Planejamento() {
                                         {pctGrupo.toFixed(0)}% da entrada
                                       </span>
                                     )}
-                                    <span style={{ fontSize:11, fontWeight:700, color: totalGrupo > 0 ? COR.vermelho : COR.textoSuave }}>
+                                    <span style={{ fontSize:13, fontWeight:600, color: totalGrupo > 0 ? COR.vermelho : COR.textoSuave }}>
                                       {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                     </span>
                                   </div>
