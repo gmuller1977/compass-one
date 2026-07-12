@@ -1095,22 +1095,91 @@ export default function Planejamento() {
                             <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
                           </div>
                         )}
-                        {(aba === 'real' ? dadosBase.saidas : dadosAnoFinal.saidas).map((cat, ri) => {
+                        {aba === 'previsto' ? (() => {
+                          const saidasPlan = dadosAnoFinal.saidas
+                          const getGrupo = (cat: Cat) =>
+                            categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+                          const gruposUsados = new Set(saidasPlan.map(getGrupo))
+                          const gruposOrdenados = [
+                            ...GRUPOS_PADRAO.filter(g => gruposUsados.has(g)),
+                            ...Array.from(gruposUsados).filter(g => !GRUPOS_PADRAO.includes(g) && g !== '__sem_grupo__').sort(),
+                            ...(gruposUsados.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
+                          ]
+                          return gruposOrdenados.map(grupo => {
+                            const catsGrupo = saidasPlan.map((cat, idx) => ({ cat, ri: idx })).filter(({ cat }) => getGrupo(cat) === grupo)
+                            const totalGrupo = catsGrupo.reduce((s, { cat }) => s + cat.v[mi], 0)
+                            const pctGrupo = te > 0 ? (totalGrupo / te) * 100 : 0
+                            return (
+                              <div key={grupo} style={{ marginBottom:2 }}>
+                                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                                  padding:'5px 4px 3px', borderBottom:'1px solid #e8edf8', marginTop:6 }}>
+                                  <span style={{ fontSize:9, fontWeight:700, color:COR.azulEscuro,
+                                    textTransform:'uppercase', letterSpacing:.5 }}>
+                                    {grupo === '__sem_grupo__' ? 'Outras' : grupo}
+                                  </span>
+                                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                    {te > 0 && (
+                                      <span style={{ fontSize:9, color:COR.textoSuave }}>
+                                        {pctGrupo.toFixed(0)}% da entrada
+                                      </span>
+                                    )}
+                                    <span style={{ fontSize:11, fontWeight:700, color: totalGrupo > 0 ? COR.vermelho : COR.textoSuave }}>
+                                      {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                    </span>
+                                  </div>
+                                </div>
+                                {catsGrupo.map(({ cat, ri }) => {
+                                  const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                                  const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
+                                  const bm = tm ? BADGE_MOV[tm] : null
+                                  const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
+                                  return (
+                                    <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
+                                      padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
+                                      <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                        display:'flex', alignItems:'center', justifyContent:'center',
+                                        fontSize:12, flexShrink:0 }}>{icone}</div>
+                                      {bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                          width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                          background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                                      <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                        style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
+                                          cursor:'pointer', flexShrink:0, minWidth:140 }}
+                                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
+                                        {cat.nome}
+                                        {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                      </span>
+                                      {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
+                                      <div style={{ flex:1 }}/>
+                                      {!bloqueado && !ehFatura && (
+                                        <button onClick={() => replicarLinhaMes('s', ri, mi)}
+                                          title={`Replicar ${MESES[mi]} para todos os meses`}
+                                          style={{ border:'none', background:'#fee2e2', cursor:'pointer',
+                                            borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.vermelho,
+                                            fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
+                                            opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
+                                          →12
+                                        </button>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )
+                          })
+                        })() : dadosBase.saidas.map((cat, ri) => {
                           const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                           const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
                           const bm = tm ? BADGE_MOV[tm] : null
                           const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
-                          const previsto = aba === 'real'
-                            ? ((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
-                            : 0
+                          const previsto = (planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0
                           const totalCartaoConsolidado = ehFatura
                             ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((s, v) => s + v, 0)
                             : 0
-                          const lancado = aba === 'real'
-                            ? ehFatura
-                              ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + totalCartaoConsolidado
-                              : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
-                            : 0
+                          const lancado = ehFatura
+                            ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + totalCartaoConsolidado
+                            : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
                           const prevAbs = Math.abs(previsto)
                           const lancAbs = Math.abs(lancado)
                           const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
@@ -1121,14 +1190,10 @@ export default function Planejamento() {
                               <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                 display:'flex', alignItems:'center', justifyContent:'center',
                                 fontSize:12, flexShrink:0 }}>{icone}</div>
-                              {aba === 'real'
-                                ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                    background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
-                                    visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
-                                : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                    background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                              <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                  width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                  background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                  visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
                               <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
                                 style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
                                   cursor:'pointer', flexShrink:0, minWidth:140 }}
@@ -1137,49 +1202,30 @@ export default function Planejamento() {
                                 {cat.nome}
                                 {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
                               </span>
-                              {aba === 'real' ? (
-                                <>
-                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                    fontSize:12, color:COR.textoSuave }}>
-                                    {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
-                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                    fontSize:12, fontWeight:700,
-                                    color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
-                                    {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
-                                  <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
-                                    color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
-                                    {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
-                                  <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
-                                    <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
-                                      <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
-                                        background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
-                                        width:`${pct}%` }}/>
-                                    </div>
-                                    <span style={{ fontSize:10, color:COR.textoSuave,
-                                      minWidth:28, textAlign:'right', flexShrink:0 }}>
-                                      {Math.round(pct)}%
-                                    </span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
-                                  <div style={{ flex:1 }}/>
-                                  {!bloqueado && !ehFatura && (
-                                    <button onClick={() => replicarLinhaMes('s', ri, mi)}
-                                      title={`Replicar ${MESES[mi]} para todos os meses`}
-                                      style={{ border:'none', background:'#fee2e2', cursor:'pointer',
-                                        borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.vermelho,
-                                        fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
-                                        opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
-                                      →12
-                                    </button>
-                                  )}
-                                </>
-                              )}
+                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                fontSize:12, color:COR.textoSuave }}>
+                                {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </span>
+                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
+                                fontSize:12, fontWeight:700,
+                                color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
+                                {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </span>
+                              <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
+                                color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
+                                {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </span>
+                              <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
+                                <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
+                                  <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
+                                    background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
+                                    width:`${pct}%` }}/>
+                                </div>
+                                <span style={{ fontSize:10, color:COR.textoSuave,
+                                  minWidth:28, textAlign:'right', flexShrink:0 }}>
+                                  {Math.round(pct)}%
+                                </span>
+                              </div>
                             </div>
                           )
                         })}
