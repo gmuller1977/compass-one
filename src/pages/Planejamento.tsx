@@ -105,14 +105,15 @@ export default function Planejamento() {
   const [quizSaidas,       setQuizSaidas]      = useState<Record<string, string>>({})
 
   const quizGruposAtivos = useMemo(() => {
-    const saidas = categorias.filter(c => c.tipo === 'saida' && c.ativa)
+    const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
+    const saidas = categorias.filter(c => c.tipo === 'saida' && c.ativa && !nomeFaturaCartao(c.nome, cartNomes))
     const grupos: string[] = [
       ...GRUPOS_PADRAO.filter(g => saidas.some(c => c.grupo === g)),
       ...Array.from(new Set(saidas.map(c => c.grupo).filter((g): g is string => !!g && !GRUPOS_PADRAO.includes(g)))),
     ]
     if (saidas.some(c => !c.grupo)) grupos.push('__sem_grupo__')
     return grupos
-  }, [categorias])
+  }, [categorias, contas])
   const QUIZ_STEP_RESUMO = 4 + quizGruposAtivos.length
   const QUIZ_TOTAL      = QUIZ_STEP_RESUMO + 1
 
@@ -433,8 +434,17 @@ export default function Planejamento() {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
     const saidas = categorias
       .filter(c => c.tipo === 'saida' && c.ativa)
-      .map(c => ({ id: c.id, nome: c.nome, t: c.tipoMovimento,
-        v: Array.from({length:12}, (_,i) => (quizTodosMeses || i >= mesAtual) ? parseBRL(quizSaidas[c.id] ?? '0') : 0) }))
+      .map(c => {
+        const val = parseBRL(quizSaidas[c.id] ?? '0')
+        // Para cartão, estima mês anterior = mês atual para que a fatura do 1º mês não seja zero
+        const estimaMesAnterior = !quizTodosMeses && c.tipoMovimento === 'cartao' && mesAtual > 0
+        return { id: c.id, nome: c.nome, t: c.tipoMovimento,
+          v: Array.from({length:12}, (_,i) => {
+            if (quizTodosMeses || i >= mesAtual) return val
+            if (estimaMesAnterior && i === mesAtual - 1) return val
+            return 0
+          }) }
+      })
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
     setPlanos(prev => ({ ...prev, [anoAtual]: { saldoInicialJan: saldoIni, entradas, saidas } as PlanoAnoData }))
     setQuizAtivo(false)
@@ -1445,7 +1455,7 @@ export default function Planejamento() {
               {quizStep >= 4 && quizStep < QUIZ_STEP_RESUMO && (() => {
                 const grupoAtual = quizGruposAtivos[quizStep - 4]
                 const cats = categorias
-                  .filter(c => c.tipo==='saida' && c.ativa && (grupoAtual === '__sem_grupo__' ? !c.grupo : c.grupo === grupoAtual))
+                  .filter(c => c.tipo==='saida' && c.ativa && !nomeFaturaCartao(c.nome, cartaoNomes) && (grupoAtual === '__sem_grupo__' ? !c.grupo : c.grupo === grupoAtual))
                   .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
                 const totalEntradas   = Object.values(quizEntradas).reduce((s,v)=>s+parseBRL(v),0)
                 const totalSaidasTudo = Object.values(quizSaidas).reduce((s,v)=>s+parseBRL(v),0)
