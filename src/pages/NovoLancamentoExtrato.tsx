@@ -258,7 +258,7 @@ export default function NovoLancamentoExtrato() {
 
   useEffect(() => {
     if (eMesAtual)
-      setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
+      setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'start'}), 150)
     setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
   }, [contaId, mes, ano, modo])
 
