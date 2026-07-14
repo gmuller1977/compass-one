@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData } from '../context/AppContext'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
@@ -95,6 +95,11 @@ export default function Planejamento() {
   const [reajustePerc,     setReajustePerc]    = useState('0')
   const [mesesAbertos,     setMesesAbertos]    = useState<Set<number>>(() => new Set<number>())
   const [gruposAbertos,    setGruposAbertos]   = useState<Set<string>>(new Set())
+  const stickyRef      = useRef<HTMLDivElement>(null)
+  const mesRefs        = useRef<(HTMLDivElement | null)[]>([])
+  const prevMesesRef   = useRef<Set<number>>(new Set())
+  const mountedRef     = useRef(false)
+  const [stickyH, setStickyH] = useState(0)
   const [quizAtivo,        setQuizAtivo]       = useState(() => !planos[anoAtual])
   const [quizStep,         setQuizStep]        = useState(0)
   const [quizObjetivo,     setQuizObjetivo]    = useState('')
@@ -211,32 +216,42 @@ export default function Planejamento() {
     return result
   }, [contas, extratoData, anoAtual])
 
-  // Lançamentos reais somados por categoria e mês (para a aba Realizado)
+  // Lançamentos reais somados por categoria e mês (para a aba Realizado), separados por tipo
   const lancadoPorCatMes = useMemo(() => {
-    const result: Record<number, Record<string, number>> = {}
+    const result: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }> = {}
     for (let mes = 0; mes < 12; mes++) {
-      result[mes] = {}
-      contas.forEach(conta => {
-        const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
-        const dados = extratoData[key]
-        if (!dados) return
+      result[mes] = { entrada: {}, saida: {} }
+      const mesStr = String(mes + 1).padStart(2, '0')
+      const sufixo = `-${anoAtual}-${mesStr}`
+
+      // Percorre TODOS os keys do extratoData (banco, cartão e dinheiro)
+      Object.entries(extratoData).forEach(([key, dados]) => {
+        if (!key.endsWith(sufixo)) return
+
+        // Lançamentos variáveis — separados por tipo
         Object.values(dados.lancamentos).flat().forEach(l => {
-          result[mes][l.categoria] = (result[mes][l.categoria] ?? 0) + l.valor
+          result[mes][l.tipo][l.categoria] = (result[mes][l.tipo][l.categoria] ?? 0) + l.valor
         })
-        // Fixas consolidadas também contam
+
+        // Fixas consolidadas — usa tipo da própria categoria
+        // Ignora chaves de cartão (evita duplicidade com fatura)
         if (dados.fixasConsolidadas) {
-          const fixasAtivas = categorias.filter(c => c.fixa && c.ativa && conta.tipo !== 'cartao')
-          fixasAtivas.forEach(f => {
-            if (dados.fixasConsolidadas?.[f.id]) {
-              const val = dados.fixasValorOverride?.[f.id] ?? 0
-              result[mes][f.nome] = (result[mes][f.nome] ?? 0) + val
-            }
-          })
+          const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
+          if (!ehCartaoKey) {
+            categorias.filter(c => c.fixa && c.ativa).forEach(f => {
+              if (!dados.fixasConsolidadas?.[f.id]) return
+              const planCats = f.tipo === 'entrada'
+                ? (planos[anoAtual] as PlanoAnoData | undefined)?.entradas
+                : (planos[anoAtual] as PlanoAnoData | undefined)?.saidas
+              const planVal = planCats?.find(c => c.nome === f.nome)?.v[mes] ?? 0
+              result[mes][f.tipo][f.nome] = (result[mes][f.tipo][f.nome] ?? 0) + (dados.fixasValorOverride?.[f.id] ?? planVal)
+            })
+          }
         }
       })
     }
     return result
-  }, [contas, categorias, extratoData, anoAtual])
+  }, [contas, categorias, extratoData, anoAtual, planos])
 
   const saldoInicialReal = useMemo(() => {
     if (aba !== 'real') return saldoInicial
@@ -270,21 +285,33 @@ export default function Planejamento() {
     const te = new Array(12).fill(0)
     const ts = new Array(12).fill(0)
     for (let mes = 0; mes < 12; mes++) {
-      contas.filter(c => c.tipo !== 'cartao').forEach(conta => {
-        const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
-        const dados = extratoData[key]
-        if (!dados) return
+      const mesStr = String(mes + 1).padStart(2, '0')
+      const sufixo = `-${anoAtual}-${mesStr}`
+
+      // Percorre TODOS os keys (banco + dinheiro), ignora cartão (tratado via fatura abaixo)
+      Object.entries(extratoData).forEach(([key, dados]) => {
+        if (!key.endsWith(sufixo)) return
+        const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
+        if (ehCartaoKey) return
+
         Object.values(dados.lancamentos).flat().forEach((l: { tipo: string; valor: number }) => {
           if (l.tipo === 'entrada') te[mes] += l.valor
           else ts[mes] += l.valor
         })
+
         if (dados.fixasConsolidadas) {
           categorias.filter(c => c.fixa && c.ativa).forEach(f => {
             if (!dados.fixasConsolidadas?.[f.id]) return
-            const val = dados.fixasValorOverride?.[f.id] ?? 0
+            const planCats = f.tipo === 'entrada'
+              ? (planos[anoAtual] as PlanoAnoData | undefined)?.entradas
+              : (planos[anoAtual] as PlanoAnoData | undefined)?.saidas
+            const planVal = planCats?.find(c => c.nome === f.nome)?.v[mes] ?? 0
+            const val = dados.fixasValorOverride?.[f.id] ?? planVal
             if (f.tipo === 'entrada') te[mes] += val
             else ts[mes] += val
           })
+
+          // Faturas de cartão consolidadas
           Object.entries(dados.fixasConsolidadas).forEach(([fixaId, consolidada]) => {
             if (!consolidada || !fixaId.startsWith('cartao-')) return
             const cardId = fixaId.replace('cartao-', '')
@@ -293,7 +320,7 @@ export default function Planejamento() {
             if (overrideVal !== undefined) {
               val = overrideVal
             } else {
-              const fatKey = `${cardId}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
+              const fatKey = `${cardId}-${anoAtual}-${mesStr}`
               const dm = fatDados[fatKey]
               if (dm) {
                 const nDias = new Date(anoAtual, mes + 1, 0).getDate()
@@ -310,7 +337,7 @@ export default function Planejamento() {
       })
     }
     return { te, ts }
-  }, [contas, categorias, extratoData, anoAtual])
+  }, [contas, categorias, extratoData, anoAtual, planos])
 
   const saldoFinalReal = useMemo(() =>
     Array.from({ length: 12 }, (_, mi) => saldoInicialReal[mi] + totaisReais.te[mi] - totaisReais.ts[mi])
@@ -438,11 +465,29 @@ export default function Planejamento() {
     setQuizAtivo(false)
   }
 
+  useLayoutEffect(() => {
+    const h = stickyRef.current?.getBoundingClientRect().height ?? 0
+    setStickyH(prev => prev !== h ? h : prev)
+    if (!mountedRef.current) { mountedRef.current = true; prevMesesRef.current = new Set(mesesAbertos); return }
+    const prev = prevMesesRef.current
+    let newlyOpened: number | undefined
+    for (const m of mesesAbertos) {
+      if (!prev.has(m)) { newlyOpened = m; break }
+    }
+    prevMesesRef.current = new Set(mesesAbertos)
+    if (newlyOpened === undefined) return
+    const el = mesRefs.current[newlyOpened]
+    const sticky = stickyRef.current
+    if (!el || !sticky) return
+    const top = el.getBoundingClientRect().top + window.scrollY - h - 8
+    window.scrollTo({ top, behavior: 'smooth' })
+  }, [mesesAbertos])
+
   function toggleMes(i: number) {
     setMesesAbertos(prev => {
-      const next = new Set(prev)
-      if (next.has(i)) next.delete(i); else { next.add(i); setSaldoAberto(false) }
-      return next
+      if (prev.has(i)) return new Set<number>()
+      setSaldoAberto(false)
+      return new Set<number>([i])
     })
   }
   function toggleGrupo(mi: number, grupo: string) {
@@ -526,9 +571,10 @@ export default function Planejamento() {
     <div style={{ minHeight:'100vh', background:COR.fundo,
       fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
+      {/* ── CABEÇALHO STICKY COMPLETO (menu + título + abas + cards) ── */}
+      <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.fundo }}>
       <AppHeader currentPath="/planejamento" />
-
-      <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 40px' }}>
+      <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 8px' }}>
 
       {/* TÍTULO + NAVEGAÇÃO DE ANO */}
       <div style={{ padding:'14px 0 6px',
@@ -625,19 +671,28 @@ export default function Planejamento() {
         </div>
       )}
 
-      {/* SUMÁRIO ANUAL */}
+      {/* SUMÁRIO — anual ou do mês aberto */}
       {(aba === 'previsto' || realExiste) && (() => {
-        const totalE    = aba === 'real' ? totaisReais.te.reduce((a, b) => a + b, 0) : totalEntradas.reduce((a, b) => a + b, 0)
-        const totalS    = aba === 'real' ? totaisReais.ts.reduce((a, b) => a + b, 0) : totalSaidas.reduce((a, b) => a + b, 0)
-        const sfDez     = aba === 'real' ? saldoFinalReal[11] : saldoFinal[11]
+        const mesFoco   = mesesAbertos.size === 1 ? Array.from(mesesAbertos)[0] : null
+        const isMes     = mesFoco !== null
+        const sufixo    = isMes ? MESES[mesFoco] : 'anual'
+        const totalE    = isMes
+          ? (aba === 'real' ? totaisReais.te[mesFoco] : totalEntradas[mesFoco])
+          : (aba === 'real' ? totaisReais.te.reduce((a,b)=>a+b,0) : totalEntradas.reduce((a,b)=>a+b,0))
+        const totalS    = isMes
+          ? (aba === 'real' ? totaisReais.ts[mesFoco] : totalSaidas[mesFoco])
+          : (aba === 'real' ? totaisReais.ts.reduce((a,b)=>a+b,0) : totalSaidas.reduce((a,b)=>a+b,0))
+        const sfRef     = isMes
+          ? (aba === 'real' ? saldoFinalReal[mesFoco] : saldoFinal[mesFoco])
+          : (aba === 'real' ? saldoFinalReal[11] : saldoFinal[11])
         const resultado = totalE - totalS
         const metaAnual = (planos[anoAtual] as PlanoAnoData | undefined)?.metaAnual ?? 0
-        const metaPct   = metaAnual > 0 ? Math.min(100, Math.max(0, (sfDez / metaAnual) * 100)) : 0
-        const metaOk    = sfDez >= metaAnual && metaAnual > 0
+        const metaPct   = metaAnual > 0 ? Math.min(100, Math.max(0, (sfRef / metaAnual) * 100)) : 0
+        const metaOk    = sfRef >= metaAnual && metaAnual > 0
         const fixos = [
-          { label:'Entrada anual',  valor:totalE,   cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
-          { label:'Saída anual',    valor:totalS,   cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
-          { label:'Resultado',      valor:resultado,
+          { label:`↑ Entrada ${sufixo}`,  valor:totalE,   cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
+          { label:`↓ Saída ${sufixo}`,    valor:totalS,   cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
+          { label:`Resultado ${sufixo}`,  valor:resultado,
             cor:   resultado >= 0 ? '#16a34a' : COR.vermelho,
             bg:    resultado >= 0 ? '#f0fdf4' : '#fff5f5',
             borda: resultado >= 0 ? '#bbf7d0' : '#fecaca', icon: resultado >= 0 ? '↗' : '↘' },
@@ -658,8 +713,45 @@ export default function Planejamento() {
               </div>
             ))}
 
-            {/* Card 4: Meta do ano (se definida) ou Saldo dezembro */}
-            {metaAnual > 0 ? (
+            {/* Card 4: mês aberto → Saldo final mês | anual → Meta ou Saldo dez */}
+            {isMes ? (
+              metaAnual > 0 ? (() => {
+                const mesesComDados = Array.from({length:12}, (_,m) => totalEntradas[m] > 0 || totalSaidas[m] > 0).filter(Boolean).length
+                const metaMes = metaAnual / (mesesComDados || 12)
+                const resultado = totalE - totalS
+                const metaOkMes = resultado >= metaMes
+                return (
+                  <div style={{ flex:1, background: metaOkMes ? '#f0fdf4' : '#faf5ff',
+                    border:`1.5px solid ${metaOkMes ? '#bbf7d0' : '#ddd6fe'}`,
+                    borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                    <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase',
+                      letterSpacing:.5, marginBottom:4, display:'flex', alignItems:'center', gap:4,
+                      color: metaOkMes ? '#16a34a' : '#7c3aed' }}>
+                      <span style={{ fontSize:13 }}>{metaOkMes ? '✓' : '◎'}</span> Meta {MESES[mesFoco!]}
+                    </div>
+                    <div style={{ fontSize:16, fontWeight:700, color: metaOkMes ? '#16a34a' : '#7c3aed' }}>
+                      {metaMes.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    </div>
+                    <div style={{ fontSize:10, color: metaOkMes ? '#16a34a' : '#7c3aed', marginTop:2 }}>
+                      resultado: {resultado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    </div>
+                  </div>
+                )
+              })() : (
+                <div style={{ flex:1, background: sfRef >= 0 ? '#f0fdf4' : '#fff5f5',
+                  border:`1.5px solid ${sfRef >= 0 ? '#bbf7d0' : '#fecaca'}`,
+                  borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
+                    textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
+                    display:'flex', alignItems:'center', gap:4 }}>
+                    <span style={{ fontSize:13, color:corSaldo(sfRef) }}>◎</span> Saldo {MESES[mesFoco!]}
+                  </div>
+                  <div style={{ fontSize:16, fontWeight:700, color:corSaldo(sfRef) }}>
+                    {sfRef.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                  </div>
+                </div>
+              )
+            ) : metaAnual > 0 ? (
               <div
                 onClick={() => { if (!editandoMeta) { setEditandoMeta(true); setMetaTemp(metaAnual.toLocaleString('pt-BR',{minimumFractionDigits:2})) } }}
                 style={{ flex:1, background: metaOk ? '#f0fdf4' : '#faf5ff',
@@ -672,7 +764,7 @@ export default function Planejamento() {
                   <span style={{ fontSize:13 }}>{metaOk ? '✓' : '◎'}</span> Meta do ano
                 </div>
                 <div style={{ fontSize:16, fontWeight:700, color: metaOk ? '#16a34a' : '#7c3aed', marginBottom:5 }}>
-                  {sfDez.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                  {sfRef.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                 </div>
                 <div style={{ height:4, background: metaOk ? '#bbf7d0' : '#ede9fe', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
                   <div style={{ height:'100%', borderRadius:2, transition:'width .4s',
@@ -702,14 +794,14 @@ export default function Planejamento() {
             ) : (
               <div
                 onClick={() => { setEditandoMeta(true); setMetaTemp('') }}
-                style={{ flex:1, background: sfDez >= 0 ? '#eff6ff' : '#fff5f5',
-                  border:`1.5px solid ${sfDez >= 0 ? '#bfdbfe' : '#fecaca'}`,
+                style={{ flex:1, background: sfRef >= 0 ? '#eff6ff' : '#fff5f5',
+                  border:`1.5px solid ${sfRef >= 0 ? '#bfdbfe' : '#fecaca'}`,
                   borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)',
                   cursor:'pointer' }}>
                 <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
                   textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
                   display:'flex', alignItems:'center', gap:4 }}>
-                  <span style={{ fontSize:13, color:corSaldo(sfDez) }}>◎</span> Saldo dezembro
+                  <span style={{ fontSize:13, color:corSaldo(sfRef) }}>◎</span> Saldo dezembro
                 </div>
                 {editandoMeta ? (
                   <input autoFocus value={metaTemp}
@@ -730,7 +822,7 @@ export default function Planejamento() {
                 ) : (
                   <>
                     <div style={{ fontSize:16, fontWeight:700, color:corSaldo(sfDez) }}>
-                      {sfDez.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                      {sfRef.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                     </div>
                     <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
                       Clique para definir meta
@@ -743,6 +835,10 @@ export default function Planejamento() {
         )
       })()}
 
+      </div>{/* fecha maxWidth sticky */}
+      </div>{/* fim sticky */}
+
+      <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 40px' }}>
       {/* ÁREA PRINCIPAL: accordion de meses */}
       <div style={{ padding:'0 0 8px' }}>
 
@@ -866,13 +962,16 @@ export default function Planejamento() {
               const bordaHeader = ehAtual ? COR.azul : COR.borda
 
               return (
-                <div key={mi} style={{ borderRadius:12,
-                  border:`1.5px solid ${aberto ? bordaHeader : COR.borda}`,
-                  transition:'border-color .15s', background:COR.branco }}>
+                <div key={mi} ref={el => { mesRefs.current[mi] = el }} style={{ borderRadius:12,
+                  borderTop:`1.5px solid ${aberto ? bordaHeader : COR.borda}`,
+                  borderRight:`1.5px solid ${aberto ? bordaHeader : COR.borda}`,
+                  borderBottom:`1.5px solid ${aberto ? bordaHeader : COR.borda}`,
+                  borderLeft: aberto ? `4px solid ${ehAtual ? COR.azul : '#64748b'}` : `1.5px solid ${COR.borda}`,
+                  transition:'border-color .15s, border-left-width .15s', background:COR.branco }}>
 
                   {/* ── CABEÇALHO DO MÊS (sticky) ── */}
                   <div onClick={() => toggleMes(mi)}
-                    style={{ position:'sticky', top:0, zIndex:10,
+                    style={{ position:'sticky', top: stickyH, zIndex:10,
                       display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
                       cursor:'pointer',
                       background: ehAtual ? '#dbeafe' : COR.branco,
@@ -895,78 +994,15 @@ export default function Planejamento() {
                     </div>
 
                     {aberto ? (
-                      /* ── ABERTO: boxes completos ── */
-                      <div style={{ flex:1, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-
-                        {/* Entradas */}
-                        {(() => { const usaCinza = aba==='real' && !temReal; const cor = usaCinza ? cinza.txt : '#16a34a'; return (
-                          <div style={{ background: usaCinza ? cinza.bg : '#f0fdf4', border:`1px solid ${usaCinza ? cinza.bd : '#bbf7d0'}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                            <div style={{ fontSize:9, color:cor, fontWeight:700,
-                              textTransform:'uppercase', letterSpacing:.4 }}>Entradas</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:cor, whiteSpace:'nowrap', marginTop:1 }}>
-                              {te === 0 ? '—' : te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          </div>
-                        )})()}
-
-                        {/* Saídas */}
-                        {(() => { const usaCinza = aba==='real' && !temReal; const cor = usaCinza ? cinza.txt : COR.vermelho; return (
-                          <div style={{ background: usaCinza ? cinza.bg : '#fff5f5', border:`1px solid ${usaCinza ? cinza.bd : '#fecaca'}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                            <div style={{ fontSize:9, color:cor, fontWeight:700,
-                              textTransform:'uppercase', letterSpacing:.4 }}>Saídas</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:cor, whiteSpace:'nowrap', marginTop:1 }}>
-                              {ts === 0 ? '—' : ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          </div>
-                        )})()}
-
-                        {/* Saldo Final */}
-                        {(() => { const usaCinza = aba==='real' && !temReal; const c = usaCinza ? cinza : { bg: sf<0?'#fff5f5':sf<1000?'#fffbeb':'#f0fdf4', bd: sf<0?'#fecaca':sf<1000?'#fde68a':'#bbf7d0', txt: corSaldo(sf) }; return (
-                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                              letterSpacing:.4, color:c.txt }}>Saldo Final</div>
-                            <div style={{ fontSize:13, fontWeight:700, whiteSpace:'nowrap', marginTop:1, color:c.txt }}>
-                              {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          </div>
-                        )})()}
-                      </div>
+                      <div style={{ flex:1 }}/>
                     ) : (
-                      /* ── FECHADO: saldo inicial · movimentação · saldo final (caixas) ── */
-                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, justifyContent:'flex-end' }}>
-                        {(() => { const c = (aba==='real' && !temReal) ? cinza : caixaCor(si); return (
-                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                              letterSpacing:.4, color:c.txt }}>Saldo Inicial</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
-                              {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          </div>
-                        )})()}
-                        {(() => { const mov = te-ts; const c = (aba==='real' && !temReal) ? cinza : caixaCor(mov); return (
-                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                              letterSpacing:.4, color:c.txt }}>Movimentação</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
-                              {mov >= 0 ? '+' : ''}{mov.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          </div>
-                        )})()}
-                        {(() => { const c = (aba==='real' && !temReal) ? cinza : caixaCor(sf); return (
-                          <div style={{ background:c.bg, border:`1px solid ${c.bd}`,
-                            borderRadius:8, padding:'6px 14px', minWidth:110 }}>
-                            <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase',
-                              letterSpacing:.4, color:c.txt }}>Saldo Final</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:c.txt, marginTop:1 }}>
-                              {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                            </div>
-                          </div>
-                        )})()}
+                      /* ── FECHADO: apenas saldo final ── */
+                      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:6 }}>
+                        <span style={{ fontSize:11, color:COR.textoSuave }}>Saldo Final</span>
+                        <span style={{ fontSize:14, fontWeight:700,
+                          color: ((aba==='real' && !temReal) ? cinza : caixaCor(sf)).txt }}>
+                          {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -975,15 +1011,13 @@ export default function Planejamento() {
                   {aberto && (
                     <div style={{ borderTop:`1px solid ${COR.borda}` }}>
 
-                      {/* Saldo Inicial do mês */}
+                      {/* Saldo Inicial */}
                       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                        padding:'8px 16px', background:'#f8faff',
-                        borderBottom:`1px solid ${COR.borda}` }}>
-                        <span style={{ fontSize:13, color:COR.textoSuave, fontWeight:400 }}>
+                        padding:'8px 16px', background:'#f8faff', borderBottom:`1px solid ${COR.borda}` }}>
+                        <span style={{ fontSize:13, color:COR.textoSuave }}>
                           Saldo Inicial{mi === 0 ? ' de Janeiro' : ` (Saldo Final de ${MESES[mi-1]})`}
                         </span>
-                        <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si),
-                          display:'flex', alignItems:'center', gap:6 }}>
+                        <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si), display:'flex', alignItems:'center', gap:6 }}>
                           {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                           {mesTemSaldoReal[mi] && (
                             <span style={{ fontSize:10, background:'#f0fdf4', color:'#16a34a',
@@ -1012,96 +1046,134 @@ export default function Planejamento() {
                           <span>{te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
                         </div>
                         {entradasAberto && <div style={{ padding:'4px 16px 0' }}>
-                        {aba === 'real' && (
-                          <div style={{ display:'flex', alignItems:'center', gap:8,
-                            padding:'4px 0 2px', fontSize:9, fontWeight:700,
-                            color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
-                            <div style={{ width:22, flexShrink:0 }}/>
-                            <div style={{ width:16, flexShrink:0 }}/>
-                            <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
-                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
-                            <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                            <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Saldo</div>
-                            <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
-                          </div>
-                        )}
-                        {(aba === 'real' ? dadosBase.entradas : dadosAno.entradas).map((cat, ri) => {
-                          const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                          const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
-                          const bm = tm ? BADGE_MOV[tm] : null
-                          const previsto = aba === 'real'
-                            ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
-                            : 0
-                          const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) : 0
-                          const pct = previsto > 0 ? Math.min(100, (lancado / previsto) * 100) : (lancado > 0 ? 100 : 0)
-                          const saldo = lancado - previsto
-                          return (
-                            <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
-                              padding:'5px 0', borderBottom:'1px solid #f8faff' }}>
-                              <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
-                                display:'flex', alignItems:'center', justifyContent:'center',
-                                fontSize:12, flexShrink:0 }}>{icone}</div>
-                              {aba === 'real'
-                                ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                    background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
-                                    visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
-                                : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                    width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                    background:bm.bg, color:bm.cor }}>{bm.label}</span>}
-                              <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
-                                style={{ fontSize:13, color:COR.texto, cursor:'pointer',
-                                  textDecoration:'none', minWidth:140, flexShrink:0 }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
-                                {cat.nome}
-                              </span>
-                              {aba === 'real' ? (
-                                <>
-                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                    fontSize:12, color:COR.textoSuave }}>
-                                    {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
-                                  <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                    fontSize:12, fontWeight:700,
-                                    color: lancado >= previsto && previsto > 0 ? '#16a34a' : lancado > 0 ? COR.azul : COR.textoSuave }}>
-                                    {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
-                                  <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
-                                    color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
-                                    {(previsto > 0 || lancado > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
-                                  <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
-                                    <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
-                                      <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
-                                        background: pct >= 100 ? '#16a34a' : pct >= 60 ? COR.azul : '#94a3b8',
-                                        width:`${pct}%` }}/>
-                                    </div>
-                                    <span style={{ fontSize:10, color:COR.textoSuave,
-                                      minWidth:28, textAlign:'right', flexShrink:0 }}>
-                                      {Math.round(pct)}%
+                        {(() => {
+                          const entradasData = aba === 'real' ? dadosBase.entradas : dadosAno.entradas
+                          const getGrupoE = (cat: Cat) =>
+                            categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')?.grupo ?? '__sem_grupo__'
+                          const gruposUsadosE = new Set(entradasData.map(getGrupoE))
+                          const gruposOrdenadosE = [
+                            ...GRUPOS_PADRAO.filter(g => gruposUsadosE.has(g)),
+                            ...Array.from(gruposUsadosE).filter(g => !GRUPOS_PADRAO.includes(g) && g !== '__sem_grupo__').sort(),
+                            ...(gruposUsadosE.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
+                          ]
+                          return gruposOrdenadosE.map(grupo => {
+                            const catsGrupo = entradasData.map((cat, idx) => ({ cat, ri: idx })).filter(({ cat }) => getGrupoE(cat) === grupo)
+                            const totalGrupo = aba === 'real'
+                              ? catsGrupo.reduce((s, { cat }) => s + (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0), 0)
+                              : catsGrupo.reduce((s, { cat }) => s + cat.v[mi], 0)
+                            const grupoAberto = gruposAbertos.has(`${mi}-E-${grupo}`)
+                            return (
+                              <div key={grupo} style={{ marginBottom:2 }}>
+                                <div onClick={() => toggleGrupo(mi, `E-${grupo}`)}
+                                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                                    padding:'6px 4px', borderBottom:'1px solid #e8f5e9', marginTop:6,
+                                    cursor:'pointer', userSelect:'none' }}>
+                                  <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                    <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
+                                      transform: grupoAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                                    <span style={{ fontSize:11, fontWeight:700, color:'#166534',
+                                      textTransform:'uppercase', letterSpacing:.5 }}>
+                                      {grupo === '__sem_grupo__' ? 'Outras' : grupo}
                                     </span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div style={{ flex:1 }}/>
-                                  {renderValor('e', ri, mi, cat.v[mi])}
-                                  {!bloqueado && (
-                                    <button onClick={() => replicarLinhaMes('e', ri, mi)}
-                                      title={`Replicar ${MESES[mi]} para todos os meses`}
-                                      style={{ border:'none', background:'#dbeafe', cursor:'pointer',
-                                        borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
-                                        fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
-                                        opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
-                                      →12
-                                    </button>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          )
-                        })}
+                                  </span>
+                                  <span style={{ fontSize:13, fontWeight:600, color: totalGrupo > 0 ? '#16a34a' : COR.textoSuave }}>
+                                    {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  </span>
+                                </div>
+                                {grupoAberto && (
+                                  <>
+                                    {aba === 'real' && (
+                                      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'4px 0 2px', fontSize:9,
+                                        fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
+                                        <div style={{ width:22, flexShrink:0 }}/>
+                                        <div style={{ width:16, flexShrink:0 }}/>
+                                        <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
+                                        <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
+                                        <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
+                                        <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Disponível</div>
+                                        <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
+                                      </div>
+                                    )}
+                                    {catsGrupo.map(({ cat, ri }) => {
+                                      const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                                      const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
+                                      const bm = tm ? BADGE_MOV[tm] : null
+                                      const previsto = aba === 'real'
+                                        ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
+                                        : 0
+                                      const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0) : 0
+                                      const pct = previsto > 0 ? Math.min(100, (lancado / previsto) * 100) : (lancado > 0 ? 100 : 0)
+                                      const saldo = lancado - previsto
+                                      return (
+                                        <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
+                                          padding:'5px 0', borderBottom:'1px solid #f0fdf4' }}>
+                                          <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                            display:'flex', alignItems:'center', justifyContent:'center',
+                                            fontSize:12, flexShrink:0 }}>{icone}</div>
+                                          {aba === 'real'
+                                            ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                                width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                                background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                                visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
+                                            : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                                width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                                background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                                          <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                            style={{ fontSize:13, color:COR.texto, cursor:'pointer',
+                                              textDecoration:'none', minWidth:140, flexShrink:0 }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
+                                            {cat.nome}
+                                          </span>
+                                          {aba === 'real' ? (
+                                            <>
+                                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0, fontSize:12, color:COR.textoSuave }}>
+                                                {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                              </span>
+                                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
+                                                color: lancado >= previsto && previsto > 0 ? '#16a34a' : lancado > 0 ? COR.azul : COR.textoSuave }}>
+                                                {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                              </span>
+                                              <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
+                                                color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
+                                                {(previsto > 0 || lancado > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                              </span>
+                                              <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
+                                                <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
+                                                  <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
+                                                    background: pct >= 100 ? '#16a34a' : pct >= 60 ? COR.azul : '#94a3b8',
+                                                    width:`${pct}%` }}/>
+                                                </div>
+                                                <span style={{ fontSize:10, color:COR.textoSuave, minWidth:28, textAlign:'right', flexShrink:0 }}>
+                                                  {Math.round(pct)}%
+                                                </span>
+                                              </div>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <div style={{ flex:1 }}/>
+                                              {renderValor('e', ri, mi, cat.v[mi])}
+                                              {!bloqueado && (
+                                                <button onClick={() => replicarLinhaMes('e', ri, mi)}
+                                                  title={`Replicar ${MESES[mi]} para todos os meses`}
+                                                  style={{ border:'none', background:'#dbeafe', cursor:'pointer',
+                                                    borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
+                                                    fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
+                                                    opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
+                                                  →12
+                                                </button>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </>
+                                )}
+                              </div>
+                            )
+                          })
+                        })()}
                         {dadosAno.entradas.length === 0 && (
                           <div style={{ fontSize:12, color:COR.textoSuave, padding:'8px 0' }}>
                             Nenhuma categoria de entrada.
@@ -1121,12 +1193,21 @@ export default function Planejamento() {
                       })()}
 
                       {/* ── SAÍDAS ── */}
+                      {(() => {
+                        const saidasAberto = gruposAbertos.has(`${mi}-__saidas__`)
+                        return (
                       <div>
-                        <div style={{ fontSize:13, fontWeight:600, color:'#7f1d1d',
+                        <div onClick={() => toggleGrupo(mi, '__saidas__')}
+                          style={{ fontSize:13, fontWeight:600, color:'#7f1d1d',
                           padding:'7px 16px', background:'#fee2e2',
-                          borderBottom:'1px solid #fecaca', display:'flex',
-                          alignItems:'center', justifyContent:'space-between' }}>
-                          <span>↓ Saídas</span>
+                          borderBottom: saidasAberto ? '1px solid #fecaca' : 'none', display:'flex',
+                          alignItems:'center', justifyContent:'space-between',
+                          cursor:'pointer', userSelect:'none' }}>
+                          <span style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
+                              transform: saidasAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
+                            ↓ Saídas
+                          </span>
                           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                             {te > 0 && ts > 0 && (
                               <span style={{ fontSize:12, fontWeight:400, color:'#b91c1c' }}>
@@ -1136,7 +1217,7 @@ export default function Planejamento() {
                             <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
                           </div>
                         </div>
-                        <div style={{ padding:'4px 16px 0' }}>
+                        {saidasAberto && <div style={{ padding:'4px 16px 0' }}>
                         {aba === 'previsto' ? (() => {
                           const saidasPlan = dadosAnoFinal.saidas
                           const getGrupo = (cat: Cat) =>
@@ -1180,7 +1261,7 @@ export default function Planejamento() {
                                 </div>
                                 {grupoAberto && catsGrupo.map(({ cat, ri }) => {
                                   const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                                  const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
+                                  const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'saida') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
                                   const bm = tm ? BADGE_MOV[tm] : null
                                   const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
                                   return (
@@ -1233,7 +1314,7 @@ export default function Planejamento() {
                             const totalLancGrupo = catsGrupoR.reduce((s, { cat }) => {
                               const ehF = nomeFaturaCartao(cat.nome, cartaoNomes)
                               const tc = ehF ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0) : 0
-                              return s + Math.abs(ehF ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + tc : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0))
+                              return s + Math.abs(ehF ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + tc : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0))
                             }, 0)
                             const pctGrupoR = te > 0 ? (totalLancGrupo / te) * 100 : 0
                             const grupoAberto = gruposAbertos.has(`${mi}-${grupo}`)
@@ -1273,12 +1354,12 @@ export default function Planejamento() {
                                       <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
                                       <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
                                       <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                                      <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Saldo</div>
+                                      <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Disponível</div>
                                       <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
                                     </div>
                                     {catsGrupoR.map(({ cat, ri }) => {
                                       const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                                      const tm = categorias.find(c => c.nome === cat.nome)?.tipoMovimento ?? cat.t
+                                      const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'saida') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
                                       const bm = tm ? BADGE_MOV[tm] : null
                                       const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
                                       const previsto = (planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0
@@ -1286,8 +1367,8 @@ export default function Planejamento() {
                                         ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0)
                                         : 0
                                       const lancado = ehFatura
-                                        ? (lancadoPorCatMes[mi]?.[cat.nome] ?? 0) + totalCartaoConsolidado
-                                        : (lancadoPorCatMes[mi]?.[cat.nome] ?? 0)
+                                        ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + totalCartaoConsolidado
+                                        : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
                                       const prevAbs = Math.abs(previsto)
                                       const lancAbs = Math.abs(lancado)
                                       const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
@@ -1356,7 +1437,18 @@ export default function Planejamento() {
                             + Categoria de saída
                           </button>
                         </div>
-                        </div>{/* fecha padding interno */}
+                        </div>}{/* fecha padding interno saidas */}
+                      </div>
+                        )
+                      })()}
+
+                      {/* Saldo Final */}
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                        padding:'8px 16px', borderTop:`1px solid ${COR.borda}`, background:'#f8faff' }}>
+                        <span style={{ fontSize:13, color:COR.textoSuave }}>Saldo Final</span>
+                        <span style={{ fontSize:13, fontWeight:600, color:corSaldo(sf) }}>
+                          {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                        </span>
                       </div>
 
                     </div>
@@ -1364,6 +1456,7 @@ export default function Planejamento() {
                 </div>
               )
             })}
+            <div style={{ height: 600, flexShrink: 0 }} />
           </div>
         )}
       </div>

@@ -316,6 +316,14 @@ export default function ExtratoConsolidado() {
   const saldoTotal = saldosPorConta.reduce((s, x) => s + x.saldo, 0) + saldoDinheiro
   const saldoDisponivel = saldoBase + entradasConf - saidasConf
 
+  const { planEntradas, planSaidas } = useMemo(() => {
+    const planoAno = planos[ano]
+    if (!planoAno) return { planEntradas: 0, planSaidas: 0 }
+    const pe = planoAno.entradas.reduce((s, c) => s + (c.v[mes] ?? 0), 0)
+    const ps = planoAno.saidas.reduce((s, c) => s + (c.v[mes] ?? 0), 0)
+    return { planEntradas: pe, planSaidas: ps }
+  }, [planos, ano, mes])
+
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
@@ -367,7 +375,43 @@ export default function ExtratoConsolidado() {
           </div>
         </div>
 
-        {/* Linha 2: pills por conta */}
+        {/* Linha 2: resumo entradas / saídas do mês */}
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
+          {[
+            { label:'↑ Entradas', valor: entradasConf, plan: planEntradas, cor: '#16a34a', bg:'#f0fdf4', borda:'#bbf7d0' },
+            { label:'↓ Saídas',   valor: saidasConf,  plan: planSaidas,   cor: COR.vermelho, bg:'#fff5f5', borda:'#fecaca' },
+          ].map(({ label, valor, plan, cor, bg, borda }) => {
+            const diff  = valor - plan
+            const pct   = plan > 0 ? Math.round((valor / plan) * 100) : null
+            return (
+              <div key={label} style={{ display:'flex', alignItems:'center', gap:8,
+                background: bg, border:`1px solid ${borda}`, borderRadius:8,
+                padding:'6px 14px' }}>
+                <span style={{ fontSize:12, fontWeight:600, color: cor }}>{label}</span>
+                <span style={{ fontSize:15, fontWeight:800, color: cor }}>{fmt(valor)}</span>
+                {plan > 0 && (
+                  <span style={{ fontSize:11, color:'#94a3b8' }}>
+                    / {fmt(plan)}
+                    {pct !== null && (
+                      <span style={{ marginLeft:4, fontWeight:700,
+                        color: label.startsWith('↑') ? (pct >= 100 ? '#16a34a' : '#f59e0b') : (pct <= 100 ? '#16a34a' : COR.vermelho) }}>
+                        ({pct}%)
+                      </span>
+                    )}
+                  </span>
+                )}
+                {plan > 0 && (
+                  <span style={{ fontSize:11, fontWeight:600,
+                    color: diff === 0 ? '#94a3b8' : label.startsWith('↑') ? (diff > 0 ? '#16a34a' : COR.vermelho) : (diff < 0 ? '#16a34a' : COR.vermelho) }}>
+                    {diff > 0 ? '+' : ''}{fmt(diff)}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Linha 3: pills por conta */}
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {saldosPorConta.map(({conta,saldo,manual}) => (
             <span key={conta.id} style={{
@@ -425,7 +469,10 @@ export default function ExtratoConsolidado() {
             <div key={dia}
               onClick={() => toggleDia(dia)}
               style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
-                border:`1.5px solid ${ehHoje?'#93c5fd':COR.borda}`,
+                borderTop:`1.5px solid ${ehHoje?'#93c5fd':COR.borda}`,
+                borderRight:`1.5px solid ${ehHoje?'#93c5fd':COR.borda}`,
+                borderBottom:`1.5px solid ${ehHoje?'#93c5fd':COR.borda}`,
+                borderLeft: aberto ? `4px solid ${ehHoje ? COR.azul : '#64748b'}` : `1.5px solid ${ehHoje?'#93c5fd':COR.borda}`,
                 background:COR.branco,
                 boxShadow:ehHoje?'0 0 0 2px rgba(147,197,253,0.3)':'none'}}>
 

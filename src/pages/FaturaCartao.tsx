@@ -110,9 +110,21 @@ export default function FaturaCartao() {
   const diaFechamento = mesDados.fechamentoOverride ?? diaFechamentoBase
   const diaVencimento = mesDados.vencimentoOverride ?? diaVencimentoBase
 
-  // Categorias de cartão
+  // Mês/ano da aba atual = mês de vencimento (tab = billing month)
+  const mesVenc = mes
+  const anoVenc = ano
+
+  // Calcula a aba padrão do período de faturamento atual (para marcar o ponto)
+  const billingOffset = diaVencimentoBase < diaFechamentoBase ? 1 : 0
+  const billingMes = (() => { let m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset; return m > 11 ? m - 12 : m })()
+  const billingAno = (() => { let m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset; return m > 11 ? anoHoje + 1 : anoHoje })()
+
+  // Status da fatura: paga se a data de vencimento já passou
+  const faturaStatus: 'paga' | 'aberta' = new Date(anoVenc, mesVenc, diaVencimento) < hoje ? 'paga' : 'aberta'
+
+  // Categorias de cartão — estorno usa as mesmas categorias de saída
   const categoriasCartao = categorias
-    .filter(c => c.tipo === fTipo && c.tipoMovimento === 'cartao')
+    .filter(c => c.tipo === 'saida' && c.tipoMovimento === 'cartao')
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
 
   useEffect(() => { salvarDados(dados) }, [dados])
@@ -147,13 +159,11 @@ export default function FaturaCartao() {
       }
       const total = saidas - entradas
 
-      const diaFech = dm.fechamentoOverride ?? contaCartao.diaFechamento ?? 1
       const diaVenc = dm.vencimentoOverride ?? contaCartao.diaVencimento ?? 1
-      const mVenc = diaVenc < diaFech ? (m === 11 ? 0 : m + 1) : m
-      const aVenc = diaVenc < diaFech && m === 11 ? a + 1 : a
 
+      // Tab = mês de vencimento, então a chave do extrato é o próprio mês da fatura
       const lancId = `fatura-${cId}-${a}-${String(m + 1).padStart(2, '0')}`
-      const extratoKey = `${contaBancoId}-${aVenc}-${String(mVenc + 1).padStart(2, '0')}`
+      const extratoKey = `${contaBancoId}-${a}-${String(m + 1).padStart(2, '0')}`
       const descricao = `Fatura ${contaCartao.banco}`
 
       const extratoMes = extrato[extratoKey] ?? { lancamentos: {}, saldoBanco: '' }
@@ -176,18 +186,23 @@ export default function FaturaCartao() {
     window.dispatchEvent(new CustomEvent('compass:extrato-updated'))
   }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-avança para o próximo mês se hoje já passou da data de fechamento
+  // Auto-avança para a aba do período de faturamento atual
+  // A aba representa o mês de VENCIMENTO da fatura, não o mês de compra
   useEffect(() => {
     const conta = contas.find(c => c.id === contaId)
     const diaFech = conta?.diaFechamento ?? 1
+    const diaVenc = conta?.diaVencimento ?? 1
+    const offset  = diaVenc < diaFech ? 1 : 0  // venc no mês seguinte ao fechamento
     if (diaHoje >= diaFech) {
-      const novoMes = mesHoje === 11 ? 0 : mesHoje + 1
-      const novoAno = mesHoje === 11 ? anoHoje + 1 : anoHoje
-      setMes(novoMes); setAno(novoAno)
-      setDiaSel(1)
+      // Passou do fechamento: próximo período de faturamento
+      let m = mesHoje + 1 + offset, a = anoHoje
+      if (m > 11) { m -= 12; a++ }
+      setMes(m); setAno(a); setDiaSel(1)
     } else {
-      setMes(mesHoje); setAno(anoHoje)
-      setDiaSel(diaHoje)
+      // Antes do fechamento: período atual
+      let m = mesHoje + offset, a = anoHoje
+      if (m > 11) { m = 0; a++ }
+      setMes(m); setAno(a); setDiaSel(diaHoje)
     }
   }, [contaId, contas])
 
@@ -224,7 +239,7 @@ export default function FaturaCartao() {
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia)
     setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
-    setFValor(String(l.valor * (l.parcelas ?? 1)).replace('.', ','))
+    setFValor(String(l.valor).replace('.', ','))
     setFParcelas(String(l.parcelas ?? 1))
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
@@ -266,11 +281,9 @@ export default function FaturaCartao() {
   const grandTotalFaturas = totaisPorCartao.reduce((s, x) => s + x.total, 0)
 
   function lancar() {
-    const valorTotal  = parseBRL(fValor)
-    const nParcelas   = Math.max(1, parseInt(fParcelas) || 1)
-    if (!fCat || valorTotal <= 0) return
-
-    const valorParcela = parseFloat((valorTotal / nParcelas).toFixed(2))
+    const valorParcela = parseBRL(fValor)
+    const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
+    if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
 
     if (editandoId) {
@@ -384,11 +397,6 @@ export default function FaturaCartao() {
   }
 
   // Mês/ano de vencimento da fatura exibida
-  const mesVenc = diaVencimento < diaFechamento
-    ? (mes === 11 ? 0 : mes + 1)
-    : mes
-  const anoVenc = diaVencimento < diaFechamento && mes === 11 ? ano + 1 : ano
-
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo}}>
 
@@ -423,7 +431,7 @@ export default function FaturaCartao() {
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
-          const isAtual = i===mesHoje && ano===anoHoje
+          const isAtual = i===billingMes && ano===billingAno
           const ativo   = i===mes
           return (
             <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{
@@ -497,7 +505,7 @@ export default function FaturaCartao() {
           )}
         </div>
 
-        {/* Linha 2: pill + fatura atual + diferença + fechamento + vencimento */}
+        {/* Linha 2: pill + fatura atual + total sistema + diferença + status + fechamento + vencimento */}
         <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
           {contaInfo && (
             <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
@@ -508,8 +516,15 @@ export default function FaturaCartao() {
               <span style={{fontWeight:700,color:totalFatura>0?COR.vermelho:COR.texto}}>{fmt(totalFatura)}</span>
             </span>
           )}
+          {/* Badge PAGA / ABERTA */}
+          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
+            background:faturaStatus==='paga'?'#dcfce7':'#fef9c3',
+            color:faturaStatus==='paga'?'#166534':'#92400e',
+            border:`1px solid ${faturaStatus==='paga'?'#86efac':'#fde68a'}`}}>
+            {faturaStatus==='paga'?'✓ Paga':'● Aberta'}
+          </span>
           <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Fatura atual do cartão:</span>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Fatura atual cartão:</span>
             <input value={mesDados.faturaAtual}
               onChange={e => updateMes(prev=>({...prev,faturaAtual:e.target.value}))}
               onFocus={e => e.target.select()}
@@ -518,6 +533,13 @@ export default function FaturaCartao() {
               style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
                 fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
                 outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Total sistema:</span>
+            <span style={{fontSize:13,fontWeight:700,
+              color:totalFatura>0?COR.vermelho:totalFatura<0?COR.verde:COR.textoSuave}}>
+              {fmt(totalFatura)}
+            </span>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
@@ -607,8 +629,7 @@ export default function FaturaCartao() {
           const entradasDia = ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
           const totalDia   = saidasDia - entradasDia
 
-          // Indica o dia de fechamento e vencimento
-          const ehFechamento  = dia === diaFechamento
+          // Indica o dia de vencimento
           const ehVencimento  = dia === diaVencimento && mes === mesVenc && ano === anoVenc
 
           return (
@@ -645,10 +666,6 @@ export default function FaturaCartao() {
                     borderRadius:4,background:'#dbeafe',color:COR.azul,
                     letterSpacing:.5,textTransform:'uppercase',flexShrink:0}}>Hoje</span>
                 )}
-                {ehFechamento && (
-                  <span style={{fontSize:10,background:'#7c3aed',color:'#fff',
-                    padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Fechamento</span>
-                )}
                 {ehVencimento && (
                   <span style={{fontSize:10,background:COR.vermelho,color:'#fff',
                     padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Vencimento</span>
@@ -668,65 +685,70 @@ export default function FaturaCartao() {
                 </div>
               </div>
 
-              {/* Lançamentos */}
-              {aberto && ls.map(l => {
-                const catVisual   = iconeCategoria(categorias, l.categoria)
-                const consolidado = diaFuturo ? (l.consolidado === true) : true
-                const corValor    = consolidado ? (l.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
-                const emEdicao    = editandoId === l.id
-                return (
-                <div key={l.id}
-                  onClick={e => { e.stopPropagation(); editarLancamento(dia, l) }}
-                  style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
-                    padding:'10px 16px',borderBottom:`1px solid #f1f5f9`,
-                    background:emEdicao?'#eff6ff':'transparent'}}
-                  onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
-                  onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background='transparent' }}>
-                  {diaFuturo && (
-                    <input type="checkbox" checked={!!consolidado}
-                      onClick={e => e.stopPropagation()}
-                      onChange={() => toggleConsolidar(dia, l.id)}
-                      title="Consolidar lançamento"
-                      style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
-                  )}
-                  <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
-                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
-                    background:catVisual.cor,opacity:consolidado?1:0.5}}>
-                    {catVisual.icone}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:500,
-                      color:consolidado?COR.texto:'#94a3b8',
-                      display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                      {l.descricao}
-                      {l.parcelas && (
-                        <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,
-                          background:'#ede9fe',color:'#7c3aed'}}>
-                          {l.parcelaAtual} de {l.parcelas}
-                        </span>
-                      )}
-                      {diaFuturo && (
-                        <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                          background:consolidado?'#e0f2fe':'#f1f5f9',
-                          color:consolidado?'#0369a1':'#94a3b8'}}>
-                          {consolidado?'consolidado':'não consolidado'}
-                        </span>
-                      )}
+              {/* Lançamentos — agrupados por tipo */}
+              {aberto && (() => {
+                const parcelados = ls.filter(l => l.parcelas && l.parcelas > 1)
+                const manuais    = ls.filter(l => !l.parcelas || l.parcelas <= 1)
+                const grupos: Array<{label: string; itens: typeof ls}> = []
+                if (parcelados.length) grupos.push({label:'Parcelados', itens:parcelados})
+                if (manuais.length)    grupos.push({label:'Manuais',    itens:manuais})
+                const mostrarHeader = parcelados.length > 0 && manuais.length > 0
+
+                const renderItem = (l: typeof ls[0]) => {
+                  const catVisual = iconeCategoria(categorias, l.categoria)
+                  const emEdicao  = editandoId === l.id
+                  const corValor  = l.tipo==='entrada' ? COR.azul : COR.vermelho
+                  return (
+                    <div key={l.id}
+                      onClick={e => { e.stopPropagation(); editarLancamento(dia, l) }}
+                      style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
+                        padding:'10px 16px',borderBottom:`1px solid #f1f5f9`,
+                        background:emEdicao?'#eff6ff':'transparent'}}
+                      onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
+                      onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background='transparent' }}>
+                      <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
+                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
+                        background:catVisual.cor}}>
+                        {catVisual.icone}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:500,color:COR.texto,
+                          display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+                          {l.descricao}
+                          {l.parcelas && (
+                            <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,
+                              background:'#ede9fe',color:'#7c3aed'}}>
+                              {l.parcelaAtual}/{l.parcelas}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{l.categoria}</div>
+                      </div>
+                      <div style={{fontSize:13,fontWeight:600,color:corValor}}>
+                        {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                      </div>
+                      <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                        style={{border:'none',background:'transparent',cursor:'pointer',
+                          color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
+                        onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
+                        onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                     </div>
-                    <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
-                      {l.categoria}
-                    </div>
+                  )
+                }
+
+                return grupos.map(g => (
+                  <div key={g.label}>
+                    {mostrarHeader && (
+                      <div style={{fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,
+                        color:COR.textoSuave,padding:'4px 16px',background:'#f8faff',
+                        borderBottom:`1px solid ${COR.borda}`}}>
+                        {g.label}
+                      </div>
+                    )}
+                    {g.itens.map(renderItem)}
                   </div>
-                  <div style={{fontSize:13,fontWeight:600,color:corValor}}>
-                    {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
-                  </div>
-                  <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                    style={{border:'none',background:'transparent',cursor:'pointer',
-                      color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
-                    onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                    onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
-                </div>
-              )})}
+                ))
+              })()}
 
             </div>
           )
@@ -816,7 +838,7 @@ export default function FaturaCartao() {
             </select>
           </div>
           <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor total *</div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00"
               onFocus={realcarFoco} onBlur={removerRealce}
@@ -864,7 +886,7 @@ export default function FaturaCartao() {
             </div>
             {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
               <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
-                {fParcelas}x de {fmt(parseBRL(fValor) / parseInt(fParcelas))}
+                Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmt(parseBRL(fValor))})
               </div>
             )}
           </div>
