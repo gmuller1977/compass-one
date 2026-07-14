@@ -49,6 +49,25 @@ function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',curr
 function parseBRL(s: string) { return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0 }
 
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+
+function parseDateFatura(s: string, mesDefault: number, anoDefault: number): {dia:number;mes:number;ano:number}|null {
+  const t = s.trim()
+  if (!t) return null
+  if (t.includes('/')) {
+    const p = t.split('/')
+    const dia = parseInt(p[0]) || 0
+    const mes = p.length > 1 ? (parseInt(p[1]) || 0) : mesDefault + 1
+    let ano = anoDefault
+    if (p.length > 2 && p[2]) { const y = parseInt(p[2]) || 0; ano = y > 0 ? (y < 100 ? 2000+y : y) : anoDefault }
+    return dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12 ? { dia, mes: mes-1, ano } : null
+  }
+  const d = t.replace(/\D/g, '')
+  if (d.length <= 2) { const dia=parseInt(d); return dia>=1&&dia<=31 ? {dia,mes:mesDefault,ano:anoDefault} : null }
+  if (d.length === 4) { const dia=parseInt(d.slice(0,2)),mes=parseInt(d.slice(2,4)); return dia>=1&&dia<=31&&mes>=1&&mes<=12 ? {dia,mes:mes-1,ano:anoDefault} : null }
+  if (d.length === 6) { const dia=parseInt(d.slice(0,2)),mes=parseInt(d.slice(2,4)),y=parseInt(d.slice(4,6)); return dia>=1&&dia<=31&&mes>=1&&mes<=12 ? {dia,mes:mes-1,ano:2000+y} : null }
+  if (d.length === 8) { const dia=parseInt(d.slice(0,2)),mes=parseInt(d.slice(2,4)),ano=parseInt(d.slice(4,8)); return dia>=1&&dia<=31&&mes>=1&&mes<=12 ? {dia,mes:mes-1,ano} : null }
+  return null
+}
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const STORAGE_KEY  = 'compass_fatura_dados'
 
@@ -90,6 +109,7 @@ export default function FaturaCartao() {
   const [fDesc,    setFDesc]    = useState('')
   const [fValor,   setFValor]   = useState('')
   const [fParcelas, setFParcelas] = useState('1')
+  const [fDataCompra, setFDataCompra] = useState('')
   const [editandoFechamento, setEditandoFechamento] = useState(false)
   const [editandoVencimento, setEditandoVencimento] = useState(false)
 
@@ -243,7 +263,7 @@ export default function FaturaCartao() {
 
   function resetarParaNovo(novoDia: number) {
     setDiaSel(novoDia); setEditandoId(null); setEditandoDiaOriginal(null)
-    setFTipo('saida'); setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+    setFTipo('saida'); setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1'); setFDataCompra('')
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
 
@@ -252,6 +272,11 @@ export default function FaturaCartao() {
     setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
     setFValor(String(l.valor).replace('.', ','))
     setFParcelas(String(l.parcelas ?? 1))
+    const dc = l.diaCompra ?? dia
+    const mc = l.mesCompra ?? purchaseMes
+    const ac = l.anoCompra ?? purchaseAno
+    const acStr = ac !== purchaseAno ? `/${ac}` : ''
+    setFDataCompra(`${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${acStr}`)
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
 
@@ -300,6 +325,11 @@ export default function FaturaCartao() {
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
     if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
+    // Resolve data de compra a partir do campo livre
+    const parsedCompra = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
+    const diaCompraFinal = parsedCompra?.dia ?? diaSel
+    const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
+    const anoCompraFinal = parsedCompra?.ano ?? purchaseAno
 
     if (editandoId) {
       const diaOrigem = editandoDiaOriginal ?? diaSel
@@ -350,7 +380,7 @@ export default function FaturaCartao() {
                   valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
                   consolidado: p===1 ? !ehDiaFuturo(diaSel) : false,
                   parcelas:nParcelas, parcelaAtual:p,
-                  diaCompra:diaSel, mesCompra:purchaseMes, anoCompra:purchaseAno,
+                  diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
                 }],
               }
             }
@@ -757,20 +787,40 @@ export default function FaturaCartao() {
         </div>
 
         <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
-          {/* Data da compra */}
-          <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
-            <input type="number" min={1} max={totalDias} value={diaSel}
-              onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
-              onFocus={realcarFoco} onBlur={removerRealce}
-              placeholder="Dia"
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%'}} />
-            <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>
-              {NOMES_MESES[purchaseMes]} · {diaSemana(diaSel,purchaseMes,purchaseAno)}
-            </div>
-          </div>
+          {/* Data da compra — campo livre */}
+          {(() => {
+            const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
+            const dispDia = parsed?.dia ?? diaSel
+            const dispMes = parsed?.mes ?? purchaseMes
+            const dispAno = parsed?.ano ?? purchaseAno
+            const label = `${String(dispDia).padStart(2,'0')} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
+            return (
+              <div>
+                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
+                <input
+                  type="text"
+                  value={fDataCompra}
+                  onChange={e => setFDataCompra(e.target.value)}
+                  onBlur={() => {
+                    const p = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
+                    if (p) {
+                      setDiaSel(p.dia)
+                      // Formata para DD/MM ou DD/MM/AAAA ao sair do campo
+                      const acStr = p.ano !== purchaseAno ? `/${p.ano}` : ''
+                      setFDataCompra(`${String(p.dia).padStart(2,'0')}/${String(p.mes+1).padStart(2,'0')}${acStr}`)
+                    }
+                  }}
+                  onFocus={realcarFoco}
+                  placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
+                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+                    fontSize:12,outline:'none',background:'#fff',
+                    fontFamily:'inherit',color:COR.texto,width:'100%'}}
+                  onKeyDown={e => { if (e.key==='Enter') { (e.target as HTMLInputElement).blur() } }}
+                />
+                <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>{label}</div>
+              </div>
+            )
+          })()}
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
             <select ref={categoriaSelectRef} autoFocus value={fCat}
