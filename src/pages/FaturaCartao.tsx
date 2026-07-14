@@ -115,6 +115,7 @@ export default function FaturaCartao() {
 
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef      = useRef<HTMLInputElement>(null)
+  const dataCompraRef      = useRef<HTMLInputElement>(null)
 
   const contaInfo        = contas.find(c => c.id === contaId)
   // Datas base do cartão
@@ -264,7 +265,7 @@ export default function FaturaCartao() {
   function resetarParaNovo(novoDia: number) {
     setDiaSel(novoDia); setEditandoId(null); setEditandoDiaOriginal(null)
     setFTipo('saida'); setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1'); setFDataCompra('')
-    setTimeout(() => categoriaSelectRef.current?.focus(), 50)
+    setTimeout(() => dataCompraRef.current?.focus(), 50)
   }
 
   function editarLancamento(dia: number, l: Lancamento) {
@@ -277,7 +278,7 @@ export default function FaturaCartao() {
     const ac = l.anoCompra ?? purchaseAno
     const acStr = ac !== purchaseAno ? `/${ac}` : ''
     setFDataCompra(`${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${acStr}`)
-    setTimeout(() => categoriaSelectRef.current?.focus(), 50)
+    setTimeout(() => dataCompraRef.current?.focus(), 50)
   }
 
   function updateMes(fn: (prev: DadosMes) => DadosMes) {
@@ -406,7 +407,7 @@ export default function FaturaCartao() {
 
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
-    setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+    setTimeout(() => dataCompraRef.current?.focus(), 80)
   }
 
   function excluirAtual() {
@@ -798,6 +799,8 @@ export default function FaturaCartao() {
               <div>
                 <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
                 <input
+                  ref={dataCompraRef}
+                  autoFocus
                   type="text"
                   value={fDataCompra}
                   onChange={e => setFDataCompra(e.target.value)}
@@ -823,7 +826,7 @@ export default function FaturaCartao() {
           })()}
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
-            <select ref={categoriaSelectRef} autoFocus value={fCat}
+            <select ref={categoriaSelectRef} value={fCat}
               onChange={e=>setFCat(e.target.value)}
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
