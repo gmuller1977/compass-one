@@ -740,27 +740,13 @@ export default function FaturaCartao() {
           </span>
         </div>
 
-        <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:14}}>
-          <div style={{flex:'0 0 64px'}}>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Dia</div>
-            <input type="number" min={1} max={totalDias} value={diaSel}
-              onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
-              onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}} />
-          </div>
-          <div style={{fontSize:11,color:'#94a3b8',paddingBottom:8}}>
-            {NOMES_MESES[purchaseMes]} · {diaSemana(diaSel,purchaseMes,purchaseAno)}
-          </div>
-        </div>
-
+        {/* Compra / Estorno */}
         <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
-          padding:3,marginBottom:12,width:'fit-content'}}>
+          padding:3,marginBottom:12,width:'100%'}}>
           {(['saida','entrada'] as const).map(t => (
             <button key={t} onClick={() => setFTipo(t)} style={{
-              padding:'5px 14px',border:'none',borderRadius:5,
-              cursor:'pointer',fontSize:12,fontWeight:500,
+              flex:1,padding:'7px 0',border:'none',borderRadius:5,
+              cursor:'pointer',fontSize:12,fontWeight:600,
               fontFamily:'inherit',transition:'all .15s',
               background:fTipo===t?COR.branco:'transparent',
               color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
@@ -771,6 +757,20 @@ export default function FaturaCartao() {
         </div>
 
         <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
+          {/* Data da compra */}
+          <div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
+            <input type="number" min={1} max={totalDias} value={diaSel}
+              onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
+              onFocus={realcarFoco} onBlur={removerRealce}
+              placeholder="Dia"
+              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+                fontSize:12,outline:'none',background:'#fff',
+                fontFamily:'inherit',color:COR.texto,width:'100%'}} />
+            <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>
+              {NOMES_MESES[purchaseMes]} · {diaSemana(diaSel,purchaseMes,purchaseAno)}
+            </div>
+          </div>
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
             <select ref={categoriaSelectRef} autoFocus value={fCat}
@@ -789,16 +789,6 @@ export default function FaturaCartao() {
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00"
-              onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%'}}
-              onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-          </div>
-          <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
-            <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-              placeholder="Ex: Mercado Extra, Farmácia..."
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
@@ -837,6 +827,16 @@ export default function FaturaCartao() {
                 Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmt(parseBRL(fValor))})
               </div>
             )}
+          </div>
+          <div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
+            <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
+              placeholder="Ex: Mercado Extra, Farmácia..."
+              onFocus={realcarFoco} onBlur={removerRealce}
+              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                fontSize:12,outline:'none',background:'#fff',
+                fontFamily:'inherit',color:COR.texto,width:'100%'}}
+              onKeyDown={e=>e.key==='Enter'&&lancar()}/>
           </div>
         </div>
 
