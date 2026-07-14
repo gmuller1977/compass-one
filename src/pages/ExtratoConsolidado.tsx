@@ -68,7 +68,7 @@ export default function ExtratoConsolidado() {
     },
   ], [contasExtrato, ano, mesStr])
 
-  const { itensPorDia, totalEntradas, totalSaidas, entradasConf, saidasConf } = useMemo(() => {
+  const { itensPorDia, entradasConf, saidasConf } = useMemo(() => {
     const itensPorDia: Record<number, LancItem[]> = {}
     let te = 0, ts = 0, teConf = 0, tsConf = 0
 
@@ -135,7 +135,7 @@ export default function ExtratoConsolidado() {
             contaNome: fonte.contaNome, contaCor: fonte.contaCor,
             contaIcone: fonte.contaIcone, tipo: l.tipo,
             categoria: l.categoria, descricao: l.descricao,
-            valor: l.valor, confirmado: l.consolidado ?? true,
+            valor: l.valor, confirmado: (l as {consolidado?: boolean}).consolidado ?? true,
           })
         }
       }
@@ -313,7 +313,6 @@ export default function ExtratoConsolidado() {
     return te - ts
   }, [itensPorDia])
 
-  const saldoTotal = saldosPorConta.reduce((s, x) => s + x.saldo, 0) + saldoDinheiro
   const saldoDisponivel = saldoBase + entradasConf - saidasConf
 
   const { planEntradas, planSaidas } = useMemo(() => {

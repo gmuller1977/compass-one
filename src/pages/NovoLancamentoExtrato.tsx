@@ -34,6 +34,7 @@ type Lancamento = {
 type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   saldoBanco: string
+  saldoBancoData?: string
   fixasConsolidadas?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
   fixasValorOverride?: Record<string, number>

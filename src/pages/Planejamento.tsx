@@ -387,13 +387,6 @@ export default function Planejamento() {
     updateAno(d => ({ ...d, saldoInicialJan: novoSaldo }))
   }
 
-  function replicarJaneiroParaAno() {
-    updateAno(d => ({
-      ...d,
-      entradas: d.entradas.map(cat => ({ ...cat, v: new Array(12).fill(cat.v[0]) })),
-      saidas:   d.saidas.map(cat =>   ({ ...cat, v: new Array(12).fill(cat.v[0]) })),
-    }))
-  }
   function replicarLinhaMes(tipo: 'e'|'s', ri: number, mesOrigem: number) {
     const valor = tipo === 'e'
       ? dadosAno.entradas[ri]?.v[mesOrigem] ?? 0
@@ -821,7 +814,7 @@ export default function Planejamento() {
                       fontFamily:'inherit', fontWeight:700, boxSizing:'border-box' }}/>
                 ) : (
                   <>
-                    <div style={{ fontSize:16, fontWeight:700, color:corSaldo(sfDez) }}>
+                    <div style={{ fontSize:16, fontWeight:700, color:corSaldo(sfRef) }}>
                       {sfRef.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                     </div>
                     <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>

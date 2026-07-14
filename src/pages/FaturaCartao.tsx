@@ -375,16 +375,6 @@ export default function FaturaCartao() {
     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
   }
 
-  function toggleConsolidar(dia: number, id: string) {
-    updateMes(prev => ({
-      ...prev,
-      lancamentos: {
-        ...prev.lancamentos,
-        [dia]: (prev.lancamentos[dia]??[]).map(l => l.id===id ? {...l, consolidado:!l.consolidado} : l),
-      },
-    }))
-  }
-
   function excluir(dia: number, id: string) {
     updateMes(prev => ({
       ...prev,
@@ -617,14 +607,11 @@ export default function FaturaCartao() {
 
         {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
           const ehHoje   = eMesAtual && dia===diaHoje
-          const passado  = eMesAtual ? dia<diaHoje : ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
           const semana   = diaSemana(dia, mes, ano)
           const ls       = mesDados.lancamentos[dia] ?? []
           const temItens = ls.length > 0
           const selecionado = diaSel===dia
           const aberto    = diasAbertos.has(dia)
-          const diaFuturo = !passado && !ehHoje
-
           const saidasDia  = ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
           const entradasDia = ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
           const totalDia   = saidasDia - entradasDia

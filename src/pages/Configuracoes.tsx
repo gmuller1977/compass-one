@@ -3,8 +3,6 @@ import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
-import { getLayoutPref, setLayoutPref } from '../utils/prefs'
-import type { LayoutLancamentos } from '../utils/prefs'
 import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
 
 const COR = {
@@ -229,13 +227,6 @@ export default function Configuracoes() {
       setAba('preferencias')
     }
   }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
-  const [layout, setLayout] = useState<LayoutLancamentos>(getLayoutPref)
-
-  function escolherLayout(l: LayoutLancamentos) {
-    setLayoutPref(l)
-    setLayout(l)
-  }
-
   const contaVazia: Omit<Conta,'id'> = {
     nome:'', banco:'', tipo:'corrente', saldoInicial:0,
     cor:CORES_PRESET[0], icone:ICONES_CONTA[0],
