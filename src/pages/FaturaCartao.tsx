@@ -122,9 +122,9 @@ export default function FaturaCartao() {
   // Status da fatura: paga se a data de vencimento já passou
   const faturaStatus: 'paga' | 'aberta' = new Date(anoVenc, mesVenc, diaVencimento) < hoje ? 'paga' : 'aberta'
 
-  // Categorias de cartão — estorno usa as mesmas categorias de saída
+  // Categorias de cartão — estorno usa as mesmas categorias de saída, somente ativas
   const categoriasCartao = categorias
-    .filter(c => c.tipo === 'saida' && c.tipoMovimento === 'cartao')
+    .filter(c => c.tipo === 'saida' && c.tipoMovimento === 'cartao' && c.ativa)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
 
   useEffect(() => { salvarDados(dados) }, [dados])
@@ -209,8 +209,12 @@ export default function FaturaCartao() {
   useEffect(() => {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
-    setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
-  }, [contaId, mes, ano])
+    const mesDadosAtual = dados[mesKey(contaId, ano, mes)]
+    const diasComItens = Object.keys(mesDadosAtual?.lancamentos ?? {})
+      .map(Number)
+      .filter(d => (mesDadosAtual?.lancamentos[d] ?? []).length > 0)
+    setDiasAbertos(new Set(eMesAtual ? [diaHoje, ...diasComItens] : diasComItens))
+  }, [contaId, mes, ano]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     return (novoMes===mesHoje && novoAno===anoHoje) ? diaHoje : 1
@@ -357,6 +361,7 @@ export default function FaturaCartao() {
       }))
     }
 
+    setDiasAbertos(prev => new Set([...prev, diaSel]))
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
@@ -495,8 +500,20 @@ export default function FaturaCartao() {
           )}
         </div>
 
-        {/* Linha 2: pill + fatura atual + total sistema + diferença + status + fechamento + vencimento */}
+        {/* Linha 2: fatura atual → pill do cartão → diferença (mesma ordem do extrato banco) */}
         <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Fatura atual cartão:</span>
+            <input value={mesDados.faturaAtual}
+              onChange={e => updateMes(prev=>({...prev,faturaAtual:e.target.value}))}
+              onFocus={e => e.target.select()}
+              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,faturaAtual:fmt(n)})) }}
+              placeholder="R$ 0,00"
+              style={{border:`1px solid ${contaInfo?.cor ?? COR.azul}55`,borderRadius:6,padding:'4px 10px',
+                fontSize:13,fontWeight:700,color:contaInfo?.cor ?? COR.azul,
+                background:`${contaInfo?.cor ?? COR.azul}18`,
+                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          </div>
           {contaInfo && (
             <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
               display:'inline-flex',alignItems:'center',gap:5,
@@ -506,33 +523,8 @@ export default function FaturaCartao() {
               <span style={{fontWeight:700,color:totalFatura>0?COR.vermelho:COR.texto}}>{fmt(totalFatura)}</span>
             </span>
           )}
-          {/* Badge PAGA / ABERTA */}
-          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
-            background:faturaStatus==='paga'?'#dcfce7':'#fef9c3',
-            color:faturaStatus==='paga'?'#166534':'#92400e',
-            border:`1px solid ${faturaStatus==='paga'?'#86efac':'#fde68a'}`}}>
-            {faturaStatus==='paga'?'✓ Paga':'● Aberta'}
-          </span>
           <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Fatura atual cartão:</span>
-            <input value={mesDados.faturaAtual}
-              onChange={e => updateMes(prev=>({...prev,faturaAtual:e.target.value}))}
-              onFocus={e => e.target.select()}
-              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,faturaAtual:fmt(n)})) }}
-              placeholder="R$ 0,00"
-              style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,padding:'5px 10px',
-                fontSize:12,fontWeight:600,color:COR.azul,background:'#eff6ff',
-                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Total sistema:</span>
-            <span style={{fontSize:13,fontWeight:700,
-              color:totalFatura>0?COR.vermelho:totalFatura<0?COR.verde:COR.textoSuave}}>
-              {fmt(totalFatura)}
-            </span>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
             <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
               background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
               color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
@@ -541,6 +533,13 @@ export default function FaturaCartao() {
               {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
             </div>
           </div>
+          {/* Badge PAGA / ABERTA */}
+          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
+            background:faturaStatus==='paga'?'#dcfce7':'#fef9c3',
+            color:faturaStatus==='paga'?'#166534':'#92400e',
+            border:`1px solid ${faturaStatus==='paga'?'#86efac':'#fde68a'}`}}>
+            {faturaStatus==='paga'?'✓ Paga':'● Aberta'}
+          </span>
           <span style={{color:COR.borda}}>|</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
             <span style={{fontSize:11,color:COR.textoSuave}}>Fechamento:</span>
@@ -616,7 +615,8 @@ export default function FaturaCartao() {
           const entradasDia = ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
           const totalDia   = saidasDia - entradasDia
 
-          // Indica o dia de vencimento
+          // Indica o dia de fechamento e de vencimento
+          const ehFechamento  = dia === diaFechamento
           const ehVencimento  = dia === diaVencimento && mes === mesVenc && ano === anoVenc
 
           return (
@@ -652,6 +652,10 @@ export default function FaturaCartao() {
                   <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',
                     borderRadius:4,background:'#dbeafe',color:COR.azul,
                     letterSpacing:.5,textTransform:'uppercase',flexShrink:0}}>Hoje</span>
+                )}
+                {ehFechamento && (
+                  <span style={{fontSize:10,background:'#f59e0b',color:'#fff',
+                    padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Fechamento</span>
                 )}
                 {ehVencimento && (
                   <span style={{fontSize:10,background:COR.vermelho,color:'#fff',
