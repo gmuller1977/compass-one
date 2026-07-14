@@ -97,30 +97,42 @@ export default function FaturaCartao() {
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef      = useRef<HTMLInputElement>(null)
 
-  const contaInfo     = contas.find(c => c.id === contaId)
-  const totalDias     = diasNoMes(mes, ano)
-  const eMesAtual     = mes === mesHoje && ano === anoHoje
-  const key           = mesKey(contaId, ano, mes)
+  const contaInfo        = contas.find(c => c.id === contaId)
+  // Datas base do cartão
+  const diaFechamentoBase = contaInfo?.diaFechamento ?? 1
+  const diaVencimentoBase = contaInfo?.diaVencimento ?? 1
+  // billingOffset: vencimento cai no mês seguinte ao fechamento quando diaVenc < diaFech
+  const billingOffset    = diaVencimentoBase < diaFechamentoBase ? 1 : 0
+
+  // Tab = mês de VENCIMENTO (pagamento). Mês de compra = tab - offset
+  let _pMes = mes - billingOffset, _pAno = ano
+  if (_pMes < 0) { _pMes += 12; _pAno-- }
+  const purchaseMes   = _pMes   // mês do calendário onde as compras ocorreram
+  const purchaseAno   = _pAno
+
+  const totalDias     = diasNoMes(purchaseMes, purchaseAno)
+  const eMesAtual     = purchaseMes === mesHoje && purchaseAno === anoHoje
+  const key           = mesKey(contaId, purchaseAno, purchaseMes)
   const mesDados      = dados[key] ?? DADOS_MES_VAZIO
   const faturaExtNum  = parseBRL(mesDados.faturaAtual)
 
-  // Datas efetivas de fechamento e vencimento (override por mês ou base do cartão)
-  const diaFechamentoBase = contaInfo?.diaFechamento ?? 1
-  const diaVencimentoBase = contaInfo?.diaVencimento ?? 1
+  // Datas efetivas (com override por mês)
   const diaFechamento = mesDados.fechamentoOverride ?? diaFechamentoBase
   const diaVencimento = mesDados.vencimentoOverride ?? diaVencimentoBase
 
-  // Tab = mês de compra. Vencimento = mês seguinte quando diaVenc < diaFech (caso comum)
-  const mesVenc = diaVencimentoBase < diaFechamentoBase
-    ? (mes + 1 > 11 ? 0 : mes + 1)
-    : mes
-  const anoVenc = diaVencimentoBase < diaFechamentoBase && mes + 1 > 11 ? ano + 1 : ano
+  // Vencimento = a própria aba (mes = mês de pagamento)
+  const mesVenc = mes
+  const anoVenc = ano
 
-  // Aba padrão: antes do fechamento = mês atual; depois = próximo mês
-  const billingMes = diaHoje >= diaFechamentoBase
-    ? (mesHoje + 1 > 11 ? 0 : mesHoje + 1)
-    : mesHoje
-  const billingAno = diaHoje >= diaFechamentoBase && mesHoje + 1 > 11 ? anoHoje + 1 : anoHoje
+  // billingMes: qual aba deve estar ativa (mês de vencimento da fatura em aberto)
+  const billingMes = (() => {
+    const m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset
+    return m > 11 ? m - 12 : m
+  })()
+  const billingAno = (() => {
+    const m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset
+    return m > 11 ? anoHoje + 1 : anoHoje
+  })()
 
   // Status da fatura: paga se a data de vencimento já passou
   const faturaStatus: 'paga' | 'aberta' = new Date(anoVenc, mesVenc, diaVencimento) < hoje ? 'paga' : 'aberta'
@@ -202,25 +214,24 @@ export default function FaturaCartao() {
     window.dispatchEvent(new CustomEvent('compass:extrato-updated'))
   }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-avança para a aba do mês de compra atual
+  // Auto-avança para a aba do mês de vencimento da fatura em aberto
   useEffect(() => {
     const conta = contas.find(c => c.id === contaId)
     const diaFech = conta?.diaFechamento ?? 1
-    if (diaHoje >= diaFech) {
-      // Passou do fechamento: compras agora vão para o próximo mês
-      let m = mesHoje + 1, a = anoHoje
-      if (m > 11) { m = 0; a++ }
-      setMes(m); setAno(a); setDiaSel(1)
-    } else {
-      // Antes do fechamento: mês atual
-      setMes(mesHoje); setAno(anoHoje); setDiaSel(diaHoje)
-    }
+    const diaVenc = conta?.diaVencimento ?? 1
+    const offset  = diaVenc < diaFech ? 1 : 0
+    // Tab = mês de vencimento: antes do fechamento → mesHoje+offset; depois → mesHoje+1+offset
+    const rawM = (diaHoje >= diaFech ? mesHoje + 1 : mesHoje) + offset
+    let tabMes = rawM, tabAno = anoHoje
+    if (tabMes > 11) { tabMes -= 12; tabAno++ }
+    setMes(tabMes); setAno(tabAno)
+    setDiaSel(diaHoje >= diaFech ? 1 : diaHoje)
   }, [contaId, contas])
 
   useEffect(() => {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
-    const mesDadosAtual = dados[mesKey(contaId, ano, mes)]
+    const mesDadosAtual = dados[key]
     const diasComItens = Object.keys(mesDadosAtual?.lancamentos ?? {})
       .map(Number)
       .filter(d => (mesDadosAtual?.lancamentos[d] ?? []).length > 0)
@@ -228,7 +239,10 @@ export default function FaturaCartao() {
   }, [contaId, mes, ano]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
-    return (novoMes===mesHoje && novoAno===anoHoje) ? diaHoje : 1
+    // novoMes é mês de vencimento; mês de compra = novoMes - billingOffset
+    let pMes = novoMes - billingOffset, pAno = novoAno
+    if (pMes < 0) { pMes += 12; pAno-- }
+    return (pMes === mesHoje && pAno === anoHoje) ? diaHoje : 1
   }
 
   function ehDiaFuturo(dia: number) {
@@ -279,9 +293,13 @@ export default function FaturaCartao() {
 
   const totaisPorCartao = useMemo(() => {
     const cartoes = contas.filter(c => c.tipo === 'cartao')
-    const nDias = diasNoMes(mes, ano)
     return cartoes.map(c => {
-      const k = mesKey(c.id, ano, mes)
+      // Cada cartão pode ter offset diferente
+      const off = (c.diaVencimento ?? 1) < (c.diaFechamento ?? 1) ? 1 : 0
+      let pMes = mes - off, pAno = ano
+      if (pMes < 0) { pMes += 12; pAno-- }
+      const nDias = diasNoMes(pMes, pAno)
+      const k = mesKey(c.id, pAno, pMes)
       const dm = dados[k] ?? DADOS_MES_VAZIO
       let saidas = 0, entradas = 0
       for (let d = 1; d <= nDias; d++) {
@@ -332,8 +350,8 @@ export default function FaturaCartao() {
       setDados(prev => {
         let result = { ...prev }
         for (let p = 1; p <= nParcelas; p++) {
-          let m = mes + (p - 1)
-          let a = ano
+          let m = purchaseMes + (p - 1)
+          let a = purchaseAno
           while (m > 11) { m -= 12; a++ }
           const k = mesKey(contaId, a, m)
           const dadosMes = result[k] ?? DADOS_MES_VAZIO
@@ -572,7 +590,7 @@ export default function FaturaCartao() {
                 style={{fontSize:12,fontWeight:700,color:COR.azul,cursor:'pointer',
                   padding:'2px 6px',borderRadius:5,border:`1px dashed ${COR.borda}`,
                   background:'#f8faff'}}>
-                dia {diaFechamento} de {NOMES_MESES[mes]}
+                dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
                 {mesDados.fechamentoOverride && (
                   <span style={{fontSize:9,color:'#94a3b8',marginLeft:3}}>*</span>
                 )}
@@ -617,7 +635,7 @@ export default function FaturaCartao() {
 
         {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
           const ehHoje   = eMesAtual && dia===diaHoje
-          const semana   = diaSemana(dia, mes, ano)
+          const semana   = diaSemana(dia, purchaseMes, purchaseAno)
           const ls       = mesDados.lancamentos[dia] ?? []
           const temItens = ls.length > 0
           const selecionado = diaSel===dia
@@ -628,7 +646,7 @@ export default function FaturaCartao() {
 
           // Indica o dia de fechamento e de vencimento
           const ehFechamento  = dia === diaFechamento
-          const ehVencimento  = dia === diaVencimento && mes === mesVenc && ano === anoVenc
+          const ehVencimento  = false
 
           return (
             <div key={dia}
@@ -805,7 +823,7 @@ export default function FaturaCartao() {
                 fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}} />
           </div>
           <div style={{fontSize:11,color:'#94a3b8',paddingBottom:8}}>
-            {NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}
+            {NOMES_MESES[purchaseMes]} · {diaSemana(diaSel,purchaseMes,purchaseAno)}
           </div>
         </div>
 
