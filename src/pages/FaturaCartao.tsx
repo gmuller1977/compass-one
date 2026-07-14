@@ -113,9 +113,10 @@ export default function FaturaCartao() {
   const [editandoFechamento, setEditandoFechamento] = useState(false)
   const [editandoVencimento, setEditandoVencimento] = useState(false)
 
-  const categoriaSelectRef = useRef<HTMLSelectElement>(null)
-  const valorInputRef      = useRef<HTMLInputElement>(null)
-  const dataCompraRef      = useRef<HTMLInputElement>(null)
+  const categoriaSelectRef  = useRef<HTMLSelectElement>(null)
+  const valorInputRef       = useRef<HTMLInputElement>(null)
+  const dataCompraRef       = useRef<HTMLInputElement>(null)
+  const parcelasBtnRefs     = useRef<(HTMLButtonElement|null)[]>([])
 
   const contaInfo        = contas.find(c => c.id === contaId)
   // Datas base do cartão
@@ -775,7 +776,7 @@ export default function FaturaCartao() {
         <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
           padding:3,marginBottom:12,width:'100%'}}>
           {(['saida','entrada'] as const).map(t => (
-            <button key={t} onClick={() => setFTipo(t)} style={{
+            <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
               flex:1,padding:'7px 0',border:'none',borderRadius:5,
               cursor:'pointer',fontSize:12,fontWeight:600,
               fontFamily:'inherit',transition:'all .15s',
@@ -851,21 +852,35 @@ export default function FaturaCartao() {
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Parcelas</div>
             <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-              {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => {
+              {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
                 const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
                 const ativo = parcelasAtual === n
                 return (
-                  <button key={n} onClick={()=>setFParcelas(String(n))} style={{
-                    padding:'4px 8px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
-                    borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
-                    background:ativo?'#eff6ff':'#fff',
-                    color:ativo?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                  <button key={n}
+                    ref={el => { parcelasBtnRefs.current[i] = el }}
+                    tabIndex={ativo ? 0 : -1}
+                    onClick={() => setFParcelas(String(n))}
+                    onKeyDown={e => {
+                      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        e.preventDefault()
+                        if (n < 12) { setFParcelas(String(n+1)); parcelasBtnRefs.current[i+1]?.focus() }
+                      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        e.preventDefault()
+                        if (n > 1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() }
+                      }
+                    }}
+                    style={{
+                      padding:'4px 8px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
+                      borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
+                      background:ativo?'#eff6ff':'#fff',
+                      color:ativo?COR.azul:'#0369a1',fontFamily:'inherit'}}>
                     {n}x
                   </button>
                 )
               })}
               <input
                 type="number" min={13} placeholder="+12x"
+                tabIndex={parseInt(fParcelas) > 12 ? 0 : -1}
                 value={parseInt(fParcelas)>12 ? fParcelas : ''}
                 onChange={e => { if(e.target.value) setFParcelas(e.target.value) }}
                 onFocus={e => { e.currentTarget.style.border=`1.5px solid ${COR.azul}`; e.currentTarget.style.boxShadow='0 0 0 3px rgba(26,86,219,0.15)' }}
