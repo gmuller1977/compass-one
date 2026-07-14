@@ -346,6 +346,7 @@ export default function FaturaCartao() {
           ...entrada, tipo:fTipo, descricao:fDesc.trim()||fCat, categoria:fCat,
           valor:valorParcela, formaPagamento:'credito', consolidado:novoConsolidado,
           parcelas:nParcelas>1?nParcelas:undefined, parcelaAtual:entrada.parcelaAtual,
+          diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
         }
         if (diaOrigem === diaSel) {
           return { ...prev, lancamentos: { ...prev.lancamentos, [diaOrigem]: listaOrigem.map(l => l.id===idAtual ? atualizada : l) } }
@@ -400,7 +401,7 @@ export default function FaturaCartao() {
             descricao:fDesc.trim()||fCat, categoria:fCat,
             valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
             consolidado: !ehDiaFuturo(diaSel),
-            diaCompra:diaSel, mesCompra:purchaseMes, anoCompra:purchaseAno,
+            diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
           }],
         }
       }))
@@ -408,7 +409,7 @@ export default function FaturaCartao() {
 
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
-    setTimeout(() => dataCompraRef.current?.focus(), 80)
+    setTimeout(() => { const el = dataCompraRef.current; if (el) { el.focus(); el.select() } }, 80)
   }
 
   function excluirAtual() {

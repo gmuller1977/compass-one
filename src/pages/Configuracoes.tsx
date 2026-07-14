@@ -77,15 +77,28 @@ function EmBreve() {
 
 // ── Picker de cor ────────────────────────────────────────────────────
 function ColorPicker({ valor, onChange }: { valor:string; onChange:(c:string)=>void }) {
+  const refs = useRef<(HTMLButtonElement|null)[]>([])
   return (
     <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-      {CORES_PRESET.map(c => (
-        <div key={c} onClick={() => onChange(c)} style={{
-          width:26, height:26, borderRadius:'50%', background:c, cursor:'pointer',
-          border:`3px solid ${valor===c ? '#0f172a' : 'transparent'}`,
-          boxShadow: valor===c ? '0 0 0 2px #fff, 0 0 0 4px #0f172a' : 'none',
-          transition:'all .15s',
-        }} />
+      {CORES_PRESET.map((c, i) => (
+        <button key={c}
+          ref={el => { refs.current[i] = el }}
+          tabIndex={valor===c ? 0 : -1}
+          onClick={() => onChange(c)}
+          onKeyDown={e => {
+            const total = CORES_PRESET.length
+            if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+              e.preventDefault(); const n=refs.current[(i+1)%total]; n?.click(); n?.focus()
+            } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+              e.preventDefault(); const n=refs.current[(i-1+total)%total]; n?.click(); n?.focus()
+            }
+          }}
+          style={{
+            width:26, height:26, borderRadius:'50%', background:c, cursor:'pointer', padding:0,
+            border:`3px solid ${valor===c ? '#0f172a' : 'transparent'}`,
+            boxShadow: valor===c ? '0 0 0 2px #fff, 0 0 0 4px #0f172a' : 'none',
+            outline:'none', transition:'all .15s',
+          }} />
       ))}
     </div>
   )
@@ -93,15 +106,28 @@ function ColorPicker({ valor, onChange }: { valor:string; onChange:(c:string)=>v
 
 // ── Picker de ícone ──────────────────────────────────────────────────
 function IconPicker({ icones, valor, onChange }: { icones:string[]; valor:string; onChange:(i:string)=>void }) {
+  const refs = useRef<(HTMLButtonElement|null)[]>([])
   return (
     <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-      {icones.map(ic => (
-        <button key={ic} onClick={() => onChange(ic)} style={{
-          width:34, height:34, border:`2px solid ${valor===ic ? COR.azul : COR.borda}`,
-          borderRadius:8, background: valor===ic ? '#eff6ff' : COR.branco,
-          cursor:'pointer', fontSize:16, display:'flex',
-          alignItems:'center', justifyContent:'center',
-        }}>{ic}</button>
+      {icones.map((ic, i) => (
+        <button key={ic}
+          ref={el => { refs.current[i] = el }}
+          tabIndex={valor===ic ? 0 : -1}
+          onClick={() => onChange(ic)}
+          onKeyDown={e => {
+            const total = icones.length
+            if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+              e.preventDefault(); const n=refs.current[(i+1)%total]; n?.click(); n?.focus()
+            } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+              e.preventDefault(); const n=refs.current[(i-1+total)%total]; n?.click(); n?.focus()
+            }
+          }}
+          style={{
+            width:34, height:34, border:`2px solid ${valor===ic ? COR.azul : COR.borda}`,
+            borderRadius:8, background: valor===ic ? '#eff6ff' : COR.branco,
+            cursor:'pointer', fontSize:16, display:'flex', outline:'none',
+            alignItems:'center', justifyContent:'center',
+          }}>{ic}</button>
       ))}
     </div>
   )
@@ -179,7 +205,7 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
             return conta ? (
               <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
                 background:'#f0f4ff', color:'#1a56db' }}>
-                {conta.icone} {conta.nome}
+                {conta.icone} {conta.banco}
               </span>
             ) : null
           })()}
@@ -247,6 +273,13 @@ export default function Configuracoes() {
   const [editCatId, setEditCatId] = useState<string|null>(null)
   const [erroCat,   setErroCat]   = useState('')
   const nomeCatRef = useRef<HTMLInputElement>(null)
+
+  const tipoBancoRefs   = useRef<(HTMLButtonElement|null)[]>([])
+  const pagFaturaRefs   = useRef<(HTMLButtonElement|null)[]>([])
+  const tipoCatRefs     = useRef<(HTMLButtonElement|null)[]>([])
+  const freqCatRefs     = useRef<(HTMLButtonElement|null)[]>([])
+  const tipoMovRefs     = useRef<(HTMLButtonElement|null)[]>([])
+  const formaPagCatRefs = useRef<(HTMLButtonElement|null)[]>([])
 
   // ── Ações Conta ──
   function novaConta(tipoAba: Aba = aba) {
@@ -556,18 +589,30 @@ export default function Configuracoes() {
                             { id:'pix',           label:'Pix'               },
                             { id:'boleto',        label:'Boleto'            },
                             { id:'transferencia', label:'Transferência'     },
-                          ] as { id: FormaPagamentoFatura; label: string }[]).map(f => (
-                            <button key={f.id} onClick={() => setFormConta(p=>({
-                              ...p,
-                              formaPagamentoFatura: f.id,
-                              contaPagamentoId: f.id !== 'automatico' ? undefined : p.contaPagamentoId,
-                            }))} style={{
-                              padding:'6px 12px', fontFamily:'inherit', borderRadius:7,
-                              cursor:'pointer', fontSize:12, fontWeight:500,
-                              border:`1.5px solid ${formConta.formaPagamentoFatura===f.id ? COR.azul : COR.borda}`,
-                              background: formConta.formaPagamentoFatura===f.id ? '#eff6ff' : COR.branco,
-                              color: formConta.formaPagamentoFatura===f.id ? COR.azul : COR.textoSuave,
-                            }}>
+                          ] as { id: FormaPagamentoFatura; label: string }[]).map((f, i) => (
+                            <button key={f.id}
+                              ref={el => { pagFaturaRefs.current[i] = el }}
+                              tabIndex={formConta.formaPagamentoFatura===f.id ? 0 : -1}
+                              onClick={() => setFormConta(p=>({
+                                ...p,
+                                formaPagamentoFatura: f.id,
+                                contaPagamentoId: f.id !== 'automatico' ? undefined : p.contaPagamentoId,
+                              }))}
+                              onKeyDown={e => {
+                                const total = 4
+                                if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                                  e.preventDefault(); const n=pagFaturaRefs.current[(i+1)%total]; n?.click(); n?.focus()
+                                } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                                  e.preventDefault(); const n=pagFaturaRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
+                                }
+                              }}
+                              style={{
+                                padding:'6px 12px', fontFamily:'inherit', borderRadius:7, outline:'none',
+                                cursor:'pointer', fontSize:12, fontWeight:500,
+                                border:`1.5px solid ${formConta.formaPagamentoFatura===f.id ? COR.azul : COR.borda}`,
+                                background: formConta.formaPagamentoFatura===f.id ? '#eff6ff' : COR.branco,
+                                color: formConta.formaPagamentoFatura===f.id ? COR.azul : COR.textoSuave,
+                              }}>
                               {f.label}
                             </button>
                           ))}
@@ -638,9 +683,20 @@ export default function Configuracoes() {
                           <div>
                             <label style={labelSt}>Tipo</label>
                             <div style={{ display:'flex', gap:6 }}>
-                              {([['corrente','Corrente'],['poupanca','Poupança']] as const).map(([v,l]) => (
-                                <button key={v} onClick={() => setFormConta(p=>({...p,tipo:v}))} style={{
-                                  flex:1, padding:'7px 0', fontFamily:'inherit',
+                              {([['corrente','Corrente'],['poupanca','Poupança']] as const).map(([v,l], i) => (
+                                <button key={v}
+                                  ref={el => { tipoBancoRefs.current[i] = el }}
+                                  tabIndex={formConta.tipo===v ? 0 : -1}
+                                  onClick={() => setFormConta(p=>({...p,tipo:v}))}
+                                  onKeyDown={e => {
+                                    if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                                      e.preventDefault(); const n=tipoBancoRefs.current[(i+1)%2]; n?.click(); n?.focus()
+                                    } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                                      e.preventDefault(); const n=tipoBancoRefs.current[(i-1+2)%2]; n?.click(); n?.focus()
+                                    }
+                                  }}
+                                  style={{
+                                  flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                                   border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
                                   borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
                                   background: formConta.tipo===v ? '#eff6ff' : COR.branco,
@@ -832,9 +888,20 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Tipo</label>
                     <div style={{ display:'flex', gap:6 }}>
-                      {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l]) => (
-                        <button key={v} onClick={() => setFormCat(p=>({...p,tipo:v}))} style={{
-                          flex:1, padding:'7px 0', fontFamily:'inherit',
+                      {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l], i) => (
+                        <button key={v}
+                          ref={el => { tipoCatRefs.current[i] = el }}
+                          tabIndex={formCat.tipo===v ? 0 : -1}
+                          onClick={() => setFormCat(p=>({...p,tipo:v}))}
+                          onKeyDown={e => {
+                            if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                              e.preventDefault(); const n=tipoCatRefs.current[(i+1)%2]; n?.click(); n?.focus()
+                            } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                              e.preventDefault(); const n=tipoCatRefs.current[(i-1+2)%2]; n?.click(); n?.focus()
+                            }
+                          }}
+                          style={{
+                          flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                           border:`1.5px solid ${formCat.tipo===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
                           background: formCat.tipo===v ? (v==='entrada' ? '#f0fdf4' : '#fff1f2') : COR.branco,
@@ -847,9 +914,20 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Frequência</label>
                     <div style={{ display:'flex', gap:6 }}>
-                      {([[false,'Variável'],[true,'Fixa']] as const).map(([v,l]) => (
-                        <button key={String(v)} onClick={() => setFormCat(p=>({...p,fixa:v as boolean}))} style={{
-                          flex:1, padding:'7px 0', fontFamily:'inherit',
+                      {([[false,'Variável'],[true,'Fixa']] as const).map(([v,l], i) => (
+                        <button key={String(v)}
+                          ref={el => { freqCatRefs.current[i] = el }}
+                          tabIndex={formCat.fixa===v ? 0 : -1}
+                          onClick={() => setFormCat(p=>({...p,fixa:v as boolean}))}
+                          onKeyDown={e => {
+                            if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                              e.preventDefault(); const n=freqCatRefs.current[(i+1)%2]; n?.click(); n?.focus()
+                            } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                              e.preventDefault(); const n=freqCatRefs.current[(i-1+2)%2]; n?.click(); n?.focus()
+                            }
+                          }}
+                          style={{
+                          flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                           border:`1.5px solid ${formCat.fixa===v ? COR.azul : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
                           background: formCat.fixa===v ? '#eff6ff' : COR.branco,
@@ -897,14 +975,26 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Tipo de movimento</label>
                     <div style={{ display:'flex', gap:6 }}>
-                      {TIPOS_MOVIMENTO.map(t => (
-                        <button key={t.id} onClick={() => setFormCat(p=>({
-                          ...p, tipoMovimento:t.id,
-                          formaPagamento: t.id==='dinheiro' ? undefined
-                            : t.id==='cartao' ? 'avista' : 'automatico',
-                          contaDebitoId: undefined,
-                        }))} style={{
-                          flex:1, padding:'7px 0', fontFamily:'inherit',
+                      {TIPOS_MOVIMENTO.map((t, i) => (
+                        <button key={t.id}
+                          ref={el => { tipoMovRefs.current[i] = el }}
+                          tabIndex={formCat.tipoMovimento===t.id ? 0 : -1}
+                          onClick={() => setFormCat(p=>({
+                            ...p, tipoMovimento:t.id,
+                            formaPagamento: t.id==='dinheiro' ? undefined
+                              : t.id==='cartao' ? 'avista' : 'automatico',
+                            contaDebitoId: undefined,
+                          }))}
+                          onKeyDown={e => {
+                            const total = TIPOS_MOVIMENTO.length
+                            if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                              e.preventDefault(); const n=tipoMovRefs.current[(i+1)%total]; n?.click(); n?.focus()
+                            } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                              e.preventDefault(); const n=tipoMovRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
+                            }
+                          }}
+                          style={{
+                          flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                           border:`1.5px solid ${formCat.tipoMovimento===t.id ? COR.azul : COR.borda}`,
                           borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
                           background: formCat.tipoMovimento===t.id ? '#eff6ff' : COR.branco,
@@ -920,19 +1010,34 @@ export default function Configuracoes() {
                     <div>
                       <label style={labelSt}>Forma de pagamento</label>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                        {(formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO).map(f => (
-                          <button key={f.id} onClick={() => setFormCat(p=>({
-                            ...p, formaPagamento:f.id,
-                            contaDebitoId: f.id === 'automatico' ? p.contaDebitoId : undefined,
-                          }))} style={{
-                            padding:'7px 10px', fontFamily:'inherit',
-                            border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
-                            borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
-                            background: formCat.formaPagamento===f.id ? '#eff6ff' : COR.branco,
-                            color: formCat.formaPagamento===f.id ? COR.azul : COR.textoSuave }}>
+                        {(formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO).map((f, i) => {
+                          const lista = formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO
+                          return (
+                          <button key={f.id}
+                            ref={el => { formaPagCatRefs.current[i] = el }}
+                            tabIndex={formCat.formaPagamento===f.id ? 0 : -1}
+                            onClick={() => setFormCat(p=>({
+                              ...p, formaPagamento:f.id,
+                              contaDebitoId: f.id === 'automatico' ? p.contaDebitoId : undefined,
+                            }))}
+                            onKeyDown={e => {
+                              const total = lista.length
+                              if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                                e.preventDefault(); const n=formaPagCatRefs.current[(i+1)%total]; n?.click(); n?.focus()
+                              } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                                e.preventDefault(); const n=formaPagCatRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
+                              }
+                            }}
+                            style={{
+                              padding:'7px 10px', fontFamily:'inherit', outline:'none',
+                              border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
+                              borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                              background: formCat.formaPagamento===f.id ? '#eff6ff' : COR.branco,
+                              color: formCat.formaPagamento===f.id ? COR.azul : COR.textoSuave }}>
                             {f.label}
                           </button>
-                        ))}
+                          )
+                        })}
                       </div>
                       {formCat.fixa && formCat.tipoMovimento==='banco' && (
                         <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
