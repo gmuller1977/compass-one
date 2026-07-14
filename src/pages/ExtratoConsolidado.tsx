@@ -262,23 +262,28 @@ export default function ExtratoConsolidado() {
     [contasExtrato],
   )
 
-  // saldosConf: apenas itens confirmados → usado em dias passados/hoje (INICIAL/ATUAL/FINAL)
-  // saldosAll:  todos os itens → usado em dias futuros (INICIAL/PREVISTO)
+  // saldosConf: apenas itens confirmados → INICIAL/ATUAL/FINAL para dias passados e hoje
+  // saldosAll:  até hoje = confirmados; a partir de amanhã = todos os itens
+  //             Garante que saldo inicial = saldo final do dia anterior sempre
   const { saldosConf, saldosAll } = useMemo(() => {
     const saldosConf: Record<number, number> = {}
     const saldosAll:  Record<number, number> = {}
     let sConf = saldoBase, sAll = saldoBase
+    // Dias "passados+hoje": apenas confirmados entram no sAll
+    const limitePassado = eMesAtual ? diaHoje
+      : (ano < anoHoje || (ano === anoHoje && mes < mesHoje)) ? totalDias : 0
     for (let d = 1; d <= totalDias; d++) {
       for (const item of (itensPorDia[d] ?? [])) {
         const delta = item.tipo === 'entrada' ? item.valor : -item.valor
         if (item.confirmado) sConf += delta
-        sAll += delta
+        // sAll acompanha confirmados até hoje; depois conta tudo (PREVISTO)
+        if (d <= limitePassado ? item.confirmado : true) sAll += delta
       }
       saldosConf[d] = sConf
       saldosAll[d]  = sAll
     }
     return { saldosConf, saldosAll }
-  }, [saldoBase, itensPorDia, totalDias])
+  }, [saldoBase, itensPorDia, totalDias, eMesAtual, diaHoje, ano, anoHoje, mes, mesHoje])
 
   // Saldo disponível por conta (para exibição no header)
   const saldosPorConta = useMemo(() => contasExtrato.map(c => {
