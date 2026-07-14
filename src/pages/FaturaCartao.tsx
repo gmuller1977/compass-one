@@ -110,14 +110,17 @@ export default function FaturaCartao() {
   const diaFechamento = mesDados.fechamentoOverride ?? diaFechamentoBase
   const diaVencimento = mesDados.vencimentoOverride ?? diaVencimentoBase
 
-  // Mês/ano da aba atual = mês de vencimento (tab = billing month)
-  const mesVenc = mes
-  const anoVenc = ano
+  // Tab = mês de compra. Vencimento = mês seguinte quando diaVenc < diaFech (caso comum)
+  const mesVenc = diaVencimentoBase < diaFechamentoBase
+    ? (mes + 1 > 11 ? 0 : mes + 1)
+    : mes
+  const anoVenc = diaVencimentoBase < diaFechamentoBase && mes + 1 > 11 ? ano + 1 : ano
 
-  // Calcula a aba padrão do período de faturamento atual (para marcar o ponto)
-  const billingOffset = diaVencimentoBase < diaFechamentoBase ? 1 : 0
-  const billingMes = (() => { let m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset; return m > 11 ? m - 12 : m })()
-  const billingAno = (() => { let m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset; return m > 11 ? anoHoje + 1 : anoHoje })()
+  // Aba padrão: antes do fechamento = mês atual; depois = próximo mês
+  const billingMes = diaHoje >= diaFechamentoBase
+    ? (mesHoje + 1 > 11 ? 0 : mesHoje + 1)
+    : mesHoje
+  const billingAno = diaHoje >= diaFechamentoBase && mesHoje + 1 > 11 ? anoHoje + 1 : anoHoje
 
   // Status da fatura: paga se a data de vencimento já passou
   const faturaStatus: 'paga' | 'aberta' = new Date(anoVenc, mesVenc, diaVencimento) < hoje ? 'paga' : 'aberta'
@@ -131,9 +134,6 @@ export default function FaturaCartao() {
 
   // Sincroniza totais das faturas como lançamentos previstos no extrato bancário
   useEffect(() => {
-    const contaBancoId = contas.find(c => c.tipo === 'corrente')?.id
-    if (!contaBancoId) return
-
     const extratoRaw = localStorage.getItem('compass_extrato_dados')
     const extrato: Record<string, { lancamentos: Record<number, unknown[]>; saldoBanco: string }> =
       extratoRaw ? JSON.parse(extratoRaw) : {}
@@ -143,11 +143,27 @@ export default function FaturaCartao() {
       if (parts.length !== 3) continue
       const [cId, aStr, mStr] = parts
       const a = parseInt(aStr)
-      const m = parseInt(mStr) - 1
+      const m = parseInt(mStr) - 1  // mês de compra (0-based)
       if (isNaN(a) || isNaN(m)) continue
 
       const contaCartao = contas.find(c => c.id === cId && c.tipo === 'cartao')
       if (!contaCartao) continue
+
+      const diaFechBase = contaCartao.diaFechamento ?? 1
+      const diaVencBase = contaCartao.diaVencimento ?? 1
+
+      // Mês de vencimento: próximo mês quando diaVenc < diaFech (caso comum)
+      let vencMes = m, vencAno = a
+      if (diaVencBase < diaFechBase) {
+        vencMes = m + 1
+        if (vencMes > 11) { vencMes = 0; vencAno++ }
+      }
+
+      // Débito automático → banco vinculado; caso contrário → todos os bancos correntes
+      const bankIds: string[] = contaCartao.formaPagamentoFatura === 'automatico' && contaCartao.contaPagamentoId
+        ? [contaCartao.contaPagamentoId]
+        : contas.filter(c => c.tipo === 'corrente').map(c => c.id)
+      if (bankIds.length === 0) continue
 
       const dm = dados[fatKey]
       const nDias = diasNoMes(m, a)
@@ -159,50 +175,45 @@ export default function FaturaCartao() {
       }
       const total = saidas - entradas
 
-      const diaVenc = dm.vencimentoOverride ?? contaCartao.diaVencimento ?? 1
-
-      // Tab = mês de vencimento, então a chave do extrato é o próprio mês da fatura
+      const diaVenc = dm.vencimentoOverride ?? diaVencBase
       const lancId = `fatura-${cId}-${a}-${String(m + 1).padStart(2, '0')}`
-      const extratoKey = `${contaBancoId}-${a}-${String(m + 1).padStart(2, '0')}`
       const descricao = `Fatura ${contaCartao.banco}`
 
-      const extratoMes = extrato[extratoKey] ?? { lancamentos: {}, saldoBanco: '' }
-      const novaLancs: Record<number, unknown[]> = {}
-      for (const dStr in extratoMes.lancamentos) {
-        const dNum = parseInt(dStr)
-        novaLancs[dNum] = (extratoMes.lancamentos[dNum] ?? []).filter((l: unknown) => (l as { id: string }).id !== lancId)
+      for (const bankId of bankIds) {
+        const extratoKey = `${bankId}-${vencAno}-${String(vencMes + 1).padStart(2, '0')}`
+        const extratoMes = extrato[extratoKey] ?? { lancamentos: {}, saldoBanco: '' }
+        const novaLancs: Record<number, unknown[]> = {}
+        for (const dStr in extratoMes.lancamentos) {
+          const dNum = parseInt(dStr)
+          novaLancs[dNum] = (extratoMes.lancamentos[dNum] ?? []).filter((l: unknown) => (l as { id: string }).id !== lancId)
+        }
+        if (total > 0) {
+          novaLancs[diaVenc] = [
+            ...(novaLancs[diaVenc] ?? []).filter((l: unknown) => (l as { id: string }).id !== lancId),
+            { id: lancId, tipo: 'saida', descricao, categoria: descricao,
+              valor: total, formaPagamento: 'debito', tipoLanc: 'fixa' },
+          ]
+        }
+        extrato[extratoKey] = { ...extratoMes, lancamentos: novaLancs }
       }
-      if (total > 0) {
-        novaLancs[diaVenc] = [
-          ...(novaLancs[diaVenc] ?? []).filter((l: unknown) => (l as { id: string }).id !== lancId),
-          { id: lancId, tipo: 'saida', descricao, categoria: descricao,
-            valor: total, formaPagamento: 'debito', tipoLanc: 'fixa' },
-        ]
-      }
-      extrato[extratoKey] = { ...extratoMes, lancamentos: novaLancs }
     }
 
     localStorage.setItem('compass_extrato_dados', JSON.stringify(extrato))
     window.dispatchEvent(new CustomEvent('compass:extrato-updated'))
   }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-avança para a aba do período de faturamento atual
-  // A aba representa o mês de VENCIMENTO da fatura, não o mês de compra
+  // Auto-avança para a aba do mês de compra atual
   useEffect(() => {
     const conta = contas.find(c => c.id === contaId)
     const diaFech = conta?.diaFechamento ?? 1
-    const diaVenc = conta?.diaVencimento ?? 1
-    const offset  = diaVenc < diaFech ? 1 : 0  // venc no mês seguinte ao fechamento
     if (diaHoje >= diaFech) {
-      // Passou do fechamento: próximo período de faturamento
-      let m = mesHoje + 1 + offset, a = anoHoje
-      if (m > 11) { m -= 12; a++ }
+      // Passou do fechamento: compras agora vão para o próximo mês
+      let m = mesHoje + 1, a = anoHoje
+      if (m > 11) { m = 0; a++ }
       setMes(m); setAno(a); setDiaSel(1)
     } else {
-      // Antes do fechamento: período atual
-      let m = mesHoje + offset, a = anoHoje
-      if (m > 11) { m = 0; a++ }
-      setMes(m); setAno(a); setDiaSel(diaHoje)
+      // Antes do fechamento: mês atual
+      setMes(mesHoje); setAno(anoHoje); setDiaSel(diaHoje)
     }
   }, [contaId, contas])
 
@@ -561,7 +572,7 @@ export default function FaturaCartao() {
                 style={{fontSize:12,fontWeight:700,color:COR.azul,cursor:'pointer',
                   padding:'2px 6px',borderRadius:5,border:`1px dashed ${COR.borda}`,
                   background:'#f8faff'}}>
-                dia {diaFechamento}
+                dia {diaFechamento} de {NOMES_MESES[mes]}
                 {mesDados.fechamentoOverride && (
                   <span style={{fontSize:9,color:'#94a3b8',marginLeft:3}}>*</span>
                 )}
