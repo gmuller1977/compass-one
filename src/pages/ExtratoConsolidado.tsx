@@ -453,7 +453,9 @@ export default function ExtratoConsolidado() {
           const aberto     = diasAbertos.has(dia)
 
           const saldosRef   = diaFuturo ? saldosAll : saldosConf
-          const saldoIni    = dia===1 ? saldoBase : (saldosRef[dia-1] ?? saldoBase)
+          // saldo inicial = saldo final do dia anterior: usa a referência DAQUELE dia, não deste
+          const prevFuturo  = eMesAtual && dia > 1 && (dia - 1) > diaHoje
+          const saldoIni    = dia===1 ? saldoBase : ((prevFuturo ? saldosAll : saldosConf)[dia-1] ?? saldoBase)
           const entradasDia = diaFuturo
             ? itens.reduce((s,i) => i.tipo==='entrada'?s+i.valor:s, 0)
             : itens.reduce((s,i) => i.tipo==='entrada'&&i.confirmado?s+i.valor:s, 0)

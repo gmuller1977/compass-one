@@ -21,6 +21,7 @@ type Lancamento = {
   consolidado?: boolean
   parcelas?: number
   parcelaAtual?: number
+  diaCompra?: number; mesCompra?: number; anoCompra?: number
 }
 
 type DadosMes = {
@@ -82,7 +83,6 @@ export default function FaturaCartao() {
   const [ano,      setAno]      = useState(anoHoje)
   const [dados,    setDados]    = useState<Record<string, DadosMes>>(carregarDados)
   const [diaSel,   setDiaSel]   = useState<number>(diaHoje)
-  const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
   const [editandoId,           setEditandoId]           = useState<string|null>(null)
   const [editandoDiaOriginal,  setEditandoDiaOriginal]  = useState<number|null>(null)
   const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
@@ -93,7 +93,6 @@ export default function FaturaCartao() {
   const [editandoFechamento, setEditandoFechamento] = useState(false)
   const [editandoVencimento, setEditandoVencimento] = useState(false)
 
-  const hojeRef           = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef      = useRef<HTMLInputElement>(null)
 
@@ -228,15 +227,6 @@ export default function FaturaCartao() {
     setDiaSel(diaHoje >= diaFech ? 1 : diaHoje)
   }, [contaId, contas])
 
-  useEffect(() => {
-    if (eMesAtual)
-      setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
-    const mesDadosAtual = dados[key]
-    const diasComItens = Object.keys(mesDadosAtual?.lancamentos ?? {})
-      .map(Number)
-      .filter(d => (mesDadosAtual?.lancamentos[d] ?? []).length > 0)
-    setDiasAbertos(new Set(eMesAtual ? [diaHoje, ...diasComItens] : diasComItens))
-  }, [contaId, mes, ano]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     // novoMes é mês de vencimento; mês de compra = novoMes - billingOffset
@@ -249,14 +239,6 @@ export default function FaturaCartao() {
     const passadoDia = eMesAtual ? dia < diaHoje : (ano<anoHoje || (ano===anoHoje && mes<mesHoje))
     const ehHojeDia  = eMesAtual && dia === diaHoje
     return !passadoDia && !ehHojeDia
-  }
-
-  function toggleDia(dia: number) {
-    setDiasAbertos(prev => {
-      const next = new Set(prev)
-      next.has(dia) ? next.delete(dia) : next.add(dia)
-      return next
-    })
   }
 
   function resetarParaNovo(novoDia: number) {
@@ -368,6 +350,7 @@ export default function FaturaCartao() {
                   valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
                   consolidado: p===1 ? !ehDiaFuturo(diaSel) : false,
                   parcelas:nParcelas, parcelaAtual:p,
+                  diaCompra:diaSel, mesCompra:purchaseMes, anoCompra:purchaseAno,
                 }],
               }
             }
@@ -385,12 +368,12 @@ export default function FaturaCartao() {
             descricao:fDesc.trim()||fCat, categoria:fCat,
             valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
             consolidado: !ehDiaFuturo(diaSel),
+            diaCompra:diaSel, mesCompra:purchaseMes, anoCompra:purchaseAno,
           }],
         }
       }))
     }
 
-    setDiasAbertos(prev => new Set([...prev, diaSel]))
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
@@ -630,149 +613,94 @@ export default function FaturaCartao() {
       {/* CONTEÚDO: lista + painel */}
       <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
 
-      {/* LISTA DE DIAS */}
-      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
+      {/* LISTA DE LANÇAMENTOS (flat list) */}
+      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:8}}>
 
-        {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
-          const ehHoje   = eMesAtual && dia===diaHoje
-          const semana   = diaSemana(dia, purchaseMes, purchaseAno)
-          const ls       = mesDados.lancamentos[dia] ?? []
-          const temItens = ls.length > 0
-          const selecionado = diaSel===dia
-          const aberto    = diasAbertos.has(dia)
-          const saidasDia  = ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
-          const entradasDia = ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
-          const totalDia   = saidasDia - entradasDia
+        {(() => {
+          const todos: Array<{dia: number; l: Lancamento}> = []
+          for (let d = 1; d <= totalDias; d++) {
+            (mesDados.lancamentos[d] ?? []).forEach(l => todos.push({dia: d, l}))
+          }
 
-          // Indica o dia de fechamento e de vencimento
-          const ehFechamento  = dia === diaFechamento
-          const ehVencimento  = false
+          if (todos.length === 0) {
+            return (
+              <div style={{textAlign:'center',color:COR.textoSuave,padding:40,fontSize:13}}>
+                Nenhum lançamento nesta fatura.
+              </div>
+            )
+          }
 
-          return (
-            <div key={dia}
-              ref={ehHoje ? hojeRef : undefined}
-              onClick={() => { toggleDia(dia); resetarParaNovo(dia) }}
-              style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
-                position:'relative',zIndex:selecionado?7:6,
-                border:`1.5px solid ${selecionado?COR.azul:ehHoje?'#93c5fd':COR.borda}`,
-                background:COR.branco,
-                boxShadow:selecionado?`0 0 0 3px rgba(26,86,219,0.12)`:
-                  ehHoje?`0 0 0 2px rgba(147,197,253,0.3)`:'none',
-              }}>
+          return todos.map(({dia, l}, idx) => {
+            const catVisual  = iconeCategoria(categorias, l.categoria)
+            const emEdicao   = editandoId === l.id
+            const prevDia    = idx > 0 ? todos[idx-1].dia : 0
+            const showFechDiv = dia > diaFechamento && prevDia <= diaFechamento
 
-              {/* Cabeçalho do dia */}
-              <div style={{display:'flex',alignItems:'center',gap:12,
-                padding:'10px 16px',minHeight:54,
-                background:selecionado?'#eff6ff':ehHoje?'#f0f7ff':'#fafbff',
-                borderBottom:aberto&&(temItens||selecionado)?`1px solid ${selecionado?'#bfdbfe':COR.borda}`:'none'}}>
+            // Data da compra: usa campos armazenados se disponíveis (parcelados)
+            const dc  = l.diaCompra ?? dia
+            const mc  = l.mesCompra ?? purchaseMes
+            const ac  = l.anoCompra ?? purchaseAno
+            const dataLabel = ac !== purchaseAno
+              ? `${String(dc).padStart(2,'0')} de ${NOMES_MESES[mc]} ${ac}`
+              : `${String(dc).padStart(2,'0')} de ${NOMES_MESES[mc]}`
 
-                <div style={{display:'flex',flexDirection:'column',alignItems:'center',minWidth:32,flexShrink:0}}>
-                  <span style={{fontSize:18,fontWeight:700,lineHeight:1,
-                    color:selecionado||ehHoje?COR.azul:COR.texto}}>
-                    {String(dia).padStart(2,'0')}
-                  </span>
-                  <span style={{fontSize:10,color:'#94a3b8',
-                    fontWeight:500,textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>
-                    {semana}
-                  </span>
-                </div>
-
-                {ehHoje && (
-                  <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',
-                    borderRadius:4,background:'#dbeafe',color:COR.azul,
-                    letterSpacing:.5,textTransform:'uppercase',flexShrink:0}}>Hoje</span>
+            return (
+              <div key={l.id}>
+                {showFechDiv && (
+                  <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0 8px'}}>
+                    <div style={{flex:1,height:1,background:COR.borda}} />
+                    <span style={{fontSize:10,color:COR.textoSuave,fontWeight:600,letterSpacing:.3}}>
+                      Após fechamento
+                    </span>
+                    <div style={{flex:1,height:1,background:COR.borda}} />
+                  </div>
                 )}
-                {ehFechamento && (
-                  <span style={{fontSize:10,background:'#f59e0b',color:'#fff',
-                    padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Fechamento</span>
-                )}
-                {ehVencimento && (
-                  <span style={{fontSize:10,background:COR.vermelho,color:'#fff',
-                    padding:'2px 8px',borderRadius:5,fontWeight:600,flexShrink:0}}>Vencimento</span>
-                )}
-
-                <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:6}}>
-                  {temItens && (
-                    <span style={{fontSize:13,fontWeight:700,
-                      color:totalDia>0?COR.vermelho:COR.azul}}>
-                      {totalDia>0?`-${fmt(totalDia)}`:`+${fmt(-totalDia)}`}
+                <div
+                  onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
+                  style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',
+                    padding:'12px 14px',borderRadius:12,flexShrink:0,
+                    background: emEdicao ? '#eff6ff' : COR.branco,
+                    border: `1.5px solid ${emEdicao ? COR.azul : COR.borda}`,
+                    boxShadow: emEdicao ? '0 0 0 3px rgba(26,86,219,0.1)' : 'none',
+                  }}
+                  onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
+                  onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background= emEdicao?'#eff6ff':COR.branco }}>
+                  <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,
+                    background:catVisual.cor}}>
+                    {catVisual.icone}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:COR.texto,
+                      whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {l.descricao || l.categoria}
+                    </div>
+                    <div style={{fontSize:11,color:COR.textoSuave,marginTop:1}}>{l.categoria}</div>
+                    <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{dataLabel}</div>
+                  </div>
+                  {l.parcelas && l.parcelas > 1 && (
+                    <span style={{fontSize:11,padding:'3px 8px',borderRadius:6,fontWeight:700,
+                      flexShrink:0,background:'#ede9fe',color:'#7c3aed'}}>
+                      {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
                     </span>
                   )}
-                  <span style={{width:18,flexShrink:0,textAlign:'center',fontSize:14,
-                    color:'#94a3b8',opacity:temItens?1:0,userSelect:'none',
-                    display:'inline-block',transition:'transform .15s',
-                    transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
+                  <div style={{textAlign:'right',flexShrink:0}}>
+                    <div style={{fontSize:14,fontWeight:700,
+                      color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
+                      {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                    style={{border:'none',background:'transparent',cursor:'pointer',
+                      color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4,flexShrink:0}}
+                    onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
+                    onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                 </div>
               </div>
-
-              {/* Lançamentos — agrupados por tipo */}
-              {aberto && (() => {
-                const parcelados = ls.filter(l => l.parcelas && l.parcelas > 1)
-                const manuais    = ls.filter(l => !l.parcelas || l.parcelas <= 1)
-                const grupos: Array<{label: string; itens: typeof ls}> = []
-                if (parcelados.length) grupos.push({label:'Parcelados', itens:parcelados})
-                if (manuais.length)    grupos.push({label:'Manuais',    itens:manuais})
-                const mostrarHeader = parcelados.length > 0 && manuais.length > 0
-
-                const renderItem = (l: typeof ls[0]) => {
-                  const catVisual = iconeCategoria(categorias, l.categoria)
-                  const emEdicao  = editandoId === l.id
-                  const corValor  = l.tipo==='entrada' ? COR.azul : COR.vermelho
-                  return (
-                    <div key={l.id}
-                      onClick={e => { e.stopPropagation(); editarLancamento(dia, l) }}
-                      style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
-                        padding:'10px 16px',borderBottom:`1px solid #f1f5f9`,
-                        background:emEdicao?'#eff6ff':'transparent'}}
-                      onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
-                      onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background='transparent' }}>
-                      <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
-                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
-                        background:catVisual.cor}}>
-                        {catVisual.icone}
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:500,color:COR.texto,
-                          display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                          {l.descricao}
-                          {l.parcelas && (
-                            <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,
-                              background:'#ede9fe',color:'#7c3aed'}}>
-                              {l.parcelaAtual}/{l.parcelas}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{l.categoria}</div>
-                      </div>
-                      <div style={{fontSize:13,fontWeight:600,color:corValor}}>
-                        {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
-                      </div>
-                      <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                        style={{border:'none',background:'transparent',cursor:'pointer',
-                          color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
-                        onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                        onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
-                    </div>
-                  )
-                }
-
-                return grupos.map(g => (
-                  <div key={g.label}>
-                    {mostrarHeader && (
-                      <div style={{fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,
-                        color:COR.textoSuave,padding:'4px 16px',background:'#f8faff',
-                        borderBottom:`1px solid ${COR.borda}`}}>
-                        {g.label}
-                      </div>
-                    )}
-                    {g.itens.map(renderItem)}
-                  </div>
-                ))
-              })()}
-
-            </div>
-          )
-        })}
+            )
+          })
+        })()}
 
         {/* Total da fatura */}
         <div style={{borderRadius:12,padding:'14px 16px',flexShrink:0,
