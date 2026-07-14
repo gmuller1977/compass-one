@@ -260,7 +260,7 @@ export default function NovoLancamentoExtrato() {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'center'}), 150)
     setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
-  }, [contaId, mes, ano])
+  }, [contaId, mes, ano, modo])
 
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [modo])
 
