@@ -101,7 +101,7 @@ export default function FaturaCartao() {
   const [diaSel,   setDiaSel]   = useState<number>(diaHoje)
   const [editandoId,           setEditandoId]           = useState<string|null>(null)
   const [editandoDiaOriginal,  setEditandoDiaOriginal]  = useState<number|null>(null)
-  const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
+  const [fTipo,    setFTipo]    = useState<TipoLanc>('entrada')
   const [fCat,     setFCat]     = useState('')
   const [fDesc,    setFDesc]    = useState('')
   const [fValor,   setFValor]   = useState('')
@@ -562,24 +562,22 @@ export default function FaturaCartao() {
         </div>
       </div>
 
-      {/* BARRA DE RESUMO — padrão extrato */}
+      {/* BARRA DE RESUMO — todos os pills no mesmo formato */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
         padding:'10px 16px',flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
 
-          {/* Saldo atual cartão — chip editável */}
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Saldo atual cartão:</span>
-            <span
-              onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
-              title="Clique para atualizar"
-              style={{display:'inline-flex',alignItems:'center',gap:5,
-                fontSize:12,fontWeight:600,cursor:'pointer',
-                padding:'3px 8px',borderRadius:6,
-                border: mesDados.faturaAtual ? `1.5px solid ${COR.azul}` : '1.5px dashed #e2e8f0',
-                color: mesDados.faturaAtual ? COR.azul : '#64748b',
-                background: mesDados.faturaAtual ? '#eff6ff' : '#f8faff'}}>
-              <span style={{fontSize:11}}>✎</span>
+          {/* Pill: Saldo atual — editável */}
+          <div
+            onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
+            title="Clique para atualizar"
+            style={{display:'inline-flex',alignItems:'center',gap:6,cursor:'pointer',
+              padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+              background: mesDados.faturaAtual ? COR.azul+'18' : '#f8faff',
+              border: mesDados.faturaAtual ? `1.5px solid ${COR.azul}44` : '1.5px dashed #e2e8f0'}}>
+            <span style={{fontSize:13,color: mesDados.faturaAtual ? COR.azul : '#94a3b8'}}>✎</span>
+            <span style={{fontSize:11,fontWeight:600,color: mesDados.faturaAtual ? COR.azul : '#64748b'}}>Saldo atual</span>
+            <span style={{fontSize:14,fontWeight:800,color: mesDados.faturaAtual ? COR.texto : '#94a3b8'}}>
               {mesDados.faturaAtual || 'Informar'}
             </span>
           </div>
@@ -587,9 +585,8 @@ export default function FaturaCartao() {
           {/* Pill: cartão + total calculado */}
           {contaInfo && (
             <div style={{display:'inline-flex',alignItems:'center',gap:6,
-              padding:'4px 12px',borderRadius:20,
-              background:contaInfo.cor+'18',border:`1.5px solid ${contaInfo.cor}44`,
-              whiteSpace:'nowrap'}}>
+              padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+              background:contaInfo.cor+'18',border:`1.5px solid ${contaInfo.cor}44`}}>
               <span style={{fontSize:15}}>{contaInfo.icone}</span>
               <span style={{fontSize:11,fontWeight:600,color:contaInfo.cor}}>{contaInfo.banco}</span>
               <span style={{fontSize:14,fontWeight:800,
@@ -599,31 +596,44 @@ export default function FaturaCartao() {
             </div>
           )}
 
-          {/* Diferença */}
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Diferença:</span>
-            <span style={{fontSize:12,fontWeight:700,padding:'3px 9px',borderRadius:20,
-              background: diferenca===null ? '#f1f5f9' : conciliado ? '#dcfce7' : Math.abs(diferenca)<50 ? '#fef9c3' : '#fee2e2',
-              color:       diferenca===null ? '#94a3b8' : conciliado ? '#166534' : Math.abs(diferenca)<50 ? '#92400e' : '#991b1b',
-              border: diferenca===null ? '1px solid #e2e8f0' : conciliado ? '1px solid #86efac' : Math.abs(diferenca)<50 ? '1px solid #fde68a' : '1px solid #fca5a5'}}>
-              {diferenca===null ? '—' : conciliado ? '✓ Conciliado' : `${diferenca>0?'+':'-'} ${fmt(Math.abs(diferenca))}`}
-            </span>
-          </div>
+          {/* Pill: Diferença */}
+          {(() => {
+            const cor = diferenca===null ? '#64748b' : conciliado ? '#16a34a' : Math.abs(diferenca)<50 ? '#d97706' : '#dc2626'
+            const lbl = diferenca===null ? '—' : conciliado ? '✓ Conciliado' : `${diferenca>0?'+':'-'} ${fmt(Math.abs(diferenca))}`
+            return (
+              <div style={{display:'inline-flex',alignItems:'center',gap:6,
+                padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+                background:cor+'18',border:`1.5px solid ${cor}44`}}>
+                <span style={{fontSize:11,fontWeight:600,color:cor}}>Diferença</span>
+                <span style={{fontSize:14,fontWeight:800,color:cor}}>{lbl}</span>
+              </div>
+            )
+          })()}
 
           <span style={{color:COR.borda}}>|</span>
 
-          {/* Status */}
-          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
-            background: faturaStatus==='paga' ? '#dcfce7' : faturaStatus==='fechada' ? '#e0f2fe' : '#fef9c3',
-            color:       faturaStatus==='paga' ? '#166534' : faturaStatus==='fechada' ? '#0369a1' : '#92400e',
-            border:`1px solid ${faturaStatus==='paga'?'#86efac':faturaStatus==='fechada'?'#7dd3fc':'#fde68a'}`}}>
-            {faturaStatus==='paga' ? '✓ Paga' : faturaStatus==='fechada' ? '■ Fechada' : '● Aberta'}
-          </span>
+          {/* Pill: Status */}
+          {(() => {
+            const cor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#d97706'
+            const simbolo = faturaStatus==='paga' ? '✓' : faturaStatus==='fechada' ? '■' : '●'
+            const lbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
+            return (
+              <div style={{display:'inline-flex',alignItems:'center',gap:6,
+                padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+                background:cor+'18',border:`1.5px solid ${cor}44`}}>
+                <span style={{fontSize:13,color:cor}}>{simbolo}</span>
+                <span style={{fontSize:14,fontWeight:800,color:cor}}>{lbl}</span>
+              </div>
+            )
+          })()}
 
-          {/* Fechamento — chip ✎ */}
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Fechamento:</span>
-            {editandoFechamento ? (
+          {/* Pill: Fechamento — editável */}
+          {editandoFechamento ? (
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,
+              padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+              background:COR.azul+'18',border:`1.5px solid ${COR.azul}44`}}>
+              <span style={{fontSize:13,color:COR.azul}}>✎</span>
+              <span style={{fontSize:11,fontWeight:600,color:COR.azul}}>Fechamento</span>
               <input type="number" min={1} max={31} autoFocus
                 defaultValue={diaFechamento}
                 onBlur={e => {
@@ -633,25 +643,31 @@ export default function FaturaCartao() {
                   setEditandoFechamento(false)
                 }}
                 onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-                style={{width:44,border:`1.5px solid ${COR.azul}`,borderRadius:5,padding:'3px 6px',
-                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center'}}/>
-            ) : (
-              <span onClick={() => setEditandoFechamento(true)}
-                title="Clique para editar"
-                style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:12,fontWeight:600,
-                  cursor:'pointer',padding:'3px 8px',borderRadius:6,
-                  border:`1.5px solid ${COR.azul}`,color:COR.azul,background:'#eff6ff'}}>
-                <span style={{fontSize:11}}>✎</span>
+                style={{width:36,border:`1px solid ${COR.azul}66`,borderRadius:4,padding:'1px 4px',
+                  fontSize:13,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center',
+                  background:'transparent',color:COR.azul}}/>
+            </div>
+          ) : (
+            <div onClick={() => setEditandoFechamento(true)} title="Clique para editar"
+              style={{display:'inline-flex',alignItems:'center',gap:6,cursor:'pointer',
+                padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+                background:COR.azul+'18',border:`1.5px solid ${COR.azul}44`}}>
+              <span style={{fontSize:13,color:COR.azul}}>✎</span>
+              <span style={{fontSize:11,fontWeight:600,color:COR.azul}}>Fechamento</span>
+              <span style={{fontSize:14,fontWeight:800,color:COR.texto}}>
                 dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
-                {mesDados.fechamentoOverride && <span style={{fontSize:9,color:'#94a3b8',marginLeft:2}}>*</span>}
+                {mesDados.fechamentoOverride && <sup style={{fontSize:9,color:'#94a3b8',marginLeft:2}}>*</sup>}
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Vencimento — chip ✎ */}
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:11,color:COR.textoSuave}}>Vencimento:</span>
-            {editandoVencimento ? (
+          {/* Pill: Vencimento — editável */}
+          {editandoVencimento ? (
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,
+              padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+              background:COR.vermelho+'18',border:`1.5px solid ${COR.vermelho}44`}}>
+              <span style={{fontSize:13,color:COR.vermelho}}>✎</span>
+              <span style={{fontSize:11,fontWeight:600,color:COR.vermelho}}>Vencimento</span>
               <input type="number" min={1} max={31} autoFocus
                 defaultValue={diaVencimento}
                 onBlur={e => {
@@ -661,20 +677,23 @@ export default function FaturaCartao() {
                   setEditandoVencimento(false)
                 }}
                 onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-                style={{width:44,border:`1.5px solid ${COR.vermelho}`,borderRadius:5,padding:'3px 6px',
-                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center'}}/>
-            ) : (
-              <span onClick={() => setEditandoVencimento(true)}
-                title="Clique para editar"
-                style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:12,fontWeight:600,
-                  cursor:'pointer',padding:'3px 8px',borderRadius:6,
-                  border:`1.5px solid ${COR.vermelho}`,color:COR.vermelho,background:'#fff5f5'}}>
-                <span style={{fontSize:11}}>✎</span>
+                style={{width:36,border:`1px solid ${COR.vermelho}66`,borderRadius:4,padding:'1px 4px',
+                  fontSize:13,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center',
+                  background:'transparent',color:COR.vermelho}}/>
+            </div>
+          ) : (
+            <div onClick={() => setEditandoVencimento(true)} title="Clique para editar"
+              style={{display:'inline-flex',alignItems:'center',gap:6,cursor:'pointer',
+                padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
+                background:COR.vermelho+'18',border:`1.5px solid ${COR.vermelho}44`}}>
+              <span style={{fontSize:13,color:COR.vermelho}}>✎</span>
+              <span style={{fontSize:11,fontWeight:600,color:COR.vermelho}}>Vencimento</span>
+              <span style={{fontSize:14,fontWeight:800,color:COR.texto}}>
                 {diaVencimento} de {NOMES_MESES[mesVenc]}
-                {mesDados.vencimentoOverride && <span style={{fontSize:9,color:'#94a3b8',marginLeft:2}}>*</span>}
+                {mesDados.vencimentoOverride && <sup style={{fontSize:9,color:'#94a3b8',marginLeft:2}}>*</sup>}
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
         </div>
       </div>
@@ -830,7 +849,7 @@ export default function FaturaCartao() {
         {/* Compra / Estorno */}
         <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
           padding:3,marginBottom:12,width:'100%'}}>
-          {(['saida','entrada'] as const).map(t => (
+          {(['entrada','saida'] as const).map(t => (
             <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
               flex:1,padding:'7px 0',border:'none',borderRadius:5,
               cursor:'pointer',fontSize:12,fontWeight:600,
