@@ -244,13 +244,17 @@ export default function FaturaCartao() {
     setDiaSel(diaHoje >= diaFech ? 1 : diaHoje)
   }, [contaId, contas])
 
-  // Modal "valor da fatura" — abre uma vez por dia por fatura (aguarda dados carregarem)
+  // Modal "valor da fatura" — abre uma vez por dia por fatura
+  // Delay de 50ms: aguarda o auto-avança (efeito anterior) corrigir o mês/key antes de abrir
   useEffect(() => {
     if (carregando) return
     const dm = dados[key] ?? DADOS_MES_VAZIO
     if (dm.faturaAtualData === hojeStr) return
-    setModalFaturaValor(dm.faturaAtual ?? '')
-    setModalFatura(true)
+    const t = setTimeout(() => {
+      setModalFaturaValor(dm.faturaAtual ?? '')
+      setModalFatura(true)
+    }, 50)
+    return () => clearTimeout(t)
   }, [key, carregando]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
