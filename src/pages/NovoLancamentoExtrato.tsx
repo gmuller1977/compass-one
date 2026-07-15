@@ -648,16 +648,19 @@ export default function NovoLancamentoExtrato() {
 
         {isDinheiro ? (<>
           {/* Dinheiro — linha única (igual ao banco) */}
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo dinheiro atual:</span>
-            <input value={mesDados.saldoBanco}
-              onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
-              onFocus={e => e.target.select()}
-              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
-              placeholder="R$ 0,00"
-              style={{border:`1px solid #16a34a55`,borderRadius:6,padding:'4px 10px',
-                fontSize:13,fontWeight:700,color:'#16a34a',background:'#16a34a18',
-                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Saldo dinheiro atual:</span>
+            <span
+              onClick={() => { setModalSaldoValor(mesDados.saldoBanco ?? ''); setModalSaldo({contaId:'dinheiro',banco:'Dinheiro',icone:'💵',cor:'#16a34a',key}) }}
+              style={{display:'inline-flex',alignItems:'center',gap:5,
+                fontSize:12,fontWeight:600,cursor:'pointer',
+                padding:'3px 8px',borderRadius:6,
+                border: mesDados.saldoBanco ? '1.5px solid #16a34a' : '1.5px dashed #e2e8f0',
+                color: mesDados.saldoBanco ? '#16a34a' : '#64748b',
+                background: mesDados.saldoBanco ? '#16a34a18' : '#f8faff'}}>
+              <span style={{fontSize:11}}>✎</span>
+              {mesDados.saldoBanco || 'Informar'}
+            </span>
           </div>
           <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
             display:'inline-flex',alignItems:'center',gap:5,
@@ -685,16 +688,21 @@ export default function NovoLancamentoExtrato() {
           </div>
         </>) : (<>
           {/* Banco — linha única */}
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo atual banco:</span>
-            <input value={mesDados.saldoBanco}
-              onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
-              onFocus={e => e.target.select()}
-              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,saldoBanco:fmt(n)})) }}
-              placeholder="R$ 0,00"
-              style={{border:`1px solid ${contaInfo?.cor ?? COR.azul}55`,borderRadius:6,padding:'4px 10px',
-                fontSize:13,fontWeight:700,color:contaInfo?.cor ?? COR.azul,background:`${contaInfo?.cor ?? COR.azul}18`,
-                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Saldo atual banco:</span>
+            <span
+              onClick={() => { setModalSaldoValor(mesDados.saldoBanco ?? ''); setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key}) }}
+              style={{display:'inline-flex',alignItems:'center',gap:5,
+                fontSize:12,fontWeight:600,cursor:'pointer',
+                padding:'3px 8px',borderRadius:6,
+                border: mesDados.saldoBanco
+                  ? `1.5px solid ${contaInfo?.cor ?? COR.azul}`
+                  : '1.5px dashed #e2e8f0',
+                color: mesDados.saldoBanco ? (contaInfo?.cor ?? COR.azul) : '#64748b',
+                background: mesDados.saldoBanco ? `${contaInfo?.cor ?? COR.azul}18` : '#f8faff'}}>
+              <span style={{fontSize:11}}>✎</span>
+              {mesDados.saldoBanco || 'Informar'}
+            </span>
           </div>
           {contaInfo && (
             <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
