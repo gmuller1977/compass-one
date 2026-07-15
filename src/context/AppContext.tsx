@@ -68,6 +68,7 @@ const KEYS = {
   contas:               'compass_contas',
   categorias:           'compass_categorias',
   extrato:              'compass_extrato_dados',
+  fatura:               'compass_fatura_dados',
   planos:               'compass_planos',
   planosReal:           'compass_planos_real',
   planejamentoLockado:  'compass_planejamento_lockado',
@@ -80,6 +81,7 @@ type AppCtx = {
   contas:     Conta[]
   categorias: Categoria[]
   extratoData: Record<string, DadosMes>
+  faturaData:  Record<string, unknown>
   planos:     Record<number, PlanoAnoData>
   planosReal: Record<number, PlanoAnoData>
   planejamentoLockado: boolean
@@ -87,6 +89,7 @@ type AppCtx = {
   setCategorias:  Dispatch<SetStateAction<Categoria[]>>
   updateExtratoMes: (key: string, fn: (prev: DadosMes) => DadosMes) => void
   setExtratoData: (v: Record<string, DadosMes>) => void
+  setFaturaData:  Dispatch<SetStateAction<Record<string, unknown>>>
   setPlanos:      Dispatch<SetStateAction<Record<number, PlanoAnoData>>>
   finalizarPlanejamento:  (ano: number, dados: PlanoAnoData) => void
   updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
@@ -109,6 +112,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [contas,      setContasState]     = useState<Conta[]>(CONTAS_INICIAIS)
   const [categorias,  setCategoriasState] = useState<Categoria[]>(CATS_INICIAIS)
   const [extratoData, setExtratoState]    = useState<Record<string, DadosMes>>({})
+  const [faturaData,  setFaturaState]     = useState<Record<string, unknown>>({})
   const [planos,          setPlanosState]          = useState<Record<number, PlanoAnoData>>({})
   const [planosReal,      setPlanosRealState]       = useState<Record<number, PlanoAnoData>>({})
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
@@ -163,6 +167,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       : catsCarregadas
     setCategoriasState(catsEfetivas)
     setExtratoState((map[KEYS.extrato]  as Record<string, DadosMes> | undefined) ?? {})
+    // Fatura: carrega do Supabase; migra do localStorage se ainda não estiver no Supabase
+    let faturaLoaded = (map[KEYS.fatura] as Record<string, unknown> | undefined) ?? {}
+    if (Object.keys(faturaLoaded).length === 0) {
+      try {
+        const local = localStorage.getItem('compass_fatura_dados')
+        if (local) faturaLoaded = JSON.parse(local)
+      } catch { /* ignore */ }
+    }
+    setFaturaState(faturaLoaded)
     setPlanosState((map[KEYS.planos]    as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
@@ -175,6 +188,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setContasState(CONTAS_INICIAIS)
     setCategoriasState(CATS_INICIAIS)
     setExtratoState({})
+    setFaturaState({})
     setPlanosState({})
     setPlanosRealState({})
     setPlanejamentoLockadoState(false)
@@ -192,6 +206,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveKey(KEYS.contas,    contas)       }, [contas])
   useEffect(() => { saveKey(KEYS.categorias, categorias)  }, [categorias])
   useEffect(() => { saveKey(KEYS.extrato,    extratoData) }, [extratoData])
+  useEffect(() => { saveKey(KEYS.fatura,     faturaData)  }, [faturaData])
   useEffect(() => { saveKey(KEYS.planos,     planos)      }, [planos])
   useEffect(() => { saveKey(KEYS.planosReal, planosReal)  }, [planosReal])
   useEffect(() => { saveKey(KEYS.planejamentoLockado, planejamentoLockado) }, [planejamentoLockado])
@@ -234,6 +249,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.contas,              value: contas }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.categorias,          value: categorias }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.extrato,             value: extratoData }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.fatura,              value: faturaData }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planos,              value: planos }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planosReal,          value: planosReal }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planejamentoLockado, value: planejamentoLockado }),
@@ -245,9 +261,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       user, carregando,
-      contas, categorias, extratoData, planos, planosReal, planejamentoLockado,
+      contas, categorias, extratoData, faturaData, planos, planosReal, planejamentoLockado,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
+      setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
       finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, limparDados, sairDaConta,
     }}>

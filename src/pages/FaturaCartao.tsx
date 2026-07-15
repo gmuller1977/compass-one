@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
+import type { DadosMes as ExtratoDadosMes } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
 
 const COR = {
@@ -69,15 +70,6 @@ function parseDateFatura(s: string, mesDefault: number, anoDefault: number): {di
   return null
 }
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const STORAGE_KEY  = 'compass_fatura_dados'
-
-function carregarDados(): Record<string, DadosMes> {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {} }
-  catch { return {} }
-}
-function salvarDados(d: Record<string, DadosMes>) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch { /* silent */ }
-}
 
 function realcarFoco(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.border = `1.5px solid ${COR.azul}`
@@ -94,13 +86,16 @@ export default function FaturaCartao() {
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
 
-  const { contas, categorias } = useApp()
+  const { contas, categorias, faturaData, setFaturaData, extratoData, setExtratoData } = useApp()
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
+  const dados = faturaData as Record<string, DadosMes>
+  const setDados = setFaturaData as React.Dispatch<React.SetStateAction<Record<string, DadosMes>>>
+  const extratoRef = useRef(extratoData)
+  useEffect(() => { extratoRef.current = extratoData }, [extratoData])
 
   const [contaId,  setContaId]  = useState(() => contasCartao[0]?.id ?? 'c1')
   const [mes,      setMes]      = useState(mesHoje)
   const [ano,      setAno]      = useState(anoHoje)
-  const [dados,    setDados]    = useState<Record<string, DadosMes>>(carregarDados)
   const [diaSel,   setDiaSel]   = useState<number>(diaHoje)
   const [editandoId,           setEditandoId]           = useState<string|null>(null)
   const [editandoDiaOriginal,  setEditandoDiaOriginal]  = useState<number|null>(null)
@@ -163,13 +158,9 @@ export default function FaturaCartao() {
     .filter(c => c.tipo === 'saida' && c.tipoMovimento === 'cartao' && c.ativa)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
 
-  useEffect(() => { salvarDados(dados) }, [dados])
-
   // Sincroniza totais das faturas como lançamentos previstos no extrato bancário
   useEffect(() => {
-    const extratoRaw = localStorage.getItem('compass_extrato_dados')
-    const extrato: Record<string, { lancamentos: Record<number, unknown[]>; saldoBanco: string }> =
-      extratoRaw ? JSON.parse(extratoRaw) : {}
+    const extrato = { ...extratoRef.current } as Record<string, { lancamentos: Record<number, unknown[]>; saldoBanco: string }>
 
     for (const fatKey of Object.keys(dados)) {
       const parts = fatKey.split('-')
@@ -231,8 +222,7 @@ export default function FaturaCartao() {
       }
     }
 
-    localStorage.setItem('compass_extrato_dados', JSON.stringify(extrato))
-    window.dispatchEvent(new CustomEvent('compass:extrato-updated'))
+    setExtratoData(extrato as unknown as Record<string, ExtratoDadosMes>)
   }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-avança para a aba do mês de vencimento da fatura em aberto

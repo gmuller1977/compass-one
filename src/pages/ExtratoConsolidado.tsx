@@ -32,7 +32,7 @@ export default function ExtratoConsolidado() {
   const [ano]         = useState(anoHoje)
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
 
-  const { contas, categorias, extratoData, planos } = useApp()
+  const { contas, categorias, extratoData, faturaData, planos } = useApp()
 
   const contasExtrato = useMemo(
     () => contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca'),
@@ -202,8 +202,7 @@ export default function ExtratoConsolidado() {
 
     // ── Fixas de cartão de crédito ────────────────────────────────────
     if (contasExtrato.length > 0) {
-      let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
-      try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /**/ }
+      const faturasDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
 
       for (const card of contas.filter(c => c.tipo === 'cartao' && c.diaVencimento)) {
         const isAuto = card.formaPagamentoFatura === 'automatico'
@@ -254,7 +253,7 @@ export default function ExtratoConsolidado() {
     }
 
     return { itensPorDia, totalEntradas: te, totalSaidas: ts, entradasConf: teConf, saidasConf: tsConf }
-  }, [fontes, extratoData, totalDias, categorias, contas, planos, ano, mes,
+  }, [fontes, extratoData, faturaData, totalDias, categorias, contas, planos, ano, mes,
       contasExtrato, eMesAtual, diaHoje, mesHoje, anoHoje, mesStr])
 
   const saldoBase = useMemo(

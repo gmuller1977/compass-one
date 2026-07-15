@@ -71,7 +71,7 @@ function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
 
 export default function Planejamento() {
   const navigate    = useNavigate()
-  const { contas, setContas, categorias, extratoData,
+  const { contas, setContas, categorias, extratoData, faturaData,
           planos, setPlanos,
           planosReal, planejamentoLockado,
           finalizarPlanejamento, updatePlanoReal } = useApp()
@@ -179,8 +179,7 @@ export default function Planejamento() {
 
   // Valor consolidado de cada cartão por mês (fixasCartao conciliados no extrato banco)
   const lancadoFaturaConsolidadaMesCat = useMemo(() => {
-    let fatDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
-    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) fatDados = JSON.parse(r) } catch { /* */ }
+    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
     const result: Record<number, Record<string, number>> = {}
     for (let mes = 0; mes < 12; mes++) {
       result[mes] = {}
@@ -251,7 +250,7 @@ export default function Planejamento() {
       })
     }
     return result
-  }, [contas, categorias, extratoData, anoAtual, planos])
+  }, [contas, categorias, extratoData, faturaData, anoAtual, planos])
 
   const saldoInicialReal = useMemo(() => {
     if (aba !== 'real') return saldoInicial
@@ -280,8 +279,7 @@ export default function Planejamento() {
 
   // Totais reais (entradas e saídas) por mês — lidos dos lançamentos reais do extrato
   const totaisReais = useMemo(() => {
-    let fatDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
-    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) fatDados = JSON.parse(r) } catch { /* */ }
+    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
     const te = new Array(12).fill(0)
     const ts = new Array(12).fill(0)
     for (let mes = 0; mes < 12; mes++) {
@@ -337,7 +335,7 @@ export default function Planejamento() {
       })
     }
     return { te, ts }
-  }, [contas, categorias, extratoData, anoAtual, planos])
+  }, [contas, categorias, extratoData, faturaData, anoAtual, planos])
 
   const saldoFinalReal = useMemo(() =>
     Array.from({ length: 12 }, (_, mi) => saldoInicialReal[mi] + totaisReais.te[mi] - totaisReais.ts[mi])
