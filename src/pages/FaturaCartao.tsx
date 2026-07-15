@@ -28,6 +28,7 @@ type Lancamento = {
 type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   faturaAtual: string
+  faturaAtualData?: string
   fechamentoOverride?: number
   vencimentoOverride?: number
   fixasConsolidadas?: Record<string, boolean>
@@ -85,6 +86,7 @@ export default function FaturaCartao() {
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
+  const hojeStr = hoje.toISOString().slice(0,10)
 
   const { contas, categorias, faturaData, setFaturaData, extratoData, setExtratoData } = useApp()
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
@@ -107,6 +109,8 @@ export default function FaturaCartao() {
   const [fDataCompra, setFDataCompra] = useState('')
   const [editandoFechamento, setEditandoFechamento] = useState(false)
   const [editandoVencimento, setEditandoVencimento] = useState(false)
+  const [modalFatura, setModalFatura]       = useState(false)
+  const [modalFaturaValor, setModalFaturaValor] = useState('')
 
   const categoriaSelectRef  = useRef<HTMLSelectElement>(null)
   const valorInputRef       = useRef<HTMLInputElement>(null)
@@ -238,6 +242,14 @@ export default function FaturaCartao() {
     setDiaSel(diaHoje >= diaFech ? 1 : diaHoje)
   }, [contaId, contas])
 
+  // Modal "valor da fatura" — abre uma vez por dia por fatura
+  useEffect(() => {
+    const dm = dados[key] ?? DADOS_MES_VAZIO
+    if (dm.faturaAtualData === hojeStr) return
+    setModalFaturaValor(dm.faturaAtual ?? '')
+    setModalFatura(true)
+  }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     // novoMes é mês de vencimento; mês de compra = novoMes - billingOffset
@@ -250,6 +262,17 @@ export default function FaturaCartao() {
     const passadoDia = eMesAtual ? dia < diaHoje : (ano<anoHoje || (ano===anoHoje && mes<mesHoje))
     const ehHojeDia  = eMesAtual && dia === diaHoje
     return !passadoDia && !ehHojeDia
+  }
+
+  function confirmarModalFatura() {
+    const n = parseBRL(modalFaturaValor)
+    if (modalFaturaValor.trim()) {
+      updateMes(prev => ({...prev, faturaAtual: fmt(n), faturaAtualData: hojeStr}))
+    } else {
+      updateMes(prev => ({...prev, faturaAtualData: hojeStr}))
+    }
+    setModalFatura(false)
+    setTimeout(() => dataCompraRef.current?.focus(), 80)
   }
 
   function resetarParaNovo(novoDia: number) {
@@ -558,6 +581,19 @@ export default function FaturaCartao() {
             border:`1px solid ${faturaStatus==='paga'?'#86efac':'#fde68a'}`}}>
             {faturaStatus==='paga'?'✓ Paga':'● Aberta'}
           </span>
+          {/* Valor da fatura informado pelo usuário */}
+          <div style={{display:'flex',alignItems:'center',gap:5}}>
+            <span style={{fontSize:11,color:COR.textoSuave}}>Fatura no cartão:</span>
+            <span
+              onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
+              title="Clique para atualizar"
+              style={{fontSize:12,fontWeight:700,
+                color: mesDados.faturaAtual ? COR.texto : COR.textoSuave,
+                cursor:'pointer',padding:'2px 6px',borderRadius:5,
+                border:`1px dashed ${COR.borda}`,background:'#f8faff'}}>
+              {mesDados.faturaAtual || 'Informar'}
+            </span>
+          </div>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
             <span style={{fontSize:11,color:COR.textoSuave}}>Fechamento:</span>
             {editandoFechamento ? (
@@ -925,6 +961,62 @@ export default function FaturaCartao() {
         </div>
       </div>
       </div>
+
+      {/* MODAL FATURA DO CARTÃO */}
+      {modalFatura && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
+          display:'flex',alignItems:'center',justifyContent:'center'}}
+          onClick={() => setModalFatura(false)}>
+          <div style={{background:'#fff',borderRadius:14,padding:'28px 32px',minWidth:360,
+            boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
+            onClick={e => e.stopPropagation()}>
+            <div style={{marginBottom:20}}>
+              {contaInfo && (
+                <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
+                  display:'inline-flex',alignItems:'center',gap:6,
+                  background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
+                  <span>{contaInfo.icone}</span>
+                  <span style={{color:contaInfo.cor,fontWeight:700}}>{contaInfo.banco}</span>
+                </span>
+              )}
+            </div>
+            <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 6px'}}>
+              Qual é o valor atual da fatura?
+            </p>
+            <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 16px'}}>
+              Informe o valor do cartão para acompanhar a diferença em relação ao sistema.
+            </p>
+            <input autoFocus
+              value={modalFaturaValor}
+              onChange={e => setModalFaturaValor(e.target.value)}
+              onFocus={e => e.target.select()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') confirmarModalFatura()
+                if (e.key === 'Escape') setModalFatura(false)
+              }}
+              placeholder="R$ 0,00"
+              style={{width:'100%',border:`1.5px solid ${contaInfo?.cor ?? COR.azul}`,
+                borderRadius:8,padding:'10px 14px',fontSize:16,fontWeight:700,
+                color:'#0f172a',outline:'none',textAlign:'right',
+                fontFamily:'inherit',boxSizing:'border-box'}}/>
+            <div style={{display:'flex',gap:10,marginTop:20}}>
+              <button
+                onClick={() => { updateMes(prev=>({...prev,faturaAtualData:hojeStr})); setModalFatura(false) }}
+                style={{flex:1,padding:'10px',borderRadius:8,border:`1.5px solid #e2e8f0`,
+                  background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
+                  cursor:'pointer',fontFamily:'inherit'}}>
+                Pular
+              </button>
+              <button onClick={confirmarModalFatura}
+                style={{flex:2,padding:'10px',borderRadius:8,border:'none',
+                  background:contaInfo?.cor ?? COR.azul,color:'#fff',fontSize:13,fontWeight:700,
+                  cursor:'pointer',fontFamily:'inherit'}}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
