@@ -130,7 +130,6 @@ export default function FaturaCartao() {
   const eMesAtual     = purchaseMes === mesHoje && purchaseAno === anoHoje
   const key           = mesKey(contaId, purchaseAno, purchaseMes)
   const mesDados      = dados[key] ?? DADOS_MES_VAZIO
-  const faturaExtNum  = parseBRL(mesDados.faturaAtual)
 
   // Datas efetivas (com override por mês)
   const diaFechamento = mesDados.fechamentoOverride ?? diaFechamentoBase
@@ -287,8 +286,6 @@ export default function FaturaCartao() {
   }, [dados, key, totalDias])
 
   const totalFatura = totalEntradas - totalSaidas
-  const diferenca   = faturaExtNum > 0 ? faturaExtNum - totalFatura : null
-  const conciliado  = diferenca !== null && Math.abs(diferenca) < 0.01
 
   const totaisPorCartao = useMemo(() => {
     const cartoes = contas.filter(c => c.tipo === 'cartao')
@@ -323,6 +320,19 @@ export default function FaturaCartao() {
     const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
     const anoCompraFinal = parsedCompra?.ano ?? purchaseAno
 
+    // Se a data de compra for após o fechamento desta fatura → lança na próxima
+    const routeToNext = !editandoId && (() => {
+      if (anoCompraFinal > purchaseAno) return true
+      if (anoCompraFinal < purchaseAno) return false
+      if (mesCompraFinal > purchaseMes) return true
+      if (mesCompraFinal < purchaseMes) return false
+      return diaCompraFinal > diaFechamento
+    })()
+    let targetMes = purchaseMes, targetAno = purchaseAno
+    if (routeToNext) {
+      targetMes++; if (targetMes > 11) { targetMes = 0; targetAno++ }
+    }
+
     if (editandoId) {
       const diaOrigem = editandoDiaOriginal ?? diaSel
       const idAtual   = editandoId
@@ -351,12 +361,12 @@ export default function FaturaCartao() {
         }
       })
     } else if (nParcelas > 1) {
-      // Cria entrada em cada mês subsequente
+      // Cria entrada em cada mês subsequente (começa no targetMes se após fechamento)
       setDados(prev => {
         let result = { ...prev }
         for (let p = 1; p <= nParcelas; p++) {
-          let m = purchaseMes + (p - 1)
-          let a = purchaseAno
+          let m = targetMes + (p - 1)
+          let a = targetAno
           while (m > 11) { m -= 12; a++ }
           const k = mesKey(contaId, a, m)
           const dadosMes = result[k] ?? DADOS_MES_VAZIO
@@ -382,19 +392,27 @@ export default function FaturaCartao() {
         return result
       })
     } else {
-      updateMes(prev => ({
-        ...prev,
-        lancamentos: {
-          ...prev.lancamentos,
-          [diaSel]: [...(prev.lancamentos[diaSel]??[]), {
-            id:`${baseId}-1`, tipo:fTipo,
-            descricao:fDesc.trim()||fCat, categoria:fCat,
-            valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
-            consolidado: !ehDiaFuturo(diaSel),
-            diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
-          }],
+      // Avista — vai para targetKey (próxima fatura se após fechamento)
+      const lancKey = routeToNext ? mesKey(contaId, targetAno, targetMes) : key
+      setDados(prev => {
+        const dm = prev[lancKey] ?? DADOS_MES_VAZIO
+        return {
+          ...prev,
+          [lancKey]: {
+            ...dm,
+            lancamentos: {
+              ...dm.lancamentos,
+              [diaSel]: [...(dm.lancamentos[diaSel]??[]), {
+                id:`${baseId}-1`, tipo:fTipo,
+                descricao:fDesc.trim()||fCat, categoria:fCat,
+                valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
+                consolidado: !ehDiaFuturo(diaSel),
+                diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
+              }],
+            }
+          }
         }
-      }))
+      })
     }
 
     setEditandoId(null); setEditandoDiaOriginal(null)
@@ -515,7 +533,7 @@ export default function FaturaCartao() {
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
         padding:'10px 16px',flexShrink:0,display:'flex',flexDirection:'column',gap:8}}>
 
-        {/* Linha 1: mês + totais */}
+        {/* Linha única: mês + totais + status + fechamento + vencimento */}
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
           <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
           <span style={{color:COR.borda}}>|</span>
@@ -533,49 +551,13 @@ export default function FaturaCartao() {
               </span>
             </div>
           )}
-        </div>
-
-        {/* Linha 2: fatura atual → pill do cartão → diferença (mesma ordem do extrato banco) */}
-        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Fatura atual cartão:</span>
-            <input value={mesDados.faturaAtual}
-              onChange={e => updateMes(prev=>({...prev,faturaAtual:e.target.value}))}
-              onFocus={e => e.target.select()}
-              onBlur={e => { const n = parseBRL(e.target.value); if (!isNaN(n) && e.target.value.trim()) updateMes(prev=>({...prev,faturaAtual:fmt(n)})) }}
-              placeholder="R$ 0,00"
-              style={{border:`1px solid ${contaInfo?.cor ?? COR.azul}55`,borderRadius:6,padding:'4px 10px',
-                fontSize:13,fontWeight:700,color:contaInfo?.cor ?? COR.azul,
-                background:`${contaInfo?.cor ?? COR.azul}18`,
-                outline:'none',width:130,textAlign:'right',fontFamily:'inherit'}}/>
-          </div>
-          {contaInfo && (
-            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
-              display:'inline-flex',alignItems:'center',gap:5,
-              background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
-              <span>{contaInfo.icone}</span>
-              <span style={{color:contaInfo.cor,fontWeight:600}}>{contaInfo.banco}</span>
-              <span style={{fontWeight:700,color:totalFatura>0?COR.vermelho:COR.texto}}>{fmt(totalFatura)}</span>
-            </span>
-          )}
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
-            <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
-              background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
-              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
-              border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-              minWidth:110,textAlign:'center'}}>
-              {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
-            </div>
-          </div>
-          {/* Badge PAGA / ABERTA */}
+          <span style={{color:COR.borda}}>|</span>
           <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:20,
             background:faturaStatus==='paga'?'#dcfce7':'#fef9c3',
             color:faturaStatus==='paga'?'#166534':'#92400e',
             border:`1px solid ${faturaStatus==='paga'?'#86efac':'#fde68a'}`}}>
             {faturaStatus==='paga'?'✓ Paga':'● Aberta'}
           </span>
-          <span style={{color:COR.borda}}>|</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
             <span style={{fontSize:11,color:COR.textoSuave}}>Fechamento:</span>
             {editandoFechamento ? (
@@ -644,6 +626,23 @@ export default function FaturaCartao() {
           for (let d = 1; d <= totalDias; d++) {
             (mesDados.lancamentos[d] ?? []).forEach(l => todos.push({dia: d, l}))
           }
+          // Ordena por data real de compra
+          todos.sort((a, b) => {
+            const ts = ({dia, l}: {dia:number; l:Lancamento}) =>
+              new Date(l.anoCompra ?? purchaseAno, l.mesCompra ?? purchaseMes, l.diaCompra ?? dia).getTime()
+            return ts(a) - ts(b)
+          })
+          // Helper: data real após fechamento desta fatura?
+          const afterClosing = ({dia, l}: {dia:number; l:Lancamento}) => {
+            const dc = l.diaCompra ?? dia
+            const mc = l.mesCompra ?? purchaseMes
+            const ac = l.anoCompra ?? purchaseAno
+            if (ac > purchaseAno) return true
+            if (ac < purchaseAno) return false
+            if (mc > purchaseMes) return true
+            if (mc < purchaseMes) return false
+            return dc > diaFechamento
+          }
 
           if (todos.length === 0) {
             return (
@@ -656,8 +655,9 @@ export default function FaturaCartao() {
           return todos.map(({dia, l}, idx) => {
             const catVisual  = iconeCategoria(categorias, l.categoria)
             const emEdicao   = editandoId === l.id
-            const prevDia    = idx > 0 ? todos[idx-1].dia : 0
-            const showFechDiv = dia > diaFechamento && prevDia <= diaFechamento
+            const isAfter    = afterClosing({dia, l})
+            const prevIsAfter = idx > 0 ? afterClosing(todos[idx-1]) : false
+            const showFechDiv = isAfter && !prevIsAfter
 
             // Data da compra: usa campos armazenados se disponíveis (parcelados)
             const dc  = l.diaCompra ?? dia
