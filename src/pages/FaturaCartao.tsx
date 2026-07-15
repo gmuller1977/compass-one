@@ -197,7 +197,7 @@ export default function FaturaCartao() {
           l.tipo === 'entrada' ? entradas += l.valor : saidas += l.valor
         })
       }
-      const total = saidas - entradas
+      const total = entradas - saidas
 
       const diaVenc = dm.vencimentoOverride ?? diaVencBase
       const lancId = `fatura-${cId}-${a}-${String(m + 1).padStart(2, '0')}`
@@ -255,7 +255,7 @@ export default function FaturaCartao() {
 
   function resetarParaNovo(novoDia: number) {
     setDiaSel(novoDia); setEditandoId(null); setEditandoDiaOriginal(null)
-    setFTipo('saida'); setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1'); setFDataCompra('')
+    setFTipo('entrada'); setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1'); setFDataCompra('')
     setTimeout(() => dataCompraRef.current?.focus(), 50)
   }
 
@@ -286,7 +286,7 @@ export default function FaturaCartao() {
     return { totalEntradas:te, totalSaidas:ts }
   }, [dados, key, totalDias])
 
-  const totalFatura = totalSaidas - totalEntradas
+  const totalFatura = totalEntradas - totalSaidas
   const diferenca   = faturaExtNum > 0 ? faturaExtNum - totalFatura : null
   const conciliado  = diferenca !== null && Math.abs(diferenca) < 0.01
 
@@ -306,7 +306,7 @@ export default function FaturaCartao() {
           l.tipo === 'entrada' ? entradas += l.valor : saidas += l.valor
         })
       }
-      return { conta: c, total: saidas - entradas }
+      return { conta: c, total: entradas - saidas }
     })
   }, [dados, mes, ano, contas])
 
@@ -774,7 +774,7 @@ export default function FaturaCartao() {
               background:fTipo===t?COR.branco:'transparent',
               color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
               boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-              {t==='entrada'?'↑ Estorno':'↓ Compra'}
+              {t==='saida'?'↑ Estorno':'↓ Compra'}
             </button>
           ))}
         </div>
@@ -858,6 +858,8 @@ export default function FaturaCartao() {
                       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
                         e.preventDefault()
                         if (n > 1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() }
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault(); lancar()
                       }
                     }}
                     style={{
@@ -874,6 +876,7 @@ export default function FaturaCartao() {
                 tabIndex={parseInt(fParcelas) > 12 ? 0 : -1}
                 value={parseInt(fParcelas)>12 ? fParcelas : ''}
                 onChange={e => { if(e.target.value) setFParcelas(e.target.value) }}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); lancar() } }}
                 onFocus={e => { e.currentTarget.style.border=`1.5px solid ${COR.azul}`; e.currentTarget.style.boxShadow='0 0 0 3px rgba(26,86,219,0.15)' }}
                 onBlur={e => { e.currentTarget.style.border='1.5px solid #bae6fd'; e.currentTarget.style.boxShadow='none'; if(!e.target.value) setFParcelas('1') }}
                 style={{width:52,border:`1.5px solid ${parseInt(fParcelas)>12?COR.azul:'#bae6fd'}`,
