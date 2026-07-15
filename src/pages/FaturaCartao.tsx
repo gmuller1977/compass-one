@@ -587,10 +587,15 @@ export default function FaturaCartao() {
             <span
               onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
               title="Clique para atualizar"
-              style={{fontSize:12,fontWeight:700,
-                color: mesDados.faturaAtual ? COR.texto : COR.textoSuave,
-                cursor:'pointer',padding:'2px 6px',borderRadius:5,
-                border:`1px dashed ${COR.borda}`,background:'#f8faff'}}>
+              style={{display:'inline-flex',alignItems:'center',gap:5,
+                fontSize:12,fontWeight:600,cursor:'pointer',
+                padding:'3px 8px',borderRadius:6,
+                border: mesDados.faturaAtual
+                  ? `1.5px solid ${COR.azul}`
+                  : '1.5px dashed #e2e8f0',
+                color: mesDados.faturaAtual ? COR.azul : '#64748b',
+                background: mesDados.faturaAtual ? '#eff6ff' : '#f8faff'}}>
+              <span style={{fontSize:11}}>✎</span>
               {mesDados.faturaAtual || 'Informar'}
             </span>
           </div>
