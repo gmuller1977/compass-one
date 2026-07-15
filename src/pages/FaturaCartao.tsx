@@ -109,6 +109,7 @@ export default function FaturaCartao() {
   const [fDataCompra, setFDataCompra] = useState('')
   const [editandoFechamento, setEditandoFechamento] = useState(false)
   const [editandoVencimento, setEditandoVencimento] = useState(false)
+  const [diasFechados, setDiasFechados] = useState<Set<string>>(new Set())
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
 
@@ -257,6 +258,17 @@ export default function FaturaCartao() {
     return () => clearTimeout(t)
   }, [key, carregando]) // eslint-disable-line react-hooks/exhaustive-deps
 
+
+  function toggleDia(dateKey: string) {
+    setDiasFechados(prev => {
+      const next = new Set(prev)
+      next.has(dateKey) ? next.delete(dateKey) : next.add(dateKey)
+      return next
+    })
+  }
+
+  // Limpa dias fechados ao trocar de conta/mês
+  useEffect(() => { setDiasFechados(new Set()) }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     // novoMes é mês de vencimento; mês de compra = novoMes - billingOffset
@@ -701,33 +713,24 @@ export default function FaturaCartao() {
       {/* CONTEÚDO: lista + painel */}
       <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
 
-      {/* LISTA DE LANÇAMENTOS (flat list) */}
+      {/* LISTA DE LANÇAMENTOS agrupados por dia */}
       <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:8}}>
 
         {(() => {
-          const todos: Array<{dia: number; l: Lancamento}> = []
+          type DiaGroup = { dateKey:string; dc:number; mc:number; ac:number; items:Array<{dia:number;l:Lancamento}> }
+          const groupMap = new Map<string, DiaGroup>()
           for (let d = 1; d <= totalDias; d++) {
-            (mesDados.lancamentos[d] ?? []).forEach(l => todos.push({dia: d, l}))
-          }
-          // Ordena por data real de compra
-          todos.sort((a, b) => {
-            const ts = ({dia, l}: {dia:number; l:Lancamento}) =>
-              new Date(l.anoCompra ?? purchaseAno, l.mesCompra ?? purchaseMes, l.diaCompra ?? dia).getTime()
-            return ts(a) - ts(b)
-          })
-          // Helper: data real após fechamento desta fatura?
-          const afterClosing = ({dia, l}: {dia:number; l:Lancamento}) => {
-            const dc = l.diaCompra ?? dia
-            const mc = l.mesCompra ?? purchaseMes
-            const ac = l.anoCompra ?? purchaseAno
-            if (ac > purchaseAno) return true
-            if (ac < purchaseAno) return false
-            if (mc > purchaseMes) return true
-            if (mc < purchaseMes) return false
-            return dc > diaFechamento
+            for (const l of (mesDados.lancamentos[d] ?? [])) {
+              const dc = l.diaCompra ?? d
+              const mc = l.mesCompra ?? purchaseMes
+              const ac = l.anoCompra ?? purchaseAno
+              const dateKey = `${ac}-${String(mc+1).padStart(2,'0')}-${String(dc).padStart(2,'0')}`
+              if (!groupMap.has(dateKey)) groupMap.set(dateKey, {dateKey, dc, mc, ac, items:[]})
+              groupMap.get(dateKey)!.items.push({dia:d, l})
+            }
           }
 
-          if (todos.length === 0) {
+          if (groupMap.size === 0) {
             return (
               <div style={{textAlign:'center',color:COR.textoSuave,padding:40,fontSize:13}}>
                 Nenhum lançamento nesta fatura.
@@ -735,76 +738,132 @@ export default function FaturaCartao() {
             )
           }
 
-          return todos.map(({dia, l}, idx) => {
-            const catVisual  = iconeCategoria(categorias, l.categoria)
-            const emEdicao   = editandoId === l.id
-            const isAfter    = afterClosing({dia, l})
-            const prevIsAfter = idx > 0 ? afterClosing(todos[idx-1]) : false
-            const showFechDiv = isAfter && !prevIsAfter
+          // Decrescente: mais recente primeiro
+          const grupos = [...groupMap.values()].sort((a,b) => b.dateKey.localeCompare(a.dateKey))
 
-            // Data da compra: usa campos armazenados se disponíveis (parcelados)
-            const dc  = l.diaCompra ?? dia
-            const mc  = l.mesCompra ?? purchaseMes
-            const ac  = l.anoCompra ?? purchaseAno
-            const dataLabel = ac !== purchaseAno
-              ? `${String(dc).padStart(2,'0')} de ${NOMES_MESES[mc]} ${ac}`
-              : `${String(dc).padStart(2,'0')} de ${NOMES_MESES[mc]}`
+          const isAfterClosing = (g: DiaGroup) => {
+            if (g.ac > purchaseAno) return true
+            if (g.ac < purchaseAno) return false
+            if (g.mc > purchaseMes) return true
+            if (g.mc < purchaseMes) return false
+            return g.dc > diaFechamento
+          }
 
-            return (
-              <div key={l.id}>
-                {showFechDiv && (
-                  <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0 8px'}}>
-                    <div style={{flex:1,height:1,background:COR.borda}} />
-                    <span style={{fontSize:10,color:COR.textoSuave,fontWeight:600,letterSpacing:.3}}>
-                      Após fechamento
-                    </span>
-                    <div style={{flex:1,height:1,background:COR.borda}} />
-                  </div>
-                )}
-                <div
-                  onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
-                  style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',
-                    padding:'12px 14px',borderRadius:12,flexShrink:0,
-                    background: emEdicao ? '#eff6ff' : COR.branco,
-                    border: `1.5px solid ${emEdicao ? COR.azul : COR.borda}`,
-                    boxShadow: emEdicao ? '0 0 0 3px rgba(26,86,219,0.1)' : 'none',
-                  }}
-                  onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
-                  onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background= emEdicao?'#eff6ff':COR.branco }}>
-                  <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
-                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,
-                    background:catVisual.cor}}>
-                    {catVisual.icone}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:COR.texto,
-                      whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                      {l.descricao || l.categoria}
-                    </div>
-                    <div style={{fontSize:11,color:COR.textoSuave,marginTop:1}}>{l.categoria}</div>
-                    <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{dataLabel}</div>
-                  </div>
-                  {l.parcelas && l.parcelas > 1 && (
-                    <span style={{fontSize:11,padding:'3px 8px',borderRadius:6,fontWeight:700,
-                      flexShrink:0,background:'#ede9fe',color:'#7c3aed'}}>
-                      {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
-                    </span>
-                  )}
-                  <div style={{textAlign:'right',flexShrink:0}}>
-                    <div style={{fontSize:14,fontWeight:700,
-                      color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
-                      {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
-                    </div>
-                  </div>
-                  <button
-                    onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                    style={{border:'none',background:'transparent',cursor:'pointer',
-                      color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4,flexShrink:0}}
-                    onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                    onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
+          return grupos.map((grupo, gIdx) => {
+            const {dateKey, dc, mc, ac, items} = grupo
+            const aberto = !diasFechados.has(dateKey)
+            const totalCompras  = items.reduce((s,{l}) => l.tipo==='entrada' ? s+l.valor : s, 0)
+            const totalEstornos = items.reduce((s,{l}) => l.tipo==='saida'   ? s+l.valor : s, 0)
+            const semana = diaSemana(dc, mc, ac)
+            const mesAno = (mc !== purchaseMes || ac !== purchaseAno)
+              ? `${NOMES_MESES[mc]}${ac !== purchaseAno ? ' '+ac : ''}`
+              : NOMES_MESES[mc]
+            const prevGrupo = gIdx > 0 ? grupos[gIdx-1] : null
+            // divider aparece quando saímos da zona "após fechamento" para a zona normal
+            const showFechDiv = prevGrupo !== null && isAfterClosing(prevGrupo) && !isAfterClosing(grupo)
+
+            return [
+              showFechDiv ? (
+                <div key={`div-${dateKey}`}
+                  style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0'}}>
+                  <div style={{flex:1,height:1,background:COR.borda}}/>
+                  <span style={{fontSize:10,color:COR.textoSuave,fontWeight:600,letterSpacing:.3}}>
+                    Período da fatura
+                  </span>
+                  <div style={{flex:1,height:1,background:COR.borda}}/>
                 </div>
+              ) : null,
+
+              <div key={dateKey}
+                style={{borderRadius:12,overflow:'hidden',flexShrink:0,
+                  border:`1.5px solid ${COR.borda}`,background:COR.branco}}>
+
+                {/* Cabeçalho do dia */}
+                <div
+                  onClick={() => toggleDia(dateKey)}
+                  style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',
+                    cursor:'pointer',userSelect:'none',background:'#fafbff',
+                    borderBottom:aberto?`1px solid ${COR.borda}`:'none'}}>
+
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                    minWidth:32,flexShrink:0}}>
+                    <span style={{fontSize:18,fontWeight:700,lineHeight:1,color:COR.texto}}>
+                      {String(dc).padStart(2,'0')}
+                    </span>
+                    <span style={{fontSize:10,color:'#94a3b8',fontWeight:500,
+                      textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>
+                      {semana}
+                    </span>
+                  </div>
+
+                  <span style={{fontSize:12,color:COR.textoSuave,flex:1}}>{mesAno}</span>
+
+                  <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                    {totalCompras > 0 && (
+                      <span style={{fontSize:13,fontWeight:700,color:COR.azul}}>
+                        +{fmt(totalCompras)}
+                      </span>
+                    )}
+                    {totalEstornos > 0 && (
+                      <span style={{fontSize:13,fontWeight:700,color:COR.vermelho}}>
+                        -{fmt(totalEstornos)}
+                      </span>
+                    )}
+                    <span style={{fontSize:16,color:'#94a3b8',display:'inline-block',
+                      transition:'transform .2s',
+                      transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
+                  </div>
+                </div>
+
+                {/* Lançamentos do dia */}
+                {aberto && items.map(({dia, l}) => {
+                  const catVisual = iconeCategoria(categorias, l.categoria)
+                  const emEdicao  = editandoId === l.id
+                  return (
+                    <div key={l.id}
+                      onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
+                      style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',
+                        padding:'12px 14px',flexShrink:0,
+                        background: emEdicao ? '#eff6ff' : COR.branco,
+                        borderBottom:`1px solid ${COR.borda}`,
+                        borderLeft: emEdicao ? `3px solid ${COR.azul}` : '3px solid transparent'}}
+                      onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
+                      onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background=COR.branco }}>
+                      <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
+                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,
+                        background:catVisual.cor}}>
+                        {catVisual.icone}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,color:COR.texto,
+                          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                          {l.descricao || l.categoria}
+                        </div>
+                        <div style={{fontSize:11,color:COR.textoSuave,marginTop:1}}>{l.categoria}</div>
+                      </div>
+                      {l.parcelas && l.parcelas > 1 && (
+                        <span style={{fontSize:11,padding:'3px 8px',borderRadius:6,fontWeight:700,
+                          flexShrink:0,background:'#ede9fe',color:'#7c3aed'}}>
+                          {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
+                        </span>
+                      )}
+                      <div style={{textAlign:'right',flexShrink:0}}>
+                        <div style={{fontSize:14,fontWeight:700,
+                          color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
+                          {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                        style={{border:'none',background:'transparent',cursor:'pointer',
+                          color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4,flexShrink:0}}
+                        onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
+                        onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
+                    </div>
+                  )
+                })}
               </div>
-            )
+            ]
           })
         })()}
 

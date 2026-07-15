@@ -216,24 +216,27 @@ export default function Planejamento() {
   }, [contas, extratoData, anoAtual])
 
   // Lançamentos reais somados por categoria e mês (para a aba Realizado), separados por tipo
+  // Inclui banco (extratoData) + cartão de crédito (faturaData) por categoria
   const lancadoPorCatMes = useMemo(() => {
-    const result: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }> = {}
+    const result: Record<number, {
+      entrada: Record<string, number>; saida: Record<string, number>
+      entradaCartao: Record<string, number>; saidaCartao: Record<string, number>
+    }> = {}
+    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string }[]> }>
     for (let mes = 0; mes < 12; mes++) {
-      result[mes] = { entrada: {}, saida: {} }
+      result[mes] = { entrada: {}, saida: {}, entradaCartao: {}, saidaCartao: {} }
       const mesStr = String(mes + 1).padStart(2, '0')
       const sufixo = `-${anoAtual}-${mesStr}`
 
-      // Percorre TODOS os keys do extratoData (banco, cartão e dinheiro)
+      // Banco/dinheiro (extratoData)
       Object.entries(extratoData).forEach(([key, dados]) => {
         if (!key.endsWith(sufixo)) return
 
-        // Lançamentos variáveis — separados por tipo
         Object.values(dados.lancamentos).flat().forEach(l => {
           result[mes][l.tipo][l.categoria] = (result[mes][l.tipo][l.categoria] ?? 0) + l.valor
         })
 
-        // Fixas consolidadas — usa tipo da própria categoria
-        // Ignora chaves de cartão (evita duplicidade com fatura)
+        // Fixas consolidadas — ignora chaves de cartão (evita duplicidade com fatura)
         if (dados.fixasConsolidadas) {
           const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
           if (!ehCartaoKey) {
@@ -246,6 +249,21 @@ export default function Planejamento() {
               result[mes][f.tipo][f.nome] = (result[mes][f.tipo][f.nome] ?? 0) + (dados.fixasValorOverride?.[f.id] ?? planVal)
             })
           }
+        }
+      })
+
+      // Cartão de crédito (faturaData) — agrupa por categoria real de compra
+      Object.entries(fatDados).forEach(([key, dm]) => {
+        if (!key.endsWith(sufixo)) return
+        const nDias = new Date(anoAtual, mes + 1, 0).getDate()
+        for (let d = 1; d <= nDias; d++) {
+          ;(dm.lancamentos[d] ?? []).forEach(l => {
+            // tipo='entrada' (compra) = saída no orçamento; tipo='saida' (estorno) = entrada
+            const budgetTipo = l.tipo === 'entrada' ? 'saida' : 'entrada'
+            const budgetCartao = l.tipo === 'entrada' ? 'saidaCartao' : 'entradaCartao'
+            result[mes][budgetTipo][l.categoria] = (result[mes][budgetTipo][l.categoria] ?? 0) + l.valor
+            result[mes][budgetCartao][l.categoria] = (result[mes][budgetCartao][l.categoria] ?? 0) + l.valor
+          })
         }
       })
     }
@@ -1357,9 +1375,11 @@ export default function Planejamento() {
                                       const totalCartaoConsolidado = ehFatura
                                         ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0)
                                         : 0
+                                      const lancadoCartaoCat = ehFatura ? 0 : (lancadoPorCatMes[mi]?.saidaCartao[cat.nome] ?? 0)
                                       const lancado = ehFatura
                                         ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + totalCartaoConsolidado
                                         : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
+                                      const lancadoBancoCat = lancado - lancadoCartaoCat
                                       const prevAbs = Math.abs(previsto)
                                       const lancAbs = Math.abs(lancado)
                                       const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
@@ -1386,11 +1406,22 @@ export default function Planejamento() {
                                             fontSize:12, color:COR.textoSuave }}>
                                             {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                           </span>
-                                          <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                            fontSize:12, fontWeight:700,
-                                            color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
-                                            {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                          </span>
+                                          <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>
+                                            <div style={{ fontSize:12, fontWeight:700,
+                                              color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
+                                              {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                            </div>
+                                            {!ehFatura && lancadoCartaoCat > 0 && lancadoBancoCat > 0 && (
+                                              <div style={{ fontSize:9, color:COR.textoSuave, marginTop:1, lineHeight:1.4 }}>
+                                                <span>💳 {lancadoCartaoCat.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                                                <br/>
+                                                <span>🏦 {lancadoBancoCat.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                                              </div>
+                                            )}
+                                            {!ehFatura && lancadoCartaoCat > 0 && lancadoBancoCat <= 0 && lancAbs > 0 && (
+                                              <div style={{ fontSize:9, color:'#7c3aed', marginTop:1 }}>💳 cartão</div>
+                                            )}
+                                          </div>
                                           <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
                                             color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
                                             {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
