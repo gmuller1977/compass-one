@@ -223,6 +223,9 @@ export default function Planejamento() {
       entradaCartao: Record<string, number>; saidaCartao: Record<string, number>
     }> = {}
     const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string }[]> }>
+    const _hoje = new Date()
+    const mesHojeRef = _hoje.getMonth()
+    const anoHojeRef = _hoje.getFullYear()
     for (let mes = 0; mes < 12; mes++) {
       result[mes] = { entrada: {}, saida: {}, entradaCartao: {}, saidaCartao: {} }
       const mesStr = String(mes + 1).padStart(2, '0')
@@ -237,16 +240,25 @@ export default function Planejamento() {
         })
 
         // Fixas consolidadas — ignora chaves de cartão (evita duplicidade com fatura)
-        if (dados.fixasConsolidadas) {
+        {
           const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
           if (!ehCartaoKey) {
+            const ehMesPassado = mes < mesHojeRef || anoAtual < anoHojeRef
             categorias.filter(c => c.fixa && c.ativa).forEach(f => {
-              if (!dados.fixasConsolidadas?.[f.id]) return
+              // Considera consolidada: explicitamente marcada OU débito automático em mês passado
+              const ehAuto = (f as unknown as { formaPagamento?: string }).formaPagamento === 'automatico'
+              const estaConsolidada = dados.fixasConsolidadas?.[f.id] !== undefined
+                ? dados.fixasConsolidadas[f.id]
+                : (ehAuto && ehMesPassado)
+              if (!estaConsolidada) return
               const planCats = f.tipo === 'entrada'
                 ? (planos[anoAtual] as PlanoAnoData | undefined)?.entradas
                 : (planos[anoAtual] as PlanoAnoData | undefined)?.saidas
               const planVal = planCats?.find(c => c.nome === f.nome)?.v[mes] ?? 0
-              result[mes][f.tipo][f.nome] = (result[mes][f.tipo][f.nome] ?? 0) + (dados.fixasValorOverride?.[f.id] ?? planVal)
+              // Espelha lógica do extrato banco: override → f.valor → planVal
+              const fValor = (f as unknown as { valor?: number }).valor ?? 0
+              const val = dados.fixasValorOverride?.[f.id] ?? (planVal > 0 ? planVal : fValor)
+              result[mes][f.tipo][f.nome] = (result[mes][f.tipo][f.nome] ?? 0) + val
             })
           }
         }
