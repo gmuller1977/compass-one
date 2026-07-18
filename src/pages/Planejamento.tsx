@@ -599,6 +599,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     if (tipo === 'encerramento') {
       if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? 0 : v) }))
       else setSaidas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? 0 : v) }))
+    } else if (tipo === 'ajuste') {
+      const val = parseFloat(novoValor) || 0
+      if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? val : v) }))
+      else setSaidas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? val : v) }))
     } else {
       const adicional = parseFloat(novoValor) || 0
       if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? v + adicional : v) }))
@@ -2617,7 +2621,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
               {!ehEncerramento && (
                 <>
-                  <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Acréscimo mensal</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>
+                    {ehAjuste ? 'Novo valor mensal' : 'Acréscimo mensal'}
+                  </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom: modalEvento.catNome && adicional ? 8 : 20 }}>
                     <span style={{ fontSize:14, color:COR.textoSuave, flexShrink:0 }}>R$</span>
                     <input type="number" value={modalEvento.novoValor} placeholder="0,00"
@@ -2628,9 +2634,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   {modalEvento.catNome && adicional !== 0 && (
                     <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:20,
                       padding:'6px 10px', background:'#eff6ff', borderRadius:7 }}>
-                      Novo total: <strong style={{ color:COR.azulEscuro }}>
-                        {(valorExistente + adicional).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                      </strong> a partir de {MESES_FULL[modalEvento.mesInicio]}
+                      {ehAjuste
+                        ? <>Será aplicado <strong style={{ color:COR.azulEscuro }}>{adicional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong> a partir de {MESES_FULL[modalEvento.mesInicio]}</>
+                        : <>Novo total: <strong style={{ color:COR.azulEscuro }}>{(valorExistente + adicional).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong> a partir de {MESES_FULL[modalEvento.mesInicio]}</>
+                      }
                     </div>
                   )}
                   {(!modalEvento.catNome || adicional === 0) && <div style={{ height:0 }} />}
