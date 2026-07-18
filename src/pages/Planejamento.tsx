@@ -596,9 +596,14 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   function aplicarEvento() {
     if (!modalEvento?.catNome) return
     const { tipo, mesInicio, catTipo, catNome, novoValor } = modalEvento
-    const val = tipo === 'encerramento' ? 0 : (parseFloat(novoValor) || 0)
-    if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? val : v) }))
-    else setSaidas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? val : v) }))
+    if (tipo === 'encerramento') {
+      if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? 0 : v) }))
+      else setSaidas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? 0 : v) }))
+    } else {
+      const adicional = parseFloat(novoValor) || 0
+      if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? v + adicional : v) }))
+      else setSaidas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? v + adicional : v) }))
+    }
     setModalEvento(null)
   }
 
@@ -2533,7 +2538,26 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             const info = TIPO_INFO[modalEvento.tipo] ?? { emoji:'⚡', label:'Evento' }
             const ehEncerramento = modalEvento.tipo === 'encerramento'
             const ehAjuste = modalEvento.tipo === 'ajuste'
-            const catList = modalEvento.catTipo === 'entrada' ? dadosAno.entradas : dadosAno.saidas
+            const realAno = planosReal[anoAtual] as AnoData | undefined
+            const origAno = planos[anoAtual]    as AnoData | undefined
+            const catList = (() => {
+              const fromReal = modalEvento.catTipo === 'entrada' ? realAno?.entradas : realAno?.saidas
+              if (fromReal && fromReal.length > 0) return fromReal
+              return (modalEvento.catTipo === 'entrada' ? origAno?.entradas : origAno?.saidas) ?? []
+            })()
+            const catFromReal = modalEvento.catNome
+              ? catList === (modalEvento.catTipo === 'entrada' ? realAno?.entradas : realAno?.saidas)
+                ? catList.find(c => c.nome === modalEvento.catNome)
+                : undefined
+              : undefined
+            const catFromOrig = modalEvento.catNome && !catFromReal
+              ? (modalEvento.catTipo === 'entrada' ? origAno?.entradas : origAno?.saidas)?.find(c => c.nome === modalEvento.catNome)
+              : undefined
+            const catSource = catFromReal ?? catFromOrig ?? (modalEvento.catNome ? catList.find(c => c.nome === modalEvento.catNome) : undefined)
+            const fonteLabel = realAno && (modalEvento.catTipo === 'entrada' ? realAno.entradas : realAno.saidas).some(c => c.nome === modalEvento.catNome)
+              ? 'Atualizado' : 'Original'
+            const valorExistente = catSource?.v[modalEvento.mesInicio] ?? 0
+            const adicional = parseFloat(modalEvento.novoValor) || 0
             const podeAplicar = !!modalEvento.catNome && (ehEncerramento || !!modalEvento.novoValor)
             return (<>
               <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
@@ -2563,23 +2587,53 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
               <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Categoria</div>
               <select value={modalEvento.catNome}
-                onChange={e => setModalEvento(prev => prev ? { ...prev, catNome:e.target.value } : prev)}
+                onChange={e => setModalEvento(prev => prev ? { ...prev, catNome:e.target.value, novoValor:'' } : prev)}
                 style={{ width:'100%', padding:'8px 12px', borderRadius:8, border:`1px solid ${COR.borda}`,
-                  fontSize:13, fontFamily:'inherit', marginBottom:16, outline:'none', background:COR.branco }}>
+                  fontSize:13, fontFamily:'inherit', marginBottom:12, outline:'none', background:COR.branco }}>
                 <option value="">Selecione uma categoria...</option>
                 {catList.map(c => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
               </select>
 
+              {/* Valor atual da categoria */}
+              {modalEvento.catNome && !ehEncerramento && (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'8px 12px', borderRadius:8, background:'#f8fafc',
+                  border:`1px solid ${COR.borda}`, marginBottom:12 }}>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:COR.textoSuave,
+                      textTransform:'uppercase', letterSpacing:.5, marginBottom:2 }}>Valor atual</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:COR.texto }}>
+                      {valorExistente.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    </div>
+                  </div>
+                  <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:20,
+                    background: fonteLabel === 'Atualizado' ? '#eff6ff' : '#f0fdf4',
+                    color: fonteLabel === 'Atualizado' ? '#2563eb' : '#16a34a',
+                    border: `1px solid ${fonteLabel === 'Atualizado' ? '#bfdbfe' : '#bbf7d0'}` }}>
+                    {fonteLabel}
+                  </span>
+                </div>
+              )}
+
               {!ehEncerramento && (
                 <>
-                  <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Novo valor mensal</div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Acréscimo mensal</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom: modalEvento.catNome && adicional ? 8 : 20 }}>
                     <span style={{ fontSize:14, color:COR.textoSuave, flexShrink:0 }}>R$</span>
                     <input type="number" value={modalEvento.novoValor} placeholder="0,00"
                       onChange={e => setModalEvento(prev => prev ? { ...prev, novoValor:e.target.value } : prev)}
                       style={{ flex:1, padding:'8px 12px', borderRadius:8, border:`1px solid ${COR.borda}`,
                         fontSize:15, fontWeight:600, fontFamily:'inherit', outline:'none' }} />
                   </div>
+                  {modalEvento.catNome && adicional !== 0 && (
+                    <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:20,
+                      padding:'6px 10px', background:'#eff6ff', borderRadius:7 }}>
+                      Novo total: <strong style={{ color:COR.azulEscuro }}>
+                        {(valorExistente + adicional).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                      </strong> a partir de {MESES_FULL[modalEvento.mesInicio]}
+                    </div>
+                  )}
+                  {(!modalEvento.catNome || adicional === 0) && <div style={{ height:0 }} />}
                 </>
               )}
               {ehEncerramento && (
