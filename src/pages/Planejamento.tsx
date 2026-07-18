@@ -113,6 +113,12 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [quizSaidas,       setQuizSaidas]      = useState<Record<string, string>>({})
   const [modalCatReal,     setModalCatReal]    = useState<{ nome: string; mi: number } | null>(null)
 
+  type RevisaoItem = { tipo:'entrada'|'saida'; ri:number; nome:string; icone:string; corIcone:string; prevPlanned:number; prevReal:number; novoValor:string; desvioPerc:number }
+  const [modalRevisao,  setModalRevisao]  = useState(false)
+  const [revisaoItens,  setRevisaoItens]  = useState<RevisaoItem[]>([])
+  type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
+  const [modalEvento,   setModalEvento]   = useState<null|{ step:1|2; tipo:EventoTipo; mesInicio:number; catTipo:'entrada'|'saida'; catNome:string; novoValor:string }>(null)
+
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
     const saidas = categorias.filter(c => c.tipo === 'saida' && c.ativa && !nomeFaturaCartao(c.nome, cartNomes))
@@ -538,6 +544,57 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       } as PlanoAnoData,
     }))
   }
+  function abrirRevisao() {
+    if (mesAtual === 0) return
+    const itens: RevisaoItem[] = []
+    dadosAno.entradas.forEach((cat, ri) => {
+      let tPrev = 0, tReal = 0
+      for (let mi = 0; mi < mesAtual; mi++) {
+        tPrev += cat.v[mi]
+        tReal += lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0
+      }
+      const avgPrev = tPrev / mesAtual, avgReal = tReal / mesAtual
+      if (avgPrev === 0 && avgReal === 0) return
+      const desvio = avgPrev > 0 ? Math.abs(avgReal - avgPrev) / avgPrev : 1
+      if (desvio < 0.10) return
+      const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+      itens.push({ tipo:'entrada', ri, nome:cat.nome, icone, corIcone, prevPlanned:avgPrev, prevReal:avgReal, novoValor:String(Math.round(avgReal)), desvioPerc:desvio })
+    })
+    dadosAno.saidas.forEach((cat, ri) => {
+      let tPrev = 0, tReal = 0
+      for (let mi = 0; mi < mesAtual; mi++) {
+        tPrev += cat.v[mi]
+        tReal += (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + (lancadoPorCatMes[mi]?.saidaCartao[cat.nome] ?? 0)
+      }
+      const avgPrev = tPrev / mesAtual, avgReal = tReal / mesAtual
+      if (avgPrev === 0 && avgReal === 0) return
+      const desvio = avgPrev > 0 ? Math.abs(avgReal - avgPrev) / avgPrev : 1
+      if (desvio < 0.10) return
+      const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+      itens.push({ tipo:'saida', ri, nome:cat.nome, icone, corIcone, prevPlanned:avgPrev, prevReal:avgReal, novoValor:String(Math.round(avgReal)), desvioPerc:desvio })
+    })
+    itens.sort((a, b) => b.desvioPerc - a.desvioPerc)
+    setRevisaoItens(itens)
+    setModalRevisao(true)
+  }
+
+  function aplicarRevisao() {
+    const eItems = revisaoItens.filter(i => i.tipo === 'entrada')
+    const sItems = revisaoItens.filter(i => i.tipo === 'saida')
+    if (eItems.length > 0) setEntradas(prev => prev.map((c, i) => { const item = eItems.find(it => it.ri === i); if (!item) return c; const val = parseFloat(item.novoValor) || 0; return { ...c, v: c.v.map((v, mi) => mi >= mesAtual ? val : v) } }))
+    if (sItems.length > 0) setSaidas(prev => prev.map((c, i) => { const item = sItems.find(it => it.ri === i); if (!item) return c; const val = parseFloat(item.novoValor) || 0; return { ...c, v: c.v.map((v, mi) => mi >= mesAtual ? val : v) } }))
+    setModalRevisao(false)
+  }
+
+  function aplicarEvento() {
+    if (!modalEvento?.catNome) return
+    const { tipo, mesInicio, catTipo, catNome, novoValor } = modalEvento
+    const val = tipo === 'encerramento' ? 0 : (parseFloat(novoValor) || 0)
+    if (catTipo === 'entrada') setEntradas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? val : v) }))
+    else setSaidas(prev => prev.map(c => c.nome !== catNome ? c : { ...c, v: c.v.map((v, mi) => mi >= mesInicio ? val : v) }))
+    setModalEvento(null)
+  }
+
   function navegarAno(delta: number) {
     const novoAno = anoAtual + delta
     if (!planos[novoAno]) {
@@ -788,6 +845,21 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
               {realExiste ? '↺ Atualizar Planejamento Original' : '✓ Finalizar planejamento'}
             </button>
+          )}
+          {aba === 'real' && !hideTabs && (
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={abrirRevisao}
+                style={{ padding:'6px 14px', border:`1px solid ${COR.azul}`, borderRadius:8, cursor:'pointer',
+                  fontFamily:'inherit', fontSize:12, fontWeight:600, color:COR.azul, background:'transparent' }}>
+                📊 Revisar por Desvio
+              </button>
+              <button onClick={() => setModalEvento({ step:1, tipo:'', mesInicio:mesAtual, catTipo:'entrada', catNome:'', novoValor:'' })}
+                style={{ padding:'6px 14px', border:'none', borderRadius:8, cursor:'pointer',
+                  fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff',
+                  background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
+                ⚡ Evento de Vida
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -2260,6 +2332,257 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               <span style={{ fontSize:11 }}>Valores podem vir de fixas consolidadas automaticamente.</span>
             </div>
           )}
+        </div>
+      </div>
+    )}
+
+    {/* ── MODAL REVISÃO POR DESVIO ── */}
+    {modalRevisao && (
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999,
+        display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+        onClick={() => setModalRevisao(false)}>
+        <div style={{ background:COR.branco, borderRadius:16, padding:24, maxWidth:560, width:'100%',
+          maxHeight:'85vh', display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, flexShrink:0 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:'#eff6ff',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>📊</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:COR.texto }}>Revisão por Desvio</div>
+              <div style={{ fontSize:12, color:COR.textoSuave }}>
+                Análise de {mesAtual} {mesAtual === 1 ? 'mês' : 'meses'} realizados · ajusta {MESES_FULL[mesAtual]} a Dezembro
+              </div>
+            </div>
+            <button onClick={() => setModalRevisao(false)} style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:22, color:COR.textoSuave, lineHeight:1 }}>×</button>
+          </div>
+
+          {revisaoItens.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'32px 0', color:COR.textoSuave, fontSize:13 }}>
+              <div style={{ fontSize:32, marginBottom:12 }}>✅</div>
+              Nenhuma categoria com desvio relevante encontrado.
+              <br/><span style={{ fontSize:11 }}>Seu planejamento está bem alinhado com o realizado!</span>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:14, padding:'8px 12px',
+                background:'#eff6ff', borderRadius:8, flexShrink:0 }}>
+                Categorias com desvio acima de 10% entre o previsto e o realizado. O novo valor será aplicado de <strong>{MESES_FULL[mesAtual]}</strong> a Dezembro.
+              </div>
+              <div style={{ overflowY:'auto', flex:1, display:'flex', flexDirection:'column', gap:12 }}>
+                {(['entrada','saida'] as const).map(tipo => {
+                  const lista = revisaoItens.filter(i => i.tipo === tipo)
+                  if (lista.length === 0) return null
+                  return (
+                    <div key={tipo}>
+                      <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:.5,
+                        marginBottom:6, color: tipo === 'entrada' ? '#16a34a' : COR.vermelho }}>
+                        {tipo === 'entrada' ? '↑ Entradas' : '↓ Saídas'}
+                      </div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                        {lista.map(item => {
+                          const maisReal = tipo === 'entrada' ? item.prevReal > item.prevPlanned : item.prevReal < item.prevPlanned
+                          return (
+                            <div key={item.nome} style={{ display:'flex', alignItems:'center', gap:10,
+                              padding:'10px 12px', borderRadius:10, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                              <div style={{ width:30, height:30, borderRadius:8, background:item.corIcone,
+                                display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, flexShrink:0 }}>
+                                {item.icone}
+                              </div>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>{item.nome}</div>
+                                <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
+                                  Previsto {fmt(item.prevPlanned,true)} · Realizado {fmt(item.prevReal,true)}
+                                  <span style={{ marginLeft:6, fontWeight:700, color: maisReal ? '#16a34a' : COR.vermelho }}>
+                                    {Math.round(item.desvioPerc * 100)}% desvio
+                                  </span>
+                                </div>
+                              </div>
+                              <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                                <span style={{ fontSize:11, color:COR.textoSuave }}>R$</span>
+                                <input type="number" value={item.novoValor}
+                                  onChange={e => setRevisaoItens(prev => prev.map(it =>
+                                    it.nome === item.nome && it.tipo === item.tipo ? { ...it, novoValor: e.target.value } : it))}
+                                  style={{ width:90, padding:'4px 8px', border:'1px solid #e2e8f0', borderRadius:6,
+                                    fontSize:13, fontWeight:600, textAlign:'right', outline:'none', fontFamily:'inherit' }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ display:'flex', gap:8, marginTop:16, flexShrink:0 }}>
+                <button onClick={() => setModalRevisao(false)}
+                  style={{ flex:1, padding:'10px 0', border:`1px solid ${COR.borda}`, borderRadius:9, cursor:'pointer',
+                    fontSize:13, fontWeight:600, color:COR.textoSuave, background:'transparent', fontFamily:'inherit' }}>
+                  Cancelar
+                </button>
+                <button onClick={aplicarRevisao}
+                  style={{ flex:2, padding:'10px 0', border:'none', borderRadius:9, cursor:'pointer',
+                    fontSize:13, fontWeight:600, color:'#fff', fontFamily:'inherit',
+                    background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
+                  ✓ Aplicar {revisaoItens.length} {revisaoItens.length === 1 ? 'ajuste' : 'ajustes'} nos meses restantes
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* ── MODAL EVENTO DE VIDA ── */}
+    {modalEvento && (
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999,
+        display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+        onClick={() => setModalEvento(null)}>
+        <div style={{ background:COR.branco, borderRadius:16, padding:24, maxWidth:460, width:'100%',
+          boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:'#fef3c7',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>⚡</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:700, color:COR.texto }}>Evento de Vida</div>
+              <div style={{ fontSize:12, color:COR.textoSuave }}>
+                Passo {modalEvento.step} de 2 · {modalEvento.step === 1 ? 'Tipo e início' : 'Categoria e valor'}
+              </div>
+            </div>
+            <button onClick={() => setModalEvento(null)} style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:22, color:COR.textoSuave, lineHeight:1 }}>×</button>
+          </div>
+
+          {modalEvento.step === 1 && (<>
+            <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Tipo do evento</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:20 }}>
+              {([
+                { id:'nova_renda' as const,   emoji:'💰', label:'Nova Renda',       desc:'Novo emprego, freelance, aluguel',  catTipo:'entrada' as const },
+                { id:'novo_gasto' as const,   emoji:'📋', label:'Novo Gasto Fixo',  desc:'Financiamento, assinatura, escola', catTipo:'saida' as const },
+                { id:'encerramento' as const, emoji:'✂️', label:'Encerramento',      desc:'Pagou parcela, cancelou plano',     catTipo:'saida' as const },
+                { id:'ajuste' as const,       emoji:'🔧', label:'Ajuste de Valor',  desc:'Aumento de salário, reajuste',      catTipo:'entrada' as const },
+              ]).map(ev => (
+                <button key={ev.id}
+                  onClick={() => setModalEvento(prev => prev ? { ...prev, tipo:ev.id, catTipo:ev.catTipo, catNome:'' } : prev)}
+                  style={{ padding:'12px', borderRadius:10, border:`2px solid ${modalEvento.tipo === ev.id ? COR.azul : COR.borda}`,
+                    cursor:'pointer', textAlign:'left', fontFamily:'inherit', transition:'all .15s',
+                    background: modalEvento.tipo === ev.id ? '#eff6ff' : COR.branco }}>
+                  <div style={{ fontSize:20, marginBottom:4 }}>{ev.emoji}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:COR.texto, marginBottom:2 }}>{ev.label}</div>
+                  <div style={{ fontSize:10, color:COR.textoSuave, lineHeight:1.4 }}>{ev.desc}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>A partir de qual mês</div>
+            <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:20 }}>
+              {MESES.map((mes, mi) => (
+                <button key={mi} disabled={mi < mesAtual}
+                  onClick={() => setModalEvento(prev => prev ? { ...prev, mesInicio:mi } : prev)}
+                  style={{ padding:'4px 10px', borderRadius:6, cursor: mi < mesAtual ? 'default' : 'pointer',
+                    border:`1px solid ${modalEvento.mesInicio === mi ? COR.azul : COR.borda}`, fontSize:11, fontWeight:600, fontFamily:'inherit',
+                    background: modalEvento.mesInicio === mi ? '#eff6ff' : mi < mesAtual ? '#f8fafc' : COR.branco,
+                    color: modalEvento.mesInicio === mi ? COR.azul : mi < mesAtual ? '#cbd5e1' : COR.texto }}>
+                  {mes}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => setModalEvento(null)}
+                style={{ flex:1, padding:'10px 0', border:`1px solid ${COR.borda}`, borderRadius:9, cursor:'pointer',
+                  fontSize:13, fontWeight:600, color:COR.textoSuave, background:'transparent', fontFamily:'inherit' }}>
+                Cancelar
+              </button>
+              <button disabled={!modalEvento.tipo}
+                onClick={() => modalEvento.tipo && setModalEvento(prev => prev ? { ...prev, step:2 } : prev)}
+                style={{ flex:2, padding:'10px 0', border:'none', borderRadius:9, fontSize:13, fontWeight:600, color:'#fff', fontFamily:'inherit',
+                  cursor: modalEvento.tipo ? 'pointer' : 'default',
+                  background: modalEvento.tipo ? `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` : '#cbd5e1' }}>
+                Próximo →
+              </button>
+            </div>
+          </>)}
+
+          {modalEvento.step === 2 && (() => {
+            const TIPO_INFO: Record<string,{emoji:string;label:string}> = {
+              nova_renda:{emoji:'💰',label:'Nova Renda'}, novo_gasto:{emoji:'📋',label:'Novo Gasto Fixo'},
+              encerramento:{emoji:'✂️',label:'Encerramento'}, ajuste:{emoji:'🔧',label:'Ajuste de Valor'}
+            }
+            const info = TIPO_INFO[modalEvento.tipo] ?? { emoji:'⚡', label:'Evento' }
+            const ehEncerramento = modalEvento.tipo === 'encerramento'
+            const ehAjuste = modalEvento.tipo === 'ajuste'
+            const catList = modalEvento.catTipo === 'entrada' ? dadosAno.entradas : dadosAno.saidas
+            const podeAplicar = !!modalEvento.catNome && (ehEncerramento || !!modalEvento.novoValor)
+            return (<>
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
+                background:'#f8fafc', borderRadius:8, marginBottom:16 }}>
+                <span style={{ fontSize:16 }}>{info.emoji}</span>
+                <span style={{ fontSize:13, fontWeight:600, color:COR.texto }}>{info.label}</span>
+                <span style={{ fontSize:12, color:COR.textoSuave }}>· a partir de {MESES_FULL[modalEvento.mesInicio]}</span>
+              </div>
+
+              {ehAjuste && (
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Tipo da categoria</div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {(['entrada','saida'] as const).map(t => (
+                      <button key={t}
+                        onClick={() => setModalEvento(prev => prev ? { ...prev, catTipo:t, catNome:'' } : prev)}
+                        style={{ flex:1, padding:'6px 0', borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:600, fontFamily:'inherit',
+                          border:`1px solid ${modalEvento.catTipo === t ? COR.azul : COR.borda}`,
+                          background: modalEvento.catTipo === t ? '#eff6ff' : COR.branco,
+                          color: modalEvento.catTipo === t ? COR.azul : COR.textoSuave }}>
+                        {t === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Categoria</div>
+              <select value={modalEvento.catNome}
+                onChange={e => setModalEvento(prev => prev ? { ...prev, catNome:e.target.value } : prev)}
+                style={{ width:'100%', padding:'8px 12px', borderRadius:8, border:`1px solid ${COR.borda}`,
+                  fontSize:13, fontFamily:'inherit', marginBottom:16, outline:'none', background:COR.branco }}>
+                <option value="">Selecione uma categoria...</option>
+                {catList.map(c => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
+              </select>
+
+              {!ehEncerramento && (
+                <>
+                  <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Novo valor mensal</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20 }}>
+                    <span style={{ fontSize:14, color:COR.textoSuave, flexShrink:0 }}>R$</span>
+                    <input type="number" value={modalEvento.novoValor} placeholder="0,00"
+                      onChange={e => setModalEvento(prev => prev ? { ...prev, novoValor:e.target.value } : prev)}
+                      style={{ flex:1, padding:'8px 12px', borderRadius:8, border:`1px solid ${COR.borda}`,
+                        fontSize:15, fontWeight:600, fontFamily:'inherit', outline:'none' }} />
+                  </div>
+                </>
+              )}
+              {ehEncerramento && (
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px',
+                  background:'#fef2f2', borderRadius:8, marginBottom:20, border:'1px solid #fecaca' }}>
+                  <span>✂️</span>
+                  <span style={{ fontSize:12, color:'#dc2626', fontWeight:600 }}>
+                    O valor desta categoria será zerado a partir de {MESES_FULL[modalEvento.mesInicio]}
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={() => setModalEvento(prev => prev ? { ...prev, step:1 } : prev)}
+                  style={{ flex:1, padding:'10px 0', border:`1px solid ${COR.borda}`, borderRadius:9, cursor:'pointer',
+                    fontSize:13, fontWeight:600, color:COR.textoSuave, background:'transparent', fontFamily:'inherit' }}>
+                  ← Voltar
+                </button>
+                <button disabled={!podeAplicar} onClick={aplicarEvento}
+                  style={{ flex:2, padding:'10px 0', border:'none', borderRadius:9, fontSize:13, fontWeight:600, color:'#fff', fontFamily:'inherit',
+                    cursor: podeAplicar ? 'pointer' : 'default',
+                    background: podeAplicar ? `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` : '#cbd5e1' }}>
+                  ✓ Aplicar Evento
+                </button>
+              </div>
+            </>)
+          })()}
         </div>
       </div>
     )}
