@@ -229,7 +229,8 @@ export default function Configuracoes() {
   const location  = useLocation()
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { user, contas, categorias, setContas, setCategorias,
-          planejamentoLockado, setPlanejamentoLockado } = useApp()
+          planejamentoLockado, setPlanejamentoLockado,
+          desvioMinPerc, setDesvioMinPerc } = useApp()
   const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
   const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('ativas')
 
@@ -1322,7 +1323,32 @@ export default function Configuracoes() {
 
             {/* Card: Planejamento — funcional */}
             <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
-              <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 12px' }}>Planejamento</h3>
+              <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Planejamento</h3>
+
+              {/* Sensibilidade da revisão por desvio */}
+              <div style={{ marginBottom:16 }}>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:COR.textoSuave,
+                  textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
+                  Sensibilidade — Revisão por Desvio
+                </label>
+                <div style={{ display:'flex', gap:6 }}>
+                  {[5, 10, 15, 20].map(p => (
+                    <button key={p} onClick={() => setDesvioMinPerc(p)}
+                      style={{ flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:12, fontWeight:500,
+                        border:`1.5px solid ${desvioMinPerc === p ? '#2563eb' : COR.borda}`, borderRadius:7,
+                        cursor:'pointer', background: desvioMinPerc === p ? '#eff6ff' : COR.branco,
+                        color: desvioMinPerc === p ? '#2563eb' : COR.textoSuave }}>
+                      {p}%
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
+                  Categorias com desvio acima deste % entre previsto e realizado aparecem na revisão.
+                </div>
+              </div>
+
+              <div style={{ height:1, background:COR.borda, margin:'0 0 16px' }} />
+
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                 padding:'12px 14px', borderRadius:9,
                 background: planejamentoLockado ? '#fff7ed' : '#f0fdf4',

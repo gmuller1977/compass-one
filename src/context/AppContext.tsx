@@ -72,6 +72,7 @@ const KEYS = {
   planos:               'compass_planos',
   planosReal:           'compass_planos_real',
   planejamentoLockado:  'compass_planejamento_lockado',
+  desvioMinPerc:        'compass_desvio_min_perc',
 }
 
 // ── Context ───────────────────────────────────────────────────────────
@@ -85,6 +86,7 @@ type AppCtx = {
   planos:     Record<number, PlanoAnoData>
   planosReal: Record<number, PlanoAnoData>
   planejamentoLockado: boolean
+  desvioMinPerc: number
   setContas:      Dispatch<SetStateAction<Conta[]>>
   setCategorias:  Dispatch<SetStateAction<Categoria[]>>
   updateExtratoMes: (key: string, fn: (prev: DadosMes) => DadosMes) => void
@@ -94,6 +96,7 @@ type AppCtx = {
   finalizarPlanejamento:  (ano: number, dados: PlanoAnoData) => void
   updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
   setPlanejamentoLockado: (v: boolean) => void
+  setDesvioMinPerc: (v: number) => void
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
 }
@@ -116,6 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [planos,          setPlanosState]          = useState<Record<number, PlanoAnoData>>({})
   const [planosReal,      setPlanosRealState]       = useState<Record<number, PlanoAnoData>>({})
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
+  const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
 
   // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -179,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosState((map[KEYS.planos]    as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
+    setDesvioMinPercState((map[KEYS.desvioMinPerc] as number | undefined) ?? 10)
     setCarregando(false)
     dataLoadedRef.current = true
   }
@@ -192,6 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosState({})
     setPlanosRealState({})
     setPlanejamentoLockadoState(false)
+    setDesvioMinPercState(10)
   }
 
   // ── Auto-save para Supabase ──────────────────────────────────────────
@@ -210,6 +216,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveKey(KEYS.planos,     planos)      }, [planos])
   useEffect(() => { saveKey(KEYS.planosReal, planosReal)  }, [planosReal])
   useEffect(() => { saveKey(KEYS.planejamentoLockado, planejamentoLockado) }, [planejamentoLockado])
+  useEffect(() => { saveKey(KEYS.desvioMinPerc,       desvioMinPerc)       }, [desvioMinPerc])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -234,6 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function setPlanejamentoLockado(v: boolean) { setPlanejamentoLockadoState(v) }
+  function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
 
   async function limparDados() {
     const uid = userIdRef.current
@@ -253,6 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planos,              value: planos }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planosReal,          value: planosReal }),
         supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planejamentoLockado, value: planejamentoLockado }),
+        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.desvioMinPerc,        value: desvioMinPerc }),
       ])
     }
     await supabase.auth.signOut()
@@ -261,12 +270,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       user, carregando,
-      contas, categorias, extratoData, faturaData, planos, planosReal, planejamentoLockado,
+      contas, categorias, extratoData, faturaData, planos, planosReal, planejamentoLockado, desvioMinPerc,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, limparDados, sairDaConta,
+      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, setDesvioMinPerc, limparDados, sairDaConta,
     }}>
       {children}
     </Ctx.Provider>

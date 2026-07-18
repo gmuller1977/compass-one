@@ -75,7 +75,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const { contas, setContas, categorias, extratoData, faturaData,
           planos, setPlanos,
           planosReal, planejamentoLockado,
-          finalizarPlanejamento, updatePlanoReal } = useApp()
+          finalizarPlanejamento, updatePlanoReal,
+          desvioMinPerc, setDesvioMinPerc } = useApp()
 
   const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const SALDO_INICIAL_FIXO = contasSaldoIni
@@ -114,8 +115,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [modalCatReal,     setModalCatReal]    = useState<{ nome: string; mi: number } | null>(null)
 
   type RevisaoItem = { tipo:'entrada'|'saida'; ri:number; nome:string; icone:string; corIcone:string; prevPlanned:number; prevReal:number; novoValor:string; desvioPerc:number }
-  const [modalRevisao,  setModalRevisao]  = useState(false)
-  const [revisaoItens,  setRevisaoItens]  = useState<RevisaoItem[]>([])
+  const [modalRevisao,    setModalRevisao]    = useState(false)
+  const [revisaoItens,    setRevisaoItens]    = useState<RevisaoItem[]>([])
+  const [modalDesvioPerc, setModalDesvioPerc] = useState(desvioMinPerc)
   type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
   const [modalEvento,   setModalEvento]   = useState<null|{ step:1|2; tipo:EventoTipo; mesInicio:number; catTipo:'entrada'|'saida'; catNome:string; novoValor:string }>(null)
 
@@ -544,8 +546,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       } as PlanoAnoData,
     }))
   }
-  function abrirRevisao() {
-    if (mesAtual === 0) return
+  function computeRevisaoItens(perc: number): RevisaoItem[] {
+    if (mesAtual === 0) return []
+    const threshold = perc / 100
     const itens: RevisaoItem[] = []
     dadosAno.entradas.forEach((cat, ri) => {
       let tPrev = 0, tReal = 0
@@ -556,7 +559,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       const avgPrev = tPrev / mesAtual, avgReal = tReal / mesAtual
       if (avgPrev === 0 && avgReal === 0) return
       const desvio = avgPrev > 0 ? Math.abs(avgReal - avgPrev) / avgPrev : 1
-      if (desvio < 0.10) return
+      if (desvio < threshold) return
       const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
       itens.push({ tipo:'entrada', ri, nome:cat.nome, icone, corIcone, prevPlanned:avgPrev, prevReal:avgReal, novoValor:String(Math.round(avgReal)), desvioPerc:desvio })
     })
@@ -569,12 +572,16 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       const avgPrev = tPrev / mesAtual, avgReal = tReal / mesAtual
       if (avgPrev === 0 && avgReal === 0) return
       const desvio = avgPrev > 0 ? Math.abs(avgReal - avgPrev) / avgPrev : 1
-      if (desvio < 0.10) return
+      if (desvio < threshold) return
       const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
       itens.push({ tipo:'saida', ri, nome:cat.nome, icone, corIcone, prevPlanned:avgPrev, prevReal:avgReal, novoValor:String(Math.round(avgReal)), desvioPerc:desvio })
     })
     itens.sort((a, b) => b.desvioPerc - a.desvioPerc)
-    setRevisaoItens(itens)
+    return itens
+  }
+  function abrirRevisao() {
+    setModalDesvioPerc(desvioMinPerc)
+    setRevisaoItens(computeRevisaoItens(desvioMinPerc))
     setModalRevisao(true)
   }
 
@@ -2353,20 +2360,37 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 Análise de {mesAtual} {mesAtual === 1 ? 'mês' : 'meses'} realizados · ajusta {MESES_FULL[mesAtual]} a Dezembro
               </div>
             </div>
-            <button onClick={() => setModalRevisao(false)} style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:22, color:COR.textoSuave, lineHeight:1 }}>×</button>
+            <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+              <span style={{ fontSize:11, color:COR.textoSuave, whiteSpace:'nowrap' }}>Desvio mín.</span>
+              <div style={{ display:'flex', gap:3 }}>
+                {[5, 10, 15, 20].map(p => (
+                  <button key={p} onClick={() => {
+                    setModalDesvioPerc(p)
+                    setDesvioMinPerc(p)
+                    setRevisaoItens(computeRevisaoItens(p))
+                  }} style={{ padding:'3px 7px', fontFamily:'inherit', fontSize:11, fontWeight:600,
+                    border:`1.5px solid ${modalDesvioPerc === p ? '#2563eb' : COR.borda}`, borderRadius:5,
+                    cursor:'pointer', background: modalDesvioPerc === p ? '#eff6ff' : COR.branco,
+                    color: modalDesvioPerc === p ? '#2563eb' : COR.textoSuave }}>
+                    {p}%
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setModalRevisao(false)} style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:22, color:COR.textoSuave, lineHeight:1, marginLeft:4 }}>×</button>
           </div>
 
           {revisaoItens.length === 0 ? (
             <div style={{ textAlign:'center', padding:'32px 0', color:COR.textoSuave, fontSize:13 }}>
               <div style={{ fontSize:32, marginBottom:12 }}>✅</div>
-              Nenhuma categoria com desvio relevante encontrado.
+              Nenhuma categoria com desvio acima de {modalDesvioPerc}% encontrada.
               <br/><span style={{ fontSize:11 }}>Seu planejamento está bem alinhado com o realizado!</span>
             </div>
           ) : (
             <>
               <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:14, padding:'8px 12px',
                 background:'#eff6ff', borderRadius:8, flexShrink:0 }}>
-                Categorias com desvio acima de 10% entre o previsto e o realizado. O novo valor será aplicado de <strong>{MESES_FULL[mesAtual]}</strong> a Dezembro.
+                Categorias com desvio acima de {modalDesvioPerc}% entre o previsto e o realizado. O novo valor será aplicado de <strong>{MESES_FULL[mesAtual]}</strong> a Dezembro.
               </div>
               <div style={{ overflowY:'auto', flex:1, display:'flex', flexDirection:'column', gap:12 }}>
                 {(['entrada','saida'] as const).map(tipo => {
