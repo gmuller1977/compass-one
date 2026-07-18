@@ -845,7 +845,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         )}
         {hideTabs && <div />}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          {planejamentoLockado && !hideTabs && (
+          {planejamentoLockado && !hideTabs && aba === 'previsto' && (
             <span style={{ fontSize:11, color:COR.textoSuave, display:'flex', alignItems:'center', gap:4 }}>
               🔒 Bloqueado · desbloqueie em <strong>Configurações → Perfil</strong>
             </span>
