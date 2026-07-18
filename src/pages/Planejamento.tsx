@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData } from '../context/AppContext'
 import { useState, useMemo, useRef, useLayoutEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import AppHeader from '../components/AppHeader'
@@ -69,8 +69,9 @@ function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
   }
 }
 
-export default function Planejamento() {
+export default function Planejamento({ defaultAba = 'previsto', hideTabs = false }: { defaultAba?: 'previsto' | 'real'; hideTabs?: boolean } = {}) {
   const navigate    = useNavigate()
+  const { pathname } = useLocation()
   const { contas, setContas, categorias, extratoData, faturaData,
           planos, setPlanos,
           planosReal, planejamentoLockado,
@@ -84,7 +85,7 @@ export default function Planejamento() {
   const mesAtual    = new Date().getMonth()
 
   const [anoAtual,         setAnoAtual]        = useState(2026)
-  const [aba,              setAba]             = useState<'previsto' | 'real'>('previsto')
+  const [aba,              setAba]             = useState<'previsto' | 'real'>(defaultAba)
   const [editando,         setEditando]        = useState<Editando>(null)
   const [valorTemp,        setValorTemp]       = useState('')
   const [editandoMeta,     setEditandoMeta]    = useState(false)
@@ -99,6 +100,7 @@ export default function Planejamento() {
   const mesRefs        = useRef<(HTMLDivElement | null)[]>([])
   const prevMesesRef   = useRef<Set<number>>(new Set())
   const mountedRef     = useRef(false)
+  const skipBlurRef    = useRef(false)
   const [stickyH, setStickyH] = useState(0)
   const [quizAtivo,        setQuizAtivo]       = useState(() => !planos[anoAtual])
   const [quizStep,         setQuizStep]        = useState(0)
@@ -109,6 +111,7 @@ export default function Planejamento() {
   const [quizMetaStr,         setQuizMetaStr]         = useState('')
   const [quizEntradas,     setQuizEntradas]    = useState<Record<string, string>>({})
   const [quizSaidas,       setQuizSaidas]      = useState<Record<string, string>>({})
+  const [modalCatReal,     setModalCatReal]    = useState<{ nome: string; mi: number } | null>(null)
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -158,13 +161,7 @@ export default function Planejamento() {
 
   const somaCartaoMes = useMemo(() => {
     const cartCats = dadosAno.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
-    return MESES.map((_, i) => {
-      if (i === 0) return 0
-      const totalPrevMes = cartCats.reduce((s, c) => s + c.v[i - 1], 0)
-      // Mês anterior não planejado (zero): estima pela fatura do mês atual
-      if (totalPrevMes === 0) return cartCats.reduce((s, c) => s + c.v[i], 0)
-      return totalPrevMes
-    })
+    return MESES.map((_, i) => cartCats.reduce((s, c) => s + c.v[i], 0))
   }, [dadosAno, cartaoNomes])
 
   const dadosAnoFinal: AnoData = useMemo(() => ({
@@ -183,37 +180,49 @@ export default function Planejamento() {
     const result: Record<number, Record<string, number>> = {}
     for (let mes = 0; mes < 12; mes++) {
       result[mes] = {}
+
+      // Coleta overrides de fatura definidos em extratos banco deste mês
+      const cartaoOverrides: Record<string, number> = {}
       contas.filter(c => c.tipo !== 'cartao').forEach(conta => {
         const key = `${conta.id}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
         const dados = extratoData[key]
         if (!dados?.fixasConsolidadas) return
         Object.entries(dados.fixasConsolidadas).forEach(([fixaId, consolidada]) => {
           if (!consolidada || !fixaId.startsWith('cartao-')) return
-          const cardId = fixaId.replace('cartao-', '')
-          const card = contas.find(c => c.id === cardId)
-          if (!card) return
-          const overrideVal = dados.fixasValorOverride?.[fixaId]
-          let val = 0
-          if (overrideVal !== undefined) {
-            val = overrideVal
-          } else {
-            const fatKey = `${cardId}-${anoAtual}-${String(mes+1).padStart(2,'0')}`
-            const dm = fatDados[fatKey]
-            if (dm) {
-              const nDias = new Date(anoAtual, mes + 1, 0).getDate()
-              for (let d = 1; d <= nDias; d++) {
-                ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-                  if (l.tipo === 'saida') val += l.valor
-                })
-              }
+          const v = dados.fixasValorOverride?.[fixaId]
+          if (v !== undefined) cartaoOverrides[fixaId.replace('cartao-', '')] = v
+        })
+      })
+
+      // Inclui TODOS os cartões (consolidados com override, ou via faturaData)
+      contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
+        const diaFech = (cartao as any).diaFechamento ?? 1
+        const diaVenc = (cartao as any).diaVencimento ?? 1
+        const offset = diaVenc < diaFech ? 1 : 0
+        let pMes = mes - offset
+        let pAno = anoAtual
+        if (pMes < 0) { pMes += 12; pAno-- }
+        let val = 0
+        if (cartaoOverrides[cartao.id] !== undefined) {
+          val = cartaoOverrides[cartao.id]
+        } else {
+          const fatKey = `${cartao.id}-${pAno}-${String(pMes+1).padStart(2,'0')}`
+          const dm = fatDados[fatKey]
+          if (dm) {
+            const nDias = new Date(pAno, pMes + 1, 0).getDate()
+            for (let d = 1; d <= nDias; d++) {
+              ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+                if (l.tipo === 'entrada') val += l.valor
+                else val -= l.valor
+              })
             }
           }
-          result[mes][card.nome] = (result[mes][card.nome] ?? 0) + val
-        })
+        }
+        result[mes][cartao.nome] = (result[mes][cartao.nome] ?? 0) + val
       })
     }
     return result
-  }, [contas, extratoData, anoAtual])
+  }, [contas, extratoData, faturaData, anoAtual])
 
   // Lançamentos reais somados por categoria e mês (para a aba Realizado), separados por tipo
   // Inclui banco (extratoData) + cartão de crédito (faturaData) por categoria
@@ -264,17 +273,28 @@ export default function Planejamento() {
         }
       })
 
-      // Cartão de crédito (faturaData) — agrupa por categoria real de compra
-      Object.entries(fatDados).forEach(([key, dm]) => {
-        if (!key.endsWith(sufixo)) return
-        const nDias = new Date(anoAtual, mes + 1, 0).getDate()
+      // Cartão de crédito (faturaData) — distribui por categoria real de compra
+      // Usa billingOffset para ler a fatura do mês correto (igual ao FaturaCartao)
+      contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
+        const diaFech = (cartao as any).diaFechamento ?? 1
+        const diaVenc = (cartao as any).diaVencimento ?? 1
+        const offset = diaVenc < diaFech ? 1 : 0
+        let pMes = mes - offset
+        let pAno = anoAtual
+        if (pMes < 0) { pMes += 12; pAno-- }
+        const fatKey = `${cartao.id}-${pAno}-${String(pMes + 1).padStart(2, '0')}`
+        const dm = fatDados[fatKey]
+        if (!dm) return
+        const nDias = new Date(pAno, pMes + 1, 0).getDate()
         for (let d = 1; d <= nDias; d++) {
           ;(dm.lancamentos[d] ?? []).forEach(l => {
-            // tipo='entrada' (compra) = saída no orçamento; tipo='saida' (estorno) = entrada
-            const budgetTipo = l.tipo === 'entrada' ? 'saida' : 'entrada'
-            const budgetCartao = l.tipo === 'entrada' ? 'saidaCartao' : 'entradaCartao'
-            result[mes][budgetTipo][l.categoria] = (result[mes][budgetTipo][l.categoria] ?? 0) + l.valor
-            result[mes][budgetCartao][l.categoria] = (result[mes][budgetCartao][l.categoria] ?? 0) + l.valor
+            if (l.tipo === 'entrada') {
+              result[mes]['saida'][l.categoria] = (result[mes]['saida'][l.categoria] ?? 0) + l.valor
+              result[mes]['saidaCartao'][l.categoria] = (result[mes]['saidaCartao'][l.categoria] ?? 0) + l.valor
+            } else {
+              result[mes]['saida'][l.categoria] = (result[mes]['saida'][l.categoria] ?? 0) - l.valor
+              result[mes]['saidaCartao'][l.categoria] = (result[mes]['saidaCartao'][l.categoria] ?? 0) - l.valor
+            }
           })
         }
       })
@@ -282,24 +302,74 @@ export default function Planejamento() {
     return result
   }, [contas, categorias, extratoData, faturaData, anoAtual, planos])
 
-  const saldoInicialReal = useMemo(() => {
-    if (aba !== 'real') return saldoInicial
-    const result = [...saldoInicial]
-    const contasBanco = contasSaldoIni.filter(c => c.incluirNoSaldoInicial !== false)
-    for (let mes = 1; mes < 12; mes++) {
-      let total = 0, found = false
-      for (const conta of contasBanco) {
-        const key = `${conta.id}-${anoAtual}-${String(mes).padStart(2, '0')}`
-        const d = extratoData[key]
-        if (d?.saldoBanco) {
-          const n = parseFloat(d.saldoBanco.replace(/\./g, '').replace(',', '.'))
-          if (!isNaN(n)) { total += n; found = true }
-        }
+  const modalDados = useMemo(() => {
+    if (!modalCatReal) return null
+    const { nome, mi } = modalCatReal
+    const mesStr = String(mi + 1).padStart(2, '0')
+    const sufixo = `-${anoAtual}-${mesStr}`
+    const _hoje = new Date()
+    const ehMesPassado = mi < _hoje.getMonth() || anoAtual < _hoje.getFullYear()
+    const bancLancs: { dia: number; descricao: string; valor: number; sub: string }[] = []
+
+    Object.entries(extratoData).forEach(([key, dados]) => {
+      if (!key.endsWith(sufixo)) return
+      if (contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) return
+
+      // Lançamentos manuais (saída = custo, entrada = estorno com valor negativo)
+      Object.entries(dados.lancamentos).forEach(([dia, lances]) => {
+        lances.filter(l => l.categoria === nome).forEach(l => {
+          const val = l.tipo === 'saida' ? l.valor : -l.valor
+          bancLancs.push({ dia: Number(dia), descricao: l.descricao, valor: val, sub: l.formaPagamento })
+        })
+      })
+
+      // Fixas consolidadas automáticas
+      categorias.filter(c => c.fixa && c.ativa && c.nome === nome && c.tipo === 'saida').forEach(f => {
+        const ehAuto = (f as any).formaPagamento === 'automatico'
+        const estaConsolidada = dados.fixasConsolidadas?.[f.id] !== undefined
+          ? dados.fixasConsolidadas[f.id]
+          : (ehAuto && ehMesPassado)
+        if (!estaConsolidada) return
+        const planVal = (planos[anoAtual] as PlanoAnoData | undefined)?.saidas?.find(c => c.nome === f.nome)?.v[mi] ?? 0
+        const fValor = (f as any).valor ?? 0
+        const val = dados.fixasValorOverride?.[f.id] ?? (planVal > 0 ? planVal : fValor)
+        bancLancs.push({ dia: 1, descricao: `${f.nome}`, valor: val, sub: 'automático' })
+      })
+    })
+
+    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string; descricao?: string }[]> }>
+    const cartLancs: { dia: number; descricao: string; valor: number; cartao: string }[] = []
+    contas.filter(c => c.tipo === 'cartao').forEach(card => {
+      const diaFech = (card as any).diaFechamento ?? 1
+      const diaVenc = (card as any).diaVencimento ?? 1
+      const offset = diaVenc < diaFech ? 1 : 0
+      let pMes = mi - offset, pAno = anoAtual
+      if (pMes < 0) { pMes += 12; pAno-- }
+      const key = `${card.id}-${pAno}-${String(pMes + 1).padStart(2, '0')}`
+      const dm = fatDados[key]
+      if (!dm) return
+      const nDias = new Date(pAno, pMes + 1, 0).getDate()
+      for (let d = 1; d <= nDias; d++) {
+        ;(dm.lancamentos[d] ?? []).filter(l => l.categoria === nome && l.tipo === 'entrada').forEach(l => {
+          cartLancs.push({ dia: d, descricao: l.descricao ?? '', valor: l.valor, cartao: card.apelido ?? card.nome })
+        })
       }
-      if (found) result[mes] = total
-    }
-    return result
-  }, [aba, anoAtual, extratoData, contasSaldoIni, saldoInicial])
+    })
+
+    const totalBanc = bancLancs.reduce((s, l) => s + l.valor, 0)
+    const totalCart = cartLancs.reduce((s, l) => s + l.valor, 0)
+    const lancAbs = totalBanc + totalCart
+    const previsto = Math.abs((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === nome)?.v[mi] ?? 0)
+    const dentro = lancAbs < 0 ? true : (previsto > 0 ? lancAbs <= previsto : false)
+    const disponivel = previsto - lancAbs
+    const allLancs = [
+      ...bancLancs.map(l => ({ dia: l.dia, descricao: l.descricao, valor: l.valor, icone: '🏦', sub: l.sub })),
+      ...cartLancs.map(l => ({ dia: l.dia, descricao: l.descricao, valor: l.valor, icone: '💳', sub: l.cartao })),
+    ].sort((a, b) => a.dia - b.dia)
+    const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
+    return { nome, mi, previsto, lancAbs, totalBanc, totalCart, dentro, disponivel, allLancs, icone, corIcone }
+  }, [modalCatReal, extratoData, faturaData, contas, categorias, anoAtual, planos])
+
 
   const mesTemSaldoReal = useMemo(() => Array.from({ length: 12 }, (_, mes) => {
     if (aba !== 'real' || mes === 0) return false
@@ -316,7 +386,18 @@ export default function Planejamento() {
       const mesStr = String(mes + 1).padStart(2, '0')
       const sufixo = `-${anoAtual}-${mesStr}`
 
-      // Percorre TODOS os keys (banco + dinheiro), ignora cartão (tratado via fatura abaixo)
+      // Coleta overrides de fatura de cartão definidos em qualquer extrato banco deste mês
+      const cartaoOverrides: Record<string, number> = {}
+      Object.entries(extratoData).forEach(([key, dados]) => {
+        if (!key.endsWith(sufixo) || !dados.fixasConsolidadas) return
+        Object.entries(dados.fixasConsolidadas).forEach(([fixaId, consolidada]) => {
+          if (!consolidada || !fixaId.startsWith('cartao-')) return
+          const v = dados.fixasValorOverride?.[fixaId]
+          if (v !== undefined) cartaoOverrides[fixaId.replace('cartao-', '')] = v
+        })
+      })
+
+      // Percorre TODOS os keys (banco + dinheiro), ignora cartão (tratado via faturaData abaixo)
       Object.entries(extratoData).forEach(([key, dados]) => {
         if (!key.endsWith(sufixo)) return
         const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
@@ -338,38 +419,48 @@ export default function Planejamento() {
             if (f.tipo === 'entrada') te[mes] += val
             else ts[mes] += val
           })
+        }
+      })
 
-          // Faturas de cartão consolidadas
-          Object.entries(dados.fixasConsolidadas).forEach(([fixaId, consolidada]) => {
-            if (!consolidada || !fixaId.startsWith('cartao-')) return
-            const cardId = fixaId.replace('cartao-', '')
-            const overrideVal = dados.fixasValorOverride?.[fixaId]
-            let val = 0
-            if (overrideVal !== undefined) {
-              val = overrideVal
-            } else {
-              const fatKey = `${cardId}-${anoAtual}-${mesStr}`
-              const dm = fatDados[fatKey]
-              if (dm) {
-                const nDias = new Date(anoAtual, mes + 1, 0).getDate()
-                for (let d = 1; d <= nDias; d++) {
-                  ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-                    if (l.tipo === 'saida') val += l.valor
-                  })
-                }
-              }
-            }
-            ts[mes] += val
-          })
+      // Inclui TODOS os gastos de cartão do faturaData (consolidados ou não)
+      // Se houver override de valor (fatura paga com valor diferente da soma), usa-o
+      contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
+        const diaFech = (cartao as any).diaFechamento ?? 1
+        const diaVenc = (cartao as any).diaVencimento ?? 1
+        const offset = diaVenc < diaFech ? 1 : 0
+        let pMes = mes - offset
+        let pAno = anoAtual
+        if (pMes < 0) { pMes += 12; pAno-- }
+        if (cartaoOverrides[cartao.id] !== undefined) {
+          ts[mes] += cartaoOverrides[cartao.id]
+        } else {
+          const fatKey = `${cartao.id}-${pAno}-${String(pMes + 1).padStart(2, '0')}`
+          const dm = fatDados[fatKey]
+          if (!dm) return
+          const nDias = new Date(pAno, pMes + 1, 0).getDate()
+          for (let d = 1; d <= nDias; d++) {
+            ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+              if (l.tipo === 'entrada') ts[mes] += l.valor
+              else ts[mes] -= l.valor
+            })
+          }
         }
       })
     }
     return { te, ts }
   }, [contas, categorias, extratoData, faturaData, anoAtual, planos])
 
-  const saldoFinalReal = useMemo(() =>
-    Array.from({ length: 12 }, (_, mi) => saldoInicialReal[mi] + totaisReais.te[mi] - totaisReais.ts[mi])
-  , [saldoInicialReal, totaisReais])
+  const { saldoInicialReal, saldoFinalReal } = useMemo(() => {
+    if (aba !== 'real') return { saldoInicialReal: saldoInicial, saldoFinalReal: saldoFinal }
+    const siArr = new Array(12).fill(0) as number[]
+    const sfArr = new Array(12).fill(0) as number[]
+    siArr[0] = saldoInicial[0]
+    for (let mi = 0; mi < 12; mi++) {
+      sfArr[mi] = siArr[mi] + totaisReais.te[mi] - totaisReais.ts[mi]
+      if (mi + 1 < 12) siArr[mi + 1] = sfArr[mi]
+    }
+    return { saldoInicialReal: siArr, saldoFinalReal: sfArr }
+  }, [aba, saldoInicial, saldoFinal, totaisReais])
 
   // Indica quais meses têm dados reais lançados (para fallback ao previsto em cinza)
   const mesTemDadosReais = useMemo(() => Array.from({ length: 12 }, (_, mes) => {
@@ -383,6 +474,14 @@ export default function Planejamento() {
       return temLanc || temConsolidados
     })
   }), [aba, contas, extratoData, anoAtual])
+
+  const limiteCartaoPorMes = useMemo(() =>
+    Array.from({ length: 12 }, (_, mi) =>
+      ((planos[anoAtual] as PlanoAnoData | undefined)?.saidas ?? [])
+        .filter(pc => (pc as { t?: string }).t === 'cartao' && !nomeFaturaCartao(pc.nome, cartaoNomes))
+        .reduce((s, pc) => s + (pc.v[mi] ?? 0), 0)
+    )
+  , [planos, anoAtual, cartaoNomes])
 
   // ── Helpers de update ──
   function updateAno(fn: (d: AnoData) => AnoData) {
@@ -415,14 +514,14 @@ export default function Planejamento() {
     updateAno(d => ({ ...d, saldoInicialJan: novoSaldo }))
   }
 
-  function replicarLinhaMes(tipo: 'e'|'s', ri: number, mesOrigem: number) {
+  function replicarLinhaMes(tipo: 'e'|'s', ri: number, mesOrigem: number, mesDest: number) {
     const valor = tipo === 'e'
       ? dadosAno.entradas[ri]?.v[mesOrigem] ?? 0
       : dadosAnoFinal.saidas[ri]?.v[mesOrigem] ?? 0
     if (tipo === 'e') {
-      setEntradas(prev => prev.map((c, i) => i === ri ? { ...c, v: new Array(12).fill(valor) } : c))
+      setEntradas(prev => prev.map((c, i) => i === ri ? { ...c, v: c.v.map((v, m) => m > mesOrigem && m <= mesDest ? valor : v) } : c))
     } else {
-      setSaidas(prev => prev.map((c, i) => i === ri ? { ...c, v: new Array(12).fill(valor) } : c))
+      setSaidas(prev => prev.map((c, i) => i === ri ? { ...c, v: c.v.map((v, m) => m > mesOrigem && m <= mesDest ? valor : v) } : c))
     }
   }
   function copiarAnoAnteriorComReajuste(anoBase: number, anoNovo: number, percReaj: number) {
@@ -489,14 +588,17 @@ export default function Planejamento() {
   useLayoutEffect(() => {
     const h = stickyRef.current?.getBoundingClientRect().height ?? 0
     setStickyH(prev => prev !== h ? h : prev)
-    if (!mountedRef.current) { mountedRef.current = true; prevMesesRef.current = new Set(mesesAbertos); return }
+    if (!mountedRef.current) { mountedRef.current = true; prevMesesRef.current = new Set(mesesAbertos); window.scrollTo({ top: 0 }); return }
     const prev = prevMesesRef.current
     let newlyOpened: number | undefined
     for (const m of mesesAbertos) {
       if (!prev.has(m)) { newlyOpened = m; break }
     }
     prevMesesRef.current = new Set(mesesAbertos)
-    if (newlyOpened === undefined) return
+    if (newlyOpened === undefined) {
+      if (mesesAbertos.size === 0 && prev.size > 0) window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
     const el = mesRefs.current[newlyOpened]
     const sticky = stickyRef.current
     if (!el || !sticky) return
@@ -506,9 +608,9 @@ export default function Planejamento() {
 
   function toggleMes(i: number) {
     setMesesAbertos(prev => {
-      if (prev.has(i)) return new Set<number>()
-      setSaldoAberto(false)
-      return new Set<number>([i])
+      const next = new Set(prev)
+      if (next.has(i)) { next.delete(i) } else { setSaldoAberto(false); next.add(i) }
+      return next
     })
   }
   function toggleGrupo(mi: number, grupo: string) {
@@ -536,13 +638,31 @@ export default function Planejamento() {
       setSaidas(prev => prev.map((c, ri) =>
         ri === row ? { ...c, v: c.v.map((v, ci) => ci === mes ? novo : v) } : c))
     }
-    // Avança para a próxima linha editável do mesmo mês
+    // Navega pela ordem de exibição (grupos alfabéticos), não pela ordem bruta do array
     const lista = tipo === 'e' ? dadosAno.entradas : dadosAnoFinal.saidas
-    let next = row + 1
-    while (next < lista.length && tipo === 's' && nomeFaturaCartao(lista[next].nome, cartaoNomes)) next++
-    if (next < lista.length) {
-      const v = lista[next].v[mes]
-      setEditando({ tipo, row: next, mes })
+    const getGrupoNav = (cat: Cat) => {
+      if (tipo === 's') {
+        if (nomeFaturaCartao(cat.nome, cartaoNomes)) return 'Cartão de Crédito'
+        return categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+      }
+      return categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')?.grupo ?? '__sem_grupo__'
+    }
+    const gruposUsadosNav = new Set(lista.map(getGrupoNav))
+    const gruposOrdenadosNav = [
+      ...Array.from(gruposUsadosNav).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      ...(gruposUsadosNav.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
+    ]
+    const ordemDisplay: number[] = []
+    for (const grupo of gruposOrdenadosNav) {
+      lista.forEach((cat, idx) => { if (getGrupoNav(cat) === grupo) ordemDisplay.push(idx) })
+    }
+    const posAtual = ordemDisplay.indexOf(row)
+    let nextPos = posAtual + 1
+    while (nextPos < ordemDisplay.length && tipo === 's' && nomeFaturaCartao(lista[ordemDisplay[nextPos]].nome, cartaoNomes)) nextPos++
+    if (nextPos < ordemDisplay.length) {
+      const nextRow = ordemDisplay[nextPos]
+      const v = lista[nextRow].v[mes]
+      setEditando({ tipo, row: nextRow, mes })
       setValorTemp(v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
     } else {
       setEditando(null)
@@ -559,14 +679,16 @@ export default function Planejamento() {
         <input autoFocus value={valorTemp}
           onChange={e => setValorTemp(e.target.value)}
           onFocus={e => e.target.select()}
-          onBlur={confirmarValor}
+          onBlur={() => { if (skipBlurRef.current) { skipBlurRef.current = false } else { confirmarValor() } }}
           onKeyDown={e => {
-            if (e.key === 'Enter')  confirmarValor()
+            if (e.key === 'Enter') { skipBlurRef.current = true; confirmarValor() }
+            if (e.key === 'Tab')   { e.preventDefault(); skipBlurRef.current = true; confirmarValor() }
             if (e.key === 'Escape') setEditando(null)
           }}
-          style={{ width:110, padding:'4px 8px', textAlign:'right', border:'none', outline:'none',
+          style={{ width:110, padding:'4px 8px', textAlign:'right',
+            border:`1px solid ${COR.azul}`, outline:'none',
             background:'#dbeafe', color:COR.azulEscuro, fontSize:13, fontFamily:'inherit',
-            fontWeight:600, borderRadius:6, boxShadow:`inset 0 -2px 0 ${COR.azul}` }} />
+            fontWeight:600, borderRadius:6 }} />
       )
     }
     const corVal = readOnly
@@ -579,10 +701,17 @@ export default function Planejamento() {
           fontWeight: readOnly ? 600 : 400, whiteSpace:'nowrap', userSelect:'none',
           cursor: readOnly || bloqueado ? 'default' : 'pointer',
           borderRadius:6, minWidth:110,
-          background: ativo ? '#dbeafe' : 'transparent',
-          transition:'background .1s' }}
-        onMouseEnter={e => { if (!readOnly && !bloqueado) (e.currentTarget as HTMLElement).style.background='#f1f5fb' }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background='transparent' }}>
+          background: readOnly ? 'transparent' : '#f8fafc',
+          border: readOnly ? 'none' : '1px solid #e2e8f0',
+          transition:'border-color .1s, background .1s' }}
+        onMouseEnter={e => { if (!readOnly && !bloqueado) {
+          ;(e.currentTarget as HTMLElement).style.borderColor = '#93c5fd'
+          ;(e.currentTarget as HTMLElement).style.background = '#f1f5fb'
+        }}}
+        onMouseLeave={e => { if (!readOnly) {
+          ;(e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'
+          ;(e.currentTarget as HTMLElement).style.background = '#f8fafc'
+        }}}>
         {fmt(valor)}
       </div>
     )
@@ -594,16 +723,16 @@ export default function Planejamento() {
 
       {/* ── CABEÇALHO STICKY COMPLETO (menu + título + abas + cards) ── */}
       <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.fundo }}>
-      <AppHeader currentPath="/planejamento" />
+      <AppHeader currentPath={pathname} />
       <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 8px' }}>
 
       {/* TÍTULO + NAVEGAÇÃO DE ANO */}
       <div style={{ padding:'14px 0 6px',
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>Planejamento</h1>
+          <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>{hideTabs ? 'Acompanhamento' : 'Planejamento'}</h1>
           <p style={{ fontSize:12, color:COR.textoSuave, marginTop:3 }}>
-            Fluxo de caixa mensal · Abra um ou vários meses para planejar
+            {hideTabs ? 'Realizado mensal · Acompanhe seus lançamentos' : 'Fluxo de caixa mensal · Abra um ou vários meses para planejar'}
           </p>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:0,
@@ -631,20 +760,23 @@ export default function Planejamento() {
       {/* ABAS + BOTÃO FINALIZAR */}
       <div style={{ padding:'0 0 8px',
         display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', gap:4, background:COR.branco,
-          border:`1px solid ${COR.borda}`, borderRadius:9, padding:3 }}>
-          {(['previsto','real'] as const).map(v => (
-            <button key={v} onClick={() => { setAba(v); setEditando(null) }} style={{
-              padding:'5px 18px', borderRadius:6, border:'none', cursor:'pointer',
-              fontFamily:'inherit', fontSize:12, fontWeight:600,
-              background: aba === v ? COR.azul : 'transparent',
-              color:       aba === v ? '#fff'   : COR.textoSuave, transition:'all .15s' }}>
-              {v === 'previsto' ? 'Original' : 'Realizado'}
-            </button>
-          ))}
-        </div>
+        {!hideTabs && (
+          <div style={{ display:'flex', gap:4, background:COR.branco,
+            border:`1px solid ${COR.borda}`, borderRadius:9, padding:3 }}>
+            {(['previsto','real'] as const).map(v => (
+              <button key={v} onClick={() => { setAba(v); setEditando(null) }} style={{
+                padding:'5px 18px', borderRadius:6, border:'none', cursor:'pointer',
+                fontFamily:'inherit', fontSize:12, fontWeight:600,
+                background: aba === v ? COR.azul : 'transparent',
+                color:       aba === v ? '#fff'   : COR.textoSuave, transition:'all .15s' }}>
+                {v === 'previsto' ? 'Original' : 'Atualizado'}
+              </button>
+            ))}
+          </div>
+        )}
+        {hideTabs && <div />}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          {planejamentoLockado && (
+          {planejamentoLockado && !hideTabs && (
             <span style={{ fontSize:11, color:COR.textoSuave, display:'flex', alignItems:'center', gap:4 }}>
               🔒 Bloqueado · desbloqueie em <strong>Configurações → Perfil</strong>
             </span>
@@ -654,7 +786,7 @@ export default function Planejamento() {
               style={{ padding:'6px 16px', border:'none', borderRadius:8, cursor:'pointer',
                 fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff',
                 background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
-              {realExiste ? '↺ Refazer planejamento real' : '✓ Finalizar planejamento'}
+              {realExiste ? '↺ Atualizar Planejamento Original' : '✓ Finalizar planejamento'}
             </button>
           )}
         </div>
@@ -708,15 +840,27 @@ export default function Planejamento() {
           : (aba === 'real' ? saldoFinalReal[11] : saldoFinal[11])
         const resultado = totalE - totalS
         const metaAnual = (planos[anoAtual] as PlanoAnoData | undefined)?.metaAnual ?? 0
-        const metaPct   = metaAnual > 0 ? Math.min(100, Math.max(0, (sfRef / metaAnual) * 100)) : 0
+        const metaPct   = metaAnual > 0 ? Math.max(0, (sfRef / metaAnual) * 100) : 0
         const metaOk    = sfRef >= metaAnual && metaAnual > 0
+        const caixaValor = isMes ? sfRef : resultado
+        const totalEPrev = isMes ? totalEntradas[mesFoco!] : totalEntradas.reduce((a,b)=>a+b,0)
+        const totalSPrev = isMes ? totalSaidas[mesFoco!]   : totalSaidas.reduce((a,b)=>a+b,0)
+        const caixaPrev  = isMes ? saldoFinal[mesFoco!]    : (totalEPrev - totalSPrev)
         const fixos = [
-          { label:`↑ Entrada ${sufixo}`,  valor:totalE,   cor:'#16a34a',    bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
-          { label:`↓ Saída ${sufixo}`,    valor:totalS,   cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
-          { label:`Resultado ${sufixo}`,  valor:resultado,
-            cor:   resultado >= 0 ? '#16a34a' : COR.vermelho,
-            bg:    resultado >= 0 ? '#f0fdf4' : '#fff5f5',
-            borda: resultado >= 0 ? '#bbf7d0' : '#fecaca', icon: resultado >= 0 ? '↗' : '↘' },
+          { label:`↑ Entrada ${sufixo}`, valor:totalE, prev:totalEPrev,
+            pct: totalEPrev>0 ? Math.max(0, totalE/totalEPrev*100) : (totalE>0?100:0),
+            ok: totalE>=totalEPrev,
+            cor:'#16a34a', bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
+          { label:`↓ Saída ${sufixo}`, valor:totalS, prev:totalSPrev,
+            pct: totalSPrev>0 ? Math.max(0, totalS/totalSPrev*100) : (totalS>0?100:0),
+            ok: totalSPrev===0 || totalS<=totalSPrev,
+            cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
+          { label: isMes ? `Caixa ${sufixo}` : `Resultado ${sufixo}`, valor:caixaValor, prev:caixaPrev,
+            pct: caixaPrev>0 ? Math.max(0, caixaValor/caixaPrev*100) : (caixaValor>0?100:0),
+            ok: caixaValor>=caixaPrev,
+            cor: caixaValor>=0 ? '#16a34a' : COR.vermelho,
+            bg:  caixaValor>=0 ? '#f0fdf4' : '#fff5f5',
+            borda: caixaValor>=0 ? '#bbf7d0' : '#fecaca', icon: caixaValor>=0 ? '↗' : '↘' },
         ]
         return (
           <div style={{ margin:'0 0 10px', display:'flex', gap:8 }}>
@@ -728,19 +872,29 @@ export default function Planejamento() {
                   display:'flex', alignItems:'center', gap:4 }}>
                   <span style={{ fontSize:13, color:m.cor }}>{m.icon}</span> {m.label}
                 </div>
-                <div style={{ fontSize:16, fontWeight:700, color:m.cor }}>
+                <div style={{ fontSize:16, fontWeight:700, color:m.cor, marginBottom: aba==='real' && m.prev!==0 ? 5 : 0 }}>
                   {m.valor.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })}
                 </div>
+                {aba === 'real' && m.prev !== 0 && (
+                  <>
+                    <div style={{ height:4, background:'rgba(0,0,0,0.08)', borderRadius:2, overflow:'hidden', marginBottom:3 }}>
+                      <div style={{ height:'100%', borderRadius:2, transition:'width .4s',
+                        background: m.ok ? '#16a34a' : '#f59e0b', width:`${Math.min(100, m.pct)}%` }}/>
+                    </div>
+                    <div style={{ fontSize:10, color:COR.textoSuave }}>
+                      {m.pct.toFixed(0)}% de {m.prev.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
 
             {/* Card 4: mês aberto → Saldo final mês | anual → Meta ou Saldo dez */}
             {isMes ? (
               metaAnual > 0 ? (() => {
-                const mesesComDados = Array.from({length:12}, (_,m) => totalEntradas[m] > 0 || totalSaidas[m] > 0).filter(Boolean).length
-                const metaMes = metaAnual / (mesesComDados || 12)
-                const resultado = totalE - totalS
-                const metaOkMes = resultado >= metaMes
+                const metaAcumulada = metaAnual / 12 * (mesFoco! + 1)
+                const metaOkMes = sfRef >= metaAcumulada
+                const metaPctMes = metaAcumulada > 0 ? Math.max(0, (sfRef / metaAcumulada) * 100) : 0
                 return (
                   <div style={{ flex:1, background: metaOkMes ? '#f0fdf4' : '#faf5ff',
                     border:`1.5px solid ${metaOkMes ? '#bbf7d0' : '#ddd6fe'}`,
@@ -750,25 +904,29 @@ export default function Planejamento() {
                       color: metaOkMes ? '#16a34a' : '#7c3aed' }}>
                       <span style={{ fontSize:13 }}>{metaOkMes ? '✓' : '◎'}</span> Meta {MESES[mesFoco!]}
                     </div>
-                    <div style={{ fontSize:16, fontWeight:700, color: metaOkMes ? '#16a34a' : '#7c3aed' }}>
-                      {metaMes.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    <div style={{ fontSize:16, fontWeight:700, color: metaOkMes ? '#16a34a' : '#7c3aed', marginBottom:5 }}>
+                      {sfRef.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                     </div>
-                    <div style={{ fontSize:10, color: metaOkMes ? '#16a34a' : '#7c3aed', marginTop:2 }}>
-                      resultado: {resultado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                    <div style={{ height:4, background: metaOkMes ? '#bbf7d0' : '#ede9fe', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
+                      <div style={{ height:'100%', borderRadius:2, transition:'width .4s',
+                        background: metaOkMes ? '#16a34a' : '#7c3aed', width:`${Math.min(100, metaPctMes)}%` }}/>
+                    </div>
+                    <div style={{ fontSize:10, color: metaOkMes ? '#16a34a' : '#7c3aed' }}>
+                      {metaPctMes.toFixed(0)}% de {metaAcumulada.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                     </div>
                   </div>
                 )
               })() : (
-                <div style={{ flex:1, background: sfRef >= 0 ? '#f0fdf4' : '#fff5f5',
-                  border:`1.5px solid ${sfRef >= 0 ? '#bbf7d0' : '#fecaca'}`,
+                <div style={{ flex:1, background: resultado >= 0 ? '#f0fdf4' : '#fff5f5',
+                  border:`1.5px solid ${resultado >= 0 ? '#bbf7d0' : '#fecaca'}`,
                   borderRadius:12, padding:'10px 14px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
                   <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
                     textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
                     display:'flex', alignItems:'center', gap:4 }}>
-                    <span style={{ fontSize:13, color:corSaldo(sfRef) }}>◎</span> Saldo {MESES[mesFoco!]}
+                    <span style={{ fontSize:13, color: resultado >= 0 ? COR.verde : COR.vermelho }}>↗</span> Resultado {MESES[mesFoco!]}
                   </div>
-                  <div style={{ fontSize:16, fontWeight:700, color:corSaldo(sfRef) }}>
-                    {sfRef.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                  <div style={{ fontSize:16, fontWeight:700, color: resultado >= 0 ? COR.verde : COR.vermelho }}>
+                    {resultado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                   </div>
                 </div>
               )
@@ -789,7 +947,7 @@ export default function Planejamento() {
                 </div>
                 <div style={{ height:4, background: metaOk ? '#bbf7d0' : '#ede9fe', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
                   <div style={{ height:'100%', borderRadius:2, transition:'width .4s',
-                    background: metaOk ? '#16a34a' : '#7c3aed', width:`${metaPct}%` }}/>
+                    background: metaOk ? '#16a34a' : '#7c3aed', width:`${Math.min(100, metaPct)}%` }}/>
                 </div>
                 {editandoMeta ? (
                   <input autoFocus value={metaTemp}
@@ -888,7 +1046,7 @@ export default function Planejamento() {
           <div style={{ display:'flex', flexDirection:'column', gap:6, paddingTop:4 }}>
 
             {/* ── SALDO INICIAL ── */}
-            <div style={{ background:COR.branco, borderRadius:12,
+            {!hideTabs && <div style={{ background:COR.branco, borderRadius:12,
               border:`1px solid ${COR.borda}`, overflow:'hidden' }}>
               <div style={{ display:'flex', alignItems:'center',
                 padding:'10px 14px', gap:12 }}>
@@ -968,7 +1126,7 @@ export default function Planejamento() {
                   </div>
                 </div>
               )}
-            </div>
+            </div>}
 
             {/* ── ACCORDION DE MESES ── */}
             {MESES_FULL.map((nomeMes, mi) => {
@@ -995,7 +1153,7 @@ export default function Planejamento() {
                     style={{ position:'sticky', top: stickyH, zIndex:10,
                       display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
                       cursor:'pointer',
-                      background: ehAtual ? '#dbeafe' : COR.branco,
+                      background: ehAtual ? '#dbeafe' : '#f8fafc',
                       borderRadius: aberto ? '10px 10px 0 0' : 10,
                       borderBottom: aberto ? `1px solid ${COR.borda}` : 'none',
                       boxShadow:'0 2px 6px rgba(0,0,0,0.06)' }}>
@@ -1015,47 +1173,97 @@ export default function Planejamento() {
                     </div>
 
                     {aberto ? (
-                      <div style={{ flex:1 }}/>
-                    ) : (
-                      /* ── FECHADO: apenas saldo final ── */
                       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:6 }}>
+                        {aba === 'real' && <>
+                          <div style={{ padding:'3px 8px', fontSize:11, fontWeight:600, color:COR.textoSuave,
+                            borderRadius:6, border:`1px solid ${COR.borda}`, textAlign:'center', minWidth:110 }}>Previsto</div>
+                          <div style={{ padding:'3px 8px', fontSize:11, fontWeight:600, color:COR.textoSuave,
+                            borderRadius:6, border:`1px solid ${COR.borda}`, textAlign:'center', minWidth:110 }}>Realizado</div>
+                          <div style={{ padding:'3px 8px', fontSize:11, fontWeight:600, color:COR.textoSuave,
+                            borderRadius:6, border:`1px solid ${COR.borda}`, textAlign:'center', minWidth:80 }}>Variação</div>
+                        </>}
+                      </div>
+                    ) : (
+                      /* ── FECHADO: saldo final ── */
+                      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:8 }}>
                         <span style={{ fontSize:11, color:COR.textoSuave }}>Saldo Final</span>
-                        <span style={{ fontSize:14, fontWeight:700,
-                          color: ((aba==='real' && !temReal) ? cinza : caixaCor(sf)).txt }}>
-                          {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                        </span>
+                        {aba === 'real' ? (
+                          <>
+                            <div style={{ padding:'2px 8px', fontSize:12, borderRadius:6, textAlign:'right', minWidth:90,
+                              color:COR.textoSuave, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                              {saldoFinal[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                            <div style={{ padding:'2px 8px', fontSize:12, borderRadius:6, textAlign:'right', minWidth:90, fontWeight:700,
+                              color: sf>=saldoFinal[mi] ? '#16a34a' : COR.vermelho,
+                              background: sf>=saldoFinal[mi] ? '#f0fdf4' : '#fef2f2',
+                              border:`1px solid ${sf>=saldoFinal[mi] ? '#bbf7d0' : '#fecaca'}` }}>
+                              {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                            <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600,
+                              color:(sf-saldoFinal[mi])>0?'#16a34a':(sf-saldoFinal[mi])<0?COR.vermelho:COR.textoSuave }}>
+                              {sf!==saldoFinal[mi]?((sf-saldoFinal[mi])>0?'+':'')+(sf-saldoFinal[mi]).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ fontSize:14, fontWeight:700,
+                            color: ((aba==='real' && !temReal) ? cinza : caixaCor(sf)).txt }}>
+                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
 
                   {/* ── CORPO DO MÊS (quando aberto) ── */}
                   {aberto && (
-                    <div style={{ borderTop:`1px solid ${COR.borda}` }}>
+                    <div style={{ borderTop:`1px solid ${COR.borda}`, display:'flex', flexDirection:'column', maxHeight:`calc(100svh - ${stickyH + 43}px)` }}>
 
                       {/* Saldo Inicial */}
-                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                        padding:'8px 16px', background:'#f8faff', borderBottom:`1px solid ${COR.borda}` }}>
+                      <div style={{ flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between',
+                        padding:'8px 24px 8px 16px', background:'#eff6ff', borderBottom:`1px solid ${COR.borda}` }}>
                         <span style={{ fontSize:13, color:COR.textoSuave }}>
                           Saldo Inicial{mi === 0 ? ' de Janeiro' : ` (Saldo Final de ${MESES[mi-1]})`}
                         </span>
-                        <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si), display:'flex', alignItems:'center', gap:6 }}>
-                          {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                          {mesTemSaldoReal[mi] && (
-                            <span style={{ fontSize:10, background:'#f0fdf4', color:'#16a34a',
-                              border:'1px solid #bbf7d0', borderRadius:4, padding:'0 4px' }}>extrato</span>
-                          )}
-                        </span>
+                        {aba === 'real' ? (
+                          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                            <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
+                              color:COR.textoSuave, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                              {saldoInicialReal[mi] !== 0 ? saldoInicialReal[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                            </div>
+                            <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:600,
+                              color:COR.textoSuave, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                              {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                            <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600, color:COR.textoSuave }}>
+                              —
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize:13, fontWeight:600, color:corSaldo(si), display:'flex', alignItems:'center', gap:6 }}>
+                            {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            {mesTemSaldoReal[mi] && (
+                              <span style={{ fontSize:10, background:'#f0fdf4', color:'#16a34a',
+                                border:'1px solid #bbf7d0', borderRadius:4, padding:'0 4px' }}>extrato</span>
+                            )}
+                          </span>
+                        )}
                       </div>
 
                       {/* ── ENTRADAS ── */}
                       {(() => {
                         const entradasAberto = gruposAbertos.has(`${mi}-__entradas__`)
+                        const entradasPrevistas = aba === 'real' ? dadosBase.entradas : dadosAno.entradas
+                        const teRealizado = aba === 'real'
+                          ? entradasPrevistas.reduce((s, cat) => s + (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0), 0)
+                          : totalEntradas[mi]
+                        const tePrevisto = totalEntradas[mi]
                         return (
-                      <div style={{ borderBottom:`1px solid ${COR.borda}` }}>
+                      <div style={{ flex: entradasAberto ? 1 : '0 0 auto', minHeight:0, display:'flex', flexDirection:'column',
+                        margin:'4px 8px 2px 16px', borderRadius:8, border:'1px solid #86efac', overflow:'hidden' }}>
                         <div
                           onClick={() => toggleGrupo(mi, '__entradas__')}
-                          style={{ fontSize:13, fontWeight:600, color:'#166534',
-                            padding:'7px 16px', background:'#dcfce7',
+                          style={{ flexShrink:0, fontSize:13, fontWeight:600, color:'#166534',
+                            padding:'7px 16px 7px 12px', background:'#dcfce7',
                             borderBottom: entradasAberto ? '1px solid #bbf7d0' : 'none',
                             display:'flex', alignItems:'center', justifyContent:'space-between',
                             cursor:'pointer', userSelect:'none' }}>
@@ -1064,17 +1272,37 @@ export default function Planejamento() {
                               transform: entradasAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
                             ↑ Entradas
                           </span>
-                          <span>{te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                          {aba === 'real' ? (
+                            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                              <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
+                                color:'#166534', background:'rgba(255,255,255,0.5)', border:'1px solid #86efac' }}>
+                                {tePrevisto>0 ? tePrevisto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </div>
+                              <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
+                                color: teRealizado>=tePrevisto ? '#166534' : '#b91c1c',
+                                background: teRealizado>=tePrevisto ? 'rgba(255,255,255,0.7)' : 'rgba(254,202,202,0.5)',
+                                border:`1px solid ${teRealizado>=tePrevisto ? '#4ade80' : '#fca5a5'}` }}>
+                                {teRealizado>0 ? teRealizado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </div>
+                              <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600,
+                                color:(teRealizado-tePrevisto)>0?'#166534':'#166534', opacity:(teRealizado-tePrevisto)>0?1:.4 }}>
+                                {(teRealizado-tePrevisto)>0
+                                  ? `+${(teRealizado-tePrevisto).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`
+                                  : '—'}
+                              </span>
+                            </div>
+                          ) : (
+                            <span>{te.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                          )}
                         </div>
-                        {entradasAberto && <div style={{ padding:'4px 16px 0' }}>
+                        {entradasAberto && <div style={{ overflowY:'auto', flex:1, minHeight:0, padding:'4px 8px 0' }}>
                         {(() => {
                           const entradasData = aba === 'real' ? dadosBase.entradas : dadosAno.entradas
                           const getGrupoE = (cat: Cat) =>
                             categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')?.grupo ?? '__sem_grupo__'
                           const gruposUsadosE = new Set(entradasData.map(getGrupoE))
                           const gruposOrdenadosE = [
-                            ...GRUPOS_PADRAO.filter(g => gruposUsadosE.has(g)),
-                            ...Array.from(gruposUsadosE).filter(g => !GRUPOS_PADRAO.includes(g) && g !== '__sem_grupo__').sort(),
+                            ...Array.from(gruposUsadosE).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
                             ...(gruposUsadosE.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
                           ]
                           return gruposOrdenadosE.map(grupo => {
@@ -1082,12 +1310,16 @@ export default function Planejamento() {
                             const totalGrupo = aba === 'real'
                               ? catsGrupo.reduce((s, { cat }) => s + (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0), 0)
                               : catsGrupo.reduce((s, { cat }) => s + cat.v[mi], 0)
+                            const prevGrupoE = aba === 'real'
+                              ? catsGrupo.reduce((s, { cat }) => s + ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0), 0)
+                              : 0
                             const grupoAberto = gruposAbertos.has(`${mi}-E-${grupo}`)
                             return (
-                              <div key={grupo} style={{ marginBottom:2 }}>
+                              <div key={grupo} style={{ marginBottom:4, borderRadius:8, overflow:'hidden'}}>
                                 <div onClick={() => toggleGrupo(mi, `E-${grupo}`)}
                                   style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                                    padding:'6px 4px', borderBottom:'1px solid #e8f5e9', marginTop:6,
+                                    padding:'6px 8px', background:'#f1f5f9',
+                                    borderBottom: grupoAberto ? '1px solid rgba(0,0,0,0.06)' : 'none',
                                     cursor:'pointer', userSelect:'none' }}>
                                   <span style={{ display:'flex', alignItems:'center', gap:8 }}>
                                     <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
@@ -1097,24 +1329,32 @@ export default function Planejamento() {
                                       {grupo === '__sem_grupo__' ? 'Outras' : grupo}
                                     </span>
                                   </span>
-                                  <span style={{ fontSize:13, fontWeight:600, color: totalGrupo > 0 ? '#16a34a' : COR.textoSuave }}>
-                                    {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                  </span>
+                                  {aba === 'real' ? (
+                                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                                      <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
+                                        color:'#16a34a', background:'rgba(255,255,255,0.6)', border:'1px solid #86efac' }}>
+                                        {prevGrupoE>0 ? prevGrupoE.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                      </div>
+                                      <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
+                                        color: totalGrupo>=prevGrupoE ? '#16a34a' : '#b91c1c',
+                                        background: totalGrupo>=prevGrupoE ? 'rgba(255,255,255,0.8)' : 'rgba(254,202,202,0.4)',
+                                        border:`1px solid ${totalGrupo>=prevGrupoE ? '#4ade80' : '#fca5a5'}` }}>
+                                        {totalGrupo>0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                      </div>
+                                      <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600,
+                                        color:(totalGrupo-prevGrupoE)>0?'#16a34a':COR.textoSuave,
+                                        opacity:(totalGrupo-prevGrupoE)>0?1:.4 }}>
+                                        {(totalGrupo-prevGrupoE)>0?`+${(totalGrupo-prevGrupoE).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`:'—'}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize:13, fontWeight:600, color: totalGrupo > 0 ? '#16a34a' : COR.textoSuave }}>
+                                      {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                    </span>
+                                  )}
                                 </div>
                                 {grupoAberto && (
                                   <>
-                                    {aba === 'real' && (
-                                      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'4px 0 2px', fontSize:9,
-                                        fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
-                                        <div style={{ width:22, flexShrink:0 }}/>
-                                        <div style={{ width:16, flexShrink:0 }}/>
-                                        <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
-                                        <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
-                                        <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                                        <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Disponível</div>
-                                        <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
-                                      </div>
-                                    )}
                                     {catsGrupo.map(({ cat, ri }) => {
                                       const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                                       const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
@@ -1123,11 +1363,12 @@ export default function Planejamento() {
                                         ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
                                         : 0
                                       const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0) : 0
-                                      const pct = previsto > 0 ? Math.min(100, (lancado / previsto) * 100) : (lancado > 0 ? 100 : 0)
-                                      const saldo = lancado - previsto
                                       return (
-                                        <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
-                                          padding:'5px 0', borderBottom:'1px solid #f0fdf4' }}>
+                                        <div key={ri}
+                                          onClick={aba !== 'real' && !bloqueado ? () => iniciarValor('e', ri, mi, cat.v[mi]) : undefined}
+                                          style={{ display:'flex', alignItems:'center', gap:8,
+                                            padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)',
+                                            cursor: aba !== 'real' && !bloqueado ? 'pointer' : 'default' }}>
                                           <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                             display:'flex', alignItems:'center', justifyContent:'center',
                                             fontSize:12, flexShrink:0 }}>{icone}</div>
@@ -1139,50 +1380,53 @@ export default function Planejamento() {
                                             : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
                                                 width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
                                                 background:bm.bg, color:bm.cor }}>{bm.label}</span>}
-                                          <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                          <span onClick={e => { e.stopPropagation(); navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } }) }}
                                             style={{ fontSize:13, color:COR.texto, cursor:'pointer',
-                                              textDecoration:'none', minWidth:140, flexShrink:0 }}
+                                              textDecoration:'none', flex:1, minWidth:140 }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
                                             {cat.nome}
                                           </span>
                                           {aba === 'real' ? (
                                             <>
-                                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0, fontSize:12, color:COR.textoSuave }}>
+                                              <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                                color: previsto === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
+                                                borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
                                                 {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                              </span>
-                                              <span style={{ minWidth:90, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
-                                                color: lancado >= previsto && previsto > 0 ? '#16a34a' : lancado > 0 ? COR.azul : COR.textoSuave }}>
-                                                {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                              </span>
-                                              <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
-                                                color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
-                                                {(previsto > 0 || lancado > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                              </span>
-                                              <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
-                                                <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
-                                                  <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
-                                                    background: pct >= 100 ? '#16a34a' : pct >= 60 ? COR.azul : '#94a3b8',
-                                                    width:`${pct}%` }}/>
-                                                </div>
-                                                <span style={{ fontSize:10, color:COR.textoSuave, minWidth:28, textAlign:'right', flexShrink:0 }}>
-                                                  {Math.round(pct)}%
-                                                </span>
                                               </div>
+                                              <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                                fontWeight: lancado > 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
+                                                color: lancado === 0 ? '#c0cce0' : lancado >= previsto ? '#16a34a' : COR.vermelho,
+                                                background: lancado === 0 ? '#f8fafc' : lancado >= previsto ? '#f0fdf4' : '#fef2f2',
+                                                border:`1px solid ${lancado === 0 ? '#e2e8f0' : lancado >= previsto ? '#bbf7d0' : '#fecaca'}` }}>
+                                                {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                              </div>
+                                              {(() => {
+                                                const ganhos = lancado - previsto
+                                                return (
+                                                  <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: ganhos > 0 ? 600 : 400,
+                                                    color: ganhos > 0 ? '#16a34a' : COR.textoSuave }}>
+                                                    {ganhos > 0 ? `+${ganhos.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '—'}
+                                                  </span>
+                                                )
+                                              })()}
                                             </>
                                           ) : (
                                             <>
                                               <div style={{ flex:1 }}/>
                                               {renderValor('e', ri, mi, cat.v[mi])}
-                                              {!bloqueado && (
-                                                <button onClick={() => replicarLinhaMes('e', ri, mi)}
-                                                  title={`Replicar ${MESES[mi]} para todos os meses`}
-                                                  style={{ border:'none', background:'#dbeafe', cursor:'pointer',
-                                                    borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.azul,
-                                                    fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
-                                                    opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
-                                                  →12
-                                                </button>
+                                              {!bloqueado && mi < 11 && (
+                                                <select defaultValue=""
+                                                  onChange={e => { e.stopPropagation(); replicarLinhaMes('e', ri, mi, parseInt(e.target.value));(e.target as HTMLSelectElement).value='' }}
+                                                  onClick={e => e.stopPropagation()}
+                                                  style={{ border:'1px solid #cbd5e1', background:'#f1f5f9', cursor:'pointer',
+                                                    borderRadius:4, padding:'1px 2px', fontSize:9, color:COR.textoSuave,
+                                                    fontWeight:700, fontFamily:'inherit', flexShrink:0 }}>
+                                                  <option value="">→</option>
+                                                  {MESES.slice(mi + 1).map((mes, idx) => (
+                                                    <option key={idx} value={String(mi + 1 + idx)}>{mes}</option>
+                                                  ))}
+                                                </select>
                                               )}
                                             </>
                                           )}
@@ -1216,11 +1460,20 @@ export default function Planejamento() {
                       {/* ── SAÍDAS ── */}
                       {(() => {
                         const saidasAberto = gruposAbertos.has(`${mi}-__saidas__`)
+                        const saidasPrevistas = aba === 'real' ? dadosBase.saidas : dadosAnoFinal.saidas
+                        const tsRealizado = aba === 'real'
+                          ? saidasPrevistas.reduce((s, cat) => {
+                              if (nomeFaturaCartao(cat.nome, cartaoNomes)) return s
+                              return s + (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
+                            }, 0)
+                          : totalSaidas[mi]
+                        const tsPrevisto = totalSaidas[mi]
                         return (
-                      <div>
+                      <div style={{ flex: saidasAberto ? 1 : '0 0 auto', minHeight:0, display:'flex', flexDirection:'column',
+                        margin:'2px 8px 4px 16px', borderRadius:8, border:'1px solid #fca5a5', overflow:'hidden' }}>
                         <div onClick={() => toggleGrupo(mi, '__saidas__')}
-                          style={{ fontSize:13, fontWeight:600, color:'#7f1d1d',
-                          padding:'7px 16px', background:'#fee2e2',
+                          style={{ flexShrink:0, fontSize:13, fontWeight:600, color:'#7f1d1d',
+                          padding:'7px 16px 7px 12px', background:'#fee2e2',
                           borderBottom: saidasAberto ? '1px solid #fecaca' : 'none', display:'flex',
                           alignItems:'center', justifyContent:'space-between',
                           cursor:'pointer', userSelect:'none' }}>
@@ -1229,24 +1482,45 @@ export default function Planejamento() {
                               transform: saidasAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
                             ↓ Saídas
                           </span>
-                          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                            {te > 0 && ts > 0 && (
-                              <span style={{ fontSize:12, fontWeight:400, color:'#b91c1c' }}>
-                                {((ts / te) * 100).toFixed(0)}% da entrada
+                          {aba === 'real' ? (
+                            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                              <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
+                                color:'#7f1d1d', background:'rgba(255,255,255,0.5)', border:'1px solid #fca5a5' }}>
+                                {totalSaidas[mi]>0 ? totalSaidas[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </div>
+                              <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
+                                color: tsRealizado<=tsPrevisto ? '#166534' : '#7f1d1d',
+                                background: tsRealizado<=tsPrevisto ? 'rgba(220,252,231,0.6)' : 'rgba(255,255,255,0.7)',
+                                border:`1px solid ${tsRealizado<=tsPrevisto ? '#86efac' : '#fca5a5'}` }}>
+                                {tsRealizado>0 ? tsRealizado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              </div>
+                              <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600,
+                                color:(tsPrevisto-tsRealizado)>0?'#166534':(tsPrevisto-tsRealizado)<0?'#7f1d1d':'#6b7280' }}>
+                                {tsPrevisto!==tsRealizado
+                                  ? ((tsPrevisto-tsRealizado)>0?'+':'')+(tsPrevisto-tsRealizado).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
+                                  : '—'}
                               </span>
-                            )}
-                            <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
-                          </div>
+                            </div>
+                          ) : (
+                            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                              {te > 0 && ts > 0 && (
+                                <span style={{ fontSize:12, fontWeight:400, color:'#b91c1c' }}>
+                                  {((ts / te) * 100).toFixed(0)}% da entrada
+                                </span>
+                              )}
+                              <span>{ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+                            </div>
+                          )}
                         </div>
-                        {saidasAberto && <div style={{ padding:'4px 16px 0' }}>
+                        {saidasAberto && <div style={{ overflowY:'auto', flex:1, minHeight:0, padding:'4px 8px 0' }}>
                         {aba === 'previsto' ? (() => {
                           const saidasPlan = dadosAnoFinal.saidas
                           const getGrupo = (cat: Cat) =>
-                            categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+                            nomeFaturaCartao(cat.nome, cartaoNomes) ? 'Cartão de Crédito' :
+                            (categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__')
                           const gruposUsados = new Set(saidasPlan.map(getGrupo))
                           const gruposOrdenados = [
-                            ...GRUPOS_PADRAO.filter(g => gruposUsados.has(g)),
-                            ...Array.from(gruposUsados).filter(g => !GRUPOS_PADRAO.includes(g) && g !== '__sem_grupo__').sort(),
+                            ...Array.from(gruposUsados).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
                             ...(gruposUsados.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
                           ]
                           return gruposOrdenados.map(grupo => {
@@ -1255,11 +1529,12 @@ export default function Planejamento() {
                             const pctGrupo = te > 0 ? (totalGrupo / te) * 100 : 0
                             const grupoAberto = gruposAbertos.has(`${mi}-${grupo}`)
                             return (
-                              <div key={grupo} style={{ marginBottom:2 }}>
+                              <div key={grupo} style={{ marginBottom:4, borderRadius:8, overflow:'hidden'}}>
                                 <div
                                   onClick={() => toggleGrupo(mi, grupo)}
                                   style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                                    padding:'6px 4px', borderBottom:'1px solid #e8edf8', marginTop:6,
+                                    padding:'6px 8px', background:'#f1f5f9',
+                                    borderBottom: grupoAberto ? '1px solid rgba(0,0,0,0.06)' : 'none',
                                     cursor:'pointer', userSelect:'none' }}>
                                   <span style={{ display:'flex', alignItems:'center', gap:8 }}>
                                     <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
@@ -1286,15 +1561,18 @@ export default function Planejamento() {
                                   const bm = tm ? BADGE_MOV[tm] : null
                                   const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
                                   return (
-                                    <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
-                                      padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
+                                    <div key={ri}
+                                      onClick={!bloqueado && !ehFatura ? () => iniciarValor('s', ri, mi, cat.v[mi]) : undefined}
+                                      style={{ display:'flex', alignItems:'center', gap:8,
+                                        padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)',
+                                        cursor: !bloqueado && !ehFatura ? 'pointer' : 'default' }}>
                                       <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                         display:'flex', alignItems:'center', justifyContent:'center',
                                         fontSize:12, flexShrink:0 }}>{icone}</div>
                                       {bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
                                           width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
                                           background:bm.bg, color:bm.cor }}>{bm.label}</span>}
-                                      <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                      <span onClick={e => { e.stopPropagation(); navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } }) }}
                                         style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
                                           cursor:'pointer', flexShrink:0, minWidth:140 }}
                                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
@@ -1304,15 +1582,18 @@ export default function Planejamento() {
                                       </span>
                                       <div style={{ flex:1 }}/>
                                       {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
-                                      {!bloqueado && !ehFatura && (
-                                        <button onClick={() => replicarLinhaMes('s', ri, mi)}
-                                          title={`Replicar ${MESES[mi]} para todos os meses`}
-                                          style={{ border:'none', background:'#fee2e2', cursor:'pointer',
-                                            borderRadius:4, padding:'2px 6px', fontSize:9, color:COR.vermelho,
-                                            fontWeight:700, fontFamily:'inherit', flexShrink:0, lineHeight:1.4,
-                                            opacity: cat.v[mi] === 0 ? 0.4 : 1 }}>
-                                          →12
-                                        </button>
+                                      {!bloqueado && !ehFatura && mi < 11 && (
+                                        <select defaultValue=""
+                                          onChange={e => { e.stopPropagation(); replicarLinhaMes('s', ri, mi, parseInt(e.target.value));(e.target as HTMLSelectElement).value='' }}
+                                          onClick={e => e.stopPropagation()}
+                                          style={{ border:'1px solid #cbd5e1', background:'#f1f5f9', cursor:'pointer',
+                                            borderRadius:4, padding:'1px 2px', fontSize:9, color:COR.textoSuave,
+                                            fontWeight:700, fontFamily:'inherit', flexShrink:0 }}>
+                                          <option value="">→</option>
+                                          {MESES.slice(mi + 1).map((mes, idx) => (
+                                            <option key={idx} value={String(mi + 1 + idx)}>{mes}</option>
+                                          ))}
+                                        </select>
                                       )}
                                     </div>
                                   )
@@ -1323,28 +1604,32 @@ export default function Planejamento() {
                         })() : (() => {
                           const saidasReal = dadosBase.saidas
                           const getGrupoR = (cat: Cat) =>
-                            categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+                            nomeFaturaCartao(cat.nome, cartaoNomes) ? 'Cartão de Crédito' :
+                            (categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__')
                           const gruposUsadosR = new Set(saidasReal.map(getGrupoR))
                           const gruposOrdenadosR = [
-                            ...GRUPOS_PADRAO.filter(g => gruposUsadosR.has(g)),
-                            ...Array.from(gruposUsadosR).filter(g => !GRUPOS_PADRAO.includes(g) && g !== '__sem_grupo__').sort(),
+                            ...Array.from(gruposUsadosR).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
                             ...(gruposUsadosR.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
                           ]
                           return gruposOrdenadosR.map(grupo => {
                             const catsGrupoR = saidasReal.map((cat, idx) => ({ cat, ri: idx })).filter(({ cat }) => getGrupoR(cat) === grupo)
                             const totalLancGrupo = catsGrupoR.reduce((s, { cat }) => {
-                              const ehF = nomeFaturaCartao(cat.nome, cartaoNomes)
-                              const tc = ehF ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0) : 0
-                              return s + Math.abs(ehF ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + tc : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0))
+                              if (nomeFaturaCartao(cat.nome, cartaoNomes))
+                                return s + Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0)
+                              return s + (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
                             }, 0)
-                            const pctGrupoR = te > 0 ? (totalLancGrupo / te) * 100 : 0
                             const grupoAberto = gruposAbertos.has(`${mi}-${grupo}`)
+                            const prevLancGrupo = catsGrupoR.reduce((s, { cat }) => {
+                              if (nomeFaturaCartao(cat.nome, cartaoNomes)) return s + limiteCartaoPorMes[mi]
+                              return s + Math.abs((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
+                            }, 0)
                             return (
-                              <div key={grupo} style={{ marginBottom:2 }}>
+                              <div key={grupo} style={{ marginBottom:4, borderRadius:8, overflow:'hidden'}}>
                                 <div
                                   onClick={() => toggleGrupo(mi, grupo)}
                                   style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                                    padding:'6px 4px', borderBottom:'1px solid #e8edf8', marginTop:6,
+                                    padding:'6px 8px', background:'#f1f5f9',
+                                    borderBottom: grupoAberto ? '1px solid rgba(0,0,0,0.06)' : 'none',
                                     cursor:'pointer', userSelect:'none' }}>
                                   <span style={{ display:'flex', alignItems:'center', gap:8 }}>
                                     <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
@@ -1354,30 +1639,25 @@ export default function Planejamento() {
                                       {grupo === '__sem_grupo__' ? 'Outras' : grupo}
                                     </span>
                                   </span>
-                                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                                    {te > 0 && (
-                                      <span style={{ fontSize:12, color:COR.textoSuave }}>
-                                        {pctGrupoR.toFixed(0)}% da entrada
-                                      </span>
-                                    )}
-                                    <span style={{ fontSize:13, fontWeight:600, color: totalLancGrupo > 0 ? COR.vermelho : COR.textoSuave }}>
-                                      {totalLancGrupo > 0 ? totalLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                                    <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
+                                      color:COR.vermelho, background:'rgba(255,255,255,0.6)', border:'1px solid #fca5a5' }}>
+                                      {prevLancGrupo>0 ? prevLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                    </div>
+                                    <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
+                                      color: totalLancGrupo<=prevLancGrupo ? '#16a34a' : COR.vermelho,
+                                      background: totalLancGrupo<=prevLancGrupo ? 'rgba(220,252,231,0.5)' : 'rgba(255,255,255,0.7)',
+                                      border:`1px solid ${totalLancGrupo<=prevLancGrupo ? '#86efac' : '#fca5a5'}` }}>
+                                      {totalLancGrupo>0 ? totalLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                    </div>
+                                    <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600,
+                                      color:(prevLancGrupo-totalLancGrupo)>0?'#16a34a':(prevLancGrupo-totalLancGrupo)<0?COR.vermelho:COR.textoSuave }}>
+                                      {prevLancGrupo!==totalLancGrupo?((prevLancGrupo-totalLancGrupo)>0?'+':'')+(prevLancGrupo-totalLancGrupo).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}
                                     </span>
                                   </div>
                                 </div>
                                 {grupoAberto && (
                                   <>
-                                    <div style={{ display:'flex', alignItems:'center', gap:8,
-                                      padding:'4px 0 2px', fontSize:9, fontWeight:700,
-                                      color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5 }}>
-                                      <div style={{ width:22, flexShrink:0 }}/>
-                                      <div style={{ width:16, flexShrink:0 }}/>
-                                      <div style={{ minWidth:140, flexShrink:0 }}>Categoria</div>
-                                      <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Previsto</div>
-                                      <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>Realizado</div>
-                                      <div style={{ minWidth:80, textAlign:'right', flexShrink:0 }}>Disponível</div>
-                                      <div style={{ width:110, paddingLeft:8, flexShrink:0 }}>Consumo</div>
-                                    </div>
                                     {catsGrupoR.map(({ cat, ri }) => {
                                       const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                                       const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'saida') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
@@ -1392,13 +1672,13 @@ export default function Planejamento() {
                                         ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + totalCartaoConsolidado
                                         : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
                                       const lancadoBancoCat = lancado - lancadoCartaoCat
-                                      const prevAbs = Math.abs(previsto)
-                                      const lancAbs = Math.abs(lancado)
-                                      const pct = prevAbs > 0 ? Math.min(100, (lancAbs / prevAbs) * 100) : (lancAbs > 0 ? 100 : 0)
-                                      const saldo = prevAbs - lancAbs
+                                      const prevAbs = ehFatura ? limiteCartaoPorMes[mi] : Math.abs(previsto)
+                                      const lancadoDisplay = ehFatura ? totalCartaoConsolidado : lancado
+                                      const dentro = lancadoDisplay < 0 ? true : (prevAbs > 0 ? lancadoDisplay <= prevAbs : false)
+                                      const disponivel = prevAbs - lancadoDisplay
                                       return (
                                         <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
-                                          padding:'5px 0', borderBottom:'1px solid #fdf8f8' }}>
+                                          padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)' }}>
                                           <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                             display:'flex', alignItems:'center', justifyContent:'center',
                                             fontSize:12, flexShrink:0 }}>{icone}</div>
@@ -1408,47 +1688,30 @@ export default function Planejamento() {
                                               visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
                                           <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
                                             style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
-                                              cursor:'pointer', flexShrink:0, minWidth:140 }}
+                                              cursor:'pointer', flex:1, minWidth:140 }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
                                             {cat.nome}
                                             {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
                                           </span>
-                                          <span style={{ minWidth:90, textAlign:'right', flexShrink:0,
-                                            fontSize:12, color:COR.textoSuave }}>
+                                          <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                            color: prevAbs === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
+                                            borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
                                             {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                          </span>
-                                          <div style={{ minWidth:90, textAlign:'right', flexShrink:0 }}>
-                                            <div style={{ fontSize:12, fontWeight:700,
-                                              color: pct >= 100 ? COR.vermelho : lancAbs > 0 ? COR.texto : COR.textoSuave }}>
-                                              {lancAbs > 0 ? lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                            </div>
-                                            {!ehFatura && lancadoCartaoCat > 0 && lancadoBancoCat > 0 && (
-                                              <div style={{ fontSize:9, color:COR.textoSuave, marginTop:1, lineHeight:1.4 }}>
-                                                <span>💳 {lancadoCartaoCat.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
-                                                <br/>
-                                                <span>🏦 {lancadoBancoCat.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
-                                              </div>
-                                            )}
-                                            {!ehFatura && lancadoCartaoCat > 0 && lancadoBancoCat <= 0 && lancAbs > 0 && (
-                                              <div style={{ fontSize:9, color:'#7c3aed', marginTop:1 }}>💳 cartão</div>
-                                            )}
                                           </div>
-                                          <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight:700,
-                                            color: saldo > 0 ? '#16a34a' : saldo < 0 ? COR.vermelho : COR.textoSuave }}>
-                                            {(prevAbs > 0 || lancAbs > 0) ? saldo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                          </span>
-                                          <div style={{ width:110, display:'flex', alignItems:'center', gap:4, paddingLeft:8, flexShrink:0 }}>
-                                            <div style={{ flex:1, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
-                                              <div style={{ height:'100%', borderRadius:4, transition:'width .3s',
-                                                background: pct >= 100 ? COR.vermelho : pct >= 80 ? '#f59e0b' : '#94a3b8',
-                                                width:`${pct}%` }}/>
-                                            </div>
-                                            <span style={{ fontSize:10, color:COR.textoSuave,
-                                              minWidth:28, textAlign:'right', flexShrink:0 }}>
-                                              {Math.round(pct)}%
-                                            </span>
+                                          <div onClick={() => !ehFatura && lancadoDisplay !== 0 && setModalCatReal({ nome: cat.nome, mi })}
+                                            style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                              fontWeight: lancadoDisplay !== 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
+                                              cursor: !ehFatura && lancadoDisplay !== 0 ? 'pointer' : 'default',
+                                              color: lancadoDisplay === 0 ? '#c0cce0' : (lancadoDisplay < 0 || dentro) ? '#16a34a' : COR.vermelho,
+                                              background: lancadoDisplay === 0 ? '#f8fafc' : (lancadoDisplay < 0 || dentro) ? '#f0fdf4' : '#fef2f2',
+                                              border:`1px solid ${lancadoDisplay === 0 ? '#e2e8f0' : (lancadoDisplay < 0 || dentro) ? '#bbf7d0' : '#fecaca'}` }}>
+                                            {lancadoDisplay !== 0 ? lancadoDisplay.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                           </div>
+                                          <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: (prevAbs > 0 || lancadoDisplay !== 0) ? 600 : 400,
+                                            color: disponivel > 0 ? '#16a34a' : disponivel < 0 ? COR.vermelho : COR.textoSuave }}>
+                                            {(prevAbs > 0 || lancadoDisplay !== 0) ? disponivel.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                          </span>
                                         </div>
                                       )
                                     })}
@@ -1477,13 +1740,33 @@ export default function Planejamento() {
                       })()}
 
                       {/* Saldo Final */}
-                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                        padding:'8px 16px', borderTop:`1px solid ${COR.borda}`, background:'#f8faff' }}>
+                      <div style={{ flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between',
+                        padding:'8px 24px 8px 16px', borderTop:`1px solid ${COR.borda}`, background:'#f8faff' }}>
                         <span style={{ fontSize:13, color:COR.textoSuave }}>Saldo Final</span>
-                        <span style={{ fontSize:13, fontWeight:600, color:corSaldo(sf) }}>
-                          {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                        </span>
+                        {aba === 'real' ? (
+                          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                            <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
+                              color:COR.textoSuave, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                              {saldoFinal[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                            <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:600,
+                              color: sf>=saldoFinal[mi] ? '#16a34a' : COR.vermelho,
+                              background: sf>=saldoFinal[mi] ? '#f0fdf4' : '#fef2f2',
+                              border:`1px solid ${sf>=saldoFinal[mi] ? '#bbf7d0' : '#fecaca'}` }}>
+                              {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                            <span style={{ minWidth:80, textAlign:'right', fontSize:12, fontWeight:600,
+                              color:(sf-saldoFinal[mi])>0?'#16a34a':(sf-saldoFinal[mi])<0?COR.vermelho:COR.textoSuave }}>
+                              {sf!==saldoFinal[mi]?((sf-saldoFinal[mi])>0?'+':'')+(sf-saldoFinal[mi]).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize:13, fontWeight:600, color:corSaldo(sf) }}>
+                            {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          </span>
+                        )}
                       </div>
+
 
                     </div>
                   )}
@@ -1859,9 +2142,127 @@ export default function Planejamento() {
             padding:'1px 6px', borderRadius:3, fontWeight:700, fontSize:10 }}>D</span>
           Dinheiro
         </span>
-        <span>→12 Replicar valor do mês para o ano todo</span>
+        <span>→Dez Replicar valor do mês até dezembro</span>
         <span style={{ color:'#7c3aed' }}>(auto) Fatura calculada automaticamente do mês anterior</span>
       </div>
+
+    {/* ── MODAL DETALHES CATEGORIA REALIZADO ── */}
+    {modalCatReal && modalDados && (
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999,
+        display:'flex', alignItems:'center', justifyContent:'center' }}
+        onClick={() => setModalCatReal(null)}>
+        <div style={{ background:COR.branco, borderRadius:16, padding:24, maxWidth:460, width:'90%',
+          maxHeight:'80vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}
+          onClick={e => e.stopPropagation()}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:modalDados.corIcone,
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{modalDados.icone}</div>
+            <div>
+              <div style={{ fontSize:16, fontWeight:700, color:COR.texto }}>{modalDados.nome}</div>
+              <div style={{ fontSize:12, color:COR.textoSuave }}>{MESES[modalDados.mi]} {anoAtual}</div>
+            </div>
+            <button onClick={() => setModalCatReal(null)}
+              style={{ marginLeft:'auto', border:'none', background:'transparent',
+                cursor:'pointer', fontSize:22, color:COR.textoSuave, lineHeight:1 }}>×</button>
+          </div>
+          <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+            <div style={{ flex:1, padding:'10px 12px', borderRadius:10, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+              <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:.5, color:COR.textoSuave, marginBottom:4 }}>Previsto</div>
+              <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
+                {modalDados.previsto > 0 ? modalDados.previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+              </div>
+            </div>
+            <div style={{ flex:1, padding:'10px 12px', borderRadius:10,
+              background: modalDados.lancAbs === 0 ? '#f8fafc' : modalDados.dentro ? '#f0fdf4' : '#fef2f2',
+              border:`1px solid ${modalDados.lancAbs === 0 ? '#e2e8f0' : modalDados.dentro ? '#bbf7d0' : '#fecaca'}` }}>
+              <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
+                color: modalDados.lancAbs === 0 ? COR.textoSuave : modalDados.dentro ? '#16a34a' : COR.vermelho }}>Realizado</div>
+              <div style={{ fontSize:15, fontWeight:700, color: modalDados.lancAbs === 0 ? COR.textoSuave : modalDados.dentro ? '#16a34a' : COR.vermelho }}>
+                {modalDados.lancAbs > 0 ? modalDados.lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+              </div>
+            </div>
+            {modalDados.previsto > 0 && (
+              <div style={{ flex:1, padding:'10px 12px', borderRadius:10,
+                background: modalDados.disponivel >= 0 ? '#f0fdf4' : '#fef2f2',
+                border:`1px solid ${modalDados.disponivel >= 0 ? '#bbf7d0' : '#fecaca'}` }}>
+                <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
+                  color: modalDados.disponivel >= 0 ? '#16a34a' : COR.vermelho }}>Disponível</div>
+                <div style={{ fontSize:15, fontWeight:700, color: modalDados.disponivel >= 0 ? '#16a34a' : COR.vermelho }}>
+                  {modalDados.disponivel.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                </div>
+              </div>
+            )}
+          </div>
+          {(modalDados.totalBanc !== 0 || modalDados.totalCart !== 0) && (
+            <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+              {modalDados.totalBanc !== 0 && (
+                <div style={{ flex:1, padding:'8px 12px', borderRadius:8, background:'#f0f9ff', border:'1px solid #bae6fd' }}>
+                  <div style={{ fontSize:10, color:'#0369a1', fontWeight:600, marginBottom:2 }}>🏦 Banco</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#0369a1' }}>
+                    {modalDados.totalBanc.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                  </div>
+                </div>
+              )}
+              {modalDados.totalCart !== 0 && (
+                <div style={{ flex:1, padding:'8px 12px', borderRadius:8, background:'#faf5ff', border:'1px solid #e9d5ff' }}>
+                  <div style={{ fontSize:10, color:'#7c3aed', fontWeight:600, marginBottom:2 }}>💳 Cartão</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#7c3aed' }}>
+                    {modalDados.totalCart.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {modalDados.allLancs.length > 0 && (() => {
+            const byDay: Record<number, typeof modalDados.allLancs> = {}
+            modalDados.allLancs.forEach(l => { if (!byDay[l.dia]) byDay[l.dia] = []; byDay[l.dia].push(l) })
+            const dias = Object.keys(byDay).map(Number).sort((a, b) => a - b)
+            return (
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase',
+                  letterSpacing:.5, color:COR.textoSuave, marginBottom:8 }}>Lançamentos</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                  {dias.map(dia => (
+                    <div key={dia}>
+                      <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
+                        background:'#f1f5f9', borderRadius:6, padding:'3px 10px',
+                        marginBottom:5, display:'inline-block' }}>
+                        {dia} de {MESES[modalDados.mi]}
+                      </div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+                        {byDay[dia].map((l, i) => (
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8,
+                            padding:'7px 10px', borderRadius:8, background:'#f8fafc', border:'1px solid #f1f5f9' }}>
+                            <span style={{ fontSize:14, flexShrink:0 }}>{l.icone}</span>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:12, color:COR.texto, fontWeight:500,
+                                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                {l.descricao || modalDados.nome}
+                              </div>
+                              {l.sub && <div style={{ fontSize:10, color:COR.textoSuave }}>{l.sub}</div>}
+                            </div>
+                            <div style={{ fontSize:12, fontWeight:700, flexShrink:0,
+                              color: l.valor < 0 ? '#16a34a' : COR.texto }}>
+                              {l.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+          {modalDados.allLancs.length === 0 && (
+            <div style={{ textAlign:'center', padding:'20px 0', color:COR.textoSuave, fontSize:13 }}>
+              Nenhum lançamento individual encontrado.<br/>
+              <span style={{ fontSize:11 }}>Valores podem vir de fixas consolidadas automaticamente.</span>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
 
     </div>
   )

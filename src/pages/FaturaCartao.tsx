@@ -88,7 +88,7 @@ export default function FaturaCartao() {
   const anoHoje = hoje.getFullYear()
   const hojeStr = hoje.toISOString().slice(0,10)
 
-  const { contas, categorias, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
+  const { contas, categorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
   const dados = faturaData as Record<string, DadosMes>
   const setDados = setFaturaData as React.Dispatch<React.SetStateAction<Record<string, DadosMes>>>
@@ -159,9 +159,9 @@ export default function FaturaCartao() {
     new Date(anoVenc, mesVenc, diaVencimento) <= hoje ? 'paga' :
     new Date(purchaseAno, purchaseMes, diaFechamento) <= hoje ? 'fechada' : 'aberta'
 
-  // Categorias de cartão — estorno usa as mesmas categorias de saída, somente ativas
+  // Todas as categorias de saída ativas — cartão pode cobrir qualquer tipo de gasto
   const categoriasCartao = categorias
-    .filter(c => c.tipo === 'saida' && c.tipoMovimento === 'cartao' && c.ativa)
+    .filter(c => c.tipo === 'saida' && c.ativa)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
 
   // Sincroniza totais das faturas como lançamentos previstos no extrato bancário
@@ -332,10 +332,19 @@ export default function FaturaCartao() {
   const diferenca    = faturaExtNum > 0 ? faturaExtNum - totalFatura : null
   const conciliado   = diferenca !== null && Math.abs(diferenca) < 0.01
 
-  const totaisPorCartao = useMemo(() => {
-    const cartoes = contas.filter(c => c.tipo === 'cartao')
-    return cartoes.map(c => {
-      // Cada cartão pode ter offset diferente
+  const totalPrevisto = useMemo(() => {
+    const planosAno = (planos as Record<number, { saidas: { nome: string; v: number[] }[] }>)[ano]
+    if (!planosAno) return 0
+    return planosAno.saidas
+      .filter(pc => {
+        const cat = categorias.find(c => c.nome === pc.nome)
+        return cat?.tipoMovimento === 'cartao' && cat?.ativa
+      })
+      .reduce((s, pc) => s + (pc.v[mes] ?? 0), 0)
+  }, [planos, categorias, ano, mes])
+
+  const grandTotalFaturas = useMemo(() => {
+    return contas.filter(c => c.tipo === 'cartao').reduce((total, c) => {
       const off = (c.diaVencimento ?? 1) < (c.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - off, pAno = ano
       if (pMes < 0) { pMes += 12; pAno-- }
@@ -348,11 +357,10 @@ export default function FaturaCartao() {
           l.tipo === 'entrada' ? entradas += l.valor : saidas += l.valor
         })
       }
-      return { conta: c, total: entradas - saidas }
-    })
+      return total + (entradas - saidas)
+    }, 0)
   }, [dados, mes, ano, contas])
 
-  const grandTotalFaturas = totaisPorCartao.reduce((s, x) => s + x.total, 0)
 
   function lancar() {
     const valorParcela = parseBRL(fValor)
@@ -382,9 +390,10 @@ export default function FaturaCartao() {
       const diaOrigem = editandoDiaOriginal ?? diaSel
       const idAtual   = editandoId
       const futuroAlvo = ehDiaFuturo(diaSel)
-      updateMes(prev => {
-        const listaOrigem = prev.lancamentos[diaOrigem] ?? []
-        const entrada = listaOrigem.find(l => l.id===idAtual)
+      setDados(prev => {
+        const dmCurrent = prev[key] ?? DADOS_MES_VAZIO
+        const listaOrigem = dmCurrent.lancamentos[diaOrigem] ?? []
+        const entrada = listaOrigem.find(l => l.id === idAtual)
         if (!entrada) return prev
         const novoConsolidado = diaOrigem !== diaSel ? !futuroAlvo : entrada.consolidado
         const atualizada: Lancamento = {
@@ -393,17 +402,50 @@ export default function FaturaCartao() {
           parcelas:nParcelas>1?nParcelas:undefined, parcelaAtual:entrada.parcelaAtual,
           diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
         }
-        if (diaOrigem === diaSel) {
-          return { ...prev, lancamentos: { ...prev.lancamentos, [diaOrigem]: listaOrigem.map(l => l.id===idAtual ? atualizada : l) } }
-        }
-        return {
-          ...prev,
-          lancamentos: {
-            ...prev.lancamentos,
-            [diaOrigem]: listaOrigem.filter(l=>l.id!==idAtual),
-            [diaSel]: [...(prev.lancamentos[diaSel]??[]), atualizada],
+        const dmUpdated = diaOrigem === diaSel
+          ? { ...dmCurrent, lancamentos: { ...dmCurrent.lancamentos, [diaOrigem]: listaOrigem.map(l => l.id===idAtual ? atualizada : l) } }
+          : {
+              ...dmCurrent,
+              lancamentos: {
+                ...dmCurrent.lancamentos,
+                [diaOrigem]: listaOrigem.filter(l => l.id !== idAtual),
+                [diaSel]: [...(dmCurrent.lancamentos[diaSel] ?? []), atualizada],
+              },
+            }
+        let result = { ...prev, [key]: dmUpdated }
+        // Propagate category/description changes to sibling installments in other months
+        const novaDesc = fDesc.trim() || fCat
+        if (entrada.parcelas && entrada.parcelas > 1 && (fCat !== entrada.categoria || novaDesc !== entrada.descricao)) {
+          const baseId = entrada.id.replace(/-\d+$/, '')
+          const totalParcelas = entrada.parcelas
+          const currentParcela = entrada.parcelaAtual ?? 1
+          // Compute the purchase month of installment 1
+          let baseMes = purchaseMes - (currentParcela - 1)
+          let baseAno = purchaseAno
+          while (baseMes < 0) { baseMes += 12; baseAno-- }
+          for (let p = 1; p <= totalParcelas; p++) {
+            if (p === currentParcela) continue
+            let m = baseMes + (p - 1)
+            let a = baseAno
+            while (m > 11) { m -= 12; a++ }
+            const sibKey = mesKey(contaId, a, m)
+            const sibDm = result[sibKey] as DadosMes | undefined
+            if (!sibDm?.lancamentos) continue
+            const targetId = `${baseId}-${p}`
+            let dmChanged = false
+            const newLancs: Record<number, Lancamento[]> = {}
+            for (const [dStr, list] of Object.entries(sibDm.lancamentos)) {
+              const d = parseInt(dStr)
+              const newList = (list as Lancamento[]).map(l => {
+                if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc } }
+                return l
+              })
+              newLancs[d] = newList
+            }
+            if (dmChanged) result = { ...result, [sibKey]: { ...sibDm, lancamentos: newLancs } }
           }
         }
+        return result
       })
     } else if (nParcelas > 1) {
       // Cria entrada em cada mês subsequente (começa no targetMes se após fechamento)
@@ -545,34 +587,40 @@ export default function FaturaCartao() {
         })}
       </div>
 
-      {/* TOTAL DE TODAS AS FATURAS */}
-      <div style={{background:'#f8faff',borderBottom:`1px solid ${COR.borda}`,
-        padding:'6px 16px',flexShrink:0,display:'flex',alignItems:'center',gap:0,overflowX:'auto'}}>
-        <span style={{fontSize:10,color:COR.textoSuave,fontWeight:600,marginRight:14,
-          textTransform:'uppercase',letterSpacing:.5,whiteSpace:'nowrap',flexShrink:0}}>
-          Faturas · {NOMES_MESES[mes]}
-        </span>
-        {totaisPorCartao.map(({conta, total}) => (
-          <div key={conta.id} style={{display:'flex',alignItems:'center',gap:6,
-            padding:'3px 12px',borderRight:`1px solid ${COR.borda}`,flexShrink:0}}>
-            <div style={{width:8,height:8,borderRadius:'50%',background:conta.cor,flexShrink:0}}/>
-            <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>{conta.banco}</span>
-            <span style={{fontSize:13,fontWeight:700,
-              color:total>0?COR.vermelho:total<0?COR.verde:COR.textoSuave,
-              whiteSpace:'nowrap'}}>
-              {fmt(total)}
-            </span>
+      {/* RESUMO ORÇAMENTO CARTÃO */}
+      {(() => {
+        const disponivel = totalPrevisto - grandTotalFaturas
+        return (
+          <div style={{background:'#f8faff',borderBottom:`1px solid ${COR.borda}`,
+            padding:'6px 16px',flexShrink:0,display:'flex',alignItems:'center',gap:0,overflowX:'auto'}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,
+              padding:'3px 16px',borderRight:`1px solid ${COR.borda}`,flexShrink:0}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Limite Planejado</span>
+              <span style={{fontSize:13,fontWeight:700,color:COR.texto,whiteSpace:'nowrap'}}>
+                {fmt(totalPrevisto)}
+              </span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6,
+              padding:'3px 16px',borderRight:`1px solid ${COR.borda}`,flexShrink:0}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Total Utilizado</span>
+              <span style={{fontSize:13,fontWeight:700,
+                color:grandTotalFaturas>0?COR.vermelho:grandTotalFaturas<0?COR.verde:COR.textoSuave,
+                whiteSpace:'nowrap'}}>
+                {fmt(grandTotalFaturas)}
+              </span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6,
+              padding:'3px 16px',flexShrink:0}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Valor Disponível</span>
+              <span style={{fontSize:13,fontWeight:700,
+                color:disponivel>=0?COR.verde:COR.vermelho,
+                whiteSpace:'nowrap'}}>
+                {fmt(disponivel)}
+              </span>
+            </div>
           </div>
-        ))}
-        <div style={{display:'flex',alignItems:'center',gap:6,padding:'3px 12px',flexShrink:0}}>
-          <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Total</span>
-          <span style={{fontSize:14,fontWeight:700,
-            color:grandTotalFaturas>0?COR.vermelho:grandTotalFaturas<0?COR.verde:COR.textoSuave,
-            whiteSpace:'nowrap'}}>
-            {fmt(grandTotalFaturas)}
-          </span>
-        </div>
-      </div>
+        )
+      })()}
 
       {/* BARRA DE RESUMO — todos os pills no mesmo formato */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
@@ -798,21 +846,9 @@ export default function FaturaCartao() {
 
                   <span style={{fontSize:12,color:COR.textoSuave,flex:1}}>{mesAno}</span>
 
-                  <div style={{display:'flex',gap:10,alignItems:'center'}}>
-                    {totalCompras > 0 && (
-                      <span style={{fontSize:13,fontWeight:700,color:COR.azul}}>
-                        +{fmt(totalCompras)}
-                      </span>
-                    )}
-                    {totalEstornos > 0 && (
-                      <span style={{fontSize:13,fontWeight:700,color:COR.vermelho}}>
-                        -{fmt(totalEstornos)}
-                      </span>
-                    )}
-                    <span style={{fontSize:16,color:'#94a3b8',display:'inline-block',
-                      transition:'transform .2s',
-                      transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
-                  </div>
+                  <span style={{fontSize:16,color:'#94a3b8',display:'inline-block',
+                    transition:'transform .2s',
+                    transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
                 </div>
 
                 {/* Lançamentos do dia */}
@@ -837,9 +873,14 @@ export default function FaturaCartao() {
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:13,fontWeight:600,color:COR.texto,
                           whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                          {l.descricao || l.categoria}
+                          {l.categoria}
                         </div>
-                        <div style={{fontSize:11,color:COR.textoSuave,marginTop:1}}>{l.categoria}</div>
+                        {l.descricao && l.descricao !== l.categoria && (
+                          <div style={{fontSize:11,color:COR.textoSuave,marginTop:1,
+                            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                            {l.descricao}
+                          </div>
+                        )}
                       </div>
                       {l.parcelas && l.parcelas > 1 && (
                         <span style={{fontSize:11,padding:'3px 8px',borderRadius:6,fontWeight:700,

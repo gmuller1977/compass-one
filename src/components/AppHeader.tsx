@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',    path: '/dashboard' },
-  { label: 'Planejamento', path: '/planejamento' },
-  { label: 'Lançamentos',  path: '/novo-lancamento' },
-  { label: 'Cadastro',     path: '/configuracoes' },
+  { label: 'Dashboard',       path: '/dashboard' },
+  { label: 'Cadastro',        path: '/configuracoes' },
+  { label: 'Planejamento',    path: '/planejamento' },
+  { label: 'Lançamentos',     path: '/novo-lancamento' },
+  { label: 'Acompanhamento',  path: '/acompanhamento' },
 ]
 
 type Props = { currentPath: string }

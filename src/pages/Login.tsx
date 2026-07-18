@@ -15,9 +15,10 @@ const COR = {
   inputFundo: '#f1f5f9',
 }
 
-function Campo({ label, tipo = 'text', placeholder, valor, onChange }: {
+function Campo({ label, tipo = 'text', placeholder, valor, onChange, onKeyDown }: {
   label: string; tipo?: string; placeholder: string
   valor: string; onChange: (v: string) => void
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
 }) {
   const [focado, setFocado] = useState(false)
   return (
@@ -30,6 +31,7 @@ function Campo({ label, tipo = 'text', placeholder, valor, onChange }: {
         placeholder={placeholder}
         value={valor}
         onChange={e => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         onFocus={() => setFocado(true)}
         onBlur={() => setFocado(false)}
         style={{
@@ -230,7 +232,7 @@ export default function Login() {
           {/* Campos */}
           {!isLogin && <Campo label="Nome completo" placeholder="Como quer ser chamado?" valor={form.nome} onChange={set('nome')} />}
           <Campo label="E-mail" tipo="email" placeholder="seu@email.com" valor={form.email} onChange={set('email')} />
-          <Campo label="Senha" tipo="password" placeholder="••••••••" valor={form.senha} onChange={set('senha')} />
+          <Campo label="Senha" tipo="password" placeholder="••••••••" valor={form.senha} onChange={set('senha')} onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
           {!isLogin && <Campo label="Confirmar senha" tipo="password" placeholder="••••••••" valor={form.confirmar} onChange={set('confirmar')} />}
 
           {isLogin && (

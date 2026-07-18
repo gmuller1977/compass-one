@@ -4,8 +4,9 @@ import { AppProvider, useApp } from './context/AppContext'
 import Login          from './pages/Login'
 import Dashboard      from './pages/Dashboard'
 import NovoLancamento from './pages/NovoLancamento'
-import Planejamento   from './pages/Planejamento'
-import Configuracoes  from './pages/Configuracoes'
+import Planejamento    from './pages/Planejamento'
+import Acompanhamento  from './pages/Acompanhamento'
+import Configuracoes   from './pages/Configuracoes'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { user, carregando } = useApp()
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
+          <Route path="/acompanhamento" element={<Protegido><Acompanhamento /></Protegido>} />
           <Route path="/novo-lancamento" element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"   element={<Protegido><Configuracoes /></Protegido>} />
           <Route path="*"               element={<Navigate to="/login" replace />} />
