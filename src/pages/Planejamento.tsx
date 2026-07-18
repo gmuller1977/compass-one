@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext'
-import type { PlanoAnoData, PlanoItem } from '../context/AppContext'
-import { useState, useMemo, useRef, useLayoutEffect, Fragment } from 'react'
+import type { PlanoAnoData } from '../context/AppContext'
+import { useState, useMemo, useRef, useLayoutEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
@@ -22,7 +22,7 @@ const BADGE_MOV: Record<string, { label: string; bg: string; cor: string }> = {
   dinheiro: { label: 'D', bg: '#f0fdf4', cor: '#16a34a' },
 }
 
-type Cat      = { id?: string; nome: string; t?: string; v: number[]; itens?: PlanoItem[] }
+type Cat      = { id?: string; nome: string; t?: string; v: number[] }
 type AnoData  = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 type Editando = { tipo: 'e'|'s'; row: number; mes: number } | null
 
@@ -120,12 +120,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [modalDesvioPerc, setModalDesvioPerc] = useState(desvioMinPerc)
   type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
   const [modalEvento,   setModalEvento]   = useState<null|{ step:1|2; tipo:EventoTipo; mesInicio:number; catTipo:'entrada'|'saida'; catNome:string; novoValor:string }>(null)
-
-  const [itensAbertos,   setItensAbertos]   = useState<Set<string>>(new Set())
-  const [novoItemTexto,  setNovoItemTexto]  = useState<Record<string, string>>({})
-  type EditandoItem = { tipo: 'e'|'s'; catNome: string; itemIdx: number; mi: number } | null
-  const [editandoItem,   setEditandoItem]   = useState<EditandoItem>(null)
-  const [valorItemTemp,  setValorItemTemp]  = useState('')
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -518,58 +512,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   function setSaidas(fn: (prev: Cat[]) => Cat[]) {
     updateAno(d => ({ ...d, saidas: fn(d.saidas) }))
   }
-
-  function toggleItens(tipo: 'e'|'s', catNome: string) {
-    const key = `${tipo}-${catNome}`
-    setItensAbertos(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next })
-  }
-  function setEntradaItems(catNome: string, fn: (prev: PlanoItem[]) => PlanoItem[]) {
-    setEntradas(prev => prev.map(c => {
-      if (c.nome !== catNome) return c
-      const novos = fn(c.itens ?? [])
-      const novoV = novos.length > 0 ? Array.from({length:12}, (_, m) => novos.reduce((s, it) => s + (it.v[m] ?? 0), 0)) : c.v
-      return { ...c, itens: novos.length > 0 ? novos : undefined, v: novoV }
-    }))
-  }
-  function setSaidaItems(catNome: string, fn: (prev: PlanoItem[]) => PlanoItem[]) {
-    setSaidas(prev => prev.map(c => {
-      if (c.nome !== catNome) return c
-      const novos = fn(c.itens ?? [])
-      const novoV = novos.length > 0 ? Array.from({length:12}, (_, m) => novos.reduce((s, it) => s + (it.v[m] ?? 0), 0)) : c.v
-      return { ...c, itens: novos.length > 0 ? novos : undefined, v: novoV }
-    }))
-  }
-  function adicionarItem(tipo: 'e'|'s', catNome: string) {
-    const nome = (novoItemTexto[`${tipo}-${catNome}`] ?? '').trim()
-    if (!nome) return
-    const updateCat = (c: Cat): Cat => {
-      if (c.nome !== catNome) return c
-      const prev = c.itens ?? []
-      // primeiro item herda o valor atual da categoria para não zerar os meses
-      const initialV = prev.length === 0 ? [...c.v] : new Array(12).fill(0)
-      const novos = [...prev, { nome, v: initialV }]
-      const novoV = Array.from({ length: 12 }, (_, m) => novos.reduce((s, it) => s + (it.v[m] ?? 0), 0))
-      return { ...c, itens: novos, v: novoV }
-    }
-    if (tipo === 'e') setEntradas(prev => prev.map(updateCat))
-    else setSaidas(prev => prev.map(updateCat))
-    setNovoItemTexto(prev => ({ ...prev, [`${tipo}-${catNome}`]: '' }))
-  }
-  function removerItem(tipo: 'e'|'s', catNome: string, itemIdx: number) {
-    const fn = (prev: PlanoItem[]) => prev.filter((_, i) => i !== itemIdx)
-    if (tipo === 'e') setEntradaItems(catNome, fn)
-    else setSaidaItems(catNome, fn)
-  }
-  function confirmarItemValor(tipo: 'e'|'s', catNome: string, itemIdx: number, mi: number) {
-    const val = parseBRL(valorItemTemp)
-    const fn = (prev: PlanoItem[]) => prev.map((it, i) =>
-      i === itemIdx ? { ...it, v: it.v.map((v, m) => m === mi ? val : v) } : it
-    )
-    if (tipo === 'e') setEntradaItems(catNome, fn)
-    else setSaidaItems(catNome, fn)
-    setEditandoItem(null)
-  }
-
   function toggleContaNoSaldoInicial(id: string) {
     const novasContas = contas.map(c => c.id === id
       ? { ...c, incluirNoSaldoInicial: c.incluirNoSaldoInicial === false ? true : false } : c)
@@ -844,77 +786,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           ;(e.currentTarget as HTMLElement).style.background = '#f8fafc'
         }}}>
         {fmt(valor)}
-      </div>
-    )
-  }
-
-  function renderItemsPanel(tipo: 'e'|'s', catNome: string, catItens: PlanoItem[], mi: number) {
-    const itemKey = `${tipo}-${catNome}`
-    return (
-      <div style={{ background:'#f8fafc', borderBottom:'1px solid rgba(0,0,0,0.05)', padding:'2px 8px 6px 46px' }}>
-        {catItens.map((item, itemIdx) => {
-          const isEditing = editandoItem?.tipo === tipo && editandoItem.catNome === catNome && editandoItem.itemIdx === itemIdx && editandoItem.mi === mi
-          return (
-            <div key={itemIdx} style={{ display:'flex', alignItems:'center', gap:8, padding:'2px 0' }}>
-              <span style={{ flex:1, fontSize:12, color:COR.texto, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {item.nome}
-              </span>
-              {isEditing && !bloqueado
-                ? <input autoFocus value={valorItemTemp}
-                    onChange={e => setValorItemTemp(e.target.value)}
-                    onFocus={e => e.target.select()}
-                    onBlur={() => confirmarItemValor(tipo, catNome, itemIdx, mi)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); confirmarItemValor(tipo, catNome, itemIdx, mi) }
-                      if (e.key === 'Escape') setEditandoItem(null)
-                    }}
-                    style={{ width:100, padding:'3px 8px', textAlign:'right',
-                      border:`1px solid ${COR.azul}`, outline:'none',
-                      background:'#dbeafe', color:COR.azulEscuro,
-                      fontSize:12, fontFamily:'inherit', fontWeight:600, borderRadius:6 }} />
-                : <div
-                    onClick={bloqueado ? undefined : () => {
-                      setEditandoItem({ tipo, catNome, itemIdx, mi })
-                      setValorItemTemp(item.v[mi] === 0 ? '' : item.v[mi].toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
-                    }}
-                    style={{ padding:'3px 8px', textAlign:'right', fontSize:12,
-                      color: item.v[mi] === 0 ? '#c0cce0' : COR.texto,
-                      borderRadius:6, minWidth:100, background:'#f1f5f9', border:'1px solid #e2e8f0',
-                      whiteSpace:'nowrap', cursor: bloqueado ? 'default' : 'pointer' }}>
-                    {fmt(item.v[mi])}
-                  </div>
-              }
-              {!bloqueado && (
-                <button
-                  onClick={() => removerItem(tipo, catNome, itemIdx)}
-                  style={{ width:18, height:18, borderRadius:4, border:'1px solid #fecaca',
-                    background:'#fff5f5', color:'#dc2626', fontSize:12, cursor:'pointer',
-                    display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, padding:0 }}>
-                  ×
-                </button>
-              )}
-            </div>
-          )
-        })}
-        {!bloqueado && (
-          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
-            <input
-              value={novoItemTexto[itemKey] ?? ''}
-              onChange={e => setNovoItemTexto(prev => ({ ...prev, [itemKey]: e.target.value }))}
-              onKeyDown={e => { if (e.key === 'Enter') adicionarItem(tipo, catNome) }}
-              placeholder="Novo item..."
-              style={{ flex:1, padding:'3px 8px', fontSize:12,
-                border:'1px dashed #93c5fd', borderRadius:6,
-                color:COR.texto, fontFamily:'inherit', background:'#fff', outline:'none' }} />
-            <button
-              onClick={() => adicionarItem(tipo, catNome)}
-              style={{ padding:'3px 8px', borderRadius:6,
-                border:`1px solid ${COR.azul}`, background:COR.azul,
-                color:'#fff', fontSize:11, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
-              +
-            </button>
-          </div>
-        )}
       </div>
     )
   }
@@ -1580,100 +1451,74 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                         ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
                                         : 0
                                       const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0) : 0
-                                      const catItens: PlanoItem[] = aba === 'real'
-                                        ? ((dadosAno.entradas as Cat[]).find(c => c.nome === cat.nome)?.itens ?? [])
-                                        : (cat.itens ?? [])
-                                      const hasItems = catItens.length > 0
-                                      const itemKey = `e-${cat.nome}`
-                                      const showItens = itensAbertos.has(itemKey)
                                       return (
-                                        <Fragment key={ri}>
-                                          <div
-                                            onClick={aba !== 'real' && !bloqueado && !hasItems ? () => iniciarValor('e', ri, mi, cat.v[mi]) : undefined}
-                                            style={{ display:'flex', alignItems:'center', gap:8,
-                                              padding:'5px 8px', borderBottom: showItens ? 'none' : '1px solid rgba(0,0,0,0.05)',
-                                              cursor: aba !== 'real' && !bloqueado && !hasItems ? 'pointer' : 'default' }}>
-                                            <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
-                                              display:'flex', alignItems:'center', justifyContent:'center',
-                                              fontSize:12, flexShrink:0 }}>{icone}</div>
-                                            {aba === 'real'
-                                              ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                                  width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                                  background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
-                                                  visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
-                                              : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                                  width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                                  background:bm.bg, color:bm.cor }}>{bm.label}</span>}
-                                            <span onClick={e => { e.stopPropagation(); navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } }) }}
-                                              style={{ fontSize:13, color:COR.texto, cursor:'pointer',
-                                                textDecoration:'none', flex:1, minWidth:140 }}
-                                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
-                                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
-                                              {cat.nome}
-                                            </span>
-                                            <button
-                                              onClick={e => { e.stopPropagation(); toggleItens('e', cat.nome) }}
-                                              title={showItens ? 'Ocultar itens' : 'Mostrar itens'}
-                                              style={{ padding:'1px 5px', borderRadius:4,
-                                                border:`1px solid ${showItens ? '#93c5fd' : '#e2e8f0'}`,
-                                                background: showItens ? '#eff6ff' : 'transparent',
-                                                color: showItens ? COR.azul : '#94a3b8',
-                                                fontSize:12, cursor:'pointer', flexShrink:0, lineHeight:'16px' }}>
-                                              ≡
-                                            </button>
-                                            {aba === 'real' ? (
-                                              <>
-                                                <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
-                                                  color: previsto === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
-                                                  borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                                                  {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                                </div>
-                                                <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
-                                                  fontWeight: lancado > 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
-                                                  color: lancado === 0 ? '#c0cce0' : lancado >= previsto ? '#16a34a' : COR.vermelho,
-                                                  background: lancado === 0 ? '#f8fafc' : lancado >= previsto ? '#f0fdf4' : '#fef2f2',
-                                                  border:`1px solid ${lancado === 0 ? '#e2e8f0' : lancado >= previsto ? '#bbf7d0' : '#fecaca'}` }}>
-                                                  {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                                </div>
-                                                {(() => {
-                                                  const ganhos = lancado - previsto
-                                                  return (
-                                                    <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: ganhos > 0 ? 600 : 400,
-                                                      color: ganhos > 0 ? '#16a34a' : COR.textoSuave }}>
-                                                      {ganhos > 0 ? `+${ganhos.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '—'}
-                                                    </span>
-                                                  )
-                                                })()}
-                                              </>
-                                            ) : (
-                                              <>
-                                                <div style={{ flex:1 }}/>
-                                                {hasItems
-                                                  ? <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
-                                                      color: cat.v[mi] === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
-                                                      borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                                                      {fmt(cat.v[mi])}
-                                                    </div>
-                                                  : renderValor('e', ri, mi, cat.v[mi])
-                                                }
-                                                {!bloqueado && mi < 11 && !hasItems && (
-                                                  <select defaultValue=""
-                                                    onChange={e => { e.stopPropagation(); replicarLinhaMes('e', ri, mi, parseInt(e.target.value));(e.target as HTMLSelectElement).value='' }}
-                                                    onClick={e => e.stopPropagation()}
-                                                    style={{ border:'1px solid #cbd5e1', background:'#f1f5f9', cursor:'pointer',
-                                                      borderRadius:4, padding:'1px 2px', fontSize:9, color:COR.textoSuave,
-                                                      fontWeight:700, fontFamily:'inherit', flexShrink:0 }}>
-                                                    <option value="">→</option>
-                                                    {MESES.slice(mi + 1).map((mes, idx) => (
-                                                      <option key={idx} value={String(mi + 1 + idx)}>{mes}</option>
-                                                    ))}
-                                                  </select>
-                                                )}
-                                              </>
-                                            )}
-                                          </div>
-                                          {showItens && renderItemsPanel('e', cat.nome, catItens, mi)}
-                                        </Fragment>
+                                        <div key={ri}
+                                          onClick={aba !== 'real' && !bloqueado ? () => iniciarValor('e', ri, mi, cat.v[mi]) : undefined}
+                                          style={{ display:'flex', alignItems:'center', gap:8,
+                                            padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)',
+                                            cursor: aba !== 'real' && !bloqueado ? 'pointer' : 'default' }}>
+                                          <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                            display:'flex', alignItems:'center', justifyContent:'center',
+                                            fontSize:12, flexShrink:0 }}>{icone}</div>
+                                          {aba === 'real'
+                                            ? <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                                width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                                background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                                visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
+                                            : bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                                width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                                background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                                          <span onClick={e => { e.stopPropagation(); navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } }) }}
+                                            style={{ fontSize:13, color:COR.texto, cursor:'pointer',
+                                              textDecoration:'none', flex:1, minWidth:140 }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color=COR.texto}>
+                                            {cat.nome}
+                                          </span>
+                                          {aba === 'real' ? (
+                                            <>
+                                              <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                                color: previsto === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
+                                                borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                                                {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                              </div>
+                                              <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                                fontWeight: lancado > 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
+                                                color: lancado === 0 ? '#c0cce0' : lancado >= previsto ? '#16a34a' : COR.vermelho,
+                                                background: lancado === 0 ? '#f8fafc' : lancado >= previsto ? '#f0fdf4' : '#fef2f2',
+                                                border:`1px solid ${lancado === 0 ? '#e2e8f0' : lancado >= previsto ? '#bbf7d0' : '#fecaca'}` }}>
+                                                {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                              </div>
+                                              {(() => {
+                                                const ganhos = lancado - previsto
+                                                return (
+                                                  <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: ganhos > 0 ? 600 : 400,
+                                                    color: ganhos > 0 ? '#16a34a' : COR.textoSuave }}>
+                                                    {ganhos > 0 ? `+${ganhos.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '—'}
+                                                  </span>
+                                                )
+                                              })()}
+                                            </>
+                                          ) : (
+                                            <>
+                                              <div style={{ flex:1 }}/>
+                                              {renderValor('e', ri, mi, cat.v[mi])}
+                                              {!bloqueado && mi < 11 && (
+                                                <select defaultValue=""
+                                                  onChange={e => { e.stopPropagation(); replicarLinhaMes('e', ri, mi, parseInt(e.target.value));(e.target as HTMLSelectElement).value='' }}
+                                                  onClick={e => e.stopPropagation()}
+                                                  style={{ border:'1px solid #cbd5e1', background:'#f1f5f9', cursor:'pointer',
+                                                    borderRadius:4, padding:'1px 2px', fontSize:9, color:COR.textoSuave,
+                                                    fontWeight:700, fontFamily:'inherit', flexShrink:0 }}>
+                                                  <option value="">→</option>
+                                                  {MESES.slice(mi + 1).map((mes, idx) => (
+                                                    <option key={idx} value={String(mi + 1 + idx)}>{mes}</option>
+                                                  ))}
+                                                </select>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
                                       )
                                     })}
                                   </>
@@ -1803,68 +1648,42 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                   const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'saida') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
                                   const bm = tm ? BADGE_MOV[tm] : null
                                   const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
-                                  const catItens: PlanoItem[] = cat.itens ?? []
-                                  const hasItems = catItens.length > 0
-                                  const itemKey = `s-${cat.nome}`
-                                  const showItens = itensAbertos.has(itemKey)
                                   return (
-                                    <Fragment key={ri}>
-                                      <div
-                                        onClick={!bloqueado && !ehFatura && !hasItems ? () => iniciarValor('s', ri, mi, cat.v[mi]) : undefined}
-                                        style={{ display:'flex', alignItems:'center', gap:8,
-                                          padding:'5px 8px', borderBottom: showItens ? 'none' : '1px solid rgba(0,0,0,0.05)',
-                                          cursor: !bloqueado && !ehFatura && !hasItems ? 'pointer' : 'default' }}>
-                                        <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
-                                          display:'flex', alignItems:'center', justifyContent:'center',
-                                          fontSize:12, flexShrink:0 }}>{icone}</div>
-                                        {bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                            width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                            background:bm.bg, color:bm.cor }}>{bm.label}</span>}
-                                        <span onClick={e => { e.stopPropagation(); navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } }) }}
-                                          style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
-                                            cursor:'pointer', flexShrink:0, minWidth:140 }}
-                                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
-                                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
-                                          {cat.nome}
-                                          {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
-                                        </span>
-                                        <div style={{ flex:1 }}/>
-                                        {!ehFatura && (
-                                          <button
-                                            onClick={e => { e.stopPropagation(); toggleItens('s', cat.nome) }}
-                                            title={showItens ? 'Ocultar itens' : 'Mostrar itens'}
-                                            style={{ padding:'1px 5px', borderRadius:4,
-                                              border:`1px solid ${showItens ? '#93c5fd' : '#e2e8f0'}`,
-                                              background: showItens ? '#eff6ff' : 'transparent',
-                                              color: showItens ? COR.azul : '#94a3b8',
-                                              fontSize:12, cursor:'pointer', flexShrink:0, lineHeight:'16px' }}>
-                                            ≡
-                                          </button>
-                                        )}
-                                        {hasItems
-                                          ? <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
-                                              color: cat.v[mi] === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
-                                              borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                                              {fmt(cat.v[mi])}
-                                            </div>
-                                          : renderValor('s', ri, mi, cat.v[mi], ehFatura)
-                                        }
-                                        {!bloqueado && !ehFatura && mi < 11 && !hasItems && (
-                                          <select defaultValue=""
-                                            onChange={e => { e.stopPropagation(); replicarLinhaMes('s', ri, mi, parseInt(e.target.value));(e.target as HTMLSelectElement).value='' }}
-                                            onClick={e => e.stopPropagation()}
-                                            style={{ border:'1px solid #cbd5e1', background:'#f1f5f9', cursor:'pointer',
-                                              borderRadius:4, padding:'1px 2px', fontSize:9, color:COR.textoSuave,
-                                              fontWeight:700, fontFamily:'inherit', flexShrink:0 }}>
-                                            <option value="">→</option>
-                                            {MESES.slice(mi + 1).map((mes, idx) => (
-                                              <option key={idx} value={String(mi + 1 + idx)}>{mes}</option>
-                                            ))}
-                                          </select>
-                                        )}
-                                      </div>
-                                      {showItens && renderItemsPanel('s', cat.nome, catItens, mi)}
-                                    </Fragment>
+                                    <div key={ri}
+                                      onClick={!bloqueado && !ehFatura ? () => iniciarValor('s', ri, mi, cat.v[mi]) : undefined}
+                                      style={{ display:'flex', alignItems:'center', gap:8,
+                                        padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)',
+                                        cursor: !bloqueado && !ehFatura ? 'pointer' : 'default' }}>
+                                      <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                        display:'flex', alignItems:'center', justifyContent:'center',
+                                        fontSize:12, flexShrink:0 }}>{icone}</div>
+                                      {bm && <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                          width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                          background:bm.bg, color:bm.cor }}>{bm.label}</span>}
+                                      <span onClick={e => { e.stopPropagation(); navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } }) }}
+                                        style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
+                                          cursor:'pointer', flexShrink:0, minWidth:140 }}
+                                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
+                                        {cat.nome}
+                                        {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                      </span>
+                                      <div style={{ flex:1 }}/>
+                                      {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
+                                      {!bloqueado && !ehFatura && mi < 11 && (
+                                        <select defaultValue=""
+                                          onChange={e => { e.stopPropagation(); replicarLinhaMes('s', ri, mi, parseInt(e.target.value));(e.target as HTMLSelectElement).value='' }}
+                                          onClick={e => e.stopPropagation()}
+                                          style={{ border:'1px solid #cbd5e1', background:'#f1f5f9', cursor:'pointer',
+                                            borderRadius:4, padding:'1px 2px', fontSize:9, color:COR.textoSuave,
+                                            fontWeight:700, fontFamily:'inherit', flexShrink:0 }}>
+                                          <option value="">→</option>
+                                          {MESES.slice(mi + 1).map((mes, idx) => (
+                                            <option key={idx} value={String(mi + 1 + idx)}>{mes}</option>
+                                          ))}
+                                        </select>
+                                      )}
+                                    </div>
                                   )
                                 })}
                               </div>
@@ -1945,63 +1764,43 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                       const lancadoDisplay = ehFatura ? totalCartaoConsolidado : lancado
                                       const dentro = lancadoDisplay < 0 ? true : (prevAbs > 0 ? lancadoDisplay <= prevAbs : false)
                                       const disponivel = prevAbs - lancadoDisplay
-                                      const catItensR: PlanoItem[] = !ehFatura
-                                        ? ((dadosAno.saidas as Cat[]).find(c => c.nome === cat.nome)?.itens ?? [])
-                                        : []
-                                      const itemKeyR = `s-${cat.nome}`
-                                      const showItensR = itensAbertos.has(itemKeyR)
                                       return (
-                                        <Fragment key={ri}>
-                                          <div style={{ display:'flex', alignItems:'center', gap:8,
-                                            padding:'5px 8px', borderBottom: showItensR ? 'none' : '1px solid rgba(0,0,0,0.05)' }}>
-                                            <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
-                                              display:'flex', alignItems:'center', justifyContent:'center',
-                                              fontSize:12, flexShrink:0 }}>{icone}</div>
-                                            <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                                                width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
-                                                background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
-                                                visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
-                                            <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
-                                              style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
-                                                cursor:'pointer', flex:1, minWidth:140 }}
-                                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
-                                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
-                                              {cat.nome}
-                                              {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
-                                            </span>
-                                            {!ehFatura && (
-                                              <button
-                                                onClick={e => { e.stopPropagation(); toggleItens('s', cat.nome) }}
-                                                title={showItensR ? 'Ocultar itens' : 'Mostrar itens'}
-                                                style={{ padding:'1px 5px', borderRadius:4,
-                                                  border:`1px solid ${showItensR ? '#93c5fd' : '#e2e8f0'}`,
-                                                  background: showItensR ? '#eff6ff' : 'transparent',
-                                                  color: showItensR ? COR.azul : '#94a3b8',
-                                                  fontSize:12, cursor:'pointer', flexShrink:0, lineHeight:'16px' }}>
-                                                ≡
-                                              </button>
-                                            )}
-                                            <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
-                                              color: prevAbs === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
-                                              borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                                              {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                            </div>
-                                            <div onClick={() => !ehFatura && lancadoDisplay !== 0 && setModalCatReal({ nome: cat.nome, mi })}
-                                              style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
-                                                fontWeight: lancadoDisplay !== 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
-                                                cursor: !ehFatura && lancadoDisplay !== 0 ? 'pointer' : 'default',
-                                                color: lancadoDisplay === 0 ? '#c0cce0' : (lancadoDisplay < 0 || dentro) ? '#16a34a' : COR.vermelho,
-                                                background: lancadoDisplay === 0 ? '#f8fafc' : (lancadoDisplay < 0 || dentro) ? '#f0fdf4' : '#fef2f2',
-                                                border:`1px solid ${lancadoDisplay === 0 ? '#e2e8f0' : (lancadoDisplay < 0 || dentro) ? '#bbf7d0' : '#fecaca'}` }}>
-                                              {lancadoDisplay !== 0 ? lancadoDisplay.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                            </div>
-                                            <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: (prevAbs > 0 || lancadoDisplay !== 0) ? 600 : 400,
-                                              color: disponivel > 0 ? '#16a34a' : disponivel < 0 ? COR.vermelho : COR.textoSuave }}>
-                                              {(prevAbs > 0 || lancadoDisplay !== 0) ? disponivel.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                                            </span>
+                                        <div key={ri} style={{ display:'flex', alignItems:'center', gap:8,
+                                          padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)' }}>
+                                          <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
+                                            display:'flex', alignItems:'center', justifyContent:'center',
+                                            fontSize:12, flexShrink:0 }}>{icone}</div>
+                                          <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                              width:16, height:16, borderRadius:3, fontSize:9, fontWeight:700, flexShrink:0,
+                                              background: bm?.bg ?? 'transparent', color: bm?.cor ?? 'transparent',
+                                              visibility: bm ? 'visible' : 'hidden' }}>{bm?.label}</span>
+                                          <span onClick={() => navigate('/configuracoes', { state:{ aba:'categorias', catNome:cat.nome } })}
+                                            style={{ fontSize:13, color: ehFatura ? '#7c3aed' : COR.texto,
+                                              cursor:'pointer', flex:1, minWidth:140 }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
+                                            {cat.nome}
+                                            {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                          </span>
+                                          <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                            color: prevAbs === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
+                                            borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+                                            {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                           </div>
-                                          {showItensR && renderItemsPanel('s', cat.nome, catItensR, mi)}
-                                        </Fragment>
+                                          <div onClick={() => !ehFatura && lancadoDisplay !== 0 && setModalCatReal({ nome: cat.nome, mi })}
+                                            style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
+                                              fontWeight: lancadoDisplay !== 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
+                                              cursor: !ehFatura && lancadoDisplay !== 0 ? 'pointer' : 'default',
+                                              color: lancadoDisplay === 0 ? '#c0cce0' : (lancadoDisplay < 0 || dentro) ? '#16a34a' : COR.vermelho,
+                                              background: lancadoDisplay === 0 ? '#f8fafc' : (lancadoDisplay < 0 || dentro) ? '#f0fdf4' : '#fef2f2',
+                                              border:`1px solid ${lancadoDisplay === 0 ? '#e2e8f0' : (lancadoDisplay < 0 || dentro) ? '#bbf7d0' : '#fecaca'}` }}>
+                                            {lancadoDisplay !== 0 ? lancadoDisplay.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                          </div>
+                                          <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: (prevAbs > 0 || lancadoDisplay !== 0) ? 600 : 400,
+                                            color: disponivel > 0 ? '#16a34a' : disponivel < 0 ? COR.vermelho : COR.textoSuave }}>
+                                            {(prevAbs > 0 || lancadoDisplay !== 0) ? disponivel.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                                          </span>
+                                        </div>
                                       )
                                     })}
                                   </>
