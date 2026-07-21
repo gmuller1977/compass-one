@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 
 const NAV_ITEMS = [
   { label: 'Dashboard',       path: '/dashboard' },
-  { label: 'Cadastro',        path: '/configuracoes' },
+  { label: 'Configurações',   path: '/configuracoes' },
   { label: 'Planejamento',    path: '/planejamento' },
   { label: 'Lançamentos',     path: '/novo-lancamento' },
   { label: 'Acompanhamento',  path: '/acompanhamento' },

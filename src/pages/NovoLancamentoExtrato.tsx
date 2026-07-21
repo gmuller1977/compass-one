@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import { useToast } from '../components/Toast'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
 import ExtratoConsolidado from './ExtratoConsolidado'
@@ -110,13 +112,16 @@ function formaRecebCategoria(fp: string | undefined, mov: string | undefined): F
 }
 
 export default function NovoLancamentoExtrato() {
+  const { toast } = useToast()
+  const navigate  = useNavigate()
   const hoje      = new Date()
   const diaHoje   = hoje.getDate()
   const mesHoje   = hoje.getMonth()
   const anoHoje   = hoje.getFullYear()
   const hojeStr   = hoje.toISOString().slice(0,10)
 
-  const [contaId, setContaId] = useState('')
+  const [contaId, setContaId] = useState('consolidado')
+  const [busca,   setBusca]   = useState('')
   const [mes,     setMes]     = useState(mesHoje)
   const [ano]                  = useState(anoHoje)
   const [diaSel,  setDiaSel]  = useState<number>(diaHoje)
@@ -128,24 +133,31 @@ export default function NovoLancamentoExtrato() {
   const [fDesc,   setFDesc]   = useState('')
   const [fValor,  setFValor]  = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
-  const [modo, setModo] = useState<'consolidado'|'banco'|'cartao'|'dinheiro'>('consolidado')
+  const [tabPrincipal, setTabPrincipal] = useState<'extrato'|'cartao'|'dinheiro'>('extrato')
   const [fContaDestino,     setFContaDestino]      = useState('')
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
+  const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number}|null>(null)
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, updatePlanoReal } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, updatePlanoReal } = useApp()
 
-  // Valor planejado (previsto) para uma categoria fixa no mês/ano atual
+  // Valor planejado (previsto) para uma categoria no mês/ano atual
+  // Prefere planosReal (Atualizado) quando disponível
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
-    const planoAno = planos[ano] as typeof planos[number] | undefined
+    const planoAno = (planosReal[ano] ?? planos[ano]) as typeof planos[number] | undefined
     if (!planoAno) return 0
     const lista = tipoLanc === 'entrada' ? planoAno.entradas : planoAno.saidas
     const found = lista.find(c => (catId && c.id === catId) || c.nome === catNome)
     return found?.v[mes] ?? 0
+  }
+
+  function valorPrevistoPorNome(catNome: string, tipoLanc: TipoLanc): number {
+    const cat = categorias.find(c => c.nome === catNome)
+    return valorPrevistoCat(cat?.id ?? '', catNome, tipoLanc)
   }
 
   // Grava no planosReal o valor realizado de uma categoria fixa para o mês atual
@@ -167,7 +179,8 @@ export default function NovoLancamentoExtrato() {
     })
   }
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-  const isDinheiro = modo === 'dinheiro'
+  const isDinheiro = tabPrincipal === 'dinheiro'
+  const isConsolidado = tabPrincipal === 'extrato' && contaId === 'consolidado'
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   const dados = extratoData as Record<string, DadosMes>
   const fixasCategoria = categorias
@@ -260,26 +273,26 @@ export default function NovoLancamentoExtrato() {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'start'}), 150)
     setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
-  }, [contaId, mes, ano, modo])
+  }, [contaId, mes, ano, tabPrincipal])
 
-  useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [modo])
+  useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [tabPrincipal])
 
   useEffect(() => {
-    if (modo === 'dinheiro') {
+    if (tabPrincipal === 'dinheiro') {
       const k = mesKey('dinheiro', ano, mes)
       if (dados[k]?.saldoBancoData === hojeStr) return
       setModalSaldoValor(dados[k]?.saldoBanco ?? '')
       setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
       return
     }
-    if (modo !== 'banco') return
+    if (tabPrincipal !== 'extrato' || isConsolidado) return
     const conta = contasExtrato.find(c => c.id === contaId) ?? contasExtrato[0]
     if (!conta) return
     const k = mesKey(conta.id, ano, mes)
     if (dados[k]?.saldoBancoData === hojeStr) return
     setModalSaldoValor(dados[k]?.saldoBanco ?? '')
     setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
-  }, [modo])
+  }, [tabPrincipal])
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     return (novoMes===mesHoje && novoAno===anoHoje) ? diaHoje : 1
@@ -521,6 +534,25 @@ export default function NovoLancamentoExtrato() {
         }
       }))
     }
+    if (editandoId) {
+      toast('Lançamento atualizado')
+    } else {
+      toast('Lançamento registrado')
+    }
+    // Verificar se a categoria ultrapassou o planejado (apenas saídas)
+    if (fTipo === 'saida' && fCat && !editandoId) {
+      const previsto = valorPrevistoPorNome(fCat, 'saida')
+      if (previsto > 0) {
+        const totalExistente = Object.values(mesDados.lancamentos)
+          .flat()
+          .filter(l => l.categoria === fCat && l.tipo === 'saida')
+          .reduce((s, l) => s + l.valor, 0)
+        const totalNovo = totalExistente + valor
+        if (totalNovo > previsto) {
+          setAlertaDesvio({ catNome: fCat, totalGasto: totalNovo, previsto })
+        }
+      }
+    }
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor('')
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
@@ -537,6 +569,7 @@ export default function NovoLancamentoExtrato() {
     }))
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor('')
+    toast('Lançamento excluído', 'info')
   }
 
   function excluir(dia: number, id: string) {
@@ -568,28 +601,70 @@ export default function NovoLancamentoExtrato() {
 
       <AppHeader currentPath="/novo-lancamento" />
 
-      {/* MODO: Extrato bancário vs Fatura cartão */}
+      {/* ALERTA DE DESVIO */}
+      {alertaDesvio && (
+        <div style={{ background:'#fef3c7', borderBottom:'1px solid #fcd34d',
+          padding:'10px 16px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+          <span style={{ fontSize:15 }}>⚠️</span>
+          <div style={{ flex:1, fontSize:12, color:'#92400e' }}>
+            <strong>{alertaDesvio.catNome}</strong> ultrapassou o planejado:{' '}
+            gasto {alertaDesvio.totalGasto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} de{' '}
+            {alertaDesvio.previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} previstos.
+          </div>
+          <button
+            onClick={() => { setAlertaDesvio(null); navigate('/planejamento', { state: { aba: 'revisao' } }) }}
+            style={{ padding:'5px 12px', border:'none', borderRadius:7, cursor:'pointer',
+              fontFamily:'inherit', fontSize:12, fontWeight:600,
+              background:'#d97706', color:'#fff', whiteSpace:'nowrap' }}>
+            Fazer revisão →
+          </button>
+          <button onClick={() => setAlertaDesvio(null)}
+            style={{ border:'none', background:'transparent', cursor:'pointer',
+              fontSize:18, color:'#92400e', lineHeight:1, padding:'0 4px' }}>
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* ABAS PRINCIPAIS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px',flexShrink:0,display:'flex',gap:6}}>
-        {([['consolidado','📊 Consolidado'],['banco','🏦 Extrato Bancário'],['cartao','💳 Fatura Cartão'],['dinheiro','💵 Dinheiro']] as const).map(([v,l]) => (
-          <button key={v} onClick={() => setModo(v)} style={{
-            padding:'7px 16px',borderRadius:8,
-            border:`1.5px solid ${modo===v?COR.azul:COR.borda}`,
-            cursor:'pointer',fontSize:12,fontWeight:600,fontFamily:'inherit',
-            background:modo===v?COR.azul:'#f8faff',color:modo===v?'#fff':COR.textoSuave}}>
+        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3}}>
+        {([['extrato','🏦 Extrato Bancário'],['cartao','💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro']] as const).map(([v,l]) => (
+          <button key={v} onClick={() => {
+            setTabPrincipal(v)
+            if (v === 'extrato') setContaId('consolidado')
+          }} style={{
+            padding:'7px 16px',borderRadius:'8px 8px 0 0',
+            border:`1px solid ${tabPrincipal===v?COR.azul:COR.borda}`,
+            cursor:'pointer',fontSize:12,fontWeight:tabPrincipal===v?700:500,fontFamily:'inherit',
+            background:tabPrincipal===v?COR.azul:'#f8faff',color:tabPrincipal===v?'#fff':COR.textoSuave,
+            position:'relative',zIndex:tabPrincipal===v?1:0}}>
             {l}
           </button>
         ))}
       </div>
 
-      {modo==='consolidado' ? <ExtratoConsolidado /> : modo==='cartao' ? <FaturaCartao /> : (
+      {tabPrincipal==='cartao' ? <FaturaCartao /> : (
       <>
-      {/* ABAS DE BANCO — ocultas no modo dinheiro */}
-      {!isDinheiro && (
+      {/* SUB-ABAS: Consolidado + bancos (somente para Extrato Bancário) */}
+      {tabPrincipal === 'extrato' && (
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
+        {/* Sub-aba Consolidado */}
+        {(() => { const ativa = contaId === 'consolidado'; return (
+          <button onClick={() => setContaId('consolidado')} style={{
+            display:'flex',alignItems:'center',gap:6,
+            padding:'7px 14px',borderRadius:'8px 8px 0 0',
+            border:`1px solid ${ativa?COR.azul:COR.borda}`,
+            cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
+            background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
+            position:'relative',zIndex:ativa?1:0}}>
+            📊 Consolidado
+          </button>
+        )})()}
+        {/* Sub-abas dos bancos cadastrados */}
         {contasExtrato.map(c => {
-          const ativa = c.id===contaIdEfetivo
+          const ativa = c.id===contaId
           return (
             <button key={c.id} onClick={() => {
               setContaId(c.id)
@@ -614,6 +689,8 @@ export default function NovoLancamentoExtrato() {
         })}
       </div>
       )}
+      {/* Vista consolidada dentro de Extrato Bancário */}
+      {isConsolidado ? <ExtratoConsolidado /> : (<>
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
@@ -621,15 +698,21 @@ export default function NovoLancamentoExtrato() {
         {MESES_CURTOS.map((m,i) => {
           const isAtual = i===mesHoje && ano===anoHoje
           const ativo   = i===mes
+          const countMes = Object.values(dados[mesKey(contaIdEfetivo,ano,i)]?.lancamentos ?? {}).flat().length
           return (
             <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{
-              padding:'7px 14px',borderRadius:'8px 8px 0 0',
+              padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
               border:`1px solid ${ativo?COR.azul:COR.borda}`,
               cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,
               fontFamily:'inherit',whiteSpace:'nowrap',
               background:ativo?COR.azul:'#f8faff',
-              color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0}}>
+              color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
+              display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
               {m}
+              <span style={{fontSize:9,fontWeight:600,lineHeight:1,
+                color:ativo?'rgba(255,255,255,0.7)':countMes>0?COR.azul:'transparent'}}>
+                {countMes > 0 ? countMes : '·'}
+              </span>
               {isAtual && (
                 <span style={{position:'absolute',bottom:3,left:'50%',
                   transform:'translateX(-50%)',width:4,height:4,
@@ -733,6 +816,15 @@ export default function NovoLancamentoExtrato() {
         </>)}
       </div>
 
+      {/* BUSCA */}
+      <div style={{padding:'8px 16px 0',flexShrink:0}}>
+        <input value={busca} onChange={e => setBusca(e.target.value)}
+          placeholder="Buscar por categoria, descrição ou valor..."
+          style={{width:'100%',boxSizing:'border-box',
+            padding:'7px 14px',border:`1px solid ${COR.borda}`,borderRadius:8,
+            fontSize:12,fontFamily:'inherit',color:COR.texto,background:'#fff',outline:'none'}}/>
+      </div>
+
       {/* CONTEÚDO: lista + painel de lançamento */}
       <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
 
@@ -745,7 +837,13 @@ export default function NovoLancamentoExtrato() {
           const passado   = eMesAtual ? dia<diaHoje : ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
           const semana    = diaSemana(dia, mes, ano)
           const fs        = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
-          const ls        = mesDados.lancamentos[dia] ?? []
+          const lsRaw     = mesDados.lancamentos[dia] ?? []
+          const ls        = busca.trim() ? lsRaw.filter(l => {
+            const q = busca.toLowerCase()
+            return l.categoria?.toLowerCase().includes(q) ||
+              l.descricao?.toLowerCase().includes(q) ||
+              String(l.valor).includes(q)
+          }) : lsRaw
           const temItens  = fs.length>0 || ls.length>0
           const saldoIni  = dia===1 ? SALDO_INICIAL : (saldosDia[dia-1] ?? SALDO_INICIAL)
           const diaFuturo = !passado && !ehHoje
@@ -1190,6 +1288,8 @@ export default function NovoLancamentoExtrato() {
         </div>
       </div>
       </div>
+      </>
+      )}
       </>
       )}
 

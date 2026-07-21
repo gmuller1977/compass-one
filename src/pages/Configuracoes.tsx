@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import { useToast } from '../components/Toast'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
 
@@ -33,10 +34,8 @@ const TIPOS_MOVIMENTO: { id: TipoMovimento; label: string }[] = [
   { id:'dinheiro', label:'Dinheiro' },
 ]
 const FORMAS_PAG_BANCO: { id: FormaPagamentoCategoria; label: string }[] = [
-  { id:'automatico',    label:'Débito Automático' },
-  { id:'pix',           label:'Pix' },
-  { id:'boleto',        label:'Boleto' },
-  { id:'transferencia', label:'Transferência' },
+  { id:'automatico', label:'Débito Automático' },
+  { id:'manual',     label:'Manual' },
 ]
 const FORMAS_PAG_CARTAO: { id: FormaPagamentoCategoria; label: string }[] = [
   { id:'avista',    label:'À Vista' },
@@ -44,6 +43,7 @@ const FORMAS_PAG_CARTAO: { id: FormaPagamentoCategoria; label: string }[] = [
 ]
 const CORES_FORMA_PAG: Record<string,{bg:string;cor:string}> = {
   automatico:    { bg:'#e0f2fe', cor:'#0369a1' },
+  manual:        { bg:'#f1f5f9', cor:'#475569' },
   pix:           { bg:'#d1fae5', cor:'#065f46' },
   boleto:        { bg:'#fef9c3', cor:'#92400e' },
   transferencia: { bg:'#eff6ff', cor:'#1a56db' },
@@ -53,10 +53,16 @@ const CORES_FORMA_PAG: Record<string,{bg:string;cor:string}> = {
 }
 function labelCobranca(c: Categoria): { label: string; bg: string; cor: string } {
   if (c.tipoMovimento === 'dinheiro') return { label:'Dinheiro', ...CORES_FORMA_PAG.dinheiro }
-  const lista = c.tipoMovimento === 'cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO
-  const f = lista.find(x => x.id === c.formaPagamento)
-  const cores = CORES_FORMA_PAG[c.formaPagamento ?? ''] ?? { bg:'#f1f5f9', cor:'#64748b' }
-  return { label: f?.label ?? (c.tipoMovimento==='cartao' ? 'Cartão' : 'Banco'), ...cores }
+  if (c.tipoMovimento === 'cartao') {
+    const f = FORMAS_PAG_CARTAO.find(x => x.id === c.formaPagamento)
+    const cores = CORES_FORMA_PAG[c.formaPagamento ?? ''] ?? { bg:'#f1f5f9', cor:'#64748b' }
+    return { label: f?.label ?? 'Cartão', ...cores }
+  }
+  // pix/boleto/transferencia legados são exibidos como Manual
+  const isAutomatico = c.formaPagamento === 'automatico'
+  return isAutomatico
+    ? { label:'Débito Automático', ...CORES_FORMA_PAG.automatico }
+    : { label:'Manual', ...CORES_FORMA_PAG.manual }
 }
 
 function fmt(v: number) {
@@ -211,15 +217,26 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
           })()}
         </div>
       </div>
-      {/* Toggle ativo */}
-      <button onClick={e => { e.stopPropagation(); toggleAtiva(c.id) }} style={{
-        border:`1px solid ${c.ativa ? COR.verde : COR.vermelho}`,
-        borderRadius:6, padding:'3px 9px', cursor:'pointer', fontSize:11,
-        background: c.ativa ? '#f0fdf4' : '#fff1f2',
-        color: c.ativa ? COR.verde : COR.vermelho,
-        fontFamily:'inherit', fontWeight:500 }}>
-        {c.ativa ? '✓ Ativa' : 'Inativa'}
-      </button>
+      {/* Toggle ativo/inativo */}
+      <div onClick={e => e.stopPropagation()} style={{
+        display:'flex', border:`1px solid ${COR.borda}`, borderRadius:7,
+        overflow:'hidden', flexShrink:0 }}>
+        <button onClick={() => { if (!c.ativa) toggleAtiva(c.id) }} style={{
+          padding:'3px 10px', border:'none', cursor: c.ativa ? 'default' : 'pointer',
+          fontSize:11, fontFamily:'inherit', fontWeight:600,
+          background: c.ativa ? '#f0fdf4' : COR.branco,
+          color: c.ativa ? COR.verde : COR.textoSuave }}>
+          Ativo
+        </button>
+        <button onClick={() => { if (c.ativa) toggleAtiva(c.id) }} style={{
+          padding:'3px 10px', border:'none', borderLeft:`1px solid ${COR.borda}`,
+          cursor: c.ativa ? 'pointer' : 'default',
+          fontSize:11, fontFamily:'inherit', fontWeight:600,
+          background: !c.ativa ? '#fff1f2' : COR.branco,
+          color: !c.ativa ? COR.vermelho : COR.textoSuave }}>
+          Inativo
+        </button>
+      </div>
     </div>
   )
 }
@@ -227,12 +244,14 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
   const location  = useLocation()
+  const { toast } = useToast()
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { user, contas, categorias, setContas, setCategorias,
+          planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc } = useApp()
   const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
-  const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('ativas')
+  const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('todas')
 
   useEffect(() => {
     const st = location.state as { aba?: string; catNome?: string } | null
@@ -267,7 +286,7 @@ export default function Configuracoes() {
   const nomeContaRef = useRef<HTMLInputElement>(null)
 
   const catVazia: Omit<Categoria,'id'> = {
-    nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'boleto',
+    nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'manual',
     cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true, grupo: undefined,
   }
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
@@ -321,8 +340,10 @@ export default function Configuracoes() {
     setErroConta('')
     if (editContaId) {
       setContas(prev => prev.map(c => c.id===editContaId ? {id:editContaId,...contaFinal} : c))
+      toast('Conta atualizada')
     } else {
       setContas(prev => [...prev, {id:gerarId(),...contaFinal}])
+      toast('Conta cadastrada')
     }
     novaConta()
   }
@@ -330,6 +351,7 @@ export default function Configuracoes() {
     if (!window.confirm('Excluir esta conta?')) return
     setContas(prev => prev.filter(c => c.id!==id))
     if (editContaId===id) novaConta()
+    toast('Conta excluída', 'info')
   }
 
   // ── Ações Categoria ──
@@ -348,8 +370,10 @@ export default function Configuracoes() {
     setErroCat('')
     if (editCatId) {
       setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...formCat, ativa:true} : c))
+      toast('Categoria atualizada')
     } else {
       setCategorias(prev => [...prev, {id:gerarId(),...formCat, ativa:true}])
+      toast('Categoria criada')
     }
     novaCategoria()
   }
@@ -357,8 +381,31 @@ export default function Configuracoes() {
     if (!window.confirm('Excluir esta categoria?')) return
     setCategorias(prev => prev.filter(c => c.id!==id))
     if (editCatId===id) { setEditCatId(null); setFormCat({...catVazia, tipo:abaCat}) }
+    toast('Categoria excluída', 'info')
   }
   function toggleAtiva(id: string) {
+    const cat = categorias.find(c => c.id === id)
+    if (!cat) return
+    if (cat.ativa) {
+      const anoAtual = new Date().getFullYear()
+      const mesAtual = new Date().getMonth()
+      const temLancFuturo = (lista: { id?: string; nome: string; v: number[] }[]) => {
+        const entry = lista.find(c => (c.id && c.id === id) || c.nome === cat.nome)
+        return entry ? entry.v.some((v, i) => i > mesAtual && v !== 0) : false
+      }
+      const anoFuturo = Object.entries(planos)
+        .filter(([ano]) => Number(ano) > anoAtual)
+        .some(([, pd]) => {
+          const lista = cat.tipo === 'entrada' ? pd.entradas : pd.saidas
+          return lista.some(c => ((c.id && c.id === id) || c.nome === cat.nome) && c.v.some(v => v !== 0))
+        })
+      const listaAtual = cat.tipo === 'entrada' ? (planos[anoAtual]?.entradas ?? []) : (planos[anoAtual]?.saidas ?? [])
+      const listaRealAtual = cat.tipo === 'entrada' ? (planosReal[anoAtual]?.entradas ?? []) : (planosReal[anoAtual]?.saidas ?? [])
+      if (temLancFuturo(listaAtual) || temLancFuturo(listaRealAtual) || anoFuturo) {
+        window.alert('Não é possível inativar esta categoria pois ela possui lançamentos planejados em meses futuros. Remova os valores dos meses futuros no planejamento antes de inativar.')
+        return
+      }
+    }
     setCategorias(prev => prev.map(c => c.id===id ? {...c, ativa:!c.ativa} : c))
   }
   function importarSugestoes() {
@@ -408,14 +455,14 @@ export default function Configuracoes() {
 
       {/* ABAS PRINCIPAIS */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
-        padding:'0 24px', display:'flex', gap:4, flexShrink:0 }}>
-        {([['bancos','🏦 Cadastro de Bancos'],['cartoes','💳 Cadastro de Cartões'],['categorias','🏷 Cadastro de Categorias']] as const).map(([v,l]) => (
+        padding:'10px 24px 0', display:'flex', gap:3, flexShrink:0 }}>
+        {([['bancos','Bancos'],['cartoes','Cartões de Crédito'],['categorias','Categorias']] as const).map(([v,l]) => (
           <button key={v} onClick={() => { setAba(v); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
-            padding:'12px 16px', border:'none',
-            borderBottom:`2px solid ${aba===v ? COR.azul : 'transparent'}`,
-            background:'transparent', cursor:'pointer', fontSize:13, fontWeight:500,
-            color: aba===v ? COR.azul : COR.textoSuave,
-            fontFamily:'inherit', transition:'all .15s' }}>
+            padding:'7px 16px', borderRadius:'8px 8px 0 0',
+            border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
+            cursor:'pointer', fontSize:12, fontWeight:aba===v ? 700 : 500, fontFamily:'inherit',
+            background: aba===v ? COR.azul : '#f8faff', color: aba===v ? '#fff' : COR.textoSuave,
+            position:'relative', zIndex: aba===v ? 1 : 0 }}>
             {l}
           </button>
         ))}
@@ -880,6 +927,28 @@ export default function Configuracoes() {
                 </div>
 
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                  {/* Grupo */}
+                  <div>
+                    <label style={labelSt}>Grupo</label>
+                    <select
+                      value={formCat.grupo && !GRUPOS_PADRAO.includes(formCat.grupo) ? '__outro__' : (formCat.grupo ?? '')}
+                      onChange={e => {
+                        if (e.target.value === '__outro__') setFormCat(p=>({...p, grupo:''}))
+                        else setFormCat(p=>({...p, grupo: e.target.value || undefined}))
+                      }}
+                      className="campo-cfg" style={{...inputSt, cursor:'pointer'}}>
+                      <option value="">Selecione um grupo...</option>
+                      {GRUPOS_PADRAO.map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="__outro__">Outro...</option>
+                    </select>
+                    {formCat.grupo != null && !GRUPOS_PADRAO.includes(formCat.grupo) && (
+                      <input value={formCat.grupo}
+                        onChange={e => setFormCat(p=>({...p, grupo: e.target.value || undefined}))}
+                        placeholder="Nome do grupo personalizado"
+                        className="campo-cfg" style={{...inputSt, marginTop:6}} />
+                    )}
+                  </div>
+
                   <div>
                     <label style={labelSt}>Nome da categoria</label>
                     <input ref={nomeCatRef} value={formCat.nome}
@@ -887,7 +956,7 @@ export default function Configuracoes() {
                       placeholder="Ex: Supermercado, Lazer..." className="campo-cfg" style={inputSt} />
                   </div>
                   <div>
-                    <label style={labelSt}>Tipo</label>
+                    <label style={labelSt}>Movimentação</label>
                     <div style={{ display:'flex', gap:6 }}>
                       {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l], i) => (
                         <button key={v}
@@ -913,7 +982,7 @@ export default function Configuracoes() {
                     </div>
                   </div>
                   <div>
-                    <label style={labelSt}>Frequência</label>
+                    <label style={labelSt}>Tipo</label>
                     <div style={{ display:'flex', gap:6 }}>
                       {([[false,'Variável'],[true,'Fixa']] as const).map(([v,l], i) => (
                         <button key={String(v)}
@@ -939,28 +1008,6 @@ export default function Configuracoes() {
                     </div>
                   </div>
 
-                  {/* Grupo */}
-                  <div>
-                    <label style={labelSt}>Grupo</label>
-                    <select
-                      value={formCat.grupo && !GRUPOS_PADRAO.includes(formCat.grupo) ? '__outro__' : (formCat.grupo ?? '')}
-                      onChange={e => {
-                        if (e.target.value === '__outro__') setFormCat(p=>({...p, grupo:''}))
-                        else setFormCat(p=>({...p, grupo: e.target.value || undefined}))
-                      }}
-                      className="campo-cfg" style={{...inputSt, cursor:'pointer'}}>
-                      <option value="">Selecione um grupo...</option>
-                      {GRUPOS_PADRAO.map(g => <option key={g} value={g}>{g}</option>)}
-                      <option value="__outro__">Outro...</option>
-                    </select>
-                    {formCat.grupo != null && !GRUPOS_PADRAO.includes(formCat.grupo) && (
-                      <input value={formCat.grupo}
-                        onChange={e => setFormCat(p=>({...p, grupo: e.target.value || undefined}))}
-                        placeholder="Nome do grupo personalizado"
-                        className="campo-cfg" style={{...inputSt, marginTop:6}} />
-                    )}
-                  </div>
-
                   {/* Dia vencimento — só fixa */}
                   {formCat.fixa && (
                     <div>
@@ -972,9 +1019,9 @@ export default function Configuracoes() {
                     </div>
                   )}
 
-                  {/* Tipo de movimento — todas as categorias */}
+                  {/* Lançamentos — todas as categorias */}
                   <div>
-                    <label style={labelSt}>Tipo de movimento</label>
+                    <label style={labelSt}>Lançamentos</label>
                     <div style={{ display:'flex', gap:6 }}>
                       {TIPOS_MOVIMENTO.map((t, i) => (
                         <button key={t.id}
@@ -1004,12 +1051,17 @@ export default function Configuracoes() {
                         </button>
                       ))}
                     </div>
+                    <p style={{ fontSize:11, color:COR.textoSuave, marginTop:6, lineHeight:1.5 }}>
+                      {formCat.tipoMovimento === 'banco'    && 'Gastos debitados diretamente na conta bancária (débito, Pix, boleto).'}
+                      {formCat.tipoMovimento === 'cartao'   && 'Gastos pagos com cartão de crédito — aparecem na fatura do cartão.'}
+                      {formCat.tipoMovimento === 'dinheiro' && 'Gastos pagos em espécie — aparecem no extrato de dinheiro em carteira.'}
+                    </p>
                   </div>
 
                   {/* Forma de pagamento — depende do tipo de movimento */}
                   {formCat.tipoMovimento!=='dinheiro' && (
                     <div>
-                      <label style={labelSt}>Forma de pagamento</label>
+                      <label style={labelSt}>Forma de lançamento</label>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                         {(formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO).map((f, i) => {
                           const lista = formCat.tipoMovimento==='cartao' ? FORMAS_PAG_CARTAO : FORMAS_PAG_BANCO
@@ -1040,11 +1092,19 @@ export default function Configuracoes() {
                           )
                         })}
                       </div>
-                      {formCat.fixa && formCat.tipoMovimento==='banco' && (
-                        <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
-                          {formCat.formaPagamento==='automatico'
-                            ? 'Se vencer em dia não útil, o sistema desloca sozinho para o próximo dia útil.'
-                            : 'Ao consolidar o lançamento, você informa o dia em que foi realizado.'}
+                      <div style={{ fontSize:11, color:'#94a3b8', marginTop:6, lineHeight:1.5 }}>
+                        {formCat.tipoMovimento==='cartao'
+                          ? formCat.formaPagamento==='parcelado'
+                            ? 'O valor é dividido em parcelas e cobrado nas faturas consecutivas do cartão.'
+                            : 'O valor é cobrado integralmente na próxima fatura do cartão.'
+                          : formCat.formaPagamento==='automatico'
+                            ? 'A despesa é debitada automaticamente na conta vinculada no dia do vencimento.'
+                            : 'Você informa a data e o meio de pagamento ao consolidar cada lançamento.'
+                        }
+                      </div>
+                      {formCat.fixa && formCat.tipoMovimento==='banco' && formCat.formaPagamento==='automatico' && (
+                        <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>
+                          Se vencer em dia não útil, o sistema desloca para o próximo dia útil.
                         </div>
                       )}
                     </div>
