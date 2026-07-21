@@ -965,7 +965,16 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             })}
           </div>
         )}
-        {hideTabs && <div />}
+        {hideTabs && (
+          <div style={{ display:'flex', gap:3 }}>
+            <button style={{ padding:'7px 16px', borderRadius:'8px 8px 0 0',
+              border:`1px solid ${COR.azul}`,
+              cursor:'default', fontSize:12, fontWeight:700, fontFamily:'inherit',
+              background:COR.azul, color:'#fff', position:'relative', zIndex:1 }}>
+              Fluxo de Caixa
+            </button>
+          </div>
+        )}
 
         {/* Ano nav + Finalizar */}
         <div style={{ display:'flex', alignItems:'center', gap:10, paddingBottom:6 }}>
