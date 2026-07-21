@@ -87,17 +87,6 @@ export default function AppHeader({ currentPath }: Props) {
             minWidth: 190, paddingTop: 6, paddingBottom: 6,
           }}>
             <MenuItem
-              icon="👤"
-              label="Perfil"
-              onClick={() => { setDropdown(false); navigate('/configuracoes', { state: { aba: 'perfil' } }) }}
-            />
-            <MenuItem
-              icon="⚙"
-              label="Preferências"
-              onClick={() => { setDropdown(false); navigate('/configuracoes', { state: { aba: 'preferencias' } }) }}
-            />
-            <div style={{ height: 1, background: '#e2e8f0', margin: '4px 8px' }} />
-            <MenuItem
               icon="⏻"
               label="Logout"
               danger

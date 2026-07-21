@@ -937,46 +937,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       <AppHeader currentPath={pathname} />
       <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 8px' }}>
 
-      {/* TÍTULO + NAVEGAÇÃO DE ANO */}
-      <div style={{ padding:'14px 0 6px',
-        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div>
-          <h1 style={{ fontSize:17, fontWeight:700, color:COR.texto, margin:0 }}>{hideTabs ? 'Acompanhamento' : 'Planejamento'}</h1>
-          <p style={{ fontSize:12, color:COR.textoSuave, marginTop:3 }}>
-            {hideTabs ? 'Realizado mensal · Acompanhe seus lançamentos' : 'Fluxo de caixa mensal · Abra um ou vários meses para planejar'}
-          </p>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:0,
-          background:COR.branco, border:`1px solid ${COR.borda}`,
-          borderRadius:10, overflow:'hidden', flexShrink:0 }}>
-          <button onClick={() => navegarAno(-1)} style={{ border:'none', background:'transparent',
-            cursor:'pointer', padding:'10px 18px', fontSize:18, color:COR.textoSuave,
-            lineHeight:1, transition:'background .15s' }}
-            onMouseEnter={e => (e.currentTarget.style.background='#f0f4ff')}
-            onMouseLeave={e => (e.currentTarget.style.background='transparent')}>‹</button>
-          <div style={{ padding:'10px 22px', borderLeft:`1px solid ${COR.borda}`,
-            borderRight:`1px solid ${COR.borda}`, textAlign:'center', minWidth:100 }}>
-            <div style={{ fontSize:20, fontWeight:700, color:COR.texto, letterSpacing:-.5 }}>{anoAtual}</div>
-            {anoAtual === anoCorrente
-              ? <div style={{ fontSize:9, color:COR.azul, fontWeight:700,
-                  textTransform:'uppercase', letterSpacing:.6, marginTop:1 }}>Ano atual</div>
-              : <div style={{ fontSize:9, color:COR.textoSuave, marginTop:1 }}>
-                  {anoAtual < anoCorrente ? `${anoCorrente - anoAtual} ano(s) atrás` : `${anoAtual - anoCorrente} ano(s) à frente`}
-                </div>
-            }
-          </div>
-          <button onClick={() => navegarAno(+1)} style={{ border:'none', background:'transparent',
-            cursor:'pointer', padding:'10px 18px', fontSize:18, color:COR.textoSuave,
-            lineHeight:1, transition:'background .15s' }}
-            onMouseEnter={e => (e.currentTarget.style.background='#f0f4ff')}
-            onMouseLeave={e => (e.currentTarget.style.background='transparent')}>›</button>
-        </div>
-      </div>
+      {/* ABAS + ANO NAV */}
+      <div style={{ padding:'10px 0 0',
+        display:'flex', alignItems:'flex-end', justifyContent:'space-between' }}>
 
-      {/* ABAS + BOTÃO FINALIZAR */}
-      <div style={{ padding:'10px 0 0', marginBottom:8,
-        display:'flex', alignItems:'flex-end', justifyContent:'space-between',
-        borderBottom:`1px solid ${COR.borda}` }}>
+        {/* Abas principais — apenas no Planejamento */}
         {!hideTabs && (
           <div style={{ display:'flex', gap:3 }}>
             {(['previsto','real','revisao'] as const).map(v => {
@@ -1001,13 +966,15 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           </div>
         )}
         {hideTabs && <div />}
+
+        {/* Ano nav + Finalizar */}
         <div style={{ display:'flex', alignItems:'center', gap:10, paddingBottom:6 }}>
           {planejamentoLockado && !hideTabs && aba === 'previsto' && (
             <span style={{ fontSize:11, color:COR.textoSuave, display:'flex', alignItems:'center', gap:4 }}>
               🔒 Bloqueado · desbloqueie em <strong>Configurações → Perfil</strong>
             </span>
           )}
-          {!planejamentoLockado && aba === 'previsto' && (
+          {!planejamentoLockado && !hideTabs && aba === 'previsto' && (
             <button onClick={() => finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData)}
               style={{ padding:'6px 16px', border:'none', borderRadius:8, cursor:'pointer',
                 fontFamily:'inherit', fontSize:12, fontWeight:600, color:'#fff',
@@ -1015,12 +982,46 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {realExiste ? '↺ Atualizar Planejamento Original' : '✓ Finalizar planejamento'}
             </button>
           )}
+          <div style={{ display:'flex', alignItems:'center', gap:0,
+            background:COR.branco, border:`1px solid ${COR.borda}`,
+            borderRadius:10, overflow:'hidden', flexShrink:0 }}>
+            <button onClick={() => navegarAno(-1)} style={{ border:'none', background:'transparent',
+              cursor:'pointer', padding:'10px 18px', fontSize:18, color:COR.textoSuave,
+              lineHeight:1, transition:'background .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background='#f0f4ff')}
+              onMouseLeave={e => (e.currentTarget.style.background='transparent')}>‹</button>
+            <div style={{ padding:'10px 22px', borderLeft:`1px solid ${COR.borda}`,
+              borderRight:`1px solid ${COR.borda}`, textAlign:'center', minWidth:100 }}>
+              <div style={{ fontSize:20, fontWeight:700, color:COR.texto, letterSpacing:-.5 }}>{anoAtual}</div>
+              {anoAtual === anoCorrente
+                ? <div style={{ fontSize:9, color:COR.azul, fontWeight:700,
+                    textTransform:'uppercase', letterSpacing:.6, marginTop:1 }}>Ano atual</div>
+                : <div style={{ fontSize:9, color:COR.textoSuave, marginTop:1 }}>
+                    {anoAtual < anoCorrente ? `${anoCorrente - anoAtual} ano(s) atrás` : `${anoAtual - anoCorrente} ano(s) à frente`}
+                  </div>
+              }
+            </div>
+            <button onClick={() => navegarAno(+1)} style={{ border:'none', background:'transparent',
+              cursor:'pointer', padding:'10px 18px', fontSize:18, color:COR.textoSuave,
+              lineHeight:1, transition:'background .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background='#f0f4ff')}
+              onMouseLeave={e => (e.currentTarget.style.background='transparent')}>›</button>
+          </div>
         </div>
       </div>
 
+      {/* DESCRIÇÃO DA ABA SELECIONADA */}
+      <div style={{ borderBottom:`1px solid ${COR.borda}`, padding:'6px 0 10px', marginBottom:8 }}>
+        <p style={{ fontSize:12, color:COR.textoSuave, margin:0 }}>
+          {!hideTabs && aba === 'previsto' && 'Defina os valores de entradas e saídas para cada mês do ano. Finalize para criar o planejamento de referência.'}
+          {!hideTabs && aba === 'real' && 'Planejamento atualizado com os valores reais lançados. Compare mês a mês o que foi previsto com o realizado.'}
+          {!hideTabs && aba === 'revisao' && 'Revisão mensal dos desvios entre previsto e realizado. Disponível a partir do 1º dia de cada mês.'}
+          {hideTabs && 'Visualize o fluxo de caixa realizado mês a mês com saldo inicial, entradas, saídas e saldo final do período.'}
+        </p>
+      </div>
 
-      {/* SUB-ABAS: Fluxo de Caixa / Por Categoria */}
-      {(aba === 'previsto' || (aba === 'real' && realExiste)) && (
+      {/* SUB-ABAS: Fluxo de Caixa / Por Categoria — apenas no Planejamento */}
+      {!hideTabs && (aba === 'previsto' || (aba === 'real' && realExiste)) && (
         <div style={{ display:'flex', gap:3, borderBottom:`1px solid ${COR.borda}`, margin:'0 0 8px' }}>
           <button onClick={() => setVisaoCat(false)} style={{ padding:'7px 16px', borderRadius:'8px 8px 0 0',
             border:`1px solid ${!visaoCat ? COR.azul : COR.borda}`,

@@ -456,7 +456,7 @@ export default function Configuracoes() {
       {/* ABAS PRINCIPAIS */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 24px 0', display:'flex', gap:3, flexShrink:0 }}>
-        {([['bancos','Bancos'],['cartoes','Cartões de Crédito'],['categorias','Categorias']] as const).map(([v,l]) => (
+        {([['bancos','Bancos'],['cartoes','Cartões de Crédito'],['categorias','Categorias'],['perfil','Perfil'],['preferencias','Preferências']] as const).map(([v,l]) => (
           <button key={v} onClick={() => { setAba(v); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
             padding:'7px 16px', borderRadius:'8px 8px 0 0',
             border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
