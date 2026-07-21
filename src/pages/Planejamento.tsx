@@ -935,7 +935,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       {/* ── CABEÇALHO STICKY COMPLETO (menu + título + abas + cards) ── */}
       <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.branco, borderBottom:`1px solid ${COR.borda}` }}>
       <AppHeader currentPath={pathname} />
-      <div style={{ maxWidth:920, margin:'0 auto', padding:'0 24px 8px' }}>
+      <div style={{ padding:'0 24px 8px' }}>
 
       {/* ABAS + ANO NAV */}
       <div style={{ padding:'10px 0 0',
