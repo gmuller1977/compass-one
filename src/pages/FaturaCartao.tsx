@@ -800,8 +800,6 @@ export default function FaturaCartao() {
           return grupos.map((grupo, gIdx) => {
             const {dateKey, dc, mc, ac, items} = grupo
             const aberto = !diasFechados.has(dateKey)
-            const totalCompras  = items.reduce((s,{l}) => l.tipo==='entrada' ? s+l.valor : s, 0)
-            const totalEstornos = items.reduce((s,{l}) => l.tipo==='saida'   ? s+l.valor : s, 0)
             const semana = diaSemana(dc, mc, ac)
             const mesAno = (mc !== purchaseMes || ac !== purchaseAno)
               ? `${NOMES_MESES[mc]}${ac !== purchaseAno ? ' '+ac : ''}`

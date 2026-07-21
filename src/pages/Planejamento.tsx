@@ -61,13 +61,6 @@ function nomeFaturaCartao(nome: string, cartaoNomes: Set<string>): boolean {
   const n = nome.toLowerCase()
   return n.includes('cart') && (/cr[eé]d/.test(n) || n.includes('fatura'))
 }
-function criarAnoZerado(template: AnoData, saldoIni: number): AnoData {
-  return {
-    saldoInicialJan: saldoIni,
-    entradas: template.entradas.map(c => ({ ...c, v: new Array(12).fill(0) })),
-    saidas:   template.saidas.map(c =>   ({ ...c, v: new Array(12).fill(0) })),
-  }
-}
 
 export default function Planejamento({ defaultAba = 'previsto', hideTabs = false }: { defaultAba?: 'previsto' | 'real' | 'revisao'; hideTabs?: boolean } = {}) {
   const navigate    = useNavigate()
@@ -669,11 +662,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     })
     itens.sort((a, b) => b.desvioPerc - a.desvioPerc)
     return itens
-  }
-  function abrirRevisao() {
-    setModalDesvioPerc(desvioMinPerc)
-    setRevisaoItens(computeRevisaoItens(desvioMinPerc))
-    setModalRevisao(true)
   }
 
   function aplicarRevisao() {
@@ -1749,7 +1737,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               const aberto  = mesesAbertos.has(mi)
               const ehAtual = mi === mesAtual && anoAtual === anoCorrente
               const temReal = aba === 'real' && mesTemDadosReais[mi]
-              const cinza = { bg:'#f8fafc', bd:'#e2e8f0', txt:'#94a3b8' }
               const te = temReal ? totaisReais.te[mi] : totalEntradas[mi]
               const ts = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
               const sf = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
@@ -1822,7 +1809,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           </>
                         ) : (
                           <span style={{ fontSize:14, fontWeight:700,
-                            color: ((aba==='real' && !temReal) ? cinza : caixaCor(sf)).txt }}>
+                            color: caixaCor(sf).txt }}>
                             {sf.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                           </span>
                         )}
@@ -2288,11 +2275,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                       const totalCartaoConsolidado = ehFatura
                                         ? Object.values(lancadoFaturaConsolidadaMesCat[mi] ?? {}).reduce((sv, v) => sv + v, 0)
                                         : 0
-                                      const lancadoCartaoCat = ehFatura ? 0 : (lancadoPorCatMes[mi]?.saidaCartao[cat.nome] ?? 0)
                                       const lancado = ehFatura
                                         ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + totalCartaoConsolidado
                                         : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
-                                      const lancadoBancoCat = lancado - lancadoCartaoCat
                                       const isInativa = !(categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.ativa ?? true)
                                       if (isInativa && previsto === 0 && lancado === 0) return null
                                       const prevAbs = ehFatura ? limiteCartaoPorMes[mi] : Math.abs(previsto)
