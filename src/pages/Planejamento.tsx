@@ -1009,6 +1009,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         {!hideTabs && (aba === 'previsto' || (aba === 'real' && realExiste)) && aba !== 'revisao' && (
           <div style={{ padding:'10px 24px 0', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'flex-end', gap:3 }}>
             {([
+              { key:'quiz', label:'Comece aqui', active: quizAtivo,
+                onClick:() => { setQuizAtivo(true); setQuizStep(0) },
+                icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
+                  <polygon points="1,0.5 10,5.5 1,10.5"/>
+                </svg>) },
               { key:'grade',      label:'Grade',      active:!visaoCat && viewMode==='grade',
                 onClick:() => { setVisaoCat(false); setViewMode('grade') },
                 icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
@@ -3096,7 +3101,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       })()}
 
       {/* ── QUIZ DE ONBOARDING ── */}
-      {quizAtivo && !planoCriado && (
+      {quizAtivo && (
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:300,
           display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{background:'#fff',borderRadius:20,width:'100%',maxWidth:520,
