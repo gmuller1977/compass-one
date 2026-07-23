@@ -129,7 +129,7 @@ export default function Dashboard() {
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {passos.map(p => (
             <div key={p.num}
-              onClick={() => navigate(p.path)}
+              onClick={() => navigate(p.path, p.num === 4 ? { state: { openQuiz: true } } : {})}
               style={{
                 display:'flex',alignItems:'center',gap:16,
                 padding:'16px 20px',borderRadius:14,cursor:'pointer',
