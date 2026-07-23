@@ -1,4 +1,4 @@
-﻿import { useApp } from '../context/AppContext'
+import { useApp } from '../context/AppContext'
 import type { PlanoAnoData } from '../context/AppContext'
 import { useState, useMemo, useRef, useLayoutEffect, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -88,8 +88,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [anoAtual,         setAnoAtual]        = useState(2026)
   const [aba,              setAba]             = useState<'previsto' | 'real' | 'revisao'>(() => {
     const fromState = (location.state as any)?.aba
-    return (fromState === 'previsto' || fromState === 'real' || fromState === 'revisao')
-      ? fromState : defaultAba
+    if (fromState === 'previsto' || fromState === 'real' || fromState === 'revisao') return fromState
+    if (defaultAba !== 'previsto') return defaultAba
+    return (planejamentoLockado && !!planosReal[anoCorrente]) ? 'real' : 'previsto'
   })
   const [editando,         setEditando]        = useState<Editando>(null)
   const [valorTemp,        setValorTemp]       = useState('')
@@ -112,6 +113,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [modalCatPlano,    setModalCatPlano]    = useState<{ nome: string; tipo: 'e'|'s' } | null>(null)
   const [valoresMeses,     setValoresMeses]     = useState<string[]>(Array(12).fill(''))
   const [quizAtivo,        setQuizAtivo]       = useState(() => !planos[anoAtual])
+  const [quizConcluido,    setQuizConcluido]   = useState(false)
+  const [confirmarRefazer, setConfirmarRefazer] = useState<'refazer' | 'bloqueado' | false>(false)
   const [quizStep,         setQuizStep]        = useState(0)
   const [quizObjetivo,     setQuizObjetivo]    = useState('')
   const [quizConsiderarSaldo, setQuizConsiderarSaldo] = useState<boolean | null>(null)
@@ -778,7 +781,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       saldoInicialJan: saldoIni, entradas, saidas,
       ...(metaAnualQuiz > 0 ? { metaAnual: metaAnualQuiz } : {}),
     } as PlanoAnoData }))
-    setQuizAtivo(false)
+    setQuizConcluido(true)
   }
 
   useLayoutEffect(() => {
@@ -1010,7 +1013,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           <div style={{ padding:'10px 24px 0', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'flex-end', gap:3 }}>
             {([
               { key:'quiz', label:'Comece aqui', active: quizAtivo,
-                onClick:() => { setQuizAtivo(true); setQuizStep(0) },
+                onClick:() => {
+                if (!planoCriado) { setQuizAtivo(true); setQuizStep(0); setQuizConcluido(false) }
+                else if (planejamentoLockado) { setConfirmarRefazer('bloqueado') }
+                else { setConfirmarRefazer('refazer') }
+              },
                 icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
                   <polygon points="1,0.5 10,5.5 1,10.5"/>
                 </svg>) },
@@ -3112,12 +3119,12 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div style={{background:`linear-gradient(135deg,#0f2878,#1a56db)`,
               padding:'24px 28px 20px',borderRadius:'20px 20px 0 0',position:'relative',flexShrink:0}}>
               <div style={{position:'absolute',top:14,right:14,display:'flex',alignItems:'center',gap:6}}>
-                <button onClick={() => setQuizAtivo(false)} style={{
+                <button onClick={() => { setQuizAtivo(false); setQuizConcluido(false); }} style={{
                   background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.25)',
                   borderRadius:8,color:'rgba(255,255,255,0.75)',padding:'4px 10px',
                   cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:500,
                   lineHeight:1}}>Pular →</button>
-                <button onClick={() => setQuizAtivo(false)} style={{
+                <button onClick={() => { setQuizAtivo(false); setQuizConcluido(false); }} style={{
                   background:'rgba(255,255,255,0.15)',border:'none',borderRadius:8,color:'#fff',
                   width:28,height:28,cursor:'pointer',fontSize:16,fontFamily:'inherit',
                   display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
@@ -3151,6 +3158,38 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             {/* Corpo */}
             <div style={{padding:'22px 28px',flex:1,overflowY:'auto'}}>
 
+{quizConcluido ? (
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',gap:16,padding:'8px 0'}}>
+                <div style={{fontSize:48,lineHeight:1}}>🎉</div>
+                <div style={{fontSize:20,fontWeight:800,color:COR.texto,lineHeight:1.2}}>Parabéns! Seu planejamento está criado.</div>
+                <div style={{fontSize:13,color:COR.textoSuave,lineHeight:1.6}}>Agora você pode acompanhar e ajustar seus valores usando os três modos de visualização:</div>
+                <div style={{display:'flex',flexDirection:'column',gap:10,width:'100%',marginTop:4}}>
+                  <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,background:'#eff6ff',border:'1px solid #bfdbfe'}}>
+                    <div style={{fontSize:20,flexShrink:0}}>📊</div>
+                    <div style={{textAlign:'left'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#1e40af',marginBottom:2}}>Grade</div>
+                      <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>Visão geral do ano em cards mensais. Clique em qualquer mês para ver ou editar os detalhes.</div>
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,background:'#f0fdf4',border:'1px solid #bbf7d0'}}>
+                    <div style={{fontSize:20,flexShrink:0}}>📋</div>
+                    <div style={{textAlign:'left'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:2}}>Planilha</div>
+                      <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>Todos os 12 meses lado a lado. Edite diretamente nas células e use Tab para navegar rapidamente.</div>
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,background:'#faf5ff',border:'1px solid #e9d5ff'}}>
+                    <div style={{fontSize:20,flexShrink:0}}>📝</div>
+                    <div style={{textAlign:'left'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#6b21a8',marginBottom:2}}>Lista</div>
+                      <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>Todas as categorias em lista. Ideal para ajustar valores de uma categoria específica em todos os meses.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              ) : (
+              <>
               {/* Gate: sem bancos ou sem categorias */}
               {(() => {
                 const semBancos = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca').length === 0
@@ -3509,10 +3548,19 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   ))}
                 </div>
               })()}
-            </div>
+                          </>
+              )}</div>
 
             {/* Rodapé */}
             <div style={{padding:'14px 28px 24px',display:'flex',gap:10,borderTop:`1px solid ${COR.borda}`,flexShrink:0}}>
+              {quizConcluido ? (
+              <button onClick={() => { setQuizAtivo(false); setQuizConcluido(false); setViewMode('grade'); setAba('previsto') }} style={{
+                flex:1,padding:'10px',borderRadius:9,border:'none',fontFamily:'inherit',
+                background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,color:'#fff',
+                fontSize:13,fontWeight:700,cursor:'pointer'}}>
+                Ver meu planejamento →
+              </button>
+              ) : (<>
               {quizStep > 0 && (
                 <button onClick={() => setQuizStep(s=>s-1)} style={{
                   flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${COR.borda}`,
@@ -3536,13 +3584,83 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   ✓ Criar meu planejamento
                 </button>
-              )}
+              )}              </>)}
+            
             </div>
           </div>
         </div>
       )}
 
-      {/* LEGENDA */}
+
+      {/* ── MODAL CONFIRMAR REFAZER / BLOQUEADO ── */}
+      {confirmarRefazer && (
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:400,
+          display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{background:'#fff',borderRadius:16,width:'100%',maxWidth:440,
+            boxShadow:'0 20px 50px rgba(0,0,0,0.3)',overflow:'hidden'}}>
+            {confirmarRefazer === 'refazer' ? (
+              <div>
+                <div style={{padding:'24px 24px 16px'}}>
+                  <div style={{fontSize:18,fontWeight:700,color:'#0f172a',marginBottom:8}}>Refazer planejamento?</div>
+                  <div style={{fontSize:13,color:'#64748b',lineHeight:1.6}}>
+                    Isso irá apagar o planejamento atual e iniciar o quiz novamente para criar um novo. Esta ação não pode ser desfeita.
+                  </div>
+                </div>
+                <div style={{padding:'0 24px 24px',display:'flex',gap:10}}>
+                  <button onClick={() => setConfirmarRefazer(false)} style={{
+                    flex:1,padding:'10px',borderRadius:9,border:'1.5px solid #e2e8f0',
+                    background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
+                    cursor:'pointer',fontFamily:'inherit'}}>
+                    Cancelar
+                  </button>
+                  <button onClick={() => {
+                    setPlanos((prev: any) => { const n = {...prev}; delete n[anoAtual]; return n })
+                    setConfirmarRefazer(false)
+                    setQuizAtivo(true)
+                    setQuizStep(0)
+                    setQuizConcluido(false)
+                    setQuizObjetivo('')
+                    setQuizConsiderarSaldo(null)
+                    setQuizEntradas({})
+                    setQuizSaidas({})
+                    setViewMode('grade')
+                  }} style={{
+                    flex:2,padding:'10px',borderRadius:9,border:'none',
+                    background:'linear-gradient(135deg,#dc2626,#b91c1c)',
+                    color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    Sim, refazer
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{padding:'24px 24px 16px'}}>
+                  <div style={{fontSize:18,fontWeight:700,color:'#0f172a',marginBottom:8}}>Planejamento bloqueado</div>
+                  <div style={{fontSize:13,color:'#64748b',lineHeight:1.6}}>
+                    Para refazer o quiz e criar um novo planejamento, é necessário desbloquear o planejamento primeiro. Acesse as preferências para liberar a edição.
+                  </div>
+                </div>
+                <div style={{padding:'0 24px 24px',display:'flex',gap:10}}>
+                  <button onClick={() => setConfirmarRefazer(false)} style={{
+                    flex:1,padding:'10px',borderRadius:9,border:'1.5px solid #e2e8f0',
+                    background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
+                    cursor:'pointer',fontFamily:'inherit'}}>
+                    Fechar
+                  </button>
+                  <button onClick={() => { setConfirmarRefazer(false); navigate('/configuracoes', { state: { aba: 'perfil' } }) }} style={{
+                    flex:2,padding:'10px',borderRadius:9,border:'none',
+                    background:'linear-gradient(135deg,#0f2878,#1a56db)',
+                    color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    Ir para Preferências
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+            {/* LEGENDA */}
       <div style={{ display:'flex', gap:20, padding:'6px 24px 12px',
         fontSize:11, color:COR.textoSuave, flexWrap:'wrap',
         flexShrink:0, alignItems:'center', borderTop:`1px solid ${COR.borda}` }}>
