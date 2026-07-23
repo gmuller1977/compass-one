@@ -66,7 +66,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const navigate    = useNavigate()
   const location    = useLocation()
   const { pathname } = location
-  const { contas, setContas, categorias, extratoData, faturaData,
+  const { contas, categorias, extratoData, faturaData,
           planos, setPlanos,
           planosReal, planejamentoLockado,
           finalizarPlanejamento, updatePlanoReal,
@@ -805,7 +805,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   function toggleMes(i: number) {
     setMesesAbertos(prev => {
       const next = new Set(prev)
-      if (next.has(i)) { next.delete(i) } else { setSaldoAberto(false); next.add(i) }
+      if (next.has(i)) { next.delete(i) } else { next.add(i) }
       return next
     })
   }
@@ -992,7 +992,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         </div>
 
         {/* LINHA 2: Grade | Planilha | Lista | Categorias */}
-        {!hideTabs && (aba === 'previsto' || (aba === 'real' && realExiste)) && aba !== 'revisao' && (
+        {!hideTabs && (aba === 'previsto' || (aba === 'real' && realExiste)) && (aba as string) !== 'revisao' && (
           <div style={{ padding:'10px 24px 0', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'flex-end', gap:3 }}>
             {([
               { key:'quiz', label:'Comece aqui', active: quizAtivo,
@@ -1533,7 +1533,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
 
             {/* ── ACCORDION (revisão) / CARDS ou LISTA (fluxo de caixa) ── */}
-            {(aba === 'revisao' ? MESES_FULL.map((nomeMes, mi) => {
+            {((aba as string) === 'revisao' ? MESES_FULL.map((nomeMes, mi) => {
               const aberto  = mesesAbertos.has(mi)
               const ehAtual = mi === mesAtual && anoAtual === anoCorrente
               const temReal = aba === 'real' && mesTemDadosReais[mi]
@@ -2237,7 +2237,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   const te      = temReal ? totaisReais.te[mi] : totalEntradas[mi]
                   const ts      = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
                   const sfVal   = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
-                  const siVal   = temReal ? saldoInicialReal[mi] : saldoInicial[mi]
                   const pctUsado = te > 0 ? Math.min(100, Math.round(ts / te * 100)) : (ts > 0 ? 100 : 0)
                   const sfCor   = sfVal > 0 ? COR.verde : sfVal < 0 ? COR.vermelho : COR.textoSuave
                   const sfBg    = sfVal > 0 ? '#f0fdf4' : sfVal < 0 ? '#fff5f5' : '#f8fafc'
@@ -2246,13 +2245,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   const metaPct    = te > 0 ? Math.round((te - ts) / te * 100) : 0
                   const metaOk     = te > 0 && (te - ts) >= 0
                   const showMeta   = te > 0
-                  const abbrVal = (v: number) => {
-                    if (v === 0) return '—'
-                    const a = Math.abs(v)
-                    if (a >= 1000000) return `R$ ${(v/1000000).toFixed(1).replace('.',',')}M`
-                    if (a >= 1000)    return `R$ ${(v/1000).toFixed(0)}k`
-                    return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
-                  }
                   return (
                     <div key={mi}
                       onClick={() => setModalMes(mi)}
