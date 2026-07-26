@@ -72,6 +72,16 @@ function fmt(v: number) {
 }
 function gerarId() { return `id-${Date.now()}-${Math.random().toString(36).slice(2,6)}` }
 
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
+
 function EmBreve() {
   return (
     <span style={{ fontSize:9, padding:'2px 7px', borderRadius:4,
@@ -252,6 +262,8 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
 export default function Configuracoes() {
   const location  = useLocation()
   const { toast } = useToast()
+  const isMobile = useIsMobile()
+  const [mobileView, setMobileView] = useState<'list'|'form'>('list')
   const [aba,    setAba]    = useState<Aba>('bancos')
   const { user, contas, categorias, setContas, setCategorias,
           planos, planosReal,
@@ -325,6 +337,7 @@ export default function Configuracoes() {
     setTimeout(() => nomeContaRef.current?.focus(), 0)
   }
   function editarConta(c: Conta) {
+    setMobileView('form')
     const { id, ...rest } = c
     const restFinal = (rest.tipo === 'cartao' && rest.contaPagamentoId && !rest.formaPagamentoFatura)
       ? { ...rest, formaPagamentoFatura: 'automatico' as FormaPagamentoFatura }
@@ -364,12 +377,14 @@ export default function Configuracoes() {
       setContas(prev => [...prev, {id:gerarId(),...contaFinal}])
       toast('Conta cadastrada')
     }
+    setMobileView('list')
     novaConta()
   }
   function excluirConta(id: string) {
     if (!window.confirm('Excluir esta conta?')) return
     setContas(prev => prev.filter(c => c.id!==id))
     if (editContaId===id) novaConta()
+    setMobileView('list')
     toast('Conta excluída', 'info')
   }
   function moverConta(id: string, dir: 'up' | 'down') {
@@ -396,6 +411,7 @@ export default function Configuracoes() {
     setTimeout(() => nomeCatRef.current?.focus(), 0)
   }
   function editarCategoria(c: Categoria) {
+    setMobileView('form')
     const { id, ...rest } = c
     setFormCat(rest); setEditCatId(id)
     setErroCat('')
@@ -406,9 +422,11 @@ export default function Configuracoes() {
     if (editCatId) {
       setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...formCat, ativa:true} : c))
       toast('Categoria atualizada')
+      setMobileView('list')
     } else {
       setCategorias(prev => [...prev, {id:gerarId(),...formCat, ativa:true}])
       toast('Categoria criada')
+      setMobileView('list')
     }
     novaCategoria()
   }
@@ -416,6 +434,7 @@ export default function Configuracoes() {
     if (!window.confirm('Excluir esta categoria?')) return
     setCategorias(prev => prev.filter(c => c.id!==id))
     if (editCatId===id) { setEditCatId(null); setFormCat({...catVazia, tipo:abaCat}) }
+    setMobileView('list')
     toast('Categoria excluída', 'info')
   }
   function toggleAtiva(id: string) {
@@ -490,9 +509,13 @@ export default function Configuracoes() {
 
       {/* ABAS PRINCIPAIS */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 24px 0', display:'flex', gap:3, flexShrink:0 }}>
-        {([['bancos','Bancos'],['cartoes','Cartões de Crédito'],['categorias','Grupos/Categorias'],['perfil','Perfil'],['preferencias','Preferências']] as const).map(([v,l]) => (
-          <button key={v} onClick={() => { setAba(v); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
+        padding: isMobile ? '8px 12px 0' : '10px 24px 0',
+        display:'flex', gap:3, flexShrink:0,
+        overflowX: isMobile ? 'auto' : 'visible',
+        WebkitOverflowScrolling: 'touch' as never,
+      }}>
+        {([['bancos','Bancos'],['cartoes','Cartões'],['categorias','Categorias'],['perfil','Perfil'],['preferencias','Preferências']] as const).map(([v,l]) => (
+          <button key={v} onClick={() => { setAba(v); setMobileView('list'); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
             padding:'7px 16px', borderRadius:'8px 8px 0 0',
             border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
             cursor:'pointer', fontSize:12, fontWeight:aba===v ? 700 : 500, fontFamily:'inherit',
@@ -504,12 +527,12 @@ export default function Configuracoes() {
       </div>
 
       {/* CONTEÚDO */}
-      <div style={{ flex:1, overflowY:'auto', display:'flex', padding:20, gap:16 }}>
+      <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? 12 : 20, gap:16 }}>
 
         {/* ══ ABA BANCOS / CARTÕES ══ */}
         {(aba==='bancos' || aba==='cartoes') && (
           <>
-            <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
+            <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
               <div style={{ display:'flex', justifyContent:'space-between',
                 alignItems:'center', marginBottom:14 }}>
                 <div>
@@ -525,6 +548,12 @@ export default function Configuracoes() {
                     })()}
                   </p>
                 </div>
+                {isMobile && (
+                  <button onClick={() => { novaConta(); setMobileView('form') }} style={{
+                    padding:'8px 14px', border:'none', borderRadius:8,
+                    background:COR.azul, color:'#fff', fontSize:13, fontWeight:600,
+                    cursor:'pointer', fontFamily:'inherit' }}>+ Novo</button>
+                )}
               </div>
 
               <div style={{ overflowY:'auto', flex:1 }}>
@@ -611,16 +640,25 @@ export default function Configuracoes() {
 
             {/* Formulário conta */}
             <div onKeyDown={e => { if (e.key==='Enter' && (e.target as HTMLElement).tagName==='INPUT') salvarConta() }}
-              style={{ width:340, flexShrink:0, background:COR.branco,
+              style={{ width: isMobile ? '100%' : 340, flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
-                padding:20, overflowY:'auto' }}>
+                padding:20, overflowY:'auto',
+                display: isMobile && mobileView==='list' ? 'none' : 'block' }}>
+                {isMobile && (
+                  <button onClick={() => setMobileView('list')} style={{
+                    display:'flex', alignItems:'center', gap:4, marginBottom:14,
+                    border:'none', background:'transparent', cursor:'pointer',
+                    fontSize:13, color:COR.azul, fontFamily:'inherit', fontWeight:500, padding:0 }}>
+                    ← Voltar
+                  </button>
+                )}
                 <div style={{ display:'flex', justifyContent:'space-between',
                   alignItems:'center', marginBottom:18 }}>
                   <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
                     {editContaId ? 'Editar conta' : 'Nova conta'}
                   </h3>
                   {editContaId && (
-                    <button onClick={() => novaConta()} title="Cancelar edição" style={{
+                    <button onClick={() => { novaConta(); setMobileView('list') }} title="Cancelar edição" style={{
                       border:'none', background:'transparent',
                       cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
                   )}
@@ -836,8 +874,8 @@ export default function Configuracoes() {
               ))}
             </div>
             {subAbaCat === 'categorias' && (
-            <div style={{ flex:1, display:'flex', gap:16, minWidth:0, overflow:'hidden' }}>
-            <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
+            <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
+            <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
               <div style={{ display:'flex', justifyContent:'space-between',
                 alignItems:'center', marginBottom:14 }}>
                 <div>
@@ -846,13 +884,19 @@ export default function Configuracoes() {
                     {categorias.filter(c=>c.ativa).length} ativas de {categorias.length}
                   </p>
                 </div>
-                {temSugestoesPendentes && (
+                {temSugestoesPendentes && !isMobile && (
                   <button onClick={importarSugestoes} style={{
                     padding:'7px 14px', border:`1px solid ${COR.borda}`, borderRadius:8,
                     background:COR.branco, color:COR.textoSuave, fontSize:12, fontWeight:500,
                     cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5 }}>
                     ✨ Importar sugestões
                   </button>
+                )}
+                {isMobile && (
+                  <button onClick={() => { novaCategoria(); setMobileView('form') }} style={{
+                    padding:'8px 14px', border:'none', borderRadius:8,
+                    background:COR.azul, color:'#fff', fontSize:13, fontWeight:600,
+                    cursor:'pointer', fontFamily:'inherit' }}>+ Nova</button>
                 )}
               </div>
 
@@ -931,16 +975,25 @@ export default function Configuracoes() {
 
             {/* Formulário categoria */}
             <div onKeyDown={e => { if (e.key==='Enter' && (e.target as HTMLElement).tagName==='INPUT') salvarCategoria() }}
-              style={{ width:340, flexShrink:0, background:COR.branco,
+              style={{ width: isMobile ? '100%' : 340, flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
-                padding:20, overflowY:'auto' }}>
+                padding:20, overflowY:'auto',
+                display: isMobile && mobileView==='list' ? 'none' : 'block' }}>
+                {isMobile && (
+                  <button onClick={() => setMobileView('list')} style={{
+                    display:'flex', alignItems:'center', gap:4, marginBottom:14,
+                    border:'none', background:'transparent', cursor:'pointer',
+                    fontSize:13, color:COR.azul, fontFamily:'inherit', fontWeight:500, padding:0 }}>
+                    ← Voltar
+                  </button>
+                )}
                 <div style={{ display:'flex', justifyContent:'space-between',
                   alignItems:'center', marginBottom:18 }}>
                   <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
                     {editCatId ? 'Editar categoria' : 'Nova categoria'}
                   </h3>
                   {editCatId && (
-                    <button onClick={novaCategoria} title="Cancelar edição" style={{
+                    <button onClick={() => { novaCategoria(); setMobileView('list') }} title="Cancelar edição" style={{
                       border:'none', background:'transparent',
                       cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
                   )}
@@ -1196,14 +1249,22 @@ export default function Configuracoes() {
               </div>
             </div>)}
             {subAbaCat === 'grupos' && (
-              <div style={{ flex:1, display:'flex', gap:16, minWidth:0, overflow:'hidden' }}>
+              <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
                 {/* Lista de grupos */}
-                <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6 }}>
-                  <div style={{ marginBottom:4 }}>
+                <div style={{ flex:1, overflowY:'auto', display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', gap:6 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+                    <div>
                     <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 4px' }}>Grupos</h2>
                     <p style={{ fontSize:12, color:COR.textoSuave, margin:0 }}>
                       Organize suas categorias em grupos para facilitar a visualização.
                     </p>
+                    </div>
+                    {isMobile && (
+                      <button onClick={() => { setEditGrupo(null); setNovoGrupoNome(''); setMobileView('form') }} style={{
+                        padding:'8px 14px', border:'none', borderRadius:8,
+                        background:COR.azul, color:'#fff', fontSize:13, fontWeight:600,
+                        cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>+ Novo</button>
+                    )}
                   </div>
                   {todosGrupos.filter(g => g !== 'Cartão de Crédito').map(g => {
                     const count = categorias.filter(c => c.grupo === g).length
@@ -1213,7 +1274,7 @@ export default function Configuracoes() {
                     const selecionado = editGrupo === g
                     return (
                       <div key={g}
-                        onClick={() => { setEditGrupo(g); setEditGrupoNome(g); setEditGrupoTipo(tipoG) }}
+                        onClick={() => { setEditGrupo(g); setEditGrupoNome(g); setEditGrupoTipo(tipoG); setMobileView('form') }}
                         style={{
                           background: selecionado ? '#eff6ff' : COR.branco,
                           border: `1.5px solid ${selecionado ? COR.azul : COR.borda}`,
@@ -1251,15 +1312,24 @@ export default function Configuracoes() {
                 </div>
 
                 {/* Formulário de grupo */}
-                <div style={{ width:300, flexShrink:0, background:COR.branco,
+                <div style={{ width: isMobile ? '100%' : 300, flexShrink:0, background:COR.branco,
                   border:`1px solid ${COR.borda}`, borderRadius:12,
-                  padding:20, overflowY:'auto' }}>
+                  padding:20, overflowY:'auto',
+                  display: isMobile && mobileView==='list' ? 'none' : 'block' }}>
+                  {isMobile && (
+                    <button onClick={() => { setEditGrupo(null); setMobileView('list') }} style={{
+                      display:'flex', alignItems:'center', gap:4, marginBottom:14,
+                      border:'none', background:'transparent', cursor:'pointer',
+                      fontSize:13, color:COR.azul, fontFamily:'inherit', fontWeight:500, padding:0 }}>
+                      ← Voltar
+                    </button>
+                  )}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
                     <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
                       {editGrupo ? 'Editar grupo' : 'Novo grupo'}
                     </h3>
                     {editGrupo && (
-                      <button onClick={() => setEditGrupo(null)} title="Cancelar" style={{
+                      <button onClick={() => { setEditGrupo(null); setMobileView('list') }} title="Cancelar" style={{
                         border:'none', background:'transparent', cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
                     )}
                   </div>
@@ -1317,12 +1387,14 @@ export default function Configuracoes() {
                           }
                           setGruposExtraTipos(prev => ({...prev, [nome||editGrupo]: editGrupoTipo}))
                           setEditGrupo(null)
+                          setMobileView('list')
                         } else {
                           const nome = novoGrupoNome.trim()
                           if (!nome || todosGrupos.includes(nome)) return
                           setGruposExtra(prev => [...prev, nome].sort())
                           setGruposExtraTipos(prev => ({...prev, [nome]: novoGrupoTipo}))
                           setNovoGrupoNome('')
+                          setMobileView('list')
                         }
                       }} style={{
                         flex:2, padding:'10px 0', border:'none', borderRadius:8,
