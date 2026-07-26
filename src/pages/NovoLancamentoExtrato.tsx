@@ -1382,6 +1382,7 @@ export default function NovoLancamentoExtrato() {
                 ))}
               </select>
             ) : (
+            <>
             <select ref={categoriaSelectRef} autoFocus value={fCat}
               onChange={e => {
                 const nome = e.target.value
@@ -1423,6 +1424,7 @@ export default function NovoLancamentoExtrato() {
                 </div>
               </div>
             )}
+            </>
             )}
           </div>
           <div>
