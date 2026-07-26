@@ -158,8 +158,8 @@ export default function Acompanhamento() {
   }
 
   // ── Linha de categoria ─────────────────────────────────────────────────
-  function CatRow({ uid, nome, prev, realBanc, realCart, lancamentos, isEntrada }: {
-    uid: string; nome: string; prev: number; realBanc: number; realCart: number
+  function CatRow({ uid, nome, descricao, prev, realBanc, realCart, lancamentos, isEntrada }: {
+    uid: string; nome: string; descricao?: string; prev: number; realBanc: number; realCart: number
     lancamentos: Lanc[]; isEntrada?: boolean
   }) {
     const aberto = abertos.has(uid)
@@ -199,8 +199,14 @@ export default function Acompanhamento() {
           <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:0}}>
             <div style={{width:30,height:30,borderRadius:8,background:corIcone,flexShrink:0,
               display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{icone}</div>
-            <span style={{fontSize:13,fontWeight:600,color:COR.texto,
-              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{nome}</span>
+            <div style={{display:'flex',flexDirection:'column',minWidth:0}}>
+              <span style={{fontSize:13,fontWeight:600,color:COR.texto,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{nome}</span>
+              {descricao && (
+                <span style={{fontSize:10,color:COR.textoSuave,
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{descricao}</span>
+              )}
+            </div>
           </div>
 
           {/* Três caixinhas */}
@@ -330,22 +336,22 @@ export default function Acompanhamento() {
     const bordaGrupo  = isEntrada ? '#bbf7d0' : '#fecaca'
 
     return grupos.map(grupo => {
-      const catsRaw = planCats.filter(cat => {
+      const catsPlan = planCats.filter(cat => {
         const g = categorias.find((c: Categoria) => c.nome === cat.nome && c.tipo === tipo)?.grupo ?? '__sem_grupo__'
         return g === grupo
       })
-      // Deduplica por nome somando valores previstos (plano pode ter entradas duplicadas)
-      const seenMap = new Map<string, number[]>()
-      for (const cat of catsRaw) {
-        if (seenMap.has(cat.nome)) {
-          const prev = seenMap.get(cat.nome)!
-          seenMap.set(cat.nome, prev.map((val, i) => val + (cat.v[i] ?? 0)))
-        } else {
-          seenMap.set(cat.nome, [...cat.v])
-        }
-      }
-      const catsPlan = Array.from(seenMap.entries()).map(([nome, v]) => ({ nome, v }))
       if (catsPlan.length === 0) return null
+
+      // Para nomes duplicados no plano, pareia com a nª categoria do cadastro (pela ordem)
+      const nomeOcorrencia = new Map<string, number>()
+      const catsComDesc = catsPlan.map(cat => {
+        const ocorrencia = nomeOcorrencia.get(cat.nome) ?? 0
+        nomeOcorrencia.set(cat.nome, ocorrencia + 1)
+        const matching = categorias.filter((c: Categoria) => c.nome === cat.nome && c.tipo === tipo)
+        const descricao = matching[ocorrencia]?.descricao ?? ''
+        return { ...cat, descricao }
+      })
+
       return (
         <div key={grupo} style={{marginBottom:4}}>
           {/* Cabeçalho do grupo */}
@@ -362,7 +368,7 @@ export default function Acompanhamento() {
 
           {/* Categorias */}
           <div style={{background:COR.branco}}>
-            {catsPlan.map((cat, idx) => {
+            {catsComDesc.map((cat, idx) => {
               const cd  = realMap[cat.nome]
               const uid = `${tipo}-${grupo}-${cat.nome}-${idx}`
               return (
@@ -370,6 +376,7 @@ export default function Acompanhamento() {
                   key={uid}
                   uid={uid}
                   nome={cat.nome}
+                  descricao={cat.descricao}
                   prev={cat.v[mes]??0}
                   realBanc={cd?.totalBanc??0}
                   realCart={cd?.totalCart??0}
