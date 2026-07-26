@@ -27,6 +27,7 @@ export default function ExtratoDinheiro() {
   const [ano,  setAno]  = useState(hoje.getFullYear())
   const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
   const [fCat,     setFCat]     = useState('')
+  const [fSubDesc, setFSubDesc] = useState('')
   const [fValor,   setFValor]   = useState('')
   const [fDesc,    setFDesc]    = useState('')
   const [fDia,     setFDia]     = useState(hoje.getDate())
@@ -42,6 +43,10 @@ export default function ExtratoDinheiro() {
   , [categorias])
 
   const catsFiltradas = catsDinheiro.filter(c => c.tipo === fTipo)
+  const catsSelect = catsFiltradas.filter((c, idx, arr) => arr.findIndex(x => x.nome === c.nome) === idx)
+  const subDescsDisponiveis = fCat
+    ? catsFiltradas.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!)
+    : []
 
   const { totalEnt, totalSai } = useMemo(() => {
     let totalEnt = 0, totalSai = 0
@@ -63,7 +68,7 @@ export default function ExtratoDinheiro() {
         const lancs = { ...prev.lancamentos }
         for (const d of Object.keys(lancs)) {
           lancs[+d] = (lancs[+d] as Lancamento[]).map(l =>
-            l.id === editId ? { ...l, tipo:fTipo, categoria:fCat, valor, descricao:fDesc } : l
+            l.id === editId ? { ...l, tipo:fTipo, categoria:fCat, subCategoria:fSubDesc||undefined, valor, descricao:fDesc } : l
           )
         }
         return { ...prev, lancamentos: lancs }
@@ -75,11 +80,11 @@ export default function ExtratoDinheiro() {
         ...prev,
         lancamentos: {
           ...prev.lancamentos,
-          [fDia]: [...(prev.lancamentos[fDia] ?? []), { id, tipo:fTipo, categoria:fCat, valor, descricao:fDesc, formaPagamento:'dinheiro', tipoLanc:'variavel' }],
+          [fDia]: [...(prev.lancamentos[fDia] ?? []), { id, tipo:fTipo, categoria:fCat, subCategoria:fSubDesc||undefined, valor, descricao:fDesc, formaPagamento:'dinheiro', tipoLanc:'variavel' }],
         },
       }))
     }
-    setFValor(''); setFDesc(''); setFCat('');
+    setFValor(''); setFDesc(''); setFCat(''); setFSubDesc('');
   }
 
   function excluir(dia: number, id: string) {
@@ -94,7 +99,7 @@ export default function ExtratoDinheiro() {
   }
 
   function editar(dia: number, l: Lancamento) {
-    setFDia(dia); setFTipo(l.tipo); setFCat(l.categoria)
+    setFDia(dia); setFTipo(l.tipo); setFCat(l.categoria); setFSubDesc(l.subCategoria ?? '')
     setFValor(l.valor.toFixed(2).replace('.',',')); setFDesc(l.descricao)
     setEditId(l.id)
   }
@@ -176,12 +181,31 @@ export default function ExtratoDinheiro() {
           {/* Categoria */}
           <div style={{ flex:1, minWidth:160 }}>
             <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600, marginBottom:4 }}>Categoria</div>
-            <select value={fCat} onChange={e => setFCat(e.target.value)} style={{
+            <select value={fCat} onChange={e => { setFCat(e.target.value); setFSubDesc('') }} style={{
               width:'100%', padding:'7px 10px', borderRadius:8, border:`1px solid ${COR.borda}`,
               fontSize:12, fontFamily:'inherit', color:fCat?COR.texto:COR.textoSuave, background:COR.branco }}>
               <option value=''>Selecione...</option>
-              {catsFiltradas.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+              {catsSelect.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </select>
+            {subDescsDisponiveis.length > 1 && (
+              <div style={{marginTop:6}}>
+                <div style={{fontSize:9,color:COR.textoSuave,fontWeight:600,
+                  textTransform:'uppercase',letterSpacing:.4,marginBottom:4}}>Qual variante?</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                  {subDescsDisponiveis.map(desc => (
+                    <button key={desc} type="button"
+                      onClick={() => setFSubDesc(desc === fSubDesc ? '' : desc)}
+                      style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:600,
+                        border:`1.5px solid ${fSubDesc===desc?COR.azul:COR.borda}`,
+                        background:fSubDesc===desc?COR.azul:'#eff6ff',
+                        color:fSubDesc===desc?'#fff':COR.azul,
+                        cursor:'pointer',fontFamily:'inherit'}}>
+                      {desc}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Valor */}
