@@ -73,15 +73,14 @@ const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
 const FORMAS_SAI: { id: FormaPag; label: string }[] = [
   { id:'debito',        label:'Débito'        },
+  { id:'dinheiro',      label:'Dinheiro'      },
   { id:'pix',           label:'Pix'           },
   { id:'transferencia', label:'Transferência' },
-  { id:'dinheiro',      label:'Dinheiro'      },
 ]
 const FORMAS_ENT: { id: FormaPag; label: string }[] = [
-  { id:'credito',       label:'Crédito'       },
+  { id:'dinheiro',      label:'Dinheiro'      },
   { id:'pix',           label:'Pix'           },
   { id:'transferencia', label:'Transferência' },
-  { id:'dinheiro',      label:'Dinheiro'      },
 ]
 
 function realcarFoco(e: React.FocusEvent<HTMLElement>) {
@@ -114,7 +113,7 @@ function formaRecebCategoria(fp: string | undefined, mov: string | undefined): F
   if (mov === 'dinheiro') return 'dinheiro'
   if (fp === 'pix') return 'pix'
   if (fp === 'transferencia') return 'transferencia'
-  return 'credito'
+  return 'pix'
 }
 
 export default function NovoLancamentoExtrato() {
@@ -730,7 +729,7 @@ export default function NovoLancamentoExtrato() {
             {(['saida','entrada'] as const).map(t=>(
               <button key={t} onClick={()=>{
                 setFTipo(t)
-                setFPag(t==='entrada'?'credito':'debito')
+                setFPag(t==='entrada'?'pix':'debito')
               }} style={{
                 padding:'5px 14px',border:'none',borderRadius:5,cursor:'pointer',
                 fontSize:12,fontWeight:500,fontFamily:'inherit',

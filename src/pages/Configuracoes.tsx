@@ -261,10 +261,13 @@ export default function Configuracoes() {
   const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('todas')
   const [subAbaCat,   setSubAbaCat]   = useState<'categorias'|'grupos'>('categorias')
   const [novoGrupoNome,  setNovoGrupoNome]  = useState('')
+  const [novoGrupoTipo,  setNovoGrupoTipo]  = useState<TipoCategoria>('saida')
   const [editGrupo,      setEditGrupo]      = useState<string|null>(null)
   const [editGrupoNome,  setEditGrupoNome]  = useState('')
+  const [editGrupoTipo,  setEditGrupoTipo]  = useState<TipoCategoria>('saida')
   const [gruposExtra,    setGruposExtra]    = useState<string[]>([])
   const [gruposOcultos,  setGruposOcultos]  = useState<string[]>([])
+  const [gruposExtraTipos, setGruposExtraTipos] = useState<Record<string, TipoCategoria>>({})
 
   useEffect(() => {
     const st = location.state as { aba?: string; catNome?: string } | null
@@ -813,6 +816,12 @@ export default function Configuracoes() {
             ...categorias.map(c => c.grupo).filter((g): g is string => !!g && !GRUPOS_PADRAO.includes(g)),
           ])).sort()
           const todosGrupos = [...GRUPOS_PADRAO.filter(g => !gruposOcultos.includes(g)), ...gruposCustom].sort((a,b) => a.localeCompare(b,'pt-BR'))
+          const gruposParaTipo = todosGrupos.filter(g =>
+            g !== 'Cartão de Crédito' && (
+              !categorias.some(c => c.grupo === g && c.ativa) ||
+              categorias.some(c => c.grupo === g && c.tipo === formCat.tipo && c.ativa)
+            )
+          )
           return (
           <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0, overflow:'hidden' }}>
             {/* Sub-abas: Categorias / Grupos */}
@@ -946,34 +955,7 @@ export default function Configuracoes() {
                 </div>
 
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                  {/* Grupo */}
-                  <div>
-                    <label style={labelSt}>Grupo</label>
-                    <select
-                      value={formCat.grupo && !todosGrupos.includes(formCat.grupo) ? '__outro__' : (formCat.grupo ?? '')}
-                      onChange={e => {
-                        if (e.target.value === '__outro__') setFormCat(p=>({...p, grupo:''}))
-                        else setFormCat(p=>({...p, grupo: e.target.value || undefined}))
-                      }}
-                      className="campo-cfg" style={{...inputSt, cursor:'pointer'}}>
-                      <option value="">Selecione um grupo...</option>
-                      {todosGrupos.map(g => <option key={g} value={g}>{g}</option>)}
-                      <option value="__outro__">Outro...</option>
-                    </select>
-                    {formCat.grupo != null && !todosGrupos.includes(formCat.grupo) && (
-                      <input value={formCat.grupo}
-                        onChange={e => setFormCat(p=>({...p, grupo: e.target.value || undefined}))}
-                        placeholder="Nome do grupo personalizado"
-                        className="campo-cfg" style={{...inputSt, marginTop:6}} />
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={labelSt}>Nome da categoria</label>
-                    <input ref={nomeCatRef} value={formCat.nome}
-                      onChange={e => setFormCat(p=>({...p, nome:e.target.value}))}
-                      placeholder="Ex: Supermercado, Lazer..." className="campo-cfg" style={inputSt} />
-                  </div>
+                  {/* Movimentação — primeiro campo */}
                   <div>
                     <label style={labelSt}>Movimentação</label>
                     <div style={{ display:'flex', gap:6 }}>
@@ -981,7 +963,7 @@ export default function Configuracoes() {
                         <button key={v}
                           ref={el => { tipoCatRefs.current[i] = el }}
                           tabIndex={formCat.tipo===v ? 0 : -1}
-                          onClick={() => setFormCat(p=>({...p,tipo:v}))}
+                          onClick={() => setFormCat(p=>({...p,tipo:v,grupo:undefined}))}
                           onKeyDown={e => {
                             if (e.key==='ArrowRight'||e.key==='ArrowDown') {
                               e.preventDefault(); const n=tipoCatRefs.current[(i+1)%2]; n?.click(); n?.focus()
@@ -998,6 +980,46 @@ export default function Configuracoes() {
                           {l}
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Grupo — filtrado pela movimentação selecionada */}
+                  <div>
+                    <label style={labelSt}>Grupo</label>
+                    <select
+                      value={formCat.grupo && !gruposParaTipo.includes(formCat.grupo) ? '__outro__' : (formCat.grupo ?? '')}
+                      onChange={e => {
+                        if (e.target.value === '__outro__') setFormCat(p=>({...p, grupo:''}))
+                        else setFormCat(p=>({...p, grupo: e.target.value || undefined}))
+                      }}
+                      className="campo-cfg" style={{...inputSt, cursor:'pointer'}}>
+                      <option value="">Selecione um grupo...</option>
+                      {gruposParaTipo.map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="__outro__">Outro...</option>
+                    </select>
+                    {formCat.grupo != null && !gruposParaTipo.includes(formCat.grupo) && (
+                      <input value={formCat.grupo}
+                        onChange={e => setFormCat(p=>({...p, grupo: e.target.value || undefined}))}
+                        placeholder="Nome do grupo personalizado"
+                        className="campo-cfg" style={{...inputSt, marginTop:6}} />
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={labelSt}>Nome da categoria</label>
+                    <input ref={nomeCatRef} value={formCat.nome}
+                      onChange={e => setFormCat(p=>({...p, nome:e.target.value}))}
+                      placeholder="Ex: Supermercado, Lazer..." className="campo-cfg" style={inputSt} />
+                  </div>
+
+                  <div>
+                    <label style={labelSt}>Variante</label>
+                    <input value={(formCat as any).descricao||''}
+                      onChange={e => setFormCat(p=>({...p, descricao:e.target.value||undefined}))}
+                      placeholder="Ex: Banco, Prefeitura, Fitway..."
+                      className="campo-cfg" style={inputSt} />
+                    <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                      Diferencia categorias de mesmo nome. Aparece nos chips de seleção no lançamento.
                     </div>
                   </div>
                   <div>
@@ -1137,23 +1159,6 @@ export default function Configuracoes() {
                     </div>
                   )}
 
-                  {/* Descrição — só saída fixa */}
-                  {formCat.fixa && formCat.tipo==='saida' && (
-                    <div>
-                      <label style={labelSt}>Descrição</label>
-                      <textarea
-                        value={(formCat as any).descricao||''}
-                        onChange={e => setFormCat(p=>({...p, descricao:e.target.value}))}
-                        placeholder="Ex: Parcela do financiamento, vence todo dia 10..."
-                        rows={3}
-                        className="campo-cfg" style={{ ...inputSt, resize:'vertical', lineHeight:1.5 }}
-                      />
-                      <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
-                        Aparece como observação no lançamento automático desta conta fixa.
-                      </div>
-                    </div>
-                  )}
-
                   <div>
                     <label style={labelSt}>Ícone</label>
                     <IconPicker icones={ICONES_CAT} valor={formCat.icone}
@@ -1191,96 +1196,142 @@ export default function Configuracoes() {
               </div>
             </div>)}
             {subAbaCat === 'grupos' && (
-              <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:16 }}>
-                <div>
-                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 4px' }}>Grupos</h2>
-                  <p style={{ fontSize:12, color:COR.textoSuave, margin:0 }}>
-                    Organize suas categorias em grupos para facilitar a visualização.
-                  </p>
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {todosGrupos.map(g => {
+              <div style={{ flex:1, display:'flex', gap:16, minWidth:0, overflow:'hidden' }}>
+                {/* Lista de grupos */}
+                <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6 }}>
+                  <div style={{ marginBottom:4 }}>
+                    <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 4px' }}>Grupos</h2>
+                    <p style={{ fontSize:12, color:COR.textoSuave, margin:0 }}>
+                      Organize suas categorias em grupos para facilitar a visualização.
+                    </p>
+                  </div>
+                  {todosGrupos.filter(g => g !== 'Cartão de Crédito').map(g => {
                     const count = categorias.filter(c => c.grupo === g).length
                     const isPadrao = GRUPOS_PADRAO.includes(g)
-                    const editando = editGrupo === g
+                    const tipoG: TipoCategoria = gruposExtraTipos[g]
+                      ?? (categorias.some(c => c.grupo === g && c.tipo === 'entrada') ? 'entrada' : 'saida')
+                    const selecionado = editGrupo === g
                     return (
-                      <div key={g} style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:10, padding:'10px 14px', display:'flex', alignItems:'center', gap:10 }}>
-                        {editando ? (
-                          <input autoFocus value={editGrupoNome} onChange={e => setEditGrupoNome(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                const nome = editGrupoNome.trim()
-                                if (nome && nome !== g) {
-                                  setCategorias(prev => prev.map(c => c.grupo === g ? {...c, grupo: nome} : c))
-                                  setGruposExtra(prev => prev.map(x => x === g ? nome : x))
-                                }
-                                setEditGrupo(null)
-                              } else if (e.key === 'Escape') setEditGrupo(null)
-                            }}
-                            className="campo-cfg" style={{ flex:1, fontSize:13, padding:'4px 8px', border:`1.5px solid ${COR.azul}`, borderRadius:6, outline:'none', fontFamily:'inherit' }} />
-                        ) : (
-                          <span style={{ flex:1, fontSize:13, fontWeight:600, color:COR.texto }}>{g}</span>
-                        )}
+                      <div key={g}
+                        onClick={() => { setEditGrupo(g); setEditGrupoNome(g); setEditGrupoTipo(tipoG) }}
+                        style={{
+                          background: selecionado ? '#eff6ff' : COR.branco,
+                          border: `1.5px solid ${selecionado ? COR.azul : COR.borda}`,
+                          borderRadius:10, padding:'10px 14px',
+                          display:'flex', alignItems:'center', gap:10, cursor:'pointer',
+                        }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>{g}</div>
+                          <div style={{ fontSize:10, color: tipoG==='entrada' ? COR.verde : COR.vermelho, marginTop:1, fontWeight:500 }}>
+                            {tipoG === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                          </div>
+                        </div>
                         <span style={{ fontSize:11, color:COR.textoSuave, background:'#f1f5f9', padding:'2px 8px', borderRadius:10, flexShrink:0 }}>
                           {count} {count === 1 ? 'categoria' : 'categorias'}
                         </span>
-                        {!editando && (
-                          <>
-                            <button onClick={() => { setEditGrupo(g); setEditGrupoNome(g) }} title="Renomear" style={{
-                              border:'none', background:'transparent', cursor:'pointer', fontSize:14, color:COR.textoSuave, padding:'2px 4px' }}>✏</button>
-                            <button onClick={() => {
-                              const msg = count > 0 ? `Remover grupo "${g}"? As ${count} categorias ficarão sem grupo.` : `Remover grupo "${g}"?`
-                              if (window.confirm(msg)) {
-                                setCategorias(prev => prev.map(c => c.grupo === g ? {...c, grupo: undefined} : c))
-                                if (isPadrao) setGruposOcultos(prev => [...prev, g])
-                                else setGruposExtra(prev => prev.filter(x => x !== g))
-                              }
-                            }} title="Excluir" style={{
-                              border:'none', background:'transparent', cursor:'pointer', fontSize:14, color:COR.vermelho, padding:'2px 4px' }}>✕</button>
-                          </>
-                        )}
-                        {editando && (
-                          <button onClick={() => {
-                            const nome = editGrupoNome.trim()
-                            if (nome && nome !== g) {
-                              setCategorias(prev => prev.map(c => c.grupo === g ? {...c, grupo: nome} : c))
-                              if (isPadrao) {
-                                setGruposOcultos(prev => [...prev, g])
-                                if (!GRUPOS_PADRAO.includes(nome)) setGruposExtra(prev => [...prev, nome].sort())
-                              } else {
-                                setGruposExtra(prev => prev.map(x => x === g ? nome : x))
-                              }
+                        {!isPadrao && (
+                          <button onClick={e => {
+                            e.stopPropagation()
+                            const msg = count > 0
+                              ? `Remover grupo "${g}"? As ${count} categorias ficarão sem grupo.`
+                              : `Remover grupo "${g}"?`
+                            if (window.confirm(msg)) {
+                              setCategorias(prev => prev.map(c => c.grupo === g ? {...c, grupo:undefined} : c))
+                              setGruposExtra(prev => prev.filter(x => x !== g))
+                              setGruposExtraTipos(prev => { const n={...prev}; delete n[g]; return n })
+                              if (editGrupo === g) setEditGrupo(null)
                             }
-                            setEditGrupo(null)
-                          }} style={{ border:'none', background:COR.azul, color:'#fff', cursor:'pointer', fontSize:11, padding:'3px 10px', borderRadius:5, fontFamily:'inherit', fontWeight:600 }}>OK</button>
+                          }} title="Excluir" style={{
+                            border:'none', background:'transparent', cursor:'pointer',
+                            fontSize:14, color:COR.vermelho, padding:'2px 4px', flexShrink:0 }}>✕</button>
                         )}
                       </div>
                     )
                   })}
                 </div>
-                <div style={{ background:COR.branco, border:`1.5px dashed ${COR.borda}`, borderRadius:10, padding:'12px 14px' }}>
-                  <div style={{ fontSize:12, fontWeight:600, color:COR.textoSuave, marginBottom:8 }}>Novo grupo</div>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <input value={novoGrupoNome} onChange={e => setNovoGrupoNome(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
+
+                {/* Formulário de grupo */}
+                <div style={{ width:300, flexShrink:0, background:COR.branco,
+                  border:`1px solid ${COR.borda}`, borderRadius:12,
+                  padding:20, overflowY:'auto' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+                    <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
+                      {editGrupo ? 'Editar grupo' : 'Novo grupo'}
+                    </h3>
+                    {editGrupo && (
+                      <button onClick={() => setEditGrupo(null)} title="Cancelar" style={{
+                        border:'none', background:'transparent', cursor:'pointer', fontSize:18, color:COR.textoSuave }}>✕</button>
+                    )}
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                    <div>
+                      <label style={labelSt}>Movimentação</label>
+                      <div style={{ display:'flex', gap:6 }}>
+                        {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l]) => {
+                          const cur = editGrupo ? editGrupoTipo : novoGrupoTipo
+                          const set = editGrupo ? setEditGrupoTipo : setNovoGrupoTipo
+                          return (
+                            <button key={v} onClick={() => set(v as TipoCategoria)} style={{
+                              flex:1, padding:'7px 0', fontFamily:'inherit',
+                              border:`1.5px solid ${cur===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.borda}`,
+                              borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                              background: cur===v ? (v==='entrada' ? '#f0fdf4' : '#fff1f2') : COR.branco,
+                              color: cur===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave }}>
+                              {l}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={labelSt}>Nome do grupo</label>
+                      <input
+                        value={editGrupo ? editGrupoNome : novoGrupoNome}
+                        onChange={e => editGrupo ? setEditGrupoNome(e.target.value) : setNovoGrupoNome(e.target.value)}
+                        placeholder="Ex: Moradia, Transporte..."
+                        className="campo-cfg" style={inputSt} />
+                    </div>
+                    <div style={{ display:'flex', gap:8, marginTop:4 }}>
+                      {editGrupo && (
+                        <button onClick={() => setEditGrupo(null)} style={{
+                          flex:1, padding:'10px 0', border:`1.5px solid ${COR.borda}`,
+                          borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:500,
+                          background:COR.branco, color:COR.textoSuave, fontFamily:'inherit' }}>
+                          Cancelar
+                        </button>
+                      )}
+                      <button onClick={() => {
+                        if (editGrupo) {
+                          const nome = editGrupoNome.trim()
+                          if (!nome) return
+                          if (nome !== editGrupo) {
+                            setCategorias(prev => prev.map(c => c.grupo === editGrupo ? {...c, grupo:nome} : c))
+                            const isPadrao = GRUPOS_PADRAO.includes(editGrupo)
+                            if (isPadrao) {
+                              setGruposOcultos(prev => [...prev, editGrupo])
+                              if (!GRUPOS_PADRAO.includes(nome)) setGruposExtra(prev => [...prev, nome].sort())
+                            } else {
+                              setGruposExtra(prev => prev.map(x => x === editGrupo ? nome : x))
+                            }
+                            setGruposExtraTipos(prev => { const n={...prev}; if(prev[editGrupo]) n[nome]=prev[editGrupo]; delete n[editGrupo]; return n })
+                          }
+                          setGruposExtraTipos(prev => ({...prev, [nome||editGrupo]: editGrupoTipo}))
+                          setEditGrupo(null)
+                        } else {
                           const nome = novoGrupoNome.trim()
-                          if (nome && !todosGrupos.includes(nome)) setGruposExtra(prev => [...prev, nome].sort())
+                          if (!nome || todosGrupos.includes(nome)) return
+                          setGruposExtra(prev => [...prev, nome].sort())
+                          setGruposExtraTipos(prev => ({...prev, [nome]: novoGrupoTipo}))
                           setNovoGrupoNome('')
                         }
-                      }}
-                      placeholder="Nome do novo grupo..." className="campo-cfg"
-                      style={{ flex:1, fontSize:13, padding:'7px 10px', border:`1.5px solid ${COR.borda}`, borderRadius:7, outline:'none', fontFamily:'inherit', background:COR.branco, color:COR.texto }} />
-                    <button onClick={() => {
-                      const nome = novoGrupoNome.trim()
-                      if (nome && !todosGrupos.includes(nome)) setGruposExtra(prev => [...prev, nome].sort())
-                      setNovoGrupoNome('')
-                    }} style={{ padding:'7px 16px', border:'none', borderRadius:7, background:COR.azul, color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                      Adicionar
-                    </button>
-                  </div>
-                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:6 }}>
-                    O grupo ficará disponível ao cadastrar ou editar categorias.
+                      }} style={{
+                        flex:2, padding:'10px 0', border:'none', borderRadius:8,
+                        background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                        color:'#fff', fontSize:13, fontWeight:600,
+                        cursor:'pointer', fontFamily:'inherit' }}>
+                        {editGrupo ? 'Salvar alterações' : 'Adicionar grupo'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
