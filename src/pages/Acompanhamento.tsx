@@ -13,8 +13,6 @@ const COR = {
   verdeFundoGrupo: '#e8fdf0',
 }
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
 function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
 function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
