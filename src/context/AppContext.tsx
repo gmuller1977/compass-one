@@ -10,7 +10,7 @@ export type TipoCategoria = 'entrada' | 'saida'
 export type FormaPagLanc  = 'debito' | 'pix' | 'transferencia' | 'dinheiro'
 export type TipoLanc      = 'entrada' | 'saida'
 export type TipoMovimento = 'banco' | 'cartao' | 'dinheiro'
-export type FormaPagamentoBanco  = 'automatico' | 'manual' | 'pix' | 'boleto' | 'transferencia'
+export type FormaPagamentoBanco  = 'automatico' | 'debito' | 'pix' | 'boleto' | 'transferencia'
 export type FormaPagamentoCartao = 'avista' | 'parcelado'
 export type FormaPagamentoCategoria = FormaPagamentoBanco | FormaPagamentoCartao
 
@@ -25,6 +25,7 @@ export type Conta = {
   formaPagamentoFatura?: FormaPagamentoFatura
   contaPagamentoId?: string
   apelido?: string
+  preferida?: boolean
 }
 
 export type Categoria = {
@@ -171,7 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const catsCarregadas = (map[KEYS.categorias] as Categoria[] | undefined) ?? CATS_INICIAIS
     const catsEfetivas = catsCarregadas.length === 0
       ? CATEGORIAS_PADRAO.map((c, i) => ({ ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` }))
-      : catsCarregadas
+      : catsCarregadas.map((c, i) => (c as { id?: string }).id ? c : { ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` })
     setCategoriasState(catsEfetivas)
     setExtratoState((map[KEYS.extrato]  as Record<string, DadosMes> | undefined) ?? {})
     // Fatura: carrega do Supabase; migra do localStorage se ainda não estiver no Supabase

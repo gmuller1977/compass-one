@@ -577,11 +577,6 @@ export default function FaturaCartao() {
               background:ativo?COR.azul:'#f8faff',
               color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0}}>
               {m}
-              {isAtual && (
-                <span style={{position:'absolute',bottom:3,left:'50%',
-                  transform:'translateX(-50%)',width:4,height:4,
-                  borderRadius:'50%',background:ativo?'#fff':COR.azul,display:'block'}}/>
-              )}
             </button>
           )
         })}

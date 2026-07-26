@@ -70,7 +70,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           planos, setPlanos,
           planosReal, planejamentoLockado,
           finalizarPlanejamento, updatePlanoReal,
-          desvioMinPerc, setDesvioMinPerc } = useApp()
+          desvioMinPerc, setDesvioMinPerc,
+          carregando } = useApp()
 
   const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const SALDO_INICIAL_FIXO = contasSaldoIni
@@ -107,9 +108,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const mountedRef     = useRef(false)
   const skipBlurRef    = useRef(false)
   const [stickyH, setStickyH] = useState(0)
-  const [quizAtivo,        setQuizAtivo]       = useState(() => !planos[anoAtual])
+  const [quizAtivo,        setQuizAtivo]       = useState(false)
   const [quizConcluido,    setQuizConcluido]   = useState(false)
-  const [confirmarRefazer, setConfirmarRefazer] = useState<'refazer' | 'bloqueado' | false>(false)
+  const [confirmarRefazer,   setConfirmarRefazer]   = useState<'refazer' | 'bloqueado' | false>(false)
+  const [confirmarAtualizar, setConfirmarAtualizar] = useState(false)
   const [quizStep,         setQuizStep]        = useState(0)
   const [quizObjetivo,     setQuizObjetivo]    = useState('')
   const [quizConsiderarSaldo, setQuizConsiderarSaldo] = useState<boolean | null>(null)
@@ -130,6 +132,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [sugestoesEditadas, setSugestoesEditadas] = useState<Record<string,string>>({})
   const [viewMode,           setViewMode]          = useState<'grade'|'horizontal'|'vertical'>('grade')
   const [modalMes,           setModalMes]          = useState<number | null>(null)
+  const [copiarMesPrompt,    setCopiarMesPrompt]    = useState<{ origem: number; destino: number } | null>(null)
   const [gruposHorizAbertos, setGruposHorizAbertos] = useState<Set<string>>(new Set())
 
   const quizGruposAtivos = useMemo(() => {
@@ -138,7 +141,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const grupos: string[] = [
       ...GRUPOS_PADRAO.filter(g => saidas.some(c => c.grupo === g)),
       ...Array.from(new Set(saidas.map(c => c.grupo).filter((g): g is string => !!g && !GRUPOS_PADRAO.includes(g)))),
-    ]
+    ].sort((a,b) => a.localeCompare(b,'pt-BR'))
     if (saidas.some(c => !c.grupo)) grupos.push('__sem_grupo__')
     return grupos
   }, [categorias, contas])
@@ -172,11 +175,14 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     if (!salvo) return dadosBase
     const merge = (base: Cat[], saved: Cat[]) => {
       const merged = base.map(cat => {
-        const found = saved.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)
+        // Busca por ID primeiro; só cai em nome para entradas do plano sem ID (dados legados)
+        const found = cat.id
+          ? (saved.find(c => c.id === cat.id) ?? saved.find(c => !c.id && c.nome === cat.nome))
+          : saved.find(c => c.nome === cat.nome)
         return found ? { ...cat, v: found.v } : cat
       })
       const historical = saved.filter(s =>
-        !base.some(b => (b.id && s.id === b.id) || s.nome === b.nome) && s.v.some(v => v !== 0)
+        !base.some(b => (s.id && b.id === s.id) || b.nome === s.nome) && s.v.some(v => v !== 0)
       )
       return [...merged, ...historical].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
     }
@@ -185,8 +191,16 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
   const somaCartaoMes = useMemo(() => {
     const cartCats = dadosAno.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
-    return MESES.map((_, i) => cartCats.reduce((s, c) => s + c.v[i], 0))
-  }, [dadosAno, cartaoNomes])
+    const anoAnterior = planos[anoAtual - 1] as AnoData | undefined
+    const cartCatsAnterior = anoAnterior?.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes)) ?? []
+    return MESES.map((_, i) => {
+      // Fatura do cartão paga no mês i = gastos do mês i-1
+      const somaAnterior = i === 0
+        ? cartCatsAnterior.reduce((s, c) => s + (c.v[11] ?? 0), 0)   // janeiro → dezembro do ano anterior
+        : cartCats.reduce((s, c) => s + c.v[i - 1], 0)
+      return somaAnterior > 0 ? somaAnterior : cartCats.reduce((s, c) => s + c.v[i], 0)
+    })
+  }, [dadosAno, cartaoNomes, planos, anoAtual])
 
   const dadosAnoFinal: AnoData = useMemo(() => ({
     ...dadosAno,
@@ -607,6 +621,29 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       setSaidas(prev => prev.map((c, i) => i === ri ? { ...c, v: c.v.map((v, m) => m > mesOrigem && m <= mesDest ? valor : v) } : c))
     }
   }
+  function mesSemPlano(mi: number): boolean {
+    const temE = dadosAno.entradas.some(c => c.v[mi] > 0)
+    const temS = dadosAno.saidas.some(c => c.v[mi] > 0)
+    return !temE && !temS
+  }
+  function navegarModalMes(miAtual: number, destino: number) {
+    setEditando(null)
+    if (aba === 'previsto' && !bloqueado && mesSemPlano(destino)) {
+      setCopiarMesPrompt({ origem: miAtual, destino })
+    } else {
+      setModalMes(destino)
+    }
+  }
+  function confirmarCopiarMes(origem: number, destino: number) {
+    updateAno(d => ({
+      ...d,
+      entradas: d.entradas.map(c => { const v = [...c.v]; v[destino] = c.v[origem]; return { ...c, v } }),
+      saidas:   d.saidas.map(c =>   { const v = [...c.v]; v[destino] = c.v[origem]; return { ...c, v } }),
+    }))
+    setModalMes(destino)
+    setCopiarMesPrompt(null)
+  }
+
   function copiarAnoAnteriorComReajuste(anoBase: number, anoNovo: number, percReaj: number) {
     const base = planos[anoBase] as AnoData | undefined
     if (!base) return
@@ -802,6 +839,39 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     }
   }, [location.state]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const quizKeyRef = useRef<{
+    quizStep: number; quizObjetivo: string|null; quizConsiderarSaldo: boolean|null
+    quizConcluido: boolean; QUIZ_STEP_RESUMO: number; confirmarQuiz: ()=>void
+  }>({ quizStep, quizObjetivo, quizConsiderarSaldo, quizConcluido, QUIZ_STEP_RESUMO, confirmarQuiz })
+  quizKeyRef.current = { quizStep, quizObjetivo, quizConsiderarSaldo, quizConcluido, QUIZ_STEP_RESUMO, confirmarQuiz }
+
+  useEffect(() => {
+    if (!quizAtivo) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'TEXTAREA') return
+      if (tag === 'BUTTON' && (e.target as HTMLElement).hasAttribute('data-quiz-nav')) return
+      const { quizStep: step, quizObjetivo: obj, quizConsiderarSaldo: saldo,
+              quizConcluido: done, QUIZ_STEP_RESUMO: resumo, confirmarQuiz: confirm } = quizKeyRef.current
+      if (done) return
+      e.preventDefault()
+      const isDisabled = (step===0 && !obj) || (step===2 && saldo===null)
+      if (step < resumo && !isDisabled) setQuizStep(s=>s+1)
+      else if (step === resumo) confirm()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [quizAtivo])
+
+  // Abre o quiz apenas após os dados carregarem (evita sobrescrever plano existente)
+  const quizIniciadoRef = useRef(false)
+  useEffect(() => {
+    if (carregando || quizIniciadoRef.current) return
+    quizIniciadoRef.current = true
+    if (!planos[anoAtual]) setQuizAtivo(true)
+  }, [carregando])
+
   function toggleMes(i: number) {
     setMesesAbertos(prev => {
       const next = new Set(prev)
@@ -839,9 +909,12 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const getGrupoNav = (cat: Cat) => {
       if (tipo === 's') {
         if (nomeFaturaCartao(cat.nome, cartaoNomes)) return 'Cartão de Crédito'
-        return categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+        return (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__'
       }
-      return categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')?.grupo ?? '__sem_grupo__'
+      const catE = cat.id
+        ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada'))
+        : categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')
+      return catE?.grupo ?? '__sem_grupo__'
     }
     const gruposUsadosNav = new Set(lista.map(getGrupoNav))
     const gruposOrdenadosNav = [
@@ -962,7 +1035,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               </span>
             )}
             {!hideTabs && aba === 'previsto' && !planejamentoLockado && (
-              <button onClick={() => finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData)}
+              <button onClick={() => {
+                  if (realExiste) { setConfirmarAtualizar(true) }
+                  else { finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData) }
+                }}
                 style={{ padding:'4px 12px', border:'none', borderRadius:7, cursor:'pointer',
                   fontFamily:'inherit', fontSize:11, fontWeight:600, color:'#fff', whiteSpace:'nowrap' as const,
                   background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
@@ -1701,8 +1777,12 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         {entradasAberto && <div style={{ overflowY:'auto', flex:1, minHeight:0, padding:'4px 8px 0' }}>
                         {(() => {
                           const entradasData = aba === 'real' ? entradasComHistorico : dadosAno.entradas
-                          const getGrupoE = (cat: Cat) =>
-                            categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')?.grupo ?? '__sem_grupo__'
+                          const getGrupoE = (cat: Cat) => {
+                            const found = cat.id
+                              ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada'))
+                              : categorias.find(c => c.nome === cat.nome && c.tipo === 'entrada')
+                            return found?.grupo ?? '__sem_grupo__'
+                          }
                           const gruposUsadosE = new Set(entradasData.map(getGrupoE))
                           const gruposOrdenadosE = [
                             ...Array.from(gruposUsadosE).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
@@ -1766,7 +1846,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                         ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
                                         : 0
                                       const lancado = aba === 'real' ? (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0) : 0
-                                      const isInativa = !(categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.ativa ?? true)
+                                      const isInativa = !((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.ativa ?? true)
                                       if (isInativa && aba === 'real' && previsto === 0 && lancado === 0) return null
                                       if (isInativa && aba !== 'real' && cat.v[mi] === 0) return null
                                       return (
@@ -1923,7 +2003,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           const saidasPlan = dadosAnoFinal.saidas
                           const getGrupo = (cat: Cat) =>
                             nomeFaturaCartao(cat.nome, cartaoNomes) ? 'Cartão de Crédito' :
-                            (categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__')
+                            ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__')
                           const gruposUsados = new Set(saidasPlan.map(getGrupo))
                           const gruposOrdenados = [
                             ...Array.from(gruposUsados).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
@@ -1966,7 +2046,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                   const tm = (categorias.find(c => c.nome === cat.nome && c.tipo === 'saida') ?? categorias.find(c => c.nome === cat.nome))?.tipoMovimento ?? cat.t
                                   const bm = tm ? BADGE_MOV[tm] : null
                                   const ehFatura = nomeFaturaCartao(cat.nome, cartaoNomes)
-                                  const isInativa = !(categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.ativa ?? true)
+                                  const isInativa = !((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.ativa ?? true)
                                   if (isInativa && cat.v[mi] === 0) return null
                                   return (
                                     <div key={ri}
@@ -2013,7 +2093,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           const saidasReal = saidasComHistorico
                           const getGrupoR = (cat: Cat) =>
                             nomeFaturaCartao(cat.nome, cartaoNomes) ? 'Cartão de Crédito' :
-                            (categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__')
+                            ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__')
                           const gruposUsadosR = new Set(saidasReal.map(getGrupoR))
                           const gruposOrdenadosR = [
                             ...Array.from(gruposUsadosR).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
@@ -2078,7 +2158,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                       const lancado = ehFatura
                                         ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) + totalCartaoConsolidado
                                         : (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0)
-                                      const isInativa = !(categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.ativa ?? true)
+                                      const isInativa = !((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.ativa ?? true)
                                       if (isInativa && previsto === 0 && lancado === 0) return null
                                       const prevAbs = ehFatura ? limiteCartaoPorMes[mi] : Math.abs(previsto)
                                       const lancadoDisplay = ehFatura ? totalCartaoConsolidado : lancado
@@ -2341,10 +2421,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               })
               const cartNomesH = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
               const getGE = (cat: Cat) =>
-                categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+                (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__'
               const getGS = (cat: Cat) =>
                 nomeFaturaCartao(cat.nome, cartNomesH) ? 'Cartão de Crédito'
-                : (categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__')
+                : ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__')
 
               const groupBy = (cats: Cat[], fn: (c: Cat) => string): [string, Cat[]][] => {
                 const m = new Map<string, Cat[]>()
@@ -2353,9 +2433,18 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               }
               const gruposE = groupBy(dadosAnoFinal.entradas, getGE)
               const gruposS = groupBy(dadosAnoFinal.saidas,   getGS)
+              const gruposSComCartao: [string, Cat[]][] = (() => {
+                if (somaCartaoMes.every(v => v === 0)) return gruposS
+                if (gruposS.some(([g]) => g === 'Cartão de Crédito')) return gruposS
+                const sintetico: Cat = { id: '__cartao__', nome: 'Cartão de Crédito', t: 'cartao', v: somaCartaoMes }
+                const entry: [string, Cat[]] = ['Cartão de Crédito', [sintetico]]
+                const result: [string, Cat[]][] = [...gruposS]
+                result.unshift(entry)
+                return result
+              })()
 
               const keysE = gruposE.map(([g]) => `e-${g}`)
-              const keysS = gruposS.map(([g]) => `s-${g}`)
+              const keysS = gruposSComCartao.map(([g]) => `s-${g}`)
               const todosEAbertos = keysE.every(k => gruposHorizAbertos.has(k))
               const todosSAbertos = keysS.every(k => gruposHorizAbertos.has(k))
               const toggleAllH = (keys: string[], todosAbertos: boolean) =>
@@ -2562,9 +2651,15 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             {aberto && cats.map(cat => {
                               const row = dadosAnoFinal.entradas.indexOf(cat)
                               const catTotal = cat.v.reduce((a,b)=>a+b,0)
+                              const catCfgE = cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome)
+                              const descE = catCfgE?.descricao
                               return (
                                 <div key={cat.nome} style={{ display:'flex', borderBottom:'1px solid #f1f5f9', background:'#f7fdf9' }}>
-                                  {nameCell(<span style={{ color:'#166534', paddingLeft:24 }}>{cat.nome}</span>, '#f7fdf9')}
+                                  {nameCell(
+                                    <span style={{ color:'#166534', paddingLeft:24, display:'block' }}>
+                                      {cat.nome}
+                                      {descE && <span style={{ display:'block', fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descE}</span>}
+                                    </span>, '#f7fdf9', { whiteSpace:'normal' })}
                                   {cat.v.map((v,mi) => editableCellH(v, mi, 'e', row, '#16a34a', ehAtualMes(mi)?'#ecfdf5':'#f7fdf9'))}
                                   {totalCell(catTotal, '#16a34a', '#f0fdf4', 400)}
                                 </div>
@@ -2591,32 +2686,49 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         {Array.from({length:13}, (_,i) => <div key={i} style={{ flexShrink:0, width:CW, background:'#fff1f2', borderLeft:'1px solid #fecaca' }} />)}
                       </div>
 
-                      {gruposS.map(([grupo, cats]) => {
+                      {gruposSComCartao.map(([grupo, cats]) => {
+                        const ehCartaoGrupo = grupo === 'Cartão de Crédito'
                         const label = grupo === '__sem_grupo__' ? 'Outras saídas' : grupo
                         const key = `s-${grupo}`
                         const aberto = gruposHorizAbertos.has(key)
                         const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
                         const gTotal = gVals.reduce((a,b)=>a+b,0)
+                        const corGrupo = ehCartaoGrupo ? '#6d28d9' : '#b91c1c'
+                        const corVal   = ehCartaoGrupo ? '#7c3aed' : COR.vermelho
                         return (
                           <div key={key}>
                             <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}`, cursor:'pointer' }}
                               onClick={() => toggleH(key)}>
                               {nameCell(
-                                <span style={{ fontWeight:600, color:'#b91c1c', paddingLeft:10 }}>
+                                <span style={{ fontWeight:600, color:corGrupo, paddingLeft:10 }}>
                                   <span style={{ marginRight:5, fontSize:8, display:'inline-block',
                                     transform: aberto ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
                                   {label}
                                 </span>, COR.branco
                               )}
-                              {gVals.map((v,mi) => cell(v, mi, COR.vermelho, undefined, 600))}
-                              {totalCell(gTotal, COR.vermelho)}
+                              {gVals.map((v,mi) => cell(v, mi, corVal, undefined, 600))}
+                              {totalCell(gTotal, corVal)}
                             </div>
                             {aberto && cats.map(cat => {
-                              const row = dadosAnoFinal.saidas.indexOf(cat)
+                              const ehCartaoSin = cat.id === '__cartao__'
                               const catTotal = cat.v.reduce((a,b)=>a+b,0)
+                              if (ehCartaoSin) return (
+                                <div key={cat.nome} style={{ display:'flex', borderBottom:'1px solid #ede9fe', background:'#faf5ff' }}>
+                                  {nameCell(<span style={{ color:'#7c3aed', paddingLeft:24 }}>💳 {cat.nome}</span>, '#faf5ff')}
+                                  {cat.v.map((v,mi) => cell(v, mi, '#7c3aed', ehAtualMes(mi)?'#ede9fe':'#faf5ff'))}
+                                  {totalCell(catTotal, '#7c3aed', '#f5f3ff', 400)}
+                                </div>
+                              )
+                              const row = dadosAnoFinal.saidas.indexOf(cat)
+                              const catCfgS2 = cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome)
+                              const descS = catCfgS2?.descricao
                               return (
                                 <div key={cat.nome} style={{ display:'flex', borderBottom:'1px solid #f1f5f9', background:'#fff7f7' }}>
-                                  {nameCell(<span style={{ color:'#b91c1c', paddingLeft:24 }}>{cat.nome}</span>, '#fff7f7')}
+                                  {nameCell(
+                                    <span style={{ color:'#b91c1c', paddingLeft:24, display:'block' }}>
+                                      {cat.nome}
+                                      {descS && <span style={{ display:'block', fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descS}</span>}
+                                    </span>, '#fff7f7', { whiteSpace:'normal' })}
                                   {cat.v.map((v,mi) => editableCellH(v, mi, 's', row, COR.vermelho, ehAtualMes(mi)?'#fee2e2':'#fff7f7'))}
                                   {totalCell(catTotal, COR.vermelho, '#fff1f2', 400)}
                                 </div>
@@ -2625,7 +2737,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           </div>
                         )
                       })}
-
                       {simpleRow(
                         <span style={{ fontWeight:700, color:'#7f1d1d' }}>Total Saídas</span>,
                         totalSaidas, COR.vermelho, '#fff1f2',
@@ -2766,7 +2877,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 background:ehAtual?'#dbeafe':COR.branco,
                 display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <button onClick={() => { setModalMes(mi > 0 ? mi - 1 : 11); setEditando(null) }}
+                  <button onClick={() => navegarModalMes(mi, mi > 0 ? mi - 1 : 11)}
                     style={{ width:28, height:28, borderRadius:7, border:`1px solid ${COR.borda}`,
                       background:'transparent', cursor:'pointer', fontSize:16, color:COR.textoSuave,
                       fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
@@ -2774,7 +2885,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     {MESES_FULL[mi]}
                   </div>
                   {ehAtual && <span style={{ fontSize:8, background:COR.azul, color:'#fff', padding:'2px 6px', borderRadius:10, fontWeight:700, textTransform:'uppercase' }}>atual</span>}
-                  <button onClick={() => { setModalMes(mi < 11 ? mi + 1 : 0); setEditando(null) }}
+                  <button onClick={() => navegarModalMes(mi, mi < 11 ? mi + 1 : 0)}
                     style={{ width:28, height:28, borderRadius:7, border:`1px solid ${COR.borda}`,
                       background:'transparent', cursor:'pointer', fontSize:16, color:COR.textoSuave,
                       fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
@@ -2837,31 +2948,23 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   <div style={{ padding:'8px 14px', background:'#dcfce7',
                     display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                     <span style={{ fontSize:12, fontWeight:700, color:'#166534' }}>↑ Entradas</span>
-                    {aba === 'real' && (
-                      <div style={{ display:'flex', gap:6 }}>
-                        <span style={{ fontSize:10, color:'#166534', background:'rgba(255,255,255,0.6)', padding:'2px 8px', borderRadius:4 }}>Previsto</span>
-                        <span style={{ fontSize:10, color:'#166534', background:'rgba(255,255,255,0.9)', padding:'2px 8px', borderRadius:4 }}>Realizado</span>
-                      </div>
-                    )}
                   </div>
                   {(() => { const entradasComIdx = entradasModal.map((cat, ri) => ({ cat, ri }))
           .sort((a, b) => {
-            const ga = categorias.find(c => (a.cat.id && c.id === a.cat.id) || c.nome === a.cat.nome)?.grupo ?? '__sem_grupo__'
-            const gb = categorias.find(c => (b.cat.id && c.id === b.cat.id) || c.nome === b.cat.nome)?.grupo ?? '__sem_grupo__'
+            const ga = (a.cat.id ? (categorias.find(c => c.id === a.cat.id) ?? categorias.find(c => c.nome === a.cat.nome)) : categorias.find(c => c.nome === a.cat.nome))?.grupo ?? '__sem_grupo__'
+            const gb = (b.cat.id ? (categorias.find(c => c.id === b.cat.id) ?? categorias.find(c => c.nome === b.cat.nome)) : categorias.find(c => c.nome === b.cat.nome))?.grupo ?? '__sem_grupo__'
             return ga === '__sem_grupo__' ? 1 : gb === '__sem_grupo__' ? -1 : ga.localeCompare(gb, 'pt-BR')
           })
           let prevGrupoE: string | null = null; return entradasComIdx.map(({ cat, ri }) => {
                     const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                    const lancado  = aba === 'real' ? (lancadoPorCatMes[mi]?.entrada[cat.nome] ?? 0) : 0
-                    const previsto = aba === 'real'
-                      ? ((planos[anoAtual] as AnoData | undefined)?.entradas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
-                      : 0
-                    const isAtiva = categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.ativa ?? true
-                    if (!isAtiva && cat.v[mi] === 0 && lancado === 0 && previsto === 0) return null
-                    const grupo = categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__'
+                    const catCfgE = cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome)
+                    const isAtiva = catCfgE?.ativa ?? true
+                    if (!isAtiva && cat.v[mi] === 0) return null
+                    const grupo = catCfgE?.grupo ?? '__sem_grupo__'
+                    const descricaoE = catCfgE?.descricao
                     const showGrupoHeader = grupo !== prevGrupoE
                     prevGrupoE = grupo
-                    const podeEditar = aba !== 'real' && !bloqueado && isAtiva
+                    const podeEditar = (aba === 'previsto' ? !bloqueado : (anoAtual > anoCorrente || mi >= mesAtual)) && isAtiva
                     return (
                       <div key={ri}>
                         {showGrupoHeader && (
@@ -2878,18 +2981,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             background:editando?.tipo==='e'&&editando.row===ri&&editando.mes===mi?'#f0fdf4':'transparent' }}>
                           <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
                             display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
-                          <span style={{ flex:1, fontSize:12, color:isAtiva?COR.texto:COR.textoSuave }}>{cat.nome}</span>
-                          {aba === 'real' ? (
-                            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                              <span style={{ fontSize:12, color:COR.textoSuave, fontVariantNumeric:'tabular-nums', minWidth:80, textAlign:'right' }}>
-                                {previsto>0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                              </span>
-                              <span style={{ fontSize:12, fontWeight:600, fontVariantNumeric:'tabular-nums', minWidth:80, textAlign:'right',
-                                color:lancado>=previsto?'#16a34a':COR.vermelho }}>
-                                {lancado>0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
-                              </span>
-                            </div>
-                          ) : renderValor('e', ri, mi, cat.v[mi], !podeEditar)}
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:12, color:isAtiva?COR.texto:COR.textoSuave }}>{cat.nome}</div>
+                            {descricaoE && <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descricaoE}</div>}
+                          </div>
+                          {renderValor('e', ri, mi, cat.v[mi], !podeEditar)}
                         </div>
                       </div>
                     )
@@ -2901,72 +2997,98 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   <div style={{ padding:'8px 14px', background:'#fee2e2',
                     display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                     <span style={{ fontSize:12, fontWeight:700, color:'#7f1d1d' }}>↓ Saídas</span>
-                    {aba === 'real' && (
-                      <div style={{ display:'flex', gap:6 }}>
-                        <span style={{ fontSize:10, color:'#7f1d1d', background:'rgba(255,255,255,0.6)', padding:'2px 8px', borderRadius:4 }}>Previsto</span>
-                        <span style={{ fontSize:10, color:'#7f1d1d', background:'rgba(255,255,255,0.9)', padding:'2px 8px', borderRadius:4 }}>Realizado</span>
-                      </div>
-                    )}
                   </div>
-                  {(() => { const saidasComIdx = saidasModal.map((cat, ri) => ({ cat, ri }))
-          .sort((a, b) => {
-            const ga = nomeFaturaCartao(a.cat.nome, cartaoNomes) ? 'Cartao de Credito'
-              : (categorias.find(c => (a.cat.id && c.id === a.cat.id) || c.nome === a.cat.nome)?.grupo ?? '__sem_grupo__')
-            const gb = nomeFaturaCartao(b.cat.nome, cartaoNomes) ? 'Cartao de Credito'
-              : (categorias.find(c => (b.cat.id && c.id === b.cat.id) || c.nome === b.cat.nome)?.grupo ?? '__sem_grupo__')
-            return ga === '__sem_grupo__' ? 1 : gb === '__sem_grupo__' ? -1 : ga.localeCompare(gb, 'pt-BR')
-          })
-          let prevGrupoS: string | null = null; return saidasComIdx.map(({ cat, ri }) => {
-                    const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                    const ehFatura  = nomeFaturaCartao(cat.nome, cartaoNomes)
-                    const lancBanco = aba === 'real' ? (lancadoPorCatMes[mi]?.saida[cat.nome] ?? 0) : 0
-                    const lancCart  = aba === 'real' ? (lancadoPorCatMes[mi]?.saidaCartao[cat.nome] ?? 0) : 0
-                    const lancado   = lancBanco + lancCart
-                    const previsto  = aba === 'real'
-                      ? ((planos[anoAtual] as AnoData | undefined)?.saidas.find(c => c.nome === cat.nome)?.v[mi] ?? 0)
-                      : 0
-                    const isAtiva = categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.ativa ?? true
-                    if (!isAtiva && cat.v[mi] === 0 && lancado === 0 && previsto === 0) return null
-                    const grupo = ehFatura ? 'Cartão de Crédito'
-                      : (categorias.find(c => (cat.id && c.id === cat.id) || c.nome === cat.nome)?.grupo ?? '__sem_grupo__')
-                    const showGrupoHeader = grupo !== prevGrupoS
-                    prevGrupoS = grupo
-                    const podeEditar = aba !== 'real' && !bloqueado && !ehFatura && isAtiva
-                    return (
-                      <div key={ri}>
-                        {showGrupoHeader && (
-                          <div style={{ padding:'4px 14px', background:'#fff1f2',
-                            fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5,
-                            color:'#7f1d1d', borderBottom:'1px solid #fecaca', borderTop:'1px solid #fecaca' }}>
-                            {grupo === '__sem_grupo__' ? 'Outros' : grupo}
-                          </div>
-                        )}
-                        <div
-                          onClick={podeEditar ? () => iniciarValor('s', ri, mi, cat.v[mi]) : undefined}
-                          style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 14px',
-                            borderBottom:'1px solid rgba(0,0,0,0.05)', cursor:podeEditar?'pointer':'default',
-                            background:editando?.tipo==='s'&&editando.row===ri&&editando.mes===mi?'#fff5f5':'transparent' }}>
-                          <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
-                            display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
-                          <span style={{ flex:1, fontSize:12, color:isAtiva?COR.texto:COR.textoSuave }}>
-                            {cat.nome}
-                            {ehFatura && <span style={{ fontSize:9, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
-                          </span>
-                          {aba === 'real' ? (
-                            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                              <span style={{ fontSize:12, color:COR.textoSuave, fontVariantNumeric:'tabular-nums', minWidth:80, textAlign:'right' }}>
-                                {previsto>0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                  {(() => {
+                    const temFatura = saidasModal.some(c => nomeFaturaCartao(c.nome, cartaoNomes))
+                    const cartaoSinM = somaCartaoMes[mi]
+                    const sinteticos: { cat: Cat; ri: number }[] =
+                      cartaoSinM > 0 && !temFatura
+                        ? [{ cat: { id: '__cartao__', nome: 'Cartão de Crédito', t: 'cartao', v: somaCartaoMes }, ri: -1 }]
+                        : []
+                    const saidasComIdx = [
+                      ...saidasModal.map((cat, ri) => ({ cat, ri })),
+                      ...sinteticos,
+                    ].sort((a, b) => {
+                      const ga = (a.ri === -1 || nomeFaturaCartao(a.cat.nome, cartaoNomes)) ? 'Cartão de Crédito'
+                        : ((a.cat.id ? (categorias.find(c => c.id === a.cat.id) ?? categorias.find(c => c.nome === a.cat.nome)) : categorias.find(c => c.nome === a.cat.nome))?.grupo ?? '__sem_grupo__')
+                      const gb = (b.ri === -1 || nomeFaturaCartao(b.cat.nome, cartaoNomes)) ? 'Cartão de Crédito'
+                        : ((b.cat.id ? (categorias.find(c => c.id === b.cat.id) ?? categorias.find(c => c.nome === b.cat.nome)) : categorias.find(c => c.nome === b.cat.nome))?.grupo ?? '__sem_grupo__')
+                      if (ga === gb) return 0
+                      if (ga === 'Cartão de Crédito') return -1
+                      if (gb === 'Cartão de Crédito') return 1
+                      if (ga === '__sem_grupo__') return 1
+                      if (gb === '__sem_grupo__') return -1
+                      return ga.localeCompare(gb, 'pt-BR')
+                    })
+                    let prevGrupoS: string | null = null
+                    return saidasComIdx.map(({ cat, ri }) => {
+                      if (ri === -1) {
+                        const v = cat.v[mi] ?? 0
+                        const showH = 'Cartão de Crédito' !== prevGrupoS
+                        prevGrupoS = 'Cartão de Crédito'
+                        return (
+                          <div key="__cartao__">
+                            {showH && (
+                              <div style={{ padding:'4px 14px', background:'#f5f3ff',
+                                fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5,
+                                color:'#6d28d9', borderBottom:'1px solid #ddd6fe', borderTop:'1px solid #ddd6fe' }}>
+                                Cartão de Crédito
+                              </div>
+                            )}
+                            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 14px',
+                              borderBottom:'1px solid rgba(0,0,0,0.05)', background:'#faf5ff' }}>
+                              <div style={{ width:20, height:20, borderRadius:5, background:'#7c3aed22',
+                                display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>💳</div>
+                              <span style={{ flex:1, fontSize:12, color:'#7c3aed', fontWeight:500 }}>
+                                Cartão de Crédito
+                                <span style={{ fontSize:9, color:'#c4b5fd', marginLeft:4 }}>(calculado)</span>
                               </span>
-                              <span style={{ fontSize:12, fontWeight:600, fontVariantNumeric:'tabular-nums', minWidth:80, textAlign:'right',
-                                color:previsto===0||lancado<=previsto?COR.verde:COR.vermelho }}>
-                                {lancado>0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
+                              <span style={{ fontSize:13, fontWeight:600, color:'#7c3aed', fontVariantNumeric:'tabular-nums' as const }}>
+                                {v > 0 ? v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' }) : '—'}
                               </span>
                             </div>
-                          ) : renderValor('s', ri, mi, cat.v[mi], !podeEditar)}
+                          </div>
+                        )
+                      }
+                      const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                      const ehFatura  = nomeFaturaCartao(cat.nome, cartaoNomes)
+                      const catCfgS = cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome)
+                      const isAtiva = catCfgS?.ativa ?? true
+                      if (!isAtiva && cat.v[mi] === 0) return null
+                      const grupo = ehFatura ? 'Cartão de Crédito' : (catCfgS?.grupo ?? '__sem_grupo__')
+                      const descricaoS = catCfgS?.descricao
+                      const showGrupoHeader = grupo !== prevGrupoS
+                      prevGrupoS = grupo
+                      const podeEditar = (aba === 'previsto' ? !bloqueado : (anoAtual > anoCorrente || mi >= mesAtual)) && !ehFatura && isAtiva
+                      return (
+                        <div key={ri}>
+                          {showGrupoHeader && (
+                            <div style={{ padding:'4px 14px', background:'#fff1f2',
+                              fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5,
+                              color:'#7f1d1d', borderBottom:'1px solid #fecaca', borderTop:'1px solid #fecaca' }}>
+                              {grupo === '__sem_grupo__' ? 'Outros' : grupo}
+                            </div>
+                          )}
+                          <div
+                            onClick={podeEditar ? () => iniciarValor('s', ri, mi, cat.v[mi]) : undefined}
+                            style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 14px',
+                              borderBottom:'1px solid rgba(0,0,0,0.05)', cursor:podeEditar?'pointer':'default',
+                              background:editando?.tipo==='s'&&editando.row===ri&&editando.mes===mi?'#fff5f5':'transparent' }}>
+                            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
+                              display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:12, color:isAtiva?COR.texto:COR.textoSuave }}>
+                                {cat.nome}
+                                {ehFatura && <span style={{ fontSize:9, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                              </div>
+                              {descricaoS && <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descricaoS}</div>}
+                            </div>
+                            {renderValor('s', ri, mi, cat.v[mi], !podeEditar)}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })})()}
+                      )
+                    })
+                  })()}
                 </div>
 
               </div>
@@ -2974,6 +3096,41 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           </div>
         )
       })()}
+
+      {/* ── PROMPT COPIAR MÊS ── */}
+      {copiarMesPrompt !== null && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.55)', zIndex:200,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:360, padding:'28px 24px',
+            boxShadow:'0 20px 60px rgba(0,0,0,0.3)', display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ fontSize:32, textAlign:'center' }}>📋</div>
+            <div style={{ fontSize:16, fontWeight:700, color:'#0f172a', textAlign:'center' }}>
+              {MESES_FULL[copiarMesPrompt.destino]} sem planejamento
+            </div>
+            <div style={{ fontSize:13, color:'#64748b', textAlign:'center', lineHeight:1.5 }}>
+              Deseja copiar os valores de{' '}
+              <strong>{MESES_FULL[copiarMesPrompt.origem]}</strong>{' '}
+              para <strong>{MESES_FULL[copiarMesPrompt.destino]}</strong>?
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:4 }}>
+              <button
+                onClick={() => { setModalMes(copiarMesPrompt.destino); setCopiarMesPrompt(null) }}
+                style={{ flex:1, padding:'10px 0', borderRadius:10, border:`1px solid #e2e8f0`,
+                  background:'#f8fafc', cursor:'pointer', fontSize:13, fontWeight:600,
+                  color:'#64748b', fontFamily:'inherit' }}>
+                Não, ir assim mesmo
+              </button>
+              <button
+                onClick={() => confirmarCopiarMes(copiarMesPrompt.origem, copiarMesPrompt.destino)}
+                style={{ flex:1, padding:'10px 0', borderRadius:10, border:'none',
+                  background:COR.azul, cursor:'pointer', fontSize:13, fontWeight:700,
+                  color:'#fff', fontFamily:'inherit' }}>
+                Sim, copiar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── QUIZ DE ONBOARDING ── */}
       {quizAtivo && (
@@ -3293,7 +3450,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       padding:'8px 12px',borderRadius:10,border:`1px solid ${COR.borda}`,background:'#fafafa'}}>
                       <div style={{width:32,height:32,borderRadius:8,background:cor+'22',
                         display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icone}</div>
-                      <span style={{flex:1,fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                      <div style={{flex:1,display:'flex',flexDirection:'column',gap:1}}>
+                        <span style={{fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                        {c.descricao && <span style={{fontSize:11,color:COR.textoSuave,lineHeight:1.3}}>{c.descricao}</span>}
+                      </div>
                       <input value={quizEntradas[c.id]??''}
                         onChange={e => setQuizEntradas(p=>({...p,[c.id]:e.target.value}))}
                         onFocus={e => e.target.select()}
@@ -3327,7 +3487,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       padding:'8px 12px',borderRadius:10,border:`1px solid ${COR.borda}`,background:'#fafafa'}}>
                       <div style={{width:32,height:32,borderRadius:8,background:cor+'22',
                         display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{icone}</div>
-                      <span style={{flex:1,fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                      <div style={{flex:1,display:'flex',flexDirection:'column',gap:1}}>
+                        <span style={{fontSize:13,fontWeight:500,color:COR.texto}}>{c.nome}</span>
+                        {c.descricao && <span style={{fontSize:11,color:COR.textoSuave,lineHeight:1.3}}>{c.descricao}</span>}
+                      </div>
                       <input value={quizSaidas[c.id]??''}
                         onChange={e => setQuizSaidas(p=>({...p,[c.id]:e.target.value}))}
                         onFocus={e => e.target.select()}
@@ -3422,7 +3585,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             {/* Rodapé */}
             <div style={{padding:'14px 28px 24px',display:'flex',gap:10,borderTop:`1px solid ${COR.borda}`,flexShrink:0}}>
               {quizConcluido ? (
-              <button onClick={() => { setQuizAtivo(false); setQuizConcluido(false); setViewMode('grade'); setAba('previsto') }} style={{
+              <button data-quiz-nav='' onClick={() => { setQuizAtivo(false); setQuizConcluido(false); setViewMode('grade'); setAba('previsto') }} style={{
                 flex:1,padding:'10px',borderRadius:9,border:'none',fontFamily:'inherit',
                 background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,color:'#fff',
                 fontSize:13,fontWeight:700,cursor:'pointer'}}>
@@ -3430,13 +3593,13 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               </button>
               ) : (<>
               {quizStep > 0 && (
-                <button onClick={() => setQuizStep(s=>s-1)} style={{
+                <button data-quiz-nav='' onClick={() => setQuizStep(s=>s-1)} style={{
                   flex:1,padding:'10px',borderRadius:9,border:`1.5px solid ${COR.borda}`,
                   background:'#f8faff',color:COR.textoSuave,fontSize:13,fontWeight:600,
                   cursor:'pointer',fontFamily:'inherit'}}>← Voltar</button>
               )}
               {quizStep < QUIZ_STEP_RESUMO ? (
-                <button onClick={() => setQuizStep(s=>s+1)}
+                <button data-quiz-nav='' onClick={() => setQuizStep(s=>s+1)}
                   disabled={(quizStep===0 && !quizObjetivo) || (quizStep===2 && quizConsiderarSaldo===null)}
                   style={{flex:2,padding:'10px',borderRadius:9,border:'none',fontFamily:'inherit',
                     background:((quizStep===0&&!quizObjetivo)||(quizStep===2&&quizConsiderarSaldo===null))?'#e2e8f0':`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
@@ -3446,7 +3609,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   Próximo →
                 </button>
               ) : (
-                <button onClick={confirmarQuiz} style={{
+                <button data-quiz-nav='' onClick={confirmarQuiz} style={{
                   flex:2,padding:'10px',borderRadius:9,border:'none',
                   background:`linear-gradient(135deg,${COR.verde},#15803d)`,
                   color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
@@ -3482,7 +3645,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     Cancelar
                   </button>
                   <button onClick={() => {
-                    setPlanos((prev: any) => { const n = {...prev}; delete n[anoAtual]; return n })
                     setConfirmarRefazer(false)
                     setQuizAtivo(true)
                     setQuizStep(0)
@@ -3524,6 +3686,41 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL CONFIRMAR ATUALIZAR PLANO ── */}
+      {confirmarAtualizar && (
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',zIndex:400,
+          display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{background:'#fff',borderRadius:16,width:'100%',maxWidth:400,
+            boxShadow:'0 20px 50px rgba(0,0,0,0.3)',overflow:'hidden'}}>
+            <div style={{padding:'24px 24px 16px'}}>
+              <div style={{fontSize:22,textAlign:'center',marginBottom:12}}>⚠️</div>
+              <div style={{fontSize:16,fontWeight:700,color:'#0f172a',marginBottom:8}}>Atualizar Plano Atualizado?</div>
+              <div style={{fontSize:13,color:'#64748b',lineHeight:1.6}}>
+                O Plano Atualizado será substituído por uma cópia do Plano Original atual.
+                Edições manuais que você fez em meses futuros no Plano Atualizado serão perdidas.
+              </div>
+            </div>
+            <div style={{padding:'0 24px 24px',display:'flex',gap:10}}>
+              <button onClick={() => setConfirmarAtualizar(false)} style={{
+                flex:1,padding:'10px',borderRadius:9,border:'1.5px solid #e2e8f0',
+                background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
+                cursor:'pointer',fontFamily:'inherit'}}>
+                Cancelar
+              </button>
+              <button onClick={() => {
+                finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData)
+                setConfirmarAtualizar(false)
+              }} style={{
+                flex:2,padding:'10px',borderRadius:9,border:'none',
+                background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                Sim, atualizar
+              </button>
+            </div>
           </div>
         </div>
       )}

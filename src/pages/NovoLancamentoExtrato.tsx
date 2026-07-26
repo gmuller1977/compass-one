@@ -15,10 +15,11 @@ const COR = {
 }
 
 type TipoLanc = 'entrada' | 'saida'
-type FormaPag = 'debito' | 'credito' | 'pix' | 'transferencia' | 'dinheiro'
+type FormaPag = 'debito' | 'automatico' | 'credito' | 'pix' | 'transferencia' | 'dinheiro' | 'boleto' | 'manual'
 
 type CatFixa = {
   id: string; nome: string; categoria: string
+  subtitulo?: string
   valor: number; tipo: TipoLanc
   formaPagamento: FormaPag
   diaVencimento: number
@@ -102,6 +103,10 @@ function formaPagCategoria(fp: string | undefined, mov: string | undefined): For
   if (mov === 'dinheiro') return 'dinheiro'
   if (fp === 'pix') return 'pix'
   if (fp === 'transferencia') return 'transferencia'
+  if (fp === 'boleto') return 'boleto'
+  if (fp === 'manual') return 'manual'
+  if (fp === 'debito') return 'debito'
+  if (fp === 'automatico') return 'automatico'
   return 'debito'
 }
 function formaRecebCategoria(fp: string | undefined, mov: string | undefined): FormaPag {
@@ -133,8 +138,9 @@ export default function NovoLancamentoExtrato() {
   const [fDesc,   setFDesc]   = useState('')
   const [fValor,  setFValor]  = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
-  const [tabPrincipal, setTabPrincipal] = useState<'extrato'|'cartao'|'dinheiro'>('extrato')
+  const [tabPrincipal, setTabPrincipal] = useState<'extrato'|'cartao'|'dinheiro'|'consolidado'>('extrato')
   const [fContaDestino,     setFContaDestino]      = useState('')
+  const [fBancoConsolidado, setFBancoConsolidado]  = useState('')
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
@@ -143,7 +149,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, updatePlanoReal } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, faturaData } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   // Prefere planosReal (Atualizado) quando disponível
@@ -151,7 +157,10 @@ export default function NovoLancamentoExtrato() {
     const planoAno = (planosReal[ano] ?? planos[ano]) as typeof planos[number] | undefined
     if (!planoAno) return 0
     const lista = tipoLanc === 'entrada' ? planoAno.entradas : planoAno.saidas
-    const found = lista.find(c => (catId && c.id === catId) || c.nome === catNome)
+    // Busca por ID primeiro; só cai em nome para entradas do plano sem ID (dados legados)
+    const found = catId
+      ? (lista.find(c => c.id === catId) ?? lista.find(c => !c.id && c.nome === catNome))
+      : lista.find(c => c.nome === catNome)
     return found?.v[mes] ?? 0
   }
 
@@ -160,27 +169,12 @@ export default function NovoLancamentoExtrato() {
     return valorPrevistoCat(cat?.id ?? '', catNome, tipoLanc)
   }
 
-  // Grava no planosReal o valor realizado de uma categoria fixa para o mês atual
-  function atualizarRealFixa(catId: string, catNome: string, tipoLanc: TipoLanc, valor: number) {
-    updatePlanoReal(ano, prev => {
-      const campo = tipoLanc === 'entrada' ? 'entradas' : 'saidas'
-      const lista = campo === 'entradas' ? prev.entradas : prev.saidas
-      const existe = lista.some(c => (catId && c.id === catId) || c.nome === catNome)
-      const novaLista = existe
-        ? lista.map(c => ((catId && c.id === catId) || c.nome === catNome)
-            ? { ...c, v: c.v.map((v, i) => i === mes ? valor : v) }
-            : c)
-        : (() => {
-            const cat = categorias.find(c => c.id === catId || c.nome === catNome)
-            const newV = new Array(12).fill(0); newV[mes] = valor
-            return [...lista, { id: catId, nome: catNome, t: cat?.tipoMovimento, v: newV }]
-          })()
-      return campo === 'entradas' ? { ...prev, entradas: novaLista } : { ...prev, saidas: novaLista }
-    })
-  }
-  const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+
+  const contasExtrato = contas
+    .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+    .sort((a, b) => (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0))
   const isDinheiro = tabPrincipal === 'dinheiro'
-  const isConsolidado = tabPrincipal === 'extrato' && contaId === 'consolidado'
+  const isConsolidado = tabPrincipal === 'consolidado'
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   const dados = extratoData as Record<string, DadosMes>
   const fixasCategoria = categorias
@@ -201,6 +195,7 @@ export default function NovoLancamentoExtrato() {
     })
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
+      subtitulo: c.grupo,
       valor: valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc),
       tipo: c.tipo as TipoLanc,
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
@@ -208,8 +203,7 @@ export default function NovoLancamentoExtrato() {
     }))
   const fixasCartao: CatFixa[] = useMemo(() => {
     if (isDinheiro) return []
-    let faturasDados: Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }> = {}
-    try { const r = localStorage.getItem('compass_fatura_dados'); if (r) faturasDados = JSON.parse(r) } catch { /**/ }
+    const faturasDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
 
     const result: CatFixa[] = []
     contas.filter(c => c.tipo === 'cartao' && c.diaVencimento).forEach(c => {
@@ -256,10 +250,10 @@ export default function NovoLancamentoExtrato() {
       })
     })
     return result
-  }, [contas, contaIdEfetivo, ano, mes, dados, contasExtrato])
+  }, [contas, contaIdEfetivo, ano, mes, dados, contasExtrato, faturaData])
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
-    .filter(c => c.ativa && c.tipo === fTipo && (!isDinheiro || c.tipoMovimento === 'dinheiro'))
+    .filter(c => c.ativa && c.tipo === fTipo && (isDinheiro ? c.formaPagamento !== 'automatico' : true))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
@@ -268,6 +262,13 @@ export default function NovoLancamentoExtrato() {
   const key       = mesKey(contaIdEfetivo, ano, mes)
   const mesDados  = dados[key] ?? { lancamentos:{}, saldoBanco:'' }
   const saldoExtNum = parseBRL(mesDados.saldoBanco)
+
+  useEffect(() => {
+    const bancos = contas.filter(c => c.tipo==='corrente'||c.tipo==='poupanca')
+    const preferida = bancos.find(c => c.preferida)
+    const inicial = preferida ?? bancos[0]
+    if (inicial) { setContaId(inicial.id); setFBancoConsolidado(inicial.id) }
+  }, [])
 
   useEffect(() => {
     if (eMesAtual)
@@ -285,7 +286,7 @@ export default function NovoLancamentoExtrato() {
       setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
       return
     }
-    if (tabPrincipal !== 'extrato' || isConsolidado) return
+    if (tabPrincipal !== 'extrato') return
     const conta = contasExtrato.find(c => c.id === contaId) ?? contasExtrato[0]
     if (!conta) return
     const k = mesKey(conta.id, ano, mes)
@@ -396,7 +397,7 @@ export default function NovoLancamentoExtrato() {
           if (dPast || dHoje) {
             // passado/hoje: só fixas confirmadas entram no saldo acumulado
             const conf = dadosMesAtual?.fixasConsolidadas?.[f.id]
-            const confirmada = conf !== undefined ? conf : (ehAutomatico(f) && dPast)
+            const confirmada = conf !== undefined ? conf : (ehAutomatico(f) && mesPast)
             if (!confirmada) return
           }
           const v = (dPast || dHoje) ? (dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
@@ -420,7 +421,7 @@ export default function NovoLancamentoExtrato() {
       fc.filter(f => diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
         .filter(f => {
           const c = dadosMesAtual?.fixasConsolidadas?.[f.id]
-          return c !== undefined ? c : (ehAutomatico(f) && dPassado(d))
+          return c !== undefined ? c : (ehAutomatico(f) && mesPast)
         })
         .forEach(f=>{ const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor; f.tipo==='entrada'?te+=v:ts+=v })
       ;(lancs[d]??[]).forEach(l=>{ l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
@@ -447,10 +448,7 @@ export default function NovoLancamentoExtrato() {
         fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
         fixasPagOverride:   { ...prev.fixasPagOverride,   [editandoFixaId]: fPag },
       }))
-      if (mesDados.fixasConsolidadas?.[editandoFixaId] === true) {
-        const f = fixasCategoria.find(f => f.id === editandoFixaId)
-        if (f) atualizarRealFixa(editandoFixaId, f.nome, f.tipo, valor)
-      }
+
       setEditandoFixaId(null)
       setFCat(''); setFDesc(''); setFValor('')
       setTimeout(() => categoriaSelectRef.current?.focus(), 80)
@@ -558,6 +556,27 @@ export default function NovoLancamentoExtrato() {
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
   }
 
+  function lancarConsolidado() {
+    const valor = parseBRL(fValor)
+    if (!fCat || valor <= 0 || !fBancoConsolidado) return
+    const diaFuturoAlvo = ehDiaFuturo(diaSel)
+    updateMesPorKey(mesKey(fBancoConsolidado, ano, mes), prev => ({
+      ...prev,
+      lancamentos: {
+        ...prev.lancamentos,
+        [diaSel]: [...(prev.lancamentos[diaSel]??[]), {
+          id:`v-${Date.now()}`, tipo:fTipo,
+          descricao:fDesc.trim()||fCat, categoria:fCat,
+          valor, formaPagamento:fPag, tipoLanc:'variavel',
+          consolidado: !diaFuturoAlvo,
+        }],
+      },
+    }))
+    toast('Lançamento registrado')
+    setFCat(''); setFDesc(''); setFValor('')
+    setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+  }
+
   function excluirAtual() {
     if (!editandoId) return
     if (!window.confirm('Excluir este lançamento?')) return
@@ -585,11 +604,14 @@ export default function NovoLancamentoExtrato() {
 
   function BadgePag({ fp }: { fp: FormaPag }) {
     const map: Record<FormaPag,{bg:string;cor:string;label:string}> = {
-      debito:        {bg:'#fef9c3',cor:'#92400e', label:'Déb'},
-      credito:       {bg:'#eff6ff',cor:'#1a56db', label:'Créd'},
-      pix:           {bg:'#d1fae5',cor:'#065f46', label:'Pix'},
-      transferencia: {bg:'#e0f2fe',cor:'#0369a1', label:'TED'},
-      dinheiro:      {bg:'#f1f5f9',cor:'#475569', label:'Din'},
+      debito:        {bg:'#fef9c3',cor:'#92400e', label:'Débito'},
+      automatico:    {bg:'#fef9c3',cor:'#92400e', label:'Débito Automático'},
+      credito:       {bg:'#eff6ff',cor:'#1a56db', label:'Crédito'},
+      pix:           {bg:'#d1fae5',cor:'#065f46', label:'PIX'},
+      transferencia: {bg:'#e0f2fe',cor:'#0369a1', label:'Transferência'},
+      dinheiro:      {bg:'#f1f5f9',cor:'#475569', label:'Dinheiro'},
+      boleto:        {bg:'#fce7f3',cor:'#9d174d', label:'Boleto'},
+      manual:        {bg:'#ede9fe',cor:'#6d28d9', label:'Manual'},
     }
     const s = map[fp]
     return <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,background:s.bg,color:s.cor}}>{s.label}</span>
@@ -629,10 +651,13 @@ export default function NovoLancamentoExtrato() {
       {/* ABAS PRINCIPAIS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3}}>
-        {([['extrato','🏦 Extrato Bancário'],['cartao','💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro']] as const).map(([v,l]) => (
+        {([['extrato','🏦 Extrato Bancário'],['cartao','💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro'],['consolidado','📊 Consolidado']] as const).map(([v,l]) => (
           <button key={v} onClick={() => {
             setTabPrincipal(v)
-            if (v === 'extrato') setContaId('consolidado')
+            if (v === 'extrato') {
+              const preferida = contasExtrato.find(c => c.preferida)
+              setContaId((preferida ?? contasExtrato[0])?.id ?? '')
+            }
           }} style={{
             padding:'7px 16px',borderRadius:'8px 8px 0 0',
             border:`1px solid ${tabPrincipal===v?COR.azul:COR.borda}`,
@@ -644,25 +669,147 @@ export default function NovoLancamentoExtrato() {
         ))}
       </div>
 
-      {tabPrincipal==='cartao' ? <FaturaCartao /> : (
+      {tabPrincipal==='cartao' ? <FaturaCartao /> :
+       tabPrincipal==='consolidado' ? (
+      <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+          <ExtratoConsolidado />
+        </div>
+        {/* PAINEL DE LANÇAMENTO — consolidado */}
+        <div style={{width:340,flexShrink:0,background:COR.branco,
+          border:`1px solid ${COR.borda}`,borderRadius:12,padding:20,overflowY:'auto'}}>
+          <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:'0 0 14px'}}>Novo lançamento</h3>
+
+          {/* Banco */}
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Banco *</div>
+            <select value={fBancoConsolidado} onChange={e=>setFBancoConsolidado(e.target.value)}
+              onFocus={realcarFoco} onBlur={removerRealce}
+              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                fontSize:12,outline:'none',background:'#fff',
+                fontFamily:'inherit',color:COR.texto,width:'100%'}}>
+              <option value="">Selecione o banco...</option>
+              {contasExtrato.map(c=>(
+                <option key={c.id} value={c.id}>{c.icone} {c.banco} — {c.nome}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Dia */}
+          <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:14}}>
+            <div style={{flex:'0 0 64px'}}>
+              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Dia</div>
+              <input type="number" min={1} max={totalDias} value={diaSel}
+                onChange={e=>setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
+                onFocus={realcarFoco} onBlur={removerRealce}
+                style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+                  fontSize:12,outline:'none',background:'#fff',
+                  fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}}/>
+            </div>
+            <div style={{fontSize:11,color:'#94a3b8',paddingBottom:8}}>
+              {NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}
+            </div>
+          </div>
+
+          {/* Entrada/Saída */}
+          <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
+            padding:3,marginBottom:10,width:'fit-content'}}>
+            {(['saida','entrada'] as const).map(t=>(
+              <button key={t} onClick={()=>{
+                setFTipo(t)
+                setFPag(t==='entrada'?'credito':'debito')
+              }} style={{
+                padding:'5px 14px',border:'none',borderRadius:5,cursor:'pointer',
+                fontSize:12,fontWeight:500,fontFamily:'inherit',
+                background:fTipo===t?COR.branco:'transparent',
+                color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
+                boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
+                {t==='entrada'?'↑ Entrada':'↓ Saída'}
+              </button>
+            ))}
+          </div>
+
+          {/* Forma de pagamento */}
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
+              {fTipo==='entrada'?'Forma de recebimento:':'Forma de pagamento:'}
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              {(fTipo==='entrada'
+                ? FORMAS_ENT.filter(p=>p.id!=='transferencia'&&p.id!=='dinheiro')
+                : FORMAS_SAI.filter(p=>p.id!=='transferencia'&&p.id!=='dinheiro')
+              ).map(p=>(
+                <button key={p.id} onClick={()=>setFPag(p.id)} style={{
+                  padding:'4px 12px',
+                  border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
+                  borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
+                  background:fPag===p.id?'#eff6ff':'#fff',
+                  color:fPag===p.id?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Categoria + Valor + Descrição */}
+          <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
+            <div>
+              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
+              <select ref={categoriaSelectRef} value={fCat}
+                onChange={e=>{
+                  const nome=e.target.value; setFCat(nome)
+                  const cat=categorias.find(c=>c.nome===nome)
+                  if (cat) setFPag(fTipo==='entrada'
+                    ?formaRecebCategoria(cat.formaPagamento,cat.tipoMovimento)
+                    :formaPagCategoria(cat.formaPagamento,cat.tipoMovimento))
+                }}
+                onFocus={realcarFoco} onBlur={removerRealce}
+                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                  fontSize:12,outline:'none',background:'#fff',
+                  fontFamily:'inherit',color:COR.texto,width:'100%'}}>
+                <option value="">Selecione...</option>
+                {categoriasVariaveis.map(c=>(
+                  <option key={c.id} value={c.nome}>{c.descricao ? `${c.nome} — ${c.descricao}` : c.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor *</div>
+              <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+                placeholder="R$ 0,00" onFocus={realcarFoco} onBlur={removerRealce}
+                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                  fontSize:12,outline:'none',background:'#fff',
+                  fontFamily:'inherit',color:COR.texto,width:'100%'}}
+                onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
+              <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
+                placeholder="Ex: Mercado Extra, Farmácia..."
+                onFocus={realcarFoco} onBlur={removerRealce}
+                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                  fontSize:12,outline:'none',background:'#fff',
+                  fontFamily:'inherit',color:COR.texto,width:'100%'}}
+                onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>
+            </div>
+          </div>
+
+          <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>
+            Enter no valor ou na descrição para salvar
+          </div>
+          <button onClick={lancarConsolidado} style={{
+            width:'100%',padding:'10px 0',border:'none',borderRadius:8,
+            background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+            color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+            Lançar
+          </button>
+        </div>
+      </div>
+      ) : (
       <>
-      {/* SUB-ABAS: Consolidado + bancos (somente para Extrato Bancário) */}
       {tabPrincipal === 'extrato' && (
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-        {/* Sub-aba Consolidado */}
-        {(() => { const ativa = contaId === 'consolidado'; return (
-          <button onClick={() => setContaId('consolidado')} style={{
-            display:'flex',alignItems:'center',gap:6,
-            padding:'7px 14px',borderRadius:'8px 8px 0 0',
-            border:`1px solid ${ativa?COR.azul:COR.borda}`,
-            cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
-            background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
-            position:'relative',zIndex:ativa?1:0}}>
-            📊 Consolidado
-          </button>
-        )})()}
-        {/* Sub-abas dos bancos cadastrados */}
         {contasExtrato.map(c => {
           const ativa = c.id===contaId
           return (
@@ -689,12 +836,12 @@ export default function NovoLancamentoExtrato() {
         })}
       </div>
       )}
-      {/* Vista consolidada dentro de Extrato Bancário */}
-      {isConsolidado ? <ExtratoConsolidado /> : (<>
+      <div style={{flex:1,display:'flex',gap:16,padding:'0 16px 10px',overflow:'hidden'}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
+        padding:'10px 0 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
           const isAtual = i===mesHoje && ano===anoHoje
           const ativo   = i===mes
@@ -709,15 +856,6 @@ export default function NovoLancamentoExtrato() {
               color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
               display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
               {m}
-              <span style={{fontSize:9,fontWeight:600,lineHeight:1,
-                color:ativo?'rgba(255,255,255,0.7)':countMes>0?COR.azul:'transparent'}}>
-                {countMes > 0 ? countMes : '·'}
-              </span>
-              {isAtual && (
-                <span style={{position:'absolute',bottom:3,left:'50%',
-                  transform:'translateX(-50%)',width:4,height:4,
-                  borderRadius:'50%',background:ativo?'#fff':COR.azul,display:'block'}}/>
-              )}
             </button>
           )
         })}
@@ -725,7 +863,7 @@ export default function NovoLancamentoExtrato() {
 
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding:'10px 16px',flexShrink:0,
+        padding:'10px 0',flexShrink:0,
         display:'flex',flexDirection:'row',
         alignItems:'center',gap:14,flexWrap:'wrap'}}>
 
@@ -817,7 +955,7 @@ export default function NovoLancamentoExtrato() {
       </div>
 
       {/* BUSCA */}
-      <div style={{padding:'8px 16px 0',flexShrink:0}}>
+      <div style={{padding:'8px 0 0',flexShrink:0}}>
         <input value={busca} onChange={e => setBusca(e.target.value)}
           placeholder="Buscar por categoria, descrição ou valor..."
           style={{width:'100%',boxSizing:'border-box',
@@ -825,12 +963,9 @@ export default function NovoLancamentoExtrato() {
             fontSize:12,fontFamily:'inherit',color:COR.texto,background:'#fff',outline:'none'}}/>
       </div>
 
-      {/* CONTEÚDO: lista + painel de lançamento */}
-      <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
-
       {/* EXTRATO */}
       <div style={{flex:1,overflowY:'auto',
-        display:'flex',flexDirection:'column',gap:6}}>
+        display:'flex',flexDirection:'column',gap:6,paddingTop:10}}>
 
         {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
           const ehHoje    = eMesAtual && dia===diaHoje
@@ -849,17 +984,17 @@ export default function NovoLancamentoExtrato() {
           const diaFuturo = !passado && !ehHoje
           // Valor exibido: projeção total (todos os itens do dia)
           const entradasDia = fs.filter(f=>f.tipo==='entrada')
-            .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
+            .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
             + ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
           const saidasDia = fs.filter(f=>f.tipo==='saida')
-            .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
+            .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
             + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
           // Confirmados: fixas consolidadas (ou automáticas em dia passado) + lancamentos manuais
           const entradasConf =
             fs.filter(f => f.tipo==='entrada' && (
               mesDados.fixasConsolidadas?.[f.id] !== undefined
                 ? mesDados.fixasConsolidadas[f.id]
-                : (ehAutomatico(f) && passado)
+                : (ehAutomatico(f) && !eMesAtual && passado)
             ))
             .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
             + ls.filter(l => l.tipo==='entrada').reduce((s,l) => s + l.valor, 0)
@@ -867,7 +1002,7 @@ export default function NovoLancamentoExtrato() {
             fs.filter(f => f.tipo==='saida' && (
               mesDados.fixasConsolidadas?.[f.id] !== undefined
                 ? mesDados.fixasConsolidadas[f.id]
-                : (ehAutomatico(f) && passado)
+                : (ehAutomatico(f) && !eMesAtual && passado)
             ))
             .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
             + ls.filter(l => l.tipo==='saida').reduce((s,l) => s + l.valor, 0)
@@ -992,34 +1127,30 @@ export default function NovoLancamentoExtrato() {
                 const automatico = ehAutomatico(f)
                 const consolidada = mesDados.fixasConsolidadas?.[f.id] !== undefined
                   ? mesDados.fixasConsolidadas[f.id]
-                  : (automatico ? passado : false)
+                  : (automatico && !eMesAtual && passado)
                 const corValor = consolidada ? (f.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
                 const emEdicaoFixa = editandoFixaId === f.id
-                const valorMostrado = consolidada ? (mesDados.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
+                const valorMostrado = mesDados.fixasValorOverride?.[f.id] ?? f.valor
                 return (
                 <div key={f.id} onClick={e => e.stopPropagation()}
                   style={{background:emEdicaoFixa?'#eff6ff':'transparent'}}>
                   <div onClick={() => editarFixa(dia, f)}
                     style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
                     padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
-                    {(ehFaturaFixa || !(passado && automatico)) && (
-                      <input type="checkbox" checked={consolidada}
-                        onClick={e => e.stopPropagation()}
-                        onChange={() => {
-                          if (consolidada) {
-                            desconsolidarFixa(f.id)
-                            atualizarRealFixa(f.id, f.nome, f.tipo, valorPrevistoCat(f.id, f.nome, f.tipo))
-                          } else {
-                            updateMes(prev => ({
-                              ...prev,
-                              fixasConsolidadas: { ...prev.fixasConsolidadas, [f.id]: true }
-                            }))
-                            atualizarRealFixa(f.id, f.nome, f.tipo, mesDados.fixasValorOverride?.[f.id] ?? f.valor)
-                          }
-                        }}
-                        title="Consolidar lançamento"
-                        style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
-                    )}
+                    <input type="checkbox" checked={consolidada}
+                      onClick={e => e.stopPropagation()}
+                      onChange={() => {
+                        if (consolidada) {
+                          desconsolidarFixa(f.id)
+                        } else {
+                          updateMes(prev => ({
+                            ...prev,
+                            fixasConsolidadas: { ...prev.fixasConsolidadas, [f.id]: true }
+                          }))
+                        }
+                      }}
+                      title="Consolidar lançamento"
+                      style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
                     <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                       display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
                       background:catVisual.cor,opacity:consolidada?1:0.5}}>
@@ -1033,20 +1164,14 @@ export default function NovoLancamentoExtrato() {
                         <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                           background:consolidada?'#e0f2fe':'#f1f5f9',
                           color:consolidada?'#0369a1':'#94a3b8'}}>
-                          {consolidada ? (automatico && passado ? 'fixa ✓' : 'consolidado') : 'não consolidado'}
+                          {consolidada ? (automatico && !eMesAtual && passado ? 'fixa ✓' : 'consolidado') : 'não consolidado'}
                         </span>
-                        {automatico && f.tipo==='saida' && (
-                          <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                            background:'#f1f5f9',color:'#94a3b8'}}>
-                            débito automático
-                          </span>
-                        )}
                       </div>
                       <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
                         display:'flex',alignItems:'center',gap:4}}>
                         {ehFaturaFixa
                           ? `${f.categoria}${f.nome !== f.categoria ? ' · ' + f.nome : ''}`
-                          : f.categoria
+                          : (f.subtitulo ?? f.categoria)
                         } <BadgePag fp={f.formaPagamento}/>
                       </div>
                     </div>
@@ -1119,10 +1244,11 @@ export default function NovoLancamentoExtrato() {
           </span>
         </div>
       </div>
+      </div>{/* fim coluna esquerda */}
 
       {/* PAINEL DE LANÇAMENTO */}
       <div style={{width:340,flexShrink:0,background:COR.branco,
-        border:`1px solid ${COR.borda}`,borderRadius:12,padding:20,overflowY:'auto'}}>
+        border:`1px solid ${COR.borda}`,borderRadius:12,padding:20,overflowY:'auto',marginTop:10}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
           <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:0}}>
             {editandoFixaId ? 'Editar fixa' : editandoId ? 'Editar lançamento' : 'Novo lançamento'}
@@ -1236,7 +1362,7 @@ export default function NovoLancamentoExtrato() {
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}>
               <option value="">Selecione...</option>
               {categoriasVariaveis.map(c=>(
-                <option key={c.id} value={c.nome}>{c.nome}</option>
+                <option key={c.id} value={c.nome}>{c.descricao ? `${c.nome} — ${c.descricao}` : c.nome}</option>
               ))}
             </select>
             )}
@@ -1251,7 +1377,6 @@ export default function NovoLancamentoExtrato() {
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}
               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
           </div>
-          {!(editandoFixaId && fixaEhAutomatica) && (
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
@@ -1262,7 +1387,6 @@ export default function NovoLancamentoExtrato() {
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}
               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
           </div>
-          )}
         </div>
 
         <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>
@@ -1288,8 +1412,6 @@ export default function NovoLancamentoExtrato() {
         </div>
       </div>
       </div>
-      </>
-      )}
       </>
       )}
 

@@ -3,9 +3,9 @@ import type { Categoria } from '../context/AppContext'
 type CatSugestao = Pick<Categoria, 'nome' | 'tipo' | 'icone' | 'fixa' | 'tipoMovimento' | 'cor' | 'ativa' | 'grupo'>
 
 export const GRUPOS_PADRAO = [
-  'Renda', 'Moradia', 'Alimentação', 'Transporte', 'Saúde',
-  'Educação', 'Lazer', 'Vestuário', 'Pet', 'Tecnologia', 'Finanças',
-  'Cartão de Crédito', 'Outros',
+  'Alimentação', 'Cartão de Crédito', 'Educação', 'Finanças',
+  'Lazer', 'Moradia', 'Outros', 'Pet', 'Renda', 'Saúde',
+  'Tecnologia', 'Transporte', 'Vestuário',
 ]
 
 const NEUTRO: Pick<CatSugestao, 'fixa' | 'tipoMovimento' | 'cor' | 'ativa'> = {

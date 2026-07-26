@@ -32,7 +32,7 @@ export default function ExtratoConsolidado() {
   const [ano]         = useState(anoHoje)
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
 
-  const { contas, categorias, extratoData, faturaData, planos } = useApp()
+  const { contas, categorias, extratoData, faturaData, planos, planosReal } = useApp()
 
   const contasExtrato = useMemo(
     () => contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca'),
@@ -85,8 +85,8 @@ export default function ExtratoConsolidado() {
     }
 
     function valorFixaCat(catId: string, catNome: string, tipo: string, override?: number): number {
-      if (override !== undefined && override > 0) return override
-      const planoAno = planos[ano]
+      if (override !== undefined) return override
+      const planoAno = planosReal[ano] ?? planos[ano]
       if (planoAno) {
         const lista = tipo === 'entrada' ? planoAno.entradas : planoAno.saidas
         const found = lista.find(c => (catId && c.id === catId) || c.nome === catNome)
@@ -107,7 +107,8 @@ export default function ExtratoConsolidado() {
     }
 
     const isPastMonth = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
-    const primeiroBancoId = contasExtrato[0]?.id ?? ''
+    const preferidaBanco = contasExtrato.find(ct => ct.preferida)
+    const primeiroBancoId = (preferidaBanco ?? contasExtrato[0])?.id ?? ''
 
     // Conta que confirmou a fixa; se nenhuma, usa o primeiro banco
     function ownerDeFixa(fixaId: string): string {
@@ -182,13 +183,11 @@ export default function ExtratoConsolidado() {
       const dia = Math.min(Math.max(diaRaw, 1), totalDias)
 
       const confirmado = fixasConf[cat.id] === true
-        || (isAuto && (isPastMonth || (eMesAtual && dia < diaHoje)))
+        || (isAuto && isPastMonth)
 
-      // Override só vale para fixas já confirmadas (valor efetivamente pago).
-      // Para previsto, ignora override e usa o valor do plano.
-      const override = confirmado ? fixasOvr[cat.id] : undefined
+      const override = fixasOvr[cat.id]
       const valor = valorFixaCat(cat.id, cat.nome, cat.tipo, override)
-      if (valor <= 0) continue
+      if (valor <= 0 && !confirmado) continue
 
       addItem(dia, {
         contaId: ownerContaId, contaBanco: ownerBanco,
@@ -240,7 +239,7 @@ export default function ExtratoConsolidado() {
         if (total <= 0) continue
 
         const confirmado = fixasConf[fixaId] === true
-          || (isAuto && (isPastMonth || (eMesAtual && dia < diaHoje)))
+          || (isAuto && isPastMonth)
 
         addItem(dia, {
           contaId: oid, contaBanco: info.contaBanco,
@@ -253,7 +252,7 @@ export default function ExtratoConsolidado() {
     }
 
     return { itensPorDia, totalEntradas: te, totalSaidas: ts, entradasConf: teConf, saidasConf: tsConf }
-  }, [fontes, extratoData, faturaData, totalDias, categorias, contas, planos, ano, mes,
+  }, [fontes, extratoData, faturaData, totalDias, categorias, contas, planos, planosReal, ano, mes,
       contasExtrato, eMesAtual, diaHoje, mesHoje, anoHoje, mesStr])
 
   const saldoBase = useMemo(
@@ -319,14 +318,6 @@ export default function ExtratoConsolidado() {
 
   const saldoDisponivel = saldoBase + entradasConf - saidasConf
 
-  const { planEntradas, planSaidas } = useMemo(() => {
-    const planoAno = planos[ano]
-    if (!planoAno) return { planEntradas: 0, planSaidas: 0 }
-    const pe = planoAno.entradas.reduce((s, c) => s + (c.v[mes] ?? 0), 0)
-    const ps = planoAno.saidas.reduce((s, c) => s + (c.v[mes] ?? 0), 0)
-    return { planEntradas: pe, planSaidas: ps }
-  }, [planos, ano, mes])
-
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
@@ -346,11 +337,6 @@ export default function ExtratoConsolidado() {
               background:ativo?COR.azul:'#f8faff',
               color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0}}>
               {m}
-              {isAtual && (
-                <span style={{position:'absolute',bottom:3,left:'50%',
-                  transform:'translateX(-50%)',width:4,height:4,
-                  borderRadius:'50%',background:ativo?'#fff':COR.azul,display:'block'}}/>
-              )}
             </button>
           )
         })}
@@ -365,7 +351,7 @@ export default function ExtratoConsolidado() {
           <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
           <span style={{color:COR.borda}}>|</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Disponível:</span>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo atual:</span>
             <span style={{fontSize:16,fontWeight:800,
               color:saldoDisponivel<0?COR.vermelho:COR.verde}}>{fmt(saldoDisponivel)}</span>
           </div>
@@ -378,43 +364,7 @@ export default function ExtratoConsolidado() {
           </div>
         </div>
 
-        {/* Linha 2: resumo entradas / saídas do mês */}
-        <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
-          {[
-            { label:'↑ Entradas', valor: entradasConf, plan: planEntradas, cor: '#16a34a', bg:'#f0fdf4', borda:'#bbf7d0' },
-            { label:'↓ Saídas',   valor: saidasConf,  plan: planSaidas,   cor: COR.vermelho, bg:'#fff5f5', borda:'#fecaca' },
-          ].map(({ label, valor, plan, cor, bg, borda }) => {
-            const diff  = valor - plan
-            const pct   = plan > 0 ? Math.round((valor / plan) * 100) : null
-            return (
-              <div key={label} style={{ display:'flex', alignItems:'center', gap:8,
-                background: bg, border:`1px solid ${borda}`, borderRadius:8,
-                padding:'6px 14px' }}>
-                <span style={{ fontSize:12, fontWeight:600, color: cor }}>{label}</span>
-                <span style={{ fontSize:15, fontWeight:800, color: cor }}>{fmt(valor)}</span>
-                {plan > 0 && (
-                  <span style={{ fontSize:11, color:'#94a3b8' }}>
-                    / {fmt(plan)}
-                    {pct !== null && (
-                      <span style={{ marginLeft:4, fontWeight:700,
-                        color: label.startsWith('↑') ? (pct >= 100 ? '#16a34a' : '#f59e0b') : (pct <= 100 ? '#16a34a' : COR.vermelho) }}>
-                        ({pct}%)
-                      </span>
-                    )}
-                  </span>
-                )}
-                {plan > 0 && (
-                  <span style={{ fontSize:11, fontWeight:600,
-                    color: diff === 0 ? '#94a3b8' : label.startsWith('↑') ? (diff > 0 ? '#16a34a' : COR.vermelho) : (diff < 0 ? '#16a34a' : COR.vermelho) }}>
-                    {diff > 0 ? '+' : ''}{fmt(diff)}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Linha 3: pills por conta */}
+        {/* Linha 2: pills por conta */}
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {saldosPorConta.map(({conta,saldo,manual}) => (
             <span key={conta.id} style={{
@@ -444,8 +394,8 @@ export default function ExtratoConsolidado() {
       </div>
 
       {/* LISTA DE DIAS */}
-      <div style={{flex:1,display:'flex',padding:'10px 16px',overflow:'hidden'}}>
-      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:6,padding:'10px 16px'}}>
 
         {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
           const itens      = itensPorDia[dia] ?? []
@@ -453,7 +403,8 @@ export default function ExtratoConsolidado() {
           const passado    = eMesAtual ? dia<diaHoje : ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
           const diaFuturo  = !passado && !ehHoje
           const semana     = DIAS_SEM[new Date(ano,mes,dia).getDay()]
-          const temItens   = itens.length > 0
+          const itensVisiveis = diaFuturo ? itens : itens.filter(i => i.confirmado)
+          const temItens   = itensVisiveis.length > 0
           const aberto     = diasAbertos.has(dia)
 
           const saldosRef   = diaFuturo ? saldosAll : saldosConf
@@ -566,7 +517,7 @@ export default function ExtratoConsolidado() {
               </div>
 
               {/* Lançamentos */}
-              {aberto && itens.map((item, idx) => {
+              {aberto && itensVisiveis.map((item, idx) => {
                 const catVisual = iconeCategoria(categorias, item.categoria)
                 const opacidade = diaFuturo && !item.confirmado ? 0.5 : 1
                 return (
@@ -574,7 +525,7 @@ export default function ExtratoConsolidado() {
                     style={{display:'flex',alignItems:'center',gap:10,
                       padding:'11px 16px 11px 12px',opacity:opacidade,
                       borderLeft:`4px solid ${item.contaCor}`,
-                      borderBottom:idx<itens.length-1?`1px solid #f1f5f9`:'none'}}>
+                      borderBottom:idx<itensVisiveis.length-1?`1px solid #f1f5f9`:'none'}}>
                     <div style={{width:34,height:34,borderRadius:8,flexShrink:0,
                       display:'flex',alignItems:'center',justifyContent:'center',
                       fontSize:16,background:catVisual.cor}}>
@@ -609,6 +560,19 @@ export default function ExtratoConsolidado() {
             </div>
           )
         })}
+      </div>
+      {/* Saldo final previsto */}
+      <div style={{padding:'0 16px 10px',flexShrink:0}}>
+        <div style={{borderRadius:12,padding:'14px 16px',
+          background:'linear-gradient(135deg,#0f2878,#2563eb)',
+          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
+            Saldo final previsto — {NOMES_MESES[mes]} {ano}
+          </span>
+          <span style={{fontSize:18,fontWeight:700,color:'#fff'}}>
+            {fmt(saldosAll[totalDias]??saldoBase)}
+          </span>
+        </div>
       </div>
       </div>
     </div>
