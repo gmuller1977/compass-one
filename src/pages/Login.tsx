@@ -1,6 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
 
 const COR = {
   azul: '#1a56db',
@@ -49,6 +59,7 @@ function Campo({ label, tipo = 'text', placeholder, valor, onChange, onKeyDown }
 
 export default function Login() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [aba, setAba] = useState<'login' | 'cadastro'>('login')
   const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmar: '' })
   const [carregando, setCarregando] = useState(false)
@@ -127,94 +138,129 @@ export default function Login() {
 
   return (
     <div style={{
-      display: 'flex', minHeight: '100vh',
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      minHeight: '100vh',
       fontFamily: "-apple-system,'Inter',sans-serif",
       background: COR.fundo,
     }}>
 
-      {/* ── PAINEL ESQUERDO ── */}
-      <div style={{
-        width: '42%', minWidth: 300,
-        background: `linear-gradient(145deg, ${COR.azulEscuro} 0%, ${COR.azul} 55%, ${COR.azulMedio} 100%)`,
-        display: 'flex', flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '48px 40px', position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Anéis decorativos */}
-        <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', border: '40px solid rgba(255,255,255,0.06)' }} />
-        <div style={{ position: 'absolute', bottom: -80, left: -80, width: 280, height: 280, borderRadius: '50%', border: '50px solid rgba(255,255,255,0.04)' }} />
-
-        {/* Rosa dos ventos */}
-        <svg style={{ position: 'absolute', bottom: 90, right: 30, opacity: 0.1 }} width="120" height="120" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="56" fill="none" stroke="white" strokeWidth="1.5" />
-          <circle cx="60" cy="60" r="40" fill="none" stroke="white" strokeWidth="1" />
-          <polygon points="60,10 66,58 60,52 54,58" fill="white" />
-          <polygon points="60,110 54,62 60,68 66,62" fill="white" opacity=".4" />
-          <polygon points="10,60 58,54 52,60 58,66" fill="white" opacity=".4" />
-          <polygon points="110,60 62,66 68,60 62,54" fill="white" opacity=".4" />
-          <circle cx="60" cy="60" r="4" fill="white" />
-        </svg>
-
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5" />
-              <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white" />
-              <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5" />
-            </svg>
+      {/* ── PAINEL ESQUERDO (desktop) / HEADER COMPACTO (mobile) ── */}
+      {isMobile ? (
+        <div style={{
+          background: `linear-gradient(145deg, ${COR.azulEscuro} 0%, ${COR.azul} 55%, ${COR.azulMedio} 100%)`,
+          padding: '28px 24px 32px',
+          position: 'relative', overflow: 'hidden', flexShrink: 0,
+        }}>
+          {/* Anéis decorativos */}
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', border: '30px solid rgba(255,255,255,0.06)' }} />
+          <div style={{ position: 'absolute', bottom: -50, left: -50, width: 180, height: 180, borderRadius: '50%', border: '35px solid rgba(255,255,255,0.04)' }} />
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, position: 'relative', zIndex: 1, marginBottom: 16 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5" />
+                <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white" />
+                <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>
+              Compass <span style={{ fontWeight: 300, opacity: 0.75 }}>One</span>
+            </span>
           </div>
-          <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>
-            Compass <span style={{ fontWeight: 300, opacity: 0.75 }}>One</span>
-          </span>
-        </div>
-
-        {/* Tagline */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <h2 style={{ fontSize: 26, fontWeight: 600, color: '#fff', lineHeight: 1.35, marginBottom: 14, letterSpacing: -0.3 }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: 0, position: 'relative', zIndex: 1, lineHeight: 1.6 }}>
             Navegue suas finanças com clareza.
-          </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.75 }}>
-            Controle inteligente de gastos, metas e alertas — pelo app e direto no WhatsApp.
           </p>
         </div>
+      ) : (
+        <div style={{
+          width: '42%', minWidth: 300,
+          background: `linear-gradient(145deg, ${COR.azulEscuro} 0%, ${COR.azul} 55%, ${COR.azulMedio} 100%)`,
+          display: 'flex', flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '48px 40px', position: 'relative', overflow: 'hidden',
+        }}>
+          {/* Anéis decorativos */}
+          <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', border: '40px solid rgba(255,255,255,0.06)' }} />
+          <div style={{ position: 'absolute', bottom: -80, left: -80, width: 280, height: 280, borderRadius: '50%', border: '50px solid rgba(255,255,255,0.04)' }} />
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 8, position: 'relative', zIndex: 1 }}>
-          {[
-            { val: '34+',       label: 'Categorias', emBreve: false },
-            { val: 'Real-time', label: 'Alertas',    emBreve: false },
-            { val: 'IA',        label: 'WhatsApp',   emBreve: true  },
-          ].map(({ val, label, emBreve }) => (
-            <div key={label} style={{
-              padding: '10px 14px', borderRadius: 10,
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              position: 'relative',
+          {/* Rosa dos ventos */}
+          <svg style={{ position: 'absolute', bottom: 90, right: 30, opacity: 0.1 }} width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="56" fill="none" stroke="white" strokeWidth="1.5" />
+            <circle cx="60" cy="60" r="40" fill="none" stroke="white" strokeWidth="1" />
+            <polygon points="60,10 66,58 60,52 54,58" fill="white" />
+            <polygon points="60,110 54,62 60,68 66,62" fill="white" opacity=".4" />
+            <polygon points="10,60 58,54 52,60 58,66" fill="white" opacity=".4" />
+            <polygon points="110,60 62,66 68,60 62,54" fill="white" opacity=".4" />
+            <circle cx="60" cy="60" r="4" fill="white" />
+          </svg>
+
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {emBreve && (
-                <div style={{
-                  position: 'absolute', top: -8, right: -4,
-                  fontSize: 8, fontWeight: 700, letterSpacing: 0.4,
-                  textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
-                  background: '#d97706', color: '#fff',
-                }}>Em breve</div>
-              )}
-              <div style={{ fontSize: 14, fontWeight: 600, color: emBreve ? 'rgba(255,255,255,0.45)' : '#fff' }}>{val}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5" />
+                <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white" />
+                <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5" />
+              </svg>
             </div>
-          ))}
-        </div>
-      </div>
+            <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>
+              Compass <span style={{ fontWeight: 300, opacity: 0.75 }}>One</span>
+            </span>
+          </div>
 
-      {/* ── PAINEL DIREITO ── */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 40px' }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
+          {/* Tagline */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 600, color: '#fff', lineHeight: 1.35, marginBottom: 14, letterSpacing: -0.3 }}>
+              Navegue suas finanças com clareza.
+            </h2>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.75 }}>
+              Controle inteligente de gastos, metas e alertas — pelo app e direto no WhatsApp.
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 8, position: 'relative', zIndex: 1 }}>
+            {[
+              { val: '34+',       label: 'Categorias', emBreve: false },
+              { val: 'Real-time', label: 'Alertas',    emBreve: false },
+              { val: 'IA',        label: 'WhatsApp',   emBreve: true  },
+            ].map(({ val, label, emBreve }) => (
+              <div key={label} style={{
+                padding: '10px 14px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                position: 'relative',
+              }}>
+                {emBreve && (
+                  <div style={{
+                    position: 'absolute', top: -8, right: -4,
+                    fontSize: 8, fontWeight: 700, letterSpacing: 0.4,
+                    textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
+                    background: '#d97706', color: '#fff',
+                  }}>Em breve</div>
+                )}
+                <div style={{ fontSize: 14, fontWeight: 600, color: emBreve ? 'rgba(255,255,255,0.45)' : '#fff' }}>{val}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── PAINEL DO FORMULÁRIO ── */}
+      <div style={{
+        flex: 1,
+        display: 'flex', alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: 'center',
+        padding: isMobile ? '28px 20px 40px' : '48px 40px',
+      }}>
+        <div style={{ width: '100%', maxWidth: isMobile ? undefined : 380 }}>
 
           {/* Abas */}
           <div style={{ display: 'flex', background: COR.inputFundo, borderRadius: 10, padding: 3, marginBottom: 30, border: `1px solid ${COR.borda}` }}>
