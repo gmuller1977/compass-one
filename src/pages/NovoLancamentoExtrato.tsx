@@ -29,6 +29,7 @@ type CatFixa = {
 type Lancamento = {
   id: string; tipo: TipoLanc
   descricao: string; categoria: string
+  subCategoria?: string
   valor: number; formaPagamento: FormaPag
   tipoLanc: 'fixa'|'variavel'
   consolidado?: boolean
@@ -133,10 +134,11 @@ export default function NovoLancamentoExtrato() {
   const [editandoId, setEditandoId] = useState<string|null>(null)
   const [editandoDiaOriginal, setEditandoDiaOriginal] = useState<number|null>(null)
   const [editandoFixaId, setEditandoFixaId] = useState<string|null>(null)
-  const [fTipo,   setFTipo]   = useState<TipoLanc>('saida')
-  const [fCat,    setFCat]    = useState('')
-  const [fDesc,   setFDesc]   = useState('')
-  const [fValor,  setFValor]  = useState('')
+  const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
+  const [fCat,     setFCat]     = useState('')
+  const [fSubDesc, setFSubDesc] = useState('')
+  const [fDesc,    setFDesc]    = useState('')
+  const [fValor,   setFValor]   = useState('')
   const [fPag,    setFPag]    = useState<FormaPag>('debito')
   const [tabPrincipal, setTabPrincipal] = useState<'extrato'|'cartao'|'dinheiro'|'consolidado'>('extrato')
   const [fContaDestino,     setFContaDestino]      = useState('')
@@ -255,6 +257,14 @@ export default function NovoLancamentoExtrato() {
   const categoriasVariaveis = categorias
     .filter(c => c.ativa && c.tipo === fTipo && (isDinheiro ? c.formaPagamento !== 'automatico' : true))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+  // Para o select: deduplica por nome (exibe cada nome só uma vez)
+  const categoriasSelect = categoriasVariaveis.filter((c, idx, arr) =>
+    arr.findIndex(x => x.nome === c.nome) === idx
+  )
+  // Subcategorias disponíveis para a categoria selecionada (quando há duplicatas com descrição)
+  const subDescsDisponiveis = fCat
+    ? categoriasVariaveis.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!)
+    : []
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
   const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
   const totalDias = diasNoMes(mes, ano)
@@ -315,13 +325,13 @@ export default function NovoLancamentoExtrato() {
 
   function resetarParaNovo(novoDia: number) {
     setDiaSel(novoDia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(null)
-    setFTipo('saida'); setFCat(''); setFDesc(''); setFValor(''); setFContaDestino('')
+    setFTipo('saida'); setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFContaDestino('')
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
 
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia); setEditandoFixaId(null)
-    setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
+    setFTipo(l.tipo); setFCat(l.categoria); setFSubDesc(l.subCategoria ?? ''); setFDesc(l.descricao)
     setFValor(String(l.valor).replace('.', ',')); setFPag(l.formaPagamento)
 
     if (l.formaPagamento === 'transferencia') {
@@ -450,7 +460,7 @@ export default function NovoLancamentoExtrato() {
       }))
 
       setEditandoFixaId(null)
-      setFCat(''); setFDesc(''); setFValor('')
+      setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
       setTimeout(() => categoriaSelectRef.current?.focus(), 80)
       return
     }
@@ -486,7 +496,7 @@ export default function NovoLancamentoExtrato() {
           }],
         },
       }))
-      setFCat(''); setFDesc(''); setFValor(''); setFContaDestino('')
+      setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFContaDestino('')
       setTimeout(() => categoriaSelectRef.current?.focus(), 80)
       return
     }
@@ -504,6 +514,7 @@ export default function NovoLancamentoExtrato() {
         const novoConsolidado = precisaRecalcular ? !diaFuturoAlvo : entrada.consolidado
         const atualizada: Lancamento = {
           ...entrada, tipo:fTipo, descricao:fDesc.trim()||fCat, categoria:fCat,
+          subCategoria: fSubDesc || undefined,
           valor, formaPagamento:fPag, consolidado:novoConsolidado,
         }
         if (diaOrigem === diaSel) {
@@ -526,6 +537,7 @@ export default function NovoLancamentoExtrato() {
           [diaSel]: [...(prev.lancamentos[diaSel]??[]), {
             id:`v-${Date.now()}`, tipo:fTipo,
             descricao:fDesc.trim()||fCat, categoria:fCat,
+            subCategoria: fSubDesc || undefined,
             valor, formaPagamento:fPag, tipoLanc:'variavel',
             consolidado: !diaFuturoAlvo,
           }],
@@ -552,7 +564,7 @@ export default function NovoLancamentoExtrato() {
       }
     }
     setEditandoId(null); setEditandoDiaOriginal(null)
-    setFCat(''); setFDesc(''); setFValor('')
+    setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
   }
 
@@ -567,13 +579,14 @@ export default function NovoLancamentoExtrato() {
         [diaSel]: [...(prev.lancamentos[diaSel]??[]), {
           id:`v-${Date.now()}`, tipo:fTipo,
           descricao:fDesc.trim()||fCat, categoria:fCat,
+          subCategoria: fSubDesc || undefined,
           valor, formaPagamento:fPag, tipoLanc:'variavel',
           consolidado: !diaFuturoAlvo,
         }],
       },
     }))
     toast('Lançamento registrado')
-    setFCat(''); setFDesc(''); setFValor('')
+    setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
   }
 
@@ -587,7 +600,7 @@ export default function NovoLancamentoExtrato() {
       lancamentos: { ...prev.lancamentos, [diaAlvo]: (prev.lancamentos[diaAlvo]??[]).filter(l=>l.id!==idAtual) }
     }))
     setEditandoId(null); setEditandoDiaOriginal(null)
-    setFCat(''); setFDesc(''); setFValor('')
+    setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
     toast('Lançamento excluído', 'info')
   }
 
@@ -598,7 +611,7 @@ export default function NovoLancamentoExtrato() {
     }))
     if (editandoId === id) {
       setEditandoId(null); setEditandoDiaOriginal(null)
-      setFCat(''); setFDesc(''); setFValor('')
+      setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
     }
   }
 
@@ -757,7 +770,7 @@ export default function NovoLancamentoExtrato() {
               <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
               <select ref={categoriaSelectRef} value={fCat}
                 onChange={e=>{
-                  const nome=e.target.value; setFCat(nome)
+                  const nome=e.target.value; setFCat(nome); setFSubDesc('')
                   const cat=categorias.find(c=>c.nome===nome)
                   if (cat) setFPag(fTipo==='entrada'
                     ?formaRecebCategoria(cat.formaPagamento,cat.tipoMovimento)
@@ -768,10 +781,34 @@ export default function NovoLancamentoExtrato() {
                   fontSize:12,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}>
                 <option value="">Selecione...</option>
-                {categoriasVariaveis.map(c=>(
-                  <option key={c.id} value={c.nome}>{c.descricao ? `${c.nome} — ${c.descricao}` : c.nome}</option>
+                {categoriasSelect.map(c=>(
+                  <option key={c.id} value={c.nome}>{c.nome}</option>
                 ))}
               </select>
+              {/* Chips de sub-descrição quando categoria tem múltiplas variantes */}
+              {subDescsDisponiveis.length > 1 && (
+                <div style={{marginTop:6}}>
+                  <div style={{fontSize:9,color:'#0369a1',fontWeight:600,
+                    textTransform:'uppercase',letterSpacing:.4,marginBottom:4}}>
+                    Qual variante?
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                    {subDescsDisponiveis.map(desc => (
+                      <button key={desc} type="button"
+                        onClick={() => setFSubDesc(desc === fSubDesc ? '' : desc)}
+                        style={{
+                          padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:600,
+                          border:`1.5px solid ${fSubDesc===desc?'#1a56db':'#bae6fd'}`,
+                          background:fSubDesc===desc?'#1a56db':'#eff6ff',
+                          color:fSubDesc===desc?'#fff':'#1a56db',
+                          cursor:'pointer',fontFamily:'inherit',
+                        }}>
+                        {desc}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor *</div>

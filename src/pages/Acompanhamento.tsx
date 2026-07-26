@@ -50,8 +50,11 @@ export default function Acompanhamento() {
     const entradas: Record<string, CatReal> = {}
     const sufixo = `-${ano}-${mesStr}`
 
-    const getSaida   = (n: string) => { if (!saidas[n])   saidas[n]  = mkCatReal(); return saidas[n] }
-    const getEntrada = (n: string) => { if (!entradas[n]) entradas[n] = mkCatReal(); return entradas[n] }
+    // Chave do bucket: "nome" para categorias únicas, "nome||subCategoria" quando subCategoria está definida
+    function rKey(nome: string, sub?: string) { return sub ? `${nome}||${sub}` : nome }
+
+    const getSaida   = (k: string) => { if (!saidas[k])   saidas[k]  = mkCatReal(); return saidas[k] }
+    const getEntrada = (k: string) => { if (!entradas[k]) entradas[k] = mkCatReal(); return entradas[k] }
 
     for (const [key, dados] of Object.entries(extratoData)) {
       if (!key.endsWith(sufixo)) continue
@@ -61,12 +64,13 @@ export default function Acompanhamento() {
       for (let d = 1; d <= totalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           const fonte = l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco'
+          const sub   = (l as { subCategoria?: string }).subCategoria
           if (l.tipo === 'saida') {
-            const c = getSaida(l.categoria)
+            const c = getSaida(rKey(l.categoria, sub))
             c.total += l.valor; c.totalBanc += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
           } else {
-            const c = getEntrada(l.categoria)
+            const c = getEntrada(rKey(l.categoria, sub))
             c.total += l.valor; c.totalBanc += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
           }
@@ -369,7 +373,8 @@ export default function Acompanhamento() {
           {/* Categorias */}
           <div style={{background:COR.branco}}>
             {catsComDesc.map((cat, idx) => {
-              const cd  = realMap[cat.nome]
+              const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
+              const cd  = realMap[realKey] ?? realMap[cat.nome]
               const uid = `${tipo}-${grupo}-${cat.nome}-${idx}`
               return (
                 <CatRow

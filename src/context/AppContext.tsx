@@ -45,6 +45,7 @@ export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; said
 export type Lancamento = {
   id: string; tipo: TipoLanc
   descricao: string; categoria: string
+  subCategoria?: string
   valor: number; formaPagamento: FormaPagLanc
   tipoLanc: 'fixa' | 'variavel'
 }
