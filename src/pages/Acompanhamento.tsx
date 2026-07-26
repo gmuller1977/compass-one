@@ -25,7 +25,7 @@ function barCor(perc: number, isEntrada?: boolean) {
   return COR.verde
 }
 
-type Lanc = { dia: number; descricao: string; valor: number; icone: string; sub: string }
+type Lanc = { dia: number; descricao: string; valor: number; sub: string; fonte: 'banco'|'cartao'|'dinheiro' }
 type CatReal = { total: number; totalBanc: number; totalCart: number; lancamentos: Lanc[] }
 function mkCatReal(): CatReal { return { total:0, totalBanc:0, totalCart:0, lancamentos:[] } }
 
@@ -34,8 +34,8 @@ export default function Acompanhamento() {
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
 
-  const [mes, setMes]   = useState(mesHoje)
-  const [ano, setAno]   = useState(anoHoje)
+  const [mes, setMes]     = useState(mesHoje)
+  const [ano, setAno]     = useState(anoHoje)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
 
   const { pathname } = useLocation()
@@ -62,14 +62,15 @@ export default function Acompanhamento() {
 
       for (let d = 1; d <= totalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
+          const fonte = l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco'
           if (l.tipo === 'saida') {
             const c = getSaida(l.categoria)
             c.total += l.valor; c.totalBanc += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, icone:'🏦', sub:l.formaPagamento })
+            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
           } else {
             const c = getEntrada(l.categoria)
             c.total += l.valor; c.totalBanc += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, icone:'🏦', sub:l.formaPagamento })
+            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
           }
         }
       }
@@ -88,11 +89,11 @@ export default function Acompanhamento() {
           if (fixaCat.tipo === 'saida') {
             const c = getSaida(fixaCat.nome)
             c.total += val; c.totalBanc += val
-            c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, icone:'🏦', sub:'automático' })
+            c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
           } else {
             const c = getEntrada(fixaCat.nome)
             c.total += val; c.totalBanc += val
-            c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, icone:'🏦', sub:'automático' })
+            c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
           }
         }
       }
@@ -108,7 +109,7 @@ export default function Acompanhamento() {
           if (l.tipo === 'entrada') {
             const c = getSaida(l.categoria)
             c.total += l.valor; c.totalCart += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, icone:'💳', sub:card.apelido??card.nome })
+            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
           }
         }
       }
@@ -140,131 +141,180 @@ export default function Acompanhamento() {
   const gruposSaida   = useMemo(() => buildGrupos('saida'),  [categorias, cartaoNomes])
   const gruposEntrada = useMemo(() => buildGrupos('entrada'), [categorias, cartaoNomes])
 
-  const { totalPrevS, totalRealS, totalPrevE, totalRealE } = useMemo(() => {
+  const { totalPrevS, totalRealS, totalPrevE, totalRealE, somaDispSaidas } = useMemo(() => {
     const totalPrevS = (dadosAno?.saidas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
     const totalRealS = Object.values(saidasMap).reduce((s,c) => s + c.total, 0)
     const totalPrevE = (dadosAno?.entradas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
     const totalRealE = Object.values(entradasMap).reduce((s,c) => s + c.total, 0)
-    return { totalPrevS, totalRealS, totalPrevE, totalRealE }
+    // Soma dos disponíveis restantes de cada categoria de saída: quanto ainda pode ser gasto
+    const somaDispSaidas = (dadosAno?.saidas ?? []).reduce((s,c) => {
+      const prev = c.v[mes] ?? 0
+      const real = saidasMap[c.nome]?.total ?? 0
+      return s + Math.max(0, prev - real)
+    }, 0)
+    return { totalPrevS, totalRealS, totalPrevE, totalRealE, somaDispSaidas }
   }, [dadosAno, mes, saidasMap, entradasMap])
 
-  function toggleAberto(nome: string) {
-    setAbertos(prev => { const n = new Set(prev); n.has(nome)?n.delete(nome):n.add(nome); return n })
+  function toggleAberto(uid: string) {
+    setAbertos(prev => { const n = new Set(prev); n.has(uid)?n.delete(uid):n.add(uid); return n })
   }
 
   // ── Linha de categoria ─────────────────────────────────────────────────
-  function CatRow({ nome, prev, realBanc, realCart, lancamentos, isEntrada }: {
-    nome: string; prev: number; realBanc: number; realCart: number
+  function CatRow({ uid, nome, prev, realBanc, realCart, lancamentos, isEntrada }: {
+    uid: string; nome: string; prev: number; realBanc: number; realCart: number
     lancamentos: Lanc[]; isEntrada?: boolean
   }) {
+    const aberto = abertos.has(uid)
     const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
     const lancAbs    = realBanc + realCart
     const disponivel = prev - lancAbs
     const perc       = prev > 0 ? lancAbs / prev : (lancAbs > 0 ? 1 : 0)
     const bc         = barCor(perc, isEntrada)
-    const aberto     = abertos.has(nome)
 
-    const realColor  = isEntrada
-      ? (lancAbs > 0 ? COR.verde : COR.textoSuave)
-      : (lancAbs === 0 ? COR.textoSuave : (lancAbs <= prev || prev === 0) ? COR.azul : COR.vermelho)
+    const realColor = isEntrada
+      ? (lancAbs > 0 ? COR.verde : '#94a3b8')
+      : (lancAbs === 0 ? '#94a3b8' : (lancAbs <= prev || prev === 0) ? COR.azul : COR.vermelho)
+    const realBg = isEntrada
+      ? (lancAbs > 0 ? '#f0fdf4' : '#f8faff')
+      : (lancAbs === 0 ? '#f8faff' : (lancAbs <= prev || prev === 0) ? '#eff6ff' : '#fff1f2')
+    const realBd = isEntrada
+      ? (lancAbs > 0 ? '#bbf7d0' : COR.borda)
+      : (lancAbs === 0 ? COR.borda : (lancAbs <= prev || prev === 0) ? '#bfdbfe' : '#fecdd3')
 
-    const dispColor  = (prev === 0 && lancAbs === 0) ? COR.textoSuave
-      : isEntrada ? (disponivel <= 0 ? COR.textoSuave : COR.verde)
+    const dispColor = (prev === 0 && lancAbs === 0) ? '#94a3b8'
+      : isEntrada ? '#94a3b8'
       : (disponivel >= 0 ? COR.verde : COR.vermelho)
-
-    const byDay: Record<number, Lanc[]> = {}
-    lancamentos.forEach(l => { if (!byDay[l.dia]) byDay[l.dia] = []; byDay[l.dia].push(l) })
-    const dias = Object.keys(byDay).map(Number).sort((a,b) => a-b)
+    const dispBg = (prev === 0 && lancAbs === 0) ? '#f8faff'
+      : isEntrada ? '#f8faff'
+      : (disponivel >= 0 ? '#f0fdf4' : '#fff1f2')
+    const dispBd = (prev === 0 && lancAbs === 0) ? COR.borda
+      : isEntrada ? COR.borda
+      : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
 
     return (
       <div style={{borderBottom:`1px solid ${COR.borda}`}}>
-        {/* Linha principal */}
-        <div
-          onClick={() => lancamentos.length > 0 && toggleAberto(nome)}
-          style={{
-            display:'grid',gridTemplateColumns:'1fr 90px 90px 90px 20px',
-            gap:6,padding:'8px 12px',alignItems:'center',
-            cursor:lancamentos.length>0?'pointer':'default',
-            background:aberto?'#f8faff':'transparent',
-            transition:'background .15s',
-          }}>
-          <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+        {/* Linha */}
+        <div onClick={() => toggleAberto(uid)}
+          style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',
+            cursor:'pointer',background:aberto?'#f8faff':'transparent',transition:'background .15s'}}>
+          {/* Ícone + nome */}
+          <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:0}}>
             <div style={{width:30,height:30,borderRadius:8,background:corIcone,flexShrink:0,
               display:'flex',alignItems:'center',justifyContent:'center',fontSize:15}}>{icone}</div>
             <span style={{fontSize:13,fontWeight:600,color:COR.texto,
               overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{nome}</span>
           </div>
-          <div style={{textAlign:'right',fontSize:13,fontWeight:500,color:COR.textoSuave,
-            fontVariantNumeric:'tabular-nums'}}>
-            {prev > 0 ? fmt(prev) : '—'}
+
+          {/* Três caixinhas */}
+          <div style={{display:'flex',gap:6,flexShrink:0}}>
+            {/* Previsto */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,minWidth:90,
+              background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+              <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Previsto</span>
+              <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,
+                fontVariantNumeric:'tabular-nums'}}>
+                {prev > 0 ? fmt(prev) : '—'}
+              </span>
+            </div>
+            {/* Realizado */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,minWidth:90,
+              background:realBg,border:`1px solid ${realBd}`}}>
+              <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:realColor}}>Realizado</span>
+              <span style={{fontSize:13,fontWeight:700,color:realColor,
+                fontVariantNumeric:'tabular-nums'}}>
+                {lancAbs > 0 ? fmt(lancAbs) : '—'}
+              </span>
+            </div>
+            {/* Disponível */}
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,minWidth:90,
+              background:dispBg,border:`1px solid ${dispBd}`}}>
+              <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:dispColor}}>Disponível</span>
+              <span style={{fontSize:13,fontWeight:700,color:dispColor,
+                fontVariantNumeric:'tabular-nums'}}>
+                {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
+              </span>
+            </div>
           </div>
-          <div style={{textAlign:'right',fontSize:13,fontWeight:700,color:realColor,
-            fontVariantNumeric:'tabular-nums'}}>
-            {lancAbs > 0 ? fmt(lancAbs) : '—'}
-          </div>
-          <div style={{textAlign:'right',fontSize:13,fontWeight:700,color:dispColor,
-            fontVariantNumeric:'tabular-nums'}}>
-            {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
-          </div>
-          <div style={{textAlign:'center',color:COR.textoSuave,fontSize:12,flexShrink:0,
-            transform:aberto?'rotate(180deg)':'rotate(0deg)',transition:'transform .15s'}}>
-            {lancamentos.length > 0 ? '⌄' : ''}
-          </div>
+          {/* Chevron */}
+          <div style={{flexShrink:0,fontSize:12,color:COR.textoSuave,width:16,textAlign:'center',
+            transform:aberto?'rotate(180deg)':'rotate(0deg)',transition:'transform .15s'}}>⌄</div>
         </div>
 
         {/* Barra de progresso */}
         {(prev > 0 || lancAbs > 0) && (
-          <div style={{padding:'0 12px 6px',
-            display:'grid',gridTemplateColumns:'1fr 90px 90px 90px 20px',gap:6}}>
-            <div/>
-            <div style={{gridColumn:'2/5',background:'#e9edf2',borderRadius:99,height:3,overflow:'hidden'}}>
+          <div style={{padding:'0 12px 6px'}}>
+            <div style={{background:'#e9edf2',borderRadius:99,height:3,overflow:'hidden'}}>
               <div style={{width:`${Math.min(perc*100,100)}%`,height:3,borderRadius:99,
                 background:bc,transition:'width .3s'}}/>
             </div>
-            <div/>
           </div>
         )}
 
-        {/* Lançamentos expandíveis */}
-        {aberto && (
-          <div style={{background:'#f8faff',borderTop:`1px solid ${COR.borda}`,
-            padding:'10px 12px 12px'}}>
-            {dias.length === 0 ? (
-              <div style={{textAlign:'center',color:COR.textoSuave,fontSize:12,padding:'8px'}}>
-                Nenhum lançamento encontrado.
-              </div>
-            ) : dias.map(dia => (
-              <div key={dia} style={{marginBottom:10}}>
-                <div style={{fontSize:10,fontWeight:700,color:COR.textoSuave,
-                  textTransform:'uppercase',letterSpacing:.5,
-                  background:'#e9edf2',borderRadius:6,padding:'2px 8px',
-                  marginBottom:5,display:'inline-block'}}>
-                  {dia} {NOMES_MESES[mes]} · {DIAS_SEM[new Date(ano,mes,dia).getDay()]}
+        {/* Expansão: lançamentos em 3 colunas */}
+        {aberto && (() => {
+          const banco   = lancamentos.filter(l => l.fonte === 'banco')
+          const cartao  = lancamentos.filter(l => l.fonte === 'cartao')
+          const dinheiro = lancamentos.filter(l => l.fonte === 'dinheiro')
+          const colunas = [
+            { label:'🏦 Banco',   itens: banco   },
+            { label:'💳 Cartão',  itens: cartao  },
+            { label:'💵 Dinheiro', itens: dinheiro },
+          ].filter(c => c.itens.length > 0)
+          return (
+            <div style={{background:'#f8faff',borderTop:`1px solid ${COR.borda}`,
+              padding:'10px 12px 12px'}}>
+              {colunas.length === 0 ? (
+                <div style={{textAlign:'center',color:COR.textoSuave,fontSize:12}}>
+                  Nenhum lançamento encontrado.
                 </div>
-                <div style={{display:'flex',flexDirection:'column',gap:3}}>
-                  {byDay[dia].map((l,i) => (
-                    <div key={i} style={{display:'flex',alignItems:'center',gap:8,
-                      padding:'6px 10px',borderRadius:8,background:COR.branco,
-                      border:`1px solid ${COR.borda}`}}>
-                      <span style={{fontSize:14,flexShrink:0}}>{l.icone}</span>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,color:COR.texto,fontWeight:500,
-                          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                          {l.descricao || nome}
-                        </div>
-                        {l.sub && <div style={{fontSize:10,color:COR.textoSuave}}>{l.sub}</div>}
+              ) : (
+                <div style={{display:'grid',
+                  gridTemplateColumns:`repeat(${colunas.length}, 1fr)`,gap:10}}>
+                  {colunas.map(col => (
+                    <div key={col.label}>
+                      <div style={{fontSize:10,fontWeight:700,color:COR.textoSuave,
+                        textTransform:'uppercase',letterSpacing:.5,
+                        marginBottom:6,padding:'2px 0'}}>
+                        {col.label}
                       </div>
-                      <div style={{fontSize:12,fontWeight:700,flexShrink:0,
-                        color:isEntrada?COR.verde:COR.texto}}>
-                        {fmt(Math.abs(l.valor))}
+                      <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                        {col.itens.map((l,i) => (
+                          <div key={i} style={{padding:'5px 8px',borderRadius:7,
+                            background:COR.branco,border:`1px solid ${COR.borda}`,
+                            display:'flex',flexDirection:'column',gap:1}}>
+                            <div style={{display:'flex',justifyContent:'space-between',gap:6}}>
+                              <span style={{fontSize:10,color:COR.textoSuave,flexShrink:0}}>
+                                {String(l.dia).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}
+                              </span>
+                              <span style={{fontSize:11,fontWeight:700,
+                                color:isEntrada?COR.verde:COR.texto,
+                                fontVariantNumeric:'tabular-nums',flexShrink:0}}>
+                                {fmt(l.valor)}
+                              </span>
+                            </div>
+                            <div style={{fontSize:11,color:COR.texto,
+                              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                              {l.descricao || nome}
+                            </div>
+                            {l.sub && (
+                              <div style={{fontSize:9,color:COR.textoSuave}}>{l.sub}</div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </div>
+          )
+        })()}
       </div>
     )
   }
@@ -301,27 +351,15 @@ export default function Acompanhamento() {
             {grupo === '__sem_grupo__' ? 'Outras' : grupo}
           </div>
 
-          {/* Cabeçalho de colunas */}
-          <div style={{
-            display:'grid',gridTemplateColumns:'1fr 90px 90px 90px 20px',gap:6,
-            padding:'4px 12px',background:'#fafbfd',
-            borderBottom:`1px solid ${COR.borda}`,
-          }}>
-            <div/>
-            {['Previsto','Realizado','Disponível'].map(h => (
-              <div key={h} style={{textAlign:'right',fontSize:9,fontWeight:700,
-                textTransform:'uppercase',letterSpacing:.5,color:COR.textoSuave}}>{h}</div>
-            ))}
-            <div/>
-          </div>
-
           {/* Categorias */}
           <div style={{background:COR.branco}}>
-            {catsPlan.map(cat => {
-              const cd = realMap[cat.nome]
+            {catsPlan.map((cat, idx) => {
+              const cd  = realMap[cat.nome]
+              const uid = `${tipo}-${grupo}-${idx}`
               return (
                 <CatRow
-                  key={cat.nome}
+                  key={uid}
+                  uid={uid}
                   nome={cat.nome}
                   prev={cat.v[mes]??0}
                   realBanc={cd?.totalBanc??0}
@@ -432,12 +470,13 @@ export default function Acompanhamento() {
 
           <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
 
-          {/* Disponível */}
+          {/* Disponível = Real.Entradas - Σ disponíveis das saídas */}
           {(() => {
-            const disp = totalPrevS - totalRealS
-            const corDisp = totalRealS === 0 ? '#94a3b8' : disp >= 0 ? COR.verde : COR.vermelho
-            const bgDisp  = totalRealS === 0 ? '#f8faff' : disp >= 0 ? '#f0fdf4' : '#fff1f2'
-            const bdDisp  = totalRealS === 0 ? COR.borda  : disp >= 0 ? '#bbf7d0' : '#fecdd3'
+            const disp = totalRealE - somaDispSaidas
+            const semDados = totalRealE === 0 && somaDispSaidas === 0
+            const corDisp = semDados ? '#94a3b8' : disp >= 0 ? COR.verde : COR.vermelho
+            const bgDisp  = semDados ? '#f8faff' : disp >= 0 ? '#f0fdf4' : '#fff1f2'
+            const bdDisp  = semDados ? COR.borda  : disp >= 0 ? '#bbf7d0' : '#fecdd3'
             return (
               <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                 padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
@@ -445,7 +484,7 @@ export default function Acompanhamento() {
                 <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                   letterSpacing:.4,marginBottom:1,color:corDisp}}>Disponível</span>
                 <span style={{fontSize:13,fontWeight:700,color:corDisp,fontVariantNumeric:'tabular-nums'}}>
-                  {totalRealS === 0 ? '—' : fmt(disp)}
+                  {semDados ? '—' : fmt(disp)}
                 </span>
               </div>
             )
