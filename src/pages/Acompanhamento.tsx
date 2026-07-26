@@ -508,7 +508,7 @@ export default function Acompanhamento() {
             {/* ENTRADAS */}
             {(dadosAno.entradas ?? []).length > 0 && (
               <div style={{background:COR.branco,borderRadius:12,
-                border:`1px solid ${COR.borda}`,overflow:'hidden'}}>
+                border:`1px solid ${COR.borda}`,overflow:'hidden',flexShrink:0}}>
                 <div style={{padding:'10px 12px 8px',borderBottom:`1px solid ${COR.borda}`,
                   display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:14,fontWeight:700,color:COR.verde}}>↑ Entradas</span>
@@ -520,7 +520,7 @@ export default function Acompanhamento() {
             {/* SAÍDAS */}
             {(dadosAno.saidas ?? []).length > 0 && (
               <div style={{background:COR.branco,borderRadius:12,
-                border:`1px solid ${COR.borda}`,overflow:'hidden'}}>
+                border:`1px solid ${COR.borda}`,overflow:'hidden',flexShrink:0}}>
                 <div style={{padding:'10px 12px 8px',borderBottom:`1px solid ${COR.borda}`,
                   display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:14,fontWeight:700,color:COR.vermelho}}>↓ Saídas</span>
