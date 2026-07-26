@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
+import { ToastProvider } from './components/Toast'
 import Login          from './pages/Login'
 import Dashboard      from './pages/Dashboard'
 import NovoLancamento from './pages/NovoLancamento'
@@ -31,6 +32,7 @@ function Protegido({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <AppProvider>
+    <ToastProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -42,6 +44,7 @@ export default function App() {
           <Route path="*"               element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
+    </ToastProvider>
     </AppProvider>
   )
 }

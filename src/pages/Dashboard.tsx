@@ -20,10 +20,21 @@ function mesKey(conta: string, ano: number, mes: number) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { contas, categorias, extratoData } = useApp()
+  const { contas, categorias, extratoData, planos } = useApp()
   const hoje = new Date()
   const mes  = hoje.getMonth()
   const ano  = hoje.getFullYear()
+
+  const temBanco      = contas.some(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+  const temCartao     = contas.some(c => c.tipo === 'cartao')
+  const temCategorias = categorias.some(c => c.ativa)
+  const temPlano = useMemo(() => {
+    const p = (planos as any)?.[ano]
+    if (!p) return false
+    return (p.metaAnual ?? 0) > 0 ||
+      (p.entradas ?? []).some((c: any) => (c.v ?? []).some((v: number) => v > 0)) ||
+      (p.saidas   ?? []).some((c: any) => (c.v ?? []).some((v: number) => v > 0))
+  }, [planos, ano])
   // ── Calcula totais do mês atual para conta corrente ──
   const { totalEntradas, totalSaidas, saldoDisponivel, topCategorias } = useMemo(() => {
     let te = 0, ts = 0
@@ -75,6 +86,94 @@ export default function Dashboard() {
     return todos.sort((a,b) => b.data - a.data).slice(0, 5)
   }, [contas, extratoData, mes, ano])
 
+  const semContas = contas.length === 0
+  const semDados  = !semContas && totalEntradas === 0 && totalSaidas === 0
+
+  const passos = [
+    {
+      num: 1, icone: '🏦', titulo: 'Cadastre seus bancos',
+      desc: 'Adicione suas contas correntes e poupanças para acompanhar o saldo.',
+      feito: temBanco, path: '/configuracoes',
+    },
+    {
+      num: 2, icone: '💳', titulo: 'Adicione seus cartões de crédito',
+      desc: 'Vincule seus cartões para controlar faturas automaticamente.',
+      feito: temCartao, path: '/configuracoes', opcional: true,
+    },
+    {
+      num: 3, icone: '🗂️', titulo: 'Crie suas categorias',
+      desc: 'Organize receitas e despesas para visualizar para onde vai o dinheiro.',
+      feito: temCategorias, path: '/configuracoes',
+    },
+    {
+      num: 4, icone: '📋', titulo: 'Faça o planejamento anual',
+      desc: 'Defina metas e orçamentos mensais com o assistente de planejamento.',
+      feito: temPlano, path: '/planejamento',
+    },
+  ]
+
+  if (!temBanco || !temCategorias || !temPlano) return (
+    <div style={{minHeight:'100vh',background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
+      <AppHeader currentPath="/dashboard" />
+      <div style={{maxWidth:560,margin:'0 auto',padding:'48px 24px'}}>
+        <div style={{textAlign:'center',marginBottom:36}}>
+          <div style={{fontSize:44,marginBottom:14}}>🧭</div>
+          <h2 style={{fontSize:22,fontWeight:700,color:COR.texto,margin:'0 0 10px'}}>
+            Bem-vindo ao Compass One
+          </h2>
+          <p style={{fontSize:14,color:COR.textoSuave,lineHeight:1.7,margin:0}}>
+            Siga os passos abaixo para começar a organizar suas finanças.
+          </p>
+        </div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {passos.map(p => (
+            <div key={p.num}
+              onClick={() => navigate(p.path, p.num === 4 ? { state: { openQuiz: true } } : {})}
+              style={{
+                display:'flex',alignItems:'center',gap:16,
+                padding:'16px 20px',borderRadius:14,cursor:'pointer',
+                background: p.feito ? '#f0fdf4' : COR.branco,
+                border:`1.5px solid ${p.feito ? '#86efac' : COR.borda}`,
+                transition:'box-shadow 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow='none')}
+            >
+              <div style={{
+                width:38,height:38,borderRadius:'50%',flexShrink:0,
+                display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit',
+                background: p.feito ? COR.verde : COR.azul,
+                color:'#fff',fontWeight:700,fontSize: p.feito ? 17 : 14,
+              }}>
+                {p.feito ? '✓' : p.num}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3,flexWrap:'wrap'}}>
+                  <span style={{fontSize:17}}>{p.icone}</span>
+                  <span style={{fontSize:14,fontWeight:600,color: p.feito ? '#15803d' : COR.texto}}>
+                    {p.titulo}
+                  </span>
+                  {(p as any).opcional && (
+                    <span style={{fontSize:10,fontWeight:600,color:COR.textoSuave,
+                      background:'#f1f5f9',border:`1px solid ${COR.borda}`,
+                      borderRadius:4,padding:'1px 6px',letterSpacing:.3}}>
+                      opcional
+                    </span>
+                  )}
+                </div>
+                <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>
+                  {p.desc}
+                </div>
+              </div>
+              <span style={{fontSize:18,color:COR.textoSuave,flexShrink:0}}>›</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{minHeight:'100vh',background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
 
@@ -112,8 +211,18 @@ export default function Dashboard() {
                 onClick={()=>navigate('/novo-lancamento')}>Ver tudo</span>
             </div>
             {topCategorias.length === 0 ? (
-              <div style={{textAlign:'center',padding:'20px 0',color:COR.textoSuave,fontSize:13}}>
-                Nenhum lançamento ainda este mês
+              <div style={{textAlign:'center',padding:'24px 0'}}>
+                <div style={{fontSize:28,marginBottom:8}}>📊</div>
+                <div style={{color:COR.textoSuave,fontSize:13,marginBottom:12}}>
+                  Nenhum lançamento ainda este mês
+                </div>
+                {semDados && (
+                  <button onClick={() => navigate('/novo-lancamento')} style={{
+                    padding:'8px 18px',border:'none',borderRadius:8,cursor:'pointer',
+                    background:COR.azul,color:'#fff',fontSize:12,fontWeight:600,fontFamily:'inherit'}}>
+                    Registrar lançamento
+                  </button>
+                )}
               </div>
             ) : topCategorias.map(cat=>(
               <div key={cat.nome} style={{marginBottom:16}}>

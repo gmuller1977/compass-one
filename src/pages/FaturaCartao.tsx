@@ -577,11 +577,6 @@ export default function FaturaCartao() {
               background:ativo?COR.azul:'#f8faff',
               color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0}}>
               {m}
-              {isAtual && (
-                <span style={{position:'absolute',bottom:3,left:'50%',
-                  transform:'translateX(-50%)',width:4,height:4,
-                  borderRadius:'50%',background:ativo?'#fff':COR.azul,display:'block'}}/>
-              )}
             </button>
           )
         })}
@@ -800,8 +795,6 @@ export default function FaturaCartao() {
           return grupos.map((grupo, gIdx) => {
             const {dateKey, dc, mc, ac, items} = grupo
             const aberto = !diasFechados.has(dateKey)
-            const totalCompras  = items.reduce((s,{l}) => l.tipo==='entrada' ? s+l.valor : s, 0)
-            const totalEstornos = items.reduce((s,{l}) => l.tipo==='saida'   ? s+l.valor : s, 0)
             const semana = diaSemana(dc, mc, ac)
             const mesAno = (mc !== purchaseMes || ac !== purchaseAno)
               ? `${NOMES_MESES[mc]}${ac !== purchaseAno ? ' '+ac : ''}`

@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 
 const NAV_ITEMS = [
   { label: 'Dashboard',       path: '/dashboard' },
-  { label: 'Cadastro',        path: '/configuracoes' },
+  { label: 'Configurações',   path: '/configuracoes' },
   { label: 'Planejamento',    path: '/planejamento' },
   { label: 'Lançamentos',     path: '/novo-lancamento' },
   { label: 'Acompanhamento',  path: '/acompanhamento' },
@@ -86,17 +86,6 @@ export default function AppHeader({ currentPath }: Props) {
             border: '1px solid #e2e8f0',
             minWidth: 190, paddingTop: 6, paddingBottom: 6,
           }}>
-            <MenuItem
-              icon="👤"
-              label="Perfil"
-              onClick={() => { setDropdown(false); navigate('/configuracoes', { state: { aba: 'perfil' } }) }}
-            />
-            <MenuItem
-              icon="⚙"
-              label="Preferências"
-              onClick={() => { setDropdown(false); navigate('/configuracoes', { state: { aba: 'preferencias' } }) }}
-            />
-            <div style={{ height: 1, background: '#e2e8f0', margin: '4px 8px' }} />
             <MenuItem
               icon="⏻"
               label="Logout"

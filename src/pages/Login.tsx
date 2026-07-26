@@ -60,6 +60,18 @@ export default function Login() {
 
   const isLogin = aba === 'login'
 
+  function forcaSenha(s: string): { nivel: 0 | 1 | 2; label: string; cor: string } {
+    if (s.length === 0) return { nivel: 0, label: '', cor: '' }
+    const temLetra  = /[a-zA-Z]/.test(s)
+    const temNumero = /[0-9]/.test(s)
+    const temEspec  = /[^a-zA-Z0-9]/.test(s)
+    if (s.length < 6)                          return { nivel: 0, label: 'Fraca — mínimo 6 caracteres', cor: '#dc2626' }
+    if (s.length >= 8 && temLetra && temNumero && temEspec) return { nivel: 2, label: 'Forte',  cor: '#15803d' }
+    if (temLetra && temNumero)                 return { nivel: 2, label: 'Forte',  cor: '#15803d' }
+    if (s.length >= 8)                         return { nivel: 1, label: 'Média',  cor: '#d97706' }
+    return { nivel: 1, label: 'Média — adicione números para fortalecer', cor: '#d97706' }
+  }
+
   function traduzirErro(msg: string) {
     if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos'
     if (msg.includes('Email not confirmed'))        return 'Confirme seu e-mail antes de entrar'
@@ -174,13 +186,26 @@ export default function Login() {
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: 8, position: 'relative', zIndex: 1 }}>
-          {[['34+', 'Categorias'], ['Real-time', 'Alertas'], ['IA', 'WhatsApp']].map(([val, label]) => (
+          {[
+            { val: '34+',       label: 'Categorias', emBreve: false },
+            { val: 'Real-time', label: 'Alertas',    emBreve: false },
+            { val: 'IA',        label: 'WhatsApp',   emBreve: true  },
+          ].map(({ val, label, emBreve }) => (
             <div key={label} style={{
               padding: '10px 14px', borderRadius: 10,
               background: 'rgba(255,255,255,0.08)',
               border: '1px solid rgba(255,255,255,0.12)',
+              position: 'relative',
             }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{val}</div>
+              {emBreve && (
+                <div style={{
+                  position: 'absolute', top: -8, right: -4,
+                  fontSize: 8, fontWeight: 700, letterSpacing: 0.4,
+                  textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
+                  background: '#d97706', color: '#fff',
+                }}>Em breve</div>
+              )}
+              <div style={{ fontSize: 14, fontWeight: 600, color: emBreve ? 'rgba(255,255,255,0.45)' : '#fff' }}>{val}</div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
             </div>
           ))}
@@ -233,6 +258,23 @@ export default function Login() {
           {!isLogin && <Campo label="Nome completo" placeholder="Como quer ser chamado?" valor={form.nome} onChange={set('nome')} />}
           <Campo label="E-mail" tipo="email" placeholder="seu@email.com" valor={form.email} onChange={set('email')} />
           <Campo label="Senha" tipo="password" placeholder="••••••••" valor={form.senha} onChange={set('senha')} onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
+          {!isLogin && form.senha.length > 0 && (() => {
+            const { nivel, label, cor } = forcaSenha(form.senha)
+            return (
+              <div style={{ marginTop: -8, marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 5 }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{
+                      flex: 1, height: 3, borderRadius: 2,
+                      background: i <= nivel ? cor : COR.borda,
+                      transition: 'background 0.2s',
+                    }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: 11, color: cor, fontWeight: 500 }}>{label}</span>
+              </div>
+            )
+          })()}
           {!isLogin && <Campo label="Confirmar senha" tipo="password" placeholder="••••••••" valor={form.confirmar} onChange={set('confirmar')} />}
 
           {isLogin && (

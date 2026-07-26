@@ -10,7 +10,7 @@ export type TipoCategoria = 'entrada' | 'saida'
 export type FormaPagLanc  = 'debito' | 'pix' | 'transferencia' | 'dinheiro'
 export type TipoLanc      = 'entrada' | 'saida'
 export type TipoMovimento = 'banco' | 'cartao' | 'dinheiro'
-export type FormaPagamentoBanco  = 'automatico' | 'pix' | 'boleto' | 'transferencia'
+export type FormaPagamentoBanco  = 'automatico' | 'debito' | 'pix' | 'boleto' | 'transferencia'
 export type FormaPagamentoCartao = 'avista' | 'parcelado'
 export type FormaPagamentoCategoria = FormaPagamentoBanco | FormaPagamentoCartao
 
@@ -25,6 +25,7 @@ export type Conta = {
   formaPagamentoFatura?: FormaPagamentoFatura
   contaPagamentoId?: string
   apelido?: string
+  preferida?: boolean
 }
 
 export type Categoria = {
@@ -111,6 +112,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const dataLoadedRef   = useRef(false)   // bloqueia saves enquanto loadData roda ou após reset
   const everLoadedRef   = useRef(false)   // true após primeiro loadData — evita double-load
   const wasLoggedOutRef = useRef(false)   // true após logout explícito — garante reload no login
+  const loadedUserIdRef = useRef<string | null>(null) // ID do usuário cujos dados estão em memória
 
   const [contas,      setContasState]     = useState<Conta[]>(CONTAS_INICIAIS)
   const [categorias,  setCategoriasState] = useState<Categoria[]>(CATS_INICIAIS)
@@ -141,10 +143,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUserState(u)
       if (!u) {
         wasLoggedOutRef.current = true
+        loadedUserIdRef.current = null
         resetState()
         setCarregando(false)
-      } else if (wasLoggedOutRef.current || !everLoadedRef.current) {
-        // login após logout explícito OU primeiro login (página abriu sem sessão)
+      } else if (wasLoggedOutRef.current || !everLoadedRef.current || loadedUserIdRef.current !== u.id) {
+        // login após logout explícito, primeiro login, OU mudança de usuário sem logout explícito
         wasLoggedOutRef.current = false
         everLoadedRef.current = true
         loadData(u.id)
@@ -157,6 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function loadData(userId: string) {
     setCarregando(true)
     dataLoadedRef.current = false
+    loadedUserIdRef.current = null
     const { data } = await supabase
       .from('user_data')
       .select('key, value')
@@ -168,7 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const catsCarregadas = (map[KEYS.categorias] as Categoria[] | undefined) ?? CATS_INICIAIS
     const catsEfetivas = catsCarregadas.length === 0
       ? CATEGORIAS_PADRAO.map((c, i) => ({ ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` }))
-      : catsCarregadas
+      : catsCarregadas.map((c, i) => (c as { id?: string }).id ? c : { ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` })
     setCategoriasState(catsEfetivas)
     setExtratoState((map[KEYS.extrato]  as Record<string, DadosMes> | undefined) ?? {})
     // Fatura: carrega do Supabase; migra do localStorage se ainda não estiver no Supabase
@@ -184,12 +188,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
     setDesvioMinPercState((map[KEYS.desvioMinPerc] as number | undefined) ?? 10)
+    loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
   }
 
   function resetState() {
     dataLoadedRef.current = false
+    loadedUserIdRef.current = null
     setContasState(CONTAS_INICIAIS)
     setCategoriasState(CATS_INICIAIS)
     setExtratoState({})
