@@ -330,10 +330,21 @@ export default function Acompanhamento() {
     const bordaGrupo  = isEntrada ? '#bbf7d0' : '#fecaca'
 
     return grupos.map(grupo => {
-      const catsPlan = planCats.filter(cat => {
+      const catsRaw = planCats.filter(cat => {
         const g = categorias.find((c: Categoria) => c.nome === cat.nome && c.tipo === tipo)?.grupo ?? '__sem_grupo__'
         return g === grupo
       })
+      // Deduplica por nome somando valores previstos (plano pode ter entradas duplicadas)
+      const seenMap = new Map<string, number[]>()
+      for (const cat of catsRaw) {
+        if (seenMap.has(cat.nome)) {
+          const prev = seenMap.get(cat.nome)!
+          seenMap.set(cat.nome, prev.map((val, i) => val + (cat.v[i] ?? 0)))
+        } else {
+          seenMap.set(cat.nome, [...cat.v])
+        }
+      }
+      const catsPlan = Array.from(seenMap.entries()).map(([nome, v]) => ({ nome, v }))
       if (catsPlan.length === 0) return null
       return (
         <div key={grupo} style={{marginBottom:4}}>
@@ -353,7 +364,7 @@ export default function Acompanhamento() {
           <div style={{background:COR.branco}}>
             {catsPlan.map((cat, idx) => {
               const cd  = realMap[cat.nome]
-              const uid = `${tipo}-${grupo}-${idx}`
+              const uid = `${tipo}-${grupo}-${cat.nome}-${idx}`
               return (
                 <CatRow
                   key={uid}
