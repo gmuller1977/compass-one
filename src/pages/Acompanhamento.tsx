@@ -140,6 +140,14 @@ export default function Acompanhamento() {
   const gruposSaida   = useMemo(() => buildGrupos('saida'),  [categorias, cartaoNomes])
   const gruposEntrada = useMemo(() => buildGrupos('entrada'), [categorias, cartaoNomes])
 
+  const { totalPrevS, totalRealS, totalPrevE, totalRealE } = useMemo(() => {
+    const totalPrevS = (dadosAno?.saidas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
+    const totalRealS = Object.values(saidasMap).reduce((s,c) => s + c.total, 0)
+    const totalPrevE = (dadosAno?.entradas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
+    const totalRealE = Object.values(entradasMap).reduce((s,c) => s + c.total, 0)
+    return { totalPrevS, totalRealS, totalPrevE, totalRealE }
+  }, [dadosAno, mes, saidasMap, entradasMap])
+
   function toggleAberto(nome: string) {
     setAbertos(prev => { const n = new Set(prev); n.has(nome)?n.delete(nome):n.add(nome); return n })
   }
@@ -343,7 +351,7 @@ export default function Acompanhamento() {
           <button onClick={() => setAno(a => a+1)} style={{background:'none',border:'none',
             cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>›</button>
         </div>
-        <div style={{display:'flex',gap:3,padding:'6px 0 0',overflowX:'auto'}}>
+        <div style={{display:'flex',gap:3,padding:'6px 0 0',overflowX:'auto',paddingBottom:4}}>
           {MESES_CURTOS.map((m,i) => {
             const ativo = i === mes
             return (
@@ -360,6 +368,90 @@ export default function Acompanhamento() {
           })}
         </div>
       </div>
+
+      {/* CAIXINHAS DE RESUMO */}
+      {dadosAno && (
+        <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
+          padding:'10px 16px',flexShrink:0,display:'flex',gap:6,overflowX:'auto',
+          alignItems:'stretch',flexWrap:'nowrap'}}>
+
+          {/* Previsto Entradas */}
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+            background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+              letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. Entradas</span>
+            <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
+              {totalPrevE > 0 ? fmt(totalPrevE) : '—'}
+            </span>
+          </div>
+
+          {/* Real. Entradas */}
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+            background:totalRealE > 0 ? '#eff6ff' : '#f8faff',
+            border:`1px solid ${totalRealE > 0 ? '#bfdbfe' : COR.borda}`}}>
+            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+              letterSpacing:.4,marginBottom:1,color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
+              Real. Entradas
+            </span>
+            <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
+              color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
+              {totalRealE > 0 ? fmt(totalRealE) : '—'}
+            </span>
+          </div>
+
+          <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
+
+          {/* Prev. Saídas */}
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+            background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+              letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. Saídas</span>
+            <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
+              {totalPrevS > 0 ? fmt(totalPrevS) : '—'}
+            </span>
+          </div>
+
+          {/* Real. Saídas */}
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+            background:totalRealS > 0 ? (totalRealS > totalPrevS ? '#fff1f2' : '#f0f9ff') : '#f8faff',
+            border:`1px solid ${totalRealS > 0 ? (totalRealS > totalPrevS ? '#fecdd3' : '#bae6fd') : COR.borda}`}}>
+            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+              letterSpacing:.4,marginBottom:1,
+              color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
+              Real. Saídas
+            </span>
+            <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
+              color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
+              {totalRealS > 0 ? fmt(totalRealS) : '—'}
+            </span>
+          </div>
+
+          <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
+
+          {/* Disponível */}
+          {(() => {
+            const disp = totalPrevS - totalRealS
+            const corDisp = totalRealS === 0 ? '#94a3b8' : disp >= 0 ? COR.verde : COR.vermelho
+            const bgDisp  = totalRealS === 0 ? '#f8faff' : disp >= 0 ? '#f0fdf4' : '#fff1f2'
+            const bdDisp  = totalRealS === 0 ? COR.borda  : disp >= 0 ? '#bbf7d0' : '#fecdd3'
+            return (
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+                background:bgDisp,border:`1px solid ${bdDisp}`}}>
+                <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                  letterSpacing:.4,marginBottom:1,color:corDisp}}>Disponível</span>
+                <span style={{fontSize:13,fontWeight:700,color:corDisp,fontVariantNumeric:'tabular-nums'}}>
+                  {totalRealS === 0 ? '—' : fmt(disp)}
+                </span>
+              </div>
+            )
+          })()}
+        </div>
+      )}
 
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 24px',
