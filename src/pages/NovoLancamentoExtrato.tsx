@@ -1385,7 +1385,7 @@ export default function NovoLancamentoExtrato() {
             <select ref={categoriaSelectRef} autoFocus value={fCat}
               onChange={e => {
                 const nome = e.target.value
-                setFCat(nome)
+                setFCat(nome); setFSubDesc('')
                 const cat = categorias.find(c => c.nome === nome)
                 if (cat) setFPag(fTipo === 'entrada'
                   ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
@@ -1396,10 +1396,33 @@ export default function NovoLancamentoExtrato() {
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}>
               <option value="">Selecione...</option>
-              {categoriasVariaveis.map(c=>(
-                <option key={c.id} value={c.nome}>{c.descricao ? `${c.nome} — ${c.descricao}` : c.nome}</option>
+              {categoriasSelect.map(c=>(
+                <option key={c.id} value={c.nome}>{c.nome}</option>
               ))}
             </select>
+            {subDescsDisponiveis.length > 1 && (
+              <div style={{marginTop:6}}>
+                <div style={{fontSize:9,color:'#0369a1',fontWeight:600,
+                  textTransform:'uppercase',letterSpacing:.4,marginBottom:4}}>
+                  Qual variante?
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                  {subDescsDisponiveis.map(desc => (
+                    <button key={desc} type="button"
+                      onClick={() => setFSubDesc(desc === fSubDesc ? '' : desc)}
+                      style={{
+                        padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:600,
+                        border:`1.5px solid ${fSubDesc===desc?'#1a56db':'#bae6fd'}`,
+                        background:fSubDesc===desc?'#1a56db':'#eff6ff',
+                        color:fSubDesc===desc?'#fff':'#1a56db',
+                        cursor:'pointer',fontFamily:'inherit',
+                      }}>
+                      {desc}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             )}
           </div>
           <div>
