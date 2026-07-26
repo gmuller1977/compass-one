@@ -385,9 +385,6 @@ export default function Configuracoes() {
       return next
     })
   }
-  function marcarPreferida(id: string) {
-    setContas(prev => prev.map(c => ({ ...c, preferida: c.id === id ? !c.preferida : false })))
-  }
 
   // ── Ações Categoria ──
   function novaCategoria() {

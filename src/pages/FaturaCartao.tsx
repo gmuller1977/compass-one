@@ -144,15 +144,7 @@ export default function FaturaCartao() {
   const mesVenc = mes
   const anoVenc = ano
 
-  // billingMes: qual aba deve estar ativa (mês de vencimento da fatura em aberto)
-  const billingMes = (() => {
-    const m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset
-    return m > 11 ? m - 12 : m
-  })()
-  const billingAno = (() => {
-    const m = (diaHoje >= diaFechamentoBase ? mesHoje + 1 : mesHoje) + billingOffset
-    return m > 11 ? anoHoje + 1 : anoHoje
-  })()
+
 
   // Status da fatura
   const faturaStatus =
@@ -566,7 +558,6 @@ export default function FaturaCartao() {
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
-          const isAtual = i===billingMes && ano===billingAno
           const ativo   = i===mes
           return (
             <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{

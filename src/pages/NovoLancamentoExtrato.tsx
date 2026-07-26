@@ -174,7 +174,7 @@ export default function NovoLancamentoExtrato() {
     .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
     .sort((a, b) => (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0))
   const isDinheiro = tabPrincipal === 'dinheiro'
-  const isConsolidado = tabPrincipal === 'consolidado'
+
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   const dados = extratoData as Record<string, DadosMes>
   const fixasCategoria = categorias
@@ -415,7 +415,7 @@ export default function NovoLancamentoExtrato() {
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
     const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
-    const dPassado = (d: number) => mesPast || (eMesAtual && d < diaHoje)
+
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
       fc.filter(f => diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
@@ -843,9 +843,7 @@ export default function NovoLancamentoExtrato() {
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 0 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
-          const isAtual = i===mesHoje && ano===anoHoje
           const ativo   = i===mes
-          const countMes = Object.values(dados[mesKey(contaIdEfetivo,ano,i)]?.lancamentos ?? {}).flat().length
           return (
             <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{
               padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
