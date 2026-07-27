@@ -645,7 +645,7 @@ export default function NovoLancamentoExtrato() {
   return (
     <div style={{height: isMobile ? 'auto' : '100vh', minHeight:'100vh', display:'flex',flexDirection:'column',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif", overflow: isMobile ? 'visible' : 'hidden',
-      paddingBottom: isMobile ? 72 : 0}}>
+      paddingBottom: isMobile ? 120 : 0}}>
 
       <AppHeader currentPath="/novo-lancamento" />
 
@@ -753,23 +753,34 @@ export default function NovoLancamentoExtrato() {
       {isMobile ? (
         mobileStep === 'extrato' && (
         <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'10px 16px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:18,lineHeight:1}}>
+          padding:'8px 12px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+          {/* Banco clicável — abre wizard */}
+          <button onClick={() => setMobileStep('tipo')} style={{
+            display:'flex',alignItems:'center',gap:6,
+            border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
+            padding:'6px 14px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+            <span style={{fontSize:16,lineHeight:1}}>
               {tabPrincipal==='extrato'?'🏦':tabPrincipal==='cartao'?'💳':tabPrincipal==='dinheiro'?'💵':'📊'}
             </span>
-            <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>
+            <span>
               {tabPrincipal==='extrato'
                 ? (contasExtrato.find(c=>c.id===contaId)?.banco ?? 'Banco')
-                : tabPrincipal==='cartao' ? 'Cartão de Crédito'
+                : tabPrincipal==='cartao' ? 'Cartão'
                 : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
             </span>
-          </div>
-          <button onClick={() => setMobileStep('tipo')} style={{
-            border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
-            padding:'5px 14px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-            ← Trocar
           </button>
+          {/* Navegador de mês */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <button onClick={() => { const m=Math.max(0,mes-1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
+              style={{border:'none',background:mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
+                borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
+            <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:68,textAlign:'center'}}>
+              {NOMES_MESES[mes]}
+            </span>
+            <button onClick={() => { const m=Math.min(11,mes+1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
+              style={{border:'none',background:mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
+                borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
+          </div>
         </div>
         )
       ) : (
@@ -988,21 +999,7 @@ export default function NovoLancamentoExtrato() {
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
       {/* SELETOR DE MÊS */}
-      {isMobile ? (
-        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'10px 16px',flexShrink:0,
-          display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-          <button onClick={() => { const m=Math.max(0,mes-1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
-            style={{border:'none',background: mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
-              borderRadius:8,padding:'6px 16px',fontSize:18,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
-          <span style={{fontWeight:700,fontSize:17,color:COR.texto,minWidth:110,textAlign:'center'}}>
-            {NOMES_MESES[mes]}
-          </span>
-          <button onClick={() => { const m=Math.min(11,mes+1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
-            style={{border:'none',background: mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
-              borderRadius:8,padding:'6px 16px',fontSize:18,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
-        </div>
-      ) : (
+      {isMobile ? null : (
         <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
           padding:'10px 0 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
           {MESES_CURTOS.map((m,i) => {
@@ -1025,12 +1022,11 @@ export default function NovoLancamentoExtrato() {
 
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding:'10px 0',flexShrink:0,
+        padding: isMobile ? '10px 16px' : '10px 0',flexShrink:0,
         display:'flex',flexDirection:'row',
-        alignItems:'center',gap:14,flexWrap:'wrap'}}>
+        alignItems:'center',gap:isMobile?12:14,flexWrap:'wrap'}}>
 
         {isDinheiro ? (<>
-          {/* Dinheiro — linha única (igual ao banco) */}
           <div style={{display:'flex',alignItems:'center',gap:5}}>
             <span style={{fontSize:11,color:COR.textoSuave}}>Saldo dinheiro atual:</span>
             <span
@@ -1045,32 +1041,36 @@ export default function NovoLancamentoExtrato() {
               {mesDados.saldoBanco || 'Informar'}
             </span>
           </div>
-          <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
-            display:'inline-flex',alignItems:'center',gap:5,
-            background:'#16a34a18',border:'1px solid #16a34a55'}}>
-            <span>💵</span>
-            <span style={{color:'#16a34a',fontWeight:600}}>Dinheiro</span>
-            <span style={{fontWeight:700,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
-          </span>
+          {!isMobile && (
+            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
+              display:'inline-flex',alignItems:'center',gap:5,
+              background:'#16a34a18',border:'1px solid #16a34a55'}}>
+              <span>💵</span>
+              <span style={{color:'#16a34a',fontWeight:600}}>Dinheiro</span>
+              <span style={{fontWeight:700,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
+            </span>
+          )}
           <div style={{display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
             <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
               background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
               color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
               border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-              minWidth:110,textAlign:'center'}}>
+              minWidth:isMobile?80:110,textAlign:'center'}}>
               {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
             </div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
-            <span style={{fontSize:16,fontWeight:800,
-              color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
-              {fmt(saldosDia[totalDias]??saldoMes)}
-            </span>
-          </div>
+          {!isMobile && (
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
+              <span style={{fontSize:16,fontWeight:800,
+                color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
+                {fmt(saldosDia[totalDias]??saldoMes)}
+              </span>
+            </div>
+          )}
         </>) : (<>
-          {/* Banco — linha única */}
+          {/* Banco */}
           <div style={{display:'flex',alignItems:'center',gap:5}}>
             <span style={{fontSize:11,color:COR.textoSuave}}>Saldo atual banco:</span>
             <span
@@ -1087,7 +1087,7 @@ export default function NovoLancamentoExtrato() {
               {mesDados.saldoBanco || 'Informar'}
             </span>
           </div>
-          {contaInfo && (
+          {contaInfo && !isMobile && (
             <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
               display:'inline-flex',alignItems:'center',gap:5,
               background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
@@ -1102,28 +1102,32 @@ export default function NovoLancamentoExtrato() {
               background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
               color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
               border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-              minWidth:110,textAlign:'center'}}>
+              minWidth:isMobile?80:110,textAlign:'center'}}>
               {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
             </div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
-            <span style={{fontSize:16,fontWeight:800,
-              color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
-              {fmt(saldosDia[totalDias]??saldoMes)}
-            </span>
-          </div>
+          {!isMobile && (
+            <div style={{display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
+              <span style={{fontSize:16,fontWeight:800,
+                color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
+                {fmt(saldosDia[totalDias]??saldoMes)}
+              </span>
+            </div>
+          )}
         </>)}
       </div>
 
-      {/* BUSCA */}
-      <div style={{padding:'8px 0 0',flexShrink:0}}>
-        <input value={busca} onChange={e => setBusca(e.target.value)}
-          placeholder="Buscar por categoria, descrição ou valor..."
-          style={{width:'100%',boxSizing:'border-box',
-            padding:'7px 14px',border:`1px solid ${COR.borda}`,borderRadius:8,
-            fontSize:12,fontFamily:'inherit',color:COR.texto,background:'#fff',outline:'none'}}/>
-      </div>
+      {/* BUSCA — desktop only */}
+      {!isMobile && (
+        <div style={{padding:'8px 0 0',flexShrink:0}}>
+          <input value={busca} onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar por categoria, descrição ou valor..."
+            style={{width:'100%',boxSizing:'border-box',
+              padding:'7px 14px',border:`1px solid ${COR.borda}`,borderRadius:8,
+              fontSize:12,fontFamily:'inherit',color:COR.texto,background:'#fff',outline:'none'}}/>
+        </div>
+      )}
 
       {/* EXTRATO */}
       <div style={{flex:1,overflowY:'auto',
@@ -1408,17 +1412,6 @@ export default function NovoLancamentoExtrato() {
       </div>
       </div>{/* fim coluna esquerda */}
 
-      {/* Botão novo lançamento mobile */}
-      {isMobile && mobileView === 'extrato' && (
-        <div style={{padding:'12px 12px 0'}}>
-          <button onClick={() => { resetarParaNovo(diaSel); setMobileView('form') }} style={{
-            width:'100%', padding:'13px', border:'none', borderRadius:10,
-            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-            color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-          }}>+ Novo lançamento</button>
-        </div>
-      )}
-
       {/* PAINEL DE LANÇAMENTO */}
       <div style={{width: isMobile ? '100%' : 340, flexShrink:0, background:COR.branco,
         border:`1px solid ${COR.borda}`,borderRadius:12,padding: isMobile ? '16px 12px' : 20,
@@ -1620,6 +1613,33 @@ export default function NovoLancamentoExtrato() {
       </div>
       </>
       )}
+
+      {/* FAB + BARRA PREVISTO — mobile only */}
+      {isMobile && mobileStep === 'extrato' && mobileView === 'extrato' && (<>
+        {/* Barra "Previsto fim do mês" — fixa acima do tab bar */}
+        <div style={{position:'fixed',left:0,right:0,bottom:60,
+          background:COR.branco,borderTop:`1px solid ${COR.borda}`,
+          padding:'10px 16px',display:'flex',alignItems:'center',
+          justifyContent:'space-between',zIndex:40,
+          boxShadow:'0 -2px 8px rgba(0,0,0,0.07)'}}>
+          <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês</span>
+          <span style={{fontSize:17,fontWeight:800,
+            color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:COR.verde}}>
+            {fmt(saldosDia[totalDias]??saldoMes)}
+          </span>
+        </div>
+        {/* FAB + */}
+        <button onClick={() => { resetarParaNovo(diaSel); setMobileView('form') }}
+          style={{position:'fixed',right:20,bottom:116,
+            width:54,height:54,borderRadius:'50%',border:'none',
+            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+            color:'#fff',fontSize:26,fontWeight:300,lineHeight:1,
+            cursor:'pointer',fontFamily:'inherit',
+            boxShadow:'0 4px 16px rgba(59,130,246,0.5)',
+            display:'flex',alignItems:'center',justifyContent:'center'}}>
+          +
+        </button>
+      </>)}
 
       {/* MODAL SALDO BANCO */}
       {modalSaldo && (
