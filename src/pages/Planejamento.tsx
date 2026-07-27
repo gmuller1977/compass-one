@@ -26,6 +26,16 @@ type Cat      = { id?: string; nome: string; t?: string; v: number[] }
 type AnoData  = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 type Editando = { tipo: 'e'|'s'; row: number; mes: number } | null
 
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
+
 function parseBRL(s: string): number {
   return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
 }
@@ -134,6 +144,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [modalMes,           setModalMes]          = useState<number | null>(null)
   const [copiarMesPrompt,    setCopiarMesPrompt]    = useState<{ origem: number; destino: number } | null>(null)
   const [gruposHorizAbertos, setGruposHorizAbertos] = useState<Set<string>>(new Set())
+  const isMobile = useIsMobile()
+  const [mesMobile, setMesMobile] = useState(mesAtual)
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -990,6 +1002,193 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           ;(e.currentTarget as HTMLElement).style.background = '#f8fafc'
         }}}>
         {fmt(valor)}
+      </div>
+    )
+  }
+
+  // ── MOBILE VIEW ──────────────────────────────────────────────────────────
+  if (isMobile) {
+    const mi = mesMobile
+    const te = totalEntradas[mi]
+    const ts = totalSaidas[mi]
+    const si = saldoInicial[mi]
+    const sf = saldoFinal[mi]
+
+    const gruposMap = new Map<string, Array<{ cat: Cat; ri: number }>>()
+    for (const cat of saidasComHistorico) {
+      if (nomeFaturaCartao(cat.nome, cartaoNomes)) continue
+      const ri = dadosAnoFinal.saidas.findIndex(c => c.id ? c.id === cat.id : c.nome === cat.nome)
+      if (ri < 0) continue
+      const catInfo = cat.id
+        ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome))
+        : categorias.find(c => c.nome === cat.nome)
+      const grupo = catInfo?.grupo ?? '__sem_grupo__'
+      if (!gruposMap.has(grupo)) gruposMap.set(grupo, [])
+      gruposMap.get(grupo)!.push({ cat, ri })
+    }
+    const gruposOrdenados = [
+      ...Array.from(gruposMap.keys()).filter(g => g !== '__sem_grupo__').sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      ...(gruposMap.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
+    ]
+
+    const renderCelMobile = (tipo: 'e'|'s', ri: number) => {
+      const valor = tipo === 'e'
+        ? (dadosAnoFinal.entradas[ri]?.v[mi] ?? 0)
+        : (dadosAnoFinal.saidas[ri]?.v[mi] ?? 0)
+      const ativo = editando?.tipo === tipo && editando.row === ri && editando.mes === mi
+      if (ativo && !bloqueado) {
+        return (
+          <input
+            autoFocus inputMode="decimal"
+            value={valorTemp}
+            onChange={e => setValorTemp(e.target.value)}
+            onBlur={() => confirmarValor()}
+            onKeyDown={e => { if (e.key === 'Enter') confirmarValor() }}
+            style={{
+              width: 110, border: '1.5px solid #1a56db', borderRadius: 8,
+              padding: '6px 10px', fontSize: 15, fontWeight: 600,
+              fontFamily: 'inherit', textAlign: 'right' as const, outline: 'none',
+              background: '#eff6ff', color: '#0f2878',
+            }}
+          />
+        )
+      }
+      return (
+        <div
+          onClick={() => !bloqueado && iniciarValor(tipo, ri, mi, valor)}
+          style={{
+            minWidth: 90, padding: '6px 10px', borderRadius: 8,
+            background: valor !== 0 ? '#f0f4ff' : '#f8fafc',
+            border: `1px solid ${valor !== 0 ? '#bfdbfe' : '#e2e8f0'}`,
+            fontSize: 15, fontWeight: valor !== 0 ? 600 : 400,
+            color: valor !== 0 ? '#0f2878' : '#94a3b8',
+            textAlign: 'right' as const, cursor: bloqueado ? 'default' : 'pointer',
+          }}
+        >
+          {fmt(valor)}
+        </div>
+      )
+    }
+
+    const navBtnStyle = (disabled: boolean): React.CSSProperties => ({
+      border: 'none', background: '#f0f4ff', color: disabled ? '#cbd5e1' : COR.azul,
+      borderRadius: 8, padding: '6px 14px', fontSize: 18, cursor: disabled ? 'default' : 'pointer',
+      fontFamily: 'inherit',
+    })
+
+    return (
+      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 72 }}>
+        <AppHeader currentPath={pathname} />
+
+        {/* Cabeçalho: ano + tabs + mês */}
+        <div style={{ background: COR.branco, borderBottom: `1px solid ${COR.borda}` }}>
+          <div style={{ padding: '10px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button onClick={() => navegarAno(-1)} style={{ border: 'none', background: 'transparent', padding: '4px 8px', cursor: 'pointer', borderRadius: 6, fontSize: 18, color: COR.azul, fontFamily: 'inherit' }}>‹</button>
+              <span style={{ fontWeight: 700, fontSize: 16, color: COR.texto, minWidth: 40, textAlign: 'center' }}>{anoAtual}</span>
+              <button onClick={() => navegarAno(1)}  style={{ border: 'none', background: 'transparent', padding: '4px 8px', cursor: 'pointer', borderRadius: 6, fontSize: 18, color: COR.azul, fontFamily: 'inherit' }}>›</button>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['previsto', 'real'] as const).map(v => {
+                const label = v === 'previsto' ? 'Original' : 'Atualizado'
+                const active = aba === v
+                return (
+                  <button key={v} onClick={() => { setAba(v); setEditando(null) }} style={{
+                    padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                    fontSize: 12, fontWeight: active ? 700 : 400, fontFamily: 'inherit',
+                    background: active ? COR.azul : '#f0f4ff',
+                    color: active ? '#fff' : COR.textoSuave,
+                  }}>{label}</button>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '0 16px 12px' }}>
+            <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtnStyle(mi === 0)}>‹</button>
+            <span style={{ fontWeight: 600, fontSize: 16, color: COR.texto, minWidth: 110, textAlign: 'center' }}>{MESES_FULL[mi]}</span>
+            <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtnStyle(mi === 11)}>›</button>
+          </div>
+        </div>
+
+        {/* Conteúdo */}
+        <div style={{ padding: '12px 16px 16px' }}>
+
+          {/* Saldo Inicial */}
+          <div style={{ background: COR.branco, borderRadius: 12, padding: '12px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1px solid ${COR.borda}` }}>
+            <span style={{ fontSize: 13, color: COR.textoSuave, fontWeight: 500 }}>Saldo Inicial</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: corSaldo(si) }}>{fmt(si, true)}</span>
+          </div>
+
+          {/* Entradas */}
+          <div style={{ background: COR.branco, borderRadius: 12, border: `1px solid ${COR.borda}`, marginBottom: 12, overflow: 'hidden' }}>
+            <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>↑ Entradas</span>
+            </div>
+            {entradasComHistorico.map(cat => {
+              const ri = dadosAnoFinal.entradas.findIndex(c => c.id ? c.id === cat.id : c.nome === cat.nome)
+              if (ri < 0) return null
+              const { icone, corIcone } = iconeCategoria(categorias, cat.nome)
+              return (
+                <div key={cat.id ?? cat.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 16, lineHeight: 1, color: corIcone, flexShrink: 0 }}>{icone}</span>
+                    <span style={{ fontSize: 14, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.nome}</span>
+                  </div>
+                  {renderCelMobile('e', ri)}
+                </div>
+              )
+            })}
+            <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', borderTop: '1px solid #bbf7d0' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Total</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#15803d' }}>{fmt(te, true)}</span>
+            </div>
+          </div>
+
+          {/* Saídas */}
+          <div style={{ background: COR.branco, borderRadius: 12, border: `1px solid ${COR.borda}`, marginBottom: 12, overflow: 'hidden' }}>
+            <div style={{ padding: '10px 16px', background: '#fff5f5', borderBottom: '1px solid #fecaca' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em' }}>↓ Saídas</span>
+            </div>
+            {gruposOrdenados.map(grupo => {
+              const itens = gruposMap.get(grupo) ?? []
+              return (
+                <div key={grupo}>
+                  {grupo !== '__sem_grupo__' && (
+                    <div style={{ padding: '6px 16px', background: '#fafafa', borderBottom: `1px solid ${COR.borda}` }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{grupo}</span>
+                    </div>
+                  )}
+                  {itens.map(({ cat, ri }) => {
+                    const { icone, corIcone } = iconeCategoria(categorias, cat.nome)
+                    return (
+                      <div key={cat.id ?? cat.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: 16, lineHeight: 1, color: corIcone, flexShrink: 0 }}>{icone}</span>
+                          <span style={{ fontSize: 14, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.nome}</span>
+                        </div>
+                        {renderCelMobile('s', ri)}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+            <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff5f5', borderTop: '1px solid #fecaca' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>Total</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#dc2626' }}>{fmt(ts, true)}</span>
+            </div>
+          </div>
+
+          {/* Saldo Final */}
+          <div style={{
+            background: COR.branco, borderRadius: 12, padding: '14px 16px',
+            border: `2px solid ${corSaldo(sf) === COR.verde ? '#bbf7d0' : corSaldo(sf) === COR.vermelho ? '#fecaca' : '#fde68a'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Saldo Final</span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: corSaldo(sf) }}>{fmt(sf, true)}</span>
+          </div>
+        </div>
       </div>
     )
   }
