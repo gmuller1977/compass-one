@@ -284,7 +284,7 @@ export default function Login() {
               {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
             </h1>
             <p style={{ fontSize: 13, color: COR.textoSuave, margin: '6px 0 0' }}>
-              {isLogin ? 'Acesse seu painel financeiro' : 'Comece a organizar suas finanças hoje'}
+              {isLogin ? 'Acesse sua bússola financeira' : 'Comece a organizar suas finanças hoje'}
             </p>
           </div>
 
