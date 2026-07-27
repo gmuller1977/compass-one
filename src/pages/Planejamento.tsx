@@ -1127,7 +1127,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             {entradasComHistorico.map(cat => {
               const ri = dadosAnoFinal.entradas.findIndex(c => c.id ? c.id === cat.id : c.nome === cat.nome)
               if (ri < 0) return null
-              const { icone, corIcone } = iconeCategoria(categorias, cat.nome)
+              const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
               return (
                 <div key={cat.id ?? cat.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
@@ -1159,7 +1159,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     </div>
                   )}
                   {itens.map(({ cat, ri }) => {
-                    const { icone, corIcone } = iconeCategoria(categorias, cat.nome)
+                    const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
                     return (
                       <div key={cat.id ?? cat.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, gap: 8 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
