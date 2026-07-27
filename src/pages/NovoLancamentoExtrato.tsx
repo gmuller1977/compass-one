@@ -752,34 +752,71 @@ export default function NovoLancamentoExtrato() {
       {/* SELETOR DE TIPO */}
       {isMobile ? (
         mobileStep === 'extrato' && (
-        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'8px 12px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-          {/* Banco clicável — abre wizard */}
-          <button onClick={() => setMobileStep('tipo')} style={{
-            display:'flex',alignItems:'center',gap:6,
-            border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
-            padding:'6px 14px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
-            <span style={{fontSize:16,lineHeight:1}}>
-              {tabPrincipal==='extrato'?'🏦':tabPrincipal==='cartao'?'💳':tabPrincipal==='dinheiro'?'💵':'📊'}
-            </span>
-            <span>
-              {tabPrincipal==='extrato'
-                ? (contasExtrato.find(c=>c.id===contaId)?.banco ?? 'Banco')
-                : tabPrincipal==='cartao' ? 'Cartão'
-                : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
-            </span>
-          </button>
-          {/* Navegador de mês */}
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <button onClick={() => { const m=Math.max(0,mes-1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
-              style={{border:'none',background:mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
-                borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
-            <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:68,textAlign:'center'}}>
-              {NOMES_MESES[mes]}
-            </span>
-            <button onClick={() => { const m=Math.min(11,mes+1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
-              style={{border:'none',background:mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
-                borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
+        <div style={{position:'sticky',top:52,zIndex:30,background:COR.branco,
+          boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
+          {/* Linha 1: Banco clicável + navegador de mês */}
+          <div style={{borderBottom:`1px solid ${COR.borda}`,
+            padding:'8px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+            <button onClick={() => setMobileStep('tipo')} style={{
+              display:'flex',alignItems:'center',gap:6,
+              border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
+              padding:'6px 14px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
+              <span style={{fontSize:16,lineHeight:1}}>
+                {tabPrincipal==='extrato'?'🏦':tabPrincipal==='cartao'?'💳':tabPrincipal==='dinheiro'?'💵':'📊'}
+              </span>
+              <span>
+                {tabPrincipal==='extrato'
+                  ? (contasExtrato.find(c=>c.id===contaId)?.banco ?? 'Banco')
+                  : tabPrincipal==='cartao' ? 'Cartão'
+                  : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
+              </span>
+            </button>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <button onClick={() => { const m=Math.max(0,mes-1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
+                style={{border:'none',background:mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
+                  borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
+              <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:68,textAlign:'center'}}>
+                {NOMES_MESES[mes]}
+              </span>
+              <button onClick={() => { const m=Math.min(11,mes+1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
+                style={{border:'none',background:mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
+                  borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
+            </div>
+          </div>
+          {/* Linha 2: Saldo banco + Diferença na mesma linha */}
+          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'8px 16px',
+            display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>
+                {isDinheiro ? 'Saldo dinheiro:' : 'Saldo banco:'}
+              </span>
+              <span onClick={e => { e.stopPropagation()
+                  setModalSaldoValor(mesDados.saldoBanco ?? '')
+                  isDinheiro
+                    ? setModalSaldo({contaId:'dinheiro',banco:'Dinheiro',icone:'💵',cor:'#16a34a',key})
+                    : setModalSaldo({contaId:contaIdEfetivo,banco:contaInfo?.banco??'',icone:contaInfo?.icone??'',cor:contaInfo?.cor??COR.azul,key})
+                }}
+                style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:13,fontWeight:700,
+                  cursor:'pointer',padding:'2px 8px',borderRadius:6,
+                  border: mesDados.saldoBanco
+                    ? `1.5px solid ${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}`
+                    : '1.5px dashed #e2e8f0',
+                  color: mesDados.saldoBanco ? (isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)) : '#64748b',
+                  background: mesDados.saldoBanco ? `${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}18` : '#f8faff'}}>
+                <span style={{fontSize:10}}>✎</span>
+                {mesDados.saldoBanco || 'Informar'}
+              </span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Diferença:</span>
+              <div style={{padding:'3px 10px',borderRadius:7,fontSize:12,fontWeight:700,
+                background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+                color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+                border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+                whiteSpace:'nowrap'}}>
+                {diferenca===null?'—':conciliado?'✓':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+              </div>
+            </div>
           </div>
         </div>
         )
@@ -1020,11 +1057,11 @@ export default function NovoLancamentoExtrato() {
         </div>
       )}
 
-      {/* BARRA DE SALDO */}
-      <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding: isMobile ? '10px 16px' : '10px 0',flexShrink:0,
+      {/* BARRA DE SALDO — desktop only (mobile fica no sticky acima) */}
+      {!isMobile && <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
+        padding:'10px 0',flexShrink:0,
         display:'flex',flexDirection:'row',
-        alignItems:'center',gap:isMobile?12:14,flexWrap:'wrap'}}>
+        alignItems:'center',gap:14,flexWrap:'wrap'}}>
 
         {isDinheiro ? (<>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -1116,7 +1153,7 @@ export default function NovoLancamentoExtrato() {
             </div>
           )}
         </>)}
-      </div>
+      </div>}
 
       {/* BUSCA — desktop only */}
       {!isMobile && (
@@ -1222,9 +1259,9 @@ export default function NovoLancamentoExtrato() {
 
                 {/* Inicial | Entradas | Saída | Final */}
                 <div style={{flex:1,display:'flex',alignItems:'center',
-                  justifyContent:'flex-end',gap:6}}>
+                  justifyContent:'flex-end',gap:isMobile?4:6}}>
 
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                  {!isMobile && <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saldoIni<0?'#fff1f2':'#f0fdf4',
                     border:`1px solid ${diaFuturo?COR.borda:saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
@@ -1233,10 +1270,11 @@ export default function NovoLancamentoExtrato() {
                       color:diaFuturo?'#94a3b8':corIni}}>Inicial</span>
                     <span style={{fontSize:13,fontWeight:700,
                       color:diaFuturo?'#64748b':corIni}}>{fmt(saldoIni)}</span>
-                  </div>
+                  </div>}
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
+                    padding:'5px 10px',borderRadius:8,
+                    flex:isMobile?1:undefined,minWidth:isMobile?undefined:150,
                     background:entradasConf>0?'#eff6ff':'#f8faff',
                     border:`1px solid ${entradasConf>0?'#bfdbfe':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -1245,27 +1283,28 @@ export default function NovoLancamentoExtrato() {
                       Entradas
                     </span>
                     <span style={{fontSize:13,fontWeight:700,
-                      color:entradasConf>0?COR.azul:entradasDia>0?'#94a3b8':'#94a3b8'}}>
+                      color:entradasConf>0?COR.azul:'#94a3b8'}}>
                       {entradasBoxVal===0?'—':`+${fmt(entradasBoxVal)}`}
                     </span>
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
+                    padding:'5px 10px',borderRadius:8,
+                    flex:isMobile?1:undefined,minWidth:isMobile?undefined:150,
                     background:saidasConf>0?'#fff1f2':'#f8faff',
                     border:`1px solid ${saidasConf>0?'#fecdd3':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                       letterSpacing:.4,marginBottom:1,
                       color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
-                      Saída
+                      Saídas
                     </span>
                     <span style={{fontSize:13,fontWeight:700,
-                      color:saidasConf>0?COR.vermelho:saidasDia>0?'#94a3b8':'#94a3b8'}}>
+                      color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
                       {saidasBoxVal===0?'—':`-${fmt(saidasBoxVal)}`}
                     </span>
                   </div>
 
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                  {!isMobile && <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saldoDia<0?'#fff1f2':'#f0fdf4',
                     border:`1px solid ${diaFuturo?COR.borda:saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
@@ -1276,7 +1315,7 @@ export default function NovoLancamentoExtrato() {
                     </span>
                     <span style={{fontSize:13,fontWeight:700,
                       color:diaFuturo?'#64748b':corSaldo}}>{fmt(saldoDia)}</span>
-                  </div>
+                  </div>}
                 </div>
 
                 {/* Chevron */}
@@ -1630,7 +1669,7 @@ export default function NovoLancamentoExtrato() {
         </div>
         {/* FAB + */}
         <button onClick={() => { resetarParaNovo(diaSel); setMobileView('form') }}
-          style={{position:'fixed',right:20,bottom:116,
+          style={{position:'fixed',right:20,bottom:116,zIndex:50,
             width:54,height:54,borderRadius:'50%',border:'none',
             background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
             color:'#fff',fontSize:26,fontWeight:300,lineHeight:1,
