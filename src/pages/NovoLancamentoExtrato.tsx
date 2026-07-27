@@ -673,27 +673,47 @@ export default function NovoLancamentoExtrato() {
         </div>
       )}
 
-      {/* ABAS PRINCIPAIS */}
-      <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto',
-        WebkitOverflowScrolling:'touch' as never}}>
-        {([['extrato', isMobile ? '🏦 Extrato' : '🏦 Extrato Bancário'],['cartao', isMobile ? '💳 Cartão' : '💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro'],['consolidado','📊 Consolidado']] as const).map(([v,l]) => (
-          <button key={v} onClick={() => {
-            setTabPrincipal(v)
-            if (v === 'extrato') {
-              const preferida = contasExtrato.find(c => c.preferida)
-              setContaId((preferida ?? contasExtrato[0])?.id ?? '')
-            }
-          }} style={{
-            padding:'7px 16px',borderRadius:'8px 8px 0 0',
-            border:`1px solid ${tabPrincipal===v?COR.azul:COR.borda}`,
-            cursor:'pointer',fontSize:12,fontWeight:tabPrincipal===v?700:500,fontFamily:'inherit',
-            background:tabPrincipal===v?COR.azul:'#f8faff',color:tabPrincipal===v?'#fff':COR.textoSuave,
-            position:'relative',zIndex:tabPrincipal===v?1:0}}>
-            {l}
-          </button>
-        ))}
-      </div>
+      {/* SELETOR DE TIPO */}
+      {isMobile ? (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+          padding:'10px 12px',flexShrink:0,display:'flex',gap:8}}>
+          {([['extrato','🏦','Extrato'],['cartao','💳','Cartão'],['dinheiro','💵','Dinheiro'],['consolidado','📊','Total']] as const).map(([v,icone,label]) => {
+            const ativo = tabPrincipal===v
+            return (
+              <button key={v} onClick={() => {
+                setTabPrincipal(v)
+                if (v==='extrato') { const p=contasExtrato.find(c=>c.preferida); setContaId((p??contasExtrato[0])?.id??'') }
+              }} style={{
+                flex:1,padding:'7px 4px',borderRadius:10,
+                border:`1.5px solid ${ativo?COR.azul:COR.borda}`,
+                cursor:'pointer',fontFamily:'inherit',
+                background:ativo?COR.azul:'#f8faff',color:ativo?'#fff':COR.textoSuave,
+                display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+                <span style={{fontSize:18,lineHeight:1}}>{icone}</span>
+                <span style={{fontSize:10,fontWeight:ativo?700:500}}>{label}</span>
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+          padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto',
+          WebkitOverflowScrolling:'touch' as never}}>
+          {([['extrato','🏦 Extrato Bancário'],['cartao','💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro'],['consolidado','📊 Consolidado']] as const).map(([v,l]) => (
+            <button key={v} onClick={() => {
+              setTabPrincipal(v)
+              if (v==='extrato') { const p=contasExtrato.find(c=>c.preferida); setContaId((p??contasExtrato[0])?.id??'') }
+            }} style={{
+              padding:'7px 16px',borderRadius:'8px 8px 0 0',
+              border:`1px solid ${tabPrincipal===v?COR.azul:COR.borda}`,
+              cursor:'pointer',fontSize:12,fontWeight:tabPrincipal===v?700:500,fontFamily:'inherit',
+              background:tabPrincipal===v?COR.azul:'#f8faff',color:tabPrincipal===v?'#fff':COR.textoSuave,
+              position:'relative',zIndex:tabPrincipal===v?1:0}}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
 
       {tabPrincipal==='cartao' ? <FaturaCartao /> :
        tabPrincipal==='consolidado' ? (
@@ -858,56 +878,99 @@ export default function NovoLancamentoExtrato() {
       ) : (
       <>
       {tabPrincipal === 'extrato' && (
-      <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-        {contasExtrato.map(c => {
-          const ativa = c.id===contaId
-          return (
-            <button key={c.id} onClick={() => {
-              setContaId(c.id)
-              resetarParaNovo(diaDefaultPara(mes,ano))
-              const k = mesKey(c.id, ano, mes)
-              if (dados[k]?.saldoBancoData !== hojeStr) {
-                setModalSaldoValor(dados[k]?.saldoBanco ?? '')
-                setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
-              }
-            }} style={{
-              display:'flex',alignItems:'center',gap:6,
-              padding:'7px 14px',borderRadius:'8px 8px 0 0',
-              border:`1px solid ${ativa?COR.azul:COR.borda}`,
-              cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
-              background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
-              position:'relative',zIndex:ativa?1:0}}>
-              <div style={{width:7,height:7,borderRadius:'50%',background:ativa?'#fff':c.cor}}/>
-              {c.icone} {c.banco}
-              <span style={{fontSize:9,color:ativa?'rgba(255,255,255,0.8)':'#94a3b8',fontWeight:400,marginLeft:2}}>{c.nome}</span>
-            </button>
-          )
-        })}
-      </div>
+      isMobile ? (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+          padding:'8px 12px',flexShrink:0,display:'flex',gap:6,overflowX:'auto',
+          WebkitOverflowScrolling:'touch' as never}}>
+          {contasExtrato.map(c => {
+            const ativa = c.id===contaId
+            return (
+              <button key={c.id} onClick={() => {
+                setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
+                const k = mesKey(c.id,ano,mes)
+                if (dados[k]?.saldoBancoData !== hojeStr) {
+                  setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+                  setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k})
+                }
+              }} style={{
+                display:'flex',alignItems:'center',gap:5,
+                padding:'6px 12px',borderRadius:20,flexShrink:0,
+                border:`1.5px solid ${ativa?COR.azul:COR.borda}`,
+                cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
+                background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave}}>
+                <div style={{width:6,height:6,borderRadius:'50%',background:ativa?'#fff':c.cor,flexShrink:0}}/>
+                {c.icone} {c.banco}
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+          padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
+          {contasExtrato.map(c => {
+            const ativa = c.id===contaId
+            return (
+              <button key={c.id} onClick={() => {
+                setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
+                const k = mesKey(c.id,ano,mes)
+                if (dados[k]?.saldoBancoData !== hojeStr) {
+                  setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+                  setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k})
+                }
+              }} style={{
+                display:'flex',alignItems:'center',gap:6,
+                padding:'7px 14px',borderRadius:'8px 8px 0 0',
+                border:`1px solid ${ativa?COR.azul:COR.borda}`,
+                cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
+                background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
+                position:'relative',zIndex:ativa?1:0}}>
+                <div style={{width:7,height:7,borderRadius:'50%',background:ativa?'#fff':c.cor}}/>
+                {c.icone} {c.banco}
+                <span style={{fontSize:9,color:ativa?'rgba(255,255,255,0.8)':'#94a3b8',fontWeight:400,marginLeft:2}}>{c.nome}</span>
+              </button>
+            )
+          })}
+        </div>
+      )
       )}
       <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'visible' : 'hidden'}}>
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
-      {/* ABAS DE MÊS */}
-      <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 0 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-        {MESES_CURTOS.map((m,i) => {
-          const ativo   = i===mes
-          return (
-            <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{
-              padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
-              border:`1px solid ${ativo?COR.azul:COR.borda}`,
-              cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,
-              fontFamily:'inherit',whiteSpace:'nowrap',
-              background:ativo?COR.azul:'#f8faff',
-              color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
-              display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-              {m}
-            </button>
-          )
-        })}
-      </div>
+      {/* SELETOR DE MÊS */}
+      {isMobile ? (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+          padding:'10px 16px',flexShrink:0,
+          display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
+          <button onClick={() => { const m=Math.max(0,mes-1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
+            style={{border:'none',background: mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
+              borderRadius:8,padding:'6px 16px',fontSize:18,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
+          <span style={{fontWeight:700,fontSize:17,color:COR.texto,minWidth:110,textAlign:'center'}}>
+            {NOMES_MESES[mes]}
+          </span>
+          <button onClick={() => { const m=Math.min(11,mes+1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
+            style={{border:'none',background: mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
+              borderRadius:8,padding:'6px 16px',fontSize:18,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
+        </div>
+      ) : (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+          padding:'10px 0 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
+          {MESES_CURTOS.map((m,i) => {
+            const ativo = i===mes
+            return (
+              <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{
+                padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
+                border:`1px solid ${ativo?COR.azul:COR.borda}`,
+                cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,
+                fontFamily:'inherit',whiteSpace:'nowrap',
+                background:ativo?COR.azul:'#f8faff',
+                color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
+                display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                {m}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
