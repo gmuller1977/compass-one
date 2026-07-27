@@ -116,6 +116,16 @@ function formaRecebCategoria(fp: string | undefined, mov: string | undefined): F
   return 'pix'
 }
 
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
+
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
   const navigate  = useNavigate()
@@ -146,6 +156,8 @@ export default function NovoLancamentoExtrato() {
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
   const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number}|null>(null)
+  const isMobile = useIsMobile()
+  const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
@@ -329,7 +341,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function editarLancamento(dia: number, l: Lancamento) {
-    setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia); setEditandoFixaId(null)
+    setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia); setEditandoFixaId(null); if (isMobile) setMobileView('form')
     setFTipo(l.tipo); setFCat(l.categoria); setFSubDesc(l.subCategoria ?? ''); setFDesc(l.descricao)
     setFValor(String(l.valor).replace('.', ',')); setFPag(l.formaPagamento)
 
@@ -353,7 +365,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function editarFixa(dia: number, f: CatFixa) {
-    setDiaSel(dia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(f.id)
+    setDiaSel(dia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(f.id); if (isMobile) setMobileView('form')
     setFTipo(f.tipo); setFCat(f.categoria)
     setFDesc(mesDados.fixasDescOverride?.[f.id] ?? f.nome)
     setFValor(String(mesDados.fixasValorOverride?.[f.id] ?? f.valor).replace('.', ','))
@@ -460,7 +472,7 @@ export default function NovoLancamentoExtrato() {
 
       setEditandoFixaId(null)
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
-      setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+      if (isMobile) { setMobileView('extrato') } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
       return
     }
     if (fPag === 'transferencia' && !editandoId) {
@@ -496,7 +508,7 @@ export default function NovoLancamentoExtrato() {
         },
       }))
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFContaDestino('')
-      setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+      if (isMobile) { setMobileView('extrato') } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
       return
     }
 
@@ -564,7 +576,7 @@ export default function NovoLancamentoExtrato() {
     }
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
-    setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+    if (isMobile) { setMobileView('extrato') } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
   }
 
   function lancarConsolidado() {
@@ -630,8 +642,9 @@ export default function NovoLancamentoExtrato() {
   }
 
   return (
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',
-      background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",overflow:'hidden'}}>
+    <div style={{height: isMobile ? 'auto' : '100vh', minHeight:'100vh', display:'flex',flexDirection:'column',
+      background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif", overflow: isMobile ? 'visible' : 'hidden',
+      paddingBottom: isMobile ? 72 : 0}}>
 
       <AppHeader currentPath="/novo-lancamento" />
 
@@ -662,8 +675,9 @@ export default function NovoLancamentoExtrato() {
 
       {/* ABAS PRINCIPAIS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3}}>
-        {([['extrato','🏦 Extrato Bancário'],['cartao','💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro'],['consolidado','📊 Consolidado']] as const).map(([v,l]) => (
+        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto',
+        WebkitOverflowScrolling:'touch' as never}}>
+        {([['extrato', isMobile ? '🏦 Extrato' : '🏦 Extrato Bancário'],['cartao', isMobile ? '💳 Cartão' : '💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro'],['consolidado','📊 Consolidado']] as const).map(([v,l]) => (
           <button key={v} onClick={() => {
             setTabPrincipal(v)
             if (v === 'extrato') {
@@ -872,8 +886,8 @@ export default function NovoLancamentoExtrato() {
         })}
       </div>
       )}
-      <div style={{flex:1,display:'flex',gap:16,padding:'0 16px 10px',overflow:'hidden'}}>
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'visible' : 'hidden'}}>
+      <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
@@ -1280,11 +1294,30 @@ export default function NovoLancamentoExtrato() {
       </div>
       </div>{/* fim coluna esquerda */}
 
+      {/* Botão novo lançamento mobile */}
+      {isMobile && mobileView === 'extrato' && (
+        <div style={{padding:'12px 12px 0'}}>
+          <button onClick={() => { resetarParaNovo(diaSel); setMobileView('form') }} style={{
+            width:'100%', padding:'13px', border:'none', borderRadius:10,
+            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+            color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+          }}>+ Novo lançamento</button>
+        </div>
+      )}
+
       {/* PAINEL DE LANÇAMENTO */}
-      <div style={{width:340,flexShrink:0,background:COR.branco,
-        border:`1px solid ${COR.borda}`,borderRadius:12,padding:20,overflowY:'auto',marginTop:10}}>
+      <div style={{width: isMobile ? '100%' : 340, flexShrink:0, background:COR.branco,
+        border:`1px solid ${COR.borda}`,borderRadius:12,padding: isMobile ? '16px 12px' : 20,
+        overflowY:'auto', marginTop:10,
+        display: isMobile && mobileView==='extrato' ? 'none' : 'block'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-          <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:0}}>
+          {isMobile && (
+            <button onClick={() => { setMobileView('extrato'); resetarParaNovo(diaSel) }} style={{
+              border:'none', background:'transparent', cursor:'pointer',
+              fontSize:13, fontWeight:600, color:COR.azul, fontFamily:'inherit', padding:'0 8px 0 0',
+            }}>← Voltar</button>
+          )}
+          <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:0,flex:1}}>
             {editandoFixaId ? 'Editar fixa' : editandoId ? 'Editar lançamento' : 'Novo lançamento'}
           </h3>
           {(editandoId || editandoFixaId) && (
