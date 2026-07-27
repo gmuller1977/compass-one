@@ -158,6 +158,7 @@ export default function NovoLancamentoExtrato() {
   const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number}|null>(null)
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
+  const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('tipo')
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
@@ -648,6 +649,81 @@ export default function NovoLancamentoExtrato() {
 
       <AppHeader currentPath="/novo-lancamento" />
 
+      {/* ── WIZARD MOBILE: STEP TIPO ── */}
+      {isMobile && mobileStep === 'tipo' && (
+        <div style={{position:'fixed',top:52,left:0,right:0,bottom:60,background:COR.fundo,zIndex:50,overflowY:'auto'}}>
+          <div style={{padding:'28px 16px 16px'}}>
+            <h2 style={{fontSize:20,fontWeight:800,color:COR.texto,margin:0}}>O que deseja ver?</h2>
+            <p style={{fontSize:13,color:COR.textoSuave,marginTop:4,marginBottom:24}}>Selecione o tipo de extrato</p>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              {([
+                {tipo:'extrato' as const,  icone:'🏦', label:'Banco',              desc: contasExtrato.length > 0 ? contasExtrato.slice(0,2).map(c=>c.banco).join(', ')+(contasExtrato.length>2?' ...':'') : 'Extrato bancário'},
+                {tipo:'cartao' as const,   icone:'💳', label:'Cartão de Crédito',  desc:'Faturas e gastos no cartão'},
+                {tipo:'dinheiro' as const, icone:'💵', label:'Dinheiro',            desc:'Lançamentos em espécie'},
+                {tipo:'consolidado' as const,icone:'📊',label:'Consolidado',        desc:'Visão geral de todas as contas'},
+              ] as const).map(({tipo,icone,label,desc}) => (
+                <button key={tipo} onClick={() => {
+                  setTabPrincipal(tipo)
+                  if (tipo === 'extrato') {
+                    if (contasExtrato.length === 1) {
+                      const c = contasExtrato[0]; setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
+                      const k = mesKey(c.id,ano,mes)
+                      if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
+                      setMobileStep('extrato')
+                    } else { setMobileStep('conta') }
+                  } else { setMobileStep('extrato') }
+                }} style={{
+                  background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
+                  padding:'16px 20px',display:'flex',alignItems:'center',gap:16,
+                  cursor:'pointer',fontFamily:'inherit',textAlign:'left',width:'100%',
+                  boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+                }}>
+                  <span style={{fontSize:32,lineHeight:1}}>{icone}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{label}</div>
+                    <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{desc}</div>
+                  </div>
+                  <span style={{fontSize:20,color:'#cbd5e1',fontWeight:300}}>›</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WIZARD MOBILE: STEP CONTA ── */}
+      {isMobile && mobileStep === 'conta' && (
+        <div style={{position:'fixed',top:52,left:0,right:0,bottom:60,background:COR.fundo,zIndex:50,overflowY:'auto'}}>
+          <div style={{padding:'16px 16px 0',display:'flex',alignItems:'center',gap:8,borderBottom:`1px solid ${COR.borda}`,paddingBottom:12,background:COR.branco}}>
+            <button onClick={() => setMobileStep('tipo')} style={{border:'none',background:'transparent',color:COR.azul,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>← Voltar</button>
+            <span style={{fontSize:14,fontWeight:600,color:COR.texto}}>Selecione o banco</span>
+          </div>
+          <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:10}}>
+            {contasExtrato.map(c => (
+              <button key={c.id} onClick={() => {
+                setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
+                const k = mesKey(c.id,ano,mes)
+                if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
+                setMobileStep('extrato')
+              }} style={{
+                background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
+                padding:'16px 20px',display:'flex',alignItems:'center',gap:14,
+                cursor:'pointer',fontFamily:'inherit',textAlign:'left',width:'100%',
+                boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+              }}>
+                <div style={{width:40,height:40,borderRadius:10,background:c.cor+'22',border:`1.5px solid ${c.cor}55`,
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{c.icone}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{c.banco}</div>
+                  <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{c.nome}</div>
+                </div>
+                <span style={{fontSize:20,color:'#cbd5e1',fontWeight:300}}>›</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ALERTA DE DESVIO */}
       {alertaDesvio && (
         <div style={{ background:'#fef3c7', borderBottom:'1px solid #fcd34d',
@@ -675,26 +751,27 @@ export default function NovoLancamentoExtrato() {
 
       {/* SELETOR DE TIPO */}
       {isMobile ? (
+        mobileStep === 'extrato' && (
         <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'10px 12px',flexShrink:0,display:'flex',gap:8}}>
-          {([['extrato','🏦','Extrato'],['cartao','💳','Cartão'],['dinheiro','💵','Dinheiro'],['consolidado','📊','Total']] as const).map(([v,icone,label]) => {
-            const ativo = tabPrincipal===v
-            return (
-              <button key={v} onClick={() => {
-                setTabPrincipal(v)
-                if (v==='extrato') { const p=contasExtrato.find(c=>c.preferida); setContaId((p??contasExtrato[0])?.id??'') }
-              }} style={{
-                flex:1,padding:'7px 4px',borderRadius:10,
-                border:`1.5px solid ${ativo?COR.azul:COR.borda}`,
-                cursor:'pointer',fontFamily:'inherit',
-                background:ativo?COR.azul:'#f8faff',color:ativo?'#fff':COR.textoSuave,
-                display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
-                <span style={{fontSize:18,lineHeight:1}}>{icone}</span>
-                <span style={{fontSize:10,fontWeight:ativo?700:500}}>{label}</span>
-              </button>
-            )
-          })}
+          padding:'10px 16px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:18,lineHeight:1}}>
+              {tabPrincipal==='extrato'?'🏦':tabPrincipal==='cartao'?'💳':tabPrincipal==='dinheiro'?'💵':'📊'}
+            </span>
+            <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>
+              {tabPrincipal==='extrato'
+                ? (contasExtrato.find(c=>c.id===contaId)?.banco ?? 'Banco')
+                : tabPrincipal==='cartao' ? 'Cartão de Crédito'
+                : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
+            </span>
+          </div>
+          <button onClick={() => setMobileStep('tipo')} style={{
+            border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
+            padding:'5px 14px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+            ← Trocar
+          </button>
         </div>
+        )
       ) : (
         <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
           padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto',
@@ -878,33 +955,7 @@ export default function NovoLancamentoExtrato() {
       ) : (
       <>
       {tabPrincipal === 'extrato' && (
-      isMobile ? (
-        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'8px 12px',flexShrink:0,display:'flex',gap:6,overflowX:'auto',
-          WebkitOverflowScrolling:'touch' as never}}>
-          {contasExtrato.map(c => {
-            const ativa = c.id===contaId
-            return (
-              <button key={c.id} onClick={() => {
-                setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
-                const k = mesKey(c.id,ano,mes)
-                if (dados[k]?.saldoBancoData !== hojeStr) {
-                  setModalSaldoValor(dados[k]?.saldoBanco ?? '')
-                  setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k})
-                }
-              }} style={{
-                display:'flex',alignItems:'center',gap:5,
-                padding:'6px 12px',borderRadius:20,flexShrink:0,
-                border:`1.5px solid ${ativa?COR.azul:COR.borda}`,
-                cursor:'pointer',fontSize:12,fontWeight:ativa?700:500,fontFamily:'inherit',whiteSpace:'nowrap',
-                background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave}}>
-                <div style={{width:6,height:6,borderRadius:'50%',background:ativa?'#fff':c.cor,flexShrink:0}}/>
-                {c.icone} {c.banco}
-              </button>
-            )
-          })}
-        </div>
-      ) : (
+      isMobile ? null : (
         <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
           padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
           {contasExtrato.map(c => {
