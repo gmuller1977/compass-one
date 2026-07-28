@@ -835,21 +835,44 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
 
         {/* TOTAL FIXO */}
         {mobileView === 'extrato' && (
-          <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
-            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-            padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',
-            boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
-            <div>
-              <div style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)'}}>
+          <div onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
+            style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,cursor:'pointer',
+              background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+              padding:'10px 20px',display:'flex',flexDirection:'column',gap:3,
+              boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
+            {/* Linha 1: Total calculado */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
                 Total da fatura — {NOMES_MESES[mes]} {ano}
-              </div>
-              <div style={{fontSize:10,color:'rgba(255,255,255,.6)',marginTop:1}}>
-                Venc: {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-              </div>
+              </span>
+              <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
+                {fmt(totalFatura)}
+              </span>
             </div>
-            <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-              {fmt(totalFatura)}
-            </span>
+            {/* Linha 2: Vencimento + informado + diferença */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:10,color:'rgba(255,255,255,.6)'}}>
+                Venc: {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
+              </span>
+              {mesDados.faturaAtual ? (
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:10,color:'rgba(255,255,255,.6)'}}>
+                    Informado: {mesDados.faturaAtual}
+                  </span>
+                  {diferenca !== null && (
+                    <span style={{fontSize:10,fontWeight:700,borderRadius:5,padding:'1px 6px',
+                      background:'rgba(0,0,0,0.2)',
+                      color:conciliado?'#86efac':Math.abs(diferenca)<50?'#fde68a':'#fca5a5'}}>
+                      {conciliado ? '✓ OK' : `Δ ${diferenca>0?'+':''}${fmt(diferenca)}`}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span style={{fontSize:10,color:'rgba(255,255,255,.5)',fontStyle:'italic'}}>
+                  ✎ Toque para informar valor
+                </span>
+              )}
+            </div>
           </div>
         )}
 
