@@ -264,10 +264,33 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   }, [fontes, extratoData, faturaData, totalDias, categorias, contas, planos, planosReal, ano, mes,
       contasExtrato, eMesAtual, diaHoje, mesHoje, anoHoje, mesStr])
 
-  const saldoBase = useMemo(
-    () => contasExtrato.reduce((s, c) => s + (c.saldoInicial ?? 0), 0),
-    [contasExtrato],
-  )
+  const saldoBase = useMemo(() => {
+    // Ponto de partida: soma dos saldos iniciais configurados em cada conta
+    const base = contasExtrato.reduce((s, c) => s + (c.saldoInicial ?? 0), 0)
+
+    const todasContas = [...contasExtrato.map(c => c.id), 'dinheiro']
+    let acc = base
+
+    // Acumula todas as transações de meses anteriores ao mês atual
+    // Chave tem sempre formato "...${contaId}-YYYY-MM" → últimos 7 chars = "YYYY-MM"
+    for (const [key, dados] of Object.entries(extratoData)) {
+      if (!dados.lancamentos) continue
+      if (!todasContas.some(id => key.startsWith(id + '-'))) continue
+
+      const suffix = key.slice(-7) // "YYYY-MM"
+      const keyAno = parseInt(suffix.slice(0, 4))
+      const keyMes = parseInt(suffix.slice(5, 7)) - 1 // 0-indexed
+      if (isNaN(keyAno) || isNaN(keyMes)) continue
+      if (keyAno > ano || (keyAno === ano && keyMes >= mes)) continue
+
+      for (const itens of Object.values(dados.lancamentos)) {
+        for (const item of itens) {
+          acc += item.tipo === 'entrada' ? item.valor : -item.valor
+        }
+      }
+    }
+    return acc
+  }, [contasExtrato, extratoData, ano, mes])
 
   // saldosConf: apenas itens confirmados → INICIAL/ATUAL/FINAL para dias passados e hoje
   // saldosAll:  até hoje = confirmados; a partir de amanhã = todos os itens
