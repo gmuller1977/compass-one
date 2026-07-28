@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { DadosMes, Categoria } from '../context/AppContext'
@@ -13,6 +13,17 @@ const COR = {
   verdeFundoGrupo: '#e8fdf0',
 }
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const MESES_FULL   = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
 
 function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
 function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
@@ -32,6 +43,7 @@ export default function Acompanhamento() {
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
 
+  const isMobile = useIsMobile()
   const [mes, setMes]     = useState(mesHoje)
   const [ano, setAno]     = useState(anoHoje)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
@@ -403,29 +415,57 @@ export default function Acompanhamento() {
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px 0'}}>
-          <button onClick={() => setAno(a => a-1)} style={{background:'none',border:'none',
-            cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>‹</button>
-          <span style={{fontSize:13,fontWeight:600,color:COR.texto}}>{ano}</span>
-          <button onClick={() => setAno(a => a+1)} style={{background:'none',border:'none',
-            cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>›</button>
-        </div>
-        <div style={{display:'flex',gap:3,padding:'6px 0 0',overflowX:'auto',paddingBottom:4}}>
-          {MESES_CURTOS.map((m,i) => {
-            const ativo = i === mes
-            return (
-              <button key={m} onClick={() => setMes(i)} style={{
-                padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
-                border:`1px solid ${ativo?COR.azul:COR.borda}`,
-                cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,fontFamily:'inherit',
-                whiteSpace:'nowrap',background:ativo?COR.azul:'#f8faff',
-                color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
-                display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-                {m}
-              </button>
-            )
-          })}
-        </div>
+        {isMobile ? (
+          /* Mobile: ano + setas de mês na mesma linha */
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'10px 16px 10px',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <button onClick={() => setAno(a => a-1)} style={{background:'none',border:'none',
+                cursor:'pointer',color:COR.textoSuave,fontSize:16,padding:'0 4px',lineHeight:1}}>‹</button>
+              <span style={{fontSize:13,fontWeight:700,color:COR.texto}}>{ano}</span>
+              <button onClick={() => setAno(a => a+1)} style={{background:'none',border:'none',
+                cursor:'pointer',color:COR.textoSuave,fontSize:16,padding:'0 4px',lineHeight:1}}>›</button>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <button onClick={() => setMes(m => Math.max(0, m-1))} style={{
+                border:'none',background:mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
+                borderRadius:8,padding:'5px 14px',fontSize:16,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
+              <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:80,textAlign:'center'}}>
+                {MESES_FULL[mes]}
+              </span>
+              <button onClick={() => setMes(m => Math.min(11, m+1))} style={{
+                border:'none',background:mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
+                borderRadius:8,padding:'5px 14px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
+            </div>
+          </div>
+        ) : (
+          /* Desktop: ano acima, 12 abas de mês */
+          <>
+            <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px 0'}}>
+              <button onClick={() => setAno(a => a-1)} style={{background:'none',border:'none',
+                cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>‹</button>
+              <span style={{fontSize:13,fontWeight:600,color:COR.texto}}>{ano}</span>
+              <button onClick={() => setAno(a => a+1)} style={{background:'none',border:'none',
+                cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>›</button>
+            </div>
+            <div style={{display:'flex',gap:3,padding:'6px 0 0',overflowX:'auto',paddingBottom:4}}>
+              {MESES_CURTOS.map((m,i) => {
+                const ativo = i === mes
+                return (
+                  <button key={m} onClick={() => setMes(i)} style={{
+                    padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
+                    border:`1px solid ${ativo?COR.azul:COR.borda}`,
+                    cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,fontFamily:'inherit',
+                    whiteSpace:'nowrap',background:ativo?COR.azul:'#f8faff',
+                    color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
+                    display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                    {m}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* CAIXINHAS DE RESUMO */}
