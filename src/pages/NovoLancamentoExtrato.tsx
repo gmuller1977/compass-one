@@ -159,6 +159,7 @@ export default function NovoLancamentoExtrato() {
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
   const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('tipo')
+  const [mobileCartaoId, setMobileCartaoId] = useState<string|null>(null)
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
@@ -670,6 +671,10 @@ export default function NovoLancamentoExtrato() {
                       if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
                       setMobileStep('extrato')
                     } else { setMobileStep('conta') }
+                  } else if (tipo === 'cartao') {
+                    const cartoes = contas.filter(c => c.tipo === 'cartao')
+                    if (cartoes.length === 1) { setMobileCartaoId(cartoes[0].id); setMobileStep('extrato') }
+                    else { setMobileStep('conta') }
                   } else { setMobileStep('extrato') }
                 }} style={{
                   background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
@@ -695,30 +700,54 @@ export default function NovoLancamentoExtrato() {
         <div style={{position:'fixed',top:52,left:0,right:0,bottom:60,background:COR.fundo,zIndex:50,overflowY:'auto'}}>
           <div style={{padding:'16px 16px 0',display:'flex',alignItems:'center',gap:8,borderBottom:`1px solid ${COR.borda}`,paddingBottom:12,background:COR.branco}}>
             <button onClick={() => setMobileStep('tipo')} style={{border:'none',background:'transparent',color:COR.azul,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>← Voltar</button>
-            <span style={{fontSize:14,fontWeight:600,color:COR.texto}}>Selecione o banco</span>
+            <span style={{fontSize:14,fontWeight:600,color:COR.texto}}>
+              {tabPrincipal === 'cartao' ? 'Selecione o cartão' : 'Selecione o banco'}
+            </span>
           </div>
           <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:10}}>
-            {contasExtrato.map(c => (
-              <button key={c.id} onClick={() => {
-                setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
-                const k = mesKey(c.id,ano,mes)
-                if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
-                setMobileStep('extrato')
-              }} style={{
-                background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
-                padding:'16px 20px',display:'flex',alignItems:'center',gap:14,
-                cursor:'pointer',fontFamily:'inherit',textAlign:'left',width:'100%',
-                boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
-              }}>
-                <div style={{width:40,height:40,borderRadius:10,background:c.cor+'22',border:`1.5px solid ${c.cor}55`,
-                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{c.icone}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{c.banco}</div>
-                  <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{c.nome}</div>
-                </div>
-                <span style={{fontSize:20,color:'#cbd5e1',fontWeight:300}}>›</span>
-              </button>
-            ))}
+            {tabPrincipal === 'cartao' ? (
+              contas.filter(c => c.tipo === 'cartao').map(c => (
+                <button key={c.id} onClick={() => {
+                  setMobileCartaoId(c.id)
+                  setMobileStep('extrato')
+                }} style={{
+                  background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
+                  padding:'16px 20px',display:'flex',alignItems:'center',gap:14,
+                  cursor:'pointer',fontFamily:'inherit',textAlign:'left',width:'100%',
+                  boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+                }}>
+                  <div style={{width:40,height:40,borderRadius:10,background:c.cor+'22',border:`1.5px solid ${c.cor}55`,
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{c.icone}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{c.banco}</div>
+                    {c.apelido && <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{c.apelido}</div>}
+                  </div>
+                  <span style={{fontSize:20,color:'#cbd5e1',fontWeight:300}}>›</span>
+                </button>
+              ))
+            ) : (
+              contasExtrato.map(c => (
+                <button key={c.id} onClick={() => {
+                  setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
+                  const k = mesKey(c.id,ano,mes)
+                  if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
+                  setMobileStep('extrato')
+                }} style={{
+                  background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
+                  padding:'16px 20px',display:'flex',alignItems:'center',gap:14,
+                  cursor:'pointer',fontFamily:'inherit',textAlign:'left',width:'100%',
+                  boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
+                }}>
+                  <div style={{width:40,height:40,borderRadius:10,background:c.cor+'22',border:`1.5px solid ${c.cor}55`,
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{c.icone}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{c.banco}</div>
+                    <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{c.nome}</div>
+                  </div>
+                  <span style={{fontSize:20,color:'#cbd5e1',fontWeight:300}}>›</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -750,7 +779,7 @@ export default function NovoLancamentoExtrato() {
 
       {/* SELETOR DE TIPO */}
       {isMobile ? (
-        mobileStep === 'extrato' && (
+        mobileStep === 'extrato' && tabPrincipal !== 'cartao' && (
         <div style={{flexShrink:0,zIndex:30,background:COR.branco,
           boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
           {/* Linha 1: Banco clicável + navegador de mês */}
@@ -761,12 +790,11 @@ export default function NovoLancamentoExtrato() {
               border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
               padding:'6px 14px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
               <span style={{fontSize:16,lineHeight:1}}>
-                {tabPrincipal==='extrato'?'🏦':tabPrincipal==='cartao'?'💳':tabPrincipal==='dinheiro'?'💵':'📊'}
+                {tabPrincipal==='extrato'?'🏦':tabPrincipal==='dinheiro'?'💵':'📊'}
               </span>
               <span>
                 {tabPrincipal==='extrato'
                   ? (contasExtrato.find(c=>c.id===contaId)?.banco ?? 'Banco')
-                  : tabPrincipal==='cartao' ? 'Cartão'
                   : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
               </span>
             </button>
@@ -839,7 +867,7 @@ export default function NovoLancamentoExtrato() {
         </div>
       )}
 
-      {tabPrincipal==='cartao' ? <FaturaCartao /> :
+      {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={mobileCartaoId ?? undefined} onVoltar={() => setMobileStep('tipo')} /> :
        tabPrincipal==='consolidado' ? (
       <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
@@ -1653,7 +1681,7 @@ export default function NovoLancamentoExtrato() {
       )}
 
       {/* FAB + BARRA PREVISTO — mobile only */}
-      {isMobile && mobileStep === 'extrato' && mobileView === 'extrato' && (<>
+      {isMobile && mobileStep === 'extrato' && mobileView === 'extrato' && tabPrincipal !== 'cartao' && (<>
         {/* Barra "Previsto fim do mês" — fixa acima do tab bar */}
         <div style={{position:'fixed',left:0,right:0,bottom:60,
           background:COR.branco,borderTop:`1px solid ${COR.borda}`,

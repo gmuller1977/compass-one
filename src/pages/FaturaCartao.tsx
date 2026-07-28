@@ -72,6 +72,12 @@ function parseDateFatura(s: string, mesDefault: number, anoDefault: number): {di
 }
 const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
+function useIsMobile() {
+  const [m, setM] = useState(() => window.innerWidth < 640)
+  useEffect(() => { const fn = () => setM(window.innerWidth < 640); window.addEventListener('resize', fn); return () => window.removeEventListener('resize', fn) }, [])
+  return m
+}
+
 function realcarFoco(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.border = `1.5px solid ${COR.azul}`
   e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,86,219,0.15)'
@@ -81,12 +87,14 @@ function removerRealce(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.boxShadow = 'none'
 }
 
-export default function FaturaCartao() {
+export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSelecionado?: string; onVoltar?: () => void } = {}) {
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
   const hojeStr = hoje.toISOString().slice(0,10)
+  const isMobile = useIsMobile()
+  const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
 
   const { contas, categorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
@@ -95,7 +103,7 @@ export default function FaturaCartao() {
   const extratoRef = useRef(extratoData)
   useEffect(() => { extratoRef.current = extratoData }, [extratoData])
 
-  const [contaId,  setContaId]  = useState(() => contasCartao[0]?.id ?? 'c1')
+  const [contaId,  setContaId]  = useState(() => mobileSelecionado ?? contasCartao[0]?.id ?? 'c1')
   const [mes,      setMes]      = useState(mesHoje)
   const [ano,      setAno]      = useState(anoHoje)
   const [diaSel,   setDiaSel]   = useState<number>(diaHoje)
@@ -236,6 +244,8 @@ export default function FaturaCartao() {
     setMes(tabMes); setAno(tabAno)
     setDiaSel(diaHoje >= diaFech ? 1 : diaHoje)
   }, [contaId, contas])
+
+  useEffect(() => { if (mobileSelecionado) setContaId(mobileSelecionado) }, [mobileSelecionado])
 
   // Modal "valor da fatura" — abre uma vez por dia por fatura
   // Delay de 50ms: aguarda o auto-avança (efeito anterior) corrigir o mês/key antes de abrir
@@ -524,6 +534,381 @@ export default function FaturaCartao() {
   }
 
   // Mês/ano de vencimento da fatura exibida
+  if (isMobile) {
+    const prevMesNav = () => { if (mes === 0) { setMes(11); setAno(y => y-1) } else setMes(m => m-1) }
+    const nextMesNav = () => { if (mes === 11) { setMes(0); setAno(y => y+1) } else setMes(m => m+1) }
+    const statusCor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#d97706'
+    const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
+    return (
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo}}>
+
+        {/* MOBILE HEADER */}
+        <div style={{flexShrink:0,background:COR.branco,boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
+          {/* Row 1: Cartão pill + Mês nav */}
+          <div style={{padding:'8px 12px',display:'flex',alignItems:'center',
+            justifyContent:'space-between',borderBottom:`1px solid ${COR.borda}`,gap:8}}>
+            <button onClick={onVoltar} style={{
+              display:'flex',alignItems:'center',gap:6,border:'none',borderRadius:20,
+              padding:'6px 14px',flexShrink:0,cursor:'pointer',fontFamily:'inherit',
+              background:contaInfo ? contaInfo.cor+'18' : '#f0f4ff'}}>
+              <span style={{fontSize:16,lineHeight:1}}>{contaInfo?.icone ?? '💳'}</span>
+              <span style={{fontSize:13,fontWeight:700,color:contaInfo ? contaInfo.cor : COR.azul}}>
+                {contaInfo?.banco ?? 'Cartão'}
+              </span>
+            </button>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <button onClick={prevMesNav} style={{border:'none',background:'#eff6ff',color:COR.azul,
+                borderRadius:8,padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
+              <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:84,textAlign:'center'}}>
+                {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''}
+              </span>
+              <button onClick={nextMesNav} style={{border:'none',background:'#eff6ff',color:COR.azul,
+                borderRadius:8,padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
+            </div>
+          </div>
+          {/* Row 2: Fatura total + status */}
+          <div style={{padding:'8px 16px',borderBottom:`2px solid ${COR.borda}`,
+            display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500}}>
+                Fatura {NOMES_MESES[mes]}
+              </span>
+              <span style={{fontSize:10,padding:'2px 8px',borderRadius:10,fontWeight:700,
+                background:statusCor+'18',color:statusCor,border:`1px solid ${statusCor}44`}}>
+                {statusLbl}
+              </span>
+            </div>
+            <span style={{fontSize:16,fontWeight:800,fontVariantNumeric:'tabular-nums',
+              color:totalFatura>0?COR.vermelho:totalFatura<0?COR.verde:COR.textoSuave}}>
+              {fmt(totalFatura)}
+            </span>
+          </div>
+        </div>
+
+        {/* FORM VIEW */}
+        {mobileView === 'form' && (
+          <div style={{flex:1,overflowY:'auto',background:COR.branco}}>
+            <div style={{padding:'12px 16px',borderBottom:`1px solid ${COR.borda}`,
+              display:'flex',alignItems:'center',gap:8}}>
+              <button onClick={() => { resetarParaNovo(diaSel); setMobileView('extrato') }}
+                style={{border:'none',background:'transparent',color:COR.azul,fontSize:13,
+                  fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>← Voltar</button>
+              <span style={{fontSize:14,fontWeight:600,color:COR.texto}}>
+                {editandoId ? 'Editar lançamento' : 'Novo lançamento'}
+              </span>
+            </div>
+            <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
+              {/* Compra / Estorno */}
+              <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,padding:3}}>
+                {(['entrada','saida'] as const).map(t => (
+                  <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
+                    flex:1,padding:'8px 0',border:'none',borderRadius:5,
+                    cursor:'pointer',fontSize:13,fontWeight:600,
+                    fontFamily:'inherit',transition:'all .15s',
+                    background:fTipo===t?COR.branco:'transparent',
+                    color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
+                    boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
+                    {t==='saida'?'↑ Estorno':'↓ Compra'}
+                  </button>
+                ))}
+              </div>
+              {/* Data da compra */}
+              {(() => {
+                const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
+                const dispDia = parsed?.dia ?? diaSel
+                const dispMes = parsed?.mes ?? purchaseMes
+                const dispAno = parsed?.ano ?? purchaseAno
+                const label = `${String(dispDia).padStart(2,'0')} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
+                return (
+                  <div>
+                    <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
+                    <input ref={dataCompraRef} type="text" value={fDataCompra}
+                      onChange={e => setFDataCompra(e.target.value)}
+                      onBlur={() => {
+                        const p = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
+                        if (p) {
+                          setDiaSel(p.dia)
+                          const acStr = p.ano !== purchaseAno ? `/${p.ano}` : ''
+                          setFDataCompra(`${String(p.dia).padStart(2,'0')}/${String(p.mes+1).padStart(2,'0')}${acStr}`)
+                        }
+                      }}
+                      placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
+                      style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
+                        fontSize:14,outline:'none',background:'#fff',width:'100%',
+                        fontFamily:'inherit',color:COR.texto,boxSizing:'border-box'}}
+                      onKeyDown={e => { if (e.key==='Enter') (e.target as HTMLInputElement).blur() }}/>
+                    <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>{label}</div>
+                  </div>
+                )
+              })()}
+              {/* Categoria */}
+              <div>
+                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
+                <select ref={categoriaSelectRef} value={fCat} onChange={e=>setFCat(e.target.value)}
+                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
+                    fontSize:14,outline:'none',background:'#fff',width:'100%',
+                    fontFamily:'inherit',color:COR.texto}}>
+                  <option value="">Selecione...</option>
+                  {categoriasCartao.map(c=>(
+                    <option key={c.id} value={c.nome}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Valor */}
+              <div>
+                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
+                <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+                  placeholder="R$ 0,00"
+                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
+                    fontSize:14,outline:'none',background:'#fff',width:'100%',
+                    fontFamily:'inherit',color:COR.texto,boxSizing:'border-box'}}
+                  onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+              </div>
+              {/* Parcelas */}
+              <div>
+                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Parcelas</div>
+                <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                  {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
+                    const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
+                    const ativo = parcelasAtual === n
+                    return (
+                      <button key={n} ref={el => { parcelasBtnRefs.current[i] = el }}
+                        tabIndex={ativo ? 0 : -1} onClick={() => setFParcelas(String(n))}
+                        onKeyDown={e => {
+                          if (e.key === 'ArrowRight'||e.key === 'ArrowDown') { e.preventDefault(); if (n<12) { setFParcelas(String(n+1)); parcelasBtnRefs.current[i+1]?.focus() } }
+                          else if (e.key === 'ArrowLeft'||e.key === 'ArrowUp') { e.preventDefault(); if (n>1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() } }
+                          else if (e.key === 'Enter') { e.preventDefault(); lancar() }
+                        }}
+                        style={{padding:'6px 10px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
+                          borderRadius:6,cursor:'pointer',fontSize:12,fontWeight:500,
+                          background:ativo?'#eff6ff':'#fff',
+                          color:ativo?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                        {n}x
+                      </button>
+                    )
+                  })}
+                </div>
+                {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
+                  <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
+                    Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} ({fParcelas}x de {fmt(parseBRL(fValor))})
+                  </div>
+                )}
+              </div>
+              {/* Descrição */}
+              <div>
+                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
+                <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
+                  placeholder="Ex: Mercado Extra, Farmácia..."
+                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
+                    fontSize:14,outline:'none',background:'#fff',width:'100%',
+                    fontFamily:'inherit',color:COR.texto,boxSizing:'border-box'}}
+                  onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+              </div>
+              {/* Botões */}
+              <div style={{display:'flex',gap:8,marginTop:4,paddingBottom:80}}>
+                {editandoId && (
+                  <button onClick={() => {
+                    if (!editandoId || !window.confirm('Excluir este lançamento?')) return
+                    const diaAlvo = editandoDiaOriginal ?? diaSel
+                    const idAtual = editandoId
+                    updateMes(prev => ({...prev, lancamentos:{ ...prev.lancamentos, [diaAlvo]:(prev.lancamentos[diaAlvo]??[]).filter(l=>l.id!==idAtual) }}))
+                    setEditandoId(null); setEditandoDiaOriginal(null)
+                    setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+                    setMobileView('extrato')
+                  }} style={{
+                    flex:1,padding:'12px 0',border:`1.5px solid ${COR.borda}`,
+                    borderRadius:8,cursor:'pointer',fontSize:14,fontWeight:500,
+                    background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>Excluir</button>
+                )}
+                <button onClick={() => {
+                  const valid = !!fCat && parseBRL(fValor) > 0
+                  lancar()
+                  if (valid) setMobileView('extrato')
+                }} style={{
+                  flex:2,padding:'12px 0',border:'none',borderRadius:8,
+                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                  color:'#fff',fontSize:14,fontWeight:600,
+                  cursor:'pointer',fontFamily:'inherit'}}>
+                  {editandoId ? 'Salvar' : 'Lançar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* EXTRATO VIEW */}
+        {mobileView === 'extrato' && (
+          <div style={{flex:1,overflowY:'auto',padding:'8px 12px 140px'}}>
+            {(() => {
+              type DiaGroup = { dateKey:string; dc:number; mc:number; ac:number; items:Array<{dia:number;l:Lancamento}> }
+              const groupMap = new Map<string, DiaGroup>()
+              for (let d = 1; d <= totalDias; d++) {
+                for (const l of (mesDados.lancamentos[d] ?? [])) {
+                  const dc = l.diaCompra ?? d
+                  const mc = l.mesCompra ?? purchaseMes
+                  const ac = l.anoCompra ?? purchaseAno
+                  const dateKey = `${ac}-${String(mc+1).padStart(2,'0')}-${String(dc).padStart(2,'0')}`
+                  if (!groupMap.has(dateKey)) groupMap.set(dateKey, {dateKey, dc, mc, ac, items:[]})
+                  groupMap.get(dateKey)!.items.push({dia:d, l})
+                }
+              }
+              if (groupMap.size === 0) {
+                return (
+                  <div style={{textAlign:'center',color:COR.textoSuave,padding:40,fontSize:13}}>
+                    Nenhum lançamento nesta fatura.
+                  </div>
+                )
+              }
+              const grupos = [...groupMap.values()].sort((a,b) => b.dateKey.localeCompare(a.dateKey))
+              return grupos.map((grupo) => {
+                const {dateKey, dc, mc, ac, items} = grupo
+                const aberto = !diasFechados.has(dateKey)
+                const semana = diaSemana(dc, mc, ac)
+                const mesAno = (mc !== purchaseMes || ac !== purchaseAno)
+                  ? `${NOMES_MESES[mc]}${ac !== purchaseAno ? ' '+ac : ''}`
+                  : NOMES_MESES[mc]
+                return (
+                  <div key={dateKey} style={{borderRadius:12,overflow:'hidden',flexShrink:0,marginBottom:8,
+                    border:`1.5px solid ${COR.borda}`,background:COR.branco}}>
+                    <div onClick={() => toggleDia(dateKey)}
+                      style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',
+                        cursor:'pointer',userSelect:'none',background:'#fafbff',
+                        borderBottom:aberto?`1px solid ${COR.borda}`:'none'}}>
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',minWidth:32,flexShrink:0}}>
+                        <span style={{fontSize:18,fontWeight:700,lineHeight:1,color:COR.texto}}>
+                          {String(dc).padStart(2,'0')}
+                        </span>
+                        <span style={{fontSize:10,color:'#94a3b8',fontWeight:500,
+                          textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>{semana}</span>
+                      </div>
+                      <span style={{fontSize:12,color:COR.textoSuave,flex:1}}>{mesAno}</span>
+                      <span style={{fontSize:16,color:'#94a3b8',display:'inline-block',
+                        transition:'transform .2s',transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
+                    </div>
+                    {aberto && items.map(({dia, l}) => {
+                      const catVisual = iconeCategoria(categorias, l.categoria)
+                      return (
+                        <div key={l.id}
+                          onClick={() => { editarLancamento(dia, l); setMobileView('form') }}
+                          style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
+                            padding:'12px 14px',background:COR.branco,
+                            borderBottom:`1px solid ${COR.borda}`}}>
+                          <div style={{width:36,height:36,borderRadius:9,flexShrink:0,
+                            display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,
+                            background:catVisual.cor}}>
+                            {catVisual.icone}
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13,fontWeight:600,color:COR.texto,
+                              whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                              {l.categoria}
+                            </div>
+                            {l.descricao && l.descricao !== l.categoria && (
+                              <div style={{fontSize:11,color:COR.textoSuave,marginTop:1,
+                                whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                                {l.descricao}
+                              </div>
+                            )}
+                          </div>
+                          {l.parcelas && l.parcelas > 1 && (
+                            <span style={{fontSize:11,padding:'3px 7px',borderRadius:6,fontWeight:700,
+                              flexShrink:0,background:'#ede9fe',color:'#7c3aed'}}>
+                              {l.parcelaAtual}&nbsp;/&nbsp;{l.parcelas}
+                            </span>
+                          )}
+                          <div style={{textAlign:'right',flexShrink:0}}>
+                            <div style={{fontSize:14,fontWeight:700,
+                              color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
+                              {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                            </div>
+                          </div>
+                          <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                            style={{border:'none',background:'transparent',cursor:'pointer',
+                              color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4,flexShrink:0}}>✕</button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })
+            })()}
+            {/* Total */}
+            <div style={{borderRadius:12,padding:'14px 16px',
+              background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+              display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
+                  Total — {NOMES_MESES[mes]} {ano}
+                </div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,.6)',marginTop:2}}>
+                  Venc: {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
+                </div>
+              </div>
+              <span style={{fontSize:18,fontWeight:700,color:'#fff'}}>{fmt(totalFatura)}</span>
+            </div>
+          </div>
+        )}
+
+        {/* FAB */}
+        {mobileView === 'extrato' && (
+          <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }}
+            style={{position:'fixed',right:20,bottom:76,width:52,height:52,
+              borderRadius:'50%',border:'none',background:COR.azul,
+              color:'#fff',fontSize:24,lineHeight:'52px',textAlign:'center',
+              cursor:'pointer',zIndex:40,
+              boxShadow:'0 4px 12px rgba(26,86,219,0.4)'}}>+</button>
+        )}
+
+        {/* MODAL FATURA */}
+        {modalFatura && (
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
+            display:'flex',alignItems:'center',justifyContent:'center',padding:'0 24px'}}
+            onClick={() => setModalFatura(false)}>
+            <div style={{background:'#fff',borderRadius:14,padding:'24px',width:'100%',maxWidth:400,
+              boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
+              onClick={e => e.stopPropagation()}>
+              <div style={{marginBottom:16}}>
+                {contaInfo && (
+                  <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
+                    display:'inline-flex',alignItems:'center',gap:6,
+                    background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
+                    <span>{contaInfo.icone}</span>
+                    <span style={{color:contaInfo.cor,fontWeight:700}}>{contaInfo.banco}</span>
+                  </span>
+                )}
+              </div>
+              <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 4px'}}>
+                Qual é o valor atual da fatura?
+              </p>
+              <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 14px'}}>
+                Informe o valor para acompanhar a diferença.
+              </p>
+              <input autoFocus value={modalFaturaValor}
+                onChange={e => setModalFaturaValor(e.target.value)}
+                onFocus={e => e.target.select()}
+                onKeyDown={e => { if (e.key==='Enter') confirmarModalFatura(); if (e.key==='Escape') setModalFatura(false) }}
+                placeholder="R$ 0,00"
+                style={{width:'100%',border:`1.5px solid ${contaInfo?.cor ?? COR.azul}`,
+                  borderRadius:8,padding:'10px 14px',fontSize:16,fontWeight:700,
+                  color:'#0f172a',outline:'none',textAlign:'right',
+                  fontFamily:'inherit',boxSizing:'border-box'}}/>
+              <div style={{display:'flex',gap:10,marginTop:16}}>
+                <button onClick={() => { updateMes(prev=>({...prev,faturaAtualData:hojeStr})); setModalFatura(false) }}
+                  style={{flex:1,padding:'10px',borderRadius:8,border:'1.5px solid #e2e8f0',
+                    background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
+                    cursor:'pointer',fontFamily:'inherit'}}>Pular</button>
+                <button onClick={confirmarModalFatura}
+                  style={{flex:2,padding:'10px',borderRadius:8,border:'none',
+                    background:contaInfo?.cor ?? COR.azul,color:'#fff',fontSize:13,fontWeight:700,
+                    cursor:'pointer',fontFamily:'inherit'}}>Confirmar</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo}}>
 
