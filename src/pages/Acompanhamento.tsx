@@ -205,6 +205,10 @@ export default function Acompanhamento() {
       : isEntrada ? COR.borda
       : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
 
+    const boxBg   = isEntrada ? '#f0fdf4' : '#eff6ff'
+    const boxBd   = isEntrada ? '#bbf7d0' : '#bfdbfe'
+    const boxClr  = isEntrada ? COR.verde  : COR.azul
+
     return (
       <div style={{borderBottom:`1px solid ${COR.borda}`}}>
         {/* Linha */}
@@ -225,32 +229,9 @@ export default function Acompanhamento() {
             </div>
           </div>
 
-          {/* Três caixinhas */}
-          <div style={{display:'flex',gap:6,flexShrink:0}}>
-            {/* Previsto */}
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-              padding:'5px 10px',borderRadius:8,minWidth:90,
-              background:'#f8faff',border:`1px solid ${COR.borda}`}}>
-              <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
-                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Previsto</span>
-              <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,
-                fontVariantNumeric:'tabular-nums'}}>
-                {prev > 0 ? fmt(prev) : '—'}
-              </span>
-            </div>
-            {/* Realizado */}
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-              padding:'5px 10px',borderRadius:8,minWidth:90,
-              background:realBg,border:`1px solid ${realBd}`}}>
-              <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
-                letterSpacing:.4,marginBottom:1,color:realColor}}>Realizado</span>
-              <span style={{fontSize:13,fontWeight:700,color:realColor,
-                fontVariantNumeric:'tabular-nums'}}>
-                {lancAbs > 0 ? fmt(lancAbs) : '—'}
-              </span>
-            </div>
-            {/* Disponível */}
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+          {isMobile ? (
+            /* Mobile: só disponível */
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0,
               padding:'5px 10px',borderRadius:8,minWidth:90,
               background:dispBg,border:`1px solid ${dispBd}`}}>
               <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
@@ -260,7 +241,41 @@ export default function Acompanhamento() {
                 {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
               </span>
             </div>
-          </div>
+          ) : (
+            /* Desktop: três caixinhas separadas */
+            <div style={{display:'flex',gap:6,flexShrink:0}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                padding:'5px 10px',borderRadius:8,minWidth:90,
+                background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+                <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                  letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Previsto</span>
+                <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,
+                  fontVariantNumeric:'tabular-nums'}}>
+                  {prev > 0 ? fmt(prev) : '—'}
+                </span>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                padding:'5px 10px',borderRadius:8,minWidth:90,
+                background:realBg,border:`1px solid ${realBd}`}}>
+                <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                  letterSpacing:.4,marginBottom:1,color:realColor}}>Realizado</span>
+                <span style={{fontSize:13,fontWeight:700,color:realColor,
+                  fontVariantNumeric:'tabular-nums'}}>
+                  {lancAbs > 0 ? fmt(lancAbs) : '—'}
+                </span>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                padding:'5px 10px',borderRadius:8,minWidth:90,
+                background:dispBg,border:`1px solid ${dispBd}`}}>
+                <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                  letterSpacing:.4,marginBottom:1,color:dispColor}}>Disponível</span>
+                <span style={{fontSize:13,fontWeight:700,color:dispColor,
+                  fontVariantNumeric:'tabular-nums'}}>
+                  {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
+                </span>
+              </div>
+            </div>
+          )}
           {/* Chevron */}
           <div style={{flexShrink:0,fontSize:12,color:COR.textoSuave,width:16,textAlign:'center',
             transform:aberto?'rotate(180deg)':'rotate(0deg)',transition:'transform .15s'}}>⌄</div>
@@ -289,6 +304,31 @@ export default function Acompanhamento() {
           return (
             <div style={{background:'#f8faff',borderTop:`1px solid ${COR.borda}`,
               padding:'10px 12px 12px'}}>
+              {/* Mobile: Previsto + Realizado no topo do detalhe */}
+              {isMobile && (
+                <div style={{display:'flex',gap:8,marginBottom:10}}>
+                  <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+                    padding:'6px 8px',borderRadius:8,
+                    background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+                    <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                      letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Previsto</span>
+                    <span style={{fontSize:14,fontWeight:700,color:COR.textoSuave,
+                      fontVariantNumeric:'tabular-nums'}}>
+                      {prev > 0 ? fmt(prev) : '—'}
+                    </span>
+                  </div>
+                  <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+                    padding:'6px 8px',borderRadius:8,
+                    background:realBg,border:`1px solid ${realBd}`}}>
+                    <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
+                      letterSpacing:.4,marginBottom:1,color:realColor}}>Realizado</span>
+                    <span style={{fontSize:14,fontWeight:700,color:realColor,
+                      fontVariantNumeric:'tabular-nums'}}>
+                      {lancAbs > 0 ? fmt(lancAbs) : '—'}
+                    </span>
+                  </div>
+                </div>
+              )}
               {colunas.length === 0 ? (
                 <div style={{textAlign:'center',color:COR.textoSuave,fontSize:12}}>
                   Nenhum lançamento encontrado.
