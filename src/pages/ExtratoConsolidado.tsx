@@ -22,14 +22,23 @@ type LancItem = {
 
 function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
 
-export default function ExtratoConsolidado() {
+function useIsMobile() {
+  const [m, setM] = useState(() => window.innerWidth < 640)
+  useEffect(() => { const fn = () => setM(window.innerWidth < 640); window.addEventListener('resize', fn); return () => window.removeEventListener('resize', fn) }, [])
+  return m
+}
+
+export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: number; onMesProp?: (m: number) => void } = {}) {
+  const isMobile = useIsMobile()
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
 
-  const [mes, setMes] = useState(mesHoje)
-  const [ano]         = useState(anoHoje)
+  const [mesSelf, setMesSelf] = useState(mesHoje)
+  const mes    = mesProp ?? mesSelf
+  const setMes = onMesProp ?? setMesSelf
+  const [ano]  = useState(anoHoje)
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
 
   const { contas, categorias, extratoData, faturaData, planos, planosReal } = useApp()
@@ -322,8 +331,8 @@ export default function ExtratoConsolidado() {
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
 
-      {/* ABAS DE MÊS */}
-      <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
+      {/* ABAS DE MÊS — oculto no mobile (setas do header controlam o mês) */}
+      {!isMobile && <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
         padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
         {MESES_CURTOS.map((m,i) => {
           const ativo   = i===mes
@@ -339,7 +348,7 @@ export default function ExtratoConsolidado() {
             </button>
           )
         })}
-      </div>
+      </div>}
 
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
@@ -350,10 +359,11 @@ export default function ExtratoConsolidado() {
           <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
           <span style={{color:COR.borda}}>|</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo atual:</span>
+            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Saldo inicial:</span>
             <span style={{fontSize:16,fontWeight:800,
               color:saldoDisponivel<0?COR.vermelho:COR.verde}}>{fmt(saldoDisponivel)}</span>
           </div>
+          {!isMobile && (
           <div style={{display:'flex',alignItems:'center',gap:5}}>
             <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
             <span style={{fontSize:16,fontWeight:800,
@@ -361,10 +371,11 @@ export default function ExtratoConsolidado() {
               {fmt(saldosAll[totalDias]??saldoBase)}
             </span>
           </div>
+          )}
         </div>
 
-        {/* Linha 2: pills por conta */}
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {/* Linha 2: pills por conta — oculto no mobile */}
+        {!isMobile && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {saldosPorConta.map(({conta,saldo,manual}) => (
             <span key={conta.id} style={{
               fontSize:13,fontWeight:500,
@@ -389,7 +400,7 @@ export default function ExtratoConsolidado() {
             <span style={{fontWeight:700,
               color:saldoDinheiro<0?COR.vermelho:COR.texto}}>{fmt(saldoDinheiro)}</span>
           </span>
-        </div>
+        </div>}
       </div>
 
       {/* LISTA DE DIAS */}
@@ -455,6 +466,7 @@ export default function ExtratoConsolidado() {
 
                 {/* Boxes: INICIAL, ENTRADAS, SAÍDA, FINAL */}
                 <div style={{display:'flex',gap:6}}>
+                  {!isMobile && (
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saldoIni<0?'#fff1f2':'#f0fdf4',
@@ -467,9 +479,10 @@ export default function ExtratoConsolidado() {
                       {fmt(saldoIni)}
                     </span>
                   </div>
+                  )}
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
+                    padding:'5px 10px',borderRadius:8,flex:isMobile?1:undefined,minWidth:isMobile?0:150,
                     background:diaFuturo?'#f8faff':entradasDia>0?'#eff6ff':'#f8faff',
                     border:`1px solid ${diaFuturo?COR.borda:entradasDia>0?'#bfdbfe':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -482,7 +495,7 @@ export default function ExtratoConsolidado() {
                   </div>
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
+                    padding:'5px 10px',borderRadius:8,flex:isMobile?1:undefined,minWidth:isMobile?0:150,
                     background:diaFuturo?'#f8faff':saidasDia>0?'#fff1f2':'#f8faff',
                     border:`1px solid ${diaFuturo?COR.borda:saidasDia>0?'#fecdd3':COR.borda}`}}>
                     <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
@@ -494,6 +507,7 @@ export default function ExtratoConsolidado() {
                     </span>
                   </div>
 
+                  {!isMobile && (
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,minWidth:150,
                     background:diaFuturo?'#f8faff':saldoFinal<0?'#fff1f2':'#f0fdf4',
@@ -506,6 +520,7 @@ export default function ExtratoConsolidado() {
                     <span style={{fontSize:13,fontWeight:700,
                       color:diaFuturo?'#64748b':corSaldoFin}}>{fmt(saldoFinal)}</span>
                   </div>
+                  )}
                 </div>
 
                 {/* Chevron */}

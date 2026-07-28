@@ -894,7 +894,7 @@ export default function NovoLancamentoExtrato() {
         overflow:isMobile?'auto':'hidden'}}>
         <div style={{flex:1,display:isMobile&&mobileView==='form'?'none':'flex',
           flexDirection:'column',overflow:'hidden'}}>
-          <ExtratoConsolidado />
+          <ExtratoConsolidado mesProp={isMobile ? mes : undefined} onMesProp={isMobile ? setMes : undefined} />
         </div>
         {/* PAINEL DE LANÇAMENTO — consolidado */}
         <div style={{width:isMobile?'100%':340,flexShrink:0,background:COR.branco,
