@@ -643,9 +643,8 @@ export default function NovoLancamentoExtrato() {
   }
 
   return (
-    <div style={{height: isMobile ? 'auto' : '100vh', minHeight:'100vh', display:'flex',flexDirection:'column',
-      background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif", overflow: isMobile ? 'visible' : 'hidden',
-      paddingBottom: isMobile ? 120 : 0}}>
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',
+      background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",overflow:'hidden'}}>
 
       <AppHeader currentPath="/novo-lancamento" />
 
@@ -752,7 +751,7 @@ export default function NovoLancamentoExtrato() {
       {/* SELETOR DE TIPO */}
       {isMobile ? (
         mobileStep === 'extrato' && (
-        <div style={{position:'sticky',top:52,zIndex:30,background:COR.branco,
+        <div style={{flexShrink:0,zIndex:30,background:COR.branco,
           boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
           {/* Linha 1: Banco clicável + navegador de mês */}
           <div style={{borderBottom:`1px solid ${COR.borda}`,
@@ -1032,7 +1031,7 @@ export default function NovoLancamentoExtrato() {
         </div>
       )
       )}
-      <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'visible' : 'hidden'}}>
+      <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'auto' : 'hidden', paddingBottom: isMobile ? 120 : 0}}>
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
       {/* SELETOR DE MÊS */}
