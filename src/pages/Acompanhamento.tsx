@@ -235,7 +235,7 @@ export default function Acompanhamento() {
               padding:'5px 10px',borderRadius:8,minWidth:90,
               background:dispBg,border:`1px solid ${dispBd}`}}>
               <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',
-                letterSpacing:.4,marginBottom:1,color:dispColor}}>Disponível</span>
+                letterSpacing:.4,marginBottom:1,color:dispColor}}>{isEntrada ? 'A receber' : 'Disponível'}</span>
               <span style={{fontSize:13,fontWeight:700,color:dispColor,
                 fontVariantNumeric:'tabular-nums'}}>
                 {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
