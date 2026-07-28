@@ -196,13 +196,13 @@ export default function Acompanhamento() {
       : (lancAbs === 0 ? COR.borda : (lancAbs <= prev || prev === 0) ? '#bfdbfe' : '#fecdd3')
 
     const dispColor = (prev === 0 && lancAbs === 0) ? '#94a3b8'
-      : isEntrada ? '#94a3b8'
+      : isEntrada ? (disponivel > 0 ? COR.verde : '#94a3b8')
       : (disponivel >= 0 ? COR.verde : COR.vermelho)
     const dispBg = (prev === 0 && lancAbs === 0) ? '#f8faff'
-      : isEntrada ? '#f8faff'
+      : isEntrada ? (disponivel > 0 ? '#f0fdf4' : '#f8faff')
       : (disponivel >= 0 ? '#f0fdf4' : '#fff1f2')
     const dispBd = (prev === 0 && lancAbs === 0) ? COR.borda
-      : isEntrada ? COR.borda
+      : isEntrada ? (disponivel > 0 ? '#bbf7d0' : COR.borda)
       : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
 
 
