@@ -205,9 +205,6 @@ export default function Acompanhamento() {
       : isEntrada ? COR.borda
       : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
 
-    const boxBg   = isEntrada ? '#f0fdf4' : '#eff6ff'
-    const boxBd   = isEntrada ? '#bbf7d0' : '#bfdbfe'
-    const boxClr  = isEntrada ? COR.verde  : COR.azul
 
     return (
       <div style={{borderBottom:`1px solid ${COR.borda}`}}>
@@ -509,89 +506,139 @@ export default function Acompanhamento() {
       </div>
 
       {/* CAIXINHAS DE RESUMO */}
-      {dadosAno && (
-        <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-          padding:'10px 16px',flexShrink:0,display:'flex',gap:6,overflowX:'auto',
-          alignItems:'stretch',flexWrap:'nowrap'}}>
-
-          {/* Previsto Entradas */}
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
-            background:'#f8faff',border:`1px solid ${COR.borda}`}}>
-            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-              letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. Entradas</span>
-            <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
-              {totalPrevE > 0 ? fmt(totalPrevE) : '—'}
-            </span>
-          </div>
-
-          {/* Real. Entradas */}
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
-            background:totalRealE > 0 ? '#eff6ff' : '#f8faff',
-            border:`1px solid ${totalRealE > 0 ? '#bfdbfe' : COR.borda}`}}>
-            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-              letterSpacing:.4,marginBottom:1,color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
-              Real. Entradas
-            </span>
-            <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
-              color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
-              {totalRealE > 0 ? fmt(totalRealE) : '—'}
-            </span>
-          </div>
-
-          <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
-
-          {/* Prev. Saídas */}
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
-            background:'#f8faff',border:`1px solid ${COR.borda}`}}>
-            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-              letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. Saídas</span>
-            <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
-              {totalPrevS > 0 ? fmt(totalPrevS) : '—'}
-            </span>
-          </div>
-
-          {/* Real. Saídas */}
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-            padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
-            background:totalRealS > 0 ? (totalRealS > totalPrevS ? '#fff1f2' : '#f0f9ff') : '#f8faff',
-            border:`1px solid ${totalRealS > 0 ? (totalRealS > totalPrevS ? '#fecdd3' : '#bae6fd') : COR.borda}`}}>
-            <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-              letterSpacing:.4,marginBottom:1,
-              color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
-              Real. Saídas
-            </span>
-            <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
-              color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
-              {totalRealS > 0 ? fmt(totalRealS) : '—'}
-            </span>
-          </div>
-
-          <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
-
-          {/* Disponível = Real.Entradas - Σ disponíveis das saídas */}
-          {(() => {
-            const disp = totalRealE - somaDispSaidas
-            const semDados = totalRealE === 0 && somaDispSaidas === 0
-            const corDisp = semDados ? '#94a3b8' : disp >= 0 ? COR.verde : COR.vermelho
-            const bgDisp  = semDados ? '#f8faff' : disp >= 0 ? '#f0fdf4' : '#fff1f2'
-            const bdDisp  = semDados ? COR.borda  : disp >= 0 ? '#bbf7d0' : '#fecdd3'
-            return (
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
-                background:bgDisp,border:`1px solid ${bdDisp}`}}>
-                <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                  letterSpacing:.4,marginBottom:1,color:corDisp}}>Disponível</span>
-                <span style={{fontSize:13,fontWeight:700,color:corDisp,fontVariantNumeric:'tabular-nums'}}>
-                  {semDados ? '—' : fmt(disp)}
-                </span>
+      {dadosAno && (() => {
+        const saldo = totalRealE - somaDispSaidas
+        const semDados = totalRealE === 0 && somaDispSaidas === 0
+        const corSaldo = semDados ? '#94a3b8' : saldo >= 0 ? COR.verde : COR.vermelho
+        const bgSaldo  = semDados ? '#f8faff' : saldo >= 0 ? '#f0fdf4' : '#fff1f2'
+        const bdSaldo  = semDados ? COR.borda  : saldo >= 0 ? '#bbf7d0' : '#fecdd3'
+        const percE = totalPrevE > 0 ? Math.min(totalRealE / totalPrevE, 1) : (totalRealE > 0 ? 1 : 0)
+        const percS = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
+        const barCorE = percE >= 1 ? COR.azul : COR.verde
+        const barCorS = percS >= 1 ? COR.vermelho : percS >= 0.8 ? '#f59e0b' : COR.azul
+        return isMobile ? (
+          /* Mobile: linhas com barra de progresso */
+          <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
+            padding:'10px 14px 12px',flexShrink:0,display:'flex',flexDirection:'column',gap:8}}>
+            {/* Linha Entradas */}
+            <div>
+              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
+                <span style={{fontSize:11,fontWeight:700,color:COR.verde}}>↑ Entradas</span>
+                <div style={{display:'flex',alignItems:'baseline',gap:4}}>
+                  <span style={{fontSize:14,fontWeight:800,color:COR.verde,
+                    fontVariantNumeric:'tabular-nums'}}>
+                    {totalRealE > 0 ? fmt(totalRealE) : '—'}
+                  </span>
+                  {totalPrevE > 0 && (
+                    <span style={{fontSize:10,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
+                      de {fmt(totalPrevE)}
+                    </span>
+                  )}
+                  <span style={{fontSize:10,fontWeight:600,color:barCorE,minWidth:32,textAlign:'right'}}>
+                    {totalPrevE > 0 ? `${Math.round(percE*100)}%` : ''}
+                  </span>
+                </div>
               </div>
-            )
-          })()}
-        </div>
-      )}
+              <div style={{background:'#e9edf2',borderRadius:99,height:4,overflow:'hidden'}}>
+                <div style={{width:`${percE*100}%`,height:4,borderRadius:99,background:barCorE,transition:'width .3s'}}/>
+              </div>
+            </div>
+            {/* Linha Saídas */}
+            <div>
+              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
+                <span style={{fontSize:11,fontWeight:700,color:COR.vermelho}}>↓ Saídas</span>
+                <div style={{display:'flex',alignItems:'baseline',gap:4}}>
+                  <span style={{fontSize:14,fontWeight:800,color:COR.vermelho,
+                    fontVariantNumeric:'tabular-nums'}}>
+                    {totalRealS > 0 ? fmt(totalRealS) : '—'}
+                  </span>
+                  {totalPrevS > 0 && (
+                    <span style={{fontSize:10,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
+                      de {fmt(totalPrevS)}
+                    </span>
+                  )}
+                  <span style={{fontSize:10,fontWeight:600,color:barCorS,minWidth:32,textAlign:'right'}}>
+                    {totalPrevS > 0 ? `${Math.round(percS*100)}%` : ''}
+                  </span>
+                </div>
+              </div>
+              <div style={{background:'#e9edf2',borderRadius:99,height:4,overflow:'hidden'}}>
+                <div style={{width:`${percS*100}%`,height:4,borderRadius:99,background:barCorS,transition:'width .3s'}}/>
+              </div>
+            </div>
+            {/* Saldo */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+              paddingTop:8,borderTop:`1px solid ${COR.borda}`}}>
+              <span style={{fontSize:11,fontWeight:600,color:COR.textoSuave}}>Saldo disponível</span>
+              <span style={{fontSize:16,fontWeight:800,color:corSaldo,fontVariantNumeric:'tabular-nums'}}>
+                {semDados ? '—' : fmt(saldo)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* Desktop: layout original com caixas separadas */
+          <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
+            padding:'10px 16px',flexShrink:0,display:'flex',gap:6,overflowX:'auto',
+            alignItems:'stretch',flexWrap:'nowrap'}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+              background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. Entradas</span>
+              <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
+                {totalPrevE > 0 ? fmt(totalPrevE) : '—'}
+              </span>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+              background:totalRealE > 0 ? '#eff6ff' : '#f8faff',
+              border:`1px solid ${totalRealE > 0 ? '#bfdbfe' : COR.borda}`}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
+                Real. Entradas
+              </span>
+              <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
+                color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
+                {totalRealE > 0 ? fmt(totalRealE) : '—'}
+              </span>
+            </div>
+            <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+              background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. Saídas</span>
+              <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
+                {totalPrevS > 0 ? fmt(totalPrevS) : '—'}
+              </span>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+              background:totalRealS > 0 ? (totalRealS > totalPrevS ? '#fff1f2' : '#f0f9ff') : '#f8faff',
+              border:`1px solid ${totalRealS > 0 ? (totalRealS > totalPrevS ? '#fecdd3' : '#bae6fd') : COR.borda}`}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,
+                color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
+                Real. Saídas
+              </span>
+              <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
+                color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
+                {totalRealS > 0 ? fmt(totalRealS) : '—'}
+              </span>
+            </div>
+            <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+              padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
+              background:bgSaldo,border:`1px solid ${bdSaldo}`}}>
+              <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                letterSpacing:.4,marginBottom:1,color:corSaldo}}>Disponível</span>
+              <span style={{fontSize:13,fontWeight:700,color:corSaldo,fontVariantNumeric:'tabular-nums'}}>
+                {semDados ? '—' : fmt(saldo)}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 24px',
