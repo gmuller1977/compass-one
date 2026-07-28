@@ -794,7 +794,7 @@ export default function NovoLancamentoExtrato() {
               </span>
               <span>
                 {tabPrincipal==='extrato'
-                  ? (contasExtrato.find(c=>c.id===contaId)?.banco ?? 'Banco')
+                  ? ('Banco ' + (contasExtrato.find(c=>c.id===contaId)?.banco ?? ''))
                   : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
               </span>
             </button>
