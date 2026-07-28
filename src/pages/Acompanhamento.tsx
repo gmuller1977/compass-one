@@ -446,7 +446,7 @@ export default function Acompanhamento() {
   }
 
   return (
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:COR.fundo,
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo,
       fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
@@ -653,7 +653,7 @@ export default function Acompanhamento() {
       })()}
 
       {/* CONTEÚDO */}
-      <div style={{flex:1,overflowY:'auto',padding:'12px 16px 24px',
+      <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
         display:'flex',flexDirection:'column',gap:12}}>
         {!dadosAno ? (
           <div style={{textAlign:'center',padding:'60px 20px',color:COR.textoSuave}}>
