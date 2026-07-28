@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
@@ -9,7 +9,6 @@ const COR = {
   textoSuave: '#64748b', borda: '#e2e8f0',
   verde: '#16a34a', vermelho: '#dc2626',
 }
-const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -38,7 +37,11 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   const [mesSelf, setMesSelf] = useState(mesHoje)
   const mes    = mesProp ?? mesSelf
   const setMes = onMesProp ?? setMesSelf
-  const [ano]  = useState(anoHoje)
+  const [ano, setAno]  = useState(anoHoje)
+  const [mostrarCalendario, setMostrarCalendario] = useState(false)
+  const [anoCalendario,     setAnoCalendario]     = useState(anoHoje)
+  const [calPos,            setCalPos]            = useState({top:0,left:0})
+  const calBtnRef = useRef<HTMLButtonElement>(null)
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
 
   const { contas, categorias, extratoData, faturaData, planos, planosReal } = useApp()
@@ -55,6 +58,13 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   useEffect(() => {
     setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
   }, [mes, ano])
+
+  useEffect(() => {
+    if (!mostrarCalendario) return
+    const fechar = () => setMostrarCalendario(false)
+    document.addEventListener('click', fechar)
+    return () => document.removeEventListener('click', fechar)
+  }, [mostrarCalendario])
 
   function toggleDia(dia: number) {
     setDiasAbertos(prev => {
@@ -115,7 +125,6 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
       return Math.min(x, totalDias)
     }
 
-    const isPastMonth = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
     const preferidaBanco = contasExtrato.find(ct => ct.preferida)
     const primeiroBancoId = (preferidaBanco ?? contasExtrato[0])?.id ?? ''
 
@@ -192,11 +201,10 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
       const dia = Math.min(Math.max(diaRaw, 1), totalDias)
 
       const confirmado = fixasConf[cat.id] === true
-        || (isAuto && isPastMonth)
 
       const override = fixasOvr[cat.id]
       const valor = valorFixaCat(cat.id, cat.nome, cat.tipo, override)
-      if (valor <= 0 && !confirmado) continue
+      if (valor <= 0) continue
 
       addItem(dia, {
         contaId: ownerContaId, contaBanco: ownerBanco,
@@ -248,7 +256,6 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
         if (total <= 0) continue
 
         const confirmado = fixasConf[fixaId] === true
-          || (isAuto && isPastMonth)
 
         addItem(dia, {
           contaId: oid, contaBanco: info.contaBanco,
@@ -264,33 +271,88 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   }, [fontes, extratoData, faturaData, totalDias, categorias, contas, planos, planosReal, ano, mes,
       contasExtrato, eMesAtual, diaHoje, mesHoje, anoHoje, mesStr])
 
+  // Saldo inicial = saldoInicial de todas as contas
+  //   + lançamentos variáveis de meses anteriores
+  //   + fixas confirmadas (fixasConsolidadas) de meses anteriores
   const saldoBase = useMemo(() => {
-    // Ponto de partida: soma dos saldos iniciais configurados em cada conta
     const base = contasExtrato.reduce((s, c) => s + (c.saldoInicial ?? 0), 0)
-
     const todasContas = [...contasExtrato.map(c => c.id), 'dinheiro']
     let acc = base
 
-    // Acumula todas as transações de meses anteriores ao mês atual
-    // Chave tem sempre formato "...${contaId}-YYYY-MM" → últimos 7 chars = "YYYY-MM"
+    // Agrupa chaves de meses anteriores por sufixo "YYYY-MM"
+    const porMes: Record<string, DadosMes[]> = {}
     for (const [key, dados] of Object.entries(extratoData)) {
-      if (!dados.lancamentos) continue
       if (!todasContas.some(id => key.startsWith(id + '-'))) continue
-
-      const suffix = key.slice(-7) // "YYYY-MM"
-      const keyAno = parseInt(suffix.slice(0, 4))
-      const keyMes = parseInt(suffix.slice(5, 7)) - 1 // 0-indexed
+      const sufixo = key.slice(-7)
+      const keyAno = parseInt(sufixo.slice(0, 4))
+      const keyMes = parseInt(sufixo.slice(5, 7)) - 1
       if (isNaN(keyAno) || isNaN(keyMes)) continue
       if (keyAno > ano || (keyAno === ano && keyMes >= mes)) continue
+      if (!porMes[sufixo]) porMes[sufixo] = []
+      porMes[sufixo].push(dados)
+    }
 
-      for (const itens of Object.values(dados.lancamentos)) {
-        for (const item of itens) {
-          acc += item.tipo === 'entrada' ? item.valor : -item.valor
+    for (const [sufixo, entradas] of Object.entries(porMes)) {
+      const ky = parseInt(sufixo.slice(0, 4))
+      const km = parseInt(sufixo.slice(5, 7)) - 1
+      const planoAno = planosReal[ky] ?? planos[ky]
+
+      // 1. lançamentos variáveis
+      for (const dados of entradas) {
+        for (const itens of Object.values(dados.lancamentos ?? {})) {
+          for (const item of itens) {
+            acc += item.tipo === 'entrada' ? item.valor : -item.valor
+          }
+        }
+      }
+
+      // 2. fixas confirmadas (deduplicadas por catId)
+      const catJaContado = new Set<string>()
+      for (const dados of entradas) {
+        for (const [catId, confirmed] of Object.entries(dados.fixasConsolidadas ?? {})) {
+          if (!confirmed || catJaContado.has(catId)) continue
+          catJaContado.add(catId)
+          const fixasOvr = dados.fixasValorOverride ?? {}
+
+          if (catId.startsWith('cartao-')) {
+            const cardId = catId.slice(7)
+            const override = fixasOvr[catId]
+            if (override !== undefined && override > 0) {
+              acc -= override
+            } else {
+              const dm = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[`${cardId}-${sufixo}`]
+              if (dm?.lancamentos) {
+                const totalDiasM = new Date(ky, km + 1, 0).getDate()
+                let total = 0
+                for (let d = 1; d <= totalDiasM; d++) {
+                  ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+                    l.tipo === 'saida' ? total += l.valor : total -= l.valor
+                  })
+                }
+                if (total > 0) acc -= total
+              }
+            }
+          } else {
+            const cat = categorias.find(c => c.id === catId)
+            if (!cat) continue
+            const override = fixasOvr[catId]
+            let valor = 0
+            if (override !== undefined) {
+              valor = override
+            } else if (planoAno) {
+              const lista = cat.tipo === 'entrada' ? planoAno.entradas : planoAno.saidas
+              const found = lista.find(c => c.id === catId || c.nome === cat.nome)
+              valor = found?.v[km] ?? 0
+            }
+            if (valor <= 0) continue
+            acc += cat.tipo === 'entrada' ? valor : -valor
+          }
         }
       }
     }
+
     return acc
-  }, [contasExtrato, extratoData, ano, mes])
+  }, [contasExtrato, extratoData, faturaData, planos, planosReal, categorias, ano, mes])
 
   // saldosConf: apenas itens confirmados → INICIAL/ATUAL/FINAL para dias passados e hoje
   // saldosAll:  até hoje = confirmados; a partir de amanhã = todos os itens
@@ -354,31 +416,12 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
 
-      {/* ABAS DE MÊS — oculto no mobile (setas do header controlam o mês) */}
-      {!isMobile && <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-        {MESES_CURTOS.map((m,i) => {
-          const ativo   = i===mes
-          return (
-            <button key={m} onClick={() => setMes(i)} style={{
-              padding:'7px 14px',borderRadius:'8px 8px 0 0',
-              border:`1px solid ${ativo?COR.azul:COR.borda}`,
-              cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,
-              fontFamily:'inherit',whiteSpace:'nowrap',
-              background:ativo?COR.azul:'#f8faff',
-              color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0}}>
-              {m}
-            </button>
-          )
-        })}
-      </div>}
-
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
         padding:'10px 16px',flexShrink:0,display:'flex',flexDirection:'column',gap:8}}>
 
-        {/* Linha 1: mês + saldos resumidos */}
-        <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+        {/* Linha 1: mês + saldos resumidos — mobile only (web usa barra gradiente) */}
+        {isMobile && <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
           <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
           <span style={{color:COR.borda}}>|</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -386,16 +429,7 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
             <span style={{fontSize:16,fontWeight:800,
               color:saldoDisponivel<0?COR.vermelho:COR.verde}}>{fmt(saldoDisponivel)}</span>
           </div>
-          {!isMobile && (
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
-            <span style={{fontSize:16,fontWeight:800,
-              color:(saldosAll[totalDias]??saldoBase)<0?COR.vermelho:'#64748b'}}>
-              {fmt(saldosAll[totalDias]??saldoBase)}
-            </span>
-          </div>
-          )}
-        </div>
+        </div>}
 
         {/* Linha 2: pills por conta — oculto no mobile */}
         {!isMobile && <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
@@ -426,6 +460,77 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
         </div>}
       </div>
 
+      {/* Barra saldo inicial — web only */}
+      {!isMobile && (
+        <div style={{borderRadius:12,padding:'10px 16px',flexShrink:0,margin:'8px 0 0',position:'relative',
+          background:saldoBase<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':'linear-gradient(135deg,#0f2878,#2563eb)',
+          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <button onClick={() => {
+              let m=mes-1, a=ano
+              if (m<0) { m=11; a-- }
+              setMes(m); setAno(a)
+            }} style={{border:'none',background:'rgba(255,255,255,.15)',color:'#fff',
+              borderRadius:6,padding:'3px 10px',fontSize:16,cursor:'pointer',fontFamily:'inherit',lineHeight:1}}>‹</button>
+            <button ref={calBtnRef} onClick={(e) => {
+                e.stopPropagation()
+                const rect = calBtnRef.current?.getBoundingClientRect()
+                if (rect) setCalPos({top: rect.bottom + 8, left: rect.left})
+                setAnoCalendario(ano)
+                setMostrarCalendario(v=>!v)
+              }}
+              style={{border:'none',background:'transparent',color:'rgba(255,255,255,.9)',
+                fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',
+                padding:'4px 8px',borderRadius:6,transition:'background .15s'}}
+              onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,.12)')}
+              onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+              Saldo inicial — {NOMES_MESES[mes]} {ano}
+            </button>
+            <button onClick={() => {
+              let m=mes+1, a=ano
+              if (m>11) { m=0; a++ }
+              setMes(m); setAno(a)
+            }} style={{border:'none',background:'rgba(255,255,255,.15)',color:'#fff',
+              borderRadius:6,padding:'3px 10px',fontSize:16,cursor:'pointer',fontFamily:'inherit',lineHeight:1}}>›</button>
+          </div>
+          <span style={{fontSize:18,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
+            {fmt(saldoBase)}
+          </span>
+          {mostrarCalendario && (
+            <div style={{position:'fixed',top:calPos.top,left:calPos.left,zIndex:200,
+              background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.18)',
+              padding:16,minWidth:272}} onClick={e=>e.stopPropagation()}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                <button onClick={()=>setAnoCalendario(a=>a-1)}
+                  style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
+                    padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
+                <span style={{fontWeight:700,fontSize:15,color:COR.texto}}>{anoCalendario}</span>
+                <button onClick={()=>setAnoCalendario(a=>a+1)}
+                  style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
+                    padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
+                {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev,i) => {
+                  const ativo = i===mes && anoCalendario===ano
+                  return (
+                    <button key={i} onClick={() => {
+                      setMes(i); setAno(anoCalendario)
+                      setMostrarCalendario(false)
+                    }} style={{
+                      padding:'8px 4px',border:'none',borderRadius:8,cursor:'pointer',
+                      fontFamily:'inherit',fontSize:12,fontWeight:ativo?700:500,
+                      background:ativo?COR.azul:'#f1f5f9',
+                      color:ativo?'#fff':COR.texto}}>
+                      {abrev}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* LISTA DE DIAS */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
       <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:6,padding:'10px 16px'}}>
@@ -451,7 +556,6 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
             ? itens.reduce((s,i) => i.tipo==='saida'?s+i.valor:s, 0)
             : itens.reduce((s,i) => i.tipo==='saida'&&i.confirmado?s+i.valor:s, 0)
           const saldoFinal  = saldosRef[dia] ?? saldoIni
-          const corSaldoIni = saldoIni < 0 ? COR.vermelho : COR.verde
           const corSaldoFin = saldoFinal < 0 ? COR.vermelho : COR.verde
 
           return (
@@ -489,20 +593,6 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
 
                 {/* Boxes: INICIAL, ENTRADAS, SAÍDA, FINAL */}
                 <div style={{display:'flex',gap:6}}>
-                  {!isMobile && (
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
-                    background:diaFuturo?'#f8faff':saldoIni<0?'#fff1f2':'#f0fdf4',
-                    border:`1px solid ${diaFuturo?COR.borda:saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
-                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                      letterSpacing:.4,marginBottom:1,
-                      color:diaFuturo?'#94a3b8':corSaldoIni}}>Inicial</span>
-                    <span style={{fontSize:13,fontWeight:700,
-                      color:diaFuturo?'#64748b':corSaldoIni}}>
-                      {fmt(saldoIni)}
-                    </span>
-                  </div>
-                  )}
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,flex:isMobile?1:undefined,minWidth:isMobile?0:150,
@@ -601,12 +691,12 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
       {/* Saldo final previsto */}
       <div style={{padding:'0 16px 10px',flexShrink:0}}>
         <div style={{borderRadius:12,padding:'14px 16px',
-          background:'linear-gradient(135deg,#0f2878,#2563eb)',
+          background:(saldosAll[totalDias]??saldoBase)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':'linear-gradient(135deg,#0f2878,#2563eb)',
           display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
             Saldo final previsto — {NOMES_MESES[mes]} {ano}
           </span>
-          <span style={{fontSize:18,fontWeight:700,color:'#fff'}}>
+          <span style={{fontSize:18,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
             {fmt(saldosAll[totalDias]??saldoBase)}
           </span>
         </div>

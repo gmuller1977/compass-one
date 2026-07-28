@@ -67,7 +67,6 @@ function diaEfetivoFixa(
 
 
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-const MESES_CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
 
@@ -136,9 +135,13 @@ export default function NovoLancamentoExtrato() {
   const hojeStr   = hoje.toISOString().slice(0,10)
 
   const [contaId, setContaId] = useState('consolidado')
-  const [busca,   setBusca]   = useState('')
+  const busca = ''
   const [mes,     setMes]     = useState(mesHoje)
-  const [ano]                  = useState(anoHoje)
+  const [ano, setAno]          = useState(anoHoje)
+  const [mostrarCalendario, setMostrarCalendario] = useState(false)
+  const [anoCalendario,     setAnoCalendario]     = useState(anoHoje)
+  const [calPos,            setCalPos]            = useState({top:0,left:0})
+  const calBtnRef = useRef<HTMLButtonElement>(null)
   const [diaSel,  setDiaSel]  = useState<number>(diaHoje)
   const [editandoId, setEditandoId] = useState<string|null>(null)
   const [editandoDiaOriginal, setEditandoDiaOriginal] = useState<number|null>(null)
@@ -318,6 +321,13 @@ export default function NovoLancamentoExtrato() {
     setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
   }, [tabPrincipal])
 
+  useEffect(() => {
+    if (!mostrarCalendario) return
+    const fechar = () => setMostrarCalendario(false)
+    document.addEventListener('click', fechar)
+    return () => document.removeEventListener('click', fechar)
+  }, [mostrarCalendario])
+
   function diaDefaultPara(novoMes: number, novoAno: number) {
     return (novoMes===mesHoje && novoAno===anoHoje) ? diaHoje : 1
   }
@@ -404,13 +414,67 @@ export default function NovoLancamentoExtrato() {
     }))
   }
 
+  // Carry-over: saldoInicial + tudo realizado de meses anteriores
+  const saldoBase = useMemo(() => {
+    let acc = SALDO_INICIAL
+    for (const [k, dadosK] of Object.entries(dados)) {
+      if (!k.startsWith(`${contaIdEfetivo}-`)) continue
+      const sufixo = k.slice(-7)                    // "YYYY-MM"
+      const ky = parseInt(sufixo.slice(0, 4))
+      const km = parseInt(sufixo.slice(5, 7)) - 1
+      if (isNaN(ky) || isNaN(km)) continue
+      if (ky > ano || (ky === ano && km >= mes)) continue
+      // lançamentos variáveis
+      for (const itens of Object.values(dadosK.lancamentos ?? {}))
+        for (const item of itens)
+          acc += item.tipo === 'entrada' ? item.valor : -item.valor
+      // fixas confirmadas
+      const planoAno = planosReal[ky] ?? planos[ky]
+      for (const [catId, confirmed] of Object.entries(dadosK.fixasConsolidadas ?? {})) {
+        if (!confirmed) continue
+        const fixasOvr = dadosK.fixasValorOverride ?? {}
+        if (catId.startsWith('cartao-')) {
+          const cardId = catId.slice(7)
+          const override = fixasOvr[catId]
+          if (override !== undefined && override > 0) { acc -= override; continue }
+          const dm = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[`${cardId}-${sufixo}`]
+          if (dm?.lancamentos) {
+            const tdm = new Date(ky, km + 1, 0).getDate()
+            let total = 0
+            for (let d = 1; d <= tdm; d++) {
+              ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+                l.tipo === 'saida' ? total += l.valor : total -= l.valor
+              })
+            }
+            if (total > 0) acc -= total
+          }
+        } else {
+          const cat = categorias.find(c => c.id === catId)
+          if (!cat) continue
+          const override = fixasOvr[catId]
+          let valor = 0
+          if (override !== undefined) {
+            valor = override
+          } else if (planoAno) {
+            const lista = cat.tipo === 'entrada' ? planoAno.entradas : planoAno.saidas
+            const found = lista.find(c => c.id === catId || c.nome === cat.nome)
+            valor = found?.v[km] ?? 0
+          }
+          if (valor <= 0) continue
+          acc += cat.tipo === 'entrada' ? valor : -valor
+        }
+      }
+    }
+    return acc
+  }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, planosReal, faturaData])
+
   const saldosDia = useMemo(() => {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
     const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
-    let saldo = SALDO_INICIAL
+    let saldo = saldoBase
     const res: Record<number,number> = {}
     for (let d=1; d<=totalDias; d++) {
       const dPast = mesPast || (eMesAtual && d < diaHoje)
@@ -419,8 +483,7 @@ export default function NovoLancamentoExtrato() {
         .forEach(f => {
           if (dPast || dHoje) {
             // passado/hoje: só fixas confirmadas entram no saldo acumulado
-            const conf = dadosMesAtual?.fixasConsolidadas?.[f.id]
-            const confirmada = conf !== undefined ? conf : (ehAutomatico(f) && mesPast)
+            const confirmada = dadosMesAtual?.fixasConsolidadas?.[f.id] === true
             if (!confirmada) return
           }
           const v = (dPast || dHoje) ? (dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
@@ -430,21 +493,19 @@ export default function NovoLancamentoExtrato() {
       res[d] = saldo
     }
     return res
-  }, [dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
+  }, [saldoBase, dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
-    const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
 
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
       fc.filter(f => diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
         .filter(f => {
-          const c = dadosMesAtual?.fixasConsolidadas?.[f.id]
-          return c !== undefined ? c : (ehAutomatico(f) && mesPast)
+          return dadosMesAtual?.fixasConsolidadas?.[f.id] === true
         })
         .forEach(f=>{ const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor; f.tipo==='entrada'?te+=v:ts+=v })
       ;(lancs[d]??[]).forEach(l=>{ l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
@@ -452,7 +513,7 @@ export default function NovoLancamentoExtrato() {
     return { totalEntradas:te, totalSaidas:ts }
   }, [dados, key, contaId, totalDias, mes, ano, categorias])
 
-  const saldoMes   = SALDO_INICIAL + totalEntradas - totalSaidas
+  const saldoMes   = saldoBase + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
 
@@ -830,38 +891,47 @@ export default function NovoLancamentoExtrato() {
             </div>
           </div>
           ) : (
-          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'8px 16px',
-            display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>
-                {isDinheiro ? 'Saldo dinheiro:' : 'Saldo banco:'}
-              </span>
-              <span onClick={e => { e.stopPropagation()
-                  setModalSaldoValor(mesDados.saldoBanco ?? '')
-                  isDinheiro
-                    ? setModalSaldo({contaId:'dinheiro',banco:'Dinheiro',icone:'💵',cor:'#16a34a',key})
-                    : setModalSaldo({contaId:contaIdEfetivo,banco:contaInfo?.banco??'',icone:contaInfo?.icone??'',cor:contaInfo?.cor??COR.azul,key})
-                }}
-                style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:13,fontWeight:700,
-                  cursor:'pointer',padding:'2px 8px',borderRadius:6,
-                  border: mesDados.saldoBanco
-                    ? `1.5px solid ${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}`
-                    : '1.5px dashed #e2e8f0',
-                  color: mesDados.saldoBanco ? (isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)) : '#64748b',
-                  background: mesDados.saldoBanco ? `${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}18` : '#f8faff'}}>
-                <span style={{fontSize:10}}>✎</span>
-                {mesDados.saldoBanco || 'Informar'}
-              </span>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Diferença:</span>
-              <div style={{padding:'3px 10px',borderRadius:7,fontSize:12,fontWeight:700,
-                background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
-                color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
-                border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-                whiteSpace:'nowrap'}}>
-                {diferenca===null?'—':conciliado?'✓':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'6px 16px',
+            display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>
+                  {isDinheiro ? 'Saldo dinheiro:' : 'Saldo banco:'}
+                </span>
+                <span onClick={e => { e.stopPropagation()
+                    setModalSaldoValor(mesDados.saldoBanco ?? '')
+                    isDinheiro
+                      ? setModalSaldo({contaId:'dinheiro',banco:'Dinheiro',icone:'💵',cor:'#16a34a',key})
+                      : setModalSaldo({contaId:contaIdEfetivo,banco:contaInfo?.banco??'',icone:contaInfo?.icone??'',cor:contaInfo?.cor??COR.azul,key})
+                  }}
+                  style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:13,fontWeight:700,
+                    cursor:'pointer',padding:'2px 8px',borderRadius:6,
+                    border: mesDados.saldoBanco
+                      ? `1.5px solid ${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}`
+                      : '1.5px dashed #e2e8f0',
+                    color: mesDados.saldoBanco ? (isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)) : '#64748b',
+                    background: mesDados.saldoBanco ? `${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}18` : '#f8faff'}}>
+                  <span style={{fontSize:10}}>✎</span>
+                  {mesDados.saldoBanco || 'Informar'}
+                </span>
               </div>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Diferença:</span>
+                <div style={{padding:'3px 10px',borderRadius:7,fontSize:12,fontWeight:700,
+                  background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+                  color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+                  border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+                  whiteSpace:'nowrap'}}>
+                  {diferenca===null?'—':conciliado?'✓':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+                </div>
+              </div>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Saldo inicial:</span>
+              <span style={{fontSize:12,fontWeight:600,
+                color:saldoBase<0?COR.vermelho:COR.texto,fontVariantNumeric:'tabular-nums'}}>
+                {fmt(saldoBase)}
+              </span>
             </div>
           </div>
           )}
@@ -1093,27 +1163,6 @@ export default function NovoLancamentoExtrato() {
       <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'auto' : 'hidden', paddingBottom: isMobile ? 120 : 0}}>
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
-      {/* SELETOR DE MÊS */}
-      {isMobile ? null : (
-        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'10px 0 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-          {MESES_CURTOS.map((m,i) => {
-            const ativo = i===mes
-            return (
-              <button key={m} onClick={() => { setMes(i); resetarParaNovo(diaDefaultPara(i,ano)) }} style={{
-                padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
-                border:`1px solid ${ativo?COR.azul:COR.borda}`,
-                cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,
-                fontFamily:'inherit',whiteSpace:'nowrap',
-                background:ativo?COR.azul:'#f8faff',
-                color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
-                display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-                {m}
-              </button>
-            )
-          })}
-        </div>
-      )}
 
       {/* BARRA DE SALDO — desktop only (mobile fica no sticky acima) */}
       {!isMobile && <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
@@ -1136,15 +1185,6 @@ export default function NovoLancamentoExtrato() {
               {mesDados.saldoBanco || 'Informar'}
             </span>
           </div>
-          {!isMobile && (
-            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
-              display:'inline-flex',alignItems:'center',gap:5,
-              background:'#16a34a18',border:'1px solid #16a34a55'}}>
-              <span>💵</span>
-              <span style={{color:'#16a34a',fontWeight:600}}>Dinheiro</span>
-              <span style={{fontWeight:700,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
-            </span>
-          )}
           <div style={{display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
             <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
@@ -1155,15 +1195,6 @@ export default function NovoLancamentoExtrato() {
               {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
             </div>
           </div>
-          {!isMobile && (
-            <div style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
-              <span style={{fontSize:16,fontWeight:800,
-                color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
-                {fmt(saldosDia[totalDias]??saldoMes)}
-              </span>
-            </div>
-          )}
         </>) : (<>
           {/* Banco */}
           <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -1182,15 +1213,6 @@ export default function NovoLancamentoExtrato() {
               {mesDados.saldoBanco || 'Informar'}
             </span>
           </div>
-          {contaInfo && !isMobile && (
-            <span style={{fontSize:13,fontWeight:500,padding:'4px 10px',borderRadius:6,
-              display:'inline-flex',alignItems:'center',gap:5,
-              background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
-              <span>{contaInfo.icone}</span>
-              <span style={{color:contaInfo.cor,fontWeight:600}}>{contaInfo.banco}</span>
-              <span style={{fontWeight:700,color:saldoMes<0?COR.vermelho:COR.texto}}>{fmt(saldoMes)}</span>
-            </span>
-          )}
           <div style={{display:'flex',alignItems:'center',gap:6}}>
             <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Diferença:</span>
             <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
@@ -1201,26 +1223,84 @@ export default function NovoLancamentoExtrato() {
               {diferenca===null?'':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
             </div>
           </div>
-          {!isMobile && (
-            <div style={{display:'flex',alignItems:'center',gap:5}}>
-              <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês:</span>
-              <span style={{fontSize:16,fontWeight:800,
-                color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:'#64748b'}}>
-                {fmt(saldosDia[totalDias]??saldoMes)}
-              </span>
-            </div>
-          )}
         </>)}
       </div>}
 
-      {/* BUSCA — desktop only */}
+
+      {/* Barra saldo inicial — web only */}
       {!isMobile && (
-        <div style={{padding:'8px 0 0',flexShrink:0}}>
-          <input value={busca} onChange={e => setBusca(e.target.value)}
-            placeholder="Buscar por categoria, descrição ou valor..."
-            style={{width:'100%',boxSizing:'border-box',
-              padding:'7px 14px',border:`1px solid ${COR.borda}`,borderRadius:8,
-              fontSize:12,fontFamily:'inherit',color:COR.texto,background:'#fff',outline:'none'}}/>
+        <div style={{borderRadius:12,padding:'10px 16px',flexShrink:0,margin:'8px 0 0',position:'relative',
+          background:saldoBase<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          {/* Setas + label clicável */}
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <button onClick={() => {
+              let m=mes-1, a=ano
+              if (m<0) { m=11; a-- }
+              setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a))
+            }} style={{border:'none',background:'rgba(255,255,255,.15)',color:'#fff',
+              borderRadius:6,padding:'3px 10px',fontSize:16,cursor:'pointer',fontFamily:'inherit',lineHeight:1}}>‹</button>
+            <button ref={calBtnRef} onClick={(e) => {
+                e.stopPropagation()
+                const rect = calBtnRef.current?.getBoundingClientRect()
+                if (rect) setCalPos({top: rect.bottom + 8, left: rect.left})
+                setAnoCalendario(ano)
+                setMostrarCalendario(v=>!v)
+              }}
+              style={{border:'none',background:'transparent',color:'rgba(255,255,255,.9)',
+                fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',
+                padding:'4px 8px',borderRadius:6,transition:'background .15s'}}
+              onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,.12)')}
+              onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+              Saldo inicial — {NOMES_MESES[mes]} {ano}
+            </button>
+            <button onClick={() => {
+              let m=mes+1, a=ano
+              if (m>11) { m=0; a++ }
+              setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a))
+            }} style={{border:'none',background:'rgba(255,255,255,.15)',color:'#fff',
+              borderRadius:6,padding:'3px 10px',fontSize:16,cursor:'pointer',fontFamily:'inherit',lineHeight:1}}>›</button>
+          </div>
+          {/* Valor — imutável */}
+          <span style={{fontSize:18,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
+            {fmt(saldoBase)}
+          </span>
+          {/* Calendário popup */}
+          {mostrarCalendario && (
+            <div style={{position:'fixed',top:calPos.top,left:calPos.left,zIndex:200,
+              background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.18)',
+              padding:16,minWidth:272}} onClick={e=>e.stopPropagation()}>
+              {/* Seletor de ano */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                <button onClick={()=>setAnoCalendario(a=>a-1)}
+                  style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
+                    padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
+                <span style={{fontWeight:700,fontSize:15,color:COR.texto}}>{anoCalendario}</span>
+                <button onClick={()=>setAnoCalendario(a=>a+1)}
+                  style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
+                    padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
+              </div>
+              {/* Grid 4×3 meses */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
+                {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev,i) => {
+                  const ativo = i===mes && anoCalendario===ano
+                  return (
+                    <button key={i} onClick={() => {
+                      setMes(i); setAno(anoCalendario)
+                      resetarParaNovo(diaDefaultPara(i,anoCalendario))
+                      setMostrarCalendario(false)
+                    }} style={{
+                      padding:'8px 4px',border:'none',borderRadius:8,cursor:'pointer',
+                      fontFamily:'inherit',fontSize:12,fontWeight:ativo?700:500,
+                      background:ativo?COR.azul:'#f1f5f9',
+                      color:ativo?'#fff':COR.texto}}>
+                      {abrev}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1241,7 +1321,7 @@ export default function NovoLancamentoExtrato() {
               String(l.valor).includes(q)
           }) : lsRaw
           const temItens  = fs.length>0 || ls.length>0
-          const saldoIni  = dia===1 ? SALDO_INICIAL : (saldosDia[dia-1] ?? SALDO_INICIAL)
+          const saldoIni  = dia===1 ? saldoBase : (saldosDia[dia-1] ?? saldoBase)
           const diaFuturo = !passado && !ehHoje
           // Valor exibido: projeção total (todos os itens do dia)
           const entradasDia = fs.filter(f=>f.tipo==='entrada')
@@ -1276,7 +1356,6 @@ export default function NovoLancamentoExtrato() {
             : saldoIni + entradasConf - saidasConf
           const selecionado = diaSel===dia
           const aberto    = diasAbertos.has(dia)
-          const corIni    = saldoIni<0 ? COR.vermelho : COR.verde
           const corSaldo  = saldoDia<0 ? COR.vermelho : COR.verde
 
           return (
@@ -1319,16 +1398,6 @@ export default function NovoLancamentoExtrato() {
                 <div style={{flex:1,display:'flex',alignItems:'center',
                   justifyContent:'flex-end',gap:isMobile?4:6}}>
 
-                  {!isMobile && <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
-                    background:diaFuturo?'#f8faff':saldoIni<0?'#fff1f2':'#f0fdf4',
-                    border:`1px solid ${diaFuturo?COR.borda:saldoIni<0?'#fecdd3':'#bbf7d0'}`}}>
-                    <span style={{fontSize:10,fontWeight:600,
-                      textTransform:'uppercase',letterSpacing:.4,marginBottom:1,
-                      color:diaFuturo?'#94a3b8':corIni}}>Inicial</span>
-                    <span style={{fontSize:13,fontWeight:700,
-                      color:diaFuturo?'#64748b':corIni}}>{fmt(saldoIni)}</span>
-                  </div>}
 
                   <div style={{display:'flex',flexDirection:'column',alignItems:'center',
                     padding:'5px 10px',borderRadius:8,
@@ -1495,18 +1564,21 @@ export default function NovoLancamentoExtrato() {
           )
         })}
 
-        {/* Saldo final — oculto no mobile (substituído pela barra fixa) */}
-        <div style={{borderRadius:12,padding:'14px 16px',flexShrink:0,
-          background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-          display: isMobile ? 'none' : 'flex',alignItems:'center',justifyContent:'space-between'}}>
+      </div>
+
+      {/* Saldo final previsto — fora do scroll, fixo no fundo do painel */}
+      {!isMobile && (
+        <div style={{borderRadius:12,padding:'14px 16px',flexShrink:0,margin:'0 0 10px',
+          background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
             Saldo final previsto — {NOMES_MESES[mes]} {ano}
           </span>
-          <span style={{fontSize:18,fontWeight:700,color:'#fff'}}>
+          <span style={{fontSize:18,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
             {fmt(saldosDia[totalDias] ?? saldoMes)}
           </span>
         </div>
-      </div>
+      )}
       </div>{/* fim coluna esquerda */}
 
       {/* PAINEL DE LANÇAMENTO */}
@@ -1711,11 +1783,12 @@ export default function NovoLancamentoExtrato() {
       </>
       )}
 
+
       {/* FAB + BARRA PREVISTO — mobile only */}
       {isMobile && mobileStep === 'extrato' && mobileView === 'extrato' && tabPrincipal !== 'cartao' && (<>
         {/* Barra "Saldo final previsto" — fixa acima do tab bar */}
         <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
-          background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+          background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
           padding:'10px 20px',display:'flex',alignItems:'center',
           justifyContent:'space-between',
           boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
