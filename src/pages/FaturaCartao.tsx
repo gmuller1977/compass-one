@@ -553,7 +553,7 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
               background:contaInfo ? contaInfo.cor+'18' : '#f0f4ff'}}>
               <span style={{fontSize:16,lineHeight:1}}>{contaInfo?.icone ?? '💳'}</span>
               <span style={{fontSize:13,fontWeight:700,color:contaInfo ? contaInfo.cor : COR.azul}}>
-                {contaInfo?.banco ?? 'Cartão'}
+                {contaInfo ? `Cartão ${contaInfo.banco}` : 'Cartão'}
               </span>
             </button>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
@@ -566,11 +566,10 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
                 borderRadius:8,padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
             </div>
           </div>
-          {/* Row 2: Fatura total + status */}
-          <div style={{padding:'8px 16px',borderBottom:`2px solid ${COR.borda}`,
-            display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          {/* Row 2: Fatura info + fechamento */}
+          <div style={{padding:'8px 16px',borderBottom:`2px solid ${COR.borda}`}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500}}>
+              <span style={{fontSize:11,color:COR.textoSuave,fontWeight:600}}>
                 Fatura {NOMES_MESES[mes]}
               </span>
               <span style={{fontSize:10,padding:'2px 8px',borderRadius:10,fontWeight:700,
@@ -578,9 +577,8 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
                 {statusLbl}
               </span>
             </div>
-            <span style={{fontSize:16,fontWeight:800,fontVariantNumeric:'tabular-nums',
-              color:totalFatura>0?COR.vermelho:totalFatura<0?COR.verde:COR.textoSuave}}>
-              {fmt(totalFatura)}
+            <span style={{fontSize:10,color:'#94a3b8',marginTop:2,display:'block'}}>
+              Fecha dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
             </span>
           </div>
         </div>
@@ -738,7 +736,7 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
 
         {/* EXTRATO VIEW */}
         {mobileView === 'extrato' && (
-          <div style={{flex:1,overflowY:'auto',padding:'8px 12px 140px'}}>
+          <div style={{flex:1,overflowY:'auto',padding:'8px 12px 180px'}}>
             {(() => {
               type DiaGroup = { dateKey:string; dc:number; mc:number; ac:number; items:Array<{dia:number;l:Lancamento}> }
               const groupMap = new Map<string, DiaGroup>()
@@ -832,27 +830,33 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
                 )
               })
             })()}
-            {/* Total */}
-            <div style={{borderRadius:12,padding:'14px 16px',
-              background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-              display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <div>
-                <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
-                  Total — {NOMES_MESES[mes]} {ano}
-                </div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,.6)',marginTop:2}}>
-                  Venc: {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-                </div>
+          </div>
+        )}
+
+        {/* TOTAL FIXO */}
+        {mobileView === 'extrato' && (
+          <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
+            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+            padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',
+            boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)'}}>
+                Total da fatura — {NOMES_MESES[mes]} {ano}
               </div>
-              <span style={{fontSize:18,fontWeight:700,color:'#fff'}}>{fmt(totalFatura)}</span>
+              <div style={{fontSize:10,color:'rgba(255,255,255,.6)',marginTop:1}}>
+                Venc: {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
+              </div>
             </div>
+            <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
+              {fmt(totalFatura)}
+            </span>
           </div>
         )}
 
         {/* FAB */}
         {mobileView === 'extrato' && (
           <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }}
-            style={{position:'fixed',right:20,bottom:76,width:52,height:52,
+            style={{position:'fixed',right:20,bottom:124,width:52,height:52,
               borderRadius:'50%',border:'none',background:COR.azul,
               color:'#fff',fontSize:24,lineHeight:'52px',textAlign:'center',
               cursor:'pointer',zIndex:40,
