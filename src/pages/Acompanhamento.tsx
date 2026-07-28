@@ -155,18 +155,12 @@ export default function Acompanhamento() {
   const gruposSaida   = useMemo(() => buildGrupos('saida'),  [categorias, cartaoNomes])
   const gruposEntrada = useMemo(() => buildGrupos('entrada'), [categorias, cartaoNomes])
 
-  const { totalPrevS, totalRealS, totalPrevE, totalRealE, somaDispSaidas } = useMemo(() => {
+  const { totalPrevS, totalRealS, totalPrevE, totalRealE } = useMemo(() => {
     const totalPrevS = (dadosAno?.saidas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
     const totalRealS = Object.values(saidasMap).reduce((s,c) => s + c.total, 0)
     const totalPrevE = (dadosAno?.entradas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
     const totalRealE = Object.values(entradasMap).reduce((s,c) => s + c.total, 0)
-    // Soma dos disponíveis restantes de cada categoria de saída: quanto ainda pode ser gasto
-    const somaDispSaidas = (dadosAno?.saidas ?? []).reduce((s,c) => {
-      const prev = c.v[mes] ?? 0
-      const real = saidasMap[c.nome]?.total ?? 0
-      return s + Math.max(0, prev - real)
-    }, 0)
-    return { totalPrevS, totalRealS, totalPrevE, totalRealE, somaDispSaidas }
+    return { totalPrevS, totalRealS, totalPrevE, totalRealE }
   }, [dadosAno, mes, saidasMap, entradasMap])
 
   function toggleAberto(uid: string) {
