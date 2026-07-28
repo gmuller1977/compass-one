@@ -1077,12 +1077,14 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     })
 
     return (
-      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 72 }}>
+      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 120 }}>
         <AppHeader currentPath={pathname} />
 
-        {/* Cabeçalho: ano + tabs + mês */}
-        <div style={{ background: COR.branco, borderBottom: `1px solid ${COR.borda}` }}>
-          <div style={{ padding: '10px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Cabeçalho sticky: ano + tabs + mês + saldo final */}
+        <div style={{ position: 'sticky', top: 52, zIndex: 30, background: COR.branco,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
+          {/* Linha 1: ano nav + tabs */}
+          <div style={{ padding: '10px 16px 8px', borderBottom: `1px solid ${COR.borda}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button onClick={() => navegarAno(-1)} style={{ border: 'none', background: 'transparent', padding: '4px 8px', cursor: 'pointer', borderRadius: 6, fontSize: 18, color: COR.azul, fontFamily: 'inherit' }}>‹</button>
               <span style={{ fontWeight: 700, fontSize: 16, color: COR.texto, minWidth: 40, textAlign: 'center' }}>{anoAtual}</span>
@@ -1103,10 +1105,17 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               })}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '0 16px 12px' }}>
-            <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtnStyle(mi === 0)}>‹</button>
-            <span style={{ fontWeight: 600, fontSize: 16, color: COR.texto, minWidth: 110, textAlign: 'center' }}>{MESES_FULL[mi]}</span>
-            <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtnStyle(mi === 11)}>›</button>
+          {/* Linha 2: mês nav + saldo final */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 16px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtnStyle(mi === 0)}>‹</button>
+              <span style={{ fontWeight: 600, fontSize: 15, color: COR.texto, minWidth: 90, textAlign: 'center' }}>{MESES_FULL[mi]}</span>
+              <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtnStyle(mi === 11)}>›</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 11, color: COR.textoSuave, whiteSpace: 'nowrap' }}>Saldo final:</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: corSaldo(sf), whiteSpace: 'nowrap' }}>{fmt(sf, true)}</span>
+            </div>
           </div>
         </div>
 
@@ -1179,15 +1188,15 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             </div>
           </div>
 
-          {/* Saldo Final */}
-          <div style={{
-            background: COR.branco, borderRadius: 12, padding: '14px 16px',
-            border: `2px solid ${corSaldo(sf) === COR.verde ? '#bbf7d0' : corSaldo(sf) === COR.vermelho ? '#fecaca' : '#fde68a'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Saldo Final</span>
-            <span style={{ fontSize: 18, fontWeight: 800, color: corSaldo(sf) }}>{fmt(sf, true)}</span>
-          </div>
+        </div>
+
+        {/* Barra inferior fixa — Saldo Final Previsto */}
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 60, zIndex: 40,
+          background: COR.branco, borderTop: `2px solid ${corSaldo(sf) === COR.verde ? '#bbf7d0' : corSaldo(sf) === COR.vermelho ? '#fecaca' : '#fde68a'}`,
+          padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.07)' }}>
+          <span style={{ fontSize: 13, color: COR.textoSuave, fontWeight: 500 }}>Saldo final previsto</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: corSaldo(sf) }}>{fmt(sf, true)}</span>
         </div>
       </div>
     )
