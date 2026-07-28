@@ -507,11 +507,11 @@ export default function Acompanhamento() {
 
       {/* CAIXINHAS DE RESUMO */}
       {dadosAno && (() => {
-        const saldo = totalRealE - somaDispSaidas
-        const semDados = totalRealE === 0 && somaDispSaidas === 0
-        const corSaldo = semDados ? '#94a3b8' : saldo >= 0 ? COR.verde : COR.vermelho
-        const bgSaldo  = semDados ? '#f8faff' : saldo >= 0 ? '#f0fdf4' : '#fff1f2'
-        const bdSaldo  = semDados ? COR.borda  : saldo >= 0 ? '#bbf7d0' : '#fecdd3'
+        const saldoReal = totalRealE - totalRealS
+        const saldoPrev = totalPrevE - totalPrevS
+        const semDados  = totalRealE === 0 && totalRealS === 0 && totalPrevE === 0 && totalPrevS === 0
+        const corSaldoR = semDados ? '#94a3b8' : saldoReal >= 0 ? COR.verde : COR.vermelho
+        const corSaldoP = semDados ? '#94a3b8' : saldoPrev >= 0 ? COR.verde : COR.vermelho
         const percE = totalPrevE > 0 ? Math.min(totalRealE / totalPrevE, 1) : (totalRealE > 0 ? 1 : 0)
         const percS = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
         const barCorE = percE >= 1 ? COR.azul : COR.verde
@@ -570,9 +570,20 @@ export default function Acompanhamento() {
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
               paddingTop:8,borderTop:`1px solid ${COR.borda}`}}>
               <span style={{fontSize:11,fontWeight:600,color:COR.textoSuave}}>Saldo disponível</span>
-              <span style={{fontSize:16,fontWeight:800,color:corSaldo,fontVariantNumeric:'tabular-nums'}}>
-                {semDados ? '—' : fmt(saldo)}
-              </span>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span style={{fontSize:14,fontWeight:800,color:corSaldoR,fontVariantNumeric:'tabular-nums'}}>
+                  {semDados ? '—' : fmt(saldoReal)}
+                </span>
+                {!semDados && (
+                  <>
+                    <span style={{fontSize:12,color:COR.textoSuave}}>→</span>
+                    <span style={{fontSize:13,fontWeight:700,color:corSaldoP,fontVariantNumeric:'tabular-nums'}}>
+                      {fmt(saldoPrev)}
+                    </span>
+                    <span style={{fontSize:9,color:COR.textoSuave,fontWeight:500}}>prev.</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -629,11 +640,12 @@ export default function Acompanhamento() {
             <div style={{width:1,background:COR.borda,flexShrink:0,margin:'4px 0'}}/>
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',
               padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
-              background:bgSaldo,border:`1px solid ${bdSaldo}`}}>
+              background:saldoReal>=0?'#f0fdf4':'#fff1f2',
+              border:`1px solid ${saldoReal>=0?'#bbf7d0':'#fecdd3'}`}}>
               <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                letterSpacing:.4,marginBottom:1,color:corSaldo}}>Disponível</span>
-              <span style={{fontSize:13,fontWeight:700,color:corSaldo,fontVariantNumeric:'tabular-nums'}}>
-                {semDados ? '—' : fmt(saldo)}
+                letterSpacing:.4,marginBottom:1,color:corSaldoR}}>Saldo</span>
+              <span style={{fontSize:13,fontWeight:700,color:corSaldoR,fontVariantNumeric:'tabular-nums'}}>
+                {semDados ? '—' : fmt(saldoReal)}
               </span>
             </div>
           </div>
