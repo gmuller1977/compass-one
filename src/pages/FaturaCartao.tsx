@@ -566,8 +566,8 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
                 borderRadius:8,padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
             </div>
           </div>
-          {/* Row 2: Fatura info + fechamento */}
-          <div style={{padding:'8px 16px',borderBottom:`2px solid ${COR.borda}`}}>
+          {/* Row 2: Status + fechamento */}
+          <div style={{padding:'6px 16px',borderBottom:`1px solid ${COR.borda}`}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <span style={{fontSize:11,color:COR.textoSuave,fontWeight:600}}>
                 Fatura {NOMES_MESES[mes]}
@@ -576,10 +576,38 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
                 background:statusCor+'18',color:statusCor,border:`1px solid ${statusCor}44`}}>
                 {statusLbl}
               </span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>
+                · Fecha dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
+              </span>
             </div>
-            <span style={{fontSize:10,color:'#94a3b8',marginTop:2,display:'block'}}>
-              Fecha dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
-            </span>
+          </div>
+          {/* Row 3: Fatura atual (informada) + Diferença — mesmo padrão do banco */}
+          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'8px 16px',
+            display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Fatura atual:</span>
+              <span onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
+                style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:13,fontWeight:700,
+                  cursor:'pointer',padding:'2px 8px',borderRadius:6,
+                  border: mesDados.faturaAtual
+                    ? `1.5px solid ${contaInfo?.cor ?? COR.azul}`
+                    : '1.5px dashed #e2e8f0',
+                  color: mesDados.faturaAtual ? (contaInfo?.cor ?? COR.azul) : '#64748b',
+                  background: mesDados.faturaAtual ? `${contaInfo?.cor ?? COR.azul}18` : '#f8faff'}}>
+                <span style={{fontSize:10}}>✎</span>
+                {mesDados.faturaAtual || 'Informar'}
+              </span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Diferença:</span>
+              <div style={{padding:'3px 10px',borderRadius:7,fontSize:12,fontWeight:700,
+                background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
+                color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
+                border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
+                whiteSpace:'nowrap'}}>
+                {diferenca===null?'—':conciliado?'✓':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -835,44 +863,21 @@ export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSe
 
         {/* TOTAL FIXO */}
         {mobileView === 'extrato' && (
-          <div onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
-            style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,cursor:'pointer',
-              background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-              padding:'10px 20px',display:'flex',flexDirection:'column',gap:3,
-              boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
-            {/* Linha 1: Total calculado */}
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
+          <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
+            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+            padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',
+            boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
                 Total da fatura — {NOMES_MESES[mes]} {ano}
-              </span>
-              <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-                {fmt(totalFatura)}
-              </span>
-            </div>
-            {/* Linha 2: Vencimento + informado + diferença */}
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <span style={{fontSize:10,color:'rgba(255,255,255,.6)'}}>
+              </div>
+              <div style={{fontSize:10,color:'rgba(255,255,255,.6)',marginTop:1}}>
                 Venc: {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-              </span>
-              {mesDados.faturaAtual ? (
-                <div style={{display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:10,color:'rgba(255,255,255,.6)'}}>
-                    Informado: {mesDados.faturaAtual}
-                  </span>
-                  {diferenca !== null && (
-                    <span style={{fontSize:10,fontWeight:700,borderRadius:5,padding:'1px 6px',
-                      background:'rgba(0,0,0,0.2)',
-                      color:conciliado?'#86efac':Math.abs(diferenca)<50?'#fde68a':'#fca5a5'}}>
-                      {conciliado ? '✓ OK' : `Δ ${diferenca>0?'+':''}${fmt(diferenca)}`}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <span style={{fontSize:10,color:'rgba(255,255,255,.5)',fontStyle:'italic'}}>
-                  ✎ Toque para informar valor
-                </span>
-              )}
+              </div>
             </div>
+            <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
+              {fmt(totalFatura)}
+            </span>
           </div>
         )}
 
