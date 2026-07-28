@@ -669,13 +669,13 @@ export default function NovoLancamentoExtrato() {
                       const c = contasExtrato[0]; setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
                       const k = mesKey(c.id,ano,mes)
                       if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
-                      setMobileStep('extrato')
+                      setMobileView('extrato'); setMobileStep('extrato')
                     } else { setMobileStep('conta') }
                   } else if (tipo === 'cartao') {
                     const cartoes = contas.filter(c => c.tipo === 'cartao')
-                    if (cartoes.length === 1) { setMobileCartaoId(cartoes[0].id); setMobileStep('extrato') }
+                    if (cartoes.length === 1) { setMobileCartaoId(cartoes[0].id); setMobileView('extrato'); setMobileStep('extrato') }
                     else { setMobileStep('conta') }
-                  } else { setMobileStep('extrato') }
+                  } else { setMobileView('extrato'); setMobileStep('extrato') }
                 }} style={{
                   background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
                   padding:'16px 20px',display:'flex',alignItems:'center',gap:16,
@@ -709,7 +709,7 @@ export default function NovoLancamentoExtrato() {
               contas.filter(c => c.tipo === 'cartao').map(c => (
                 <button key={c.id} onClick={() => {
                   setMobileCartaoId(c.id)
-                  setMobileStep('extrato')
+                  setMobileView('extrato'); setMobileStep('extrato')
                 }} style={{
                   background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
                   padding:'16px 20px',display:'flex',alignItems:'center',gap:14,
@@ -731,7 +731,7 @@ export default function NovoLancamentoExtrato() {
                   setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano))
                   const k = mesKey(c.id,ano,mes)
                   if (dados[k]?.saldoBancoData !== hojeStr) { setModalSaldoValor(dados[k]?.saldoBanco??''); setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k}) }
-                  setMobileStep('extrato')
+                  setMobileView('extrato'); setMobileStep('extrato')
                 }} style={{
                   background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,
                   padding:'16px 20px',display:'flex',alignItems:'center',gap:14,
@@ -810,7 +810,26 @@ export default function NovoLancamentoExtrato() {
                   borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
             </div>
           </div>
-          {/* Linha 2: Saldo banco + Diferença na mesma linha */}
+          {/* Linha 2: Saldo banco + Diferença (banco/dinheiro) | Totais (consolidado) */}
+          {tabPrincipal === 'consolidado' ? (
+          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'8px 16px',
+            display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Total bancos:</span>
+              <span style={{fontSize:13,fontWeight:700,padding:'2px 8px',borderRadius:6,
+                background:'#eff6ff',color:COR.azul,border:`1.5px solid ${COR.azul}`}}>
+                {fmt(contasExtrato.reduce((acc,c)=>{const v=parseBRL(dados[mesKey(c.id,ano,mes)]?.saldoBanco??'');return acc+(isNaN(v)?0:v)},0))}
+              </span>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Dinheiro:</span>
+              <span style={{fontSize:13,fontWeight:700,padding:'2px 8px',borderRadius:6,
+                background:'#f0fdf4',color:'#16a34a',border:`1.5px solid #16a34a`}}>
+                {(() => { const v=parseBRL(dados[mesKey('dinheiro',ano,mes)]?.saldoBanco??''); return isNaN(v)?'—':fmt(v) })()}
+              </span>
+            </div>
+          </div>
+          ) : (
           <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'8px 16px',
             display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
@@ -845,6 +864,7 @@ export default function NovoLancamentoExtrato() {
               </div>
             </div>
           </div>
+          )}
         </div>
         )
       ) : (
@@ -869,13 +889,24 @@ export default function NovoLancamentoExtrato() {
 
       {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={mobileCartaoId ?? undefined} onVoltar={() => setMobileStep('tipo')} /> :
        tabPrincipal==='consolidado' ? (
-      <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
-        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',
+        gap:isMobile?0:16,padding:isMobile?0:'10px 16px',
+        overflow:isMobile?'auto':'hidden'}}>
+        <div style={{flex:1,display:isMobile&&mobileView==='form'?'none':'flex',
+          flexDirection:'column',overflow:'hidden'}}>
           <ExtratoConsolidado />
         </div>
         {/* PAINEL DE LANÇAMENTO — consolidado */}
-        <div style={{width:340,flexShrink:0,background:COR.branco,
-          border:`1px solid ${COR.borda}`,borderRadius:12,padding:20,overflowY:'auto'}}>
+        <div style={{width:isMobile?'100%':340,flexShrink:0,background:COR.branco,
+          border:isMobile?'none':`1px solid ${COR.borda}`,
+          borderRadius:isMobile?0:12,padding:isMobile?'16px 12px':20,overflowY:'auto',
+          display:isMobile&&mobileView==='extrato'?'none':'block'}}>
+          {isMobile && (
+            <button onClick={() => { setMobileView('extrato'); resetarParaNovo(diaSel) }} style={{
+              border:'none',background:'transparent',cursor:'pointer',
+              fontSize:13,fontWeight:600,color:COR.azul,fontFamily:'inherit',
+              padding:'0 0 12px 0',display:'block'}}>← Voltar</button>
+          )}
           <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:'0 0 14px'}}>Novo lançamento</h3>
 
           {/* Banco */}
@@ -1464,10 +1495,10 @@ export default function NovoLancamentoExtrato() {
           )
         })}
 
-        {/* Saldo final */}
+        {/* Saldo final — oculto no mobile (substituído pela barra fixa) */}
         <div style={{borderRadius:12,padding:'14px 16px',flexShrink:0,
           background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          display: isMobile ? 'none' : 'flex',alignItems:'center',justifyContent:'space-between'}}>
           <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
             Saldo final previsto — {NOMES_MESES[mes]} {ano}
           </span>
@@ -1682,15 +1713,16 @@ export default function NovoLancamentoExtrato() {
 
       {/* FAB + BARRA PREVISTO — mobile only */}
       {isMobile && mobileStep === 'extrato' && mobileView === 'extrato' && tabPrincipal !== 'cartao' && (<>
-        {/* Barra "Previsto fim do mês" — fixa acima do tab bar */}
-        <div style={{position:'fixed',left:0,right:0,bottom:60,
-          background:COR.branco,borderTop:`1px solid ${COR.borda}`,
-          padding:'10px 16px',display:'flex',alignItems:'center',
-          justifyContent:'space-between',zIndex:40,
-          boxShadow:'0 -2px 8px rgba(0,0,0,0.07)'}}>
-          <span style={{fontSize:13,color:COR.textoSuave,fontWeight:500}}>Previsto fim do mês</span>
-          <span style={{fontSize:17,fontWeight:800,
-            color:(saldosDia[totalDias]??saldoMes)<0?COR.vermelho:COR.verde}}>
+        {/* Barra "Saldo final previsto" — fixa acima do tab bar */}
+        <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
+          background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+          padding:'10px 20px',display:'flex',alignItems:'center',
+          justifyContent:'space-between',
+          boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
+          <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
+            Saldo final previsto — {NOMES_MESES[mes]} {ano}
+          </span>
+          <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
             {fmt(saldosDia[totalDias]??saldoMes)}
           </span>
         </div>
