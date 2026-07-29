@@ -351,62 +351,66 @@ export default function QuickLaunch() {
           >✏️ Editar</button>
         </div>
 
-        {catsGrid.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px 16px' }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-            <div style={{ color: COR.textoSuave, fontSize: 13, marginBottom: 12 }}>
-              Nenhuma categoria no lançamento rápido.
-            </div>
-            <button
-              onClick={abrirGerenciar}
-              style={{
-                border: 'none', borderRadius: 12, padding: '10px 20px',
-                background: COR.azul, color: '#fff', fontSize: 13,
-                fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >Adicionar categorias</button>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 8 }}>
-            {catsGrid.map(c => {
-              const active    = catSel === c.nome
-              const previsto  = c.tipo === 'saida' ? previstoMes(c.nome) : 0
-              const realizado = c.tipo === 'saida' ? realizadoMes(c.nome) : 0
-              const disponivel = previsto - realizado
-              const temPrevisto = previsto > 0
-              const corDisp = disponivel < 0 ? COR.vermelho : disponivel < previsto * .2 ? '#f59e0b' : COR.verde
-              const ult = temPrevisto ? null : ultimoValorCat(c.nome)
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 8 }}>
+          {Array.from({ length: 9 }, (_, i) => {
+            const c = catsGrid[i]
+            if (!c) {
               return (
                 <button
-                  key={c.id}
-                  onClick={() => catSel === c.nome ? fecharInput() : abrirCat(c)}
+                  key={`add-${i}`}
+                  onClick={abrirGerenciar}
                   style={{
-                    background: active ? '#eff6ff' : '#fff',
-                    border: `2px solid ${active ? COR.azul : COR.borda}`,
-                    borderRadius: 14, padding: '13px 8px',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                    cursor: 'pointer', transform: active ? 'scale(.95)' : undefined,
-                    transition: 'all .15s',
+                    background: 'transparent',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: 14, padding: '13px 8px', minHeight: 88,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    justifyContent: 'center', gap: 5,
+                    cursor: 'pointer', transition: 'all .15s',
                   }}
                 >
-                  <span style={{ fontSize: 26 }}>{c.icone}</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2 }}>
-                    {c.nome}
-                  </span>
-                  {temPrevisto ? (
-                    <span style={{ fontSize: 9, color: corDisp, fontWeight: 700, textAlign: 'center' }}>
-                      {fmt(disponivel).replace('R$ ', 'R$ ')} disp.
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 9, color: '#94a3b8' }}>
-                      {ult ? `últ. ${fmt(ult)}` : c.tipo}
-                    </span>
-                  )}
+                  <span style={{ fontSize: 20, color: '#cbd5e1', fontWeight: 300, lineHeight: 1 }}>+</span>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: '#cbd5e1' }}>adicionar</span>
                 </button>
               )
-            })}
-          </div>
-        )}
+            }
+            const active     = catSel === c.nome
+            const previsto   = c.tipo === 'saida' ? previstoMes(c.nome) : 0
+            const realizado  = c.tipo === 'saida' ? realizadoMes(c.nome) : 0
+            const disponivel = previsto - realizado
+            const temPrevisto = previsto > 0
+            const corDisp = disponivel < 0 ? COR.vermelho : disponivel < previsto * .2 ? '#f59e0b' : COR.verde
+            const ult = temPrevisto ? null : ultimoValorCat(c.nome)
+            return (
+              <button
+                key={c.id}
+                onClick={() => catSel === c.nome ? fecharInput() : abrirCat(c)}
+                style={{
+                  background: active ? '#eff6ff' : '#fff',
+                  border: `2px solid ${active ? COR.azul : COR.borda}`,
+                  borderRadius: 14, padding: '13px 8px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                  cursor: 'pointer', transform: active ? 'scale(.95)' : undefined,
+                  transition: 'all .15s',
+                }}
+              >
+                <span style={{ fontSize: 26 }}>{c.icone}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2 }}>
+                  {c.nome}
+                </span>
+                {temPrevisto ? (
+                  <span style={{ fontSize: 9, color: corDisp, fontWeight: 700, textAlign: 'center' }}>
+                    {fmt(disponivel)} disp.
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 9, color: '#94a3b8' }}>
+                    {ult ? `últ. ${fmt(ult)}` : c.tipo}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
       </div>
 
       {/* Input rápido */}
