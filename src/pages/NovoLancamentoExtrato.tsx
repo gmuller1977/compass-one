@@ -6,6 +6,7 @@ import { useToast } from '../components/Toast'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
 import ExtratoConsolidado from './ExtratoConsolidado'
+import BottomNav from '../components/BottomNav'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -135,7 +136,6 @@ export default function NovoLancamentoExtrato() {
   const hojeStr   = hoje.toISOString().slice(0,10)
 
   const [contaId, setContaId] = useState('consolidado')
-  const busca = ''
   const [mes,     setMes]     = useState(mesHoje)
   const [ano, setAno]          = useState(anoHoje)
   const [mostrarCalendario, setMostrarCalendario] = useState(false)
@@ -161,13 +161,16 @@ export default function NovoLancamentoExtrato() {
   const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number}|null>(null)
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
-  const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('tipo')
+  const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('extrato')
+  const [mobileBusca,   setMobileBusca]   = useState('')
+  const [mobileDiaForm, setMobileDiaForm] = useState<number|null>(null)
   const [mobileCartaoId, setMobileCartaoId] = useState<string|null>(null)
+  const busca = isMobile ? mobileBusca : ''
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, faturaData } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, faturaData, user, sairDaConta } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   // Prefere planosReal (Atualizado) quando disponível
@@ -535,7 +538,7 @@ export default function NovoLancamentoExtrato() {
 
       setEditandoFixaId(null)
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
-      if (isMobile) { setMobileView('extrato') } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
+      if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
       return
     }
     if (fPag === 'transferencia' && !editandoId) {
@@ -571,7 +574,7 @@ export default function NovoLancamentoExtrato() {
         },
       }))
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFContaDestino('')
-      if (isMobile) { setMobileView('extrato') } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
+      if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
       return
     }
 
@@ -639,7 +642,7 @@ export default function NovoLancamentoExtrato() {
     }
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
-    if (isMobile) { setMobileView('extrato') } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
+    if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
   }
 
   function lancarConsolidado() {
@@ -708,7 +711,61 @@ export default function NovoLancamentoExtrato() {
     <div style={{height:'100vh',display:'flex',flexDirection:'column',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",overflow:'hidden'}}>
 
-      <AppHeader currentPath="/novo-lancamento" />
+      {isMobile ? (
+        <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+          padding:'44px 20px 0',flexShrink:0}}>
+          {/* Logo + avatar */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <div style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',
+                border:'1px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
+                  <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
+                  <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
+                </svg>
+              </div>
+              <span style={{color:'#fff',fontWeight:700,fontSize:15}}>
+                Compass <span style={{fontWeight:300,opacity:.75}}>One</span>
+              </span>
+            </div>
+            <button onClick={sairDaConta} title="Sair"
+              style={{width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,.2)',
+                border:'none',cursor:'pointer',display:'flex',alignItems:'center',
+                justifyContent:'center',color:'#fff',fontSize:13,fontWeight:700}}>
+              {user?.email?.charAt(0).toUpperCase() ?? 'U'}
+            </button>
+          </div>
+          {/* Tipo tabs */}
+          <div style={{display:'flex',gap:6,overflowX:'auto',scrollbarWidth:'none' as never}}>
+            {([
+              {v:'extrato'     as const, icon:'🏦', label:'Extrato'},
+              {v:'cartao'      as const, icon:'💳', label:'Cartão'},
+              {v:'dinheiro'    as const, icon:'💵', label:'Dinheiro'},
+              {v:'consolidado' as const, icon:'📊', label:'Total'},
+            ]).map(({v,icon,label}) => {
+              const ativo = tabPrincipal === v
+              return (
+                <button key={v} onClick={() => {
+                  setTabPrincipal(v)
+                  setMobileDiaForm(null)
+                  if (v==='extrato') { const p=contasExtrato.find(c=>c.preferida); setContaId((p??contasExtrato[0])?.id??'') }
+                }} style={{
+                  display:'flex',flexDirection:'column',alignItems:'center',gap:4,
+                  padding:'8px 16px',borderRadius:'12px 12px 0 0',
+                  cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,
+                  border:'none',background:ativo?'rgba(255,255,255,.15)':'transparent',
+                }}>
+                  <span style={{fontSize:18}}>{icon}</span>
+                  <span style={{fontSize:10,fontWeight:600,color:ativo?'#fff':'rgba(255,255,255,.6)'}}>{label}</span>
+                  <span style={{width:4,height:4,borderRadius:'50%',background:'#fff',
+                    opacity:ativo?1:0,marginTop:2}}/>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : <AppHeader currentPath="/novo-lancamento" />}
 
       {/* ── WIZARD MOBILE: STEP TIPO ── */}
       {isMobile && mobileStep === 'tipo' && (
@@ -838,106 +895,117 @@ export default function NovoLancamentoExtrato() {
         </div>
       )}
 
-      {/* SELETOR DE TIPO */}
-      {isMobile ? (
-        mobileStep === 'extrato' && tabPrincipal !== 'cartao' && (
-        <div style={{flexShrink:0,zIndex:30,background:COR.branco,
-          boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
-          {/* Linha 1: Banco clicável + navegador de mês */}
-          <div style={{borderBottom:`1px solid ${COR.borda}`,
-            padding:'8px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-            <button onClick={() => setMobileStep('tipo')} style={{
-              display:'flex',alignItems:'center',gap:6,
-              border:'none',background:'#f0f4ff',color:COR.azul,borderRadius:20,
-              padding:'6px 14px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>
-              <span style={{fontSize:16,lineHeight:1}}>
-                {tabPrincipal==='extrato'?'🏦':tabPrincipal==='dinheiro'?'💵':'📊'}
-              </span>
-              <span>
-                {tabPrincipal==='extrato'
-                  ? ('Banco ' + (contasExtrato.find(c=>c.id===contaId)?.banco ?? ''))
-                  : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
-              </span>
-            </button>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <button onClick={() => { const m=Math.max(0,mes-1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
-                style={{border:'none',background:mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
-                  borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
-              <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:68,textAlign:'center'}}>
-                {NOMES_MESES[mes]}
-              </span>
-              <button onClick={() => { const m=Math.min(11,mes+1); setMes(m); resetarParaNovo(diaDefaultPara(m,ano)) }}
-                style={{border:'none',background:mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
-                  borderRadius:8,padding:'4px 12px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
+      {/* SUB-HEADER MOBILE: bank pills + month nav */}
+      {isMobile && tabPrincipal !== 'cartao' && (
+        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,flexShrink:0}}>
+          {tabPrincipal === 'extrato' && contasExtrato.length > 0 && (
+            <div style={{display:'flex',gap:6,padding:'10px 14px',overflowX:'auto',scrollbarWidth:'none' as never}}>
+              {contasExtrato.map(c => {
+                const ativo = c.id === contaIdEfetivo
+                return (
+                  <button key={c.id} onClick={() => {
+                    setContaId(c.id)
+                    const k=mesKey(c.id,ano,mes)
+                    if(dados[k]?.saldoBancoData!==hojeStr){setModalSaldoValor(dados[k]?.saldoBanco??'');setModalSaldo({contaId:c.id,banco:c.banco,icone:c.icone,cor:c.cor,key:k})}
+                  }} style={{
+                    display:'flex',alignItems:'center',gap:5,
+                    padding:'5px 12px',borderRadius:20,flexShrink:0,
+                    border:`1.5px solid ${ativo?COR.azul:'#e2e8f0'}`,
+                    background:ativo?'#eff6ff':'#f8faff',
+                    cursor:'pointer',whiteSpace:'nowrap',
+                    fontSize:11,fontWeight:500,color:ativo?COR.azul:'#64748b',
+                  }}>
+                    <span style={{width:7,height:7,borderRadius:'50%',background:c.cor,display:'inline-block'}}/>
+                    {c.icone} {c.banco}
+                  </button>
+                )
+              })}
             </div>
-          </div>
-          {/* Linha 2: Saldo banco + Diferença (banco/dinheiro) | Totais (consolidado) */}
-          {tabPrincipal === 'consolidado' ? (
-          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'8px 16px',
-            display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Total bancos:</span>
-              <span style={{fontSize:13,fontWeight:700,padding:'2px 8px',borderRadius:6,
-                background:'#eff6ff',color:COR.azul,border:`1.5px solid ${COR.azul}`}}>
-                {fmt(contasExtrato.reduce((acc,c)=>{const v=parseBRL(dados[mesKey(c.id,ano,mes)]?.saldoBanco??'');return acc+(isNaN(v)?0:v)},0))}
-              </span>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Dinheiro:</span>
-              <span style={{fontSize:13,fontWeight:700,padding:'2px 8px',borderRadius:6,
-                background:'#f0fdf4',color:'#16a34a',border:`1.5px solid #16a34a`}}>
-                {(() => { const v=parseBRL(dados[mesKey('dinheiro',ano,mes)]?.saldoBanco??''); return isNaN(v)?'—':fmt(v) })()}
-              </span>
-            </div>
-          </div>
-          ) : (
-          <div style={{borderBottom:`2px solid ${COR.borda}`,padding:'6px 16px',
-            display:'flex',flexDirection:'column',gap:4}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-              <div style={{display:'flex',alignItems:'center',gap:6}}>
-                <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>
-                  {isDinheiro ? 'Saldo dinheiro:' : 'Saldo banco:'}
-                </span>
-                <span onClick={e => { e.stopPropagation()
-                    setModalSaldoValor(mesDados.saldoBanco ?? '')
-                    isDinheiro
-                      ? setModalSaldo({contaId:'dinheiro',banco:'Dinheiro',icone:'💵',cor:'#16a34a',key})
-                      : setModalSaldo({contaId:contaIdEfetivo,banco:contaInfo?.banco??'',icone:contaInfo?.icone??'',cor:contaInfo?.cor??COR.azul,key})
-                  }}
-                  style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:13,fontWeight:700,
-                    cursor:'pointer',padding:'2px 8px',borderRadius:6,
-                    border: mesDados.saldoBanco
-                      ? `1.5px solid ${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}`
-                      : '1.5px dashed #e2e8f0',
-                    color: mesDados.saldoBanco ? (isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)) : '#64748b',
-                    background: mesDados.saldoBanco ? `${isDinheiro?'#16a34a':(contaInfo?.cor??COR.azul)}18` : '#f8faff'}}>
-                  <span style={{fontSize:10}}>✎</span>
-                  {mesDados.saldoBanco || 'Informar'}
-                </span>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:6}}>
-                <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Diferença:</span>
-                <div style={{padding:'3px 10px',borderRadius:7,fontSize:12,fontWeight:700,
-                  background:diferenca===null?'#f1f5f9':conciliado?'#dcfce7':'#fee2e2',
-                  color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b',
-                  border:`1px solid ${diferenca===null?COR.borda:conciliado?'#86efac':'#fca5a5'}`,
-                  whiteSpace:'nowrap'}}>
-                  {diferenca===null?'—':conciliado?'✓':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
-                </div>
-              </div>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Saldo inicial:</span>
-              <span style={{fontSize:12,fontWeight:600,
-                color:saldoBase<0?COR.vermelho:COR.texto,fontVariantNumeric:'tabular-nums'}}>
-                {fmt(saldoBase)}
-              </span>
-            </div>
-          </div>
           )}
+          {tabPrincipal === 'dinheiro' && (
+            <div style={{padding:'10px 14px'}}>
+              <span style={{fontSize:12,color:COR.azul,fontWeight:600}}>💵 Dinheiro em espécie</span>
+            </div>
+          )}
+          {tabPrincipal === 'consolidado' && (
+            <div style={{padding:'10px 14px'}}>
+              <span style={{fontSize:12,color:COR.azul,fontWeight:600}}>📊 Visão consolidada</span>
+            </div>
+          )}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px 10px'}}>
+            <button onClick={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m); resetarParaNovo(diaDefaultPara(m,a)) }}
+              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f0f4ff',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                cursor:'pointer',fontSize:16,color:COR.azul,fontWeight:700}}>‹</button>
+            <span style={{fontSize:15,fontWeight:700,color:COR.texto}}>{NOMES_MESES[mes]} {ano}</span>
+            <button onClick={() => { let m=mes+1,a=ano; if(m>11){m=0;a++}; setMes(m); resetarParaNovo(diaDefaultPara(m,a)) }}
+              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f0f4ff',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                cursor:'pointer',fontSize:16,color:COR.azul,fontWeight:700}}>›</button>
+          </div>
         </div>
-        )
-      ) : (
+      )}
+
+      {/* SALDO CARD — mobile only (extrato/dinheiro) */}
+      {isMobile && (tabPrincipal==='extrato'||tabPrincipal==='dinheiro') && (
+        <div style={{margin:'0 14px 10px',borderRadius:14,overflow:'hidden',
+          boxShadow:'0 2px 12px rgba(0,0,0,.07)',flexShrink:0}}>
+          {/* Banco (extrato) */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f0f4ff`}}
+            onClick={e=>{e.stopPropagation();setModalSaldoValor(mesDados.saldoBanco??'');
+              isDinheiro
+                ?setModalSaldo({contaId:'dinheiro',banco:'Dinheiro',icone:'💵',cor:COR.verde,key})
+                :setModalSaldo({contaId:contaIdEfetivo,banco:contaInfo?.banco??'',icone:contaInfo?.icone??'',cor:contaInfo?.cor??COR.azul,key})
+            }}>
+            <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500,display:'flex',alignItems:'center',gap:5}}>
+              💰 {isDinheiro?'Dinheiro':(contaInfo?.banco??'Banco')} (extrato)
+            </span>
+            <span style={{fontSize:13,fontWeight:700,cursor:'pointer',
+              color:mesDados.saldoBanco?COR.texto:'#94a3b8'}}>
+              {mesDados.saldoBanco || <span style={{fontSize:11,fontStyle:'italic'}}>Informar ✎</span>}
+            </span>
+          </div>
+          {/* Sistema */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f0f4ff`}}>
+            <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500,display:'flex',alignItems:'center',gap:5}}>
+              📱 Sistema
+            </span>
+            <span style={{fontSize:13,fontWeight:700,color:COR.azul}}>{fmt(saldoMes)}</span>
+          </div>
+          {/* Diferença */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'10px 14px',
+            background:diferenca===null?COR.branco:conciliado?'#f0fdf4':'#fff1f2'}}>
+            <span style={{fontSize:11,fontWeight:500,display:'flex',alignItems:'center',gap:5,
+              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b'}}>
+              {diferenca===null?'⚖':conciliado?'✓':'⚠'} Diferença
+            </span>
+            <span style={{fontSize:13,fontWeight:700,
+              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b'}}>
+              {diferenca===null?'—':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* SEARCH — mobile */}
+      {isMobile && tabPrincipal !== 'cartao' && (
+        <div style={{padding:'0 14px 8px',flexShrink:0}}>
+          <input
+            value={mobileBusca}
+            onChange={e=>setMobileBusca(e.target.value)}
+            placeholder="Buscar categoria, descrição ou valor..."
+            style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
+              padding:'9px 14px',fontSize:13,color:COR.texto,
+              background:COR.branco,outline:'none',fontFamily:'inherit',boxSizing:'border-box' as never}}
+          />
+        </div>
+      )}
+
+      {/* DESKTOP: tab selector */}
+      {!isMobile && (
         <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
           padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto',
           WebkitOverflowScrolling:'touch' as never}}>
@@ -1361,7 +1429,7 @@ export default function NovoLancamentoExtrato() {
           return (
             <div key={dia}
               ref={ehHoje ? hojeRef : undefined}
-              onClick={() => { toggleDia(dia); resetarParaNovo(dia) }}
+              onClick={() => { setMobileDiaForm(null); toggleDia(dia); if(!isMobile) resetarParaNovo(dia); else setDiaSel(dia) }}
               style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
                 position:'relative',zIndex:selecionado?7:6,
                 border:`1.5px solid ${selecionado?COR.azul:ehHoje?'#93c5fd':COR.borda}`,
@@ -1394,55 +1462,91 @@ export default function NovoLancamentoExtrato() {
                     letterSpacing:.5,textTransform:'uppercase',flexShrink:0}}>Hoje</span>
                 )}
 
-                {/* Inicial | Entradas | Saída | Final */}
+                {/* Boxes: mobile → Inicial|Movimentação|Final  desktop → Entradas|Saídas|Final */}
                 <div style={{flex:1,display:'flex',alignItems:'center',
                   justifyContent:'flex-end',gap:isMobile?4:6}}>
-
-
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,
-                    flex:isMobile?1:undefined,minWidth:isMobile?undefined:150,
-                    background:entradasConf>0?'#eff6ff':'#f8faff',
-                    border:`1px solid ${entradasConf>0?'#bfdbfe':COR.borda}`}}>
-                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                      letterSpacing:.4,marginBottom:1,
-                      color:entradasConf>0?COR.azul:'#94a3b8'}}>
-                      Entradas
-                    </span>
-                    <span style={{fontSize:13,fontWeight:700,
-                      color:entradasConf>0?COR.azul:'#94a3b8'}}>
-                      {entradasBoxVal===0?'—':`+${fmt(entradasBoxVal)}`}
-                    </span>
-                  </div>
-
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,
-                    flex:isMobile?1:undefined,minWidth:isMobile?undefined:150,
-                    background:saidasConf>0?'#fff1f2':'#f8faff',
-                    border:`1px solid ${saidasConf>0?'#fecdd3':COR.borda}`}}>
-                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                      letterSpacing:.4,marginBottom:1,
-                      color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
-                      Saídas
-                    </span>
-                    <span style={{fontSize:13,fontWeight:700,
-                      color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
-                      {saidasBoxVal===0?'—':`-${fmt(saidasBoxVal)}`}
-                    </span>
-                  </div>
-
-                  {!isMobile && <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    padding:'5px 10px',borderRadius:8,minWidth:150,
-                    background:diaFuturo?'#f8faff':saldoDia<0?'#fff1f2':'#f0fdf4',
-                    border:`1px solid ${diaFuturo?COR.borda:saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
-                    <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                      letterSpacing:.4,marginBottom:1,
-                      color:diaFuturo?'#94a3b8':corSaldo}}>
-                      {diaFuturo?'Previsto':passado?'Final':'Atual'}
-                    </span>
-                    <span style={{fontSize:13,fontWeight:700,
-                      color:diaFuturo?'#64748b':corSaldo}}>{fmt(saldoDia)}</span>
-                  </div>}
+                  {isMobile ? (<>
+                    {/* Inicial */}
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                      padding:'5px 8px',borderRadius:9,flex:1,
+                      background:'#f8faff',border:`1px solid ${COR.borda}`}}>
+                      <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
+                        letterSpacing:.4,marginBottom:2,color:'#94a3b8'}}>Inicial</span>
+                      <span style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'-.3px'}}>
+                        {fmt(saldoIni).replace('R$ ','R$ ')}
+                      </span>
+                    </div>
+                    {/* Movimentação */}
+                    {(() => {
+                      const mov = diaFuturo ? (entradasDia - saidasDia) : (entradasConf - saidasConf)
+                      const pos = mov > 0; const neg = mov < 0
+                      return (
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                          padding:'5px 8px',borderRadius:9,flex:1,
+                          background:pos?'#f0fdf4':neg?'#fff1f2':'#f8faff',
+                          border:`1px solid ${pos?'#bbf7d0':neg?'#fecdd3':COR.borda}`}}>
+                          <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
+                            letterSpacing:.4,marginBottom:2,
+                            color:pos?COR.verde:neg?COR.vermelho:'#94a3b8'}}>Mov.</span>
+                          <span style={{fontSize:11,fontWeight:700,letterSpacing:'-.3px',
+                            color:pos?COR.verde:neg?COR.vermelho:'#94a3b8'}}>
+                            {mov===0?'—':`${mov>0?'+':'-'}${fmt(Math.abs(mov)).replace('R$ ','R$ ')}`}
+                          </span>
+                        </div>
+                      )
+                    })()}
+                    {/* Final */}
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                      padding:'5px 8px',borderRadius:9,flex:1,
+                      background:diaFuturo?'#f8faff':ehHoje?'#eff6ff':saldoDia<0?'#fff1f2':'#f0fdf4',
+                      border:`1px solid ${diaFuturo?COR.borda:ehHoje?'#bfdbfe':saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
+                      <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
+                        letterSpacing:.4,marginBottom:2,
+                        color:diaFuturo?'#94a3b8':ehHoje?COR.azul:corSaldo}}>
+                        {diaFuturo?'Prev.':ehHoje?'Atual':'Final'}
+                      </span>
+                      <span style={{fontSize:11,fontWeight:700,letterSpacing:'-.3px',
+                        color:diaFuturo?'#64748b':ehHoje?COR.azul:corSaldo}}>
+                        {fmt(saldoDia).replace('R$ ','R$ ')}
+                      </span>
+                    </div>
+                  </>) : (<>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                      padding:'5px 10px',borderRadius:8,minWidth:150,
+                      background:entradasConf>0?'#eff6ff':'#f8faff',
+                      border:`1px solid ${entradasConf>0?'#bfdbfe':COR.borda}`}}>
+                      <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                        letterSpacing:.4,marginBottom:1,
+                        color:entradasConf>0?COR.azul:'#94a3b8'}}>Entradas</span>
+                      <span style={{fontSize:13,fontWeight:700,color:entradasConf>0?COR.azul:'#94a3b8'}}>
+                        {entradasBoxVal===0?'—':`+${fmt(entradasBoxVal)}`}
+                      </span>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                      padding:'5px 10px',borderRadius:8,minWidth:150,
+                      background:saidasConf>0?'#fff1f2':'#f8faff',
+                      border:`1px solid ${saidasConf>0?'#fecdd3':COR.borda}`}}>
+                      <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                        letterSpacing:.4,marginBottom:1,
+                        color:saidasConf>0?COR.vermelho:'#94a3b8'}}>Saídas</span>
+                      <span style={{fontSize:13,fontWeight:700,color:saidasConf>0?COR.vermelho:'#94a3b8'}}>
+                        {saidasBoxVal===0?'—':`-${fmt(saidasBoxVal)}`}
+                      </span>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                      padding:'5px 10px',borderRadius:8,minWidth:150,
+                      background:diaFuturo?'#f8faff':saldoDia<0?'#fff1f2':'#f0fdf4',
+                      border:`1px solid ${diaFuturo?COR.borda:saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
+                      <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
+                        letterSpacing:.4,marginBottom:1,
+                        color:diaFuturo?'#94a3b8':corSaldo}}>
+                        {diaFuturo?'Previsto':passado?'Final':'Atual'}
+                      </span>
+                      <span style={{fontSize:13,fontWeight:700,color:diaFuturo?'#64748b':corSaldo}}>
+                        {fmt(saldoDia)}
+                      </span>
+                    </div>
+                  </>)}
                 </div>
 
                 {/* Chevron */}
@@ -1560,9 +1664,109 @@ export default function NovoLancamentoExtrato() {
                 </div>
               )})}
 
+              {/* INLINE FORM — mobile only, mostra dentro do dia card */}
+              {isMobile && aberto && (
+                <>
+                  <button
+                    onClick={e => { e.stopPropagation()
+                      if (mobileDiaForm===dia) { setMobileDiaForm(null) } else {
+                        setMobileDiaForm(dia); setDiaSel(dia)
+                        setFTipo('saida'); setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFPag('debito')
+                        setEditandoId(null); setEditandoFixaId(null)
+                        setTimeout(()=>categoriaSelectRef.current?.focus(),80)
+                      }
+                    }}
+                    style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                      padding:9,fontSize:11,fontWeight:600,color:COR.azul,
+                      cursor:'pointer',border:'none',background:'#f8faff',width:'100%',
+                      borderTop:`1px dashed #bfdbfe`}}>
+                    + Adicionar neste dia
+                  </button>
+                  {mobileDiaForm === dia && (
+                    <div onClick={e=>e.stopPropagation()}
+                      style={{background:'#f0f9ff',borderTop:`2px solid ${COR.azul}`,padding:'12px 14px'}}>
+                      <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,padding:3,marginBottom:10,width:'fit-content'}}>
+                        {(['saida','entrada'] as const).map(t=>(
+                          <button key={t} onClick={()=>{setFTipo(t);setFPag(t==='entrada'?'pix':'debito')}} style={{
+                            padding:'5px 14px',border:'none',borderRadius:6,cursor:'pointer',
+                            fontSize:11,fontWeight:600,fontFamily:'inherit',
+                            background:fTipo===t?COR.branco:'transparent',
+                            color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):'#0369a1',
+                            boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+                            {t==='saida'?'↓ Saída':'↑ Entrada'}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap' as never}}>
+                        <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
+                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
+                          <select ref={categoriaSelectRef} value={fCat}
+                            onChange={e=>{const n=e.target.value;setFCat(n);setFSubDesc('');const c=categorias.find(x=>x.nome===n);if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))}}
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
+                            <option value="">Selecione...</option>
+                            {categoriasSelect.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}
+                          </select>
+                        </div>
+                        <div style={{flex:'2 1 120px',display:'flex',flexDirection:'column',gap:3}}>
+                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Descrição</div>
+                          <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
+                            placeholder="Ex: Mercado Extra..."
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                            onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+                        </div>
+                        <div style={{flex:'0 0 90px',display:'flex',flexDirection:'column',gap:3}}>
+                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
+                          <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+                            placeholder="R$ 0,00" inputMode="decimal"
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                            onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+                        </div>
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as never,marginBottom:8}}>
+                        <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>Pgto:</span>
+                        {(fTipo==='entrada'?FORMAS_ENT:FORMAS_SAI).map(p=>(
+                          <button key={p.id} onClick={()=>setFPag(p.id)} style={{
+                            padding:'4px 10px',border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
+                            borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:600,
+                            background:fPag===p.id?'#eff6ff':'#fff',color:fPag===p.id?COR.azul:'#0369a1',
+                            fontFamily:'inherit'}}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{display:'flex',gap:6}}>
+                        <button onClick={()=>setMobileDiaForm(null)}
+                          style={{flex:1,padding:'9px 0',border:`1.5px solid ${COR.borda}`,borderRadius:8,
+                            background:'#fff',color:COR.textoSuave,fontSize:12,fontWeight:600,
+                            cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                        <button onClick={lancar}
+                          style={{flex:2,padding:'9px 0',border:'none',borderRadius:8,
+                            background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                            color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Lançar</button>
+                      </div>
+                      <div style={{fontSize:9,color:'#0369a1',marginTop:8,opacity:.7}}>↵ Enter no valor para salvar</div>
+                    </div>
+                  )}
+                </>
+              )}
+
             </div>
           )
         })}
+
+        {/* Saldo final — mobile inline (dentro do scroll) */}
+        {isMobile && tabPrincipal !== 'consolidado' && (
+          <div style={{margin:'4px 0 8px',borderRadius:14,
+            background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+            padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+            <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)'}}>
+              Saldo final — {NOMES_MESES[mes]} {ano}
+            </span>
+            <span style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.5px'}}>
+              {fmt(saldosDia[totalDias]??saldoMes)}
+            </span>
+          </div>
+        )}
 
       </div>
 
@@ -1585,7 +1789,7 @@ export default function NovoLancamentoExtrato() {
       <div style={{width: isMobile ? '100%' : 340, flexShrink:0, background:COR.branco,
         border:`1px solid ${COR.borda}`,borderRadius:12,padding: isMobile ? '16px 12px' : 20,
         overflowY:'auto', marginTop:10,
-        display: isMobile && mobileView==='extrato' ? 'none' : 'block'}}>
+        display: isMobile ? 'none' : 'block'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
           {isMobile && (
             <button onClick={() => { setMobileView('extrato'); resetarParaNovo(diaSel) }} style={{
@@ -1784,33 +1988,7 @@ export default function NovoLancamentoExtrato() {
       )}
 
 
-      {/* FAB + BARRA PREVISTO — mobile only */}
-      {isMobile && mobileStep === 'extrato' && mobileView === 'extrato' && tabPrincipal !== 'cartao' && (<>
-        {/* Barra "Saldo final previsto" — fixa acima do tab bar */}
-        <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
-          background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-          padding:'10px 20px',display:'flex',alignItems:'center',
-          justifyContent:'space-between',
-          boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
-          <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.8)'}}>
-            Saldo final previsto — {NOMES_MESES[mes]} {ano}
-          </span>
-          <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-            {fmt(saldosDia[totalDias]??saldoMes)}
-          </span>
-        </div>
-        {/* FAB + */}
-        <button onClick={() => { resetarParaNovo(diaSel); setMobileView('form') }}
-          style={{position:'fixed',right:20,bottom:116,zIndex:50,
-            width:54,height:54,borderRadius:'50%',border:'none',
-            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-            color:'#fff',fontSize:26,fontWeight:300,lineHeight:1,
-            cursor:'pointer',fontFamily:'inherit',
-            boxShadow:'0 4px 16px rgba(59,130,246,0.5)',
-            display:'flex',alignItems:'center',justifyContent:'center'}}>
-          +
-        </button>
-      </>)}
+      <BottomNav />
 
       {/* MODAL SALDO BANCO */}
       {modalSaldo && (

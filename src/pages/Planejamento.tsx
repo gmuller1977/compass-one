@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import AppHeader from '../components/AppHeader'
+import BottomNav from '../components/BottomNav'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -81,7 +82,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           planosReal, planejamentoLockado,
           finalizarPlanejamento, updatePlanoReal,
           desvioMinPerc, setDesvioMinPerc,
-          carregando } = useApp()
+          carregando, user, sairDaConta } = useApp()
 
   const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const SALDO_INICIAL_FIXO = contasSaldoIni
@@ -146,6 +147,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [gruposHorizAbertos, setGruposHorizAbertos] = useState<Set<string>>(new Set())
   const isMobile = useIsMobile()
   const [mesMobile, setMesMobile] = useState(mesAtual)
+  const [secEntAberto, setSecEntAberto] = useState(true)
+  const [secSaiAberto, setSecSaiAberto] = useState(true)
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -1014,6 +1017,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const si = saldoInicial[mi]
     const sf = saldoFinal[mi]
 
+    // Grupos das saídas
     const gruposMap = new Map<string, Array<{ cat: Cat; ri: number }>>()
     for (const cat of saidasComHistorico) {
       if (nomeFaturaCartao(cat.nome, cartaoNomes)) continue
@@ -1031,171 +1035,203 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       ...(gruposMap.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
     ]
 
-    const renderCelMobile = (tipo: 'e'|'s', ri: number) => {
-      const valor = tipo === 'e'
+    // Helper: valor de uma cat em um plano
+    const catValFrom = (tipo: 'e'|'s', cat: Cat, data: AnoData | undefined): number => {
+      if (!data) return 0
+      const lista = tipo === 'e' ? data.entradas : data.saidas
+      const found = cat.id
+        ? (lista.find(c => c.id === cat.id) ?? lista.find(c => c.nome === cat.nome))
+        : lista.find(c => c.nome === cat.nome)
+      return found?.v[mi] ?? 0
+    }
+
+    const dadosPrev = planos[anoAtual] as AnoData | undefined
+    const dadosRealLocal = planosReal[anoAtual] as AnoData | undefined
+    const hasReal = !!dadosRealLocal
+
+    const renderCatRow = (tipo: 'e'|'s', cat: Cat, ri: number) => {
+      const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+      const catInfo = cat.id
+        ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome))
+        : categorias.find(c => c.nome === cat.nome)
+      const subtitle = catInfo?.fixa ? 'Fixa' : 'Variável'
+      const valorAtual = tipo === 'e'
         ? (dadosAnoFinal.entradas[ri]?.v[mi] ?? 0)
         : (dadosAnoFinal.saidas[ri]?.v[mi] ?? 0)
       const ativo = editando?.tipo === tipo && editando.row === ri && editando.mes === mi
-      if (ativo && !bloqueado) {
-        return (
-          <input
-            autoFocus inputMode="decimal"
-            value={valorTemp}
-            onChange={e => setValorTemp(e.target.value)}
-            onBlur={() => confirmarValor()}
-            onKeyDown={e => { if (e.key === 'Enter') confirmarValor() }}
-            style={{
-              width: 110, border: '1.5px solid #1a56db', borderRadius: 8,
-              padding: '6px 10px', fontSize: 15, fontWeight: 600,
-              fontFamily: 'inherit', textAlign: 'right' as const, outline: 'none',
-              background: '#eff6ff', color: '#0f2878',
-            }}
-          />
-        )
-      }
+
       return (
-        <div
-          onClick={() => !bloqueado && iniciarValor(tipo, ri, mi, valor)}
-          style={{
-            minWidth: 90, padding: '6px 10px', borderRadius: 8,
-            background: valor !== 0 ? '#f0f4ff' : '#f8fafc',
-            border: `1px solid ${valor !== 0 ? '#bfdbfe' : '#e2e8f0'}`,
-            fontSize: 15, fontWeight: valor !== 0 ? 600 : 400,
-            color: valor !== 0 ? '#0f2878' : '#94a3b8',
-            textAlign: 'right' as const, cursor: bloqueado ? 'default' : 'pointer',
-          }}
-        >
-          {fmt(valor)}
+        <div key={cat.id ?? cat.nome} style={{ background:'#fff', display:'flex', alignItems:'center', gap:10, padding:'11px 16px', borderBottom:'1px solid #f8faff' }}>
+          <div style={{ width:36, height:36, borderRadius:10, background: corIcone+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
+            {icone}
+          </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cat.nome}</div>
+            <div style={{ fontSize:10, color:'#94a3b8', marginTop:1 }}>{subtitle}</div>
+          </div>
+          <div style={{ flexShrink:0 }}>
+            {ativo && !bloqueado ? (
+              <input autoFocus inputMode="decimal" value={valorTemp}
+                onChange={e => setValorTemp(e.target.value)}
+                onBlur={() => confirmarValor()}
+                onKeyDown={e => { if (e.key === 'Enter') confirmarValor() }}
+                style={{ width:100, border:'1.5px solid #1a56db', borderRadius:8, padding:'6px 10px', fontSize:14, fontWeight:600, fontFamily:'inherit', textAlign:'right' as const, outline:'none', background:'#eff6ff', color:'#0f2878' }}
+              />
+            ) : (
+              <div
+                onClick={() => !bloqueado && aba !== 'real' && iniciarValor(tipo, ri, mi, valorAtual)}
+                style={{ fontSize:13, fontWeight:700, color: valorAtual !== 0 ? '#0f172a' : '#cbd5e1', cursor: (!bloqueado && aba !== 'real') ? 'pointer' : 'default', minWidth:70, textAlign:'right' as const }}>
+                {valorAtual !== 0 ? fmt(valorAtual, true) : '—'}
+              </div>
+            )}
+          </div>
         </div>
       )
     }
 
-    const navBtnStyle = (disabled: boolean): React.CSSProperties => ({
-      border: 'none', background: '#f0f4ff', color: disabled ? '#cbd5e1' : COR.azul,
-      borderRadius: 8, padding: '6px 14px', fontSize: 18, cursor: disabled ? 'default' : 'pointer',
-      fontFamily: 'inherit',
-    })
-
-    const sfBorderColor = corSaldo(sf) === COR.verde ? '#bbf7d0' : corSaldo(sf) === COR.vermelho ? '#fecaca' : '#fde68a'
+    const navBtn: React.CSSProperties = { width:30, height:30, borderRadius:9, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'inherit' }
 
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
-        <AppHeader currentPath={pathname} />
+      <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
-        {/* Cabeçalho fixo no topo */}
-        <div style={{ flexShrink: 0, background: COR.branco, boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
-          {/* Linha 1: ano nav + tabs */}
-          <div style={{ padding: '10px 16px 8px', borderBottom: `1px solid ${COR.borda}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button onClick={() => navegarAno(-1)} style={{ border: 'none', background: 'transparent', padding: '4px 8px', cursor: 'pointer', borderRadius: 6, fontSize: 18, color: COR.azul, fontFamily: 'inherit' }}>‹</button>
-              <span style={{ fontWeight: 700, fontSize: 16, color: COR.texto, minWidth: 40, textAlign: 'center' }}>{anoAtual}</span>
-              <button onClick={() => navegarAno(1)}  style={{ border: 'none', background: 'transparent', padding: '4px 8px', cursor: 'pointer', borderRadius: 6, fontSize: 18, color: COR.azul, fontFamily: 'inherit' }}>›</button>
+        {/* HEADER — gradient */}
+        <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'44px 20px 0', flexShrink:0 }}>
+          {/* Logo + avatar */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
+                  <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
+                  <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" fillOpacity=".5"/>
+                </svg>
+              </div>
+              <div style={{ color:'#fff', fontSize:16, fontWeight:700 }}>Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span></div>
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {(['previsto', 'real'] as const).map(v => {
-                const label = v === 'previsto' ? 'Original' : 'Atualizado'
+            <div onClick={() => sairDaConta()} style={{ width:32, height:32, borderRadius:'50%', background:'rgba(255,255,255,.2)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+              {user?.email?.[0].toUpperCase() ?? 'U'}
+            </div>
+          </div>
+
+          {/* Ano + Previsto/Realizado toggle */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <button onClick={() => navegarAno(-1)} style={navBtn}>‹</button>
+              <span style={{ fontSize:20, fontWeight:800, color:'#fff', letterSpacing:'-.5px' }}>{anoAtual}</span>
+              <button onClick={() => navegarAno(1)} style={navBtn}>›</button>
+            </div>
+            <div style={{ display:'flex', background:'rgba(0,0,0,.2)', borderRadius:10, padding:3, gap:3 }}>
+              {(['previsto','real'] as const).map(v => {
+                const label = v === 'previsto' ? 'Previsto' : 'Realizado'
                 const active = aba === v
                 return (
-                  <button key={v} onClick={() => { setAba(v); setEditando(null) }} style={{
-                    padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                    fontSize: 12, fontWeight: active ? 700 : 400, fontFamily: 'inherit',
-                    background: active ? COR.azul : '#f0f4ff',
-                    color: active ? '#fff' : COR.textoSuave,
-                  }}>{label}</button>
+                  <button key={v} onClick={() => { setAba(v); setEditando(null) }}
+                    style={{ padding:'5px 12px', borderRadius:8, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: active ? 'rgba(255,255,255,.95)' : 'transparent', color: active ? '#0f2878' : 'rgba(255,255,255,.6)' }}>
+                    {label}
+                  </button>
                 )
               })}
             </div>
           </div>
-          {/* Linha 2: mês nav + saldo inicial */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 16px 10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtnStyle(mi === 0)}>‹</button>
-              <span style={{ fontWeight: 600, fontSize: 15, color: COR.texto, minWidth: 90, textAlign: 'center' }}>{MESES_FULL[mi]}</span>
-              <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtnStyle(mi === 11)}>›</button>
+
+          {/* Mês + Saldo inicial */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtn}>‹</button>
+              <span style={{ fontSize:16, fontWeight:700, color:'#fff', minWidth:80, textAlign:'center' as const }}>{MESES_FULL[mi]}</span>
+              <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtn}>›</button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ fontSize: 11, color: COR.textoSuave, whiteSpace: 'nowrap' }}>Saldo inicial:</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: corSaldo(si), whiteSpace: 'nowrap' }}>{fmt(si, true)}</span>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,.6)', fontWeight:600, textTransform:'uppercase' as const, letterSpacing:'.4px', marginBottom:2 }}>Saldo inicial</div>
+              <div style={{ fontSize:15, fontWeight:800, color:'#fbbf24', letterSpacing:'-.3px' }}>{fmt(si, true)}</div>
             </div>
           </div>
         </div>
 
-        {/* Área de scroll — só o conteúdo rola */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px' }}>
-
-          {/* Entradas */}
-          <div style={{ background: COR.branco, borderRadius: 12, border: `1px solid ${COR.borda}`, marginBottom: 12, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>↑ Entradas</span>
+        {/* RESUMO STRIP */}
+        <div style={{ background:'#fff', borderBottom:'1px solid #e2e8f0', padding:'10px 16px', display:'flex', flexShrink:0 }}>
+          {([
+            { label:'Entradas', val: te, color:'#16a34a' },
+            { label:'Saídas',   val: ts, color:'#dc2626' },
+            { label:'Saldo final', val: sf, color: corSaldo(sf) },
+          ] as const).map((item, i, arr) => (
+            <div key={item.label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, borderRight: i < arr.length-1 ? '1px solid #e2e8f0' : 'none', padding:'0 4px' }}>
+              <div style={{ fontSize:9, color:'#94a3b8', fontWeight:600, textTransform:'uppercase' as const, letterSpacing:'.3px' }}>{item.label}</div>
+              <div style={{ fontSize:13, fontWeight:800, letterSpacing:'-.3px', color:item.color, fontVariantNumeric:'tabular-nums' }}>{fmt(item.val, true)}</div>
             </div>
-            {entradasComHistorico.map(cat => {
+          ))}
+        </div>
+
+        {/* CONTENT */}
+        <div style={{ flex:1, overflowY:'auto', padding:'12px 14px 90px', scrollbarWidth:'none' as const }}>
+
+          {/* ENTRADAS section card */}
+          <div style={{ borderRadius:18, overflow:'hidden', marginBottom:12, boxShadow:'0 2px 12px rgba(0,0,0,.07)' }}>
+            <div onClick={() => setSecEntAberto(v => !v)}
+              style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#f0fdf4', borderBottom: secEntAberto ? '1px solid #dcfce7' : 'none', cursor:'pointer' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:16 }}>↑</span>
+                <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#16a34a' }}>Entradas</span>
+                <span style={{ fontSize:11, color:'#94a3b8', marginLeft:4, display:'inline-block', transform: secEntAberto ? 'none' : 'rotate(-90deg)', transition:'transform .2s' }}>▾</span>
+              </div>
+              <span style={{ fontSize:15, fontWeight:800, color:'#16a34a', letterSpacing:'-.3px' }}>{fmt(te, true)}</span>
+            </div>
+            {secEntAberto && entradasComHistorico.map(cat => {
               const ri = dadosAnoFinal.entradas.findIndex(c => c.id ? c.id === cat.id : c.nome === cat.nome)
               if (ri < 0) return null
-              const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-              return (
-                <div key={cat.id ?? cat.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 16, lineHeight: 1, color: corIcone, flexShrink: 0 }}>{icone}</span>
-                    <span style={{ fontSize: 14, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.nome}</span>
-                  </div>
-                  {renderCelMobile('e', ri)}
-                </div>
-              )
+              return renderCatRow('e', cat, ri)
             })}
-            <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', borderTop: '1px solid #bbf7d0' }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Total</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#15803d' }}>{fmt(te, true)}</span>
-            </div>
+            {secEntAberto && (
+              <div style={{ background:'#f0fdf4', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:12, fontWeight:700, color:'#16a34a' }}>Total Entradas</span>
+                <span style={{ fontSize:15, fontWeight:800, color:'#16a34a' }}>{fmt(te, true)}</span>
+              </div>
+            )}
           </div>
 
-          {/* Saídas */}
-          <div style={{ background: COR.branco, borderRadius: 12, border: `1px solid ${COR.borda}`, marginBottom: 12, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', background: '#fff5f5', borderBottom: '1px solid #fecaca' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em' }}>↓ Saídas</span>
+          {/* SAÍDAS section card */}
+          <div style={{ borderRadius:18, overflow:'hidden', marginBottom:12, boxShadow:'0 2px 12px rgba(0,0,0,.07)' }}>
+            <div onClick={() => setSecSaiAberto(v => !v)}
+              style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#fff1f2', borderBottom: secSaiAberto ? '1px solid #fecdd3' : 'none', cursor:'pointer' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:16 }}>↓</span>
+                <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#dc2626' }}>Saídas</span>
+                <span style={{ fontSize:11, color:'#94a3b8', marginLeft:4, display:'inline-block', transform: secSaiAberto ? 'none' : 'rotate(-90deg)', transition:'transform .2s' }}>▾</span>
+              </div>
+              <span style={{ fontSize:15, fontWeight:800, color:'#dc2626', letterSpacing:'-.3px' }}>{fmt(ts, true)}</span>
             </div>
-            {gruposOrdenados.map(grupo => {
+            {secSaiAberto && gruposOrdenados.map(grupo => {
               const itens = gruposMap.get(grupo) ?? []
               return (
                 <div key={grupo}>
                   {grupo !== '__sem_grupo__' && (
-                    <div style={{ padding: '6px 16px', background: '#fafafa', borderBottom: `1px solid ${COR.borda}` }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{grupo}</span>
-                    </div>
+                    <div style={{ background:'#f8faff', padding:'6px 16px', fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' as const, letterSpacing:'.6px', borderBottom:'1px solid #f1f5f9' }}>{grupo}</div>
                   )}
-                  {itens.map(({ cat, ri }) => {
-                    const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                    return (
-                      <div key={cat.id ?? cat.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, gap: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: 16, lineHeight: 1, color: corIcone, flexShrink: 0 }}>{icone}</span>
-                          <span style={{ fontSize: 14, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.nome}</span>
-                        </div>
-                        {renderCelMobile('s', ri)}
-                      </div>
-                    )
-                  })}
+                  {itens.map(({ cat, ri }) => renderCatRow('s', cat, ri))}
                 </div>
               )
             })}
-            <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff5f5', borderTop: '1px solid #fecaca' }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>Total</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#dc2626' }}>{fmt(ts, true)}</span>
-            </div>
+            {secSaiAberto && (
+              <div style={{ background:'#fff1f2', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:12, fontWeight:700, color:'#dc2626' }}>Total Saídas</span>
+                <span style={{ fontSize:15, fontWeight:800, color:'#dc2626' }}>{fmt(ts, true)}</span>
+              </div>
+            )}
           </div>
 
+          {/* SALDO FINAL card */}
+          <div style={{ borderRadius:18, background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:16, marginBottom:10, display:'flex', alignItems:'center', justifyContent:'space-between', boxShadow:'0 4px 16px rgba(26,86,219,.25)' }}>
+            <div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:600, marginBottom:3 }}>Saldo final {aba === 'real' ? 'realizado' : 'previsto'}</div>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,.4)' }}>{MESES_FULL[mi]} {anoAtual}</div>
+            </div>
+            <div style={{ fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-.5px' }}>{fmt(sf, true)}</div>
+          </div>
+
+          <div style={{ height:6 }} />
         </div>
 
-        {/* Barra inferior fixa — Saldo Final Previsto */}
-        <div style={{ flexShrink: 0, background: COR.branco, borderTop: `2px solid ${sfBorderColor}`,
-          padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.07)' }}>
-          <span style={{ fontSize: 13, color: COR.textoSuave, fontWeight: 500 }}>Saldo final previsto</span>
-          <span style={{ fontSize: 18, fontWeight: 800, color: corSaldo(sf) }}>{fmt(sf, true)}</span>
-        </div>
-
-        {/* Espaço para tab bar */}
-        <div style={{ height: 60, flexShrink: 0, background: COR.fundo }} />
+        <BottomNav />
       </div>
     )
   }

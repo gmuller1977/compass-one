@@ -98,7 +98,7 @@ export default function Login() {
     setErro('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/dashboard' },
+      options: { redirectTo: window.location.origin + '/' },
     })
     if (error) setErro(traduzirErro(error.message))
     setCarregando(false)
@@ -115,7 +115,7 @@ export default function Login() {
           password: form.senha,
         })
         if (error) throw error
-        navigate('/dashboard')
+        navigate('/')
       } else {
         if (form.senha !== form.confirmar) throw new Error('As senhas não coincidem')
         if (form.senha.length < 6) throw new Error('Password should be at least 6 characters')

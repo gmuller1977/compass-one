@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes, Categoria } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import AppHeader from '../components/AppHeader'
+import BottomNav from '../components/BottomNav'
 
 const COR = {
   azul: '#1a56db', fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
@@ -49,7 +50,7 @@ export default function Acompanhamento() {
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
 
   const { pathname } = useLocation()
-  const { contas, categorias, planos, extratoData, faturaData } = useApp()
+  const { contas, categorias, planos, extratoData, faturaData, user } = useApp()
 
   const mesStr    = String(mes+1).padStart(2,'0')
   const totalDias = diasNoMes(mes, ano)
@@ -437,6 +438,335 @@ export default function Acompanhamento() {
         </div>
       )
     })
+  }
+
+  // ── Mobile redesign ────────────────────────────────────────────────────
+  if (isMobile) {
+    const diaHoje   = new Date().getDate()
+    const saldoReal = totalRealE - totalRealS
+    const saldoPrev = totalPrevE - totalPrevS
+    const percE     = totalPrevE > 0 ? Math.min(totalRealE / totalPrevE, 1) : (totalRealE > 0 ? 1 : 0)
+    const percS     = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
+    const corSaldoR = (totalRealE===0&&totalRealS===0) ? '#94a3b8' : saldoReal>=0 ? COR.verde : COR.vermelho
+    const corSaldoP = (totalPrevE===0&&totalPrevS===0) ? '#94a3b8' : saldoPrev>=0 ? COR.verde : COR.vermelho
+    const userInitial = (() => { const u = user as any; return u?.displayName?.[0] ?? u?.email?.[0]?.toUpperCase() ?? '?' })()
+    const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
+    const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)
+
+    const btnStyle = { width:30,height:30,borderRadius:9,border:'none',
+      background:'rgba(255,255,255,.15)',color:'#fff',
+      fontSize:16,cursor:'pointer' as const,fontWeight:700,
+      display:'flex' as const,alignItems:'center' as const,justifyContent:'center' as const }
+
+    const renderMobileCatRow = (
+      tipo: 'entrada'|'saida', nome: string, descricao: string,
+      prev: number, lancAbs: number, catInfo: Categoria|undefined, uid: string,
+    ) => {
+      const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
+      const perc      = prev > 0 ? lancAbs / prev : (lancAbs > 0 ? 1 : 0)
+      const isEntrada = tipo === 'entrada'
+
+      let statusLabel: string, statusBg: string, statusColor: string
+      if (prev===0 && lancAbs===0) {
+        statusLabel='Sem previsão'; statusBg='#f1f5f9'; statusColor='#64748b'
+      } else if (isEntrada) {
+        if (lancAbs>=prev && prev>0)      { statusLabel='✓ Recebido';                     statusBg='#dcfce7'; statusColor='#166534' }
+        else if (lancAbs>0)               { statusLabel=`${Math.round(perc*100)}% receb.`; statusBg='#fef9c3'; statusColor='#92400e' }
+        else                              { statusLabel='A receber';                       statusBg='#fffbeb'; statusColor='#92400e' }
+      } else {
+        if (lancAbs===0 && prev>0)        { statusLabel='A pagar';                         statusBg='#fffbeb'; statusColor='#92400e' }
+        else if (lancAbs>prev && prev>0)  { statusLabel=`⚠ ${Math.round(perc*100)}% gasto`; statusBg='#fee2e2'; statusColor='#991b1b' }
+        else if (perc>=0.8)               { statusLabel=`⚠ ${Math.round(perc*100)}% gasto`; statusBg='#fef9c3'; statusColor='#92400e' }
+        else                              { statusLabel=`${Math.round(perc*100)}% gasto`;   statusBg='#dcfce7'; statusColor='#166534' }
+      }
+
+      const disponivel = prev - lancAbs
+      let tercLabel: string, tercValue: string, tercBg: string, tercBd: string, tercColor: string
+      if (prev===0 && lancAbs===0) {
+        tercLabel=isEntrada?'A receber':'Disponível'; tercValue='—'
+        tercBg='#f8faff'; tercBd=COR.borda; tercColor='#94a3b8'
+      } else if (isEntrada) {
+        if (lancAbs>=prev) { tercLabel='Disponível'; tercValue=fmt(0);            tercBg='#f0fdf4'; tercBd='#bbf7d0'; tercColor='#16a34a' }
+        else               { tercLabel='A receber';  tercValue=fmt(prev-lancAbs); tercBg='#fffbeb'; tercBd='#fde68a'; tercColor='#d97706' }
+      } else {
+        if (lancAbs===0)        { tercLabel='A pagar';    tercValue=fmt(prev);        tercBg='#fffbeb'; tercBd='#fde68a'; tercColor='#d97706' }
+        else if (disponivel>=0) { tercLabel='Disponível'; tercValue=fmt(disponivel);  tercBg='#f0fdf4'; tercBd='#bbf7d0'; tercColor='#16a34a' }
+        else                    { tercLabel='Excedido';   tercValue=fmt(-disponivel); tercBg='#fff1f2'; tercBd='#fecdd3'; tercColor='#dc2626' }
+      }
+
+      const progressColor = isEntrada
+        ? (perc>=1 ? COR.verde : perc>=0.5 ? '#4ade80' : '#94a3b8')
+        : (perc>1  ? COR.vermelho : perc>=0.8 ? COR.amarelo : COR.verde)
+
+      return (
+        <div key={uid} style={{ background:'#fff', borderBottom:'1px solid #f5f7ff' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px 8px' }}>
+            <div style={{ width:38, height:38, borderRadius:11, flexShrink:0,
+              background:corIcone+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
+              {icone}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#0f172a',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
+              <div style={{ fontSize:10, color:'#94a3b8', marginTop:2, display:'flex', alignItems:'center', gap:5 }}>
+                <span>{catInfo?.fixa ? 'Fixa' : 'Variável'}</span>
+                {descricao && <span>· {descricao}</span>}
+              </div>
+            </div>
+            <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', borderRadius:7, flexShrink:0,
+              background:statusBg, color:statusColor }}>{statusLabel}</span>
+          </div>
+          <div style={{ margin:'0 16px 8px' }}>
+            <div style={{ background:'#f1f5f9', borderRadius:3, height:5, overflow:'hidden' }}>
+              <div style={{ width:`${Math.min(perc,1)*100}%`, height:5, borderRadius:3, background:progressColor }}/>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:6, padding:'0 16px 12px' }}>
+            <div style={{ flex:1, background:'#f8faff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
+              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.4, color:'#94a3b8', marginBottom:4 }}>Previsto</div>
+              <div style={{ fontSize:13, fontWeight:800, color:'#64748b', fontVariantNumeric:'tabular-nums' }}>{prev>0?fmt(prev):'—'}</div>
+            </div>
+            <div style={{ flex:1, background:'#f8faff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
+              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.4, marginBottom:4,
+                color:isEntrada?(lancAbs>0?COR.verde:'#94a3b8'):(lancAbs>0?COR.vermelho:'#94a3b8') }}>Realizado</div>
+              <div style={{ fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums',
+                color:isEntrada?(lancAbs>0?COR.verde:'#94a3b8'):(lancAbs>0?COR.vermelho:'#94a3b8') }}>
+                {lancAbs>0?fmt(lancAbs):'—'}
+              </div>
+            </div>
+            <div style={{ flex:1, background:tercBg, border:`1px solid ${tercBd}`, borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
+              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.4, color:tercColor, marginBottom:4 }}>{tercLabel}</div>
+              <div style={{ fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums', color:tercColor }}>{tercValue}</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    const renderMobileSecao = (
+      tipo: 'saida'|'entrada',
+      grupos: string[],
+      planCats: { nome: string; v: number[] }[],
+      realMap: Record<string, CatReal>,
+    ) => {
+      const isEntrada = tipo === 'entrada'
+      return grupos.flatMap(grupo => {
+        const catsPlan = planCats.filter(cat => {
+          const g = categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)?.grupo ?? '__sem_grupo__'
+          return g === grupo
+        })
+        if (catsPlan.length === 0) return []
+        const nomeOcorrencia = new Map<string, number>()
+        const catsComDesc = catsPlan.map(cat => {
+          const ocorrencia = nomeOcorrencia.get(cat.nome) ?? 0
+          nomeOcorrencia.set(cat.nome, ocorrencia + 1)
+          const matching = categorias.filter((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)
+          const descricao = matching[ocorrencia]?.descricao ?? ''
+          const catInfo   = matching[ocorrencia] ?? matching[0]
+          return { nome:cat.nome, v:cat.v, descricao, catInfo }
+        })
+        const grupoLabel = grupo==='__sem_grupo__' ? 'Outras' : grupo
+        return [
+          <div key={`sub-${grupo}`} style={{ padding:'7px 16px', fontSize:9, fontWeight:800, letterSpacing:.7,
+            display:'flex', alignItems:'center', gap:5, textTransform:'uppercase',
+            borderBottom:'1px solid #f1f5f9', background:'#f8faff', color:'#64748b' }}>
+            <span>{isEntrada ? '💰' : '📂'}</span>
+            <span>{grupoLabel}</span>
+          </div>,
+          ...catsComDesc.map((cat, idx) => {
+            const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
+            const cd      = realMap[realKey] ?? realMap[cat.nome]
+            const prev    = cat.v[mes] ?? 0
+            const lancAbs = (cd?.totalBanc ?? 0) + (cd?.totalCart ?? 0)
+            const uid     = `m-${tipo}-${grupo}-${cat.nome}-${idx}`
+            return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, cat.catInfo, uid)
+          }),
+        ]
+      })
+    }
+
+    return (
+      <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden',
+        background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
+
+        {/* GRADIENT HEADER */}
+        <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'44px 20px 14px', flexShrink:0 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.15)',
+                border:'1px solid rgba(255,255,255,.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
+                  <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
+                  <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
+                </svg>
+              </div>
+              <span style={{ color:'#fff', fontSize:16, fontWeight:700 }}>
+                Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+              </span>
+            </div>
+            <div style={{ width:32, height:32, borderRadius:'50%', background:'rgba(255,255,255,.2)',
+              display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:13, fontWeight:700 }}>
+              {userInitial}
+            </div>
+          </div>
+
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <button onClick={() => setAno(a => a-1)} style={btnStyle}>‹</button>
+              <span style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,.7)' }}>{ano}</span>
+              <button onClick={() => setAno(a => a+1)} style={btnStyle}>›</button>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <button onClick={() => { if(mes===0){setMes(11);setAno(a=>a-1)}else setMes(m=>m-1) }} style={btnStyle}>‹</button>
+              <span style={{ fontSize:18, fontWeight:800, color:'#fff', minWidth:90, textAlign:'center' }}>{MESES_FULL[mes]}</span>
+              <button onClick={() => { if(mes===11){setMes(0);setAno(a=>a+1)}else setMes(m=>m+1) }} style={btnStyle}>›</button>
+            </div>
+          </div>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:10, fontWeight:700, color:'#86efac', width:56, flexShrink:0 }}>↑ Entrada</span>
+              <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(percE,1)*100}%`, height:'100%', borderRadius:3, background:'#4ade80' }}/>
+              </div>
+              <span style={{ fontSize:10, fontWeight:800, minWidth:30, textAlign:'right', color:'#fbbf24' }}>
+                {totalPrevE>0 ? `${Math.round(percE*100)}%` : '—'}
+              </span>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:10, fontWeight:700, color:'#fca5a5', width:56, flexShrink:0 }}>↓ Saída</span>
+              <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(percS,1)*100}%`, height:'100%', borderRadius:3, background:'#f87171' }}/>
+              </div>
+              <span style={{ fontSize:10, fontWeight:800, minWidth:30, textAlign:'right',
+                color:percS<0.5?'#4ade80':percS<0.8?'#fbbf24':'#f87171' }}>
+                {totalPrevS>0 ? `${Math.round(percS*100)}%` : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* SALDO STRIP */}
+        <div style={{ background:'#fff', borderBottom:'2px solid #e2e8f0', padding:'10px 16px', flexShrink:0 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div>
+              <div style={{ fontSize:9, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', letterSpacing:.4, marginBottom:3 }}>
+                Saldo disponível
+              </div>
+              <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+                <span style={{ fontSize:17, fontWeight:800, color:corSaldoR, letterSpacing:-.4, fontVariantNumeric:'tabular-nums' }}>
+                  {(totalRealE===0&&totalRealS===0) ? '—' : fmt(saldoReal)}
+                </span>
+                {!(totalRealE===0&&totalRealS===0) && <>
+                  <span style={{ fontSize:11, color:'#94a3b8' }}>→ prev.</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:corSaldoP, fontVariantNumeric:'tabular-nums' }}>{fmt(saldoPrev)}</span>
+                </>}
+              </div>
+            </div>
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontSize:9, color:'#94a3b8', marginBottom:2 }}>Dia do mês</div>
+              <div style={{ fontSize:11, fontWeight:700, color:'#1a56db' }}>{diaHoje} de {totalDias}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* CONTENT */}
+        <div style={{ flex:1, overflowY:'auto', padding:'10px 14px 90px', display:'flex', flexDirection:'column', gap:10 }}>
+          {!dadosAno ? (
+            <div style={{ textAlign:'center', padding:'60px 20px', color:'#64748b' }}>
+              <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
+              <div style={{ fontSize:15, fontWeight:600, color:'#0f172a', marginBottom:6 }}>Sem planejamento para {ano}</div>
+              <div style={{ fontSize:13 }}>Crie um planejamento anual para acompanhar o orçamento.</div>
+            </div>
+          ) : (<>
+            {(dadosAno.entradas ?? []).length > 0 && (
+              <div style={{ borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'12px 16px', background:'#f0fdf4', borderBottom:'2px solid #dcfce7' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                    <span style={{ fontSize:16 }}>↑</span>
+                    <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase', letterSpacing:.6, color:'#16a34a' }}>Entradas</span>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
+                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6,
+                      background:'#dcfce7', color:'#166534' }}>
+                      {totalPrevE>0 ? `${Math.round(percE*100)}% recebido` : 'Sem previsão'}
+                    </span>
+                    {totalPrevE>0 && <span style={{ fontSize:10, color:'#94a3b8' }}>{fmt(totalRealE)} de {fmt(totalPrevE)}</span>}
+                  </div>
+                </div>
+                {renderMobileSecao('entrada', gruposEntrada, dadosAno.entradas ?? [], entradasMap)}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'10px 16px', background:'#f0fdf4', borderTop:'1px solid #dcfce7' }}>
+                  <span style={{ fontSize:12, fontWeight:800, color:'#16a34a' }}>Total Entradas</span>
+                  <div style={{ display:'flex', gap:12 }}>
+                    {([['Previsto','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#d97706',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
+                      <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                        <span style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.3, color:'#94a3b8', marginBottom:1 }}>{lbl}</span>
+                        <span style={{ fontSize:13, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums' }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(dadosAno.saidas ?? []).length > 0 && (
+              <div style={{ borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'12px 16px', background:'#fff1f2', borderBottom:'2px solid #fecdd3' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                    <span style={{ fontSize:16 }}>↓</span>
+                    <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase', letterSpacing:.6, color:'#dc2626' }}>Saídas</span>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
+                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6,
+                      background:percS<0.8?'#dcfce7':percS<1?'#fef9c3':'#fee2e2',
+                      color:percS<0.8?'#166534':percS<1?'#92400e':'#991b1b' }}>
+                      {totalPrevS>0 ? `${Math.round(percS*100)}% gasto` : 'Sem previsão'}
+                    </span>
+                    {totalPrevS>0 && <span style={{ fontSize:10, color:'#94a3b8' }}>{fmt(totalRealS)} de {fmt(totalPrevS)}</span>}
+                  </div>
+                </div>
+                {renderMobileSecao('saida', gruposSaida, dadosAno.saidas ?? [], saidasMap)}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'10px 16px', background:'#fff1f2', borderTop:'1px solid #fecdd3' }}>
+                  <span style={{ fontSize:12, fontWeight:800, color:'#dc2626' }}>Total Saídas</span>
+                  <div style={{ display:'flex', gap:12 }}>
+                    {([['Previsto','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],['Disponível','#16a34a',fmt(totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
+                      <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
+                        <span style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.3, color:'#94a3b8', marginBottom:1 }}>{lbl}</span>
+                        <span style={{ fontSize:13, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums' }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ borderRadius:18, background:'linear-gradient(135deg,#0f2878,#2563eb)',
+              padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between',
+              boxShadow:'0 4px 16px rgba(26,86,219,.25)' }}>
+              <div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:600, marginBottom:3 }}>
+                  Saldo previsto fim do mês
+                </div>
+                <div style={{ fontSize:9, color:'rgba(255,255,255,.4)' }}>
+                  {MESES_FULL[mes]} {ano} · com todas as fixas
+                </div>
+              </div>
+              <div style={{ fontSize:20, fontWeight:800, letterSpacing:-.5, fontVariantNumeric:'tabular-nums',
+                color:saldoPrev>=0?'#4ade80':'#f87171' }}>
+                {fmt(saldoPrev)}
+              </div>
+            </div>
+          </>)}
+        </div>
+
+        <BottomNav />
+      </div>
+    )
   }
 
   return (

@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
 import Login          from './pages/Login'
 import Dashboard      from './pages/Dashboard'
+import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import Acompanhamento  from './pages/Acompanhamento'
@@ -36,12 +37,13 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/"                element={<Protegido><QuickLaunch /></Protegido>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/acompanhamento" element={<Protegido><Acompanhamento /></Protegido>} />
           <Route path="/novo-lancamento" element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"   element={<Protegido><Configuracoes /></Protegido>} />
-          <Route path="*"               element={<Navigate to="/login" replace />} />
+          <Route path="*"               element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ToastProvider>
