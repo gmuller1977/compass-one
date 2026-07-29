@@ -13,7 +13,7 @@ const COR = {
   verde: '#16a34a', vermelho: '#dc2626',
 }
 
-type Aba = 'bancos' | 'cartoes' | 'categorias' | 'perfil' | 'preferencias'
+type Aba = 'home' | 'bancos' | 'cartoes' | 'categorias' | 'perfil' | 'preferencias'
 
 const CORES_PRESET = [
   '#1a56db','#16a34a','#dc2626','#d97706','#7c3aed',
@@ -234,25 +234,23 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
           })()}
         </div>
       </div>
-      {/* Toggle ativo/inativo */}
-      <div onClick={e => e.stopPropagation()} style={{
-        display:'flex', border:`1px solid ${COR.borda}`, borderRadius:7,
-        overflow:'hidden', flexShrink:0 }}>
-        <button onClick={() => { if (!c.ativa) toggleAtiva(c.id) }} style={{
-          padding:'3px 10px', border:'none', cursor: c.ativa ? 'default' : 'pointer',
-          fontSize:11, fontFamily:'inherit', fontWeight:600,
-          background: c.ativa ? '#f0fdf4' : COR.branco,
-          color: c.ativa ? COR.verde : COR.textoSuave }}>
-          Ativo
-        </button>
-        <button onClick={() => { if (c.ativa) toggleAtiva(c.id) }} style={{
-          padding:'3px 10px', border:'none', borderLeft:`1px solid ${COR.borda}`,
-          cursor: c.ativa ? 'pointer' : 'default',
-          fontSize:11, fontFamily:'inherit', fontWeight:600,
-          background: !c.ativa ? '#fff1f2' : COR.branco,
-          color: !c.ativa ? COR.vermelho : COR.textoSuave }}>
-          Inativo
-        </button>
+      {/* Toggle ativo/inativo — pill switch */}
+      <div onClick={e => { e.stopPropagation(); toggleAtiva(c.id) }}
+        title={c.ativa ? 'Inativar' : 'Ativar'}
+        style={{ cursor:'pointer', flexShrink:0, display:'flex', alignItems:'center', gap:6 }}>
+        <div style={{
+          width:40, height:22, borderRadius:11,
+          background: c.ativa ? COR.verde : '#cbd5e1',
+          position:'relative', transition:'background .2s',
+          flexShrink:0 }}>
+          <div style={{
+            width:16, height:16, borderRadius:'50%', background:'#fff',
+            position:'absolute', top:3,
+            left: c.ativa ? 20 : 3,
+            boxShadow:'0 1px 4px rgba(0,0,0,.25)',
+            transition:'left .2s',
+          }} />
+        </div>
       </div>
     </div>
   )
@@ -264,7 +262,7 @@ export default function Configuracoes() {
   const { toast } = useToast()
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'list'|'form'>('list')
-  const [aba,    setAba]    = useState<Aba>('bancos')
+  const [aba,    setAba]    = useState<Aba>('home')
   const { user, contas, categorias, setContas, setCategorias,
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
@@ -403,6 +401,8 @@ export default function Configuracoes() {
       return next
     })
   }
+  // moverConta preservada para futura reativação do reordenamento
+  void (moverConta as unknown as null)
 
   // ── Ações Categoria ──
   function novaCategoria() {
@@ -474,14 +474,14 @@ export default function Configuracoes() {
   }
 
   const inputSt: React.CSSProperties = {
-    border:`1.5px solid ${COR.borda}`, borderRadius:8,
-    padding:'8px 11px', fontSize:13, outline:'none',
-    background:'#f8fafc', fontFamily:'inherit',
+    border:'1.5px solid #e2e8f0', borderRadius:12,
+    padding:'11px 14px', fontSize:14, outline:'none',
+    background:'#fff', fontFamily:'inherit',
     color:COR.texto, width:'100%',
   }
   const labelSt: React.CSSProperties = {
-    display:'block', fontSize:11, fontWeight:600,
-    color:COR.textoSuave, marginBottom:5,
+    display:'block', fontSize:10, fontWeight:700,
+    color:COR.azul, textTransform:'uppercase', letterSpacing:'.5px', marginBottom:5,
   }
 
   const catsFiltradas = categorias
@@ -507,26 +507,56 @@ export default function Configuracoes() {
 
       <AppHeader currentPath="/configuracoes" />
 
-      {/* ABAS PRINCIPAIS */}
-      <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
-        padding: isMobile ? '8px 12px 0' : '10px 24px 0',
-        display:'flex', gap:3, flexShrink:0,
-        overflowX: isMobile ? 'auto' : 'visible',
-        WebkitOverflowScrolling: 'touch' as never,
-      }}>
-        {([['bancos','Bancos'],['cartoes','Cartões'],['categorias','Categorias'],['perfil','Perfil'],['preferencias','Preferências']] as const).map(([v,l]) => (
-          <button key={v} onClick={() => { setAba(v); setMobileView('list'); if (v==='bancos'||v==='cartoes') novaConta(v) }} style={{
-            padding:'7px 16px', borderRadius:'8px 8px 0 0',
-            border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
-            cursor:'pointer', fontSize:12, fontWeight:aba===v ? 700 : 500, fontFamily:'inherit',
-            background: aba===v ? COR.azul : '#f8faff', color: aba===v ? '#fff' : COR.textoSuave,
-            position:'relative', zIndex: aba===v ? 1 : 0 }}>
-            {l}
+      {/* HOME SCREEN */}
+      {aba === 'home' && (
+        <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '40px 24px',
+          display:'flex', flexDirection:'column', alignItems:'center' }}>
+          <h1 style={{ fontSize:22, fontWeight:800, color:COR.texto, marginBottom:28, textAlign:'center' }}>
+            Configurações
+          </h1>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, width:'100%', maxWidth:420 }}>
+            {[
+              { icon:'🏦', label:'Bancos',       fn: () => { setAba('bancos');     setMobileView('list'); novaConta('bancos') } },
+              { icon:'💳', label:'Cartões',      fn: () => { setAba('cartoes');    setMobileView('list'); novaConta('cartoes') } },
+              { icon:'🏷', label:'Categorias',   fn: () => { setAba('categorias'); setSubAbaCat('categorias'); setMobileView('list') } },
+              { icon:'📁', label:'Grupos',       fn: () => { setAba('categorias'); setSubAbaCat('grupos');     setMobileView('list') } },
+              { icon:'👤', label:'Perfil',       fn: () => setAba('perfil') },
+              { icon:'⚙️', label:'Preferências', fn: () => setAba('preferencias') },
+            ].map(card => (
+              <button key={card.label} onClick={card.fn} style={{
+                background:COR.branco, borderRadius:18, padding:'20px 10px 16px',
+                display:'flex', flexDirection:'column', alignItems:'center', gap:10,
+                border:`1px solid ${COR.borda}`, boxShadow:'0 2px 10px rgba(0,0,0,.06)',
+                cursor:'pointer', fontFamily:'inherit', transition:'box-shadow .15s',
+              }}>
+                <span style={{ fontSize:30 }}>{card.icon}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:COR.texto }}>{card.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* BACK BAR — exibida em todas as seções exceto home */}
+      {aba !== 'home' && (
+        <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
+          padding:'10px 16px', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+          <button onClick={() => { setAba('home'); setMobileView('list') }} style={{
+            border:'none', background:'transparent', color:COR.azul,
+            fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', padding:0 }}>
+            ‹ Voltar
           </button>
-        ))}
-      </div>
+          <span style={{ fontSize:14, fontWeight:700, color:COR.texto, marginLeft:4 }}>
+            {aba === 'bancos' ? '🏦 Bancos'
+              : aba === 'cartoes' ? '💳 Cartões'
+              : aba === 'categorias' ? (subAbaCat === 'grupos' ? '📁 Grupos' : '🏷 Categorias')
+              : aba === 'perfil' ? '👤 Perfil' : '⚙️ Preferências'}
+          </span>
+        </div>
+      )}
 
       {/* CONTEÚDO */}
+      {aba !== 'home' && (
       <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? 12 : 20, gap:16 }}>
 
         {/* ══ ABA BANCOS / CARTÕES ══ */}
@@ -569,53 +599,45 @@ export default function Configuracoes() {
                         {titulo}
                       </div>
                       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                        {grupo.map((c, grupoIdx) => (
-                          <div key={c.id} onClick={() => editarConta(c)} style={{
+                        {grupo.map((c) => (
+                          <div key={c.id} style={{
                             background:COR.branco, border:`1px solid ${COR.borda}`,
                             borderRadius:12, padding:'14px 16px', cursor:'pointer',
                             display:'flex', alignItems:'center', gap:14,
                             borderLeft:`4px solid ${c.cor}`,
-                            boxShadow: editContaId===c.id ? `0 0 0 2px ${COR.azul}` : 'none' }}>
-                            <div style={{ width:42, height:42, borderRadius:12, background:c.cor,
+                            boxShadow: editContaId===c.id ? `0 0 0 2px ${COR.azul}` : '0 1px 4px rgba(0,0,0,.05)' }}>
+                            <div style={{ width:48, height:48, borderRadius:14, background:c.cor+'22',
                               display:'flex', alignItems:'center', justifyContent:'center',
-                              fontSize:20, flexShrink:0 }}>
+                              fontSize:22, flexShrink:0 }}>
                               {c.icone}
                             </div>
                             <div style={{ flex:1, minWidth:0 }}>
-                              <div style={{ fontSize:14, fontWeight:600, color:COR.texto }}>
-                                {c.tipo==='cartao' ? 'Cartão de Crédito' : c.banco}
+                              <div style={{ fontSize:14, fontWeight:700, color:COR.texto }}>
+                                {c.tipo==='cartao' ? (c.apelido || c.banco) : c.banco}
                               </div>
                               <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>
                                 {c.tipo==='cartao'
                                   ? `${c.banco}${c.apelido ? ` · ${c.apelido}` : ''}`
                                   : `${c.nome}${c.agencia ? ` · Ag ${c.agencia}` : ''}${c.numeroConta ? ` · CC ${c.numeroConta}` : ''}`}
                               </div>
+                              <button onClick={() => editarConta(c)} style={{
+                                marginTop:6, border:`1px solid ${COR.borda}`, borderRadius:7,
+                                background:COR.branco, color:COR.azul, fontSize:11, fontWeight:600,
+                                cursor:'pointer', padding:'3px 10px', fontFamily:'inherit' }}>
+                                ✏ Editar
+                              </button>
                             </div>
-                            {c.tipo !== 'cartao' && (
-                              <div style={{ display:'flex', gap:2, flexShrink:0 }}
-                                onClick={e => e.stopPropagation()}>
-                                <button onClick={() => moverConta(c.id,'up')} disabled={grupoIdx===0}
-                                  title="Mover para cima"
-                                  style={{ background:'none', border:'none',
-                                    cursor: grupoIdx===0 ? 'default' : 'pointer',
-                                    fontSize:18, padding:'2px 6px', color: COR.textoSuave,
-                                    opacity: grupoIdx===0 ? 0.2 : 0.65 }}>↑</button>
-                                <button onClick={() => moverConta(c.id,'down')} disabled={grupoIdx===grupo.length-1}
-                                  title="Mover para baixo"
-                                  style={{ background:'none', border:'none',
-                                    cursor: grupoIdx===grupo.length-1 ? 'default' : 'pointer',
-                                    fontSize:18, padding:'2px 6px', color: COR.textoSuave,
-                                    opacity: grupoIdx===grupo.length-1 ? 0.2 : 0.65 }}>↓</button>
-                              </div>
-                            )}
                             <div style={{ textAlign:'right', flexShrink:0 }}>
                               {c.tipo==='cartao' ? (
                                 <>
                                   <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>
-                                    Limite: {fmt(c.limiteCartao??0)}
+                                    {fmt(c.limiteCartao??0)}
                                   </div>
                                   <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
-                                    Fecha dia {c.diaFechamento} · Vence dia {c.diaVencimento}
+                                    Limite
+                                  </div>
+                                  <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
+                                    Fecha {c.diaFechamento} · Vence {c.diaVencimento}
                                   </div>
                                 </>
                               ) : (
@@ -664,24 +686,67 @@ export default function Configuracoes() {
                   )}
                 </div>
 
-                {/* Preview */}
-                <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:12, marginBottom:18 }}>
-                  <div style={{ width:56, height:56, borderRadius:16, background:formConta.cor,
-                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>
-                    {formConta.icone}
+                {/* Preview — cartão azul (banco) ou preview cor (cartão de crédito) */}
+                {formConta.tipo !== 'cartao' ? (
+                  <div style={{ borderRadius:18, padding:'18px 20px', marginBottom:18,
+                    background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                    color:'#fff', display:'flex', alignItems:'center', gap:14,
+                    boxShadow:'0 6px 20px rgba(26,86,219,.30)' }}>
+                    <div style={{ width:52, height:52, borderRadius:14, background:'rgba(255,255,255,.15)',
+                      display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>
+                      {formConta.icone}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:15, fontWeight:800, opacity:.95 }}>
+                        {formConta.nome || 'Titular'}
+                      </div>
+                      <div style={{ fontSize:12, opacity:.75, marginTop:2 }}>
+                        {formConta.banco || 'Banco'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign:'right', flexShrink:0 }}>
+                      <div style={{ fontSize:16, fontWeight:800 }}>
+                        {fmt(formConta.saldoInicial || 0)}
+                      </div>
+                      <div style={{ fontSize:10, opacity:.7, marginTop:2 }}>Saldo inicial</div>
+                    </div>
+                    {editContaId && (
+                      <button
+                        onClick={() => setFormConta(prev => ({ ...prev, preferida: !prev.preferida }))}
+                        title={formConta.preferida ? 'Remover como preferida' : 'Marcar como preferida'}
+                        style={{ background:'none', border:'none', cursor:'pointer', padding:0,
+                          fontSize:22, lineHeight:1, alignSelf:'flex-start',
+                          color: formConta.preferida ? '#fbbf24' : 'rgba(255,255,255,.4)' }}>
+                        ★
+                      </button>
+                    )}
                   </div>
-                  {editContaId && formConta.tipo !== 'cartao' && (
-                    <button
-                      onClick={() => setFormConta(prev => ({ ...prev, preferida: !prev.preferida }))}
-                      title={formConta.preferida ? 'Remover como preferida' : 'Marcar como banco preferido'}
-                      style={{ background:'none', border:'none', cursor:'pointer', padding:'4px 6px',
-                        fontSize:48, lineHeight:1,
-                        color: formConta.preferida ? '#f59e0b' : COR.textoSuave,
-                        opacity: formConta.preferida ? 1 : 0.3 }}>
-                      ★
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  <div style={{ borderRadius:18, padding:'18px 20px', marginBottom:18,
+                    background:`linear-gradient(135deg,${formConta.cor},${formConta.cor}cc)`,
+                    color:'#fff', display:'flex', alignItems:'center', gap:14,
+                    boxShadow:`0 6px 20px ${formConta.cor}55` }}>
+                    <div style={{ width:52, height:52, borderRadius:14, background:'rgba(255,255,255,.15)',
+                      display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>
+                      {formConta.icone}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:14, fontWeight:800, opacity:.95 }}>
+                        {formConta.apelido || formConta.banco || 'Cartão'}
+                      </div>
+                      <div style={{ fontSize:12, opacity:.75, marginTop:2 }}>
+                        {formConta.banco || 'Banco'}
+                        {formConta.diaFechamento ? ` · Fecha dia ${formConta.diaFechamento}` : ''}
+                      </div>
+                    </div>
+                    <div style={{ textAlign:'right', flexShrink:0 }}>
+                      <div style={{ fontSize:14, fontWeight:800 }}>
+                        {fmt(formConta.limiteCartao ?? 0)}
+                      </div>
+                      <div style={{ fontSize:10, opacity:.7, marginTop:2 }}>Limite</div>
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                   {/* ── BANCO (primeiro para cartão, com opção Outro) ── */}
@@ -714,12 +779,21 @@ export default function Configuracoes() {
                           }}
                           placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
                       </div>
-                      <div>
-                        <label style={labelSt}>Dia fechamento</label>
-                        <input type="number" min="1" max="31"
-                          value={formConta.diaFechamento||''}
-                          onChange={e => setFormConta(p=>({...p, diaFechamento:parseInt(e.target.value)||undefined}))}
-                          placeholder="Dia" className="campo-cfg" style={inputSt} />
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                        <div>
+                          <label style={labelSt}>Dia fechamento</label>
+                          <input type="number" min="1" max="31"
+                            value={formConta.diaFechamento||''}
+                            onChange={e => setFormConta(p=>({...p, diaFechamento:parseInt(e.target.value)||undefined}))}
+                            placeholder="Ex: 10" className="campo-cfg" style={inputSt} />
+                        </div>
+                        <div>
+                          <label style={labelSt}>Dia vencimento</label>
+                          <input type="number" min="1" max="31"
+                            value={formConta.diaVencimento||''}
+                            onChange={e => setFormConta(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
+                            placeholder="Ex: 17" className="campo-cfg" style={inputSt} />
+                        </div>
                       </div>
                       <div>
                         <label style={labelSt}>Apelido do cartão <span style={{ fontWeight:400, color:COR.textoSuave }}>(opcional)</span></label>
@@ -999,11 +1073,31 @@ export default function Configuracoes() {
                   )}
                 </div>
 
-                {/* Preview */}
-                <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
-                  <div style={{ width:56, height:56, borderRadius:16, background:formCat.cor,
-                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>
+                {/* Preview card */}
+                <div style={{ background:'#fff', borderRadius:18, padding:16,
+                  boxShadow:'0 2px 12px rgba(0,0,0,.08)', marginBottom:18,
+                  display:'flex', alignItems:'center', gap:14, border:`1px solid ${COR.borda}` }}>
+                  <div style={{ width:52, height:52, borderRadius:16, background:formCat.cor,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontSize:24, flexShrink:0 }}>
                     {formCat.icone}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:COR.texto }}>
+                      {formCat.nome || 'Nome da categoria'}
+                    </div>
+                    <div style={{ display:'flex', gap:5, marginTop:6, flexWrap:'wrap' }}>
+                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:4, fontWeight:700,
+                        background: formCat.tipo === 'entrada' ? '#dcfce7' : '#fee2e2',
+                        color: formCat.tipo === 'entrada' ? COR.verde : COR.vermelho }}>
+                        {formCat.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                      </span>
+                      <span style={{ fontSize:10, padding:'2px 8px', borderRadius:4, fontWeight:700,
+                        background: formCat.fixa ? '#fef9c3' : '#f1f5f9',
+                        color: formCat.fixa ? '#92400e' : '#64748b' }}>
+                        {formCat.fixa ? 'Fixa' : 'Variável'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1658,6 +1752,7 @@ export default function Configuracoes() {
         )}
 
       </div>
+      )}
     </div>
   )
 }
