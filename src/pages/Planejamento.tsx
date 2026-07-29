@@ -1035,20 +1035,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       ...(gruposMap.has('__sem_grupo__') ? ['__sem_grupo__'] : []),
     ]
 
-    // Helper: valor de uma cat em um plano
-    const catValFrom = (tipo: 'e'|'s', cat: Cat, data: AnoData | undefined): number => {
-      if (!data) return 0
-      const lista = tipo === 'e' ? data.entradas : data.saidas
-      const found = cat.id
-        ? (lista.find(c => c.id === cat.id) ?? lista.find(c => c.nome === cat.nome))
-        : lista.find(c => c.nome === cat.nome)
-      return found?.v[mi] ?? 0
-    }
-
-    const dadosPrev = planos[anoAtual] as AnoData | undefined
-    const dadosRealLocal = planosReal[anoAtual] as AnoData | undefined
-    const hasReal = !!dadosRealLocal
-
     const renderCatRow = (tipo: 'e'|'s', cat: Cat, ri: number) => {
       const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
       const catInfo = cat.id

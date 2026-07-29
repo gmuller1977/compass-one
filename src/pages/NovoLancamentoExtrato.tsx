@@ -1755,7 +1755,7 @@ export default function NovoLancamentoExtrato() {
         })}
 
         {/* Saldo final — mobile inline (dentro do scroll) */}
-        {isMobile && tabPrincipal !== 'consolidado' && (
+        {isMobile && (
           <div style={{margin:'4px 0 8px',borderRadius:14,
             background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
             padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
