@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
 import Login          from './pages/Login'
+import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
 import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
@@ -36,7 +37,8 @@ export default function App() {
     <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login"    element={<Login />} />
+          <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/"                element={<Protegido><QuickLaunch /></Protegido>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
