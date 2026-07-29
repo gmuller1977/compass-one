@@ -37,6 +37,7 @@ export type Categoria = {
   diaVencimento?: number; descricao?: string
   numeroParcelas?: number
   contaDebitoId?: string
+  pinQuick?: boolean
 }
 
 export type PlanoCat     = { id?: string; nome: string; t?: string; v: number[] }

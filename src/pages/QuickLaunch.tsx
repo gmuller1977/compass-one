@@ -39,7 +39,7 @@ function NOMES_MESES_SHORT() {
 const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb']
 
 export default function QuickLaunch() {
-  const { user, contas, categorias, extratoData, updateExtratoMes } = useApp()
+  const { user, contas, categorias, extratoData, updateExtratoMes, setCategorias } = useApp()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
@@ -53,21 +53,19 @@ export default function QuickLaunch() {
   const mes  = hoje.getMonth()
   const dia  = hoje.getDate()
 
-  // Conta selecionada (cicla entre contas bancárias + dinheiro)
   const [contaIdx, setContaIdx] = useState(0)
-  // Categoria selecionada para input rápido
   const [catSel, setCatSel] = useState<string | null>(null)
-  // Tipo do lançamento rápido
   const [tipoSel, setTipoSel] = useState<'saida' | 'entrada'>('saida')
-  // Valor e descrição do input rápido
   const [valor, setValor]   = useState('')
   const [desc,  setDesc]    = useState('')
-  // Feedback toast
   const [feedback, setFeedback] = useState(false)
+
+  // Gerenciamento do grid
+  const [gerenciar, setGerenciar] = useState(false)
+  const [pinLocal, setPinLocal]   = useState<Set<string>>(new Set())
 
   const valorRef = useRef<HTMLInputElement>(null)
 
-  // Contas exceto cartão de crédito (para saldo)
   const contasBanco = useMemo(
     () => contas.filter(c => c.tipo !== 'cartao'),
     [contas]
@@ -79,13 +77,11 @@ export default function QuickLaunch() {
     lancamentos: {}, saldoBanco: '0',
   }
 
-  // Saldo atual (saldoBanco se definido, senão saldoInicial)
   const saldoAtual = useMemo(() => {
     if (!contaSel) return 0
     if (mesDados.saldoBanco && mesDados.saldoBanco !== '0') {
       return parseBRL(mesDados.saldoBanco)
     }
-    // Fallback: saldoInicial + todos lançamentos do mês até hoje
     let base = contaSel.saldoInicial
     Object.entries(mesDados.lancamentos).forEach(([d, lcs]) => {
       if (Number(d) <= dia) {
@@ -95,19 +91,52 @@ export default function QuickLaunch() {
     return base
   }, [contaSel, mesDados, dia])
 
-  // Gastos de hoje
   const gastosHoje = useMemo(() => {
     const lcsHoje = mesDados.lancamentos[dia] ?? []
     return lcsHoje.filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
   }, [mesDados, dia])
 
-  // Categorias ativas para grid rápido
-  const catsGrid = useMemo(
-    () => categorias.filter(c => c.ativa).slice(0, 8),
+  // Categorias variáveis (não fixas) para o gerenciador
+  const catsVariaveis = useMemo(
+    () => categorias.filter(c => !c.fixa),
     [categorias]
   )
 
-  // Último valor por categoria (últimos 30 dias, todos os meses disponíveis)
+  // Se alguma categoria tem pinQuick definido, usa-o; senão mostra todas variáveis ativas
+  const hasAnyPin = useMemo(
+    () => categorias.some(c => c.pinQuick === true),
+    [categorias]
+  )
+
+  const catsGrid = useMemo(() => {
+    if (hasAnyPin) return categorias.filter(c => c.ativa && c.pinQuick === true)
+    return categorias.filter(c => c.ativa && !c.fixa)
+  }, [categorias, hasAnyPin])
+
+  function abrirGerenciar() {
+    if (hasAnyPin) {
+      setPinLocal(new Set(categorias.filter(c => c.pinQuick === true).map(c => c.id)))
+    } else {
+      // Inicializa com todas as variáveis ativas selecionadas
+      setPinLocal(new Set(categorias.filter(c => c.ativa && !c.fixa).map(c => c.id)))
+    }
+    setGerenciar(true)
+  }
+
+  function toggleLocal(catId: string) {
+    setPinLocal(prev => {
+      const next = new Set(prev)
+      if (next.has(catId)) next.delete(catId)
+      else next.add(catId)
+      return next
+    })
+  }
+
+  function salvarPins() {
+    setCategorias(prev => prev.map(c => ({ ...c, pinQuick: pinLocal.has(c.id) })))
+    setGerenciar(false)
+  }
+
   function ultimoValorCat(catNome: string): number | null {
     const keys = Object.keys(extratoData as Record<string, DadosMes>)
     let max = 0
@@ -204,7 +233,7 @@ export default function QuickLaunch() {
         </div>
       </div>
 
-      {/* Conta card — overlap do header */}
+      {/* Conta card */}
       {contaSel && (
         <div
           onClick={() => setContaIdx(i => (i + 1) % contasBanco.length)}
@@ -267,11 +296,31 @@ export default function QuickLaunch() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <span>⚡ Lançamento rápido</span>
+          <button
+            onClick={abrirGerenciar}
+            style={{
+              border: `1px solid ${COR.borda}`, background: '#fff', color: COR.azul,
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              borderRadius: 20, padding: '4px 10px',
+              fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >✏️ Editar</button>
         </div>
 
         {catsGrid.length === 0 ? (
-          <div style={{ textAlign: 'center', color: COR.textoSuave, fontSize: 13, marginTop: 24 }}>
-            Nenhuma categoria configurada ainda.
+          <div style={{ textAlign: 'center', padding: '24px 16px' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+            <div style={{ color: COR.textoSuave, fontSize: 13, marginBottom: 12 }}>
+              Nenhuma categoria no lançamento rápido.
+            </div>
+            <button
+              onClick={abrirGerenciar}
+              style={{
+                border: 'none', borderRadius: 12, padding: '10px 20px',
+                background: COR.azul, color: '#fff', fontSize: 13,
+                fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >Adicionar categorias</button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 8 }}>
@@ -297,7 +346,7 @@ export default function QuickLaunch() {
                     {c.nome}
                   </span>
                   <span style={{ fontSize: 9, color: '#94a3b8' }}>
-                    {ult ? `últ. ${fmt(ult).replace('R$ ', 'R$ ')}` : c.tipo}
+                    {ult ? `últ. ${fmt(ult)}` : c.tipo}
                   </span>
                 </button>
               )
@@ -387,6 +436,145 @@ export default function QuickLaunch() {
         }}>
           ✓ Lançamento registrado!
         </div>
+      )}
+
+      {/* Bottom sheet: gerenciar categorias do grid */}
+      {gerenciar && (
+        <>
+          <div
+            onClick={() => setGerenciar(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 110,
+            }}
+          />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 111,
+            background: '#fff', borderRadius: '20px 20px 0 0',
+            maxHeight: '82vh', display: 'flex', flexDirection: 'column',
+            animation: 'slideUp .25s ease',
+          }}>
+            {/* Handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0' }}/>
+            </div>
+
+            {/* Header */}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+              padding: '12px 20px 14px',
+              borderBottom: `1px solid ${COR.borda}`,
+            }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: COR.texto }}>
+                  Categorias no Início
+                </div>
+                <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 3 }}>
+                  Categorias variáveis disponíveis no lançamento rápido
+                </div>
+              </div>
+              <button
+                onClick={() => setGerenciar(false)}
+                style={{
+                  border: 'none', background: 'transparent',
+                  fontSize: 20, color: '#94a3b8', cursor: 'pointer', padding: 4, flexShrink: 0,
+                }}
+              >✕</button>
+            </div>
+
+            {/* Lista */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {catsVariaveis.length === 0 ? (
+                <div style={{ padding: 32, textAlign: 'center', color: COR.textoSuave, fontSize: 13 }}>
+                  Nenhuma categoria variável cadastrada.
+                </div>
+              ) : (
+                ['saida', 'entrada'].map(tipo => {
+                  const cats = catsVariaveis.filter(c => c.tipo === tipo)
+                  if (cats.length === 0) return null
+                  return (
+                    <div key={tipo}>
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, color: COR.textoSuave,
+                        textTransform: 'uppercase', letterSpacing: '.5px',
+                        padding: '12px 20px 6px',
+                        background: '#f8fafc',
+                      }}>
+                        {tipo === 'saida' ? '📤 Saídas' : '📥 Entradas'}
+                      </div>
+                      {cats.map(c => {
+                        const ativo = pinLocal.has(c.id)
+                        return (
+                          <div
+                            key={c.id}
+                            onClick={() => toggleLocal(c.id)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '12px 20px', cursor: 'pointer',
+                              borderBottom: `1px solid ${COR.borda}`,
+                              background: ativo ? '#f0f7ff' : '#fff',
+                              transition: 'background .15s',
+                            }}
+                          >
+                            <span style={{ fontSize: 24, opacity: c.ativa ? 1 : .4, flexShrink: 0 }}>
+                              {c.icone}
+                            </span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: 14, fontWeight: 600,
+                                color: c.ativa ? COR.texto : '#94a3b8',
+                              }}>
+                                {c.nome}
+                              </div>
+                              {!c.ativa && (
+                                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>
+                                  inativa
+                                </div>
+                              )}
+                            </div>
+                            {/* Toggle */}
+                            <div style={{
+                              width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+                              background: ativo ? COR.azul : '#e2e8f0',
+                              position: 'relative', transition: 'background .2s',
+                            }}>
+                              <div style={{
+                                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                                position: 'absolute', top: 2,
+                                left: ativo ? 22 : 2, transition: 'left .2s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                              }}/>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '12px 20px 20px',
+              borderTop: `1px solid ${COR.borda}`,
+            }}>
+              <div style={{ fontSize: 11, color: COR.textoSuave, textAlign: 'center', marginBottom: 10 }}>
+                {pinLocal.size} categoria{pinLocal.size !== 1 ? 's' : ''} selecionada{pinLocal.size !== 1 ? 's' : ''}
+              </div>
+              <button
+                onClick={salvarPins}
+                style={{
+                  width: '100%', padding: '13px', border: 'none', borderRadius: 13,
+                  background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                  color: '#fff', fontSize: 15, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       <BottomNav />
