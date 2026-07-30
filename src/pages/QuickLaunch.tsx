@@ -41,6 +41,36 @@ function parseBRL(s: string) {
 function NOMES_MESES_SHORT() {
   return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 }
+function calcSaldoBanco(
+  contaId: string, saldoInicial: number,
+  extratoData: Record<string, import('../context/AppContext').DadosMes>,
+  ano: number, mes: number, dia: number,
+): number {
+  const prefix = contaId + '-'
+  const curYM  = ano * 100 + (mes + 1)
+  const curKey = mesKey(contaId, ano, mes)
+  const curDados = extratoData[curKey]
+  if (curDados?.saldoBanco && curDados.saldoBanco !== '0') return parseBRL(curDados.saldoBanco)
+  let baseYM = 0, base = saldoInicial
+  for (const [k, v] of Object.entries(extratoData)) {
+    if (!k.startsWith(prefix) || !v.saldoBanco || v.saldoBanco === '0') continue
+    const [sy, sm] = k.slice(prefix.length).split('-')
+    const ym = parseInt(sy) * 100 + parseInt(sm)
+    if (ym < curYM && ym > baseYM) { baseYM = ym; base = parseBRL(v.saldoBanco) }
+  }
+  for (const [k, v] of Object.entries(extratoData)) {
+    if (!k.startsWith(prefix)) continue
+    const [sy, sm] = k.slice(prefix.length).split('-')
+    const ym = parseInt(sy) * 100 + parseInt(sm)
+    if (ym <= baseYM || ym > curYM) continue
+    const isCur = ym === curYM
+    Object.entries(v.lancamentos).forEach(([d, lcs]) => {
+      if (isCur && Number(d) > dia) return
+      lcs.forEach(l => { base += l.tipo === 'entrada' ? l.valor : -l.valor })
+    })
+  }
+  return base
+}
 const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb']
 
 export default function QuickLaunch() {
@@ -102,36 +132,16 @@ export default function QuickLaunch() {
         .flat().filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
       return limite - total
     }
-    // Saldo manual definido no mês atual → usa diretamente
-    if (mesDadosBanco.saldoBanco && mesDadosBanco.saldoBanco !== '0') {
-      return parseBRL(mesDadosBanco.saldoBanco)
+    return calcSaldoBanco(contaSel.id, contaSel.saldoInicial, extratoData as Record<string, DadosMes>, ano, mes, dia)
+  }, [contaSel, isCartao, extratoData, mesDadosCartao, ano, mes, dia])
+
+  const saldosBanco = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const c of contasBanco) {
+      map[c.id] = calcSaldoBanco(c.id, c.saldoInicial, extratoData as Record<string, DadosMes>, ano, mes, dia)
     }
-    // Busca o mês mais recente (antes do atual) com saldo manual como base
-    const prefix = contaSel.id + '-'
-    const curYM  = ano * 100 + (mes + 1)
-    let baseYM   = 0
-    let base     = contaSel.saldoInicial
-    for (const [k, v] of Object.entries(extratoData as Record<string, DadosMes>)) {
-      if (!k.startsWith(prefix)) continue
-      if (!v.saldoBanco || v.saldoBanco === '0') continue
-      const [sy, sm] = k.slice(prefix.length).split('-')
-      const ym = parseInt(sy) * 100 + parseInt(sm)
-      if (ym < curYM && ym > baseYM) { baseYM = ym; base = parseBRL(v.saldoBanco) }
-    }
-    // Acumula transações dos meses após a base até o mês atual
-    for (const [k, v] of Object.entries(extratoData as Record<string, DadosMes>)) {
-      if (!k.startsWith(prefix)) continue
-      const [sy, sm] = k.slice(prefix.length).split('-')
-      const ym = parseInt(sy) * 100 + parseInt(sm)
-      if (ym <= baseYM || ym > curYM) continue
-      const isCur = ym === curYM
-      Object.entries(v.lancamentos).forEach(([d, lcs]) => {
-        if (isCur && Number(d) > dia) return
-        lcs.forEach(l => { base += l.tipo === 'entrada' ? l.valor : -l.valor })
-      })
-    }
-    return base
-  }, [contaSel, isCartao, extratoData, mesDadosBanco, mesDadosCartao, ano, mes, dia])
+    return map
+  }, [contasBanco, extratoData, ano, mes, dia])
 
   const gastosHoje = useMemo(() => {
     if (isCartao) {
@@ -276,7 +286,7 @@ export default function QuickLaunch() {
       {/* Header */}
       <div style={{
         background: `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding: '52px 20px 32px', flexShrink: 0,
+        padding: '16px 20px 32px', flexShrink: 0,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
@@ -577,6 +587,9 @@ export default function QuickLaunch() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{c.banco}</div>
                           <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1 }}>{c.nome}</div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: saldosBanco[c.id] >= 0 ? COR.verde : COR.vermelho, flexShrink: 0 }}>
+                          {fmt(saldosBanco[c.id] ?? 0)}
                         </div>
                         {sel && (
                           <div style={{
