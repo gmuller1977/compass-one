@@ -93,7 +93,7 @@ export default function NovoLancamentoClassico() {
   const [anoAtual,    setAnoAtual]    = useState(agora.getFullYear())
   const [contaAtual,  setContaAtual]  = useState('cc')
   const [dados,       setDados]       = useState<Record<string, MesData>>(dadosIniciais)
-  const [busca,       setBusca]       = useState('')
+
 
   const [fTipo,      setFTipo]      = useState<TipoLanc>('saida')
   const [fDesc,      setFDesc]      = useState('')
@@ -198,11 +198,9 @@ export default function NovoLancamentoClassico() {
   }
 
   const lancsFiltrados = useMemo(() => {
-    const termo = busca.toLowerCase()
     return mesDados.lancamentos
-      .filter(l => !termo || l.descricao.toLowerCase().includes(termo) || l.categoria.toLowerCase().includes(termo))
       .sort((a,b) => b.data.localeCompare(a.data))
-  }, [mesDados.lancamentos, busca])
+  }, [mesDados.lancamentos])
 
   const grupos = useMemo(() => {
     const g: Record<string, Lancamento[]> = {}
@@ -486,13 +484,6 @@ export default function NovoLancamentoClassico() {
             )}
           </div>
 
-          {/* Busca */}
-          <div style={{padding:'8px 16px 4px',background:COR.branco,
-            borderBottom:`1px solid ${COR.borda}`,flexShrink:0}}>
-            <input value={busca} onChange={e=>setBusca(e.target.value)}
-              placeholder="🔍 Buscar lançamento..."
-              style={{...inputSt,background:'#f8faff'}}/>
-          </div>
 
           {/* Lista */}
           <div style={{flex:1,overflowY:'auto',padding:'8px 16px'}}>

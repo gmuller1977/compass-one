@@ -162,10 +162,10 @@ export default function NovoLancamentoExtrato() {
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
   const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('extrato')
-  const [mobileBusca,   setMobileBusca]   = useState('')
+
   const [mobileDiaForm, setMobileDiaForm] = useState<number|null>(null)
   const [mobileCartaoId, setMobileCartaoId] = useState<string|null>(null)
-  const busca = isMobile ? mobileBusca : ''
+
 
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
@@ -991,19 +991,6 @@ export default function NovoLancamentoExtrato() {
         </div>
       )}
 
-      {/* SEARCH — mobile */}
-      {isMobile && tabPrincipal !== 'cartao' && (
-        <div style={{padding:'0 14px 8px',flexShrink:0}}>
-          <input
-            value={mobileBusca}
-            onChange={e=>setMobileBusca(e.target.value)}
-            placeholder="Buscar categoria, descrição ou valor..."
-            style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-              padding:'9px 14px',fontSize:13,color:COR.texto,
-              background:COR.branco,outline:'none',fontFamily:'inherit',boxSizing:'border-box' as never}}
-          />
-        </div>
-      )}
 
       {/* DESKTOP: tab selector */}
       {!isMobile && (
@@ -1383,12 +1370,7 @@ export default function NovoLancamentoExtrato() {
           const semana    = diaSemana(dia, mes, ano)
           const fs        = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
           const lsRaw     = mesDados.lancamentos[dia] ?? []
-          const ls        = busca.trim() ? lsRaw.filter(l => {
-            const q = busca.toLowerCase()
-            return l.categoria?.toLowerCase().includes(q) ||
-              l.descricao?.toLowerCase().includes(q) ||
-              String(l.valor).includes(q)
-          }) : lsRaw
+          const ls        = lsRaw
           const temItens  = fs.length>0 || ls.length>0
           const saldoIni  = dia===1 ? saldoBase : (saldosDia[dia-1] ?? saldoBase)
           const diaFuturo = !passado && !ehHoje

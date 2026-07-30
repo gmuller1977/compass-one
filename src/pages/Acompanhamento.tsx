@@ -388,7 +388,6 @@ export default function Acompanhamento() {
         const g = categorias.find((c: Categoria) => c.nome === cat.nome && c.tipo === tipo)?.grupo ?? '__sem_grupo__'
         return g === grupo
       })
-      if (catsPlan.length === 0) return null
 
       // Para nomes duplicados no plano, pareia com a nª categoria do cadastro (pela ordem)
       const nomeOcorrencia = new Map<string, number>()
@@ -399,6 +398,19 @@ export default function Acompanhamento() {
         const descricao = matching[ocorrencia]?.descricao ?? ''
         return { ...cat, descricao }
       })
+      // Include categories with actual transactions but no plan entry
+      const plannedNames = new Set(catsPlan.map(c => c.nome))
+      const extraCats = Object.keys(realMap)
+        .map(k => k.includes('||') ? k.split('||')[0] : k)
+        .filter((n,i,a) => a.indexOf(n)===i && !plannedNames.has(n))
+        .flatMap(nome => {
+          const cat = categorias.find((c: Categoria) => c.nome===nome && c.tipo===tipo)
+          if (!cat || !cat.ativa || cartaoNomes.has(cat.nome.toLowerCase())) return []
+          if ((cat.grupo ?? '__sem_grupo__') !== grupo) return []
+          return [{ nome, v: Array(12).fill(0) as number[], descricao: cat.descricao ?? '' }]
+        })
+      const allCats = [...catsComDesc, ...extraCats]
+      if (allCats.length === 0) return null
 
       return (
         <div key={grupo} style={{marginBottom:4}}>
@@ -416,7 +428,7 @@ export default function Acompanhamento() {
 
           {/* Categorias */}
           <div style={{background:COR.branco}}>
-            {catsComDesc.map((cat, idx) => {
+            {allCats.map((cat, idx) => {
               const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
               const cd  = realMap[realKey] ?? realMap[cat.nome]
               const uid = `${tipo}-${grupo}-${cat.nome}-${idx}`
@@ -637,7 +649,6 @@ export default function Acompanhamento() {
           const g = categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)?.grupo ?? '__sem_grupo__'
           return g === grupo
         })
-        if (catsPlan.length === 0) return []
         const nomeOcorrencia = new Map<string, number>()
         const catsComDesc = catsPlan.map(cat => {
           const ocorrencia = nomeOcorrencia.get(cat.nome) ?? 0
@@ -647,9 +658,22 @@ export default function Acompanhamento() {
           const catInfo   = matching[ocorrencia] ?? matching[0]
           return { nome:cat.nome, v:cat.v, descricao, catInfo }
         })
+        // Include categories with actual transactions but no plan entry
+        const plannedNames = new Set(catsPlan.map(c => c.nome))
+        const extraCats = Object.keys(realMap)
+          .map(k => k.includes('||') ? k.split('||')[0] : k)
+          .filter((n,i,a) => a.indexOf(n)===i && !plannedNames.has(n))
+          .flatMap(nome => {
+            const cat = categorias.find((c: Categoria) => c.nome===nome && c.tipo===tipo)
+            if (!cat || !cat.ativa || cartaoNomes.has(cat.nome.toLowerCase())) return []
+            if ((cat.grupo ?? '__sem_grupo__') !== grupo) return []
+            return [{ nome, v: Array(12).fill(0) as number[], descricao: cat.descricao ?? '', catInfo: cat }]
+          })
+        const allCats = [...catsComDesc, ...extraCats]
+        if (allCats.length === 0) return []
         const grupoLabel = grupo==='__sem_grupo__' ? 'Outras' : grupo
         const grupoIcone = (() => {
-          const primNome = catsComDesc[0]?.nome
+          const primNome = allCats[0]?.nome
           if (!primNome) return isEntrada ? '💰' : '📂'
           return iconeCategoria(categorias, primNome).icone
         })()
@@ -662,7 +686,7 @@ export default function Acompanhamento() {
               <span>{grupoLabel}</span>
             </div>
           ] : []),
-          ...catsComDesc.map((cat, idx) => {
+          ...allCats.map((cat, idx) => {
             const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
             const cd      = realMap[realKey] ?? realMap[cat.nome]
             const prev    = cat.v[mes] ?? 0
