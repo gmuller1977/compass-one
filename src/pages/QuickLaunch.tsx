@@ -575,8 +575,8 @@ export default function QuickLaunch() {
                           fontSize: 20, flexShrink: 0,
                         }}>{c.icone || '🏦'}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{c.nome}</div>
-                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1 }}>{c.banco}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{c.banco}</div>
+                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1 }}>{c.nome}</div>
                         </div>
                         {sel && (
                           <div style={{
