@@ -44,7 +44,7 @@ function NOMES_MESES_SHORT() {
 const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb']
 
 export default function QuickLaunch() {
-  const { user, contas, categorias, extratoData, faturaData, planos, updateExtratoMes, setFaturaData, setCategorias } = useApp()
+  const { user, contas, categorias, extratoData, faturaData, planos, updateExtratoMes, setFaturaData, setCategorias, perfil } = useApp()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
@@ -237,7 +237,9 @@ export default function QuickLaunch() {
   }
 
   const dataHoje = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
-  const nomeUser = user?.email?.split('@')[0] ?? 'Usuário'
+  const hora = hoje.getHours()
+  const saudacao = hora >= 5 && hora < 12 ? 'Bom dia' : hora >= 12 && hora < 18 ? 'Boa tarde' : 'Boa noite'
+  const nomeUser = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
   const inicial  = nomeUser.charAt(0).toUpperCase()
   const mesStr   = `${NOMES_MESES_SHORT()[mes]}/${ano}`
 
@@ -257,7 +259,7 @@ export default function QuickLaunch() {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 12, marginBottom: 2 }}>Bom dia,</div>
+            <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 12, marginBottom: 2 }}>{saudacao},</div>
             <div style={{ color: '#fff', fontSize: 20, fontWeight: 700 }}>{nomeUser} 👋</div>
             <div style={{ color: 'rgba(255,255,255,.55)', fontSize: 11, marginTop: 3 }}>
               {dataHoje.charAt(0).toUpperCase() + dataHoje.slice(1)} · {mesStr}

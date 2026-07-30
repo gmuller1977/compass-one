@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 
 // ── Types compartilhados ─────────────────────────────────────────────
+export type Perfil = { nome: string; apelido: string }
 export type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
 export type TipoCategoria = 'entrada' | 'saida'
 export type FormaPagLanc  = 'debito' | 'pix' | 'transferencia' | 'dinheiro'
@@ -67,6 +68,8 @@ const CONTAS_INICIAIS: Conta[]     = []
 const CATS_INICIAIS:   Categoria[] = []
 
 // ── Chaves Supabase ──────────────────────────────────────────────────
+const PERFIL_INICIAL: Perfil = { nome: '', apelido: '' }
+
 const KEYS = {
   contas:               'compass_contas',
   categorias:           'compass_categorias',
@@ -76,6 +79,7 @@ const KEYS = {
   planosReal:           'compass_planos_real',
   planejamentoLockado:  'compass_planejamento_lockado',
   desvioMinPerc:        'compass_desvio_min_perc',
+  perfil:               'compass_perfil',
 }
 
 // ── Context ───────────────────────────────────────────────────────────
@@ -90,6 +94,7 @@ type AppCtx = {
   planosReal: Record<number, PlanoAnoData>
   planejamentoLockado: boolean
   desvioMinPerc: number
+  perfil: Perfil
   setContas:      Dispatch<SetStateAction<Conta[]>>
   setCategorias:  Dispatch<SetStateAction<Categoria[]>>
   updateExtratoMes: (key: string, fn: (prev: DadosMes) => DadosMes) => void
@@ -100,6 +105,7 @@ type AppCtx = {
   updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
   setPlanejamentoLockado: (v: boolean) => void
   setDesvioMinPerc: (v: number) => void
+  setPerfil: (v: Perfil) => void
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
 }
@@ -124,6 +130,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [planosReal,      setPlanosRealState]       = useState<Record<number, PlanoAnoData>>({})
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
   const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
+  const [perfil,              setPerfilState]              = useState<Perfil>(PERFIL_INICIAL)
 
   // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -190,6 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
     setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
     setDesvioMinPercState((map[KEYS.desvioMinPerc] as number | undefined) ?? 10)
+    setPerfilState((map[KEYS.perfil] as Perfil | undefined) ?? PERFIL_INICIAL)
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
@@ -206,6 +214,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosRealState({})
     setPlanejamentoLockadoState(false)
     setDesvioMinPercState(10)
+    setPerfilState(PERFIL_INICIAL)
   }
 
   // ── Auto-save para Supabase ──────────────────────────────────────────
@@ -225,6 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveKey(KEYS.planosReal, planosReal)  }, [planosReal])
   useEffect(() => { saveKey(KEYS.planejamentoLockado, planejamentoLockado) }, [planejamentoLockado])
   useEffect(() => { saveKey(KEYS.desvioMinPerc,       desvioMinPerc)       }, [desvioMinPerc])
+  useEffect(() => { saveKey(KEYS.perfil,              perfil)              }, [perfil])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -250,6 +260,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function setPlanejamentoLockado(v: boolean) { setPlanejamentoLockadoState(v) }
   function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
+  function setPerfil(v: Perfil) { setPerfilState(v) }
 
   async function limparDados() {
     const uid = userIdRef.current
@@ -278,12 +289,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       user, carregando,
-      contas, categorias, extratoData, faturaData, planos, planosReal, planejamentoLockado, desvioMinPerc,
+      contas, categorias, extratoData, faturaData, planos, planosReal, planejamentoLockado, desvioMinPerc, perfil,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, setDesvioMinPerc, limparDados, sairDaConta,
+      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, setDesvioMinPerc, setPerfil, limparDados, sairDaConta,
     }}>
       {children}
     </Ctx.Provider>

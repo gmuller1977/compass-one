@@ -266,7 +266,9 @@ export default function Configuracoes() {
   const { user, contas, categorias, setContas, setCategorias,
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
-          desvioMinPerc, setDesvioMinPerc } = useApp()
+          desvioMinPerc, setDesvioMinPerc,
+          perfil, setPerfil } = useApp()
+  const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
   const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('todas')
   const [subAbaCat,   setSubAbaCat]   = useState<'categorias'|'grupos'>('categorias')
@@ -278,6 +280,12 @@ export default function Configuracoes() {
   const [gruposExtra,    setGruposExtra]    = useState<string[]>([])
   const [gruposOcultos,  setGruposOcultos]  = useState<string[]>([])
   const [gruposExtraTipos, setGruposExtraTipos] = useState<Record<string, TipoCategoria>>({})
+
+  useEffect(() => {
+    if (perfil.nome || perfil.apelido) {
+      setFormPerfil({ nome: perfil.nome, apelido: perfil.apelido })
+    }
+  }, [perfil.nome, perfil.apelido])
 
   useEffect(() => {
     const st = location.state as { aba?: string; catNome?: string } | null
@@ -1547,23 +1555,33 @@ export default function Configuracoes() {
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 <div>
                   <label style={labelSt}>Nome completo</label>
-                  <input defaultValue="Guilherme Müller" placeholder="Seu nome" className="campo-cfg" style={inputSt} />
+                  <input value={formPerfil.nome}
+                    onChange={e => setFormPerfil(p => ({ ...p, nome: e.target.value }))}
+                    placeholder="Seu nome completo" className="campo-cfg" style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Como prefere ser chamado</label>
+                  <input value={formPerfil.apelido}
+                    onChange={e => setFormPerfil(p => ({ ...p, apelido: e.target.value }))}
+                    placeholder="Ex: Gui, Guilherme, Pri..." className="campo-cfg" style={inputSt} />
+                  <div style={{ fontSize:10, color:'#94a3b8', marginTop:3 }}>
+                    Este nome aparece na saudação do Início.
+                  </div>
                 </div>
                 <div style={{ opacity:.6 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5 }}>
-                    <span style={labelSt}>E-mail</span>
-                    <EmBreve />
-                  </div>
+                  <label style={labelSt}>E-mail</label>
                   <input disabled value={user?.email ?? 'seu@email.com'}
                     style={{ ...inputSt, cursor:'not-allowed', background:'#f8fafc' }} />
                   <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
                     Vinculado à sua conta de login. Não editável aqui.
                   </div>
                 </div>
-                <button style={{ padding:'10px 0', border:'none', borderRadius:8,
-                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                  color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer',
-                  fontFamily:'inherit', marginTop:2 }}>
+                <button
+                  onClick={() => { setPerfil({ nome: formPerfil.nome.trim(), apelido: formPerfil.apelido.trim() }); toast('Perfil salvo!') }}
+                  style={{ padding:'10px 0', border:'none', borderRadius:8,
+                    background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                    color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer',
+                    fontFamily:'inherit', marginTop:2 }}>
                   Salvar perfil
                 </button>
               </div>
