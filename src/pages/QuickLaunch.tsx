@@ -36,7 +36,7 @@ function fmt(n: number) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 function parseBRL(s: string) {
-  return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
+  return parseFloat(s.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
 }
 function NOMES_MESES_SHORT() {
   return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
