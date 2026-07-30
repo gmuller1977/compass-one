@@ -9,8 +9,9 @@ import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import Acompanhamento  from './pages/Acompanhamento'
-import Configuracoes   from './pages/Configuracoes'
-import Onboarding      from './pages/Onboarding'
+import Configuracoes       from './pages/Configuracoes'
+import Onboarding          from './pages/Onboarding'
+import WizardPlanejamento  from './pages/WizardPlanejamento'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { user, carregando, onboardingCompleto } = useApp()
@@ -30,7 +31,8 @@ function Protegido({ children }: { children: ReactNode }) {
     </div>
   )
   if (!user) return <Navigate to="/login" replace />
-  if (!onboardingCompleto && location.pathname !== '/onboarding') {
+  const bypass = ['/onboarding', '/configuracoes', '/wizard-planejamento']
+  if (!onboardingCompleto && !bypass.some(p => location.pathname.startsWith(p))) {
     return <Navigate to="/onboarding" replace />
   }
   return <>{children}</>
@@ -51,7 +53,7 @@ export default function App() {
           <Route path="/novo-lancamento"    element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
-          <Route path="/wizard-planejamento" element={<Protegido><Planejamento /></Protegido>} />
+          <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="*"                   element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
