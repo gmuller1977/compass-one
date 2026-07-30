@@ -116,6 +116,8 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
   const [fDataCompra, setFDataCompra] = useState('')
   const [editandoFechamento, setEditandoFechamento] = useState(false)
   const [editandoVencimento, setEditandoVencimento] = useState(false)
+  const [editFechVal, setEditFechVal] = useState(1)
+  const [editVencVal, setEditVencVal] = useState(1)
   const [diasFechados, setDiasFechados] = useState<Set<string>>(new Set())
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
@@ -597,72 +599,138 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
           </div>
         </div>
 
-        {/* INFO BAR: fecha · vence — chips editáveis */}
-        <div style={{flexShrink:0,background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'6px 10px',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as const}}>
-          {/* Chip fechamento */}
-          {editandoFechamento ? (
-            <div style={{display:'flex',alignItems:'center',gap:4,background:'#eff6ff',
-              border:`1px solid ${COR.azul}55`,borderRadius:20,padding:'4px 10px'}}>
-              <span style={{fontSize:10,fontWeight:600,color:COR.azul}}>Fecha dia</span>
-              <input type="number" min={1} max={31} autoFocus defaultValue={diaFechamento}
-                onBlur={e => {
-                  const v = Math.min(Math.max(parseInt(e.target.value)||diaFechamentoBase,1),31)
-                  if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
-                  else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
-                  setEditandoFechamento(false)
-                }}
-                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-                style={{width:32,border:`1px solid ${COR.azul}66`,borderRadius:4,padding:'1px 4px',
-                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',
-                  textAlign:'center' as const,background:'transparent',color:COR.azul}}/>
-              <span style={{fontSize:10,color:COR.azul}}>de {NOMES_MESES[purchaseMes].slice(0,3)}</span>
-            </div>
-          ) : (
-            <div onClick={() => setEditandoFechamento(true)}
-              style={{display:'flex',alignItems:'center',gap:4,cursor:'pointer',
-                background:'#f0f6ff',border:`1px solid ${COR.azul}33`,
-                borderRadius:20,padding:'4px 10px'}}>
-              <span style={{fontSize:10,fontWeight:600,color:COR.azul}}>
-                Fecha {diaFechamento} de {NOMES_MESES[purchaseMes].slice(0,3)}
-                {mesDados.fechamentoOverride ? <sup style={{fontSize:8,color:'#94a3b8',marginLeft:1}}>*</sup> : null}
+        {/* INFO BAR: fecha · vence — chips + painel expandido */}
+        <div style={{flexShrink:0,background:COR.branco,borderBottom:`1px solid ${COR.borda}`}}>
+          {/* Chips row */}
+          <div style={{padding:'7px 12px',display:'flex',alignItems:'center',gap:8}}>
+            {/* Chip fechamento */}
+            <div onClick={() => {
+                if (editandoFechamento) { setEditandoFechamento(false); return }
+                setEditFechVal(diaFechamento)
+                setEditandoFechamento(true); setEditandoVencimento(false)
+              }}
+              style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
+                background: editandoFechamento ? '#eff6ff' : '#f8faff',
+                border:`1.5px solid ${editandoFechamento ? COR.azul : COR.azul+'44'}`,
+                borderRadius:20,padding:'5px 12px',flexShrink:0}}>
+              <span style={{fontSize:11,fontWeight:600,color:COR.azul}}>
+                ✂ Fecha dia {diaFechamento}
               </span>
-              <span style={{fontSize:9,color:COR.azul,opacity:.6}}>✎</span>
+              {mesDados.fechamentoOverride && <span style={{fontSize:9,color:'#94a3b8'}}>*</span>}
+            </div>
+
+            <span style={{color:'#e2e8f0',fontSize:11,flexShrink:0}}>·</span>
+
+            {/* Chip vencimento */}
+            <div onClick={() => {
+                if (editandoVencimento) { setEditandoVencimento(false); return }
+                setEditVencVal(diaVencimento)
+                setEditandoVencimento(true); setEditandoFechamento(false)
+              }}
+              style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
+                background: editandoVencimento ? '#fff5f5' : '#fff8f8',
+                border:`1.5px solid ${editandoVencimento ? COR.vermelho : COR.vermelho+'44'}`,
+                borderRadius:20,padding:'5px 12px',flexShrink:0}}>
+              <span style={{fontSize:11,fontWeight:600,color:COR.vermelho}}>
+                📅 Vence dia {diaVencimento}
+              </span>
+              {mesDados.vencimentoOverride && <span style={{fontSize:9,color:'#94a3b8'}}>*</span>}
+            </div>
+          </div>
+
+          {/* Painel expandido — Fechamento */}
+          {editandoFechamento && (
+            <div style={{padding:'12px 14px 14px',borderTop:`1px solid ${COR.azul}22`,
+              background:'#f0f7ff'}}>
+              <div style={{fontSize:11,color:'#64748b',marginBottom:10,
+                display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontWeight:700,color:COR.azul}}>Dia de fechamento — {NOMES_MESES[purchaseMes]}</span>
+                <span style={{fontSize:10,color:'#94a3b8'}}>padrão: dia {diaFechamentoBase}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <button onClick={() => setEditFechVal(v => Math.max(1,v-1))}
+                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.azul}55`,
+                    background:'#fff',fontSize:22,fontWeight:700,color:COR.azul,
+                    cursor:'pointer',fontFamily:'inherit',display:'flex',
+                    alignItems:'center',justifyContent:'center'}}>−</button>
+                <input type="number" min={1} max={31} value={editFechVal}
+                  onChange={e => setEditFechVal(Math.min(31,Math.max(1,parseInt(e.target.value)||1)))}
+                  style={{flex:1,textAlign:'center' as const,fontSize:28,fontWeight:800,
+                    color:COR.azul,border:`2px solid ${COR.azul}`,borderRadius:12,
+                    padding:'8px 0',background:'#fff',outline:'none',fontFamily:'inherit'}}/>
+                <button onClick={() => setEditFechVal(v => Math.min(31,v+1))}
+                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.azul}55`,
+                    background:'#fff',fontSize:22,fontWeight:700,color:COR.azul,
+                    cursor:'pointer',fontFamily:'inherit',display:'flex',
+                    alignItems:'center',justifyContent:'center'}}>+</button>
+              </div>
+              <div style={{display:'flex',gap:8,marginTop:10}}>
+                <button onClick={() => setEditandoFechamento(false)}
+                  style={{flex:1,padding:'10px',border:`1.5px solid ${COR.borda}`,
+                    borderRadius:10,background:COR.branco,color:COR.textoSuave,
+                    fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  Cancelar
+                </button>
+                <button onClick={() => {
+                    const v = Math.min(Math.max(editFechVal,1),31)
+                    if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
+                    else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
+                    setEditandoFechamento(false)
+                  }}
+                  style={{flex:2,padding:'10px',border:'none',borderRadius:10,
+                    background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                    color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  ✓ Confirmar dia {editFechVal}
+                </button>
+              </div>
             </div>
           )}
 
-          <span style={{color:'#e2e8f0',fontSize:11}}>·</span>
-
-          {/* Chip vencimento */}
-          {editandoVencimento ? (
-            <div style={{display:'flex',alignItems:'center',gap:4,background:'#fff5f5',
-              border:`1px solid ${COR.vermelho}55`,borderRadius:20,padding:'4px 10px'}}>
-              <span style={{fontSize:10,fontWeight:600,color:COR.vermelho}}>Vence dia</span>
-              <input type="number" min={1} max={31} autoFocus defaultValue={diaVencimento}
-                onBlur={e => {
-                  const v = Math.min(Math.max(parseInt(e.target.value)||diaVencimentoBase,1),31)
-                  if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
-                  else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
-                  setEditandoVencimento(false)
-                }}
-                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-                style={{width:32,border:`1px solid ${COR.vermelho}66`,borderRadius:4,padding:'1px 4px',
-                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',
-                  textAlign:'center' as const,background:'transparent',color:COR.vermelho}}/>
-              <span style={{fontSize:10,color:COR.vermelho}}>
-                de {NOMES_MESES[mesVenc].slice(0,3)}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
-              </span>
-            </div>
-          ) : (
-            <div onClick={() => setEditandoVencimento(true)}
-              style={{display:'flex',alignItems:'center',gap:4,cursor:'pointer',
-                background:'#fff5f5',border:`1px solid ${COR.vermelho}33`,
-                borderRadius:20,padding:'4px 10px'}}>
-              <span style={{fontSize:10,fontWeight:600,color:COR.vermelho}}>
-                Vence {diaVencimento} de {NOMES_MESES[mesVenc].slice(0,3)}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
-                {mesDados.vencimentoOverride ? <sup style={{fontSize:8,color:'#94a3b8',marginLeft:1}}>*</sup> : null}
-              </span>
-              <span style={{fontSize:9,color:COR.vermelho,opacity:.6}}>✎</span>
+          {/* Painel expandido — Vencimento */}
+          {editandoVencimento && (
+            <div style={{padding:'12px 14px 14px',borderTop:`1px solid ${COR.vermelho}22`,
+              background:'#fff5f5'}}>
+              <div style={{fontSize:11,color:'#64748b',marginBottom:10,
+                display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontWeight:700,color:COR.vermelho}}>Dia de vencimento — {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}</span>
+                <span style={{fontSize:10,color:'#94a3b8'}}>padrão: dia {diaVencimentoBase}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <button onClick={() => setEditVencVal(v => Math.max(1,v-1))}
+                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.vermelho}55`,
+                    background:'#fff',fontSize:22,fontWeight:700,color:COR.vermelho,
+                    cursor:'pointer',fontFamily:'inherit',display:'flex',
+                    alignItems:'center',justifyContent:'center'}}>−</button>
+                <input type="number" min={1} max={31} value={editVencVal}
+                  onChange={e => setEditVencVal(Math.min(31,Math.max(1,parseInt(e.target.value)||1)))}
+                  style={{flex:1,textAlign:'center' as const,fontSize:28,fontWeight:800,
+                    color:COR.vermelho,border:`2px solid ${COR.vermelho}`,borderRadius:12,
+                    padding:'8px 0',background:'#fff',outline:'none',fontFamily:'inherit'}}/>
+                <button onClick={() => setEditVencVal(v => Math.min(31,v+1))}
+                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.vermelho}55`,
+                    background:'#fff',fontSize:22,fontWeight:700,color:COR.vermelho,
+                    cursor:'pointer',fontFamily:'inherit',display:'flex',
+                    alignItems:'center',justifyContent:'center'}}>+</button>
+              </div>
+              <div style={{display:'flex',gap:8,marginTop:10}}>
+                <button onClick={() => setEditandoVencimento(false)}
+                  style={{flex:1,padding:'10px',border:`1.5px solid ${COR.borda}`,
+                    borderRadius:10,background:COR.branco,color:COR.textoSuave,
+                    fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  Cancelar
+                </button>
+                <button onClick={() => {
+                    const v = Math.min(Math.max(editVencVal,1),31)
+                    if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
+                    else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
+                    setEditandoVencimento(false)
+                  }}
+                  style={{flex:2,padding:'10px',border:'none',borderRadius:10,
+                    background:`linear-gradient(135deg,#dc2626,#ef4444)`,
+                    color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  ✓ Confirmar dia {editVencVal}
+                </button>
+              </div>
             </div>
           )}
         </div>
