@@ -450,6 +450,7 @@ export default function Acompanhamento() {
     const corSaldoR = (totalRealE===0&&totalRealS===0) ? '#94a3b8' : saldoReal>=0 ? COR.verde : COR.vermelho
     const corSaldoP = (totalPrevE===0&&totalPrevS===0) ? '#94a3b8' : saldoPrev>=0 ? COR.verde : COR.vermelho
     const userInitial = (() => { const u = user as any; return u?.displayName?.[0] ?? u?.email?.[0]?.toUpperCase() ?? '?' })()
+    const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
     const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
     const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)
 
@@ -461,46 +462,70 @@ export default function Acompanhamento() {
     const renderMobileCatRow = (
       tipo: 'entrada'|'saida', nome: string, descricao: string,
       prev: number, lancAbs: number, catInfo: Categoria|undefined, uid: string,
+      lancamentos: Lanc[],
     ) => {
       const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
       const perc      = prev > 0 ? lancAbs / prev : (lancAbs > 0 ? 1 : 0)
       const isEntrada = tipo === 'entrada'
-
-      let statusLabel: string, statusBg: string, statusColor: string
-      if (prev===0 && lancAbs===0) {
-        statusLabel='Sem previsão'; statusBg='#f1f5f9'; statusColor='#64748b'
-      } else if (isEntrada) {
-        if (lancAbs>=prev && prev>0)      { statusLabel='✓ Recebido';                     statusBg='#dcfce7'; statusColor='#166534' }
-        else if (lancAbs>0)               { statusLabel=`${Math.round(perc*100)}% receb.`; statusBg='#fef9c3'; statusColor='#92400e' }
-        else                              { statusLabel='A receber';                       statusBg='#fffbeb'; statusColor='#92400e' }
-      } else {
-        if (lancAbs===0 && prev>0)        { statusLabel='A pagar';                         statusBg='#fffbeb'; statusColor='#92400e' }
-        else if (lancAbs>prev && prev>0)  { statusLabel=`⚠ ${Math.round(perc*100)}% gasto`; statusBg='#fee2e2'; statusColor='#991b1b' }
-        else if (perc>=0.8)               { statusLabel=`⚠ ${Math.round(perc*100)}% gasto`; statusBg='#fef9c3'; statusColor='#92400e' }
-        else                              { statusLabel=`${Math.round(perc*100)}% gasto`;   statusBg='#dcfce7'; statusColor='#166534' }
-      }
-
+      const aberto    = abertos.has(uid)
       const disponivel = prev - lancAbs
-      let tercLabel: string, tercValue: string, tercBg: string, tercBd: string, tercColor: string
-      if (prev===0 && lancAbs===0) {
-        tercLabel=isEntrada?'A receber':'Disponível'; tercValue='—'
-        tercBg='#f8faff'; tercBd=COR.borda; tercColor='#94a3b8'
+
+      // Value shown on collapsed row
+      let dispLabel: string, dispValue: string, dispColor: string
+      if (prev === 0 && lancAbs === 0) {
+        dispLabel = isEntrada ? 'A receber' : 'Disponível'; dispValue = '—'; dispColor = '#94a3b8'
       } else if (isEntrada) {
-        if (lancAbs>=prev) { tercLabel='Disponível'; tercValue=fmt(0);            tercBg='#f0fdf4'; tercBd='#bbf7d0'; tercColor='#16a34a' }
-        else               { tercLabel='A receber';  tercValue=fmt(prev-lancAbs); tercBg='#fffbeb'; tercBd='#fde68a'; tercColor='#d97706' }
+        if (lancAbs >= prev && prev > 0) { dispLabel = 'Recebido';  dispValue = fmt(lancAbs);               dispColor = '#16a34a' }
+        else                             { dispLabel = 'A receber'; dispValue = fmt(Math.max(disponivel,0)); dispColor = '#d97706' }
       } else {
-        if (lancAbs===0)        { tercLabel='A pagar';    tercValue=fmt(prev);        tercBg='#fffbeb'; tercBd='#fde68a'; tercColor='#d97706' }
-        else if (disponivel>=0) { tercLabel='Disponível'; tercValue=fmt(disponivel);  tercBg='#f0fdf4'; tercBd='#bbf7d0'; tercColor='#16a34a' }
-        else                    { tercLabel='Excedido';   tercValue=fmt(-disponivel); tercBg='#fff1f2'; tercBd='#fecdd3'; tercColor='#dc2626' }
+        if (lancAbs === 0 && catInfo?.fixa) { dispLabel = 'A pagar';    dispValue = fmt(prev);         dispColor = '#d97706' }
+        else if (disponivel >= 0)            { dispLabel = 'Disponível'; dispValue = fmt(disponivel);   dispColor = '#16a34a' }
+        else                                 { dispLabel = 'Excedido';   dispValue = fmt(-disponivel);  dispColor = '#dc2626' }
       }
 
       const progressColor = isEntrada
-        ? (perc>=1 ? COR.verde : perc>=0.5 ? '#4ade80' : '#94a3b8')
-        : (perc>1  ? COR.vermelho : perc>=0.8 ? COR.amarelo : COR.verde)
+        ? (perc >= 1 ? COR.verde : perc >= 0.5 ? '#4ade80' : '#94a3b8')
+        : (perc > 1  ? COR.vermelho : perc >= 0.8 ? COR.amarelo : COR.verde)
+
+      // Detail: status badge
+      let statusLabel: string, statusBg: string, statusColor: string
+      if (prev === 0 && lancAbs === 0) {
+        statusLabel = 'Sem previsão'; statusBg = '#f1f5f9'; statusColor = '#64748b'
+      } else if (isEntrada) {
+        if (lancAbs >= prev && prev > 0) { statusLabel = '✓ Recebido';                      statusBg = '#dcfce7'; statusColor = '#166534' }
+        else if (lancAbs > 0)            { statusLabel = `${Math.round(perc*100)}% receb.`;  statusBg = '#fef9c3'; statusColor = '#92400e' }
+        else                             { statusLabel = 'A receber';                        statusBg = '#fffbeb'; statusColor = '#92400e' }
+      } else {
+        if (lancAbs === 0 && prev > 0)   { statusLabel = 'A pagar';                          statusBg = '#fffbeb'; statusColor = '#92400e' }
+        else if (lancAbs > prev && prev > 0) { statusLabel = `⚠ ${Math.round(perc*100)}% gasto`; statusBg = '#fee2e2'; statusColor = '#991b1b' }
+        else if (perc >= 0.8)            { statusLabel = `⚠ ${Math.round(perc*100)}% gasto`; statusBg = '#fef9c3'; statusColor = '#92400e' }
+        else                             { statusLabel = `${Math.round(perc*100)}% gasto`;   statusBg = '#dcfce7'; statusColor = '#166534' }
+      }
+
+      const realColor = isEntrada
+        ? (lancAbs > 0 ? '#16a34a' : '#94a3b8')
+        : (lancAbs > 0 ? '#dc2626' : '#94a3b8')
+      const realBg  = isEntrada ? (lancAbs > 0 ? '#f0fdf4' : '#f8faff') : (lancAbs > 0 ? '#fff1f2' : '#f8faff')
+      const realBd  = isEntrada ? (lancAbs > 0 ? '#bbf7d0' : COR.borda) : (lancAbs > 0 ? '#fecdd3' : COR.borda)
+      const dispBg2 = (prev===0&&lancAbs===0) ? '#f8faff' : (disponivel >= 0 ? '#f0fdf4' : '#fff1f2')
+      const dispBd2 = (prev===0&&lancAbs===0) ? COR.borda : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
+      const dispC2  = (prev===0&&lancAbs===0) ? '#94a3b8' : (disponivel >= 0 ? '#16a34a' : '#dc2626')
+
+      const banco    = lancamentos.filter(l => l.fonte === 'banco')
+      const cartao   = lancamentos.filter(l => l.fonte === 'cartao')
+      const dinheiro = lancamentos.filter(l => l.fonte === 'dinheiro')
+      const colunas  = [
+        { label:'🏦 Banco',    itens: banco    },
+        { label:'💳 Cartão',   itens: cartao   },
+        { label:'💵 Dinheiro', itens: dinheiro },
+      ].filter(c => c.itens.length > 0)
 
       return (
         <div key={uid} style={{ background:'#fff', borderBottom:'1px solid #f5f7ff' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px 8px' }}>
+          {/* COMPACT ROW */}
+          <div onClick={() => toggleAberto(uid)}
+            style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 16px 6px',
+              cursor:'pointer', background: aberto ? '#f8faff' : '#fff' }}>
             <div style={{ width:38, height:38, borderRadius:11, flexShrink:0,
               background:corIcone+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
               {icone}
@@ -508,37 +533,94 @@ export default function Acompanhamento() {
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:13, fontWeight:700, color:'#0f172a',
                 overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
-              <div style={{ fontSize:10, color:'#94a3b8', marginTop:2, display:'flex', alignItems:'center', gap:5 }}>
-                <span>{catInfo?.fixa ? 'Fixa' : 'Variável'}</span>
-                {descricao && <span>· {descricao}</span>}
+              <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:2 }}>
+                <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, fontWeight:700,
+                  background:catInfo?.fixa?'#e0f2fe':'#f1f5f9',
+                  color:catInfo?.fixa?'#0369a1':'#64748b' }}>
+                  {catInfo?.fixa ? 'Fixa' : 'Variável'}
+                </span>
+                {descricao && <span style={{ fontSize:10, color:'#94a3b8' }}>· {descricao}</span>}
               </div>
             </div>
-            <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', borderRadius:7, flexShrink:0,
-              background:statusBg, color:statusColor }}>{statusLabel}</span>
-          </div>
-          <div style={{ margin:'0 16px 8px' }}>
-            <div style={{ background:'#f1f5f9', borderRadius:3, height:5, overflow:'hidden' }}>
-              <div style={{ width:`${Math.min(perc,1)*100}%`, height:5, borderRadius:3, background:progressColor }}/>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:6, padding:'0 16px 12px' }}>
-            <div style={{ flex:1, background:'#f8faff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
-              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.4, color:'#94a3b8', marginBottom:4 }}>Previsto</div>
-              <div style={{ fontSize:13, fontWeight:800, color:'#64748b', fontVariantNumeric:'tabular-nums' }}>{prev>0?fmt(prev):'—'}</div>
-            </div>
-            <div style={{ flex:1, background:'#f8faff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
-              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.4, marginBottom:4,
-                color:isEntrada?(lancAbs>0?COR.verde:'#94a3b8'):(lancAbs>0?COR.vermelho:'#94a3b8') }}>Realizado</div>
-              <div style={{ fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums',
-                color:isEntrada?(lancAbs>0?COR.verde:'#94a3b8'):(lancAbs>0?COR.vermelho:'#94a3b8') }}>
-                {lancAbs>0?fmt(lancAbs):'—'}
+            <div style={{ flexShrink:0, textAlign:'right' as const }}>
+              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.3,
+                color:'#94a3b8', marginBottom:2 }}>{dispLabel}</div>
+              <div style={{ fontSize:14, fontWeight:800, color:dispColor, fontVariantNumeric:'tabular-nums' }}>
+                {dispValue}
               </div>
             </div>
-            <div style={{ flex:1, background:tercBg, border:`1px solid ${tercBd}`, borderRadius:10, padding:'8px 6px', textAlign:'center' }}>
-              <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.4, color:tercColor, marginBottom:4 }}>{tercLabel}</div>
-              <div style={{ fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums', color:tercColor }}>{tercValue}</div>
-            </div>
+            <div style={{ flexShrink:0, fontSize:11, color:'#94a3b8', width:14, textAlign:'center' as const,
+              transform: aberto ? 'rotate(180deg)' : 'none', transition:'transform .15s' }}>⌄</div>
           </div>
+          {/* PROGRESS BAR */}
+          {(prev > 0 || lancAbs > 0) && (
+            <div style={{ margin:'0 16px 8px' }}>
+              <div style={{ background:'#f1f5f9', borderRadius:3, height:4, overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(perc,1)*100}%`, height:4, borderRadius:3, background:progressColor }}/>
+              </div>
+            </div>
+          )}
+          {/* EXPANDED DETAIL */}
+          {aberto && (
+            <div style={{ background:'#f8faff', borderTop:'1px solid #e2e8f0', padding:'10px 16px 14px' }}>
+              <div style={{ display:'flex', alignItems:'center', marginBottom:8 }}>
+                <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', borderRadius:7,
+                  background:statusBg, color:statusColor }}>{statusLabel}</span>
+              </div>
+              <div style={{ display:'flex', gap:6, marginBottom: colunas.length > 0 ? 10 : 0 }}>
+                <div style={{ flex:1, background:'#f0f4ff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' as const }}>
+                  <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4, color:'#94a3b8', marginBottom:4 }}>Previsto</div>
+                  <div style={{ fontSize:13, fontWeight:800, color:'#64748b', fontVariantNumeric:'tabular-nums' }}>{prev>0?fmt(prev):'—'}</div>
+                </div>
+                <div style={{ flex:1, background:realBg, border:`1px solid ${realBd}`, borderRadius:10, padding:'8px 6px', textAlign:'center' as const }}>
+                  <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4, color:realColor, marginBottom:4 }}>Realizado</div>
+                  <div style={{ fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums', color:realColor }}>
+                    {lancAbs>0?fmt(lancAbs):'—'}
+                  </div>
+                </div>
+                <div style={{ flex:1, background:dispBg2, border:`1px solid ${dispBd2}`, borderRadius:10, padding:'8px 6px', textAlign:'center' as const }}>
+                  <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4, color:dispC2, marginBottom:4 }}>
+                    {isEntrada ? 'A receber' : 'Disponível'}
+                  </div>
+                  <div style={{ fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums', color:dispC2 }}>
+                    {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
+                  </div>
+                </div>
+              </div>
+              {colunas.length > 0 && (
+                <div style={{ display:'grid', gridTemplateColumns:`repeat(${colunas.length},1fr)`, gap:8 }}>
+                  {colunas.map(col => (
+                    <div key={col.label}>
+                      <div style={{ fontSize:10, fontWeight:700, color:'#64748b',
+                        textTransform:'uppercase' as const, letterSpacing:.5, marginBottom:6 }}>{col.label}</div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+                        {col.itens.map((l,i) => (
+                          <div key={i} style={{ padding:'5px 8px', borderRadius:7,
+                            background:'#fff', border:'1px solid #e2e8f0',
+                            display:'flex', flexDirection:'column', gap:1 }}>
+                            <div style={{ display:'flex', justifyContent:'space-between', gap:6 }}>
+                              <span style={{ fontSize:10, color:'#94a3b8', flexShrink:0 }}>
+                                {String(l.dia).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}
+                              </span>
+                              <span style={{ fontSize:11, fontWeight:700, flexShrink:0,
+                                color:isEntrada?'#16a34a':'#0f172a', fontVariantNumeric:'tabular-nums' }}>
+                                {fmt(l.valor)}
+                              </span>
+                            </div>
+                            <div style={{ fontSize:11, color:'#0f172a',
+                              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              {l.descricao || nome}
+                            </div>
+                            {l.sub && <div style={{ fontSize:9, color:'#94a3b8' }}>{l.sub}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )
     }
@@ -566,20 +648,27 @@ export default function Acompanhamento() {
           return { nome:cat.nome, v:cat.v, descricao, catInfo }
         })
         const grupoLabel = grupo==='__sem_grupo__' ? 'Outras' : grupo
+        const grupoIcone = (() => {
+          const primNome = catsComDesc[0]?.nome
+          if (!primNome) return isEntrada ? '💰' : '📂'
+          return iconeCategoria(categorias, primNome).icone
+        })()
         return [
-          <div key={`sub-${grupo}`} style={{ padding:'7px 16px', fontSize:9, fontWeight:800, letterSpacing:.7,
-            display:'flex', alignItems:'center', gap:5, textTransform:'uppercase',
-            borderBottom:'1px solid #f1f5f9', background:'#f8faff', color:'#64748b' }}>
-            <span>{isEntrada ? '💰' : '📂'}</span>
-            <span>{grupoLabel}</span>
-          </div>,
+          ...(grupo !== '__sem_grupo__' ? [
+            <div key={`sub-${grupo}`} style={{ padding:'7px 16px', fontSize:9, fontWeight:800, letterSpacing:.7,
+              display:'flex', alignItems:'center', gap:5, textTransform:'uppercase',
+              borderBottom:'1px solid #f1f5f9', background:'#f8faff', color:'#64748b' }}>
+              <span>{grupoIcone}</span>
+              <span>{grupoLabel}</span>
+            </div>
+          ] : []),
           ...catsComDesc.map((cat, idx) => {
             const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
             const cd      = realMap[realKey] ?? realMap[cat.nome]
             const prev    = cat.v[mes] ?? 0
             const lancAbs = (cd?.totalBanc ?? 0) + (cd?.totalCart ?? 0)
             const uid     = `m-${tipo}-${grupo}-${cat.nome}-${idx}`
-            return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, cat.catInfo, uid)
+            return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, cat.catInfo, uid, cd?.lancamentos ?? [])
           }),
         ]
       })
@@ -630,7 +719,8 @@ export default function Acompanhamento() {
               <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
                 <div style={{ width:`${Math.min(percE,1)*100}%`, height:'100%', borderRadius:3, background:'#4ade80' }}/>
               </div>
-              <span style={{ fontSize:10, fontWeight:800, minWidth:30, textAlign:'right', color:'#fbbf24' }}>
+              {totalPrevE>0 && <span style={{ fontSize:10, color:'rgba(255,255,255,.6)', whiteSpace:'nowrap' }}>{fmtK(totalRealE)} / {fmtK(totalPrevE)}</span>}
+              <span style={{ fontSize:10, fontWeight:800, minWidth:28, textAlign:'right', color:'#fbbf24' }}>
                 {totalPrevE>0 ? `${Math.round(percE*100)}%` : '—'}
               </span>
             </div>
@@ -639,7 +729,8 @@ export default function Acompanhamento() {
               <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
                 <div style={{ width:`${Math.min(percS,1)*100}%`, height:'100%', borderRadius:3, background:'#f87171' }}/>
               </div>
-              <span style={{ fontSize:10, fontWeight:800, minWidth:30, textAlign:'right',
+              {totalPrevS>0 && <span style={{ fontSize:10, color:'rgba(255,255,255,.6)', whiteSpace:'nowrap' }}>{fmtK(totalRealS)} / {fmtK(totalPrevS)}</span>}
+              <span style={{ fontSize:10, fontWeight:800, minWidth:28, textAlign:'right',
                 color:percS<0.5?'#4ade80':percS<0.8?'#fbbf24':'#f87171' }}>
                 {totalPrevS>0 ? `${Math.round(percS*100)}%` : '—'}
               </span>
@@ -696,7 +787,9 @@ export default function Acompanhamento() {
                     {totalPrevE>0 && <span style={{ fontSize:10, color:'#94a3b8' }}>{fmt(totalRealE)} de {fmt(totalPrevE)}</span>}
                   </div>
                 </div>
-                {renderMobileSecao('entrada', gruposEntrada, dadosAno.entradas ?? [], entradasMap)}
+                {renderMobileSecao('entrada',
+                  gruposEntrada.includes('__sem_grupo__') ? gruposEntrada : [...gruposEntrada, '__sem_grupo__'],
+                  dadosAno.entradas ?? [], entradasMap)}
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                   padding:'10px 16px', background:'#f0fdf4', borderTop:'1px solid #dcfce7' }}>
                   <span style={{ fontSize:12, fontWeight:800, color:'#16a34a' }}>Total Entradas</span>

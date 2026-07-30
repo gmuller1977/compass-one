@@ -149,6 +149,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [mesMobile, setMesMobile] = useState(mesAtual)
   const [secEntAberto, setSecEntAberto] = useState(true)
   const [secSaiAberto, setSecSaiAberto] = useState(true)
+  const [mobileComp,   setMobileComp]   = useState(false)
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -1040,11 +1041,53 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       const catInfo = cat.id
         ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome))
         : categorias.find(c => c.nome === cat.nome)
-      const subtitle = catInfo?.fixa ? 'Fixa' : 'Variável'
       const valorAtual = tipo === 'e'
         ? (dadosAnoFinal.entradas[ri]?.v[mi] ?? 0)
         : (dadosAnoFinal.saidas[ri]?.v[mi] ?? 0)
       const ativo = editando?.tipo === tipo && editando.row === ri && editando.mes === mi
+
+      if (mobileComp) {
+        const prevData = planos[anoAtual] as AnoData | undefined
+        const realData = planosReal[anoAtual] as PlanoAnoData | undefined
+        const arr = tipo === 'e' ? 'entradas' : 'saidas'
+        const prevVal = (prevData?.[arr]?.find((c: Cat) => cat.id ? c.id === cat.id : c.nome === cat.nome) as Cat | undefined)?.v[mi] ?? 0
+        const realVal = (realData?.[arr]?.find((c: Cat) => cat.id ? c.id === cat.id : c.nome === cat.nome) as Cat | undefined)?.v[mi] ?? 0
+        const progPct = prevVal > 0 ? Math.min(1.5, realVal / prevVal) : 0
+        let arrow = '='
+        let arrowColor = '#94a3b8'
+        if (prevVal > 0 || realVal > 0) {
+          if (tipo === 's') {
+            if (realVal > prevVal)      { arrow = '↑'; arrowColor = '#dc2626' }
+            else if (realVal < prevVal) { arrow = '↓'; arrowColor = '#16a34a' }
+          } else {
+            if (realVal > prevVal)      { arrow = '↑'; arrowColor = '#16a34a' }
+            else if (realVal < prevVal) { arrow = '↓'; arrowColor = '#dc2626' }
+          }
+        }
+        const progColor = tipo === 's'
+          ? (progPct > 1 ? '#dc2626' : progPct > .8 ? '#d97706' : '#16a34a')
+          : (progPct >= 1 ? '#16a34a' : '#d97706')
+        return (
+          <div key={cat.id ?? cat.nome} style={{ background:'#fff', display:'flex', alignItems:'center', gap:10, padding:'11px 16px', borderBottom:'1px solid #f8faff' }}>
+            <div style={{ width:36, height:36, borderRadius:10, background: corIcone+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
+              {icone}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cat.nome}</div>
+              <div style={{ marginTop:4, width:80, height:3, borderRadius:2, background:'#e2e8f0', overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(1, progPct)*100}%`, height:'100%', background:progColor, borderRadius:2 }} />
+              </div>
+            </div>
+            <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:1 }}>
+              <div style={{ fontSize:11, fontWeight:600, color:'#94a3b8' }}>{prevVal !== 0 ? fmt(prevVal, true) : '—'}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:arrowColor, display:'flex', alignItems:'center', gap:2 }}>
+                <span style={{ fontSize:10 }}>{arrow}</span>
+                {realVal !== 0 ? fmt(realVal, true) : '—'}
+              </div>
+            </div>
+          </div>
+        )
+      }
 
       return (
         <div key={cat.id ?? cat.nome} style={{ background:'#fff', display:'flex', alignItems:'center', gap:10, padding:'11px 16px', borderBottom:'1px solid #f8faff' }}>
@@ -1053,7 +1096,13 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cat.nome}</div>
-            <div style={{ fontSize:10, color:'#94a3b8', marginTop:1 }}>{subtitle}</div>
+            <div style={{ marginTop:2 }}>
+              <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, fontWeight:700,
+                background: catInfo?.fixa ? '#e0f2fe' : '#f1f5f9',
+                color:       catInfo?.fixa ? '#0369a1' : '#64748b' }}>
+                {catInfo?.fixa ? 'Fixa' : 'Variável'}
+              </span>
+            </div>
           </div>
           <div style={{ flexShrink:0 }}>
             {ativo && !bloqueado ? (
@@ -1109,14 +1158,18 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div style={{ display:'flex', background:'rgba(0,0,0,.2)', borderRadius:10, padding:3, gap:3 }}>
               {(['previsto','real'] as const).map(v => {
                 const label = v === 'previsto' ? 'Previsto' : 'Realizado'
-                const active = aba === v
+                const active = aba === v && !mobileComp
                 return (
-                  <button key={v} onClick={() => { setAba(v); setEditando(null) }}
+                  <button key={v} onClick={() => { setAba(v); setMobileComp(false); setEditando(null) }}
                     style={{ padding:'5px 12px', borderRadius:8, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: active ? 'rgba(255,255,255,.95)' : 'transparent', color: active ? '#0f2878' : 'rgba(255,255,255,.6)' }}>
                     {label}
                   </button>
                 )
               })}
+              <button onClick={() => { setMobileComp(true); setEditando(null) }}
+                style={{ padding:'5px 12px', borderRadius:8, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: mobileComp ? 'rgba(255,255,255,.95)' : 'transparent', color: mobileComp ? '#0f2878' : 'rgba(255,255,255,.6)' }}>
+                Comparar
+              </button>
             </div>
           </div>
 
@@ -1191,7 +1244,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               return (
                 <div key={grupo}>
                   {grupo !== '__sem_grupo__' && (
-                    <div style={{ background:'#f8faff', padding:'6px 16px', fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' as const, letterSpacing:'.6px', borderBottom:'1px solid #f1f5f9' }}>{grupo}</div>
+                    <div style={{ background:'#f8faff', padding:'6px 16px', fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' as const, letterSpacing:'.6px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', gap:5 }}>
+                      <span style={{ fontSize:13 }}>{iconeCategoria(categorias, itens[0]?.cat.nome ?? '').icone}</span>
+                      <span>{grupo}</span>
+                    </div>
                   )}
                   {itens.map(({ cat, ri }) => renderCatRow('s', cat, ri))}
                 </div>

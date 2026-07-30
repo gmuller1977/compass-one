@@ -704,6 +704,7 @@ export default function NovoLancamentoExtrato() {
       manual:        {bg:'#ede9fe',cor:'#6d28d9', label:'Manual'},
     }
     const s = map[fp]
+    if (!s) return null
     return <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:700,background:s.bg,color:s.cor}}>{s.label}</span>
   }
 
