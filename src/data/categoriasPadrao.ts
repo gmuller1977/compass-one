@@ -9,7 +9,7 @@ export const GRUPOS_PADRAO = [
 ]
 
 const NEUTRO: Pick<CatSugestao, 'fixa' | 'tipoMovimento' | 'cor' | 'ativa'> = {
-  fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: false,
+  fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true,
 }
 
 export const CATEGORIAS_PADRAO: CatSugestao[] = [

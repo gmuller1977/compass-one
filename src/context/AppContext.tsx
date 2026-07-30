@@ -80,6 +80,7 @@ const KEYS = {
   planejamentoLockado:  'compass_planejamento_lockado',
   desvioMinPerc:        'compass_desvio_min_perc',
   perfil:               'compass_perfil',
+  onboarding:           'compass_onboarding_completo',
 }
 
 // ── Context ───────────────────────────────────────────────────────────
@@ -106,6 +107,8 @@ type AppCtx = {
   setPlanejamentoLockado: (v: boolean) => void
   setDesvioMinPerc: (v: number) => void
   setPerfil: (v: Perfil) => void
+  onboardingCompleto: boolean
+  setOnboardingCompleto: (v: boolean) => void
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
 }
@@ -131,6 +134,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
   const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
   const [perfil,              setPerfilState]              = useState<Perfil>(PERFIL_INICIAL)
+  const [onboardingCompleto,  setOnboardingCompletoState]  = useState(false)
 
   // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -198,6 +202,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
     setDesvioMinPercState((map[KEYS.desvioMinPerc] as number | undefined) ?? 10)
     setPerfilState((map[KEYS.perfil] as Perfil | undefined) ?? PERFIL_INICIAL)
+    const hasData = ((map[KEYS.contas] as Conta[] | undefined)?.length ?? 0) > 0
+      || ((map[KEYS.categorias] as Categoria[] | undefined)?.length ?? 0) > 0
+    const onboardingValue = KEYS.onboarding in map
+      ? (map[KEYS.onboarding] as boolean)
+      : hasData
+    setOnboardingCompletoState(onboardingValue)
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
@@ -215,6 +225,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanejamentoLockadoState(false)
     setDesvioMinPercState(10)
     setPerfilState(PERFIL_INICIAL)
+    setOnboardingCompletoState(false)
   }
 
   // ── Auto-save para Supabase ──────────────────────────────────────────
@@ -235,6 +246,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveKey(KEYS.planejamentoLockado, planejamentoLockado) }, [planejamentoLockado])
   useEffect(() => { saveKey(KEYS.desvioMinPerc,       desvioMinPerc)       }, [desvioMinPerc])
   useEffect(() => { saveKey(KEYS.perfil,              perfil)              }, [perfil])
+  useEffect(() => { saveKey(KEYS.onboarding,          onboardingCompleto)  }, [onboardingCompleto])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -261,6 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function setPlanejamentoLockado(v: boolean) { setPlanejamentoLockadoState(v) }
   function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
   function setPerfil(v: Perfil) { setPerfilState(v) }
+  function setOnboardingCompleto(v: boolean) { setOnboardingCompletoState(v) }
 
   async function limparDados() {
     const uid = userIdRef.current
@@ -294,7 +307,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, setDesvioMinPerc, setPerfil, limparDados, sairDaConta,
+      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, setDesvioMinPerc, setPerfil,
+      onboardingCompleto, setOnboardingCompleto,
+      limparDados, sairDaConta,
     }}>
       {children}
     </Ctx.Provider>

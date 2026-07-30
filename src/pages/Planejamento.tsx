@@ -149,6 +149,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [mesMobile, setMesMobile] = useState(mesAtual)
   const [secEntAberto, setSecEntAberto] = useState(true)
   const [secSaiAberto, setSecSaiAberto] = useState(true)
+  const [alertsDismissed, setAlertsDismissed] = useState<Set<string>>(new Set())
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -1323,6 +1324,52 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
       <AppHeader currentPath={pathname} />
+
+      {/* ── ALERTAS DE CONFIGURAÇÃO ── */}
+      {(() => {
+        const semContas = contas.length === 0
+        const semEntradas = !categorias.some(c => c.tipo === 'entrada' && c.ativa)
+        const semSaidas   = !categorias.some(c => c.tipo === 'saida'   && c.ativa)
+        const semPlano    = !planos[anoCorrente]
+        type AlertId = 'contas' | 'entradas' | 'saidas' | 'plano'
+        const itens: { id: AlertId; msg: string; url: string; tipo: 'warn' | 'info' }[] = []
+        if (semContas)   itens.push({ id:'contas',   msg:'⚠ Você não tem nenhuma conta cadastrada.',            url:'/configuracoes?aba=bancos&acao=novo', tipo:'warn' })
+        if (semEntradas) itens.push({ id:'entradas', msg:'⚠ Você não tem categorias de entrada cadastradas.',   url:'/configuracoes?aba=categorias',       tipo:'warn' })
+        if (semSaidas)   itens.push({ id:'saidas',   msg:'⚠ Você não tem categorias de saída cadastradas.',     url:'/configuracoes?aba=categorias',       tipo:'warn' })
+        if (semPlano)    itens.push({ id:'plano',    msg:`📊 Você ainda não tem um planejamento para ${anoCorrente}.`, url:'/wizard-planejamento', tipo:'info' })
+        const visiveis = itens.filter(a => !alertsDismissed.has(a.id))
+        if (visiveis.length === 0) return null
+        return (
+          <div style={{ padding:'8px 20px 0', display:'flex', flexDirection:'column', gap:6 }}>
+            {visiveis.map(a => {
+              const warn = a.tipo === 'warn'
+              return (
+                <div key={a.id} style={{
+                  display:'flex', alignItems:'center', gap:10,
+                  background: warn ? '#fffbeb' : '#eff6ff',
+                  border:`1px solid ${warn ? '#fde68a' : '#bfdbfe'}`,
+                  borderRadius:10, padding:'10px 14px',
+                }}>
+                  <span style={{ flex:1, fontSize:13, color: warn ? '#92400e' : '#1e40af', fontWeight:500 }}>
+                    {a.msg}
+                  </span>
+                  <button onClick={() => navigate(a.url)} style={{
+                    border:'none', borderRadius:7, padding:'5px 12px', cursor:'pointer',
+                    background: warn ? '#fde68a' : '#bfdbfe',
+                    color: warn ? '#92400e' : '#1e40af',
+                    fontSize:12, fontWeight:700, fontFamily:'inherit', flexShrink:0,
+                  }}>Configurar</button>
+                  <button onClick={() => setAlertsDismissed(prev => new Set([...prev, a.id]))} style={{
+                    border:'none', background:'transparent', cursor:'pointer',
+                    fontSize:16, color: warn ? '#d97706' : '#93c5fd', padding:'0 2px', flexShrink:0,
+                    lineHeight:1,
+                  }}>✕</button>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       {/* ── BARRA DE ABAS STICKY ── */}
       <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.branco }}>

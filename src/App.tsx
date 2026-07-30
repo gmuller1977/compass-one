@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
 import Login          from './pages/Login'
@@ -10,9 +10,11 @@ import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import Acompanhamento  from './pages/Acompanhamento'
 import Configuracoes   from './pages/Configuracoes'
+import Onboarding      from './pages/Onboarding'
 
 function Protegido({ children }: { children: ReactNode }) {
-  const { user, carregando } = useApp()
+  const { user, carregando, onboardingCompleto } = useApp()
+  const location = useLocation()
   if (carregando) return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -28,6 +30,9 @@ function Protegido({ children }: { children: ReactNode }) {
     </div>
   )
   if (!user) return <Navigate to="/login" replace />
+  if (!onboardingCompleto && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />
+  }
   return <>{children}</>
 }
 
@@ -43,9 +48,11 @@ export default function App() {
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/acompanhamento" element={<Protegido><Acompanhamento /></Protegido>} />
-          <Route path="/novo-lancamento" element={<Protegido><NovoLancamento /></Protegido>} />
-          <Route path="/configuracoes"   element={<Protegido><Configuracoes /></Protegido>} />
-          <Route path="*"               element={<Navigate to="/" replace />} />
+          <Route path="/novo-lancamento"    element={<Protegido><NovoLancamento /></Protegido>} />
+          <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
+          <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
+          <Route path="/wizard-planejamento" element={<Protegido><Planejamento /></Protegido>} />
+          <Route path="*"                   element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ToastProvider>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import { useToast } from '../components/Toast'
@@ -259,6 +259,7 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
   const location  = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { toast } = useToast()
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'list'|'form'>('list')
@@ -307,6 +308,26 @@ export default function Configuracoes() {
       setAba('preferencias')
     }
   }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const abaParam = searchParams.get('aba') as Aba | null
+    const acaoParam = searchParams.get('acao')
+    if (!abaParam) return
+    if (abaParam === 'bancos') {
+      setAba('bancos')
+      setMobileView(acaoParam === 'novo' ? 'form' : 'list')
+      if (acaoParam === 'novo') novaConta('bancos')
+    } else if (abaParam === 'cartoes') {
+      setAba('cartoes')
+      setMobileView(acaoParam === 'novo' ? 'form' : 'list')
+      if (acaoParam === 'novo') novaConta('cartoes')
+    } else if (abaParam === 'categorias') {
+      setAba('categorias')
+      setMobileView('list')
+    }
+    setSearchParams({}, { replace: true })
+  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const contaVazia: Omit<Conta,'id'> = {
     nome:'', banco:'', tipo:'corrente', saldoInicial:0,
     cor:CORES_PRESET[0], icone:ICONES_CONTA[0],
