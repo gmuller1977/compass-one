@@ -1094,7 +1094,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         </div>
       )
 
-      function revisaoSecao(items: typeof dr.entradas, tipo: 'entrada'|'saida') {
+      function revisaoSecao(items: NonNullable<typeof dadosRevisao>['entradas'], tipo: 'entrada'|'saida') {
         if (items.length === 0) return null
         const isE = tipo === 'entrada'
         return (
