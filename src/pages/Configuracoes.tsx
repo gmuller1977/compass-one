@@ -266,7 +266,7 @@ export default function Configuracoes() {
   const [mobileView, setMobileView] = useState<'list'|'form'>('list')
   const [aba,    setAba]    = useState<Aba>('home')
   const { user, contas, categorias, setContas, setCategorias,
-          planos, planosReal,
+          planos, planosReal, setPlanos,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
           perfil, setPerfil,
@@ -1783,6 +1783,30 @@ export default function Configuracoes() {
                   fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
                   background: planejamentoLockado ? '#ea580c' : '#16a34a', color:'#fff' }}>
                   {planejamentoLockado ? 'Desbloquear' : 'Bloquear'}
+                </button>
+              </div>
+
+              <div style={{ height:1, background:COR.borda, margin:'16px 0' }} />
+
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'12px 14px', borderRadius:9, background:'#fff5f5',
+                border:'1px solid #fecaca' }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🔄 Refazer planejamento</div>
+                  <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
+                    Apaga o plano de {new Date().getFullYear()} e abre o assistente do zero.
+                  </div>
+                </div>
+                <button onClick={() => {
+                  if (!window.confirm('Isso apagará o planejamento atual. Continuar?')) return
+                  const ano = new Date().getFullYear()
+                  setPlanos(prev => { const p = { ...prev }; delete p[ano]; return p })
+                  navigate('/wizard-planejamento')
+                }} style={{
+                  padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+                  fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
+                  background:'#dc2626', color:'#fff' }}>
+                  Refazer
                 </button>
               </div>
             </div>
