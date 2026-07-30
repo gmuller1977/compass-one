@@ -266,7 +266,7 @@ export default function Configuracoes() {
   const [mobileView, setMobileView] = useState<'list'|'form'>('list')
   const [aba,    setAba]    = useState<Aba>('home')
   const { user, contas, categorias, setContas, setCategorias,
-          planos, planosReal, setPlanos,
+          planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
           perfil, setPerfil,
@@ -1797,12 +1797,7 @@ export default function Configuracoes() {
                     Apaga o plano de {new Date().getFullYear()} e abre o assistente do zero.
                   </div>
                 </div>
-                <button onClick={() => {
-                  if (!window.confirm('Isso apagará o planejamento atual. Continuar?')) return
-                  const ano = new Date().getFullYear()
-                  setPlanos(prev => { const p = { ...prev }; delete p[ano]; return p })
-                  navigate('/wizard-planejamento')
-                }} style={{
+                <button onClick={() => navigate('/wizard-planejamento', { state: { refazer: true } })} style={{
                   padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
                   fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
                   background:'#dc2626', color:'#fff' }}>

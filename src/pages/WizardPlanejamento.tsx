@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData, Categoria } from '../context/AppContext'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
@@ -61,13 +61,15 @@ const saldoInputSt: React.CSSProperties = {
 
 export default function WizardPlanejamento() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const refazer  = (location.state as { refazer?: boolean } | null)?.refazer === true
   const { contas, categorias, planos, setPlanos, setOnboardingCompleto, onboardingCompleto } = useApp()
 
   const contasBanco  = useMemo(() => contas.filter(c => c.tipo !== 'cartao'), [contas])
   const cartaoNomes  = useMemo(() => new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())), [contas])
   const catsEntrada  = useMemo(() => categorias.filter(c => c.tipo === 'entrada'), [categorias])
   const catsSaida    = useMemo(() => categorias.filter(c => c.tipo === 'saida' && !nomeFaturaCartao(c.nome, cartaoNomes)), [categorias, cartaoNomes])
-  const existingPlan = planos[ANO]
+  const existingPlan = refazer ? undefined : planos[ANO]
 
   function initSaldos(): Record<string,string> {
     const r: Record<string,string> = {}
