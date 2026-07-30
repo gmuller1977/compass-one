@@ -102,15 +102,36 @@ export default function QuickLaunch() {
         .flat().filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
       return limite - total
     }
+    // Saldo manual definido no mês atual → usa diretamente
     if (mesDadosBanco.saldoBanco && mesDadosBanco.saldoBanco !== '0') {
       return parseBRL(mesDadosBanco.saldoBanco)
     }
-    let base = contaSel.saldoInicial
-    Object.entries(mesDadosBanco.lancamentos).forEach(([d, lcs]) => {
-      if (Number(d) <= dia) lcs.forEach(l => { base += l.tipo === 'entrada' ? l.valor : -l.valor })
-    })
+    // Busca o mês mais recente (antes do atual) com saldo manual como base
+    const prefix = contaSel.id + '-'
+    const curYM  = ano * 100 + (mes + 1)
+    let baseYM   = 0
+    let base     = contaSel.saldoInicial
+    for (const [k, v] of Object.entries(extratoData as Record<string, DadosMes>)) {
+      if (!k.startsWith(prefix)) continue
+      if (!v.saldoBanco || v.saldoBanco === '0') continue
+      const [sy, sm] = k.slice(prefix.length).split('-')
+      const ym = parseInt(sy) * 100 + parseInt(sm)
+      if (ym < curYM && ym > baseYM) { baseYM = ym; base = parseBRL(v.saldoBanco) }
+    }
+    // Acumula transações dos meses após a base até o mês atual
+    for (const [k, v] of Object.entries(extratoData as Record<string, DadosMes>)) {
+      if (!k.startsWith(prefix)) continue
+      const [sy, sm] = k.slice(prefix.length).split('-')
+      const ym = parseInt(sy) * 100 + parseInt(sm)
+      if (ym <= baseYM || ym > curYM) continue
+      const isCur = ym === curYM
+      Object.entries(v.lancamentos).forEach(([d, lcs]) => {
+        if (isCur && Number(d) > dia) return
+        lcs.forEach(l => { base += l.tipo === 'entrada' ? l.valor : -l.valor })
+      })
+    }
     return base
-  }, [contaSel, isCartao, mesDadosBanco, mesDadosCartao, dia])
+  }, [contaSel, isCartao, extratoData, mesDadosBanco, mesDadosCartao, ano, mes, dia])
 
   const gastosHoje = useMemo(() => {
     if (isCartao) {
@@ -293,7 +314,7 @@ export default function QuickLaunch() {
           }}>{contaSel.icone || (isCartao ? '💳' : '🏦')}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11, color: COR.textoSuave, fontWeight: 500, marginBottom: 1 }}>
-              {contaSel.nome}
+              {isCartao ? (contaSel.apelido || contaSel.banco) : contaSel.banco}
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: COR.texto, letterSpacing: '-.5px' }}>
               {isCartao
@@ -302,7 +323,7 @@ export default function QuickLaunch() {
               }
             </div>
             <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>
-              {isCartao ? `Disponível · Limite ${fmt(contaSel.limiteCartao ?? 0)}` : contaSel.banco}
+              {isCartao ? `Disponível · Limite ${fmt(contaSel.limiteCartao ?? 0)}` : contaSel.nome}
             </div>
           </div>
           <div style={{
