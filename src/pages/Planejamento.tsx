@@ -149,7 +149,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [mesMobile, setMesMobile] = useState(mesAtual)
   const [secEntAberto, setSecEntAberto] = useState(true)
   const [secSaiAberto, setSecSaiAberto] = useState(true)
-  const [mobileComp,   setMobileComp]   = useState(false)
 
   const quizGruposAtivos = useMemo(() => {
     const cartNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
@@ -1046,49 +1045,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         : (dadosAnoFinal.saidas[ri]?.v[mi] ?? 0)
       const ativo = editando?.tipo === tipo && editando.row === ri && editando.mes === mi
 
-      if (mobileComp) {
-        const prevData = planos[anoAtual] as AnoData | undefined
-        const realData = planosReal[anoAtual] as PlanoAnoData | undefined
-        const arr = tipo === 'e' ? 'entradas' : 'saidas'
-        const prevVal = (prevData?.[arr]?.find((c: Cat) => cat.id ? c.id === cat.id : c.nome === cat.nome) as Cat | undefined)?.v[mi] ?? 0
-        const realVal = (realData?.[arr]?.find((c: Cat) => cat.id ? c.id === cat.id : c.nome === cat.nome) as Cat | undefined)?.v[mi] ?? 0
-        const progPct = prevVal > 0 ? Math.min(1.5, realVal / prevVal) : 0
-        let arrow = '='
-        let arrowColor = '#94a3b8'
-        if (prevVal > 0 || realVal > 0) {
-          if (tipo === 's') {
-            if (realVal > prevVal)      { arrow = '↑'; arrowColor = '#dc2626' }
-            else if (realVal < prevVal) { arrow = '↓'; arrowColor = '#16a34a' }
-          } else {
-            if (realVal > prevVal)      { arrow = '↑'; arrowColor = '#16a34a' }
-            else if (realVal < prevVal) { arrow = '↓'; arrowColor = '#dc2626' }
-          }
-        }
-        const progColor = tipo === 's'
-          ? (progPct > 1 ? '#dc2626' : progPct > .8 ? '#d97706' : '#16a34a')
-          : (progPct >= 1 ? '#16a34a' : '#d97706')
-        return (
-          <div key={cat.id ?? cat.nome} style={{ background:'#fff', display:'flex', alignItems:'center', gap:10, padding:'11px 16px', borderBottom:'1px solid #f8faff' }}>
-            <div style={{ width:36, height:36, borderRadius:10, background: corIcone+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
-              {icone}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cat.nome}</div>
-              <div style={{ marginTop:4, width:80, height:3, borderRadius:2, background:'#e2e8f0', overflow:'hidden' }}>
-                <div style={{ width:`${Math.min(1, progPct)*100}%`, height:'100%', background:progColor, borderRadius:2 }} />
-              </div>
-            </div>
-            <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:1 }}>
-              <div style={{ fontSize:11, fontWeight:600, color:'#94a3b8' }}>{prevVal !== 0 ? fmt(prevVal, true) : '—'}</div>
-              <div style={{ fontSize:12, fontWeight:700, color:arrowColor, display:'flex', alignItems:'center', gap:2 }}>
-                <span style={{ fontSize:10 }}>{arrow}</span>
-                {realVal !== 0 ? fmt(realVal, true) : '—'}
-              </div>
-            </div>
-          </div>
-        )
-      }
-
       return (
         <div key={cat.id ?? cat.nome} style={{ background:'#fff', display:'flex', alignItems:'center', gap:10, padding:'11px 16px', borderBottom:'1px solid #f8faff' }}>
           <div style={{ width:36, height:36, borderRadius:10, background: corIcone+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
@@ -1126,6 +1082,89 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
     const navBtn: React.CSSProperties = { width:30, height:30, borderRadius:9, border:'none', background:'rgba(255,255,255,.15)', color:'#fff', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'inherit' }
 
+    const mobileRevisaoView = aba === 'revisao' ? buildMobileRevisao() : null
+
+    function buildMobileRevisao() {
+      const dr = dadosRevisao
+      if (!dr) return (
+        <div style={{ textAlign:'center' as const, padding:'60px 20px', color:'#64748b' }}>
+          <div style={{ fontSize:32, marginBottom:12 }}>📭</div>
+          <div style={{ fontSize:14, fontWeight:600, color:'#0f172a', marginBottom:6 }}>Revisão indisponível</div>
+          <div style={{ fontSize:12 }}>Registre lançamentos e crie um planejamento para ver a revisão mensal.</div>
+        </div>
+      )
+
+      function revisaoSecao(items: typeof dr.entradas, tipo: 'entrada'|'saida') {
+        if (items.length === 0) return null
+        const isE = tipo === 'entrada'
+        return (
+          <div style={{ borderRadius:18, overflow:'hidden', marginBottom:12, boxShadow:'0 2px 12px rgba(0,0,0,.07)' }}>
+            <div style={{ padding:'12px 16px', background: isE ? '#f0fdf4' : '#fff1f2',
+              borderBottom: isE ? '1px solid #dcfce7' : '1px solid #fecdd3',
+              display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:16 }}>{isE ? '↑' : '↓'}</span>
+              <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const,
+                letterSpacing:'.5px', color: isE ? '#16a34a' : '#dc2626' }}>
+                {isE ? 'Entradas' : 'Saídas'}
+              </span>
+            </div>
+            {items.map(item => {
+              const excesso   = tipo === 'saida' ? item.desvio > 0 : item.desvio < 0
+              const corDesvio = item.desvio === 0 ? '#94a3b8' : excesso ? '#dc2626' : '#16a34a'
+              return (
+                <div key={item.nome} style={{ background:'#fff', display:'flex', alignItems:'center',
+                  gap:10, padding:'12px 16px', borderBottom:'1px solid #f8faff' }}>
+                  <div style={{ width:36, height:36, borderRadius:10, background: item.cor+'18',
+                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
+                    {item.icone}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:'#0f172a',
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome}</div>
+                    <div style={{ fontSize:10, color:'#94a3b8', marginTop:2, fontVariantNumeric:'tabular-nums' }}>
+                      {item.previsto > 0 ? fmt(item.previsto, true) : '—'} → {item.realizado > 0 ? fmt(item.realizado, true) : '—'}
+                    </div>
+                  </div>
+                  <div style={{ flexShrink:0, textAlign:'right' as const }}>
+                    <div style={{ fontSize:13, fontWeight:800, color:corDesvio, fontVariantNumeric:'tabular-nums' }}>
+                      {item.desvio === 0 ? '—' : (item.desvio > 0 ? '+' : '') + fmt(Math.abs(item.desvio), true)}
+                    </div>
+                    {item.desvioPerc !== null && item.desvio !== 0 && (
+                      <div style={{ fontSize:10, color:corDesvio }}>
+                        {item.desvioPerc > 0 ? '+' : ''}{item.desvioPerc.toFixed(0)}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      }
+
+      const semDados = dr.entradas.length === 0 && dr.saidas.length === 0
+      return (
+        <div>
+          <div style={{ borderRadius:14, background:'#fff', padding:'12px 16px', marginBottom:12,
+            boxShadow:'0 2px 8px rgba(0,0,0,.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>
+                Revisão de {MESES_FULL[mesRevisao]} {anoRevisao}
+              </div>
+              <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>
+                Base: {dr.temAtualizado ? 'Plano Atualizado' : 'Plano Original'}
+              </div>
+            </div>
+            <div style={{ fontSize:22 }}>🔍</div>
+          </div>
+          {semDados
+            ? <div style={{ textAlign:'center' as const, padding:'40px 20px', color:'#64748b', fontSize:13 }}>Nenhum dado encontrado para este mês.</div>
+            : <div>{revisaoSecao(dr.entradas, 'entrada')}{revisaoSecao(dr.saidas, 'saida')}</div>
+          }
+        </div>
+      )
+    }
+
     return (
       <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
@@ -1148,28 +1187,27 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             </div>
           </div>
 
-          {/* Ano + Previsto/Realizado toggle */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <button onClick={() => navegarAno(-1)} style={navBtn}>‹</button>
-              <span style={{ fontSize:20, fontWeight:800, color:'#fff', letterSpacing:'-.5px' }}>{anoAtual}</span>
-              <button onClick={() => navegarAno(1)} style={navBtn}>›</button>
-            </div>
+          {/* Ano */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginBottom:10 }}>
+            <button onClick={() => navegarAno(-1)} style={navBtn}>‹</button>
+            <span style={{ fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-.5px', minWidth:56, textAlign:'center' as const }}>{anoAtual}</span>
+            <button onClick={() => navegarAno(1)} style={navBtn}>›</button>
+          </div>
+
+          {/* Previsto / Realizado / Revisão toggle */}
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
             <div style={{ display:'flex', background:'rgba(0,0,0,.2)', borderRadius:10, padding:3, gap:3 }}>
-              {(['previsto','real'] as const).map(v => {
-                const label = v === 'previsto' ? 'Previsto' : 'Realizado'
-                const active = aba === v && !mobileComp
+              {(['previsto','real','revisao'] as const).map(v => {
+                const label = v === 'previsto' ? 'Previsto' : v === 'real' ? 'Realizado' : 'Revisão'
+                const active = aba === v
+                const disabled = v === 'revisao' && !revisaoDisponivel
                 return (
-                  <button key={v} onClick={() => { setAba(v); setMobileComp(false); setEditando(null) }}
-                    style={{ padding:'5px 12px', borderRadius:8, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: active ? 'rgba(255,255,255,.95)' : 'transparent', color: active ? '#0f2878' : 'rgba(255,255,255,.6)' }}>
+                  <button key={v} onClick={() => { if (!disabled) { setAba(v); setEditando(null) } }}
+                    style={{ padding:'6px 16px', borderRadius:8, border:'none', cursor: disabled ? 'default' : 'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: active ? 'rgba(255,255,255,.95)' : 'transparent', color: active ? '#0f2878' : disabled ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.6)' }}>
                     {label}
                   </button>
                 )
               })}
-              <button onClick={() => { setMobileComp(true); setEditando(null) }}
-                style={{ padding:'5px 12px', borderRadius:8, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: mobileComp ? 'rgba(255,255,255,.95)' : 'transparent', color: mobileComp ? '#0f2878' : 'rgba(255,255,255,.6)' }}>
-                Comparar
-              </button>
             </div>
           </div>
 
@@ -1204,6 +1242,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         {/* CONTENT */}
         <div style={{ flex:1, overflowY:'auto', padding:'12px 14px 90px', scrollbarWidth:'none' as const }}>
 
+          {mobileRevisaoView}
+
+          {aba !== 'revisao' && <>
           {/* ENTRADAS section card */}
           <div style={{ borderRadius:18, overflow:'hidden', marginBottom:12, boxShadow:'0 2px 12px rgba(0,0,0,.07)' }}>
             <div onClick={() => setSecEntAberto(v => !v)}
@@ -1271,6 +1312,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           </div>
 
           <div style={{ height:6 }} />
+          </>}
         </div>
 
         <BottomNav />
