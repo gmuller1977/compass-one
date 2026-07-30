@@ -315,7 +315,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia)
     setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
-    setFValor(fmt(l.valor * (l.parcelas ?? 1)))
+    setFValor(String(l.valor).replace('.', ','))
     setFParcelas(String(l.parcelas ?? 1))
     const dc = l.diaCompra ?? dia
     const mc = l.mesCompra ?? purchaseMes
@@ -375,8 +375,8 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
 
 
   function lancar() {
+    const valorParcela = parseBRL(fValor)
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
-    const valorParcela = parseBRL(fValor) / nParcelas
     if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
     // Resolve data de compra a partir do campo livre
@@ -597,16 +597,74 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
           </div>
         </div>
 
-        {/* INFO BAR: fecha · vence */}
+        {/* INFO BAR: fecha · vence — chips editáveis */}
         <div style={{flexShrink:0,background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'7px 14px',display:'flex',alignItems:'center',gap:5,flexWrap:'wrap' as const}}>
-          <span style={{fontSize:11,color:'#94a3b8'}}>
-            Fecha dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
-          </span>
-          <span style={{color:'#e2e8f0',fontSize:12}}>·</span>
-          <span style={{fontSize:11,color:'#94a3b8'}}>
-            Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
-          </span>
+          padding:'6px 10px',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as const}}>
+          {/* Chip fechamento */}
+          {editandoFechamento ? (
+            <div style={{display:'flex',alignItems:'center',gap:4,background:'#eff6ff',
+              border:`1px solid ${COR.azul}55`,borderRadius:20,padding:'4px 10px'}}>
+              <span style={{fontSize:10,fontWeight:600,color:COR.azul}}>Fecha dia</span>
+              <input type="number" min={1} max={31} autoFocus defaultValue={diaFechamento}
+                onBlur={e => {
+                  const v = Math.min(Math.max(parseInt(e.target.value)||diaFechamentoBase,1),31)
+                  if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
+                  else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
+                  setEditandoFechamento(false)
+                }}
+                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
+                style={{width:32,border:`1px solid ${COR.azul}66`,borderRadius:4,padding:'1px 4px',
+                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',
+                  textAlign:'center' as const,background:'transparent',color:COR.azul}}/>
+              <span style={{fontSize:10,color:COR.azul}}>de {NOMES_MESES[purchaseMes].slice(0,3)}</span>
+            </div>
+          ) : (
+            <div onClick={() => setEditandoFechamento(true)}
+              style={{display:'flex',alignItems:'center',gap:4,cursor:'pointer',
+                background:'#f0f6ff',border:`1px solid ${COR.azul}33`,
+                borderRadius:20,padding:'4px 10px'}}>
+              <span style={{fontSize:10,fontWeight:600,color:COR.azul}}>
+                Fecha {diaFechamento} de {NOMES_MESES[purchaseMes].slice(0,3)}
+                {mesDados.fechamentoOverride ? <sup style={{fontSize:8,color:'#94a3b8',marginLeft:1}}>*</sup> : null}
+              </span>
+              <span style={{fontSize:9,color:COR.azul,opacity:.6}}>✎</span>
+            </div>
+          )}
+
+          <span style={{color:'#e2e8f0',fontSize:11}}>·</span>
+
+          {/* Chip vencimento */}
+          {editandoVencimento ? (
+            <div style={{display:'flex',alignItems:'center',gap:4,background:'#fff5f5',
+              border:`1px solid ${COR.vermelho}55`,borderRadius:20,padding:'4px 10px'}}>
+              <span style={{fontSize:10,fontWeight:600,color:COR.vermelho}}>Vence dia</span>
+              <input type="number" min={1} max={31} autoFocus defaultValue={diaVencimento}
+                onBlur={e => {
+                  const v = Math.min(Math.max(parseInt(e.target.value)||diaVencimentoBase,1),31)
+                  if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
+                  else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
+                  setEditandoVencimento(false)
+                }}
+                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
+                style={{width:32,border:`1px solid ${COR.vermelho}66`,borderRadius:4,padding:'1px 4px',
+                  fontSize:12,fontWeight:700,outline:'none',fontFamily:'inherit',
+                  textAlign:'center' as const,background:'transparent',color:COR.vermelho}}/>
+              <span style={{fontSize:10,color:COR.vermelho}}>
+                de {NOMES_MESES[mesVenc].slice(0,3)}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
+              </span>
+            </div>
+          ) : (
+            <div onClick={() => setEditandoVencimento(true)}
+              style={{display:'flex',alignItems:'center',gap:4,cursor:'pointer',
+                background:'#fff5f5',border:`1px solid ${COR.vermelho}33`,
+                borderRadius:20,padding:'4px 10px'}}>
+              <span style={{fontSize:10,fontWeight:600,color:COR.vermelho}}>
+                Vence {diaVencimento} de {NOMES_MESES[mesVenc].slice(0,3)}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
+                {mesDados.vencimentoOverride ? <sup style={{fontSize:8,color:'#94a3b8',marginLeft:1}}>*</sup> : null}
+              </span>
+              <span style={{fontSize:9,color:COR.vermelho,opacity:.6}}>✎</span>
+            </div>
+          )}
         </div>
 
         {/* RESUMO STRIP */}
@@ -737,18 +795,13 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
                 </select>
               </div>
 
-              {/* Valor total */}
+              {/* Valor da parcela */}
               <div style={{marginBottom:14}}>
                 <label style={{fontSize:10,fontWeight:700,color:COR.azul,
                   textTransform:'uppercase' as const,letterSpacing:.5,
-                  marginBottom:5,display:'block'}}>💰 Valor total</label>
+                  marginBottom:5,display:'block'}}>💰 Valor da parcela</label>
                 <input ref={valorInputRef} value={fValor}
-                  onChange={e => {
-                    const digits = e.target.value.replace(/\D/g,'')
-                    if (!digits) { setFValor(''); return }
-                    const num = (parseInt(digits)/100).toFixed(2)
-                    setFValor('R$ '+parseFloat(num).toLocaleString('pt-BR',{minimumFractionDigits:2}))
-                  }}
+                  onChange={e => setFValor(e.target.value)}
                   placeholder="R$ 0,00"
                   style={{width:'100%',border:`2px solid ${COR.azul}`,borderRadius:12,
                     padding:'12px 14px',fontSize:22,fontWeight:800,color:COR.azul,
@@ -788,13 +841,13 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
                     )
                   })}
                 </div>
-                {parseBRL(fValor) > 0 && (
+                {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
                   <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',
                     borderRadius:10,padding:'10px 14px',marginTop:8,
                     display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <span style={{fontSize:11,color:COR.textoSuave}}>Valor de cada parcela</span>
+                    <span style={{fontSize:11,color:COR.textoSuave}}>Total da compra</span>
                     <span style={{fontSize:14,fontWeight:800,color:'#16a34a'}}>
-                      {fmt(parseBRL(fValor) / Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
+                      {fmt(parseBRL(fValor) * Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
                     </span>
                   </div>
                 )}
@@ -1452,7 +1505,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
             </select>
           </div>
           <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor total *</div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00"
               onFocus={realcarFoco} onBlur={removerRealce}
@@ -1507,7 +1560,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
             </div>
             {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
               <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
-                {fParcelas}x de {fmt(parseBRL(fValor) / parseInt(fParcelas))}
+                Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmt(parseBRL(fValor))})
               </div>
             )}
           </div>
