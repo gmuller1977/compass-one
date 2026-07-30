@@ -714,7 +714,7 @@ export default function NovoLancamentoExtrato() {
 
       {isMobile ? (
         <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-          padding:'44px 20px 0',flexShrink:0}}>
+          padding:'16px 20px 0',flexShrink:0}}>
           {/* Logo + avatar */}
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>

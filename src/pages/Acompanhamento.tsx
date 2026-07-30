@@ -679,7 +679,7 @@ export default function Acompanhamento() {
         background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
         {/* GRADIENT HEADER */}
-        <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'44px 20px 14px', flexShrink:0 }}>
+        <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'16px 20px 14px', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.15)',

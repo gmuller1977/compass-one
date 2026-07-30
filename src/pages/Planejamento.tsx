@@ -1169,7 +1169,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
         {/* HEADER — gradient */}
-        <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'44px 20px 0', flexShrink:0 }}>
+        <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'16px 20px 0', flexShrink:0 }}>
           {/* Logo + avatar */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
