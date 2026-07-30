@@ -421,12 +421,12 @@ export default function QuickLaunch() {
                   {c.nome}
                 </span>
                 {temPrevisto ? (
-                  <span style={{ fontSize: 9, color: corDisp, fontWeight: 700, textAlign: 'center' }}>
-                    {fmt(disponivel)} disp.
+                  <span style={{ fontSize: 11, color: corDisp, fontWeight: 700, textAlign: 'center' }}>
+                    {fmt(disponivel)}
                   </span>
                 ) : (
-                  <span style={{ fontSize: 9, color: '#94a3b8' }}>
-                    {ult ? `últ. ${fmt(ult)}` : c.tipo}
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                    {ult ? fmt(ult) : c.tipo}
                   </span>
                 )}
               </button>
