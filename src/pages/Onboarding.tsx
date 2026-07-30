@@ -92,6 +92,7 @@ export default function Onboarding() {
       minHeight: '100dvh', background: COR.fundo,
       display: 'flex', flexDirection: 'column',
       fontFamily: "-apple-system,'Inter',sans-serif",
+      maxWidth: 480, margin: '0 auto',
     }}>
       {/* Header */}
       <div style={{
