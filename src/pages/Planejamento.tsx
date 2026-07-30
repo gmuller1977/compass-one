@@ -1187,15 +1187,22 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             </div>
           </div>
 
-          {/* Ano */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginBottom:10 }}>
-            <button onClick={() => navegarAno(-1)} style={navBtn}>‹</button>
-            <span style={{ fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-.5px', minWidth:56, textAlign:'center' as const }}>{anoAtual}</span>
-            <button onClick={() => navegarAno(1)} style={navBtn}>›</button>
+          {/* Ano + Mês — mesma linha */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <button onClick={() => navegarAno(-1)} style={navBtn}>‹</button>
+              <span style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,.7)' }}>{anoAtual}</span>
+              <button onClick={() => navegarAno(1)} style={navBtn}>›</button>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtn}>‹</button>
+              <span style={{ fontSize:18, fontWeight:800, color:'#fff', minWidth:90, textAlign:'center' as const }}>{MESES_FULL[mi]}</span>
+              <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtn}>›</button>
+            </div>
           </div>
 
-          {/* Previsto / Realizado / Revisão toggle */}
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}>
+          {/* Toggle + Saldo inicial — mesma linha */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:16 }}>
             <div style={{ display:'flex', background:'rgba(0,0,0,.2)', borderRadius:10, padding:3, gap:3 }}>
               {(['previsto','real','revisao'] as const).map(v => {
                 const label = v === 'previsto' ? 'Previsto' : v === 'real' ? 'Realizado' : 'Revisão'
@@ -1203,20 +1210,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 const disabled = v === 'revisao' && !revisaoDisponivel
                 return (
                   <button key={v} onClick={() => { if (!disabled) { setAba(v); setEditando(null) } }}
-                    style={{ padding:'6px 16px', borderRadius:8, border:'none', cursor: disabled ? 'default' : 'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: active ? 'rgba(255,255,255,.95)' : 'transparent', color: active ? '#0f2878' : disabled ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.6)' }}>
+                    style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor: disabled ? 'default' : 'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit', background: active ? 'rgba(255,255,255,.95)' : 'transparent', color: active ? '#0f2878' : disabled ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.6)' }}>
                     {label}
                   </button>
                 )
               })}
-            </div>
-          </div>
-
-          {/* Mês + Saldo inicial */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <button onClick={() => setMesMobile(m => Math.max(0, m - 1))} style={navBtn}>‹</button>
-              <span style={{ fontSize:16, fontWeight:700, color:'#fff', minWidth:80, textAlign:'center' as const }}>{MESES_FULL[mi]}</span>
-              <button onClick={() => setMesMobile(m => Math.min(11, m + 1))} style={navBtn}>›</button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
               <div style={{ fontSize:9, color:'rgba(255,255,255,.6)', fontWeight:600, textTransform:'uppercase' as const, letterSpacing:'.4px', marginBottom:2 }}>Saldo inicial</div>
