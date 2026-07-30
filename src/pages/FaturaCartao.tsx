@@ -86,7 +86,7 @@ function removerRealce(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.boxShadow = 'none'
 }
 
-export default function FaturaCartao({ mobileSelecionado, onVoltar }: { mobileSelecionado?: string; onVoltar?: () => void } = {}) {
+export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?: string; onVoltar?: () => void } = {}) {
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
