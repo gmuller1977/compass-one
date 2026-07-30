@@ -315,7 +315,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia)
     setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
-    setFValor(String(l.valor).replace('.', ','))
+    setFValor(fmt(l.valor * (l.parcelas ?? 1)))
     setFParcelas(String(l.parcelas ?? 1))
     const dc = l.diaCompra ?? dia
     const mc = l.mesCompra ?? purchaseMes
@@ -375,8 +375,8 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
 
 
   function lancar() {
-    const valorParcela = parseBRL(fValor)
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
+    const valorParcela = parseBRL(fValor) / nParcelas
     if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
     // Resolve data de compra a partir do campo livre
@@ -646,41 +646,58 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
 
         {/* FORM VIEW */}
         {mobileView === 'form' && (
-          <div style={{flex:1,overflowY:'auto',background:COR.branco}}>
-            <div style={{padding:'12px 16px',borderBottom:`1px solid ${COR.borda}`,
-              display:'flex',alignItems:'center',gap:8}}>
+          <div style={{flex:1,overflowY:'auto',scrollbarWidth:'none' as const}}>
+            {/* Back bar */}
+            <div style={{background:COR.branco,padding:'10px 16px',
+              borderBottom:`1px solid ${COR.borda}`,
+              display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
               <button onClick={() => { resetarParaNovo(diaSel); setMobileView('extrato') }}
-                style={{border:'none',background:'transparent',color:COR.azul,fontSize:13,
-                  fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>← Voltar</button>
-              <span style={{fontSize:14,fontWeight:600,color:COR.texto}}>
+                style={{border:'none',background:'transparent',color:COR.azul,
+                  fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>
+                ‹ Voltar
+              </button>
+              <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>
                 {editandoId ? 'Editar lançamento' : 'Novo lançamento'}
               </span>
             </div>
-            <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
-              {/* Compra / Estorno */}
-              <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,padding:3}}>
-                {(['entrada','saida'] as const).map(t => (
-                  <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
-                    flex:1,padding:'8px 0',border:'none',borderRadius:5,
-                    cursor:'pointer',fontSize:13,fontWeight:600,
-                    fontFamily:'inherit',transition:'all .15s',
-                    background:fTipo===t?COR.branco:'transparent',
-                    color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
-                    boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-                    {t==='saida'?'↑ Estorno':'↓ Compra'}
-                  </button>
-                ))}
+
+            <div style={{padding:'14px',display:'flex',flexDirection:'column'}}>
+
+              {/* Toggle Compra / Estorno */}
+              <div style={{display:'flex',background:'#f1f5f9',borderRadius:12,
+                padding:3,gap:3,marginBottom:16}}>
+                {(['entrada','saida'] as const).map(t => {
+                  const ativo = fTipo === t
+                  const isCompra = t === 'entrada'
+                  return (
+                    <button key={t} onClick={() => setFTipo(t)} style={{
+                      flex:1,padding:10,border:'none',borderRadius:10,cursor:'pointer',
+                      fontSize:13,fontWeight:700,fontFamily:'inherit',
+                      display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                      background: ativo ? (isCompra ? '#fff1f2' : '#f0fdf4') : 'transparent',
+                      color: ativo ? (isCompra ? '#dc2626' : '#16a34a') : '#94a3b8',
+                      boxShadow: ativo ? (isCompra ? '0 2px 8px rgba(220,38,38,.12)' : '0 2px 8px rgba(22,163,74,.12)') : 'none',
+                    }}>
+                      {isCompra ? '↓ Compra' : '↑ Estorno'}
+                    </button>
+                  )
+                })}
               </div>
+
               {/* Data da compra */}
               {(() => {
                 const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
                 const dispDia = parsed?.dia ?? diaSel
                 const dispMes = parsed?.mes ?? purchaseMes
                 const dispAno = parsed?.ano ?? purchaseAno
-                const label = `${String(dispDia).padStart(2,'0')} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
+                const label = `📅 ${dispDia} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
                 return (
-                  <div>
-                    <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
+                  <div style={{marginBottom:14}}>
+                    <label style={{fontSize:10,fontWeight:700,color:COR.azul,
+                      textTransform:'uppercase' as const,letterSpacing:.5,
+                      marginBottom:5,display:'block'}}>
+                      📅 Data da compra
+                    </label>
                     <input ref={dataCompraRef} type="text" value={fDataCompra}
                       onChange={e => setFDataCompra(e.target.value)}
                       onBlur={() => {
@@ -692,41 +709,61 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
                         }
                       }}
                       placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
-                      style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
-                        fontSize:14,outline:'none',background:'#fff',width:'100%',
+                      style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
+                        padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
                         fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
                       onKeyDown={e => { if (e.key==='Enter') (e.target as HTMLInputElement).blur() }}/>
-                    <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>{label}</div>
+                    <div style={{fontSize:11,color:COR.azul,fontWeight:600,marginTop:4}}>{label}</div>
                   </div>
                 )
               })()}
+
               {/* Categoria */}
-              <div>
-                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
-                <select ref={categoriaSelectRef} value={fCat} onChange={e=>setFCat(e.target.value)}
-                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
-                    fontSize:14,outline:'none',background:'#fff',width:'100%',
-                    fontFamily:'inherit',color:COR.texto}}>
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
+                  textTransform:'uppercase' as const,letterSpacing:.5,
+                  marginBottom:5,display:'block'}}>🏷 Categoria</label>
+                <select ref={categoriaSelectRef} value={fCat} onChange={e => setFCat(e.target.value)}
+                  style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
+                    padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
+                    fontFamily:'inherit',color:COR.texto,
+                    appearance:'none' as const,cursor:'pointer',
+                    backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E\")",
+                    backgroundRepeat:'no-repeat',backgroundPosition:'calc(100% - 14px) center'}}>
                   <option value="">Selecione...</option>
-                  {categoriasCartao.map(c=>(
+                  {categoriasCartao.map(c => (
                     <option key={c.id} value={c.nome}>{c.nome}</option>
                   ))}
                 </select>
               </div>
-              {/* Valor */}
-              <div>
-                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
-                <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+
+              {/* Valor total */}
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
+                  textTransform:'uppercase' as const,letterSpacing:.5,
+                  marginBottom:5,display:'block'}}>💰 Valor total</label>
+                <input ref={valorInputRef} value={fValor}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g,'')
+                    if (!digits) { setFValor(''); return }
+                    const num = (parseInt(digits)/100).toFixed(2)
+                    setFValor('R$ '+parseFloat(num).toLocaleString('pt-BR',{minimumFractionDigits:2}))
+                  }}
                   placeholder="R$ 0,00"
-                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
-                    fontSize:14,outline:'none',background:'#fff',width:'100%',
-                    fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
-                  onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+                  style={{width:'100%',border:`2px solid ${COR.azul}`,borderRadius:12,
+                    padding:'12px 14px',fontSize:22,fontWeight:800,color:COR.azul,
+                    background:'#eff6ff',outline:'none',fontFamily:'inherit',
+                    textAlign:'center' as const,letterSpacing:-.4,
+                    boxSizing:'border-box' as const}}
+                  onKeyDown={e => e.key==='Enter' && lancar()}/>
               </div>
+
               {/* Parcelas */}
-              <div>
-                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Parcelas</div>
-                <div style={{display:'flex',gap:5,flexWrap:'wrap' as const}}>
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
+                  textTransform:'uppercase' as const,letterSpacing:.5,
+                  marginBottom:5,display:'block'}}>🔢 Parcelas</label>
+                <div style={{display:'flex',flexWrap:'wrap' as const,gap:7}}>
                   {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
                     const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
                     const ativo = parcelasAtual === n
@@ -734,37 +771,56 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
                       <button key={n} ref={el => { parcelasBtnRefs.current[i] = el }}
                         tabIndex={ativo ? 0 : -1} onClick={() => setFParcelas(String(n))}
                         onKeyDown={e => {
-                          if (e.key === 'ArrowRight'||e.key === 'ArrowDown') { e.preventDefault(); if (n<12) { setFParcelas(String(n+1)); parcelasBtnRefs.current[i+1]?.focus() } }
-                          else if (e.key === 'ArrowLeft'||e.key === 'ArrowUp') { e.preventDefault(); if (n>1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() } }
-                          else if (e.key === 'Enter') { e.preventDefault(); lancar() }
+                          if (e.key==='ArrowRight'||e.key==='ArrowDown') { e.preventDefault(); if (n<12) { setFParcelas(String(n+1)); parcelasBtnRefs.current[i+1]?.focus() } }
+                          else if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); if (n>1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() } }
+                          else if (e.key==='Enter') { e.preventDefault(); lancar() }
                         }}
-                        style={{padding:'6px 10px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
-                          borderRadius:6,cursor:'pointer',fontSize:12,fontWeight:500,
-                          background:ativo?'#eff6ff':'#fff',
-                          color:ativo?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                        style={{width:46,height:36,borderRadius:9,
+                          border:`1.5px solid ${ativo ? COR.azul : COR.borda}`,
+                          background: ativo ? '#eff6ff' : '#fff',
+                          fontSize:12,fontWeight:700,
+                          color: ativo ? COR.azul : COR.textoSuave,
+                          cursor:'pointer',fontFamily:'inherit',
+                          display:'flex',alignItems:'center',justifyContent:'center',
+                          boxShadow: ativo ? '0 0 0 2px rgba(26,86,219,.15)' : 'none'}}>
                         {n}x
                       </button>
                     )
                   })}
                 </div>
-                {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
-                  <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
-                    Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} ({fParcelas}x de {fmt(parseBRL(fValor))})
+                {parseBRL(fValor) > 0 && (
+                  <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',
+                    borderRadius:10,padding:'10px 14px',marginTop:8,
+                    display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:11,color:COR.textoSuave}}>Valor de cada parcela</span>
+                    <span style={{fontSize:14,fontWeight:800,color:'#16a34a'}}>
+                      {fmt(parseBRL(fValor) / Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
+                    </span>
                   </div>
                 )}
               </div>
+
               {/* Descrição */}
-              <div>
-                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
-                <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
+                  textTransform:'uppercase' as const,letterSpacing:.5,
+                  marginBottom:5,display:'block'}}>
+                  📝 Descrição{' '}
+                  <span style={{fontWeight:400,color:'#94a3b8',
+                    textTransform:'none' as const,fontSize:9,letterSpacing:0}}>
+                    (opcional)
+                  </span>
+                </label>
+                <input value={fDesc} onChange={e => setFDesc(e.target.value)}
                   placeholder="Ex: Mercado Extra, Farmácia..."
-                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'10px 12px',
-                    fontSize:14,outline:'none',background:'#fff',width:'100%',
+                  style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
+                    padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
                     fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
-                  onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+                  onKeyDown={e => e.key==='Enter' && lancar()}/>
               </div>
+
               {/* Botões */}
-              <div style={{display:'flex',gap:8,marginTop:4,paddingBottom:80}}>
+              <div style={{display:'flex',gap:8,marginTop:4,paddingBottom:20}}>
                 {editandoId && (
                   <button onClick={() => {
                     if (!editandoId || !window.confirm('Excluir este lançamento?')) return
@@ -775,20 +831,22 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
                     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
                     setMobileView('extrato')
                   }} style={{
-                    flex:1,padding:'12px 0',border:`1.5px solid ${COR.borda}`,
-                    borderRadius:8,cursor:'pointer',fontSize:14,fontWeight:500,
-                    background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>Excluir</button>
+                    flex:1,padding:'13px 0',border:`1.5px solid ${COR.borda}`,
+                    borderRadius:12,cursor:'pointer',fontSize:14,fontWeight:600,
+                    background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>
+                    Excluir
+                  </button>
                 )}
                 <button onClick={() => {
                   const valid = !!fCat && parseBRL(fValor) > 0
                   lancar()
                   if (valid) setMobileView('extrato')
                 }} style={{
-                  flex:2,padding:'12px 0',border:'none',borderRadius:8,
+                  flex:2,padding:15,border:'none',borderRadius:14,
                   background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                  color:'#fff',fontSize:14,fontWeight:600,
-                  cursor:'pointer',fontFamily:'inherit'}}>
-                  {editandoId ? 'Salvar' : 'Lançar'}
+                  color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',
+                  boxShadow:'0 4px 16px rgba(26,86,219,.3)'}}>
+                  {editandoId ? '✓ Salvar alterações' : '✓ Salvar lançamento'}
                 </button>
               </div>
             </div>
@@ -1394,7 +1452,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
             </select>
           </div>
           <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor total *</div>
             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00"
               onFocus={realcarFoco} onBlur={removerRealce}
@@ -1449,7 +1507,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
             </div>
             {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
               <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
-                Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmt(parseBRL(fValor))})
+                {fParcelas}x de {fmt(parseBRL(fValor) / parseInt(fParcelas))}
               </div>
             )}
           </div>
