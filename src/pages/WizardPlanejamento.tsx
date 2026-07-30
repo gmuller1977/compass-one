@@ -65,8 +65,8 @@ export default function WizardPlanejamento() {
 
   const contasBanco  = useMemo(() => contas.filter(c => c.tipo !== 'cartao'), [contas])
   const cartaoNomes  = useMemo(() => new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())), [contas])
-  const catsEntrada  = useMemo(() => categorias.filter(c => c.tipo === 'entrada' && c.ativa), [categorias])
-  const catsSaida    = useMemo(() => categorias.filter(c => c.tipo === 'saida'   && c.ativa && !nomeFaturaCartao(c.nome, cartaoNomes)), [categorias, cartaoNomes])
+  const catsEntrada  = useMemo(() => categorias.filter(c => c.tipo === 'entrada'), [categorias])
+  const catsSaida    = useMemo(() => categorias.filter(c => c.tipo === 'saida' && !nomeFaturaCartao(c.nome, cartaoNomes)), [categorias, cartaoNomes])
   const existingPlan = planos[ANO]
 
   function initSaldos(): Record<string,string> {
