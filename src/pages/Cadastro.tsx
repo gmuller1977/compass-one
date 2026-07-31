@@ -363,9 +363,11 @@ export default function Cadastro() {
       <div style={{ textAlign:'center', marginTop:20 }}>
         <span style={{ fontSize:10, color:'#94a3b8', lineHeight:1.5 }}>
           Ao criar sua conta você concorda com os{' '}
-          <span style={{ color:'#1a56db', fontWeight:600, cursor:'pointer' }}>Termos de Uso</span>
+          <a href="/termos" target="_blank" rel="noopener noreferrer"
+            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Termos de Uso</a>
           {' '}e{' '}
-          <span style={{ color:'#1a56db', fontWeight:600, cursor:'pointer' }}>Privacidade</span>
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer"
+            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Privacidade</a>
         </span>
       </div>
     </div>
