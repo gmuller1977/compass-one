@@ -197,10 +197,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           : saved.find(c => c.nome === cat.nome)
         return found ? { ...cat, v: found.v } : cat
       })
-      const historical = saved.filter(s =>
-        !base.some(b => (s.id && b.id === s.id) || b.nome === s.nome) && s.v.some(v => v !== 0)
-      )
-      return [...merged, ...historical].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+      // Não inclui categorias deletadas/inativas: evita inflacionar totais com valores órfãos
+      return merged.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
     }
     return { ...salvo, saldoInicialJan: SALDO_INICIAL_FIXO, entradas: merge(dadosBase.entradas, salvo.entradas), saidas: merge(dadosBase.saidas, salvo.saidas) }
   }, [aba, anoAtual, dadosBase, planos, planosReal, SALDO_INICIAL_FIXO])
@@ -243,10 +241,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
   }, [dadosBase.saidas, planosReal, anoAtual])
 
-  // Plano de referência para comparações: usa Atualizado se existir, senão Original
+  // Plano de referência para comparações: usa Atualizado só quando bloqueado
   const planoRef = useMemo(() =>
-    ((planosReal[anoAtual] ?? planos[anoAtual]) as PlanoAnoData | undefined),
-  [planosReal, planos, anoAtual])
+    ((planejamentoLockado && planosReal[anoAtual] ? planosReal[anoAtual] : planos[anoAtual]) as PlanoAnoData | undefined),
+  [planejamentoLockado, planosReal, planos, anoAtual])
 
   const { totalEntradas, totalSaidas, saldoInicial, saldoFinal } =
     useMemo(() => calcSaldos(dadosAnoFinal, true), [dadosAnoFinal])
@@ -1071,8 +1069,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               />
             ) : (
               <div
-                onClick={() => !bloqueado && aba !== 'real' && iniciarValor(tipo, ri, mi, valorAtual)}
-                style={{ fontSize:13, fontWeight:700, color: valorAtual !== 0 ? '#0f172a' : '#cbd5e1', cursor: (!bloqueado && aba !== 'real') ? 'pointer' : 'default', minWidth:70, textAlign:'right' as const }}>
+                onClick={() => !bloqueado && iniciarValor(tipo, ri, mi, valorAtual)}
+                style={{ fontSize:13, fontWeight:700, color: valorAtual !== 0 ? '#0f172a' : '#cbd5e1', cursor: !bloqueado ? 'pointer' : 'default', minWidth:70, textAlign:'right' as const }}>
                 {valorAtual !== 0 ? fmt(valorAtual, true) : '—'}
               </div>
             )}
@@ -1255,8 +1253,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               </div>
               <span style={{ fontSize:15, fontWeight:800, color:'#16a34a', letterSpacing:'-.3px' }}>{fmt(te, true)}</span>
             </div>
-            {secEntAberto && entradasComHistorico.map(cat => {
-              const ri = dadosAnoFinal.entradas.findIndex(c => c.id ? c.id === cat.id : c.nome === cat.nome)
+            {secEntAberto && (aba === 'real' ? entradasComHistorico : dadosAnoFinal.entradas).map((cat, idx) => {
+              const ri = aba === 'real'
+                ? dadosAnoFinal.entradas.findIndex(c => c.id ? c.id === cat.id : c.nome === cat.nome)
+                : idx
               if (ri < 0) return null
               return renderCatRow('e', cat, ri)
             })}
@@ -2222,10 +2222,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                       if (isInativa && aba !== 'real' && cat.v[mi] === 0) return null
                                       return (
                                         <div key={ri}
-                                          onClick={aba !== 'real' && !bloqueado && !isInativa ? () => iniciarValor('e', ri, mi, cat.v[mi]) : undefined}
+                                          onClick={!bloqueado && !isInativa ? () => iniciarValor('e', ri, mi, cat.v[mi]) : undefined}
                                           style={{ display:'flex', alignItems:'center', gap:8,
                                             padding:'5px 8px', borderBottom:'1px solid rgba(0,0,0,0.05)',
-                                            cursor: aba !== 'real' && !bloqueado && !isInativa ? 'pointer' : 'default' }}>
+                                            cursor: !bloqueado && !isInativa ? 'pointer' : 'default' }}>
                                           <div style={{ width:22, height:22, borderRadius:6, background:corIcone,
                                             display:'flex', alignItems:'center', justifyContent:'center',
                                             fontSize:12, flexShrink:0 }}>{icone}</div>

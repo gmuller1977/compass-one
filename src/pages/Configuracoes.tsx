@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import BottomNav from '../components/BottomNav'
 import { useToast } from '../components/Toast'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
@@ -269,8 +270,7 @@ export default function Configuracoes() {
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
-          perfil, setPerfil,
-          setOnboardingCompleto } = useApp()
+          perfil, setPerfil } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
   const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('todas')
@@ -536,7 +536,8 @@ export default function Configuracoes() {
         }
       `}</style>
 
-      <AppHeader currentPath="/configuracoes" />
+      <AppHeader currentPath="/configuracoes" hideBottomTab />
+      <BottomNav />
 
       {/* HOME SCREEN */}
       {aba === 'home' && (
@@ -1802,27 +1803,6 @@ export default function Configuracoes() {
                   fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
                   background:'#dc2626', color:'#fff' }}>
                   Refazer
-                </button>
-              </div>
-            </div>
-
-            {/* Card: Configuração inicial */}
-            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
-              <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Configuração inicial</h3>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                padding:'12px 14px', borderRadius:9, background:'#f0f4ff',
-                border:`1px solid ${COR.borda}` }}>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🚀 Assistente de configuração</div>
-                  <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
-                    Refazer o fluxo de onboarding (contas, cartões e planejamento).
-                  </div>
-                </div>
-                <button onClick={() => { setOnboardingCompleto(false); navigate('/onboarding') }} style={{
-                  padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
-                  fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
-                  background:COR.azul, color:'#fff' }}>
-                  Rever
                 </button>
               </div>
             </div>

@@ -1058,7 +1058,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
 
         {/* TOTAL FOOTER */}
         {mobileView === 'extrato' && (
-          <div style={{position:'fixed',left:0,right:0,bottom:60,zIndex:39,
+          <div style={{position:'fixed',left:0,right:0,bottom:70,zIndex:39,
             background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
             padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',
             boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
@@ -1079,7 +1079,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
         {/* ADD BAR */}
         {mobileView === 'extrato' && (
           <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }}
-            style={{position:'fixed',left:0,right:0,bottom:104,zIndex:40,
+            style={{position:'fixed',left:0,right:0,bottom:114,zIndex:40,
               border:'none',background:COR.branco,
               borderTop:`1px solid ${COR.borda}`,borderBottom:`1px solid ${COR.borda}`,
               padding:'11px 20px',display:'flex',alignItems:'center',justifyContent:'center',

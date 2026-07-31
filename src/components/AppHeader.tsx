@@ -100,9 +100,9 @@ function CompassSvg({ size = 16 }: { size?: number }) {
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
-type Props = { currentPath: string }
+type Props = { currentPath: string; hideBottomTab?: boolean }
 
-export default function AppHeader({ currentPath }: Props) {
+export default function AppHeader({ currentPath, hideBottomTab }: Props) {
   const navigate       = useNavigate()
   const { sairDaConta } = useApp()
   const [dropdown, setDropdown] = useState(false)
@@ -170,7 +170,7 @@ export default function AppHeader({ currentPath }: Props) {
         </div>
 
         {/* Bottom tab bar */}
-        <div style={{
+        {!hideBottomTab && <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
           background: '#fff',
           borderTop: '1px solid #e2e8f0',
@@ -231,7 +231,7 @@ export default function AppHeader({ currentPath }: Props) {
               </button>
             )
           })}
-        </div>
+        </div>}
       </>
     )
   }

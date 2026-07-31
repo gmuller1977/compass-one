@@ -50,11 +50,11 @@ export default function Acompanhamento() {
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
 
   const { pathname } = useLocation()
-  const { contas, categorias, planos, extratoData, faturaData, user } = useApp()
+  const { contas, categorias, planos, planosReal, planejamentoLockado, extratoData, faturaData, user } = useApp()
 
   const mesStr    = String(mes+1).padStart(2,'0')
   const totalDias = diasNoMes(mes, ano)
-  const dadosAno  = planos[ano]
+  const dadosAno  = (planejamentoLockado && planosReal[ano]) ? planosReal[ano] : planos[ano]
   const isPastMonth = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
 
   // ── Realizados ────────────────────────────────────────────────────────
@@ -71,6 +71,7 @@ export default function Acompanhamento() {
 
     for (const [key, dados] of Object.entries(extratoData)) {
       if (!key.endsWith(sufixo)) continue
+      if (!contas.some(c => key.startsWith(c.id))) continue   // ignora contas excluídas
       if (contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) continue
       const dm = dados as DadosMes
 
@@ -132,6 +133,7 @@ export default function Acompanhamento() {
 
     for (const c of Object.values(saidas))   c.lancamentos.sort((a,b) => a.dia-b.dia)
     for (const c of Object.values(entradas))  c.lancamentos.sort((a,b) => a.dia-b.dia)
+
     return { saidasMap: saidas, entradasMap: entradas }
   }, [ano, mes, mesStr, totalDias, isPastMonth, extratoData, faturaData, contas, categorias, dadosAno])
 

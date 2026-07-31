@@ -151,7 +151,14 @@ export default function Cadastro() {
       if (error) throw error
       setConfirmacaoEnviada(true)
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Erro desconhecido'
+      let msg = 'Erro desconhecido'
+      if (e instanceof Error && e.message && e.message !== '{}') {
+        msg = e.message
+      } else if (typeof e === 'object' && e !== null) {
+        const obj = e as Record<string, unknown>
+        msg = (obj.message ?? obj.error_description ?? obj.msg ?? '') as string
+        if (!msg || msg === '{}') msg = 'Erro no servidor. Tente novamente em alguns minutos.'
+      }
       const traduzido = traduzirErro(msg)
       if (traduzido.includes('já está cadastrado')) {
         setErro(traduzido + ' — ')
