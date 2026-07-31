@@ -12,6 +12,7 @@ import Acompanhamento  from './pages/Acompanhamento'
 import Configuracoes       from './pages/Configuracoes'
 import Onboarding          from './pages/Onboarding'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
+import RedefinirSenha      from './pages/RedefinirSenha'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { user, carregando, onboardingCompleto } = useApp()
@@ -44,8 +45,9 @@ export default function App() {
     <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login"    element={<Login />} />
-          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/login"           element={<Login />} />
+          <Route path="/cadastro"        element={<Cadastro />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/"                element={<Protegido><QuickLaunch /></Protegido>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />

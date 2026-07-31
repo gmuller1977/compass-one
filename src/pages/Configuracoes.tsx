@@ -270,8 +270,11 @@ export default function Configuracoes() {
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
-          perfil, setPerfil } = useApp()
+          perfil, setPerfil, excluirConta: excluirContaUsuario } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
+  const [modalExcluirConta, setModalExcluirConta] = useState(false)
+  const [confirmInput,      setConfirmInput]      = useState('')
+  const [deletando,         setDeletando]         = useState(false)
   const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
   const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('todas')
   const [subAbaCat,   setSubAbaCat]   = useState<'categorias'|'grupos'>('categorias')
@@ -1636,6 +1639,23 @@ export default function Configuracoes() {
               <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>MVP — em desenvolvimento</div>
             </div>
 
+            {/* Zona de perigo */}
+            <div style={{ background:'#fff5f5', border:'1.5px solid #fecaca', borderRadius:14, padding:24 }}>
+              <h3 style={{ fontSize:14, fontWeight:700, color:COR.vermelho, margin:'0 0 8px' }}>
+                Zona de perigo
+              </h3>
+              <p style={{ fontSize:12, color:COR.textoSuave, margin:'0 0 16px', lineHeight:1.6 }}>
+                Ao excluir a conta, todos os seus dados — contas, categorias, extratos e planejamentos — serão permanentemente removidos. Esta ação não pode ser desfeita.
+              </p>
+              <button
+                onClick={() => { setModalExcluirConta(true); setConfirmInput('') }}
+                style={{ padding:'9px 20px', border:`1.5px solid ${COR.vermelho}`, borderRadius:8,
+                  background:'transparent', color:COR.vermelho, fontSize:13, fontWeight:600,
+                  cursor:'pointer', fontFamily:'inherit' }}>
+                Excluir minha conta
+              </button>
+            </div>
+
           </div>
           </div>
           </div>
@@ -1813,6 +1833,58 @@ export default function Configuracoes() {
         )}
 
       </div>
+      )}
+
+      {/* Modal confirmação de exclusão de conta */}
+      {modalExcluirConta && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)',
+          zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:COR.branco, borderRadius:16, padding:28,
+            maxWidth:420, width:'100%', boxShadow:'0 8px 40px rgba(0,0,0,.2)' }}>
+            <h3 style={{ fontSize:16, fontWeight:700, color:COR.vermelho, margin:'0 0 10px' }}>
+              Excluir conta permanentemente
+            </h3>
+            <p style={{ fontSize:13, color:COR.textoSuave, margin:'0 0 18px', lineHeight:1.6 }}>
+              Esta ação é <strong>irreversível</strong>. Todos os seus dados serão apagados e não poderão ser recuperados.<br /><br />
+              Para confirmar, digite <strong style={{ color:COR.texto }}>EXCLUIR</strong> no campo abaixo:
+            </p>
+            <input
+              autoFocus
+              value={confirmInput}
+              onChange={e => setConfirmInput(e.target.value)}
+              placeholder="EXCLUIR"
+              style={{ width:'100%', padding:'10px 12px', borderRadius:8, boxSizing:'border-box',
+                border:`1.5px solid ${confirmInput === 'EXCLUIR' ? COR.vermelho : COR.borda}`,
+                fontSize:14, fontFamily:'inherit', outline:'none', letterSpacing:.5 }} />
+            <div style={{ display:'flex', gap:10, marginTop:18 }}>
+              <button
+                onClick={() => setModalExcluirConta(false)}
+                disabled={deletando}
+                style={{ flex:1, padding:'10px 0', border:`1px solid ${COR.borda}`, borderRadius:8,
+                  background:COR.branco, color:COR.texto, fontSize:13, fontWeight:600,
+                  cursor:'pointer', fontFamily:'inherit', opacity: deletando ? .5 : 1 }}>
+                Cancelar
+              </button>
+              <button
+                disabled={confirmInput !== 'EXCLUIR' || deletando}
+                onClick={async () => {
+                  setDeletando(true)
+                  const { error } = await excluirContaUsuario()
+                  if (error) {
+                    toast('Erro ao excluir: ' + error)
+                    setDeletando(false)
+                  }
+                }}
+                style={{ flex:1, padding:'10px 0', border:'none', borderRadius:8,
+                  background: confirmInput === 'EXCLUIR' && !deletando ? COR.vermelho : '#fca5a5',
+                  color:'#fff', fontSize:13, fontWeight:600, fontFamily:'inherit',
+                  cursor: confirmInput === 'EXCLUIR' && !deletando ? 'pointer' : 'not-allowed',
+                  transition:'background .2s' }}>
+                {deletando ? 'Excluindo...' : 'Excluir conta'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -12,15 +12,6 @@ function useIsMobile() {
   return v
 }
 
-function traduzirErro(msg: string) {
-  if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos'
-  if (msg.includes('Email not confirmed'))        return 'Confirme seu e-mail antes de entrar'
-  if (msg.includes('User already registered'))    return 'Este e-mail já está cadastrado'
-  if (msg.includes('Password should be'))         return 'A senha deve ter pelo menos 6 caracteres'
-  if (msg.includes('Unable to validate'))         return 'Erro de validação — tente novamente'
-  return msg
-}
-
 function Campo({
   label, tipo = 'text', placeholder, valor, onChange, icone, onKeyDown, erroMsg,
 }: {
@@ -55,7 +46,7 @@ function Campo({
           onFocus={() => setFocado(true)}
           onBlur={() => setFocado(false)}
           onKeyDown={onKeyDown}
-          autoComplete={ehSenha ? 'current-password' : tipo === 'email' ? 'email' : undefined}
+          autoComplete="new-password"
           style={{
             width: '100%',
             padding: `13px ${ehSenha ? '44px' : '14px'} 13px ${icone ? '44px' : '14px'}`,
@@ -83,15 +74,6 @@ function Campo({
   )
 }
 
-const GoogleSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24">
-    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-  </svg>
-)
-
 const LogoSVG = ({ size = 36 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.2"/>
@@ -103,25 +85,52 @@ const LogoSVG = ({ size = 36 }: { size?: number }) => (
   </svg>
 )
 
-export default function Login() {
+export default function RedefinirSenha() {
   const navigate    = useNavigate()
   const isMobile    = useIsMobile()
-  const [email,     setEmail]     = useState('')
-  const [senha,     setSenha]     = useState('')
-  const [carregando, setCarregando] = useState(false)
-  const [erro,      setErro]      = useState('')
-  const [sucesso,   setSucesso]   = useState('')
+  const [novaSenha,      setNovaSenha]      = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [carregando,     setCarregando]     = useState(false)
+  const [erro,           setErro]           = useState('')
+  const [sucesso,        setSucesso]        = useState(false)
+  const [linkValido,     setLinkValido]     = useState<boolean | null>(null)
+
+  useEffect(() => {
+    // Supabase v2 processa o hash #access_token automaticamente.
+    // O evento PASSWORD_RECOVERY confirma que a sessão de redefinição está ativa.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setLinkValido(true)
+    })
+
+    // Verifica sessão já estabelecida (caso o evento já tenha disparado)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setLinkValido(true)
+    })
+
+    // Após 3s sem sessão, considera link inválido/expirado
+    const timer = setTimeout(() => {
+      setLinkValido(prev => prev === null ? false : prev)
+    }, 3000)
+
+    return () => { subscription.unsubscribe(); clearTimeout(timer) }
+  }, [])
+
+  useEffect(() => {
+    if (!sucesso) return
+    const timer = setTimeout(() => navigate('/login'), 3000)
+    return () => clearTimeout(timer)
+  }, [sucesso, navigate])
 
   async function handleSubmit() {
     setErro('')
-    setSucesso('')
-    if (!email) { setErro('Digite seu e-mail'); return }
-    if (!senha)  { setErro('Digite sua senha');  return }
+    if (!novaSenha)                    { setErro('Digite a nova senha'); return }
+    if (novaSenha.length < 6)          { setErro('A senha deve ter pelo menos 6 caracteres'); return }
+    if (novaSenha !== confirmarSenha)  { setErro('As senhas não coincidem'); return }
     setCarregando(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
+      const { error } = await supabase.auth.updateUser({ password: novaSenha })
       if (error) throw error
-      navigate('/')
+      setSucesso(true)
     } catch (e: unknown) {
       let msg = 'Erro desconhecido'
       if (e instanceof Error && e.message && e.message !== '{}') {
@@ -131,34 +140,10 @@ export default function Login() {
         msg = (obj.message ?? obj.error_description ?? obj.msg ?? '') as string
         if (!msg || msg === '{}') msg = 'Erro no servidor. Tente novamente em alguns minutos.'
       }
-      setErro(traduzirErro(msg))
+      setErro(msg)
     } finally {
       setCarregando(false)
     }
-  }
-
-  async function handleGoogle() {
-    setErro('')
-    setCarregando(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/' },
-    })
-    if (error) setErro(traduzirErro(error.message))
-    setCarregando(false)
-  }
-
-  async function handleResetSenha() {
-    setErro('')
-    setSucesso('')
-    if (!email) { setErro('Digite seu e-mail para recuperar a senha'); return }
-    setCarregando(true)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/redefinir-senha',
-    })
-    if (error) setErro(traduzirErro(error.message))
-    else setSucesso('Link de recuperação enviado! Verifique sua caixa de entrada.')
-    setCarregando(false)
   }
 
   const hero = (compact: boolean) => (
@@ -196,82 +181,81 @@ export default function Login() {
   const form = (
     <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Bem-vindo de volta!</div>
-        <div style={{ fontSize:13, color:'#64748b' }}>Entre com sua conta para continuar</div>
-      </div>
-
-      {erro && (
-        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16, textAlign:'center' }}>
-          {erro}
+        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Nova senha</div>
+        <div style={{ fontSize:13, color:'#64748b' }}>
+          {sucesso
+            ? 'Senha atualizada com sucesso!'
+            : linkValido === false
+              ? 'Link inválido ou expirado.'
+              : 'Escolha uma senha segura para sua conta.'}
         </div>
-      )}
-      {sucesso && (
-        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#15803d', marginBottom:16, textAlign:'center' }}>
-          {sucesso}
+      </div>
+
+      {sucesso ? (
+        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:12,
+          padding:'20px 16px', textAlign:'center' }}>
+          <div style={{ fontSize:32, marginBottom:10 }}>✅</div>
+          <div style={{ fontSize:14, fontWeight:700, color:'#15803d', marginBottom:6 }}>Senha redefinida!</div>
+          <div style={{ fontSize:13, color:'#166534' }}>
+            Você será redirecionado para o login em instantes...
+          </div>
         </div>
+      ) : linkValido === false ? (
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:32, marginBottom:12 }}>🔗</div>
+          <div style={{ fontSize:13, color:'#64748b', marginBottom:20, lineHeight:1.6 }}>
+            Este link de redefinição é inválido ou já expirou.<br/>
+            Solicite um novo link na tela de login.
+          </div>
+          <button onClick={() => navigate('/login')} style={{
+            padding:'12px 24px', border:'none', borderRadius:12,
+            background:'linear-gradient(135deg,#1a56db,#2563eb)',
+            color:'#fff', fontSize:14, fontWeight:700,
+            cursor:'pointer', fontFamily:'inherit',
+          }}>
+            Voltar ao login
+          </button>
+        </div>
+      ) : (
+        <>
+          {erro && (
+            <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10,
+              padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16, textAlign:'center' }}>
+              {erro}
+            </div>
+          )}
+
+          <Campo label="🔒 Nova senha" tipo="password" placeholder="Mínimo 6 caracteres"
+            valor={novaSenha} onChange={setNovaSenha} icone="🔑" />
+
+          <Campo label="🔒 Confirmar senha" tipo="password" placeholder="Repita a nova senha"
+            valor={confirmarSenha} onChange={setConfirmarSenha} icone="🔑"
+            onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
+
+          <button onClick={handleSubmit} disabled={carregando || linkValido === null} style={{
+            width:'100%', padding:'15px', border:'none', borderRadius:14,
+            background:'linear-gradient(135deg,#1a56db,#2563eb)',
+            color:'#fff', fontSize:16, fontWeight:800,
+            cursor: carregando ? 'default' : 'pointer',
+            opacity: (carregando || linkValido === null) ? .75 : 1,
+            fontFamily:'inherit',
+            boxShadow:'0 4px 20px rgba(26,86,219,.35)',
+            transition:'all .15s',
+            marginTop:4, marginBottom:16,
+          }}>
+            {carregando ? 'Salvando...' : linkValido === null ? 'Verificando link...' : 'Redefinir senha →'}
+          </button>
+
+          <div style={{ textAlign:'center' }}>
+            <button onClick={() => navigate('/login')} style={{
+              border:'none', background:'transparent', color:'#94a3b8',
+              fontSize:12, cursor:'pointer', fontFamily:'inherit',
+            }}>
+              Voltar ao login
+            </button>
+          </div>
+        </>
       )}
-
-      <Campo label="✉️ E-mail" tipo="email" placeholder="seu@email.com"
-        valor={email} onChange={setEmail} icone="✉️" />
-
-      <Campo label="🔒 Senha" tipo="password" placeholder="Sua senha"
-        valor={senha} onChange={setSenha} icone="🔑"
-        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
-
-      <div style={{ textAlign:'right', marginTop:-8, marginBottom:20 }}>
-        <button onClick={handleResetSenha} style={{
-          border:'none', background:'transparent', color:'#1a56db',
-          fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-        }}>Esqueceu a senha?</button>
-      </div>
-
-      <button onClick={handleSubmit} disabled={carregando} style={{
-        width:'100%', padding:'15px', border:'none', borderRadius:14,
-        background:'linear-gradient(135deg,#1a56db,#2563eb)',
-        color:'#fff', fontSize:16, fontWeight:800,
-        cursor: carregando ? 'default' : 'pointer',
-        opacity: carregando ? .75 : 1,
-        fontFamily:'inherit',
-        boxShadow:'0 4px 20px rgba(26,86,219,.35)',
-        transition:'all .15s',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        marginBottom:16,
-      }}>
-        {carregando ? 'Entrando...' : 'Entrar →'}
-      </button>
-
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-        <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou continue com</span>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-      </div>
-
-      <button onClick={handleGoogle} disabled={carregando} style={{
-        width:'100%', padding:'13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-        background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
-        cursor:'pointer', fontFamily:'inherit',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-        transition:'all .15s', marginBottom:24,
-      }}>
-        <GoogleSVG/> Entrar com Google
-      </button>
-
-      <div style={{ textAlign:'center' }}>
-        <span style={{ fontSize:13, color:'#64748b' }}>Não tem uma conta? </span>
-        <button onClick={() => navigate('/cadastro')} style={{
-          border:'none', background:'transparent', color:'#1a56db',
-          fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-        }}>Criar conta grátis</button>
-      </div>
-
-      <div style={{ textAlign:'center', marginTop:20 }}>
-        <span style={{ fontSize:10, color:'#94a3b8', lineHeight:1.5 }}>
-          Ao entrar você concorda com os{' '}
-          <span style={{ color:'#1a56db', fontWeight:600, cursor:'pointer' }}>Termos de Uso</span>
-          {' '}e{' '}
-          <span style={{ color:'#1a56db', fontWeight:600, cursor:'pointer' }}>Privacidade</span>
-        </span>
-      </div>
     </div>
   )
 

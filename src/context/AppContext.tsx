@@ -90,6 +90,7 @@ type AppCtx = {
   setOnboardingCompleto: (v: boolean) => void
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
+  excluirConta: () => Promise<{ error?: string }>
 }
 
 const Ctx = createContext<AppCtx>({} as AppCtx)
@@ -516,6 +517,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  async function excluirConta(): Promise<{ error?: string }> {
+    const { error } = await supabase.rpc('delete_current_user')
+    if (error) return { error: error.message }
+    try { await supabase.auth.signOut() } catch { /* sessão já invalidada */ }
+    return {}
+  }
+
   return (
     <Ctx.Provider value={{
       user, carregando,
@@ -528,7 +536,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado,
       setDesvioMinPerc, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
-      limparDados, sairDaConta,
+      limparDados, sairDaConta, excluirConta,
     }}>
       {children}
     </Ctx.Provider>
