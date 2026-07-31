@@ -1094,7 +1094,8 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
   }
 
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo}}>
+    <div style={{flex:1,display:'flex',flexDirection:'row',overflow:'hidden',background:COR.fundo}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
 
       {/* ABAS DE CARTÃO */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
@@ -1261,11 +1262,8 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
         </div>
       </div>
 
-      {/* CONTEÚDO: lista + painel */}
-      <div style={{flex:1,display:'flex',gap:16,padding:'10px 16px',overflow:'hidden'}}>
-
       {/* LISTA DE LANÇAMENTOS agrupados por dia */}
-      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:8}}>
+      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:8,padding:'10px 16px'}}>
 
         {(() => {
           type DiaGroup = { dateKey:string; dc:number; mc:number; ac:number; items:Array<{dia:number;l:Lancamento}> }
@@ -1411,9 +1409,28 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
 
       </div>
 
+      {/* FOOTER: total da fatura */}
+      <div style={{flexShrink:0,
+        background:totalFatura<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+        padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.6)'}}>
+            Total da fatura — {NOMES_MESES[mes]} {ano}
+          </div>
+          <div style={{fontSize:9,color:'rgba(255,255,255,.4)',marginTop:1}}>
+            Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
+          </div>
+        </div>
+        <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums' as const}}>
+          {fmt(totalFatura)}
+        </span>
+      </div>
+
+      </div>{/* fim coluna esquerda */}
+
       {/* PAINEL DE LANÇAMENTO */}
       <div style={{width:340,flexShrink:0,background:COR.branco,
-        border:`1px solid ${COR.borda}`,borderRadius:12,padding:20,overflowY:'auto'}}>
+        borderLeft:`1px solid ${COR.borda}`,padding:20,overflowY:'auto'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
           <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:0}}>
             {editandoId ? 'Editar lançamento' : 'Novo lançamento'}
@@ -1665,7 +1682,6 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
             {editandoId ? 'Salvar alterações' : 'Lançar'}
           </button>
         </div>
-      </div>
       </div>
 
       {/* MODAL FATURA DO CARTÃO */}
