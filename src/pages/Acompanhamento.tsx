@@ -5,6 +5,7 @@ import type { DadosMes, Categoria } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
+import EmptyState from '../components/EmptyState'
 
 const COR = {
   azul: '#1a56db', fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
@@ -791,11 +792,11 @@ export default function Acompanhamento() {
         {/* CONTENT */}
         <div style={{ flex:1, overflowY:'auto', padding:'10px 14px 90px', display:'flex', flexDirection:'column', gap:10 }}>
           {!dadosAno ? (
-            <div style={{ textAlign:'center', padding:'60px 20px', color:'#64748b' }}>
-              <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
-              <div style={{ fontSize:15, fontWeight:600, color:'#0f172a', marginBottom:6 }}>Sem planejamento para {ano}</div>
-              <div style={{ fontSize:13 }}>Crie um planejamento anual para acompanhar o orçamento.</div>
-            </div>
+            <EmptyState
+              icon="📋"
+              title={`Sem planejamento para ${ano}`}
+              description="Crie um planejamento anual para acompanhar o orçamento."
+            />
           ) : (<>
             {(dadosAno.entradas ?? []).length > 0 && (
               <div style={{ borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
@@ -1099,15 +1100,11 @@ export default function Acompanhamento() {
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
         display:'flex',flexDirection:'column',gap:12}}>
         {!dadosAno ? (
-          <div style={{textAlign:'center',padding:'60px 20px',color:COR.textoSuave}}>
-            <div style={{fontSize:32,marginBottom:12}}>📋</div>
-            <div style={{fontSize:15,fontWeight:600,color:COR.texto,marginBottom:6}}>
-              Sem planejamento para {ano}
-            </div>
-            <div style={{fontSize:13}}>
-              Crie um planejamento anual para acompanhar o orçamento.
-            </div>
-          </div>
+          <EmptyState
+            icon="📋"
+            title={`Sem planejamento para ${ano}`}
+            description="Crie um planejamento anual para acompanhar o orçamento."
+          />
         ) : (
           <>
             {/* ENTRADAS */}

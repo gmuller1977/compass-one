@@ -147,6 +147,7 @@ export default function NovoLancamentoExtrato() {
   const [editandoId, setEditandoId] = useState<string|null>(null)
   const [editandoDiaOriginal, setEditandoDiaOriginal] = useState<number|null>(null)
   const [editandoFixaId, setEditandoFixaId] = useState<string|null>(null)
+  const [highlightDia, setHighlightDia] = useState<number|null>(null)
   const [fTipo,    setFTipo]    = useState<TipoLanc>('saida')
   const [fCat,     setFCat]     = useState('')
   const [fSubDesc, setFSubDesc] = useState('')
@@ -656,7 +657,10 @@ export default function NovoLancamentoExtrato() {
     }
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
-    if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
+    if (isMobile) { setMobileDiaForm(null) } else {
+      setHighlightDia(diaSel); setTimeout(() => setHighlightDia(null), 1200)
+      setTimeout(() => categoriaSelectRef.current?.focus(), 80)
+    }
   }
 
   function lancarConsolidado() {
@@ -678,6 +682,7 @@ export default function NovoLancamentoExtrato() {
     }))
     toast('Lançamento registrado')
     setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
+    setHighlightDia(diaSel); setTimeout(() => setHighlightDia(null), 1200)
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
   }
 
@@ -725,6 +730,12 @@ export default function NovoLancamentoExtrato() {
   return (
     <div style={{height:'100vh',display:'flex',flexDirection:'column',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",overflow:'hidden'}}>
+      <style>{`
+        @keyframes rowSaved {
+          0%   { box-shadow: 0 0 0 3px rgba(26,86,219,0.35), inset 0 0 0 9999px rgba(219,234,254,0.5); }
+          100% { box-shadow: none; }
+        }
+      `}</style>
 
       {isMobile ? (
         <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
@@ -1124,6 +1135,7 @@ export default function NovoLancamentoExtrato() {
                   if (cat) setFPag(fTipo==='entrada'
                     ?formaRecebCategoria(cat.formaPagamento,cat.tipoMovimento)
                     :formaPagCategoria(cat.formaPagamento,cat.tipoMovimento))
+                  if (nome) setTimeout(() => valorInputRef.current?.focus(), 50)
                 }}
                 onFocus={realcarFoco} onBlur={removerRealce}
                 style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
@@ -1426,6 +1438,7 @@ export default function NovoLancamentoExtrato() {
                 background:COR.branco,
                 boxShadow:selecionado?`0 0 0 3px rgba(26,86,219,0.12)`:
                   ehHoje?`0 0 0 2px rgba(147,197,253,0.3)`:'none',
+                animation: highlightDia===dia ? 'rowSaved 1.2s ease-out' : undefined,
               }}>
 
               {/* Cabeçalho */}
@@ -1691,7 +1704,7 @@ export default function NovoLancamentoExtrato() {
                         <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
                           <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
                           <select ref={categoriaSelectRef} value={fCat}
-                            onChange={e=>{const n=e.target.value;setFCat(n);setFSubDesc('');const c=categorias.find(x=>x.nome===n);if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))}}
+                            onChange={e=>{const n=e.target.value;setFCat(n);setFSubDesc('');const c=categorias.find(x=>x.nome===n);if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento));if(n)setTimeout(()=>valorInputRef.current?.focus(),50)}}
                             style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                             <option value="">Selecione...</option>
                             {categoriasSelect.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}
