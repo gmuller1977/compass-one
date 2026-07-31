@@ -141,7 +141,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
   const [modalEvento,   setModalEvento]   = useState<null|{ step:1|2; tipo:EventoTipo; mesInicio:number; catTipo:'entrada'|'saida'; catNome:string; novoValor:string }>(null)
   const [sugestoesEditadas, setSugestoesEditadas] = useState<Record<string,string>>({})
-  const [viewMode,           setViewMode]          = useState<'grade'|'horizontal'|'vertical'>('grade')
+  const layoutParam = new URLSearchParams(location.search).get('layout')
+  const viewMode: 'grade' | 'horizontal' | 'vertical' =
+    layoutParam === 'planilha' ? 'horizontal'
+    : layoutParam === 'lista'  ? 'vertical'
+    : 'grade'
   const [modalMes,           setModalMes]          = useState<number | null>(null)
   const [copiarMesPrompt,    setCopiarMesPrompt]    = useState<{ origem: number; destino: number } | null>(null)
   const [gruposHorizAbertos, setGruposHorizAbertos] = useState<Set<string>>(new Set())
@@ -853,6 +857,28 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     }
   }, [location.state]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sidebar "Comece aqui" → ?action=quiz
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('action') !== 'quiz') return
+    navigate(pathname, { replace: true })
+    if (!planoCriado) {
+      setQuizAtivo(true); setQuizStep(0); setQuizConcluido(false)
+    } else if (planejamentoLockado) {
+      setConfirmarRefazer('bloqueado')
+    } else {
+      setConfirmarRefazer('refazer')
+    }
+  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sidebar "Revisão mensal" → ?view=revisao
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('view') !== 'revisao') return
+    navigate(pathname, { replace: true })
+    setAba('revisao')
+  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const quizKeyRef = useRef<{
     quizStep: number; quizObjetivo: string|null; quizConsiderarSaldo: boolean|null
     quizConcluido: boolean; QUIZ_STEP_RESUMO: number; confirmarQuiz: ()=>void
@@ -1378,19 +1404,17 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         <div style={{ padding:'10px 24px 0', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:12 }}>
 
           <div style={{ display:'flex', gap:3 }}>
-            {!hideTabs && (['previsto','real','revisao'] as const).map(v => {
-              const disabled = v === 'revisao' && !revisaoDisponivel
-              const label = v === 'previsto' ? 'Original' : v === 'real' ? 'Atualizado' : 'Revisão Mensal'
+            {!hideTabs && (['previsto','real'] as const).map(v => {
+              const label = v === 'previsto' ? 'Original' : 'Atualizado'
               return (
                 <button key={v}
-                  onClick={() => { if (!disabled) { setAba(v); setEditando(null) } }}
-                  title={disabled ? 'Disponível a partir do dia 1 de cada mês' : undefined}
+                  onClick={() => { setAba(v); setEditando(null) }}
                   style={{ padding:'7px 16px', borderRadius:'8px 8px 0 0',
                     border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
-                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    cursor: 'pointer',
                     fontFamily:'inherit', fontSize:12, fontWeight: aba===v ? 700 : 500,
-                    background: aba===v ? COR.azul : disabled ? '#f8fafc' : '#f8faff',
-                    color: aba===v ? '#fff' : disabled ? '#cbd5e1' : COR.textoSuave,
+                    background: aba===v ? COR.azul : '#f8faff',
+                    color: aba===v ? '#fff' : COR.textoSuave,
                     position:'relative', zIndex: aba===v ? 1 : 0 }}>
                   {label}
                 </button>
@@ -1438,57 +1462,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           </div>
         </div>
 
-        {/* LINHA 2: Grade | Planilha | Lista | Categorias */}
-        {!hideTabs && (aba === 'previsto' || (aba === 'real' && realExiste)) && (aba as string) !== 'revisao' && (
-          <div style={{ padding:'10px 24px 0', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'flex-end', gap:3 }}>
-            {([
-              { key:'quiz', label:'Comece aqui', active: quizAtivo,
-                onClick:() => {
-                if (!planoCriado) { setQuizAtivo(true); setQuizStep(0); setQuizConcluido(false) }
-                else if (planejamentoLockado) { setConfirmarRefazer('bloqueado') }
-                else { setConfirmarRefazer('refazer') }
-              },
-                icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
-                  <polygon points="1,0.5 10,5.5 1,10.5"/>
-                </svg>) },
-              { key:'grade',      label:'Grade',      active:viewMode==='grade',
-                onClick:() => { setViewMode('grade') },
-                icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
-                  <rect x="0" y="0" width="4.5" height="4.5" rx="1"/>
-                  <rect x="6.5" y="0" width="4.5" height="4.5" rx="1"/>
-                  <rect x="0" y="6.5" width="4.5" height="4.5" rx="1"/>
-                  <rect x="6.5" y="6.5" width="4.5" height="4.5" rx="1"/>
-                </svg>) },
-              { key:'horizontal', label:'Planilha',   active:viewMode==='horizontal',
-                onClick:() => { setViewMode('horizontal') },
-                icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
-                  <rect x="0" y="0" width="11" height="2" rx="1"/>
-                  <rect x="0" y="4.5" width="11" height="2" rx="1"/>
-                  <rect x="0" y="9" width="11" height="2" rx="1"/>
-                  <rect x="0" y="0" width="2" height="11" rx="1"/>
-                </svg>) },
-              { key:'vertical',   label:'Lista',      active:viewMode==='vertical',
-                onClick:() => { setViewMode('vertical') },
-                icon:(<svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style={{ flexShrink:0 }}>
-                  <rect x="0" y="0" width="11" height="2.5" rx="1"/>
-                  <rect x="0" y="4.25" width="11" height="2.5" rx="1"/>
-                  <rect x="0" y="8.5" width="11" height="2.5" rx="1"/>
-                </svg>) },
-            ] as const).map(v => (
-              <button key={v.key} onClick={v.onClick}
-                style={{ padding:'7px 14px', borderRadius:'8px 8px 0 0',
-                  border:`1px solid ${v.active ? COR.azul : COR.borda}`,
-                  cursor:'pointer',
-                  fontFamily:'inherit', fontSize:12, fontWeight: v.active ? 700 : 500,
-                  background: v.active ? COR.azul : '#f8faff',
-                  color: v.active ? '#fff' : COR.textoSuave,
-                  display:'flex', alignItems:'center', gap:5,
-                  position:'relative', zIndex: v.active ? 1 : 0 }}>
-                {v.icon} {v.label}
-              </button>
-            ))}
-          </div>
-        )}
 
       {(false as boolean) && (() => {
         const mesFoco = null as null
@@ -3956,7 +3929,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             {/* Rodapé */}
             <div style={{padding:'14px 28px 24px',display:'flex',gap:10,borderTop:`1px solid ${COR.borda}`,flexShrink:0}}>
               {quizConcluido ? (
-              <button data-quiz-nav='' onClick={() => { setQuizAtivo(false); setQuizConcluido(false); setViewMode('grade'); setAba('previsto') }} style={{
+              <button data-quiz-nav='' onClick={() => { setQuizAtivo(false); setQuizConcluido(false); setAba('previsto') }} style={{
                 flex:1,padding:'10px',borderRadius:9,border:'none',fontFamily:'inherit',
                 background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,color:'#fff',
                 fontSize:13,fontWeight:700,cursor:'pointer'}}>
@@ -4024,7 +3997,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     setQuizConsiderarSaldo(null)
                     setQuizEntradas({})
                     setQuizSaidas({})
-                    setViewMode('grade')
                   }} style={{
                     flex:2,padding:'10px',borderRadius:9,border:'none',
                     background:'linear-gradient(135deg,#dc2626,#b91c1c)',

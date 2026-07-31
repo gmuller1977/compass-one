@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
+import Sidebar, { SIDEBAR_W } from './components/Sidebar'
 import Login          from './pages/Login'
 import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
@@ -15,6 +17,29 @@ import WizardPlanejamento  from './pages/WizardPlanejamento'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
+
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
+
+function AppShell({ children }: { children: ReactNode }) {
+  const isMobile = useIsMobile()
+  if (isMobile) return <>{children}</>
+  return (
+    <>
+      <Sidebar />
+      <div style={{ marginLeft: SIDEBAR_W }}>
+        {children}
+      </div>
+    </>
+  )
+}
 
 function Protegido({ children }: { children: ReactNode }) {
   const { user, carregando, onboardingCompleto } = useApp()
@@ -38,7 +63,7 @@ function Protegido({ children }: { children: ReactNode }) {
   if (!onboardingCompleto && !bypass.some(p => location.pathname.startsWith(p))) {
     return <Navigate to="/onboarding" replace />
   }
-  return <>{children}</>
+  return <AppShell>{children}</AppShell>
 }
 
 export default function App() {

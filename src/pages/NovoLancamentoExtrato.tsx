@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import { useToast } from '../components/Toast'
@@ -129,6 +129,7 @@ function useIsMobile() {
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
   const navigate  = useNavigate()
+  const location  = useLocation()
   const hoje      = new Date()
   const diaHoje   = hoje.getDate()
   const mesHoje   = hoje.getMonth()
@@ -306,6 +307,19 @@ export default function NovoLancamentoExtrato() {
   }, [contaId, mes, ano, tabPrincipal])
 
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [tabPrincipal])
+
+  // Sidebar desktop → ?tipo= param troca a aba
+  useEffect(() => {
+    if (isMobile) return
+    const tipo = new URLSearchParams(location.search).get('tipo') as typeof tabPrincipal | null
+    if (!tipo || tipo === tabPrincipal) return
+    setTabPrincipal(tipo)
+    if (tipo === 'extrato') {
+      const p = contasExtrato.find(c => c.preferida)
+      setContaId((p ?? contasExtrato[0])?.id ?? '')
+    }
+    navigate(location.pathname, { replace: true })
+  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (tabPrincipal === 'dinheiro') {
@@ -768,6 +782,18 @@ export default function NovoLancamentoExtrato() {
         </div>
       ) : <AppHeader currentPath="/novo-lancamento" />}
 
+      {/* DESKTOP: cabeçalho do tipo de lançamento ativo */}
+      {!isMobile && (
+        <div style={{ padding:'12px 20px', background:COR.branco, borderBottom:`1px solid ${COR.borda}`, flexShrink:0, display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:22, lineHeight:1 }}>
+            {tabPrincipal==='extrato' ? '🏦' : tabPrincipal==='cartao' ? '💳' : tabPrincipal==='dinheiro' ? '💵' : '📊'}
+          </span>
+          <span style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
+            {tabPrincipal==='extrato' ? 'Extrato Bancário' : tabPrincipal==='cartao' ? 'Cartão de Crédito' : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
+          </span>
+        </div>
+      )}
+
       {/* ── WIZARD MOBILE: STEP TIPO ── */}
       {isMobile && mobileStep === 'tipo' && (
         <div style={{position:'fixed',top:52,left:0,right:0,bottom:60,background:COR.fundo,zIndex:50,overflowY:'auto'}}>
@@ -992,26 +1018,7 @@ export default function NovoLancamentoExtrato() {
       )}
 
 
-      {/* DESKTOP: tab selector */}
-      {!isMobile && (
-        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-          padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto',
-          WebkitOverflowScrolling:'touch' as never}}>
-          {([['extrato','🏦 Extrato Bancário'],['cartao','💳 Cartão de Crédito'],['dinheiro','💵 Dinheiro'],['consolidado','📊 Consolidado']] as const).map(([v,l]) => (
-            <button key={v} onClick={() => {
-              setTabPrincipal(v)
-              if (v==='extrato') { const p=contasExtrato.find(c=>c.preferida); setContaId((p??contasExtrato[0])?.id??'') }
-            }} style={{
-              padding:'7px 16px',borderRadius:'8px 8px 0 0',
-              border:`1px solid ${tabPrincipal===v?COR.azul:COR.borda}`,
-              cursor:'pointer',fontSize:12,fontWeight:tabPrincipal===v?700:500,fontFamily:'inherit',
-              background:tabPrincipal===v?COR.azul:'#f8faff',color:tabPrincipal===v?'#fff':COR.textoSuave,
-              position:'relative',zIndex:tabPrincipal===v?1:0}}>
-              {l}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* DESKTOP: tab selector removido — navegação via sidebar */}
 
       {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={mobileCartaoId ?? undefined} onVoltar={() => setMobileStep('tipo')} /> :
        tabPrincipal==='consolidado' ? (

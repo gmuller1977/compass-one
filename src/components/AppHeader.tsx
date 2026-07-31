@@ -143,6 +143,9 @@ export default function AppHeader({ currentPath, hideBottomTab }: Props) {
     </div>
   )
 
+  // Desktop nav is handled by Sidebar — nothing to render here
+  if (!isMobile) return null
+
   // ── MOBILE ──────────────────────────────────────────────────────────────
   if (isMobile) {
     return (
