@@ -14,7 +14,6 @@ export type TipoMovimento = 'banco' | 'cartao' | 'dinheiro'
 export type FormaPagamentoBanco  = 'automatico' | 'debito' | 'pix' | 'boleto' | 'transferencia'
 export type FormaPagamentoCartao = 'avista' | 'parcelado'
 export type FormaPagamentoCategoria = FormaPagamentoBanco | FormaPagamentoCartao
-
 export type FormaPagamentoFatura = 'automatico' | 'pix' | 'boleto' | 'transferencia'
 
 export type Conta = {
@@ -42,7 +41,7 @@ export type Categoria = {
 }
 
 export type PlanoCat     = { id?: string; nome: string; t?: string; v: number[] }
-export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number }
+export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number; mesInicio?: number }
 
 export type Lancamento = {
   id: string; tipo: TipoLanc
@@ -63,27 +62,7 @@ export type DadosMes = {
   fixasPagOverride?: Record<string, string>
 }
 
-// ── Dados iniciais (novos usuários começam em branco) ─────────────────
-const CONTAS_INICIAIS: Conta[]     = []
-const CATS_INICIAIS:   Categoria[] = []
-
-// ── Chaves Supabase ──────────────────────────────────────────────────
-const PERFIL_INICIAL: Perfil = { nome: '', apelido: '' }
-
-const KEYS = {
-  contas:               'compass_contas',
-  categorias:           'compass_categorias',
-  extrato:              'compass_extrato_dados',
-  fatura:               'compass_fatura_dados',
-  planos:               'compass_planos',
-  planosReal:           'compass_planos_real',
-  planejamentoLockado:  'compass_planejamento_lockado',
-  desvioMinPerc:        'compass_desvio_min_perc',
-  perfil:               'compass_perfil',
-  onboarding:           'compass_onboarding_completo',
-}
-
-// ── Context ───────────────────────────────────────────────────────────
+// ── Context type ─────────────────────────────────────────────────────
 type AppCtx = {
   user:       User | null
   carregando: boolean
@@ -116,24 +95,129 @@ type AppCtx = {
 const Ctx = createContext<AppCtx>({} as AppCtx)
 export const useApp = () => useContext(Ctx)
 
+// ── Row mappers ───────────────────────────────────────────────────────
+
+function contaToRow(c: Conta, userId: string) {
+  return {
+    id: c.id,
+    user_id: userId,
+    nome: c.nome,
+    banco: c.banco,
+    tipo: c.tipo,
+    saldo_inicial: c.saldoInicial,
+    cor: c.cor,
+    icone: c.icone,
+    limite_cartao: c.limiteCartao ?? null,
+    dia_vencimento: c.diaVencimento ?? null,
+    dia_fechamento: c.diaFechamento ?? null,
+    incluir_no_saldo_inicial: c.incluirNoSaldoInicial ?? true,
+    agencia: c.agencia ?? null,
+    numero_conta: c.numeroConta ?? null,
+    forma_pagamento_fatura: c.formaPagamentoFatura ?? null,
+    conta_pagamento_id: c.contaPagamentoId ?? null,
+    apelido: c.apelido ?? null,
+    preferida: c.preferida ?? false,
+    ativo: true,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToConta(row: any): Conta {
+  return {
+    id: row.id,
+    nome: row.nome,
+    banco: row.banco ?? '',
+    tipo: row.tipo as TipoConta,
+    saldoInicial: Number(row.saldo_inicial ?? 0),
+    cor: row.cor ?? '',
+    icone: row.icone ?? '',
+    limiteCartao: row.limite_cartao != null ? Number(row.limite_cartao) : undefined,
+    diaVencimento: row.dia_vencimento != null ? Number(row.dia_vencimento) : undefined,
+    diaFechamento: row.dia_fechamento != null ? Number(row.dia_fechamento) : undefined,
+    incluirNoSaldoInicial: row.incluir_no_saldo_inicial ?? true,
+    agencia: row.agencia ?? undefined,
+    numeroConta: row.numero_conta ?? undefined,
+    formaPagamentoFatura: row.forma_pagamento_fatura ?? undefined,
+    contaPagamentoId: row.conta_pagamento_id ?? undefined,
+    apelido: row.apelido ?? undefined,
+    preferida: row.preferida ?? false,
+  }
+}
+
+function categoriaToRow(c: Categoria, userId: string) {
+  return {
+    id: c.id,
+    user_id: userId,
+    nome: c.nome,
+    tipo: c.tipo,
+    grupo: c.grupo ?? null,
+    fixa: c.fixa,
+    tipo_movimento: c.tipoMovimento,
+    forma_pagamento: c.formaPagamento ?? null,
+    cor: c.cor,
+    icone: c.icone,
+    ativa: c.ativa,
+    dia_vencimento: c.diaVencimento ?? null,
+    descricao: c.descricao ?? null,
+    numero_parcelas: c.numeroParcelas ?? 1,
+    conta_debito_id: c.contaDebitoId ?? null,
+    pin_quick: c.pinQuick ?? false,
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToCategoria(row: any): Categoria {
+  return {
+    id: row.id,
+    nome: row.nome,
+    tipo: row.tipo as TipoCategoria,
+    fixa: row.fixa ?? false,
+    tipoMovimento: (row.tipo_movimento ?? 'banco') as TipoMovimento,
+    formaPagamento: row.forma_pagamento ?? undefined,
+    cor: row.cor ?? '',
+    icone: row.icone ?? '',
+    ativa: row.ativa ?? true,
+    grupo: row.grupo ?? undefined,
+    diaVencimento: row.dia_vencimento != null ? Number(row.dia_vencimento) : undefined,
+    descricao: row.descricao ?? undefined,
+    numeroParcelas: row.numero_parcelas != null ? Number(row.numero_parcelas) : undefined,
+    contaDebitoId: row.conta_debito_id ?? undefined,
+    pinQuick: row.pin_quick ?? false,
+  }
+}
+
+function parseExtratoKey(key: string): { contaId: string; ano: number; mes: number } {
+  // key: {contaId}-{YYYY}-{MM}  →  last 8 chars = '-YYYY-MM'
+  return {
+    contaId: key.slice(0, -8),
+    ano: parseInt(key.slice(-7, -3)),
+    mes: parseInt(key.slice(-2)),
+  }
+}
+
+function extratoKeyFromRow(contaId: string, ano: number, mes: number): string {
+  return `${contaId}-${ano}-${String(mes).padStart(2, '0')}`
+}
+
+// ── Provider ──────────────────────────────────────────────────────────
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user,       setUserState]  = useState<User | null>(null)
   const [carregando, setCarregando] = useState(true)
   const userIdRef       = useRef<string | null>(null)
-  const dataLoadedRef   = useRef(false)   // bloqueia saves enquanto loadData roda ou após reset
-  const everLoadedRef   = useRef(false)   // true após primeiro loadData — evita double-load
-  const wasLoggedOutRef = useRef(false)   // true após logout explícito — garante reload no login
-  const loadedUserIdRef = useRef<string | null>(null) // ID do usuário cujos dados estão em memória
+  const dataLoadedRef   = useRef(false)
+  const everLoadedRef   = useRef(false)
+  const wasLoggedOutRef = useRef(false)
+  const loadedUserIdRef = useRef<string | null>(null)
 
-  const [contas,      setContasState]     = useState<Conta[]>(CONTAS_INICIAIS)
-  const [categorias,  setCategoriasState] = useState<Categoria[]>(CATS_INICIAIS)
+  const [contas,      setContasState]     = useState<Conta[]>([])
+  const [categorias,  setCategoriasState] = useState<Categoria[]>([])
   const [extratoData, setExtratoState]    = useState<Record<string, DadosMes>>({})
   const [faturaData,  setFaturaState]     = useState<Record<string, unknown>>({})
-  const [planos,          setPlanosState]          = useState<Record<number, PlanoAnoData>>({})
-  const [planosReal,      setPlanosRealState]       = useState<Record<number, PlanoAnoData>>({})
+  const [planos,          setPlanosState]     = useState<Record<number, PlanoAnoData>>({})
+  const [planosReal,      setPlanosRealState] = useState<Record<number, PlanoAnoData>>({})
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
   const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
-  const [perfil,              setPerfilState]              = useState<Perfil>(PERFIL_INICIAL)
+  const [perfil,              setPerfilState]              = useState<Perfil>({ nome: '', apelido: '' })
   const [onboardingCompleto,  setOnboardingCompletoState]  = useState(false)
 
   // ── Auth ─────────────────────────────────────────────────────────────
@@ -142,12 +226,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const u = session?.user ?? null
       userIdRef.current = u?.id ?? null
       setUserState(u)
-      if (u) {
-        everLoadedRef.current = true
-        loadData(u.id)
-      } else {
-        setCarregando(false)
-      }
+      if (u) { everLoadedRef.current = true; loadData(u.id) }
+      else setCarregando(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
@@ -160,54 +240,86 @@ export function AppProvider({ children }: { children: ReactNode }) {
         resetState()
         setCarregando(false)
       } else if (wasLoggedOutRef.current || !everLoadedRef.current || loadedUserIdRef.current !== u.id) {
-        // login após logout explícito, primeiro login, OU mudança de usuário sem logout explícito
         wasLoggedOutRef.current = false
         everLoadedRef.current = true
         loadData(u.id)
       }
     })
-
     return () => subscription.unsubscribe()
   }, [])
 
+  // ── Load data ────────────────────────────────────────────────────────
   async function loadData(userId: string) {
     setCarregando(true)
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
-    const { data } = await supabase
-      .from('user_data')
-      .select('key, value')
-      .eq('user_id', userId)
-    const map: Record<string, unknown> = data
-      ? Object.fromEntries(data.map(r => [r.key, r.value]))
-      : {}
-    setContasState((map[KEYS.contas] as Conta[] | undefined) ?? CONTAS_INICIAIS)
-    const catsCarregadas = (map[KEYS.categorias] as Categoria[] | undefined) ?? CATS_INICIAIS
-    const catsEfetivas = catsCarregadas.length === 0
-      ? CATEGORIAS_PADRAO.map((c, i) => ({ ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` }))
-      : catsCarregadas.map((c, i) => (c as { id?: string }).id ? c : { ...c, id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}` })
-    setCategoriasState(catsEfetivas)
-    setExtratoState((map[KEYS.extrato]  as Record<string, DadosMes> | undefined) ?? {})
-    // Fatura: carrega do Supabase; migra do localStorage se ainda não estiver no Supabase
-    let faturaLoaded = (map[KEYS.fatura] as Record<string, unknown> | undefined) ?? {}
-    if (Object.keys(faturaLoaded).length === 0) {
-      try {
-        const local = localStorage.getItem('compass_fatura_dados')
-        if (local) faturaLoaded = JSON.parse(local)
-      } catch { /* ignore */ }
+
+    const [
+      { data: contasRows },
+      { data: categoriasRows },
+      { data: prefRow },
+      { data: extratoRows },
+      { data: faturaRows },
+      { data: planoRows },
+    ] = await Promise.all([
+      supabase.from('contas').select('*').eq('user_id', userId),
+      supabase.from('categorias').select('*').eq('user_id', userId),
+      supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
+      supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
+      supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
+      supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
+    ])
+
+    // Contas
+    const contasLoaded: Conta[] = (contasRows ?? []).map(rowToConta)
+    setContasState(contasLoaded)
+    const contaIdSet = new Set(contasLoaded.map(c => c.id))
+
+    // Categorias
+    let catsLoaded: Categoria[] = (categoriasRows ?? []).map(rowToCategoria)
+    if (catsLoaded.length === 0) {
+      catsLoaded = CATEGORIAS_PADRAO.map((c, i) => ({
+        ...c,
+        id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      }))
+    }
+    setCategoriasState(catsLoaded)
+
+    // Preferences
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pref = prefRow as any
+    setPerfilState({ nome: pref?.perfil_nome ?? '', apelido: pref?.perfil_apelido ?? '' })
+    const hasData = contasLoaded.length > 0 || (categoriasRows ?? []).length > 0
+    setOnboardingCompletoState(pref?.onboarding_completo ?? hasData)
+    setPlanejamentoLockadoState(pref?.planejamento_lockado ?? false)
+    setDesvioMinPercState(Number(pref?.desvio_min_perc ?? 10))
+
+    // Extrato — filtra contas excluídas
+    const extratoLoaded: Record<string, DadosMes> = {}
+    for (const row of (extratoRows ?? [])) {
+      if (!contaIdSet.has(row.conta_id)) continue
+      extratoLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados as DadosMes
+    }
+    setExtratoState(extratoLoaded)
+
+    // Fatura — filtra contas excluídas
+    const faturaLoaded: Record<string, unknown> = {}
+    for (const row of (faturaRows ?? [])) {
+      if (!contaIdSet.has(row.conta_id)) continue
+      faturaLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados
     }
     setFaturaState(faturaLoaded)
-    setPlanosState((map[KEYS.planos]    as Record<number, PlanoAnoData> | undefined) ?? {})
-    setPlanosRealState((map[KEYS.planosReal] as Record<number, PlanoAnoData> | undefined) ?? {})
-    setPlanejamentoLockadoState((map[KEYS.planejamentoLockado] as boolean | undefined) ?? false)
-    setDesvioMinPercState((map[KEYS.desvioMinPerc] as number | undefined) ?? 10)
-    setPerfilState((map[KEYS.perfil] as Perfil | undefined) ?? PERFIL_INICIAL)
-    const hasData = ((map[KEYS.contas] as Conta[] | undefined)?.length ?? 0) > 0
-      || ((map[KEYS.categorias] as Categoria[] | undefined)?.length ?? 0) > 0
-    const onboardingValue = KEYS.onboarding in map
-      ? (map[KEYS.onboarding] as boolean)
-      : hasData
-    setOnboardingCompletoState(onboardingValue)
+
+    // Planos
+    const planosLoaded: Record<number, PlanoAnoData> = {}
+    const planosRealLoaded: Record<number, PlanoAnoData> = {}
+    for (const row of (planoRows ?? [])) {
+      if (row.tipo_plano === 'previsto') planosLoaded[row.ano] = row.dados as PlanoAnoData
+      else if (row.tipo_plano === 'real') planosRealLoaded[row.ano] = row.dados as PlanoAnoData
+    }
+    setPlanosState(planosLoaded)
+    setPlanosRealState(planosRealLoaded)
+
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
@@ -216,37 +328,136 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function resetState() {
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
-    setContasState(CONTAS_INICIAIS)
-    setCategoriasState(CATS_INICIAIS)
+    setContasState([])
+    setCategoriasState([])
     setExtratoState({})
     setFaturaState({})
     setPlanosState({})
     setPlanosRealState({})
     setPlanejamentoLockadoState(false)
     setDesvioMinPercState(10)
-    setPerfilState(PERFIL_INICIAL)
+    setPerfilState({ nome: '', apelido: '' })
     setOnboardingCompletoState(false)
   }
 
-  // ── Auto-save para Supabase ──────────────────────────────────────────
-  function saveKey(key: string, val: unknown) {
-    const uid = userIdRef.current
-    if (!uid || !dataLoadedRef.current) return
-    supabase.from('user_data')
-      .upsert({ user_id: uid, key, value: val })
-      .then(({ error }) => { if (error) console.error('Supabase save error:', key, error) })
+  // ── Save helpers ─────────────────────────────────────────────────────
+  function canSave() { return !!(userIdRef.current && dataLoadedRef.current) }
+
+  async function saveContas(list: Conta[]) {
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    if (list.length === 0) {
+      await supabase.from('contas').delete().eq('user_id', uid)
+      return
+    }
+    const { error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid)))
+    if (error) { console.error('save contas:', error); return }
+    const ids = list.map(c => `'${c.id}'`).join(',')
+    await supabase.from('contas').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
   }
 
-  useEffect(() => { saveKey(KEYS.contas,    contas)       }, [contas])
-  useEffect(() => { saveKey(KEYS.categorias, categorias)  }, [categorias])
-  useEffect(() => { saveKey(KEYS.extrato,    extratoData) }, [extratoData])
-  useEffect(() => { saveKey(KEYS.fatura,     faturaData)  }, [faturaData])
-  useEffect(() => { saveKey(KEYS.planos,     planos)      }, [planos])
-  useEffect(() => { saveKey(KEYS.planosReal, planosReal)  }, [planosReal])
-  useEffect(() => { saveKey(KEYS.planejamentoLockado, planejamentoLockado) }, [planejamentoLockado])
-  useEffect(() => { saveKey(KEYS.desvioMinPerc,       desvioMinPerc)       }, [desvioMinPerc])
-  useEffect(() => { saveKey(KEYS.perfil,              perfil)              }, [perfil])
-  useEffect(() => { saveKey(KEYS.onboarding,          onboardingCompleto)  }, [onboardingCompleto])
+  async function saveCategorias(list: Categoria[]) {
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    if (list.length === 0) {
+      await supabase.from('categorias').delete().eq('user_id', uid)
+      return
+    }
+    const { error } = await supabase.from('categorias').upsert(list.map(c => categoriaToRow(c, uid)))
+    if (error) { console.error('save categorias:', error); return }
+    const ids = list.map(c => `'${c.id}'`).join(',')
+    await supabase.from('categorias').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
+  }
+
+  async function saveExtratoData(data: Record<string, DadosMes>) {
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    if (Object.keys(data).length === 0) {
+      await supabase.from('extrato_data').delete().eq('user_id', uid)
+      return
+    }
+    const rows = Object.entries(data).map(([key, dados]) => {
+      const { contaId, ano, mes } = parseExtratoKey(key)
+      return { user_id: uid, conta_id: contaId, ano, mes, dados }
+    })
+    const { error } = await supabase
+      .from('extrato_data')
+      .upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' })
+    if (error) console.error('save extrato_data:', error)
+  }
+
+  async function saveFaturaData(data: Record<string, unknown>) {
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    if (Object.keys(data).length === 0) {
+      await supabase.from('fatura_data').delete().eq('user_id', uid)
+      return
+    }
+    const rows = Object.entries(data).map(([key, dados]) => {
+      const { contaId, ano, mes } = parseExtratoKey(key)
+      return { user_id: uid, conta_id: contaId, ano, mes, dados }
+    })
+    const { error } = await supabase
+      .from('fatura_data')
+      .upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' })
+    if (error) console.error('save fatura_data:', error)
+  }
+
+  async function savePlanosData(dict: Record<number, PlanoAnoData>, tipo: 'previsto' | 'real') {
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    const entries = Object.entries(dict)
+    if (entries.length === 0) {
+      await supabase.from('planejamento_data').delete().eq('user_id', uid).eq('tipo_plano', tipo)
+      return
+    }
+    const rows = entries.map(([anoStr, dados]) => ({
+      user_id: uid,
+      ano: parseInt(anoStr),
+      tipo_plano: tipo,
+      saldo_inicial_jan: (dados as PlanoAnoData).saldoInicialJan ?? 0,
+      meta_anual: (dados as PlanoAnoData).metaAnual ?? null,
+      mes_inicio: (dados as PlanoAnoData).mesInicio ?? 1,
+      objetivos: (dados as PlanoAnoData).objetivos ?? [],
+      dados,
+    }))
+    const { error } = await supabase
+      .from('planejamento_data')
+      .upsert(rows, { onConflict: 'user_id,ano,tipo_plano' })
+    if (error) { console.error('save planejamento_data:', error); return }
+    const anos = entries.map(([a]) => a).join(',')
+    await supabase.from('planejamento_data')
+      .delete().eq('user_id', uid).eq('tipo_plano', tipo)
+      .not('ano', 'in', `(${anos})`)
+  }
+
+  async function saveUserPrefs(
+    p: Perfil, oc: boolean, pl: boolean, dmp: number
+  ) {
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    const { error } = await supabase.from('user_preferences').upsert({
+      user_id: uid,
+      perfil_nome: p.nome,
+      perfil_apelido: p.apelido,
+      onboarding_completo: oc,
+      planejamento_lockado: pl,
+      desvio_min_perc: dmp,
+      atualizado_em: new Date().toISOString(),
+    })
+    if (error) console.error('save user_preferences:', error)
+  }
+
+  // ── Auto-save effects ────────────────────────────────────────────────
+  useEffect(() => { saveContas(contas) }, [contas])          // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { saveCategorias(categorias) }, [categorias]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { saveExtratoData(extratoData) }, [extratoData]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { saveFaturaData(faturaData) }, [faturaData])    // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { savePlanosData(planos, 'previsto') }, [planos])       // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { savePlanosData(planosReal, 'real') }, [planosReal])   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc)
+  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -278,7 +489,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function limparDados() {
     const uid = userIdRef.current
     if (!uid) return
-    await supabase.from('user_data').delete().eq('user_id', uid)
+    await Promise.all([
+      supabase.from('contas').delete().eq('user_id', uid),
+      supabase.from('categorias').delete().eq('user_id', uid),
+      supabase.from('user_preferences').delete().eq('user_id', uid),
+      supabase.from('extrato_data').delete().eq('user_id', uid),
+      supabase.from('fatura_data').delete().eq('user_id', uid),
+      supabase.from('planejamento_data').delete().eq('user_id', uid),
+    ])
     resetState()
   }
 
@@ -286,14 +504,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const uid = userIdRef.current
     if (uid && dataLoadedRef.current) {
       await Promise.all([
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.contas,              value: contas }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.categorias,          value: categorias }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.extrato,             value: extratoData }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.fatura,              value: faturaData }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planos,              value: planos }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planosReal,          value: planosReal }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.planejamentoLockado, value: planejamentoLockado }),
-        supabase.from('user_data').upsert({ user_id: uid, key: KEYS.desvioMinPerc,        value: desvioMinPerc }),
+        saveContas(contas),
+        saveCategorias(categorias),
+        saveExtratoData(extratoData),
+        saveFaturaData(faturaData),
+        savePlanosData(planos, 'previsto'),
+        savePlanosData(planosReal, 'real'),
+        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc),
       ])
     }
     await supabase.auth.signOut()
@@ -302,12 +519,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       user, carregando,
-      contas, categorias, extratoData, faturaData, planos, planosReal, planejamentoLockado, desvioMinPerc, perfil,
+      contas, categorias, extratoData, faturaData, planos, planosReal,
+      planejamentoLockado, desvioMinPerc, perfil,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado, setDesvioMinPerc, setPerfil,
+      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado,
+      setDesvioMinPerc, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
       limparDados, sairDaConta,
     }}>
