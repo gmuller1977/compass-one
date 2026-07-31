@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
+import CompassCard from '../components/CompassCard'
 import type { DadosMes } from '../context/AppContext'
 
 function useIsMobile() {
@@ -344,8 +345,13 @@ export default function QuickLaunch() {
         </div>
       )}
 
+      {/* Compass card */}
+      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        <CompassCard />
+      </div>
+
       {/* Hoje strip */}
-      <div style={{ display: 'flex', gap: 8, padding: '12px 16px 6px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 8, padding: '8px 16px 6px', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: 11, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
           <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Gastos hoje</div>
           <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: gastosHoje > 0 ? COR.vermelho : COR.textoSuave }}>

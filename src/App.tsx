@@ -55,7 +55,8 @@ export default function App() {
           <Route path="/"                element={<Protegido><QuickLaunch /></Protegido>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
-          <Route path="/acompanhamento" element={<Protegido><Acompanhamento /></Protegido>} />
+          <Route path="/evolucao"       element={<Protegido><Acompanhamento /></Protegido>} />
+          <Route path="/acompanhamento" element={<Navigate to="/evolucao" replace />} />
           <Route path="/novo-lancamento"    element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />

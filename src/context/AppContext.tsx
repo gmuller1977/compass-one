@@ -209,6 +209,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const everLoadedRef   = useRef(false)
   const wasLoggedOutRef = useRef(false)
   const loadedUserIdRef = useRef<string | null>(null)
+  const loadingForUserRef = useRef<string | null>(null)
 
   const [contas,      setContasState]     = useState<Conta[]>([])
   const [categorias,  setCategoriasState] = useState<Categoria[]>([])
@@ -251,6 +252,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Load data ────────────────────────────────────────────────────────
   async function loadData(userId: string) {
+    if (loadingForUserRef.current === userId) return
+    loadingForUserRef.current = userId
     setCarregando(true)
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
@@ -276,8 +279,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setContasState(contasLoaded)
     const contaIdSet = new Set(contasLoaded.map(c => c.id))
 
-    // Categorias
-    let catsLoaded: Categoria[] = (categoriasRows ?? []).map(rowToCategoria)
+    // Categorias — deduplica por nome antes de usar (protege contra race condition de carregamento duplo)
+    const rawCats: Categoria[] = (categoriasRows ?? []).map(rowToCategoria)
+    const seenNomes = new Set<string>()
+    let catsLoaded = rawCats.filter(c => {
+      if (seenNomes.has(c.nome)) return false
+      seenNomes.add(c.nome)
+      return true
+    })
     if (catsLoaded.length === 0) {
       catsLoaded = CATEGORIAS_PADRAO.map((c, i) => ({
         ...c,
@@ -324,6 +333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
+    loadingForUserRef.current = null
   }
 
   function resetState() {

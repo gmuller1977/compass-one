@@ -69,11 +69,11 @@ function IcGear({ active }: { active: boolean }) {
 
 // ── Itens de navegação ────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { label: 'Dashboard',      path: '/dashboard'       },
-  { label: 'Configurações',  path: '/configuracoes'   },
-  { label: 'Planejamento',   path: '/planejamento'    },
-  { label: 'Lançamentos',    path: '/novo-lancamento' },
-  { label: 'Acompanhamento', path: '/acompanhamento'  },
+  { label: 'Início',        path: '/dashboard'       },
+  { label: 'Configurações', path: '/configuracoes'   },
+  { label: 'Planejamento',  path: '/planejamento'    },
+  { label: 'Lançamentos',   path: '/novo-lancamento' },
+  { label: 'Evolução',      path: '/evolucao'        },
 ]
 
 type TabDef =
@@ -82,7 +82,7 @@ type TabDef =
 
 const BOTTOM_TABS: TabDef[] = [
   { path: '/dashboard',       label: 'Início',  type: 'icon', Icon: IcHome     },
-  { path: '/acompanhamento',  label: 'Acomp.',  type: 'icon', Icon: IcChart    },
+  { path: '/evolucao',        label: 'Evol.',   type: 'icon', Icon: IcChart    },
   { path: '/novo-lancamento', label: 'Lançar',  type: 'fab'                    },
   { path: '/planejamento',    label: 'Plano',   type: 'icon', Icon: IcCalendar },
   { path: '/configuracoes',   label: 'Config.', type: 'icon', Icon: IcGear     },
