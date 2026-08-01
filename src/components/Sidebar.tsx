@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
@@ -25,6 +25,12 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
       {
         icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false,
+        sub: [
+          { label: 'Banco',       path: '/novo-lancamento?tipo=banco'       },
+          { label: 'Cartão',      path: '/novo-lancamento?tipo=cartao'      },
+          { label: 'Dinheiro',    path: '/novo-lancamento?tipo=dinheiro'    },
+          { label: 'Visão geral', path: '/novo-lancamento?tipo=consolidado' },
+        ],
       },
     ],
   },
@@ -34,11 +40,11 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
         sub: [
-          { label: 'Comece aqui',    path: '/planejamento?action=quiz'     },
-          { label: 'Grade',          path: '/planejamento?layout=grade'    },
-          { label: 'Planilha',       path: '/planejamento?layout=planilha' },
-          { label: 'Lista',          path: '/planejamento?layout=lista'    },
-          { label: 'Revisão mensal', path: '/planejamento?view=revisao'    },
+          { label: 'Comece aqui',    path: '/planejamento?modo=wizard'  },
+          { label: 'Grade',          path: '/planejamento?modo=grade'   },
+          { label: 'Planilha',       path: '/planejamento?modo=planilha'},
+          { label: 'Lista',          path: '/planejamento?modo=lista'   },
+          { label: 'Revisão mensal', path: '/planejamento?modo=revisao' },
         ],
       },
       { icon: '📈', label: 'Evolução',   path: '/evolucao',    exact: false },
@@ -51,11 +57,12 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         icon: '⚙️', label: 'Configurações', path: '/configuracoes', exact: false,
         sub: [
-          { label: 'Bancos',        path: '/configuracoes?tab=bancos'       },
-          { label: 'Cartões',       path: '/configuracoes?tab=cartoes'      },
-          { label: 'Categorias',    path: '/configuracoes?tab=categorias'   },
-          { label: 'Perfil',        path: '/configuracoes?tab=perfil'       },
-          { label: 'Preferências',  path: '/configuracoes?tab=preferencias' },
+          { label: 'Bancos',       path: '/configuracoes?aba=bancos'       },
+          { label: 'Cartões',      path: '/configuracoes?aba=cartoes'      },
+          { label: 'Categorias',   path: '/configuracoes?aba=categorias'   },
+          { label: 'Grupos',       path: '/configuracoes?aba=grupos'       },
+          { label: 'Perfil',       path: '/configuracoes?aba=perfil'       },
+          { label: 'Preferências', path: '/configuracoes?aba=preferencias' },
         ],
       },
     ],
@@ -175,31 +182,10 @@ function SubDividerRow({ label }: { label: string }) {
 export default function Sidebar() {
   const navigate              = useNavigate()
   const { pathname, search }  = useLocation()
-  const { perfil, user, sairDaConta, contas } = useApp()
+  const { perfil, user, sairDaConta } = useApp()
 
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
 
-  // Sub-itens dinâmicos de Lançamentos
-  const subLancamentos = useMemo((): SubItem[] => {
-    const bancos  = contas.filter(c => c.tipo !== 'cartao')
-    const cartoes = contas.filter(c => c.tipo === 'cartao')
-    return [
-      ...(bancos.length > 0 ? [
-        { divider: 'Banco' } as SubDivider,
-        ...bancos.map(b => ({ label: `${b.icone} ${b.nome || b.banco}`, path: `/novo-lancamento?tipo=extrato&conta=${b.id}` })),
-      ] : [
-        { label: 'Banco', path: '/novo-lancamento?tipo=extrato' } as SubLeaf,
-      ]),
-      ...(cartoes.length > 0 ? [
-        { divider: 'Cartão' } as SubDivider,
-        ...cartoes.map(c => ({ label: `${c.icone} ${c.apelido || c.banco}`, path: `/novo-lancamento?tipo=cartao&conta=${c.id}` })),
-      ] : [
-        { label: 'Cartão', path: '/novo-lancamento?tipo=cartao' } as SubLeaf,
-      ]),
-      { label: 'Dinheiro',    path: '/novo-lancamento?tipo=dinheiro'    },
-      { label: 'Visão geral', path: '/novo-lancamento?tipo=consolidado' },
-    ]
-  }, [contas])
   const email   = user?.email ?? ''
   const inicial = nome.charAt(0).toUpperCase()
 
@@ -208,7 +194,7 @@ export default function Sidebar() {
   }
 
   function isSubActive(subPath: string) {
-    if (subPath.includes('action=quiz')) return false
+    if (subPath.includes('modo=wizard')) return false
     return (pathname + search) === subPath
   }
 
@@ -269,8 +255,7 @@ export default function Sidebar() {
               {group.label}
             </div>
             {group.items.map(item => {
-              const isLancamentos = item.path === '/novo-lancamento'
-              const sub = isLancamentos ? subLancamentos : (item.sub ?? [])
+              const sub = item.sub ?? []
               const parentActive = !item.disabled && isParentActive(item.path, item.exact)
               const hasSub = sub.length > 0
               const isExpanded = expandedItem === item.label && hasSub

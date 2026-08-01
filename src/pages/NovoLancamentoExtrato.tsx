@@ -312,13 +312,15 @@ export default function NovoLancamentoExtrato() {
 
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [tabPrincipal])
 
-  // Sidebar desktop → ?tipo= e ?conta= trocam aba e conta
+  // Sidebar desktop → ?tipo= troca aba (banco→extrato internamente)
   useEffect(() => {
     if (isMobile) return
-    const params = new URLSearchParams(location.search)
-    const tipo   = params.get('tipo') as typeof tabPrincipal | null
-    const conta  = params.get('conta')
-    if (!tipo && !conta) return
+    const params  = new URLSearchParams(location.search)
+    let rawTipo   = params.get('tipo')
+    const conta   = params.get('conta')
+    if (!rawTipo && !conta) return
+    if (rawTipo === 'banco') rawTipo = 'extrato'
+    const tipo = rawTipo as typeof tabPrincipal | null
     if (tipo && tipo !== tabPrincipal) setTabPrincipal(tipo)
     if (tipo === 'extrato') {
       if (conta && contasExtrato.find(c => c.id === conta)) {
@@ -331,7 +333,7 @@ export default function NovoLancamentoExtrato() {
     if (tipo === 'cartao' && conta) {
       setCartaoNavId(conta)
     }
-    navigate(location.pathname, { replace: true })
+    // URL mantida para que o sub-item ativo na sidebar reflita o tab atual
   }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -1054,7 +1056,38 @@ export default function NovoLancamentoExtrato() {
       )}
 
 
-      {/* DESKTOP: tab selector removido — navegação via sidebar */}
+      {/* Tutoriais por tipo de lançamento (position:fixed, podem ficar aqui) */}
+      {tabPrincipal === 'extrato' && <TutorialCard tela="lanc_banco" icon="🏦"
+        title="Movimentação do banco"
+        description="Aqui você registra tudo que entra e sai da sua conta bancária. É como o extrato do banco, só que organizado do seu jeito."
+        tips={[
+          { icon: '📅', text: 'Cada dia do mês aparece no calendário — toque para lançar' },
+          { icon: '🔄', text: 'Gastos previstos do planejamento aparecem em cinza' },
+          { icon: '✅', text: 'Quando pagar uma conta prevista, marque como paga' },
+        ]} buttonLabel="Ver movimentação →" />}
+      {tabPrincipal === 'cartao' && <TutorialCard tela="lanc_cartao" icon="💳"
+        title="Fatura do cartão"
+        description="Acompanhe os gastos do seu cartão de crédito. Veja quanto já gastou da fatura e quanto ainda tem de limite."
+        tips={[
+          { icon: '📋', text: 'Cada compra no cartão aparece aqui automaticamente' },
+          { icon: '📊', text: 'Acompanhe o uso do limite em tempo real' },
+          { icon: '📅', text: 'Veja a fatura aberta e as anteriores' },
+        ]} buttonLabel="Ver fatura →" />}
+      {tabPrincipal === 'dinheiro' && <TutorialCard tela="lanc_dinheiro" icon="💵"
+        title="Gastos em dinheiro"
+        description="Registre aqui os gastos que você fez em dinheiro vivo — aqueles que não aparecem no banco nem no cartão."
+        tips={[
+          { icon: '🧾', text: 'Controle os gastos que normalmente passam despercebidos' },
+          { icon: '📝', text: 'Anote na hora para não esquecer depois' },
+        ]} buttonLabel="Registrar →" />}
+      {tabPrincipal === 'consolidado' && <TutorialCard tela="lanc_visaogeral" icon="📊"
+        title="Tudo junto"
+        description="Aqui você vê todos os seus gastos e recebimentos — banco, cartão e dinheiro — em um único lugar."
+        tips={[
+          { icon: '🔍', text: 'Visão completa de todas as movimentações do mês' },
+          { icon: '📈', text: 'Compare entradas e saídas de todas as fontes' },
+          { icon: '🗓️', text: 'Navegue entre os meses para ver o histórico' },
+        ]} buttonLabel="Ver visão geral →" />}
 
       {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={isMobile ? (mobileCartaoId ?? undefined) : cartaoNavId} onCartaoChange={id => setCartaoAtualId(id)} onVoltar={() => setMobileStep('tipo')} /> :
        tabPrincipal==='consolidado' ? (
@@ -1266,19 +1299,6 @@ export default function NovoLancamentoExtrato() {
       <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'auto' : 'hidden', paddingBottom: isMobile ? 120 : 0}}>
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
-
-      <TutorialCard
-        tela="lancamentos"
-        icon="📋"
-        title="Aqui começa o controle!"
-        description="Essa é a tela mais importante do app. Cada gasto registrado é um passo para você saber exatamente para onde vai seu dinheiro."
-        tips={[
-          { icon: '📅', text: 'Toque em um dia para registrar um gasto ou recebimento' },
-          { icon: '⬜', text: 'Gastos previstos do planejamento aparecem automaticamente em cinza' },
-          { icon: '🔀', text: 'Alterne entre banco, cartão e dinheiro no menu lateral' },
-        ]}
-        buttonLabel="Começar a registrar →"
-      />
 
       {/* BARRA DE SALDO — desktop only (mobile fica no sticky acima) */}
       {!isMobile && <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,

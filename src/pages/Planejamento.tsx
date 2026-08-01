@@ -102,6 +102,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [aba,              setAba]             = useState<'previsto' | 'real' | 'revisao'>(() => {
     const fromState = (location.state as any)?.aba
     if (fromState === 'previsto' || fromState === 'real' || fromState === 'revisao') return fromState
+    if (new URLSearchParams(window.location.search).get('modo') === 'revisao') return 'revisao'
     if (defaultAba !== 'previsto') return defaultAba
     return (planejamentoLockado && !!planosReal[anoCorrente]) ? 'real' : 'previsto'
   })
@@ -121,6 +122,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const skipBlurRef    = useRef(false)
   const [stickyH, setStickyH] = useState(0)
   const [quizAtivo,        setQuizAtivo]       = useState(false)
+  const [quizFromWizard,   setQuizFromWizard]  = useState(false)
   const [quizConcluido,    setQuizConcluido]   = useState(false)
   const [confirmarRefazer,   setConfirmarRefazer]   = useState<'refazer' | 'bloqueado' | false>(false)
   const [confirmarAtualizar, setConfirmarAtualizar] = useState(false)
@@ -142,10 +144,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
   const [modalEvento,   setModalEvento]   = useState<null|{ step:1|2; tipo:EventoTipo; mesInicio:number; catTipo:'entrada'|'saida'; catNome:string; novoValor:string }>(null)
   const [sugestoesEditadas, setSugestoesEditadas] = useState<Record<string,string>>({})
-  const layoutParam = new URLSearchParams(location.search).get('layout')
+  const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: 'grade' | 'horizontal' | 'vertical' =
-    layoutParam === 'planilha' ? 'horizontal'
-    : layoutParam === 'lista'  ? 'vertical'
+    modoParam === 'planilha' ? 'horizontal'
+    : modoParam === 'lista'  ? 'vertical'
     : 'grade'
   const [modalMes,           setModalMes]          = useState<number | null>(null)
   const [copiarMesPrompt,    setCopiarMesPrompt]    = useState<{ origem: number; destino: number } | null>(null)
@@ -858,26 +860,23 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     }
   }, [location.state]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sidebar "Comece aqui" → ?action=quiz
+  // Sidebar → ?modo=wizard|revisao
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    if (params.get('action') !== 'quiz') return
-    navigate(pathname, { replace: true })
-    if (!planoCriado) {
-      setQuizAtivo(true); setQuizStep(0); setQuizConcluido(false)
-    } else if (planejamentoLockado) {
-      setConfirmarRefazer('bloqueado')
-    } else {
-      setConfirmarRefazer('refazer')
+    const modo   = params.get('modo')
+    if (modo === 'wizard') {
+      navigate(pathname, { replace: true }) // limpa URL — quiz é modal, não estado persistente
+      setQuizFromWizard(true)
+      if (!planoCriado) {
+        setQuizAtivo(true); setQuizStep(0); setQuizConcluido(false)
+      } else if (planejamentoLockado) {
+        setConfirmarRefazer('bloqueado')
+      } else {
+        setConfirmarRefazer('refazer')
+      }
+    } else if (modo === 'revisao') {
+      setAba('revisao') // URL mantida para sub-item ativo na sidebar
     }
-  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Sidebar "Revisão mensal" → ?view=revisao
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    if (params.get('view') !== 'revisao') return
-    navigate(pathname, { replace: true })
-    setAba('revisao')
   }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const quizKeyRef = useRef<{
@@ -1660,19 +1659,47 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       {/* ÁREA PRINCIPAL */}
       <div style={{ padding:'0 0 8px' }}>
 
-        {/* Tutorial primeira visita */}
-        <TutorialCard
-          tela="planejamento"
-          icon="🎯"
-          title="Monte seu plano financeiro"
-          description="Planejamento é definir quanto você quer gastar em cada área da sua vida. Com isso, o app consegue te avisar quando estiver saindo do rumo."
+        {/* Tutorial por modo/view */}
+        {quizAtivo && quizStep === 0 && quizFromWizard && <TutorialCard tela="plan_comece" icon="🚀"
+          title="Crie seu planejamento"
+          description="O assistente vai te guiar passo a passo para montar seu orçamento mensal. Não precisa ser perfeito — você ajusta depois."
           tips={[
-            { icon: '✏️', text: 'Defina valores mensais para cada categoria de gasto' },
-            { icon: '💡', text: 'Não precisa ser exato — valores aproximados já ajudam muito' },
-            { icon: '🔄', text: 'Você pode revisar e ajustar o plano a qualquer momento' },
-          ]}
-          buttonLabel="Criar meu plano →"
-        />
+            { icon: '🎯', text: 'Escolha seu objetivo financeiro' },
+            { icon: '💰', text: 'Informe sua renda mensal' },
+            { icon: '📋', text: 'Defina quanto quer gastar em cada categoria' },
+          ]} buttonLabel="Começar →" />}
+        {viewMode === 'grade' && aba !== 'revisao' && !quizAtivo && <TutorialCard tela="plan_grade" icon="📅"
+          title="Visão em grade"
+          description="Veja seu planejamento mês a mês, com cards que mostram entradas, saídas e saldo de cada período."
+          tips={[
+            { icon: '📦', text: 'Cada card é um mês do ano' },
+            { icon: '🖊️', text: 'Clique em um mês para editar os valores' },
+            { icon: '🟢', text: 'Verde = sobrou | 🔴 Vermelho = faltou' },
+          ]} buttonLabel="Ver grade →" />}
+        {viewMode === 'horizontal' && !quizAtivo && <TutorialCard tela="plan_planilha" icon="📑"
+          title="Visão em planilha"
+          description="Para quem gosta de detalhes. Veja todas as categorias lado a lado, mês a mês, como uma planilha."
+          tips={[
+            { icon: '📊', text: 'Linhas = categorias, Colunas = meses' },
+            { icon: '🖊️', text: 'Edite valores diretamente nas células' },
+            { icon: '📈', text: 'Totais calculados automaticamente' },
+          ]} buttonLabel="Ver planilha →" />}
+        {viewMode === 'vertical' && !quizAtivo && <TutorialCard tela="plan_lista" icon="📃"
+          title="Visão em lista"
+          description="Visão simplificada das suas categorias e valores planejados para o mês selecionado."
+          tips={[
+            { icon: '📋', text: 'Veja todas as categorias organizadas por grupo' },
+            { icon: '🖊️', text: 'Edite valores de forma rápida' },
+            { icon: '📊', text: 'Ideal para ajustes pontuais' },
+          ]} buttonLabel="Ver lista →" />}
+        {aba === 'revisao' && !quizAtivo && <TutorialCard tela="plan_revisao" icon="🔄"
+          title="Hora de revisar"
+          description="Compare o que você planejou com o que realmente aconteceu. Use essa análise para ajustar o plano do próximo mês."
+          tips={[
+            { icon: '📊', text: 'Veja planejado vs realizado por categoria' },
+            { icon: '⚡', text: 'Identifique onde gastou mais ou menos que o previsto' },
+            { icon: '✏️', text: 'Atualize o plano com base na realidade' },
+          ]} buttonLabel="Revisar meu mês →" />}
 
         {/* BANNER COPIAR ANO ANTERIOR */}
         {showBannerCopiar && aba === 'previsto' && !planejamentoLockado && (

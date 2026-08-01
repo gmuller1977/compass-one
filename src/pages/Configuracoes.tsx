@@ -262,11 +262,17 @@ function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: {
 export default function Configuracoes() {
   const location  = useLocation()
   const navigate  = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const { toast } = useToast()
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'list'|'form'>('list')
-  const [aba,    setAba]    = useState<Aba>('home')
+  const [aba,    setAba]    = useState<Aba>(() => {
+    if (window.innerWidth < 640) return 'home'
+    const p = new URLSearchParams(window.location.search).get('aba')
+    if (p === 'grupos') return 'categorias'
+    if (p && ['bancos','cartoes','categorias','perfil','preferencias'].includes(p)) return p as Aba
+    return 'bancos'
+  })
   const { user, contas, categorias, setContas, setCategorias,
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
@@ -279,7 +285,9 @@ export default function Configuracoes() {
   const [deletando,         setDeletando]         = useState(false)
   const [abaCat,      setAbaCat]      = useState<TipoCategoria>('saida')
   const [filtroAtiva, setFiltroAtiva] = useState<'ativas'|'inativas'|'todas'>('todas')
-  const [subAbaCat,   setSubAbaCat]   = useState<'categorias'|'grupos'>('categorias')
+  const [subAbaCat,   setSubAbaCat]   = useState<'categorias'|'grupos'>(() =>
+    new URLSearchParams(window.location.search).get('aba') === 'grupos' ? 'grupos' : 'categorias'
+  )
   const [novoGrupoNome,  setNovoGrupoNome]  = useState('')
   const [novoGrupoTipo,  setNovoGrupoTipo]  = useState<TipoCategoria>('saida')
   const [editGrupo,      setEditGrupo]      = useState<string|null>(null)
@@ -317,7 +325,7 @@ export default function Configuracoes() {
   }, [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const abaParam = searchParams.get('aba') as Aba | null
+    const abaParam = searchParams.get('aba')
     const acaoParam = searchParams.get('acao')
     if (!abaParam) return
     if (abaParam === 'bancos') {
@@ -330,9 +338,18 @@ export default function Configuracoes() {
       if (acaoParam === 'novo') novaConta('cartoes')
     } else if (abaParam === 'categorias') {
       setAba('categorias')
+      setSubAbaCat('categorias')
       setMobileView('list')
+    } else if (abaParam === 'grupos') {
+      setAba('categorias')
+      setSubAbaCat('grupos')
+      setMobileView('list')
+    } else if (abaParam === 'perfil') {
+      setAba('perfil')
+    } else if (abaParam === 'preferencias') {
+      setAba('preferencias')
     }
-    setSearchParams({}, { replace: true })
+    // URL mantida para que o sub-item ativo na sidebar reflita a aba atual
   }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const contaVazia: Omit<Conta,'id'> = {
@@ -544,8 +561,8 @@ export default function Configuracoes() {
       <AppHeader currentPath="/configuracoes" hideBottomTab />
       <BottomNav />
 
-      {/* HOME SCREEN */}
-      {aba === 'home' && (
+      {/* HOME SCREEN — apenas mobile (desktop usa sidebar para navegar) */}
+      {isMobile && aba === 'home' && (
         <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '40px 24px',
           display:'flex', flexDirection:'column', alignItems:'center' }}>
           <TutorialCard
@@ -586,8 +603,8 @@ export default function Configuracoes() {
         </div>
       )}
 
-      {/* BACK BAR — exibida em todas as seções exceto home */}
-      {aba !== 'home' && (
+      {/* BACK BAR — apenas mobile */}
+      {isMobile && aba !== 'home' && (
         <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
           padding:'10px 16px', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
           <button onClick={() => { setAba('home'); setMobileView('list') }} style={{
@@ -603,6 +620,46 @@ export default function Configuracoes() {
           </span>
         </div>
       )}
+
+      {/* Tutoriais por seção */}
+      {aba === 'bancos' && <TutorialCard tela="config_bancos" icon="🏦" title="Seus bancos"
+        description="Cadastre e gerencie suas contas bancárias. Cada conta que você adiciona aparece nos lançamentos."
+        tips={[
+          { icon: '➕', text: 'Adicione contas correntes e poupanças' },
+          { icon: '✏️', text: 'Edite saldo, nome e ícone a qualquer momento' },
+          { icon: '🎨', text: 'Personalize com cores para identificar rápido' },
+        ]} buttonLabel="Gerenciar bancos →" />}
+
+      {aba === 'cartoes' && <TutorialCard tela="config_cartoes" icon="💳" title="Seus cartões"
+        description="Cadastre seus cartões de crédito para acompanhar faturas e controlar o uso do limite."
+        tips={[
+          { icon: '📅', text: 'Informe dia de vencimento para organizar seus pagamentos' },
+          { icon: '💰', text: 'Defina o limite para acompanhar o uso' },
+          { icon: '🏷️', text: 'Dê um apelido para identificar cada cartão' },
+        ]} buttonLabel="Gerenciar cartões →" />}
+
+      {aba === 'categorias' && <TutorialCard tela="config_categorias" icon="📁" title="Tipos de gasto"
+        description="Categorias são os tipos de gasto do seu dia a dia — como Mercado, Conta de Luz, Uber. Organize do seu jeito."
+        tips={[
+          { icon: '✅', text: 'Ative ou desative categorias conforme sua necessidade' },
+          { icon: '➕', text: 'Crie categorias personalizadas' },
+          { icon: '📂', text: 'Organize em grupos para facilitar a visualização' },
+        ]} buttonLabel="Ver categorias →" />}
+
+      {aba === 'perfil' && <TutorialCard tela="config_perfil" icon="👤" title="Seus dados"
+        description="Atualize seu nome, como quer ser chamado e outras informações da sua conta."
+        tips={[
+          { icon: '✏️', text: 'O apelido aparece na saudação do Início' },
+          { icon: '🔒', text: 'Seu email está vinculado ao login' },
+        ]} buttonLabel="Ver perfil →" />}
+
+      {aba === 'preferencias' && <TutorialCard tela="config_preferencias" icon="⚙️" title="Personalize o app"
+        description="Ajuste o Compass One do seu jeito — moeda, formato de números, alertas e tutoriais."
+        tips={[
+          { icon: '💱', text: 'Escolha moeda e formato de exibição' },
+          { icon: '🔔', text: 'Configure alertas de saldo baixo' },
+          { icon: '📚', text: 'Reative tutoriais quando quiser rever' },
+        ]} buttonLabel="Ajustar preferências →" />}
 
       {/* CONTEÚDO */}
       {aba !== 'home' && (
