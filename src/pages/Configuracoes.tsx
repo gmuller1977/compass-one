@@ -3,6 +3,7 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
+import TutorialCard, { reativarTutoriais } from '../components/TutorialCard'
 import { useToast } from '../components/Toast'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
@@ -270,7 +271,8 @@ export default function Configuracoes() {
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
-          perfil, setPerfil, excluirConta: excluirContaUsuario } = useApp()
+          perfil, setPerfil, excluirConta: excluirContaUsuario,
+          setOnboardingCompleto } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [modalExcluirConta, setModalExcluirConta] = useState(false)
   const [confirmInput,      setConfirmInput]      = useState('')
@@ -546,6 +548,18 @@ export default function Configuracoes() {
       {aba === 'home' && (
         <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '40px 24px',
           display:'flex', flexDirection:'column', alignItems:'center' }}>
+          <TutorialCard
+            tela="configuracoes"
+            icon="⚙️"
+            title="Ajuste tudo do seu jeito"
+            description="Aqui você gerencia seus bancos, cartões e categorias. Tudo que você configurou no início pode ser ajustado quando quiser."
+            tips={[
+              'Adicione novos bancos e cartões',
+              'Ative ou desative categorias',
+              'Personalize suas preferências',
+            ]}
+            buttonLabel="Explorar configurações →"
+          />
           <h1 style={{ fontSize:22, fontWeight:800, color:COR.texto, marginBottom:28, textAlign:'center' }}>
             Configurações
           </h1>
@@ -1829,6 +1843,45 @@ export default function Configuracoes() {
                   fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
                   background:'#dc2626', color:'#fff' }}>
                   Refazer
+                </button>
+              </div>
+            </div>
+
+            {/* Card: Tutoriais */}
+            <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
+              <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Tutoriais</h3>
+
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'12px 14px', borderRadius:9, background:'#f0f9ff',
+                border:'1px solid #bae6fd', marginBottom:10 }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>💡 Reativar tutoriais das telas</div>
+                  <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
+                    Faz os cards de dica aparecerem novamente em cada tela.
+                  </div>
+                </div>
+                <button onClick={() => { reativarTutoriais(); toast('Tutoriais reativados!') }} style={{
+                  padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+                  fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
+                  background:'#0284c7', color:'#fff' }}>
+                  Reativar
+                </button>
+              </div>
+
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'12px 14px', borderRadius:9, background:'#f8faff',
+                border:`1px solid ${COR.borda}` }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🧭 Rever boas-vindas</div>
+                  <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
+                    Volta à tela de introdução com os slides iniciais.
+                  </div>
+                </div>
+                <button onClick={() => { setOnboardingCompleto(false); toast('Boas-vindas reativadas!') }} style={{
+                  padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+                  fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
+                  background:COR.azul, color:'#fff' }}>
+                  Rever
                 </button>
               </div>
             </div>

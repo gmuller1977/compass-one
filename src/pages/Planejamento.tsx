@@ -6,6 +6,7 @@ import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
+import TutorialCard from '../components/TutorialCard'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -1658,6 +1659,20 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px 40px' }}>
       {/* ÁREA PRINCIPAL */}
       <div style={{ padding:'0 0 8px' }}>
+
+        {/* Tutorial primeira visita */}
+        <TutorialCard
+          tela="planejamento"
+          icon="🎯"
+          title="Monte seu plano financeiro"
+          description="Planejamento é definir quanto você quer gastar em cada área da sua vida. Com isso, o app consegue te avisar quando estiver saindo do rumo."
+          tips={[
+            'Defina valores mensais para cada categoria de gasto',
+            'Não precisa ser exato — valores aproximados já ajudam muito',
+            'Você pode revisar e ajustar o plano a qualquer momento',
+          ]}
+          buttonLabel="Criar meu plano →"
+        />
 
         {/* BANNER COPIAR ANO ANTERIOR */}
         {showBannerCopiar && aba === 'previsto' && !planejamentoLockado && (

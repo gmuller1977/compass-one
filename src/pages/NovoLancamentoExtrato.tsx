@@ -7,6 +7,7 @@ import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../uti
 import FaturaCartao from './FaturaCartao'
 import ExtratoConsolidado from './ExtratoConsolidado'
 import BottomNav from '../components/BottomNav'
+import TutorialCard from '../components/TutorialCard'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -1265,6 +1266,19 @@ export default function NovoLancamentoExtrato() {
       <div style={{flex:1,display:'flex',flexDirection: isMobile ? 'column' : 'row',gap: isMobile ? 0 : 16,padding: isMobile ? 0 : '0 16px 10px',overflow: isMobile ? 'auto' : 'hidden', paddingBottom: isMobile ? 120 : 0}}>
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
 
+
+      <TutorialCard
+        tela="lancamentos"
+        icon="📋"
+        title="Aqui começa o controle!"
+        description="Essa é a tela mais importante do app. Cada gasto registrado é um passo para você saber exatamente para onde vai seu dinheiro."
+        tips={[
+          'Toque em um dia para registrar um gasto ou recebimento',
+          'Gastos previstos do seu planejamento aparecem automaticamente em cinza',
+          'Você pode alternar entre banco, cartão e dinheiro no menu lateral',
+        ]}
+        buttonLabel="Começar a registrar →"
+      />
 
       {/* BARRA DE SALDO — desktop only (mobile fica no sticky acima) */}
       {!isMobile && <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,

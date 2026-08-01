@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import TutorialCard from '../components/TutorialCard'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -256,6 +257,20 @@ export default function Dashboard() {
             }}>Começar →</button>
           </div>
         )}
+
+        {/* ── Tutorial primeira visita ── */}
+        <TutorialCard
+          tela="inicio"
+          icon="🧭"
+          title="Seu painel de comando"
+          description="Aqui você vê o resumo da sua vida financeira. A bússola te mostra se está no caminho certo — tudo de forma simples e visual."
+          tips={[
+            'Os cards mostram quanto você tem, ganhou e gastou',
+            'A bússola muda de cor conforme sua situação financeira',
+            'Abaixo você vê seus maiores gastos e últimos lançamentos',
+          ]}
+          buttonLabel="Ver meu painel →"
+        />
 
         {/* ── Bússola hero ── */}
         <div style={{

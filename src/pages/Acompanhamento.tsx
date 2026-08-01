@@ -6,6 +6,7 @@ import { iconeCategoria } from '../utils/categoriaIcone'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import EmptyState from '../components/EmptyState'
+import TutorialCard from '../components/TutorialCard'
 
 const COR = {
   azul: '#1a56db', fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
@@ -1099,6 +1100,18 @@ export default function Acompanhamento() {
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
         display:'flex',flexDirection:'column',gap:12}}>
+        <TutorialCard
+          tela="evolucao"
+          icon="📈"
+          title="Veja como você está indo"
+          description="Aqui o app compara o que você planejou com o que realmente gastou. É assim que você descobre onde pode melhorar."
+          tips={[
+            'Verde = dentro do plano',
+            'Amarelo = chegando no limite',
+            'Vermelho = passou do planejado',
+          ]}
+          buttonLabel="Ver minha evolução →"
+        />
         {!dadosAno ? (
           <EmptyState
             icon="📋"
