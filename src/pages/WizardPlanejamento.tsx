@@ -326,9 +326,15 @@ export default function WizardPlanejamento() {
         <div style={{ fontSize:18, fontWeight:800, color:'#0f172a', textAlign:'center', marginBottom:6 }}>
           {isEntrada ? 'Suas entradas mensais' : 'Suas saídas mensais'}
         </div>
-        <div style={{ fontSize:13, color:'#64748b', textAlign:'center', lineHeight:1.5, marginBottom:24 }}>
+        <div style={{ fontSize:13, color:'#64748b', textAlign:'center', lineHeight:1.5, marginBottom:!isEntrada ? 12 : 24 }}>
           Informe o valor mensal de cada categoria. Deixe em branco se não se aplica.
         </div>
+        {!isEntrada && (
+          <div style={{ fontSize:12, color:'#64748b', lineHeight:1.6, marginBottom:20,
+            padding:'10px 14px', background:'#fffbeb', borderRadius:10, border:'1px solid #fde68a' }}>
+            💡 Preencha apenas as que você conhece. Deixe em branco as que não sabe — você ajusta depois.
+          </div>
+        )}
         {grupos.length === 0 && (
           <div style={{ textAlign:'center', color:'#94a3b8', fontSize:13, padding:'20px 0' }}>
             Nenhuma categoria {isEntrada ? 'de entrada' : 'de saída'} ativa.
@@ -373,7 +379,6 @@ export default function WizardPlanejamento() {
   function renderStep5() {
     const corRes = resultadoMensal > 0 ? '#16a34a' : resultadoMensal < 0 ? '#dc2626' : '#64748b'
     const corAnual= saldoFinalDez  >= 0 ? '#16a34a' : '#dc2626'
-    const mesesLabel = `${MESES_FULL[MES_ATU]} → Dezembro ${ANO}`
 
     return (
       <>
@@ -410,6 +415,24 @@ export default function WizardPlanejamento() {
               {resultadoMensal >= 0 ? '+' : ''}{fmtBRL(resultadoMensal)}
             </span>
           </div>
+          {resultadoMensal < 0 && (
+            <div style={{ padding:'12px 16px', background:'#fff1f2', borderTop:'1px solid #fecdd3' }}>
+              <div style={{ fontSize:12, color:'#991b1b', lineHeight:1.5, marginBottom:8 }}>
+                ⚠ Seus gastos planejados são maiores que sua renda. Revise as categorias de saída para equilibrar.
+              </div>
+              <button onClick={() => setStep(4)} style={{
+                border:'none', background:'transparent', color:'#dc2626',
+                fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', padding:0,
+              }}>← Revisar saídas</button>
+            </div>
+          )}
+          {resultadoMensal > 0 && totalEntradas > 0 && (
+            <div style={{ padding:'12px 16px', background:'#f0fdf4', borderTop:'1px solid #bbf7d0' }}>
+              <div style={{ fontSize:12, color:'#166534', lineHeight:1.5 }}>
+                ✓ Ótimo! Se seguir esse plano, você vai guardar {fmtBRL(resultadoMensal)} por mês.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Projeção anual */}
@@ -432,11 +455,14 @@ export default function WizardPlanejamento() {
         </div>
 
         {/* Como aplicar */}
-        <div style={{ fontSize:12, fontWeight:700, color:'#0f172a', marginBottom:10 }}>Como deseja aplicar?</div>
+        <div style={{ fontSize:12, fontWeight:700, color:'#0f172a', marginBottom:4 }}>Como deseja aplicar?</div>
+        <div style={{ fontSize:11, color:'#94a3b8', marginBottom:10 }}>
+          Está começando agora? Escolha "A partir de agora".
+        </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {([
-            { id:'restantes' as Aplicar, emoji:'📅', titulo:'Meses restantes', sub:`Aplicar de ${mesesLabel}` },
-            { id:'todos'     as Aplicar, emoji:'📆', titulo:'Ano todo',         sub:`Aplicar em todos os 12 meses de ${ANO}` },
+            { id:'restantes' as Aplicar, emoji:'📅', titulo:'A partir de agora', sub:`${MESES_FULL[MES_ATU]} → Dezembro ${ANO}` },
+            { id:'todos'     as Aplicar, emoji:'📆', titulo:'Ano inteiro (Jan → Dez)', sub:`Todos os 12 meses de ${ANO}` },
           ]).map(opt => (
             <button key={opt.id} onClick={() => setAplicar(opt.id)} style={{
               background: aplicar===opt.id ? '#eff6ff' : '#fff',

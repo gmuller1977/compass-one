@@ -469,7 +469,7 @@ export default function QuickLaunch() {
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{catSel}</div>
               <div style={{ fontSize: 10, color: '#94a3b8' }}>
-                {tipoSel === 'saida' ? 'Saída' : 'Entrada'} · {contaSel?.nome}
+                {tipoSel === 'saida' ? 'Gastei' : 'Recebi'} · {contaSel?.nome}
                 {isCartao ? ' · Crédito 💳' : ''}
               </div>
             </div>

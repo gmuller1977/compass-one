@@ -231,8 +231,12 @@ export default function Cadastro() {
           Enviamos um link de confirmação para
         </div>
         <div style={{ fontSize:15, fontWeight:700, color:'#1a56db', marginBottom:28 }}>{email}</div>
-        <div style={{ fontSize:13, color:'#94a3b8', marginBottom:28, lineHeight:1.5 }}>
+        <div style={{ fontSize:13, color:'#94a3b8', marginBottom:16, lineHeight:1.5 }}>
           Clique no link do e-mail para ativar sua conta e começar a usar o Compass One.
+        </div>
+        <div style={{ fontSize:12, color:'#94a3b8', marginBottom:28, lineHeight:1.5,
+          padding:'10px 14px', background:'#f8fafc', borderRadius:10, border:'1px solid #e2e8f0' }}>
+          Não recebeu? Verifique a pasta de spam ou lixo eletrônico. O email pode levar até 2 minutos.
         </div>
         <button onClick={handleReenviar} disabled={carregando} style={{
           width:'100%', padding:'13px', border:'1.5px solid #e2e8f0', borderRadius:14,
@@ -277,7 +281,7 @@ export default function Cadastro() {
     <div style={{ padding: isMobile ? '28px 24px 32px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif" }}>
       <div style={{ marginBottom:24 }}>
         <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Crie sua conta</div>
-        <div style={{ fontSize:13, color:'#64748b' }}>Comece agora, é grátis</div>
+        <div style={{ fontSize:13, color:'#64748b' }}>Grátis. Sem cartão de crédito. Sem anúncios.</div>
       </div>
 
       {erro && (

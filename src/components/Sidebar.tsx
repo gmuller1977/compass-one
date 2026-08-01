@@ -26,10 +26,10 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false,
         sub: [
-          { label: 'Extrato bancário',  path: '/novo-lancamento?tipo=extrato'     },
-          { label: 'Cartão de crédito', path: '/novo-lancamento?tipo=cartao'      },
+          { label: 'Banco',              path: '/novo-lancamento?tipo=extrato'     },
+          { label: 'Cartão',            path: '/novo-lancamento?tipo=cartao'      },
           { label: 'Dinheiro',          path: '/novo-lancamento?tipo=dinheiro'    },
-          { label: 'Consolidado',       path: '/novo-lancamento?tipo=consolidado' },
+          { label: 'Visão geral',       path: '/novo-lancamento?tipo=consolidado' },
         ],
       },
     ],

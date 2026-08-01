@@ -34,10 +34,10 @@ const STEP_CONFIG: Record<StepId, {
   cartao: {
     emoji: '💳',
     titulo: 'Tem cartão de crédito?',
-    descricao: 'Cadastre seus cartões para controlar as faturas e não ser surpreendido no final do mês.',
+    descricao: 'Cadastre seus cartões para enxergar suas dívidas e montar um plano.',
     acaoLabel: '+ Cadastrar cartão',
     acaoUrl: '/configuracoes?aba=cartoes&acao=novo',
-    pularLabel: 'Não tenho cartão →',
+    pularLabel: 'Pular por agora (você pode adicionar depois)',
   },
   categorias: {
     emoji: '🏷️',

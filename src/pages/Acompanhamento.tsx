@@ -742,7 +742,7 @@ export default function Acompanhamento() {
 
           <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:10, fontWeight:700, color:'#86efac', width:56, flexShrink:0 }}>↑ Entrada</span>
+              <span style={{ fontSize:10, fontWeight:700, color:'#86efac', width:56, flexShrink:0 }}>↑ Recebimentos</span>
               <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
                 <div style={{ width:`${Math.min(percE,1)*100}%`, height:'100%', borderRadius:3, background:'#4ade80' }}/>
               </div>
@@ -752,7 +752,7 @@ export default function Acompanhamento() {
               </span>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:10, fontWeight:700, color:'#fca5a5', width:56, flexShrink:0 }}>↓ Saída</span>
+              <span style={{ fontSize:10, fontWeight:700, color:'#fca5a5', width:56, flexShrink:0 }}>↓ Gastos</span>
               <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
                 <div style={{ width:`${Math.min(percS,1)*100}%`, height:'100%', borderRadius:3, background:'#f87171' }}/>
               </div>

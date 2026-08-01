@@ -821,6 +821,9 @@ export default function Configuracoes() {
                             value={formConta.diaFechamento||''}
                             onChange={e => setFormConta(p=>({...p, diaFechamento:parseInt(e.target.value)||undefined}))}
                             placeholder="Ex: 10" className="campo-cfg" style={inputSt} />
+                          <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                            Não sabe? Verifique no app do banco ou deixe em branco.
+                          </div>
                         </div>
                         <div>
                           <label style={labelSt}>Dia vencimento</label>
@@ -915,6 +918,9 @@ export default function Configuracoes() {
                             setFormConta(p=>({...p, saldoInicial:parseFloat(raw.replace(',','.'))||0}))
                           }}
                           placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
+                        <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>
+                          Pode ser um valor aproximado — você ajusta depois.
+                        </div>
                       </div>
                     </>
                   )}

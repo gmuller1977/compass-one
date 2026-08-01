@@ -800,7 +800,7 @@ export default function NovoLancamentoExtrato() {
             {tabPrincipal==='extrato' ? '🏦' : tabPrincipal==='cartao' ? '💳' : tabPrincipal==='dinheiro' ? '💵' : '📊'}
           </span>
           <span style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
-            {tabPrincipal==='extrato' ? 'Extrato Bancário' : tabPrincipal==='cartao' ? 'Cartão de Crédito' : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Consolidado'}
+            {tabPrincipal==='extrato' ? 'Movimentação do banco' : tabPrincipal==='cartao' ? 'Cartão de Crédito' : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Visão geral'}
           </span>
         </div>
       )}
@@ -816,7 +816,7 @@ export default function NovoLancamentoExtrato() {
                 {tipo:'extrato' as const,  icone:'🏦', label:'Banco',              desc: contasExtrato.length > 0 ? contasExtrato.slice(0,2).map(c=>c.banco).join(', ')+(contasExtrato.length>2?' ...':'') : 'Extrato bancário'},
                 {tipo:'cartao' as const,   icone:'💳', label:'Cartão de Crédito',  desc:'Faturas e gastos no cartão'},
                 {tipo:'dinheiro' as const, icone:'💵', label:'Dinheiro',            desc:'Lançamentos em espécie'},
-                {tipo:'consolidado' as const,icone:'📊',label:'Consolidado',        desc:'Visão geral de todas as contas'},
+                {tipo:'consolidado' as const,icone:'📊',label:'Visão geral',         desc:'Visão geral de todas as contas'},
               ] as const).map(({tipo,icone,label,desc}) => (
                 <button key={tipo} onClick={() => {
                   setTabPrincipal(tipo)
@@ -1084,7 +1084,7 @@ export default function NovoLancamentoExtrato() {
             </div>
           </div>
 
-          {/* Entrada/Saída */}
+          {/* Recebi/Gastei */}
           <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
             padding:3,marginBottom:10,width:'fit-content'}}>
             {(['saida','entrada'] as const).map(t=>(
@@ -1097,15 +1097,18 @@ export default function NovoLancamentoExtrato() {
                 background:fTipo===t?COR.branco:'transparent',
                 color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
                 boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-                {t==='entrada'?'↑ Entrada':'↓ Saída'}
+                {t==='entrada'?'↑ Recebi':'↓ Gastei'}
               </button>
             ))}
           </div>
 
           {/* Forma de pagamento */}
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:2}}>
               {fTipo==='entrada'?'Forma de recebimento:':'Forma de pagamento:'}
+            </div>
+            <div style={{fontSize:10,color:'#94a3b8',marginBottom:6}}>
+              Ajuda a saber de qual conta saiu o dinheiro.
             </div>
             <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
               {(fTipo==='entrada'
@@ -1588,7 +1591,7 @@ export default function NovoLancamentoExtrato() {
                           }))
                         }
                       }}
-                      title="Consolidar lançamento"
+                      title="Marcar como paga ✓"
                       style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
                     <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                       display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
@@ -1603,7 +1606,7 @@ export default function NovoLancamentoExtrato() {
                         <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                           background:consolidada?'#e0f2fe':'#f1f5f9',
                           color:consolidada?'#0369a1':'#94a3b8'}}>
-                          {consolidada ? (automatico && !eMesAtual && passado ? 'fixa ✓' : 'consolidado') : 'não consolidado'}
+                          {consolidada ? (automatico && !eMesAtual && passado ? 'automática ✓' : 'paga ✓') : 'previsto'}
                         </span>
                       </div>
                       <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
@@ -1696,7 +1699,7 @@ export default function NovoLancamentoExtrato() {
                             background:fTipo===t?COR.branco:'transparent',
                             color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):'#0369a1',
                             boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                            {t==='saida'?'↓ Saída':'↑ Entrada'}
+                            {t==='saida'?'↓ Gastei':'↑ Recebi'}
                           </button>
                         ))}
                       </div>
@@ -1845,7 +1848,7 @@ export default function NovoLancamentoExtrato() {
               background:fTipo===t?COR.branco:'transparent',
               color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
               boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-              {t==='entrada'?'↑ Entrada':'↓ Saída'}
+              {t==='entrada'?'↑ Recebi':'↓ Gastei'}
             </button>
           ))}
         </div>
@@ -2013,7 +2016,7 @@ export default function NovoLancamentoExtrato() {
               Qual é o saldo atual no banco?
             </p>
             <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 16px'}}>
-              Informe o saldo para calcular a diferença em relação ao sistema.
+              Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.
             </p>
             <input autoFocus
               value={modalSaldoValor}

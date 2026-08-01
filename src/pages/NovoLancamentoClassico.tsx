@@ -418,7 +418,7 @@ export default function NovoLancamentoClassico() {
                     background:fTipo===t?COR.branco:'transparent',
                     color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):COR.textoSuave,
                     boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,0.08)':'none'}}>
-                    {t==='entrada'?'↑ Entrada':'↓ Saída'}
+                    {t==='entrada'?'↑ Recebi':'↓ Gastei'}
                   </button>
                 ))}
               </div>
