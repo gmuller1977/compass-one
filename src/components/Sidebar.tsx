@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
@@ -25,12 +25,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
       {
         icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false,
-        sub: [
-          { label: 'Banco',              path: '/novo-lancamento?tipo=extrato'     },
-          { label: 'Cartão',            path: '/novo-lancamento?tipo=cartao'      },
-          { label: 'Dinheiro',          path: '/novo-lancamento?tipo=dinheiro'    },
-          { label: 'Visão geral',       path: '/novo-lancamento?tipo=consolidado' },
-        ],
       },
     ],
   },
@@ -181,9 +175,31 @@ function SubDividerRow({ label }: { label: string }) {
 export default function Sidebar() {
   const navigate              = useNavigate()
   const { pathname, search }  = useLocation()
-  const { perfil, user, sairDaConta } = useApp()
+  const { perfil, user, sairDaConta, contas } = useApp()
 
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
+
+  // Sub-itens dinâmicos de Lançamentos
+  const subLancamentos = useMemo((): SubItem[] => {
+    const bancos  = contas.filter(c => c.tipo !== 'cartao')
+    const cartoes = contas.filter(c => c.tipo === 'cartao')
+    return [
+      ...(bancos.length > 0 ? [
+        { divider: 'Banco' } as SubDivider,
+        ...bancos.map(b => ({ label: `${b.icone} ${b.nome || b.banco}`, path: `/novo-lancamento?tipo=extrato&conta=${b.id}` })),
+      ] : [
+        { label: 'Banco', path: '/novo-lancamento?tipo=extrato' } as SubLeaf,
+      ]),
+      ...(cartoes.length > 0 ? [
+        { divider: 'Cartão' } as SubDivider,
+        ...cartoes.map(c => ({ label: `${c.icone} ${c.apelido || c.banco}`, path: `/novo-lancamento?tipo=cartao&conta=${c.id}` })),
+      ] : [
+        { label: 'Cartão', path: '/novo-lancamento?tipo=cartao' } as SubLeaf,
+      ]),
+      { label: 'Dinheiro',    path: '/novo-lancamento?tipo=dinheiro'    },
+      { label: 'Visão geral', path: '/novo-lancamento?tipo=consolidado' },
+    ]
+  }, [contas])
   const email   = user?.email ?? ''
   const inicial = nome.charAt(0).toUpperCase()
 
@@ -192,9 +208,24 @@ export default function Sidebar() {
   }
 
   function isSubActive(subPath: string) {
-    // "Comece aqui" (?action=quiz) is never shown as active — it's an action trigger
     if (subPath.includes('action=quiz')) return false
     return (pathname + search) === subPath
+  }
+
+  // Expanded state — independent of navigation
+  const [expandedItem, setExpandedItem] = useState<string|null>(() => {
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        if (!item.disabled && pathname.startsWith(item.path) && item.path !== '/dashboard') {
+          return item.label
+        }
+      }
+    }
+    return null
+  })
+
+  function toggleExpand(label: string) {
+    setExpandedItem(prev => prev === label ? null : label)
   }
 
   return (
@@ -238,8 +269,11 @@ export default function Sidebar() {
               {group.label}
             </div>
             {group.items.map(item => {
+              const isLancamentos = item.path === '/novo-lancamento'
+              const sub = isLancamentos ? subLancamentos : (item.sub ?? [])
               const parentActive = !item.disabled && isParentActive(item.path, item.exact)
-              const hasSub = !!(item.sub && item.sub.length)
+              const hasSub = sub.length > 0
+              const isExpanded = expandedItem === item.label && hasSub
               return (
                 <div key={item.label}>
                   <NavItemRow
@@ -247,23 +281,23 @@ export default function Sidebar() {
                     label={item.label}
                     active={parentActive}
                     hasSub={hasSub}
-                    expanded={parentActive && hasSub}
+                    expanded={isExpanded}
                     badge={item.badge}
                     disabled={item.disabled}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => hasSub ? toggleExpand(item.label) : navigate(item.path)}
                   />
-                  {hasSub && parentActive && (
+                  {hasSub && isExpanded && (
                     <div style={{ animation: 'subExpand .18s ease' }}>
-                      {item.sub!.map((sub, i) => {
-                        if ('divider' in sub) {
-                          return <SubDividerRow key={i} label={sub.divider} />
+                      {sub.map((s, i) => {
+                        if ('divider' in s) {
+                          return <SubDividerRow key={i} label={s.divider} />
                         }
                         return (
                           <SubItemRow
-                            key={sub.path}
-                            label={sub.label}
-                            active={isSubActive(sub.path)}
-                            onClick={() => navigate(sub.path)}
+                            key={s.path}
+                            label={s.label}
+                            active={isSubActive(s.path)}
+                            onClick={() => navigate(s.path)}
                           />
                         )
                       })}

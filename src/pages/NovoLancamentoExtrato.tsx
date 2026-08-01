@@ -137,6 +137,8 @@ export default function NovoLancamentoExtrato() {
   const hojeStr   = hoje.toISOString().slice(0,10)
 
   const [contaId, setContaId] = useState('consolidado')
+  const [cartaoNavId,   setCartaoNavId]   = useState<string|undefined>(undefined)
+  const [cartaoAtualId, setCartaoAtualId] = useState<string|undefined>(undefined)
   const [mes,     setMes]     = useState(mesHoje)
   const [ano, setAno]          = useState(anoHoje)
   const [mostrarCalendario, setMostrarCalendario] = useState(false)
@@ -309,15 +311,24 @@ export default function NovoLancamentoExtrato() {
 
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [tabPrincipal])
 
-  // Sidebar desktop → ?tipo= param troca a aba
+  // Sidebar desktop → ?tipo= e ?conta= trocam aba e conta
   useEffect(() => {
     if (isMobile) return
-    const tipo = new URLSearchParams(location.search).get('tipo') as typeof tabPrincipal | null
-    if (!tipo || tipo === tabPrincipal) return
-    setTabPrincipal(tipo)
+    const params = new URLSearchParams(location.search)
+    const tipo   = params.get('tipo') as typeof tabPrincipal | null
+    const conta  = params.get('conta')
+    if (!tipo && !conta) return
+    if (tipo && tipo !== tabPrincipal) setTabPrincipal(tipo)
     if (tipo === 'extrato') {
-      const p = contasExtrato.find(c => c.preferida)
-      setContaId((p ?? contasExtrato[0])?.id ?? '')
+      if (conta && contasExtrato.find(c => c.id === conta)) {
+        setContaId(conta)
+      } else {
+        const p = contasExtrato.find(c => c.preferida)
+        setContaId((p ?? contasExtrato[0])?.id ?? '')
+      }
+    }
+    if (tipo === 'cartao' && conta) {
+      setCartaoNavId(conta)
     }
     navigate(location.pathname, { replace: true })
   }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -794,16 +805,29 @@ export default function NovoLancamentoExtrato() {
       ) : <AppHeader currentPath="/novo-lancamento" />}
 
       {/* DESKTOP: cabeçalho do tipo de lançamento ativo */}
-      {!isMobile && (
-        <div style={{ padding:'12px 20px', background:COR.branco, borderBottom:`1px solid ${COR.borda}`, flexShrink:0, display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:22, lineHeight:1 }}>
-            {tabPrincipal==='extrato' ? '🏦' : tabPrincipal==='cartao' ? '💳' : tabPrincipal==='dinheiro' ? '💵' : '📊'}
-          </span>
-          <span style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
-            {tabPrincipal==='extrato' ? 'Movimentação do banco' : tabPrincipal==='cartao' ? 'Cartão de Crédito' : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Visão geral'}
-          </span>
-        </div>
-      )}
+      {!isMobile && (() => {
+        const cartaoInfo = contas.find(c => c.id === (cartaoAtualId ?? cartaoNavId))
+        const subLabel = tabPrincipal === 'extrato'
+          ? (contaInfo ? `${contaInfo.icone} ${contaInfo.nome || contaInfo.banco}` : null)
+          : tabPrincipal === 'cartao'
+          ? (cartaoInfo ? `${cartaoInfo.icone} ${cartaoInfo.apelido || cartaoInfo.banco}` : null)
+          : null
+        return (
+          <div style={{ padding:'12px 20px', background:COR.branco, borderBottom:`1px solid ${COR.borda}`, flexShrink:0, display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:22, lineHeight:1 }}>
+              {tabPrincipal==='extrato' ? '🏦' : tabPrincipal==='cartao' ? '💳' : tabPrincipal==='dinheiro' ? '💵' : '📊'}
+            </span>
+            <div>
+              <div style={{ fontSize:15, fontWeight:700, color:COR.texto, lineHeight:1.2 }}>
+                {tabPrincipal==='extrato' ? 'Movimentação do banco' : tabPrincipal==='cartao' ? 'Cartão de Crédito' : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Visão geral'}
+              </div>
+              {subLabel && (
+                <div style={{ fontSize:12, color:COR.textoSuave, marginTop:2 }}>{subLabel}</div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── WIZARD MOBILE: STEP TIPO ── */}
       {isMobile && mobileStep === 'tipo' && (
@@ -1031,7 +1055,7 @@ export default function NovoLancamentoExtrato() {
 
       {/* DESKTOP: tab selector removido — navegação via sidebar */}
 
-      {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={mobileCartaoId ?? undefined} onVoltar={() => setMobileStep('tipo')} /> :
+      {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={isMobile ? (mobileCartaoId ?? undefined) : cartaoNavId} onCartaoChange={id => setCartaoAtualId(id)} onVoltar={() => setMobileStep('tipo')} /> :
        tabPrincipal==='consolidado' ? (
       <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',
         gap:isMobile?0:16,padding:isMobile?0:'10px 16px',

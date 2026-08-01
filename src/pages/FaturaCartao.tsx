@@ -86,7 +86,7 @@ function removerRealce(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.boxShadow = 'none'
 }
 
-export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?: string; onVoltar?: () => void } = {}) {
+export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mobileSelecionado?: string; onVoltar?: () => void; onCartaoChange?: (id: string) => void } = {}) {
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
@@ -251,6 +251,7 @@ export default function FaturaCartao({ mobileSelecionado }: { mobileSelecionado?
   }, [contaId, contas])
 
   useEffect(() => { if (mobileSelecionado) setContaId(mobileSelecionado) }, [mobileSelecionado])
+  useEffect(() => { onCartaoChange?.(contaId) }, [contaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Modal "valor da fatura" — abre uma vez por dia por fatura
   // Delay de 50ms: aguarda o auto-avança (efeito anterior) corrigir o mês/key antes de abrir
