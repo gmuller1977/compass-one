@@ -1667,9 +1667,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           title="Monte seu plano financeiro"
           description="Planejamento é definir quanto você quer gastar em cada área da sua vida. Com isso, o app consegue te avisar quando estiver saindo do rumo."
           tips={[
-            'Defina valores mensais para cada categoria de gasto',
-            'Não precisa ser exato — valores aproximados já ajudam muito',
-            'Você pode revisar e ajustar o plano a qualquer momento',
+            { icon: '✏️', text: 'Defina valores mensais para cada categoria de gasto' },
+            { icon: '💡', text: 'Não precisa ser exato — valores aproximados já ajudam muito' },
+            { icon: '🔄', text: 'Você pode revisar e ajustar o plano a qualquer momento' },
           ]}
           buttonLabel="Criar meu plano →"
         />

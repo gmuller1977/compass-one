@@ -554,9 +554,9 @@ export default function Configuracoes() {
             title="Ajuste tudo do seu jeito"
             description="Aqui você gerencia seus bancos, cartões e categorias. Tudo que você configurou no início pode ser ajustado quando quiser."
             tips={[
-              'Adicione novos bancos e cartões',
-              'Ative ou desative categorias',
-              'Personalize suas preferências',
+              { icon: '🏦', text: 'Adicione novos bancos e cartões' },
+              { icon: '🏷️', text: 'Ative ou desative categorias de gasto' },
+              { icon: '⚙️', text: 'Personalize preferências como desvio de planejamento' },
             ]}
             buttonLabel="Explorar configurações →"
           />

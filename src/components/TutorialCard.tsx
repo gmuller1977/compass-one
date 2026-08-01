@@ -6,6 +6,8 @@ export function reativarTutoriais() {
   TELAS.forEach(t => localStorage.removeItem('tutorial_visto_' + t))
 }
 
+export type TutorialTip = { icon: string; text: string }
+
 export default function TutorialCard({
   tela, icon, title, description, tips, buttonLabel = 'Entendi, vamos lá →',
 }: {
@@ -13,17 +15,18 @@ export default function TutorialCard({
   icon: string
   title: string
   description: string
-  tips: string[]
+  tips: TutorialTip[]
   buttonLabel?: string
 }) {
-  const [visible,    setVisible]    = useState(() => !localStorage.getItem('tutorial_visto_' + tela))
+  const key = 'tutorial_visto_' + tela
+  const [dismissed, setDismissed] = useState(false)
   const [naoMostrar, setNaoMostrar] = useState(false)
 
-  if (!visible) return null
+  if (!!localStorage.getItem(key) || dismissed) return null
 
   function dismiss() {
-    if (naoMostrar) localStorage.setItem('tutorial_visto_' + tela, '1')
-    setVisible(false)
+    if (naoMostrar) localStorage.setItem(key, '1')
+    setDismissed(true)
   }
 
   return (
@@ -31,10 +34,10 @@ export default function TutorialCard({
       onClick={e => { if (e.target === e.currentTarget) dismiss() }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(15,23,42,.62)',
+        background: 'rgba(0,0,0,.72)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '24px 16px',
-        animation: 'tutFadeIn .22s ease',
+        animation: 'tutFadeIn .2s ease-out',
       }}
     >
       <style>{`
@@ -42,74 +45,72 @@ export default function TutorialCard({
           from { opacity: 0; }
           to   { opacity: 1; }
         }
-        @keyframes tutSlideUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes tutScaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
       <div style={{
-        background: '#fff', borderRadius: 20,
-        padding: '32px 28px 24px',
-        maxWidth: 500, width: '100%',
-        boxShadow: '0 24px 64px rgba(0,0,0,.22)',
-        animation: 'tutSlideUp .25s ease',
+        background: 'linear-gradient(160deg, #0f2878 0%, #1a56db 100%)',
+        borderRadius: 20,
+        padding: '32px 28px 26px',
+        maxWidth: 440, width: '90%',
+        boxShadow: '0 32px 80px rgba(0,0,0,.45)',
+        animation: 'tutScaleIn .2s ease-out',
         fontFamily: "-apple-system,'Inter',sans-serif",
       }}>
         {/* Ícone */}
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <span style={{ fontSize: 52, lineHeight: 1 }}>{icon}</span>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+          <span style={{
+            fontSize: 54, lineHeight: 1, display: 'inline-block',
+            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,.35))',
+          }}>{icon}</span>
         </div>
 
         {/* Título */}
         <h2 style={{
-          fontSize: 20, fontWeight: 800, color: '#0f172a',
-          margin: '0 0 10px', textAlign: 'center', lineHeight: 1.3,
+          fontSize: 21, fontWeight: 800, color: '#fff',
+          margin: '0 0 10px', textAlign: 'center', lineHeight: 1.25,
         }}>
           {title}
         </h2>
 
         {/* Descrição */}
         <p style={{
-          fontSize: 13.5, color: '#475569', lineHeight: 1.65,
-          margin: '0 0 18px', textAlign: 'center',
+          fontSize: 13.5, color: 'rgba(255,255,255,.82)', lineHeight: 1.65,
+          margin: '0 0 20px', textAlign: 'center',
         }}>
           {description}
         </p>
 
         {/* Tips */}
-        <div style={{
-          background: '#f0f4ff', borderRadius: 12,
-          padding: '14px 16px', marginBottom: 22,
-        }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 26 }}>
           {tips.map((t, i) => (
             <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-              marginBottom: i < tips.length - 1 ? 10 : 0,
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: 'rgba(255,255,255,.12)',
+              borderRadius: 10, padding: '11px 14px',
             }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                background: '#1a56db', color: '#fff',
-                fontSize: 11, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginTop: 1,
-              }}>{i + 1}</span>
-              <span style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5 }}>{t}</span>
+              <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{t.icon}</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,.9)', lineHeight: 1.45 }}>
+                {t.text}
+              </span>
             </div>
           ))}
         </div>
 
-        {/* Botão primário */}
+        {/* Botão primário — branco com texto azul */}
         <button
           onClick={dismiss}
           style={{
             width: '100%', padding: '13px 20px',
-            border: 'none', borderRadius: 12,
-            background: 'linear-gradient(135deg,#1a56db,#2563eb)',
-            color: '#fff', fontSize: 15, fontWeight: 700,
+            border: 'none', borderRadius: 10,
+            background: '#fff', color: '#0f2878',
+            fontSize: 15, fontWeight: 700,
             cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: '0 4px 14px rgba(26,86,219,.28)',
-            marginBottom: 14,
+            boxShadow: '0 4px 16px rgba(0,0,0,.2)',
+            marginBottom: 16,
           }}
         >
           {buttonLabel}
@@ -118,16 +119,23 @@ export default function TutorialCard({
         {/* Não mostrar novamente */}
         <label style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 8, cursor: 'pointer',
+          gap: 8, cursor: 'pointer', marginBottom: 10,
         }}>
           <input
             type="checkbox"
             checked={naoMostrar}
             onChange={e => setNaoMostrar(e.target.checked)}
-            style={{ cursor: 'pointer', accentColor: '#1a56db', width: 15, height: 15 }}
+            style={{ cursor: 'pointer', accentColor: '#fff', width: 14, height: 14 }}
           />
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>Não mostrar novamente</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.65)', userSelect: 'none' }}>
+            Não mostrar novamente
+          </span>
         </label>
+
+        {/* Dica sobre reativar */}
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', textAlign: 'center', lineHeight: 1.4 }}>
+          Você pode reativar em Configurações → Preferências
+        </div>
       </div>
     </div>
   )

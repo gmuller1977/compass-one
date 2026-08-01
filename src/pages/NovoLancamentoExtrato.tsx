@@ -1273,9 +1273,9 @@ export default function NovoLancamentoExtrato() {
         title="Aqui começa o controle!"
         description="Essa é a tela mais importante do app. Cada gasto registrado é um passo para você saber exatamente para onde vai seu dinheiro."
         tips={[
-          'Toque em um dia para registrar um gasto ou recebimento',
-          'Gastos previstos do seu planejamento aparecem automaticamente em cinza',
-          'Você pode alternar entre banco, cartão e dinheiro no menu lateral',
+          { icon: '📅', text: 'Toque em um dia para registrar um gasto ou recebimento' },
+          { icon: '⬜', text: 'Gastos previstos do planejamento aparecem automaticamente em cinza' },
+          { icon: '🔀', text: 'Alterne entre banco, cartão e dinheiro no menu lateral' },
         ]}
         buttonLabel="Começar a registrar →"
       />
