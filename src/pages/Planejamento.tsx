@@ -2662,7 +2662,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {/* Resumo anual */}
               <div style={{ display:'flex', borderRadius:12, border:`1px solid ${COR.borda}`, overflow:'hidden', marginBottom:12, background:COR.branco }}>
                 {([
-                  { label:'💰 Você tem hoje',  val:siAnual, cor:corSaldo(siAnual) },
+                  { label:'💰 Quanto você tem hoje', val:siAnual, cor:corSaldo(siAnual) },
                   { label:'↑ Vai entrar',    val:teAnual, cor:'#16a34a'         },
                   { label:'↓ Vai sair',      val:tsAnual, cor:COR.vermelho      },
                   { label:'🎯 Vai sobrar',   val:sfAnual, cor:sfAnualCor        },
@@ -3023,17 +3023,17 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         const gTotal = gVals.reduce((a,b)=>a+b,0)
                         return (
                           <div key={key}>
-                            <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}`, cursor:'pointer' }}
+                            <div style={{ display:'flex', borderBottom:'1px solid #bbf7d0', cursor:'pointer', background:'#f0fdf4' }}
                               onClick={() => toggleH(key)}>
                               {nameCell(
-                                <span style={{ fontWeight:600, color:'#15803d', paddingLeft:10 }}>
-                                  <span style={{ marginRight:5, fontSize:8, display:'inline-block',
+                                <span style={{ fontWeight:700, color:'#15803d', paddingLeft:10 }}>
+                                  <span style={{ marginRight:6, fontSize:11, display:'inline-block', color:'#16a34a',
                                     transform: aberto ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
                                   {label}
-                                </span>, COR.branco
+                                </span>, '#f0fdf4'
                               )}
-                              {gVals.map((v,mi) => cell(v, mi, '#16a34a', undefined, 600))}
-                              {totalCell(gTotal, '#16a34a')}
+                              {gVals.map((v,mi) => cell(v, mi, '#16a34a', ehAtualMes(mi) ? '#dcfce7' : '#f0fdf4', 700))}
+                              {totalCell(gTotal, '#16a34a', '#dcfce7', 700)}
                             </div>
                             {aberto && cats.map(cat => {
                               const row = dadosAnoFinal.entradas.indexOf(cat)
@@ -3063,7 +3063,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       )}
 
                       {/* ── SAÍDAS ── */}
-                      <div style={{ display:'flex', background:'#fff1f2', borderTop:'2px solid #fca5a5', borderBottom:`1px solid #fca5a5`, cursor:'pointer' }}
+                      <div style={{ display:'flex', background:'#fef2f2', borderTop:'2px solid #fca5a5', borderBottom:`1px solid #fca5a5`, cursor:'pointer' }}
                         onClick={() => toggleAllH(keysS, todosSAbertos)}>
                         {nameCell(
                           <span style={{ fontWeight:700, color:'#7f1d1d', fontSize:10, textTransform:'uppercase' as const, letterSpacing:.6, display:'flex', alignItems:'center', gap:5 }}>
@@ -3084,18 +3084,26 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         const corVal   = ehCartaoGrupo ? '#7c3aed' : COR.vermelho
                         return (
                           <div key={key}>
-                            <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}`, cursor:'pointer' }}
+                            {(() => {
+                              const gRowBg  = ehCartaoGrupo ? '#faf5ff' : '#fff7f7'
+                              const gRowBd  = ehCartaoGrupo ? '#ede9fe' : '#fecaca'
+                              const gAtualBg = ehCartaoGrupo ? '#ede9fe' : '#fee2e2'
+                              const gTotBg  = ehCartaoGrupo ? '#f5f3ff' : '#fef2f2'
+                              return (
+                            <div style={{ display:'flex', borderBottom:`1px solid ${gRowBd}`, cursor:'pointer', background:gRowBg }}
                               onClick={() => toggleH(key)}>
                               {nameCell(
-                                <span style={{ fontWeight:600, color:corGrupo, paddingLeft:10 }}>
-                                  <span style={{ marginRight:5, fontSize:8, display:'inline-block',
+                                <span style={{ fontWeight:700, color:corGrupo, paddingLeft:10 }}>
+                                  <span style={{ marginRight:6, fontSize:11, display:'inline-block', color:corVal,
                                     transform: aberto ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
                                   {label}
-                                </span>, COR.branco
+                                </span>, gRowBg
                               )}
-                              {gVals.map((v,mi) => cell(v, mi, corVal, undefined, 600))}
-                              {totalCell(gTotal, corVal)}
+                              {gVals.map((v,mi) => cell(v, mi, corVal, ehAtualMes(mi) ? gAtualBg : gRowBg, 700))}
+                              {totalCell(gTotal, corVal, gTotBg, 700)}
                             </div>
+                              )
+                            })()}
                             {aberto && cats.map(cat => {
                               const ehCartaoSin = cat.id === '__cartao__'
                               const catTotal = cat.v.reduce((a,b)=>a+b,0)
@@ -3126,8 +3134,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       })}
                       {simpleRow(
                         <span style={{ fontWeight:700, color:'#7f1d1d' }}>↓ Total saídas</span>,
-                        totalSaidas, COR.vermelho, '#fff1f2',
-                        mi => ehAtualMes(mi) ? '#fecaca' : '#fff1f2', 700, '#fecaca'
+                        totalSaidas, COR.vermelho, '#fef2f2',
+                        mi => ehAtualMes(mi) ? '#fecaca' : '#fef2f2', 700, '#fecaca'
                       )}
 
                       {/* SALDO FINAL — sticky rodapé */}
