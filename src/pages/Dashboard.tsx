@@ -432,8 +432,20 @@ export default function Dashboard() {
               }}>Ver tudo</button>
             </div>
             {ultimosLanc.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: COR.textoMuted, fontSize: 13 }}>
-                Nenhum lançamento ainda este mês
+              <div style={{ textAlign: 'center', padding: '24px 0 16px' }}>
+                <div style={{ fontSize: 30, marginBottom: 10 }}>📋</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 5 }}>
+                  Nenhum lançamento este mês
+                </div>
+                <div style={{ fontSize: 12, color: COR.textoMuted, lineHeight: 1.55, marginBottom: 14 }}>
+                  Registre seus gastos e receitas para ver<br/>o histórico aqui.
+                </div>
+                <button onClick={() => navigate('/novo-lancamento')} style={{
+                  padding: '7px 18px', border: 'none', borderRadius: 8,
+                  background: COR.azul, color: '#fff',
+                  fontSize: 12, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}>Registrar →</button>
               </div>
             ) : ultimosLanc.map((l, i) => {
               const cat = categorias.find(c => c.nome === l.categoria)

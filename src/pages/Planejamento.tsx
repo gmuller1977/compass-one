@@ -152,6 +152,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [modalMes,           setModalMes]          = useState<number | null>(null)
   const [copiarMesPrompt,    setCopiarMesPrompt]    = useState<{ origem: number; destino: number } | null>(null)
   const [gruposHorizAbertos, setGruposHorizAbertos] = useState<Set<string>>(new Set())
+  const [listaMesAberto,    setListaMesAberto]    = useState<number | null>(mesAtual)
   const isMobile = useIsMobile()
   const [mesMobile, setMesMobile] = useState(mesAtual)
   const [secEntAberto, setSecEntAberto] = useState(true)
@@ -1670,7 +1671,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           ]} buttonLabel="Começar →" />}
         {viewMode === 'grade' && aba !== 'revisao' && !quizAtivo && <TutorialCard tela="plan_grade" icon="📅"
           title="Visão em grade"
-          description="Veja seu planejamento mês a mês, com cards que mostram entradas, saídas e saldo de cada período."
+          description="Visão geral do ano em cards mensais. Toque em qualquer mês para ver ou editar os detalhes."
           tips={[
             { icon: '📦', text: 'Cada card é um mês do ano' },
             { icon: '🖊️', text: 'Clique em um mês para editar os valores' },
@@ -1678,7 +1679,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           ]} buttonLabel="Ver grade →" />}
         {viewMode === 'horizontal' && !quizAtivo && <TutorialCard tela="plan_planilha" icon="📑"
           title="Visão em planilha"
-          description="Para quem gosta de detalhes. Veja todas as categorias lado a lado, mês a mês, como uma planilha."
+          description="Todos os meses lado a lado com as categorias. Edite direto nas células."
           tips={[
             { icon: '📊', text: 'Linhas = categorias, Colunas = meses' },
             { icon: '🖊️', text: 'Edite valores diretamente nas células' },
@@ -1686,11 +1687,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           ]} buttonLabel="Ver planilha →" />}
         {viewMode === 'vertical' && !quizAtivo && <TutorialCard tela="plan_lista" icon="📃"
           title="Visão em lista"
-          description="Visão simplificada das suas categorias e valores planejados para o mês selecionado."
+          description="Fluxo de caixa — veja mês a mês como seu dinheiro evolui. Toque na linha para ver categorias."
           tips={[
-            { icon: '📋', text: 'Veja todas as categorias organizadas por grupo' },
-            { icon: '🖊️', text: 'Edite valores de forma rápida' },
-            { icon: '📊', text: 'Ideal para ajustes pontuais' },
+            { icon: '📋', text: 'Clique em um mês para ver entradas e saídas' },
+            { icon: '🖊️', text: 'Edite valores clicando na categoria' },
+            { icon: '📊', text: 'Total do ano no rodapé' },
           ]} buttonLabel="Ver lista →" />}
         {aba === 'revisao' && !quizAtivo && <TutorialCard tela="plan_revisao" icon="🔄"
           title="Hora de revisar"
@@ -2661,10 +2662,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {/* Resumo anual */}
               <div style={{ display:'flex', borderRadius:12, border:`1px solid ${COR.borda}`, overflow:'hidden', marginBottom:12, background:COR.branco }}>
                 {([
-                  { label:'Saldo Inicial', val:siAnual, cor:corSaldo(siAnual) },
-                  { label:'↑ Entradas',   val:teAnual, cor:'#16a34a'         },
-                  { label:'↓ Saídas',     val:tsAnual, cor:COR.vermelho      },
-                  { label:'Saldo Final',  val:sfAnual, cor:sfAnualCor        },
+                  { label:'💰 Você tem hoje',  val:siAnual, cor:corSaldo(siAnual) },
+                  { label:'↑ Vai entrar',    val:teAnual, cor:'#16a34a'         },
+                  { label:'↓ Vai sair',      val:tsAnual, cor:COR.vermelho      },
+                  { label:'🎯 Vai sobrar',   val:sfAnual, cor:sfAnualCor        },
                 ] as {label:string;val:number;cor:string}[]).map((item, idx) => (
                   <div key={idx} style={{ flex:1, padding:'10px 14px', borderRight:`1px solid ${COR.borda}` }}>
                     <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5, color:COR.textoSuave, marginBottom:3 }}>{item.label}</div>
@@ -2742,17 +2743,17 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         </div>
 
                           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5 }}>
-                            <span style={{ fontSize:11, color:'#16a34a', fontWeight:600 }}>↑ Entrada</span>
+                            <span style={{ fontSize:11, color:'#16a34a', fontWeight:600 }}>↑ Vai entrar</span>
                             <span style={{ fontSize:12, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{te===0?'—':te.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})}</span>
                           </div>
                           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:7 }}>
-                            <span style={{ fontSize:11, color:COR.vermelho, fontWeight:600 }}>↓ Saída</span>
+                            <span style={{ fontSize:11, color:COR.vermelho, fontWeight:600 }}>↓ Vai sair</span>
                             <span style={{ fontSize:12, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{ts===0?'—':ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})}</span>
                           </div>
                           {(() => { const res=te-ts; const cor=res>0?'#16a34a':res<0?COR.vermelho:COR.textoSuave; return (
                             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline',
                               borderTop:`1px solid ${COR.borda}`, paddingTop:6 }}>
-                              <span style={{ fontSize:10, color:COR.textoSuave, fontWeight:500 }}>= Resultado</span>
+                              <span style={{ fontSize:10, color:COR.textoSuave, fontWeight:500 }}>= Sobra</span>
                               <span style={{ fontSize:12, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums' as const }}>
                                 {res===0?'—':(res>0?'+':'')+res.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})}
                               </span>
@@ -2782,7 +2783,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           padding:'8px 8px', textAlign:'center' as const }}>
                           <div style={{ fontSize:8, color:sfCor, fontWeight:600,
                             textTransform:'uppercase' as const, letterSpacing:.5, marginBottom:3 }}>
-                            Saldo Final
+                            Quanto terá guardado
                           </div>
                           <div style={{ fontSize:15, fontWeight:800, color:sfCor,
                             fontVariantNumeric:'tabular-nums' as const, lineHeight:1,
@@ -2997,7 +2998,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
                       {/* SALDO INICIAL — sticky abaixo do header */}
                       {simpleRow(
-                        <span style={{ fontWeight:600, color:COR.textoSuave }}>Saldo Inicial</span>,
+                        <span style={{ fontWeight:600, color:COR.textoSuave }}>Quanto você tem hoje</span>,
                         saldoInicial, COR.textoSuave, '#fafafa',
                         mi => ehAtualMes(mi) ? '#eff6ff' : '#fafafa', 400, '#f0f4ff',
                         { position:'sticky' as const, top:43, zIndex:9 }
@@ -3009,7 +3010,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         {nameCell(
                           <span style={{ fontWeight:700, color:'#166534', fontSize:10, textTransform:'uppercase' as const, letterSpacing:.6, display:'flex', alignItems:'center', gap:5 }}>
                             <span style={{ fontSize:8, display:'inline-block', transform: todosEAbertos ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
-                            ↑ Entradas
+                            ↑ Vai entrar
                           </span>, '#f0fdf4')}
                         {Array.from({length:13}, (_,i) => <div key={i} style={{ flexShrink:0, width:CW, background:'#f0fdf4', borderLeft:'1px solid #bbf7d0' }} />)}
                       </div>
@@ -3056,7 +3057,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       })}
 
                       {simpleRow(
-                        <span style={{ fontWeight:700, color:'#15803d' }}>Total Entradas</span>,
+                        <span style={{ fontWeight:700, color:'#15803d' }}>↑ Total entradas</span>,
                         totalEntradas, '#16a34a', '#f0fdf4',
                         mi => ehAtualMes(mi) ? '#dcfce7' : '#f0fdf4', 700, '#dcfce7'
                       )}
@@ -3067,7 +3068,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         {nameCell(
                           <span style={{ fontWeight:700, color:'#7f1d1d', fontSize:10, textTransform:'uppercase' as const, letterSpacing:.6, display:'flex', alignItems:'center', gap:5 }}>
                             <span style={{ fontSize:8, display:'inline-block', transform: todosSAbertos ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
-                            ↓ Saídas
+                            ↓ Vai sair
                           </span>, '#fff1f2')}
                         {Array.from({length:13}, (_,i) => <div key={i} style={{ flexShrink:0, width:CW, background:'#fff1f2', borderLeft:'1px solid #fecaca' }} />)}
                       </div>
@@ -3124,7 +3125,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         )
                       })}
                       {simpleRow(
-                        <span style={{ fontWeight:700, color:'#7f1d1d' }}>Total Saídas</span>,
+                        <span style={{ fontWeight:700, color:'#7f1d1d' }}>↓ Total saídas</span>,
                         totalSaidas, COR.vermelho, '#fff1f2',
                         mi => ehAtualMes(mi) ? '#fecaca' : '#fff1f2', 700, '#fecaca'
                       )}
@@ -3133,7 +3134,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       <div style={{ display:'flex', borderTop:`2px solid ${COR.azulMedio}`,
                         position:'sticky' as const, bottom:0, zIndex:5 }}>
                         {nameCell(
-                          <span style={{ fontWeight:700, color:COR.azul, fontSize:14 }}>Saldo Final</span>,
+                          <span style={{ fontWeight:700, color:COR.azul, fontSize:14 }}>💰 Quanto vai sobrar</span>,
                           '#eff6ff', { borderTop:`2px solid ${COR.azulMedio}` }
                         )}
                         {saldoFinal.map((v, mi) => (
@@ -3162,68 +3163,214 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   </div>
                 </div>
               )
-            })() : (
+            })() : (() => {
 
-              /* ── LISTA DE MESES ── */
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {MESES_FULL.map((nomeMes, mi) => {
-                  const ehAtual = mi === mesAtual && anoAtual === anoCorrente
-                  const temReal = aba === 'real' && mesTemDadosReais[mi]
-                  const te      = temReal ? totaisReais.te[mi]    : totalEntradas[mi]
-                  const ts      = temReal ? totaisReais.ts[mi]    : totalSaidas[mi]
-                  const sfVal   = temReal ? saldoFinalReal[mi]    : saldoFinal[mi]
-                  const siVal   = temReal ? saldoInicialReal[mi]  : saldoInicial[mi]
-                  const sfCor   = sfVal > 0 ? COR.verde : sfVal < 0 ? COR.vermelho : COR.textoSuave
-                  const sfBg    = sfVal > 0 ? '#f0fdf4' : sfVal < 0 ? '#fff5f5' : '#f8fafc'
-                  const sfBd    = sfVal > 0 ? '#bbf7d0' : sfVal < 0 ? '#fecaca' : COR.borda
-                  const siCor   = siVal > 0 ? COR.verde : siVal < 0 ? COR.vermelho : COR.textoSuave
-                  const strip   = ehAtual ? COR.azul : sfVal > 0 ? '#22c55e' : sfVal < 0 ? '#f87171' : '#cbd5e1'
-                  const fmtV = (v: number) => v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 })
-                  const cell = (label: string, val: number, cor: string, bg: string, bd: string) => (
-                    <div style={{ flex:1, background:bg, border:`1px solid ${bd}`, borderRadius:9,
-                      padding:'6px 10px', textAlign:'center' as const, minWidth:0 }}>
-                      <div style={{ fontSize:7, color:cor, fontWeight:600, textTransform:'uppercase' as const,
-                        letterSpacing:.5, marginBottom:2, opacity:.75 }}>{label}</div>
-                      <div style={{ fontSize:13, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums' as const,
-                        lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>
-                        {fmtV(val)}
-                      </div>
-                    </div>
-                  )
-                  return (
-                    <div key={mi}
-                      onClick={() => setModalMes(mi)}
-                      style={{ background:COR.branco, borderRadius:12, overflow:'hidden', cursor:'pointer',
-                        border: ehAtual ? `2px solid ${COR.azul}` : `1.5px solid ${COR.borda}`,
-                        boxShadow: modalMes === mi ? '0 0 0 3px #bfdbfe' : '0 1px 3px rgba(0,0,0,0.05)',
-                        transition:'box-shadow .15s, border-color .15s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ehAtual ? '0 0 0 3px #bfdbfe' : '0 2px 8px rgba(0,0,0,0.10)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = modalMes === mi ? '0 0 0 3px #bfdbfe' : '0 1px 3px rgba(0,0,0,0.05)' }}>
-                      <div style={{ height:3, background:strip }} />
-                      <div style={{ display:'flex', alignItems:'center', padding:'8px 12px', gap:8 }}>
-                        <div style={{ minWidth:72, flexShrink:0 }}>
-                          <div style={{ fontSize:13, fontWeight:700, color: ehAtual ? COR.azul : COR.texto, marginBottom: ehAtual ? 3 : 0 }}>
-                            {nomeMes}
+              /* ── LISTA — TABELA COMPACTA ── */
+              const fmtL = (v: number) => v === 0 ? '—'
+                : v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 })
+              const cartNomesL = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
+              const getGrupEL = (cat: Cat) =>
+                (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outros'
+              const getGrupSL = (cat: Cat) =>
+                nomeFaturaCartao(cat.nome, cartNomesL) ? 'Cartão de Crédito'
+                : ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outras saídas')
+              const groupBy = <T,>(items: T[], fn: (x: T) => string): [string, T[]][] => {
+                const m = new Map<string, T[]>()
+                items.forEach(x => { const g = fn(x); if (!m.has(g)) m.set(g, []); m.get(g)!.push(x) })
+                return [...m.entries()].sort(([a],[b]) => {
+                  const last = (s: string) => s === 'Outros' || s === 'Outras saídas' || s === '__sem_grupo__'
+                  if (last(a) && !last(b)) return 1
+                  if (!last(a) && last(b)) return -1
+                  if (a === 'Cartão de Crédito') return 1
+                  if (b === 'Cartão de Crédito') return -1
+                  return a.localeCompare(b, 'pt-BR')
+                })
+              }
+              const teTotal = totalEntradas.reduce((a,b) => a+b, 0)
+              const tsTotal = totalSaidas.reduce((a,b) => a+b, 0)
+              const sobraTotal = teTotal - tsTotal
+              const guardadoFinal = saldoFinal[11]
+              const colStyle = (right = true): React.CSSProperties => ({
+                padding:'11px 12px', fontSize:10, fontWeight:700,
+                textTransform:'uppercase', letterSpacing:.5, color:COR.textoSuave,
+                textAlign: right ? 'right' : 'left', borderBottom:`2px solid ${COR.borda}`,
+              })
+              const COLS = '140px 1fr 1fr 1fr 1fr'
+              return (
+                <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, overflow:'hidden' }}>
+                  {/* Header */}
+                  <div style={{ display:'grid', gridTemplateColumns:COLS, background:'#f8fafc' }}>
+                    <div style={colStyle(false)}>Mês</div>
+                    <div style={colStyle()}>Vai entrar</div>
+                    <div style={colStyle()}>Vai sair</div>
+                    <div style={colStyle()}>Sobra</div>
+                    <div style={colStyle()}>Guardado</div>
+                  </div>
+
+                  {MESES_FULL.map((nomeMes, mi) => {
+                    const ehAtual = mi === mesAtual && anoAtual === anoCorrente
+                    const temReal = aba === 'real' && mesTemDadosReais[mi]
+                    const te      = temReal ? totaisReais.te[mi] : totalEntradas[mi]
+                    const ts      = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
+                    const sfVal   = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
+                    const sobra   = te - ts
+                    const sobraCor = sobra > 0 ? COR.verde : sobra < 0 ? COR.vermelho : COR.textoSuave
+                    const sfCor   = sfVal > 0 ? COR.verde : sfVal < 0 ? COR.vermelho : COR.textoSuave
+                    const aberto  = listaMesAberto === mi
+                    const rowBg   = aberto ? '#fafbff' : ehAtual ? '#eff6ff' : COR.branco
+
+                    const gruposEnt = groupBy(dadosAnoFinal.entradas, getGrupEL)
+                    const gruposSai = groupBy(dadosAnoFinal.saidas,   getGrupSL)
+
+                    return (
+                      <div key={mi}>
+                        {/* Month summary row */}
+                        <div
+                          onClick={() => setListaMesAberto(aberto ? null : mi)}
+                          style={{ display:'grid', gridTemplateColumns:COLS, cursor:'pointer',
+                            borderBottom:`1px solid ${COR.borda}`, background:rowBg,
+                            transition:'background .12s' }}
+                          onMouseEnter={e => { if (!aberto) (e.currentTarget as HTMLDivElement).style.background = '#fafbff' }}
+                          onMouseLeave={e => { if (!aberto) (e.currentTarget as HTMLDivElement).style.background = rowBg }}>
+
+                          <div style={{ padding:'11px 14px', display:'flex', alignItems:'center', gap:8 }}>
+                            <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
+                              transition:'transform .15s', transform: aberto ? 'rotate(90deg)' : 'none' }}>▶</span>
+                            <div>
+                              <div style={{ fontSize:13, fontWeight:700, color: ehAtual ? COR.azul : COR.texto }}>{nomeMes}</div>
+                              {ehAtual && (
+                                <span style={{ fontSize:7, background:COR.azul, color:'#fff', padding:'1px 5px',
+                                  borderRadius:5, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.3 }}>Atual</span>
+                              )}
+                            </div>
                           </div>
-                          {ehAtual && (
-                            <span style={{ fontSize:7, background:COR.azul, color:'#fff', padding:'1px 5px',
-                              borderRadius:5, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4 }}>
-                              Atual
-                            </span>
-                          )}
+                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{fmtL(te)}</div>
+                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(ts)}</div>
+                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:13, fontWeight:800, color:sobraCor, fontVariantNumeric:'tabular-nums' as const }}>
+                            {sobra === 0 ? '—' : (sobra > 0 ? '+' : '') + fmtL(Math.abs(sobra))}
+                          </div>
+                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:14, fontWeight:800, color:sfCor, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(sfVal)}</div>
                         </div>
-                        {cell('S. Inicial', siVal, siCor, '#f8fafc', COR.borda)}
-                        {cell('Entradas',   te,    '#16a34a', '#f0fdf4', '#bbf7d0')}
-                        {cell('Saídas',     ts,    COR.vermelho, '#fff5f5', '#fecaca')}
-                        {cell('S. Final',   sfVal, sfCor, sfBg, sfBd)}
-                        <span style={{ fontSize:16, color:COR.textoSuave, flexShrink:0 }}>›</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
 
-            ))}
+                        {/* Expanded detail */}
+                        {aberto && (
+                          <div style={{ borderBottom:`1px solid ${COR.borda}`, background:'#fafbff' }}>
+                            <div style={{ padding:'0 14px 14px' }}>
+
+                              {/* Entradas */}
+                              <div style={{ marginTop:12, borderRadius:10, overflow:'hidden', border:'1px solid #86efac' }}>
+                                <div style={{ padding:'8px 14px', background:'#dcfce7',
+                                  display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                                  <span style={{ fontSize:11, fontWeight:700, color:'#166534' }}>↑ Quanto vai entrar</span>
+                                  <span style={{ fontSize:12, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{fmtL(te)}</span>
+                                </div>
+                                {gruposEnt.map(([grupo, cats]) => {
+                                  const gTotal = cats.reduce((s,c) => s + c.v[mi], 0)
+                                  const label = grupo === '__sem_grupo__' ? 'Outros' : grupo
+                                  if (gTotal === 0 && bloqueado) return null
+                                  return (
+                                    <div key={grupo}>
+                                      <div style={{ padding:'5px 14px', background:'#f0fdf4', borderTop:'1px solid #dcfce7',
+                                        fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4,
+                                        color:'#166534', display:'flex', justifyContent:'space-between' }}>
+                                        <span>{label}</span>
+                                        {gTotal > 0 && <span style={{ fontVariantNumeric:'tabular-nums' as const }}>{fmtL(gTotal)}</span>}
+                                      </div>
+                                      {cats.map(cat => {
+                                        const row = dadosAnoFinal.entradas.indexOf(cat)
+                                        const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                                        const podeEditar = !bloqueado
+                                        if (cat.v[mi] === 0 && bloqueado) return null
+                                        return (
+                                          <div key={cat.nome}
+                                            onClick={podeEditar ? (e) => { e.stopPropagation(); iniciarValor('e', row, mi, cat.v[mi]) } : undefined}
+                                            style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px 7px 22px',
+                                              borderTop:'1px solid rgba(0,0,0,0.04)', cursor:podeEditar?'pointer':'default',
+                                              background:editando?.tipo==='e'&&editando.row===row&&editando.mes===mi?'#f0fdf4':'transparent' }}>
+                                            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
+                                              display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
+                                            <div style={{ flex:1, fontSize:12, color:COR.texto }}>{cat.nome}</div>
+                                            {renderValor('e', row, mi, cat.v[mi], !podeEditar)}
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+
+                              {/* Saídas */}
+                              <div style={{ marginTop:10, borderRadius:10, overflow:'hidden', border:'1px solid #fca5a5' }}>
+                                <div style={{ padding:'8px 14px', background:'#fee2e2',
+                                  display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                                  <span style={{ fontSize:11, fontWeight:700, color:'#7f1d1d' }}>↓ Quanto vai sair</span>
+                                  <span style={{ fontSize:12, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(ts)}</span>
+                                </div>
+                                {gruposSai.map(([grupo, cats]) => {
+                                  const ehCartao = grupo === 'Cartão de Crédito'
+                                  const gTotal = cats.reduce((s,c) => s + c.v[mi], 0)
+                                  const label = grupo === '__sem_grupo__' ? 'Outras saídas' : grupo
+                                  const corGrupo = ehCartao ? '#6d28d9' : '#991b1b'
+                                  const bgGrupo  = ehCartao ? '#f5f3ff' : '#fef2f2'
+                                  const bdGrupo  = ehCartao ? '#ede9fe' : '#fecaca'
+                                  if (gTotal === 0 && bloqueado) return null
+                                  return (
+                                    <div key={grupo}>
+                                      <div style={{ padding:'5px 14px', background:bgGrupo, borderTop:`1px solid ${bdGrupo}`,
+                                        fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4,
+                                        color:corGrupo, display:'flex', justifyContent:'space-between' }}>
+                                        <span>{label}</span>
+                                        {gTotal > 0 && <span style={{ fontVariantNumeric:'tabular-nums' as const }}>{fmtL(gTotal)}</span>}
+                                      </div>
+                                      {cats.map(cat => {
+                                        const ehCartaoSin = cat.id === '__cartao__'
+                                        const row = dadosAnoFinal.saidas.indexOf(cat)
+                                        const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
+                                        const podeEditar = !bloqueado && !ehCartaoSin && !nomeFaturaCartao(cat.nome, cartaoNomes)
+                                        if (cat.v[mi] === 0 && bloqueado) return null
+                                        return (
+                                          <div key={cat.nome}
+                                            onClick={podeEditar ? (e) => { e.stopPropagation(); iniciarValor('s', row, mi, cat.v[mi]) } : undefined}
+                                            style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px 7px 22px',
+                                              borderTop:'1px solid rgba(0,0,0,0.04)', cursor:podeEditar?'pointer':'default',
+                                              background:editando?.tipo==='s'&&editando.row===row&&editando.mes===mi?'#fff7f7':'transparent' }}>
+                                            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
+                                              display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
+                                            <div style={{ flex:1, fontSize:12, color:COR.texto }}>{cat.nome}</div>
+                                            {renderValor('s', row, mi, cat.v[mi], !podeEditar)}
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* Total do Ano */}
+                  <div style={{ display:'grid', gridTemplateColumns:COLS, borderTop:`2px solid ${COR.borda}`, background:'#f8fafc' }}>
+                    <div style={{ padding:'12px 14px', fontSize:13, fontWeight:700, color:COR.texto }}>Total do Ano</div>
+                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{fmtL(teTotal)}</div>
+                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(tsTotal)}</div>
+                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:13, fontWeight:800,
+                      color: sobraTotal > 0 ? COR.verde : sobraTotal < 0 ? COR.vermelho : COR.textoSuave,
+                      fontVariantNumeric:'tabular-nums' as const }}>
+                      {sobraTotal === 0 ? '—' : (sobraTotal > 0 ? '+' : '') + fmtL(Math.abs(sobraTotal))}
+                    </div>
+                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:14, fontWeight:800,
+                      color: guardadoFinal > 0 ? COR.verde : guardadoFinal < 0 ? COR.vermelho : COR.textoSuave,
+                      fontVariantNumeric:'tabular-nums' as const }}>{fmtL(guardadoFinal)}</div>
+                  </div>
+                </div>
+              )
+            })())}
+
             <div style={{ height: 600, flexShrink: 0 }} />
           </div>
         )}
@@ -3285,10 +3432,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {/* Totals bar: SI / E / S / SF */}
               <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}`, flexShrink:0 }}>
                 {([
-                  { label:'Saldo Inicial', val:si,    cor:corSaldo(si)  },
-                  { label:'↑ Entradas',   val:te,    cor:'#16a34a'     },
-                  { label:'↓ Saídas',     val:ts,    cor:COR.vermelho  },
-                  { label:'Saldo Final',  val:sfVal, cor:sfCor         },
+                  { label:'Você tem hoje', val:si,    cor:corSaldo(si)  },
+                  { label:'↑ Vai entrar',  val:te,    cor:'#16a34a'     },
+                  { label:'↓ Vai sair',    val:ts,    cor:COR.vermelho  },
+                  { label:'Vai sobrar',    val:sfVal, cor:sfCor         },
                 ] as { label:string; val:number; cor:string }[]).map((item, idx) => (
                   <div key={idx} style={{ flex:1, padding:'10px 14px',
                     borderRight: idx < 3 ? `1px solid ${COR.borda}` : 'none' }}>
@@ -3333,7 +3480,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 <div style={{ margin:'10px 10px 6px', borderRadius:10, border:'1px solid #86efac', overflow:'hidden' }}>
                   <div style={{ padding:'8px 14px', background:'#dcfce7',
                     display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:'#166534' }}>↑ Entradas</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#166534' }}>↑ Quanto vai entrar</span>
                   </div>
                   {(() => { const entradasComIdx = entradasModal.map((cat, ri) => ({ cat, ri }))
           .sort((a, b) => {
@@ -3382,7 +3529,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 <div style={{ margin:'6px 10px 10px', borderRadius:10, border:'1px solid #fca5a5', overflow:'hidden' }}>
                   <div style={{ padding:'8px 14px', background:'#fee2e2',
                     display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:'#7f1d1d' }}>↓ Saídas</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#7f1d1d' }}>↓ Quanto vai sair</span>
                   </div>
                   {(() => {
                     const temFatura = saidasModal.some(c => nomeFaturaCartao(c.nome, cartaoNomes))

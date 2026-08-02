@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { DadosMes, Categoria } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
@@ -52,6 +52,7 @@ export default function Acompanhamento() {
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
 
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { contas, categorias, planos, planosReal, planejamentoLockado, extratoData, faturaData, user } = useApp()
 
   const mesStr    = String(mes+1).padStart(2,'0')
@@ -794,9 +795,11 @@ export default function Acompanhamento() {
         <div style={{ flex:1, overflowY:'auto', padding:'10px 14px 90px', display:'flex', flexDirection:'column', gap:10 }}>
           {!dadosAno ? (
             <EmptyState
-              icon="📋"
-              title={`Sem planejamento para ${ano}`}
-              description="Crie um planejamento anual para acompanhar o orçamento."
+              icon="📈"
+              title="Veja se está no caminho certo"
+              description={`Aqui você compara o que planejou com o que gastou em ${ano}. Para começar, monte seu plano.`}
+              actionLabel="Criar plano →"
+              onAction={() => navigate('/planejamento?modo=wizard')}
             />
           ) : (<>
             {(dadosAno.entradas ?? []).length > 0 && (
@@ -1114,9 +1117,11 @@ export default function Acompanhamento() {
         />
         {!dadosAno ? (
           <EmptyState
-            icon="📋"
-            title={`Sem planejamento para ${ano}`}
-            description="Crie um planejamento anual para acompanhar o orçamento."
+            icon="📈"
+            title="Veja se está no caminho certo"
+            description={`Aqui você compara o que planejou com o que gastou em ${ano}. Para começar, monte seu plano.`}
+            actionLabel="Criar plano →"
+            onAction={() => navigate('/planejamento?modo=wizard')}
           />
         ) : (
           <>

@@ -17,6 +17,7 @@ import WizardPlanejamento  from './pages/WizardPlanejamento'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
+import LandingPage         from './pages/LandingPage'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -41,10 +42,8 @@ function AppShell({ children }: { children: ReactNode }) {
   )
 }
 
-function Protegido({ children }: { children: ReactNode }) {
-  const { user, carregando, onboardingCompleto } = useApp()
-  const location = useLocation()
-  if (carregando) return (
+function LoadingSpinner() {
+  return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       height: '100vh', fontFamily: "-apple-system,'Inter',sans-serif",
@@ -58,6 +57,22 @@ function Protegido({ children }: { children: ReactNode }) {
       Carregando...
     </div>
   )
+}
+
+function HomeRoute() {
+  const { user, carregando, onboardingCompleto } = useApp()
+  const isMobile = useIsMobile()
+  if (carregando) return <LoadingSpinner />
+  if (!user) return <LandingPage />
+  if (!onboardingCompleto) return <Navigate to="/onboarding" replace />
+  if (!isMobile) return <Navigate to="/dashboard" replace />
+  return <AppShell><QuickLaunch /></AppShell>
+}
+
+function Protegido({ children }: { children: ReactNode }) {
+  const { user, carregando, onboardingCompleto } = useApp()
+  const location = useLocation()
+  if (carregando) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
   const bypass = ['/onboarding', '/configuracoes', '/wizard-planejamento']
   if (!onboardingCompleto && !bypass.some(p => location.pathname.startsWith(p))) {
@@ -77,7 +92,7 @@ export default function App() {
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
-          <Route path="/"                element={<Protegido><QuickLaunch /></Protegido>} />
+          <Route path="/"                element={<HomeRoute />} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/evolucao"       element={<Protegido><Acompanhamento /></Protegido>} />

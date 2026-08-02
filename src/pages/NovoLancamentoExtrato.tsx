@@ -1444,6 +1444,28 @@ export default function NovoLancamentoExtrato() {
       <div style={{flex:1,overflowY:'auto',
         display:'flex',flexDirection:'column',gap:6,paddingTop:10}}>
 
+        {totalEntradas === 0 && totalSaidas === 0 &&
+         fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria)).length === 0 && (
+          <div style={{
+            margin:'0 16px 6px',padding:'13px 16px',
+            background:'#eff6ff',borderRadius:12,
+            border:'1px solid #bfdbfe',
+            display:'flex',alignItems:'flex-start',gap:12,flexShrink:0,
+          }}>
+            <span style={{fontSize:20,lineHeight:1,flexShrink:0}}>💡</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:COR.azul,marginBottom:3}}>
+                Nenhum lançamento este mês
+              </div>
+              <div style={{fontSize:12,color:'#3b82f6',lineHeight:1.5}}>
+                {isMobile
+                  ? 'Toque em qualquer dia abaixo para registrar.'
+                  : 'Clique em um dia e use o painel à direita para registrar.'}
+              </div>
+            </div>
+          </div>
+        )}
+
         {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
           const ehHoje    = eMesAtual && dia===diaHoje
           const passado   = eMesAtual ? dia<diaHoje : ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
