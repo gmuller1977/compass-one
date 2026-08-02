@@ -1,11 +1,10 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import AppHeader from '../components/AppHeader'
 import { useApp } from '../context/AppContext'
-import type { MetaSim } from '../context/AppContext'
+import { supabase } from '../lib/supabase'
 
 function useIsMobile() {
   const [v] = useState(() => window.innerWidth < 640)
@@ -15,7 +14,8 @@ function useIsMobile() {
 const COR = {
   fundo: '#f8faff', branco: '#ffffff', borda: '#e8edf3',
   texto: '#0f172a', textoSuave: '#64748b', textoMuted: '#94a3b8',
-  azul: '#1a56db', azulMedio: '#2563eb', verde: '#16a34a', vermelho: '#dc2626',
+  azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
+  verde: '#16a34a', vermelho: '#dc2626',
 }
 
 function parseBRL(s: string): number {
@@ -40,6 +40,22 @@ type DividaResult = {
 type MetaResult = {
   meses: number; guardaPorMes: number
   chartData: { mes: number; poupado: number }[]
+}
+
+type SimRow = {
+  id: string
+  tipo: 'divida' | 'meta'
+  nome: string
+  valor_total: number
+  parcela: number
+  juros: number
+  resultado_meses: number
+  data_conclusao: string
+  total_pago?: number
+  juros_pagos?: number
+  ativo: boolean
+  integrado_planejamento: boolean
+  created_at: string
 }
 
 function simularDivida(saldo0: number, parcela: number, taxa: number): DividaResult {
@@ -84,15 +100,89 @@ const card: React.CSSProperties = {
   background: COR.branco, border: `.5px solid ${COR.borda}`, borderRadius: 12, padding: '20px 22px',
 }
 
+function SimCard({ sim, onDelete }: { sim: SimRow; onDelete: (id: string) => void }) {
+  const isDivida = sim.tipo === 'divida'
+  const [hovDel, setHovDel] = useState(false)
+  return (
+    <div style={{
+      background: COR.branco,
+      border: `.5px solid ${COR.borda}`,
+      borderRadius: 10,
+      padding: '14px 16px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12,
+    }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+        background: isDivida ? '#fff1f2' : '#f0fdf4',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 18,
+      }}>{isDivida ? '💳' : '🐷'}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>{sim.nome}</div>
+        <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
+          {fmt(sim.valor_total)} · {fmt(sim.parcela)}/mês
+        </div>
+        <div style={{ fontSize: 12, color: isDivida ? COR.vermelho : COR.verde, marginTop: 2 }}>
+          {isDivida ? 'Quitada' : 'Alcançada'} em {sim.resultado_meses} meses — {sim.data_conclusao}
+        </div>
+        {sim.integrado_planejamento && (
+          <div style={{
+            display: 'inline-block', marginTop: 5, fontSize: 10, fontWeight: 600,
+            padding: '2px 6px', borderRadius: 4,
+            background: '#eff6ff', color: COR.azul,
+          }}>✓ No planejamento</div>
+        )}
+      </div>
+      <button
+        onClick={() => onDelete(sim.id)}
+        onMouseEnter={() => setHovDel(true)}
+        onMouseLeave={() => setHovDel(false)}
+        style={{
+          border: 'none', background: hovDel ? '#fff1f2' : 'transparent',
+          color: hovDel ? COR.vermelho : COR.textoMuted,
+          borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+          fontSize: 13, fontFamily: 'inherit', transition: 'all .12s',
+          flexShrink: 0,
+        }}
+      >✕</button>
+    </div>
+  )
+}
+
 export default function Simulacao() {
-  const navigate       = useNavigate()
   const isMobile       = useIsMobile()
-  const { setMetaSim } = useApp()
-  const hoje = new Date()
+  const { user }       = useApp()
+  const hoje           = new Date()
 
   const [aba, setAba] = useState<'divida' | 'meta'>('divida')
 
-  // ── Dívida ──────────────────────────────────────────────────────────────
+  // ── Saved simulations ────────────────────────────────────────────────
+  const [simList,      setSimList]      = useState<SimRow[]>([])
+  const [listLoading,  setListLoading]  = useState(true)
+  const [simSalva,     setSimSalva]     = useState(false)
+
+  const loadSims = useCallback(async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('simulacoes')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setSimList(data as SimRow[])
+    setListLoading(false)
+  }, [user])
+
+  useEffect(() => { loadSims() }, [loadSims])
+
+  const simListFiltrada = simList.filter(s => s.tipo === aba)
+
+  async function excluirSim(id: string) {
+    await supabase.from('simulacoes').delete().eq('id', id)
+    setSimList(prev => prev.filter(s => s.id !== id))
+  }
+
+  // ── Dívida form ──────────────────────────────────────────────────────
   const [nomeDivida,  setNomeDivida]  = useState('')
   const [valorDivida, setValorDivida] = useState('')
   const [parcelaStr,  setParcelaStr]  = useState('')
@@ -101,28 +191,36 @@ export default function Simulacao() {
   const [sliderDiv,   setSliderDiv]   = useState(0)
   const [visibleD,    setVisibleD]    = useState(false)
 
-  // ── Meta ────────────────────────────────────────────────────────────────
-  const [nomeMeta,    setNomeMeta]    = useState('')
-  const [valorMeta,   setValorMeta]   = useState('')
-  const [guardaStr,   setGuardaStr]   = useState('')
-  const [resultMeta,  setResultMeta]  = useState<MetaResult | null>(null)
-  const [sliderMeta,  setSliderMeta]  = useState(0)
-  const [visibleM,    setVisibleM]    = useState(false)
-  const [metaSalva,   setMetaSalva]   = useState(false)
+  // ── Meta form ────────────────────────────────────────────────────────
+  const [nomeMeta,   setNomeMeta]   = useState('')
+  const [valorMeta,  setValorMeta]  = useState('')
+  const [guardaStr,  setGuardaStr]  = useState('')
+  const [resultMeta, setResultMeta] = useState<MetaResult | null>(null)
+  const [sliderMeta, setSliderMeta] = useState(0)
+  const [visibleM,   setVisibleM]   = useState(false)
 
-  // ── Simular dívida ──────────────────────────────────────────────────────
+  // ── Simular ──────────────────────────────────────────────────────────
   function simDiv() {
     const saldo   = parseBRL(valorDivida)
     const parcela = parseBRL(parcelaStr)
     const taxa    = taxaStr ? parseFloat(taxaStr.replace(',', '.')) / 100 : 0
     if (!saldo || !parcela) return
     if (taxa > 0 && parcela <= saldo * taxa) {
-      alert('A parcela é menor que os juros mensais — a dívida nunca seria quitada com esses dados.')
+      alert('A parcela é menor que os juros mensais — a dívida nunca seria quitada.')
       return
     }
     setResultDiv(simularDivida(saldo, parcela, taxa))
-    setSliderDiv(0); setVisibleD(false)
+    setSliderDiv(0); setVisibleD(false); setSimSalva(false)
     setTimeout(() => setVisibleD(true), 20)
+  }
+
+  function simMeta() {
+    const objetivo = parseBRL(valorMeta)
+    const guarda   = parseBRL(guardaStr)
+    if (!objetivo || !guarda) return
+    setResultMeta(simularMeta(objetivo, guarda))
+    setSliderMeta(0); setVisibleM(false); setSimSalva(false)
+    setTimeout(() => setVisibleM(true), 20)
   }
 
   const resultDivSlider = useMemo(() => {
@@ -131,33 +229,55 @@ export default function Simulacao() {
     return simularDivida(parseBRL(valorDivida), resultDiv.parcela + sliderDiv, taxa)
   }, [resultDiv, sliderDiv, valorDivida, taxaStr])
 
-  // ── Simular meta ────────────────────────────────────────────────────────
-  function simMeta() {
-    const objetivo = parseBRL(valorMeta)
-    const guarda   = parseBRL(guardaStr)
-    if (!objetivo || !guarda) return
-    setResultMeta(simularMeta(objetivo, guarda))
-    setSliderMeta(0); setVisibleM(false); setMetaSalva(false)
-    setTimeout(() => setVisibleM(true), 20)
-  }
-
   const resultMetaSlider = useMemo(() => {
     if (!resultMeta || sliderMeta === 0) return null
     return simularMeta(parseBRL(valorMeta), resultMeta.guardaPorMes + sliderMeta)
   }, [resultMeta, sliderMeta, valorMeta])
 
-  function salvarMeta() {
-    if (!resultMeta) return
-    const meta: MetaSim = {
-      nome: nomeMeta || 'Minha meta',
-      objetivo: parseBRL(valorMeta),
-      guardaPorMes: resultMeta.guardaPorMes,
-      iniciadoEm: new Date().toISOString(),
+  // ── Salvar ───────────────────────────────────────────────────────────
+  async function salvarSimulacao() {
+    if (!user) return
+    let row: Record<string, unknown>
+
+    if (aba === 'divida' && resultDiv) {
+      row = {
+        user_id:         user.id,
+        tipo:            'divida',
+        nome:            nomeDivida || 'Dívida sem nome',
+        valor_total:     parseBRL(valorDivida),
+        parcela:         resultDiv.parcela,
+        juros:           taxaStr ? parseFloat(taxaStr.replace(',', '.')) : 0,
+        resultado_meses: resultDiv.meses,
+        data_conclusao:  addMeses(hoje, resultDiv.meses),
+        total_pago:      resultDiv.totalPago,
+        juros_pagos:     resultDiv.jurosPagos,
+      }
+    } else if (aba === 'meta' && resultMeta) {
+      row = {
+        user_id:         user.id,
+        tipo:            'meta',
+        nome:            nomeMeta || 'Meta sem nome',
+        valor_total:     parseBRL(valorMeta),
+        parcela:         resultMeta.guardaPorMes,
+        juros:           0,
+        resultado_meses: resultMeta.meses,
+        data_conclusao:  addMeses(hoje, resultMeta.meses),
+      }
+    } else return
+
+    const { data, error } = await supabase.from('simulacoes').insert([row]).select().single()
+    if (!error && data) {
+      setSimList(prev => [data as SimRow, ...prev])
+      setSimSalva(true)
     }
-    setMetaSim(meta); setMetaSalva(true)
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────
+  const isDivida = aba === 'divida'
+  const corAba   = isDivida ? COR.vermelho : COR.verde
+  const resultAtual   = isDivida ? resultDiv  : resultMeta
+  const visibleAtual  = isDivida ? visibleD   : visibleM
+
   return (
     <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath="/simulacao" />
@@ -178,18 +298,33 @@ export default function Simulacao() {
         {/* Abas */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${COR.borda}`, marginBottom: 24 }}>
           {([['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => (
-            <button key={v} onClick={() => setAba(v)} style={{
+            <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
               padding: '10px 20px', border: 'none', fontFamily: 'inherit',
-              borderBottom: `2px solid ${aba === v ? COR.azul : 'transparent'}`,
+              borderBottom: `2px solid ${aba === v ? corAba : 'transparent'}`,
               background: 'transparent', cursor: 'pointer', fontSize: 13,
               fontWeight: aba === v ? 700 : 500,
-              color: aba === v ? COR.azul : COR.textoSuave, transition: 'all .15s',
+              color: aba === v ? corAba : COR.textoSuave, transition: 'all .15s',
             }}>{l}</button>
           ))}
         </div>
 
-        {/* ═══════════════ ABA DÍVIDA ═══════════════ */}
-        {aba === 'divida' && (
+        {/* ── Minhas simulações salvas ── */}
+        {!listLoading && simListFiltrada.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoMuted, letterSpacing: '.8px', textTransform: 'uppercase', marginBottom: 10 }}>
+              Minhas simulações salvas
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {simListFiltrada.map(s => (
+                <SimCard key={s.id} sim={s} onDelete={excluirSim} />
+              ))}
+            </div>
+            <div style={{ height: 1, background: COR.borda, margin: '20px 0' }} />
+          </div>
+        )}
+
+        {/* ═══ ABA DÍVIDA ═══ */}
+        {isDivida && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={card}>
@@ -206,32 +341,28 @@ export default function Simulacao() {
                     placeholder="R$ 10.000,00" style={inputSt} />
                 </div>
                 <div>
-                  <label style={labelSt}>Parcela mensal atual (R$)</label>
+                  <label style={labelSt}>Parcela mensal (R$)</label>
                   <input value={parcelaStr} onChange={e => setParcelaStr(e.target.value)}
                     placeholder="R$ 500,00" style={inputSt} />
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelSt}>
-                    Taxa de juros mensal (%) <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— opcional</span>
+                    Juros mensal (%) <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— opcional</span>
                   </label>
                   <input value={taxaStr} onChange={e => setTaxaStr(e.target.value)}
                     placeholder="Ex: 2,5 — deixe em branco se não souber" style={inputSt} />
-                  <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 4 }}>
-                    Não sabe? Deixe em branco e usamos só o valor total.
-                  </div>
                 </div>
               </div>
               <button onClick={simDiv} style={{
                 marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 9,
-                background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                background: `linear-gradient(135deg,${COR.vermelho},#b91c1c)`,
                 color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}>Simular →</button>
+              }}>Calcular →</button>
             </div>
 
             {resultDiv && (
               <div style={{ opacity: visibleD ? 1 : 0, transition: 'opacity .4s', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                {/* Resultado principal */}
                 <div style={{ ...card, borderLeft: `4px solid ${COR.vermelho}` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.vermelho, marginBottom: 10 }}>
                     {nomeDivida || 'Sua dívida'}
@@ -255,7 +386,6 @@ export default function Simulacao() {
                   </div>
                 </div>
 
-                {/* Gráfico */}
                 <div style={card}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 14 }}>Saldo devedor ao longo do tempo</div>
                   <ResponsiveContainer width="100%" height={200}>
@@ -269,14 +399,13 @@ export default function Simulacao() {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Slider */}
                 <div style={card}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>E se eu pagasse mais?</div>
                   <div style={{ fontSize: 12, color: COR.textoMuted, marginBottom: 14 }}>Arraste para ver quanto tempo você economiza</div>
                   <input type="range" min={0} max={Math.round(resultDiv.parcela)} step={50}
                     value={sliderDiv} onChange={e => setSliderDiv(Number(e.target.value))}
                     style={{ width: '100%', accentColor: COR.vermelho }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginTop: 4, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginTop: 4, marginBottom: sliderDiv > 0 ? 14 : 0 }}>
                     <span>{fmt(resultDiv.parcela)} (atual)</span>
                     <span>{fmt(resultDiv.parcela * 2)} (2×)</span>
                   </div>
@@ -297,13 +426,30 @@ export default function Simulacao() {
                     </div>
                   )}
                 </div>
+
+                {/* Salvar */}
+                {!simSalva ? (
+                  <button onClick={salvarSimulacao} style={{
+                    width: '100%', padding: '13px 0', border: 'none', borderRadius: 9,
+                    background: `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                    color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                    💾 Salvar simulação
+                  </button>
+                ) : (
+                  <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: COR.verde }}>✓ Simulação salva!</div>
+                    <div style={{ fontSize: 12, color: '#166534', marginTop: 4 }}>Você pode ver todas as suas simulações acima</div>
+                  </div>
+                )}
+
               </div>
             )}
           </div>
         )}
 
-        {/* ═══════════════ ABA META ═══════════════ */}
-        {aba === 'meta' && (
+        {/* ═══ ABA META ═══ */}
+        {!isDivida && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={card}>
@@ -329,13 +475,12 @@ export default function Simulacao() {
                 marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 9,
                 background: `linear-gradient(135deg,${COR.verde},#15803d)`,
                 color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}>Simular →</button>
+              }}>Calcular →</button>
             </div>
 
             {resultMeta && (
               <div style={{ opacity: visibleM ? 1 : 0, transition: 'opacity .4s', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                {/* Resultado principal */}
                 <div style={{ ...card, borderLeft: `4px solid ${COR.verde}` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.verde, marginBottom: 10 }}>
                     {nomeMeta || 'Seu objetivo'}
@@ -349,16 +494,15 @@ export default function Simulacao() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginBottom: 5 }}>
                       <span>R$ 0</span><span>{fmt(parseBRL(valorMeta))}</span>
                     </div>
-                    <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ height: 8, borderRadius: 4, background: COR.verde, width: '100%', opacity: 0.18 }}/>
+                    <div style={{ height: 8, background: '#dcfce7', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: 8, borderRadius: 4, background: COR.verde, width: '0%' }}/>
                     </div>
-                    <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 5, textAlign: 'center' }}>
-                      Progresso estimado ao completar os {resultMeta.meses} meses
+                    <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 5 }}>
+                      Progresso será acompanhado após salvar
                     </div>
                   </div>
                 </div>
 
-                {/* Gráfico */}
                 <div style={card}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 14 }}>Evolução da poupança</div>
                   <ResponsiveContainer width="100%" height={200}>
@@ -372,14 +516,13 @@ export default function Simulacao() {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Slider */}
                 <div style={card}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>E se eu guardasse mais?</div>
                   <div style={{ fontSize: 12, color: COR.textoMuted, marginBottom: 14 }}>Arraste para ver como acelera seu objetivo</div>
                   <input type="range" min={0} max={Math.round(resultMeta.guardaPorMes)} step={50}
                     value={sliderMeta} onChange={e => setSliderMeta(Number(e.target.value))}
                     style={{ width: '100%', accentColor: COR.verde }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginTop: 4, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginTop: 4, marginBottom: sliderMeta > 0 ? 14 : 0 }}>
                     <span>{fmt(resultMeta.guardaPorMes)} (atual)</span>
                     <span>{fmt(resultMeta.guardaPorMes * 2)} (2×)</span>
                   </div>
@@ -400,35 +543,21 @@ export default function Simulacao() {
                   )}
                 </div>
 
-                {/* Adicionar ao Dashboard */}
-                <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: COR.verde, marginBottom: 4 }}>
-                        🐷 Acompanhar no Dashboard
-                      </div>
-                      <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.5 }}>
-                        Salve esta meta para ver o progresso direto no início
-                      </div>
-                    </div>
-                    {metaSalva ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: COR.verde }}>✓ Meta salva!</span>
-                        <button onClick={() => navigate('/dashboard')} style={{
-                          padding: '7px 14px', border: 'none', borderRadius: 8,
-                          background: COR.verde, color: '#fff', fontSize: 12, fontWeight: 600,
-                          cursor: 'pointer', fontFamily: 'inherit',
-                        }}>Ver no Dashboard →</button>
-                      </div>
-                    ) : (
-                      <button onClick={salvarMeta} style={{
-                        padding: '10px 20px', border: 'none', borderRadius: 9,
-                        background: COR.verde, color: '#fff', fontSize: 13, fontWeight: 700,
-                        cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                      }}>Adicionar ao Dashboard →</button>
-                    )}
+                {/* Salvar */}
+                {!simSalva ? (
+                  <button onClick={salvarSimulacao} style={{
+                    width: '100%', padding: '13px 0', border: 'none', borderRadius: 9,
+                    background: `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                    color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                    💾 Salvar simulação
+                  </button>
+                ) : (
+                  <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: COR.verde }}>✓ Simulação salva!</div>
+                    <div style={{ fontSize: 12, color: '#166534', marginTop: 4 }}>Você pode ver todas as suas simulações acima</div>
                   </div>
-                </div>
+                )}
 
               </div>
             )}
