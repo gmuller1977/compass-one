@@ -231,9 +231,9 @@ function TabelaImpacto({ parcela, planos, cor }: {
 }
 
 export default function Simulacao() {
-  const isMobile            = useIsMobile()
-  const { user, planos }    = useApp()
-  const hoje                = new Date()
+  const isMobile                          = useIsMobile()
+  const { user, planos, finalizarPlanejamento } = useApp()
+  const hoje                              = new Date()
 
   const [aba, setAba] = useState<'divida' | 'meta'>('divida')
 
@@ -241,6 +241,7 @@ export default function Simulacao() {
   const [simList,      setSimList]      = useState<SimRow[]>([])
   const [listLoading,  setListLoading]  = useState(true)
   const [simSalva,     setSimSalva]     = useState(false)
+  const [integrado,    setIntegrado]    = useState(false)
 
   const loadSims = useCallback(async () => {
     if (!user) return
@@ -289,7 +290,7 @@ export default function Simulacao() {
       return
     }
     setResultDiv(simularDivida(saldo, parcela, taxa))
-    setSliderDiv(0); setVisibleD(false); setSimSalva(false)
+    setSliderDiv(0); setVisibleD(false); setSimSalva(false); setIntegrado(false)
     setTimeout(() => setVisibleD(true), 20)
   }
 
@@ -298,7 +299,7 @@ export default function Simulacao() {
     const guarda   = parseBRL(guardaStr)
     if (!objetivo || !guarda) return
     setResultMeta(simularMeta(objetivo, guarda))
-    setSliderMeta(0); setVisibleM(false); setSimSalva(false)
+    setSliderMeta(0); setVisibleM(false); setSimSalva(false); setIntegrado(false)
     setTimeout(() => setVisibleM(true), 20)
   }
 
@@ -351,11 +352,44 @@ export default function Simulacao() {
     }
   }
 
+  // ── Incluir no planejamento ──────────────────────────────────────────
+  async function incluirNoPlanejamento() {
+    if (!user) return
+    const parcela  = aba === 'divida' ? resultDiv?.parcela       : resultMeta?.guardaPorMes
+    const nome     = aba === 'divida' ? (nomeDivida || 'Dívida') : (nomeMeta || 'Meta')
+    const mesesTot = aba === 'divida' ? resultDiv?.meses         : resultMeta?.meses
+    if (!parcela || !mesesTot) return
+
+    const anoAtual = hoje.getFullYear()
+    const mesAtual = hoje.getMonth()
+
+    // Build monthly value array for current year
+    const v = Array(12).fill(0)
+    for (let m = mesAtual; m < 12 && (m - mesAtual) < mesesTot; m++) {
+      v[m] = parcela
+    }
+
+    const planoBase = planos[anoAtual] ?? { saldoInicialJan: 0, entradas: [], saidas: [] }
+    const jaExiste  = planoBase.saidas.find(c => c.nome === nome)
+    const novasSaidas = jaExiste
+      ? planoBase.saidas.map(c => c.nome === nome ? { ...c, v } : c)
+      : [...planoBase.saidas, { nome, t: 'Outros', v }]
+
+    finalizarPlanejamento(anoAtual, { ...planoBase, saidas: novasSaidas })
+
+    // Mark simulation as integrated in DB if it was saved
+    const simSalvada = simList.find(s => s.tipo === aba && !s.integrado_planejamento)
+    if (simSalvada) {
+      await supabase.from('simulacoes').update({ integrado_planejamento: true }).eq('id', simSalvada.id)
+      setSimList(prev => prev.map(s => s.id === simSalvada.id ? { ...s, integrado_planejamento: true } : s))
+    }
+
+    setIntegrado(true)
+  }
+
   // ── Render ───────────────────────────────────────────────────────────
   const isDivida = aba === 'divida'
   const corAba   = isDivida ? COR.vermelho : COR.verde
-  const resultAtual   = isDivida ? resultDiv  : resultMeta
-  const visibleAtual  = isDivida ? visibleD   : visibleM
 
   return (
     <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
@@ -472,7 +506,7 @@ export default function Simulacao() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="mes" tick={{ fontSize: 10 }} label={{ value: 'Meses', position: 'insideBottom', offset: -4, fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(v: number) => [fmt(v), 'Saldo']} labelFormatter={v => `Mês ${v}`} />
+                      <Tooltip formatter={(v: unknown) => [fmt(v as number), 'Saldo']} labelFormatter={v => `Mês ${v}`} />
                       <Line type="monotone" dataKey="saldo" stroke={COR.vermelho} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -509,21 +543,35 @@ export default function Simulacao() {
                 {/* Impacto no planejamento */}
                 <TabelaImpacto parcela={resultDiv.parcela} planos={planos} cor={COR.vermelho} />
 
-                {/* Salvar */}
-                {!simSalva ? (
-                  <button onClick={salvarSimulacao} style={{
-                    width: '100%', padding: '13px 0', border: 'none', borderRadius: 9,
-                    background: `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-                    color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                  }}>
-                    💾 Salvar simulação
-                  </button>
-                ) : (
-                  <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: COR.verde }}>✓ Simulação salva!</div>
-                    <div style={{ fontSize: 12, color: '#166534', marginTop: 4 }}>Você pode ver todas as suas simulações acima</div>
+                {/* Ações */}
+                <div style={{ ...card, background: 'linear-gradient(135deg,#f0f4ff,#f8faff)', border: '1px solid #dbeafe' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 12 }}>O que você quer fazer?</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button onClick={salvarSimulacao} disabled={simSalva} style={{
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 9,
+                      background: simSalva ? '#f1f5f9' : `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                      color: simSalva ? COR.textoMuted : '#fff',
+                      fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
+                      transition: 'all .15s',
+                    }}>
+                      {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
+                    </button>
+                    <button onClick={incluirNoPlanejamento} disabled={integrado} style={{
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 9,
+                      background: integrado ? '#f0fdf4' : COR.branco,
+                      color: integrado ? COR.verde : COR.texto,
+                      fontSize: 13, fontWeight: 600, cursor: integrado ? 'default' : 'pointer', fontFamily: 'inherit',
+                      transition: 'all .15s',
+                    }}>
+                      {integrado ? '✓ No planejamento' : '📅 Incluir no planejamento'}
+                    </button>
                   </div>
-                )}
+                  {integrado && (
+                    <div style={{ fontSize: 12, color: COR.verde, marginTop: 10 }}>
+                      Parcela de {fmt(resultDiv.parcela)}/mês adicionada ao planejamento de {hoje.getFullYear()}
+                    </div>
+                  )}
+                </div>
 
               </div>
             )}
@@ -592,7 +640,7 @@ export default function Simulacao() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="mes" tick={{ fontSize: 10 }} label={{ value: 'Meses', position: 'insideBottom', offset: -4, fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(v: number) => [fmt(v), 'Poupado']} labelFormatter={v => `Mês ${v}`} />
+                      <Tooltip formatter={(v: unknown) => [fmt(v as number), 'Poupado']} labelFormatter={v => `Mês ${v}`} />
                       <Line type="monotone" dataKey="poupado" stroke={COR.verde} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -628,21 +676,35 @@ export default function Simulacao() {
                 {/* Impacto no planejamento */}
                 <TabelaImpacto parcela={resultMeta.guardaPorMes} planos={planos} cor={COR.verde} />
 
-                {/* Salvar */}
-                {!simSalva ? (
-                  <button onClick={salvarSimulacao} style={{
-                    width: '100%', padding: '13px 0', border: 'none', borderRadius: 9,
-                    background: `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-                    color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                  }}>
-                    💾 Salvar simulação
-                  </button>
-                ) : (
-                  <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: COR.verde }}>✓ Simulação salva!</div>
-                    <div style={{ fontSize: 12, color: '#166534', marginTop: 4 }}>Você pode ver todas as suas simulações acima</div>
+                {/* Ações */}
+                <div style={{ ...card, background: 'linear-gradient(135deg,#f0fdf4,#f8faff)', border: '1px solid #bbf7d0' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 12 }}>O que você quer fazer?</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button onClick={salvarSimulacao} disabled={simSalva} style={{
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 9,
+                      background: simSalva ? '#f1f5f9' : `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+                      color: simSalva ? COR.textoMuted : '#fff',
+                      fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
+                      transition: 'all .15s',
+                    }}>
+                      {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
+                    </button>
+                    <button onClick={incluirNoPlanejamento} disabled={integrado} style={{
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 9,
+                      background: integrado ? '#f0fdf4' : COR.branco,
+                      color: integrado ? COR.verde : COR.texto,
+                      fontSize: 13, fontWeight: 600, cursor: integrado ? 'default' : 'pointer', fontFamily: 'inherit',
+                      transition: 'all .15s',
+                    }}>
+                      {integrado ? '✓ No planejamento' : '📅 Incluir no planejamento'}
+                    </button>
                   </div>
-                )}
+                  {integrado && (
+                    <div style={{ fontSize: 12, color: COR.verde, marginTop: 10 }}>
+                      {fmt(resultMeta.guardaPorMes)}/mês de poupança adicionado ao planejamento de {hoje.getFullYear()}
+                    </div>
+                  )}
+                </div>
 
               </div>
             )}

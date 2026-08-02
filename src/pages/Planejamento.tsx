@@ -152,7 +152,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const [modalMes,           setModalMes]          = useState<number | null>(null)
   const [copiarMesPrompt,    setCopiarMesPrompt]    = useState<{ origem: number; destino: number } | null>(null)
   const [gruposHorizAbertos, setGruposHorizAbertos] = useState<Set<string>>(new Set())
-  const [listaMesAberto,    setListaMesAberto]    = useState<number | null>(mesAtual)
+
   const isMobile = useIsMobile()
   const [mesMobile, setMesMobile] = useState(mesAtual)
   const [secEntAberto, setSecEntAberto] = useState(true)
