@@ -272,12 +272,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadedUserIdRef.current = null
 
     const [
-      { data: contasRows },
-      { data: categoriasRows },
+      { data: contasRows,  error: contasErr },
+      { data: categoriasRows, error: catsErr },
       { data: prefRow },
-      { data: extratoRows },
-      { data: faturaRows },
-      { data: planoRows },
+      { data: extratoRows, error: extratoErr },
+      { data: faturaRows,  error: faturaErr },
+      { data: planoRows,   error: planosErr },
     ] = await Promise.all([
       supabase.from('contas').select('*').eq('user_id', userId),
       supabase.from('categorias').select('*').eq('user_id', userId),
@@ -286,6 +286,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
       supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
     ])
+
+    // Se qualquer tabela crítica retornar erro, abortar sem salvar estado vazio
+    if (contasErr || catsErr || extratoErr || faturaErr || planosErr) {
+      console.error('loadData abortado por erro:', { contasErr, catsErr, extratoErr, faturaErr, planosErr })
+      setCarregando(false)
+      loadingForUserRef.current = null
+      return
+    }
 
     // Contas
     const contasLoaded: Conta[] = (contasRows ?? []).map(rowToConta)
