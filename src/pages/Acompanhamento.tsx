@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes, Categoria } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import AppHeader from '../components/AppHeader'
+import PageHeader from '../components/PageHeader'
 import BottomNav from '../components/BottomNav'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
@@ -897,6 +898,39 @@ export default function Acompanhamento() {
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo,
       fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
+
+      {/* PageHeader */}
+      {!isMobile && (
+        <div style={{ padding: '12px 16px 0', background: COR.branco, borderBottom: 'none', flexShrink: 0 }}>
+          <PageHeader
+            icon="ti-refresh"
+            breadcrumb="MEU PLANO"
+            title="Revisão mensal"
+            subtitle={`${MESES_FULL[mes]} ${ano}`}
+            mb={12}
+            rightContent={
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden',
+              }}>
+                <button onClick={() => setMes(m => Math.max(0, m-1))} style={{
+                  border: 'none', background: 'transparent', cursor: mes===0?'default':'pointer',
+                  padding: '5px 9px', color: mes===0?'rgba(255,255,255,0.3)':'#fff', fontSize: 11, lineHeight: 1,
+                }}>◀</button>
+                <span style={{
+                  fontSize: 12, fontWeight: 500, color: '#fff',
+                  padding: '5px 10px', borderLeft: '1px solid rgba(255,255,255,0.2)',
+                  borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: 80, textAlign: 'center',
+                }}>{MESES_FULL[mes]}</span>
+                <button onClick={() => setMes(m => Math.min(11, m+1))} style={{
+                  border: 'none', background: 'transparent', cursor: mes===11?'default':'pointer',
+                  padding: '5px 9px', color: mes===11?'rgba(255,255,255,0.3)':'#fff', fontSize: 11, lineHeight: 1,
+                }}>▶</button>
+              </div>
+            }
+          />
+        </div>
+      )}
 
       {/* ABAS DE MÊS */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,flexShrink:0}}>

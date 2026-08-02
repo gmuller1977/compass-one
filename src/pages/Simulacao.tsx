@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import AppHeader from '../components/AppHeader'
+import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 
@@ -398,15 +399,17 @@ export default function Simulacao() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px' }}>
 
         {/* Cabeçalho */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: COR.textoMuted, marginBottom: 4 }}>MEU PLANO</div>
-          <h1 style={{ fontSize: isMobile ? 20 : 25, fontWeight: 800, color: COR.texto, margin: 0 }}>
-            🔮 Simulador financeiro
-          </h1>
-          <p style={{ fontSize: 13, color: COR.textoSuave, margin: '5px 0 0', lineHeight: 1.5 }}>
-            Descubra em quanto tempo você quita uma dívida ou alcança um objetivo
-          </p>
-        </div>
+        <PageHeader
+          icon="ti-calculator"
+          breadcrumb="MEU PLANO"
+          title="Simulador"
+          subtitle={simList.length > 0 ? `${simList.length} simulaç${simList.length === 1 ? 'ão salva' : 'ões salvas'}` : 'Nenhuma simulação salva'}
+          rightContent={
+            <button onClick={() => { setAba('divida'); setSimSalva(false) }} style={PH_BTN_SOLID}>
+              + Nova simulação
+            </button>
+          }
+        />
 
         {/* Abas */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${COR.borda}`, marginBottom: 24 }}>

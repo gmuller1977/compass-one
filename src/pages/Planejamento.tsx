@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import AppHeader from '../components/AppHeader'
+import PageHeader, { PH_BTN_WHITE, PH_BTN_SOLID, PH_BTN_WHITE_ACTIVE } from '../components/PageHeader'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 
@@ -1352,6 +1353,43 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
       <AppHeader currentPath={pathname} />
 
+      {/* ── PageHeader ── */}
+      {!isMobile && (
+        <div style={{ padding: '16px 24px 0' }}>
+          <PageHeader
+            icon="ti-target"
+            breadcrumb="MEU PLANO"
+            title="Planejamento"
+            subtitle={`${anoAtual} · Visão ${viewMode === 'horizontal' ? 'Planilha' : viewMode === 'vertical' ? 'Lista' : 'Grade'}`}
+            mb={0}
+            rightContent={!hideTabs ? (
+              <>
+                {(['previsto', 'real'] as const).map(v => (
+                  <button key={v}
+                    onClick={() => { setAba(v); setEditando(null) }}
+                    style={aba === v ? PH_BTN_WHITE_ACTIVE : PH_BTN_WHITE}>
+                    {v === 'previsto' ? 'Original' : 'Atualizado'}
+                  </button>
+                ))}
+                {aba === 'previsto' && !planejamentoLockado && (
+                  <button onClick={() => {
+                    if (realExiste) { setConfirmarAtualizar(true) }
+                    else { finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData) }
+                  }} style={PH_BTN_SOLID}>
+                    {realExiste ? '↺ Atualizar' : '✓ Finalizar'}
+                  </button>
+                )}
+                {aba === 'previsto' && planejamentoLockado && (
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
+                    🔒 Bloqueado
+                  </span>
+                )}
+              </>
+            ) : undefined}
+          />
+        </div>
+      )}
+
       {/* ── ALERTAS DE CONFIGURAÇÃO ── */}
       {(() => {
         const semContas = contas.length === 0
@@ -1398,39 +1436,35 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         )
       })()}
 
-      {/* ── BARRA DE ABAS STICKY ── */}
+      {/* ── BARRA STICKY ── */}
       <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.branco }}>
 
-        {/* LINHA 1: abas principais (esquerda) + Finalizar + Ano (direita) */}
-        <div style={{ padding:'10px 24px 0', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:12 }}>
+        <div style={{ padding:'8px 24px', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
 
-          <div style={{ display:'flex', gap:3 }}>
-            {!hideTabs && (['previsto','real'] as const).map(v => {
-              const label = v === 'previsto' ? 'Original' : 'Atualizado'
-              return (
-                <button key={v}
-                  onClick={() => { setAba(v); setEditando(null) }}
-                  style={{ padding:'7px 16px', borderRadius:'8px 8px 0 0',
-                    border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
-                    cursor: 'pointer',
-                    fontFamily:'inherit', fontSize:12, fontWeight: aba===v ? 700 : 500,
-                    background: aba===v ? COR.azul : '#f8faff',
-                    color: aba===v ? '#fff' : COR.textoSuave,
-                    position:'relative', zIndex: aba===v ? 1 : 0 }}>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
+          {/* Abas — mobile only (no desktop ficam no PageHeader) */}
+          {(isMobile || hideTabs) && (
+            <div style={{ display:'flex', gap:3 }}>
+              {!hideTabs && (['previsto','real'] as const).map(v => {
+                const label = v === 'previsto' ? 'Original' : 'Atualizado'
+                return (
+                  <button key={v}
+                    onClick={() => { setAba(v); setEditando(null) }}
+                    style={{ padding:'6px 14px', borderRadius:8,
+                      border:`1px solid ${aba===v ? COR.azul : COR.borda}`,
+                      cursor: 'pointer',
+                      fontFamily:'inherit', fontSize:12, fontWeight: aba===v ? 700 : 500,
+                      background: aba===v ? COR.azul : '#f8faff',
+                      color: aba===v ? '#fff' : COR.textoSuave }}>
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
-          <div style={{ display:'flex', alignItems:'center', gap:7, paddingBottom:7 }}>
-            {/* Finalizar / Bloqueado */}
-            {!hideTabs && aba === 'previsto' && planejamentoLockado && (
-              <span style={{ fontSize:10, color:COR.textoSuave, whiteSpace:'nowrap' as const }}>
-                🔒 Bloqueado · desbloqueie em <strong>Configurações</strong>
-              </span>
-            )}
-            {!hideTabs && aba === 'previsto' && !planejamentoLockado && (
+          {/* Lado direito: Finalizar (mobile) + Ano nav */}
+          <div style={{ display:'flex', alignItems:'center', gap:7, marginLeft:'auto' }}>
+            {isMobile && !hideTabs && aba === 'previsto' && !planejamentoLockado && (
               <button onClick={() => {
                   if (realExiste) { setConfirmarAtualizar(true) }
                   else { finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData) }

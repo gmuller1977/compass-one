@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import AppHeader from '../components/AppHeader'
+import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import TutorialCard from '../components/TutorialCard'
 
 type SimAtivaRow = {
@@ -188,62 +189,41 @@ export default function Dashboard() {
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 40px' }}>
 
-        {/* ── Topbar ── */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 22, flexWrap: 'wrap', gap: 12,
-        }}>
-          <div>
-            <div style={{ fontSize: 12, color: COR.textoMuted, fontWeight: 400, marginBottom: 1 }}>Olá,</div>
-            <div style={{ fontSize: isMobile ? 20 : 22, fontWeight: 700, color: COR.texto, lineHeight: 1.1 }}>{nome}</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Seletor de mês */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 0,
-              background: COR.branco, borderRadius: 10, border: `1px solid ${COR.borda}`,
-              overflow: 'hidden',
-            }}>
-              <button
-                onClick={prevMes}
-                style={{
+        {/* ── PageHeader ── */}
+        <PageHeader
+          icon="ti-layout-dashboard"
+          title={`Olá, ${nome}`}
+          subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
+          rightContent={
+            <>
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden',
+              }}>
+                <button onClick={prevMes} style={{
                   border: 'none', background: 'transparent', cursor: 'pointer',
-                  padding: '7px 10px', color: COR.textoSuave, fontSize: 13, lineHeight: 1,
-                  transition: 'background .1s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >◀</button>
-              <span style={{
-                fontSize: 12, fontWeight: isCurrent ? 700 : 500,
-                color: isCurrent ? COR.azul : COR.texto,
-                minWidth: isMobile ? 72 : 96, textAlign: 'center',
-                padding: '7px 4px', borderLeft: `1px solid ${COR.borda}`, borderRight: `1px solid ${COR.borda}`,
-              }}>{MESES_FULL[viewMes].slice(0, isMobile ? 3 : 9)} {viewAno}</span>
-              <button
-                onClick={nextMes}
-                style={{
+                  padding: '5px 9px', color: '#fff', fontSize: 11, lineHeight: 1,
+                }}>◀</button>
+                <span style={{
+                  fontSize: 12, fontWeight: 500, color: '#fff',
+                  padding: '5px 8px',
+                  borderLeft: '1px solid rgba(255,255,255,0.2)',
+                  borderRight: '1px solid rgba(255,255,255,0.2)',
+                  minWidth: isMobile ? 56 : 80, textAlign: 'center',
+                }}>{MESES_FULL[viewMes].slice(0, isMobile ? 3 : 9)} {viewAno}</span>
+                <button onClick={nextMes} style={{
                   border: 'none', background: 'transparent',
                   cursor: isAtMax ? 'not-allowed' : 'pointer',
-                  padding: '7px 10px', color: isAtMax ? '#d1d5db' : COR.textoSuave,
-                  fontSize: 13, lineHeight: 1, transition: 'background .1s',
-                }}
-                onMouseEnter={e => { if (!isAtMax) e.currentTarget.style.background = '#f1f5f9' }}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >▶</button>
-            </div>
-            {/* Lançar */}
-            <button
-              onClick={() => navigate('/novo-lancamento')}
-              style={{
-                background: 'linear-gradient(135deg,#1a56db,#2563eb)', color: '#fff',
-                border: 'none', borderRadius: 10, padding: '8px 16px',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-              }}
-            >+ Lançar</button>
-          </div>
-        </div>
+                  padding: '5px 9px', color: isAtMax ? 'rgba(255,255,255,0.3)' : '#fff',
+                  fontSize: 11, lineHeight: 1,
+                }}>▶</button>
+              </div>
+              <button onClick={() => navigate('/novo-lancamento')} style={PH_BTN_SOLID}>
+                + Lançar
+              </button>
+            </>
+          }
+        />
 
         {/* ── Banners de setup ── */}
         {(!temBanco || !temCategorias) && (

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import PageHeader from '../components/PageHeader'
 import { useToast } from '../components/Toast'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
@@ -807,27 +808,45 @@ export default function NovoLancamentoExtrato() {
         </div>
       ) : <AppHeader currentPath="/novo-lancamento" />}
 
-      {/* DESKTOP: cabeçalho do tipo de lançamento ativo */}
+      {/* DESKTOP: PageHeader por tab */}
       {!isMobile && (() => {
         const cartaoInfo = contas.find(c => c.id === (cartaoAtualId ?? cartaoNavId))
-        const subLabel = tabPrincipal === 'extrato'
-          ? (contaInfo ? `${contaInfo.icone} ${contaInfo.nome || contaInfo.banco}` : null)
-          : tabPrincipal === 'cartao'
-          ? (cartaoInfo ? `${cartaoInfo.icone} ${cartaoInfo.apelido || cartaoInfo.banco}` : null)
-          : null
-        return (
-          <div style={{ padding:'12px 20px', background:COR.branco, borderBottom:`1px solid ${COR.borda}`, flexShrink:0, display:'flex', alignItems:'center', gap:10 }}>
-            <span style={{ fontSize:22, lineHeight:1 }}>
-              {tabPrincipal==='extrato' ? '🏦' : tabPrincipal==='cartao' ? '💳' : tabPrincipal==='dinheiro' ? '💵' : '📊'}
+        const tabIcon = tabPrincipal==='extrato' ? 'ti-building-bank'
+          : tabPrincipal==='cartao' ? 'ti-credit-card'
+          : tabPrincipal==='dinheiro' ? 'ti-cash'
+          : 'ti-list-details'
+        const tabTitle = tabPrincipal==='extrato' ? 'Movimentação do banco'
+          : tabPrincipal==='cartao' ? 'Fatura do cartão'
+          : tabPrincipal==='dinheiro' ? 'Movimentação em dinheiro'
+          : 'Visão geral'
+        const tabSubtitle = tabPrincipal==='extrato'
+          ? (contaInfo ? `${contaInfo.banco}${contaInfo.nome ? ` · ${contaInfo.nome}` : ''}` : `${NOMES_MESES[mes]} ${ano}`)
+          : tabPrincipal==='cartao'
+          ? (cartaoInfo ? `${cartaoInfo.apelido || cartaoInfo.banco}${cartaoInfo.diaVencimento ? ` · Vence dia ${cartaoInfo.diaVencimento}` : ''}` : 'Selecione um cartão')
+          : `${NOMES_MESES[mes]} ${ano}`
+        const monthNav = tabPrincipal !== 'cartao' ? (
+          <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.12)', borderRadius:8, overflow:'hidden' }}>
+            <button onClick={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m) }}
+              style={{ border:'none', background:'transparent', cursor:'pointer', padding:'5px 9px', color:'#fff', fontSize:11, lineHeight:1 }}>◀</button>
+            <span style={{ fontSize:12, fontWeight:500, color:'#fff', padding:'5px 8px',
+              borderLeft:'1px solid rgba(255,255,255,0.2)', borderRight:'1px solid rgba(255,255,255,0.2)',
+              minWidth:76, textAlign:'center' as const }}>
+              {NOMES_MESES[mes].slice(0,3)} {ano}
             </span>
-            <div>
-              <div style={{ fontSize:15, fontWeight:700, color:COR.texto, lineHeight:1.2 }}>
-                {tabPrincipal==='extrato' ? 'Movimentação do banco' : tabPrincipal==='cartao' ? 'Cartão de Crédito' : tabPrincipal==='dinheiro' ? 'Dinheiro' : 'Visão geral'}
-              </div>
-              {subLabel && (
-                <div style={{ fontSize:12, color:COR.textoSuave, marginTop:2 }}>{subLabel}</div>
-              )}
-            </div>
+            <button onClick={() => { let m=mes+1,a=ano; if(m>11){m=0;a++}; setMes(m) }}
+              style={{ border:'none', background:'transparent', cursor:'pointer', padding:'5px 9px', color:'#fff', fontSize:11, lineHeight:1 }}>▶</button>
+          </div>
+        ) : undefined
+        return (
+          <div style={{ padding:'12px 20px 0', flexShrink:0 }}>
+            <PageHeader
+              icon={tabIcon}
+              breadcrumb="LANÇAMENTOS"
+              title={tabTitle}
+              subtitle={tabSubtitle}
+              mb={12}
+              rightContent={monthNav}
+            />
           </div>
         )
       })()}

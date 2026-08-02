@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import BottomNav from '../components/BottomNav'
 import TutorialCard, { reativarTutoriais } from '../components/TutorialCard'
 import { useToast } from '../components/Toast'
@@ -677,28 +678,22 @@ export default function Configuracoes() {
         {/* ══ ABA BANCOS / CARTÕES ══ */}
         {(aba==='bancos' || aba==='cartoes') && (<>
             <div style={{ flex:1, display: (isMobile && mobileView==='form') || nenhumaConta ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
-              <div style={{ display:'flex', justifyContent:'space-between',
-                alignItems:'center', marginBottom:14 }}>
-                <div>
-                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>
-                    {aba==='bancos' ? 'Minhas contas' : 'Meus cartões'}
-                  </h2>
-                  <p style={{ fontSize:12, color:COR.textoSuave, margin:'3px 0 0' }}>
-                    {(() => {
-                      const n = contas.filter(c => aba==='bancos' ? c.tipo!=='cartao' : c.tipo==='cartao').length
-                      return aba==='bancos'
-                        ? `${n} conta${n!==1?'s':''} cadastrada${n!==1?'s':''}`
-                        : `${n} cartão${n!==1?'ões':''} cadastrado${n!==1?'s':''}`
-                    })()}
-                  </p>
-                </div>
-                {isMobile && (
-                  <button onClick={() => { novaConta(); setMobileView('form') }} style={{
-                    padding:'8px 14px', border:'none', borderRadius:8,
-                    background:COR.azul, color:'#fff', fontSize:13, fontWeight:600,
-                    cursor:'pointer', fontFamily:'inherit' }}>+ Novo</button>
-                )}
-              </div>
+              <PageHeader
+                icon={aba==='bancos' ? 'ti-building-bank' : 'ti-credit-card'}
+                breadcrumb="CONTA"
+                title={aba==='bancos' ? 'Minhas contas' : 'Meus cartões'}
+                subtitle={(() => {
+                  const n = contas.filter(c => aba==='bancos' ? c.tipo!=='cartao' : c.tipo==='cartao').length
+                  return aba==='bancos'
+                    ? `${n} conta${n!==1?'s':''} cadastrada${n!==1?'s':''}`
+                    : `${n} cartão${n!==1?'ões':''} cadastrado${n!==1?'s':''}`
+                })()}
+                rightContent={
+                  <button onClick={() => { novaConta(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
+                    {aba==='bancos' ? '+ Nova conta' : '+ Novo cartão'}
+                  </button>
+                }
+              />
 
               <div style={{ overflowY:'auto', flex:1 }}>
                 {(aba==='bancos' ? (['corrente','poupanca'] as const) : (['cartao'] as const)).map(tipo => {
@@ -1062,29 +1057,26 @@ export default function Configuracoes() {
             {subAbaCat === 'categorias' && (
             <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
             <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
-              <div style={{ display:'flex', justifyContent:'space-between',
-                alignItems:'center', marginBottom:14 }}>
-                <div>
-                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>Categorias</h2>
-                  <p style={{ fontSize:12, color:COR.textoSuave, margin:'3px 0 0' }}>
-                    {categorias.filter(c=>c.ativa).length} ativas de {categorias.length}
-                  </p>
-                </div>
-                {temSugestoesPendentes && !isMobile && (
-                  <button onClick={importarSugestoes} style={{
-                    padding:'7px 14px', border:`1px solid ${COR.borda}`, borderRadius:8,
-                    background:COR.branco, color:COR.textoSuave, fontSize:12, fontWeight:500,
-                    cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5 }}>
-                    ✨ Importar sugestões
-                  </button>
-                )}
-                {isMobile && (
-                  <button onClick={() => { novaCategoria(); setMobileView('form') }} style={{
-                    padding:'8px 14px', border:'none', borderRadius:8,
-                    background:COR.azul, color:'#fff', fontSize:13, fontWeight:600,
-                    cursor:'pointer', fontFamily:'inherit' }}>+ Nova</button>
-                )}
-              </div>
+              <PageHeader
+                icon="ti-category"
+                breadcrumb="CONTA"
+                title="Categorias"
+                subtitle={`${categorias.filter(c=>c.ativa).length} ativas de ${categorias.length}`}
+                rightContent={
+                  <>
+                    {temSugestoesPendentes && !isMobile && (
+                      <button onClick={importarSugestoes} style={{
+                        background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none',
+                        borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 500,
+                        cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      }}>✨ Sugestões</button>
+                    )}
+                    <button onClick={() => { novaCategoria(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
+                      + Nova categoria
+                    </button>
+                  </>
+                }
+              />
 
               {/* Sub-abas + filtro ativo/inativo */}
               {categorias.length > 0 && (
@@ -1485,20 +1477,17 @@ export default function Configuracoes() {
               <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
                 {/* Lista de grupos */}
                 <div style={{ flex:1, overflowY:'auto', display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', gap:6 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
-                    <div>
-                    <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 4px' }}>Grupos</h2>
-                    <p style={{ fontSize:12, color:COR.textoSuave, margin:0 }}>
-                      Organize suas categorias em grupos para facilitar a visualização.
-                    </p>
-                    </div>
-                    {isMobile && (
-                      <button onClick={() => { setEditGrupo(null); setNovoGrupoNome(''); setMobileView('form') }} style={{
-                        padding:'8px 14px', border:'none', borderRadius:8,
-                        background:COR.azul, color:'#fff', fontSize:13, fontWeight:600,
-                        cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>+ Novo</button>
-                    )}
-                  </div>
+                  <PageHeader
+                    icon="ti-folders"
+                    breadcrumb="CONTA"
+                    title="Grupos"
+                    subtitle={`${todosGrupos.filter(g => g !== 'Cartão de Crédito').length} grupos`}
+                    rightContent={
+                      <button onClick={() => { setEditGrupo(null); setNovoGrupoNome(''); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
+                        + Novo grupo
+                      </button>
+                    }
+                  />
                   {todosGrupos.filter(g => g !== 'Cartão de Crédito').map(g => {
                     const count = categorias.filter(c => c.grupo === g).length
                     const isPadrao = GRUPOS_PADRAO.includes(g)
@@ -1647,12 +1636,18 @@ export default function Configuracoes() {
         {/* ══ ABA PERFIL ══ */}
         {aba==='perfil' && (
           <div style={{ flex:1, overflowY:'auto' }}>
-          <div style={{ display:'flex', justifyContent:'center', padding:'20px 0 28px' }}>
+          <div style={{ display:'flex', justifyContent:'center', padding:'0 0 28px' }}>
           <div style={{ display:'flex', flexDirection:'column', gap:14, width:'100%', maxWidth:500 }}>
+
+            <PageHeader
+              icon="ti-user"
+              breadcrumb="CONTA"
+              title="Perfil"
+              subtitle={user?.email ?? ''}
+            />
 
             {/* Dados pessoais */}
             <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:28 }}>
-              <h2 style={{ fontSize:15, fontWeight:700, color:COR.texto, margin:'0 0 20px' }}>Perfil</h2>
 
               {/* Avatar */}
               <div style={{ display:'flex', justifyContent:'center', marginBottom:20 }}>
@@ -1768,8 +1763,15 @@ export default function Configuracoes() {
         {/* ══ ABA PREFERÊNCIAS ══ */}
         {aba==='preferencias' && (
           <div style={{ flex:1, overflowY:'auto' }}>
-          <div style={{ display:'flex', justifyContent:'center', padding:'20px 0 28px' }}>
+          <div style={{ display:'flex', justifyContent:'center', padding:'0 0 28px' }}>
           <div style={{ display:'flex', flexDirection:'column', gap:14, width:'100%', maxWidth:500 }}>
+
+            <PageHeader
+              icon="ti-adjustments"
+              breadcrumb="CONTA"
+              title="Preferências"
+              subtitle="Personalize o app"
+            />
 
             {/* Card: Exibição */}
             <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
