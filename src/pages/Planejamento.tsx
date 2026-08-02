@@ -228,7 +228,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   const dadosAnoFinal: AnoData = useMemo(() => ({
     ...dadosAno,
     saidas: dadosAno.saidas.map(cat =>
-      nomeFaturaCartao(cat.nome, cartaoNomes) ? { ...cat, v: somaCartaoMes } : cat
+      nomeFaturaCartao(cat.nome, cartaoNomes) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
     ),
   }), [dadosAno, somaCartaoMes, cartaoNomes])
 
