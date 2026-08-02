@@ -28,6 +28,11 @@ const ICONES_CAT   = [
   '🍽️','🎁','🏋️','🐾','📺','🎮','🏥','📌','🔧','☕',
   '🎵','📚','🏖️','💐','🧴','💈','🐶','🎯',
 ]
+const ICONES_CAT_ENTRADA = [
+  '💰','💵','💼','📈','🏦','💹','🤑','🧾','🏠','🚗',
+  '💎','📊','🏢','🎯','⭐','🏆','🔑','📥','🪙','💳',
+  '🤝','📑','🎉','🌟','💡','🏗️','🛡️','🌱',
+]
 const BANCOS = ['Banco do Brasil','Bradesco','C6 Bank','Caixa','Inter','Itaú','Nubank','Santander','Sicredi','Outro']
 
 const TIPOS_MOVIMENTO: { id: TipoMovimento; label: string }[] = [
@@ -372,6 +377,7 @@ export default function Configuracoes() {
   const [editCatId, setEditCatId] = useState<string|null>(null)
   const [erroCat,   setErroCat]   = useState('')
   const nomeCatRef = useRef<HTMLInputElement>(null)
+  const grupoSelectRef = useRef<HTMLSelectElement>(null)
 
   const tipoBancoRefs   = useRef<(HTMLButtonElement|null)[]>([])
   const tipoCatRefs     = useRef<(HTMLButtonElement|null)[]>([])
@@ -461,7 +467,7 @@ export default function Configuracoes() {
   function novaCategoria() {
     setFormCat({...catVazia, tipo:abaCat}); setEditCatId(null)
     setErroCat('')
-    setTimeout(() => nomeCatRef.current?.focus(), 0)
+    setTimeout(() => grupoSelectRef.current?.focus(), 0)
   }
   function editarCategoria(c: Categoria) {
     setMobileView('form')
@@ -545,6 +551,9 @@ export default function Configuracoes() {
   const temSugestoesPendentes = CATEGORIAS_PADRAO.some(
     p => !categorias.some(c => c.nome.toLowerCase() === p.nome.toLowerCase())
   )
+
+  const contasFiltradas = contas.filter(c => aba === 'bancos' ? c.tipo !== 'cartao' : c.tipo === 'cartao')
+  const nenhumaConta = (aba === 'bancos' || aba === 'cartoes') && !isMobile && contasFiltradas.length === 0
 
   return (
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
@@ -666,14 +675,13 @@ export default function Configuracoes() {
       <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? 12 : 20, gap:16 }}>
 
         {/* ══ ABA BANCOS / CARTÕES ══ */}
-        {(aba==='bancos' || aba==='cartoes') && (
-          <>
-            <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
+        {(aba==='bancos' || aba==='cartoes') && (<>
+            <div style={{ flex:1, display: (isMobile && mobileView==='form') || nenhumaConta ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
               <div style={{ display:'flex', justifyContent:'space-between',
                 alignItems:'center', marginBottom:14 }}>
                 <div>
                   <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>
-                    {aba==='bancos' ? 'Cadastro de Bancos' : 'Cadastro de Cartões'}
+                    {aba==='bancos' ? 'Minhas contas' : 'Meus cartões'}
                   </h2>
                   <p style={{ fontSize:12, color:COR.textoSuave, margin:'3px 0 0' }}>
                     {(() => {
@@ -768,7 +776,9 @@ export default function Configuracoes() {
 
             {/* Formulário conta */}
             <div onKeyDown={e => { if (e.key==='Enter' && (e.target as HTMLElement).tagName==='INPUT') salvarConta() }}
-              style={{ width: isMobile ? '100%' : 340, flexShrink:0, background:COR.branco,
+              style={{ width: isMobile ? '100%' : nenhumaConta ? 440 : 340,
+                margin: nenhumaConta ? '0 auto' : undefined,
+                flexShrink:0, background:COR.branco,
                 border:`1px solid ${COR.borda}`, borderRadius:12,
                 padding:20, overflowY:'auto',
                 display: isMobile && mobileView==='list' ? 'none' : 'block' }}>
@@ -783,7 +793,9 @@ export default function Configuracoes() {
                 <div style={{ display:'flex', justifyContent:'space-between',
                   alignItems:'center', marginBottom:18 }}>
                   <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
-                    {editContaId ? 'Editar conta' : 'Nova conta'}
+                    {editContaId
+                      ? (aba==='cartoes' ? 'Editar cartão' : 'Editar conta')
+                      : (aba==='cartoes' ? 'Novo cartão' : 'Nova conta')}
                   </h3>
                   {editContaId && (
                     <button onClick={() => { novaConta(); setMobileView('list') }} title="Cancelar edição" style={{
@@ -927,7 +939,7 @@ export default function Configuracoes() {
                         </select>
                       </div>
                       <div>
-                        <label style={labelSt}>Titular da conta</label>
+                        <label style={labelSt}>Nome da conta</label>
                         <input ref={nomeContaRef} value={formConta.nome}
                           onChange={e => setFormConta(p=>({...p, nome:e.target.value}))}
                           placeholder="Ex: João Silva, Maria Souza..."
@@ -981,7 +993,7 @@ export default function Configuracoes() {
                         </>
                       )}
                       <div>
-                        <label style={labelSt}>Saldo inicial</label>
+                        <label style={labelSt}>Saldo atual</label>
                         <input value={saldoStr}
                           onChange={e => {
                             const raw = e.target.value.replace(/[^0-9.,]/g, '')
@@ -1030,8 +1042,7 @@ export default function Configuracoes() {
                   </div>
                 </div>
               </div>
-          </>
-        )}
+          </>)}
 
         {/* ══ ABA CATEGORIAS ══ */}
         {aba==='categorias' && (() => {
@@ -1048,24 +1059,13 @@ export default function Configuracoes() {
           )
           return (
           <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0, overflow:'hidden' }}>
-            {/* Sub-abas: Categorias / Grupos */}
-            <div style={{ display:'flex', gap:0, borderBottom:`1px solid ${COR.borda}`, marginBottom:16, flexShrink:0 }}>
-              {([['categorias','Categorias'],['grupos','Grupos']] as const).map(([v,l]) => (
-                <button key={v} onClick={() => setSubAbaCat(v)} style={{
-                  padding:'7px 18px', border:'none', borderBottom:`2px solid ${subAbaCat===v ? COR.azul : 'transparent'}`,
-                  cursor:'pointer', fontSize:13, fontWeight:subAbaCat===v ? 700 : 500, fontFamily:'inherit',
-                  background:'transparent', color: subAbaCat===v ? COR.azul : COR.textoSuave, transition:'all .15s' }}>
-                  {l}
-                </button>
-              ))}
-            </div>
             {subAbaCat === 'categorias' && (
             <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
             <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
               <div style={{ display:'flex', justifyContent:'space-between',
                 alignItems:'center', marginBottom:14 }}>
                 <div>
-                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>Cadastro de Categorias</h2>
+                  <h2 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:0 }}>Categorias</h2>
                   <p style={{ fontSize:12, color:COR.textoSuave, margin:'3px 0 0' }}>
                     {categorias.filter(c=>c.ativa).length} ativas de {categorias.length}
                   </p>
@@ -1222,7 +1222,14 @@ export default function Configuracoes() {
                         <button key={v}
                           ref={el => { tipoCatRefs.current[i] = el }}
                           tabIndex={formCat.tipo===v ? 0 : -1}
-                          onClick={() => setFormCat(p=>({...p,tipo:v,grupo:undefined}))}
+                          onClick={() => setFormCat(p=>({
+                            ...p, tipo:v, grupo:undefined,
+                            icone: v==='entrada' ? ICONES_CAT_ENTRADA[0] : ICONES_CAT[0],
+                            tipoMovimento: v==='entrada' && p.tipoMovimento==='cartao' ? 'banco' : p.tipoMovimento,
+                            formaPagamento: v==='entrada'
+                              ? (p.tipoMovimento==='dinheiro' ? undefined : 'pix')
+                              : p.formaPagamento,
+                          }))}
                           onKeyDown={e => {
                             if (e.key==='ArrowRight'||e.key==='ArrowDown') {
                               e.preventDefault(); const n=tipoCatRefs.current[(i+1)%2]; n?.click(); n?.focus()
@@ -1246,6 +1253,7 @@ export default function Configuracoes() {
                   <div>
                     <label style={labelSt}>Grupo</label>
                     <select
+                      ref={grupoSelectRef}
                       value={formCat.grupo && !gruposParaTipo.includes(formCat.grupo) ? '__outro__' : (formCat.grupo ?? '')}
                       onChange={e => {
                         if (e.target.value === '__outro__') setFormCat(p=>({...p, grupo:''}))
@@ -1319,76 +1327,95 @@ export default function Configuracoes() {
                     </div>
                   )}
 
-                  {/* Lançamentos — todas as categorias */}
-                  <div>
-                    <label style={labelSt}>Lançamentos</label>
-                    <div style={{ display:'flex', gap:6 }}>
-                      {TIPOS_MOVIMENTO.map((t, i) => (
-                        <button key={t.id}
-                          ref={el => { tipoMovRefs.current[i] = el }}
-                          tabIndex={formCat.tipoMovimento===t.id ? 0 : -1}
-                          onClick={() => setFormCat(p=>({
-                            ...p, tipoMovimento:t.id,
-                            formaPagamento: t.id==='dinheiro' ? undefined
-                              : t.id==='cartao' ? 'avista' : 'automatico',
-                            contaDebitoId: undefined,
-                          }))}
-                          onKeyDown={e => {
-                            const total = TIPOS_MOVIMENTO.length
-                            if (e.key==='ArrowRight'||e.key==='ArrowDown') {
-                              e.preventDefault(); const n=tipoMovRefs.current[(i+1)%total]; n?.click(); n?.focus()
-                            } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
-                              e.preventDefault(); const n=tipoMovRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
-                            }
-                          }}
-                          style={{
-                          flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
-                          border:`1.5px solid ${formCat.tipoMovimento===t.id ? COR.azul : COR.borda}`,
-                          borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
-                          background: formCat.tipoMovimento===t.id ? '#eff6ff' : COR.branco,
-                          color: formCat.tipoMovimento===t.id ? COR.azul : COR.textoSuave }}>
-                          {t.label}
-                        </button>
-                      ))}
+                  {/* Lançamentos */}
+                  {(() => {
+                    const tiposVisiveis = formCat.tipo === 'entrada'
+                      ? TIPOS_MOVIMENTO.filter(t => t.id !== 'cartao')
+                      : TIPOS_MOVIMENTO
+                    return (
+                    <div>
+                      <label style={labelSt}>Lançamentos</label>
+                      <div style={{ display:'flex', gap:6 }}>
+                        {tiposVisiveis.map((t, i) => (
+                          <button key={t.id}
+                            ref={el => { tipoMovRefs.current[i] = el }}
+                            tabIndex={formCat.tipoMovimento===t.id ? 0 : -1}
+                            onClick={() => setFormCat(p=>({
+                              ...p, tipoMovimento:t.id,
+                              formaPagamento: t.id==='dinheiro' ? undefined
+                                : t.id==='cartao' ? 'avista'
+                                : p.tipo==='entrada' ? 'pix' : 'automatico',
+                              contaDebitoId: undefined,
+                            }))}
+                            onKeyDown={e => {
+                              const total = tiposVisiveis.length
+                              if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                                e.preventDefault(); const n=tipoMovRefs.current[(i+1)%total]; n?.click(); n?.focus()
+                              } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                                e.preventDefault(); const n=tipoMovRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
+                              }
+                            }}
+                            style={{
+                            flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
+                            border:`1.5px solid ${formCat.tipoMovimento===t.id ? COR.azul : COR.borda}`,
+                            borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                            background: formCat.tipoMovimento===t.id ? '#eff6ff' : COR.branco,
+                            color: formCat.tipoMovimento===t.id ? COR.azul : COR.textoSuave }}>
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p style={{ fontSize:11, color:COR.textoSuave, marginTop:6, lineHeight:1.5 }}>
+                        {formCat.tipoMovimento === 'banco'    && (formCat.tipo==='entrada'
+                          ? 'Receitas creditadas na conta bancária (PIX, transferência).'
+                          : 'Gastos debitados diretamente na conta bancária (débito, Pix, boleto).')}
+                        {formCat.tipoMovimento === 'cartao'   && 'Gastos pagos com cartão de crédito — aparecem na fatura do cartão.'}
+                        {formCat.tipoMovimento === 'dinheiro' && (formCat.tipo==='entrada'
+                          ? 'Receitas recebidas em espécie — aparecem no extrato de dinheiro em carteira.'
+                          : 'Gastos pagos em espécie — aparecem no extrato de dinheiro em carteira.')}
+                      </p>
                     </div>
-                    <p style={{ fontSize:11, color:COR.textoSuave, marginTop:6, lineHeight:1.5 }}>
-                      {formCat.tipoMovimento === 'banco'    && 'Gastos debitados diretamente na conta bancária (débito, Pix, boleto).'}
-                      {formCat.tipoMovimento === 'cartao'   && 'Gastos pagos com cartão de crédito — aparecem na fatura do cartão.'}
-                      {formCat.tipoMovimento === 'dinheiro' && 'Gastos pagos em espécie — aparecem no extrato de dinheiro em carteira.'}
-                    </p>
-                  </div>
+                    )
+                  })()}
 
                   {/* Forma de pagamento — só para banco */}
                   {formCat.tipoMovimento==='banco' && (
                     <div>
                       <label style={labelSt}>Forma de lançamento</label>
-                      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                        {FORMAS_PAG_BANCO.map((f, i) => (
-                          <button key={f.id}
-                            ref={el => { formaPagCatRefs.current[i] = el }}
-                            tabIndex={formCat.formaPagamento===f.id ? 0 : -1}
-                            onClick={() => setFormCat(p=>({
-                              ...p, formaPagamento:f.id,
-                              contaDebitoId: f.id === 'automatico' ? p.contaDebitoId : undefined,
-                            }))}
-                            onKeyDown={e => {
-                              const total = FORMAS_PAG_BANCO.length
-                              if (e.key==='ArrowRight'||e.key==='ArrowDown') {
-                                e.preventDefault(); const n=formaPagCatRefs.current[(i+1)%total]; n?.click(); n?.focus()
-                              } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
-                                e.preventDefault(); const n=formaPagCatRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
-                              }
-                            }}
-                            style={{
-                              padding:'7px 10px', fontFamily:'inherit', outline:'none',
-                              border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
-                              borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
-                              background: formCat.formaPagamento===f.id ? '#eff6ff' : COR.branco,
-                              color: formCat.formaPagamento===f.id ? COR.azul : COR.textoSuave }}>
-                            {f.label}
-                          </button>
-                        ))}
-                      </div>
+                      {(() => {
+                        const formasVisiveis = formCat.tipo==='entrada'
+                          ? FORMAS_PAG_BANCO.filter(f => f.id==='pix' || f.id==='transferencia')
+                          : FORMAS_PAG_BANCO
+                        return (
+                        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                          {formasVisiveis.map((f, i) => (
+                            <button key={f.id}
+                              ref={el => { formaPagCatRefs.current[i] = el }}
+                              tabIndex={formCat.formaPagamento===f.id ? 0 : -1}
+                              onClick={() => setFormCat(p=>({
+                                ...p, formaPagamento:f.id,
+                                contaDebitoId: f.id === 'automatico' ? p.contaDebitoId : undefined,
+                              }))}
+                              onKeyDown={e => {
+                                const total = formasVisiveis.length
+                                if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                                  e.preventDefault(); const n=formaPagCatRefs.current[(i+1)%total]; n?.click(); n?.focus()
+                                } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                                  e.preventDefault(); const n=formaPagCatRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
+                                }
+                              }}
+                              style={{
+                                padding:'7px 10px', fontFamily:'inherit', outline:'none',
+                                border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
+                                borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                                background: formCat.formaPagamento===f.id ? '#eff6ff' : COR.branco,
+                                color: formCat.formaPagamento===f.id ? COR.azul : COR.textoSuave }}>
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+                        )
+                      })()}
                       <div style={{ fontSize:11, color:'#94a3b8', marginTop:6, lineHeight:1.5 }}>
                         {formCat.formaPagamento==='automatico'
                           ? 'A despesa é debitada automaticamente na conta vinculada no dia do vencimento.'
@@ -1420,7 +1447,7 @@ export default function Configuracoes() {
 
                   <div>
                     <label style={labelSt}>Ícone</label>
-                    <IconPicker icones={ICONES_CAT} valor={formCat.icone}
+                    <IconPicker icones={formCat.tipo==='entrada' ? ICONES_CAT_ENTRADA : ICONES_CAT} valor={formCat.icone}
                       onChange={i => setFormCat(p=>({...p,icone:i}))} />
                   </div>
                   <div>

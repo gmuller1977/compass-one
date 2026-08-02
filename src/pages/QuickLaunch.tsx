@@ -353,7 +353,7 @@ export default function QuickLaunch() {
       {/* Hoje strip */}
       <div style={{ display: 'flex', gap: 8, padding: '8px 16px 6px', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: 11, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
-          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Gastos hoje</div>
+          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Despesas hoje</div>
           <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: gastosHoje > 0 ? COR.vermelho : COR.textoSuave }}>
             {fmt(gastosHoje)}
           </div>
@@ -469,7 +469,7 @@ export default function QuickLaunch() {
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{catSel}</div>
               <div style={{ fontSize: 10, color: '#94a3b8' }}>
-                {tipoSel === 'saida' ? 'Gastei' : 'Recebi'} · {contaSel?.nome}
+                {tipoSel === 'saida' ? 'Despesa' : 'Receita'} · {contaSel?.nome}
                 {isCartao ? ' · Crédito 💳' : ''}
               </div>
             </div>

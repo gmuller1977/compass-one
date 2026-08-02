@@ -808,7 +808,7 @@ export default function Acompanhamento() {
                   padding:'12px 16px', background:'#f0fdf4', borderBottom:'2px solid #dcfce7' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                     <span style={{ fontSize:16 }}>↑</span>
-                    <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase', letterSpacing:.6, color:'#16a34a' }}>Quanto entrou</span>
+                    <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase', letterSpacing:.6, color:'#16a34a' }}>Receitas</span>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
                     <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6,
@@ -823,7 +823,7 @@ export default function Acompanhamento() {
                   dadosAno.entradas ?? [], entradasMap)}
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                   padding:'10px 16px', background:'#f0fdf4', borderTop:'1px solid #dcfce7' }}>
-                  <span style={{ fontSize:12, fontWeight:800, color:'#16a34a' }}>Total entrou</span>
+                  <span style={{ fontSize:12, fontWeight:800, color:'#16a34a' }}>Total receitas</span>
                   <div style={{ display:'flex', gap:12 }}>
                     {([['Previsto','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#d97706',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
                       <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
@@ -842,7 +842,7 @@ export default function Acompanhamento() {
                   padding:'12px 16px', background:'#fff1f2', borderBottom:'2px solid #fecdd3' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                     <span style={{ fontSize:16 }}>↓</span>
-                    <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase', letterSpacing:.6, color:'#dc2626' }}>Quanto gastei</span>
+                    <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase', letterSpacing:.6, color:'#dc2626' }}>Despesas</span>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
                     <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6,
@@ -856,7 +856,7 @@ export default function Acompanhamento() {
                 {renderMobileSecao('saida', gruposSaida, dadosAno.saidas ?? [], saidasMap)}
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
                   padding:'10px 16px', background:'#fff1f2', borderTop:'1px solid #fecdd3' }}>
-                  <span style={{ fontSize:12, fontWeight:800, color:'#dc2626' }}>Total gastei</span>
+                  <span style={{ fontSize:12, fontWeight:800, color:'#dc2626' }}>Total despesas</span>
                   <div style={{ display:'flex', gap:12 }}>
                     {([['Previsto','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],['Disponível','#16a34a',fmt(totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
                       <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
@@ -971,7 +971,7 @@ export default function Acompanhamento() {
             {/* Linha Entradas */}
             <div>
               <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
-                <span style={{fontSize:11,fontWeight:700,color:COR.verde}}>↑ Entrou</span>
+                <span style={{fontSize:11,fontWeight:700,color:COR.verde}}>Receitas</span>
                 <div style={{display:'flex',alignItems:'baseline',gap:4}}>
                   <span style={{fontSize:14,fontWeight:800,color:COR.verde,
                     fontVariantNumeric:'tabular-nums'}}>
@@ -994,7 +994,7 @@ export default function Acompanhamento() {
             {/* Linha Saídas */}
             <div>
               <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
-                <span style={{fontSize:11,fontWeight:700,color:COR.vermelho}}>↓ Gastei</span>
+                <span style={{fontSize:11,fontWeight:700,color:COR.vermelho}}>Despesas</span>
                 <div style={{display:'flex',alignItems:'baseline',gap:4}}>
                   <span style={{fontSize:14,fontWeight:800,color:COR.vermelho,
                     fontVariantNumeric:'tabular-nums'}}>
@@ -1017,7 +1017,7 @@ export default function Acompanhamento() {
             {/* Saldo */}
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
               paddingTop:8,borderTop:`1px solid ${COR.borda}`}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.textoSuave}}>Quanto tenho</span>
+              <span style={{fontSize:11,fontWeight:600,color:COR.textoSuave}}>Resultado do mês</span>
               <div style={{display:'flex',alignItems:'center',gap:6}}>
                 <span style={{fontSize:14,fontWeight:800,color:corSaldoR,fontVariantNumeric:'tabular-nums'}}>
                   {semDados ? '—' : fmt(saldoReal)}
@@ -1043,7 +1043,7 @@ export default function Acompanhamento() {
               padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
               background:'#f8faff',border:`1px solid ${COR.borda}`}}>
               <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. entrou</span>
+                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Receitas previstas</span>
               <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
                 {totalPrevE > 0 ? fmt(totalPrevE) : '—'}
               </span>
@@ -1054,7 +1054,7 @@ export default function Acompanhamento() {
               border:`1px solid ${totalRealE > 0 ? '#bfdbfe' : COR.borda}`}}>
               <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                 letterSpacing:.4,marginBottom:1,color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
-                Real. entrou
+                Receitas realizadas
               </span>
               <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
                 color:totalRealE > 0 ? COR.azul : '#94a3b8'}}>
@@ -1066,7 +1066,7 @@ export default function Acompanhamento() {
               padding:'5px 10px',borderRadius:8,flex:'1 0 auto',
               background:'#f8faff',border:`1px solid ${COR.borda}`}}>
               <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
-                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Prev. gastei</span>
+                letterSpacing:.4,marginBottom:1,color:'#94a3b8'}}>Despesas previstas</span>
               <span style={{fontSize:13,fontWeight:700,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
                 {totalPrevS > 0 ? fmt(totalPrevS) : '—'}
               </span>
@@ -1078,7 +1078,7 @@ export default function Acompanhamento() {
               <span style={{fontSize:10,fontWeight:600,textTransform:'uppercase',
                 letterSpacing:.4,marginBottom:1,
                 color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>
-                Real. gastei
+                Despesas realizadas
               </span>
               <span style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
                 color:totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : '#0284c7') : '#94a3b8'}}>

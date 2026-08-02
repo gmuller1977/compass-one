@@ -14,6 +14,7 @@ import Acompanhamento  from './pages/Acompanhamento'
 import Configuracoes       from './pages/Configuracoes'
 import Onboarding          from './pages/Onboarding'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
+import Simulacao           from './pages/Simulacao'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
+          <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
           <Route path="*"                   element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

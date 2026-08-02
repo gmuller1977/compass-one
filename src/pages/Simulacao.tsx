@@ -1,332 +1,445 @@
-import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import type { PlanoCat } from '../context/AppContext'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import AppHeader from '../components/AppHeader'
+import { useApp } from '../context/AppContext'
+import type { MetaSim } from '../context/AppContext'
 
-const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+function useIsMobile() {
+  const [v] = useState(() => window.innerWidth < 640)
+  return v
+}
 
 const COR = {
-  azul:'#1a56db', azulEscuro:'#1e40af', azulMedio:'#2563eb',
-  verde:'#16a34a', vermelho:'#dc2626', borda:'#e2e8f0',
-  textoSuave:'#64748b', texto:'#0f172a', branco:'#ffffff', fundo:'#f8fafc',
+  fundo: '#f8faff', branco: '#ffffff', borda: '#e8edf3',
+  texto: '#0f172a', textoSuave: '#64748b', textoMuted: '#94a3b8',
+  azul: '#1a56db', azulMedio: '#2563eb', verde: '#16a34a', vermelho: '#dc2626',
 }
 
-type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
-type EventoState = {
-  step: 1|2
-  tipo: EventoTipo
-  mesInicio: number
-  catTipo: 'entrada'|'saida'
-  catNome: string
-  novoValor: string
+function parseBRL(s: string): number {
+  return parseFloat(s.replace(/[^\d,]/g, '').replace(',', '.')) || 0
+}
+function fmt(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-const EVENTOS = [
-  { id:'nova_renda'   as const, emoji:'🟢', label:'Nova Renda',      desc:'Salário, freelance, aluguel recebido', catTipo:'entrada' as const },
-  { id:'novo_gasto'   as const, emoji:'🔴', label:'Novo Gasto',      desc:'Assinatura, dívida nova, mensalidade', catTipo:'saida'   as const },
-  { id:'encerramento' as const, emoji:'❌', label:'Encerramento',    desc:'Fim de salário, quitação de dívida',   catTipo:'saida'   as const },
-  { id:'ajuste'       as const, emoji:'🔧', label:'Ajuste de Valor', desc:'Aumento de salário, reajuste',         catTipo:'entrada' as const },
-]
+const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
+  'Agosto','Setembro','Outubro','Novembro','Dezembro']
 
-const TIPO_INFO: Record<string, { emoji:string; label:string }> = {
-  nova_renda:   { emoji:'🟢', label:'Nova Renda' },
-  novo_gasto:   { emoji:'🔴', label:'Novo Gasto' },
-  encerramento: { emoji:'❌', label:'Encerramento' },
-  ajuste:       { emoji:'🔧', label:'Ajuste de Valor' },
+function addMeses(base: Date, n: number) {
+  const d = new Date(base.getFullYear(), base.getMonth() + n, 1)
+  return `${MESES_FULL[d.getMonth()]}/${d.getFullYear()}`
+}
+
+type DividaResult = {
+  meses: number; totalPago: number; jurosPagos: number; parcela: number
+  chartData: { mes: number; saldo: number }[]
+}
+type MetaResult = {
+  meses: number; guardaPorMes: number
+  chartData: { mes: number; poupado: number }[]
+}
+
+function simularDivida(saldo0: number, parcela: number, taxa: number): DividaResult {
+  let saldo = saldo0; let totalPago = 0
+  const chartData: { mes: number; saldo: number }[] = [{ mes: 0, saldo: Math.round(saldo) }]
+  let meses = 0
+  while (saldo > 0.01 && meses < 600) {
+    saldo = taxa > 0 ? saldo * (1 + taxa) - parcela : saldo - parcela
+    meses++
+    const pago = saldo < 0 ? parcela + saldo : parcela
+    totalPago += pago
+    saldo = Math.max(0, saldo)
+    chartData.push({ mes: meses, saldo: Math.round(saldo) })
+    if (saldo === 0) break
+  }
+  return { meses, totalPago: Math.round(totalPago), jurosPagos: Math.round(totalPago - saldo0), parcela, chartData }
+}
+
+function simularMeta(objetivo: number, guarda: number): MetaResult {
+  let poupado = 0
+  const chartData: { mes: number; poupado: number }[] = [{ mes: 0, poupado: 0 }]
+  let meses = 0
+  while (poupado < objetivo && meses < 600) {
+    poupado = Math.min(poupado + guarda, objetivo)
+    meses++
+    chartData.push({ mes: meses, poupado: Math.round(poupado) })
+    if (poupado >= objetivo) break
+  }
+  return { meses, guardaPorMes: guarda, chartData }
+}
+
+const inputSt: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', border: `1px solid ${COR.borda}`,
+  borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none',
+  boxSizing: 'border-box', background: COR.branco, color: COR.texto,
+}
+const labelSt: React.CSSProperties = {
+  display: 'block', fontSize: 11, fontWeight: 600, color: COR.textoSuave,
+  textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 5,
+}
+const card: React.CSSProperties = {
+  background: COR.branco, border: `.5px solid ${COR.borda}`, borderRadius: 12, padding: '20px 22px',
 }
 
 export default function Simulacao() {
-  const { pathname } = useLocation()
-  const { planos, planosReal, setPlanos } = useApp()
+  const navigate       = useNavigate()
+  const isMobile       = useIsMobile()
+  const { setMetaSim } = useApp()
+  const hoje = new Date()
 
-  const anoAtual = new Date().getFullYear()
-  const mesAtual = new Date().getMonth()
+  const [aba, setAba] = useState<'divida' | 'meta'>('divida')
 
-  const [evento, setEvento] = useState<EventoState | null>(null)
-  const [resultado, setResultado] = useState<string | null>(null)
+  // ── Dívida ──────────────────────────────────────────────────────────────
+  const [nomeDivida,  setNomeDivida]  = useState('')
+  const [valorDivida, setValorDivida] = useState('')
+  const [parcelaStr,  setParcelaStr]  = useState('')
+  const [taxaStr,     setTaxaStr]     = useState('')
+  const [resultDiv,   setResultDiv]   = useState<DividaResult | null>(null)
+  const [sliderDiv,   setSliderDiv]   = useState(0)
+  const [visibleD,    setVisibleD]    = useState(false)
 
-  const origAno = planos[anoAtual]
-  const realAno = planosReal[anoAtual]
+  // ── Meta ────────────────────────────────────────────────────────────────
+  const [nomeMeta,    setNomeMeta]    = useState('')
+  const [valorMeta,   setValorMeta]   = useState('')
+  const [guardaStr,   setGuardaStr]   = useState('')
+  const [resultMeta,  setResultMeta]  = useState<MetaResult | null>(null)
+  const [sliderMeta,  setSliderMeta]  = useState(0)
+  const [visibleM,    setVisibleM]    = useState(false)
+  const [metaSalva,   setMetaSalva]   = useState(false)
 
-  const catList: PlanoCat[] = (() => {
-    if (!evento) return []
-    const fromReal = evento.catTipo === 'entrada' ? realAno?.entradas : realAno?.saidas
-    if (fromReal && fromReal.length > 0) return fromReal
-    return (evento.catTipo === 'entrada' ? origAno?.entradas : origAno?.saidas) ?? []
-  })()
-
-  const catSource    = catList.find(c => c.nome === evento?.catNome)
-  const valorExiste  = catSource?.v[evento?.mesInicio ?? 0] ?? 0
-  const adicional    = parseFloat(evento?.novoValor ?? '') || 0
-  const ehEncerr     = evento?.tipo === 'encerramento'
-  const ehAjuste     = evento?.tipo === 'ajuste'
-  const podeAplicar  = !!evento?.catNome && (ehEncerr || !!evento?.novoValor)
-
-  function aplicarEvento() {
-    if (!evento?.catNome) return
-    const { tipo, mesInicio, catTipo, catNome, novoValor } = evento
-    const delta = parseFloat(novoValor) || 0
-
-    setPlanos(prev => {
-      const planoAno = prev[anoAtual]
-      if (!planoAno) return prev
-      const applyList = (list: PlanoCat[]) => list.map(c =>
-        c.nome !== catNome ? c : {
-          ...c,
-          v: c.v.map((v, mi) => mi < mesInicio ? v : tipo === 'encerramento' ? 0 : v + delta),
-        }
-      )
-      return {
-        ...prev,
-        [anoAtual]: {
-          ...planoAno,
-          entradas: catTipo === 'entrada' ? applyList(planoAno.entradas) : planoAno.entradas,
-          saidas:   catTipo === 'saida'   ? applyList(planoAno.saidas)   : planoAno.saidas,
-        },
-      }
-    })
-
-    const info = TIPO_INFO[evento.tipo] ?? { emoji:'⚡', label:'Evento' }
-    setResultado(`${info.emoji} ${info.label} aplicado em "${catNome}" a partir de ${MESES_FULL[mesInicio]}`)
-    setEvento(null)
+  // ── Simular dívida ──────────────────────────────────────────────────────
+  function simDiv() {
+    const saldo   = parseBRL(valorDivida)
+    const parcela = parseBRL(parcelaStr)
+    const taxa    = taxaStr ? parseFloat(taxaStr.replace(',', '.')) / 100 : 0
+    if (!saldo || !parcela) return
+    if (taxa > 0 && parcela <= saldo * taxa) {
+      alert('A parcela é menor que os juros mensais — a dívida nunca seria quitada com esses dados.')
+      return
+    }
+    setResultDiv(simularDivida(saldo, parcela, taxa))
+    setSliderDiv(0); setVisibleD(false)
+    setTimeout(() => setVisibleD(true), 20)
   }
 
+  const resultDivSlider = useMemo(() => {
+    if (!resultDiv || sliderDiv === 0) return null
+    const taxa = taxaStr ? parseFloat(taxaStr.replace(',', '.')) / 100 : 0
+    return simularDivida(parseBRL(valorDivida), resultDiv.parcela + sliderDiv, taxa)
+  }, [resultDiv, sliderDiv, valorDivida, taxaStr])
+
+  // ── Simular meta ────────────────────────────────────────────────────────
+  function simMeta() {
+    const objetivo = parseBRL(valorMeta)
+    const guarda   = parseBRL(guardaStr)
+    if (!objetivo || !guarda) return
+    setResultMeta(simularMeta(objetivo, guarda))
+    setSliderMeta(0); setVisibleM(false); setMetaSalva(false)
+    setTimeout(() => setVisibleM(true), 20)
+  }
+
+  const resultMetaSlider = useMemo(() => {
+    if (!resultMeta || sliderMeta === 0) return null
+    return simularMeta(parseBRL(valorMeta), resultMeta.guardaPorMes + sliderMeta)
+  }, [resultMeta, sliderMeta, valorMeta])
+
+  function salvarMeta() {
+    if (!resultMeta) return
+    const meta: MetaSim = {
+      nome: nomeMeta || 'Minha meta',
+      objetivo: parseBRL(valorMeta),
+      guardaPorMes: resultMeta.guardaPorMes,
+      iniciadoEm: new Date().toISOString(),
+    }
+    setMetaSim(meta); setMetaSalva(true)
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:'100vh', background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif" }}>
-      <AppHeader currentPath={pathname} />
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+      <AppHeader currentPath="/simulacao" />
 
-      <div style={{ maxWidth:640, margin:'0 auto', padding:'32px 24px' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px' }}>
 
-        {/* Título */}
-        <div style={{ marginBottom:24 }}>
-          <h1 style={{ fontSize:22, fontWeight:700, color:COR.texto, margin:'0 0 4px' }}>Simulação</h1>
-          <p style={{ fontSize:13, color:COR.textoSuave, margin:0 }}>
-            Simule o impacto de eventos no seu planejamento financeiro.
+        {/* Cabeçalho */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, color: COR.textoMuted, marginBottom: 4 }}>MEU PLANO</div>
+          <h1 style={{ fontSize: isMobile ? 20 : 25, fontWeight: 800, color: COR.texto, margin: 0 }}>
+            🔮 Simulador financeiro
+          </h1>
+          <p style={{ fontSize: 13, color: COR.textoSuave, margin: '5px 0 0', lineHeight: 1.5 }}>
+            Descubra em quanto tempo você quita uma dívida ou alcança um objetivo
           </p>
         </div>
 
-        {/* Card Evento de Vida */}
-        <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:16,
-          padding:24, boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
-
-          {/* Cabeçalho do card */}
-          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: evento ? 20 : 0 }}>
-            <div style={{ width:40, height:40, borderRadius:12, background:'#fef3c7',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
-              ⚡
-            </div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>Evento de Vida</div>
-              <div style={{ fontSize:12, color:COR.textoSuave }}>
-                {evento
-                  ? `Passo ${evento.step} de 2 · ${evento.step === 1 ? 'Tipo e início' : 'Categoria e valor'}`
-                  : 'Nova renda, novo gasto, encerramento ou ajuste de valor'}
-              </div>
-            </div>
-            {!evento && (
-              <button onClick={() => { setResultado(null); setEvento({ step:1, tipo:'', mesInicio:mesAtual, catTipo:'entrada', catNome:'', novoValor:'' }) }}
-                style={{ padding:'8px 16px', border:'none', borderRadius:9, cursor:'pointer',
-                  fontFamily:'inherit', fontSize:13, fontWeight:600, color:'#fff',
-                  background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` }}>
-                + Criar evento
-              </button>
-            )}
-            {evento && (
-              <button onClick={() => setEvento(null)}
-                style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:22, color:COR.textoSuave, lineHeight:1, padding:'0 2px' }}>
-                ×
-              </button>
-            )}
-          </div>
-
-          {/* ── PASSO 1 ── */}
-          {evento?.step === 1 && (
-            <>
-              <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>
-                Tipo do evento
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:20 }}>
-                {EVENTOS.map(ev => (
-                  <button key={ev.id}
-                    onClick={() => setEvento(prev => prev ? { ...prev, tipo:ev.id, catTipo:ev.catTipo, catNome:'' } : prev)}
-                    style={{ padding:'12px', borderRadius:10,
-                      border:`2px solid ${evento.tipo === ev.id ? COR.azul : COR.borda}`,
-                      cursor:'pointer', textAlign:'left', fontFamily:'inherit', transition:'all .15s',
-                      background: evento.tipo === ev.id ? '#eff6ff' : COR.branco }}>
-                    <div style={{ fontSize:20, marginBottom:4 }}>{ev.emoji}</div>
-                    <div style={{ fontSize:12, fontWeight:700, color:COR.texto }}>{ev.label}</div>
-                    <div style={{ fontSize:11, color:COR.textoSuave }}>{ev.desc}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>
-                A partir de qual mês?
-              </div>
-              <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:20 }}>
-                {MESES.map((mes, mi) => (
-                  <button key={mi} disabled={mi < mesAtual}
-                    onClick={() => mi >= mesAtual && setEvento(prev => prev ? { ...prev, mesInicio:mi } : prev)}
-                    style={{ padding:'4px 10px', borderRadius:6,
-                      cursor: mi < mesAtual ? 'default' : 'pointer',
-                      border:`1px solid ${evento.mesInicio === mi ? COR.azul : COR.borda}`,
-                      fontSize:11, fontWeight:600, fontFamily:'inherit',
-                      background: evento.mesInicio === mi ? '#eff6ff' : mi < mesAtual ? '#f8fafc' : COR.branco,
-                      color: evento.mesInicio === mi ? COR.azul : mi < mesAtual ? '#cbd5e1' : COR.texto }}>
-                    {mes}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={() => setEvento(null)}
-                  style={{ flex:1, padding:'10px 0', border:`1px solid ${COR.borda}`, borderRadius:9,
-                    fontSize:13, fontWeight:600, color:COR.textoSuave, fontFamily:'inherit',
-                    cursor:'pointer', background:COR.branco }}>
-                  Cancelar
-                </button>
-                <button disabled={!evento.tipo}
-                  onClick={() => evento.tipo && setEvento(prev => prev ? { ...prev, step:2 } : prev)}
-                  style={{ flex:2, padding:'10px 0', border:'none', borderRadius:9,
-                    fontSize:13, fontWeight:600, color:'#fff', fontFamily:'inherit',
-                    cursor: evento.tipo ? 'pointer' : 'default',
-                    background: evento.tipo ? `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})` : '#cbd5e1' }}>
-                  Próximo →
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ── PASSO 2 ── */}
-          {evento?.step === 2 && (() => {
-            const info = TIPO_INFO[evento.tipo] ?? { emoji:'⚡', label:'Evento' }
-            return (
-              <>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
-                  <span style={{ fontSize:18 }}>{info.emoji}</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:COR.texto }}>{info.label}</span>
-                  <span style={{ fontSize:12, color:COR.textoSuave }}>· a partir de {MESES_FULL[evento.mesInicio]}</span>
-                </div>
-
-                {/* Toggle entrada / saída */}
-                <div style={{ display:'flex', gap:6, marginBottom:14 }}>
-                  {(['entrada','saida'] as const).map(t => (
-                    <button key={t}
-                      onClick={() => setEvento(prev => prev ? { ...prev, catTipo:t, catNome:'', novoValor:'' } : prev)}
-                      style={{ flex:1, padding:'6px 0', borderRadius:7, cursor:'pointer',
-                        fontSize:12, fontWeight:600, fontFamily:'inherit',
-                        border:`1px solid ${evento.catTipo === t ? COR.azul : COR.borda}`,
-                        background: evento.catTipo === t ? '#eff6ff' : COR.branco,
-                        color: evento.catTipo === t ? COR.azul : COR.textoSuave }}>
-                      {t === 'entrada' ? '↑ Entrada' : '↓ Saída'}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Categoria */}
-                <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
-                  Categoria
-                </div>
-                <select value={evento.catNome}
-                  onChange={e => setEvento(prev => prev ? { ...prev, catNome:e.target.value, novoValor:'' } : prev)}
-                  style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1px solid ${COR.borda}`,
-                    fontSize:13, fontFamily:'inherit', marginBottom:14, outline:'none',
-                    background:COR.branco, color:COR.texto }}>
-                  <option value="">Selecione uma categoria...</option>
-                  {catList.map(c => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
-                </select>
-
-                {/* Valor atual */}
-                {evento.catNome && !ehEncerr && (
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                    background:'#f8fafc', borderRadius:8, padding:'8px 12px', marginBottom:14, fontSize:12 }}>
-                    <span style={{ color:COR.textoSuave }}>Valor atual em {MESES_FULL[evento.mesInicio]}</span>
-                    <span style={{ fontWeight:700, color:COR.texto }}>
-                      {valorExiste.toLocaleString('pt-BR',{ style:'currency', currency:'BRL' })}
-                    </span>
-                  </div>
-                )}
-
-                {/* Campo valor */}
-                {!ehEncerr && (
-                  <>
-                    <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
-                      {ehAjuste ? 'Valor do ajuste' : 'Valor mensal'}
-                    </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom: evento.catNome && adicional ? 8 : 20 }}>
-                      <span style={{ fontSize:14, color:COR.textoSuave, flexShrink:0 }}>R$</span>
-                      <input type="number" value={evento.novoValor} placeholder="0,00"
-                        onChange={e => setEvento(prev => prev ? { ...prev, novoValor:e.target.value } : prev)}
-                        style={{ flex:1, padding:'8px 10px', borderRadius:8, border:`1px solid ${COR.borda}`,
-                          fontSize:14, fontFamily:'inherit', outline:'none' }}/>
-                    </div>
-                    {evento.catNome && adicional !== 0 && (
-                      <div style={{ fontSize:12, color:'#166534', marginBottom:20,
-                        background:'#f0fdf4', borderRadius:8, padding:'8px 12px', border:'1px solid #bbf7d0' }}>
-                        {ehAjuste
-                          ? <>Será aplicado <strong>{adicional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong> a partir de {MESES_FULL[evento.mesInicio]}</>
-                          : <>Novo total: <strong>{(valorExiste + adicional).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong> a partir de {MESES_FULL[evento.mesInicio]}</>
-                        }
-                      </div>
-                    )}
-                    {(!evento.catNome || adicional === 0) && <div style={{ height:20 }} />}
-                  </>
-                )}
-
-                {/* Aviso encerramento */}
-                {ehEncerr && evento.catNome && (
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20,
-                    background:'#fff5f5', borderRadius:8, padding:'10px 12px', border:'1px solid #fecaca' }}>
-                    <span style={{ fontSize:16 }}>⚠️</span>
-                    <span style={{ fontSize:12, color:COR.vermelho, fontWeight:600 }}>
-                      O valor desta categoria será zerado a partir de {MESES_FULL[evento.mesInicio]}
-                    </span>
-                  </div>
-                )}
-                {ehEncerr && !evento.catNome && <div style={{ height:20 }} />}
-
-                <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={() => setEvento(prev => prev ? { ...prev, step:1 } : prev)}
-                    style={{ flex:1, padding:'10px 0', border:`1px solid ${COR.borda}`, borderRadius:9,
-                      fontSize:13, fontWeight:600, color:COR.textoSuave, fontFamily:'inherit',
-                      cursor:'pointer', background:COR.branco }}>
-                    ← Voltar
-                  </button>
-                  <button disabled={!podeAplicar} onClick={aplicarEvento}
-                    style={{ flex:2, padding:'10px 0', border:'none', borderRadius:9,
-                      fontSize:13, fontWeight:600, color:'#fff', fontFamily:'inherit',
-                      cursor: podeAplicar ? 'pointer' : 'default',
-                      background: podeAplicar
-                        ? `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`
-                        : '#cbd5e1' }}>
-                    ✓ Aplicar ao planejamento
-                  </button>
-                </div>
-              </>
-            )
-          })()}
+        {/* Abas */}
+        <div style={{ display: 'flex', borderBottom: `1px solid ${COR.borda}`, marginBottom: 24 }}>
+          {([['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setAba(v)} style={{
+              padding: '10px 20px', border: 'none', fontFamily: 'inherit',
+              borderBottom: `2px solid ${aba === v ? COR.azul : 'transparent'}`,
+              background: 'transparent', cursor: 'pointer', fontSize: 13,
+              fontWeight: aba === v ? 700 : 500,
+              color: aba === v ? COR.azul : COR.textoSuave, transition: 'all .15s',
+            }}>{l}</button>
+          ))}
         </div>
 
-        {/* Resultado */}
-        {resultado && (
-          <div style={{ marginTop:16, background:'#f0fdf4', border:'1px solid #bbf7d0',
-            borderRadius:10, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
-            <span style={{ fontSize:13, fontWeight:600, color:COR.verde, flex:1 }}>{resultado}</span>
-            <button onClick={() => { setResultado(null); setEvento({ step:1, tipo:'', mesInicio:mesAtual, catTipo:'entrada', catNome:'', novoValor:'' }) }}
-              style={{ padding:'6px 12px', border:`1px solid ${COR.verde}`, borderRadius:7, cursor:'pointer',
-                fontFamily:'inherit', fontSize:11, fontWeight:600, color:COR.verde, background:'transparent',
-                whiteSpace:'nowrap' }}>
-              + Outro evento
-            </button>
-            <button onClick={() => setResultado(null)}
-              style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:20, color:COR.verde, lineHeight:1, padding:'0 2px' }}>
-              ×
-            </button>
+        {/* ═══════════════ ABA DÍVIDA ═══════════════ */}
+        {aba === 'divida' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            <div style={card}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 16 }}>Dados da dívida</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelSt}>Nome da dívida</label>
+                  <input value={nomeDivida} onChange={e => setNomeDivida(e.target.value)}
+                    placeholder="Ex: Cartão Nubank, Empréstimo..." style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Valor total (R$)</label>
+                  <input value={valorDivida} onChange={e => setValorDivida(e.target.value)}
+                    placeholder="R$ 10.000,00" style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Parcela mensal atual (R$)</label>
+                  <input value={parcelaStr} onChange={e => setParcelaStr(e.target.value)}
+                    placeholder="R$ 500,00" style={inputSt} />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelSt}>
+                    Taxa de juros mensal (%) <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— opcional</span>
+                  </label>
+                  <input value={taxaStr} onChange={e => setTaxaStr(e.target.value)}
+                    placeholder="Ex: 2,5 — deixe em branco se não souber" style={inputSt} />
+                  <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 4 }}>
+                    Não sabe? Deixe em branco e usamos só o valor total.
+                  </div>
+                </div>
+              </div>
+              <button onClick={simDiv} style={{
+                marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 9,
+                background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Simular →</button>
+            </div>
+
+            {resultDiv && (
+              <div style={{ opacity: visibleD ? 1 : 0, transition: 'opacity .4s', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                {/* Resultado principal */}
+                <div style={{ ...card, borderLeft: `4px solid ${COR.vermelho}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.vermelho, marginBottom: 10 }}>
+                    {nomeDivida || 'Sua dívida'}
+                  </div>
+                  <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, color: COR.texto, lineHeight: 1.4 }}>
+                    Pagando {fmt(resultDiv.parcela)}/mês, você quita em{' '}
+                    <span style={{ color: COR.vermelho }}>{resultDiv.meses} meses</span>{' '}
+                    ({addMeses(hoje, resultDiv.meses)})
+                  </div>
+                  <div style={{ display: 'flex', gap: 24, marginTop: 14, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: COR.textoMuted }}>Total pago</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto }}>{fmt(resultDiv.totalPago)}</div>
+                    </div>
+                    {resultDiv.jurosPagos > 0 && (
+                      <div>
+                        <div style={{ fontSize: 11, color: COR.textoMuted }}>Juros pagos</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: COR.vermelho }}>{fmt(resultDiv.jurosPagos)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Gráfico */}
+                <div style={card}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 14 }}>Saldo devedor ao longo do tempo</div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={resultDiv.chartData} margin={{ top: 4, right: 8, left: -20, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="mes" tick={{ fontSize: 10 }} label={{ value: 'Meses', position: 'insideBottom', offset: -4, fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(v: number) => [fmt(v), 'Saldo']} labelFormatter={v => `Mês ${v}`} />
+                      <Line type="monotone" dataKey="saldo" stroke={COR.vermelho} strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Slider */}
+                <div style={card}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>E se eu pagasse mais?</div>
+                  <div style={{ fontSize: 12, color: COR.textoMuted, marginBottom: 14 }}>Arraste para ver quanto tempo você economiza</div>
+                  <input type="range" min={0} max={Math.round(resultDiv.parcela)} step={50}
+                    value={sliderDiv} onChange={e => setSliderDiv(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: COR.vermelho }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginTop: 4, marginBottom: 14 }}>
+                    <span>{fmt(resultDiv.parcela)} (atual)</span>
+                    <span>{fmt(resultDiv.parcela * 2)} (2×)</span>
+                  </div>
+                  {sliderDiv > 0 && resultDivSlider && (
+                    <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: COR.vermelho, marginBottom: 4 }}>
+                        Pagando {fmt(resultDiv.parcela + sliderDiv)}/mês (+{fmt(sliderDiv)})
+                      </div>
+                      <div style={{ fontSize: 13, color: COR.texto }}>
+                        Você quita em <strong>{resultDivSlider.meses} meses</strong> ({addMeses(hoje, resultDivSlider.meses)})
+                      </div>
+                      {resultDiv.meses - resultDivSlider.meses > 0 && (
+                        <div style={{ fontSize: 12, color: COR.verde, marginTop: 6, fontWeight: 600 }}>
+                          ✓ Economiza {resultDiv.meses - resultDivSlider.meses} meses
+                          {resultDiv.totalPago - resultDivSlider.totalPago > 0 && ` e ${fmt(resultDiv.totalPago - resultDivSlider.totalPago)}`}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+        {/* ═══════════════ ABA META ═══════════════ */}
+        {aba === 'meta' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            <div style={card}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 16 }}>Dados do objetivo</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={labelSt}>Nome do objetivo</label>
+                  <input value={nomeMeta} onChange={e => setNomeMeta(e.target.value)}
+                    placeholder="Ex: Viagem, Reserva de emergência..." style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Valor total (R$)</label>
+                  <input value={valorMeta} onChange={e => setValorMeta(e.target.value)}
+                    placeholder="R$ 20.000,00" style={inputSt} />
+                </div>
+                <div>
+                  <label style={labelSt}>Quanto pode guardar por mês (R$)</label>
+                  <input value={guardaStr} onChange={e => setGuardaStr(e.target.value)}
+                    placeholder="R$ 800,00" style={inputSt} />
+                </div>
+              </div>
+              <button onClick={simMeta} style={{
+                marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 9,
+                background: `linear-gradient(135deg,${COR.verde},#15803d)`,
+                color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Simular →</button>
+            </div>
+
+            {resultMeta && (
+              <div style={{ opacity: visibleM ? 1 : 0, transition: 'opacity .4s', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                {/* Resultado principal */}
+                <div style={{ ...card, borderLeft: `4px solid ${COR.verde}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.verde, marginBottom: 10 }}>
+                    {nomeMeta || 'Seu objetivo'}
+                  </div>
+                  <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, color: COR.texto, lineHeight: 1.4 }}>
+                    Guardando {fmt(resultMeta.guardaPorMes)}/mês, você alcança em{' '}
+                    <span style={{ color: COR.verde }}>{resultMeta.meses} meses</span>{' '}
+                    ({addMeses(hoje, resultMeta.meses)})
+                  </div>
+                  <div style={{ margin: '14px 0 4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginBottom: 5 }}>
+                      <span>R$ 0</span><span>{fmt(parseBRL(valorMeta))}</span>
+                    </div>
+                    <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: 8, borderRadius: 4, background: COR.verde, width: '100%', opacity: 0.18 }}/>
+                    </div>
+                    <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 5, textAlign: 'center' }}>
+                      Progresso estimado ao completar os {resultMeta.meses} meses
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gráfico */}
+                <div style={card}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 14 }}>Evolução da poupança</div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={resultMeta.chartData} margin={{ top: 4, right: 8, left: -20, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="mes" tick={{ fontSize: 10 }} label={{ value: 'Meses', position: 'insideBottom', offset: -4, fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(v: number) => [fmt(v), 'Poupado']} labelFormatter={v => `Mês ${v}`} />
+                      <Line type="monotone" dataKey="poupado" stroke={COR.verde} strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Slider */}
+                <div style={card}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>E se eu guardasse mais?</div>
+                  <div style={{ fontSize: 12, color: COR.textoMuted, marginBottom: 14 }}>Arraste para ver como acelera seu objetivo</div>
+                  <input type="range" min={0} max={Math.round(resultMeta.guardaPorMes)} step={50}
+                    value={sliderMeta} onChange={e => setSliderMeta(Number(e.target.value))}
+                    style={{ width: '100%', accentColor: COR.verde }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginTop: 4, marginBottom: 14 }}>
+                    <span>{fmt(resultMeta.guardaPorMes)} (atual)</span>
+                    <span>{fmt(resultMeta.guardaPorMes * 2)} (2×)</span>
+                  </div>
+                  {sliderMeta > 0 && resultMetaSlider && (
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: COR.verde, marginBottom: 4 }}>
+                        Guardando {fmt(resultMeta.guardaPorMes + sliderMeta)}/mês (+{fmt(sliderMeta)})
+                      </div>
+                      <div style={{ fontSize: 13, color: COR.texto }}>
+                        Você alcança em <strong>{resultMetaSlider.meses} meses</strong> ({addMeses(hoje, resultMetaSlider.meses)})
+                      </div>
+                      {resultMeta.meses - resultMetaSlider.meses > 0 && (
+                        <div style={{ fontSize: 12, color: COR.verde, marginTop: 6, fontWeight: 600 }}>
+                          ✓ Chega {resultMeta.meses - resultMetaSlider.meses} meses antes
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Adicionar ao Dashboard */}
+                <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: COR.verde, marginBottom: 4 }}>
+                        🐷 Acompanhar no Dashboard
+                      </div>
+                      <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.5 }}>
+                        Salve esta meta para ver o progresso direto no início
+                      </div>
+                    </div>
+                    {metaSalva ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: COR.verde }}>✓ Meta salva!</span>
+                        <button onClick={() => navigate('/dashboard')} style={{
+                          padding: '7px 14px', border: 'none', borderRadius: 8,
+                          background: COR.verde, color: '#fff', fontSize: 12, fontWeight: 600,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                        }}>Ver no Dashboard →</button>
+                      </div>
+                    ) : (
+                      <button onClick={salvarMeta} style={{
+                        padding: '10px 20px', border: 'none', borderRadius: 9,
+                        background: COR.verde, color: '#fff', fontSize: 13, fontWeight: 700,
+                        cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      }}>Adicionar ao Dashboard →</button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
+      <style>{`
+        input[type=range] { cursor: pointer; }
+        input:focus { outline: 2px solid ${COR.azul}; outline-offset: 1px; }
+      `}</style>
     </div>
   )
 }

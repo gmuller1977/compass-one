@@ -34,17 +34,17 @@ type CompassStatus = 'verde' | 'amarelo' | 'vermelho' | 'sem-plano' | 'sem-dados
 const COMPASS_CFG: Record<CompassStatus, {
   bg: string; border: string; cor: string; icon: string; title: string; msg: (s: number, e: number) => string
 }> = {
-  verde:     { bg: '#f0fdf4', border: '#86efac', cor: '#16a34a', icon: '🧭', title: 'Você está no caminho certo!',          msg: (s) => `Sobrou ${fmt(s)} este mês.` },
-  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#d97706', icon: '⚠️', title: 'Atenção!',                             msg: () => 'Seus gastos estão perto do limite planejado.' },
-  vermelho:  { bg: '#fff1f2', border: '#fecdd3', cor: '#dc2626', icon: '🔴', title: 'Fora do rumo.',                        msg: (_s, e) => `Você já gastou ${fmt(e)} a mais do que planejou.` },
-  'sem-plano': { bg: '#f0f4ff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem planejamento ainda',             msg: () => 'Monte seu plano para eu poder te guiar.' },
-  'sem-dados': { bg: COR.fundo,  border: COR.borda,  cor: COR.textoSuave, icon: '📊', title: 'Sem lançamentos este mês',   msg: () => 'Registre seus primeiros gastos para eu mostrar sua direção.' },
+  verde:     { bg: '#f0fdf4', border: '#86efac', cor: '#16a34a', icon: '🧭', title: 'Você está no caminho certo!',          msg: (s) => `No caminho certo. Resultado positivo de +${fmt(s)} este mês.` },
+  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#d97706', icon: '⚠️', title: 'Atenção!',                             msg: () => 'Atenção. Suas despesas estão perto do limite planejado para este mês.' },
+  vermelho:  { bg: '#fff1f2', border: '#fecdd3', cor: '#dc2626', icon: '🔴', title: 'Fora do rumo.',                        msg: (_s, e) => `Acima do planejado. Despesas ultrapassaram o previsto em ${fmt(e)}.` },
+  'sem-plano': { bg: '#f0f4ff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem planejamento ainda',             msg: () => 'Crie seu planejamento para ativar a bússola e acompanhar seu progresso.' },
+  'sem-dados': { bg: COR.fundo,  border: COR.borda,  cor: COR.textoSuave, icon: '📊', title: 'Sem movimentação',           msg: () => 'Sem movimentação este mês. Registre sua primeira despesa ou receita para ativar a bússola.' },
 }
 
 export default function Dashboard() {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
-  const { contas, categorias, extratoData, planos, perfil, user } = useApp()
+  const { contas, categorias, extratoData, planos, perfil, user, objetivoUsuario, metaSim } = useApp()
 
   const hoje = new Date()
   const [viewMes, setViewMes] = useState(hoje.getMonth())
@@ -291,6 +291,23 @@ export default function Dashboard() {
             <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
               {cc.msg(sobrou, excedeu)}
             </div>
+            {objetivoUsuario && (
+              <div style={{ marginTop: 8, fontSize: 12, color: cc.cor, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span>🎯 Seu objetivo: {
+                  objetivoUsuario === 'controlar' ? 'Controlar meus gastos' :
+                  objetivoUsuario === 'economizar' ? 'Economizar e poupar' :
+                  objetivoUsuario === 'sonho' ? 'Realizar um sonho' :
+                  objetivoUsuario === 'dividas' ? 'Sair das dívidas' : objetivoUsuario
+                }</span>
+                {objetivoUsuario === 'dividas' && (
+                  <button onClick={() => navigate('/simulacao')} style={{
+                    background: 'transparent', border: `1px solid ${cc.cor}`, color: cc.cor,
+                    borderRadius: 6, padding: '2px 8px', fontSize: 11, cursor: 'pointer',
+                    fontFamily: 'inherit', fontWeight: 600,
+                  }}>Usar simulador →</button>
+                )}
+              </div>
+            )}
           </div>
           {compassStatus === 'sem-plano' && (
             <button
@@ -312,21 +329,21 @@ export default function Dashboard() {
         }}>
           {[
             {
-              label: 'Quanto tenho',
+              label: 'Meu saldo',
               hint:  'Saldo de todas as contas',
               valor: saldoDisponivel,
               cor:   saldoDisponivel < 0 ? COR.vermelho : COR.azul,
               icone: '◎',
             },
             {
-              label: 'Quanto entrou',
+              label: 'Receitas do mês',
               hint:  'Salário + extras',
               valor: totalEntradas,
               cor:   COR.verde,
               icone: '↑',
             },
             {
-              label: 'Quanto gastei',
+              label: 'Despesas do mês',
               hint:  percGastei !== null ? `${percGastei}% do planejado` : 'Gastos do mês',
               valor: totalSaidas,
               cor:   COR.vermelho,
@@ -353,6 +370,46 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* ── Card meta de poupança ── */}
+        {metaSim && (() => {
+          const hoje2 = new Date()
+          const inicio = new Date(metaSim.iniciadoEm)
+          const mesesPassados = (hoje2.getFullYear() - inicio.getFullYear()) * 12 + (hoje2.getMonth() - inicio.getMonth())
+          const guardadoEstimado = Math.min(metaSim.guardaPorMes * mesesPassados, metaSim.objetivo)
+          const perc = Math.round((guardadoEstimado / metaSim.objetivo) * 100)
+          const mesesRestantes = Math.ceil((metaSim.objetivo - guardadoEstimado) / metaSim.guardaPorMes)
+          const chegada = new Date(hoje2.getFullYear(), hoje2.getMonth() + mesesRestantes, 1)
+          const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+          return (
+          <div style={{
+            background: COR.branco, border: `.5px solid ${COR.borda}`, borderRadius: 12,
+            padding: '18px 20px', marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 16, flexWrap: isMobile ? 'wrap' : 'nowrap',
+          }}>
+            <div style={{ fontSize: 32, flexShrink: 0 }}>🐷</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 6 }}>
+                {metaSim.nome}
+              </div>
+              <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 4 }}>
+                <div style={{ height: 6, borderRadius: 3, background: COR.verde, width: `${perc}%`, transition: 'width .4s' }}/>
+              </div>
+              <div style={{ fontSize: 11, color: COR.textoMuted }}>
+                {fmt(guardadoEstimado)} de {fmt(metaSim.objetivo)} ({perc}%)
+              </div>
+            </div>
+            <div style={{ flexShrink: 0, textAlign: 'right' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: COR.verde }}>
+                No ritmo atual:
+              </div>
+              <div style={{ fontSize: 11, color: COR.textoMuted }}>
+                {MESES[chegada.getMonth()]} {chegada.getFullYear()}
+              </div>
+            </div>
+          </div>
+          )
+        })()}
+
         {/* ── 2-col grid ── */}
         <div style={{
           display: 'grid',
@@ -367,7 +424,7 @@ export default function Dashboard() {
               padding: '18px 20px', border: `.5px solid ${COR.borda}`,
             }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto, marginBottom: 18 }}>
-                Onde mais gastei
+                Maiores despesas
               </div>
               {topCategorias.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -425,7 +482,7 @@ export default function Dashboard() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
             }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Últimos lançamentos</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Últimas movimentações</div>
               <button onClick={() => navigate('/novo-lancamento')} style={{
                 border: 'none', background: 'transparent', color: COR.azul,
                 fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,

@@ -43,6 +43,13 @@ export type Categoria = {
 export type PlanoCat     = { id?: string; nome: string; t?: string; v: number[] }
 export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number; mesInicio?: number }
 
+export type MetaSim = {
+  nome: string
+  objetivo: number
+  guardaPorMes: number
+  iniciadoEm: string
+}
+
 export type Lancamento = {
   id: string; tipo: TipoLanc
   descricao: string; categoria: string
@@ -88,6 +95,10 @@ type AppCtx = {
   setPerfil: (v: Perfil) => void
   onboardingCompleto: boolean
   setOnboardingCompleto: (v: boolean) => void
+  objetivoUsuario: string
+  setObjetivoUsuario: (v: string) => void
+  metaSim: MetaSim | null
+  setMetaSim: (v: MetaSim | null) => void
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
   excluirConta: () => Promise<{ error?: string }>
@@ -221,6 +232,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
   const [perfil,              setPerfilState]              = useState<Perfil>({ nome: '', apelido: '' })
   const [onboardingCompleto,  setOnboardingCompletoState]  = useState(false)
+  const [objetivoUsuario,     setObjetivoUsuarioState]     = useState('')
+  const [metaSim,             setMetaSimState]             = useState<MetaSim | null>(null)
 
   // ── Auth ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -303,6 +316,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOnboardingCompletoState(pref?.onboarding_completo ?? hasData)
     setPlanejamentoLockadoState(pref?.planejamento_lockado ?? false)
     setDesvioMinPercState(Number(pref?.desvio_min_perc ?? 10))
+    setObjetivoUsuarioState(pref?.objetivo_usuario ?? '')
+    setMetaSimState(pref?.meta_simulacao ?? null)
 
     // Extrato — filtra contas excluídas
     const extratoLoaded: Record<string, DadosMes> = {}
@@ -443,7 +458,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveUserPrefs(
-    p: Perfil, oc: boolean, pl: boolean, dmp: number
+    p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null
   ) {
     if (!canSave()) return
     const uid = userIdRef.current!
@@ -454,6 +469,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       onboarding_completo: oc,
       planejamento_lockado: pl,
       desvio_min_perc: dmp,
+      objetivo_usuario: ou || null,
+      meta_simulacao: ms ?? null,
       atualizado_em: new Date().toISOString(),
     })
     if (error) console.error('save user_preferences:', error)
@@ -467,8 +484,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { savePlanosData(planos, 'previsto') }, [planos])       // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { savePlanosData(planosReal, 'real') }, [planosReal])   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc)
-  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc]) // eslint-disable-line react-hooks/exhaustive-deps
+    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim)
+  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -496,6 +513,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
   function setPerfil(v: Perfil) { setPerfilState(v) }
   function setOnboardingCompleto(v: boolean) { setOnboardingCompletoState(v) }
+  function setObjetivoUsuario(v: string) { setObjetivoUsuarioState(v) }
+  function setMetaSim(v: MetaSim | null) { setMetaSimState(v) }
 
   async function limparDados() {
     const uid = userIdRef.current
@@ -521,7 +540,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveFaturaData(faturaData),
         savePlanosData(planos, 'previsto'),
         savePlanosData(planosReal, 'real'),
-        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc),
+        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim),
       ])
     }
     await supabase.auth.signOut()
@@ -546,6 +565,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado,
       setDesvioMinPerc, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
+      objetivoUsuario, setObjetivoUsuario,
+      metaSim, setMetaSim,
       limparDados, sairDaConta, excluirConta,
     }}>
       {children}

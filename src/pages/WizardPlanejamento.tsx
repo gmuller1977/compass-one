@@ -63,7 +63,7 @@ export default function WizardPlanejamento() {
   const navigate = useNavigate()
   const location = useLocation()
   const refazer  = (location.state as { refazer?: boolean } | null)?.refazer === true
-  const { contas, categorias, planos, setPlanos, setOnboardingCompleto, onboardingCompleto } = useApp()
+  const { contas, categorias, planos, setPlanos, setOnboardingCompleto, onboardingCompleto, setObjetivoUsuario } = useApp()
 
   const contasBanco  = useMemo(() => contas.filter(c => c.tipo !== 'cartao'), [contas])
   const cartaoNomes  = useMemo(() => new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())), [contas])
@@ -124,6 +124,7 @@ export default function WizardPlanejamento() {
       })),
     }
     setPlanos(prev => ({ ...prev, [ANO]: novoPlano }))
+    setObjetivoUsuario(objetivo)
     if (!onboardingCompleto) setOnboardingCompleto(true)
     navigate('/planejamento', { replace: true })
   }
@@ -324,7 +325,7 @@ export default function WizardPlanejamento() {
       <>
         <div style={{ fontSize:40, textAlign:'center', marginBottom:12 }}>{isEntrada ? '↑' : '↓'}</div>
         <div style={{ fontSize:18, fontWeight:800, color:'#0f172a', textAlign:'center', marginBottom:6 }}>
-          {isEntrada ? 'Suas entradas mensais' : 'Suas saídas mensais'}
+          {isEntrada ? 'Suas receitas mensais' : 'Suas despesas mensais'}
         </div>
         <div style={{ fontSize:13, color:'#64748b', textAlign:'center', lineHeight:1.5, marginBottom:!isEntrada ? 12 : 24 }}>
           Informe o valor mensal de cada categoria. Deixe em branco se não se aplica.

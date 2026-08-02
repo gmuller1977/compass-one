@@ -1131,7 +1131,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               <span style={{ fontSize:16 }}>{isE ? '↑' : '↓'}</span>
               <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const,
                 letterSpacing:'.5px', color: isE ? '#16a34a' : '#dc2626' }}>
-                {isE ? 'Entradas' : 'Saídas'}
+                {isE ? 'Receitas' : 'Despesas'}
               </span>
             </div>
             {items.map(item => {
@@ -1252,8 +1252,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         {/* RESUMO STRIP */}
         <div style={{ background:'#fff', borderBottom:'1px solid #e2e8f0', padding:'10px 16px', display:'flex', flexShrink:0 }}>
           {([
-            { label:'Entradas', val: te, color:'#16a34a' },
-            { label:'Saídas',   val: ts, color:'#dc2626' },
+            { label:'Receitas', val: te, color:'#16a34a' },
+            { label:'Despesas', val: ts, color:'#dc2626' },
             { label:'Saldo final', val: sf, color: corSaldo(sf) },
           ] as const).map((item, i, arr) => (
             <div key={item.label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, borderRight: i < arr.length-1 ? '1px solid #e2e8f0' : 'none', padding:'0 4px' }}>
@@ -1275,7 +1275,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#f0fdf4', borderBottom: secEntAberto ? '1px solid #dcfce7' : 'none', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <span style={{ fontSize:16 }}>↑</span>
-                <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#16a34a' }}>Entradas</span>
+                <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#16a34a' }}>Receitas</span>
                 <span style={{ fontSize:11, color:'#94a3b8', marginLeft:4, display:'inline-block', transform: secEntAberto ? 'none' : 'rotate(-90deg)', transition:'transform .2s' }}>▾</span>
               </div>
               <span style={{ fontSize:15, fontWeight:800, color:'#16a34a', letterSpacing:'-.3px' }}>{fmt(te, true)}</span>
@@ -1289,7 +1289,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             })}
             {secEntAberto && (
               <div style={{ background:'#f0fdf4', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:12, fontWeight:700, color:'#16a34a' }}>Total Entradas</span>
+                <span style={{ fontSize:12, fontWeight:700, color:'#16a34a' }}>Total receitas</span>
                 <span style={{ fontSize:15, fontWeight:800, color:'#16a34a' }}>{fmt(te, true)}</span>
               </div>
             )}
@@ -1301,7 +1301,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#fff1f2', borderBottom: secSaiAberto ? '1px solid #fecdd3' : 'none', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <span style={{ fontSize:16 }}>↓</span>
-                <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#dc2626' }}>Saídas</span>
+                <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#dc2626' }}>Despesas</span>
                 <span style={{ fontSize:11, color:'#94a3b8', marginLeft:4, display:'inline-block', transform: secSaiAberto ? 'none' : 'rotate(-90deg)', transition:'transform .2s' }}>▾</span>
               </div>
               <span style={{ fontSize:15, fontWeight:800, color:'#dc2626', letterSpacing:'-.3px' }}>{fmt(ts, true)}</span>
@@ -1322,7 +1322,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             })}
             {secSaiAberto && (
               <div style={{ background:'#fff1f2', padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:12, fontWeight:700, color:'#dc2626' }}>Total Saídas</span>
+                <span style={{ fontSize:12, fontWeight:700, color:'#dc2626' }}>Total despesas</span>
                 <span style={{ fontSize:15, fontWeight:800, color:'#dc2626' }}>{fmt(ts, true)}</span>
               </div>
             )}
@@ -1825,8 +1825,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10, marginBottom:12 }}>
                     {([
-                      { label:'Entradas', v:dr.totalPrevE, r:dr.totalRealE, tipo:'e' as const },
-                      { label:'Saídas',   v:dr.totalPrevS, r:dr.totalRealS, tipo:'s' as const },
+                      { label:'Receitas', v:dr.totalPrevE, r:dr.totalRealE, tipo:'e' as const },
+                      { label:'Despesas', v:dr.totalPrevS, r:dr.totalRealS, tipo:'s' as const },
                     ]).map(c => {
                       const desvio  = c.r - c.v
                       const excesso = c.tipo === 's' ? desvio > 0 : desvio < 0
@@ -1849,8 +1849,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       )
                     })}
                   </div>
-                  {tabelaDesvios(dr.entradas, 'entrada', 'Entradas')}
-                  {tabelaDesvios(dr.saidas, 'saida', 'Saídas')}
+                  {tabelaDesvios(dr.entradas, 'entrada', 'Receitas')}
+                  {tabelaDesvios(dr.saidas, 'saida', 'Despesas')}
 
                   {/* ── SEÇÃO 2: Sugestões para meses restantes ── */}
                   {sugestoes.length > 0 && (
@@ -1982,7 +1982,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:10,
                 flexWrap:'wrap' as const }}>
                 <span style={{ fontSize:13, fontWeight:600, color:'#92400e', flex:1, minWidth:200 }}>
-                  Planejamento em branco — clique em qualquer mês para preencher
+                  Nenhum plano cadastrado — Selecione um mês para definir seus valores.
                 </span>
                 <button onClick={() => setQuizAtivo(true)}
                   style={{ padding:'6px 14px', border:'none', borderRadius:8, cursor:'pointer',
@@ -2136,7 +2136,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           <span style={{ display:'flex', alignItems:'center', gap:8 }}>
                             <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
                               transform: entradasAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                            ↑ Entradas
+                            Receitas
                           </span>
                           {aba === 'real' ? (
                             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -2353,7 +2353,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           <span style={{ display:'flex', alignItems:'center', gap:8 }}>
                             <span style={{ fontSize:9, display:'inline-block', transition:'transform .2s',
                               transform: saidasAberto ? 'rotate(180deg)' : 'none' }}>▼</span>
-                            ↓ Saídas
+                            Despesas
                           </span>
                           {aba === 'real' ? (
                             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -2648,151 +2648,104 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 </div>
               )
             }) : viewMode === 'grade' ? (() => {
-              const teAnual  = aba === 'real' ? totaisReais.te.reduce((a,b)=>a+b,0) : totalEntradas.reduce((a,b)=>a+b,0)
-              const tsAnual  = aba === 'real' ? totaisReais.ts.reduce((a,b)=>a+b,0) : totalSaidas.reduce((a,b)=>a+b,0)
-              const siAnual  = aba === 'real' ? saldoInicialReal[0] : saldoInicial[0]
-              const sfAnual  = aba === 'real' ? saldoFinalReal[11]  : saldoFinal[11]
-              const sfAnualCor = sfAnual > 0 ? COR.verde : sfAnual < 0 ? COR.vermelho : COR.textoSuave
-              const metaAnualGrade = (planos[anoAtual] as any)?.metaAnual ?? 0
-              const resultadoAnual = teAnual - tsAnual
-              const pctAnual = metaAnualGrade > 0 ? Math.min(100, Math.max(0, resultadoAnual / metaAnualGrade * 100)) : 0
-              const metaOkGrade = metaAnualGrade > 0 && resultadoAnual >= metaAnualGrade
+              const teAnual = aba === 'real' ? totaisReais.te.reduce((a,b)=>a+b,0) : totalEntradas.reduce((a,b)=>a+b,0)
+              const tsAnual = aba === 'real' ? totaisReais.ts.reduce((a,b)=>a+b,0) : totalSaidas.reduce((a,b)=>a+b,0)
+              const siAnual = aba === 'real' ? saldoInicialReal[0] : saldoInicial[0]
+              const sfAnual = aba === 'real' ? saldoFinalReal[11]  : saldoFinal[11]
+              const fmtG = (v: number) => v === 0 ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
               return (
               <>
-              {/* Resumo anual */}
-              <div style={{ display:'flex', borderRadius:12, border:`1px solid ${COR.borda}`, overflow:'hidden', marginBottom:12, background:COR.branco }}>
+              {/* Resumo anual — grade 4 colunas */}
+              <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1px',
+                background:COR.borda, borderRadius:14, overflow:'hidden', marginBottom:16,
+                boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
                 {([
-                  { label:'💰 Quanto você tem hoje', val:siAnual, cor:corSaldo(siAnual) },
-                  { label:'↑ Vai entrar',    val:teAnual, cor:'#16a34a'         },
-                  { label:'↓ Vai sair',      val:tsAnual, cor:COR.vermelho      },
-                  { label:'🎯 Vai sobrar',   val:sfAnual, cor:sfAnualCor        },
-                ] as {label:string;val:number;cor:string}[]).map((item, idx) => (
-                  <div key={idx} style={{ flex:1, padding:'10px 14px', borderRight:`1px solid ${COR.borda}` }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5, color:COR.textoSuave, marginBottom:3 }}>{item.label}</div>
-                    <div style={{ fontSize:13, fontWeight:700, color:item.cor, fontVariantNumeric:'tabular-nums' }}>
-                      {item.val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                    </div>
+                  {label:'💰 Saldo inicial',        val:siAnual, cor:COR.texto},
+                  {label:'↗ Receitas do ano',     val:teAnual, cor:COR.verde},
+                  {label:'↙ Despesas do ano',     val:tsAnual, cor:COR.vermelho},
+                  {label:'🎯 Resultado em Dez',   val:sfAnual, cor:sfAnual>0?COR.verde:sfAnual<0?COR.vermelho:COR.textoSuave},
+                ] as {label:string;val:number;cor:string}[]).map((item,idx) => (
+                  <div key={idx} style={{background:COR.branco, padding:'14px 16px'}}>
+                    <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4, color:COR.textoSuave, marginBottom:4}}>{item.label}</div>
+                    <div style={{fontSize:18, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, color:item.cor}}>{fmtG(item.val)}</div>
                   </div>
                 ))}
-                {metaAnualGrade > 0 && (
-                  <div style={{ flex:1, padding:'10px 14px', background: metaOkGrade ? '#f0fdf4' : '#faf5ff' }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5,
-                      color: metaOkGrade ? '#166534' : '#6d28d9', marginBottom:3 }}>
-                      {metaOkGrade ? '✓' : '◎'} Meta anual
-                    </div>
-                    <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:5 }}>
-                      <div style={{ fontSize:13, fontWeight:700, fontVariantNumeric:'tabular-nums',
-                        color: metaOkGrade ? '#166534' : '#6d28d9' }}>
-                        {metaAnualGrade.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-                      </div>
-                      <div style={{ fontSize:12, fontWeight:800, color: metaOkGrade ? '#166534' : '#7c3aed' }}>
-                        {pctAnual.toFixed(0)}%
-                      </div>
-                    </div>
-                    <div style={{ height:5, background:'rgba(0,0,0,0.08)', borderRadius:3, overflow:'hidden' }}>
-                      <div style={{ height:'100%', borderRadius:3, transition:'width .4s',
-                        background: metaOkGrade ? '#16a34a' : '#7c3aed', width:`${pctAnual}%` }}/>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:12, paddingTop:4 }}>
+              {/* Grade de 12 meses — 6 colunas */}
+              <div style={{display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10}}>
                 {MESES_FULL.map((nomeMes, mi) => {
                   const ehAtual = mi === mesAtual && anoAtual === anoCorrente
                   const temReal = aba === 'real' && mesTemDadosReais[mi]
                   const te      = temReal ? totaisReais.te[mi] : totalEntradas[mi]
                   const ts      = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
                   const sfVal   = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
-                  const pctUsado = te > 0 ? Math.min(100, Math.round(ts / te * 100)) : (ts > 0 ? 100 : 0)
-                  const sfCor   = sfVal > 0 ? COR.verde : sfVal < 0 ? COR.vermelho : COR.textoSuave
-                  const sfBg    = sfVal > 0 ? '#f0fdf4' : sfVal < 0 ? '#fff5f5' : '#f8fafc'
-                  const sfBd    = sfVal > 0 ? '#bbf7d0' : sfVal < 0 ? '#fecaca' : COR.borda
-                  const strip   = ehAtual ? COR.azul : sfVal > 0 ? '#22c55e' : sfVal < 0 ? '#f87171' : '#cbd5e1'
-                  const metaPct    = te > 0 ? Math.round((te - ts) / te * 100) : 0
-                  const metaOk     = te > 0 && (te - ts) >= 0
-                  const showMeta   = te > 0
+                  const res     = te - ts
+                  const pct     = te > 0 ? Math.min(100, Math.round(ts / te * 100)) : (ts > 0 ? 100 : 0)
+                  const stripBg = ehAtual ? COR.azul : sfVal > 0 ? '#22c55e' : '#f87171'
+                  const sfPos   = sfVal >= 0
                   return (
                     <div key={mi}
                       onClick={() => setModalMes(mi)}
-                      style={{ background:COR.branco, borderRadius:14, overflow:'hidden',
-                        cursor:'pointer', userSelect:'none' as const,
-                        display:'flex', flexDirection:'column' as const, minHeight:210,
-                        border: ehAtual ? `2px solid ${COR.azul}` : `1.5px solid ${COR.borda}`,
-                        boxShadow: modalMes===mi ? '0 0 0 3px #bfdbfe' : '0 1px 3px rgba(0,0,0,0.05)',
-                        transition:'box-shadow .15s, border-color .15s' }}
+                      style={{background:COR.branco, borderRadius:14, overflow:'hidden', cursor:'pointer',
+                        border:ehAtual ? `2px solid ${COR.azul}` : `1.5px solid ${COR.borda}`,
+                        display:'flex', flexDirection:'column' as const,
+                        transition:'box-shadow .15s, border-color .15s'}}
                       onMouseEnter={e => { const d=e.currentTarget as HTMLDivElement; d.style.boxShadow='0 4px 16px rgba(37,99,235,.12)'; d.style.borderColor='#93c5fd' }}
-                      onMouseLeave={e => { const d=e.currentTarget as HTMLDivElement; d.style.boxShadow=modalMes===mi?'0 0 0 3px #bfdbfe':'0 1px 3px rgba(0,0,0,0.05)'; d.style.borderColor=ehAtual?COR.azul:COR.borda }}>
+                      onMouseLeave={e => { const d=e.currentTarget as HTMLDivElement; d.style.boxShadow=''; d.style.borderColor=ehAtual?COR.azul:COR.borda }}>
 
-                      {/* Faixa colorida */}
-                      <div style={{ height:4, background:strip, flexShrink:0 }} />
+                      {/* Strip topo */}
+                      <div style={{height:4, background:stripBg, flexShrink:0}}/>
 
-                      <div style={{ padding:'10px 12px 13px', flex:1, display:'flex', flexDirection:'column' as const, justifyContent:'space-between' as const }}>
-
-                        {/* Topo */}
+                      <div style={{padding:'10px 12px 12px', flex:1, display:'flex', flexDirection:'column' as const, justifyContent:'space-between' as const}}>
                         <div>
-                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                          <span style={{ fontSize:13, fontWeight:700, color:ehAtual?COR.azul:COR.texto, lineHeight:1 }}>{nomeMes}</span>
-                          <div style={{ display:'flex', gap:3 }}>
-                            {ehAtual && (
-                              <span style={{ fontSize:7, background:COR.azul, color:'#fff',
-                                padding:'2px 5px', borderRadius:6, fontWeight:700,
-                                textTransform:'uppercase' as const, letterSpacing:.4 }}>Atual</span>
-                            )}
+                          {/* Header */}
+                          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+                            <span style={{fontSize:13, fontWeight:700, color:ehAtual?COR.azul:COR.texto}}>{nomeMes}</span>
+                            {ehAtual && <span style={{fontSize:7, background:COR.azul, color:'#fff', padding:'2px 5px', borderRadius:6, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4}}>Atual</span>}
+                          </div>
+
+                          {/* ↑ Vai entrar */}
+                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4}}>
+                            <span style={{fontSize:11, fontWeight:600, color:COR.verde}}>Receitas</span>
+                            <span style={{fontSize:12, fontWeight:700, color:COR.verde, fontVariantNumeric:'tabular-nums' as const}}>{fmtG(te)}</span>
+                          </div>
+
+                          {/* ↓ Vai sair */}
+                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
+                            <span style={{fontSize:11, fontWeight:600, color:COR.vermelho}}>Despesas</span>
+                            <span style={{fontSize:12, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const}}>{fmtG(ts)}</span>
+                          </div>
+
+                          {/* = Resultado */}
+                          <div style={{borderTop:`1px solid ${COR.borda}`, paddingTop:6, marginTop:2,
+                            display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
+                            <span style={{fontSize:10, color:COR.textoSuave, fontWeight:500}}>= Resultado</span>
+                            <span style={{fontSize:12, fontWeight:800, fontVariantNumeric:'tabular-nums' as const,
+                              color:res>0?COR.verde:res<0?COR.vermelho:COR.textoSuave}}>
+                              {res===0?'—':(res>0?'+':'')+fmtG(Math.abs(res))}
+                            </span>
                           </div>
                         </div>
 
-                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5 }}>
-                            <span style={{ fontSize:11, color:'#16a34a', fontWeight:600 }}>↑ Vai entrar</span>
-                            <span style={{ fontSize:12, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{te===0?'—':te.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                        {/* Footer */}
+                        <div style={{marginTop:8}}>
+                          {/* Barra progresso */}
+                          <div style={{height:4, background:'#f1f5f9', borderRadius:3, overflow:'hidden', display:'flex', marginBottom:8}}>
+                            <div style={{background:'#f87171', width:`${pct}%`, transition:'width .4s'}}/>
+                            {te > 0 && <div style={{flex:1, background:'#22c55e'}}/>}
                           </div>
-                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:7 }}>
-                            <span style={{ fontSize:11, color:COR.vermelho, fontWeight:600 }}>↓ Vai sair</span>
-                            <span style={{ fontSize:12, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{ts===0?'—':ts.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})}</span>
-                          </div>
-                          {(() => { const res=te-ts; const cor=res>0?'#16a34a':res<0?COR.vermelho:COR.textoSuave; return (
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline',
-                              borderTop:`1px solid ${COR.borda}`, paddingTop:6 }}>
-                              <span style={{ fontSize:10, color:COR.textoSuave, fontWeight:500 }}>= Sobra</span>
-                              <span style={{ fontSize:12, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums' as const }}>
-                                {res===0?'—':(res>0?'+':'')+res.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})}
-                              </span>
-                            </div>
-                          )})()}
-                          {showMeta && (
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:6 }}>
-                              <span style={{ fontSize:10, color:COR.textoSuave, fontWeight:500 }}>Saldo %</span>
-                              <span style={{ fontSize:11, padding:'2px 7px', borderRadius:6, fontWeight:700,
-                                background: metaOk ? '#dcfce7' : '#fef3c7',
-                                color: metaOk ? '#15803d' : '#92400e' }}>
-                                {metaOk ? '✓ ' : ''}{metaPct}%
-                              </span>
-                            </div>
-                          )}
-                        </div>
 
-                        {/* Rodapé */}
-                        <div>
-                        {/* Barra proporcional */}
-                        <div style={{ height:4, background:'#f1f5f9', borderRadius:3, overflow:'hidden', display:'flex', marginBottom:10 }}>
-                          <div style={{ width:`${pctUsado}%`, background:'#f87171', transition:'width .4s' }} />
-                          {te > 0 && <div style={{ flex:1, background:'#22c55e' }} />}
-                        </div>
-
-                        <div style={{ background:sfBg, border:`1.5px solid ${sfBd}`, borderRadius:9,
-                          padding:'8px 8px', textAlign:'center' as const }}>
-                          <div style={{ fontSize:8, color:sfCor, fontWeight:600,
-                            textTransform:'uppercase' as const, letterSpacing:.5, marginBottom:3 }}>
-                            Quanto terá guardado
-                          </div>
-                          <div style={{ fontSize:15, fontWeight:800, color:sfCor,
-                            fontVariantNumeric:'tabular-nums' as const, lineHeight:1,
-                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>
-                            {sfVal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                          {/* Quanto terá guardado */}
+                          <div style={{borderRadius:9, padding:'7px 8px', textAlign:'center' as const,
+                            background:sfPos?'#f0fdf4':'#fef2f2',
+                            border:`1.5px solid ${sfPos?'#bbf7d0':'#fecaca'}`}}>
+                            <div style={{fontSize:8, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.5, marginBottom:2,
+                              color:sfPos?COR.verde:COR.vermelho}}>Saldo previsto</div>
+                            <div style={{fontSize:14, fontWeight:800, fontVariantNumeric:'tabular-nums' as const,
+                              color:sfPos?COR.verde:COR.vermelho}}>{fmtG(sfVal)}</div>
                           </div>
                         </div>
-                        </div>
-
                       </div>
                     </div>
                   )
@@ -2802,389 +2755,163 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               )
             })() : viewMode === 'horizontal' ? (() => {
 
-              /* ── PLANILHA HORIZONTAL — meses em colunas, grupos em linhas ── */
-              const toggleH = (k: string) => setGruposHorizAbertos(prev => {
-                const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n
-              })
+              /* ── PLANILHA — tabela com meses em colunas, resumos no topo ── */
+              const fmtH = (v: number) => v === 0 ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
               const cartNomesH = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
-              const getGE = (cat: Cat) =>
-                (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__'
-              const getGS = (cat: Cat) =>
+              const getGrupoE = (cat: Cat) =>
+                (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outros'
+              const getGrupoS = (cat: Cat) =>
                 nomeFaturaCartao(cat.nome, cartNomesH) ? 'Cartão de Crédito'
-                : ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? '__sem_grupo__')
-
-              const groupBy = (cats: Cat[], fn: (c: Cat) => string): [string, Cat[]][] => {
+                : ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outros')
+              const groupByH = (cats: Cat[], fn: (c: Cat) => string): [string, Cat[]][] => {
                 const m = new Map<string, Cat[]>()
                 cats.forEach(c => { const g = fn(c); if (!m.has(g)) m.set(g, []); m.get(g)!.push(c) })
                 return [...m.entries()].sort(([a],[b]) => a==='__sem_grupo__'?1:b==='__sem_grupo__'?-1:a.localeCompare(b,'pt-BR'))
               }
-              const gruposE = groupBy(dadosAnoFinal.entradas, getGE)
-              const gruposS = groupBy(dadosAnoFinal.saidas,   getGS)
-              const gruposSComCartao: [string, Cat[]][] = (() => {
-                if (somaCartaoMes.every(v => v === 0)) return gruposS
-                if (gruposS.some(([g]) => g === 'Cartão de Crédito')) return gruposS
-                const sintetico: Cat = { id: '__cartao__', nome: 'Cartão de Crédito', t: 'cartao', v: somaCartaoMes }
-                const entry: [string, Cat[]] = ['Cartão de Crédito', [sintetico]]
-                const result: [string, Cat[]][] = [...gruposS]
-                result.unshift(entry)
-                return result
-              })()
-
-              const keysE = gruposE.map(([g]) => `e-${g}`)
-              const keysS = gruposSComCartao.map(([g]) => `s-${g}`)
-              const todosEAbertos = keysE.every(k => gruposHorizAbertos.has(k))
-              const todosSAbertos = keysS.every(k => gruposHorizAbertos.has(k))
-              const toggleAllH = (keys: string[], todosAbertos: boolean) =>
-                setGruposHorizAbertos(prev => {
-                  const n = new Set(prev)
-                  if (todosAbertos) keys.forEach(k => n.delete(k))
-                  else keys.forEach(k => n.add(k))
-                  return n
-                })
-
-              const fmtH = (v: number) => v === 0 ? '—'
-                : v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0,maximumFractionDigits:0})
-
-              const NW = 210, CW = 108
+              const toggleH = (k: string) => setGruposHorizAbertos(prev => {
+                const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n
+              })
+              const gruposEP = groupByH(dadosAnoFinal.entradas, getGrupoE)
+              const gruposSP = groupByH(dadosAnoFinal.saidas, getGrupoS)
               const ehAtualMes = (mi: number) => mi === mesAtual && anoAtual === anoCorrente
-              const colBg  = (mi: number) => ehAtualMes(mi) ? '#eff6ff' : COR.branco
 
-              // ── Flat list of editable cells for Tab navigation (expanded groups only)
-              const flatEditCells: {tipo:'e'|'s', row:number, mi:number}[] = []
-              gruposE.forEach(([grupo, cats]) => {
-                if (gruposHorizAbertos.has(`e-${grupo}`)) {
-                  cats.forEach(cat => {
-                    const row = dadosAnoFinal.entradas.indexOf(cat)
-                    for (let mi = 0; mi < 12; mi++) flatEditCells.push({tipo:'e', row, mi})
-                  })
-                }
+              const thStyle = (mi?: number): React.CSSProperties => ({
+                position:'sticky' as const, top:0, zIndex:10,
+                background: (mi !== undefined && ehAtualMes(mi)) ? '#eff6ff' : '#f8fafc',
+                padding:10, fontSize:10, fontWeight:700,
+                textTransform:'uppercase' as const, letterSpacing:.5,
+                color: (mi !== undefined && ehAtualMes(mi)) ? COR.azul : COR.textoSuave,
+                borderBottom:`2px solid ${COR.borda}`, textAlign:'right' as const,
+                whiteSpace:'nowrap' as const,
               })
-              gruposS.forEach(([grupo, cats]) => {
-                if (gruposHorizAbertos.has(`s-${grupo}`)) {
-                  cats.forEach(cat => {
-                    const row = dadosAnoFinal.saidas.indexOf(cat)
-                    for (let mi = 0; mi < 12; mi++) flatEditCells.push({tipo:'s', row, mi})
-                  })
-                }
-              })
-              const curFlatIdx = editando
-                ? flatEditCells.findIndex(c => c.tipo===editando.tipo && c.row===editando.row && c.mi===editando.mes)
-                : -1
 
-              function salvarCelulaPlanilha() {
-                if (!editando) return
-                const novo = parseBRL(valorTemp)
-                const {tipo, row, mes} = editando
-                if (tipo === 'e') setEntradas(prev => prev.map((c,ri) => ri===row ? {...c, v:c.v.map((v,ci)=>ci===mes?novo:v)} : c))
-                else             setSaidas(prev =>   prev.map((c,ri) => ri===row ? {...c, v:c.v.map((v,ci)=>ci===mes?novo:v)} : c))
-              }
-
-              function navPlanilha(dir: 1|-1|0) {
-                salvarCelulaPlanilha()
-                if (dir === 0) { setEditando(null); return }
-                const next = curFlatIdx >= 0 ? flatEditCells[curFlatIdx + dir] : undefined
-                if (next) {
-                  const cat = next.tipo==='e' ? dadosAnoFinal.entradas[next.row] : dadosAnoFinal.saidas[next.row]
-                  const v = cat?.v[next.mi] ?? 0
-                  setEditando({tipo:next.tipo, row:next.row, mes:next.mi})
-                  setValorTemp(v === 0 ? '' : v.toLocaleString('pt-BR',{minimumFractionDigits:2}))
-                } else {
-                  setEditando(null)
-                }
-              }
-
-              // ── Editable cell for category rows
-              const editableCellH = (v: number, mi: number, tipo: 'e'|'s', row: number, cor: string, bg?: string) => {
-                const ativo = !bloqueado && editando?.tipo===tipo && editando.row===row && editando.mes===mi
-                if (ativo) {
-                  return (
-                    <div key={mi} style={{ flexShrink:0, width:CW, padding:'3px 6px',
-                      background: bg ?? colBg(mi), borderLeft:'1px solid #f1f5f9', display:'flex', alignItems:'center' }}>
-                      <input autoFocus value={valorTemp}
-                        onChange={e => setValorTemp(e.target.value)}
-                        onFocus={e => e.target.select()}
-                        onBlur={() => { if (!skipBlurRef.current) navPlanilha(0); else skipBlurRef.current = false }}
-                        onKeyDown={e => {
-                          if (e.key==='Enter')  { skipBlurRef.current=true; navPlanilha(0) }
-                          if (e.key==='Tab')    { e.preventDefault(); skipBlurRef.current=true; navPlanilha(e.shiftKey?-1:1) }
-                          if (e.key==='Escape') { skipBlurRef.current=true; setEditando(null) }
-                        }}
-                        style={{ width:'100%', textAlign:'right', border:`1px solid ${COR.azul}`, outline:'none',
-                          background:'#dbeafe', color:COR.azulEscuro, fontSize:13,
-                          fontFamily:'inherit', fontWeight:600, borderRadius:6, padding:'4px 8px' }}
-                      />
-                    </div>
-                  )
-                }
-                return (
-                  <div key={mi}
-                    onClick={bloqueado ? undefined : () => iniciarValor(tipo, row, mi, v)}
-                    style={{ flexShrink:0, width:CW, padding:'7px 10px',
-                      fontSize:13, fontVariantNumeric:'tabular-nums' as const,
-                      textAlign:'right' as const, whiteSpace:'nowrap' as const,
-                      color: v===0 ? '#cbd5e1' : cor,
-                      background: bg ?? colBg(mi), borderLeft:'1px solid #f1f5f9',
-                      cursor: bloqueado ? 'default' : 'text' }}>
-                    {fmtH(v)}
-                  </div>
-                )
-              }
-
-              const cell = (v: number, mi: number, cor: string, bg?: string, fw?: number) => (
-                <div key={mi} style={{ flexShrink:0, width:CW, padding:'7px 10px',
-                  fontSize:13, fontVariantNumeric:'tabular-nums' as const,
-                  textAlign:'right' as const, whiteSpace:'nowrap' as const,
-                  color: v === 0 ? '#cbd5e1' : cor, fontWeight: fw,
-                  background: bg ?? colBg(mi), borderLeft:'1px solid #f1f5f9' }}>
+              const catCellSpan = (v: number, mi: number) => (
+                <span
+                  onClick={() => setModalMes(mi)}
+                  style={{padding:'3px 7px', borderRadius:6, cursor:'pointer', display:'inline-block', minWidth:60, textAlign:'right' as const, fontVariantNumeric:'tabular-nums' as const, transition:'background .15s'}}
+                  onMouseEnter={e => { const el=e.currentTarget as HTMLSpanElement; el.style.background='#eff6ff'; el.style.color=COR.azul }}
+                  onMouseLeave={e => { const el=e.currentTarget as HTMLSpanElement; el.style.background=''; el.style.color='#475569' }}>
                   {fmtH(v)}
-                </div>
-              )
-              const totalCell = (v: number, cor: string, bg = '#fafafa', fw = 600) => (
-                <div style={{ flexShrink:0, width:CW, padding:'7px 10px',
-                  fontSize:13, fontVariantNumeric:'tabular-nums' as const,
-                  textAlign:'right' as const, whiteSpace:'nowrap' as const,
-                  color: v === 0 ? '#cbd5e1' : cor, fontWeight: fw,
-                  background: bg, borderLeft:`2px solid ${COR.borda}` }}>
-                  {fmtH(v)}
-                </div>
-              )
-              const nameCell = (content: React.ReactNode, bg = COR.branco, extra: React.CSSProperties = {}) => (
-                <div style={{ position:'sticky' as const, left:0, flexShrink:0, width:NW,
-                  padding:'7px 12px', fontSize:13, whiteSpace:'nowrap' as const,
-                  overflow:'hidden', textOverflow:'ellipsis' as const,
-                  zIndex:2, background:bg, borderRight:`1px solid ${COR.borda}`, ...extra }}>
-                  {content}
-                </div>
-              )
-
-              const simpleRow = (
-                label: React.ReactNode, vals: number[], cor: string,
-                nameBg: string, cellBg?: (mi: number) => string, fw?: number, totalBg?: string,
-                extraStyle?: React.CSSProperties
-              ) => (
-                <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}`, ...extraStyle }}>
-                  {nameCell(label, nameBg)}
-                  {vals.map((v, mi) => cell(v, mi, cor, cellBg?.(mi), fw))}
-                  {totalCell(vals.reduce((a,b)=>a+b,0), cor, totalBg, fw ?? 600)}
-                </div>
+                </span>
               )
 
               return (
-                <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, overflow:'hidden' }}>
-                  <div style={{ overflow:'auto' as const, maxHeight:'calc(100vh - 215px)' }}>
-                    <div style={{ minWidth: NW + CW * 13 }}>
+                <div style={{background:COR.branco, borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,.06)', overflow:'hidden'}}>
+                  <div style={{overflowX:'auto' as const}}>
+                    <table style={{width:'100%', borderCollapse:'collapse', minWidth:920}}>
+                      <thead>
+                        <tr>
+                          <th style={{...thStyle(), textAlign:'left' as const, minWidth:190, position:'sticky' as const, left:0, zIndex:11, background:'#f8fafc'}}>Categoria</th>
+                          {MESES.map((m, mi) => (
+                            <th key={mi} style={thStyle(mi)}>{ehAtualMes(mi) ? '● ' : ''}{m}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
 
-                      {/* HEADER — sticky topo */}
-                      <div style={{ display:'flex', borderBottom:`2px solid ${COR.borda}`, background:'#f8fafc',
-                        position:'sticky' as const, top:0, zIndex:10 }}>
-                        {nameCell(<span style={{ fontWeight:700, color:COR.textoSuave, fontSize:10, textTransform:'uppercase' as const, letterSpacing:.5 }}>Categoria / Mês</span>, '#f8fafc')}
-                        {MESES.map((m, mi) => (
-                          <div key={m} style={{ flexShrink:0, width:CW, padding:'8px 8px',
-                            textAlign:'center' as const, fontSize:11,
-                            fontWeight: ehAtualMes(mi) ? 700 : 600,
-                            color: ehAtualMes(mi) ? COR.azul : COR.textoSuave,
-                            background: ehAtualMes(mi) ? '#eff6ff' : '#f8fafc',
-                            borderLeft:'1px solid #f1f5f9' }}>
-                            <div>{m}</div>
-                            {ehAtualMes(mi) && <div style={{ fontSize:8, background:COR.azul, color:'#fff', borderRadius:3, padding:'1px 4px', marginTop:2, display:'inline-block' }}>ATUAL</div>}
-                          </div>
-                        ))}
-                        <div style={{ flexShrink:0, width:CW, padding:'8px 8px', textAlign:'center' as const,
-                          fontSize:11, fontWeight:700, color:COR.texto,
-                          background:'#f0f4ff', borderLeft:`2px solid ${COR.borda}` }}>
-                          Anual
-                        </div>
-                      </div>
+                        {/* ── Resumos no topo ── */}
 
-                      {/* SALDO INICIAL — sticky abaixo do header */}
-                      {simpleRow(
-                        <span style={{ fontWeight:600, color:COR.textoSuave }}>Quanto você tem hoje</span>,
-                        saldoInicial, COR.textoSuave, '#fafafa',
-                        mi => ehAtualMes(mi) ? '#eff6ff' : '#fafafa', 400, '#f0f4ff',
-                        { position:'sticky' as const, top:43, zIndex:9 }
-                      )}
+                        {/* ↗ Quanto vai entrar */}
+                        <tr>
+                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px', fontSize:12, fontWeight:700, color:COR.verde, background:'#f0fdf4', borderTop:`2px solid ${COR.borda}`}}>Receitas</td>
+                          {totalEntradas.map((v, mi) => (
+                            <td key={mi} style={{padding:'10px', fontSize:12, fontWeight:700, color:COR.verde, background:'#f0fdf4', textAlign:'right' as const, borderTop:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                          ))}
+                        </tr>
 
-                      {/* ── ENTRADAS ── */}
-                      <div style={{ display:'flex', background:'#f0fdf4', borderTop:'2px solid #86efac', borderBottom:`1px solid #86efac`, cursor:'pointer' }}
-                        onClick={() => toggleAllH(keysE, todosEAbertos)}>
-                        {nameCell(
-                          <span style={{ fontWeight:700, color:'#166534', fontSize:10, textTransform:'uppercase' as const, letterSpacing:.6, display:'flex', alignItems:'center', gap:5 }}>
-                            <span style={{ fontSize:8, display:'inline-block', transform: todosEAbertos ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
-                            ↑ Vai entrar
-                          </span>, '#f0fdf4')}
-                        {Array.from({length:13}, (_,i) => <div key={i} style={{ flexShrink:0, width:CW, background:'#f0fdf4', borderLeft:'1px solid #bbf7d0' }} />)}
-                      </div>
+                        {/* ↙ Quanto vai sair */}
+                        <tr>
+                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px', fontSize:12, fontWeight:700, color:COR.vermelho, background:'#fef2f2', borderTop:`2px solid ${COR.borda}`}}>Despesas</td>
+                          {totalSaidas.map((v, mi) => (
+                            <td key={mi} style={{padding:'10px', fontSize:12, fontWeight:700, color:COR.vermelho, background:'#fef2f2', textAlign:'right' as const, borderTop:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                          ))}
+                        </tr>
 
-                      {gruposE.map(([grupo, cats]) => {
-                        const label = grupo === '__sem_grupo__' ? 'Outras entradas' : grupo
-                        const key = `e-${grupo}`
-                        const aberto = gruposHorizAbertos.has(key)
-                        const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
-                        const gTotal = gVals.reduce((a,b)=>a+b,0)
-                        return (
-                          <div key={key}>
-                            <div style={{ display:'flex', borderBottom:'1px solid #bbf7d0', cursor:'pointer', background:'#f0fdf4' }}
-                              onClick={() => toggleH(key)}>
-                              {nameCell(
-                                <span style={{ fontWeight:700, color:'#15803d', paddingLeft:10 }}>
-                                  <span style={{ marginRight:6, fontSize:11, display:'inline-block', color:'#16a34a',
-                                    transform: aberto ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
-                                  {label}
-                                </span>, '#f0fdf4'
-                              )}
-                              {gVals.map((v,mi) => cell(v, mi, '#16a34a', ehAtualMes(mi) ? '#dcfce7' : '#f0fdf4', 700))}
-                              {totalCell(gTotal, '#16a34a', '#dcfce7', 700)}
-                            </div>
-                            {aberto && cats.map(cat => {
-                              const row = dadosAnoFinal.entradas.indexOf(cat)
-                              const catTotal = cat.v.reduce((a,b)=>a+b,0)
-                              const catCfgE = cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome)
-                              const descE = catCfgE?.descricao
-                              return (
-                                <div key={cat.nome} style={{ display:'flex', borderBottom:'1px solid #f1f5f9', background:'#f7fdf9' }}>
-                                  {nameCell(
-                                    <span style={{ color:'#166534', paddingLeft:24, display:'block' }}>
-                                      {cat.nome}
-                                      {descE && <span style={{ display:'block', fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descE}</span>}
-                                    </span>, '#f7fdf9', { whiteSpace:'normal' })}
-                                  {cat.v.map((v,mi) => editableCellH(v, mi, 'e', row, '#16a34a', ehAtualMes(mi)?'#ecfdf5':'#f7fdf9'))}
-                                  {totalCell(catTotal, '#16a34a', '#f0fdf4', 400)}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )
-                      })}
+                        {/* 💰 Quanto vai sobrar */}
+                        <tr>
+                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px', fontSize:13, fontWeight:800, color:COR.texto, background:'#f8fafc', borderTop:`2px solid ${COR.borda}`, borderBottom:`2px solid ${COR.borda}`}}>Resultado</td>
+                          {totalEntradas.map((te, mi) => {
+                            const sob = te - totalSaidas[mi]
+                            return (
+                              <td key={mi} style={{padding:'10px', fontSize:13, fontWeight:800, textAlign:'right' as const, background:'#f8fafc', borderTop:`2px solid ${COR.borda}`, borderBottom:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const,
+                                color:sob>0?COR.verde:sob<0?COR.vermelho:COR.textoSuave}}>{fmtH(sob)}</td>
+                            )
+                          })}
+                        </tr>
 
-                      {simpleRow(
-                        <span style={{ fontWeight:700, color:'#15803d' }}>↑ Total entradas</span>,
-                        totalEntradas, '#16a34a', '#f0fdf4',
-                        mi => ehAtualMes(mi) ? '#dcfce7' : '#f0fdf4', 700, '#dcfce7'
-                      )}
+                        {/* ── Grupos de entradas ── */}
+                        {gruposEP.map(([grupo, cats]) => {
+                          const label = grupo === '__sem_grupo__' ? 'Outras entradas' : grupo
+                          const key = `e-${grupo}`
+                          const aberto = gruposHorizAbertos.has(key)
+                          const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
+                          return [
+                            <tr key={key} onClick={() => toggleH(key)} style={{cursor:'pointer'}}>
+                              <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'9px 10px', fontSize:13, fontWeight:700, color:COR.texto, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`}}>
+                                💰 {label}
+                                <span style={{float:'right' as const, display:'inline-block', transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', color:COR.textoSuave, fontSize:11}}>▸</span>
+                              </td>
+                              {gVals.map((v, mi) => (
+                                <td key={mi} style={{padding:'9px 10px', textAlign:'right' as const, fontWeight:800, color:'#334155', fontSize:12, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                              ))}
+                            </tr>,
+                            ...(!aberto ? [] : cats.map(cat => (
+                              <tr key={cat.nome}>
+                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 30px', fontSize:12, color:COR.textoSuave, fontWeight:500, textAlign:'left' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                {cat.v.map((v, mi) => (
+                                  <td key={mi} style={{padding:'6px 10px', fontSize:12, color:'#475569', textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{catCellSpan(v, mi)}</td>
+                                ))}
+                              </tr>
+                            )))
+                          ]
+                        })}
 
-                      {/* ── SAÍDAS ── */}
-                      <div style={{ display:'flex', background:'#fef2f2', borderTop:'2px solid #fca5a5', borderBottom:`1px solid #fca5a5`, cursor:'pointer' }}
-                        onClick={() => toggleAllH(keysS, todosSAbertos)}>
-                        {nameCell(
-                          <span style={{ fontWeight:700, color:'#7f1d1d', fontSize:10, textTransform:'uppercase' as const, letterSpacing:.6, display:'flex', alignItems:'center', gap:5 }}>
-                            <span style={{ fontSize:8, display:'inline-block', transform: todosSAbertos ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
-                            ↓ Vai sair
-                          </span>, '#fff1f2')}
-                        {Array.from({length:13}, (_,i) => <div key={i} style={{ flexShrink:0, width:CW, background:'#fff1f2', borderLeft:'1px solid #fecaca' }} />)}
-                      </div>
+                        {/* ── Grupos de saídas ── */}
+                        {gruposSP.map(([grupo, cats]) => {
+                          const label = grupo === '__sem_grupo__' ? 'Outras saídas' : grupo
+                          const key = `s-${grupo}`
+                          const aberto = gruposHorizAbertos.has(key)
+                          const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
+                          return [
+                            <tr key={key} onClick={() => toggleH(key)} style={{cursor:'pointer'}}>
+                              <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'9px 10px', fontSize:13, fontWeight:700, color:COR.texto, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`}}>
+                                📌 {label}
+                                <span style={{float:'right' as const, display:'inline-block', transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', color:COR.textoSuave, fontSize:11}}>▸</span>
+                              </td>
+                              {gVals.map((v, mi) => (
+                                <td key={mi} style={{padding:'9px 10px', textAlign:'right' as const, fontWeight:800, color:'#334155', fontSize:12, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                              ))}
+                            </tr>,
+                            ...(!aberto ? [] : cats.map(cat => (
+                              <tr key={cat.nome}>
+                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 30px', fontSize:12, color:COR.textoSuave, fontWeight:500, textAlign:'left' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                {cat.v.map((v, mi) => (
+                                  <td key={mi} style={{padding:'6px 10px', fontSize:12, color:'#475569', textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{catCellSpan(v, mi)}</td>
+                                ))}
+                              </tr>
+                            )))
+                          ]
+                        })}
 
-                      {gruposSComCartao.map(([grupo, cats]) => {
-                        const ehCartaoGrupo = grupo === 'Cartão de Crédito'
-                        const label = grupo === '__sem_grupo__' ? 'Outras saídas' : grupo
-                        const key = `s-${grupo}`
-                        const aberto = gruposHorizAbertos.has(key)
-                        const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
-                        const gTotal = gVals.reduce((a,b)=>a+b,0)
-                        const corGrupo = ehCartaoGrupo ? '#6d28d9' : '#b91c1c'
-                        const corVal   = ehCartaoGrupo ? '#7c3aed' : COR.vermelho
-                        return (
-                          <div key={key}>
-                            {(() => {
-                              const gRowBg  = ehCartaoGrupo ? '#faf5ff' : '#fff7f7'
-                              const gRowBd  = ehCartaoGrupo ? '#ede9fe' : '#fecaca'
-                              const gAtualBg = ehCartaoGrupo ? '#ede9fe' : '#fee2e2'
-                              const gTotBg  = ehCartaoGrupo ? '#f5f3ff' : '#fef2f2'
-                              return (
-                            <div style={{ display:'flex', borderBottom:`1px solid ${gRowBd}`, cursor:'pointer', background:gRowBg }}
-                              onClick={() => toggleH(key)}>
-                              {nameCell(
-                                <span style={{ fontWeight:700, color:corGrupo, paddingLeft:10 }}>
-                                  <span style={{ marginRight:6, fontSize:11, display:'inline-block', color:corVal,
-                                    transform: aberto ? 'rotate(90deg)' : 'none', transition:'transform .15s' }}>▶</span>
-                                  {label}
-                                </span>, gRowBg
-                              )}
-                              {gVals.map((v,mi) => cell(v, mi, corVal, ehAtualMes(mi) ? gAtualBg : gRowBg, 700))}
-                              {totalCell(gTotal, corVal, gTotBg, 700)}
-                            </div>
-                              )
-                            })()}
-                            {aberto && cats.map(cat => {
-                              const ehCartaoSin = cat.id === '__cartao__'
-                              const catTotal = cat.v.reduce((a,b)=>a+b,0)
-                              if (ehCartaoSin) return (
-                                <div key={cat.nome} style={{ display:'flex', borderBottom:'1px solid #ede9fe', background:'#faf5ff' }}>
-                                  {nameCell(<span style={{ color:'#7c3aed', paddingLeft:24 }}>💳 {cat.nome}</span>, '#faf5ff')}
-                                  {cat.v.map((v,mi) => cell(v, mi, '#7c3aed', ehAtualMes(mi)?'#ede9fe':'#faf5ff'))}
-                                  {totalCell(catTotal, '#7c3aed', '#f5f3ff', 400)}
-                                </div>
-                              )
-                              const row = dadosAnoFinal.saidas.indexOf(cat)
-                              const catCfgS2 = cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome)
-                              const descS = catCfgS2?.descricao
-                              return (
-                                <div key={cat.nome} style={{ display:'flex', borderBottom:'1px solid #f1f5f9', background:'#fff7f7' }}>
-                                  {nameCell(
-                                    <span style={{ color:'#b91c1c', paddingLeft:24, display:'block' }}>
-                                      {cat.nome}
-                                      {descS && <span style={{ display:'block', fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descS}</span>}
-                                    </span>, '#fff7f7', { whiteSpace:'normal' })}
-                                  {cat.v.map((v,mi) => editableCellH(v, mi, 's', row, COR.vermelho, ehAtualMes(mi)?'#fee2e2':'#fff7f7'))}
-                                  {totalCell(catTotal, COR.vermelho, '#fff1f2', 400)}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )
-                      })}
-                      {simpleRow(
-                        <span style={{ fontWeight:700, color:'#7f1d1d' }}>↓ Total saídas</span>,
-                        totalSaidas, COR.vermelho, '#fef2f2',
-                        mi => ehAtualMes(mi) ? '#fecaca' : '#fef2f2', 700, '#fecaca'
-                      )}
-
-                      {/* SALDO FINAL — sticky rodapé */}
-                      <div style={{ display:'flex', borderTop:`2px solid ${COR.azulMedio}`,
-                        position:'sticky' as const, bottom:0, zIndex:5 }}>
-                        {nameCell(
-                          <span style={{ fontWeight:700, color:COR.azul, fontSize:14 }}>💰 Quanto vai sobrar</span>,
-                          '#eff6ff', { borderTop:`2px solid ${COR.azulMedio}` }
-                        )}
-                        {saldoFinal.map((v, mi) => (
-                          <div key={mi} style={{ flexShrink:0, width:CW, padding:'8px 10px',
-                            fontSize:13, fontVariantNumeric:'tabular-nums' as const,
-                            textAlign:'right' as const, whiteSpace:'nowrap' as const,
-                            fontWeight:700,
-                            color: v < 0 ? COR.vermelho : COR.azul,
-                            background: ehAtualMes(mi) ? '#dbeafe' : '#eff6ff',
-                            borderLeft:'1px solid #bfdbfe',
-                            borderTop:`2px solid ${COR.azulMedio}` }}>
-                            {fmtH(v)}
-                          </div>
-                        ))}
-                        <div style={{ flexShrink:0, width:CW, padding:'8px 10px',
-                          textAlign:'right' as const, fontSize:14, fontWeight:700,
-                          fontVariantNumeric:'tabular-nums' as const,
-                          color: saldoFinal[11] < 0 ? COR.vermelho : COR.azul,
-                          background:'#dbeafe', borderLeft:`2px solid ${COR.borda}`,
-                          borderTop:`2px solid ${COR.azulMedio}` }}>
-                          {fmtH(saldoFinal[11])}
-                        </div>
-                      </div>
-
-                    </div>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )
             })() : (() => {
 
-              /* ── LISTA — TABELA COMPACTA ── */
+              /* ── LISTA — navegador mensal com cards por grupo ── */
               const fmtL = (v: number) => v === 0 ? '—'
-                : v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 })
+                : v.toLocaleString('pt-BR', { minimumFractionDigits:0, maximumFractionDigits:0 })
               const cartNomesL = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
               const getGrupEL = (cat: Cat) =>
                 (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outros'
               const getGrupSL = (cat: Cat) =>
                 nomeFaturaCartao(cat.nome, cartNomesL) ? 'Cartão de Crédito'
                 : ((cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outras saídas')
-              const groupBy = <T,>(items: T[], fn: (x: T) => string): [string, T[]][] => {
-                const m = new Map<string, T[]>()
-                items.forEach(x => { const g = fn(x); if (!m.has(g)) m.set(g, []); m.get(g)!.push(x) })
+              const groupByL = (cats: Cat[], fn: (c: Cat) => string): [string, Cat[]][] => {
+                const m = new Map<string, Cat[]>()
+                cats.forEach(c => { const g = fn(c); if (!m.has(g)) m.set(g, []); m.get(g)!.push(c) })
                 return [...m.entries()].sort(([a],[b]) => {
                   const last = (s: string) => s === 'Outros' || s === 'Outras saídas' || s === '__sem_grupo__'
                   if (last(a) && !last(b)) return 1
@@ -3194,188 +2921,143 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   return a.localeCompare(b, 'pt-BR')
                 })
               }
-              const teTotal = totalEntradas.reduce((a,b) => a+b, 0)
-              const tsTotal = totalSaidas.reduce((a,b) => a+b, 0)
-              const sobraTotal = teTotal - tsTotal
-              const guardadoFinal = saldoFinal[11]
-              const colStyle = (right = true): React.CSSProperties => ({
-                padding:'11px 12px', fontSize:10, fontWeight:700,
-                textTransform:'uppercase', letterSpacing:.5, color:COR.textoSuave,
-                textAlign: right ? 'right' : 'left', borderBottom:`2px solid ${COR.borda}`,
+              const te = totalEntradas[mesMobile]
+              const ts = totalSaidas[mesMobile]
+              const sob = te - ts
+              const ehAtualL = mesMobile === mesAtual && anoAtual === anoCorrente
+              const gruposEnt = groupByL(dadosAnoFinal.entradas, getGrupEL)
+              const gruposSai = groupByL(dadosAnoFinal.saidas, getGrupSL)
+              const toggleGA = (k: string) => setGruposAbertos(prev => {
+                const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n
               })
-              const COLS = '140px 1fr 1fr 1fr 1fr'
+
+              const entBarW = 100
+              const saiBarW = te > 0 ? Math.min(100, Math.round(ts / te * 100)) : 0
+              const sobBarW = te > 0 ? Math.min(100, Math.max(0, Math.round(sob / te * 100))) : 0
+
               return (
-                <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, overflow:'hidden' }}>
-                  {/* Header */}
-                  <div style={{ display:'grid', gridTemplateColumns:COLS, background:'#f8fafc' }}>
-                    <div style={colStyle(false)}>Mês</div>
-                    <div style={colStyle()}>Vai entrar</div>
-                    <div style={colStyle()}>Vai sair</div>
-                    <div style={colStyle()}>Sobra</div>
-                    <div style={colStyle()}>Guardado</div>
+                <>
+                {/* ── Navegador de mês ── */}
+                <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:14, marginBottom:16}}>
+                  <button
+                    onClick={() => setMesMobile(prev => (prev - 1 + 12) % 12)}
+                    style={{width:36, height:36, borderRadius:10, border:`1.5px solid ${COR.borda}`, background:COR.branco, cursor:'pointer', fontSize:18, color:COR.textoSuave, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    ‹
+                  </button>
+                  <div style={{display:'flex', alignItems:'center', gap:8}}>
+                    <span style={{fontSize:18, fontWeight:800, color:COR.texto, minWidth:160, textAlign:'center' as const}}>
+                      {MESES_FULL[mesMobile]} {anoAtual}
+                    </span>
+                    {ehAtualL && (
+                      <span style={{fontSize:9, background:COR.azul, color:'#fff', padding:'2px 7px', borderRadius:10, fontWeight:700, textTransform:'uppercase' as const}}>Atual</span>
+                    )}
                   </div>
+                  <button
+                    onClick={() => setMesMobile(prev => (prev + 1) % 12)}
+                    style={{width:36, height:36, borderRadius:10, border:`1.5px solid ${COR.borda}`, background:COR.branco, cursor:'pointer', fontSize:18, color:COR.textoSuave, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    ›
+                  </button>
+                </div>
 
-                  {MESES_FULL.map((nomeMes, mi) => {
-                    const ehAtual = mi === mesAtual && anoAtual === anoCorrente
-                    const temReal = aba === 'real' && mesTemDadosReais[mi]
-                    const te      = temReal ? totaisReais.te[mi] : totalEntradas[mi]
-                    const ts      = temReal ? totaisReais.ts[mi] : totalSaidas[mi]
-                    const sfVal   = temReal ? saldoFinalReal[mi] : saldoFinal[mi]
-                    const sobra   = te - ts
-                    const sobraCor = sobra > 0 ? COR.verde : sobra < 0 ? COR.vermelho : COR.textoSuave
-                    const sfCor   = sfVal > 0 ? COR.verde : sfVal < 0 ? COR.vermelho : COR.textoSuave
-                    const aberto  = listaMesAberto === mi
-                    const rowBg   = aberto ? '#fafbff' : ehAtual ? '#eff6ff' : COR.branco
-
-                    const gruposEnt = groupBy(dadosAnoFinal.entradas, getGrupEL)
-                    const gruposSai = groupBy(dadosAnoFinal.saidas,   getGrupSL)
-
-                    return (
-                      <div key={mi}>
-                        {/* Month summary row */}
-                        <div
-                          onClick={() => setListaMesAberto(aberto ? null : mi)}
-                          style={{ display:'grid', gridTemplateColumns:COLS, cursor:'pointer',
-                            borderBottom:`1px solid ${COR.borda}`, background:rowBg,
-                            transition:'background .12s' }}
-                          onMouseEnter={e => { if (!aberto) (e.currentTarget as HTMLDivElement).style.background = '#fafbff' }}
-                          onMouseLeave={e => { if (!aberto) (e.currentTarget as HTMLDivElement).style.background = rowBg }}>
-
-                          <div style={{ padding:'11px 14px', display:'flex', alignItems:'center', gap:8 }}>
-                            <span style={{ fontSize:8, color:COR.textoSuave, display:'inline-block',
-                              transition:'transform .15s', transform: aberto ? 'rotate(90deg)' : 'none' }}>▶</span>
-                            <div>
-                              <div style={{ fontSize:13, fontWeight:700, color: ehAtual ? COR.azul : COR.texto }}>{nomeMes}</div>
-                              {ehAtual && (
-                                <span style={{ fontSize:7, background:COR.azul, color:'#fff', padding:'1px 5px',
-                                  borderRadius:5, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.3 }}>Atual</span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{fmtL(te)}</div>
-                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(ts)}</div>
-                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:13, fontWeight:800, color:sobraCor, fontVariantNumeric:'tabular-nums' as const }}>
-                            {sobra === 0 ? '—' : (sobra > 0 ? '+' : '') + fmtL(Math.abs(sobra))}
-                          </div>
-                          <div style={{ padding:'11px 12px', textAlign:'right' as const, fontSize:14, fontWeight:800, color:sfCor, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(sfVal)}</div>
-                        </div>
-
-                        {/* Expanded detail */}
-                        {aberto && (
-                          <div style={{ borderBottom:`1px solid ${COR.borda}`, background:'#fafbff' }}>
-                            <div style={{ padding:'0 14px 14px' }}>
-
-                              {/* Entradas */}
-                              <div style={{ marginTop:12, borderRadius:10, overflow:'hidden', border:'1px solid #86efac' }}>
-                                <div style={{ padding:'8px 14px', background:'#dcfce7',
-                                  display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                                  <span style={{ fontSize:11, fontWeight:700, color:'#166534' }}>↑ Quanto vai entrar</span>
-                                  <span style={{ fontSize:12, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{fmtL(te)}</span>
-                                </div>
-                                {gruposEnt.map(([grupo, cats]) => {
-                                  const gTotal = cats.reduce((s,c) => s + c.v[mi], 0)
-                                  const label = grupo === '__sem_grupo__' ? 'Outros' : grupo
-                                  if (gTotal === 0 && bloqueado) return null
-                                  return (
-                                    <div key={grupo}>
-                                      <div style={{ padding:'5px 14px', background:'#f0fdf4', borderTop:'1px solid #dcfce7',
-                                        fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4,
-                                        color:'#166534', display:'flex', justifyContent:'space-between' }}>
-                                        <span>{label}</span>
-                                        {gTotal > 0 && <span style={{ fontVariantNumeric:'tabular-nums' as const }}>{fmtL(gTotal)}</span>}
-                                      </div>
-                                      {cats.map(cat => {
-                                        const row = dadosAnoFinal.entradas.indexOf(cat)
-                                        const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                                        const podeEditar = !bloqueado
-                                        if (cat.v[mi] === 0 && bloqueado) return null
-                                        return (
-                                          <div key={cat.nome}
-                                            onClick={podeEditar ? (e) => { e.stopPropagation(); iniciarValor('e', row, mi, cat.v[mi]) } : undefined}
-                                            style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px 7px 22px',
-                                              borderTop:'1px solid rgba(0,0,0,0.04)', cursor:podeEditar?'pointer':'default',
-                                              background:editando?.tipo==='e'&&editando.row===row&&editando.mes===mi?'#f0fdf4':'transparent' }}>
-                                            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
-                                              display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
-                                            <div style={{ flex:1, fontSize:12, color:COR.texto }}>{cat.nome}</div>
-                                            {renderValor('e', row, mi, cat.v[mi], !podeEditar)}
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-
-                              {/* Saídas */}
-                              <div style={{ marginTop:10, borderRadius:10, overflow:'hidden', border:'1px solid #fca5a5' }}>
-                                <div style={{ padding:'8px 14px', background:'#fee2e2',
-                                  display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                                  <span style={{ fontSize:11, fontWeight:700, color:'#7f1d1d' }}>↓ Quanto vai sair</span>
-                                  <span style={{ fontSize:12, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(ts)}</span>
-                                </div>
-                                {gruposSai.map(([grupo, cats]) => {
-                                  const ehCartao = grupo === 'Cartão de Crédito'
-                                  const gTotal = cats.reduce((s,c) => s + c.v[mi], 0)
-                                  const label = grupo === '__sem_grupo__' ? 'Outras saídas' : grupo
-                                  const corGrupo = ehCartao ? '#6d28d9' : '#991b1b'
-                                  const bgGrupo  = ehCartao ? '#f5f3ff' : '#fef2f2'
-                                  const bdGrupo  = ehCartao ? '#ede9fe' : '#fecaca'
-                                  if (gTotal === 0 && bloqueado) return null
-                                  return (
-                                    <div key={grupo}>
-                                      <div style={{ padding:'5px 14px', background:bgGrupo, borderTop:`1px solid ${bdGrupo}`,
-                                        fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4,
-                                        color:corGrupo, display:'flex', justifyContent:'space-between' }}>
-                                        <span>{label}</span>
-                                        {gTotal > 0 && <span style={{ fontVariantNumeric:'tabular-nums' as const }}>{fmtL(gTotal)}</span>}
-                                      </div>
-                                      {cats.map(cat => {
-                                        const ehCartaoSin = cat.id === '__cartao__'
-                                        const row = dadosAnoFinal.saidas.indexOf(cat)
-                                        const { icone, cor: corIcone } = iconeCategoria(categorias, cat.nome)
-                                        const podeEditar = !bloqueado && !ehCartaoSin && !nomeFaturaCartao(cat.nome, cartaoNomes)
-                                        if (cat.v[mi] === 0 && bloqueado) return null
-                                        return (
-                                          <div key={cat.nome}
-                                            onClick={podeEditar ? (e) => { e.stopPropagation(); iniciarValor('s', row, mi, cat.v[mi]) } : undefined}
-                                            style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px 7px 22px',
-                                              borderTop:'1px solid rgba(0,0,0,0.04)', cursor:podeEditar?'pointer':'default',
-                                              background:editando?.tipo==='s'&&editando.row===row&&editando.mes===mi?'#fff7f7':'transparent' }}>
-                                            <div style={{ width:20, height:20, borderRadius:5, background:corIcone,
-                                              display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{icone}</div>
-                                            <div style={{ flex:1, fontSize:12, color:COR.texto }}>{cat.nome}</div>
-                                            {renderValor('s', row, mi, cat.v[mi], !podeEditar)}
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-
-                  {/* Total do Ano */}
-                  <div style={{ display:'grid', gridTemplateColumns:COLS, borderTop:`2px solid ${COR.borda}`, background:'#f8fafc' }}>
-                    <div style={{ padding:'12px 14px', fontSize:13, fontWeight:700, color:COR.texto }}>Total do Ano</div>
-                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:'#16a34a', fontVariantNumeric:'tabular-nums' as const }}>{fmtL(teTotal)}</div>
-                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:13, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const }}>{fmtL(tsTotal)}</div>
-                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:13, fontWeight:800,
-                      color: sobraTotal > 0 ? COR.verde : sobraTotal < 0 ? COR.vermelho : COR.textoSuave,
-                      fontVariantNumeric:'tabular-nums' as const }}>
-                      {sobraTotal === 0 ? '—' : (sobraTotal > 0 ? '+' : '') + fmtL(Math.abs(sobraTotal))}
+                {/* ── 3 cards de resumo ── */}
+                <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:14}}>
+                  {/* ↗ Vai entrar */}
+                  <div style={{background:COR.branco, borderRadius:12, padding:'14px 18px', boxShadow:'0 1px 3px rgba(0,0,0,.06)'}}>
+                    <div style={{fontSize:11, color:COR.textoSuave, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.3}}>Receitas</div>
+                    <div style={{fontSize:20, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, marginTop:2, color:COR.verde}}>{fmtL(te)}</div>
+                    <div style={{height:4, borderRadius:4, background:'#f1f5f9', marginTop:8, overflow:'hidden'}}>
+                      <div style={{height:'100%', borderRadius:4, background:'#34d399', width:`${entBarW}%`}}/>
                     </div>
-                    <div style={{ padding:'12px 12px', textAlign:'right' as const, fontSize:14, fontWeight:800,
-                      color: guardadoFinal > 0 ? COR.verde : guardadoFinal < 0 ? COR.vermelho : COR.textoSuave,
-                      fontVariantNumeric:'tabular-nums' as const }}>{fmtL(guardadoFinal)}</div>
+                  </div>
+                  {/* ↙ Vai sair */}
+                  <div style={{background:COR.branco, borderRadius:12, padding:'14px 18px', boxShadow:'0 1px 3px rgba(0,0,0,.06)'}}>
+                    <div style={{fontSize:11, color:COR.textoSuave, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.3}}>Despesas</div>
+                    <div style={{fontSize:20, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, marginTop:2, color:COR.vermelho}}>{fmtL(ts)}</div>
+                    <div style={{height:4, borderRadius:4, background:'#f1f5f9', marginTop:8, overflow:'hidden'}}>
+                      <div style={{height:'100%', borderRadius:4, background:'#fca5a5', width:`${saiBarW}%`}}/>
+                    </div>
+                  </div>
+                  {/* 💰 Vai sobrar */}
+                  <div style={{background:COR.branco, borderRadius:12, padding:'14px 18px', boxShadow:'0 1px 3px rgba(0,0,0,.06)'}}>
+                    <div style={{fontSize:11, color:COR.textoSuave, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.3}}>Resultado</div>
+                    <div style={{fontSize:20, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, marginTop:2, color:COR.azul}}>{fmtL(sob)}</div>
+                    <div style={{height:4, borderRadius:4, background:'#f1f5f9', marginTop:8, overflow:'hidden'}}>
+                      <div style={{height:'100%', borderRadius:4, background:'#93c5fd', width:`${sobBarW}%`}}/>
+                    </div>
                   </div>
                 </div>
+
+                {/* ── Cards de grupo ── */}
+                {[...gruposEnt.map(([g,cats]) => ({key:`e-${g}`,nome:g,cats,tipo:'e' as const})),
+                  ...gruposSai.map(([g,cats]) => ({key:`s-${g}`,nome:g,cats,tipo:'s' as const}))
+                ].map(({key,nome,cats,tipo}) => {
+                  const groupTotal = cats.reduce((s,c) => s + (c.v[mesMobile] ?? 0), 0)
+                  if (groupTotal === 0) return null
+                  const isOpen = gruposAbertos.has(key)
+                  const pct = ts > 0 && tipo === 's' ? Math.round(groupTotal / ts * 100) : te > 0 && tipo === 'e' ? Math.round(groupTotal / te * 100) : 0
+                  const label = nome === '__sem_grupo__' ? (tipo === 'e' ? 'Outras entradas' : 'Outras saídas') : nome
+                  return (
+                    <div key={key} style={{background:COR.branco, borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,.06)', overflow:'hidden', marginBottom:10}}>
+                      {/* Header do card */}
+                      <div
+                        onClick={() => toggleGA(key)}
+                        style={{padding:'12px 18px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between',
+                          borderBottom:isOpen?'1px solid #f1f5f9':'1px solid transparent'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:10}}>
+                          <div style={{width:36, height:36, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, background:'#dbeafe'}}>
+                            {tipo === 'e' ? '💰' : '📌'}
+                          </div>
+                          <div>
+                            <div style={{fontSize:14, fontWeight:700, color:COR.texto}}>{label}</div>
+                            <div style={{fontSize:11, color:COR.textoSuave}}>{cats.filter(c => (c.v[mesMobile] ?? 0) > 0).length} categoria{cats.filter(c => (c.v[mesMobile] ?? 0) > 0).length !== 1 ? 's' : ''}</div>
+                          </div>
+                        </div>
+                        <div style={{display:'flex', alignItems:'center', gap:12}}>
+                          {pct > 0 && <span style={{fontSize:10, fontWeight:700, color:COR.textoSuave, background:'#f1f5f9', padding:'3px 8px', borderRadius:16}}>{pct}%</span>}
+                          <span style={{fontSize:15, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, color:COR.texto}}>{fmtL(groupTotal)}</span>
+                          <span style={{color:COR.textoSuave, fontSize:12, display:'inline-block', transition:'transform .2s', transform:isOpen?'rotate(180deg)':'none'}}>▾</span>
+                        </div>
+                      </div>
+                      {/* Categorias */}
+                      {isOpen && (
+                        <div style={{padding:'0 18px 12px'}}>
+                          {cats.filter(c => (c.v[mesMobile] ?? 0) > 0).map(cat => {
+                            const v = cat.v[mesMobile] ?? 0
+                            const bw = groupTotal > 0 ? Math.round(v / groupTotal * 100) : 0
+                            const {icone} = iconeCategoria(categorias, cat.nome)
+                            return (
+                              <div key={cat.nome} style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid #f8fafc'}}>
+                                <div style={{display:'flex', alignItems:'center', gap:8}}>
+                                  <span style={{fontSize:13}}>{icone}</span>
+                                  <span style={{fontSize:13, color:'#475569', fontWeight:500}}>{cat.nome}</span>
+                                </div>
+                                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                                  <div style={{width:56, height:5, background:'#f1f5f9', borderRadius:4, overflow:'hidden'}}>
+                                    <div style={{height:'100%', borderRadius:4, background:'#93c5fd', width:`${bw}%`}}/>
+                                  </div>
+                                  <span
+                                    onClick={() => setModalMes(mesMobile)}
+                                    style={{fontSize:13, fontWeight:700, color:COR.texto, fontVariantNumeric:'tabular-nums' as const, padding:'4px 8px', borderRadius:6, cursor:'pointer', transition:'background .15s'}}
+                                    onMouseEnter={e => { const el=e.currentTarget as HTMLSpanElement; el.style.background='#eff6ff'; el.style.color=COR.azul }}
+                                    onMouseLeave={e => { const el=e.currentTarget as HTMLSpanElement; el.style.background=''; el.style.color=COR.texto }}>
+                                    {fmtL(v)}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {/* Dica */}
+                <div style={{marginTop:14, padding:'10px 14px', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:10, fontSize:12, color:'#92400e', lineHeight:1.5, display:'flex', alignItems:'flex-start', gap:8}}>
+                  <span>💡</span>
+                  <span>Toque no valor para ajustar. A % mostra quanto do total cada grupo representa.</span>
+                </div>
+                </>
               )
             })())}
 
@@ -3441,9 +3123,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}`, flexShrink:0 }}>
                 {([
                   { label:'Você tem hoje', val:si,    cor:corSaldo(si)  },
-                  { label:'↑ Vai entrar',  val:te,    cor:'#16a34a'     },
-                  { label:'↓ Vai sair',    val:ts,    cor:COR.vermelho  },
-                  { label:'Vai sobrar',    val:sfVal, cor:sfCor         },
+                  { label:'Receitas',  val:te,    cor:'#16a34a'     },
+                  { label:'Despesas',  val:ts,    cor:COR.vermelho  },
+                  { label:'Resultado', val:sfVal, cor:sfCor         },
                 ] as { label:string; val:number; cor:string }[]).map((item, idx) => (
                   <div key={idx} style={{ flex:1, padding:'10px 14px',
                     borderRight: idx < 3 ? `1px solid ${COR.borda}` : 'none' }}>
@@ -3488,7 +3170,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 <div style={{ margin:'10px 10px 6px', borderRadius:10, border:'1px solid #86efac', overflow:'hidden' }}>
                   <div style={{ padding:'8px 14px', background:'#dcfce7',
                     display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:'#166534' }}>↑ Quanto vai entrar</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#166534' }}>Receitas</span>
                   </div>
                   {(() => { const entradasComIdx = entradasModal.map((cat, ri) => ({ cat, ri }))
           .sort((a, b) => {
@@ -3537,7 +3219,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 <div style={{ margin:'6px 10px 10px', borderRadius:10, border:'1px solid #fca5a5', overflow:'hidden' }}>
                   <div style={{ padding:'8px 14px', background:'#fee2e2',
                     display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:'#7f1d1d' }}>↓ Quanto vai sair</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:'#7f1d1d' }}>Despesas</span>
                   </div>
                   {(() => {
                     const temFatura = saidasModal.some(c => nomeFaturaCartao(c.nome, cartaoNomes))
@@ -4108,7 +3790,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     {label:'Saldo inicial',        v:saldoIni, c:'#1a56db'},
                     {label:'Receitas / mês',        v:totalE,   c:COR.verde},
                     {label:'Despesas / mês',        v:totalS,   c:COR.vermelho},
-                    {label:'Resultado mensal',      v:saldoMes, c:saldoMes>=0?COR.verde:COR.vermelho},
+                    {label:'Resultado',              v:saldoMes, c:saldoMes>=0?COR.verde:COR.vermelho},
                   ] as const).map(({label,v,c})=>(
                     <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
                       padding:'10px 14px',borderRadius:10,background:c+'11',border:`1px solid ${c}33`}}>
@@ -4463,7 +4145,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     <div key={tipo}>
                       <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:.5,
                         marginBottom:6, color: tipo === 'entrada' ? '#16a34a' : COR.vermelho }}>
-                        {tipo === 'entrada' ? '↑ Entradas' : '↓ Saídas'}
+                        {tipo === 'entrada' ? 'Receitas' : 'Despesas'}
                       </div>
                       <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                         {lista.map(item => {

@@ -40,7 +40,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
         sub: [
-          { label: 'Comece aqui',    path: '/planejamento?modo=wizard'  },
+          { label: 'Assistente',     path: '/planejamento?modo=wizard'  },
           { label: 'Grade',          path: '/planejamento?modo=grade'   },
           { label: 'Planilha',       path: '/planejamento?modo=planilha'},
           { label: 'Lista',          path: '/planejamento?modo=lista'   },
@@ -48,7 +48,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         ],
       },
       { icon: '📈', label: 'Evolução',   path: '/evolucao',    exact: false },
-      { icon: '🔮', label: 'Simulação',  path: '/simulacao',   exact: false, badge: 'Em breve', disabled: true },
+      { icon: '🔮', label: 'Simulador',  path: '/simulacao',   exact: false },
     ],
   },
   {
@@ -80,10 +80,10 @@ function CompassIcon() {
 }
 
 function NavItemRow({
-  icon, label, active, danger = false, expanded, hasSub, badge, disabled, onClick,
+  icon, label, active, isSair = false, expanded, hasSub, badge, disabled, onClick,
 }: {
   icon: string; label: string; active: boolean
-  danger?: boolean; expanded?: boolean; hasSub?: boolean
+  isSair?: boolean; expanded?: boolean; hasSub?: boolean
   badge?: string; disabled?: boolean; onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
@@ -98,12 +98,20 @@ function NavItemRow({
         border: 'none', borderRadius: 8,
         cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
-        background: active ? '#eff6ff' : hovered ? (danger ? '#fff1f2' : '#f8fafc') : 'transparent',
-        color: disabled ? '#b0b8c4'
-          : active ? '#1a56db'
-          : danger ? (hovered ? '#dc2626' : '#94a3b8')
-          : '#475569',
-        fontSize: 13, fontWeight: active ? 500 : 400,
+        background: active
+          ? 'rgba(255,255,255,0.15)'
+          : hovered
+            ? 'rgba(255,255,255,0.1)'
+            : 'transparent',
+        color: isSair
+          ? (hovered ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)')
+          : active
+            ? '#ffffff'
+            : disabled
+              ? 'rgba(255,255,255,0.3)'
+              : 'rgba(255,255,255,0.7)',
+        fontSize: 13,
+        fontWeight: active ? 600 : 400,
         transition: 'background .12s, color .12s',
         opacity: disabled ? 0.7 : 1,
       }}
@@ -114,14 +122,17 @@ function NavItemRow({
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: '.4px',
           padding: '2px 5px', borderRadius: 4,
-          background: '#f1f5f9', color: '#94a3b8',
-          border: '1px solid #e2e8f0', flexShrink: 0,
+          background: 'rgba(255,255,255,0.15)',
+          color: 'rgba(255,255,255,0.6)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          flexShrink: 0,
           textTransform: 'uppercase',
         }}>{badge}</span>
       )}
       {!badge && hasSub && (
         <span style={{
-          fontSize: 10, color: active ? '#1a56db' : '#b0b8c4',
+          fontSize: 10,
+          color: active ? '#ffffff' : 'rgba(255,255,255,0.4)',
           transition: 'transform .2s, color .12s',
           transform: expanded ? 'rotate(90deg)' : 'none',
           display: 'inline-block', flexShrink: 0,
@@ -130,7 +141,7 @@ function NavItemRow({
       {!badge && !hasSub && active && (
         <div style={{
           width: 4, height: 4, borderRadius: '50%',
-          background: '#1a56db', flexShrink: 0,
+          background: '#ffffff', flexShrink: 0,
         }}/>
       )}
     </button>
@@ -151,15 +162,20 @@ function SubItemRow({ label, active, onClick }: {
         width: '100%', padding: '5px 8px 5px 33px', marginBottom: 1,
         border: 'none', borderRadius: 6, cursor: 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
-        background: active ? '#eff6ff' : hovered ? '#f8fafc' : 'transparent',
-        color: active ? '#1a56db' : '#64748b',
-        fontSize: 12, fontWeight: active ? 600 : 400,
-        transition: 'background .1s, color .1s',
+        background: 'transparent',
+        color: active
+          ? '#ffffff'
+          : hovered
+            ? 'rgba(255,255,255,0.9)'
+            : 'rgba(255,255,255,0.6)',
+        fontSize: 12,
+        fontWeight: active ? 500 : 400,
+        transition: 'color .1s',
       }}
     >
       <span style={{
         width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-        background: active ? '#1a56db' : hovered ? '#94a3b8' : '#cbd5e1',
+        background: active ? '#ffffff' : hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
         transition: 'background .1s',
       }}/>
       {label}
@@ -171,7 +187,8 @@ function SubDividerRow({ label }: { label: string }) {
   return (
     <div style={{
       padding: '8px 8px 3px 33px',
-      fontSize: 10, fontWeight: 700, color: '#b0b8c4',
+      fontSize: 10, fontWeight: 700,
+      color: 'rgba(255,255,255,0.4)',
       letterSpacing: '.8px', textTransform: 'uppercase',
     }}>
       {label}
@@ -185,7 +202,6 @@ export default function Sidebar() {
   const { perfil, user, sairDaConta } = useApp()
 
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
-
   const email   = user?.email ?? ''
   const inicial = nome.charAt(0).toUpperCase()
 
@@ -198,7 +214,6 @@ export default function Sidebar() {
     return (pathname + search) === subPath
   }
 
-  // Expanded state — independent of navigation
   const [expandedItem, setExpandedItem] = useState<string|null>(() => {
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
@@ -217,28 +232,32 @@ export default function Sidebar() {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, bottom: 0, width: SIDEBAR_W,
-      background: '#fff', borderRight: '1px solid #e8edf3',
+      background: 'linear-gradient(180deg, #0f2878 0%, #1a56db 100%)',
       display: 'flex', flexDirection: 'column', zIndex: 100,
       fontFamily: "-apple-system,'Inter',sans-serif",
     }}>
 
       {/* ── Logo ── */}
-      <div style={{ padding: '18px 14px 14px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
+      <div style={{
+        padding: '18px 14px 14px',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        flexShrink: 0,
+      }}>
         <div
           onClick={() => navigate('/dashboard')}
           style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
         >
           <div style={{
             width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-            background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+            background: 'rgba(255,255,255,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <CompassIcon />
           </div>
           <div style={{ lineHeight: 1.2 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Compass</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>Compass</span>
             {' '}
-            <span style={{ fontSize: 14, fontWeight: 300, color: '#64748b' }}>One</span>
+            <span style={{ fontSize: 14, fontWeight: 300, color: 'rgba(255,255,255,0.7)' }}>One</span>
           </div>
         </div>
       </div>
@@ -248,7 +267,8 @@ export default function Sidebar() {
         {NAV_GROUPS.map(group => (
           <div key={group.label} style={{ marginBottom: 18 }}>
             <div style={{
-              fontSize: 10, fontWeight: 700, color: '#b0b8c4',
+              fontSize: 10, fontWeight: 700,
+              color: 'rgba(255,255,255,0.5)',
               letterSpacing: '1px', textTransform: 'uppercase',
               padding: '0 8px', marginBottom: 4,
             }}>
@@ -302,14 +322,19 @@ export default function Sidebar() {
       </div>
 
       {/* ── User footer ── */}
-      <div style={{ padding: '10px 10px 14px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
+      <div style={{
+        padding: '10px 10px 14px',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
+        flexShrink: 0,
+      }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 9,
           padding: '6px 8px', marginBottom: 4, borderRadius: 8,
+          background: 'rgba(255,255,255,0.1)',
         }}>
           <div style={{
             width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg,#1a56db,#2563eb)',
+            background: 'rgba(255,255,255,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontSize: 12, fontWeight: 700,
           }}>
@@ -317,16 +342,16 @@ export default function Sidebar() {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 12, fontWeight: 600, color: '#0f172a',
+              fontSize: 12, fontWeight: 600, color: '#ffffff',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{nome}</div>
             <div style={{
-              fontSize: 10, color: '#94a3b8',
+              fontSize: 10, color: 'rgba(255,255,255,0.6)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{email}</div>
           </div>
         </div>
-        <NavItemRow icon="⏻" label="Sair" active={false} danger onClick={sairDaConta} />
+        <NavItemRow icon="⏻" label="Sair" active={false} isSair onClick={sairDaConta} />
       </div>
 
     </div>
