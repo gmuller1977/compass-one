@@ -499,7 +499,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function finalizarPlanejamento(ano: number, dados: PlanoAnoData) {
     setPlanosRealState(prev => ({ ...prev, [ano]: JSON.parse(JSON.stringify(dados)) }))
-    setPlanejamentoLockadoState(true)
   }
 
   function updatePlanoReal(ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) {
