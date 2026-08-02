@@ -221,6 +221,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const wasLoggedOutRef = useRef(false)
   const loadedUserIdRef = useRef<string | null>(null)
   const loadingForUserRef = useRef<string | null>(null)
+  // Rastreia a última contagem conhecida de cada tabela crítica.
+  // Usado para bloquear saves vazios acidentais sobre dados existentes.
+  const savedCountRef = useRef({ contas: -1, categorias: -1, planos: -1, planosReal: -1 })
 
   const [contas,      setContasState]     = useState<Conta[]>([])
   const [categorias,  setCategoriasState] = useState<Categoria[]>([])
@@ -353,6 +356,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosState(planosLoaded)
     setPlanosRealState(planosRealLoaded)
 
+    // Registra contagens após load bem-sucedido para proteção de save seguro
+    savedCountRef.current = {
+      contas:     contasLoaded.length,
+      categorias: catsLoaded.length,
+      planos:     Object.keys(planosLoaded).length,
+      planosReal: Object.keys(planosRealLoaded).length,
+    }
+
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
@@ -362,6 +373,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function resetState() {
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
+    savedCountRef.current = { contas: -1, categorias: -1, planos: -1, planosReal: -1 }
     setContasState([])
     setCategoriasState([])
     setExtratoState({})
@@ -377,30 +389,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Save helpers ─────────────────────────────────────────────────────
   function canSave() { return !!(userIdRef.current && dataLoadedRef.current) }
 
+  function safeSaveCheck(key: keyof typeof savedCountRef.current, newCount: number): boolean {
+    const known = savedCountRef.current[key]
+    if (newCount === 0 && known > 0) {
+      console.warn(`[safeSave] Bloqueado: tentativa de apagar ${known} ${key} com estado vazio`)
+      return false
+    }
+    return true
+  }
+
   async function saveContas(list: Conta[]) {
     if (!canSave()) return
     const uid = userIdRef.current!
     if (list.length === 0) {
+      if (!safeSaveCheck('contas', 0)) return
       await supabase.from('contas').delete().eq('user_id', uid)
+      savedCountRef.current.contas = 0
       return
     }
     const { error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid)))
     if (error) { console.error('save contas:', error); return }
     const ids = list.map(c => `'${c.id}'`).join(',')
     await supabase.from('contas').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
+    savedCountRef.current.contas = list.length
   }
 
   async function saveCategorias(list: Categoria[]) {
     if (!canSave()) return
     const uid = userIdRef.current!
     if (list.length === 0) {
+      if (!safeSaveCheck('categorias', 0)) return
       await supabase.from('categorias').delete().eq('user_id', uid)
+      savedCountRef.current.categorias = 0
       return
     }
     const { error } = await supabase.from('categorias').upsert(list.map(c => categoriaToRow(c, uid)))
     if (error) { console.error('save categorias:', error); return }
     const ids = list.map(c => `'${c.id}'`).join(',')
     await supabase.from('categorias').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
+    savedCountRef.current.categorias = list.length
   }
 
   async function saveExtratoData(data: Record<string, DadosMes>) {
@@ -441,8 +468,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!canSave()) return
     const uid = userIdRef.current!
     const entries = Object.entries(dict)
+    const countKey = tipo === 'previsto' ? 'planos' : 'planosReal'
     if (entries.length === 0) {
+      if (!safeSaveCheck(countKey, 0)) return
       await supabase.from('planejamento_data').delete().eq('user_id', uid).eq('tipo_plano', tipo)
+      savedCountRef.current[countKey] = 0
       return
     }
     const rows = entries.map(([anoStr, dados]) => ({
@@ -463,6 +493,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await supabase.from('planejamento_data')
       .delete().eq('user_id', uid).eq('tipo_plano', tipo)
       .not('ano', 'in', `(${anos})`)
+    savedCountRef.current[countKey] = entries.length
   }
 
   async function saveUserPrefs(
