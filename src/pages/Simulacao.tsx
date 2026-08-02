@@ -151,10 +151,89 @@ function SimCard({ sim, onDelete }: { sim: SimRow; onDelete: (id: string) => voi
   )
 }
 
+const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+function calcularImpacto(parcela: number, planos: Record<number, { entradas: {v:number[]}[]; saidas: {v:number[]}[] }>) {
+  const hoje   = new Date()
+  const anoBase = hoje.getFullYear()
+  const mesBase = hoje.getMonth()
+  return Array.from({ length: 6 }, (_, i) => {
+    const mesTotal = mesBase + i
+    const ano = anoBase + Math.floor(mesTotal / 12)
+    const mes = mesTotal % 12
+    const plano = planos[ano]
+    const receitas  = plano ? plano.entradas.reduce((s, c) => s + (c.v[mes] || 0), 0) : 0
+    const despesas  = plano ? plano.saidas.reduce((s,  c) => s + (c.v[mes] || 0), 0) : 0
+    const resultado = receitas - despesas
+    return {
+      label: `${MESES_ABR[mes]}/${ano}`,
+      resultado,
+      resultadoComParcela: resultado - parcela,
+      temDados: !!plano && (receitas > 0 || despesas > 0),
+    }
+  })
+}
+
+function TabelaImpacto({ parcela, planos, cor }: {
+  parcela: number
+  planos: Record<number, { entradas: {v:number[]}[]; saidas: {v:number[]}[] }>
+  cor: string
+}) {
+  const linhas = calcularImpacto(parcela, planos)
+  const temAlgumPlano = linhas.some(l => l.temDados)
+  const thSt: React.CSSProperties = {
+    textAlign: 'right', padding: '6px 10px',
+    borderBottom: `1px solid ${COR.borda}`,
+    color: COR.textoMuted, fontWeight: 600, fontSize: 11,
+    textTransform: 'uppercase', letterSpacing: '.4px',
+  }
+  return (
+    <div style={card}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>
+        📊 Impacto no seu planejamento
+      </div>
+      <div style={{ fontSize: 12, color: COR.textoMuted, marginBottom: 16 }}>
+        Como a parcela de {fmt(parcela)}/mês afeta seu resultado nos próximos 6 meses
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 340 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thSt, textAlign: 'left' }}>Mês</th>
+              <th style={thSt}>Resultado atual</th>
+              <th style={{ ...thSt, color: cor }}>Com parcela</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map((row, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '8px 10px', color: COR.texto, fontWeight: 500 }}>{row.label}</td>
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums',
+                  color: row.temDados ? (row.resultado >= 0 ? COR.verde : COR.vermelho) : COR.textoMuted }}>
+                  {row.temDados ? fmt(row.resultado) : '—'}
+                </td>
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+                  color: row.temDados ? (row.resultadoComParcela >= 0 ? COR.verde : COR.vermelho) : COR.textoMuted }}>
+                  {row.temDados ? fmt(row.resultadoComParcela) : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!temAlgumPlano && (
+        <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 12, padding: '8px 10px', background: '#f8fafc', borderRadius: 6 }}>
+          💡 Crie um planejamento para ver o impacto real nos seus meses.
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Simulacao() {
-  const isMobile       = useIsMobile()
-  const { user }       = useApp()
-  const hoje           = new Date()
+  const isMobile            = useIsMobile()
+  const { user, planos }    = useApp()
+  const hoje                = new Date()
 
   const [aba, setAba] = useState<'divida' | 'meta'>('divida')
 
@@ -427,6 +506,9 @@ export default function Simulacao() {
                   )}
                 </div>
 
+                {/* Impacto no planejamento */}
+                <TabelaImpacto parcela={resultDiv.parcela} planos={planos} cor={COR.vermelho} />
+
                 {/* Salvar */}
                 {!simSalva ? (
                   <button onClick={salvarSimulacao} style={{
@@ -542,6 +624,9 @@ export default function Simulacao() {
                     </div>
                   )}
                 </div>
+
+                {/* Impacto no planejamento */}
+                <TabelaImpacto parcela={resultMeta.guardaPorMes} planos={planos} cor={COR.verde} />
 
                 {/* Salvar */}
                 {!simSalva ? (
