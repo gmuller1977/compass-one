@@ -2809,91 +2809,99 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       </thead>
                       <tbody>
 
-                        {/* ── Resumos no topo ── */}
-
-                        {/* ↗ Quanto vai entrar */}
-                        <tr>
-                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px', fontSize:12, fontWeight:700, color:COR.verde, background:'#f0fdf4', borderTop:`2px solid ${COR.borda}`}}>Receitas</td>
+                        {/* ── RECEITAS — seção expansível ── */}
+                        <tr onClick={() => setSecEntAberto(v => !v)} style={{cursor:'pointer'}}>
+                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px 12px', fontSize:13, fontWeight:700, color:COR.verde, background:'#f0fdf4', borderTop:`2px solid ${COR.borda}`, userSelect:'none' as const}}>
+                            <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secEntAberto?'rotate(90deg)':'none', fontSize:10}}>▶</span>
+                            Receitas
+                          </td>
                           {totalEntradas.map((v, mi) => (
                             <td key={mi} style={{padding:'10px', fontSize:12, fontWeight:700, color:COR.verde, background:'#f0fdf4', textAlign:'right' as const, borderTop:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
                           ))}
                         </tr>
 
-                        {/* ↙ Quanto vai sair */}
-                        <tr>
-                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px', fontSize:12, fontWeight:700, color:COR.vermelho, background:'#fef2f2', borderTop:`2px solid ${COR.borda}`}}>Despesas</td>
-                          {totalSaidas.map((v, mi) => (
-                            <td key={mi} style={{padding:'10px', fontSize:12, fontWeight:700, color:COR.vermelho, background:'#fef2f2', textAlign:'right' as const, borderTop:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
-                          ))}
-                        </tr>
-
-                        {/* 💰 Quanto vai sobrar */}
-                        <tr>
-                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px', fontSize:13, fontWeight:800, color:COR.texto, background:'#f8fafc', borderTop:`2px solid ${COR.borda}`, borderBottom:`2px solid ${COR.borda}`}}>Resultado</td>
-                          {totalEntradas.map((te, mi) => {
-                            const sob = te - totalSaidas[mi]
-                            return (
-                              <td key={mi} style={{padding:'10px', fontSize:13, fontWeight:800, textAlign:'right' as const, background:'#f8fafc', borderTop:`2px solid ${COR.borda}`, borderBottom:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const,
-                                color:sob>0?COR.verde:sob<0?COR.vermelho:COR.textoSuave}}>{fmtH(sob)}</td>
-                            )
-                          })}
-                        </tr>
-
-                        {/* ── Grupos de entradas ── */}
-                        {gruposEP.map(([grupo, cats]) => {
-                          const label = grupo === '__sem_grupo__' ? 'Outras entradas' : grupo
+                        {secEntAberto && gruposEP.map(([grupo, cats]) => {
+                          const label = grupo === '__sem_grupo__' ? 'Sem grupo' : grupo
                           const key = `e-${grupo}`
                           const aberto = gruposHorizAbertos.has(key)
                           const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
                           return [
                             <tr key={key} onClick={() => toggleH(key)} style={{cursor:'pointer'}}>
-                              <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'9px 10px', fontSize:13, fontWeight:700, color:COR.texto, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`}}>
-                                💰 {label}
-                                <span style={{float:'right' as const, display:'inline-block', transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', color:COR.textoSuave, fontSize:11}}>▸</span>
+                              <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'8px 10px 8px 28px', fontSize:12, fontWeight:700, color:'#166534', background:'#f0fdf4', borderBottom:`1px solid #dcfce7`}}>
+                                <span style={{display:'inline-block', marginRight:6, transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', fontSize:9}}>▶</span>
+                                {label}
                               </td>
                               {gVals.map((v, mi) => (
-                                <td key={mi} style={{padding:'9px 10px', textAlign:'right' as const, fontWeight:800, color:'#334155', fontSize:12, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                                <td key={mi} style={{padding:'8px 10px', textAlign:'right' as const, fontWeight:600, color:'#166534', fontSize:12, background:'#f0fdf4', borderBottom:`1px solid #dcfce7`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
                               ))}
                             </tr>,
-                            ...(!aberto ? [] : cats.map(cat => (
+                            ...(aberto ? cats.map(cat => (
                               <tr key={cat.nome}>
-                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 30px', fontSize:12, color:COR.textoSuave, fontWeight:500, textAlign:'left' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
                                 {cat.v.map((v, mi) => (
                                   <td key={mi} style={{padding:'6px 10px', fontSize:12, color:'#475569', textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{catCellSpan(v, mi)}</td>
                                 ))}
                               </tr>
-                            )))
+                            )) : [])
                           ]
                         })}
 
-                        {/* ── Grupos de saídas ── */}
-                        {gruposSP.map(([grupo, cats]) => {
-                          const label = grupo === '__sem_grupo__' ? 'Outras saídas' : grupo
+                        {/* ── DESPESAS — seção expansível ── */}
+                        <tr onClick={() => setSecSaiAberto(v => !v)} style={{cursor:'pointer'}}>
+                          <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px 12px', fontSize:13, fontWeight:700, color:COR.vermelho, background:'#fef2f2', borderTop:`2px solid ${COR.borda}`, userSelect:'none' as const}}>
+                            <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secSaiAberto?'rotate(90deg)':'none', fontSize:10}}>▶</span>
+                            Despesas
+                          </td>
+                          {totalSaidas.map((v, mi) => (
+                            <td key={mi} style={{padding:'10px', fontSize:12, fontWeight:700, color:COR.vermelho, background:'#fef2f2', textAlign:'right' as const, borderTop:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                          ))}
+                        </tr>
+
+                        {secSaiAberto && gruposSP.map(([grupo, cats]) => {
+                          const label = grupo === '__sem_grupo__' ? 'Sem grupo' : grupo
                           const key = `s-${grupo}`
                           const aberto = gruposHorizAbertos.has(key)
                           const gVals = MESES.map((_,mi) => cats.reduce((s,c) => s + c.v[mi], 0))
                           return [
                             <tr key={key} onClick={() => toggleH(key)} style={{cursor:'pointer'}}>
-                              <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'9px 10px', fontSize:13, fontWeight:700, color:COR.texto, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`}}>
-                                📌 {label}
-                                <span style={{float:'right' as const, display:'inline-block', transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', color:COR.textoSuave, fontSize:11}}>▸</span>
+                              <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'8px 10px 8px 28px', fontSize:12, fontWeight:700, color:'#991b1b', background:'#fef2f2', borderBottom:`1px solid #fecdd3`}}>
+                                <span style={{display:'inline-block', marginRight:6, transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', fontSize:9}}>▶</span>
+                                {label}
                               </td>
                               {gVals.map((v, mi) => (
-                                <td key={mi} style={{padding:'9px 10px', textAlign:'right' as const, fontWeight:800, color:'#334155', fontSize:12, background:'#f8fafc', borderBottom:`1px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
+                                <td key={mi} style={{padding:'8px 10px', textAlign:'right' as const, fontWeight:600, color:'#991b1b', fontSize:12, background:'#fef2f2', borderBottom:`1px solid #fecdd3`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
                               ))}
                             </tr>,
-                            ...(!aberto ? [] : cats.map(cat => (
+                            ...(aberto ? cats.map(cat => (
                               <tr key={cat.nome}>
-                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 30px', fontSize:12, color:COR.textoSuave, fontWeight:500, textAlign:'left' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
                                 {cat.v.map((v, mi) => (
                                   <td key={mi} style={{padding:'6px 10px', fontSize:12, color:'#475569', textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{catCellSpan(v, mi)}</td>
                                 ))}
                               </tr>
-                            )))
+                            )) : [])
                           ]
                         })}
 
                       </tbody>
+
+                      {/* ── RESULTADO — sempre visível, fixo no rodapé ── */}
+                      <tfoot>
+                        <tr>
+                          <td style={{position:'sticky' as const, left:0, zIndex:6, padding:'11px 12px', fontSize:13, fontWeight:800, color:COR.texto, background:'#f1f5f9', borderTop:`2px solid ${COR.borda}`}}>
+                            Resultado
+                          </td>
+                          {totalEntradas.map((te, mi) => {
+                            const sob = te - totalSaidas[mi]
+                            return (
+                              <td key={mi} style={{padding:'11px 10px', fontSize:13, fontWeight:800, textAlign:'right' as const, background:'#f1f5f9', borderTop:`2px solid ${COR.borda}`, fontVariantNumeric:'tabular-nums' as const,
+                                color:sob>0?COR.verde:sob<0?COR.vermelho:COR.textoSuave}}>
+                                {fmtH(sob)}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 </div>
