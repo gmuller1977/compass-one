@@ -980,6 +980,28 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     }
   }
 
+  // Versão horizontal: Tab vai para próximo mês (mesma linha), Enter salva e fecha
+  function confirmarValorH(nextMes?: number) {
+    if (!editando) return
+    const novo = parseBRL(valorTemp)
+    const { tipo, row, mes } = editando
+    if (tipo === 'e') {
+      setEntradas(prev => prev.map((c, ri) =>
+        ri === row ? { ...c, v: c.v.map((v, ci) => ci === mes ? novo : v) } : c))
+    } else {
+      setSaidas(prev => prev.map((c, ri) =>
+        ri === row ? { ...c, v: c.v.map((v, ci) => ci === mes ? novo : v) } : c))
+    }
+    if (nextMes !== undefined && nextMes < 12) {
+      const lista = tipo === 'e' ? dadosAno.entradas : dadosAnoFinal.saidas
+      const v = lista[row]?.v[nextMes] ?? 0
+      setEditando({ tipo, row, mes: nextMes })
+      setValorTemp(v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
+    } else {
+      setEditando(null)
+    }
+  }
+
   const bloqueado = planejamentoLockado && aba === 'previsto'
 
   const planoCriado = useMemo(() => {
@@ -2819,15 +2841,38 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 whiteSpace:'nowrap' as const,
               })
 
-              const catCellSpan = (v: number, mi: number) => (
-                <span
-                  onClick={() => setModalMes(mi)}
-                  style={{padding:'3px 7px', borderRadius:6, cursor:'pointer', display:'inline-block', minWidth:60, textAlign:'right' as const, fontVariantNumeric:'tabular-nums' as const, transition:'background .15s'}}
-                  onMouseEnter={e => { const el=e.currentTarget as HTMLSpanElement; el.style.background='#eff6ff'; el.style.color=COR.azul }}
-                  onMouseLeave={e => { const el=e.currentTarget as HTMLSpanElement; el.style.background=''; el.style.color='#475569' }}>
-                  {fmtH(v)}
-                </span>
-              )
+              const renderValorH = (tipo: 'e'|'s', row: number, mes: number, valor: number, readOnly = false) => {
+                const ativo = editando?.tipo === tipo && editando.row === row && editando.mes === mes
+                if (ativo && !bloqueado && !readOnly) {
+                  return (
+                    <input autoFocus value={valorTemp}
+                      onChange={e => setValorTemp(e.target.value)}
+                      onFocus={e => e.target.select()}
+                      onBlur={() => { if (skipBlurRef.current) { skipBlurRef.current = false } else { confirmarValorH() } }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter')  { skipBlurRef.current = true; confirmarValorH() }
+                        if (e.key === 'Tab')    { e.preventDefault(); skipBlurRef.current = true; confirmarValorH(mes + 1) }
+                        if (e.key === 'Escape') { setEditando(null) }
+                      }}
+                      style={{ width:'100%', padding:'3px 7px', textAlign:'right' as const,
+                        border:`1.5px solid ${COR.azul}`, outline:'none',
+                        background:'#dbeafe', color:COR.azulEscuro, fontSize:12,
+                        fontFamily:'inherit', fontWeight:600, borderRadius:4, boxSizing:'border-box' as const }} />
+                  )
+                }
+                const corVal = readOnly ? (valor === 0 ? '#c4b5fd' : '#7c3aed') : (valor === 0 ? '#c0cce0' : '#475569')
+                return (
+                  <span
+                    onClick={readOnly || bloqueado ? undefined : () => iniciarValor(tipo, row, mes, valor)}
+                    style={{padding:'3px 7px', borderRadius:6, cursor: readOnly || bloqueado ? 'default' : 'pointer',
+                      display:'inline-block', minWidth:60, textAlign:'right' as const,
+                      fontVariantNumeric:'tabular-nums' as const, transition:'background .15s', color: corVal}}
+                    onMouseEnter={e => { if (!readOnly && !bloqueado) { const el=e.currentTarget as HTMLSpanElement; el.style.background='#eff6ff'; el.style.color=COR.azul } }}
+                    onMouseLeave={e => { if (!readOnly && !bloqueado) { const el=e.currentTarget as HTMLSpanElement; el.style.background=''; el.style.color=corVal } }}>
+                    {fmtH(valor)}
+                  </span>
+                )
+              }
 
               return (
                 <div style={{background:COR.branco, borderRadius:14, boxShadow:'0 1px 3px rgba(0,0,0,.06)', overflow:'hidden'}}>
@@ -2869,14 +2914,17 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                 <td key={mi} style={{padding:'8px 10px', textAlign:'right' as const, fontWeight:600, color:'#166534', fontSize:12, background:'#f0fdf4', borderBottom:`1px solid #dcfce7`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
                               ))}
                             </tr>,
-                            ...(aberto ? cats.map(cat => (
-                              <tr key={cat.nome}>
-                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
-                                {cat.v.map((v, mi) => (
-                                  <td key={mi} style={{padding:'6px 10px', fontSize:12, color:'#475569', textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{catCellSpan(v, mi)}</td>
-                                ))}
-                              </tr>
-                            )) : [])
+                            ...(aberto ? cats.map(cat => {
+                              const row = dadosAnoFinal.entradas.indexOf(cat)
+                              return (
+                                <tr key={cat.nome}>
+                                  <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                  {cat.v.map((v, mi) => (
+                                    <td key={mi} style={{padding:'4px 6px', fontSize:12, textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{renderValorH('e', row, mi, v)}</td>
+                                  ))}
+                                </tr>
+                              )
+                            }) : [])
                           ]
                         })}
 
@@ -2906,14 +2954,18 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                 <td key={mi} style={{padding:'8px 10px', textAlign:'right' as const, fontWeight:600, color:'#991b1b', fontSize:12, background:'#fef2f2', borderBottom:`1px solid #fecdd3`, fontVariantNumeric:'tabular-nums' as const}}>{fmtH(v)}</td>
                               ))}
                             </tr>,
-                            ...(aberto ? cats.map(cat => (
-                              <tr key={cat.nome}>
-                                <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
-                                {cat.v.map((v, mi) => (
-                                  <td key={mi} style={{padding:'6px 10px', fontSize:12, color:'#475569', textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{catCellSpan(v, mi)}</td>
-                                ))}
-                              </tr>
-                            )) : [])
+                            ...(aberto ? cats.map(cat => {
+                              const row = dadosAnoFinal.saidas.indexOf(cat)
+                              const isCartao = nomeFaturaCartao(cat.nome, cartNomesH)
+                              return (
+                                <tr key={cat.nome}>
+                                  <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                  {cat.v.map((v, mi) => (
+                                    <td key={mi} style={{padding:'4px 6px', fontSize:12, textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{renderValorH('s', row, mi, v, isCartao)}</td>
+                                  ))}
+                                </tr>
+                              )
+                            }) : [])
                           ]
                         })}
 

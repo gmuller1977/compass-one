@@ -221,6 +221,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const wasLoggedOutRef = useRef(false)
   const loadedUserIdRef = useRef<string | null>(null)
   const loadingForUserRef = useRef<string | null>(null)
+  const loadRetryRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const loadRetryCountRef = useRef(0)
   // Rastreia a última contagem conhecida de cada tabela crítica.
   // Usado para bloquear saves vazios acidentais sobre dados existentes.
   const savedCountRef = useRef({ contas: -1, categorias: -1, planos: -1, planosReal: -1 })
@@ -290,13 +292,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
     ])
 
-    // Se qualquer tabela crítica retornar erro, abortar sem salvar estado vazio
+    // Se qualquer tabela crítica retornar erro, abortar sem salvar estado vazio e agendar retry
     if (contasErr || catsErr || extratoErr || faturaErr || planosErr) {
-      console.error('loadData abortado por erro:', { contasErr, catsErr, extratoErr, faturaErr, planosErr })
-      setCarregando(false)
+      console.error('loadData erro:', { contasErr, catsErr, extratoErr, faturaErr, planosErr })
       loadingForUserRef.current = null
+      loadRetryCountRef.current += 1
+      const tentativa = loadRetryCountRef.current
+      if (tentativa <= 4) {
+        const delay = Math.min(1000 * tentativa, 8000) // 1s, 2s, 3s, 4s... max 8s
+        console.warn(`loadData: tentativa ${tentativa}/4, retry em ${delay}ms`)
+        loadRetryRef.current = setTimeout(() => { loadRetryRef.current = null; loadData(userId) }, delay)
+      } else {
+        console.error('loadData: máximo de tentativas atingido, dados podem estar indisponíveis')
+        setCarregando(false)
+      }
       return
     }
+    loadRetryCountRef.current = 0 // reset no sucesso
 
     // Contas
     const contasLoaded: Conta[] = (contasRows ?? []).map(rowToConta)
@@ -374,6 +386,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
     savedCountRef.current = { contas: -1, categorias: -1, planos: -1, planosReal: -1 }
+    if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
+    loadRetryCountRef.current = 0
     setContasState([])
     setCategoriasState([])
     setExtratoState({})
