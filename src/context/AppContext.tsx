@@ -241,15 +241,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [metaSim,             setMetaSimState]             = useState<MetaSim | null>(null)
 
   // ── Auth ─────────────────────────────────────────────────────────────
+  // Usamos SOMENTE onAuthStateChange (não getSession separado) para garantir que
+  // o client Supabase está totalmente inicializado com auth headers antes de qualquer query.
+  // getSession() pode disparar loadData antes dos headers estarem prontos, causando
+  // queries que retornam vazio via RLS mesmo com sessão válida.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null
-      userIdRef.current = u?.id ?? null
-      setUserState(u)
-      if (u) { everLoadedRef.current = true; loadData(u.id) }
-      else setCarregando(false)
-    })
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
       const u = session?.user ?? null
       userIdRef.current = u?.id ?? null
@@ -546,10 +542,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // existentes com estado vazio durante a inicialização ou race conditions de auth.
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) { console.warn('[save] bloqueado contas: loadData não completou'); return }
+    if (contas.length === 0) { console.warn('[save] bloqueado contas: lista vazia após load'); return }
     saveContas(contas)
   }, [contas])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) { console.warn('[save] bloqueado categorias: loadData não completou'); return }
+    if (categorias.length === 0) { console.warn('[save] bloqueado categorias: lista vazia após load'); return }
     saveCategorias(categorias)
   }, [categorias])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
