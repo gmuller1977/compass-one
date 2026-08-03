@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import type { Lancamento } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
+import ModalConfirmacao from '../components/ModalConfirmacao'
 
 const COR = {
   azul: '#1a56db', fundo: '#f0f4ff', branco: '#ffffff',
@@ -32,6 +33,7 @@ export default function ExtratoDinheiro() {
   const [fDesc,    setFDesc]    = useState('')
   const [fDia,     setFDia]     = useState(hoje.getDate())
   const [editId,   setEditId]   = useState<string|null>(null)
+  const [confirm,  setConfirm]  = useState<{ dia: number; id: string; desc: string } | null>(null)
 
   const key = mesKey(ano, mes)
   const mesDados = extratoData[key] ?? { lancamentos: {}, saldoBanco: '' }
@@ -87,7 +89,7 @@ export default function ExtratoDinheiro() {
     setFValor(''); setFDesc(''); setFCat(''); setFSubDesc('');
   }
 
-  function excluir(dia: number, id: string) {
+  function excluirConfirmado(dia: number, id: string) {
     updateExtratoMes(key, prev => ({
       ...prev,
       lancamentos: {
@@ -96,6 +98,12 @@ export default function ExtratoDinheiro() {
       },
     }))
     if (editId === id) { setEditId(null); setFValor(''); setFDesc(''); setFCat('') }
+    setConfirm(null)
+  }
+
+  function excluir(dia: number, id: string) {
+    const lanc = (mesDados.lancamentos[dia] ?? []).find((l: Lancamento) => l.id === id)
+    setConfirm({ dia, id, desc: lanc?.descricao || lanc?.categoria || 'lançamento' })
   }
 
   function editar(dia: number, l: Lancamento) {
@@ -307,6 +315,15 @@ export default function ExtratoDinheiro() {
           </div>
         )}
       </div>
+
+      <ModalConfirmacao
+        open={!!confirm}
+        titulo="Excluir lançamento?"
+        mensagem="Esta ação não pode ser desfeita."
+        detalhe={confirm?.desc}
+        onConfirmar={() => confirm && excluirConfirmado(confirm.dia, confirm.id)}
+        onCancelar={() => setConfirm(null)}
+      />
     </div>
   )
 }

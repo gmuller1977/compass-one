@@ -8,6 +8,7 @@ import TutorialCard, { reativarTutoriais } from '../components/TutorialCard'
 import { useToast } from '../components/Toast'
 import type { Conta, Categoria, TipoCategoria, TipoMovimento, FormaPagamentoCategoria, FormaPagamentoFatura } from '../context/AppContext'
 import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
+import ModalConfirmacao from '../components/ModalConfirmacao'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -386,6 +387,11 @@ export default function Configuracoes() {
   const tipoMovRefs     = useRef<(HTMLButtonElement|null)[]>([])
   const formaPagCatRefs = useRef<(HTMLButtonElement|null)[]>([])
 
+  type ConfirmState = { titulo: string; mensagem?: string; detalhe?: string; onConfirmar: () => void }
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+  const confirmar = (state: ConfirmState) => setConfirm(state)
+  const fecharConfirm = () => setConfirm(null)
+
   // ── Ações Conta ──
   function novaConta(tipoAba: Aba = aba) {
     setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
@@ -439,11 +445,20 @@ export default function Configuracoes() {
     novaConta()
   }
   function excluirConta(id: string) {
-    if (!window.confirm('Excluir esta conta?')) return
-    setContas(prev => prev.filter(c => c.id!==id))
-    if (editContaId===id) novaConta()
-    setMobileView('list')
-    toast('Conta excluída', 'info')
+    const conta = contas.find(c => c.id === id)
+    const label = conta?.tipo === 'cartao' ? 'cartão' : 'conta'
+    confirmar({
+      titulo: `Excluir ${label}?`,
+      mensagem: 'Esta ação não pode ser desfeita.',
+      detalhe: conta?.apelido || conta?.banco || conta?.nome,
+      onConfirmar: () => {
+        setContas(prev => prev.filter(c => c.id !== id))
+        if (editContaId === id) novaConta()
+        setMobileView('list')
+        toast(`${label.charAt(0).toUpperCase() + label.slice(1)} excluído`, 'info')
+        fecharConfirm()
+      },
+    })
   }
   function moverConta(id: string, dir: 'up' | 'down') {
     setContas(prev => {
@@ -491,11 +506,19 @@ export default function Configuracoes() {
     novaCategoria()
   }
   function excluirCategoria(id: string) {
-    if (!window.confirm('Excluir esta categoria?')) return
-    setCategorias(prev => prev.filter(c => c.id!==id))
-    if (editCatId===id) { setEditCatId(null); setFormCat({...catVazia, tipo:abaCat}) }
-    setMobileView('list')
-    toast('Categoria excluída', 'info')
+    const cat = categorias.find(c => c.id === id)
+    confirmar({
+      titulo: 'Excluir categoria?',
+      mensagem: 'Esta ação não pode ser desfeita.',
+      detalhe: cat?.nome,
+      onConfirmar: () => {
+        setCategorias(prev => prev.filter(c => c.id !== id))
+        if (editCatId === id) { setEditCatId(null); setFormCat({...catVazia, tipo:abaCat}) }
+        setMobileView('list')
+        toast('Categoria excluída', 'info')
+        fecharConfirm()
+      },
+    })
   }
   function toggleAtiva(id: string) {
     const cat = categorias.find(c => c.id === id)
@@ -1515,15 +1538,19 @@ export default function Configuracoes() {
                         {!isPadrao && (
                           <button onClick={e => {
                             e.stopPropagation()
-                            const msg = count > 0
-                              ? `Remover grupo "${g}"? As ${count} categorias ficarão sem grupo.`
-                              : `Remover grupo "${g}"?`
-                            if (window.confirm(msg)) {
-                              setCategorias(prev => prev.map(c => c.grupo === g ? {...c, grupo:undefined} : c))
-                              setGruposExtra(prev => prev.filter(x => x !== g))
-                              setGruposExtraTipos(prev => { const n={...prev}; delete n[g]; return n })
-                              if (editGrupo === g) setEditGrupo(null)
-                            }
+                            confirmar({
+                              titulo: `Excluir grupo "${g}"?`,
+                              mensagem: count > 0
+                                ? `As ${count} ${count === 1 ? 'categoria ficará' : 'categorias ficarão'} sem grupo.`
+                                : 'Esta ação não pode ser desfeita.',
+                              onConfirmar: () => {
+                                setCategorias(prev => prev.map(c => c.grupo === g ? {...c, grupo:undefined} : c))
+                                setGruposExtra(prev => prev.filter(x => x !== g))
+                                setGruposExtraTipos(prev => { const n={...prev}; delete n[g]; return n })
+                                if (editGrupo === g) setEditGrupo(null)
+                                fecharConfirm()
+                              },
+                            })
                           }} title="Excluir" style={{
                             border:'none', background:'transparent', cursor:'pointer',
                             fontSize:14, color:COR.vermelho, padding:'2px 4px', flexShrink:0 }}>✕</button>
@@ -2031,6 +2058,15 @@ export default function Configuracoes() {
           </div>
         </div>
       )}
+
+      <ModalConfirmacao
+        open={!!confirm}
+        titulo={confirm?.titulo ?? ''}
+        mensagem={confirm?.mensagem}
+        detalhe={confirm?.detalhe}
+        onConfirmar={() => confirm?.onConfirmar()}
+        onCancelar={fecharConfirm}
+      />
     </div>
   )
 }
