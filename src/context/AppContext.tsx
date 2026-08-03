@@ -225,7 +225,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loadRetryCountRef = useRef(0)
   // Rastreia a última contagem conhecida de cada tabela crítica.
   // Usado para bloquear saves vazios acidentais sobre dados existentes.
-  const savedCountRef = useRef({ contas: -1, categorias: -1, planos: -1, planosReal: -1 })
+  const savedCountRef = useRef({ contas: -1, categorias: -1, extrato: -1, fatura: -1, planos: -1, planosReal: -1 })
 
   const [contas,      setContasState]     = useState<Conta[]>([])
   const [categorias,  setCategoriasState] = useState<Categoria[]>([])
@@ -372,6 +372,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     savedCountRef.current = {
       contas:     contasLoaded.length,
       categorias: catsLoaded.length,
+      extrato:    Object.keys(extratoLoaded).length,
+      fatura:     Object.keys(faturaLoaded).length,
       planos:     Object.keys(planosLoaded).length,
       planosReal: Object.keys(planosRealLoaded).length,
     }
@@ -385,7 +387,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function resetState() {
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
-    savedCountRef.current = { contas: -1, categorias: -1, planos: -1, planosReal: -1 }
+    savedCountRef.current = { contas: -1, categorias: -1, extrato: -1, fatura: -1, planos: -1, planosReal: -1 }
     if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
     loadRetryCountRef.current = 0
     setContasState([])
@@ -405,6 +407,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function safeSaveCheck(key: keyof typeof savedCountRef.current, newCount: number): boolean {
     const known = savedCountRef.current[key]
+    if (known < 0) {
+      console.warn(`[safeSave] Bloqueado: ${key} nunca carregado do banco (known=${known})`)
+      return false
+    }
     if (newCount === 0 && known > 0) {
       console.warn(`[safeSave] Bloqueado: tentativa de apagar ${known} ${key} com estado vazio`)
       return false
@@ -448,7 +454,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!canSave()) return
     const uid = userIdRef.current!
     if (Object.keys(data).length === 0) {
+      if (!safeSaveCheck('extrato', 0)) return
       await supabase.from('extrato_data').delete().eq('user_id', uid)
+      savedCountRef.current.extrato = 0
       return
     }
     const rows = Object.entries(data).map(([key, dados]) => {
@@ -458,14 +466,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase
       .from('extrato_data')
       .upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' })
-    if (error) console.error('save extrato_data:', error)
+    if (error) { console.error('save extrato_data:', error); return }
+    savedCountRef.current.extrato = rows.length
   }
 
   async function saveFaturaData(data: Record<string, unknown>) {
     if (!canSave()) return
     const uid = userIdRef.current!
     if (Object.keys(data).length === 0) {
+      if (!safeSaveCheck('fatura', 0)) return
       await supabase.from('fatura_data').delete().eq('user_id', uid)
+      savedCountRef.current.fatura = 0
       return
     }
     const rows = Object.entries(data).map(([key, dados]) => {
@@ -475,7 +486,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase
       .from('fatura_data')
       .upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' })
-    if (error) console.error('save fatura_data:', error)
+    if (error) { console.error('save fatura_data:', error); return }
+    savedCountRef.current.fatura = rows.length
   }
 
   async function savePlanosData(dict: Record<number, PlanoAnoData>, tipo: 'previsto' | 'real') {
@@ -530,15 +542,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   // ── Auto-save effects ────────────────────────────────────────────────
-  useEffect(() => { saveContas(contas) }, [contas])          // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { saveCategorias(categorias) }, [categorias]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { saveExtratoData(extratoData) }, [extratoData]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { saveFaturaData(faturaData) }, [faturaData])    // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { savePlanosData(planos, 'previsto') }, [planos])       // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { savePlanosData(planosReal, 'real') }, [planosReal])   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
+  // IMPORTANTE: sempre verifica dataLoadedRef antes de salvar para evitar apagar dados
+  // existentes com estado vazio durante a inicialização ou race conditions de auth.
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) { console.warn('[save] bloqueado contas: loadData não completou'); return }
+    saveContas(contas)
+  }, [contas])
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) { console.warn('[save] bloqueado categorias: loadData não completou'); return }
+    saveCategorias(categorias)
+  }, [categorias])
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) return
+    saveExtratoData(extratoData)
+  }, [extratoData])
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) return
+    saveFaturaData(faturaData)
+  }, [faturaData])
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) return
+    savePlanosData(planos, 'previsto')
+  }, [planos])
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) return
+    savePlanosData(planosReal, 'real')
+  }, [planosReal])
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (!dataLoadedRef.current) return
     saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim)
-  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
