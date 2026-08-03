@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 
 // ── Types compartilhados ─────────────────────────────────────────────
 export type Perfil = { nome: string; apelido: string }
@@ -314,17 +313,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Categorias — deduplica por nome antes de usar (protege contra race condition de carregamento duplo)
     const rawCats: Categoria[] = (categoriasRows ?? []).map(rowToCategoria)
     const seenNomes = new Set<string>()
-    let catsLoaded = rawCats.filter(c => {
+    const catsLoaded = rawCats.filter(c => {
       if (seenNomes.has(c.nome)) return false
       seenNomes.add(c.nome)
       return true
     })
-    if (catsLoaded.length === 0) {
-      catsLoaded = CATEGORIAS_PADRAO.map((c, i) => ({
-        ...c,
-        id: `id-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-      }))
-    }
+    // NÃO gera CATEGORIAS_PADRAO aqui: se DB retornou 0 por falha de auth,
+    // salvar PADRAO deletaria as categorias reais do usuário.
+    // PADRAO é criado somente no fluxo de Onboarding.
     setCategoriasState(catsLoaded)
 
     // Preferences
