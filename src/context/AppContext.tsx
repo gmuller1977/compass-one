@@ -266,6 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Load data ────────────────────────────────────────────────────────
   async function loadData(userId: string) {
     if (loadingForUserRef.current === userId) return
+    console.log('🔄 [loadData] iniciando para userId:', userId.slice(0, 8))
     loadingForUserRef.current = userId
     setCarregando(true)
     dataLoadedRef.current = false
@@ -286,6 +287,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
       supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
     ])
+
+    console.log('📊 [loadData] resultado do banco:', {
+      contas: contasRows?.length ?? 'ERRO',
+      categorias: categoriasRows?.length ?? 'ERRO',
+      erros: { contasErr: !!contasErr, catsErr: !!catsErr, extratoErr: !!extratoErr, faturaErr: !!faturaErr, planosErr: !!planosErr }
+    })
 
     // Se qualquer tabela crítica retornar erro, abortar sem salvar estado vazio e agendar retry
     if (contasErr || catsErr || extratoErr || faturaErr || planosErr) {
@@ -413,16 +420,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function saveContas(list: Conta[]) {
     if (!canSave()) return
     const uid = userIdRef.current!
+    console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
     if (list.length === 0) {
       if (!safeSaveCheck('contas', 0)) return
+      console.error('⚠️ [saveContas] DELETE ALL contas!')
       await supabase.from('contas').delete().eq('user_id', uid)
       savedCountRef.current.contas = 0
       return
     }
-    const { error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid)))
-    if (error) { console.error('save contas:', error); return }
+    const { data: upserted, error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid))).select('id')
+    if (error) { console.error('❌ [saveContas] upsert error:', error.message, error.code); return }
+    console.log('✅ [saveContas] upsert OK:', upserted?.length, 'rows. IDs:', list.map(c => c.id))
     const ids = list.map(c => `'${c.id}'`).join(',')
-    await supabase.from('contas').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
+    const { error: delErr, count } = await supabase.from('contas').delete({ count: 'exact' }).eq('user_id', uid).not('id', 'in', `(${ids})`)
+    if (delErr) console.error('❌ [saveContas] delete-stale error:', delErr.message)
+    else if (count && count > 0) console.warn('🗑️ [saveContas] delete-stale apagou', count, 'contas antigas')
     savedCountRef.current.contas = list.length
   }
 
