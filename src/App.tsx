@@ -19,6 +19,7 @@ import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
+import NorteAgent          from './components/NorteAgent'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -32,13 +33,14 @@ function useIsMobile() {
 
 function AppShell({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile()
-  if (isMobile) return <>{children}</>
+  if (isMobile) return <>{children}<NorteAgent /></>
   return (
     <>
       <Sidebar />
       <div style={{ marginLeft: SIDEBAR_W }}>
         {children}
       </div>
+      <NorteAgent />
     </>
   )
 }
