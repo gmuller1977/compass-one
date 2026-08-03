@@ -281,6 +281,7 @@ export default function Configuracoes() {
     return 'bancos'
   })
   const { user, contas, categorias, setContas, setCategorias,
+          extratoData, faturaData,
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
@@ -387,7 +388,7 @@ export default function Configuracoes() {
   const tipoMovRefs     = useRef<(HTMLButtonElement|null)[]>([])
   const formaPagCatRefs = useRef<(HTMLButtonElement|null)[]>([])
 
-  type ConfirmState = { titulo: string; mensagem?: string; detalhe?: string; onConfirmar: () => void }
+  type ConfirmState = { titulo: string; mensagem?: string; detalhe?: string; apenasFechar?: boolean; onConfirmar: () => void }
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const confirmar = (state: ConfirmState) => setConfirm(state)
   const fecharConfirm = () => setConfirm(null)
@@ -446,7 +447,37 @@ export default function Configuracoes() {
   }
   function excluirConta(id: string) {
     const conta = contas.find(c => c.id === id)
-    const label = conta?.tipo === 'cartao' ? 'cartão' : 'conta'
+    const isCartao = conta?.tipo === 'cartao'
+    const label = isCartao ? 'cartão' : 'conta'
+    const itemRef = isCartao ? 'Este cartão' : 'Esta conta'
+
+    // Verifica vínculos que impedem exclusão
+    const temExtrato = Object.entries(extratoData).some(([k, v]) =>
+      k.startsWith(`${id}-`) &&
+      Object.values(v.lancamentos).some(arr => arr.length > 0)
+    )
+    const temFatura = Object.keys(faturaData).some(k => k.startsWith(`${id}-`))
+    const catsVinculadas = categorias.filter(c =>
+      c.formaPagamento === 'automatico' && c.contaDebitoId === id
+    )
+
+    if (temExtrato || temFatura || catsVinculadas.length > 0) {
+      const motivos: string[] = []
+      if (temExtrato || temFatura) motivos.push('possui lançamentos registrados')
+      if (catsVinculadas.length > 0) {
+        const nomes = catsVinculadas.map(c => c.nome).join(', ')
+        const qtd = catsVinculadas.length
+        motivos.push(`está vinculad${isCartao ? 'o' : 'a'} à${qtd > 1 ? 's' : ''} categoria${qtd > 1 ? 's' : ''} com débito automático: ${nomes}`)
+      }
+      confirmar({
+        titulo: 'Não é possível excluir',
+        mensagem: `${itemRef} ${motivos.join(' e ')}. Remova os vínculos antes de excluir.`,
+        apenasFechar: true,
+        onConfirmar: fecharConfirm,
+      })
+      return
+    }
+
     confirmar({
       titulo: `Excluir ${label}?`,
       mensagem: 'Esta ação não pode ser desfeita.',
@@ -2064,6 +2095,7 @@ export default function Configuracoes() {
         titulo={confirm?.titulo ?? ''}
         mensagem={confirm?.mensagem}
         detalhe={confirm?.detalhe}
+        apenasFechar={confirm?.apenasFechar}
         onConfirmar={() => confirm?.onConfirmar()}
         onCancelar={fecharConfirm}
       />
