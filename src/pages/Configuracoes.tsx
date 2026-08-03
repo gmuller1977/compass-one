@@ -337,11 +337,11 @@ export default function Configuracoes() {
     if (abaParam === 'bancos') {
       setAba('bancos')
       setMobileView(acaoParam === 'novo' ? 'form' : 'list')
-      if (acaoParam === 'novo') novaConta('bancos')
+      novaConta('bancos')
     } else if (abaParam === 'cartoes') {
       setAba('cartoes')
       setMobileView(acaoParam === 'novo' ? 'form' : 'list')
-      if (acaoParam === 'novo') novaConta('cartoes')
+      novaConta('cartoes')
     } else if (abaParam === 'categorias') {
       setAba('categorias')
       setSubAbaCat('categorias')
