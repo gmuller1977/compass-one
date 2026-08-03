@@ -222,9 +222,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loadingForUserRef = useRef<string | null>(null)
   const loadRetryRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const loadRetryCountRef = useRef(0)
+  // Refs para mesclar state do usuário com dados carregados do banco (evita perda em race condition)
+  const contasRef      = useRef<Conta[]>([])
+  const categoriasRef  = useRef<Categoria[]>([])
   // Rastreia a última contagem conhecida de cada tabela crítica.
   // Usado para bloquear saves vazios acidentais sobre dados existentes.
   const savedCountRef = useRef({ contas: -1, categorias: -1, extrato: -1, fatura: -1, planos: -1, planosReal: -1 })
+
+  // State (não ref) para que effects de save re-executem quando o load terminar
+  const [dataLoaded, setDataLoadedState] = useState(false)
 
   const [contas,      setContasState]     = useState<Conta[]>([])
   const [categorias,  setCategoriasState] = useState<Categoria[]>([])
@@ -312,10 +318,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     loadRetryCountRef.current = 0 // reset no sucesso
 
-    // Contas
+    // Contas — mescla com qualquer item que o usuário adicionou durante o load
     const contasLoaded: Conta[] = (contasRows ?? []).map(rowToConta)
-    setContasState(contasLoaded)
-    const contaIdSet = new Set(contasLoaded.map(c => c.id))
+    const contasDbIds = new Set(contasLoaded.map(c => c.id))
+    const userOnlyContas = contasRef.current.filter(c => !contasDbIds.has(c.id))
+    const mergedContas = userOnlyContas.length > 0 ? [...contasLoaded, ...userOnlyContas] : contasLoaded
+    if (userOnlyContas.length > 0) console.log('🔀 [loadData] mesclando', userOnlyContas.length, 'contas adicionadas durante o load')
+    setContasState(mergedContas)
+    const contaIdSet = new Set(mergedContas.map(c => c.id))
 
     // Categorias — deduplica por nome antes de usar (protege contra race condition de carregamento duplo)
     const rawCats: Categoria[] = (categoriasRows ?? []).map(rowToCategoria)
@@ -328,7 +338,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // NÃO gera CATEGORIAS_PADRAO aqui: se DB retornou 0 por falha de auth,
     // salvar PADRAO deletaria as categorias reais do usuário.
     // PADRAO é criado somente no fluxo de Onboarding.
-    setCategoriasState(catsLoaded)
+    // Mescla com categorias que o usuário adicionou durante o load
+    const catsDbIds = new Set(catsLoaded.map(c => c.id))
+    const userOnlyCats = categoriasRef.current.filter(c => !catsDbIds.has(c.id))
+    const mergedCats = userOnlyCats.length > 0 ? [...catsLoaded, ...userOnlyCats] : catsLoaded
+    setCategoriasState(mergedCats)
 
     // Preferences
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -369,8 +383,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Registra contagens após load bem-sucedido para proteção de save seguro
     savedCountRef.current = {
-      contas:     contasLoaded.length,
-      categorias: catsLoaded.length,
+      contas:     mergedContas.length,
+      categorias: mergedCats.length,
       extrato:    Object.keys(extratoLoaded).length,
       fatura:     Object.keys(faturaLoaded).length,
       planos:     Object.keys(planosLoaded).length,
@@ -380,11 +394,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
+    setDataLoadedState(true) // dispara effects de save com o state atual (incluindo itens adicionados durante load)
     loadingForUserRef.current = null
   }
 
   function resetState() {
     dataLoadedRef.current = false
+    setDataLoadedState(false)
     loadedUserIdRef.current = null
     savedCountRef.current = { contas: -1, categorias: -1, extrato: -1, fatura: -1, planos: -1, planosReal: -1 }
     if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
@@ -546,18 +562,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   // ── Auto-save effects ────────────────────────────────────────────────
-  // IMPORTANTE: sempre verifica dataLoadedRef antes de salvar para evitar apagar dados
-  // existentes com estado vazio durante a inicialização ou race conditions de auth.
+  // dataLoaded é state (não ref) para que o effect re-execute quando o load terminar,
+  // garantindo que itens adicionados durante o load sejam salvos no banco.
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
-    if (!dataLoadedRef.current) { console.warn('[save] bloqueado contas: loadData não completou'); return }
-    if (contas.length === 0) { console.warn('[save] bloqueado contas: lista vazia após load'); return }
+    contasRef.current = contas
+    if (!dataLoaded) return
+    if (contas.length === 0) return
     saveContas(contas)
-  }, [contas])
+  }, [contas, dataLoaded])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
-    if (!dataLoadedRef.current) { console.warn('[save] bloqueado categorias: loadData não completou'); return }
-    if (categorias.length === 0) { console.warn('[save] bloqueado categorias: lista vazia após load'); return }
+    categoriasRef.current = categorias
+    if (!dataLoaded) return
+    if (categorias.length === 0) return
     saveCategorias(categorias)
-  }, [categorias])
+  }, [categorias, dataLoaded])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) return
     saveExtratoData(extratoData)
