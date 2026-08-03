@@ -367,9 +367,10 @@ export default function Configuracoes() {
   const [formConta,   setFormConta]   = useState<Omit<Conta,'id'>>(contaVazia)
   const [editContaId, setEditContaId] = useState<string|null>(null)
   const [erroConta,   setErroConta]   = useState('')
-  const [saldoStr,    setSaldoStr]    = useState('')
-  const [limiteStr,   setLimiteStr]   = useState('')
-  const [bancoCustom, setBancoCustom] = useState('')
+  const [saldoStr,       setSaldoStr]       = useState('')
+  const [limiteStr,      setLimiteStr]      = useState('')
+  const [ultimaFaturaStr,setUltimaFaturaStr] = useState('')
+  const [bancoCustom,    setBancoCustom]    = useState('')
   const nomeContaRef = useRef<HTMLInputElement>(null)
 
   const catVazia: Omit<Categoria,'id'> = {
@@ -398,7 +399,7 @@ export default function Configuracoes() {
     setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
     setEditContaId(null)
     setErroConta('')
-    setSaldoStr(''); setLimiteStr(''); setBancoCustom('')
+    setSaldoStr(''); setLimiteStr(''); setUltimaFaturaStr(''); setBancoCustom('')
     setTimeout(() => nomeContaRef.current?.focus(), 0)
   }
   function editarConta(c: Conta) {
@@ -420,12 +421,14 @@ export default function Configuracoes() {
     setErroConta('')
     setSaldoStr(c.saldoInicial ? String(c.saldoInicial).replace('.', ',') : '')
     setLimiteStr(c.limiteCartao ? String(c.limiteCartao).replace('.', ',') : '')
+    setUltimaFaturaStr(c.ultimaFatura != null ? String(c.ultimaFatura).replace('.', ',') : '')
   }
   function salvarConta() {
     const ehCartao = formConta.tipo === 'cartao'
     const bancoEfetivo = (ehCartao && formConta.banco === 'Outro') ? bancoCustom.trim() : formConta.banco
     if (!ehCartao && !formConta.nome.trim()) return setErroConta('Informe o titular da conta')
     if (!bancoEfetivo) return setErroConta(ehCartao ? 'Selecione ou informe o banco' : 'Selecione o banco')
+    if (ehCartao && ultimaFaturaStr.trim() === '') return setErroConta('Informe o valor da última fatura do cartão')
     const nomeEfetivo = ehCartao
       ? (formConta.apelido?.trim() || bancoEfetivo)
       : formConta.nome.trim()
@@ -945,6 +948,21 @@ export default function Configuracoes() {
                             setFormConta(p=>({...p, limiteCartao:parseFloat(raw.replace(',','.'))||0}))
                           }}
                           placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
+                      </div>
+                      <div>
+                        <label style={labelSt}>
+                          Valor da última fatura <span style={{ color: COR.vermelho }}>*</span>
+                        </label>
+                        <input value={ultimaFaturaStr}
+                          onChange={e => {
+                            const raw = e.target.value.replace(/[^0-9.,]/g, '')
+                            setUltimaFaturaStr(raw)
+                            setFormConta(p=>({...p, ultimaFatura:parseFloat(raw.replace(',','.'))||0}))
+                          }}
+                          placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
+                        <div style={{ fontSize:10, color:'#94a3b8', marginTop:4 }}>
+                          Valor da fatura mais recente. Usado como base no planejamento financeiro.
+                        </div>
                       </div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                         <div>

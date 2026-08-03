@@ -216,14 +216,18 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const cartCats = dadosAno.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
     const anoAnterior = planos[anoAtual - 1] as AnoData | undefined
     const cartCatsAnterior = anoAnterior?.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes)) ?? []
+    // Fallback: soma das últimas faturas cadastradas nos cartões
+    const totalUltimaFatura = contas
+      .filter(c => c.tipo === 'cartao')
+      .reduce((s, c) => s + (c.ultimaFatura ?? 0), 0)
     return MESES.map((_, i) => {
       // Fatura do cartão paga no mês i = gastos do mês i-1
       const somaAnterior = i === 0
         ? cartCatsAnterior.reduce((s, c) => s + (c.v[11] ?? 0), 0)   // janeiro → dezembro do ano anterior
         : cartCats.reduce((s, c) => s + c.v[i - 1], 0)
-      return somaAnterior > 0 ? somaAnterior : cartCats.reduce((s, c) => s + c.v[i], 0)
+      return somaAnterior > 0 ? somaAnterior : totalUltimaFatura
     })
-  }, [dadosAno, cartaoNomes, planos, anoAtual])
+  }, [dadosAno, cartaoNomes, planos, anoAtual, contas])
 
   const dadosAnoFinal: AnoData = useMemo(() => ({
     ...dadosAno,
