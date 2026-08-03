@@ -447,7 +447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: upserted, error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid))).select('id')
     if (error) { console.error('❌ [saveContas] upsert error:', error.message, error.code); return }
     console.log('✅ [saveContas] upsert OK:', upserted?.length, 'rows. IDs:', list.map(c => c.id))
-    const ids = list.map(c => `'${c.id}'`).join(',')
+    const ids = list.map(c => c.id).join(',')
     const { error: delErr, count } = await supabase.from('contas').delete({ count: 'exact' }).eq('user_id', uid).not('id', 'in', `(${ids})`)
     if (delErr) console.error('❌ [saveContas] delete-stale error:', delErr.message)
     else if (count && count > 0) console.warn('🗑️ [saveContas] delete-stale apagou', count, 'contas antigas')
@@ -465,7 +465,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.from('categorias').upsert(list.map(c => categoriaToRow(c, uid)))
     if (error) { console.error('save categorias:', error); return }
-    const ids = list.map(c => `'${c.id}'`).join(',')
+    const ids = list.map(c => c.id).join(',')
     await supabase.from('categorias').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
     savedCountRef.current.categorias = list.length
   }
