@@ -1,8 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import AppHeader from '../components/AppHeader'
-import PageHeader from '../components/PageHeader'
 import { useToast } from '../components/Toast'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
@@ -141,7 +139,7 @@ export default function NovoLancamentoExtrato() {
 
   const [contaId, setContaId] = useState('consolidado')
   const [cartaoNavId,   setCartaoNavId]   = useState<string|undefined>(undefined)
-  const [cartaoAtualId, setCartaoAtualId] = useState<string|undefined>(undefined)
+  const [_cartaoAtualId, setCartaoAtualId] = useState<string|undefined>(undefined)
   const [mes,     setMes]     = useState(mesHoje)
   const [ano, setAno]          = useState(anoHoje)
   const [mostrarCalendario, setMostrarCalendario] = useState(false)
@@ -811,12 +809,19 @@ export default function NovoLancamentoExtrato() {
             })}
           </div>
         </div>
-      ) : <AppHeader currentPath="/novo-lancamento" />}
+      ) : null}
 
-      {/* DESKTOP: Sub-header — tabs + pills + month nav */}
+      {/* DESKTOP: Sub-header — screen title + tabs + pills + month nav */}
       {!isMobile && (
         <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'0 32px',height:52,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,zIndex:99}}>
           <div style={{display:'flex',alignItems:'center',gap:14}}>
+            {/* Screen title */}
+            <div style={{paddingRight:14,borderRight:'1px solid #e2e8f0',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+              <div style={{fontSize:11,fontWeight:800,color:'#94a3b8',textTransform:'uppercase',letterSpacing:.5,lineHeight:1,marginBottom:3}}>Movimentação</div>
+              <div style={{fontSize:13,fontWeight:700,color:'#0f172a',lineHeight:1}}>
+                {tabPrincipal==='cartao'?'Cartão de Crédito':tabPrincipal==='dinheiro'?'Dinheiro em Espécie':tabPrincipal==='consolidado'?'Visão Geral':(contaInfo?.icone??'🏦')+' '+(contaInfo?.banco??'Banco')}
+              </div>
+            </div>
             {/* Tipo tabs */}
             <div style={{display:'flex',background:'#f1f5f9',borderRadius:9,padding:3,gap:2}}>
               {([
@@ -855,7 +860,7 @@ export default function NovoLancamentoExtrato() {
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <button onClick={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
                 style={{width:28,height:28,borderRadius:8,border:'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',fontSize:14,color:'#1a56db',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>‹</button>
-              <button ref={calBtnRef} onClick={e => { e.stopPropagation(); const rect=calBtnRef.current?.getBoundingClientRect(); if(rect)setCalPos({top:rect.bottom+8,left:rect.left}); setAnoCalendario(ano); setMostrarCalendario(v=>!v) }}
+              <button ref={calBtnRef} onClick={e => { e.stopPropagation(); const rect=calBtnRef.current?.getBoundingClientRect(); if(rect)setCalPos({top:rect.bottom+8,left:Math.min(rect.left,window.innerWidth-290)}); setAnoCalendario(ano); setMostrarCalendario(v=>!v) }}
                 style={{fontSize:14,fontWeight:800,color:'#0f172a',minWidth:110,textAlign:'center',border:'none',background:'transparent',cursor:'pointer',fontFamily:'inherit',padding:'4px 8px',borderRadius:6}}
                 onMouseEnter={e=>(e.currentTarget.style.background='#f1f5f9')}
                 onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
@@ -1546,10 +1551,10 @@ export default function NovoLancamentoExtrato() {
                         {/* 4-col grid: Entradas | Saídas | Planejado | Saldo */}
                         <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr'}}>
                           {[
-                            {label:'Entradas', val:entradasBoxVal, fmt:v=>v===0?'—':`+${fmt(v)}`, cor:entradasConf>0?COR.azul:'#d1d5db'},
-                            {label:'Saídas',   val:saidasBoxVal,   fmt:v=>v===0?'—':`-${fmt(v)}`, cor:saidasConf>0?COR.vermelho:'#d1d5db'},
-                            {label:'Planejado',val:planejadoDia,   fmt:v=>v===0?'—':`-${fmt(v)}`, cor:planejadoDia>0?'#64748b':'#d1d5db'},
-                            {label:diaFuturo?'Saldo previsto':passado?'Saldo final':'Saldo atual', val:saldoDia, fmt:v=>fmt(v), cor:diaFuturo?'#64748b':corSaldo},
+                            {label:'Entradas', val:entradasBoxVal, fmt:(v:number)=>v===0?'—':`+${fmt(v)}`, cor:entradasConf>0?COR.azul:'#d1d5db'},
+                            {label:'Saídas',   val:saidasBoxVal,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:saidasConf>0?COR.vermelho:'#d1d5db'},
+                            {label:'Planejado',val:planejadoDia,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:planejadoDia>0?'#64748b':'#d1d5db'},
+                            {label:diaFuturo?'Saldo previsto':passado?'Saldo final':'Saldo atual', val:saldoDia, fmt:(v:number)=>fmt(v), cor:diaFuturo?'#64748b':corSaldo},
                           ].map(col => (
                             <div key={col.label} style={{padding:'10px 12px',textAlign:'right',borderRight:'1px solid #f8faff'}}>
                               <div style={{fontSize:9,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:.4,marginBottom:3}}>{col.label}</div>
@@ -1783,6 +1788,25 @@ export default function NovoLancamentoExtrato() {
         )}
 
       </div>
+
+      {/* Saldo final previsto — barra fixa abaixo da lista, apenas desktop */}
+      {!isMobile && (tabPrincipal==='extrato'||tabPrincipal==='dinheiro') && (() => {
+        const sf = saldosDia[totalDias] ?? saldoMes
+        return (
+          <div style={{background:sf>=0?`linear-gradient(135deg,#0f2878,#2563eb)`:'linear-gradient(135deg,#7f1d1d,#dc2626)',
+            padding:'12px 32px',display:'flex',justifyContent:'space-between',
+            alignItems:'center',flexShrink:0,borderTop:'1px solid rgba(255,255,255,.1)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.65)'}}>Saldo final previsto</span>
+              <span style={{fontSize:10,color:'rgba(255,255,255,.4)'}}>· {NOMES_MESES[mes]} {ano}</span>
+            </div>
+            <span style={{fontSize:16,fontWeight:800,letterSpacing:'-.4px',fontVariantNumeric:'tabular-nums',
+              color:sf>=0?'#86efac':'#fca5a5'}}>
+              {fmt(sf)}
+            </span>
+          </div>
+        )
+      })()}
 
       </div>{/* fim coluna esquerda */}
 
@@ -2064,24 +2088,6 @@ export default function NovoLancamentoExtrato() {
           })()}
         </div>
 
-        {/* Saldo footer */}
-        {(() => {
-          const sf = saldosDia[totalDias] ?? saldoMes
-          return (
-            <div style={{background:sf>=0?`linear-gradient(135deg,#0f2878,#2563eb)`:'linear-gradient(135deg,#7f1d1d,#dc2626)',
-              padding:'14px 20px',display:'flex',justifyContent:'space-between',
-              alignItems:'center',flexShrink:0}}>
-              <div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,.6)',fontWeight:600}}>Saldo final previsto</div>
-                <div style={{fontSize:10,color:'rgba(255,255,255,.4)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
-              </div>
-              <div style={{fontSize:16,fontWeight:800,letterSpacing:'-.4px',fontVariantNumeric:'tabular-nums',
-                color:sf>=0?'#86efac':'#fca5a5'}}>
-                {fmt(sf)}
-              </div>
-            </div>
-          )
-        })()}
       </div>
       </div>
       </>

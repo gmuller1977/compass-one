@@ -585,7 +585,6 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const temAtualizado = !!planosReal[anoRevisao]
     const planoBase = (temAtualizado ? planosReal[anoRevisao] : planos[anoRevisao]) as AnoData | undefined
     const planoAtualMes = (planosReal[anoCorrente] ?? planos[anoCorrente]) as AnoData | undefined
-    const realMes = lancadoPorCatMes[mesRevisao] ?? { entrada:{}, saida:{}, entradaCartao:{}, saidaCartao:{} }
 
     // Realizado dos últimos 3 meses para cálculo de sugestão
     function realizadoMes(catNome: string, tipo: 'entrada'|'saida', mi: number) {
@@ -1164,8 +1163,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const mobileRevisaoView = aba === 'revisao' ? buildMobileRevisao() : null
 
     function buildMobileRevisao() {
-      const dr = dadosRevisao
-      if (!dr) return (
+      const drRaw = dadosRevisao
+      if (!drRaw) return (
         <div style={{ textAlign:'center' as const, padding:'60px 20px', color:'#64748b' }}>
           <div style={{ fontSize:32, marginBottom:12 }}>📭</div>
           <div style={{ fontSize:14, fontWeight:600, color:'#0f172a', marginBottom:6 }}>Revisão indisponível</div>
@@ -1173,6 +1172,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         </div>
       )
 
+      const dr = drRaw
       const METODOS_MOB = [
         { id: 'media_3_meses', label: 'Média 3m' },
         { id: 'maior_valor',   label: 'Maior valor' },
@@ -1907,8 +1907,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         {/* ── ABA REVISÃO MENSAL ── */}
         {aba === 'revisao' && (() => {
           const mesNome = MESES_FULL[mesRevisao]
-          const dr = dadosRevisao
-          if (!dr) return null
+          const drRaw2 = dadosRevisao
+          if (!drRaw2) return null
+          const dr = drRaw2
           const semDados = dr.entradas.length === 0 && dr.saidas.length === 0
 
           const METODOS = [
