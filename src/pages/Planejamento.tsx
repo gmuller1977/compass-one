@@ -229,12 +229,18 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     })
   }, [dadosAno, cartaoNomes, planos, anoAtual, contas])
 
-  const dadosAnoFinal: AnoData = useMemo(() => ({
-    ...dadosAno,
-    saidas: dadosAno.saidas.map(cat =>
+  const dadosAnoFinal: AnoData = useMemo(() => {
+    const hasFaturaCat = dadosAno.saidas.some(cat => nomeFaturaCartao(cat.nome, cartaoNomes))
+    const saidas = dadosAno.saidas.map(cat =>
       nomeFaturaCartao(cat.nome, cartaoNomes) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
-    ),
-  }), [dadosAno, somaCartaoMes, cartaoNomes])
+    )
+    // Se não existe categoria de fatura mas há valor de cartão, injeta linha virtual
+    // para que o totalSaidas inclua a fatura (somaCartaoMes) no total de despesas
+    if (!hasFaturaCat && somaCartaoMes.some(v => v > 0)) {
+      saidas.push({ nome: 'Cartão de Crédito', t: undefined, v: somaCartaoMes })
+    }
+    return { ...dadosAno, saidas }
+  }, [dadosAno, somaCartaoMes, cartaoNomes])
 
   const entradasComHistorico = useMemo(() => {
     const realSaved = (planosReal[anoAtual] as PlanoAnoData | undefined)?.entradas ?? []
