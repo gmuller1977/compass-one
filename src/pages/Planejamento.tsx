@@ -84,6 +84,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           planosReal, planejamentoLockado,
           finalizarPlanejamento, updatePlanoReal,
           desvioMinPerc, setDesvioMinPerc,
+          percentualAlerta, metodoSugestao, setMetodoSugestao,
           carregando, user, sairDaConta } = useApp()
 
   const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
@@ -145,6 +146,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   type EventoTipo = ''|'nova_renda'|'novo_gasto'|'encerramento'|'ajuste'
   const [modalEvento,   setModalEvento]   = useState<null|{ step:1|2; tipo:EventoTipo; mesInicio:number; catTipo:'entrada'|'saida'; catNome:string; novoValor:string }>(null)
   const [sugestoesEditadas, setSugestoesEditadas] = useState<Record<string,string>>({})
+  const [metodoLocal, setMetodoLocal] = useState(metodoSugestao)
   const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: 'grade' | 'horizontal' | 'vertical' =
     modoParam === 'planilha' ? 'horizontal'
@@ -580,47 +582,66 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   // ── Dados para Revisão Mensal ──
   const dadosRevisao = useMemo(() => {
     if (!revisaoDisponivel) return null
-    // Usa Atualizado se existir, senão Original
     const temAtualizado = !!planosReal[anoRevisao]
     const planoBase = (temAtualizado ? planosReal[anoRevisao] : planos[anoRevisao]) as AnoData | undefined
     const planoAtualMes = (planosReal[anoCorrente] ?? planos[anoCorrente]) as AnoData | undefined
     const realMes = lancadoPorCatMes[mesRevisao] ?? { entrada:{}, saida:{}, entradaCartao:{}, saidaCartao:{} }
 
+    // Realizado dos últimos 3 meses para cálculo de sugestão
+    function realizadoMes(catNome: string, tipo: 'entrada'|'saida', mi: number) {
+      if (mi < 0) return 0
+      const r = lancadoPorCatMes[mi] ?? { entrada:{}, saida:{}, entradaCartao:{}, saidaCartao:{} }
+      return tipo === 'entrada'
+        ? (r.entrada[catNome] ?? 0) + (r.entradaCartao[catNome] ?? 0)
+        : (r.saida[catNome] ?? 0) + (r.saidaCartao[catNome] ?? 0)
+    }
+
+    function calcSugestao(catNome: string, tipo: 'entrada'|'saida', realizado: number, metodo: string): number {
+      const meses3 = [mesRevisao, mesRevisao - 1, mesRevisao - 2].filter(m => m >= 0)
+      const vals = meses3.map(m => realizadoMes(catNome, tipo, m))
+      if (metodo === 'media_3_meses') return Math.round(vals.reduce((s, v) => s + v, 0) / meses3.length)
+      if (metodo === 'maior_valor')   return Math.max(...vals)
+      // mes_mais_margem: realizado atual + 5%
+      return Math.round(realizado * 1.05)
+    }
+
     const mapCat = (cats: Cat[], tipo: 'entrada'|'saida') =>
       cats
         .filter(cat => {
           const previsto  = cat.v[mesRevisao] ?? 0
-          const realizado = tipo === 'entrada'
-            ? (realMes.entrada[cat.nome] ?? 0) + (realMes.entradaCartao[cat.nome] ?? 0)
-            : (realMes.saida[cat.nome]   ?? 0) + (realMes.saidaCartao[cat.nome]   ?? 0)
+          const realizado = realizadoMes(cat.nome, tipo, mesRevisao)
           return previsto > 0 || realizado > 0
         })
         .map(cat => {
           const previsto  = cat.v[mesRevisao] ?? 0
-          const realizado = tipo === 'entrada'
-            ? (realMes.entrada[cat.nome] ?? 0) + (realMes.entradaCartao[cat.nome] ?? 0)
-            : (realMes.saida[cat.nome]   ?? 0) + (realMes.saidaCartao[cat.nome]   ?? 0)
+          const realizado = realizadoMes(cat.nome, tipo, mesRevisao)
           const desvio     = realizado - previsto
           const desvioPerc = previsto !== 0 ? (desvio / previsto) * 100 : null
           const { icone, cor } = iconeCategoria(categorias, cat.nome)
-          // Valor atual planejado para o mês corrente (ponto de comparação da sugestão)
           const catAtual = planoAtualMes?.[tipo === 'entrada' ? 'entradas' : 'saidas']
             ?.find((c: Cat) => c.nome === cat.nome)
           const planejadoMesAtual = catAtual?.v[mesAtual] ?? 0
-          return { nome: cat.nome, icone, cor, previsto, realizado, desvio, desvioPerc, planejadoMesAtual }
+          // foraDoPerfil: saída que ultrapassou percentualAlerta% do planejado
+          const foraDoPerfil = tipo === 'saida' && previsto > 0 && desvioPerc !== null && desvioPerc > percentualAlerta
+          return { nome: cat.nome, icone, cor, previsto, realizado, desvio, desvioPerc, planejadoMesAtual, foraDoPerfil }
         })
         .sort((a, b) => Math.abs(b.desvio) - Math.abs(a.desvio))
 
     const entradas = mapCat(planoBase?.entradas ?? [], 'entrada')
     const saidas   = mapCat(planoBase?.saidas   ?? [], 'saida')
 
+    // Sugestões computadas para o método atual
+    function getSugestao(item: ReturnType<typeof mapCat>[number], tipo: 'entrada'|'saida', metodo: string) {
+      return calcSugestao(item.nome, tipo, item.realizado, metodo)
+    }
+
     const totalPrevE = entradas.reduce((s, c) => s + c.previsto,  0)
     const totalRealE = entradas.reduce((s, c) => s + c.realizado, 0)
     const totalPrevS = saidas.reduce((s, c)   => s + c.previsto,  0)
     const totalRealS = saidas.reduce((s, c)   => s + c.realizado, 0)
 
-    return { entradas, saidas, totalPrevE, totalRealE, totalPrevS, totalRealS, temAtualizado }
-  }, [revisaoDisponivel, planos, planosReal, anoRevisao, anoCorrente, mesRevisao, mesAtual, lancadoPorCatMes, categorias])
+    return { entradas, saidas, totalPrevE, totalRealE, totalPrevS, totalRealS, temAtualizado, getSugestao }
+  }, [revisaoDisponivel, planos, planosReal, anoRevisao, anoCorrente, mesRevisao, mesAtual, lancadoPorCatMes, categorias, percentualAlerta])
 
   // ── Helpers de update ──
   function updateAno(fn: (d: AnoData) => AnoData) {
@@ -736,25 +757,24 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   function aplicarRevisaoMensal() {
     const dr = dadosRevisao
     if (!dr) return
-    // Garante que planosReal existe para o ano corrente; se não, cria a partir do Original
     const baseReal = (planosReal[anoCorrente] ?? planos[anoCorrente]) as AnoData | undefined
     if (!baseReal) return
     updatePlanoReal(anoCorrente, prev => {
-      const merge = (prevCats: Cat[], drCats: typeof dr.entradas) => {
-        const result = prevCats.length > 0 ? [...prevCats] : [...(baseReal.entradas ?? [])]
+      const merge = (prevCats: Cat[], drCats: typeof dr.entradas, tipo: 'entrada'|'saida') => {
+        const result = prevCats.length > 0 ? [...prevCats] : [...(baseReal[tipo === 'entrada' ? 'entradas' : 'saidas'] ?? [])]
         return result.map(cat => {
           const item = drCats.find(d => d.nome === cat.nome)
           if (!item) return cat
           const novoValStr = sugestoesEditadas[cat.nome]
-          const novoVal = novoValStr !== undefined ? parseBRL(novoValStr) : item.realizado
+          const novoVal = novoValStr !== undefined ? parseBRL(novoValStr) : dr.getSugestao(item, tipo, metodoLocal)
           return { ...cat, v: cat.v.map((v, mi) => mi >= mesAtual ? novoVal : v) }
         })
       }
       const base = prev ?? { ...baseReal, entradas: [...(baseReal.entradas ?? [])], saidas: [...(baseReal.saidas ?? [])] }
       return {
         ...base,
-        entradas: merge(base.entradas, dr.entradas),
-        saidas:   merge(base.saidas,   dr.saidas),
+        entradas: merge(base.entradas, dr.entradas, 'entrada'),
+        saidas:   merge(base.saidas,   dr.saidas,   'saida'),
       } as PlanoAnoData
     })
     setSugestoesEditadas({})
@@ -1153,73 +1173,158 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         </div>
       )
 
-      function revisaoSecao(items: NonNullable<typeof dadosRevisao>['entradas'], tipo: 'entrada'|'saida') {
-        if (items.length === 0) return null
-        const isE = tipo === 'entrada'
+      const METODOS_MOB = [
+        { id: 'media_3_meses', label: 'Média 3m' },
+        { id: 'maior_valor',   label: 'Maior valor' },
+        { id: 'mes_mais_margem', label: 'Mês+5%' },
+      ]
+
+      const semDados = dr.entradas.length === 0 && dr.saidas.length === 0
+      const foraDoPerfil = dr.saidas.filter(c => c.foraDoPerfil)
+
+      function mobCard(item: typeof dr.saidas[number], tipo: 'entrada'|'saida') {
+        const excesso = tipo === 'saida' ? item.desvio > 0 : item.desvio < 0
+        const pct = item.previsto > 0 ? Math.round((item.realizado / item.previsto) * 100) : 0
+        const sugestaoVal = dr.getSugestao(item, tipo, metodoLocal)
+        const editado = sugestoesEditadas[item.nome]
+        const sugeridoStr = editado !== undefined ? editado : sugestaoVal.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 })
+        const barColor = pct <= 80 ? '#16a34a' : pct <= 100 ? '#d97706' : '#dc2626'
         return (
-          <div style={{ borderRadius:18, overflow:'hidden', marginBottom:12, boxShadow:'0 2px 12px rgba(0,0,0,.07)' }}>
-            <div style={{ padding:'12px 16px', background: isE ? '#f0fdf4' : '#fff1f2',
-              borderBottom: isE ? '1px solid #dcfce7' : '1px solid #fecdd3',
-              display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:16 }}>{isE ? '↑' : '↓'}</span>
-              <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const,
-                letterSpacing:'.5px', color: isE ? '#16a34a' : '#dc2626' }}>
-                {isE ? 'Receitas' : 'Despesas'}
-              </span>
+          <div key={item.nome} style={{ background:'#fff', borderRadius:14, border:`1.5px solid ${item.foraDoPerfil ? '#fecdd3' : '#e2e8f0'}`, margin:'0 0 10px', overflow:'hidden', boxShadow:'0 1px 4px rgba(0,0,0,.04)' }}>
+            {/* Header */}
+            <div style={{ padding:'12px 14px', display:'flex', alignItems:'center', gap:10, borderBottom:'1px solid #f8faff' }}>
+              <div style={{ width:38, height:38, borderRadius:11, background:item.cor+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{item.icone}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{item.nome}</div>
+                <div style={{ fontSize:10, color:'#94a3b8', marginTop:1 }}>{dr.temAtualizado ? 'Plano Atualizado' : 'Original'}</div>
+              </div>
+              {item.foraDoPerfil && item.desvioPerc !== null && (
+                <div style={{ fontSize:11, fontWeight:800, padding:'3px 10px', borderRadius:20, background:'#fff1f2', color:'#dc2626' }}>
+                  +{item.desvioPerc.toFixed(0)}%
+                </div>
+              )}
             </div>
-            {items.map(item => {
-              const excesso   = tipo === 'saida' ? item.desvio > 0 : item.desvio < 0
-              const corDesvio = item.desvio === 0 ? '#94a3b8' : excesso ? '#dc2626' : '#16a34a'
-              return (
-                <div key={item.nome} style={{ background:'#fff', display:'flex', alignItems:'center',
-                  gap:10, padding:'12px 16px', borderBottom:'1px solid #f8faff' }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background: item.cor+'18',
-                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
-                    {item.icone}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:'#0f172a',
-                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome}</div>
-                    <div style={{ fontSize:10, color:'#94a3b8', marginTop:2, fontVariantNumeric:'tabular-nums' }}>
-                      {item.previsto > 0 ? fmt(item.previsto, true) : '—'} → {item.realizado > 0 ? fmt(item.realizado, true) : '—'}
-                    </div>
-                  </div>
-                  <div style={{ flexShrink:0, textAlign:'right' as const }}>
-                    <div style={{ fontSize:13, fontWeight:800, color:corDesvio, fontVariantNumeric:'tabular-nums' }}>
-                      {item.desvio === 0 ? '—' : (item.desvio > 0 ? '+' : '') + fmt(Math.abs(item.desvio), true)}
-                    </div>
-                    {item.desvioPerc !== null && item.desvio !== 0 && (
-                      <div style={{ fontSize:10, color:corDesvio }}>
-                        {item.desvioPerc > 0 ? '+' : ''}{item.desvioPerc.toFixed(0)}%
-                      </div>
-                    )}
+            {/* Valores */}
+            <div style={{ display:'flex', borderBottom:'1px solid #f8faff' }}>
+              {[
+                { label:'Planejado', val:item.previsto, cor:'#1a56db' },
+                { label:'Realizado', val:item.realizado, cor: excesso ? '#dc2626' : '#16a34a' },
+                { label:'%', val:pct, cor:barColor, suffix:'%' },
+              ].map(col => (
+                <div key={col.label} style={{ flex:1, padding:'10px 12px', textAlign:'center', borderRight:'1px solid #f8faff' }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' as const, letterSpacing:'.3px', marginBottom:3 }}>{col.label}</div>
+                  <div style={{ fontSize:14, fontWeight:800, color:col.cor, letterSpacing:'-.3px', fontVariantNumeric:'tabular-nums' }}>
+                    {col.suffix ? `${col.val}%` : fmt(col.val as number, true)}
                   </div>
                 </div>
-              )
-            })}
+              ))}
+            </div>
+            {/* Barra */}
+            {item.previsto > 0 && (
+              <div style={{ padding:'10px 14px', borderBottom:'1px solid #f8faff' }}>
+                <div style={{ height:6, background:'#f1f5f9', borderRadius:3, overflow:'hidden' }}>
+                  <div style={{ height:'100%', width:`${Math.min(pct, 100)}%`, background: `linear-gradient(90deg, #16a34a, ${barColor})`, borderRadius:3 }} />
+                </div>
+              </div>
+            )}
+            {/* Sugestão */}
+            <div style={{ padding:'12px 14px', background:'#f8faff', display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ fontSize:20, flexShrink:0 }}>💡</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:10, color:'#64748b', fontWeight:600, marginBottom:3 }}>Sugestão ({METODOS_MOB.find(m => m.id === metodoLocal)?.label})</div>
+                <div style={{ fontSize:14, fontWeight:800, color:'#1a56db', fontVariantNumeric:'tabular-nums' }}>{fmt(sugestaoVal, true)}</div>
+              </div>
+              <div style={{ display:'flex', gap:6 }}>
+                <input
+                  value={sugeridoStr}
+                  onChange={e => setSugestoesEditadas(prev => ({ ...prev, [item.nome]: e.target.value }))}
+                  style={{ width:90, padding:'5px 8px', border:'1.5px solid #1a56db', borderRadius:7, fontSize:12, textAlign:'right' as const, fontFamily:'inherit', background:'#eff6ff', color:'#1a56db' }}
+                />
+              </div>
+            </div>
           </div>
         )
       }
 
-      const semDados = dr.entradas.length === 0 && dr.saidas.length === 0
       return (
         <div>
-          <div style={{ borderRadius:14, background:'#fff', padding:'12px 16px', marginBottom:12,
-            boxShadow:'0 2px 8px rgba(0,0,0,.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>
-                Revisão de {MESES_FULL[mesRevisao]} {anoRevisao}
+          {/* Banner */}
+          <div style={{ background:'linear-gradient(135deg,#92400e,#d97706)', borderRadius:16, padding:'16px', marginBottom:12, display:'flex', alignItems:'center', gap:12 }}>
+            <span style={{ fontSize:32, flexShrink:0 }}>🔍</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:'#fff', marginBottom:3 }}>
+                {semDados ? 'Sem dados para revisar' : foraDoPerfil.length > 0 ? `${foraDoPerfil.length} ${foraDoPerfil.length === 1 ? 'categoria fora' : 'categorias fora'} do controle` : 'Tudo dentro do controle ✅'}
               </div>
-              <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>
-                Base: {dr.temAtualizado ? 'Plano Atualizado' : 'Plano Original'}
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.75)' }}>
+                {MESES_FULL[mesRevisao]} {anoRevisao} · Tolerância {percentualAlerta}%
               </div>
             </div>
-            <div style={{ fontSize:22 }}>🔍</div>
+            <div style={{ background:'rgba(255,255,255,.2)', borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:700, color:'#fff', whiteSpace:'nowrap' as const }}>
+              {dr.temAtualizado ? 'Atualizado' : 'Original'}
+            </div>
           </div>
-          {semDados
-            ? <div style={{ textAlign:'center' as const, padding:'40px 20px', color:'#64748b', fontSize:13 }}>Nenhum dado encontrado para este mês.</div>
-            : <div>{revisaoSecao(dr.entradas, 'entrada')}{revisaoSecao(dr.saidas, 'saida')}</div>
-          }
+          {/* Método toggle */}
+          <div style={{ background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:14, padding:'12px 14px', marginBottom:12 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase' as const, letterSpacing:'.4px', marginBottom:8 }}>Método de sugestão</div>
+            <div style={{ display:'flex', gap:6 }}>
+              {METODOS_MOB.map(m => (
+                <button key={m.id} onClick={() => { setMetodoLocal(m.id); setMetodoSugestao(m.id) }}
+                  style={{ flex:1, padding:'7px 4px', borderRadius:9, border:`1.5px solid ${metodoLocal === m.id ? '#1a56db' : '#e2e8f0'}`, background: metodoLocal === m.id ? '#eff6ff' : '#f8faff', fontSize:10, fontWeight:600, color: metodoLocal === m.id ? '#1a56db' : '#64748b', cursor:'pointer', fontFamily:'inherit', textAlign:'center' as const }}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {semDados ? (
+            <div style={{ textAlign:'center' as const, padding:'40px 20px', color:'#64748b', fontSize:13 }}>Nenhum dado encontrado para este mês.</div>
+          ) : (
+            <>
+              {dr.entradas.length > 0 && (
+                <>
+                  <div style={{ fontSize:10, fontWeight:800, color:'#16a34a', textTransform:'uppercase' as const, letterSpacing:'.6px', padding:'14px 0 8px', display:'flex', alignItems:'center', gap:6 }}>
+                    ↑ Receitas <span style={{ background:'#f0fdf4', borderRadius:10, padding:'1px 8px', fontSize:10 }}>{dr.entradas.length}</span>
+                  </div>
+                  {dr.entradas.map(item => mobCard(item, 'entrada'))}
+                </>
+              )}
+              {foraDoPerfil.length > 0 && (
+                <>
+                  <div style={{ fontSize:10, fontWeight:800, color:'#dc2626', textTransform:'uppercase' as const, letterSpacing:'.6px', padding:'14px 0 8px', display:'flex', alignItems:'center', gap:6 }}>
+                    ⚠ Fora do controle <span style={{ background:'#fff1f2', borderRadius:10, padding:'1px 8px', fontSize:10 }}>{foraDoPerfil.length}</span>
+                  </div>
+                  {foraDoPerfil.map(item => mobCard(item, 'saida'))}
+                </>
+              )}
+              {dr.saidas.filter(c => !c.foraDoPerfil).length > 0 && (
+                <>
+                  <div style={{ fontSize:10, fontWeight:800, color:'#16a34a', textTransform:'uppercase' as const, letterSpacing:'.6px', padding:'14px 0 8px', display:'flex', alignItems:'center', gap:6 }}>
+                    ✓ Dentro do controle <span style={{ background:'#f0fdf4', borderRadius:10, padding:'1px 8px', fontSize:10 }}>{dr.saidas.filter(c => !c.foraDoPerfil).length}</span>
+                  </div>
+                  {dr.saidas.filter(c => !c.foraDoPerfil).map(item => (
+                    <div key={item.nome} style={{ background:'#fff', borderRadius:14, border:'1.5px solid #e2e8f0', padding:'12px 14px', display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+                      <div style={{ width:34, height:34, borderRadius:10, background:item.cor+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{item.icone}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:12, fontWeight:600, color:'#0f172a' }}>{item.nome}</div>
+                        <div style={{ fontSize:10, color:'#16a34a', marginTop:2, fontWeight:600 }}>
+                          {fmt(item.realizado, true)} / {fmt(item.previsto, true)}
+                        </div>
+                      </div>
+                      {item.desvioPerc !== null && (
+                        <div style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:20, background:'#f0fdf4', color:'#16a34a' }}>
+                          {item.desvioPerc.toFixed(0)}%
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+              {/* Aplicar tudo */}
+              <button onClick={aplicarRevisaoMensal}
+                style={{ margin:'4px 0 14px', width:'100%', padding:14, border:'none', borderRadius:14, background:'linear-gradient(135deg,#1a56db,#2563eb)', color:'#fff', fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 16px rgba(26,86,219,.3)' }}>
+                ✓ Aplicar tudo ao Plano Atualizado
+              </button>
+            </>
+          )}
         </div>
       )
     }
@@ -1806,213 +1911,233 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           if (!dr) return null
           const semDados = dr.entradas.length === 0 && dr.saidas.length === 0
 
-          type DrItem = typeof dr.entradas[number]
+          const METODOS = [
+            { id: 'media_3_meses', label: 'Média 3 meses' },
+            { id: 'maior_valor',   label: 'Maior valor'   },
+            { id: 'mes_mais_margem', label: 'Mês + margem 5%' },
+          ]
 
-          function tabelaDesvios(cats: DrItem[], tipo: 'entrada'|'saida', titulo: string) {
-            if (cats.length === 0) return null
+          const foraDoPerfil = dr.saidas.filter(c => c.foraDoPerfil)
+
+          function cardCategoria(item: typeof dr.saidas[number], tipo: 'entrada'|'saida') {
+            const excesso = tipo === 'saida' ? item.desvio > 0 : item.desvio < 0
+            const corDesvio = item.desvio === 0 ? '#94a3b8' : excesso ? COR.vermelho : COR.verde
+            const pct = item.previsto > 0 ? Math.round((item.realizado / item.previsto) * 100) : 0
+            const barW = Math.min(pct, 100)
+            const barOver = pct > 100 ? Math.min(pct - 100, 40) : 0
+            const sugestaoVal = dr.getSugestao(item, tipo, metodoLocal)
+            const editado = sugestoesEditadas[item.nome]
+            const sugeridoStr = editado !== undefined ? editado : sugestaoVal.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 })
             return (
-              <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:12, marginBottom:10, overflow:'hidden' }}>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 110px 110px 100px',
-                  gap:8, padding:'8px 16px', borderBottom:`1px solid ${COR.borda}`, background:'#f8fafc' }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.4 }}>{titulo}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textAlign:'right' }}>Previsto</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textAlign:'right' }}>Realizado</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textAlign:'right' }}>Desvio</span>
+              <div key={item.nome} style={{ background:COR.branco, border:`1.5px solid ${item.foraDoPerfil ? '#fecdd3' : COR.borda}`, borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.06)', marginBottom:12 }}>
+                {/* Header */}
+                <div style={{ padding:'16px 20px', display:'flex', alignItems:'center', gap:14, borderBottom:`1px solid ${COR.borda}` }}>
+                  <div style={{ width:44, height:44, borderRadius:13, background: item.cor+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>
+                    {item.icone}
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:15, fontWeight:800, color:COR.texto, marginBottom:2 }}>{item.nome}</div>
+                    <div style={{ fontSize:11, color:'#94a3b8' }}>Base: {dr.temAtualizado ? 'Plano Atualizado' : 'Original'}</div>
+                  </div>
+                  {item.foraDoPerfil && item.desvioPerc !== null && (
+                    <div style={{ fontSize:13, fontWeight:800, padding:'5px 14px', borderRadius:10, background:'#fff1f2', color:COR.vermelho, flexShrink:0 }}>
+                      +{item.desvioPerc.toFixed(0)}% do planejado
+                    </div>
+                  )}
                 </div>
-                {cats.map(item => {
-                  const excesso   = tipo === 'saida' ? item.desvio > 0 : item.desvio < 0
-                  const corDesvio = item.desvio === 0 ? COR.textoSuave : excesso ? COR.vermelho : COR.verde
-                  return (
-                    <div key={item.nome} style={{ display:'grid', gridTemplateColumns:'1fr 110px 110px 100px',
-                      gap:8, padding:'10px 16px', borderBottom:`1px solid ${COR.borda}`, alignItems:'center' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <span style={{ fontSize:17 }}>{item.icone}</span>
-                        <span style={{ fontSize:13, fontWeight:500, color:COR.texto }}>{item.nome}</span>
-                      </div>
-                      <div style={{ fontSize:12, color:COR.textoSuave, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>
-                        {item.previsto > 0 ? fmt(item.previsto) : '—'}
-                      </div>
-                      <div style={{ fontSize:12, fontWeight:600, textAlign:'right', color:COR.texto, fontVariantNumeric:'tabular-nums' }}>
-                        {item.realizado > 0 ? fmt(item.realizado) : '—'}
-                      </div>
-                      <div style={{ fontSize:12, fontWeight:600, textAlign:'right', color:corDesvio, fontVariantNumeric:'tabular-nums' }}>
-                        {item.desvio === 0 ? '—' : (item.desvio > 0 ? '+' : '') + fmt(Math.abs(item.desvio))}
-                        {item.desvioPerc !== null && item.desvio !== 0 && (
-                          <span style={{ fontSize:10, marginLeft:3, opacity:.75 }}>
-                            ({item.desvioPerc > 0 ? '+' : ''}{item.desvioPerc.toFixed(0)}%)
-                          </span>
-                        )}
+                {/* Valores */}
+                <div style={{ display:'flex', borderBottom:`1px solid ${COR.borda}` }}>
+                  {[
+                    { label:'Planejado', val:item.previsto, cor:'#1a56db' },
+                    { label:'Realizado', val:item.realizado, cor: excesso ? COR.vermelho : COR.verde },
+                    { label:'Diferença', val:item.desvio,    cor: corDesvio },
+                  ].map(col => (
+                    <div key={col.label} style={{ flex:1, padding:'14px 16px', textAlign:'center', borderRight:`1px solid ${COR.borda}` }}>
+                      <div style={{ fontSize:9, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:4 }}>{col.label}</div>
+                      <div style={{ fontSize:16, fontWeight:800, color:col.cor, letterSpacing:'-.4px', fontVariantNumeric:'tabular-nums' }}>
+                        {col.label === 'Diferença' && col.val > 0 ? '+' : ''}{fmt(Math.abs(col.val))}
                       </div>
                     </div>
-                  )
-                })}
+                  ))}
+                  <div style={{ flex:1, padding:'14px 16px', textAlign:'center' }}>
+                    <div style={{ fontSize:9, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.4px', marginBottom:4 }}>Uso %</div>
+                    <div style={{ fontSize:16, fontWeight:800, color: pct > 100 ? COR.vermelho : pct > 80 ? '#d97706' : COR.verde, letterSpacing:'-.4px' }}>{pct}%</div>
+                  </div>
+                </div>
+                {/* Barra visual */}
+                {item.previsto > 0 && (
+                  <div style={{ padding:'14px 20px', borderBottom:`1px solid ${COR.borda}` }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:6, color:'#64748b' }}>
+                      <span>0</span>
+                      <span>Planejado: {fmt(item.previsto)}</span>
+                    </div>
+                    <div style={{ height:8, background:'#f1f5f9', borderRadius:4, overflow:'visible', position:'relative' }}>
+                      <div style={{ position:'absolute', top:0, left:0, height:'100%', width:`${barW}%`, background:'#1a56db', borderRadius:'4px 0 0 4px' }} />
+                      {barOver > 0 && (
+                        <div style={{ position:'absolute', top:0, left:`${barW}%`, height:'100%', width:`${barOver}%`, background:COR.vermelho, borderRadius:'0 4px 4px 0' }} />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* Sugestão */}
+                <div style={{ padding:'14px 20px', background:'#f8faff', display:'flex', alignItems:'center', gap:14 }}>
+                  <span style={{ fontSize:24, flexShrink:0 }}>💡</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:11, color:'#64748b', fontWeight:600, marginBottom:3 }}>Sugestão para próximos meses</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:'#1a56db', letterSpacing:'-.4px', fontVariantNumeric:'tabular-nums' }}>{fmt(sugestaoVal)}</div>
+                    <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>{METODOS.find(m => m.id === metodoLocal)?.label}</div>
+                  </div>
+                  <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                    <input
+                      value={sugeridoStr}
+                      onChange={e => setSugestoesEditadas(prev => ({ ...prev, [item.nome]: e.target.value }))}
+                      style={{ width:110, padding:'6px 10px', border:`1.5px solid #1a56db`, borderRadius:8, fontSize:13, textAlign:'right', fontFamily:'inherit', fontVariantNumeric:'tabular-nums', background:'#eff6ff', color:'#1a56db' }}
+                    />
+                    {editado !== undefined && (
+                      <button onClick={() => setSugestoesEditadas(prev => { const n = {...prev}; delete n[item.nome]; return n })}
+                        style={{ padding:'6px 10px', border:`1.5px solid ${COR.borda}`, borderRadius:8, background:COR.branco, color:COR.textoSuave, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                        ↺
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )
           }
 
-          // Categorias com sugestão de ajuste (realizado ≠ planejado para o mês atual)
-          const sugestoes = [...dr.entradas, ...dr.saidas].filter(
-            item => item.realizado !== item.planejadoMesAtual
-          )
+          const catsFora = dr.saidas.filter(c => c.foraDoPerfil)
+          const catsOk   = dr.saidas.filter(c => !c.foraDoPerfil)
 
           return (
             <div style={{ paddingTop:4 }}>
-
-              {/* Badge: qual plano está sendo usado como base */}
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:8 }}>
-                <div>
-                  <h3 style={{ fontSize:16, fontWeight:700, color:COR.texto, margin:'0 0 2px' }}>
-                    Revisão de {mesNome} {anoRevisao}
-                  </h3>
-                  <p style={{ fontSize:12, color:COR.textoSuave, margin:0 }}>
-                    Base de comparação:{' '}
-                    <strong style={{ color: dr.temAtualizado ? COR.azul : COR.textoSuave }}>
-                      {dr.temAtualizado ? 'Plano Atualizado' : 'Plano Original'}
-                    </strong>
-                  </p>
+              {/* ── Banner ── */}
+              <div style={{ background:'linear-gradient(135deg,#92400e,#d97706)', borderRadius:16, padding:'20px 24px', display:'flex', alignItems:'center', gap:16, marginBottom:16, flexWrap:'wrap' }}>
+                <span style={{ fontSize:36, flexShrink:0 }}>🔍</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:'#fff', marginBottom:4 }}>
+                    {semDados ? `Sem dados para ${mesNome}` : foraDoPerfil.length > 0 ? `${foraDoPerfil.length} ${foraDoPerfil.length === 1 ? 'categoria saiu' : 'categorias saíram'} do controle em ${mesNome}` : `Tudo dentro do controle em ${mesNome} ✅`}
+                  </div>
+                  <div style={{ fontSize:13, color:'rgba(255,255,255,.75)' }}>
+                    {semDados ? 'Registre lançamentos e crie um planejamento.' : `Ultrapassaram mais de ${percentualAlerta}% do planejado — revise e ajuste`}
+                  </div>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8, flexShrink:0 }}>
+                  <div style={{ background:'rgba(255,255,255,.2)', borderRadius:8, padding:'5px 14px', fontSize:13, fontWeight:700, color:'#fff' }}>
+                    Tolerância: {percentualAlerta}%
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {METODOS.map(m => (
+                      <button key={m.id} onClick={() => { setMetodoLocal(m.id); setMetodoSugestao(m.id) }}
+                        style={{ padding:'5px 10px', borderRadius:8, border:`1.5px solid ${metodoLocal === m.id ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.3)'}`, background: metodoLocal === m.id ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.1)', fontSize:11, fontWeight:700, color: metodoLocal === m.id ? '#fff' : 'rgba(255,255,255,.7)', cursor:'pointer', fontFamily:'inherit' }}>
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {semDados ? (
-                <div style={{ textAlign:'center', padding:'48px 24px', background:COR.branco,
-                  borderRadius:14, border:`1px solid ${COR.borda}` }}>
+                <div style={{ textAlign:'center', padding:'48px 24px', background:COR.branco, borderRadius:14, border:`1px solid ${COR.borda}` }}>
                   <div style={{ fontSize:36, marginBottom:12 }}>📭</div>
                   <div style={{ fontSize:14, color:COR.textoSuave }}>
-                    Nenhum dado encontrado para {mesNome}.<br />
-                    <span style={{ fontSize:12 }}>Registre seus lançamentos e crie um planejamento para ver a revisão.</span>
+                    Registre seus lançamentos e crie um planejamento para ver a revisão.
                   </div>
                 </div>
               ) : (
-                <>
-                  {/* ── SEÇÃO 1: Desvios do mês anterior ── */}
-                  <div style={{ fontSize:12, fontWeight:700, color:COR.textoSuave,
-                    textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>
-                    1 · Desvios de {mesNome}
-                  </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10, marginBottom:12 }}>
-                    {([
-                      { label:'Receitas', v:dr.totalPrevE, r:dr.totalRealE, tipo:'e' as const },
-                      { label:'Despesas', v:dr.totalPrevS, r:dr.totalRealS, tipo:'s' as const },
-                    ]).map(c => {
-                      const desvio  = c.r - c.v
-                      const excesso = c.tipo === 's' ? desvio > 0 : desvio < 0
-                      const corD    = desvio === 0 ? COR.textoSuave : excesso ? COR.vermelho : COR.verde
-                      return (
-                        <div key={c.label} style={{ background:COR.branco, border:`1px solid ${COR.borda}`,
-                          borderRadius:12, padding:'12px 16px' }}>
-                          <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:700,
-                            textTransform:'uppercase', letterSpacing:.4, marginBottom:4 }}>{c.label}</div>
-                          <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
-                            <span style={{ fontSize:17, fontWeight:700, color:COR.texto }}>{fmt(c.r)}</span>
-                            <span style={{ fontSize:11, color:COR.textoSuave }}>plan. {fmt(c.v)}</span>
-                          </div>
-                          {desvio !== 0 && (
-                            <div style={{ fontSize:11, color:corD, marginTop:3, fontWeight:600 }}>
-                              {desvio > 0 ? '+' : ''}{fmt(desvio)} vs planejado
-                            </div>
-                          )}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:20, alignItems:'start' }}>
+                  {/* ── Coluna esquerda: categorias ── */}
+                  <div>
+                    {/* Receitas */}
+                    {dr.entradas.length > 0 && (
+                      <>
+                        <div style={{ fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:12, display:'flex', alignItems:'center', gap:8, color:'#16a34a' }}>
+                          ↑ Receitas <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:'#f0fdf4', color:'#16a34a' }}>{dr.entradas.length}</span>
                         </div>
-                      )
-                    })}
-                  </div>
-                  {tabelaDesvios(dr.entradas, 'entrada', 'Receitas')}
-                  {tabelaDesvios(dr.saidas, 'saida', 'Despesas')}
-
-                  {/* ── SEÇÃO 2: Sugestões para meses restantes ── */}
-                  {sugestoes.length > 0 && (
-                    <>
-                      <div style={{ fontSize:12, fontWeight:700, color:COR.textoSuave,
-                        textTransform:'uppercase', letterSpacing:.5, margin:'18px 0 8px' }}>
-                        2 · Sugestão para {MESES_FULL[mesAtual]} a Dezembro
-                      </div>
-                      <p style={{ fontSize:12, color:COR.textoSuave, margin:'0 0 10px' }}>
-                        Com base no realizado em {mesNome}, o sistema sugere os seguintes ajustes. Edite se necessário.
-                      </p>
-                      <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:12, overflow:'hidden', marginBottom:16 }}>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 120px 140px',
-                          gap:8, padding:'8px 16px', borderBottom:`1px solid ${COR.borda}`, background:'#f8fafc' }}>
-                          <span style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.4 }}>Categoria</span>
-                          <span style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textAlign:'right' }}>Atual ({MESES[mesAtual]})</span>
-                          <span style={{ fontSize:11, fontWeight:700, color:COR.azul, textAlign:'right' }}>Sugerido</span>
+                        {dr.entradas.map(item => cardCategoria(item, 'entrada'))}
+                      </>
+                    )}
+                    {/* Fora do controle */}
+                    {catsFora.length > 0 && (
+                      <>
+                        <div style={{ fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:12, display:'flex', alignItems:'center', gap:8, color:COR.vermelho }}>
+                          ⚠ Fora do controle <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:'#fff1f2', color:COR.vermelho }}>{catsFora.length}</span>
                         </div>
-                        {sugestoes.map(item => {
-                          const editado   = sugestoesEditadas[item.nome]
-                          const sugerido  = editado !== undefined ? editado : item.realizado.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 })
-                          const difSinal  = item.realizado - item.planejadoMesAtual
-                          const corSinal  = difSinal === 0 ? COR.textoSuave : difSinal > 0 ? COR.vermelho : COR.verde
-                          return (
-                            <div key={item.nome} style={{ display:'grid', gridTemplateColumns:'1fr 120px 140px',
-                              gap:8, padding:'10px 16px', borderBottom:`1px solid ${COR.borda}`, alignItems:'center' }}>
-                              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                                <span style={{ fontSize:17 }}>{item.icone}</span>
-                                <div>
-                                  <div style={{ fontSize:13, fontWeight:500, color:COR.texto }}>{item.nome}</div>
-                                  {difSinal !== 0 && (
-                                    <div style={{ fontSize:10, color:corSinal, fontWeight:600 }}>
-                                      {difSinal > 0 ? '+' : ''}{fmt(difSinal)} vs atual
-                                    </div>
-                                  )}
+                        {catsFora.map(item => cardCategoria(item, 'saida'))}
+                      </>
+                    )}
+                    {/* OK */}
+                    {catsOk.length > 0 && (
+                      <>
+                        <div style={{ fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:12, marginTop: catsFora.length > 0 ? 8 : 0, display:'flex', alignItems:'center', gap:8, color:'#16a34a' }}>
+                          ✓ Dentro do controle <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:'#f0fdf4', color:'#16a34a' }}>{catsOk.length}</span>
+                        </div>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                          {catsOk.map(item => (
+                            <div key={item.nome} style={{ background:COR.branco, border:`1.5px solid ${COR.borda}`, borderRadius:14, padding:14, display:'flex', alignItems:'center', gap:12 }}>
+                              <div style={{ width:38, height:38, borderRadius:11, background:item.cor+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{item.icone}</div>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ fontSize:13, fontWeight:600, color:COR.texto, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.nome}</div>
+                                <div style={{ fontSize:11, color:'#64748b', marginTop:2 }}>{fmt(item.realizado)} / {fmt(item.previsto)}</div>
+                              </div>
+                              {item.desvioPerc !== null && (
+                                <div style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:6, background:'#f0fdf4', color:'#16a34a', flexShrink:0 }}>
+                                  {item.desvioPerc > 0 ? '+' : ''}{item.desvioPerc.toFixed(0)}%
                                 </div>
-                              </div>
-                              <div style={{ fontSize:12, color:COR.textoSuave, textAlign:'right', fontVariantNumeric:'tabular-nums' }}>
-                                {item.planejadoMesAtual > 0 ? fmt(item.planejadoMesAtual) : '—'}
-                              </div>
-                              <div style={{ display:'flex', justifyContent:'flex-end' }}>
-                                <input
-                                  value={sugerido}
-                                  onChange={e => setSugestoesEditadas(prev => ({ ...prev, [item.nome]: e.target.value }))}
-                                  style={{ width:110, padding:'5px 10px', border:`1.5px solid ${COR.azul}`,
-                                    borderRadius:7, fontSize:12, textAlign:'right', fontFamily:'inherit',
-                                    fontVariantNumeric:'tabular-nums', background:'#eff6ff', color:COR.azul }}
-                                />
-                              </div>
+                              )}
                             </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* ── SEÇÃO 3: Confirmar ── */}
-                      <div style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:12,
-                        padding:'16px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
-                        <div>
-                          <div style={{ fontSize:13, fontWeight:700, color:'#15803d', marginBottom:2 }}>
-                            3 · Aplicar ao Plano Atualizado?
-                          </div>
-                          <div style={{ fontSize:12, color:'#166534' }}>
-                            Os valores acima serão aplicados de {MESES_FULL[mesAtual]} a Dezembro no plano Atualizado.
-                          </div>
+                          ))}
                         </div>
-                        <div style={{ display:'flex', gap:8 }}>
-                          <button onClick={() => setSugestoesEditadas({})}
-                            style={{ padding:'7px 16px', border:`1px solid ${COR.borda}`, borderRadius:8,
-                              cursor:'pointer', fontFamily:'inherit', fontSize:12, fontWeight:600,
-                              color:COR.textoSuave, background:COR.branco }}>
-                            Restaurar sugestões
-                          </button>
-                          <button onClick={aplicarRevisaoMensal}
-                            style={{ padding:'7px 20px', border:'none', borderRadius:8, cursor:'pointer',
-                              fontFamily:'inherit', fontSize:12, fontWeight:700, color:'#fff',
-                              background:`linear-gradient(135deg,#15803d,#16a34a)` }}>
-                            ✓ Aplicar ao Plano Atualizado
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
 
-                  {sugestoes.length === 0 && (
-                    <div style={{ textAlign:'center', padding:'24px', background:'#f0fdf4',
-                      border:'1px solid #86efac', borderRadius:12, marginTop:16 }}>
-                      <div style={{ fontSize:24, marginBottom:6 }}>✅</div>
-                      <div style={{ fontSize:13, fontWeight:600, color:'#15803d' }}>
-                        Plano em dia com o realizado de {mesNome}
+                  {/* ── Coluna direita: resumo + ações ── */}
+                  <div style={{ position:'sticky', top:20 }}>
+                    {/* Resumo */}
+                    <div style={{ background:COR.branco, border:`1.5px solid ${COR.borda}`, borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.06)', marginBottom:16 }}>
+                      <div style={{ padding:'14px 18px', borderBottom:`1px solid ${COR.borda}`, fontSize:13, fontWeight:700, color:COR.texto, display:'flex', alignItems:'center', gap:8 }}>
+                        📊 Resumo de {mesNome}
                       </div>
-                      <div style={{ fontSize:12, color:'#166534', marginTop:4 }}>
-                        Nenhum ajuste necessário para os próximos meses.
+                      {[
+                        { label:'Receitas planejadas', val:dr.totalPrevE, cor:COR.textoSuave },
+                        { label:'Receitas realizadas', val:dr.totalRealE, cor:'#16a34a' },
+                        { label:'Despesas planejadas', val:dr.totalPrevS, cor:COR.textoSuave },
+                        { label:'Despesas realizadas', val:dr.totalRealS, cor:COR.vermelho },
+                        { label:'Resultado', val: dr.totalRealE - dr.totalRealS, cor: dr.totalRealE - dr.totalRealS >= 0 ? '#16a34a' : COR.vermelho },
+                      ].map(row => (
+                        <div key={row.label} style={{ padding:'12px 18px', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:`1px solid #f8faff` }}>
+                          <span style={{ fontSize:12, color:'#64748b' }}>{row.label}</span>
+                          <span style={{ fontSize:13, fontWeight:700, color:row.cor, fontVariantNumeric:'tabular-nums' }}>{fmt(row.val)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Base do plano */}
+                    <div style={{ background:COR.branco, border:`1.5px solid ${COR.borda}`, borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.06)', marginBottom:16 }}>
+                      <div style={{ padding:'14px 18px', borderBottom:`1px solid ${COR.borda}`, fontSize:13, fontWeight:700, color:COR.texto }}>
+                        📋 Base da revisão
+                      </div>
+                      <div style={{ padding:'12px 18px', fontSize:12, color:'#64748b', lineHeight:1.6 }}>
+                        Comparando com o <strong style={{ color: dr.temAtualizado ? COR.azul : COR.textoSuave }}>{dr.temAtualizado ? 'Plano Atualizado' : 'Plano Original'}</strong>.<br />
+                        Sugestões aplicadas de <strong>{MESES_FULL[mesAtual]}</strong> a Dezembro.
                       </div>
                     </div>
-                  )}
-                </>
+
+                    {/* Botão Aplicar Tudo */}
+                    {[...dr.entradas, ...dr.saidas].length > 0 && (
+                      <>
+                        <button onClick={aplicarRevisaoMensal}
+                          style={{ width:'100%', padding:14, border:'none', borderRadius:12, background:'linear-gradient(135deg,#16a34a,#15803d)', color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 12px rgba(22,163,74,.3)', marginBottom:10 }}>
+                          ✓ Aplicar tudo ao Plano Atualizado
+                        </button>
+                        <button onClick={() => { setSugestoesEditadas({}); setAba('real') }}
+                          style={{ width:'100%', padding:12, border:`1.5px solid ${COR.borda}`, borderRadius:12, background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                          Ver Plano Atualizado sem aplicar
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )

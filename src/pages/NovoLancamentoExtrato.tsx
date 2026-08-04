@@ -9,6 +9,7 @@ import FaturaCartao from './FaturaCartao'
 import ExtratoConsolidado from './ExtratoConsolidado'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
+import AlertaOrcamento from '../components/AlertaOrcamento'
 
 const COR = {
   azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
@@ -164,7 +165,7 @@ export default function NovoLancamentoExtrato() {
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
-  const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number}|null>(null)
+  const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number; valorAtual:number; descricao:string}|null>(null)
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
   const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('extrato')
@@ -176,7 +177,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, faturaData, user, sairDaConta } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, updatePlanoReal, faturaData, user, sairDaConta, percentualAlerta } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   // Prefere planosReal (Atualizado) quando disponível
@@ -656,7 +657,7 @@ export default function NovoLancamentoExtrato() {
     } else {
       toast('Lançamento registrado')
     }
-    // Verificar se a categoria ultrapassou o planejado (apenas saídas)
+    // Verificar se a categoria ultrapassou o limite de alerta (apenas saídas)
     if (fTipo === 'saida' && fCat && !editandoId) {
       const previsto = valorPrevistoPorNome(fCat, 'saida')
       if (previsto > 0) {
@@ -665,8 +666,9 @@ export default function NovoLancamentoExtrato() {
           .filter(l => l.categoria === fCat && l.tipo === 'saida')
           .reduce((s, l) => s + l.valor, 0)
         const totalNovo = totalExistente + valor
-        if (totalNovo > previsto) {
-          setAlertaDesvio({ catNome: fCat, totalGasto: totalNovo, previsto })
+        const limiteAlerta = previsto * (1 + percentualAlerta / 100)
+        if (totalNovo > limiteAlerta) {
+          setAlertaDesvio({ catNome: fCat, totalGasto: totalNovo, previsto, valorAtual: valor, descricao: fDesc.trim() || fCat })
         }
       }
     }
@@ -954,29 +956,34 @@ export default function NovoLancamentoExtrato() {
         </div>
       )}
 
-      {/* ALERTA DE DESVIO */}
+      {/* ALERTA DE ORÇAMENTO */}
       {alertaDesvio && (
-        <div style={{ background:'#fef3c7', borderBottom:'1px solid #fcd34d',
-          padding:'10px 16px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-          <span style={{ fontSize:15 }}>⚠️</span>
-          <div style={{ flex:1, fontSize:12, color:'#92400e' }}>
-            <strong>{alertaDesvio.catNome}</strong> ultrapassou o planejado:{' '}
-            gasto {alertaDesvio.totalGasto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} de{' '}
-            {alertaDesvio.previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} previstos.
-          </div>
-          <button
-            onClick={() => { setAlertaDesvio(null); navigate('/planejamento', { state: { aba: 'revisao' } }) }}
-            style={{ padding:'5px 12px', border:'none', borderRadius:7, cursor:'pointer',
-              fontFamily:'inherit', fontSize:12, fontWeight:600,
-              background:'#d97706', color:'#fff', whiteSpace:'nowrap' }}>
-            Fazer revisão →
-          </button>
-          <button onClick={() => setAlertaDesvio(null)}
-            style={{ border:'none', background:'transparent', cursor:'pointer',
-              fontSize:18, color:'#92400e', lineHeight:1, padding:'0 4px' }}>
-            ×
-          </button>
-        </div>
+        <AlertaOrcamento
+          catNome={alertaDesvio.catNome}
+          previsto={alertaDesvio.previsto}
+          totalGasto={alertaDesvio.totalGasto}
+          valorAtual={alertaDesvio.valorAtual}
+          descricao={alertaDesvio.descricao}
+          mesLabel={NOMES_MESES[mes]}
+          onRevisar={() => { setAlertaDesvio(null); navigate('/planejamento', { state: { aba: 'revisao' } }) }}
+          onAjustarMes={novoVal => {
+            const catNome = alertaDesvio.catNome
+            const baseReal = planosReal[ano] ?? planos[ano]
+            if (baseReal) {
+              updatePlanoReal(ano, prev => {
+                const base = prev ?? { ...baseReal, saidas: [...(baseReal.saidas ?? [])] }
+                return {
+                  ...base,
+                  saidas: (base.saidas ?? []).map(c =>
+                    c.nome === catNome ? { ...c, v: c.v.map((v, mi) => mi === mes ? novoVal : v) } : c
+                  ),
+                } as typeof base
+              })
+            }
+            setAlertaDesvio(null)
+          }}
+          onIgnorar={() => setAlertaDesvio(null)}
+        />
       )}
 
       {/* SUB-HEADER MOBILE: bank pills + month nav */}

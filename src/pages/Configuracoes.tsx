@@ -285,6 +285,8 @@ export default function Configuracoes() {
           planos, planosReal,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
+          percentualAlerta, setPercentualAlerta,
+          metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
           setOnboardingCompleto } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
@@ -1962,6 +1964,54 @@ export default function Configuracoes() {
                 </div>
                 <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
                   Categorias com desvio acima deste % entre previsto e realizado aparecem na revisão.
+                </div>
+              </div>
+
+              {/* Tolerância de alerta de lançamento */}
+              <div style={{ marginBottom:16 }}>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:COR.textoSuave,
+                  textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
+                  Tolerância de Alerta — Lançamento
+                </label>
+                <div style={{ display:'flex', gap:6 }}>
+                  {[5, 10, 15, 20].map(p => (
+                    <button key={p} onClick={() => setPercentualAlerta(p)}
+                      style={{ flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:12, fontWeight:500,
+                        border:`1.5px solid ${percentualAlerta === p ? '#2563eb' : COR.borda}`, borderRadius:7,
+                        cursor:'pointer', background: percentualAlerta === p ? '#eff6ff' : COR.branco,
+                        color: percentualAlerta === p ? '#2563eb' : COR.textoSuave }}>
+                      {p}%
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
+                  Alerta aparece ao lançar uma despesa que ultrapassa este % acima do planejado.
+                </div>
+              </div>
+
+              {/* Método de sugestão */}
+              <div style={{ marginBottom:16 }}>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:COR.textoSuave,
+                  textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
+                  Método de Sugestão — Revisão Mensal
+                </label>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' as const }}>
+                  {[
+                    { id:'media_3_meses', label:'Média 3 meses' },
+                    { id:'maior_valor',   label:'Maior valor'   },
+                    { id:'mes_mais_margem', label:'Mês + margem 5%' },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => setMetodoSugestao(m.id)}
+                      style={{ flex:1, minWidth:100, padding:'7px 8px', fontFamily:'inherit', fontSize:11, fontWeight:500,
+                        border:`1.5px solid ${metodoSugestao === m.id ? '#2563eb' : COR.borda}`, borderRadius:7,
+                        cursor:'pointer', background: metodoSugestao === m.id ? '#eff6ff' : COR.branco,
+                        color: metodoSugestao === m.id ? '#2563eb' : COR.textoSuave }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
+                  Como calcular o valor sugerido de cada categoria na Revisão Mensal.
                 </div>
               </div>
 

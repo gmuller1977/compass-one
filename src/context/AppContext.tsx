@@ -81,6 +81,8 @@ type AppCtx = {
   planosReal: Record<number, PlanoAnoData>
   planejamentoLockado: boolean
   desvioMinPerc: number
+  percentualAlerta: number
+  metodoSugestao: string
   perfil: Perfil
   setContas:      Dispatch<SetStateAction<Conta[]>>
   setCategorias:  Dispatch<SetStateAction<Categoria[]>>
@@ -92,6 +94,8 @@ type AppCtx = {
   updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
   setPlanejamentoLockado: (v: boolean) => void
   setDesvioMinPerc: (v: number) => void
+  setPercentualAlerta: (v: number) => void
+  setMetodoSugestao: (v: string) => void
   setPerfil: (v: Perfil) => void
   onboardingCompleto: boolean
   setOnboardingCompleto: (v: boolean) => void
@@ -243,6 +247,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [planosReal,      setPlanosRealState] = useState<Record<number, PlanoAnoData>>({})
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
   const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
+  const [percentualAlerta,    setPercentualAlertaState]    = useState(5)
+  const [metodoSugestao,      setMetodoSugestaoState]      = useState('media_3_meses')
   const [perfil,              setPerfilState]              = useState<Perfil>({ nome: '', apelido: '' })
   const [onboardingCompleto,  setOnboardingCompletoState]  = useState(false)
   const [objetivoUsuario,     setObjetivoUsuarioState]     = useState('')
@@ -355,6 +361,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOnboardingCompletoState(pref?.onboarding_completo ?? hasData)
     setPlanejamentoLockadoState(pref?.planejamento_lockado ?? false)
     setDesvioMinPercState(Number(pref?.desvio_min_perc ?? 10))
+    setPercentualAlertaState(Number(pref?.percentual_alerta ?? 5))
+    setMetodoSugestaoState(pref?.metodo_sugestao ?? 'media_3_meses')
     setObjetivoUsuarioState(pref?.objetivo_usuario ?? '')
     setMetaSimState(pref?.meta_simulacao ?? null)
 
@@ -546,7 +554,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveUserPrefs(
-    p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null
+    p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null,
+    pa = 5, metodo = 'media_3_meses'
   ) {
     if (!canSave()) return
     const uid = userIdRef.current!
@@ -557,6 +566,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       onboarding_completo: oc,
       planejamento_lockado: pl,
       desvio_min_perc: dmp,
+      percentual_alerta: pa,
+      metodo_sugestao: metodo,
       objetivo_usuario: ou || null,
       meta_simulacao: ms ?? null,
       atualizado_em: new Date().toISOString(),
@@ -597,8 +608,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [planosReal])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) return
-    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim)
-  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim])
+    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao)
+  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -623,6 +634,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function setPlanejamentoLockado(v: boolean) { setPlanejamentoLockadoState(v) }
   function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
+  function setPercentualAlerta(v: number) { setPercentualAlertaState(v) }
+  function setMetodoSugestao(v: string) { setMetodoSugestaoState(v) }
   function setPerfil(v: Perfil) { setPerfilState(v) }
   function setOnboardingCompleto(v: boolean) { setOnboardingCompletoState(v) }
   function setObjetivoUsuario(v: string) { setObjetivoUsuarioState(v) }
@@ -652,7 +665,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveFaturaData(faturaData),
         savePlanosData(planos, 'previsto'),
         savePlanosData(planosReal, 'real'),
-        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim),
+        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao),
       ])
     }
     await supabase.auth.signOut()
@@ -669,13 +682,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{
       user, carregando,
       contas, categorias, extratoData, faturaData, planos, planosReal,
-      planejamentoLockado, desvioMinPerc, perfil,
+      planejamentoLockado, desvioMinPerc, percentualAlerta, metodoSugestao, perfil,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
       finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado,
-      setDesvioMinPerc, setPerfil,
+      setDesvioMinPerc, setPercentualAlerta, setMetodoSugestao, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
       objetivoUsuario, setObjetivoUsuario,
       metaSim, setMetaSim,
