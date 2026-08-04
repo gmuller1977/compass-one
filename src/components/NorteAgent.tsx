@@ -190,32 +190,29 @@ ${metaSim
       const history = newMessages.slice(-20)
       const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXTO_DINAMICO}', buildContext())
 
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY ?? '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: history.map(m => ({ role: m.role, content: m.content })),
-        }),
-        signal: controller.signal,
-      })
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY ?? ''}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: history.map(m => ({
+              role: m.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: m.content }],
+            })),
+          }),
+          signal: controller.signal,
+        }
+      )
 
       clearTimeout(timeout)
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
 
-      const data = await resp.json() as { content: { type: string; text: string }[] }
-      const text = data.content
-        .filter(c => c.type === 'text')
-        .map(c => c.text)
-        .join('\n')
+      const data = await resp.json() as { candidates?: { content: { parts: { text: string }[] } }[] }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+        ?? 'Desculpe, não consegui processar sua pergunta.'
 
       setMessages(prev => [...prev, { role: 'assistant', content: text, ts: Date.now() }])
     } catch {
