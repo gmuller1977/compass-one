@@ -1834,7 +1834,7 @@ export default function NovoLancamentoExtrato() {
         </div>
 
         {/* Scrollable body: form + resumo */}
-        <div style={{flex:1,overflowY:'auto'}}>
+        <div style={{flex:1,overflowY:'auto',paddingBottom:72}}>
 
           {/* Form body */}
           <div style={{padding:'16px 20px'}}>
