@@ -58,6 +58,13 @@ export default function NorteAgent() {
   const loadingRef = useRef(false)
   const isMobile = useIsMobile()
 
+  // Sidebar Norte card dispatches this event on desktop
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    document.addEventListener('openNorte', handler)
+    return () => document.removeEventListener('openNorte', handler)
+  }, [])
+
   const { contas, extratoData, faturaData, planos, planosReal, perfil, metaSim } = useApp()
 
   function buildContext() {
@@ -243,7 +250,8 @@ ${metaSim
           borderRadius: '50%',
           background: 'linear-gradient(135deg,#0f2878,#1a56db)',
           border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: isMobile ? 'flex' : 'none',
+          alignItems: 'center', justifyContent: 'center',
           fontSize: 24,
           boxShadow: '0 4px 16px rgba(26,86,219,0.45)',
           transition: 'transform 0.15s, box-shadow 0.15s',

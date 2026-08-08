@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
-export const SIDEBAR_W = 216
+export const SIDEBAR_W = 220
 
 type SubLeaf    = { label: string; path: string }
 type SubDivider = { divider: string }
@@ -23,15 +23,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'DIA A DIA',
     items: [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
-      {
-        icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false,
-        sub: [
-          { label: 'Banco',       path: '/novo-lancamento?tipo=banco'       },
-          { label: 'Cartão',      path: '/novo-lancamento?tipo=cartao'      },
-          { label: 'Dinheiro',    path: '/novo-lancamento?tipo=dinheiro'    },
-          { label: 'Visão geral', path: '/novo-lancamento?tipo=consolidado' },
-        ],
-      },
+      { icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
     ],
   },
   {
@@ -94,62 +86,59 @@ function NavItemRow({
       onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 9,
-        width: '100%', padding: '7px 8px', marginBottom: 1,
-        border: 'none', borderRadius: 8,
+        width: '100%', padding: '8px 10px', marginBottom: 1,
+        border: 'none', borderRadius: 9,
         cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
         background: active
-          ? 'rgba(255,255,255,0.15)'
+          ? '#ffffff'
           : hovered
-            ? 'rgba(255,255,255,0.1)'
+            ? 'rgba(255,255,255,0.08)'
             : 'transparent',
         color: isSair
           ? (hovered ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)')
           : active
-            ? '#ffffff'
+            ? '#1a56db'
             : disabled
               ? 'rgba(255,255,255,0.3)'
-              : 'rgba(255,255,255,0.7)',
+              : 'rgba(255,255,255,0.65)',
         fontSize: 13,
-        fontWeight: active ? 600 : 400,
-        transition: 'background .12s, color .12s',
+        fontWeight: active ? 700 : 500,
+        boxShadow: active ? '0 2px 8px rgba(0,0,0,.15)' : 'none',
+        transition: 'background .12s, color .12s, box-shadow .12s',
         opacity: disabled ? 0.7 : 1,
       }}
     >
-      <span style={{ fontSize: 15, width: 20, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <span style={{ fontSize: 15, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
       <span style={{ flex: 1 }}>{label}</span>
       {badge && (
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: '.4px',
           padding: '2px 5px', borderRadius: 4,
-          background: 'rgba(255,255,255,0.15)',
-          color: 'rgba(255,255,255,0.6)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          flexShrink: 0,
-          textTransform: 'uppercase',
+          background: active ? 'rgba(26,86,219,.12)' : 'rgba(255,255,255,0.12)',
+          color: active ? '#1a56db' : 'rgba(255,255,255,0.5)',
+          border: `1px solid ${active ? 'rgba(26,86,219,.2)' : 'rgba(255,255,255,0.15)'}`,
+          flexShrink: 0, textTransform: 'uppercase',
         }}>{badge}</span>
       )}
       {!badge && hasSub && (
         <span style={{
           fontSize: 10,
-          color: active ? '#ffffff' : 'rgba(255,255,255,0.4)',
+          color: active ? 'rgba(26,86,219,.5)' : 'rgba(255,255,255,0.35)',
           transition: 'transform .2s, color .12s',
           transform: expanded ? 'rotate(90deg)' : 'none',
           display: 'inline-block', flexShrink: 0,
-        }}>▶</span>
-      )}
-      {!badge && !hasSub && active && (
-        <div style={{
-          width: 4, height: 4, borderRadius: '50%',
-          background: '#ffffff', flexShrink: 0,
-        }}/>
+        }}>›</span>
       )}
     </button>
   )
 }
 
-function SubItemRow({ label, active, onClick }: {
-  label: string; active: boolean; onClick: () => void
+function SubItemRow({
+  label, icon, active, expanded, hasSub, onClick,
+}: {
+  label: string; icon?: string; active: boolean
+  expanded?: boolean; hasSub?: boolean; onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
   return (
@@ -159,23 +148,70 @@ function SubItemRow({ label, active, onClick }: {
       onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        width: '100%', padding: '5px 8px 5px 33px', marginBottom: 1,
-        border: 'none', borderRadius: 6, cursor: 'pointer',
+        width: '100%', padding: '7px 10px 7px 18px', marginBottom: 1,
+        border: 'none', borderRadius: 8, cursor: 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
-        background: 'transparent',
-        color: active
-          ? '#ffffff'
-          : hovered
-            ? 'rgba(255,255,255,0.9)'
-            : 'rgba(255,255,255,0.6)',
+        background: active
+          ? 'rgba(255,255,255,.9)'
+          : hovered ? 'rgba(255,255,255,.06)' : 'transparent',
+        color: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.5)',
         fontSize: 12,
-        fontWeight: active ? 500 : 400,
-        transition: 'color .1s',
+        fontWeight: active ? 700 : 400,
+        boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+        transition: 'background .12s, color .12s',
       }}
     >
-      <span style={{
-        width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-        background: active ? '#ffffff' : hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)',
+      {icon
+        ? <span style={{ fontSize: 14, flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+        : <span style={{
+            width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+            background: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.25)',
+            transition: 'background .1s',
+          }}/>
+      }
+      <span style={{ flex: 1 }}>{label}</span>
+      {hasSub && (
+        <span style={{
+          fontSize: 10,
+          color: active ? 'rgba(26,86,219,.5)' : 'rgba(255,255,255,.3)',
+          transition: 'transform .2s',
+          transform: expanded ? 'rotate(90deg)' : 'none',
+          display: 'inline-block', flexShrink: 0,
+        }}>›</span>
+      )}
+    </button>
+  )
+}
+
+function Sub2ItemRow({
+  label, color, active, onClick,
+}: {
+  label: string; color?: string; active: boolean; onClick: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 7,
+        width: '100%', padding: '6px 10px 6px 30px', marginBottom: 1,
+        border: 'none', borderRadius: 7, cursor: 'pointer',
+        fontFamily: 'inherit', textAlign: 'left',
+        background: active
+          ? 'rgba(255,255,255,.9)'
+          : hovered ? 'rgba(255,255,255,.05)' : 'transparent',
+        color: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.35)',
+        fontSize: 11,
+        fontWeight: active ? 800 : 400,
+        boxShadow: active ? '0 1px 3px rgba(0,0,0,.08)' : 'none',
+        transition: 'background .1s, color .1s',
+      }}
+    >
+      <div style={{
+        width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+        background: active ? '#1a56db' : (color ?? (hovered ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.2)')),
         transition: 'background .1s',
       }}/>
       {label}
@@ -186,9 +222,9 @@ function SubItemRow({ label, active, onClick }: {
 function SubDividerRow({ label }: { label: string }) {
   return (
     <div style={{
-      padding: '8px 8px 3px 33px',
+      padding: '8px 8px 3px 18px',
       fontSize: 10, fontWeight: 700,
-      color: 'rgba(255,255,255,0.4)',
+      color: 'rgba(255,255,255,0.35)',
       letterSpacing: '.8px', textTransform: 'uppercase',
     }}>
       {label}
@@ -199,22 +235,35 @@ function SubDividerRow({ label }: { label: string }) {
 export default function Sidebar() {
   const navigate              = useNavigate()
   const { pathname, search }  = useLocation()
-  const { perfil, user, sairDaConta } = useApp()
+  const { perfil, user, sairDaConta, contas } = useApp()
 
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
   const email   = user?.email ?? ''
   const inicial = nome.charAt(0).toUpperCase()
 
+  const contasExtrato = contas
+    .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+    .sort((a, b) => (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0))
+  const cartoes = contas.filter(c => c.tipo === 'cartao')
+
+  const params     = new URLSearchParams(search)
+  const tipoParam  = params.get('tipo')
+  const contaParam = params.get('conta')
+
+  const lancActive     = pathname.startsWith('/novo-lancamento')
+  const bancoActive    = lancActive && tipoParam === 'banco'
+  const cartaoSubActive = lancActive && tipoParam === 'cartao'
+
   function isParentActive(path: string, exact: boolean) {
     return exact ? pathname === path : pathname.startsWith(path)
   }
-
   function isSubActive(subPath: string) {
     if (subPath.includes('modo=wizard')) return false
     return (pathname + search) === subPath
   }
 
   const [expandedItem, setExpandedItem] = useState<string|null>(() => {
+    if (pathname.startsWith('/novo-lancamento')) return 'Lançamentos'
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
         if (!item.disabled && pathname.startsWith(item.path) && item.path !== '/dashboard') {
@@ -225,52 +274,90 @@ export default function Sidebar() {
     return null
   })
 
+  const [expandedSub2, setExpandedSub2] = useState<'banco' | 'cartao' | null>(() => {
+    if (!pathname.startsWith('/novo-lancamento')) return null
+    if (tipoParam === 'banco') return 'banco'
+    if (tipoParam === 'cartao') return 'cartao'
+    return null
+  })
+
+  useEffect(() => {
+    if (pathname.startsWith('/novo-lancamento')) {
+      setExpandedItem('Lançamentos')
+      if (tipoParam === 'banco' && expandedSub2 !== 'banco') setExpandedSub2('banco')
+      else if (tipoParam === 'cartao' && expandedSub2 !== 'cartao') setExpandedSub2('cartao')
+    }
+  }, [pathname, tipoParam]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function toggleExpand(label: string) {
     setExpandedItem(prev => prev === label ? null : label)
   }
+  function toggleSub2(key: 'banco' | 'cartao') {
+    setExpandedSub2(prev => prev === key ? null : key)
+  }
+
+  function abrirNorte() {
+    document.dispatchEvent(new CustomEvent('openNorte'))
+  }
+
+  // Determine which account is active at level 3
+  const activeContaId  = bancoActive
+    ? (contaParam ?? contasExtrato.find(c => c.preferida)?.id ?? contasExtrato[0]?.id)
+    : null
+  const activeCartaoId = cartaoSubActive
+    ? (contaParam ?? cartoes[0]?.id)
+    : null
 
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, bottom: 0, width: SIDEBAR_W,
-      background: 'linear-gradient(180deg, #0f2878 0%, #1a56db 100%)',
+      background: 'linear-gradient(180deg, #0f2878 0%, #1e3a8a 100%)',
       display: 'flex', flexDirection: 'column', zIndex: 100,
       fontFamily: "-apple-system,'Inter',sans-serif",
     }}>
 
       {/* ── Logo ── */}
       <div style={{
-        padding: '18px 14px 14px',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        padding: '20px 14px 16px',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
         flexShrink: 0,
       }}>
-        <div
-          onClick={() => navigate('/dashboard')}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-        >
+        <div onClick={() => navigate('/dashboard')}
+          style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
             background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <CompassIcon />
           </div>
-          <div style={{ lineHeight: 1.2 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>Compass</span>
-            {' '}
-            <span style={{ fontSize: 14, fontWeight: 300, color: 'rgba(255,255,255,0.7)' }}>One</span>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>
+              Compass <span style={{ fontWeight: 300, opacity: .7 }}>One</span>
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>
+              Sua bússola financeira
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Nav ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 10px 4px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 10px 4px', scrollbarWidth: 'none' as never }}>
+        <style>{`
+          @keyframes subExpand {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0);    }
+          }
+        `}</style>
         {NAV_GROUPS.map(group => (
           <div key={group.label} style={{ marginBottom: 18 }}>
             <div style={{
-              fontSize: 10, fontWeight: 700,
-              color: 'rgba(255,255,255,0.5)',
+              fontSize: 9, fontWeight: 800,
+              color: 'rgba(255,255,255,0.3)',
               letterSpacing: '1px', textTransform: 'uppercase',
-              padding: '0 8px', marginBottom: 4,
+              padding: '0 10px', marginBottom: 4,
             }}>
               {group.label}
             </div>
@@ -278,29 +365,113 @@ export default function Sidebar() {
               const sub = item.sub ?? []
               const parentActive = !item.disabled && isParentActive(item.path, item.exact)
               const hasSub = sub.length > 0
-              const isExpanded = expandedItem === item.label && hasSub
+              const isExpanded = expandedItem === item.label
+
+              // Special 3-level Lançamentos
+              if (item.label === 'Lançamentos') {
+                return (
+                  <div key="lancamentos">
+                    <NavItemRow
+                      icon="📋"
+                      label="Lançamentos"
+                      active={lancActive}
+                      hasSub
+                      expanded={isExpanded}
+                      onClick={() => {
+                        toggleExpand('Lançamentos')
+                        if (!lancActive) {
+                          const pref = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
+                          if (pref) navigate(`/novo-lancamento?tipo=banco&conta=${pref.id}`)
+                          else navigate('/novo-lancamento?tipo=banco')
+                        }
+                      }}
+                    />
+                    {isExpanded && (
+                      <div style={{ animation: 'subExpand .18s ease' }}>
+
+                        {contasExtrato.length > 0 && (<>
+                          <SubItemRow
+                            label="Banco"
+                            icon="🏦"
+                            active={bancoActive}
+                            hasSub={contasExtrato.length > 1}
+                            expanded={expandedSub2 === 'banco'}
+                            onClick={() => {
+                              if (contasExtrato.length > 1) toggleSub2('banco')
+                              const pref = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
+                              navigate(`/novo-lancamento?tipo=banco&conta=${pref.id}`)
+                            }}
+                          />
+                          {(expandedSub2 === 'banco' || bancoActive) && (
+                            <div style={{ animation: 'subExpand .15s ease' }}>
+                              {contasExtrato.map(c => (
+                                <Sub2ItemRow
+                                  key={c.id} label={c.banco} color={c.cor}
+                                  active={activeContaId === c.id}
+                                  onClick={() => navigate(`/novo-lancamento?tipo=banco&conta=${c.id}`)}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>)}
+
+                        {cartoes.length > 0 && (<>
+                          <SubItemRow
+                            label="Cartão"
+                            icon="💳"
+                            active={cartaoSubActive}
+                            hasSub={cartoes.length > 1}
+                            expanded={expandedSub2 === 'cartao'}
+                            onClick={() => {
+                              if (cartoes.length > 1) toggleSub2('cartao')
+                              navigate(`/novo-lancamento?tipo=cartao&conta=${cartoes[0].id}`)
+                            }}
+                          />
+                          {(expandedSub2 === 'cartao' || cartaoSubActive) && (
+                            <div style={{ animation: 'subExpand .15s ease' }}>
+                              {cartoes.map(c => (
+                                <Sub2ItemRow
+                                  key={c.id} label={c.banco} color={c.cor}
+                                  active={activeCartaoId === c.id}
+                                  onClick={() => navigate(`/novo-lancamento?tipo=cartao&conta=${c.id}`)}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>)}
+
+                        <SubItemRow
+                          label="Dinheiro" icon="💵"
+                          active={lancActive && tipoParam === 'dinheiro'}
+                          onClick={() => navigate('/novo-lancamento?tipo=dinheiro')}
+                        />
+                        <SubItemRow
+                          label="Visão geral" icon="📊"
+                          active={lancActive && tipoParam === 'consolidado'}
+                          onClick={() => navigate('/novo-lancamento?tipo=consolidado')}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              // Regular item
               return (
                 <div key={item.label}>
                   <NavItemRow
-                    icon={item.icon}
-                    label={item.label}
-                    active={parentActive}
-                    hasSub={hasSub}
-                    expanded={isExpanded}
-                    badge={item.badge}
-                    disabled={item.disabled}
+                    icon={item.icon} label={item.label}
+                    active={parentActive} hasSub={hasSub} expanded={isExpanded}
+                    badge={item.badge} disabled={item.disabled}
                     onClick={() => hasSub ? toggleExpand(item.label) : navigate(item.path)}
                   />
                   {hasSub && isExpanded && (
                     <div style={{ animation: 'subExpand .18s ease' }}>
                       {sub.map((s, i) => {
-                        if ('divider' in s) {
-                          return <SubDividerRow key={i} label={s.divider} />
-                        }
+                        if ('divider' in s) return <SubDividerRow key={i} label={s.divider} />
                         return (
                           <SubItemRow
-                            key={s.path}
-                            label={s.label}
+                            key={s.path} label={s.label}
                             active={isSubActive(s.path)}
                             onClick={() => navigate(s.path)}
                           />
@@ -313,45 +484,83 @@ export default function Sidebar() {
             })}
           </div>
         ))}
-        <style>{`
-          @keyframes subExpand {
-            from { opacity: 0; transform: translateY(-4px); }
-            to   { opacity: 1; transform: translateY(0);    }
-          }
-        `}</style>
       </div>
 
-      {/* ── User footer ── */}
+      {/* ── Footer: Norte + User + Sair ── */}
       <div style={{
         padding: '10px 10px 14px',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
         flexShrink: 0,
       }}>
+
+        {/* Norte card */}
+        <div
+          onClick={abrirNorte}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 9,
+            padding: '9px 10px', borderRadius: 10, cursor: 'pointer',
+            marginBottom: 8,
+            background: 'rgba(255,255,255,.08)',
+            border: '1px solid rgba(255,255,255,.12)',
+            transition: 'background .15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.13)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}
+        >
+          <div style={{
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            background: 'linear-gradient(135deg,#1a56db,#2563eb)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+          }}>🧭</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Norte</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Assistente financeiro</div>
+          </div>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: '#16a34a', boxShadow: '0 0 6px rgba(22,163,74,.7)', flexShrink: 0,
+          }}/>
+        </div>
+
+        {/* User info */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 9,
-          padding: '6px 8px', marginBottom: 4, borderRadius: 8,
-          background: 'rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '7px 10px', marginBottom: 2, borderRadius: 8,
+          background: 'rgba(255,255,255,0.08)',
         }}>
           <div style={{
-            width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(255,255,255,0.2)',
+            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(255,255,255,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 12, fontWeight: 700,
-          }}>
-            {inicial}
-          </div>
+            color: '#fff', fontSize: 11, fontWeight: 700,
+          }}>{inicial}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 12, fontWeight: 600, color: '#ffffff',
+              fontSize: 11, fontWeight: 700, color: '#ffffff',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{nome}</div>
             <div style={{
-              fontSize: 10, color: 'rgba(255,255,255,0.6)',
+              fontSize: 9, color: 'rgba(255,255,255,0.35)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{email}</div>
           </div>
         </div>
-        <NavItemRow icon="⏻" label="Sair" active={false} isSair onClick={sairDaConta} />
+
+        <button
+          onClick={sairDaConta}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            width: '100%', padding: '5px 10px', border: 'none',
+            borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
+            background: 'transparent',
+            fontSize: 10, color: 'rgba(255,255,255,.35)',
+            transition: 'background .15s, color .15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'rgba(255,255,255,.65)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.35)' }}
+        >
+          ↩ Sair
+        </button>
       </div>
 
     </div>
