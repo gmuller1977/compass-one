@@ -1412,9 +1412,8 @@ export default function NovoLancamentoExtrato() {
             ))
             .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
             + ls.filter(l => l.tipo==='saida').reduce((s,l) => s + l.valor, 0)
-          const temConf = entradasConf > 0 || saidasConf > 0
-          const entradasBoxVal = temConf ? entradasConf : entradasDia
-          const saidasBoxVal   = temConf ? saidasConf   : saidasDia
+          const entradasBoxVal = entradasConf
+          const saidasBoxVal   = saidasConf
           // Futuro: projeção total. Hoje/passado: só confirmados
           const saldoDia = diaFuturo
             ? saldosDia[dia] ?? saldoIni
@@ -1512,7 +1511,11 @@ export default function NovoLancamentoExtrato() {
                       </span>
                     </div>
                   </>) : (() => {
-                    const planejadoDia = fs.filter(f=>f.tipo==='saida').reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
+                    const planejadoDia = fs.filter(f => f.tipo==='saida' && !(
+                      mesDados.fixasConsolidadas?.[f.id] !== undefined
+                        ? mesDados.fixasConsolidadas[f.id]
+                        : (ehAutomatico(f) && !eMesAtual && passado)
+                    )).reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
                     return (
                       <>
                         {/* 4-col grid: Entradas | Saídas | Planejado | Saldo */}
@@ -1520,7 +1523,7 @@ export default function NovoLancamentoExtrato() {
                           {[
                             {label:'Entradas', val:entradasBoxVal, fmt:(v:number)=>v===0?'—':`+${fmt(v)}`, cor:entradasConf>0?COR.azul:'#d1d5db'},
                             {label:'Saídas',   val:saidasBoxVal,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:saidasConf>0?COR.vermelho:'#d1d5db'},
-                            {label:'Planejado',val:planejadoDia,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:planejadoDia>0?'#64748b':'#d1d5db'},
+                            {label:'Previsto',val:planejadoDia,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:planejadoDia>0?'#64748b':'#d1d5db'},
                             {label:diaFuturo?'Saldo previsto':passado?'Saldo final':'Saldo atual', val:saldoDia, fmt:(v:number)=>fmt(v), cor:diaFuturo?'#64748b':corSaldo},
                           ].map(col => (
                             <div key={col.label} style={{padding:'10px 12px',textAlign:'right',borderRight:'1px solid #f8faff'}}>
