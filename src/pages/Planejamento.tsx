@@ -509,8 +509,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const dentro = lancAbs < 0 ? true : (previsto > 0 ? lancAbs <= previsto : false)
     const disponivel = previsto - lancAbs
     const allLancs = [
-      ...bancLancs.map(l => ({ dia: l.dia, descricao: l.descricao, valor: l.valor, icone: 'ðŸ¦', sub: l.sub })),
-      ...cartLancs.map(l => ({ dia: l.dia, descricao: l.descricao, valor: l.valor, icone: 'ðŸ’³', sub: l.cartao })),
+      ...bancLancs.map(l => ({ dia: l.dia, descricao: l.descricao, valor: l.valor, icone: '🏦', sub: l.sub })),
+      ...cartLancs.map(l => ({ dia: l.dia, descricao: l.descricao, valor: l.valor, icone: '💳', sub: l.cartao })),
     ].sort((a, b) => a.dia - b.dia)
     const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
     return { nome, mi, previsto, lancAbs, totalBanc, totalCart, dentro, disponivel, allLancs, icone, corIcone }
@@ -1216,7 +1216,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       const drRaw = dadosRevisao
       if (!drRaw) return (
         <div style={{ textAlign:'center' as const, padding:'60px 20px', color:'#64748b' }}>
-          <div style={{ fontSize:32, marginBottom:12 }}>ðŸ“­</div>
+          <div style={{ fontSize:32, marginBottom:12 }}>📭</div>
           <div style={{ fontSize:14, fontWeight:600, color:'#0f172a', marginBottom:6 }}>RevisÃ£o indisponÃ­vel</div>
           <div style={{ fontSize:12 }}>Registre lanÃ§amentos e crie um planejamento para ver a revisÃ£o mensal.</div>
         </div>
@@ -1279,7 +1279,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             )}
             {/* SugestÃ£o */}
             <div style={{ padding:'12px 14px', background:'#f8faff', display:'flex', alignItems:'center', gap:10 }}>
-              <span style={{ fontSize:20, flexShrink:0 }}>ðŸ’¡</span>
+              <span style={{ fontSize:20, flexShrink:0 }}>💡</span>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:10, color:'#64748b', fontWeight:600, marginBottom:3 }}>SugestÃ£o ({METODOS_MOB.find(m => m.id === metodoLocal)?.label})</div>
                 <div style={{ fontSize:14, fontWeight:800, color:'#1a56db', fontVariantNumeric:'tabular-nums' }}>{fmt(sugestaoVal, true)}</div>
@@ -1300,7 +1300,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         <div>
           {/* Banner */}
           <div style={{ background:'linear-gradient(135deg,#92400e,#d97706)', borderRadius:16, padding:'16px', marginBottom:12, display:'flex', alignItems:'center', gap:12 }}>
-            <span style={{ fontSize:32, flexShrink:0 }}>ðŸ”</span>
+            <span style={{ fontSize:32, flexShrink:0 }}>🔍</span>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:14, fontWeight:800, color:'#fff', marginBottom:3 }}>
                 {semDados ? 'Sem dados para revisar' : foraDoPerfil.length > 0 ? `${foraDoPerfil.length} ${foraDoPerfil.length === 1 ? 'categoria fora' : 'categorias fora'} do controle` : 'Tudo dentro do controle âœ…'}
@@ -1597,7 +1597,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   </button>
                 )}
                 {!hideTabs && aba === 'previsto' && planejamentoLockado && (
-                  <span style={{ fontSize:11, color:'#94a3b8', paddingLeft:8 }}>ðŸ”’ Bloqueado</span>
+                  <span style={{ fontSize:11, color:'#94a3b8', paddingLeft:8 }}>🔒 Bloqueado</span>
                 )}
               </div>
               <div style={{ display:'flex', alignItems:'center', border:'1px solid #e2e8f0', borderRadius:7, overflow:'hidden' }}>
@@ -1629,7 +1629,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         if (semContas)   itens.push({ id:'contas',   msg:'âš  VocÃª nÃ£o tem nenhuma conta cadastrada.',            url:'/configuracoes?aba=bancos&acao=novo', tipo:'warn' })
         if (semEntradas) itens.push({ id:'entradas', msg:'âš  VocÃª nÃ£o tem categorias de entrada cadastradas.',   url:'/configuracoes?aba=categorias',       tipo:'warn' })
         if (semSaidas)   itens.push({ id:'saidas',   msg:'âš  VocÃª nÃ£o tem categorias de saÃ­da cadastradas.',     url:'/configuracoes?aba=categorias',       tipo:'warn' })
-        if (semPlano)    itens.push({ id:'plano',    msg:`ðŸ“Š VocÃª ainda nÃ£o tem um planejamento para ${anoCorrente}.`, url:'/wizard-planejamento', tipo:'info' })
+        if (semPlano)    itens.push({ id:'plano',    msg:`📊 VocÃª ainda nÃ£o tem um planejamento para ${anoCorrente}.`, url:'/wizard-planejamento', tipo:'info' })
         const visiveis = itens.filter(a => !alertsDismissed.has(a.id))
         if (visiveis.length === 0) return null
         return (
@@ -1786,7 +1786,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             ok: caixaValor>=caixaPrev,
             cor: caixaValor>=0 ? '#16a34a' : COR.vermelho,
             bg:  caixaValor>=0 ? '#f0fdf4' : '#fff5f5',
-            borda: caixaValor>=0 ? '#bbf7d0' : '#fecaca', icon: caixaValor>=0 ? 'â†—' : 'â†˜' },
+            borda: caixaValor>=0 ? '#bbf7d0' : '#fecaca', icon: caixaValor>=0 ? '↗' : '↘' },
         ]
         return (
           <div style={{ margin:'0 0 10px', display:'flex', gap:8 }}>
@@ -1849,7 +1849,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   <div style={{ fontSize:10, color:COR.textoSuave, fontWeight:600,
                     textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
                     display:'flex', alignItems:'center', gap:4 }}>
-                    <span style={{ fontSize:13, color: resultado >= 0 ? COR.verde : COR.vermelho }}>â†—</span> Resultado {MESES[mesFoco!]}
+                    <span style={{ fontSize:13, color: resultado >= 0 ? COR.verde : COR.vermelho }}>↗</span> Resultado {MESES[mesFoco!]}
                   </div>
                   <div style={{ fontSize:16, fontWeight:700, color: resultado >= 0 ? COR.verde : COR.vermelho }}>
                     {resultado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
@@ -1949,43 +1949,43 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       <div style={{ padding:'0 0 8px' }}>
 
         {/* Tutorial por modo/view */}
-        {quizAtivo && quizStep === 0 && quizFromWizard && <TutorialCard tela="plan_comece" icon="ðŸš€"
+        {quizAtivo && quizStep === 0 && quizFromWizard && <TutorialCard tela="plan_comece" icon="🚀"
           title="Crie seu planejamento"
           description="O assistente vai te guiar passo a passo para montar seu orÃ§amento mensal. NÃ£o precisa ser perfeito — vocÃª ajusta depois."
           tips={[
-            { icon: 'ðŸŽ¯', text: 'Escolha seu objetivo financeiro' },
-            { icon: 'ðŸ’°', text: 'Informe sua renda mensal' },
-            { icon: 'ðŸ“‹', text: 'Defina quanto quer gastar em cada categoria' },
+            { icon: '🎯', text: 'Escolha seu objetivo financeiro' },
+            { icon: '💰', text: 'Informe sua renda mensal' },
+            { icon: '📋', text: 'Defina quanto quer gastar em cada categoria' },
           ]} buttonLabel="ComeÃ§ar â†’" />}
-        {viewMode === 'grade' && aba !== 'revisao' && !quizAtivo && <TutorialCard tela="plan_grade" icon="ðŸ“…"
+        {viewMode === 'grade' && aba !== 'revisao' && !quizAtivo && <TutorialCard tela="plan_grade" icon="📅"
           title="VisÃ£o em grade"
           description="VisÃ£o geral do ano em cards mensais. Toque em qualquer mÃªs para ver ou editar os detalhes."
           tips={[
-            { icon: 'ðŸ“¦', text: 'Cada card Ã© um mÃªs do ano' },
-            { icon: 'ðŸ–Šï¸', text: 'Clique em um mÃªs para editar os valores' },
-            { icon: 'ðŸŸ¢', text: 'Verde = sobrou | ðŸ”´ Vermelho = faltou' },
+            { icon: '📦', text: 'Cada card Ã© um mÃªs do ano' },
+            { icon: '🖊ï¸', text: 'Clique em um mÃªs para editar os valores' },
+            { icon: '🟢', text: 'Verde = sobrou | 🔴 Vermelho = faltou' },
           ]} buttonLabel="Ver grade â†’" />}
-        {viewMode === 'horizontal' && !quizAtivo && <TutorialCard tela="plan_planilha" icon="ðŸ“‘"
+        {viewMode === 'horizontal' && !quizAtivo && <TutorialCard tela="plan_planilha" icon="📑"
           title="VisÃ£o em planilha"
           description="Todos os meses lado a lado com as categorias. Edite direto nas cÃ©lulas."
           tips={[
-            { icon: 'ðŸ“Š', text: 'Linhas = categorias, Colunas = meses' },
-            { icon: 'ðŸ–Šï¸', text: 'Edite valores diretamente nas cÃ©lulas' },
-            { icon: 'ðŸ“ˆ', text: 'Totais calculados automaticamente' },
+            { icon: '📊', text: 'Linhas = categorias, Colunas = meses' },
+            { icon: '🖊ï¸', text: 'Edite valores diretamente nas cÃ©lulas' },
+            { icon: '📈', text: 'Totais calculados automaticamente' },
           ]} buttonLabel="Ver planilha â†’" />}
-        {viewMode === 'vertical' && !quizAtivo && <TutorialCard tela="plan_lista" icon="ðŸ“ƒ"
+        {viewMode === 'vertical' && !quizAtivo && <TutorialCard tela="plan_lista" icon="📃"
           title="VisÃ£o em lista"
           description="Fluxo de caixa — veja mÃªs a mÃªs como seu dinheiro evolui. Toque na linha para ver categorias."
           tips={[
-            { icon: 'ðŸ“‹', text: 'Clique em um mÃªs para ver entradas e saÃ­das' },
-            { icon: 'ðŸ–Šï¸', text: 'Edite valores clicando na categoria' },
-            { icon: 'ðŸ“Š', text: 'Total do ano no rodapÃ©' },
+            { icon: '📋', text: 'Clique em um mÃªs para ver entradas e saÃ­das' },
+            { icon: '🖊ï¸', text: 'Edite valores clicando na categoria' },
+            { icon: '📊', text: 'Total do ano no rodapÃ©' },
           ]} buttonLabel="Ver lista â†’" />}
-        {aba === 'revisao' && !quizAtivo && <TutorialCard tela="plan_revisao" icon="ðŸ”„"
+        {aba === 'revisao' && !quizAtivo && <TutorialCard tela="plan_revisao" icon="🔄"
           title="Hora de revisar"
           description="Compare o que vocÃª planejou com o que realmente aconteceu. Use essa anÃ¡lise para ajustar o plano do prÃ³ximo mÃªs."
           tips={[
-            { icon: 'ðŸ“Š', text: 'Veja planejado vs realizado por categoria' },
+            { icon: '📊', text: 'Veja planejado vs realizado por categoria' },
             { icon: 'âš¡', text: 'Identifique onde gastou mais ou menos que o previsto' },
             { icon: 'âœï¸', text: 'Atualize o plano com base na realidade' },
           ]} buttonLabel="Revisar meu mÃªs â†’" />}
@@ -2099,7 +2099,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 )}
                 {/* SugestÃ£o */}
                 <div style={{ padding:'14px 20px', background:'#f8faff', display:'flex', alignItems:'center', gap:14 }}>
-                  <span style={{ fontSize:24, flexShrink:0 }}>ðŸ’¡</span>
+                  <span style={{ fontSize:24, flexShrink:0 }}>💡</span>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:11, color:'#64748b', fontWeight:600, marginBottom:3 }}>SugestÃ£o para prÃ³ximos meses</div>
                     <div style={{ fontSize:18, fontWeight:800, color:'#1a56db', letterSpacing:'-.4px', fontVariantNumeric:'tabular-nums' }}>{fmt(sugestaoVal)}</div>
@@ -2130,7 +2130,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div style={{ paddingTop:4 }}>
               {/* â”€â”€ Banner â”€â”€ */}
               <div style={{ background:'linear-gradient(135deg,#92400e,#d97706)', borderRadius:16, padding:'20px 24px', display:'flex', alignItems:'center', gap:16, marginBottom:16, flexWrap:'wrap' }}>
-                <span style={{ fontSize:36, flexShrink:0 }}>ðŸ”</span>
+                <span style={{ fontSize:36, flexShrink:0 }}>🔍</span>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:16, fontWeight:800, color:'#fff', marginBottom:4 }}>
                     {semDados ? `Sem dados para ${mesNome}` : foraDoPerfil.length > 0 ? `${foraDoPerfil.length} ${foraDoPerfil.length === 1 ? 'categoria saiu' : 'categorias saÃ­ram'} do controle em ${mesNome}` : `Tudo dentro do controle em ${mesNome} âœ…`}
@@ -2156,7 +2156,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
               {semDados ? (
                 <div style={{ textAlign:'center', padding:'48px 24px', background:COR.branco, borderRadius:14, border:`1px solid ${COR.borda}` }}>
-                  <div style={{ fontSize:36, marginBottom:12 }}>ðŸ“­</div>
+                  <div style={{ fontSize:36, marginBottom:12 }}>📭</div>
                   <div style={{ fontSize:14, color:COR.textoSuave }}>
                     Registre seus lanÃ§amentos e crie um planejamento para ver a revisÃ£o.
                   </div>
@@ -2214,7 +2214,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     {/* Resumo */}
                     <div style={{ background:COR.branco, border:`1.5px solid ${COR.borda}`, borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.06)', marginBottom:16 }}>
                       <div style={{ padding:'14px 18px', borderBottom:`1px solid ${COR.borda}`, fontSize:13, fontWeight:700, color:COR.texto, display:'flex', alignItems:'center', gap:8 }}>
-                        ðŸ“Š Resumo de {mesNome}
+                        📊 Resumo de {mesNome}
                       </div>
                       {[
                         { label:'Receitas planejadas', val:dr.totalPrevE, cor:COR.textoSuave },
@@ -2233,7 +2233,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     {/* Base do plano */}
                     <div style={{ background:COR.branco, border:`1.5px solid ${COR.borda}`, borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.06)', marginBottom:16 }}>
                       <div style={{ padding:'14px 18px', borderBottom:`1px solid ${COR.borda}`, fontSize:13, fontWeight:700, color:COR.texto }}>
-                        ðŸ“‹ Base da revisÃ£o
+                        📋 Base da revisÃ£o
                       </div>
                       <div style={{ padding:'12px 18px', fontSize:12, color:'#64748b', lineHeight:1.6 }}>
                         Comparando com o <strong style={{ color: dr.temAtualizado ? COR.azul : COR.textoSuave }}>{dr.temAtualizado ? 'Plano Atualizado' : 'Plano Original'}</strong>.<br />
@@ -2265,7 +2265,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         {aba === 'real' && !realExiste && (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
             justifyContent:'center', minHeight:300, gap:16, paddingBottom:40 }}>
-            <div style={{ fontSize:40 }}>ðŸ“‹</div>
+            <div style={{ fontSize:40 }}>📋</div>
             <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
               Planejamento realizado nÃ£o iniciado
             </div>
@@ -2970,10 +2970,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 background:COR.borda, borderRadius:14, overflow:'hidden', marginBottom:16,
                 boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
                 {([
-                  {label:'ðŸ’° Saldo inicial',        val:siAnual, cor:COR.texto},
-                  {label:'â†— Receitas do ano',     val:teAnual, cor:COR.verde},
+                  {label:'💰 Saldo inicial',        val:siAnual, cor:COR.texto},
+                  {label:'↗ Receitas do ano',     val:teAnual, cor:COR.verde},
                   {label:'â†™ Despesas do ano',     val:tsAnual, cor:COR.vermelho},
-                  {label:'ðŸŽ¯ Resultado em Dez',   val:sfAnual, cor:sfAnual>0?COR.verde:sfAnual<0?COR.vermelho:COR.textoSuave},
+                  {label:'🎯 Resultado em Dez',   val:sfAnual, cor:sfAnual>0?COR.verde:sfAnual<0?COR.vermelho:COR.textoSuave},
                 ] as {label:string;val:number;cor:string}[]).map((item,idx) => (
                   <div key={idx} style={{background:COR.branco, padding:'14px 16px'}}>
                     <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4, color:COR.textoSuave, marginBottom:4}}>{item.label}</div>
@@ -3146,7 +3146,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         {/* â”€â”€ RECEITAS — seÃ§Ã£o expansÃ­vel â”€â”€ */}
                         <tr onClick={() => setSecEntAberto(v => !v)} style={{cursor:'pointer'}}>
                           <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px 12px', fontSize:13, fontWeight:700, color:COR.verde, background:'#f0fdf4', borderTop:`2px solid ${COR.borda}`, userSelect:'none' as const}}>
-                            <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secEntAberto?'rotate(90deg)':'none', fontSize:10}}>â–¶</span>
+                            <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secEntAberto?'rotate(90deg)':'none', fontSize:10}}>▶</span>
                             Receitas
                           </td>
                           {totalEntradas.map((v, mi) => (
@@ -3162,7 +3162,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           return [
                             <tr key={key} onClick={() => toggleH(key)} style={{cursor:'pointer'}}>
                               <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'8px 10px 8px 28px', fontSize:12, fontWeight:700, color:'#166534', background:'#f0fdf4', borderBottom:`1px solid #dcfce7`}}>
-                                <span style={{display:'inline-block', marginRight:6, transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', fontSize:9}}>â–¶</span>
+                                <span style={{display:'inline-block', marginRight:6, transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', fontSize:9}}>▶</span>
                                 {label}
                               </td>
                               {gVals.map((v, mi) => (
@@ -3173,7 +3173,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                               const row = dadosAnoFinal.entradas.indexOf(cat)
                               return (
                                 <tr key={cat.nome}>
-                                  <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                  <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}><span style={{marginRight:5, fontSize:13}}>{iconeCategoria(categorias, cat.nome).icone}</span>{cat.nome}</td>
                                   {cat.v.map((v, mi) => (
                                     <td key={mi} style={{padding:'4px 6px', fontSize:12, textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{renderValorH('e', row, mi, v)}</td>
                                   ))}
@@ -3186,7 +3186,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                         {/* â”€â”€ DESPESAS — seÃ§Ã£o expansÃ­vel â”€â”€ */}
                         <tr onClick={() => setSecSaiAberto(v => !v)} style={{cursor:'pointer'}}>
                           <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px 12px', fontSize:13, fontWeight:700, color:COR.vermelho, background:'#fef2f2', borderTop:`2px solid ${COR.borda}`, userSelect:'none' as const}}>
-                            <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secSaiAberto?'rotate(90deg)':'none', fontSize:10}}>â–¶</span>
+                            <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secSaiAberto?'rotate(90deg)':'none', fontSize:10}}>▶</span>
                             Despesas
                           </td>
                           {totalSaidas.map((v, mi) => (
@@ -3202,7 +3202,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           return [
                             <tr key={key} onClick={() => toggleH(key)} style={{cursor:'pointer'}}>
                               <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'8px 10px 8px 28px', fontSize:12, fontWeight:700, color:'#991b1b', background:'#fef2f2', borderBottom:`1px solid #fecdd3`}}>
-                                <span style={{display:'inline-block', marginRight:6, transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', fontSize:9}}>â–¶</span>
+                                <span style={{display:'inline-block', marginRight:6, transition:'transform .2s', transform:aberto?'rotate(90deg)':'none', fontSize:9}}>▶</span>
                                 {label}
                               </td>
                               {gVals.map((v, mi) => (
@@ -3214,7 +3214,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                               const isCartao = nomeFaturaCartao(cat.nome, cartNomesH)
                               return (
                                 <tr key={cat.nome}>
-                                  <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{cat.nome}</td>
+                                  <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'6px 10px 6px 46px', fontSize:12, color:COR.textoSuave, fontWeight:400, background:COR.branco, borderBottom:'1px solid #f8fafc'}}><span style={{marginRight:5, fontSize:13}}>{iconeCategoria(categorias, cat.nome).icone}</span>{cat.nome}</td>
                                   {cat.v.map((v, mi) => (
                                     <td key={mi} style={{padding:'4px 6px', fontSize:12, textAlign:'right' as const, background:COR.branco, borderBottom:'1px solid #f8fafc'}}>{renderValorH('s', row, mi, v, isCartao)}</td>
                                   ))}
@@ -3310,7 +3310,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
                 {/* â”€â”€ 3 cards de resumo â”€â”€ */}
                 <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:14}}>
-                  {/* â†— Vai entrar */}
+                  {/* ↗ Vai entrar */}
                   <div style={{background:COR.branco, borderRadius:12, padding:'14px 18px', boxShadow:'0 1px 3px rgba(0,0,0,.06)'}}>
                     <div style={{fontSize:11, color:COR.textoSuave, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.3}}>Receitas</div>
                     <div style={{fontSize:20, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, marginTop:2, color:COR.verde}}>{fmtL(te)}</div>
@@ -3326,7 +3326,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       <div style={{height:'100%', borderRadius:4, background:'#fca5a5', width:`${saiBarW}%`}}/>
                     </div>
                   </div>
-                  {/* ðŸ’° Vai sobrar */}
+                  {/* 💰 Vai sobrar */}
                   <div style={{background:COR.branco, borderRadius:12, padding:'14px 18px', boxShadow:'0 1px 3px rgba(0,0,0,.06)'}}>
                     <div style={{fontSize:11, color:COR.textoSuave, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.3}}>Resultado</div>
                     <div style={{fontSize:20, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, marginTop:2, color:COR.azul}}>{fmtL(sob)}</div>
@@ -3354,7 +3354,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           borderBottom:isOpen?'1px solid #f1f5f9':'1px solid transparent'}}>
                         <div style={{display:'flex', alignItems:'center', gap:10}}>
                           <div style={{width:36, height:36, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, background:'#dbeafe'}}>
-                            {tipo === 'e' ? 'ðŸ’°' : 'ðŸ“Œ'}
+                            {tipo === 'e' ? '💰' : '📌'}
                           </div>
                           <div>
                             <div style={{fontSize:14, fontWeight:700, color:COR.texto}}>{label}</div>
@@ -3403,7 +3403,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
                 {/* Dica */}
                 <div style={{marginTop:14, padding:'10px 14px', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:10, fontSize:12, color:'#92400e', lineHeight:1.5, display:'flex', alignItems:'flex-start', gap:8}}>
-                  <span>ðŸ’¡</span>
+                  <span>💡</span>
                   <span>Toque no valor para ajustar. A % mostra quanto do total cada grupo representa.</span>
                 </div>
                 </>
@@ -3610,7 +3610,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 14px',
                               borderBottom:'1px solid rgba(0,0,0,0.05)', background:'#faf5ff' }}>
                               <div style={{ width:20, height:20, borderRadius:5, background:'#7c3aed22',
-                                display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>ðŸ’³</div>
+                                display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>💳</div>
                               <span style={{ flex:1, fontSize:12, color:'#7c3aed', fontWeight:500 }}>
                                 CartÃ£o de CrÃ©dito
                                 <span style={{ fontSize:9, color:'#c4b5fd', marginLeft:4 }}>(calculado)</span>
@@ -3675,7 +3675,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
           <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:360, padding:'28px 24px',
             boxShadow:'0 20px 60px rgba(0,0,0,0.3)', display:'flex', flexDirection:'column', gap:16 }}>
-            <div style={{ fontSize:32, textAlign:'center' }}>ðŸ“‹</div>
+            <div style={{ fontSize:32, textAlign:'center' }}>📋</div>
             <div style={{ fontSize:16, fontWeight:700, color:'#0f172a', textAlign:'center' }}>
               {MESES_FULL[copiarMesPrompt.destino]} sem planejamento
             </div>
@@ -3740,7 +3740,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   'Quer considerar o saldo das suas contas no planejamento?',
                   'Quais sÃ£o suas receitas mensais?',
                   ...quizGruposAtivos.map(g => `Despesas com ${g === '__sem_grupo__' ? 'outras categorias' : g}`),
-                  'Seu planejamento estÃ¡ pronto! ðŸŽ‰',
+                  'Seu planejamento estÃ¡ pronto! 🎉',
                 ])[quizStep]}
               </div>
               <div style={{display:'flex',gap:5,marginTop:14}}>
@@ -3757,26 +3757,26 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
 {quizConcluido ? (
               <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',gap:16,padding:'8px 0'}}>
-                <div style={{fontSize:48,lineHeight:1}}>ðŸŽ‰</div>
+                <div style={{fontSize:48,lineHeight:1}}>🎉</div>
                 <div style={{fontSize:20,fontWeight:800,color:COR.texto,lineHeight:1.2}}>ParabÃ©ns! Seu planejamento estÃ¡ criado.</div>
                 <div style={{fontSize:13,color:COR.textoSuave,lineHeight:1.6}}>Agora vocÃª pode acompanhar e ajustar seus valores usando os trÃªs modos de visualizaÃ§Ã£o:</div>
                 <div style={{display:'flex',flexDirection:'column',gap:10,width:'100%',marginTop:4}}>
                   <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,background:'#eff6ff',border:'1px solid #bfdbfe'}}>
-                    <div style={{fontSize:20,flexShrink:0}}>ðŸ“Š</div>
+                    <div style={{fontSize:20,flexShrink:0}}>📊</div>
                     <div style={{textAlign:'left'}}>
                       <div style={{fontSize:13,fontWeight:700,color:'#1e40af',marginBottom:2}}>Grade</div>
                       <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>VisÃ£o geral do ano em cards mensais. Clique em qualquer mÃªs para ver ou editar os detalhes.</div>
                     </div>
                   </div>
                   <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,background:'#f0fdf4',border:'1px solid #bbf7d0'}}>
-                    <div style={{fontSize:20,flexShrink:0}}>ðŸ“‹</div>
+                    <div style={{fontSize:20,flexShrink:0}}>📋</div>
                     <div style={{textAlign:'left'}}>
                       <div style={{fontSize:13,fontWeight:700,color:'#166534',marginBottom:2}}>Planilha</div>
                       <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>Todos os 12 meses lado a lado. Edite diretamente nas cÃ©lulas e use Tab para navegar rapidamente.</div>
                     </div>
                   </div>
                   <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 14px',borderRadius:12,background:'#faf5ff',border:'1px solid #e9d5ff'}}>
-                    <div style={{fontSize:20,flexShrink:0}}>ðŸ“</div>
+                    <div style={{fontSize:20,flexShrink:0}}>📝</div>
                     <div style={{textAlign:'left'}}>
                       <div style={{fontSize:13,fontWeight:700,color:'#6b21a8',marginBottom:2}}>Lista</div>
                       <div style={{fontSize:12,color:COR.textoSuave,lineHeight:1.5}}>Todas as categorias em lista. Ideal para ajustar valores de uma categoria especÃ­fica em todos os meses.</div>
@@ -3805,7 +3805,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       {semBancos && (
                         <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',
                           borderRadius:10,background:'#fff7ed',border:'1px solid #fed7aa'}}>
-                          <span style={{fontSize:22,flexShrink:0}}>ðŸ¦</span>
+                          <span style={{fontSize:22,flexShrink:0}}>🏦</span>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:13,fontWeight:600,color:'#92400e'}}>Banco nÃ£o cadastrado</div>
                             <div style={{fontSize:11,color:'#b45309'}}>Conta corrente ou poupanÃ§a</div>
@@ -3821,7 +3821,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       {semCats && (
                         <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',
                           borderRadius:10,background:'#fff7ed',border:'1px solid #fed7aa'}}>
-                          <span style={{fontSize:22,flexShrink:0}}>ðŸ—‚ï¸</span>
+                          <span style={{fontSize:22,flexShrink:0}}>🗂ï¸</span>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:13,fontWeight:600,color:'#92400e'}}>Sem categorias ativas</div>
                             <div style={{fontSize:11,color:'#b45309'}}>Receitas e despesas</div>
@@ -3843,10 +3843,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {quizStep === 0 && (
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                   {([
-                    {id:'guardar',  icon:'ðŸ’°', label:'Guardar dinheiro'},
-                    {id:'organizar',icon:'ðŸ“‹', label:'Organizar gastos'},
-                    {id:'quitar',   icon:'ðŸ’³', label:'Quitar dÃ­vidas'},
-                    {id:'tudo',     icon:'ðŸŽ¯', label:'Tudo isso'},
+                    {id:'guardar',  icon:'💰', label:'Guardar dinheiro'},
+                    {id:'organizar',icon:'📋', label:'Organizar gastos'},
+                    {id:'quitar',   icon:'💳', label:'Quitar dÃ­vidas'},
+                    {id:'tudo',     icon:'🎯', label:'Tudo isso'},
                   ] as const).map(o => (
                     <button key={o.id} onClick={() => setQuizObjetivo(o.id)} style={{
                       padding:'18px 12px',borderRadius:12,cursor:'pointer',fontFamily:'inherit',
@@ -3865,7 +3865,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {quizStep === 1 && (() => {
                 if (quizObjetivo === 'organizar') return (
                   <div style={{textAlign:'center',padding:'20px 0'}}>
-                    <div style={{fontSize:40,marginBottom:12}}>ðŸ“‹</div>
+                    <div style={{fontSize:40,marginBottom:12}}>📋</div>
                     <div style={{fontSize:14,fontWeight:600,color:COR.texto,marginBottom:8}}>
                       Ã“tima decisÃ£o!
                     </div>
@@ -3930,7 +3930,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                 {selecionada && <span style={{color:'#fff',fontSize:11,lineHeight:1}}>âœ“</span>}
                               </div>
                               <div style={{display:'flex',alignItems:'center',gap:6,flex:1,minWidth:0}}>
-                                <span style={{fontSize:16}}>{c.icone || 'ðŸ¦'}</span>
+                                <span style={{fontSize:16}}>{c.icone || '🏦'}</span>
                                 <span style={{fontSize:13,fontWeight:500,color:COR.texto,
                                   overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                                   {c.banco || c.nome}
@@ -4110,7 +4110,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   : 0
                 const saldoMes  = totalE - totalS
                 const nomesMes  = ['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-                const labels: Record<string,string> = {guardar:'ðŸ’° Guardar dinheiro',organizar:'ðŸ“‹ Organizar gastos',quitar:'ðŸ’³ Quitar dÃ­vidas',tudo:'ðŸŽ¯ Tudo isso'}
+                const labels: Record<string,string> = {guardar:'💰 Guardar dinheiro',organizar:'📋 Organizar gastos',quitar:'💳 Quitar dÃ­vidas',tudo:'🎯 Tudo isso'}
                 return <div style={{display:'flex',flexDirection:'column',gap:10}}>
                   {quizObjetivo && <div style={{fontSize:13,color:COR.textoSuave,marginBottom:2}}>
                     Objetivo: <strong style={{color:COR.texto}}>{labels[quizObjetivo]}</strong>
@@ -4377,7 +4377,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div style={{ display:'flex', gap:8, marginBottom:16 }}>
               {modalDados.totalBanc !== 0 && (
                 <div style={{ flex:1, padding:'8px 12px', borderRadius:8, background:'#f0f9ff', border:'1px solid #bae6fd' }}>
-                  <div style={{ fontSize:10, color:'#0369a1', fontWeight:600, marginBottom:2 }}>ðŸ¦ Banco</div>
+                  <div style={{ fontSize:10, color:'#0369a1', fontWeight:600, marginBottom:2 }}>🏦 Banco</div>
                   <div style={{ fontSize:13, fontWeight:700, color:'#0369a1' }}>
                     {modalDados.totalBanc.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                   </div>
@@ -4385,7 +4385,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               )}
               {modalDados.totalCart !== 0 && (
                 <div style={{ flex:1, padding:'8px 12px', borderRadius:8, background:'#faf5ff', border:'1px solid #e9d5ff' }}>
-                  <div style={{ fontSize:10, color:'#7c3aed', fontWeight:600, marginBottom:2 }}>ðŸ’³ CartÃ£o</div>
+                  <div style={{ fontSize:10, color:'#7c3aed', fontWeight:600, marginBottom:2 }}>💳 CartÃ£o</div>
                   <div style={{ fontSize:13, fontWeight:700, color:'#7c3aed' }}>
                     {modalDados.totalCart.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                   </div>
@@ -4454,7 +4454,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           onClick={e => e.stopPropagation()}>
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, flexShrink:0 }}>
             <div style={{ width:40, height:40, borderRadius:12, background:'#eff6ff',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>ðŸ“Š</div>
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>📊</div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:16, fontWeight:700, color:COR.texto }}>RevisÃ£o por Desvio</div>
               <div style={{ fontSize:12, color:COR.textoSuave }}>
@@ -4581,10 +4581,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave, textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Tipo do evento</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:20 }}>
               {([
-                { id:'nova_renda' as const,   emoji:'ðŸ’°', label:'Nova Renda',       desc:'Novo emprego, freelance, aluguel',  catTipo:'entrada' as const },
-                { id:'novo_gasto' as const,   emoji:'ðŸ“‹', label:'Novo Gasto Fixo',  desc:'Financiamento, assinatura, escola', catTipo:'saida' as const },
+                { id:'nova_renda' as const,   emoji:'💰', label:'Nova Renda',       desc:'Novo emprego, freelance, aluguel',  catTipo:'entrada' as const },
+                { id:'novo_gasto' as const,   emoji:'📋', label:'Novo Gasto Fixo',  desc:'Financiamento, assinatura, escola', catTipo:'saida' as const },
                 { id:'encerramento' as const, emoji:'âœ‚ï¸', label:'Encerramento',      desc:'Pagou parcela, cancelou plano',     catTipo:'saida' as const },
-                { id:'ajuste' as const,       emoji:'ðŸ”§', label:'Ajuste de Valor',  desc:'Aumento de salÃ¡rio, reajuste',      catTipo:'entrada' as const },
+                { id:'ajuste' as const,       emoji:'🔧', label:'Ajuste de Valor',  desc:'Aumento de salÃ¡rio, reajuste',      catTipo:'entrada' as const },
               ]).map(ev => (
                 <button key={ev.id}
                   onClick={() => setModalEvento(prev => prev ? { ...prev, tipo:ev.id, catTipo:ev.catTipo, catNome:'' } : prev)}
@@ -4628,8 +4628,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
           {modalEvento.step === 2 && (() => {
             const TIPO_INFO: Record<string,{emoji:string;label:string}> = {
-              nova_renda:{emoji:'ðŸ’°',label:'Nova Renda'}, novo_gasto:{emoji:'ðŸ“‹',label:'Novo Gasto Fixo'},
-              encerramento:{emoji:'âœ‚ï¸',label:'Encerramento'}, ajuste:{emoji:'ðŸ”§',label:'Ajuste de Valor'}
+              nova_renda:{emoji:'💰',label:'Nova Renda'}, novo_gasto:{emoji:'📋',label:'Novo Gasto Fixo'},
+              encerramento:{emoji:'âœ‚ï¸',label:'Encerramento'}, ajuste:{emoji:'🔧',label:'Ajuste de Valor'}
             }
             const info = TIPO_INFO[modalEvento.tipo] ?? { emoji:'âš¡', label:'Evento' }
             const ehEncerramento = modalEvento.tipo === 'encerramento'

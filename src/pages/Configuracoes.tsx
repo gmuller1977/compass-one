@@ -282,7 +282,7 @@ export default function Configuracoes() {
   })
   const { user, contas, categorias, setContas, setCategorias,
           extratoData, faturaData,
-          planos, planosReal,
+          planos, planosReal, setPlanos,
           planejamentoLockado, setPlanejamentoLockado,
           desvioMinPerc, setDesvioMinPerc,
           percentualAlerta, setPercentualAlerta,
@@ -371,6 +371,7 @@ export default function Configuracoes() {
   const [erroConta,   setErroConta]   = useState('')
   const [saldoStr,       setSaldoStr]       = useState('')
   const [limiteStr,      setLimiteStr]      = useState('')
+  const [faturaStr,      setFaturaStr]      = useState('')
   const [bancoCustom,    setBancoCustom]    = useState('')
   const nomeContaRef = useRef<HTMLInputElement>(null)
 
@@ -400,7 +401,7 @@ export default function Configuracoes() {
     setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
     setEditContaId(null)
     setErroConta('')
-    setSaldoStr(''); setLimiteStr(''); setBancoCustom('')
+    setSaldoStr(''); setLimiteStr(''); setFaturaStr(''); setBancoCustom('')
     setTimeout(() => nomeContaRef.current?.focus(), 0)
   }
   function editarConta(c: Conta) {
@@ -422,6 +423,16 @@ export default function Configuracoes() {
     setErroConta('')
     setSaldoStr(c.saldoInicial ? String(c.saldoInicial).replace('.', ',') : '')
     setLimiteStr(c.limiteCartao ? String(c.limiteCartao).replace('.', ',') : '')
+    if (c.tipo === 'cartao') {
+      const ano = new Date().getFullYear()
+      const mes = new Date().getMonth()
+      const faturaCat = (planos[ano] as import('../context/AppContext').PlanoAnoData | undefined)
+        ?.saidas.find(s => s.id === `fatura-${c.id}`)
+      const val = faturaCat ? (faturaCat.v[mes] || faturaCat.v.find(v => v > 0) || 0) : 0
+      setFaturaStr(val > 0 ? String(val).replace('.', ',') : '')
+    } else {
+      setFaturaStr('')
+    }
   }
   function salvarConta() {
     const ehCartao = formConta.tipo === 'cartao'
@@ -433,6 +444,7 @@ export default function Configuracoes() {
       : formConta.nome.trim()
     const contaFinal = { ...formConta, nome: nomeEfetivo, banco: bancoEfetivo }
     setErroConta('')
+    const contaId = editContaId || gerarId()
     if (editContaId) {
       setContas(prev => prev.map(c => {
         if (c.id === editContaId) return { id: editContaId, ...contaFinal }
@@ -441,8 +453,32 @@ export default function Configuracoes() {
       }))
       toast('Conta atualizada')
     } else {
-      setContas(prev => [...prev, {id:gerarId(),...contaFinal}])
+      setContas(prev => [...prev, { id: contaId, ...contaFinal }])
       toast('Conta cadastrada')
+    }
+    if (ehCartao && faturaStr.trim()) {
+      const faturaVal = parseFloat(faturaStr.replace(',', '.')) || 0
+      if (faturaVal > 0) {
+        const ano = new Date().getFullYear()
+        const mes = new Date().getMonth()
+        const nomeCartao = contaFinal.apelido?.trim() || (contaFinal.banco === 'Outro' ? bancoCustom.trim() : contaFinal.banco)
+        setPlanos(prev => {
+          const planoAtual = prev[ano] as import('../context/AppContext').PlanoAnoData | undefined
+          if (!planoAtual) return prev
+          const jaExiste = planoAtual.saidas.some(s => s.id === `fatura-${contaId}`)
+          const newSaidas = jaExiste
+            ? planoAtual.saidas.map(s =>
+                s.id === `fatura-${contaId}`
+                  ? { ...s, v: s.v.map((v, i) => i === mes ? faturaVal : v) }
+                  : s
+              )
+            : [
+                ...planoAtual.saidas,
+                { id: `fatura-${contaId}`, nome: nomeCartao, t: 'fatura_cartao', v: Array(12).fill(0).map((_, i) => i === mes ? faturaVal : 0) },
+              ]
+          return { ...prev, [ano]: { ...planoAtual, saidas: newSaidas } }
+        })
+      }
     }
     setMobileView('list')
     novaConta()
@@ -975,6 +1011,29 @@ export default function Configuracoes() {
                           className="campo-cfg" style={inputSt} />
                         <div style={{ fontSize:10, color:'#94a3b8', marginTop:3 }}>
                           Se não informado, o banco será usado como identificador do cartão.
+                        </div>
+                      </div>
+                      <div style={{ background:'#f5f3ff', border:'1px solid #ede9fe', borderRadius:10, padding:'12px 14px' }}>
+                        <label style={{ ...labelSt, color:'#6d28d9', marginBottom:6, display:'block' }}>
+                          💳 Fatura informada no planejamento
+                        </label>
+                        <input
+                          value={faturaStr}
+                          onChange={e => {
+                            const raw = e.target.value.replace(/[^0-9.,]/g, '')
+                            setFaturaStr(raw)
+                          }}
+                          placeholder="R$ 0,00"
+                          className="campo-cfg"
+                          style={{ ...inputSt, borderColor:'#ddd6fe' }}
+                        />
+                        <div style={{ fontSize:10, color:'#7c3aed', marginTop:5, lineHeight:1.5 }}>
+                          {faturaStr.trim()
+                            ? 'Salvar vai atualizar a fatura no planejamento do mês atual.'
+                            : editContaId
+                              ? 'Nenhuma fatura informada para este cartão. Preencha para incluir no planejamento.'
+                              : 'Opcional — você pode informar depois no Planejamento.'
+                          }
                         </div>
                       </div>
                     </>
