@@ -176,23 +176,35 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, updatePlanoReal, faturaData, user, sairDaConta, percentualAlerta } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, planejamentoLockado, updatePlanoReal, faturaData, user, sairDaConta, percentualAlerta } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   // Prefere planosReal (Atualizado) quando disponível
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
     const planoReal = planosReal[ano] as typeof planos[number] | undefined
     const previsto  = planos[ano]    as typeof planos[number] | undefined
-    // Plano real sem categorias (pode ocorrer se "Ajustar mês" foi usado sem plano finalizado)
-    // → usa previsto como fallback para não perder os valores planejados
-    const planoAno  = (planoReal?.saidas?.length || planoReal?.entradas?.length) ? planoReal : previsto
-    if (!planoAno) return 0
-    const lista = tipoLanc === 'entrada' ? planoAno.entradas : planoAno.saidas
-    // Busca por ID; fallback por nome sem exigir ausência de ID (cobre IDs divergentes)
-    const found = catId
-      ? (lista.find(c => c.id === catId) ?? lista.find(c => c.nome === catNome))
-      : lista.find(c => c.nome === catNome)
-    return found?.v[mes] ?? 0
+
+    const buscar = (lista: { id?: string; nome: string; v: number[] }[] | undefined) => {
+      if (!lista) return undefined
+      return catId
+        ? (lista.find(c => c.id === catId) ?? lista.find(c => c.nome === catNome))
+        : lista.find(c => c.nome === catNome)
+    }
+
+    if (planejamentoLockado) {
+      // Plano original bloqueado → usar apenas plano atualizado (sem cascade para previsto)
+      const lista = tipoLanc === 'entrada' ? planoReal?.entradas : planoReal?.saidas
+      return buscar(lista)?.v[mes] ?? 0
+    }
+
+    // Plano não bloqueado: atualizado tem prioridade; cai para previsto se categoria não encontrada
+    if (planoReal) {
+      const lista = tipoLanc === 'entrada' ? planoReal.entradas : planoReal.saidas
+      const found = buscar(lista)
+      if (found) return found.v[mes] ?? 0
+    }
+    const lista = tipoLanc === 'entrada' ? previsto?.entradas : previsto?.saidas
+    return buscar(lista)?.v[mes] ?? 0
   }
 
   function valorPrevistoPorNome(catNome: string, tipoLanc: TipoLanc): number {
