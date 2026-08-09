@@ -22,6 +22,7 @@ type FormaPag = 'debito' | 'automatico' | 'credito' | 'pix' | 'transferencia' | 
 type CatFixa = {
   id: string; nome: string; categoria: string
   subtitulo?: string
+  descricao?: string
   valor: number; tipo: TipoLanc
   formaPagamento: FormaPag
   diaVencimento: number
@@ -239,6 +240,7 @@ export default function NovoLancamentoExtrato() {
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
       subtitulo: c.grupo,
+      descricao: c.descricao,
       valor: valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc),
       tipo: c.tipo as TipoLanc,
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
@@ -1591,7 +1593,7 @@ export default function NovoLancamentoExtrato() {
                         display:'flex',alignItems:'center',gap:4}}>
                         {ehFaturaFixa
                           ? `${f.categoria}${f.nome !== f.categoria ? ' · ' + f.nome : ''}`
-                          : (f.subtitulo ?? f.categoria)
+                          : (f.descricao ?? f.subtitulo ?? f.categoria)
                         } <BadgePag fp={f.formaPagamento}/>
                       </div>
                     </div>
@@ -1632,7 +1634,7 @@ export default function NovoLancamentoExtrato() {
                       <BadgePag fp={l.formaPagamento}/>
                     </div>
                     <div style={{fontSize:11,color:'#64748b',marginTop:1}}>
-                      {ehFaturaLanc ? l.categoria : l.descricao}
+                      {ehFaturaLanc ? l.categoria : (l.subCategoria || l.descricao)}
                     </div>
                   </div>
                   <div style={{fontSize:13,fontWeight:600,color:corValor}}>
