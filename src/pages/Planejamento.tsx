@@ -51,7 +51,7 @@ function parseBRL(s: string): number {
   return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
 }
 function fmt(v: number, sempre = false) {
-  if (v === 0 && !sempre) return 'â€”'
+  if (v === 0 && !sempre) return '—'
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 function corSaldo(v: number) {
@@ -201,7 +201,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
   const realExiste = !!planosReal[anoAtual]
 
-  // Plano original (previsto) sempre com todas as categorias ativas â€” independente da aba
+  // Plano original (previsto) sempre com todas as categorias ativas — independente da aba
   const dadosPrevisto: AnoData = useMemo(() => {
     const salvo = planos[anoAtual] as AnoData | undefined
     if (!salvo) return dadosBase
@@ -394,7 +394,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           result[mes][l.tipo][l.categoria] = (result[mes][l.tipo][l.categoria] ?? 0) + l.valor
         })
 
-        // Fixas consolidadas â€” ignora chaves de cartÃ£o (evita duplicidade com fatura)
+        // Fixas consolidadas — ignora chaves de cartÃ£o (evita duplicidade com fatura)
         {
           const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
           if (!ehCartaoKey) {
@@ -419,7 +419,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         }
       })
 
-      // CartÃ£o de crÃ©dito (faturaData) â€” distribui por categoria real de compra
+      // CartÃ£o de crÃ©dito (faturaData) — distribui por categoria real de compra
       // Usa billingOffset para ler a fatura do mÃªs correto (igual ao FaturaCartao)
       contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
         const diaFech = (cartao as any).diaFechamento ?? 1
@@ -523,7 +523,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       .some(c => !!extratoData[`${c.id}-${anoAtual}-${String(mes).padStart(2, '0')}`]?.saldoBanco)
   }), [aba, anoAtual, extratoData, contasSaldoIni])
 
-  // Totais reais (entradas e saÃ­das) por mÃªs â€” lidos dos lanÃ§amentos reais do extrato
+  // Totais reais (entradas e saÃ­das) por mÃªs — lidos dos lanÃ§amentos reais do extrato
   const totaisReais = useMemo(() => {
     const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
     const te = new Array(12).fill(0)
@@ -946,7 +946,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     const params = new URLSearchParams(location.search)
     const modo   = params.get('modo')
     if (modo === 'wizard') {
-      navigate(pathname, { replace: true }) // limpa URL â€” quiz Ã© modal, nÃ£o estado persistente
+      navigate(pathname, { replace: true }) // limpa URL — quiz Ã© modal, nÃ£o estado persistente
       setQuizFromWizard(true)
       if (!planoCriado) {
         setQuizAtivo(true); setQuizStep(0); setQuizConcluido(false)
@@ -1200,7 +1200,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               <div
                 onClick={() => !bloqueado && iniciarValor(tipo, ri, mi, valorAtual)}
                 style={{ fontSize:13, fontWeight:700, color: valorAtual !== 0 ? '#0f172a' : '#cbd5e1', cursor: !bloqueado ? 'pointer' : 'default', minWidth:70, textAlign:'right' as const }}>
-                {valorAtual !== 0 ? fmt(valorAtual, true) : 'â€”'}
+                {valorAtual !== 0 ? fmt(valorAtual, true) : '—'}
               </div>
             )}
           </div>
@@ -1332,7 +1332,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               {dr.entradas.length > 0 && (
                 <>
                   <div style={{ fontSize:10, fontWeight:800, color:'#16a34a', textTransform:'uppercase' as const, letterSpacing:'.6px', padding:'14px 0 8px', display:'flex', alignItems:'center', gap:6 }}>
-                    â†‘ Receitas <span style={{ background:'#f0fdf4', borderRadius:10, padding:'1px 8px', fontSize:10 }}>{dr.entradas.length}</span>
+                    ↑ Receitas <span style={{ background:'#f0fdf4', borderRadius:10, padding:'1px 8px', fontSize:10 }}>{dr.entradas.length}</span>
                   </div>
                   {dr.entradas.map(item => mobCard(item, 'entrada'))}
                 </>
@@ -1382,7 +1382,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
     return (
       <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
-        {/* HEADER â€” gradient */}
+        {/* HEADER — gradient */}
         <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'16px 20px 0', flexShrink:0 }}>
           {/* Logo + avatar */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
@@ -1401,7 +1401,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             </div>
           </div>
 
-          {/* Ano + MÃªs â€” mesma linha */}
+          {/* Ano + MÃªs — mesma linha */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <button onClick={() => navegarAno(-1)} style={navBtn}>â€¹</button>
@@ -1415,7 +1415,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             </div>
           </div>
 
-          {/* Toggle + Saldo inicial â€” mesma linha */}
+          {/* Toggle + Saldo inicial — mesma linha */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:16 }}>
             <div style={{ display:'flex', background:'rgba(0,0,0,.2)', borderRadius:10, padding:3, gap:3 }}>
               {(['previsto','real','revisao'] as const).map(v => {
@@ -1462,7 +1462,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div onClick={() => setSecEntAberto(v => !v)}
               style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#f0fdf4', borderBottom: secEntAberto ? '1px solid #dcfce7' : 'none', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:16 }}>â†‘</span>
+                <span style={{ fontSize:16 }}>↑</span>
                 <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#16a34a' }}>Receitas</span>
                 <span style={{ fontSize:11, color:'#94a3b8', marginLeft:4, display:'inline-block', transform: secEntAberto ? 'none' : 'rotate(-90deg)', transition:'transform .2s' }}>â–¾</span>
               </div>
@@ -1488,7 +1488,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div onClick={() => setSecSaiAberto(v => !v)}
               style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:'#fff1f2', borderBottom: secSaiAberto ? '1px solid #fecdd3' : 'none', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:16 }}>â†“</span>
+                <span style={{ fontSize:16 }}>↓</span>
                 <span style={{ fontSize:13, fontWeight:800, textTransform:'uppercase' as const, letterSpacing:'.5px', color:'#dc2626' }}>Despesas</span>
                 <span style={{ fontSize:11, color:'#94a3b8', marginLeft:4, display:'inline-block', transform: secSaiAberto ? 'none' : 'rotate(-90deg)', transition:'transform .2s' }}>â–¾</span>
               </div>
@@ -1543,7 +1543,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
       {isMobile && <AppHeader currentPath={pathname} />}
 
-      {/* â”€â”€ BANNER + CONTROLES â€” desktop apenas â”€â”€ */}
+      {/* â”€â”€ BANNER + CONTROLES — desktop apenas â”€â”€ */}
       {!isMobile && (() => {
         const teAnual = aba === 'real' ? totaisReais.te.reduce((a,b)=>a+b,0) : totalEntradas.reduce((a,b)=>a+b,0)
         const tsAnual = aba === 'real' ? totaisReais.ts.reduce((a,b)=>a+b,0) : totalSaidas.reduce((a,b)=>a+b,0)
@@ -1555,9 +1555,9 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             {/* BANNER */}
             <div style={{ background:'linear-gradient(135deg,#0f2878,#1e40af)', padding:'14px 16px', flexShrink:0, display:'flex' }}>
               {([
-                { label:'Saldo inicial',           val:siAnual, cor:'rgba(255,255,255,.85)', sub:"Jan ${anoAtual}" },
-                { label:'â†‘ Receitas do ano',   val:teAnual, cor:'#93c5fd',              sub:'soma 12 meses' },
-                { label:'â†“ Despesas do ano',  val:tsAnual, cor:'#fca5a5',              sub:'soma 12 meses' },
+                { label:'Saldo inicial',           val:siAnual, cor:'rgba(255,255,255,.85)', sub:`Jan ${anoAtual}` },
+                { label:'↑ Receitas do ano',   val:teAnual, cor:'#93c5fd',              sub:'soma 12 meses' },
+                { label:'↓ Despesas do ano',  val:tsAnual, cor:'#fca5a5',              sub:'soma 12 meses' },
                 { label:'= Resultado em Dez',      val:sfAnual, cor: sfAnual >= 0 ? '#86efac' : '#fca5a5',
                   sub: sfAnual >= 0 ? 'positivo' : 'negativo' },
               ] as {label:string;val:number;cor:string;sub:string}[]).map((item, idx) => (
@@ -1688,13 +1688,13 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       )}
 
 
-      {/* â”€â”€ BARRA STICKY â€” mobile apenas â”€â”€ */}
+      {/* â”€â”€ BARRA STICKY — mobile apenas â”€â”€ */}
       {isMobile && (
       <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.branco }}>
 
         <div style={{ padding:'8px 24px', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
 
-          {/* Abas â€” mobile only (no desktop ficam no PageHeader) */}
+          {/* Abas — mobile only (no desktop ficam no PageHeader) */}
           {(isMobile || hideTabs) && (
             <div style={{ display:'flex', gap:3 }}>
               {!hideTabs && (['previsto','real'] as const).map(v => {
@@ -1773,14 +1773,14 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         const totalSPrev = isMes ? totalSaidas[mesFoco!]   : totalSaidas.reduce((a,b)=>a+b,0)
         const caixaPrev  = isMes ? saldoFinal[mesFoco!]    : (totalEPrev - totalSPrev)
         const fixos = [
-          { label:`â†‘ Entrada ${sufixo}`, valor:totalE, prev:totalEPrev,
+          { label:`↑ Entrada ${sufixo}`, valor:totalE, prev:totalEPrev,
             pct: totalEPrev>0 ? Math.max(0, totalE/totalEPrev*100) : (totalE>0?100:0),
             ok: totalE>=totalEPrev,
-            cor:'#16a34a', bg:'#f0fdf4', borda:'#bbf7d0', icon:'â†‘' },
-          { label:`â†“ SaÃ­da ${sufixo}`, valor:totalS, prev:totalSPrev,
+            cor:'#16a34a', bg:'#f0fdf4', borda:'#bbf7d0', icon:'↑' },
+          { label:`↓ SaÃ­da ${sufixo}`, valor:totalS, prev:totalSPrev,
             pct: totalSPrev>0 ? Math.max(0, totalS/totalSPrev*100) : (totalS>0?100:0),
             ok: totalSPrev===0 || totalS<=totalSPrev,
-            cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'â†“' },
+            cor:COR.vermelho, bg:'#fff5f5', borda:'#fecaca', icon:'↓' },
           { label: isMes ? `Caixa ${sufixo}` : `Resultado ${sufixo}`, valor:caixaValor, prev:caixaPrev,
             pct: caixaPrev>0 ? Math.max(0, caixaValor/caixaPrev*100) : (caixaValor>0?100:0),
             ok: caixaValor>=caixaPrev,
@@ -1951,7 +1951,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         {/* Tutorial por modo/view */}
         {quizAtivo && quizStep === 0 && quizFromWizard && <TutorialCard tela="plan_comece" icon="ðŸš€"
           title="Crie seu planejamento"
-          description="O assistente vai te guiar passo a passo para montar seu orÃ§amento mensal. NÃ£o precisa ser perfeito â€” vocÃª ajusta depois."
+          description="O assistente vai te guiar passo a passo para montar seu orÃ§amento mensal. NÃ£o precisa ser perfeito — vocÃª ajusta depois."
           tips={[
             { icon: 'ðŸŽ¯', text: 'Escolha seu objetivo financeiro' },
             { icon: 'ðŸ’°', text: 'Informe sua renda mensal' },
@@ -1975,7 +1975,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           ]} buttonLabel="Ver planilha â†’" />}
         {viewMode === 'vertical' && !quizAtivo && <TutorialCard tela="plan_lista" icon="ðŸ“ƒ"
           title="VisÃ£o em lista"
-          description="Fluxo de caixa â€” veja mÃªs a mÃªs como seu dinheiro evolui. Toque na linha para ver categorias."
+          description="Fluxo de caixa — veja mÃªs a mÃªs como seu dinheiro evolui. Toque na linha para ver categorias."
           tips={[
             { icon: 'ðŸ“‹', text: 'Clique em um mÃªs para ver entradas e saÃ­das' },
             { icon: 'ðŸ–Šï¸', text: 'Edite valores clicando na categoria' },
@@ -2136,7 +2136,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     {semDados ? `Sem dados para ${mesNome}` : foraDoPerfil.length > 0 ? `${foraDoPerfil.length} ${foraDoPerfil.length === 1 ? 'categoria saiu' : 'categorias saÃ­ram'} do controle em ${mesNome}` : `Tudo dentro do controle em ${mesNome} âœ…`}
                   </div>
                   <div style={{ fontSize:13, color:'rgba(255,255,255,.75)' }}>
-                    {semDados ? 'Registre lanÃ§amentos e crie um planejamento.' : `Ultrapassaram mais de ${percentualAlerta}% do planejado â€” revise e ajuste`}
+                    {semDados ? 'Registre lanÃ§amentos e crie um planejamento.' : `Ultrapassaram mais de ${percentualAlerta}% do planejado — revise e ajuste`}
                   </div>
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8, flexShrink:0 }}>
@@ -2169,7 +2169,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                     {dr.entradas.length > 0 && (
                       <>
                         <div style={{ fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:12, display:'flex', alignItems:'center', gap:8, color:'#16a34a' }}>
-                          â†‘ Receitas <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:'#f0fdf4', color:'#16a34a' }}>{dr.entradas.length}</span>
+                          ↑ Receitas <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:'#f0fdf4', color:'#16a34a' }}>{dr.entradas.length}</span>
                         </div>
                         {dr.entradas.map(item => cardCategoria(item, 'entrada'))}
                       </>
@@ -2291,7 +2291,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 background:'#fffbeb', border:'1px solid #fcd34d', borderRadius:10,
                 flexWrap:'wrap' as const }}>
                 <span style={{ fontSize:13, fontWeight:600, color:'#92400e', flex:1, minWidth:200 }}>
-                  Nenhum plano cadastrado â€” Selecione um mÃªs para definir seus valores.
+                  Nenhum plano cadastrado — Selecione um mÃªs para definir seus valores.
                 </span>
                 <button onClick={() => setQuizAtivo(true)}
                   style={{ padding:'6px 14px', border:'none', borderRadius:8, cursor:'pointer',
@@ -2376,7 +2376,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             </div>
                             <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600,
                               color:(sf-saldoFinal[mi])>0?'#16a34a':(sf-saldoFinal[mi])<0?COR.vermelho:COR.textoSuave }}>
-                              {sf!==saldoFinal[mi]?((sf-saldoFinal[mi])>0?'+':'')+(sf-saldoFinal[mi]).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'â€”'}
+                              {sf!==saldoFinal[mi]?((sf-saldoFinal[mi])>0?'+':'')+(sf-saldoFinal[mi]).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}
                             </span>
                           </>
                         ) : (
@@ -2403,14 +2403,14 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                             <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
                               color:COR.textoSuave, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                              {saldoInicialReal[mi] !== 0 ? saldoInicialReal[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                              {saldoInicialReal[mi] !== 0 ? saldoInicialReal[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                             </div>
                             <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:600,
                               color:COR.textoSuave, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
                               {si.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                             </div>
                             <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600, color:COR.textoSuave }}>
-                              â€”
+                              —
                             </span>
                           </div>
                         ) : (
@@ -2451,19 +2451,19 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                               <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
                                 color:'#166534', background:'rgba(255,255,255,0.5)', border:'1px solid #86efac' }}>
-                                {tePrevisto>0 ? tePrevisto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                {tePrevisto>0 ? tePrevisto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                               </div>
                               <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
                                 color: teRealizado>=tePrevisto ? '#166534' : '#b91c1c',
                                 background: teRealizado>=tePrevisto ? 'rgba(255,255,255,0.7)' : 'rgba(254,202,202,0.5)',
                                 border:`1px solid ${teRealizado>=tePrevisto ? '#4ade80' : '#fca5a5'}` }}>
-                                {teRealizado>0 ? teRealizado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                {teRealizado>0 ? teRealizado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                               </div>
                               <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600,
                                 color:(teRealizado-tePrevisto)>0?'#166534':'#166534', opacity:(teRealizado-tePrevisto)>0?1:.4 }}>
                                 {(teRealizado-tePrevisto)>0
                                   ? `+${(teRealizado-tePrevisto).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`
-                                  : 'â€”'}
+                                  : '—'}
                               </span>
                             </div>
                           ) : (
@@ -2512,23 +2512,23 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                     <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                                       <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
                                         color:'#16a34a', background:'rgba(255,255,255,0.6)', border:'1px solid #86efac' }}>
-                                        {prevGrupoE>0 ? prevGrupoE.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                        {prevGrupoE>0 ? prevGrupoE.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                       </div>
                                       <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
                                         color: totalGrupo>=prevGrupoE ? '#16a34a' : '#b91c1c',
                                         background: totalGrupo>=prevGrupoE ? 'rgba(255,255,255,0.8)' : 'rgba(254,202,202,0.4)',
                                         border:`1px solid ${totalGrupo>=prevGrupoE ? '#4ade80' : '#fca5a5'}` }}>
-                                        {totalGrupo>0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                        {totalGrupo>0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                       </div>
                                       <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600,
                                         color:(totalGrupo-prevGrupoE)>0?'#16a34a':COR.textoSuave,
                                         opacity:(totalGrupo-prevGrupoE)>0?1:.4 }}>
-                                        {(totalGrupo-prevGrupoE)>0?`+${(totalGrupo-prevGrupoE).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`:'â€”'}
+                                        {(totalGrupo-prevGrupoE)>0?`+${(totalGrupo-prevGrupoE).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`:'—'}
                                       </span>
                                     </div>
                                   ) : (
                                     <span style={{ fontSize:13, fontWeight:600, color: totalGrupo > 0 ? '#16a34a' : COR.textoSuave }}>
-                                      {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                      {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                     </span>
                                   )}
                                 </div>
@@ -2574,21 +2574,21 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                               <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
                                                 color: previsto === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
                                                 borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                                                {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                                {previsto > 0 ? previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                               </div>
                                               <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
                                                 fontWeight: lancado > 0 ? 600 : 400, whiteSpace:'nowrap', borderRadius:6, minWidth:110,
                                                 color: lancado === 0 ? '#c0cce0' : lancado >= previsto ? '#16a34a' : COR.vermelho,
                                                 background: lancado === 0 ? '#f8fafc' : lancado >= previsto ? '#f0fdf4' : '#fef2f2',
                                                 border:`1px solid ${lancado === 0 ? '#e2e8f0' : lancado >= previsto ? '#bbf7d0' : '#fecaca'}` }}>
-                                                {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                                {lancado > 0 ? lancado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                               </div>
                                               {(() => {
                                                 const ganhos = lancado - previsto
                                                 return (
                                                   <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: ganhos > 0 ? 600 : 400,
                                                     color: ganhos > 0 ? '#16a34a' : COR.textoSuave }}>
-                                                    {ganhos > 0 ? `+${ganhos.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : 'â€”'}
+                                                    {ganhos > 0 ? `+${ganhos.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '—'}
                                                   </span>
                                                 )
                                               })()}
@@ -2668,19 +2668,19 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                               <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
                                 color:'#7f1d1d', background:'rgba(255,255,255,0.5)', border:'1px solid #fca5a5' }}>
-                                {totalSaidas[mi]>0 ? totalSaidas[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                {totalSaidas[mi]>0 ? totalSaidas[mi].toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                               </div>
                               <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
                                 color: tsRealizado<=tsPrevisto ? '#166534' : '#7f1d1d',
                                 background: tsRealizado<=tsPrevisto ? 'rgba(220,252,231,0.6)' : 'rgba(255,255,255,0.7)',
                                 border:`1px solid ${tsRealizado<=tsPrevisto ? '#86efac' : '#fca5a5'}` }}>
-                                {tsRealizado>0 ? tsRealizado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                {tsRealizado>0 ? tsRealizado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                               </div>
                               <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600,
                                 color:(tsPrevisto-tsRealizado)>0?'#166534':(tsPrevisto-tsRealizado)<0?'#7f1d1d':'#6b7280' }}>
                                 {tsPrevisto!==tsRealizado
                                   ? ((tsPrevisto-tsRealizado)>0?'+':'')+(tsPrevisto-tsRealizado).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
-                                  : 'â€”'}
+                                  : '—'}
                               </span>
                             </div>
                           ) : (
@@ -2733,7 +2733,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                       </span>
                                     )}
                                     <span style={{ fontSize:13, fontWeight:600, color: totalGrupo > 0 ? COR.vermelho : COR.textoSuave }}>
-                                      {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                      {totalGrupo > 0 ? totalGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                     </span>
                                   </div>
                                 </div>
@@ -2826,17 +2826,17 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                   <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                                     <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110,
                                       color:COR.vermelho, background:'rgba(255,255,255,0.6)', border:'1px solid #fca5a5' }}>
-                                      {prevLancGrupo>0 ? prevLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                      {prevLancGrupo>0 ? prevLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                     </div>
                                     <div style={{ padding:'4px 8px', fontSize:13, borderRadius:6, textAlign:'right', minWidth:110, fontWeight:700,
                                       color: totalLancGrupo<=prevLancGrupo ? '#16a34a' : COR.vermelho,
                                       background: totalLancGrupo<=prevLancGrupo ? 'rgba(220,252,231,0.5)' : 'rgba(255,255,255,0.7)',
                                       border:`1px solid ${totalLancGrupo<=prevLancGrupo ? '#86efac' : '#fca5a5'}` }}>
-                                      {totalLancGrupo>0 ? totalLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                      {totalLancGrupo>0 ? totalLancGrupo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                     </div>
                                     <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600,
                                       color:(prevLancGrupo-totalLancGrupo)>0?'#16a34a':(prevLancGrupo-totalLancGrupo)<0?COR.vermelho:COR.textoSuave }}>
-                                      {prevLancGrupo!==totalLancGrupo?((prevLancGrupo-totalLancGrupo)>0?'+':'')+(prevLancGrupo-totalLancGrupo).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'â€”'}
+                                      {prevLancGrupo!==totalLancGrupo?((prevLancGrupo-totalLancGrupo)>0?'+':'')+(prevLancGrupo-totalLancGrupo).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}
                                     </span>
                                   </div>
                                 </div>
@@ -2881,7 +2881,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                           <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
                                             color: prevAbs === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
                                             borderRadius:6, minWidth:110, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
-                                            {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                            {prevAbs > 0 ? prevAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                           </div>
                                           <div onClick={() => !ehFatura && lancadoDisplay !== 0 && setModalCatReal({ nome: cat.nome, mi })}
                                             style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
@@ -2890,11 +2890,11 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                               color: lancadoDisplay === 0 ? '#c0cce0' : (lancadoDisplay < 0 || dentro) ? '#16a34a' : COR.vermelho,
                                               background: lancadoDisplay === 0 ? '#f8fafc' : (lancadoDisplay < 0 || dentro) ? '#f0fdf4' : '#fef2f2',
                                               border:`1px solid ${lancadoDisplay === 0 ? '#e2e8f0' : (lancadoDisplay < 0 || dentro) ? '#bbf7d0' : '#fecaca'}` }}>
-                                            {lancadoDisplay !== 0 ? lancadoDisplay.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                            {lancadoDisplay !== 0 ? lancadoDisplay.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                           </div>
                                           <span style={{ minWidth:80, textAlign:'right', flexShrink:0, fontSize:12, fontWeight: (prevAbs > 0 || lancadoDisplay !== 0) ? 600 : 400,
                                             color: disponivel > 0 ? '#16a34a' : disponivel < 0 ? COR.vermelho : COR.textoSuave }}>
-                                            {(prevAbs > 0 || lancadoDisplay !== 0) ? disponivel.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                                            {(prevAbs > 0 || lancadoDisplay !== 0) ? disponivel.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
                                           </span>
                                         </div>
                                       )
@@ -2941,7 +2941,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             </div>
                             <span style={{ minWidth:80, textAlign:'right', fontSize:13, fontVariantNumeric:'tabular-nums', fontWeight:600,
                               color:(sf-saldoFinal[mi])>0?'#16a34a':(sf-saldoFinal[mi])<0?COR.vermelho:COR.textoSuave }}>
-                              {sf!==saldoFinal[mi]?((sf-saldoFinal[mi])>0?'+':'')+(sf-saldoFinal[mi]).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'â€”'}
+                              {sf!==saldoFinal[mi]?((sf-saldoFinal[mi])>0?'+':'')+(sf-saldoFinal[mi]).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}
                             </span>
                           </div>
                         ) : (
@@ -2961,10 +2961,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               const tsAnual = aba === 'real' ? totaisReais.ts.reduce((a,b)=>a+b,0) : totalSaidas.reduce((a,b)=>a+b,0)
               const siAnual = aba === 'real' ? saldoInicialReal[0] : saldoInicial[0]
               const sfAnual = aba === 'real' ? saldoFinalReal[11]  : saldoFinal[11]
-              const fmtG = (v: number) => v === 0 ? 'â€”' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
+              const fmtG = (v: number) => v === 0 ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
               return (
               <>
-              {/* Resumo anual â€” grade 4 colunas â€” somente mobile (desktop usa banner) */}
+              {/* Resumo anual — grade 4 colunas — somente mobile (desktop usa banner) */}
               {isMobile && (
               <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1px',
                 background:COR.borda, borderRadius:14, overflow:'hidden', marginBottom:16,
@@ -2983,7 +2983,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               </div>
               )}
 
-              {/* Grade de 12 meses â€” 6 colunas */}
+              {/* Grade de 12 meses — 6 colunas */}
               <div style={{display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10}}>
                 {MESES_FULL.map((nomeMes, mi) => {
                   const ehAtual = mi === mesAtual && anoAtual === anoCorrente
@@ -3016,13 +3016,13 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             {ehAtual && <span style={{fontSize:7, background:COR.azul, color:'#fff', padding:'2px 5px', borderRadius:6, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4}}>Atual</span>}
                           </div>
 
-                          {/* â†‘ Vai entrar */}
+                          {/* ↑ Vai entrar */}
                           <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4}}>
                             <span style={{fontSize:11, fontWeight:600, color:COR.verde}}>Receitas</span>
                             <span style={{fontSize:12, fontWeight:700, color:COR.verde, fontVariantNumeric:'tabular-nums' as const}}>{fmtG(te)}</span>
                           </div>
 
-                          {/* â†“ Vai sair */}
+                          {/* ↓ Vai sair */}
                           <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline'}}>
                             <span style={{fontSize:11, fontWeight:600, color:COR.vermelho}}>Despesas</span>
                             <span style={{fontSize:12, fontWeight:700, color:COR.vermelho, fontVariantNumeric:'tabular-nums' as const}}>{fmtG(ts)}</span>
@@ -3034,7 +3034,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             <span style={{fontSize:10, color:COR.textoSuave, fontWeight:500}}>= Resultado</span>
                             <span style={{fontSize:12, fontWeight:800, fontVariantNumeric:'tabular-nums' as const,
                               color:res>0?COR.verde:res<0?COR.vermelho:COR.textoSuave}}>
-                              {res===0?'â€”':(res>0?'+':'')+fmtG(Math.abs(res))}
+                              {res===0?'—':(res>0?'+':'')+fmtG(Math.abs(res))}
                             </span>
                           </div>
                         </div>
@@ -3066,8 +3066,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               )
             })() : viewMode === 'horizontal' ? (() => {
 
-              /* â”€â”€ PLANILHA â€” tabela com meses em colunas, resumos no topo â”€â”€ */
-              const fmtH = (v: number) => v === 0 ? 'â€”' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
+              /* â”€â”€ PLANILHA — tabela com meses em colunas, resumos no topo â”€â”€ */
+              const fmtH = (v: number) => v === 0 ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
               const cartNomesH = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
               const getGrupoE = (cat: Cat) =>
                 (cat.id ? (categorias.find(c => c.id === cat.id) ?? categorias.find(c => c.nome === cat.nome)) : categorias.find(c => c.nome === cat.nome))?.grupo ?? 'Outros'
@@ -3143,7 +3143,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                       </thead>
                       <tbody>
 
-                        {/* â”€â”€ RECEITAS â€” seÃ§Ã£o expansÃ­vel â”€â”€ */}
+                        {/* â”€â”€ RECEITAS — seÃ§Ã£o expansÃ­vel â”€â”€ */}
                         <tr onClick={() => setSecEntAberto(v => !v)} style={{cursor:'pointer'}}>
                           <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px 12px', fontSize:13, fontWeight:700, color:COR.verde, background:'#f0fdf4', borderTop:`2px solid ${COR.borda}`, userSelect:'none' as const}}>
                             <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secEntAberto?'rotate(90deg)':'none', fontSize:10}}>â–¶</span>
@@ -3183,7 +3183,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           ]
                         })}
 
-                        {/* â”€â”€ DESPESAS â€” seÃ§Ã£o expansÃ­vel â”€â”€ */}
+                        {/* â”€â”€ DESPESAS — seÃ§Ã£o expansÃ­vel â”€â”€ */}
                         <tr onClick={() => setSecSaiAberto(v => !v)} style={{cursor:'pointer'}}>
                           <td style={{position:'sticky' as const, left:0, zIndex:5, padding:'10px 12px', fontSize:13, fontWeight:700, color:COR.vermelho, background:'#fef2f2', borderTop:`2px solid ${COR.borda}`, userSelect:'none' as const}}>
                             <span style={{display:'inline-block', marginRight:7, transition:'transform .2s', transform:secSaiAberto?'rotate(90deg)':'none', fontSize:10}}>â–¶</span>
@@ -3226,7 +3226,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
 
                       </tbody>
 
-                      {/* â”€â”€ RESULTADO â€” sempre visÃ­vel, fixo no rodapÃ© â”€â”€ */}
+                      {/* â”€â”€ RESULTADO — sempre visÃ­vel, fixo no rodapÃ© â”€â”€ */}
                       <tfoot>
                         <tr>
                           <td style={{position:'sticky' as const, left:0, zIndex:6, padding:'11px 12px', fontSize:13, fontWeight:800, color:COR.texto, background:'#f1f5f9', borderTop:`2px solid ${COR.borda}`}}>
@@ -3249,8 +3249,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               )
             })() : (() => {
 
-              /* â”€â”€ LISTA â€” navegador mensal com cards por grupo â”€â”€ */
-              const fmtL = (v: number) => v === 0 ? 'â€”'
+              /* â”€â”€ LISTA — navegador mensal com cards por grupo â”€â”€ */
+              const fmtL = (v: number) => v === 0 ? '—'
                 : v.toLocaleString('pt-BR', { minimumFractionDigits:0, maximumFractionDigits:0 })
               const cartNomesL = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
               const getGrupEL = (cat: Cat) =>
@@ -3616,7 +3616,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                 <span style={{ fontSize:9, color:'#c4b5fd', marginLeft:4 }}>(calculado)</span>
                               </span>
                               <span style={{ fontSize:13, fontWeight:600, color:'#7c3aed', fontVariantNumeric:'tabular-nums' as const }}>
-                                {v > 0 ? v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' }) : 'â€”'}
+                                {v > 0 ? v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' }) : '—'}
                               </span>
                             </div>
                           </div>
@@ -3839,7 +3839,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 )
               })()}
 
-              {/* Passo 0 â€” Objetivo */}
+              {/* Passo 0 — Objetivo */}
               {quizStep === 0 && (
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                   {([
@@ -3861,7 +3861,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 </div>
               )}
 
-              {/* Passo 1 â€” Meta */}
+              {/* Passo 1 — Meta */}
               {quizStep === 1 && (() => {
                 if (quizObjetivo === 'organizar') return (
                   <div style={{textAlign:'center',padding:'20px 0'}}>
@@ -3897,7 +3897,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 )
               })()}
 
-              {/* Passo 2 â€” Saldo das contas */}
+              {/* Passo 2 — Saldo das contas */}
               {quizStep === 2 && (() => {
                 const contasBanco = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
                 const totalSaldo  = contasBanco
@@ -3999,7 +3999,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 )
               })()}
 
-              {/* Passo 3 â€” Entradas */}
+              {/* Passo 3 — Entradas */}
               {quizStep === 3 && (() => {
                 const cats = categorias.filter(c => c.tipo==='entrada' && c.ativa).sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
                 if (cats.length === 0) return (
@@ -4039,7 +4039,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                 </div>
               })()}
 
-              {/* Passos de saÃ­das â€” um por grupo */}
+              {/* Passos de saÃ­das — um por grupo */}
               {quizStep >= 4 && quizStep < QUIZ_STEP_RESUMO && (() => {
                 const grupoAtual = quizGruposAtivos[quizStep - 4]
                 const cats = categorias.filter(c => c.tipo==='saida' && c.ativa && !nomeFaturaCartao(c.nome, cartaoNomes))
@@ -4349,7 +4349,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
             <div style={{ flex:1, padding:'10px 12px', borderRadius:10, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
               <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:.5, color:COR.textoSuave, marginBottom:4 }}>Previsto</div>
               <div style={{ fontSize:15, fontWeight:700, color:COR.texto }}>
-                {modalDados.previsto > 0 ? modalDados.previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                {modalDados.previsto > 0 ? modalDados.previsto.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
               </div>
             </div>
             <div style={{ flex:1, padding:'10px 12px', borderRadius:10,
@@ -4358,7 +4358,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:.5, marginBottom:4,
                 color: modalDados.lancAbs === 0 ? COR.textoSuave : modalDados.dentro ? '#16a34a' : COR.vermelho }}>Realizado</div>
               <div style={{ fontSize:15, fontWeight:700, color: modalDados.lancAbs === 0 ? COR.textoSuave : modalDados.dentro ? '#16a34a' : COR.vermelho }}>
-                {modalDados.lancAbs > 0 ? modalDados.lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'â€”'}
+                {modalDados.lancAbs > 0 ? modalDados.lancAbs.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—'}
               </div>
             </div>
             {modalDados.previsto > 0 && (
@@ -4674,7 +4674,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                           border:`1px solid ${modalEvento.catTipo === t ? COR.azul : COR.borda}`,
                           background: modalEvento.catTipo === t ? '#eff6ff' : COR.branco,
                           color: modalEvento.catTipo === t ? COR.azul : COR.textoSuave }}>
-                        {t === 'entrada' ? 'â†‘ Entrada' : 'â†“ SaÃ­da'}
+                        {t === 'entrada' ? '↑ Entrada' : '↓ SaÃ­da'}
                       </button>
                     ))}
                   </div>
