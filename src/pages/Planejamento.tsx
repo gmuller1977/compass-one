@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import AppHeader from '../components/AppHeader'
-import PageHeader, { PH_BTN_WHITE, PH_BTN_SOLID, PH_BTN_WHITE_ACTIVE } from '../components/PageHeader'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 
@@ -1485,47 +1484,85 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:COR.fundo,
+    <div style={isMobile ? { minHeight:'100vh', background:COR.fundo,
+      fontFamily:"-apple-system,'Inter',sans-serif" } : {
+      height:'100vh', display:'flex', flexDirection:'column' as const,
+      overflow:'hidden', background:'#f0f4ff',
       fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
-      <AppHeader currentPath={pathname} />
+      {isMobile && <AppHeader currentPath={pathname} />}
 
-      {/* ── PageHeader ── */}
-      {!isMobile && (
-        <div style={{ padding: '16px 24px 0' }}>
-          <PageHeader
-            icon="ti-target"
-            breadcrumb="MEU PLANO"
-            title="Planejamento"
-            subtitle={`${anoAtual} · Visão ${viewMode === 'horizontal' ? 'Planilha' : viewMode === 'vertical' ? 'Lista' : 'Grade'}`}
-            mb={0}
-            rightContent={!hideTabs ? (
-              <>
-                {(['previsto', 'real'] as const).map(v => (
+      {/* ── BANNER + CONTROLES — desktop apenas ── */}
+      {!isMobile && (() => {
+        const teAnual = aba === 'real' ? totaisReais.te.reduce((a,b)=>a+b,0) : totalEntradas.reduce((a,b)=>a+b,0)
+        const tsAnual = aba === 'real' ? totaisReais.ts.reduce((a,b)=>a+b,0) : totalSaidas.reduce((a,b)=>a+b,0)
+        const siAnual = aba === 'real' ? saldoInicialReal[0] : saldoInicial[0]
+        const sfAnual = aba === 'real' ? saldoFinalReal[11]  : saldoFinal[11]
+        const fmtB = (v: number) => v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 })
+        return (
+          <>
+            {/* BANNER */}
+            <div style={{ background:'linear-gradient(135deg,#0f2878,#1e40af)', padding:'14px 28px', flexShrink:0, display:'flex' }}>
+              {([
+                { label:'Saldo inicial',      val:siAnual, cor:'rgba(255,255,255,.85)' },
+                { label:'↑ Receitas do ano',  val:teAnual, cor:'#86efac' },
+                { label:'↓ Despesas do ano',  val:tsAnual, cor:'#fca5a5' },
+                { label:'= Resultado em Dez', val:sfAnual, cor: sfAnual >= 0 ? '#86efac' : '#fca5a5' },
+              ] as {label:string;val:number;cor:string}[]).map((item, idx) => (
+                <div key={idx} style={{ flex:1, padding:'0 16px', borderRight: idx < 3 ? '1px solid rgba(255,255,255,.15)' : 'none' }}>
+                  <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.6, color:'rgba(255,255,255,.6)', marginBottom:3 }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontSize:18, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, color:item.cor }}>
+                    {fmtB(item.val)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* CONTROLS BAR */}
+            <div style={{ background:'#fff', borderBottom:'1px solid #e2e8f0', padding:'0 28px', height:46, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+              <div style={{ display:'flex', gap:2 }}>
+                {!hideTabs && (['previsto','real'] as const).map(v => (
                   <button key={v}
                     onClick={() => { setAba(v); setEditando(null) }}
-                    style={aba === v ? PH_BTN_WHITE_ACTIVE : PH_BTN_WHITE}>
+                    style={{ padding:'5px 14px', borderRadius:7, fontSize:12, fontWeight: aba===v ? 700 : 500,
+                      border:'none', cursor:'pointer', fontFamily:'inherit',
+                      background: aba===v ? '#1a56db' : 'transparent',
+                      color: aba===v ? '#fff' : '#64748b' }}>
                     {v === 'previsto' ? 'Original' : 'Atualizado'}
                   </button>
                 ))}
-                {aba === 'previsto' && !planejamentoLockado && (
-                  <button onClick={() => {
-                    if (realExiste) { setConfirmarAtualizar(true) }
-                    else { finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData) }
-                  }} style={PH_BTN_SOLID}>
+                {!hideTabs && aba === 'previsto' && !planejamentoLockado && (
+                  <button
+                    onClick={() => { if (realExiste) { setConfirmarAtualizar(true) } else { finalizarPlanejamento(anoAtual, dadosAno as PlanoAnoData) } }}
+                    style={{ padding:'5px 14px', borderRadius:7, fontSize:12, fontWeight:700,
+                      border:'none', cursor:'pointer', fontFamily:'inherit',
+                      background:'#22c55e', color:'#fff' }}>
                     {realExiste ? '↺ Atualizar' : '✓ Finalizar'}
                   </button>
                 )}
-                {aba === 'previsto' && planejamentoLockado && (
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
-                    🔒 Bloqueado
-                  </span>
+                {!hideTabs && aba === 'previsto' && planejamentoLockado && (
+                  <span style={{ fontSize:11, color:'#94a3b8', paddingLeft:8 }}>🔒 Bloqueado</span>
                 )}
-              </>
-            ) : undefined}
-          />
-        </div>
-      )}
+              </div>
+              <div style={{ display:'flex', alignItems:'center', border:'1px solid #e2e8f0', borderRadius:7, overflow:'hidden' }}>
+                <button onClick={() => navegarAno(-1)}
+                  style={{ border:'none', background:'transparent', cursor:'pointer', padding:'4px 12px', fontSize:15, color:'#64748b', lineHeight:1 }}>‹</button>
+                <div style={{ padding:'3px 12px', borderLeft:'1px solid #e2e8f0', borderRight:'1px solid #e2e8f0', textAlign:'center' as const, minWidth:72 }}>
+                  <div style={{ fontSize:14, fontWeight:700, color:'#0f172a' }}>{anoAtual}</div>
+                  <div style={{ fontSize:8, fontWeight:600, textTransform:'uppercase' as const, letterSpacing:.4,
+                    color: anoAtual===anoCorrente ? '#1a56db' : '#94a3b8' }}>
+                    {anoAtual===anoCorrente ? 'Ano atual' : anoAtual < anoCorrente ? `${anoCorrente-anoAtual}a atrás` : `${anoAtual-anoCorrente}a frente`}
+                  </div>
+                </div>
+                <button onClick={() => navegarAno(+1)}
+                  style={{ border:'none', background:'transparent', cursor:'pointer', padding:'4px 12px', fontSize:15, color:'#64748b', lineHeight:1 }}>›</button>
+              </div>
+            </div>
+          </>
+        )
+      })()}
 
       {/* ── ALERTAS DE CONFIGURAÇÃO ── */}
       {(() => {
@@ -1573,7 +1610,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         )
       })()}
 
-      {/* ── BARRA STICKY ── */}
+      {/* ── BARRA STICKY — mobile apenas ── */}
+      {isMobile && (
       <div ref={stickyRef} style={{ position:'sticky', top:0, zIndex:20, background:COR.branco }}>
 
         <div style={{ padding:'8px 24px', borderBottom:`1px solid ${COR.borda}`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
@@ -1825,9 +1863,10 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
       })()}
 
       </div>
+      )}
       {/* fim sticky */}
 
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px 40px' }}>
+      <div style={isMobile ? { maxWidth:1200, margin:'0 auto', padding:'0 24px 40px' } : { flex:1, overflowY:'auto' as const, padding:'20px 28px 40px' }}>
       {/* ÁREA PRINCIPAL */}
       <div style={{ padding:'0 0 8px' }}>
 
@@ -2847,7 +2886,8 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
               const fmtG = (v: number) => v === 0 ? '—' : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})
               return (
               <>
-              {/* Resumo anual — grade 4 colunas */}
+              {/* Resumo anual — grade 4 colunas — somente mobile (desktop usa banner) */}
+              {isMobile && (
               <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1px',
                 background:COR.borda, borderRadius:14, overflow:'hidden', marginBottom:16,
                 boxShadow:'0 1px 3px rgba(0,0,0,.05)'}}>
@@ -2863,6 +2903,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                   </div>
                 ))}
               </div>
+              )}
 
               {/* Grade de 12 meses — 6 colunas */}
               <div style={{display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10}}>
