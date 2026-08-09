@@ -219,34 +219,80 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
   }, [aba, anoAtual, dadosBase, dadosPrevisto, planosReal, SALDO_INICIAL_FIXO])
 
   const somaCartaoMes = useMemo(() => {
+    const faturaCatsPlan = dadosAno.saidas.filter(c => c.t === 'fatura_cartao')
     const cartCats = dadosAno.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
     const anoAnterior = planos[anoAtual - 1] as AnoData | undefined
     const cartCatsAnterior = anoAnterior?.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes)) ?? []
-    // Fallback: soma das Ãºltimas faturas cadastradas nos cartÃµes
-    const totalUltimaFatura = contas
-      .filter(c => c.tipo === 'cartao')
-      .reduce((s, c) => s + (c.ultimaFatura ?? 0), 0)
+    const cartoesContas = contas.filter(c => c.tipo === 'cartao')
+    const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
     return MESES.map((_, i) => {
-      // Fatura do cartÃ£o paga no mÃªs i = gastos do mÃªs i-1
+      // 1. Valor informado pelo usuario no wizard para este mes
+      const informado = faturaCatsPlan.reduce((s, c) => s + (c.v[i] ?? 0), 0)
+      if (informado > 0) return informado
+      // 2. Despesas planejadas no cartao (categorias t='cartao')
       const somaAnterior = i === 0
-        ? cartCatsAnterior.reduce((s, c) => s + (c.v[11] ?? 0), 0)   // janeiro â†’ dezembro do ano anterior
+        ? cartCatsAnterior.reduce((s, c) => s + (c.v[11] ?? 0), 0)
         : cartCats.reduce((s, c) => s + c.v[i - 1], 0)
-      return somaAnterior > 0 ? somaAnterior : totalUltimaFatura
+      if (somaAnterior > 0) return somaAnterior
+      // 3. Lancamentos reais do mes anterior no cartao
+      const prevMes = i === 0 ? 11 : i - 1
+      const prevAno = i === 0 ? anoAtual - 1 : anoAtual
+      const prevMesStr = String(prevMes + 1).padStart(2, '0')
+      let calculado = 0
+      for (const cartao of cartoesContas) {
+        const dm = fat[`${cartao.id}-${prevAno}-${prevMesStr}`]
+        if (!dm?.lancamentos) continue
+        const totalDiasM = new Date(prevAno, prevMes + 1, 0).getDate()
+        for (let d = 1; d <= totalDiasM; d++) {
+          ;(dm.lancamentos[d] ?? []).forEach(l => {
+            l.tipo === 'saida' ? calculado += l.valor : calculado -= l.valor
+          })
+        }
+      }
+      return Math.max(0, calculado)
     })
-  }, [dadosAno, cartaoNomes, planos, anoAtual, contas])
+  }, [dadosAno, cartaoNomes, planos, anoAtual, contas, faturaData])
+
+  const somaCartaoBadges = useMemo(() => {
+    const faturaCatsPlan = dadosAno.saidas.filter(c => c.t === 'fatura_cartao')
+    const cartoesContas = contas.filter(c => c.tipo === 'cartao')
+    const fat = faturaData as Record<string, { lancamentos?: Record<number, unknown[]> }>
+    return MESES.map((_, i) => {
+      const informado = faturaCatsPlan.reduce((s, c) => s + (c.v[i] ?? 0), 0)
+      if (informado > 0) return 'informado'
+      const prevMes = i === 0 ? 11 : i - 1
+      const prevAno = i === 0 ? anoAtual - 1 : anoAtual
+      const prevMesStr = String(prevMes + 1).padStart(2, '0')
+      for (const cartao of cartoesContas) {
+        const dm = fat[`${cartao.id}-${prevAno}-${prevMesStr}`]
+        if (dm?.lancamentos && Object.keys(dm.lancamentos).length > 0) return 'calculado'
+      }
+      return 'sem_dados'
+    }) as ('informado' | 'calculado' | 'sem_dados')[]
+  }, [dadosAno, contas, faturaData, anoAtual])
 
   const dadosAnoFinal: AnoData = useMemo(() => {
-    const hasFaturaCat = dadosAno.saidas.some(cat => nomeFaturaCartao(cat.nome, cartaoNomes))
+    const isFatura = (cat: Cat) => nomeFaturaCartao(cat.nome, cartaoNomes) || cat.t === 'fatura_cartao'
+    const hasFaturaCat = dadosAno.saidas.some(isFatura)
     const saidas = dadosAno.saidas.map(cat =>
-      nomeFaturaCartao(cat.nome, cartaoNomes) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
+      isFatura(cat) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
     )
-    // Se nÃ£o existe categoria de fatura mas hÃ¡ valor de cartÃ£o, injeta linha virtual
-    // para que o totalSaidas inclua a fatura (somaCartaoMes) no total de despesas
     if (!hasFaturaCat && somaCartaoMes.some(v => v > 0)) {
-      saidas.push({ nome: 'CartÃ£o de CrÃ©dito', t: undefined, v: somaCartaoMes })
+      saidas.push({ nome: 'Cartao de Credito', t: undefined, v: somaCartaoMes })
     }
     return { ...dadosAno, saidas }
   }, [dadosAno, somaCartaoMes, cartaoNomes])
+
+  const cartoesNovos = useMemo(() => {
+    const temFaturaCats = dadosAno.saidas.some(c => c.t === 'fatura_cartao')
+    if (!temFaturaCats) return []
+    const faturaCatIds = new Set(
+      dadosAno.saidas
+        .filter(c => c.t === 'fatura_cartao')
+        .map(c => c.id?.replace('fatura-', ''))
+    )
+    return contas.filter(c => c.tipo === 'cartao' && !faturaCatIds.has(c.id))
+  }, [contas, dadosAno])
 
   const entradasComHistorico = useMemo(() => {
     const realSaved = (planosReal[anoAtual] as PlanoAnoData | undefined)?.entradas ?? []
@@ -1507,20 +1553,23 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
         return (
           <>
             {/* BANNER */}
-            <div style={{ background:'linear-gradient(135deg,#0f2878,#1e40af)', padding:'14px 28px', flexShrink:0, display:'flex' }}>
+            <div style={{ background:'linear-gradient(135deg,#0f2878,#1e40af)', padding:'14px 16px', flexShrink:0, display:'flex' }}>
               {([
-                { label:'Saldo inicial',      val:siAnual, cor:'rgba(255,255,255,.85)' },
-                { label:'â†‘ Receitas do ano',  val:teAnual, cor:'#86efac' },
-                { label:'â†“ Despesas do ano',  val:tsAnual, cor:'#fca5a5' },
-                { label:'= Resultado em Dez', val:sfAnual, cor: sfAnual >= 0 ? '#86efac' : '#fca5a5' },
-              ] as {label:string;val:number;cor:string}[]).map((item, idx) => (
-                <div key={idx} style={{ flex:1, padding:'0 16px', borderRight: idx < 3 ? '1px solid rgba(255,255,255,.15)' : 'none' }}>
-                  <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.6, color:'rgba(255,255,255,.6)', marginBottom:3 }}>
+                { label:'Saldo inicial',           val:siAnual, cor:'rgba(255,255,255,.85)', sub:"Jan ${anoAtual}" },
+                { label:'â†‘ Receitas do ano',   val:teAnual, cor:'#93c5fd',              sub:'soma 12 meses' },
+                { label:'â†“ Despesas do ano',  val:tsAnual, cor:'#fca5a5',              sub:'soma 12 meses' },
+                { label:'= Resultado em Dez',      val:sfAnual, cor: sfAnual >= 0 ? '#86efac' : '#fca5a5',
+                  sub: sfAnual >= 0 ? 'positivo' : 'negativo' },
+              ] as {label:string;val:number;cor:string;sub:string}[]).map((item, idx) => (
+                <div key={idx} style={{ flex:1, background:'rgba(255,255,255,.10)', border:'1px solid rgba(255,255,255,.15)',
+                  borderRadius:12, padding:'12px 14px', marginRight: idx < 3 ? 8 : 0 }}>
+                  <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.5, color:'rgba(255,255,255,.7)', marginBottom:6 }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize:18, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, color:item.cor }}>
+                  <div style={{ fontSize:17, fontWeight:800, fontVariantNumeric:'tabular-nums' as const, color:item.cor, letterSpacing:'-.4px' }}>
                     {fmtB(item.val)}
                   </div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,.55)', marginTop:3 }}>{item.sub}</div>
                 </div>
               ))}
             </div>
@@ -1614,6 +1663,30 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           </div>
         )
       })()}
+      {/* novos-cartoes: novo cartao adicionado apos o wizard */}
+      {cartoesNovos.length > 0 && (
+        <div style={{ padding:'8px 20px 0' }}>
+          <div style={{
+            display:'flex', alignItems:'center', gap:10,
+            background:'#fffbeb', border:'1px solid #fde68a',
+            borderRadius:10, padding:'10px 14px',
+          }}>
+            <span style={{ fontSize:16 }}>💳</span>
+            <span style={{ flex:1, fontSize:13, color:'#92400e', fontWeight:500 }}>
+              {cartoesNovos.length === 1
+                ? 'O cartão "' + cartoesNovos[0].nome + '" não tem fatura informada no planejamento.'
+                : cartoesNovos.length + ' cartões novos sem fatura informada no planejamento.'}
+              {' '}A fatura será calculada automaticamente pelos lançamentos.
+            </span>
+            <button onClick={() => navigate('/wizard-planejamento')} style={{
+              border:'none', borderRadius:7, padding:'5px 12px', cursor:'pointer',
+              background:'#fde68a', color:'#92400e',
+              fontSize:12, fontWeight:700, fontFamily:'inherit', flexShrink:0,
+            }}>Atualizar</button>
+          </div>
+        </div>
+      )}
+
 
       {/* â”€â”€ BARRA STICKY â€” mobile apenas â”€â”€ */}
       {isMobile && (
@@ -2689,7 +2762,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
                                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
                                         {cat.nome}
-                                        {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                        {ehFatura && <span style={{fontSize:9,marginLeft:4,padding:'1px 5px',borderRadius:8,fontWeight:700,background:somaCartaoBadges[mi]==='informado'?'#dbeafe':somaCartaoBadges[mi]==='calculado'?'#dcfce7':'#f1f5f9',color:somaCartaoBadges[mi]==='informado'?'#1d4ed8':somaCartaoBadges[mi]==='calculado'?'#15803d':'#94a3b8'}}>{somaCartaoBadges[mi]==='informado'?'informado':somaCartaoBadges[mi]==='calculado'?'calculado':'auto'}</span>}
                                       </span>
                                       <div style={{ flex:1 }}/>
                                       {renderValor('s', ri, mi, cat.v[mi], ehFatura)}
@@ -2803,7 +2876,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color=COR.azul}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = ehFatura ? '#7c3aed' : COR.texto}>
                                             {cat.nome}
-                                            {ehFatura && <span style={{ fontSize:10, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                            {ehFatura && <span style={{fontSize:9,marginLeft:4,padding:'1px 5px',borderRadius:8,fontWeight:700,background:somaCartaoBadges[mi]==='informado'?'#dbeafe':somaCartaoBadges[mi]==='calculado'?'#dcfce7':'#f1f5f9',color:somaCartaoBadges[mi]==='informado'?'#1d4ed8':somaCartaoBadges[mi]==='calculado'?'#15803d':'#94a3b8'}}>{somaCartaoBadges[mi]==='informado'?'informado':somaCartaoBadges[mi]==='calculado'?'calculado':'auto'}</span>}
                                           </span>
                                           <div style={{ padding:'4px 8px', textAlign:'right', fontSize:13, flexShrink:0,
                                             color: prevAbs === 0 ? '#c0cce0' : COR.texto, whiteSpace:'nowrap',
@@ -3578,7 +3651,7 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ fontSize:12, color:isAtiva?COR.texto:COR.textoSuave }}>
                                 {cat.nome}
-                                {ehFatura && <span style={{ fontSize:9, color:'#c4b5fd', marginLeft:4 }}>(auto)</span>}
+                                {ehFatura && <span style={{fontSize:9,marginLeft:4,padding:'1px 5px',borderRadius:8,fontWeight:700,background:somaCartaoBadges[mi]==='informado'?'#dbeafe':somaCartaoBadges[mi]==='calculado'?'#dcfce7':'#f1f5f9',color:somaCartaoBadges[mi]==='informado'?'#1d4ed8':somaCartaoBadges[mi]==='calculado'?'#15803d':'#94a3b8'}}>{somaCartaoBadges[mi]==='informado'?'informado':somaCartaoBadges[mi]==='calculado'?'calculado':'auto'}</span>}
                               </div>
                               {descricaoS && <div style={{ fontSize:10, color:COR.textoSuave, marginTop:1 }}>{descricaoS}</div>}
                             </div>
@@ -4243,7 +4316,14 @@ export default function Planejamento({ defaultAba = 'previsto', hideTabs = false
           Dinheiro
         </span>
         <span>â†’Dez Replicar valor do mÃªs atÃ© dezembro</span>
-        <span style={{ color:'#7c3aed' }}>(auto) Fatura calculada automaticamente do mÃªs anterior</span>
+        <span style={{ display:'flex', alignItems:'center', gap:5 }}>
+          <span style={{ fontSize:9, padding:'1px 5px', borderRadius:8, fontWeight:700, background:'#dbeafe', color:'#1d4ed8' }}>informado</span>
+          fatura do wizard
+        </span>
+        <span style={{ display:'flex', alignItems:'center', gap:5 }}>
+          <span style={{ fontSize:9, padding:'1px 5px', borderRadius:8, fontWeight:700, background:'#dcfce7', color:'#15803d' }}>calculado</span>
+          fatura calculada
+        </span>
       </div>
 
     {/* â”€â”€ MODAL DETALHES CATEGORIA REALIZADO â”€â”€ */}

@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { iconeCategoria, ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import FaturaCartao from './FaturaCartao'
-import ExtratoConsolidado from './ExtratoConsolidado'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 import AlertaOrcamento from '../components/AlertaOrcamento'
@@ -177,7 +176,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, planejamentoLockado, updatePlanoReal, faturaData, user, sairDaConta, percentualAlerta } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, planejamentoLockado, updatePlanoReal, faturaData, setFaturaData, user, sairDaConta, percentualAlerta } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   // Prefere planosReal (Atualizado) quando disponível
@@ -296,6 +295,67 @@ export default function NovoLancamentoExtrato() {
     })
     return result
   }, [contas, contaIdEfetivo, ano, mes, dados, contasExtrato, faturaData])
+  // Visao Geral: saldo atual por conta bancaria (mes corrente)
+  const saldoAtualPorConta = useMemo(() => {
+    const mesStr = String(mes + 1).padStart(2, '0')
+    const totalDiasM = new Date(ano, mes + 1, 0).getDate()
+    return contasExtrato.map(c => {
+      const key = `${c.id}-${ano}-${mesStr}`
+      const dm = dados[key]
+      const manualStr = dm?.saldoBanco ?? ''
+      const manual = parseFloat(manualStr.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
+      if (manual > 0) return { conta: c, saldo: manual }
+      let te = 0, ts = 0
+      if (dm) {
+        for (let d = 1; d <= totalDiasM; d++) {
+          ;(dm.lancamentos?.[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+            l.tipo === 'entrada' ? te += l.valor : ts += l.valor
+          })
+        }
+      }
+      return { conta: c, saldo: c.saldoInicial + te - ts }
+    })
+  }, [contasExtrato, dados, ano, mes])
+
+  // Visao Geral: fatura atual por cartao
+  const faturaAtualPorCartao = useMemo(() => {
+    const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
+    return contas.filter(c => c.tipo === 'cartao').map(c => {
+      const key = mesKey(c.id, ano, mes)
+      const dm = fat[key]
+      const totalDiasM = new Date(ano, mes + 1, 0).getDate()
+      let total = 0
+      if (dm?.lancamentos) {
+        for (let d = 1; d <= totalDiasM; d++) {
+          ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
+            l.tipo === 'saida' ? total += l.valor : total -= l.valor
+          })
+        }
+      }
+      return { conta: c, fatura: Math.max(0, total) }
+    })
+  }, [contas, faturaData, ano, mes])
+
+  // Visao Geral: totais do mes e lancamentos recentes de todas as contas
+  const { totalEntradasMes, totalSaidasMes, recentLancs } = useMemo(() => {
+    const mesStr = String(mes + 1).padStart(2, '0')
+    const totalDiasM = new Date(ano, mes + 1, 0).getDate()
+    let te = 0, ts = 0
+    const lancs: { dia: number; banco: string; icone: string; cor: string; categoria: string; descricao: string; valor: number; tipo: string }[] = []
+    for (const c of contasExtrato) {
+      const dm = dados[`${c.id}-${ano}-${mesStr}`]
+      if (!dm) continue
+      for (let d = 1; d <= totalDiasM; d++) {
+        for (const l of dm.lancamentos?.[d] ?? []) {
+          l.tipo === 'entrada' ? te += l.valor : ts += l.valor
+          lancs.push({ dia: d, banco: c.banco, icone: c.icone, cor: c.cor, categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
+        }
+      }
+    }
+    lancs.sort((a, b) => b.dia - a.dia)
+    return { totalEntradasMes: te, totalSaidasMes: ts, recentLancs: lancs.slice(0, 40) }
+  }, [contasExtrato, dados, ano, mes])
+
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
     .filter(c => c.ativa && c.tipo === fTipo && (isDinheiro ? c.formaPagamento !== 'automatico' : true))
@@ -703,26 +763,46 @@ export default function NovoLancamentoExtrato() {
     const valor = parseBRL(fValor)
     if (!fCat || valor <= 0 || !fBancoConsolidado) return
     const diaFuturoAlvo = ehDiaFuturo(diaSel)
-    updateMesPorKey(mesKey(fBancoConsolidado, ano, mes), prev => ({
-      ...prev,
-      lancamentos: {
-        ...prev.lancamentos,
-        [diaSel]: [...(prev.lancamentos[diaSel]??[]), {
-          id:`v-${Date.now()}`, tipo:fTipo,
-          descricao:fDesc.trim()||fCat, categoria:fCat,
-          subCategoria: fSubDesc || undefined,
-          valor, formaPagamento:fPag, tipoLanc:'variavel',
-          consolidado: !diaFuturoAlvo,
-        }],
-      },
-    }))
-    toast('Lançamento registrado')
+    const contaSel = contas.find(c => c.id === fBancoConsolidado)
+    if (contaSel?.tipo === 'cartao') {
+      const fatKey = mesKey(fBancoConsolidado, ano, mes)
+      ;(setFaturaData as React.Dispatch<React.SetStateAction<Record<string, unknown>>>)(prev => {
+        const dm = (prev[fatKey] ?? { lancamentos: {} }) as { lancamentos: Record<number, unknown[]> }
+        return {
+          ...prev,
+          [fatKey]: {
+            ...dm,
+            lancamentos: {
+              ...dm.lancamentos,
+              [diaSel]: [...((dm.lancamentos[diaSel]) ?? []), {
+                id: `v-${Date.now()}`, tipo: fTipo,
+                descricao: fDesc.trim() || fCat, categoria: fCat,
+                valor, consolidado: !diaFuturoAlvo,
+              }],
+            },
+          },
+        }
+      })
+    } else {
+      updateMesPorKey(mesKey(fBancoConsolidado, ano, mes), prev => ({
+        ...prev,
+        lancamentos: {
+          ...prev.lancamentos,
+          [diaSel]: [...(prev.lancamentos[diaSel]??[]), {
+            id:`v-${Date.now()}`, tipo:fTipo,
+            descricao:fDesc.trim()||fCat, categoria:fCat,
+            subCategoria: fSubDesc || undefined,
+            valor, formaPagamento:fPag, tipoLanc:'variavel',
+            consolidado: !diaFuturoAlvo,
+          }],
+        },
+      }))
+    }
+    toast('Lancamento registrado')
     setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
     setHighlightDia(diaSel); setTimeout(() => setHighlightDia(null), 1200)
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
-  }
-
-  function excluirAtual() {
+  }function excluirAtual() {
     if (!editandoId) return
     if (!window.confirm('Excluir este lançamento?')) return
     const diaAlvo = editandoDiaOriginal ?? diaSel
@@ -1095,15 +1175,144 @@ export default function NovoLancamentoExtrato() {
         ]} buttonLabel="Ver visão geral →" />}
 
       {tabPrincipal==='cartao' ? <FaturaCartao mobileSelecionado={isMobile ? (mobileCartaoId ?? undefined) : cartaoNavId} onCartaoChange={id => setCartaoAtualId(id)} onVoltar={() => setMobileStep('tipo')} /> :
-       tabPrincipal==='consolidado' ? (
+       tabPrincipal==='consolidado' ? (() => {
+        const patrimonioTotal = saldoAtualPorConta.reduce((s, x) => s + x.saldo, 0)
+        const faturaTotal = faturaAtualPorCartao.reduce((s, x) => s + x.fatura, 0)
+        const resultadoMes = totalEntradasMes - totalSaidasMes
+        const metricas = [
+          { icon: '💰', label: 'Patrimônio total', val: patrimonioTotal },
+          { icon: '↑', label: 'Total entradas', val: totalEntradasMes },
+          { icon: '↓', label: 'Total saídas', val: totalSaidasMes },
+          { icon: '=', label: 'Resultado mês', val: resultadoMes },
+          { icon: '💳', label: 'Fatura cartões', val: faturaTotal },
+        ]
+        return (
       <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',
-        gap:isMobile?0:16,padding:isMobile?0:'10px 16px',
-        overflow:isMobile?'auto':'hidden'}}>
+        gap:isMobile?0:16,padding:isMobile?0:'10px 16px',overflow:isMobile?'auto':'hidden'}}>
+        {/* PAINEL ESQUERDO: Visao Geral */}
         <div style={{flex:1,display:isMobile&&mobileView==='form'?'none':'flex',
-          flexDirection:'column',overflow:'hidden'}}>
-          <ExtratoConsolidado mesProp={isMobile ? mes : undefined} onMesProp={isMobile ? setMes : undefined} />
+          flexDirection:'column',overflow:'hidden',position:'relative'}}>
+          {/* BANNER GRADIENTE: 5 métricas */}
+          <div style={{background:'linear-gradient(135deg,#0f2878,#1e40af)',padding:'10px 14px',
+            flexShrink:0,display:'flex',overflowX:'auto',gap:0}}>
+            {metricas.map((m, i) => (
+              <div key={i} style={{flex:1,minWidth:90,
+                background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',
+                borderRadius:12,padding:'10px 12px',marginRight:i<metricas.length-1?7:0}}>
+                <div style={{fontSize:9,color:'rgba(255,255,255,.7)',fontWeight:700,
+                  textTransform:'uppercase',letterSpacing:.4,marginBottom:5}}>{m.icon} {m.label}</div>
+                <div style={{fontSize:14,fontWeight:800,fontVariantNumeric:'tabular-nums',
+                  color:m.val>=0?'#86efac':'#fca5a5',letterSpacing:'-.4px'}}>{fmt(m.val)}</div>
+              </div>
+            ))}
+          </div>
+          {/* AREA ROLAVEL */}
+          <div style={{flex:1,overflowY:'auto',padding:'16px 16px 84px'}}>
+            {/* Contas bancárias */}
+            <div style={{fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase' as const,
+              letterSpacing:.6,marginBottom:8}}>Contas bancárias</div>
+            {saldoAtualPorConta.length===0
+              ? <div style={{fontSize:12,color:'#94a3b8',marginBottom:16}}>Nenhuma conta cadastrada</div>
+              : <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
+                  {saldoAtualPorConta.map(({conta,saldo}) => (
+                    <div key={conta.id} style={{background:'#fff',border:'1px solid #e2e8f0',
+                      borderRadius:10,padding:'10px 14px',display:'flex',
+                      alignItems:'center',justifyContent:'space-between'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:18}}>{conta.icone}</span>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:600,color:'#0f172a'}}>{conta.nome}</div>
+                          <div style={{fontSize:10,color:'#64748b'}}>{conta.banco}</div>
+                        </div>
+                      </div>
+                      <div style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
+                        color:saldo>=0?'#16a34a':'#dc2626'}}>{fmt(saldo)}</div>
+                    </div>
+                  ))}
+                </div>
+            }
+            {/* Cartões de crédito */}
+            {faturaAtualPorCartao.length>0 && (
+              <>
+                <div style={{fontSize:10,fontWeight:700,color:'#64748b',
+                  textTransform:'uppercase' as const,letterSpacing:.6,marginBottom:8}}>Cartões de crédito</div>
+                <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
+                  {faturaAtualPorCartao.map(({conta,fatura}) => {
+                    const limite = conta.limiteCartao ?? 0
+                    const pct = limite>0 ? Math.min(fatura/limite*100,100) : 0
+                    const corBarra = pct>80?'#dc2626':pct>50?'#f59e0b':'#16a34a'
+                    return (
+                      <div key={conta.id} style={{background:'#fff',border:'1px solid #e2e8f0',
+                        borderRadius:10,padding:'10px 14px'}}>
+                        <div style={{display:'flex',alignItems:'center',
+                          justifyContent:'space-between',marginBottom:limite>0?8:0}}>
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{fontSize:18}}>{conta.icone||'💳'}</span>
+                            <div>
+                              <div style={{fontSize:12,fontWeight:600,color:'#0f172a'}}>{conta.nome}</div>
+                              <div style={{fontSize:10,color:'#64748b'}}>{conta.banco}</div>
+                            </div>
+                          </div>
+                          <div style={{textAlign:'right' as const}}>
+                            <div style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
+                              color:'#dc2626'}}>{fmt(fatura)}</div>
+                            {limite>0 && <div style={{fontSize:9,color:'#94a3b8'}}>de {fmt(limite)}</div>}
+                          </div>
+                        </div>
+                        {limite>0 && (
+                          <div style={{background:'#f1f5f9',borderRadius:4,height:4,overflow:'hidden'}}>
+                            <div style={{width:`${pct}%`,height:'100%',background:corBarra,borderRadius:4,transition:'width .3s'}} />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+            {/* Últimos lançamentos */}
+            <div style={{fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase' as const,
+              letterSpacing:.6,marginBottom:8}}>Últimos lançamentos</div>
+            {recentLancs.length===0
+              ? <div style={{fontSize:12,color:'#94a3b8'}}>Nenhum lançamento neste mês</div>
+              : <div style={{display:'flex',flexDirection:'column',gap:2}}>
+                  {recentLancs.map((l,i) => (
+                    <div key={i} style={{display:'flex',alignItems:'center',gap:10,
+                      padding:'8px 10px',background:'#fff',borderRadius:8,
+                      borderLeft:`3px solid ${l.cor||'#94a3b8'}`}}>
+                      <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,
+                        minWidth:22,textAlign:'center' as const}}>{l.dia}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:600,color:'#0f172a',
+                          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{l.categoria}</div>
+                        <div style={{fontSize:10,color:'#64748b',
+                          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                          {l.icone} {l.banco}{l.descricao?` · ${l.descricao}`:''}
+                        </div>
+                      </div>
+                      <div style={{fontSize:12,fontWeight:700,fontVariantNumeric:'tabular-nums',
+                        color:l.tipo==='entrada'?'#16a34a':'#dc2626',flexShrink:0}}>
+                        {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+          {/* RODAPE FIXO: Patrimônio total */}
+          <div style={{position:'absolute',bottom:0,left:0,right:0,
+            background:'linear-gradient(135deg,#0f2878,#1e40af)',
+            padding:'10px 16px',display:'flex',alignItems:'center',
+            justifyContent:'space-between',flexShrink:0}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:'#fff'}}>Patrimônio total</div>
+              <div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>{NOMES_MESES[mes]} {ano}</div>
+            </div>
+            <div style={{fontSize:22,fontWeight:800,fontVariantNumeric:'tabular-nums',
+              color:patrimonioTotal>=0?'#86efac':'#fca5a5'}}>{fmt(patrimonioTotal)}</div>
+          </div>
         </div>
-        {/* PAINEL DE LANÇAMENTO — consolidado */}
+        {/* FORMULARIO DE LANCAMENTO */}
         <div style={{width:isMobile?'100%':340,flexShrink:0,background:COR.branco,
           border:isMobile?'none':`1px solid ${COR.borda}`,
           borderRadius:isMobile?0:12,padding:isMobile?'16px 12px':20,overflowY:'auto',
@@ -1115,26 +1324,35 @@ export default function NovoLancamentoExtrato() {
               padding:'0 0 12px 0',display:'block'}}>← Voltar</button>
           )}
           <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:'0 0 14px'}}>Novo lançamento</h3>
-
-          {/* Banco */}
+          {/* Conta / Cartão */}
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Banco *</div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>🏦 Conta / Cartão *</div>
             <select value={fBancoConsolidado} onChange={e=>setFBancoConsolidado(e.target.value)}
               onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}>
-              <option value="">Selecione o banco...</option>
-              {contasExtrato.map(c=>(
-                <option key={c.id} value={c.id}>{c.icone} {c.banco} — {c.nome}</option>
-              ))}
+              <option value="">Selecione...</option>
+              {contasExtrato.length>0 && (
+                <optgroup label="Contas bancárias">
+                  {contasExtrato.map(c=>(
+                    <option key={c.id} value={c.id}>{c.icone} {c.banco} — {c.nome}</option>
+                  ))}
+                </optgroup>
+              )}
+              {contas.filter(c=>c.tipo==='cartao').length>0 && (
+                <optgroup label="Cartões de crédito">
+                  {contas.filter(c=>c.tipo==='cartao').map(c=>(
+                    <option key={c.id} value={c.id}>{c.icone||'💳'} {c.nome}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
-
           {/* Dia */}
           <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:14}}>
             <div style={{flex:'0 0 64px'}}>
-              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Dia</div>
+              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>📅 Dia</div>
               <input type="number" min={1} max={totalDias} value={diaSel}
                 onChange={e=>setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
                 onFocus={realcarFoco} onBlur={removerRealce}
@@ -1146,15 +1364,11 @@ export default function NovoLancamentoExtrato() {
               {NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}
             </div>
           </div>
-
-          {/* Recebi/Gastei */}
+          {/* Despesa / Receita */}
           <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
             padding:3,marginBottom:10,width:'fit-content'}}>
             {(['saida','entrada'] as const).map(t=>(
-              <button key={t} onClick={()=>{
-                setFTipo(t)
-                setFPag(t==='entrada'?'pix':'debito')
-              }} style={{
+              <button key={t} onClick={()=>{setFTipo(t);setFPag(t==='entrada'?'pix':'debito')}} style={{
                 padding:'5px 14px',border:'none',borderRadius:5,cursor:'pointer',
                 fontSize:12,fontWeight:500,fontFamily:'inherit',
                 background:fTipo===t?COR.branco:'transparent',
@@ -1164,32 +1378,29 @@ export default function NovoLancamentoExtrato() {
               </button>
             ))}
           </div>
-
-          {/* Forma de pagamento */}
-          <div style={{marginBottom:12}}>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:2}}>
-              {fTipo==='entrada'?'Forma de recebimento:':'Forma de pagamento:'}
+          {/* Forma de pagamento — apenas para contas bancárias */}
+          {contas.find(c=>c.id===fBancoConsolidado)?.tipo!=='cartao' && (
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
+                {fTipo==='entrada'?'Forma de recebimento:':'Forma de pagamento:'}
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                {(fTipo==='entrada'
+                  ? FORMAS_ENT.filter(p=>p.id!=='transferencia'&&p.id!=='dinheiro')
+                  : FORMAS_SAI.filter(p=>p.id!=='transferencia'&&p.id!=='dinheiro')
+                ).map(p=>(
+                  <button key={p.id} onClick={()=>setFPag(p.id)} style={{
+                    padding:'4px 12px',
+                    border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
+                    borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
+                    background:fPag===p.id?'#eff6ff':'#fff',
+                    color:fPag===p.id?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div style={{fontSize:10,color:'#94a3b8',marginBottom:6}}>
-              Ajuda a saber de qual conta saiu o dinheiro.
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-              {(fTipo==='entrada'
-                ? FORMAS_ENT.filter(p=>p.id!=='transferencia'&&p.id!=='dinheiro')
-                : FORMAS_SAI.filter(p=>p.id!=='transferencia'&&p.id!=='dinheiro')
-              ).map(p=>(
-                <button key={p.id} onClick={()=>setFPag(p.id)} style={{
-                  padding:'4px 12px',
-                  border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
-                  borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
-                  background:fPag===p.id?'#eff6ff':'#fff',
-                  color:fPag===p.id?COR.azul:'#0369a1',fontFamily:'inherit'}}>
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
+          )}
           {/* Categoria + Valor + Descrição */}
           <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
             <div>
@@ -1204,7 +1415,7 @@ export default function NovoLancamentoExtrato() {
                   if (nome) setTimeout(() => valorInputRef.current?.focus(), 50)
                 }}
                 onFocus={realcarFoco} onBlur={removerRealce}
-                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
                   fontSize:12,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}>
                 <option value="">Selecione...</option>
@@ -1212,26 +1423,19 @@ export default function NovoLancamentoExtrato() {
                   <option key={c.id} value={c.nome}>{c.nome}</option>
                 ))}
               </select>
-              {/* Chips de sub-descrição quando categoria tem múltiplas variantes */}
-              {subDescsDisponiveis.length > 1 && (
+              {subDescsDisponiveis.length>1 && (
                 <div style={{marginTop:6}}>
                   <div style={{fontSize:9,color:'#0369a1',fontWeight:600,
-                    textTransform:'uppercase',letterSpacing:.4,marginBottom:4}}>
-                    Qual variante?
-                  </div>
+                    textTransform:'uppercase' as const,letterSpacing:.4,marginBottom:4}}>Qual variante?</div>
                   <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
-                    {subDescsDisponiveis.map(desc => (
+                    {subDescsDisponiveis.map(desc=>(
                       <button key={desc} type="button"
-                        onClick={() => setFSubDesc(desc === fSubDesc ? '' : desc)}
-                        style={{
-                          padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:600,
+                        onClick={()=>setFSubDesc(desc===fSubDesc?'':desc)}
+                        style={{padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:600,
                           border:`1.5px solid ${fSubDesc===desc?'#1a56db':'#bae6fd'}`,
                           background:fSubDesc===desc?'#1a56db':'#eff6ff',
                           color:fSubDesc===desc?'#fff':'#1a56db',
-                          cursor:'pointer',fontFamily:'inherit',
-                        }}>
-                        {desc}
-                      </button>
+                          cursor:'pointer',fontFamily:'inherit'}}>{desc}</button>
                     ))}
                   </div>
                 </div>
@@ -1241,7 +1445,7 @@ export default function NovoLancamentoExtrato() {
               <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor *</div>
               <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
                 placeholder="R$ 0,00" onFocus={realcarFoco} onBlur={removerRealce}
-                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
                   fontSize:12,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}
                 onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>
@@ -1251,16 +1455,13 @@ export default function NovoLancamentoExtrato() {
               <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
                 placeholder="Ex: Mercado Extra, Farmácia..."
                 onFocus={realcarFoco} onBlur={removerRealce}
-                style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+                style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
                   fontSize:12,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}
                 onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>
             </div>
           </div>
-
-          <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>
-            Enter no valor ou na descrição para salvar
-          </div>
+          <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>Enter no valor ou na descrição para salvar</div>
           <button onClick={lancarConsolidado} style={{
             width:'100%',padding:'10px 0',border:'none',borderRadius:8,
             background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
@@ -1269,7 +1470,9 @@ export default function NovoLancamentoExtrato() {
           </button>
         </div>
       </div>
-      ) : (
+        )
+      })()
+ : (
       <>
       {/* BANNER + Calendário — desktop, extrato/dinheiro */}
       {!isMobile && (tabPrincipal==='extrato'||tabPrincipal==='dinheiro') && (() => {
@@ -1278,29 +1481,29 @@ export default function NovoLancamentoExtrato() {
         const conciliadoInline = diferencaInline !== null && Math.abs(diferencaInline) < 0.01
         return (
           <>
-            <div style={{background:'linear-gradient(135deg,#0f2878,#1e40af)',padding:'14px 32px',display:'flex',alignItems:'center',flexShrink:0}}>
-              <div style={{flex:1,display:'flex',flexDirection:'column',paddingRight:24,borderRight:'1px solid rgba(255,255,255,.15)'}}>
-                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:.5,marginBottom:4}}>💰 Saldo inicial</div>
-                <div style={{fontSize:18,fontWeight:800,color:'#fff',letterSpacing:'-.4px'}}>{fmt(saldoBase)}</div>
-                <div style={{fontSize:10,color:'rgba(255,255,255,.5)',marginTop:3}}>{NOMES_MESES[mes]} {ano}</div>
+            <div style={{background:'linear-gradient(135deg,#0f2878,#1e40af)',padding:'14px 16px',display:'flex',alignItems:'center',flexShrink:0}}>
+              <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>💰 Saldo inicial</div>
+                <div style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.4px'}}>{fmt(saldoBase)}</div>
+                <div style={{fontSize:10,color:'rgba(255,255,255,.55)',marginTop:3}}>{NOMES_MESES[mes]} {ano}</div>
               </div>
-              <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 24px',borderRight:'1px solid rgba(255,255,255,.15)'}}>
-                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:.5,marginBottom:4}}>↑ Entradas</div>
-                <div style={{fontSize:18,fontWeight:800,color:'#93c5fd',letterSpacing:'-.4px'}}>{fmt(totalEntradas)}</div>
-                <div style={{fontSize:10,color:'rgba(255,255,255,.5)',marginTop:3}}>lançadas</div>
+              <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>↑ Entradas</div>
+                <div style={{fontSize:17,fontWeight:800,color:'#93c5fd',letterSpacing:'-.4px'}}>{fmt(totalEntradas)}</div>
+                <div style={{fontSize:10,color:'rgba(255,255,255,.55)',marginTop:3}}>lançadas</div>
               </div>
-              <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 24px',borderRight:'1px solid rgba(255,255,255,.15)'}}>
-                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:.5,marginBottom:4}}>↓ Saídas</div>
-                <div style={{fontSize:18,fontWeight:800,color:'#fca5a5',letterSpacing:'-.4px'}}>{fmt(totalSaidas)}</div>
-                <div style={{fontSize:10,color:'rgba(255,255,255,.5)',marginTop:3}}>lançadas</div>
+              <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>↓ Saídas</div>
+                <div style={{fontSize:17,fontWeight:800,color:'#fca5a5',letterSpacing:'-.4px'}}>{fmt(totalSaidas)}</div>
+                <div style={{fontSize:10,color:'rgba(255,255,255,.55)',marginTop:3}}>lançadas</div>
               </div>
-              <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 24px',borderRight:'1px solid rgba(255,255,255,.15)'}}>
-                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:.5,marginBottom:4}}>= Saldo atual</div>
-                <div style={{fontSize:18,fontWeight:800,color:saldoMes>=0?'#86efac':'#fca5a5',letterSpacing:'-.4px'}}>{fmt(saldoMes)}</div>
+              <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>= Saldo atual</div>
+                <div style={{fontSize:17,fontWeight:800,color:saldoMes>=0?'#86efac':'#fca5a5',letterSpacing:'-.4px'}}>{fmt(saldoMes)}</div>
                 <div style={{fontSize:10,color:saldoMes>=0?'#86efac':'#fca5a5',marginTop:3}}>{saldoMes>=0?'↑ positivo':'↓ negativo'}</div>
               </div>
-              <div style={{display:'flex',flexDirection:'column',gap:6,paddingLeft:24}}>
-                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>🔄 Conciliação</div>
+              <div style={{display:'flex',flexDirection:'column',gap:5,background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',flexShrink:0}}>
+                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>🔄 Conciliação</div>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <span style={{fontSize:10,color:'rgba(255,255,255,.6)',minWidth:80}}>Saldo no banco</span>
                   <input value={saldoBancoInline} onChange={e=>setSaldoBancoInline(e.target.value)}

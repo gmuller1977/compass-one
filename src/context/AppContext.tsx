@@ -25,7 +25,6 @@ export type Conta = {
   contaPagamentoId?: string
   apelido?: string
   preferida?: boolean
-  ultimaFatura?: number
 }
 
 export type Categoria = {
@@ -133,7 +132,6 @@ function contaToRow(c: Conta, userId: string) {
     conta_pagamento_id: c.contaPagamentoId ?? null,
     apelido: c.apelido ?? null,
     preferida: c.preferida ?? false,
-    ultima_fatura: c.ultimaFatura ?? null,
     ativo: true,
   }
 }
@@ -158,7 +156,6 @@ function rowToConta(row: any): Conta {
     contaPagamentoId: row.conta_pagamento_id ?? undefined,
     apelido: row.apelido ?? undefined,
     preferida: row.preferida ?? false,
-    ultimaFatura: row.ultima_fatura != null ? Number(row.ultima_fatura) : undefined,
   }
 }
 

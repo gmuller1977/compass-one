@@ -10,8 +10,7 @@ const MES_ATU = new Date().getMonth()
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
-const STEP_LABELS = ['Objetivo','Saldo inicial','Entradas','Saídas','Resumo']
-const TOTAL_STEPS = 5
+// stepLabels / totalSteps computed inside component (dynamic when cartões exist)
 
 type Objetivo = 'controlar' | 'economizar' | 'sonho' | 'dividas'
 type Aplicar  = 'restantes' | 'todos'
@@ -93,6 +92,18 @@ export default function WizardPlanejamento() {
   const [entradas, setEntradas] = useState<Record<string,string>>(() => initValues('entrada'))
   const [saidas,   setSaidas]   = useState<Record<string,string>>(() => initValues('saida'))
   const [aplicar,  setAplicar]  = useState<Aplicar>('restantes')
+  const [faturas,  setFaturas]  = useState<Record<string,string>>(() => {
+    const r: Record<string,string> = {}
+    const faturaCats = (existingPlan?.saidas ?? []).filter((c: { t?: string }) => c.t === 'fatura_cartao')
+    faturaCats.forEach((c: { id?: string; v: number[] }) => {
+      const id = c.id?.replace('fatura-', '')
+      if (id) {
+        const val = c.v[MES_ATU] || c.v.find((v: number) => v > 0) || 0
+        if (val > 0) r[id] = fmtBRL(val)
+      }
+    })
+    return r
+  })
 
   const totalEntradas = useMemo(() => catsEntrada.reduce((s,c) => s + parseBRL(entradas[c.nome] ?? ''), 0), [entradas, catsEntrada])
   const totalSaidas   = useMemo(() => catsSaida.reduce((s,c) => s + parseBRL(saidas[c.nome] ?? ''), 0), [saidas, catsSaida])
@@ -100,6 +111,13 @@ export default function WizardPlanejamento() {
     if (!usarSaldo || !contasBanco.length) return 0
     return contasBanco.reduce((s,c) => s + (parseBRL(saldos[c.id] ?? '') || c.saldoInicial || 0), 0)
   }, [usarSaldo, saldos, contasBanco])
+
+  const cartoes     = useMemo(() => contas.filter(c => c.tipo === 'cartao'), [contas])
+  const hasCartoes  = cartoes.length > 0
+  const stepLabels  = hasCartoes
+    ? ['Objetivo','Saldo inicial','Cartões','Entradas','Saídas','Resumo']
+    : ['Objetivo','Saldo inicial','Entradas','Saídas','Resumo']
+  const totalSteps  = stepLabels.length
 
   const resultadoMensal = totalEntradas - totalSaidas
   const mesesAplicar    = aplicar === 'restantes' ? 12 - MES_ATU : 12
@@ -112,16 +130,26 @@ export default function WizardPlanejamento() {
   }
 
   function criarPlanejamento() {
+    const faturaCats = cartoes
+      .filter(c => parseBRL(faturas[c.id] ?? '') > 0)
+      .map(c => {
+        const v = Array(12).fill(0) as number[]
+        v[MES_ATU] = parseBRL(faturas[c.id] ?? '')
+        return { id: `fatura-${c.id}`, nome: c.nome, t: 'fatura_cartao', v }
+      })
     const novoPlano: PlanoAnoData = {
       saldoInicialJan,
       entradas: catsEntrada.filter(c => parseBRL(entradas[c.nome] ?? '') > 0).map(c => ({
         nome: c.nome, id: c.id, v: buildV(parseBRL(entradas[c.nome] ?? '')),
       })),
-      saidas: catsSaida.filter(c => parseBRL(saidas[c.nome] ?? '') > 0).map(c => ({
-        nome: c.nome, id: c.id,
-        t: c.tipoMovimento === 'cartao' ? 'cartao' : undefined,
-        v: buildV(parseBRL(saidas[c.nome] ?? '')),
-      })),
+      saidas: [
+        ...catsSaida.filter(c => parseBRL(saidas[c.nome] ?? '') > 0).map(c => ({
+          nome: c.nome, id: c.id,
+          t: c.tipoMovimento === 'cartao' ? 'cartao' : undefined,
+          v: buildV(parseBRL(saidas[c.nome] ?? '')),
+        })),
+        ...faturaCats,
+      ],
     }
     setPlanos(prev => ({ ...prev, [ANO]: novoPlano }))
     setObjetivoUsuario(objetivo)
@@ -156,18 +184,18 @@ export default function WizardPlanejamento() {
       <div style={{ marginBottom:12 }}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
           <span style={{ fontSize:11, color:'rgba(255,255,255,.7)', fontWeight:600 }}>
-            Passo {step} — {STEP_LABELS[step-1]}
+            Passo {step} — {stepLabels[step-1]}
           </span>
-          <span style={{ fontSize:11, color:'rgba(255,255,255,.5)' }}>{step} de {TOTAL_STEPS}</span>
+          <span style={{ fontSize:11, color:'rgba(255,255,255,.5)' }}>{step} de {totalSteps}</span>
         </div>
         <div style={{ height:4, background:'rgba(255,255,255,.2)', borderRadius:2, overflow:'hidden' }}>
           <div style={{ height:'100%', background:'#fff', borderRadius:2,
-            width:`${(step/TOTAL_STEPS)*100}%`, transition:'width .4s ease' }} />
+            width:`${(step/totalSteps)*100}%`, transition:'width .4s ease' }} />
         </div>
       </div>
 
       <div style={{ display:'flex', justifyContent:'center', gap:6 }}>
-        {Array.from({ length: TOTAL_STEPS }, (_,i) => (
+        {Array.from({ length: totalSteps }, (_,i) => (
           <div key={i} style={{
             width: i+1===step ? 20 : 8, height:8, borderRadius:4,
             background: i+1<step ? 'rgba(255,255,255,.6)' : i+1===step ? '#fff' : 'rgba(255,255,255,.25)',
@@ -188,7 +216,7 @@ export default function WizardPlanejamento() {
           cursor:'pointer', fontFamily:'inherit',
         }}>‹ Voltar</button>
       )}
-      {step < TOTAL_STEPS ? (
+      {step < totalSteps ? (
         <button onClick={() => setStep(s => s + 1)} style={{
           flex:2, padding:13, border:'none', borderRadius:12,
           background:'linear-gradient(135deg,#1a56db,#2563eb)',
@@ -312,6 +340,63 @@ export default function WizardPlanejamento() {
     )
   }
 
+  // ── Step 3 (opcional): Cartões ────────────────────────────────────────
+  function renderStepCartoes() {
+    const totalFaturas = cartoes.reduce((s, c) => s + parseBRL(faturas[c.id] ?? ''), 0)
+    return (
+      <>
+        <div style={{ fontSize:40, textAlign:'center', marginBottom:12 }}>💳</div>
+        <div style={{ fontSize:18, fontWeight:800, color:'#0f172a', textAlign:'center', marginBottom:6 }}>
+          Fatura dos seus cartões
+        </div>
+        <div style={{ fontSize:13, color:'#64748b', textAlign:'center', lineHeight:1.5, marginBottom:16 }}>
+          Informe o valor da fatura atual de cada cartão de crédito.
+        </div>
+        <div style={{ padding:'10px 14px', background:'#fffbeb', borderRadius:10,
+          border:'1px solid #fde68a', marginBottom:20 }}>
+          <div style={{ fontSize:12, color:'#92400e', lineHeight:1.6 }}>
+            💡 Use o valor da fatura mais recente como ponto de partida. O planejamento vai calcular automaticamente nos meses seguintes com base nos seus lançamentos.
+          </div>
+        </div>
+        {cartoes.map(c => (
+          <div key={c.id} style={{
+            background:'#fff', border:'1.5px solid #e2e8f0',
+            borderLeft:`4px solid ${c.cor}`, borderRadius:14, padding:14,
+            marginBottom:10, display:'flex', alignItems:'center', gap:12,
+          }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:c.cor+'22',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
+              {c.icone}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{c.nome}</div>
+              {c.limite != null && c.limite > 0 && (
+                <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>
+                  Limite: {fmtBRL(c.limite)}
+                </div>
+              )}
+            </div>
+            <input
+              value={faturas[c.id] ?? ''}
+              onChange={e => setFaturas(prev => ({ ...prev, [c.id]: maskBRL(e.target.value) }))}
+              onFocus={e => { e.target.style.borderColor='#7c3aed'; e.target.style.background='#fff' }}
+              onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.background='#f8fafc' }}
+              placeholder="R$ 0,00"
+              style={inputSt}
+            />
+          </div>
+        ))}
+        {totalFaturas > 0 && (
+          <div style={{ background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:12,
+            padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span style={{ fontSize:13, color:'#6d28d9', fontWeight:600 }}>Total faturas</span>
+            <span style={{ fontSize:15, fontWeight:800, color:'#6d28d9' }}>{fmtBRL(totalFaturas)}</span>
+          </div>
+        )}
+      </>
+    )
+  }
+
   // ── Steps 3 & 4: Categorias ───────────────────────────────────────────
   function renderCatStep(
     tipo: 'entrada'|'saida',
@@ -421,7 +506,7 @@ export default function WizardPlanejamento() {
               <div style={{ fontSize:12, color:'#991b1b', lineHeight:1.5, marginBottom:8 }}>
                 ⚠ Seus gastos planejados são maiores que sua renda. Revise as categorias de saída para equilibrar.
               </div>
-              <button onClick={() => setStep(4)} style={{
+              <button onClick={() => setStep(hasCartoes ? 5 : 4)} style={{
                 border:'none', background:'transparent', color:'#dc2626',
                 fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', padding:0,
               }}>← Revisar saídas</button>
@@ -491,13 +576,15 @@ export default function WizardPlanejamento() {
     )
   }
 
-  const stepContent = [
-    renderStep1(),
-    renderStep2(),
-    renderCatStep('entrada', catsEntrada, entradas, setEntradas),
-    renderCatStep('saida',   catsSaida,   saidas,   setSaidas),
-    renderStep5(),
-  ]
+  const stepContent = hasCartoes
+    ? [renderStep1(), renderStep2(), renderStepCartoes(),
+       renderCatStep('entrada', catsEntrada, entradas, setEntradas),
+       renderCatStep('saida',   catsSaida,   saidas,   setSaidas),
+       renderStep5()]
+    : [renderStep1(), renderStep2(),
+       renderCatStep('entrada', catsEntrada, entradas, setEntradas),
+       renderCatStep('saida',   catsSaida,   saidas,   setSaidas),
+       renderStep5()]
 
   return (
     <div style={{ minHeight:'100dvh', background:'#f0f4ff', display:'flex', flexDirection:'column',
