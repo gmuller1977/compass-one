@@ -181,12 +181,16 @@ export default function NovoLancamentoExtrato() {
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   // Prefere planosReal (Atualizado) quando disponível
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
-    const planoAno = (planosReal[ano] ?? planos[ano]) as typeof planos[number] | undefined
+    const planoReal = planosReal[ano] as typeof planos[number] | undefined
+    const previsto  = planos[ano]    as typeof planos[number] | undefined
+    // Plano real sem categorias (pode ocorrer se "Ajustar mês" foi usado sem plano finalizado)
+    // → usa previsto como fallback para não perder os valores planejados
+    const planoAno  = (planoReal?.saidas?.length || planoReal?.entradas?.length) ? planoReal : previsto
     if (!planoAno) return 0
     const lista = tipoLanc === 'entrada' ? planoAno.entradas : planoAno.saidas
-    // Busca por ID primeiro; só cai em nome para entradas do plano sem ID (dados legados)
+    // Busca por ID; fallback por nome sem exigir ausência de ID (cobre IDs divergentes)
     const found = catId
-      ? (lista.find(c => c.id === catId) ?? lista.find(c => !c.id && c.nome === catNome))
+      ? (lista.find(c => c.id === catId) ?? lista.find(c => c.nome === catNome))
       : lista.find(c => c.nome === catNome)
     return found?.v[mes] ?? 0
   }
@@ -928,15 +932,18 @@ export default function NovoLancamentoExtrato() {
             const catNome = alertaDesvio.catNome
             const baseReal = planosReal[ano] ?? planos[ano]
             if (baseReal) {
-              updatePlanoReal(ano, prev => {
-                const base = prev ?? { ...baseReal, saidas: [...(baseReal.saidas ?? [])] }
-                return {
-                  ...base,
-                  saidas: (base.saidas ?? []).map(c =>
-                    c.nome === catNome ? { ...c, v: c.v.map((v, mi) => mi === mes ? novoVal : v) } : c
-                  ),
-                } as typeof base
-              })
+              // Usa o plano real existente (se tiver categorias) ou o previsto como base,
+              // evitando criar um planosReal vazio que sombra o plano original
+              const planoBase = (planosReal[ano]?.saidas?.length || planosReal[ano]?.entradas?.length)
+                ? planosReal[ano]
+                : baseReal
+              const novoPlano = {
+                ...planoBase,
+                saidas: (planoBase.saidas ?? []).map(c =>
+                  c.nome === catNome ? { ...c, v: c.v.map((v, mi) => mi === mes ? novoVal : v) } : c
+                ),
+              }
+              updatePlanoReal(ano, () => novoPlano)
             }
             setAlertaDesvio(null)
           }}
