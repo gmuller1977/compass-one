@@ -370,9 +370,9 @@ export default function WizardPlanejamento() {
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{c.nome}</div>
-              {c.limite != null && c.limite > 0 && (
+              {c.limiteCartao != null && c.limiteCartao > 0 && (
                 <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>
-                  Limite: {fmtBRL(c.limite)}
+                  Limite: {fmtBRL(c.limiteCartao)}
                 </div>
               )}
             </div>
