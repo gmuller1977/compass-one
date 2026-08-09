@@ -379,11 +379,6 @@ export default function Sidebar() {
                       expanded={isExpanded}
                       onClick={() => {
                         toggleExpand('Lançamentos')
-                        if (!lancActive) {
-                          const pref = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
-                          if (pref) navigate(`/novo-lancamento?tipo=banco&conta=${pref.id}`)
-                          else navigate('/novo-lancamento?tipo=banco')
-                        }
                       }}
                     />
                     {isExpanded && (
@@ -397,9 +392,12 @@ export default function Sidebar() {
                             hasSub={contasExtrato.length > 1}
                             expanded={expandedSub2 === 'banco'}
                             onClick={() => {
-                              if (contasExtrato.length > 1) toggleSub2('banco')
-                              const pref = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
-                              navigate(`/novo-lancamento?tipo=banco&conta=${pref.id}`)
+                              if (contasExtrato.length > 1) {
+                                toggleSub2('banco')
+                              } else {
+                                const pref = contasExtrato[0]
+                                if (pref) navigate(`/novo-lancamento?tipo=banco&conta=${pref.id}`)
+                              }
                             }}
                           />
                           {(expandedSub2 === 'banco' || bancoActive) && (
