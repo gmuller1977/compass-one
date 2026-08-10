@@ -73,7 +73,6 @@ export default function PlanGrade(props: Props) {
           dadosRealizado={dadosRealizado}
           aba={aba}
           planejamentoLockado={props.planejamentoLockado}
-          lancadoPorCatMes={props.lancadoPorCatMes}
           planoRef={props.planoRef as any}
           categorias={props.categorias}
           onSave={(tipo, ri, valor) => props.onSave(tipo, ri, modalMes, valor)}

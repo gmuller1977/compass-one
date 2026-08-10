@@ -1,5 +1,5 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, COR, MESES_FULL, type AnoData } from './types'
+import { COR, MESES_FULL, fmt, type AnoData } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 
 interface Props {
@@ -8,7 +8,6 @@ interface Props {
   dadosRealizado: AnoData | null
   aba: 'meu-plano' | 'realizado'
   planejamentoLockado: boolean
-  lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   planoRef?: AnoData
   categorias: any[]
   onSave: (tipo: 'e' | 's', ri: number, valor: number) => void
@@ -18,7 +17,7 @@ interface Props {
 
 export default function PlanModalMes({
   mes, dadosPrevisto, dadosRealizado, aba, planejamentoLockado,
-  lancadoPorCatMes, categorias, onSave, onClose,
+  categorias, onSave, onClose,
 }: Props) {
   const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
@@ -47,7 +46,7 @@ export default function PlanModalMes({
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: COR.texto }}>{MESES_FULL[mes]}</div>
             <div style={{ fontSize: 11, color: COR.textoSuave }}>
-              {aba === 'meu-plano' ? 'Meu plano' : 'Realizado'}
+              {aba === 'meu-plano' ? 'Meu plano' : 'Atualizado'}
               {bloqueado ? ' · 🔒 bloqueado' : ''}
             </div>
           </div>
@@ -62,13 +61,6 @@ export default function PlanModalMes({
 
         {/* Conteudo */}
         <div style={{ overflowY: 'auto', flex: 1, padding: 20 }}>
-          {/* Labels das colunas — só no modo realizado */}
-          {aba === 'realizado' && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px', minWidth: 70, textAlign: 'right' }}>Planejado</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px', minWidth: 70, textAlign: 'right' }}>Realizado</span>
-            </div>
-          )}
           {/* Receitas */}
           <div style={{ marginBottom: 16 }}>
             <div style={{
@@ -76,7 +68,6 @@ export default function PlanModalMes({
               letterSpacing: '.4px', color: COR.verde, marginBottom: 8,
             }}>Receitas</div>
             {dadosAtivos.entradas.map((cat, ri) => {
-              const lancado = aba === 'realizado' ? (lancadoPorCatMes[mes]?.entrada[cat.nome] ?? 0) : 0
               const { icone } = iconeCategoria(categorias, cat.nome)
               return (
                 <div key={cat.nome} style={{
@@ -85,25 +76,11 @@ export default function PlanModalMes({
                 }}>
                   <span style={{ fontSize: 16 }}>{icone}</span>
                   <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
-                  {aba === 'realizado' ? (
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <PlanCelulaEditavel
-                        valor={cat.v[mes]}
-                        readOnly={false}
-                        onSave={v => onSave('e', ri, v)}
-                      />
-                      <span style={{
-                        fontSize: 13, fontWeight: 600, minWidth: 70, textAlign: 'right',
-                        color: lancado > 0 ? COR.verde : COR.textoSuave,
-                      }}>{fmt(lancado)}</span>
-                    </div>
-                  ) : (
-                    <PlanCelulaEditavel
-                      valor={cat.v[mes]}
-                      readOnly={bloqueado}
-                      onSave={v => onSave('e', ri, v)}
-                    />
-                  )}
+                  <PlanCelulaEditavel
+                    valor={cat.v[mes]}
+                    readOnly={bloqueado && aba === 'meu-plano'}
+                    onSave={v => onSave('e', ri, v)}
+                  />
                 </div>
               )
             })}
@@ -116,7 +93,6 @@ export default function PlanModalMes({
               letterSpacing: '.4px', color: COR.vermelho, marginBottom: 8,
             }}>Despesas</div>
             {dadosAtivos.saidas.map((cat, ri) => {
-              const lancado = aba === 'realizado' ? (lancadoPorCatMes[mes]?.saida[cat.nome] ?? 0) : 0
               const { icone } = iconeCategoria(categorias, cat.nome)
               return (
                 <div key={cat.nome} style={{
@@ -125,25 +101,11 @@ export default function PlanModalMes({
                 }}>
                   <span style={{ fontSize: 16 }}>{icone}</span>
                   <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
-                  {aba === 'realizado' ? (
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <PlanCelulaEditavel
-                        valor={cat.v[mes]}
-                        readOnly={false}
-                        onSave={v => onSave('s', ri, v)}
-                      />
-                      <span style={{
-                        fontSize: 13, fontWeight: 600, minWidth: 70, textAlign: 'right',
-                        color: lancado > 0 ? COR.vermelho : COR.textoSuave,
-                      }}>{fmt(lancado)}</span>
-                    </div>
-                  ) : (
-                    <PlanCelulaEditavel
-                      valor={cat.v[mes]}
-                      readOnly={bloqueado}
-                      onSave={v => onSave('s', ri, v)}
-                    />
-                  )}
+                  <PlanCelulaEditavel
+                    valor={cat.v[mes]}
+                    readOnly={bloqueado && aba === 'meu-plano'}
+                    onSave={v => onSave('s', ri, v)}
+                  />
                 </div>
               )
             })}

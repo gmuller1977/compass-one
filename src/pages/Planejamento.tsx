@@ -84,7 +84,7 @@ export default function Planejamento({
         {/* Abas */}
         {!hideTabs && (
           <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 3 }}>
-            {([['meu-plano', 'Meu plano'], ['realizado', 'Realizado']] as [Aba, string][])
+            {([['meu-plano', 'Meu plano'], ['realizado', 'Atualizado']] as [Aba, string][])
               .filter(([a]) => a !== 'realizado' || plan.realExiste)
               .map(([a, label]) => (
                 <button
