@@ -15,6 +15,7 @@ interface Props {
   lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   planoRef?: AnoData
   categorias: any[]
+  hasFaturaCat: boolean
   somaCartaoMes: number[]
   planejamentoLockado: boolean
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
@@ -72,6 +73,7 @@ export default function PlanGrade(props: Props) {
           dadosPrevisto={dadosPrevisto}
           dadosRealizado={dadosRealizado}
           aba={aba}
+          hasFaturaCat={props.hasFaturaCat}
           planejamentoLockado={props.planejamentoLockado}
           planoRef={props.planoRef as any}
           categorias={props.categorias}

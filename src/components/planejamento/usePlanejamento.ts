@@ -152,11 +152,18 @@ export function usePlanejamento(anoAtual: number) {
     return { ...dadosRealizado, saidas }
   }, [dadosRealizado, somaCartaoMes, cartaoNomes])
 
+  // Excluir t='cartao' dos totais só se existir fatura_cartao (evita dupla contagem)
+  // Sem fatura_cartao, as categorias cartao são o único planejamento do cartão
+  const hasFaturaCat = useMemo(() =>
+    dadosPrevisto.saidas.some(c => c.t === 'fatura_cartao' || nomeFaturaCartao(c.nome, cartaoNomes)),
+    [dadosPrevisto.saidas, cartaoNomes]
+  )
+
   // Totais para "Meu plano" (previsto)
-  const previsto = useMemo(() => calcSaldos(dadosPrevistoFinal, true), [dadosPrevistoFinal])
+  const previsto = useMemo(() => calcSaldos(dadosPrevistoFinal, hasFaturaCat), [dadosPrevistoFinal, hasFaturaCat])
 
   // Totais para "Realizado" (planosReal)
-  const realizadoPlan = useMemo(() => calcSaldos(dadosRealizadoFinal, true), [dadosRealizadoFinal])
+  const realizadoPlan = useMemo(() => calcSaldos(dadosRealizadoFinal, hasFaturaCat), [dadosRealizadoFinal, hasFaturaCat])
 
   // Lançamentos reais por categoria e mês (do extrato/fatura)
   const lancadoPorCatMes = useMemo(() => {
@@ -351,6 +358,7 @@ export function usePlanejamento(anoAtual: number) {
     entradasComHistorico,
     saidasComHistorico,
     realExiste,
+    hasFaturaCat,
     somaCartaoMes,
     somaCartaoBadges,
     cartaoNomes,

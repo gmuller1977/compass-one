@@ -8,6 +8,7 @@ interface Props {
   dadosRealizado: AnoData | null
   aba: 'meu-plano' | 'realizado'
   planejamentoLockado: boolean
+  hasFaturaCat: boolean
   planoRef?: AnoData
   categorias: any[]
   onSave: (tipo: 'e' | 's', ri: number, valor: number) => void
@@ -16,13 +17,16 @@ interface Props {
 }
 
 export default function PlanModalMes({
-  mes, dadosPrevisto, dadosRealizado, aba, planejamentoLockado,
+  mes, dadosPrevisto, dadosRealizado, aba, planejamentoLockado, hasFaturaCat,
   categorias, onSave, onClose,
 }: Props) {
   const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
 
-  const saidasVisiveis = dadosAtivos.saidas.filter(c => c.t !== 'cartao')
+  // Só oculta categorias 'cartao' quando existe fatura_cartao (evita dupla contagem)
+  const saidasVisiveis = hasFaturaCat
+    ? dadosAtivos.saidas.filter(c => c.t !== 'cartao')
+    : dadosAtivos.saidas
   const teTotal = dadosAtivos.entradas.reduce((s, c) => s + c.v[mes], 0)
   const tsTotal = saidasVisiveis.reduce((s, c) => s + c.v[mes], 0)
   const resultado = teTotal - tsTotal
@@ -94,7 +98,7 @@ export default function PlanModalMes({
               letterSpacing: '.4px', color: COR.vermelho, marginBottom: 8,
             }}>Despesas</div>
             {dadosAtivos.saidas.map((cat, ri) => {
-              if (cat.t === 'cartao') return null
+              if (hasFaturaCat && cat.t === 'cartao') return null
               const { icone } = iconeCategoria(categorias, cat.nome)
               return (
                 <div key={cat.nome} style={{

@@ -226,6 +226,7 @@ export default function Planejamento({
             lancadoPorCatMes={plan.lancadoPorCatMes}
             planoRef={plan.planoRef as any}
             categorias={plan.categorias}
+            hasFaturaCat={plan.hasFaturaCat}
             somaCartaoMes={plan.somaCartaoMes}
             planejamentoLockado={plan.planejamentoLockado}
             onSave={handleSave}
