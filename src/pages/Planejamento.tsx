@@ -7,6 +7,7 @@ import { type Aba, type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPlanilha from '../components/planejamento/PlanPlanilha'
 import PlanLista from '../components/planejamento/PlanLista'
+import PlanRevisao from '../components/planejamento/PlanRevisao'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -45,6 +46,7 @@ export default function Planejamento({
   const viewMode: ViewMode =
     modoParam === 'planilha' ? 'planilha'
     : modoParam === 'lista' ? 'lista'
+    : modoParam === 'revisao' ? 'revisao'
     : 'grade'
 
   const dadosAtivos = aba === 'realizado' ? plan.dadosRealizadoFinal : plan.dadosPrevistoFinal
@@ -52,6 +54,12 @@ export default function Planejamento({
 
   function handleSave(tipo: 'e' | 's', ri: number, mi: number, valor: number) {
     plan.editarValor(tipo, ri, mi, valor, aba)
+  }
+
+  function handleAjustar(tipo: 'e' | 's', ri: number, mesInicio: number, valor: number) {
+    for (let mi = mesInicio; mi <= 11; mi++) {
+      plan.editarValor(tipo, ri, mi, valor, aba)
+    }
   }
 
   function handleAtivar() {
@@ -100,13 +108,13 @@ export default function Planejamento({
 
         {/* Controles a direita */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
-          {/* Seletor de view */}
-          {!isMobile && (
+          {/* Seletor de view — apenas no mobile */}
+          {isMobile && (
             <div style={{ display: 'flex', gap: 2, background: '#f1f5f9', borderRadius: 8, padding: 2 }}>
               {([
                 ['grade', 'Grade'],
-                ['planilha', 'Planilha'],
                 ['lista', 'Lista'],
+                ['revisao', 'Revisão'],
               ] as [ViewMode, string][]).map(([v, label]) => (
                 <button
                   key={v}
@@ -197,7 +205,17 @@ export default function Planejamento({
       {renderAvisoPlanoBloqueado()}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {viewMode === 'grade' && (
+        {viewMode === 'revisao' ? (
+          <PlanRevisao
+            anoAtual={anoAtual}
+            mesAtual={plan.mesAtual}
+            dadosPrevisto={plan.dadosPrevistoFinal}
+            dadosRealizado={plan.dadosRealizadoFinal}
+            lancadoPorCatMes={plan.lancadoPorCatMes}
+            categorias={plan.categorias}
+            onAjustar={handleAjustar}
+          />
+        ) : viewMode === 'grade' ? (
           <PlanGrade
             aba={aba as 'meu-plano' | 'realizado'}
             anoAtual={anoAtual}
@@ -206,9 +224,6 @@ export default function Planejamento({
             dadosRealizado={plan.realExiste ? plan.dadosRealizadoFinal : null}
             previsto={plan.previsto}
             realizadoPlan={plan.realizadoPlan}
-            totaisReais={plan.totaisReais}
-            saldoFinalReal={plan.saldoFinalReal}
-            mesTemDadosReais={plan.mesTemDadosReais}
             lancadoPorCatMes={plan.lancadoPorCatMes}
             planoRef={plan.planoRef as any}
             categorias={plan.categorias}
@@ -216,8 +231,7 @@ export default function Planejamento({
             planejamentoLockado={plan.planejamentoLockado}
             onSave={handleSave}
           />
-        )}
-        {viewMode === 'planilha' && (
+        ) : viewMode === 'planilha' ? (
           <PlanPlanilha
             aba={aba as 'meu-plano' | 'realizado'}
             anoAtual={anoAtual}
@@ -229,8 +243,7 @@ export default function Planejamento({
             onSave={handleSave}
             lancadoPorCatMes={aba === 'realizado' ? plan.lancadoPorCatMes : undefined}
           />
-        )}
-        {viewMode === 'lista' && (
+        ) : (
           <PlanLista
             aba={aba as 'meu-plano' | 'realizado'}
             anoAtual={anoAtual}

@@ -90,21 +90,14 @@ export function usePlanejamento(anoAtual: number) {
     return [...dadosBase.saidas, ...inativas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
   }, [dadosBase.saidas, planosReal, anoAtual])
 
-  // Cálculo de fatura de cartão por mês (sempre baseado em dadosPrevisto)
+  // Cálculo de fatura de cartão por mês: informado → lançamentos reais mês anterior → R$0
   const somaCartaoMes = useMemo(() => {
     const faturaCatsPlan = dadosPrevisto.saidas.filter(c => c.t === 'fatura_cartao')
-    const cartCats = dadosPrevisto.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes))
-    const anoAnterior = planos[anoAtual - 1] as AnoData | undefined
-    const cartCatsAnterior = anoAnterior?.saidas.filter(c => c.t === 'cartao' && !nomeFaturaCartao(c.nome, cartaoNomes)) ?? []
     const cartoesContas = contas.filter(c => c.tipo === 'cartao')
     const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
     return MESES.map((_, i) => {
       const informado = faturaCatsPlan.reduce((s, c) => s + (c.v[i] ?? 0), 0)
       if (informado > 0) return informado
-      const somaAnterior = i === 0
-        ? cartCatsAnterior.reduce((s, c) => s + (c.v[11] ?? 0), 0)
-        : cartCats.reduce((s, c) => s + c.v[i - 1], 0)
-      if (somaAnterior > 0) return somaAnterior
       const prevMes = i === 0 ? 11 : i - 1
       const prevAno = i === 0 ? anoAtual - 1 : anoAtual
       const prevMesStr = String(prevMes + 1).padStart(2, '0')
@@ -121,7 +114,7 @@ export function usePlanejamento(anoAtual: number) {
       }
       return Math.max(0, calculado)
     })
-  }, [dadosPrevisto, cartaoNomes, planos, anoAtual, contas, faturaData])
+  }, [dadosPrevisto, anoAtual, contas, faturaData])
 
   const somaCartaoBadges = useMemo(() => {
     const faturaCatsPlan = dadosPrevisto.saidas.filter(c => c.t === 'fatura_cartao')
@@ -141,29 +134,21 @@ export function usePlanejamento(anoAtual: number) {
     }) as ('informado' | 'calculado' | 'sem_dados')[]
   }, [dadosPrevisto, contas, faturaData, anoAtual])
 
-  // dadosPrevisto com fatura de cartão injetada nas saídas
+  // dadosPrevisto com fatura de cartão substituída pelo valor calculado
   const dadosPrevistoFinal: AnoData = useMemo(() => {
     const isFatura = (cat: Cat) => nomeFaturaCartao(cat.nome, cartaoNomes) || cat.t === 'fatura_cartao'
-    const hasFaturaCat = dadosPrevisto.saidas.some(isFatura)
     const saidas = dadosPrevisto.saidas.map(cat =>
       isFatura(cat) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
     )
-    if (!hasFaturaCat && somaCartaoMes.some(v => v > 0)) {
-      saidas.push({ nome: 'Cartao de Credito', t: undefined, v: somaCartaoMes })
-    }
     return { ...dadosPrevisto, saidas }
   }, [dadosPrevisto, somaCartaoMes, cartaoNomes])
 
-  // dadosRealizado com fatura de cartão injetada
+  // dadosRealizado com fatura de cartão substituída pelo valor calculado
   const dadosRealizadoFinal: AnoData = useMemo(() => {
     const isFatura = (cat: Cat) => nomeFaturaCartao(cat.nome, cartaoNomes) || cat.t === 'fatura_cartao'
-    const hasFaturaCat = dadosRealizado.saidas.some(isFatura)
     const saidas = dadosRealizado.saidas.map(cat =>
       isFatura(cat) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
     )
-    if (!hasFaturaCat && somaCartaoMes.some(v => v > 0)) {
-      saidas.push({ nome: 'Cartao de Credito', t: undefined, v: somaCartaoMes })
-    }
     return { ...dadosRealizado, saidas }
   }, [dadosRealizado, somaCartaoMes, cartaoNomes])
 

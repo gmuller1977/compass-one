@@ -12,9 +12,6 @@ interface Props {
   dadosRealizado: AnoData | null
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   realizadoPlan: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  totaisReais: { te: number[]; ts: number[] }
-  saldoFinalReal: number[]
-  mesTemDadosReais: boolean[]
   lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   planoRef?: AnoData
   categorias: any[]
@@ -28,10 +25,9 @@ export default function PlanGrade(props: Props) {
 
   const {
     aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado,
-    previsto, realizadoPlan, totaisReais, saldoFinalReal, mesTemDadosReais,
+    previsto, realizadoPlan,
   } = props
 
-  // Usa os totais do plano correto para a aba ativa
   const planTotais = aba === 'realizado' ? realizadoPlan : previsto
 
   const receitasAnuais = planTotais.totalEntradas.reduce((a, b) => a + b, 0)
@@ -61,11 +57,6 @@ export default function PlanGrade(props: Props) {
             saldoPrevisto={planTotais.saldoFinal[mi]}
             isAtual={mi === mesAtual && anoAtual === new Date().getFullYear()}
             onClick={() => setModalMes(mi)}
-            aba={aba}
-            receitasReais={totaisReais.te[mi]}
-            despesasReais={totaisReais.ts[mi]}
-            saldoReal={saldoFinalReal[mi]}
-            temDadosReais={mesTemDadosReais[mi]}
           />
         ))}
       </div>

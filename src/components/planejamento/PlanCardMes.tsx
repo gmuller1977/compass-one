@@ -7,27 +7,12 @@ interface Props {
   saldoPrevisto: number
   isAtual: boolean
   onClick: () => void
-  aba: 'meu-plano' | 'realizado'
-  receitasReais?: number
-  despesasReais?: number
-  saldoReal?: number
-  temDadosReais?: boolean
 }
 
-export default function PlanCardMes({
-  mes, receitas, despesas, saldoPrevisto,
-  isAtual, onClick, aba,
-  receitasReais = 0, despesasReais = 0, saldoReal = 0, temDadosReais = false,
-}: Props) {
+export default function PlanCardMes({ mes, receitas, despesas, saldoPrevisto, isAtual, onClick }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
   const stripColor = isAtual ? COR.azul : resultado >= 0 ? COR.verde : COR.vermelho
-
-  const showReal = aba === 'realizado' && temDadosReais
-  const dispReceitas = showReal ? receitasReais : receitas
-  const dispDespesas = showReal ? despesasReais : despesas
-  const dispSaldo = showReal ? saldoReal : saldoPrevisto
-  const dispResultado = dispReceitas - dispDespesas
 
   return (
     <div
@@ -52,11 +37,9 @@ export default function PlanCardMes({
         el.style.borderColor = isAtual ? COR.azul : COR.borda
       }}
     >
-      {/* Strip colorido no topo */}
       <div style={{ height: 4, background: stripColor }} />
 
       <div style={{ padding: '10px 12px' }}>
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>{MESES_FULL[mes]}</span>
           {isAtual && (
@@ -67,29 +50,25 @@ export default function PlanCardMes({
           )}
         </div>
 
-        {/* Receitas */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
           <span style={{ color: COR.textoSuave }}>Receitas</span>
-          <span style={{ fontWeight: 600, color: COR.verde, fontVariantNumeric: 'tabular-nums' }}>{fmt(dispReceitas, true)}</span>
+          <span style={{ fontWeight: 600, color: COR.verde, fontVariantNumeric: 'tabular-nums' }}>{fmt(receitas, true)}</span>
         </div>
 
-        {/* Despesas */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
           <span style={{ color: COR.textoSuave }}>Despesas</span>
-          <span style={{ fontWeight: 600, color: COR.vermelho, fontVariantNumeric: 'tabular-nums' }}>{fmt(dispDespesas, true)}</span>
+          <span style={{ fontWeight: 600, color: COR.vermelho, fontVariantNumeric: 'tabular-nums' }}>{fmt(despesas, true)}</span>
         </div>
 
-        {/* Separador + Resultado */}
         <div style={{ borderTop: `1px solid ${COR.borda}`, paddingTop: 6, marginBottom: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
             <span style={{ color: COR.textoSuave }}>= Resultado</span>
-            <span style={{ fontWeight: 700, color: dispResultado >= 0 ? COR.verde : COR.vermelho, fontVariantNumeric: 'tabular-nums' }}>
-              {dispResultado >= 0 ? '+' : ''}{fmt(dispResultado, true)}
+            <span style={{ fontWeight: 700, color: resultado >= 0 ? COR.verde : COR.vermelho, fontVariantNumeric: 'tabular-nums' }}>
+              {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
             </span>
           </div>
         </div>
 
-        {/* Barra de progresso despesas/receitas */}
         <div style={{ height: 4, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
           <div style={{
             height: '100%', width: `${percDespesas}%`,
@@ -101,19 +80,18 @@ export default function PlanCardMes({
           {Math.round(percDespesas)}% utilizado
         </div>
 
-        {/* Saldo previsto */}
         <div style={{
-          background: dispSaldo >= 0 ? '#f0fdf4' : '#fef2f2',
-          border: `1px solid ${dispSaldo >= 0 ? '#bbf7d0' : '#fecaca'}`,
+          background: saldoPrevisto >= 0 ? '#f0fdf4' : '#fef2f2',
+          border: `1px solid ${saldoPrevisto >= 0 ? '#bbf7d0' : '#fecaca'}`,
           borderRadius: 8, padding: '6px 10px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <span style={{ fontSize: 11, color: COR.textoSuave }}>Saldo</span>
           <span style={{
             fontSize: 13, fontWeight: 700,
-            color: dispSaldo >= 0 ? COR.verde : COR.vermelho,
+            color: saldoPrevisto >= 0 ? COR.verde : COR.vermelho,
             fontVariantNumeric: 'tabular-nums',
-          }}>{fmt(dispSaldo, true)}</span>
+          }}>{fmt(saldoPrevisto, true)}</span>
         </div>
       </div>
     </div>
