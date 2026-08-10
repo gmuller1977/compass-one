@@ -22,8 +22,9 @@ export default function PlanModalMes({
   const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
 
+  const saidasVisiveis = dadosAtivos.saidas.filter(c => c.t !== 'cartao')
   const teTotal = dadosAtivos.entradas.reduce((s, c) => s + c.v[mes], 0)
-  const tsTotal = dadosAtivos.saidas.reduce((s, c) => s + c.v[mes], 0)
+  const tsTotal = saidasVisiveis.reduce((s, c) => s + c.v[mes], 0)
   const resultado = teTotal - tsTotal
 
   return (
@@ -93,6 +94,7 @@ export default function PlanModalMes({
               letterSpacing: '.4px', color: COR.vermelho, marginBottom: 8,
             }}>Despesas</div>
             {dadosAtivos.saidas.map((cat, ri) => {
+              if (cat.t === 'cartao') return null
               const { icone } = iconeCategoria(categorias, cat.nome)
               return (
                 <div key={cat.nome} style={{
