@@ -28,13 +28,16 @@ export default function PlanGrade(props: Props) {
 
   const {
     aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado,
-    previsto, totaisReais, saldoFinalReal, mesTemDadosReais,
+    previsto, realizadoPlan, totaisReais, saldoFinalReal, mesTemDadosReais,
   } = props
 
-  const receitasAnuais = previsto.totalEntradas.reduce((a, b) => a + b, 0)
-  const despesasAnuais = previsto.totalSaidas.reduce((a, b) => a + b, 0)
-  const resultadoDez = previsto.saldoFinal[11]
-  const saldoIni = previsto.saldoInicial[0]
+  // Usa os totais do plano correto para a aba ativa
+  const planTotais = aba === 'realizado' ? realizadoPlan : previsto
+
+  const receitasAnuais = planTotais.totalEntradas.reduce((a, b) => a + b, 0)
+  const despesasAnuais = planTotais.totalSaidas.reduce((a, b) => a + b, 0)
+  const resultadoDez = planTotais.saldoFinal[11]
+  const saldoIni = planTotais.saldoInicial[0]
 
   return (
     <div style={{ padding: '16px 20px' }}>
@@ -53,9 +56,9 @@ export default function PlanGrade(props: Props) {
           <PlanCardMes
             key={mi}
             mes={mi}
-            receitas={previsto.totalEntradas[mi]}
-            despesas={previsto.totalSaidas[mi]}
-            saldoPrevisto={previsto.saldoFinal[mi]}
+            receitas={planTotais.totalEntradas[mi]}
+            despesas={planTotais.totalSaidas[mi]}
+            saldoPrevisto={planTotais.saldoFinal[mi]}
             isAtual={mi === mesAtual && anoAtual === new Date().getFullYear()}
             onClick={() => setModalMes(mi)}
             aba={aba}
