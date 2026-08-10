@@ -6,7 +6,6 @@ interface Props {
   anoAtual: number
   mesAtual: number
   dadosPrevisto: AnoData
-  dadosRealizado: AnoData
   lancadoPorCatMes: Record<number, {
     entrada: Record<string, number>
     saida: Record<string, number>
@@ -30,7 +29,7 @@ function badge(tipo: 'e' | 's', planejado: number, realizado: number) {
 }
 
 export default function PlanRevisao({
-  anoAtual, mesAtual, dadosPrevisto, dadosRealizado, lancadoPorCatMes, categorias, onAjustar,
+  anoAtual, mesAtual, dadosPrevisto, lancadoPorCatMes, categorias, onAjustar,
 }: Props) {
   const hoje = new Date()
   const anoHoje = hoje.getFullYear()

@@ -210,7 +210,6 @@ export default function Planejamento({
             anoAtual={anoAtual}
             mesAtual={plan.mesAtual}
             dadosPrevisto={plan.dadosPrevistoFinal}
-            dadosRealizado={plan.dadosRealizadoFinal}
             lancadoPorCatMes={plan.lancadoPorCatMes}
             categorias={plan.categorias}
             onAjustar={handleAjustar}
