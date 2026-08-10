@@ -62,6 +62,13 @@ export default function PlanModalMes({
 
         {/* Conteudo */}
         <div style={{ overflowY: 'auto', flex: 1, padding: 20 }}>
+          {/* Labels das colunas — só no modo realizado */}
+          {aba === 'realizado' && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px', minWidth: 70, textAlign: 'right' }}>Planejado</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px', minWidth: 70, textAlign: 'right' }}>Realizado</span>
+            </div>
+          )}
           {/* Receitas */}
           <div style={{ marginBottom: 16 }}>
             <div style={{
@@ -79,13 +86,17 @@ export default function PlanModalMes({
                   <span style={{ fontSize: 16 }}>{icone}</span>
                   <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
                   {aba === 'realizado' ? (
-                    <>
-                      <span style={{ fontSize: 12, color: COR.textoSuave }}>{fmt(cat.v[mes])}</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <PlanCelulaEditavel
+                        valor={cat.v[mes]}
+                        readOnly={false}
+                        onSave={v => onSave('e', ri, v)}
+                      />
                       <span style={{
-                        fontSize: 13, fontWeight: 600,
+                        fontSize: 13, fontWeight: 600, minWidth: 70, textAlign: 'right',
                         color: lancado > 0 ? COR.verde : COR.textoSuave,
                       }}>{fmt(lancado)}</span>
-                    </>
+                    </div>
                   ) : (
                     <PlanCelulaEditavel
                       valor={cat.v[mes]}
@@ -115,13 +126,17 @@ export default function PlanModalMes({
                   <span style={{ fontSize: 16 }}>{icone}</span>
                   <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
                   {aba === 'realizado' ? (
-                    <>
-                      <span style={{ fontSize: 12, color: COR.textoSuave }}>{fmt(cat.v[mes])}</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <PlanCelulaEditavel
+                        valor={cat.v[mes]}
+                        readOnly={false}
+                        onSave={v => onSave('s', ri, v)}
+                      />
                       <span style={{
-                        fontSize: 13, fontWeight: 600,
+                        fontSize: 13, fontWeight: 600, minWidth: 70, textAlign: 'right',
                         color: lancado > 0 ? COR.vermelho : COR.textoSuave,
                       }}>{fmt(lancado)}</span>
-                    </>
+                    </div>
                   ) : (
                     <PlanCelulaEditavel
                       valor={cat.v[mes]}

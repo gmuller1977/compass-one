@@ -67,21 +67,19 @@ export default function PlanGrupoAccordion({
                 }}>
                   <span style={{ fontSize: 14 }}>{icone}</span>
                   <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
-                  {aba === 'realizado' ? (
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: COR.textoSuave }}>{fmt(cat.v[mesSelecionado])}</span>
-                      <span style={{
-                        fontSize: 13, fontWeight: 600,
-                        color: lancado > 0 ? (tipo === 'e' ? COR.verde : COR.vermelho) : COR.textoSuave,
-                      }}>{fmt(lancado)}</span>
-                    </div>
-                  ) : (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <PlanCelulaEditavel
                       valor={cat.v[mesSelecionado]}
                       readOnly={bloqueado}
                       onSave={v => onSave(tipo, ri, mesSelecionado, v)}
                     />
-                  )}
+                    {aba === 'realizado' && (
+                      <span style={{
+                        fontSize: 13, fontWeight: 600, minWidth: 70, textAlign: 'right',
+                        color: lancado > 0 ? (tipo === 'e' ? COR.verde : COR.vermelho) : COR.textoSuave,
+                      }}>{fmt(lancado)}</span>
+                    )}
+                  </div>
                 </div>
               )
             })}
