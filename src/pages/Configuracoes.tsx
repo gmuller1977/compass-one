@@ -568,6 +568,11 @@ export default function Configuracoes() {
       toast('Categoria atualizada')
       setMobileView('list')
     } else {
+      const nomeNorm = formCat.nome.trim().toLowerCase()
+      const duplicata = categorias.find(c =>
+        c.nome.trim().toLowerCase() === nomeNorm && c.tipo === formCat.tipo
+      )
+      if (duplicata) return setErroCat(`Já existe uma categoria "${duplicata.nome}" neste tipo`)
       setCategorias(prev => [...prev, {id:gerarId(),...formCat, ativa:true}])
       toast('Categoria criada')
       setMobileView('list')
