@@ -1,89 +1,24 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import type { DadosMes as ExtratoDadosMes } from '../context/AppContext'
-import { iconeCategoria } from '../utils/categoriaIcone'
-
-const COR = {
-  azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
-  fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
-  textoSuave: '#64748b', borda: '#e2e8f0',
-  verde: '#16a34a', vermelho: '#dc2626',
-}
-
-type TipoLanc = 'entrada' | 'saida'
-type FormaPag = 'credito'
-
-
-type Lancamento = {
-  id: string; tipo: TipoLanc
-  descricao: string; categoria: string
-  valor: number; formaPagamento: FormaPag
-  tipoLanc: 'fixa'|'variavel'
-  consolidado?: boolean
-  parcelas?: number
-  parcelaAtual?: number
-  diaCompra?: number; mesCompra?: number; anoCompra?: number
-}
-
-type DadosMes = {
-  lancamentos: Record<number, Lancamento[]>
-  faturaAtual: string
-  faturaAtualData?: string
-  fechamentoOverride?: number
-  vencimentoOverride?: number
-  fixasConsolidadas?: Record<string, boolean>
-  fixasMovidas?: Record<string, number>
-  fixasValorOverride?: Record<string, number>
-  fixasDescOverride?: Record<string, string>
-  fixasPagOverride?: Record<string, FormaPag>
-}
-
-const DADOS_MES_VAZIO: DadosMes = { lancamentos:{}, faturaAtual:'' }
-
-function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
-function diaSemana(d: number, m: number, a: number) {
-  return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][new Date(a,m,d).getDay()]
-}
-function mesKey(conta: string, ano: number, mes: number) {
-  return `${conta}-${ano}-${String(mes+1).padStart(2,'0')}`
-}
-function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
-function parseBRL(s: string) { return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0 }
-
-const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-
-function parseDateFatura(s: string, mesDefault: number, anoDefault: number): {dia:number;mes:number;ano:number}|null {
-  const t = s.trim()
-  if (!t) return null
-  if (t.includes('/')) {
-    const p = t.split('/')
-    const dia = parseInt(p[0]) || 0
-    const mes = p.length > 1 ? (parseInt(p[1]) || 0) : mesDefault + 1
-    let ano = anoDefault
-    if (p.length > 2 && p[2]) { const y = parseInt(p[2]) || 0; ano = y > 0 ? (y < 100 ? 2000+y : y) : anoDefault }
-    return dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12 ? { dia, mes: mes-1, ano } : null
-  }
-  const d = t.replace(/\D/g, '')
-  if (d.length <= 2) { const dia=parseInt(d); return dia>=1&&dia<=31 ? {dia,mes:mesDefault,ano:anoDefault} : null }
-  if (d.length === 4) { const dia=parseInt(d.slice(0,2)),mes=parseInt(d.slice(2,4)); return dia>=1&&dia<=31&&mes>=1&&mes<=12 ? {dia,mes:mes-1,ano:anoDefault} : null }
-  if (d.length === 6) { const dia=parseInt(d.slice(0,2)),mes=parseInt(d.slice(2,4)),y=parseInt(d.slice(4,6)); return dia>=1&&dia<=31&&mes>=1&&mes<=12 ? {dia,mes:mes-1,ano:2000+y} : null }
-  if (d.length === 8) { const dia=parseInt(d.slice(0,2)),mes=parseInt(d.slice(2,4)),ano=parseInt(d.slice(4,8)); return dia>=1&&dia<=31&&mes>=1&&mes<=12 ? {dia,mes:mes-1,ano} : null }
-  return null
-}
+import {
+  COR, DADOS_MES_VAZIO,
+  diasNoMes, mesKey, fmt, parseBRL, parseDateFatura,
+  type TipoLanc, type FormaPag, type Lancamento, type DadosMes,
+} from '../components/faturaCartao/FcShared'
+import FcMobileView from '../components/faturaCartao/FcMobileView'
+import FcDesktopLeft from '../components/faturaCartao/FcDesktopLeft'
+import FcDesktopPanel from '../components/faturaCartao/FcDesktopPanel'
+import FcModal from '../components/faturaCartao/FcModal'
 
 function useIsMobile() {
   const [m, setM] = useState(() => window.innerWidth < 640)
-  useEffect(() => { const fn = () => setM(window.innerWidth < 640); window.addEventListener('resize', fn); return () => window.removeEventListener('resize', fn) }, [])
+  useEffect(() => {
+    const fn = () => setM(window.innerWidth < 640)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
   return m
-}
-
-function realcarFoco(e: React.FocusEvent<HTMLElement>) {
-  e.currentTarget.style.border = `1.5px solid ${COR.azul}`
-  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,86,219,0.15)'
-}
-function removerRealce(e: React.FocusEvent<HTMLElement>) {
-  e.currentTarget.style.border = '1.5px solid #bae6fd'
-  e.currentTarget.style.boxShadow = 'none'
 }
 
 export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mobileSelecionado?: string; onVoltar?: () => void; onCartaoChange?: (id: string) => void } = {}) {
@@ -156,8 +91,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
   // Vencimento = a própria aba (mes = mês de pagamento)
   const mesVenc = mes
   const anoVenc = ano
-
-
 
   // Status da fatura
   const faturaStatus =
@@ -265,7 +198,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
     }, 50)
     return () => clearTimeout(t)
   }, [key, carregando]) // eslint-disable-line react-hooks/exhaustive-deps
-
 
   function toggleDia(dateKey: string) {
     setDiasFechados(prev => {
@@ -376,7 +308,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
     }, 0)
   }, [dados, mes, ano, contas])
 
-
   function lancar() {
     const valorParcela = parseBRL(fValor)
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
@@ -482,7 +413,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
                 [diaSel]: [...(dadosMes.lancamentos[diaSel]??[]), {
                   id:`${baseId}-${p}`, tipo:fTipo,
                   descricao:desc, categoria:fCat,
-                  valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
+                  valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
                   consolidado: p===1 ? !ehDiaFuturo(diaSel) : false,
                   parcelas:nParcelas, parcelaAtual:p,
                   diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
@@ -507,7 +438,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
               [diaSel]: [...(dm.lancamentos[diaSel]??[]), {
                 id:`${baseId}-1`, tipo:fTipo,
                 descricao:fDesc.trim()||fCat, categoria:fCat,
-                valor:valorParcela, formaPagamento:'credito', tipoLanc:'variavel',
+                valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
                 consolidado: !ehDiaFuturo(diaSel),
                 diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
               }],
@@ -546,1200 +477,115 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
     }
   }
 
-  // Mês/ano de vencimento da fatura exibida
+  // ── Mobile ──────────────────────────────────────────────────────────
   if (isMobile) {
-    const prevMesNav = () => { if (mes === 0) { setMes(11); setAno(y => y-1) } else setMes(m => m-1) }
-    const nextMesNav = () => { if (mes === 11) { setMes(0); setAno(y => y+1) } else setMes(m => m+1) }
-    const statusCor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#d97706'
-    const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
-    const disponivel = totalPrevisto - grandTotalFaturas
     return (
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo}}>
-
-        {/* SUB-HEADER */}
-        <div style={{flexShrink:0,background:COR.branco,boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
-          {/* Cartão pills */}
-          <div style={{display:'flex',gap:6,padding:'10px 14px 4px',overflowX:'auto',
-            scrollbarWidth:'none' as const}}>
-            {contasCartao.map(c => {
-              const ativa = c.id === contaId
-              return (
-                <button key={c.id}
-                  onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }}
-                  style={{display:'flex',alignItems:'center',gap:6,padding:'6px 14px',
-                    borderRadius:20,border:`1.5px solid ${ativa ? COR.azul : COR.borda}`,
-                    background:ativa ? '#eff6ff' : '#f8faff',flexShrink:0,
-                    cursor:'pointer',whiteSpace:'nowrap' as const,
-                    fontFamily:'inherit',fontSize:12,fontWeight:600,
-                    color:ativa ? COR.azul : COR.textoSuave}}>
-                  <div style={{width:8,height:8,borderRadius:'50%',background:c.cor,flexShrink:0}}/>
-                  <span style={{fontSize:14,lineHeight:1}}>{c.icone}</span>
-                  {c.banco}{c.apelido ? ` ${c.apelido}` : ''}
-                </button>
-              )
-            })}
-          </div>
-          {/* Mês nav + status badge */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'8px 14px 10px'}}>
-            <button onClick={prevMesNav} style={{width:30,height:30,borderRadius:9,border:'none',
-              background:'#f0f4ff',display:'flex',alignItems:'center',justifyContent:'center',
-              cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>‹</button>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:15,fontWeight:700,color:COR.texto}}>
-                {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''}
-              </span>
-              <span style={{fontSize:10,fontWeight:700,padding:'3px 10px',borderRadius:20,
-                background:statusCor+'18',color:statusCor,border:`1px solid ${statusCor}44`}}>
-                {statusLbl}
-              </span>
-            </div>
-            <button onClick={nextMesNav} style={{width:30,height:30,borderRadius:9,border:'none',
-              background:'#f0f4ff',display:'flex',alignItems:'center',justifyContent:'center',
-              cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>›</button>
-          </div>
-        </div>
-
-        {/* INFO BAR: fecha · vence — chips + painel expandido */}
-        <div style={{flexShrink:0,background:COR.branco,borderBottom:`1px solid ${COR.borda}`}}>
-          {/* Chips row */}
-          <div style={{padding:'7px 12px',display:'flex',alignItems:'center',gap:8}}>
-            {/* Chip fechamento */}
-            <div onClick={() => {
-                if (editandoFechamento) { setEditandoFechamento(false); return }
-                setEditFechVal(diaFechamento)
-                setEditandoFechamento(true); setEditandoVencimento(false)
-              }}
-              style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
-                background: editandoFechamento ? '#eff6ff' : '#f8faff',
-                border:`1.5px solid ${editandoFechamento ? COR.azul : COR.azul+'44'}`,
-                borderRadius:20,padding:'5px 12px',flexShrink:0}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.azul}}>
-                ✂ Fecha dia {diaFechamento}
-              </span>
-              {mesDados.fechamentoOverride && <span style={{fontSize:9,color:'#94a3b8'}}>*</span>}
-            </div>
-
-            <span style={{color:'#e2e8f0',fontSize:11,flexShrink:0}}>·</span>
-
-            {/* Chip vencimento */}
-            <div onClick={() => {
-                if (editandoVencimento) { setEditandoVencimento(false); return }
-                setEditVencVal(diaVencimento)
-                setEditandoVencimento(true); setEditandoFechamento(false)
-              }}
-              style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
-                background: editandoVencimento ? '#fff5f5' : '#fff8f8',
-                border:`1.5px solid ${editandoVencimento ? COR.vermelho : COR.vermelho+'44'}`,
-                borderRadius:20,padding:'5px 12px',flexShrink:0}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.vermelho}}>
-                📅 Vence dia {diaVencimento}
-              </span>
-              {mesDados.vencimentoOverride && <span style={{fontSize:9,color:'#94a3b8'}}>*</span>}
-            </div>
-          </div>
-
-          {/* Painel expandido — Fechamento */}
-          {editandoFechamento && (
-            <div style={{padding:'12px 14px 14px',borderTop:`1px solid ${COR.azul}22`,
-              background:'#f0f7ff'}}>
-              <div style={{fontSize:11,color:'#64748b',marginBottom:10,
-                display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{fontWeight:700,color:COR.azul}}>Dia de fechamento — {NOMES_MESES[purchaseMes]}</span>
-                <span style={{fontSize:10,color:'#94a3b8'}}>padrão: dia {diaFechamentoBase}</span>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <button onClick={() => setEditFechVal(v => Math.max(1,v-1))}
-                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.azul}55`,
-                    background:'#fff',fontSize:22,fontWeight:700,color:COR.azul,
-                    cursor:'pointer',fontFamily:'inherit',display:'flex',
-                    alignItems:'center',justifyContent:'center'}}>−</button>
-                <input type="number" min={1} max={31} value={editFechVal}
-                  onChange={e => setEditFechVal(Math.min(31,Math.max(1,parseInt(e.target.value)||1)))}
-                  style={{flex:1,textAlign:'center' as const,fontSize:28,fontWeight:800,
-                    color:COR.azul,border:`2px solid ${COR.azul}`,borderRadius:12,
-                    padding:'8px 0',background:'#fff',outline:'none',fontFamily:'inherit'}}/>
-                <button onClick={() => setEditFechVal(v => Math.min(31,v+1))}
-                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.azul}55`,
-                    background:'#fff',fontSize:22,fontWeight:700,color:COR.azul,
-                    cursor:'pointer',fontFamily:'inherit',display:'flex',
-                    alignItems:'center',justifyContent:'center'}}>+</button>
-              </div>
-              <div style={{display:'flex',gap:8,marginTop:10}}>
-                <button onClick={() => setEditandoFechamento(false)}
-                  style={{flex:1,padding:'10px',border:`1.5px solid ${COR.borda}`,
-                    borderRadius:10,background:COR.branco,color:COR.textoSuave,
-                    fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-                  Cancelar
-                </button>
-                <button onClick={() => {
-                    const v = Math.min(Math.max(editFechVal,1),31)
-                    if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
-                    else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
-                    setEditandoFechamento(false)
-                  }}
-                  style={{flex:2,padding:'10px',border:'none',borderRadius:10,
-                    background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                    color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  ✓ Confirmar dia {editFechVal}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Painel expandido — Vencimento */}
-          {editandoVencimento && (
-            <div style={{padding:'12px 14px 14px',borderTop:`1px solid ${COR.vermelho}22`,
-              background:'#fff5f5'}}>
-              <div style={{fontSize:11,color:'#64748b',marginBottom:10,
-                display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{fontWeight:700,color:COR.vermelho}}>Dia de vencimento — {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}</span>
-                <span style={{fontSize:10,color:'#94a3b8'}}>padrão: dia {diaVencimentoBase}</span>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:8}}>
-                <button onClick={() => setEditVencVal(v => Math.max(1,v-1))}
-                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.vermelho}55`,
-                    background:'#fff',fontSize:22,fontWeight:700,color:COR.vermelho,
-                    cursor:'pointer',fontFamily:'inherit',display:'flex',
-                    alignItems:'center',justifyContent:'center'}}>−</button>
-                <input type="number" min={1} max={31} value={editVencVal}
-                  onChange={e => setEditVencVal(Math.min(31,Math.max(1,parseInt(e.target.value)||1)))}
-                  style={{flex:1,textAlign:'center' as const,fontSize:28,fontWeight:800,
-                    color:COR.vermelho,border:`2px solid ${COR.vermelho}`,borderRadius:12,
-                    padding:'8px 0',background:'#fff',outline:'none',fontFamily:'inherit'}}/>
-                <button onClick={() => setEditVencVal(v => Math.min(31,v+1))}
-                  style={{width:44,height:44,borderRadius:12,border:`1.5px solid ${COR.vermelho}55`,
-                    background:'#fff',fontSize:22,fontWeight:700,color:COR.vermelho,
-                    cursor:'pointer',fontFamily:'inherit',display:'flex',
-                    alignItems:'center',justifyContent:'center'}}>+</button>
-              </div>
-              <div style={{display:'flex',gap:8,marginTop:10}}>
-                <button onClick={() => setEditandoVencimento(false)}
-                  style={{flex:1,padding:'10px',border:`1.5px solid ${COR.borda}`,
-                    borderRadius:10,background:COR.branco,color:COR.textoSuave,
-                    fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-                  Cancelar
-                </button>
-                <button onClick={() => {
-                    const v = Math.min(Math.max(editVencVal,1),31)
-                    if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
-                    else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
-                    setEditandoVencimento(false)
-                  }}
-                  style={{flex:2,padding:'10px',border:'none',borderRadius:10,
-                    background:`linear-gradient(135deg,#dc2626,#ef4444)`,
-                    color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  ✓ Confirmar dia {editVencVal}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* RESUMO STRIP */}
-        <div style={{flexShrink:0,background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-          padding:'10px 14px',display:'flex',gap:0}}>
-          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-            paddingRight:6,borderRight:`1px solid ${COR.borda}`}}>
-            <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-              textTransform:'uppercase' as const,letterSpacing:.3,textAlign:'center' as const}}>
-              Limite planejado
-            </span>
-            <span style={{fontSize:13,fontWeight:800,color:COR.azul,letterSpacing:-.3}}>
-              {fmt(totalPrevisto)}
-            </span>
-          </div>
-          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-            padding:'0 6px',borderRight:`1px solid ${COR.borda}`}}>
-            <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-              textTransform:'uppercase' as const,letterSpacing:.3,textAlign:'center' as const}}>
-              Fatura total
-            </span>
-            <span style={{fontSize:13,fontWeight:800,color:COR.vermelho,letterSpacing:-.3}}>
-              {fmt(grandTotalFaturas)}
-            </span>
-          </div>
-          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,paddingLeft:6}}>
-            <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-              textTransform:'uppercase' as const,letterSpacing:.3,textAlign:'center' as const}}>
-              Disponível
-            </span>
-            <span style={{fontSize:13,fontWeight:800,
-              color:disponivel>=0?COR.verde:COR.vermelho,letterSpacing:-.3}}>
-              {fmt(disponivel)}
-            </span>
-          </div>
-        </div>
-
-        {/* FORM VIEW */}
-        {mobileView === 'form' && (
-          <div style={{flex:1,overflowY:'auto',scrollbarWidth:'none' as const}}>
-            {/* Back bar */}
-            <div style={{background:COR.branco,padding:'10px 16px',
-              borderBottom:`1px solid ${COR.borda}`,
-              display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-              <button onClick={() => { resetarParaNovo(diaSel); setMobileView('extrato') }}
-                style={{border:'none',background:'transparent',color:COR.azul,
-                  fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>
-                ‹ Voltar
-              </button>
-              <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>
-                {editandoId ? 'Editar lançamento' : 'Novo lançamento'}
-              </span>
-            </div>
-
-            <div style={{padding:'14px',display:'flex',flexDirection:'column'}}>
-
-              {/* Toggle Compra / Estorno */}
-              <div style={{display:'flex',background:'#f1f5f9',borderRadius:12,
-                padding:3,gap:3,marginBottom:16}}>
-                {(['entrada','saida'] as const).map(t => {
-                  const ativo = fTipo === t
-                  const isCompra = t === 'entrada'
-                  return (
-                    <button key={t} onClick={() => setFTipo(t)} style={{
-                      flex:1,padding:10,border:'none',borderRadius:10,cursor:'pointer',
-                      fontSize:13,fontWeight:700,fontFamily:'inherit',
-                      display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                      background: ativo ? (isCompra ? '#fff1f2' : '#f0fdf4') : 'transparent',
-                      color: ativo ? (isCompra ? '#dc2626' : '#16a34a') : '#94a3b8',
-                      boxShadow: ativo ? (isCompra ? '0 2px 8px rgba(220,38,38,.12)' : '0 2px 8px rgba(22,163,74,.12)') : 'none',
-                    }}>
-                      {isCompra ? '↓ Compra' : '↑ Estorno'}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Data da compra */}
-              {(() => {
-                const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-                const dispDia = parsed?.dia ?? diaSel
-                const dispMes = parsed?.mes ?? purchaseMes
-                const dispAno = parsed?.ano ?? purchaseAno
-                const label = `📅 ${dispDia} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
-                return (
-                  <div style={{marginBottom:14}}>
-                    <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                      textTransform:'uppercase' as const,letterSpacing:.5,
-                      marginBottom:5,display:'block'}}>
-                      📅 Data da compra
-                    </label>
-                    <input ref={dataCompraRef} type="text" value={fDataCompra}
-                      onChange={e => setFDataCompra(e.target.value)}
-                      onBlur={() => {
-                        const p = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-                        if (p) {
-                          setDiaSel(p.dia)
-                          const acStr = p.ano !== purchaseAno ? `/${p.ano}` : ''
-                          setFDataCompra(`${String(p.dia).padStart(2,'0')}/${String(p.mes+1).padStart(2,'0')}${acStr}`)
-                        }
-                      }}
-                      placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
-                      style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                        padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
-                        fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
-                      onKeyDown={e => { if (e.key==='Enter') (e.target as HTMLInputElement).blur() }}/>
-                    <div style={{fontSize:11,color:COR.azul,fontWeight:600,marginTop:4}}>{label}</div>
-                  </div>
-                )
-              })()}
-
-              {/* Categoria */}
-              <div style={{marginBottom:14}}>
-                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                  textTransform:'uppercase' as const,letterSpacing:.5,
-                  marginBottom:5,display:'block'}}>🏷 Categoria</label>
-                <select ref={categoriaSelectRef} value={fCat} onChange={e => setFCat(e.target.value)}
-                  style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                    padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
-                    fontFamily:'inherit',color:COR.texto,
-                    appearance:'none' as const,cursor:'pointer',
-                    backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E\")",
-                    backgroundRepeat:'no-repeat',backgroundPosition:'calc(100% - 14px) center'}}>
-                  <option value="">Selecione...</option>
-                  {categoriasCartao.map(c => (
-                    <option key={c.id} value={c.nome}>{c.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Valor da parcela */}
-              <div style={{marginBottom:14}}>
-                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                  textTransform:'uppercase' as const,letterSpacing:.5,
-                  marginBottom:5,display:'block'}}>💰 Valor da parcela</label>
-                <input ref={valorInputRef} value={fValor}
-                  onChange={e => setFValor(e.target.value)}
-                  placeholder="R$ 0,00"
-                  style={{width:'100%',border:`2px solid ${COR.azul}`,borderRadius:12,
-                    padding:'12px 14px',fontSize:22,fontWeight:800,color:COR.azul,
-                    background:'#eff6ff',outline:'none',fontFamily:'inherit',
-                    textAlign:'center' as const,letterSpacing:-.4,
-                    boxSizing:'border-box' as const}}
-                  onKeyDown={e => e.key==='Enter' && lancar()}/>
-              </div>
-
-              {/* Parcelas */}
-              <div style={{marginBottom:14}}>
-                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                  textTransform:'uppercase' as const,letterSpacing:.5,
-                  marginBottom:5,display:'block'}}>🔢 Parcelas</label>
-                <div style={{display:'flex',flexWrap:'wrap' as const,gap:7}}>
-                  {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
-                    const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
-                    const ativo = parcelasAtual === n
-                    return (
-                      <button key={n} ref={el => { parcelasBtnRefs.current[i] = el }}
-                        tabIndex={ativo ? 0 : -1} onClick={() => setFParcelas(String(n))}
-                        onKeyDown={e => {
-                          if (e.key==='ArrowRight'||e.key==='ArrowDown') { e.preventDefault(); if (n<12) { setFParcelas(String(n+1)); parcelasBtnRefs.current[i+1]?.focus() } }
-                          else if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); if (n>1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() } }
-                          else if (e.key==='Enter') { e.preventDefault(); lancar() }
-                        }}
-                        style={{width:46,height:36,borderRadius:9,
-                          border:`1.5px solid ${ativo ? COR.azul : COR.borda}`,
-                          background: ativo ? '#eff6ff' : '#fff',
-                          fontSize:12,fontWeight:700,
-                          color: ativo ? COR.azul : COR.textoSuave,
-                          cursor:'pointer',fontFamily:'inherit',
-                          display:'flex',alignItems:'center',justifyContent:'center',
-                          boxShadow: ativo ? '0 0 0 2px rgba(26,86,219,.15)' : 'none'}}>
-                        {n}x
-                      </button>
-                    )
-                  })}
-                </div>
-                {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
-                  <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',
-                    borderRadius:10,padding:'10px 14px',marginTop:8,
-                    display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <span style={{fontSize:11,color:COR.textoSuave}}>Total da compra</span>
-                    <span style={{fontSize:14,fontWeight:800,color:'#16a34a'}}>
-                      {fmt(parseBRL(fValor) * Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Descrição */}
-              <div style={{marginBottom:14}}>
-                <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                  textTransform:'uppercase' as const,letterSpacing:.5,
-                  marginBottom:5,display:'block'}}>
-                  📝 Descrição{' '}
-                  <span style={{fontWeight:400,color:'#94a3b8',
-                    textTransform:'none' as const,fontSize:9,letterSpacing:0}}>
-                    (opcional)
-                  </span>
-                </label>
-                <input value={fDesc} onChange={e => setFDesc(e.target.value)}
-                  placeholder="Ex: Mercado Extra, Farmácia..."
-                  style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                    padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
-                    fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
-                  onKeyDown={e => e.key==='Enter' && lancar()}/>
-              </div>
-
-              {/* Botões */}
-              <div style={{display:'flex',gap:8,marginTop:4,paddingBottom:20}}>
-                {editandoId && (
-                  <button onClick={() => {
-                    if (!editandoId || !window.confirm('Excluir este lançamento?')) return
-                    const diaAlvo = editandoDiaOriginal ?? diaSel
-                    const idAtual = editandoId
-                    updateMes(prev => ({...prev, lancamentos:{ ...prev.lancamentos, [diaAlvo]:(prev.lancamentos[diaAlvo]??[]).filter(l=>l.id!==idAtual) }}))
-                    setEditandoId(null); setEditandoDiaOriginal(null)
-                    setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
-                    setMobileView('extrato')
-                  }} style={{
-                    flex:1,padding:'13px 0',border:`1.5px solid ${COR.borda}`,
-                    borderRadius:12,cursor:'pointer',fontSize:14,fontWeight:600,
-                    background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>
-                    Excluir
-                  </button>
-                )}
-                <button onClick={() => {
-                  const valid = !!fCat && parseBRL(fValor) > 0
-                  lancar()
-                  if (valid) setMobileView('extrato')
-                }} style={{
-                  flex:2,padding:15,border:'none',borderRadius:14,
-                  background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                  color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',
-                  boxShadow:'0 4px 16px rgba(26,86,219,.3)'}}>
-                  {editandoId ? '✓ Salvar alterações' : '✓ Salvar lançamento'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* EXTRATO VIEW: flat list in one card */}
-        {mobileView === 'extrato' && (
-          <div style={{flex:1,overflowY:'auto',padding:'10px 14px 160px'}}>
-            {(() => {
-              const allItems: Array<{dia:number;dc:number;mc:number;ac:number;l:Lancamento}> = []
-              for (let d = 1; d <= totalDias; d++) {
-                for (const l of (mesDados.lancamentos[d] ?? [])) {
-                  const dc = l.diaCompra ?? d
-                  const mc = l.mesCompra ?? purchaseMes
-                  const ac = l.anoCompra ?? purchaseAno
-                  allItems.push({dia:d, dc, mc, ac, l})
-                }
-              }
-              if (allItems.length === 0) {
-                return (
-                  <div style={{textAlign:'center' as const,color:COR.textoSuave,padding:40,fontSize:13}}>
-                    Nenhum lançamento nesta fatura.
-                  </div>
-                )
-              }
-              allItems.sort((a, b) => {
-                const ka = `${a.ac}-${String(a.mc+1).padStart(2,'0')}-${String(a.dc).padStart(2,'0')}`
-                const kb = `${b.ac}-${String(b.mc+1).padStart(2,'0')}-${String(b.dc).padStart(2,'0')}`
-                return kb.localeCompare(ka)
-              })
-              return (
-                <div style={{background:COR.branco,borderRadius:14,
-                  border:`1.5px solid ${COR.borda}`,overflow:'hidden',
-                  boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-                  {allItems.map(({dia, dc, mc, ac, l}, idx) => {
-                    const catVisual = iconeCategoria(categorias, l.categoria)
-                    const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
-                    const nomePrimario = hasDesc ? l.descricao : l.categoria
-                    const mesCompraLabel = (mc !== purchaseMes || ac !== purchaseAno)
-                      ? ` de ${NOMES_MESES[mc].slice(0,3)}`
-                      : ''
-                    return (
-                      <div key={l.id}
-                        onClick={() => { editarLancamento(dia, l); setMobileView('form') }}
-                        style={{display:'flex',alignItems:'center',gap:10,
-                          padding:'11px 14px',cursor:'pointer',
-                          borderBottom: idx < allItems.length-1 ? `1px solid ${COR.borda}` : 'none',
-                          background:COR.branco}}>
-                        <div style={{width:38,height:38,borderRadius:11,flexShrink:0,
-                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
-                          background:catVisual.cor}}>
-                          {catVisual.icone}
-                        </div>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:600,color:COR.texto,
-                            whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>
-                            {nomePrimario}
-                          </div>
-                          <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
-                            display:'flex',alignItems:'center',gap:5}}>
-                            <span>
-                              {hasDesc ? `${l.categoria} · ` : ''}dia {dc}{mesCompraLabel}
-                            </span>
-                            {l.parcelas && l.parcelas > 1 && (
-                              <span style={{fontSize:8,padding:'1px 6px',borderRadius:4,fontWeight:700,
-                                background:'#f5f3ff',color:'#7c3aed'}}>
-                                {l.parcelaAtual}/{l.parcelas}x
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{fontSize:14,fontWeight:700,whiteSpace:'nowrap' as const,
-                          letterSpacing:-.3,color:l.tipo==='entrada'?COR.azul:COR.vermelho,flexShrink:0}}>
-                          {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                          style={{border:'none',background:'transparent',cursor:'pointer',
-                            color:'#e2e8f0',fontSize:14,padding:3,borderRadius:5,flexShrink:0}}>✕</button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })()}
-          </div>
-        )}
-
-        {/* TOTAL FOOTER */}
-        {mobileView === 'extrato' && (
-          <div style={{position:'fixed',left:0,right:0,bottom:70,zIndex:39,
-            background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-            padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',
-            boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
-            <div>
-              <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.6)'}}>
-                Total da fatura — {NOMES_MESES[mes]} {ano}
-              </div>
-              <div style={{fontSize:9,color:'rgba(255,255,255,.4)',marginTop:1}}>
-                Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-              </div>
-            </div>
-            <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums' as const}}>
-              {fmt(totalFatura)}
-            </span>
-          </div>
-        )}
-
-        {/* ADD BAR */}
-        {mobileView === 'extrato' && (
-          <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }}
-            style={{position:'fixed',left:0,right:0,bottom:114,zIndex:40,
-              border:'none',background:COR.branco,
-              borderTop:`1px solid ${COR.borda}`,borderBottom:`1px solid ${COR.borda}`,
-              padding:'11px 20px',display:'flex',alignItems:'center',justifyContent:'center',
-              gap:6,cursor:'pointer',fontFamily:'inherit'}}>
-            <span style={{fontSize:16,color:COR.azul,fontWeight:700,lineHeight:1}}>+</span>
-            <span style={{fontSize:13,fontWeight:600,color:COR.azul}}>Adicionar lançamento</span>
-          </button>
-        )}
-
-      </div>
+      <FcMobileView
+        contasCartao={contasCartao}
+        contaId={contaId} setContaId={setContaId}
+        mes={mes} setMes={setMes} ano={ano} setAno={setAno}
+        anoHoje={anoHoje} diaHoje={diaHoje}
+        mobileView={mobileView} setMobileView={setMobileView}
+        editandoFechamento={editandoFechamento} setEditandoFechamento={setEditandoFechamento}
+        editandoVencimento={editandoVencimento} setEditandoVencimento={setEditandoVencimento}
+        editFechVal={editFechVal} setEditFechVal={setEditFechVal}
+        editVencVal={editVencVal} setEditVencVal={setEditVencVal}
+        fTipo={fTipo} setFTipo={setFTipo}
+        fCat={fCat} setFCat={setFCat}
+        fDesc={fDesc} setFDesc={setFDesc}
+        fValor={fValor} setFValor={setFValor}
+        fParcelas={fParcelas} setFParcelas={setFParcelas}
+        fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
+        editandoId={editandoId} setEditandoId={setEditandoId}
+        editandoDiaOriginal={editandoDiaOriginal} setEditandoDiaOriginal={setEditandoDiaOriginal}
+        diaSel={diaSel} setDiaSel={setDiaSel}
+        diaFechamento={diaFechamento} diaVencimento={diaVencimento}
+        diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
+        mesDados={mesDados} totalDias={totalDias}
+        purchaseMes={purchaseMes} purchaseAno={purchaseAno}
+        faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
+        totalPrevisto={totalPrevisto} grandTotalFaturas={grandTotalFaturas}
+        totalFatura={totalFatura} mesVenc={mesVenc} anoVenc={anoVenc}
+        categorias={categorias} categoriasCartao={categoriasCartao}
+        dataCompraRef={dataCompraRef}
+        categoriaSelectRef={categoriaSelectRef}
+        valorInputRef={valorInputRef}
+        parcelasBtnRefs={parcelasBtnRefs}
+        resetarParaNovo={resetarParaNovo}
+        editarLancamento={editarLancamento}
+        excluir={excluir}
+        updateMes={updateMes}
+        lancar={lancar}
+        diaDefaultPara={diaDefaultPara}
+      />
     )
   }
 
+  // ── Desktop ─────────────────────────────────────────────────────────
   return (
     <div style={{flex:1,display:'flex',flexDirection:'row',overflow:'hidden',background:COR.fundo}}>
-      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-
-      {/* ABAS DE CARTÃO */}
-      <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,
-        padding:'10px 16px 0',flexShrink:0,display:'flex',gap:3,overflowX:'auto'}}>
-        {contasCartao.map(c => {
-          const ativa = c.id===contaId
-          return (
-            <button key={c.id} onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }} style={{
-              display:'flex',alignItems:'center',gap:6,
-              padding:'7px 14px',borderRadius:'8px 8px 0 0',
-              border:`1px solid ${ativa?COR.azul:COR.borda}`,
-              cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',
-              background:ativa?COR.azul:'#f8faff',color:ativa?'#fff':COR.textoSuave,
-              position:'relative',zIndex:ativa?1:0,textAlign:'left'}}>
-              <div style={{width:7,height:7,borderRadius:'50%',flexShrink:0,background:ativa?'#fff':c.cor}}/>
-              <div>
-                <div style={{fontSize:12,fontWeight:ativa?700:600}}>{c.banco}</div>
-                {c.apelido && (
-                  <div style={{fontSize:10,fontWeight:400,color:ativa?'rgba(255,255,255,0.75)':'#94a3b8',marginTop:1}}>
-                    {c.apelido}
-                  </div>
-                )}
-              </div>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Barra Total da fatura com seletor de mês */}
-      <div style={{borderRadius:0,padding:'10px 16px',flexShrink:0,position:'relative',
-        background:totalFatura<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:4}}>
-          <button onClick={() => { const prevMesNav = () => { if (mes===0){setMes(11);setAno(y=>y-1)}else setMes(m=>m-1) }; prevMesNav() }}
-            style={{border:'none',background:'rgba(255,255,255,.15)',color:'#fff',
-              borderRadius:6,padding:'3px 10px',fontSize:16,cursor:'pointer',fontFamily:'inherit',lineHeight:1}}>‹</button>
-          <button ref={calBtnRef} onClick={(e) => {
-              e.stopPropagation()
-              const rect = calBtnRef.current?.getBoundingClientRect()
-              if (rect) setCalPos({top: rect.bottom + 8, left: rect.left})
-              setAnoCalendario(ano)
-              setMostrarCalendario(v=>!v)
-            }}
-            style={{border:'none',background:'transparent',color:'rgba(255,255,255,.9)',
-              fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',
-              padding:'4px 8px',borderRadius:6,transition:'background .15s'}}
-            onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,.12)')}
-            onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
-            Total da fatura — {NOMES_MESES[mes]} {ano}
-          </button>
-          <button onClick={() => { const nextMesNav = () => { if (mes===11){setMes(0);setAno(y=>y+1)}else setMes(m=>m+1) }; nextMesNav() }}
-            style={{border:'none',background:'rgba(255,255,255,.15)',color:'#fff',
-              borderRadius:6,padding:'3px 10px',fontSize:16,cursor:'pointer',fontFamily:'inherit',lineHeight:1}}>›</button>
-        </div>
-        <span style={{fontSize:18,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-          {fmt(totalFatura)}
-        </span>
-        {mostrarCalendario && (
-          <div style={{position:'fixed',top:calPos.top,left:calPos.left,zIndex:200,
-            background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.18)',
-            padding:16,minWidth:272}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-              <button onClick={()=>setAnoCalendario(a=>a-1)}
-                style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
-                  padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
-              <span style={{fontWeight:700,fontSize:15,color:COR.texto}}>{anoCalendario}</span>
-              <button onClick={()=>setAnoCalendario(a=>a+1)}
-                style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
-                  padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
-              {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev,i) => {
-                const ativo = i===mes && anoCalendario===ano
-                return (
-                  <button key={i} onClick={() => {
-                    setMes(i); setAno(anoCalendario)
-                    resetarParaNovo(diaDefaultPara(i, anoCalendario))
-                    setMostrarCalendario(false)
-                  }} style={{
-                    padding:'8px 4px',border:'none',borderRadius:8,cursor:'pointer',
-                    fontFamily:'inherit',fontSize:12,fontWeight:ativo?700:500,
-                    background:ativo?COR.azul:'#f1f5f9',
-                    color:ativo?'#fff':COR.texto}}>
-                    {abrev}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* RESUMO ORÇAMENTO CARTÃO */}
-      {(() => {
-        const disponivel = totalPrevisto - grandTotalFaturas
-        return (
-          <div style={{background:'#f8faff',borderBottom:`1px solid ${COR.borda}`,
-            padding:'6px 16px',flexShrink:0,display:'flex',alignItems:'center',gap:0,overflowX:'auto'}}>
-            <div style={{display:'flex',alignItems:'center',gap:6,
-              padding:'3px 16px',borderRight:`1px solid ${COR.borda}`,flexShrink:0}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Limite Planejado</span>
-              <span style={{fontSize:13,fontWeight:700,color:COR.texto,whiteSpace:'nowrap'}}>
-                {fmt(totalPrevisto)}
-              </span>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6,
-              padding:'3px 16px',borderRight:`1px solid ${COR.borda}`,flexShrink:0}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Total Utilizado</span>
-              <span style={{fontSize:13,fontWeight:700,
-                color:grandTotalFaturas>0?COR.vermelho:grandTotalFaturas<0?COR.verde:COR.textoSuave,
-                whiteSpace:'nowrap'}}>
-                {fmt(grandTotalFaturas)}
-              </span>
-            </div>
-            <div style={{display:'flex',alignItems:'center',gap:6,
-              padding:'3px 16px',flexShrink:0}}>
-              <span style={{fontSize:11,color:COR.textoSuave,whiteSpace:'nowrap'}}>Valor Disponível</span>
-              <span style={{fontSize:13,fontWeight:700,
-                color:disponivel>=0?COR.verde:COR.vermelho,
-                whiteSpace:'nowrap'}}>
-                {fmt(disponivel)}
-              </span>
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* BARRA DE RESUMO */}
-      <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding:'10px 16px',flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-
-          {/* Pill: Diferença */}
-          {(() => {
-            const cor = diferenca===null ? '#64748b' : conciliado ? '#16a34a' : Math.abs(diferenca)<50 ? '#d97706' : '#dc2626'
-            const lbl = diferenca===null ? '—' : conciliado ? '✓ Conciliado' : `${diferenca>0?'+':'-'} ${fmt(Math.abs(diferenca))}`
-            return (
-              <div style={{display:'inline-flex',alignItems:'center',gap:6,
-                padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
-                background:cor+'18',border:`1.5px solid ${cor}44`}}>
-                <span style={{fontSize:11,fontWeight:600,color:cor}}>Diferença</span>
-                <span style={{fontSize:14,fontWeight:800,color:cor}}>{lbl}</span>
-              </div>
-            )
-          })()}
-
-          <span style={{color:COR.borda}}>|</span>
-
-          {/* Pill: Status */}
-          {(() => {
-            const cor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#d97706'
-            const simbolo = faturaStatus==='paga' ? '✓' : faturaStatus==='fechada' ? '■' : '●'
-            const lbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
-            return (
-              <div style={{display:'inline-flex',alignItems:'center',gap:6,
-                padding:'4px 12px',borderRadius:20,whiteSpace:'nowrap',
-                background:cor+'18',border:`1.5px solid ${cor}44`}}>
-                <span style={{fontSize:13,color:cor}}>{simbolo}</span>
-                <span style={{fontSize:14,fontWeight:800,color:cor}}>{lbl}</span>
-              </div>
-            )
-          })()}
-
-        </div>
-      </div>
-
-      {/* LISTA DE LANÇAMENTOS agrupados por dia */}
-      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:8,padding:'10px 16px'}}>
-
-        {(() => {
-          type DiaGroup = { dateKey:string; dc:number; mc:number; ac:number; items:Array<{dia:number;l:Lancamento}> }
-          const groupMap = new Map<string, DiaGroup>()
-          for (let d = 1; d <= totalDias; d++) {
-            for (const l of (mesDados.lancamentos[d] ?? [])) {
-              const dc = l.diaCompra ?? d
-              const mc = l.mesCompra ?? purchaseMes
-              const ac = l.anoCompra ?? purchaseAno
-              const dateKey = `${ac}-${String(mc+1).padStart(2,'0')}-${String(dc).padStart(2,'0')}`
-              if (!groupMap.has(dateKey)) groupMap.set(dateKey, {dateKey, dc, mc, ac, items:[]})
-              groupMap.get(dateKey)!.items.push({dia:d, l})
-            }
-          }
-
-          if (groupMap.size === 0) {
-            return (
-              <div style={{textAlign:'center',color:COR.textoSuave,padding:40,fontSize:13}}>
-                Nenhum lançamento nesta fatura.
-              </div>
-            )
-          }
-
-          // Decrescente: mais recente primeiro
-          const grupos = [...groupMap.values()].sort((a,b) => b.dateKey.localeCompare(a.dateKey))
-
-          const isAfterClosing = (g: DiaGroup) => {
-            if (g.ac > purchaseAno) return true
-            if (g.ac < purchaseAno) return false
-            if (g.mc > purchaseMes) return true
-            if (g.mc < purchaseMes) return false
-            return g.dc > diaFechamento
-          }
-
-          return grupos.map((grupo, gIdx) => {
-            const {dateKey, dc, mc, ac, items} = grupo
-            const aberto = !diasFechados.has(dateKey)
-            const semana = diaSemana(dc, mc, ac)
-            const mesAno = (mc !== purchaseMes || ac !== purchaseAno)
-              ? `${NOMES_MESES[mc]}${ac !== purchaseAno ? ' '+ac : ''}`
-              : NOMES_MESES[mc]
-            const prevGrupo = gIdx > 0 ? grupos[gIdx-1] : null
-            // divider aparece quando saímos da zona "após fechamento" para a zona normal
-            const showFechDiv = prevGrupo !== null && isAfterClosing(prevGrupo) && !isAfterClosing(grupo)
-
-            return [
-              showFechDiv ? (
-                <div key={`div-${dateKey}`}
-                  style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0'}}>
-                  <div style={{flex:1,height:1,background:COR.borda}}/>
-                  <span style={{fontSize:10,color:COR.textoSuave,fontWeight:600,letterSpacing:.3}}>
-                    Período da fatura
-                  </span>
-                  <div style={{flex:1,height:1,background:COR.borda}}/>
-                </div>
-              ) : null,
-
-              <div key={dateKey}
-                style={{borderRadius:12,overflow:'hidden',flexShrink:0,
-                  border:`1.5px solid ${COR.borda}`,background:COR.branco}}>
-
-                {/* Cabeçalho do dia */}
-                <div
-                  onClick={() => toggleDia(dateKey)}
-                  style={{display:'flex',alignItems:'center',gap:12,padding:'10px 16px',
-                    cursor:'pointer',userSelect:'none',background:'#fafbff',
-                    borderBottom:aberto?`1px solid ${COR.borda}`:'none'}}>
-
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                    minWidth:32,flexShrink:0}}>
-                    <span style={{fontSize:18,fontWeight:700,lineHeight:1,color:COR.texto}}>
-                      {String(dc).padStart(2,'0')}
-                    </span>
-                    <span style={{fontSize:10,color:'#94a3b8',fontWeight:500,
-                      textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>
-                      {semana}
-                    </span>
-                  </div>
-
-                  <span style={{fontSize:12,color:COR.textoSuave,flex:1}}>{mesAno}</span>
-
-                  <span style={{fontSize:16,color:'#94a3b8',display:'inline-block',
-                    transition:'transform .2s',
-                    transform:aberto?'rotate(180deg)':'rotate(0deg)'}}>⌄</span>
-                </div>
-
-                {/* Lançamentos do dia */}
-                {aberto && items.map(({dia, l}) => {
-                  const catVisual = iconeCategoria(categorias, l.categoria)
-                  const emEdicao  = editandoId === l.id
-                  return (
-                    <div key={l.id}
-                      onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
-                      style={{display:'flex',alignItems:'center',gap:12,cursor:'pointer',
-                        padding:'12px 14px',flexShrink:0,
-                        background: emEdicao ? '#eff6ff' : COR.branco,
-                        borderBottom:`1px solid ${COR.borda}`,
-                        borderLeft: emEdicao ? `3px solid ${COR.azul}` : '3px solid transparent'}}
-                      onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
-                      onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background=COR.branco }}>
-                      <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
-                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,
-                        background:catVisual.cor}}>
-                        {catVisual.icone}
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:600,color:COR.texto,
-                          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                          {l.categoria}
-                        </div>
-                        {l.descricao && l.descricao !== l.categoria && (
-                          <div style={{fontSize:11,color:COR.textoSuave,marginTop:1,
-                            whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                            {l.descricao}
-                          </div>
-                        )}
-                      </div>
-                      {l.parcelas && l.parcelas > 1 && (
-                        <span style={{fontSize:11,padding:'3px 8px',borderRadius:6,fontWeight:700,
-                          flexShrink:0,background:'#ede9fe',color:'#7c3aed'}}>
-                          {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
-                        </span>
-                      )}
-                      <div style={{textAlign:'right',flexShrink:0}}>
-                        <div style={{fontSize:14,fontWeight:700,
-                          color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
-                          {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
-                        </div>
-                      </div>
-                      <button
-                        onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                        style={{border:'none',background:'transparent',cursor:'pointer',
-                          color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4,flexShrink:0}}
-                        onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                        onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
-                    </div>
-                  )
-                })}
-              </div>
-            ]
-          })
-        })()}
-
-      </div>
-
-      {/* FOOTER: total da fatura */}
-      <div style={{flexShrink:0,
-        background:totalFatura<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div>
-          <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.6)'}}>
-            Total da fatura — {NOMES_MESES[mes]} {ano}
-          </div>
-          <div style={{fontSize:9,color:'rgba(255,255,255,.4)',marginTop:1}}>
-            Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-          </div>
-        </div>
-        <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums' as const}}>
-          {fmt(totalFatura)}
-        </span>
-      </div>
-
-      </div>{/* fim coluna esquerda */}
-
-      {/* PAINEL DE LANÇAMENTO */}
-      <div style={{width:340,flexShrink:0,background:COR.branco,
-        borderLeft:`1px solid ${COR.borda}`,padding:20,overflowY:'auto'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-          <h3 style={{fontSize:14,fontWeight:700,color:COR.texto,margin:0}}>
-            {editandoId ? 'Editar lançamento' : 'Novo lançamento'}
-          </h3>
-          {editandoId && (
-            <button onClick={() => resetarParaNovo(diaSel)} title="Cancelar edição" style={{
-              border:'none',background:'transparent',cursor:'pointer',fontSize:18,color:COR.textoSuave}}>✕</button>
-          )}
-        </div>
-
-        {/* Datas e saldo atual */}
-        <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
-          {/* Fechamento */}
-          {editandoFechamento ? (
-            <div style={{display:'flex',alignItems:'center',gap:6,background:'#eff6ff',
-              border:`1px solid ${COR.azul}44`,borderRadius:8,padding:'6px 12px'}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.azul,flex:1}}>Fecha dia</span>
-              <input type="number" min={1} max={31} autoFocus
-                defaultValue={diaFechamento}
-                onBlur={e => {
-                  const v = Math.min(Math.max(parseInt(e.target.value)||diaFechamentoBase,1),31)
-                  if (v !== diaFechamentoBase) updateMes(prev=>({...prev,fechamentoOverride:v}))
-                  else updateMes(prev=>({...prev,fechamentoOverride:undefined}))
-                  setEditandoFechamento(false)
-                }}
-                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-                style={{width:40,border:`1px solid ${COR.azul}66`,borderRadius:4,padding:'2px 6px',
-                  fontSize:13,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center',
-                  background:'transparent',color:COR.azul}}/>
-              <span style={{fontSize:11,color:COR.azul}}>de {NOMES_MESES[purchaseMes]}</span>
-            </div>
-          ) : (
-            <div onClick={() => setEditandoFechamento(true)} title="Clique para editar"
-              style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',background:'#eff6ff',
-                border:`1px solid ${COR.azul}44`,borderRadius:8,padding:'6px 12px'}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.azul,flex:1}}>
-                Fecha dia {diaFechamento} de {NOMES_MESES[purchaseMes]}
-                {mesDados.fechamentoOverride && <sup style={{fontSize:9,color:'#94a3b8',marginLeft:2}}>*</sup>}
-              </span>
-              <span style={{fontSize:11,color:COR.azul}}>✎</span>
-            </div>
-          )}
-          {/* Vencimento */}
-          {editandoVencimento ? (
-            <div style={{display:'flex',alignItems:'center',gap:6,background:'#fff5f5',
-              border:`1px solid ${COR.vermelho}44`,borderRadius:8,padding:'6px 12px'}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.vermelho,flex:1}}>Vence dia</span>
-              <input type="number" min={1} max={31} autoFocus
-                defaultValue={diaVencimento}
-                onBlur={e => {
-                  const v = Math.min(Math.max(parseInt(e.target.value)||diaVencimentoBase,1),31)
-                  if (v !== diaVencimentoBase) updateMes(prev=>({...prev,vencimentoOverride:v}))
-                  else updateMes(prev=>({...prev,vencimentoOverride:undefined}))
-                  setEditandoVencimento(false)
-                }}
-                onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-                style={{width:40,border:`1px solid ${COR.vermelho}66`,borderRadius:4,padding:'2px 6px',
-                  fontSize:13,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center',
-                  background:'transparent',color:COR.vermelho}}/>
-              <span style={{fontSize:11,color:COR.vermelho}}>de {NOMES_MESES[mesVenc]} {anoVenc}</span>
-            </div>
-          ) : (
-            <div onClick={() => setEditandoVencimento(true)} title="Clique para editar"
-              style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',background:'#fff5f5',
-                border:`1px solid ${COR.vermelho}44`,borderRadius:8,padding:'6px 12px'}}>
-              <span style={{fontSize:11,fontWeight:600,color:COR.vermelho,flex:1}}>
-                Vence {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-                {mesDados.vencimentoOverride && <sup style={{fontSize:9,color:'#94a3b8',marginLeft:2}}>*</sup>}
-              </span>
-              <span style={{fontSize:11,color:COR.vermelho}}>✎</span>
-            </div>
-          )}
-          {/* Saldo atual da fatura — editável */}
-          <div onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
-            title="Clique para atualizar"
-            style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',
-              background: mesDados.faturaAtual ? '#f0fdf4' : '#f8faff',
-              border: mesDados.faturaAtual ? '1px solid #86efac' : '1.5px dashed #e2e8f0',
-              borderRadius:8,padding:'6px 12px'}}>
-            <span style={{fontSize:11,fontWeight:600,
-              color: mesDados.faturaAtual ? COR.verde : '#64748b',flex:1}}>
-              Fatura informada
-            </span>
-            <span style={{fontSize:13,fontWeight:800,
-              color: mesDados.faturaAtual ? COR.texto : '#94a3b8'}}>
-              {mesDados.faturaAtual || 'Informar'}
-            </span>
-            <span style={{fontSize:11,color: mesDados.faturaAtual ? COR.verde : '#94a3b8'}}>✎</span>
-          </div>
-        </div>
-
-        {/* Compra / Estorno */}
-        <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
-          padding:3,marginBottom:12,width:'100%'}}>
-          {(['entrada','saida'] as const).map(t => (
-            <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
-              flex:1,padding:'7px 0',border:'none',borderRadius:5,
-              cursor:'pointer',fontSize:12,fontWeight:600,
-              fontFamily:'inherit',transition:'all .15s',
-              background:fTipo===t?COR.branco:'transparent',
-              color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
-              boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-              {t==='saida'?'↑ Estorno':'↓ Compra'}
-            </button>
-          ))}
-        </div>
-
-        <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
-          {/* Data da compra — campo livre */}
-          {(() => {
-            const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-            const dispDia = parsed?.dia ?? diaSel
-            const dispMes = parsed?.mes ?? purchaseMes
-            const dispAno = parsed?.ano ?? purchaseAno
-            const label = `${String(dispDia).padStart(2,'0')} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
-            return (
-              <div>
-                <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
-                <input
-                  ref={dataCompraRef}
-                  autoFocus
-                  type="text"
-                  value={fDataCompra}
-                  onChange={e => setFDataCompra(e.target.value)}
-                  onBlur={() => {
-                    const p = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-                    if (p) {
-                      setDiaSel(p.dia)
-                      // Formata para DD/MM ou DD/MM/AAAA ao sair do campo
-                      const acStr = p.ano !== purchaseAno ? `/${p.ano}` : ''
-                      setFDataCompra(`${String(p.dia).padStart(2,'0')}/${String(p.mes+1).padStart(2,'0')}${acStr}`)
-                    }
-                  }}
-                  onFocus={realcarFoco}
-                  placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
-                  style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
-                    fontSize:12,outline:'none',background:'#fff',
-                    fontFamily:'inherit',color:COR.texto,width:'100%'}}
-                  onKeyDown={e => { if (e.key==='Enter') { (e.target as HTMLInputElement).blur() } }}
-                />
-                <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>{label}</div>
-              </div>
-            )
-          })()}
-          <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
-            <select ref={categoriaSelectRef} value={fCat}
-              onChange={e=>setFCat(e.target.value)}
-              onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%'}}>
-              <option value="">Selecione...</option>
-              {categoriasCartao.map(c=>(
-                <option key={c.id} value={c.nome}>{c.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
-            <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
-              placeholder="R$ 0,00"
-              onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%'}}
-              onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-          </div>
-          <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Parcelas</div>
-            <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-              {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
-                const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
-                const ativo = parcelasAtual === n
-                return (
-                  <button key={n}
-                    ref={el => { parcelasBtnRefs.current[i] = el }}
-                    tabIndex={ativo ? 0 : -1}
-                    onClick={() => setFParcelas(String(n))}
-                    onKeyDown={e => {
-                      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                        e.preventDefault()
-                        if (n < 12) { setFParcelas(String(n+1)); parcelasBtnRefs.current[i+1]?.focus() }
-                      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                        e.preventDefault()
-                        if (n > 1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() }
-                      } else if (e.key === 'Enter') {
-                        e.preventDefault(); lancar()
-                      }
-                    }}
-                    style={{
-                      padding:'4px 8px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
-                      borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
-                      background:ativo?'#eff6ff':'#fff',
-                      color:ativo?COR.azul:'#0369a1',fontFamily:'inherit'}}>
-                    {n}x
-                  </button>
-                )
-              })}
-              <input
-                type="number" min={13} placeholder="+12x"
-                tabIndex={parseInt(fParcelas) > 12 ? 0 : -1}
-                value={parseInt(fParcelas)>12 ? fParcelas : ''}
-                onChange={e => { if(e.target.value) setFParcelas(e.target.value) }}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); lancar() } }}
-                onFocus={e => { e.currentTarget.style.border=`1.5px solid ${COR.azul}`; e.currentTarget.style.boxShadow='0 0 0 3px rgba(26,86,219,0.15)' }}
-                onBlur={e => { e.currentTarget.style.border='1.5px solid #bae6fd'; e.currentTarget.style.boxShadow='none'; if(!e.target.value) setFParcelas('1') }}
-                style={{width:52,border:`1.5px solid ${parseInt(fParcelas)>12?COR.azul:'#bae6fd'}`,
-                  borderRadius:6,padding:'4px 6px',fontSize:11,outline:'none',
-                  background:parseInt(fParcelas)>12?'#eff6ff':'#fff',
-                  color:parseInt(fParcelas)>12?COR.azul:'#94a3b8',fontFamily:'inherit',textAlign:'center'}}/>
-            </div>
-            {parseInt(fParcelas) > 1 && parseBRL(fValor) > 0 && (
-              <div style={{fontSize:11,color:COR.textoSuave,marginTop:6}}>
-                Total: {fmt(parseBRL(fValor) * parseInt(fParcelas))} &nbsp;({fParcelas}x de {fmt(parseBRL(fValor))})
-              </div>
-            )}
-          </div>
-          <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
-            <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-              placeholder="Ex: Mercado Extra, Farmácia..."
-              onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
-                fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%'}}
-              onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-          </div>
-        </div>
-
-        <div style={{fontSize:10,color:'#94a3b8',marginBottom:14}}>
-          Enter no valor ou na descrição para salvar
-        </div>
-
-        <div style={{display:'flex',gap:8}}>
-          {editandoId && (
-            <button onClick={excluirAtual} style={{
-              flex:1,padding:'10px 0',border:`1.5px solid ${COR.borda}`,
-              borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,
-              background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>
-              Excluir
-            </button>
-          )}
-          <button onClick={lancar} style={{
-            flex:2,padding:'10px 0',border:'none',borderRadius:8,
-            background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-            color:'#fff',fontSize:13,fontWeight:600,
-            cursor:'pointer',fontFamily:'inherit'}}>
-            {editandoId ? 'Salvar alterações' : 'Lançar'}
-          </button>
-        </div>
-      </div>
-
-      {/* MODAL FATURA DO CARTÃO */}
-      {modalFatura && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
-          display:'flex',alignItems:'center',justifyContent:'center'}}
-          onClick={() => setModalFatura(false)}>
-          <div style={{background:'#fff',borderRadius:14,padding:'28px 32px',minWidth:360,
-            boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
-            onClick={e => e.stopPropagation()}>
-            <div style={{marginBottom:20}}>
-              {contaInfo && (
-                <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
-                  display:'inline-flex',alignItems:'center',gap:6,
-                  background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
-                  <span>{contaInfo.icone}</span>
-                  <span style={{color:contaInfo.cor,fontWeight:700}}>{contaInfo.banco}</span>
-                </span>
-              )}
-            </div>
-            <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 6px'}}>
-              Qual é o valor atual da fatura?
-            </p>
-            <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 16px'}}>
-              Informe o valor do cartão para acompanhar a diferença em relação ao sistema.
-            </p>
-            <input autoFocus
-              value={modalFaturaValor}
-              onChange={e => setModalFaturaValor(e.target.value)}
-              onFocus={e => e.target.select()}
-              onKeyDown={e => {
-                if (e.key === 'Enter') confirmarModalFatura()
-                if (e.key === 'Escape') setModalFatura(false)
-              }}
-              placeholder="R$ 0,00"
-              style={{width:'100%',border:`1.5px solid ${contaInfo?.cor ?? COR.azul}`,
-                borderRadius:8,padding:'10px 14px',fontSize:16,fontWeight:700,
-                color:'#0f172a',outline:'none',textAlign:'right',
-                fontFamily:'inherit',boxSizing:'border-box'}}/>
-            <div style={{display:'flex',gap:10,marginTop:20}}>
-              <button
-                onClick={() => { updateMes(prev=>({...prev,faturaAtualData:hojeStr})); setModalFatura(false) }}
-                style={{flex:1,padding:'10px',borderRadius:8,border:`1.5px solid #e2e8f0`,
-                  background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
-                  cursor:'pointer',fontFamily:'inherit'}}>
-                Pular
-              </button>
-              <button onClick={confirmarModalFatura}
-                style={{flex:2,padding:'10px',borderRadius:8,border:'none',
-                  background:contaInfo?.cor ?? COR.azul,color:'#fff',fontSize:13,fontWeight:700,
-                  cursor:'pointer',fontFamily:'inherit'}}>
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <FcDesktopLeft
+        contasCartao={contasCartao}
+        contaId={contaId} setContaId={setContaId}
+        mes={mes} setMes={setMes} ano={ano} setAno={setAno}
+        totalFatura={totalFatura}
+        totalPrevisto={totalPrevisto} grandTotalFaturas={grandTotalFaturas}
+        diferenca={diferenca} conciliado={conciliado}
+        faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
+        diaFechamento={diaFechamento} diaVencimento={diaVencimento}
+        mesDados={mesDados} totalDias={totalDias}
+        purchaseMes={purchaseMes} purchaseAno={purchaseAno}
+        mesVenc={mesVenc} anoVenc={anoVenc}
+        editandoId={editandoId}
+        diasFechados={diasFechados}
+        categorias={categorias}
+        mostrarCalendario={mostrarCalendario} setMostrarCalendario={setMostrarCalendario}
+        anoCalendario={anoCalendario} setAnoCalendario={setAnoCalendario}
+        calPos={calPos} setCalPos={setCalPos}
+        calBtnRef={calBtnRef}
+        resetarParaNovo={resetarParaNovo}
+        diaDefaultPara={diaDefaultPara}
+        editarLancamento={editarLancamento}
+        excluir={excluir}
+        toggleDia={toggleDia}
+        setDiaSel={setDiaSel}
+      />
+      <FcDesktopPanel
+        editandoId={editandoId}
+        editandoFechamento={editandoFechamento} setEditandoFechamento={setEditandoFechamento}
+        editandoVencimento={editandoVencimento} setEditandoVencimento={setEditandoVencimento}
+        fTipo={fTipo} setFTipo={setFTipo}
+        fCat={fCat} setFCat={setFCat}
+        fDesc={fDesc} setFDesc={setFDesc}
+        fValor={fValor} setFValor={setFValor}
+        fParcelas={fParcelas} setFParcelas={setFParcelas}
+        fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
+        diaFechamento={diaFechamento} diaVencimento={diaVencimento}
+        diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
+        mesDados={mesDados}
+        purchaseMes={purchaseMes} purchaseAno={purchaseAno}
+        diaSel={diaSel} setDiaSel={setDiaSel}
+        mesVenc={mesVenc} anoVenc={anoVenc}
+        categoriasCartao={categoriasCartao}
+        dataCompraRef={dataCompraRef}
+        categoriaSelectRef={categoriaSelectRef}
+        valorInputRef={valorInputRef}
+        parcelasBtnRefs={parcelasBtnRefs}
+        resetarParaNovo={resetarParaNovo}
+        excluirAtual={excluirAtual}
+        lancar={lancar}
+        updateMes={updateMes}
+        setModalFatura={setModalFatura}
+        setModalFaturaValor={setModalFaturaValor}
+      />
+      <FcModal
+        modalFatura={modalFatura} setModalFatura={setModalFatura}
+        modalFaturaValor={modalFaturaValor} setModalFaturaValor={setModalFaturaValor}
+        contaInfo={contaInfo}
+        hojeStr={hojeStr}
+        confirmarModalFatura={confirmarModalFatura}
+        updateMes={updateMes}
+      />
     </div>
   )
 }
