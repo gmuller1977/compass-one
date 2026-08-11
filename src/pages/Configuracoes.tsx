@@ -569,10 +569,13 @@ export default function Configuracoes() {
       setMobileView('list')
     } else {
       const nomeNorm = formCat.nome.trim().toLowerCase()
+      const descNorm = (formCat.descricao ?? '').trim().toLowerCase()
       const duplicata = categorias.find(c =>
-        c.nome.trim().toLowerCase() === nomeNorm && c.tipo === formCat.tipo
+        c.nome.trim().toLowerCase() === nomeNorm &&
+        c.tipo === formCat.tipo &&
+        (c.descricao ?? '').trim().toLowerCase() === descNorm
       )
-      if (duplicata) return setErroCat(`Já existe uma categoria "${duplicata.nome}" neste tipo`)
+      if (duplicata) return setErroCat(`Já existe uma categoria "${duplicata.nome}${duplicata.descricao ? ` · ${duplicata.descricao}` : ''}" neste tipo`)
       setCategorias(prev => [...prev, {id:gerarId(),...formCat, ativa:true}])
       toast('Categoria criada')
       setMobileView('list')
