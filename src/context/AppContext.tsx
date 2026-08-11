@@ -333,12 +333,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setContasState(mergedContas)
     const contaIdSet = new Set(mergedContas.map(c => c.id))
 
-    // Categorias — deduplica por nome antes de usar (protege contra race condition de carregamento duplo)
+    // Categorias — deduplica por (nome+tipo) antes de usar (protege contra race condition de carregamento duplo)
+    // Usa nome|tipo como chave para permitir a mesma categoria com tipos diferentes (entrada e saída)
     const rawCats: Categoria[] = (categoriasRows ?? []).map(rowToCategoria)
-    const seenNomes = new Set<string>()
+    const seenCatKeys = new Set<string>()
     const catsLoaded = rawCats.filter(c => {
-      if (seenNomes.has(c.nome)) return false
-      seenNomes.add(c.nome)
+      const key = `${c.nome}|${c.tipo}`
+      if (seenCatKeys.has(key)) return false
+      seenCatKeys.add(key)
       return true
     })
     // NÃO gera CATEGORIAS_PADRAO aqui: se DB retornou 0 por falha de auth,
