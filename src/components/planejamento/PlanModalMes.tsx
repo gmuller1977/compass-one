@@ -1,5 +1,5 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { COR, MESES_FULL, fmt, type AnoData } from './types'
+import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 
 interface Props {
@@ -75,12 +75,12 @@ export default function PlanModalMes({
             {dadosAtivos.entradas.map((cat, ri) => {
               const { icone } = iconeCategoria(categorias, cat.nome)
               return (
-                <div key={cat.nome} style={{
+                <div key={cat.id ?? cat.nome} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '6px 0', borderBottom: `1px solid ${COR.borda}`,
                 }}>
                   <span style={{ fontSize: 16 }}>{icone}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{nomeExibicao(cat)}</span>
                   <PlanCelulaEditavel
                     valor={cat.v[mes]}
                     readOnly={bloqueado && aba === 'meu-plano'}
@@ -101,12 +101,12 @@ export default function PlanModalMes({
               if (hasFaturaCat && cat.t === 'cartao') return null
               const { icone } = iconeCategoria(categorias, cat.nome)
               return (
-                <div key={cat.nome} style={{
+                <div key={cat.id ?? cat.nome} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '6px 0', borderBottom: `1px solid ${COR.borda}`,
                 }}>
                   <span style={{ fontSize: 16 }}>{icone}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{nomeExibicao(cat)}</span>
                   <PlanCelulaEditavel
                     valor={cat.v[mes]}
                     readOnly={bloqueado && aba === 'meu-plano'}

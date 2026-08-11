@@ -1,4 +1,8 @@
-export type Cat = { id?: string; nome: string; t?: string; v: number[] }
+export type Cat = { id?: string; nome: string; descricao?: string; t?: string; v: number[] }
+
+export function nomeExibicao(cat: Cat) {
+  return cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
+}
 export type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 export type Editando = { tipo: 'e' | 's'; row: number; mes: number } | null
 export type ViewMode = 'grade' | 'planilha' | 'lista' | 'revisao'
@@ -19,6 +23,7 @@ export function mergeCats(base: Cat[], saved: Cat[]): Cat[] {
     const found = cat.id
       ? (saved.find(c => c.id === cat.id) ?? saved.find(c => !c.id && c.nome === cat.nome))
       : saved.find(c => c.nome === cat.nome)
+    // Preserva descricao do base (fonte de verdade é o cadastro da categoria)
     return found ? { ...cat, v: found.v } : cat
   }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }

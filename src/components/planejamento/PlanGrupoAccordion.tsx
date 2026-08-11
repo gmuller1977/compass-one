@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { fmt, COR, MESES, type Cat } from './types'
+import { fmt, COR, MESES, nomeExibicao, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 
 interface GrupoCat {
@@ -61,12 +61,12 @@ export default function PlanGrupoAccordion({
                 ? (lancadoPorCatMes?.[mesSelecionado]?.entrada[cat.nome] ?? 0)
                 : (lancadoPorCatMes?.[mesSelecionado]?.saida[cat.nome] ?? 0)
               return (
-                <div key={cat.nome} style={{
+                <div key={cat.id ?? cat.nome} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 16px 8px 44px', borderBottom: `1px solid ${COR.borda}`,
                 }}>
                   <span style={{ fontSize: 14 }}>{icone}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{cat.nome}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{nomeExibicao(cat)}</span>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <PlanCelulaEditavel
                       valor={cat.v[mesSelecionado]}
@@ -119,14 +119,14 @@ export default function PlanGrupoAccordion({
         ))}
       </tr>
       {aberto && cats.map(({ cat, ri, icone }) => (
-        <tr key={cat.nome}>
+        <tr key={cat.id ?? cat.nome}>
           <td style={{
             position: 'sticky', left: 0, zIndex: 5,
             padding: '6px 10px 6px 46px', fontSize: 12,
             color: COR.textoSuave, fontWeight: 400,
             background: COR.branco, borderBottom: `1px solid #f8fafc`,
           }}>
-            <span style={{ marginRight: 5, fontSize: 13 }}>{icone}</span>{cat.nome}
+            <span style={{ marginRight: 5, fontSize: 13 }}>{icone}</span>{nomeExibicao(cat)}
           </td>
           {cat.v.map((v, mi) => (
             <td key={mi} style={{
