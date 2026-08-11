@@ -159,20 +159,21 @@ export default function PlanModalMes({
 
         {/* Rodape */}
         <div style={{
-          padding: '14px 20px', borderTop: `1px solid ${COR.borda}`,
-          background: '#f8fafc', display: 'flex', gap: 12,
+          padding: '14px 20px',
+          background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+          display: 'flex', gap: 12,
         }}>
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px' }}>Receitas</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: COR.verde }}>{fmt(teTotal, true)}</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.65)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Receitas</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{fmt(teTotal, true)}</div>
           </div>
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px' }}>Despesas</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: COR.vermelho }}>{fmt(tsTotal, true)}</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.65)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Despesas</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{fmt(tsTotal, true)}</div>
           </div>
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.4px' }}>Resultado</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: resultado >= 0 ? COR.verde : COR.vermelho }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.65)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Resultado</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: resultado >= 0 ? '#86efac' : '#fca5a5', fontVariantNumeric: 'tabular-nums' }}>
               {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
             </div>
           </div>
