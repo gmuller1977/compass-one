@@ -1,4 +1,4 @@
-export type Cat = { id?: string; nome: string; descricao?: string; t?: string; v: number[] }
+export type Cat = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[] }
 
 export function nomeExibicao(cat: Cat) {
   return cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome

@@ -34,11 +34,11 @@ export function usePlanejamento(anoAtual: number) {
     saldoInicialJan: SALDO_INICIAL_FIXO,
     entradas: categorias
       .filter(c => c.tipo === 'entrada' && c.ativa)
-      .map(c => ({ id: c.id, nome: c.nome, descricao: c.descricao, t: c.tipoMovimento, v: new Array(12).fill(0) }))
+      .map(c => ({ id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, t: c.tipoMovimento, v: new Array(12).fill(0) }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
     saidas: categorias
       .filter(c => c.tipo === 'saida' && c.ativa)
-      .map(c => ({ id: c.id, nome: c.nome, descricao: c.descricao, t: c.tipoMovimento, v: new Array(12).fill(0) }))
+      .map(c => ({ id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, t: c.tipoMovimento, v: new Array(12).fill(0) }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
   }), [SALDO_INICIAL_FIXO, categorias])
 
