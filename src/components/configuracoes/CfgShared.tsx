@@ -109,7 +109,7 @@ export function useIsMobile() {
 // ── Mini-componentes ─────────────────────────────────────────────────
 export function EmBreve() {
   return (
-    <span style={{ fontSize:9, padding:'2px 7px', borderRadius:4,
+    <span style={{ fontSize:9, padding:'2px 7px', borderRadius:6,
       background:'#fef9c3', color:'#92400e', fontWeight:700,
       textTransform:'uppercase', letterSpacing:.5, flexShrink:0 }}>
       Em breve
@@ -189,7 +189,7 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
       opacity: c.ativa ? 1 : 0.5,
       boxShadow: editCatId===c.id ? `0 0 0 2px ${COR.azul}` : 'none',
     }}>
-      <div style={{ width:36, height:36, borderRadius:9, background:c.cor,
+      <div style={{ width:36, height:36, borderRadius:10, background:c.cor,
         display:'flex', alignItems:'center', justifyContent:'center',
         fontSize:17, flexShrink:0 }}>
         {c.icone}
@@ -212,7 +212,7 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
             }
             const s = cfg[c.tipoMovimento] ?? cfg.banco
             return (
-              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
                 background:s.bg, color:s.cor }}>
                 {s.label}
               </span>
@@ -221,18 +221,18 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
           {c.tipoMovimento !== 'dinheiro' && c.tipoMovimento !== 'cartao' && (() => {
             const tc = labelCobranca(c)
             return (
-              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
                 background:tc.bg, color:tc.cor }}>
                 {tc.label}
               </span>
             )
           })()}
-          <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+          <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
             background: c.fixa ? '#fef9c3' : '#f1f5f9', color: c.fixa ? '#92400e' : '#64748b' }}>
             {c.fixa ? 'Fixa' : 'Variável'}
           </span>
           {c.diaVencimento && (
-            <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+            <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
               background:'#e0f2fe', color:'#0369a1' }}>
               Vence dia {c.diaVencimento}
             </span>
@@ -240,7 +240,7 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
           {c.contaDebitoId && (() => {
             const conta = contas.find(x => x.id === c.contaDebitoId)
             return conta ? (
-              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600,
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
                 background:'#f0f4ff', color:'#1a56db' }}>
                 {conta.icone} {conta.banco}
               </span>
@@ -252,7 +252,7 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
         title={c.ativa ? 'Inativar' : 'Ativar'}
         style={{ cursor:'pointer', flexShrink:0, display:'flex', alignItems:'center', gap:6 }}>
         <div style={{
-          width:40, height:22, borderRadius:11,
+          width:40, height:22, borderRadius:12,
           background: c.ativa ? COR.verde : '#cbd5e1',
           position:'relative', transition:'background .2s',
           flexShrink:0 }}>

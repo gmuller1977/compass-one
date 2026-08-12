@@ -197,7 +197,7 @@ export default function WizardPlanejamento() {
       <div style={{ display:'flex', justifyContent:'center', gap:6 }}>
         {Array.from({ length: totalSteps }, (_,i) => (
           <div key={i} style={{
-            width: i+1===step ? 20 : 8, height:8, borderRadius:4,
+            width: i+1===step ? 20 : 8, height:8, borderRadius:6,
             background: i+1<step ? 'rgba(255,255,255,.6)' : i+1===step ? '#fff' : 'rgba(255,255,255,.25)',
             transition:'all .3s',
           }} />
@@ -248,7 +248,7 @@ export default function WizardPlanejamento() {
             <button key={o.id} onClick={() => setObjetivo(o.id)} style={{
               background: objetivo===o.id ? '#eff6ff' : '#fff',
               border:`2px solid ${objetivo===o.id ? '#1a56db' : '#e2e8f0'}`,
-              borderRadius:16, padding:16, cursor:'pointer', fontFamily:'inherit',
+              borderRadius:14, padding:16, cursor:'pointer', fontFamily:'inherit',
               display:'flex', alignItems:'center', gap:14, textAlign:'left', transition:'all .15s',
             }}>
               <div style={{ fontSize:28, flexShrink:0 }}>{o.emoji}</div>
@@ -475,7 +475,7 @@ export default function WizardPlanejamento() {
         </div>
 
         {/* Visão mensal */}
-        <div style={{ background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', marginBottom:12 }}>
+        <div style={{ background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:14, overflow:'hidden', marginBottom:12 }}>
           <div style={{ padding:'14px 16px', borderBottom:'1px solid #e2e8f0',
             display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <span style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>📊 Visão mensal</span>
@@ -522,7 +522,7 @@ export default function WizardPlanejamento() {
         </div>
 
         {/* Projeção anual */}
-        <div style={{ background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:16, overflow:'hidden', marginBottom:16 }}>
+        <div style={{ background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:14, overflow:'hidden', marginBottom:16 }}>
           <div style={{ padding:'14px 16px', borderBottom:'1px solid #e2e8f0' }}>
             <span style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>📅 Projeção anual {ANO}</span>
           </div>

@@ -224,7 +224,7 @@ export default function NleExtrato({
                     {isMobile ? (<>
                       {/* Inicial */}
                       <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                        padding:'5px 8px',borderRadius:9,flex:1,
+                        padding:'5px 8px',borderRadius:10,flex:1,
                         background:'#f8faff',border:`1px solid ${COR.borda}`}}>
                         <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
                           letterSpacing:.4,marginBottom:2,color:'#94a3b8'}}>Inicial</span>
@@ -238,7 +238,7 @@ export default function NleExtrato({
                         const pos = mov > 0; const neg = mov < 0
                         return (
                           <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                            padding:'5px 8px',borderRadius:9,flex:1,
+                            padding:'5px 8px',borderRadius:10,flex:1,
                             background:pos?'#f0fdf4':neg?'#fff1f2':'#f8faff',
                             border:`1px solid ${pos?'#bbf7d0':neg?'#fecdd3':COR.borda}`}}>
                             <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
@@ -253,7 +253,7 @@ export default function NleExtrato({
                       })()}
                       {/* Final */}
                       <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                        padding:'5px 8px',borderRadius:9,flex:1,
+                        padding:'5px 8px',borderRadius:10,flex:1,
                         background:diaFuturo?'#f8faff':ehHoje?'#eff6ff':saldoDia<0?'#fff1f2':'#f0fdf4',
                         border:`1px solid ${diaFuturo?COR.borda:ehHoje?'#bfdbfe':saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
                         <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
@@ -395,7 +395,7 @@ export default function NleExtrato({
                       {!l.id.startsWith('fatura-') && (
                         <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
                           style={{border:'none',background:'transparent',cursor:'pointer',
-                            color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4}}
+                            color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:6}}
                           onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
                           onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                       )}
@@ -441,7 +441,7 @@ export default function NleExtrato({
                             <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
                             <select ref={categoriaSelectRef} value={fCat}
                               onChange={e=>{const n=e.target.value;setFCat(n);setFSubDesc('');const c=categorias.find((x: Categoria)=>x.nome===n);if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento));if(n)setTimeout(()=>valorInputRef.current?.focus(),50)}}
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
+                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                               <option value="">Selecione...</option>
                               {categoriasSelect.map((c: Categoria)=><option key={c.id} value={c.nome}>{c.nome}</option>)}
                             </select>
@@ -450,14 +450,14 @@ export default function NleExtrato({
                             <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Descrição</div>
                             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
                               placeholder="Ex: Mercado Extra..."
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
                               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                           </div>
                           <div style={{flex:'0 0 90px',display:'flex',flexDirection:'column',gap:3}}>
                             <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
                             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
                               placeholder="R$ 0,00" inputMode="decimal"
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:9,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
                               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                           </div>
                         </div>

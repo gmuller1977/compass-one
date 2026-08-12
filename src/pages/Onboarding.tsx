@@ -62,7 +62,7 @@ function newId() {
 type Phase = 'welcome' | 'banco' | 'cartao' | 'categorias' | 'planejamento'
 
 const inputSt: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 9,
+  width: '100%', padding: '10px 12px', borderRadius: 10,
   border: `1.5px solid ${COR.borda}`, fontSize: 13,
   fontFamily: 'inherit', color: COR.texto, outline: 'none',
   background: '#fff', boxSizing: 'border-box',
@@ -208,7 +208,7 @@ export default function Onboarding() {
         <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
           {(['welcome','banco','cartao','categorias','planejamento'] as Phase[]).map((p, i) => (
             <div key={p} style={{
-              height: 7, borderRadius: 4,
+              height: 7, borderRadius: 6,
               width: p === phase ? 22 : 7,
               background: i < (['welcome','banco','cartao','categorias','planejamento'] as Phase[]).indexOf(phase)
                 ? 'rgba(255,255,255,.6)'
@@ -248,7 +248,7 @@ export default function Onboarding() {
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 22 }}>
                   {SLIDES.map((_, i) => (
                     <div key={i} onClick={() => setSlide(i)} style={{
-                      width: i === slide ? 18 : 7, height: 7, borderRadius: 4,
+                      width: i === slide ? 18 : 7, height: 7, borderRadius: 6,
                       background: i === slide ? COR.azul : '#cbd5e1',
                       cursor: 'pointer', transition: 'all .2s',
                     }} />

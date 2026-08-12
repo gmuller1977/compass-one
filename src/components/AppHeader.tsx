@@ -160,7 +160,7 @@ export default function AppHeader({ currentPath, hideBottomTab }: Props) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
             onClick={() => navigate('/dashboard')}>
-            <div style={{ width: 28, height: 28, borderRadius: 7,
+            <div style={{ width: 28, height: 28, borderRadius: 8,
               background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <CompassSvg size={14} />

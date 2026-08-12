@@ -110,7 +110,7 @@ function SimCard({ sim, onDelete }: { sim: SimRow; onDelete: (id: string) => voi
       gap: 12,
     }}>
       <div style={{
-        width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
         background: isDivida ? '#fff1f2' : '#f0fdf4',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 18,
@@ -126,7 +126,7 @@ function SimCard({ sim, onDelete }: { sim: SimRow; onDelete: (id: string) => voi
         {sim.integrado_planejamento && (
           <div style={{
             display: 'inline-block', marginTop: 5, fontSize: 10, fontWeight: 600,
-            padding: '2px 6px', borderRadius: 4,
+            padding: '2px 6px', borderRadius: 6,
             background: '#eff6ff', color: COR.azul,
           }}>✓ No planejamento</div>
         )}
@@ -465,7 +465,7 @@ export default function Simulacao() {
                 </div>
               </div>
               <button onClick={simDiv} style={{
-                marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 9,
+                marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 10,
                 background: `linear-gradient(135deg,${COR.vermelho},#b91c1c)`,
                 color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               }}>Calcular →</button>
@@ -546,7 +546,7 @@ export default function Simulacao() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 12 }}>O que você quer fazer?</div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button onClick={salvarSimulacao} disabled={simSalva} style={{
-                      flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 9,
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 10,
                       background: simSalva ? '#f1f5f9' : `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
                       color: simSalva ? COR.textoMuted : '#fff',
                       fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
@@ -555,7 +555,7 @@ export default function Simulacao() {
                       {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
                     </button>
                     <button onClick={incluirNoPlanejamento} disabled={integrado} style={{
-                      flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 9,
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 10,
                       background: integrado ? '#f0fdf4' : COR.branco,
                       color: integrado ? COR.verde : COR.texto,
                       fontSize: 13, fontWeight: 600, cursor: integrado ? 'default' : 'pointer', fontFamily: 'inherit',
@@ -600,7 +600,7 @@ export default function Simulacao() {
                 </div>
               </div>
               <button onClick={simMeta} style={{
-                marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 9,
+                marginTop: 18, width: '100%', padding: '12px 0', border: 'none', borderRadius: 10,
                 background: `linear-gradient(135deg,${COR.verde},#15803d)`,
                 color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               }}>Calcular →</button>
@@ -622,8 +622,8 @@ export default function Simulacao() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginBottom: 5 }}>
                       <span>R$ 0</span><span>{fmt(parseBRL(valorMeta))}</span>
                     </div>
-                    <div style={{ height: 8, background: '#dcfce7', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ height: 8, borderRadius: 4, background: COR.verde, width: '0%' }}/>
+                    <div style={{ height: 8, background: '#dcfce7', borderRadius: 6, overflow: 'hidden' }}>
+                      <div style={{ height: 8, borderRadius: 6, background: COR.verde, width: '0%' }}/>
                     </div>
                     <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 5 }}>
                       Progresso será acompanhado após salvar
@@ -679,7 +679,7 @@ export default function Simulacao() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 12 }}>O que você quer fazer?</div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button onClick={salvarSimulacao} disabled={simSalva} style={{
-                      flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 9,
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: 'none', borderRadius: 10,
                       background: simSalva ? '#f1f5f9' : `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
                       color: simSalva ? COR.textoMuted : '#fff',
                       fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
@@ -688,7 +688,7 @@ export default function Simulacao() {
                       {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
                     </button>
                     <button onClick={incluirNoPlanejamento} disabled={integrado} style={{
-                      flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 9,
+                      flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 10,
                       background: integrado ? '#f0fdf4' : COR.branco,
                       color: integrado ? COR.verde : COR.texto,
                       fontSize: 13, fontWeight: 600, cursor: integrado ? 'default' : 'pointer', fontFamily: 'inherit',

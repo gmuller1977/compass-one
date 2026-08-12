@@ -163,8 +163,8 @@ export default function NleConsolidado({
                         </div>
                       </div>
                       {limite>0 && (
-                        <div style={{background:'#f1f5f9',borderRadius:4,height:4,overflow:'hidden'}}>
-                          <div style={{width:`${pct}%`,height:'100%',background:corBarra,borderRadius:4,transition:'width .3s'}} />
+                        <div style={{background:'#f1f5f9',borderRadius:6,height:4,overflow:'hidden'}}>
+                          <div style={{width:`${pct}%`,height:'100%',background:corBarra,borderRadius:6,transition:'width .3s'}} />
                         </div>
                       )}
                     </div>
@@ -236,7 +236,7 @@ export default function NleConsolidado({
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>🏦 Conta / Cartão *</div>
           <select value={fBancoConsolidado} onChange={e=>setFBancoConsolidado(e.target.value)}
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+            style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
               fontSize:12,outline:'none',background:'#fff',
               fontFamily:'inherit',color:COR.texto,width:'100%'}}>
             <option value="">Selecione...</option>
@@ -264,7 +264,7 @@ export default function NleConsolidado({
             <input type="number" min={1} max={totalDias} value={diaSel}
               onChange={e=>setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
               onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+              style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%',textAlign:'center'}}/>
           </div>
@@ -274,11 +274,11 @@ export default function NleConsolidado({
         </div>
 
         {/* Despesa / Receita */}
-        <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
+        <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,
           padding:3,marginBottom:10,width:'fit-content'}}>
           {(['saida','entrada'] as const).map(t=>(
             <button key={t} onClick={()=>{setFTipo(t);setFPag(t==='entrada'?'pix':'debito')}} style={{
-              padding:'5px 14px',border:'none',borderRadius:5,cursor:'pointer',
+              padding:'5px 14px',border:'none',borderRadius:6,cursor:'pointer',
               fontSize:12,fontWeight:500,fontFamily:'inherit',
               background:fTipo===t?COR.branco:'transparent',
               color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
@@ -326,7 +326,7 @@ export default function NleConsolidado({
                 if (nome) setTimeout(() => valorInputRef.current?.focus(), 50)
               }}
               onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+              style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}>
               <option value="">Selecione...</option>
@@ -356,7 +356,7 @@ export default function NleConsolidado({
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor *</div>
             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00" onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+              style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}
               onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>
@@ -366,7 +366,7 @@ export default function NleConsolidado({
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
               placeholder="Ex: Mercado Extra, Farmácia..."
               onFocus={realcarFoco} onBlur={removerRealce}
-              style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+              style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}
               onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>

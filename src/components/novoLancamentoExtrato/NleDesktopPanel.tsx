@@ -177,7 +177,7 @@ export default function NleDesktopPanel({
 
           {/* Tipo toggle */}
           {!editandoFixaId && (
-            <div style={{display:'flex',background:'#f1f5f9',borderRadius:9,padding:3,gap:3,marginBottom:14}}>
+            <div style={{display:'flex',background:'#f1f5f9',borderRadius:10,padding:3,gap:3,marginBottom:14}}>
               {(['saida','entrada'] as const).map(t => {
                 const ativo  = fTipo === t
                 const corBg  = t==='entrada'?'#f0fdf4':'#fff1f2'
@@ -188,7 +188,7 @@ export default function NleDesktopPanel({
                     setFTipo(t)
                     if (!isDinheiro && fPag !== 'transferencia') setFPag(t === 'entrada' ? 'credito' : 'debito')
                   }} style={{
-                    flex:1,padding:'8px',border:'none',borderRadius:7,cursor:'pointer',
+                    flex:1,padding:'8px',border:'none',borderRadius:8,cursor:'pointer',
                     fontSize:12,fontWeight:700,fontFamily:'inherit',transition:'all .15s',
                     background:ativo?corBg:'transparent',
                     color:ativo?corTxt:'#94a3b8',

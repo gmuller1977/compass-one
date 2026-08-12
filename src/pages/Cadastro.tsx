@@ -71,7 +71,7 @@ function Campo({
             width:'100%',
             padding:`13px ${ehSenha ? '44px' : '14px'} 13px ${icone ? '44px' : '14px'}`,
             border:`1.5px solid ${temErro ? '#dc2626' : focado ? '#1a56db' : '#e2e8f0'}`,
-            borderRadius:13, fontSize:14, color:'#0f172a',
+            borderRadius:14, fontSize:14, color:'#0f172a',
             background:'#fff', outline:'none', fontFamily:'inherit',
             transition:'all .15s',
             boxShadow: focado ? '0 0 0 3px rgba(26,86,219,.08)' : 'none',
@@ -200,7 +200,7 @@ export default function Cadastro() {
       <div style={{ position:'absolute', width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.04)', bottom:-40, left:-20 }}/>
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, position:'relative', zIndex:1 }}>
         <div style={{
-          width: compact ? 72 : 88, height: compact ? 72 : 88, borderRadius:22,
+          width: compact ? 72 : 88, height: compact ? 72 : 88, borderRadius:20,
           background:'rgba(255,255,255,.15)', border:'2px solid rgba(255,255,255,.25)',
           display:'flex', alignItems:'center', justifyContent:'center',
           boxShadow:'0 8px 24px rgba(0,0,0,.2)',

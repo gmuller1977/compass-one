@@ -51,7 +51,7 @@ export default function AcMobileView({
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
   const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)
 
-  const btnStyle = { width:30,height:30,borderRadius:9,border:'none',
+  const btnStyle = { width:30,height:30,borderRadius:10,border:'none',
     background:'rgba(255,255,255,.15)',color:'#fff',
     fontSize:16,cursor:'pointer' as const,fontWeight:700,
     display:'flex' as const,alignItems:'center' as const,justifyContent:'center' as const }
@@ -123,7 +123,7 @@ export default function AcMobileView({
         <div onClick={() => toggleAberto(uid)}
           style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 16px 6px',
             cursor:'pointer', background: aberto ? '#f8faff' : '#fff' }}>
-          <div style={{ width:38, height:38, borderRadius:11, flexShrink:0,
+          <div style={{ width:38, height:38, borderRadius:10, flexShrink:0,
             background:corIcone+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>
             {icone}
           </div>
@@ -131,7 +131,7 @@ export default function AcMobileView({
             <div style={{ fontSize:13, fontWeight:700, color:'#0f172a',
               overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
             <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:2 }}>
-              <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, fontWeight:700,
+              <span style={{ fontSize:8, padding:'1px 6px', borderRadius:6, fontWeight:700,
                 background:catInfo?.fixa?'#e0f2fe':'#f1f5f9',
                 color:catInfo?.fixa?'#0369a1':'#64748b' }}>
                 {catInfo?.fixa ? 'Fixa' : 'Variável'}
@@ -161,7 +161,7 @@ export default function AcMobileView({
         {aberto && (
           <div style={{ background:'#f8faff', borderTop:'1px solid #e2e8f0', padding:'10px 16px 14px' }}>
             <div style={{ display:'flex', alignItems:'center', marginBottom:8 }}>
-              <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', borderRadius:7,
+              <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', borderRadius:8,
                 background:statusBg, color:statusColor }}>{statusLabel}</span>
             </div>
             <div style={{ display:'flex', gap:6, marginBottom: colunas.length > 0 ? 10 : 0 }}>
@@ -192,7 +192,7 @@ export default function AcMobileView({
                       textTransform:'uppercase' as const, letterSpacing:.5, marginBottom:6 }}>{col.label}</div>
                     <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
                       {col.itens.map((l,i) => (
-                        <div key={i} style={{ padding:'5px 8px', borderRadius:7,
+                        <div key={i} style={{ padding:'5px 8px', borderRadius:8,
                           background:'#fff', border:'1px solid #e2e8f0',
                           display:'flex', flexDirection:'column', gap:1 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', gap:6 }}>
@@ -383,7 +383,7 @@ export default function AcMobileView({
           />
         ) : (<>
           {(dadosAno.entradas ?? []).length > 0 && (
-            <div style={{ borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
+            <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                 padding:'12px 16px', background:'#f0fdf4', borderBottom:'2px solid #dcfce7' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:7 }}>
@@ -417,7 +417,7 @@ export default function AcMobileView({
           )}
 
           {(dadosAno.saidas ?? []).length > 0 && (
-            <div style={{ borderRadius:18, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
+            <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                 padding:'12px 16px', background:'#fff1f2', borderBottom:'2px solid #fecdd3' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:7 }}>
@@ -449,7 +449,7 @@ export default function AcMobileView({
             </div>
           )}
 
-          <div style={{ borderRadius:18, background:'linear-gradient(135deg,#0f2878,#2563eb)',
+          <div style={{ borderRadius:20, background:'linear-gradient(135deg,#0f2878,#2563eb)',
             padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between',
             boxShadow:'0 4px 16px rgba(26,86,219,.25)' }}>
             <div>

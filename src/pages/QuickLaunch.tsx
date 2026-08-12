@@ -308,14 +308,14 @@ export default function QuickLaunch() {
           onClick={() => setEscolherConta(true)}
           style={{
             margin: '0 16px', marginTop: -18,
-            background: '#fff', borderRadius: 18, padding: '14px 16px',
+            background: '#fff', borderRadius: 20, padding: '14px 16px',
             boxShadow: '0 6px 24px rgba(0,0,0,.12)',
             display: 'flex', alignItems: 'center', gap: 12,
             cursor: 'pointer', flexShrink: 0,
           }}
         >
           <div style={{
-            width: 40, height: 40, borderRadius: 11, background: contaSel.cor || COR.azul,
+            width: 40, height: 40, borderRadius: 10, background: contaSel.cor || COR.azul,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, flexShrink: 0,
           }}>{contaSel.icone || (isCartao ? '💳' : '🏦')}</div>
@@ -348,17 +348,17 @@ export default function QuickLaunch() {
 
       {/* Hoje strip */}
       <div style={{ display: 'flex', gap: 8, padding: '8px 16px 6px', flexShrink: 0 }}>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 11, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
+        <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
           <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Despesas hoje</div>
           <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: gastosHoje > 0 ? COR.vermelho : COR.textoSuave }}>
             {fmt(gastosHoje)}
           </div>
         </div>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 11, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
+        <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
           <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Mês atual</div>
           <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: COR.azul }}>{mesStr}</div>
         </div>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 11, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
+        <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
           <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Dia</div>
           <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: COR.texto }}>
             {NOMES_DIA[hoje.getDay()]} {dia}
@@ -456,7 +456,7 @@ export default function QuickLaunch() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{
-              width: 34, height: 34, borderRadius: 9,
+              width: 34, height: 34, borderRadius: 10,
               background: isCartao ? '#f5f3ff' : '#eff6ff',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>
@@ -506,7 +506,7 @@ export default function QuickLaunch() {
           <button
             onClick={registrar}
             style={{
-              width: '100%', padding: 13, border: 'none', borderRadius: 13,
+              width: '100%', padding: 13, border: 'none', borderRadius: 14,
               background: isCartao
                 ? 'linear-gradient(135deg,#7c3aed,#a855f7)'
                 : `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
@@ -523,7 +523,7 @@ export default function QuickLaunch() {
         <div style={{
           position: 'fixed', top: '45%', left: '50%',
           transform: 'translate(-50%,-50%)',
-          background: COR.verde, color: '#fff', borderRadius: 16,
+          background: COR.verde, color: '#fff', borderRadius: 14,
           padding: '14px 24px', fontSize: 14, fontWeight: 600,
           display: 'flex', alignItems: 'center', gap: 8,
           zIndex: 200, boxShadow: '0 8px 30px rgba(22,163,74,.4)',
@@ -582,7 +582,7 @@ export default function QuickLaunch() {
                         }}
                       >
                         <div style={{
-                          width: 40, height: 40, borderRadius: 11, background: c.cor || COR.azul,
+                          width: 40, height: 40, borderRadius: 10, background: c.cor || COR.azul,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 20, flexShrink: 0,
                         }}>{c.icone || '🏦'}</div>
@@ -631,7 +631,7 @@ export default function QuickLaunch() {
                         }}
                       >
                         <div style={{
-                          width: 40, height: 40, borderRadius: 11, background: c.cor || '#7c3aed',
+                          width: 40, height: 40, borderRadius: 10, background: c.cor || '#7c3aed',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 20, flexShrink: 0,
                         }}>{c.icone || '💳'}</div>
@@ -761,7 +761,7 @@ export default function QuickLaunch() {
               <button
                 onClick={salvarPins}
                 style={{
-                  width: '100%', padding: '13px', border: 'none', borderRadius: 13,
+                  width: '100%', padding: '13px', border: 'none', borderRadius: 14,
                   background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
                   color: '#fff', fontSize: 15, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit',

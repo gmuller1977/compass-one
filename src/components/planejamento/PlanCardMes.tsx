@@ -69,11 +69,11 @@ export default function PlanCardMes({ mes, receitas, despesas, saldoPrevisto, is
           </div>
         </div>
 
-        <div style={{ height: 4, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
+        <div style={{ height: 4, background: '#f1f5f9', borderRadius: 6, overflow: 'hidden', marginBottom: 8 }}>
           <div style={{
             height: '100%', width: `${percDespesas}%`,
             background: percDespesas > 85 ? COR.vermelho : percDespesas > 65 ? '#f59e0b' : COR.verde,
-            borderRadius: 4, transition: 'width .3s',
+            borderRadius: 6, transition: 'width .3s',
           }} />
         </div>
         <div style={{ textAlign: 'right', fontSize: 10, color: COR.textoSuave, marginBottom: 6 }}>

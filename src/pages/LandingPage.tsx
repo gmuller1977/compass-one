@@ -30,7 +30,7 @@ function AppMockup() {
     <div style={{
       width: 340, flexShrink: 0,
       background: '#f8faff',
-      borderRadius: 18,
+      borderRadius: 20,
       overflow: 'hidden',
       boxShadow: '0 40px 100px rgba(15,40,120,.35), 0 8px 24px rgba(0,0,0,.15)',
       transform: 'perspective(1200px) rotateY(-8deg) rotateX(2deg)',
@@ -45,7 +45,7 @@ function AppMockup() {
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <div style={{
-            width:26, height:26, borderRadius:7,
+            width:26, height:26, borderRadius:8,
             background:'rgba(255,255,255,.2)', border:'1px solid rgba(255,255,255,.3)',
             display:'flex', alignItems:'center', justifyContent:'center',
           }}>
@@ -87,7 +87,7 @@ function AppMockup() {
             { label:'Gastei', value:'R$ 3.680', color:'#dc2626' },
           ].map(k => (
             <div key={k.label} style={{
-              background:'#fff', borderRadius:9, padding:'9px 9px',
+              background:'#fff', borderRadius:10, padding:'9px 9px',
               border:'1px solid #e8edf3',
             }}>
               <div style={{ fontSize:8, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', letterSpacing:'.3px', marginBottom:3 }}>{k.label}</div>
@@ -110,7 +110,7 @@ function AppMockup() {
               borderBottom: i < 2 ? '1px solid #f1f5f9' : 'none',
             }}>
               <div style={{
-                width:24, height:24, borderRadius:7, background:'#f8fafc',
+                width:24, height:24, borderRadius:8, background:'#f8fafc',
                 display:'flex', alignItems:'center', justifyContent:'center', fontSize:13,
               }}>{l.icon}</div>
               <div style={{ flex:1, fontSize:11, color:'#475569' }}>{l.name}</div>
@@ -339,7 +339,7 @@ export default function LandingPage() {
                 key={b.title}
                 className="benefit-card"
                 style={{
-                  background: '#fff', borderRadius: 16,
+                  background: '#fff', borderRadius: 14,
                   padding: '28px 24px',
                   border: '1px solid #e2e8f0',
                   borderLeft: `4px solid ${b.accent}`,
@@ -404,12 +404,12 @@ export default function LandingPage() {
               },
             ].map(p => (
               <div key={p.title} style={{
-                background: '#fff', borderRadius: 16, padding: '22px 24px',
+                background: '#fff', borderRadius: 14, padding: '22px 24px',
                 border: '1.5px solid #e8edf3',
                 display: 'flex', alignItems: 'flex-start', gap: 20,
               }}>
                 <div style={{
-                  width: 54, height: 54, borderRadius: 15, flexShrink: 0,
+                  width: 54, height: 54, borderRadius: 14, flexShrink: 0,
                   background: p.iconBg,
                   display:'flex', alignItems:'center', justifyContent:'center',
                   fontSize: 26,
@@ -620,7 +620,7 @@ export default function LandingPage() {
               },
             ].map(plan => (
               <div key={plan.name} style={{
-                background: '#fff', borderRadius: 18, overflow: 'hidden',
+                background: '#fff', borderRadius: 20, overflow: 'hidden',
                 border: plan.border,
                 boxShadow: plan.disabled ? 'none' : '0 8px 32px rgba(22,163,74,.15)',
                 opacity: plan.opacity,

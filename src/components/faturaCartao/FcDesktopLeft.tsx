@@ -403,7 +403,7 @@ export default function FcDesktopLeft({
                       <button
                         onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
                         style={{border:'none',background:'transparent',cursor:'pointer',
-                          color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:4,flexShrink:0}}
+                          color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:6,flexShrink:0}}
                         onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
                         onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                     </div>
