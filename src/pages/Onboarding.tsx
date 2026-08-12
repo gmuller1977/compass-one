@@ -3,13 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
-
-const COR = {
-  azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
-  fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
-  textoSuave: '#64748b', borda: '#e2e8f0',
-  verde: '#16a34a', vermelho: '#dc2626',
-}
+import { COR } from '../utils/cores'
 
 const BANCOS = [
   'Banco do Brasil', 'Bradesco', 'C6 Bank', 'Caixa', 'Inter',

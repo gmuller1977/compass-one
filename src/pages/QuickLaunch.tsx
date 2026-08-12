@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import CompassCard from '../components/CompassCard'
 import type { DadosMes } from '../context/AppContext'
+import { COR } from '../utils/cores'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -15,11 +16,6 @@ function useIsMobile() {
   return v
 }
 
-const COR = {
-  azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
-  fundo: '#f0f4ff', verde: '#16a34a', vermelho: '#dc2626',
-  texto: '#0f172a', textoSuave: '#64748b', borda: '#e2e8f0',
-}
 
 type FaturaLanc = {
   id: string; tipo: 'saida' | 'entrada'
