@@ -99,7 +99,7 @@ export default function CompassCard({ style }: { style?: React.CSSProperties }) 
     <div style={{
       background: c.bg,
       border: `1.5px solid ${c.border}`,
-      borderRadius: 16,
+      borderRadius: 14,
       padding: '12px 14px',
       display: 'flex',
       alignItems: 'center',

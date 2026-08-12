@@ -219,10 +219,10 @@ export default function CfgCategorias({
             </div>
 
             {/* Preview card */}
-            <div style={{ background:'#fff', borderRadius:18, padding:16,
+            <div style={{ background:'#fff', borderRadius:20, padding:16,
               boxShadow:'0 2px 12px rgba(0,0,0,.08)', marginBottom:18,
               display:'flex', alignItems:'center', gap:14, border:`1px solid ${COR.borda}` }}>
-              <div style={{ width:52, height:52, borderRadius:16, background:formCat.cor,
+              <div style={{ width:52, height:52, borderRadius:14, background:formCat.cor,
                 display:'flex', alignItems:'center', justifyContent:'center',
                 fontSize:24, flexShrink:0 }}>
                 {formCat.icone}
@@ -232,12 +232,12 @@ export default function CfgCategorias({
                   {formCat.nome || 'Nome da categoria'}
                 </div>
                 <div style={{ display:'flex', gap:5, marginTop:6, flexWrap:'wrap' }}>
-                  <span style={{ fontSize:10, padding:'2px 8px', borderRadius:4, fontWeight:700,
+                  <span style={{ fontSize:10, padding:'2px 8px', borderRadius:6, fontWeight:700,
                     background: formCat.tipo === 'entrada' ? '#dcfce7' : '#fee2e2',
                     color: formCat.tipo === 'entrada' ? COR.verde : COR.vermelho }}>
                     {formCat.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
                   </span>
-                  <span style={{ fontSize:10, padding:'2px 8px', borderRadius:4, fontWeight:700,
+                  <span style={{ fontSize:10, padding:'2px 8px', borderRadius:6, fontWeight:700,
                     background: formCat.fixa ? '#fef9c3' : '#f1f5f9',
                     color: formCat.fixa ? '#92400e' : '#64748b' }}>
                     {formCat.fixa ? 'Fixa' : 'Variável'}
@@ -273,7 +273,7 @@ export default function CfgCategorias({
                       style={{
                         flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                         border:`1.5px solid ${formCat.tipo===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.borda}`,
-                        borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                        borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:500,
                         background: formCat.tipo===v ? (v==='entrada' ? '#f0fdf4' : '#fff1f2') : COR.branco,
                         color: formCat.tipo===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave }}>
                       {l}
@@ -341,7 +341,7 @@ export default function CfgCategorias({
                       style={{
                         flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                         border:`1.5px solid ${formCat.fixa===v ? COR.azul : COR.borda}`,
-                        borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                        borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:500,
                         background: formCat.fixa===v ? '#eff6ff' : COR.branco,
                         color: formCat.fixa===v ? COR.azul : COR.textoSuave }}>
                       {l}
@@ -390,7 +390,7 @@ export default function CfgCategorias({
                           style={{
                             flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                             border:`1.5px solid ${formCat.tipoMovimento===t.id ? COR.azul : COR.borda}`,
-                            borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                            borderRadius:8, cursor:'pointer', fontSize:11, fontWeight:500,
                             background: formCat.tipoMovimento===t.id ? '#eff6ff' : COR.branco,
                             color: formCat.tipoMovimento===t.id ? COR.azul : COR.textoSuave }}>
                           {t.label}
@@ -438,7 +438,7 @@ export default function CfgCategorias({
                             style={{
                               padding:'7px 10px', fontFamily:'inherit', outline:'none',
                               border:`1.5px solid ${formCat.formaPagamento===f.id ? COR.azul : COR.borda}`,
-                              borderRadius:7, cursor:'pointer', fontSize:11, fontWeight:500,
+                              borderRadius:8, cursor:'pointer', fontSize:11, fontWeight:500,
                               background: formCat.formaPagamento===f.id ? '#eff6ff' : COR.branco,
                               color: formCat.formaPagamento===f.id ? COR.azul : COR.textoSuave }}>
                             {f.label}
@@ -487,7 +487,7 @@ export default function CfgCategorias({
               </div>
               {erroCat && (
                 <div style={{ background:'#fee2e2', color:COR.vermelho,
-                  borderRadius:7, padding:'7px 12px', fontSize:12 }}>
+                  borderRadius:8, padding:'7px 12px', fontSize:12 }}>
                   ⚠ {erroCat}
                 </div>
               )}
@@ -610,7 +610,7 @@ export default function CfgCategorias({
                       <button key={v} onClick={() => set(v as TipoCategoria)} style={{
                         flex:1, padding:'7px 0', fontFamily:'inherit',
                         border:`1.5px solid ${cur===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.borda}`,
-                        borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                        borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:500,
                         background: cur===v ? (v==='entrada' ? '#f0fdf4' : '#fff1f2') : COR.branco,
                         color: cur===v ? (v==='entrada' ? COR.verde : COR.vermelho) : COR.textoSuave }}>
                         {l}

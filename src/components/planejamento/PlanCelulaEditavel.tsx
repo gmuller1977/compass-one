@@ -41,7 +41,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, al
           width: '100%', padding: '3px 7px', textAlign: align,
           border: `1.5px solid ${COR.azul}`, outline: 'none',
           background: '#dbeafe', color: COR.azulEscuro, fontSize: 12,
-          fontFamily: 'inherit', fontWeight: 600, borderRadius: 4,
+          fontFamily: 'inherit', fontWeight: 600, borderRadius: 6,
           boxSizing: 'border-box',
         }}
       />

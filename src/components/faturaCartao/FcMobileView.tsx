@@ -145,7 +145,7 @@ export default function FcMobileView({
         {/* Mês nav + status badge */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
           padding:'8px 14px 10px'}}>
-          <button onClick={prevMesNav} style={{width:30,height:30,borderRadius:9,border:'none',
+          <button onClick={prevMesNav} style={{width:30,height:30,borderRadius:10,border:'none',
             background:'#f0f4ff',display:'flex',alignItems:'center',justifyContent:'center',
             cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>‹</button>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -157,7 +157,7 @@ export default function FcMobileView({
               {statusLbl}
             </span>
           </div>
-          <button onClick={nextMesNav} style={{width:30,height:30,borderRadius:9,border:'none',
+          <button onClick={nextMesNav} style={{width:30,height:30,borderRadius:10,border:'none',
             background:'#f0f4ff',display:'flex',alignItems:'center',justifyContent:'center',
             cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>›</button>
         </div>
@@ -460,7 +460,7 @@ export default function FcMobileView({
                         else if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); if (n>1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() } }
                         else if (e.key==='Enter') { e.preventDefault(); lancar() }
                       }}
-                      style={{width:46,height:36,borderRadius:9,
+                      style={{width:46,height:36,borderRadius:10,
                         border:`1.5px solid ${ativo ? COR.azul : COR.borda}`,
                         background: ativo ? '#eff6ff' : '#fff',
                         fontSize:12,fontWeight:700,
@@ -581,7 +581,7 @@ export default function FcMobileView({
                         padding:'11px 14px',cursor:'pointer',
                         borderBottom: idx < allItems.length-1 ? `1px solid ${COR.borda}` : 'none',
                         background:COR.branco}}>
-                      <div style={{width:38,height:38,borderRadius:11,flexShrink:0,
+                      <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
                         display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
                         background:catVisual.cor}}>
                         {catVisual.icone}
@@ -597,7 +597,7 @@ export default function FcMobileView({
                             {hasDesc ? `${l.categoria} · ` : ''}dia {dc}{mesCompraLabel}
                           </span>
                           {l.parcelas && l.parcelas > 1 && (
-                            <span style={{fontSize:8,padding:'1px 6px',borderRadius:4,fontWeight:700,
+                            <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,
                               background:'#f5f3ff',color:'#7c3aed'}}>
                               {l.parcelaAtual}/{l.parcelas}x
                             </span>
@@ -610,7 +610,7 @@ export default function FcMobileView({
                       </div>
                       <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
                         style={{border:'none',background:'transparent',cursor:'pointer',
-                          color:'#e2e8f0',fontSize:14,padding:3,borderRadius:5,flexShrink:0}}>✕</button>
+                          color:'#e2e8f0',fontSize:14,padding:3,borderRadius:6,flexShrink:0}}>✕</button>
                     </div>
                   )
                 })}

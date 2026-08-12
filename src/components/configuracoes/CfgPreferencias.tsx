@@ -63,7 +63,7 @@ export default function CfgPreferencias({
               <div style={{ display:'flex', gap:6 }}>
                 {([['2','R$ 1.500,00'],['0','R$ 1.500']] as const).map(([v,l]) => (
                   <button disabled key={v} style={{ flex:1, padding:'7px 0', fontFamily:'inherit',
-                    border:`1.5px solid ${v==='2' ? COR.azul : COR.borda}`, borderRadius:7,
+                    border:`1.5px solid ${v==='2' ? COR.azul : COR.borda}`, borderRadius:8,
                     cursor:'not-allowed', fontSize:12, fontWeight:500,
                     background: v==='2' ? '#eff6ff' : COR.branco,
                     color: v==='2' ? COR.azul : COR.textoSuave }}>{l}
@@ -102,7 +102,7 @@ export default function CfgPreferencias({
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-              padding:'10px 14px', borderRadius:9, background:'#f8fafc', border:`1px solid ${COR.borda}` }}>
+              padding:'10px 14px', borderRadius:10, background:'#f8fafc', border:`1px solid ${COR.borda}` }}>
               <div>
                 <div style={{ fontSize:13, fontWeight:500, color:COR.texto }}>Alertar quando saldo abaixo de</div>
                 <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>Destaca em vermelho no dashboard</div>
@@ -137,7 +137,7 @@ export default function CfgPreferencias({
               {[5, 10, 15, 20].map(p => (
                 <button key={p} onClick={() => setDesvioMinPerc(p)}
                   style={{ flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:12, fontWeight:500,
-                    border:`1.5px solid ${desvioMinPerc === p ? '#2563eb' : COR.borda}`, borderRadius:7,
+                    border:`1.5px solid ${desvioMinPerc === p ? '#2563eb' : COR.borda}`, borderRadius:8,
                     cursor:'pointer', background: desvioMinPerc === p ? '#eff6ff' : COR.branco,
                     color: desvioMinPerc === p ? '#2563eb' : COR.textoSuave }}>
                   {p}%
@@ -158,7 +158,7 @@ export default function CfgPreferencias({
               {[5, 10, 15, 20].map(p => (
                 <button key={p} onClick={() => setPercentualAlerta(p)}
                   style={{ flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:12, fontWeight:500,
-                    border:`1.5px solid ${percentualAlerta === p ? '#2563eb' : COR.borda}`, borderRadius:7,
+                    border:`1.5px solid ${percentualAlerta === p ? '#2563eb' : COR.borda}`, borderRadius:8,
                     cursor:'pointer', background: percentualAlerta === p ? '#eff6ff' : COR.branco,
                     color: percentualAlerta === p ? '#2563eb' : COR.textoSuave }}>
                   {p}%
@@ -183,7 +183,7 @@ export default function CfgPreferencias({
               ].map(m => (
                 <button key={m.id} onClick={() => setMetodoSugestao(m.id)}
                   style={{ flex:1, minWidth:100, padding:'7px 8px', fontFamily:'inherit', fontSize:11, fontWeight:500,
-                    border:`1.5px solid ${metodoSugestao === m.id ? '#2563eb' : COR.borda}`, borderRadius:7,
+                    border:`1.5px solid ${metodoSugestao === m.id ? '#2563eb' : COR.borda}`, borderRadius:8,
                     cursor:'pointer', background: metodoSugestao === m.id ? '#eff6ff' : COR.branco,
                     color: metodoSugestao === m.id ? '#2563eb' : COR.textoSuave }}>
                   {m.label}
@@ -198,7 +198,7 @@ export default function CfgPreferencias({
           <div style={{ height:1, background:COR.borda, margin:'0 0 16px' }} />
 
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'12px 14px', borderRadius:9,
+            padding:'12px 14px', borderRadius:10,
             background: planejamentoLockado ? '#fff7ed' : '#f0fdf4',
             border:`1px solid ${planejamentoLockado ? '#fed7aa' : '#bbf7d0'}` }}>
             <div>
@@ -212,7 +212,7 @@ export default function CfgPreferencias({
               </div>
             </div>
             <button onClick={() => setPlanejamentoLockado(!planejamentoLockado)} style={{
-              padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+              padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
               background: planejamentoLockado ? '#ea580c' : '#16a34a', color:'#fff' }}>
               {planejamentoLockado ? 'Desbloquear' : 'Bloquear'}
@@ -222,7 +222,7 @@ export default function CfgPreferencias({
           <div style={{ height:1, background:COR.borda, margin:'16px 0' }} />
 
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'12px 14px', borderRadius:9, background:'#fff5f5',
+            padding:'12px 14px', borderRadius:10, background:'#fff5f5',
             border:'1px solid #fecaca' }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🔄 Refazer planejamento</div>
@@ -231,7 +231,7 @@ export default function CfgPreferencias({
               </div>
             </div>
             <button onClick={() => navigate('/wizard-planejamento', { state: { refazer: true } })} style={{
-              padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+              padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
               background:'#dc2626', color:'#fff' }}>
               Refazer
@@ -244,7 +244,7 @@ export default function CfgPreferencias({
           <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Tutoriais</h3>
 
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'12px 14px', borderRadius:9, background:'#f0f9ff',
+            padding:'12px 14px', borderRadius:10, background:'#f0f9ff',
             border:'1px solid #bae6fd', marginBottom:10 }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>💡 Reativar tutoriais das telas</div>
@@ -253,7 +253,7 @@ export default function CfgPreferencias({
               </div>
             </div>
             <button onClick={() => { reativarTutoriais(); toast('Tutoriais reativados!') }} style={{
-              padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+              padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
               background:'#0284c7', color:'#fff' }}>
               Reativar
@@ -261,7 +261,7 @@ export default function CfgPreferencias({
           </div>
 
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'12px 14px', borderRadius:9, background:'#f8faff',
+            padding:'12px 14px', borderRadius:10, background:'#f8faff',
             border:`1px solid ${COR.borda}` }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🧭 Rever boas-vindas</div>
@@ -270,7 +270,7 @@ export default function CfgPreferencias({
               </div>
             </div>
             <button onClick={() => { setOnboardingCompleto(false); toast('Boas-vindas reativadas!') }} style={{
-              padding:'7px 14px', border:'none', borderRadius:7, cursor:'pointer',
+              padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
               background:COR.azul, color:'#fff' }}>
               Rever

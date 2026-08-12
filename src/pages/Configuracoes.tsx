@@ -441,7 +441,7 @@ export default function Configuracoes() {
               { icon:'⚙️', label:'Preferências', fn: () => setAba('preferencias') },
             ].map(card => (
               <button key={card.label} onClick={card.fn} style={{
-                background:COR.branco, borderRadius:18, padding:'20px 10px 16px',
+                background:COR.branco, borderRadius:20, padding:'20px 10px 16px',
                 display:'flex', flexDirection:'column', alignItems:'center', gap:10,
                 border:`1px solid ${COR.borda}`, boxShadow:'0 2px 10px rgba(0,0,0,.06)',
                 cursor:'pointer', fontFamily:'inherit', transition:'box-shadow .15s',
@@ -635,7 +635,7 @@ export default function Configuracoes() {
       {modalExcluirConta && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)',
           zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-          <div style={{ background:COR.branco, borderRadius:16, padding:28,
+          <div style={{ background:COR.branco, borderRadius:14, padding:28,
             maxWidth:420, width:'100%', boxShadow:'0 8px 40px rgba(0,0,0,.2)' }}>
             <h3 style={{ fontSize:16, fontWeight:700, color:COR.vermelho, margin:'0 0 10px' }}>
               Excluir conta permanentemente

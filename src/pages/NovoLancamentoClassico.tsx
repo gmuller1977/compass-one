@@ -211,7 +211,7 @@ export default function NovoLancamentoClassico() {
   const datasOrdenadas = Object.keys(grupos).sort((a,b)=>b.localeCompare(a))
 
   const inputSt: React.CSSProperties = {
-    border:`1.5px solid ${COR.borda}`, borderRadius:7,
+    border:`1.5px solid ${COR.borda}`, borderRadius:8,
     padding:'7px 10px', fontSize:12, outline:'none',
     background:'#f8fafc', fontFamily:'inherit', color:COR.texto, width:'100%',
   }
@@ -270,13 +270,13 @@ export default function NovoLancamentoClassico() {
               value={mesDados.saldoBanco}
               onChange={e => updateMes(prev=>({...prev,saldoBanco:e.target.value}))}
               placeholder="R$ 0,00"
-              style={{border:`1.5px solid ${COR.azul}`,borderRadius:7,
+              style={{border:`1.5px solid ${COR.azul}`,borderRadius:8,
                 padding:'5px 10px',fontSize:13,fontWeight:600,
                 color:COR.azul,background:'#eff6ff',outline:'none',
                 width:140,textAlign:'right',fontFamily:'inherit'}}
             />
             {diferenca!==null && (
-              <div style={{padding:'5px 12px',borderRadius:7,fontSize:12,fontWeight:600,
+              <div style={{padding:'5px 12px',borderRadius:8,fontSize:12,fontWeight:600,
                 background:conciliado?'#dcfce7':'#fee2e2',
                 color:conciliado?'#166534':'#991b1b',
                 border:`1px solid ${conciliado?'#86efac':'#fca5a5'}`}}>
@@ -329,7 +329,7 @@ export default function NovoLancamentoClassico() {
                     cursor:'pointer',transition:'all .15s',
                     border:`1px solid ${confirmada?'#86efac':COR.borda}`,
                     background:confirmada?'#f0fdf4':COR.branco}}>
-                  <div style={{width:18,height:18,borderRadius:5,flexShrink:0,
+                  <div style={{width:18,height:18,borderRadius:6,flexShrink:0,
                     border:`2px solid ${confirmada?COR.verde:'#cbd5e1'}`,
                     background:confirmada?COR.verde:'transparent',
                     display:'flex',alignItems:'center',justifyContent:'center',
@@ -410,10 +410,10 @@ export default function NovoLancamentoClassico() {
               Novo lançamento — {contaInfo.icone} {contaInfo.nome}
             </div>
             <div style={{display:'flex',gap:6,alignItems:'flex-end',flexWrap:'wrap',marginBottom:8}}>
-              <div style={{display:'flex',background:'#f1f5f9',borderRadius:7,padding:3,alignSelf:'flex-end'}}>
+              <div style={{display:'flex',background:'#f1f5f9',borderRadius:8,padding:3,alignSelf:'flex-end'}}>
                 {(['entrada','saida'] as const).map(t => (
                   <button key={t} onClick={() => {setFTipo(t);setFCat('')}} style={{
-                    padding:'5px 12px',border:'none',borderRadius:5,cursor:'pointer',
+                    padding:'5px 12px',border:'none',borderRadius:6,cursor:'pointer',
                     fontSize:12,fontWeight:500,fontFamily:'inherit',transition:'all .15s',
                     background:fTipo===t?COR.branco:'transparent',
                     color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):COR.textoSuave,
@@ -541,7 +541,7 @@ export default function NovoLancamentoClassico() {
                     <button onClick={() => excluir(l)}
                       style={{border:'none',background:'transparent',cursor:'pointer',
                         color:'#cbd5e1',fontSize:14,padding:'2px 4px',
-                        borderRadius:4,flexShrink:0}}
+                        borderRadius:6,flexShrink:0}}
                       onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
                       onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                   </div>

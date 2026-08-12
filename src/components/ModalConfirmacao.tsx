@@ -52,7 +52,7 @@ export default function ModalConfirmacao({
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: 16, padding: '28px 28px 24px',
+          background: '#fff', borderRadius: 14, padding: '28px 28px 24px',
           maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)',
         }}
       >
@@ -90,7 +90,7 @@ export default function ModalConfirmacao({
               ref={btnRef}
               onClick={onCancelar}
               style={{
-                flex: 1, padding: '10px 0', borderRadius: 9,
+                flex: 1, padding: '10px 0', borderRadius: 10,
                 border: 'none', background: '#1a56db',
                 color: '#fff', fontSize: 14, fontWeight: 600,
                 cursor: 'pointer', fontFamily: 'inherit',
@@ -104,7 +104,7 @@ export default function ModalConfirmacao({
                 ref={btnRef}
                 onClick={onCancelar}
                 style={{
-                  flex: 1, padding: '10px 0', borderRadius: 9,
+                  flex: 1, padding: '10px 0', borderRadius: 10,
                   border: '1.5px solid #e2e8f0', background: '#fff',
                   color: '#475569', fontSize: 14, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'inherit',
@@ -115,7 +115,7 @@ export default function ModalConfirmacao({
               <button
                 onClick={onConfirmar}
                 style={{
-                  flex: 1, padding: '10px 0', borderRadius: 9,
+                  flex: 1, padding: '10px 0', borderRadius: 10,
                   border: 'none', background: corConfirmar,
                   color: '#fff', fontSize: 14, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'inherit',

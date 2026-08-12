@@ -53,8 +53,8 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
           <div style={{ fontSize: 14, fontWeight: 800, color: '#dc2626', letterSpacing: '-.3px' }}>+{fmt(ultrapassou)}</div>
         </div>
       </div>
-      <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
-        <div style={{ height: '100%', width: `${Math.min(barWidth, 100)}%`, background: `linear-gradient(90deg, #16a34a, ${barColor})`, borderRadius: 4 }} />
+      <div style={{ height: 8, background: '#f1f5f9', borderRadius: 6, overflow: 'hidden', marginBottom: 6 }}>
+        <div style={{ height: '100%', width: `${Math.min(barWidth, 100)}%`, background: `linear-gradient(90deg, #16a34a, ${barColor})`, borderRadius: 6 }} />
       </div>
       <div style={{ fontSize: 10, fontWeight: 700, textAlign: 'right', color: barColor }}>{pct}% do planejado {pct > 100 ? '⚠' : ''}</div>
     </div>
@@ -103,7 +103,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
   if (isMobile) {
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,.5)', zIndex: 1000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-        <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 20px 32px' }}>
+        <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px 32px' }}>
           <div style={{ width: 36, height: 4, background: '#e2e8f0', borderRadius: 2, margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>⚠️</div>
@@ -138,7 +138,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 20, width: 480, maxWidth: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>⚠️</div>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>⚠️</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Categoria no limite!</div>
             <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{catNome} · {mesLabel}</div>

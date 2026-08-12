@@ -102,7 +102,7 @@ export default function FcDesktopPanel({
                 setEditandoFechamento(false)
               }}
               onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-              style={{width:40,border:`1px solid ${COR.azul}66`,borderRadius:4,padding:'2px 6px',
+              style={{width:40,border:`1px solid ${COR.azul}66`,borderRadius:6,padding:'2px 6px',
                 fontSize:13,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center',
                 background:'transparent',color:COR.azul}}/>
             <span style={{fontSize:11,color:COR.azul}}>de {NOMES_MESES[purchaseMes]}</span>
@@ -132,7 +132,7 @@ export default function FcDesktopPanel({
                 setEditandoVencimento(false)
               }}
               onKeyDown={e => { if(e.key==='Enter'||e.key==='Escape') e.currentTarget.blur() }}
-              style={{width:40,border:`1px solid ${COR.vermelho}66`,borderRadius:4,padding:'2px 6px',
+              style={{width:40,border:`1px solid ${COR.vermelho}66`,borderRadius:6,padding:'2px 6px',
                 fontSize:13,fontWeight:700,outline:'none',fontFamily:'inherit',textAlign:'center',
                 background:'transparent',color:COR.vermelho}}/>
             <span style={{fontSize:11,color:COR.vermelho}}>de {NOMES_MESES[mesVenc]} {anoVenc}</span>
@@ -168,11 +168,11 @@ export default function FcDesktopPanel({
       </div>
 
       {/* Compra / Estorno */}
-      <div style={{display:'flex',background:'#e0f2fe',borderRadius:7,
+      <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,
         padding:3,marginBottom:12,width:'100%'}}>
         {(['entrada','saida'] as const).map(t => (
           <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
-            flex:1,padding:'7px 0',border:'none',borderRadius:5,
+            flex:1,padding:'7px 0',border:'none',borderRadius:6,
             cursor:'pointer',fontSize:12,fontWeight:600,
             fontFamily:'inherit',transition:'all .15s',
             background:fTipo===t?COR.branco:'transparent',
@@ -211,7 +211,7 @@ export default function FcDesktopPanel({
                 }}
                 onFocus={realcarFoco}
                 placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
-                style={{border:'1.5px solid #bae6fd',borderRadius:7,padding:'7px 10px',
+                style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                   fontSize:12,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}
                 onKeyDown={e => { if (e.key==='Enter') { (e.target as HTMLInputElement).blur() } }}
@@ -225,7 +225,7 @@ export default function FcDesktopPanel({
           <select ref={categoriaSelectRef} value={fCat}
             onChange={e=>setFCat(e.target.value)}
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+            style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
               fontSize:12,outline:'none',background:'#fff',
               fontFamily:'inherit',color:COR.texto,width:'100%'}}>
             <option value="">Selecione...</option>
@@ -239,7 +239,7 @@ export default function FcDesktopPanel({
           <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
             placeholder="R$ 0,00"
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+            style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
               fontSize:12,outline:'none',background:'#fff',
               fontFamily:'inherit',color:COR.texto,width:'100%'}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
@@ -299,7 +299,7 @@ export default function FcDesktopPanel({
           <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
             placeholder="Ex: Mercado Extra, Farmácia..."
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #bae6fd`,borderRadius:7,padding:'7px 10px',
+            style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
               fontSize:12,outline:'none',background:'#fff',
               fontFamily:'inherit',color:COR.texto,width:'100%'}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>

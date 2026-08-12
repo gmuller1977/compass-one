@@ -585,7 +585,7 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
 
                 {ehHoje && (
                   <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',
-                    borderRadius:4,background:'#dbeafe',color:COR.azul,
+                    borderRadius:6,background:'#dbeafe',color:COR.azul,
                     letterSpacing:.5,textTransform:'uppercase'}}>Hoje</span>
                 )}
 

@@ -184,7 +184,7 @@ export default function AcCatRow({
                     </div>
                     <div style={{display:'flex',flexDirection:'column',gap:3}}>
                       {col.itens.map((l,i) => (
-                        <div key={i} style={{padding:'5px 8px',borderRadius:7,
+                        <div key={i} style={{padding:'5px 8px',borderRadius:8,
                           background:COR.branco,border:`1px solid ${COR.borda}`,
                           display:'flex',flexDirection:'column',gap:1}}>
                           <div style={{display:'flex',justifyContent:'space-between',gap:6}}>

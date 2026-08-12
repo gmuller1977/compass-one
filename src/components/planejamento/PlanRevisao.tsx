@@ -174,7 +174,7 @@ export default function PlanRevisao({
 
       {mesesPassados.length > 0 && (
         <div style={{
-          background: COR.branco, borderRadius: 16,
+          background: COR.branco, borderRadius: 14,
           boxShadow: '0 1px 6px rgba(0,0,0,.07)', overflow: 'hidden',
         }}>
           {/* Cabeçalho */}

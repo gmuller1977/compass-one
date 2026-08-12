@@ -87,7 +87,7 @@ function NavItemRow({
       style={{
         display: 'flex', alignItems: 'center', gap: 9,
         width: '100%', padding: '8px 10px', marginBottom: 1,
-        border: 'none', borderRadius: 9,
+        border: 'none', borderRadius: 10,
         cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
         background: active
@@ -114,7 +114,7 @@ function NavItemRow({
       {badge && (
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: '.4px',
-          padding: '2px 5px', borderRadius: 4,
+          padding: '2px 5px', borderRadius: 6,
           background: active ? 'rgba(26,86,219,.12)' : 'rgba(255,255,255,0.12)',
           color: active ? '#1a56db' : 'rgba(255,255,255,0.5)',
           border: `1px solid ${active ? 'rgba(26,86,219,.2)' : 'rgba(255,255,255,0.15)'}`,
@@ -197,7 +197,7 @@ function Sub2ItemRow({
       style={{
         display: 'flex', alignItems: 'center', gap: 7,
         width: '100%', padding: '6px 10px 6px 30px', marginBottom: 1,
-        border: 'none', borderRadius: 7, cursor: 'pointer',
+        border: 'none', borderRadius: 8, cursor: 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
         background: active
           ? 'rgba(255,255,255,.9)'
@@ -549,7 +549,7 @@ export default function Sidebar() {
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
             width: '100%', padding: '5px 10px', border: 'none',
-            borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
+            borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
             background: 'transparent',
             fontSize: 10, color: 'rgba(255,255,255,.35)',
             transition: 'background .15s, color .15s',

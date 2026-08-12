@@ -98,7 +98,7 @@ export default function CfgBancosCartoes({
                             : `${c.nome}${c.agencia ? ` · Ag ${c.agencia}` : ''}${c.numeroConta ? ` · CC ${c.numeroConta}` : ''}`}
                         </div>
                         <button onClick={() => editarConta(c)} style={{
-                          marginTop:6, border:`1px solid ${COR.borda}`, borderRadius:7,
+                          marginTop:6, border:`1px solid ${COR.borda}`, borderRadius:8,
                           background:COR.branco, color:COR.azul, fontSize:11, fontWeight:600,
                           cursor:'pointer', padding:'3px 10px', fontFamily:'inherit' }}>
                           ✏ Editar
@@ -169,7 +169,7 @@ export default function CfgBancosCartoes({
 
         {/* Preview */}
         {formConta.tipo !== 'cartao' ? (
-          <div style={{ borderRadius:18, padding:'18px 20px', marginBottom:18,
+          <div style={{ borderRadius:20, padding:'18px 20px', marginBottom:18,
             background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
             color:'#fff', display:'flex', alignItems:'center', gap:14,
             boxShadow:'0 6px 20px rgba(26,86,219,.30)' }}>
@@ -203,7 +203,7 @@ export default function CfgBancosCartoes({
             )}
           </div>
         ) : (
-          <div style={{ borderRadius:18, padding:'18px 20px', marginBottom:18,
+          <div style={{ borderRadius:20, padding:'18px 20px', marginBottom:18,
             background:`linear-gradient(135deg,${formConta.cor},${formConta.cor}cc)`,
             color:'#fff', display:'flex', alignItems:'center', gap:14,
             boxShadow:`0 6px 20px ${formConta.cor}55` }}>
@@ -367,7 +367,7 @@ export default function CfgBancosCartoes({
                           style={{
                             flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
                             border:`1.5px solid ${formConta.tipo===v ? COR.azul : COR.borda}`,
-                            borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:500,
+                            borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:500,
                             background: formConta.tipo===v ? '#eff6ff' : COR.branco,
                             color: formConta.tipo===v ? COR.azul : COR.textoSuave }}>
                           {l}
@@ -404,7 +404,7 @@ export default function CfgBancosCartoes({
           </div>
           {erroConta && (
             <div style={{ background:'#fee2e2', color:COR.vermelho,
-              borderRadius:7, padding:'7px 12px', fontSize:12 }}>
+              borderRadius:8, padding:'7px 12px', fontSize:12 }}>
               ⚠ {erroConta}
             </div>
           )}

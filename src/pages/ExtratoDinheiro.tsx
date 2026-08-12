@@ -164,7 +164,7 @@ export default function ExtratoDinheiro() {
             <div style={{ display:'flex', gap:4 }}>
               {(['saida','entrada'] as const).map(t => (
                 <button key={t} onClick={() => { setFTipo(t); setFCat('') }} style={{
-                  padding:'6px 12px', borderRadius:7, border:`1.5px solid ${fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):COR.borda}`,
+                  padding:'6px 12px', borderRadius:8, border:`1.5px solid ${fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):COR.borda}`,
                   background:fTipo===t?(t==='entrada'?'#f0fdf4':'#fff5f5'):COR.branco,
                   color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):COR.textoSuave,
                   cursor:'pointer', fontSize:12, fontWeight:600, fontFamily:'inherit' }}>
@@ -299,7 +299,7 @@ export default function ExtratoDinheiro() {
                     </div>
                     <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
                       style={{ border:'none', background:'transparent', cursor:'pointer',
-                        color:'#cbd5e1', fontSize:14, padding:'2px 5px', borderRadius:4 }}
+                        color:'#cbd5e1', fontSize:14, padding:'2px 5px', borderRadius:6 }}
                       onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
                       onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
                   </div>
