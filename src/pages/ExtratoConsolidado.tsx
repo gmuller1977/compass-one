@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { COR } from '../utils/cores'
+import PageHeader, { PH_BTN_WHITE } from '../components/PageHeader'
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -409,6 +410,30 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',
       background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif"}}>
+
+      {/* PageHeader */}
+      {!isMobile && (
+        <div style={{padding:'12px 16px 0', flexShrink:0}}>
+          <PageHeader
+            icon="ti-list-details"
+            breadcrumb="LANÇAMENTOS"
+            title="Visão geral"
+            mb={12}
+            rightContent={<>
+              <button
+                onClick={() => { let m=mes-1,a=ano; if(m<0){m=11;a--} setMes(m);setAno(a) }}
+                style={PH_BTN_WHITE}>‹</button>
+              <span style={{color:'rgba(255,255,255,0.9)',fontWeight:600,fontSize:12,
+                minWidth:120,textAlign:'center',whiteSpace:'nowrap'}}>
+                {NOMES_MESES[mes]} {ano}
+              </span>
+              <button
+                onClick={() => { let m=mes+1,a=ano; if(m>11){m=0;a++} setMes(m);setAno(a) }}
+                style={PH_BTN_WHITE}>›</button>
+            </>}
+          />
+        </div>
+      )}
 
       {/* BARRA DE SALDO */}
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,

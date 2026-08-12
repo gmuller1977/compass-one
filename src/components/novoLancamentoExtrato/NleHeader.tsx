@@ -1,6 +1,7 @@
 import type { User } from '@supabase/supabase-js'
 import type { Conta } from '../../context/AppContext'
 import { COR } from './NleShared'
+import PageHeader from '../PageHeader'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -20,7 +21,23 @@ export default function NleHeader({
   tabPrincipal, setTabPrincipal,
   contasExtrato, setContaId, setMobileDiaForm,
 }: Props) {
-  if (!isMobile) return null
+  if (!isMobile) {
+    const contaDefault = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
+    const subtitle = contaDefault
+      ? `${contaDefault.banco}${contaDefault.apelido ? ' · ' + contaDefault.apelido : ''}`
+      : undefined
+    return (
+      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        <PageHeader
+          icon="ti-building-bank"
+          breadcrumb="LANÇAMENTOS"
+          title="Movimentação do banco"
+          subtitle={subtitle}
+          mb={0}
+        />
+      </div>
+    )
+  }
 
   return (
     <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
