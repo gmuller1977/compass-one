@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import TutorialCard from '../components/TutorialCard'
+import { COR } from '../utils/cores'
 
 type SimAtivaRow = {
   id: string
@@ -28,11 +29,6 @@ function useIsMobile() {
   return v
 }
 
-const COR = {
-  fundo: '#f8faff', branco: '#ffffff', borda: '#e8edf3',
-  texto: '#0f172a', textoSuave: '#64748b', textoMuted: '#94a3b8',
-  azul: '#1a56db', verde: '#16a34a', vermelho: '#dc2626', amarelo: '#d97706',
-}
 
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 

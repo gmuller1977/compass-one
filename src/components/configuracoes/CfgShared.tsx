@@ -12,12 +12,8 @@ export type ConfirmState = {
 }
 
 // ── Paleta de cores ──────────────────────────────────────────────────
-export const COR = {
-  azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
-  fundo: '#f0f4ff', branco: '#ffffff', texto: '#0f172a',
-  textoSuave: '#64748b', borda: '#e2e8f0',
-  verde: '#16a34a', vermelho: '#dc2626',
-}
+import { COR } from '../../utils/cores'
+export { COR }
 
 // ── Constantes ───────────────────────────────────────────────────────
 export const CORES_PRESET = [

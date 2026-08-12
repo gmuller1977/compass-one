@@ -6,18 +6,13 @@ import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
+import { COR } from '../utils/cores'
 
 function useIsMobile() {
   const [v] = useState(() => window.innerWidth < 640)
   return v
 }
 
-const COR = {
-  fundo: '#f8faff', branco: '#ffffff', borda: '#e8edf3',
-  texto: '#0f172a', textoSuave: '#64748b', textoMuted: '#94a3b8',
-  azul: '#1a56db', azulEscuro: '#0f2878', azulMedio: '#2563eb',
-  verde: '#16a34a', vermelho: '#dc2626',
-}
 
 function parseBRL(s: string): number {
   return parseFloat(s.replace(/[^\d,]/g, '').replace(',', '.')) || 0

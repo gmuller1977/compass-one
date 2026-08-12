@@ -2,13 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
-
-const COR = {
-  azul: '#1a56db', azulMedio: '#2563eb', fundo: '#f0f4ff',
-  branco: '#ffffff', texto: '#0f172a',
-  textoSuave: '#64748b', borda: '#e2e8f0',
-  verde: '#16a34a', vermelho: '#dc2626',
-}
+import { COR } from '../utils/cores'
 const NOMES_MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const DIAS_SEM     = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
