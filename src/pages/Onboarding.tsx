@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
@@ -10,7 +10,11 @@ const BANCOS = [
   'Itaú', 'Nubank', 'Santander', 'Sicredi', 'XP', 'Outro',
 ]
 
-const SLIDES = [
+type SlideSimples = { icon: string; title: string; subtitle: string; desc: string }
+type SlideRotina  = { type: 'rotina' }
+type Slide = SlideSimples | SlideRotina
+
+const SLIDES: Slide[] = [
   {
     icon: '🧭',
     title: 'Bem-vindo ao Compass One!',
@@ -40,6 +44,38 @@ const SLIDES = [
     title: 'Evolução',
     subtitle: 'Acompanhe seu progresso',
     desc: 'Acompanhe se seus gastos reais estão dentro do planejado. Verde = no rumo. Vermelho = passou.',
+  },
+  { type: 'rotina' },
+]
+
+const ROTINA_COLS = [
+  {
+    titulo: 'Todo dia',
+    tempo: '5 minutos por dia',
+    passos: [
+      { titulo: 'Conferir o saldo',       desc: 'Compare o saldo do app com o do banco.',                                       pill: { icon: '🏦', label: 'Lançamentos → Banco' } },
+      { titulo: 'Registrar gastos',        desc: 'Anotou um café? Uma compra? Registre na hora para não esquecer.',              pill: { icon: '📋', label: 'Lançamentos' } },
+      { titulo: 'Acompanhar a evolução',   desc: 'Veja se seus gastos estão dentro do planejado.',                               pill: { icon: '📈', label: 'Evolução' } },
+      { titulo: 'Olhar a bússola',         desc: 'Confira o resumo do dia. Verde = no caminho certo.',                           pill: { icon: '🏠', label: 'Início' } },
+    ],
+  },
+  {
+    titulo: 'Todo mês',
+    tempo: '30 minutos por mês',
+    passos: [
+      { titulo: 'Revisar o mês',           desc: 'Veja onde gastou mais e justifique os desvios.',                               pill: { icon: '🔄', label: 'Planejamento → Revisão' } },
+      { titulo: 'Ajustar o plano',         desc: 'Corrija o planejamento dos próximos meses.',                                   pill: { icon: '🎯', label: 'Planejamento' } },
+      { titulo: 'Conferir faturas',        desc: 'Verifique as faturas antes do vencimento.',                                    pill: { icon: '💳', label: 'Lançamentos → Cartão' } },
+    ],
+  },
+  {
+    titulo: 'Todo ano',
+    tempo: '1 hora por ano',
+    passos: [
+      { titulo: 'Criar o planejamento',    desc: 'Defina seu orçamento para o ano. Use as lições do ano anterior.',              pill: { icon: '🎯', label: 'Planejamento → Assistente' } },
+      { titulo: 'Definir objetivos',       desc: 'Economizar? Quitar dívidas? Realizar um sonho?',                               pill: { icon: '🔮', label: 'Simulador' } },
+      { titulo: 'Lembrar dos extras',      desc: 'IPVA, escola, Natal, férias — inclua os gastos sazonais.',                    pill: { icon: '🎯', label: 'Planejamento → Grade' } },
+    ],
   },
 ]
 
@@ -91,6 +127,14 @@ export default function Onboarding() {
   const hasBank = contas.some(c => c.tipo !== 'cartao')
   const [phase, setPhase] = useState<Phase>(hasBank ? 'banco' : 'welcome')
   const [slide, setSlide] = useState(0)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600)
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+
+  const isRotinaSlide = phase === 'welcome' && 'type' in SLIDES[slide]
 
   // ── Banco ────────────────────────────────────────────────
   const [bancoBanco,   setBancoBanco]   = useState('')
@@ -227,21 +271,141 @@ export default function Onboarding() {
         overflowY: 'auto',
       }}>
         <div style={{
-          background: COR.branco, borderRadius: 20,
-          padding: '28px 24px', maxWidth: 420, width: '100%',
-          boxShadow: '0 4px 24px rgba(0,0,0,.08)',
+          background: isRotinaSlide ? 'transparent' : COR.branco,
+          borderRadius: 20,
+          padding: isRotinaSlide ? 0 : '28px 24px',
+          maxWidth: isRotinaSlide ? 680 : 420,
+          width: '100%',
+          boxShadow: isRotinaSlide ? 'none' : '0 4px 24px rgba(0,0,0,.08)',
         }}>
 
           {/* ──────── WELCOME ──────── */}
           {phase === 'welcome' && (() => {
             const sl = SLIDES[slide]
+            const isRotina = 'type' in sl
+
+            if (isRotina) {
+              // ── Slide "Sua rotina financeira" ──────────────────────
+              const pillSt: React.CSSProperties = {
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'rgba(147,197,253,0.12)',
+                border: '1px solid rgba(147,197,253,0.2)',
+                color: '#93c5fd', fontSize: 9, borderRadius: 10,
+                padding: '2px 7px', fontWeight: 600, whiteSpace: 'nowrap',
+                marginTop: 4,
+              }
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #0f2878 0%, #1a56db 100%)',
+                  borderRadius: 20, padding: isMobile ? '20px 16px' : '24px 24px',
+                }}>
+                  {/* Título */}
+                  <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                    <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: '#fff' }}>
+                      Sua rotina financeira
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>
+                      Simples. Consistente. Eficaz.
+                    </div>
+                  </div>
+
+                  {/* 3 colunas */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                    gap: 12, marginBottom: 18,
+                  }}>
+                    {ROTINA_COLS.map((col) => (
+                      <div key={col.titulo} style={{
+                        background: 'rgba(255,255,255,0.06)',
+                        borderRadius: 12, padding: '14px 12px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                      }}>
+                        {/* Cabeçalho da coluna */}
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{col.titulo}</div>
+                          <div style={{
+                            display: 'inline-block', marginTop: 3,
+                            background: 'rgba(147,197,253,0.15)',
+                            border: '1px solid rgba(147,197,253,0.25)',
+                            color: '#93c5fd', fontSize: 9, borderRadius: 20,
+                            padding: '2px 8px', fontWeight: 600,
+                          }}>{col.tempo}</div>
+                        </div>
+
+                        {/* Passos */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {col.passos.map((p, pi) => (
+                            <div key={pi} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                              <div style={{
+                                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                                background: 'rgba(147,197,253,0.2)', border: '1px solid rgba(147,197,253,0.3)',
+                                color: '#93c5fd', fontSize: 10, fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>{pi + 1}</div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
+                                  {p.titulo}
+                                </div>
+                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.5)', lineHeight: 1.4, marginTop: 2 }}>
+                                  {p.desc}
+                                </div>
+                                <div style={pillSt}>
+                                  <span>{p.pill.icon}</span>
+                                  <span>{p.pill.label}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rodapé */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: 10, padding: '10px 14px', marginBottom: 16,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    fontSize: 11, color: 'rgba(255,255,255,.55)', lineHeight: 1.6, textAlign: 'center',
+                  }}>
+                    <span style={{ color: '#93c5fd', fontWeight: 700 }}>5 min/dia + 30 min/mês + 1h/ano</span>
+                    {' '}= controle total das suas finanças.<br />
+                    A bússola te avisa se algo sair do rumo. O Norte te ajuda quando tiver dúvida.
+                  </div>
+
+                  {/* Dots + Botão */}
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+                    {SLIDES.map((_, i) => (
+                      <div key={i} onClick={() => setSlide(i)} style={{
+                        width: i === slide ? 18 : 7, height: 7, borderRadius: 6,
+                        background: i === slide ? '#fff' : 'rgba(255,255,255,.3)',
+                        cursor: 'pointer', transition: 'all .2s',
+                      }} />
+                    ))}
+                  </div>
+
+                  <button onClick={nextSlide} style={{
+                    width: '100%', padding: '13px 20px', border: 'none', borderRadius: 12,
+                    background: '#fff', color: COR.azulEscuro,
+                    fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(0,0,0,.2)',
+                  }}>
+                    Vamos começar →
+                  </button>
+                </div>
+              )
+            }
+
+            // ── Slides simples ────────────────────────────────────────
+            const s = sl as SlideSimples
             return (
               <>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                  <div style={{ fontSize: 52, lineHeight: 1, marginBottom: 16 }}>{sl.icon}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: COR.texto, marginBottom: 4 }}>{sl.title}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: COR.azul, marginBottom: 10 }}>{sl.subtitle}</div>
-                  <div style={{ fontSize: 14, color: COR.textoSuave, lineHeight: 1.6 }}>{sl.desc}</div>
+                  <div style={{ fontSize: 52, lineHeight: 1, marginBottom: 16 }}>{s.icon}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: COR.texto, marginBottom: 4 }}>{s.title}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: COR.azul, marginBottom: 10 }}>{s.subtitle}</div>
+                  <div style={{ fontSize: 14, color: COR.textoSuave, lineHeight: 1.6 }}>{s.desc}</div>
                 </div>
 
                 {/* Slide dots */}
@@ -261,19 +425,17 @@ export default function Onboarding() {
                   color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
                   fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(26,86,219,.25)',
                 }}>
-                  {slide < SLIDES.length - 1 ? 'Próximo →' : 'Vamos começar →'}
+                  Próximo →
                 </button>
 
-                {slide < SLIDES.length - 1 && (
-                  <button onClick={() => setPhase('banco')} style={{
-                    width: '100%', marginTop: 8, padding: '10px 20px',
-                    border: 'none', borderRadius: 12, background: 'transparent',
-                    color: COR.textoSuave, fontSize: 13, fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'inherit',
-                  }}>
-                    Pular apresentação
-                  </button>
-                )}
+                <button onClick={() => setPhase('banco')} style={{
+                  width: '100%', marginTop: 8, padding: '10px 20px',
+                  border: 'none', borderRadius: 12, background: 'transparent',
+                  color: COR.textoSuave, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}>
+                  Pular apresentação
+                </button>
               </>
             )
           })()}
