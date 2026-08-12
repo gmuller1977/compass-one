@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import type { Lancamento } from '../context/AppContext'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import ModalConfirmacao from '../components/ModalConfirmacao'
+import PageHeader, { PH_BTN_WHITE } from '../components/PageHeader'
 
 const COR = {
   azul: '#1a56db', fundo: '#f0f4ff', branco: '#ffffff',
@@ -123,6 +124,24 @@ export default function ExtratoDinheiro() {
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:COR.fundo }}>
+
+      {/* PageHeader */}
+      <div style={{ padding:'12px 16px 0', flexShrink:0 }}>
+        <PageHeader
+          icon="ti-cash"
+          breadcrumb="LANÇAMENTOS"
+          title="Movimentação em dinheiro"
+          mb={12}
+          rightContent={<>
+            <button onClick={() => mudarMes(-1)} style={PH_BTN_WHITE}>‹</button>
+            <span style={{color:'rgba(255,255,255,0.9)',fontWeight:600,fontSize:12,
+              minWidth:120,textAlign:'center',whiteSpace:'nowrap'}}>
+              {MESES_FULL[mes]} {ano}
+            </span>
+            <button onClick={() => mudarMes(1)} style={PH_BTN_WHITE}>›</button>
+          </>}
+        />
+      </div>
 
       {/* Navegação mês */}
       <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,

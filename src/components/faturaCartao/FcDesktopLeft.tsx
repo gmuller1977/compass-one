@@ -5,6 +5,7 @@ import {
   COR, NOMES_MESES, fmt, diaSemana,
   type Lancamento, type DadosMes,
 } from './FcShared'
+import PageHeader, { PH_BTN_WHITE } from '../PageHeader'
 
 type Props = {
   // Card tabs
@@ -72,8 +73,36 @@ export default function FcDesktopLeft({
   calPos, setCalPos, calBtnRef,
   resetarParaNovo, diaDefaultPara, editarLancamento, excluir, toggleDia, setDiaSel,
 }: Props) {
+  const cartaoSelecionado = contasCartao.find(c => c.id === contaId)
+  const cartaoSubtitle = cartaoSelecionado
+    ? `${cartaoSelecionado.banco}${cartaoSelecionado.apelido ? ' · ' + cartaoSelecionado.apelido : ''}`
+    : undefined
+
   return (
     <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+
+      {/* PAGE HEADER */}
+      <div style={{padding:'12px 16px 0', flexShrink:0}}>
+        <PageHeader
+          icon="ti-credit-card"
+          breadcrumb="LANÇAMENTOS"
+          title="Fatura do cartão"
+          subtitle={cartaoSubtitle}
+          mb={12}
+          rightContent={<>
+            <button
+              onClick={() => { if(mes===0){setMes(11);setAno(y=>y-1)}else setMes(m=>m-1) }}
+              style={PH_BTN_WHITE}>‹</button>
+            <span style={{color:'rgba(255,255,255,0.9)',fontWeight:600,fontSize:12,
+              minWidth:100,textAlign:'center',whiteSpace:'nowrap'}}>
+              {NOMES_MESES[mes]} {ano}
+            </span>
+            <button
+              onClick={() => { if(mes===11){setMes(0);setAno(y=>y+1)}else setMes(m=>m+1) }}
+              style={PH_BTN_WHITE}>›</button>
+          </>}
+        />
+      </div>
 
       {/* ABAS DE CARTÃO */}
       <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
+import PageHeader, { PH_BTN_WHITE, PH_BTN_WHITE_ACTIVE } from '../components/PageHeader'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type Aba, type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
@@ -191,6 +192,10 @@ export default function Planejamento({
     )
   }
 
+  const viewModeLabels: Record<ViewMode, string> = {
+    grade: 'Grade', planilha: 'Planilha', lista: 'Lista', revisao: 'Revisão',
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -200,6 +205,32 @@ export default function Planejamento({
       flexDirection: 'column',
     }}>
       {isMobile && <AppHeader currentPath={location.pathname} />}
+
+      {/* PageHeader — desktop only */}
+      {!isMobile && (
+        <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+          <PageHeader
+            icon="ti-target"
+            breadcrumb="MEU PLANO"
+            title="Planejamento"
+            subtitle={`${anoAtual} · Visão ${viewModeLabels[viewMode] ?? 'Grade'}`}
+            mb={12}
+            rightContent={
+              <>
+                {(['grade', 'planilha', 'lista'] as ViewMode[]).map(v => (
+                  <button
+                    key={v}
+                    onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
+                    style={viewMode === v ? PH_BTN_WHITE_ACTIVE : PH_BTN_WHITE}
+                  >
+                    {viewModeLabels[v]}
+                  </button>
+                ))}
+              </>
+            }
+          />
+        </div>
+      )}
 
       {renderTopBar()}
       {renderAvisoPlanoBloqueado()}
