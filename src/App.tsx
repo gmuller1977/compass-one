@@ -19,7 +19,9 @@ import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
+import AurixPage          from './pages/Aurix'
 import NorthAgent          from './components/NorthAgent'
+import AurixToast          from './components/aurix/AurixToast'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -33,7 +35,7 @@ function useIsMobile() {
 
 function AppShell({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile()
-  if (isMobile) return <>{children}<NorthAgent /></>
+  if (isMobile) return <>{children}<NorthAgent /><AurixToast /></>
   return (
     <>
       <Sidebar />
@@ -41,6 +43,7 @@ function AppShell({ children }: { children: ReactNode }) {
         {children}
       </div>
       <NorthAgent />
+      <AurixToast />
     </>
   )
 }
@@ -105,6 +108,7 @@ export default function App() {
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
+          <Route path="/aurix"             element={<Protegido><AurixPage /></Protegido>} />
           <Route path="*"                   element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
