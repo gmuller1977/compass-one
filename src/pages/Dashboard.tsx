@@ -6,8 +6,11 @@ import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import TutorialCard from '../components/TutorialCard'
 import { COR } from '../utils/cores'
-import { creditarAurix } from '../utils/aurix'
+import { creditarAurix, saldoAurix, acoesHoje } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
+
+const ACOES_DIARIAS_REFS = ['acao_login', 'acao_dashboard', 'acao_lancamento', 'acao_north', 'acao_evolucao']
+const ACOES_DIARIAS_TOTAL = 5
 
 type SimAtivaRow = {
   id: string
@@ -168,11 +171,28 @@ export default function Dashboard() {
 
   // ── Simulações ativas ─────────────────────────────────────────────────
   const [simAtivas, setSimAtivas] = useState<SimAtivaRow[]>([])
+  const [aurixSaldo, setAurixSaldo] = useState(0)
+  const [aurixStreak, setAurixStreak] = useState(0)
+  const [aurixAcoes, setAurixAcoes] = useState<string[]>([])
 
   useEffect(() => {
     if (!user) return
     creditarAurix(user.id, 'acao', 'Acessou o Início', 2, 'acao_dashboard').then(r => {
       if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Acessou o Início', pontos: 2 })
+    })
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!user) return
+    const uid = user.id
+    Promise.all([
+      saldoAurix(uid),
+      acoesHoje(uid),
+      supabase.from('user_preferences').select('streak_atual').eq('user_id', uid).single(),
+    ]).then(([s, feitas, { data }]) => {
+      setAurixSaldo(s)
+      setAurixAcoes(feitas)
+      if (data) setAurixStreak(data.streak_atual ?? 0)
     })
   }, [user?.id])
 
@@ -377,6 +397,50 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+
+        {/* ── Card Aurix ── */}
+        {(() => {
+          const feitas = aurixAcoes.filter(r => ACOES_DIARIAS_REFS.includes(r)).length
+          const aurixHoje = [
+            aurixAcoes.includes('acao_login')     ? 3 : 0,
+            aurixAcoes.includes('acao_dashboard') ? 2 : 0,
+            aurixAcoes.includes('acao_lancamento')? 5 : 0,
+            aurixAcoes.includes('acao_north')     ? 3 : 0,
+            aurixAcoes.includes('acao_evolucao')  ? 2 : 0,
+          ].reduce((a, b) => a + b, 0)
+          return (
+            <div style={{
+              background: COR.branco, borderRadius: 12, padding: '16px 20px',
+              marginBottom: 20, border: `.5px solid ${COR.borda}`,
+              display: 'flex', alignItems: 'center', gap: 14,
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COR.textoMuted, marginBottom: 8 }}>
+                  ✨ Aurix hoje
+                </div>
+                <div style={{ fontSize: 13, color: COR.texto, marginBottom: 4 }}>
+                  {aurixStreak > 0 && <span style={{ marginRight: 12 }}>🔥 Streak: {aurixStreak} dias</span>}
+                  <span style={{ color: COR.textoSuave }}>✨ {aurixSaldo.toLocaleString('pt-BR')} Aurix</span>
+                </div>
+                <div style={{ fontSize: 12, color: COR.textoSuave }}>
+                  Ações do dia: {feitas} de {ACOES_DIARIAS_TOTAL} completadas
+                  {aurixHoje > 0 && ` (+${aurixHoje} Aurix)`}
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/aurix')}
+                style={{
+                  border: 'none', background: COR.fundo, borderRadius: 8,
+                  padding: '8px 14px', color: COR.azul, fontSize: 13,
+                  fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  flexShrink: 0,
+                }}
+              >
+                Ver →
+              </button>
+            </div>
+          )
+        })()}
 
         {/* ── Minhas metas e dívidas ── */}
         {simAtivas.length > 0 && (() => {
