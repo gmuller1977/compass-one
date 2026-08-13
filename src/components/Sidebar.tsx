@@ -18,35 +18,42 @@ type NavItem = {
   sub?: SubItem[]
   badge?: string
   disabled?: boolean
+  excludeIfSearch?: string
 }
 
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
-    label: 'DIA A DIA',
+    label: '📅 Todo dia',
     items: [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
       { icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
+      { icon: '📈', label: 'Evolução',    path: '/evolucao',        exact: false },
     ],
   },
   {
-    label: 'MEU PLANO',
+    label: '📆 Todo mês',
+    items: [
+      { icon: '🔄', label: 'Revisão mensal', path: '/planejamento?modo=revisao', exact: true  },
+      { icon: '🔮', label: 'Simulador',      path: '/simulacao',                 exact: false },
+    ],
+  },
+  {
+    label: '🗓️ Todo ano',
     items: [
       {
         icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
+        excludeIfSearch: '?modo=revisao',
         sub: [
-          { label: 'Assistente',     path: '/planejamento?modo=wizard'  },
-          { label: 'Grade',          path: '/planejamento?modo=grade'   },
-          { label: 'Planilha',       path: '/planejamento?modo=planilha'},
-          { label: 'Lista',          path: '/planejamento?modo=lista'   },
-          { label: 'Revisão mensal', path: '/planejamento?modo=revisao' },
+          { label: 'Assistente', path: '/planejamento?modo=wizard'   },
+          { label: 'Grade',      path: '/planejamento?modo=grade'    },
+          { label: 'Planilha',   path: '/planejamento?modo=planilha' },
+          { label: 'Lista',      path: '/planejamento?modo=lista'    },
         ],
       },
-      { icon: '📈', label: 'Evolução',   path: '/evolucao',    exact: false },
-      { icon: '🔮', label: 'Simulador',  path: '/simulacao',   exact: false },
     ],
   },
   {
-    label: 'CONTA',
+    label: '👤 Minha conta',
     items: [
       {
         icon: '⚙️', label: 'Configurações', path: '/configuracoes', exact: false,
@@ -267,7 +274,12 @@ export default function Sidebar() {
   const bancoActive    = lancActive && tipoParam === 'banco'
   const cartaoSubActive = lancActive && tipoParam === 'cartao'
 
-  function isParentActive(path: string, exact: boolean) {
+  function isParentActive(path: string, exact: boolean, excludeIfSearch?: string) {
+    if (excludeIfSearch && search === excludeIfSearch) return false
+    if (path.includes('?')) {
+      const [basePath, query] = path.split('?', 2)
+      return pathname === basePath && search === `?${query}`
+    }
     return exact ? pathname === path : pathname.startsWith(path)
   }
   function isSubActive(subPath: string) {
@@ -279,7 +291,9 @@ export default function Sidebar() {
     if (pathname.startsWith('/novo-lancamento')) return 'Lançamentos'
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
-        if (!item.disabled && pathname.startsWith(item.path) && item.path !== '/dashboard') {
+        if (!item.disabled && !item.path.includes('?') && item.sub &&
+            pathname.startsWith(item.path) && item.path !== '/dashboard') {
+          if (item.excludeIfSearch && search === item.excludeIfSearch) continue
           return item.label
         }
       }
@@ -376,7 +390,7 @@ export default function Sidebar() {
             </div>
             {group.items.map(item => {
               const sub = item.sub ?? []
-              const parentActive = !item.disabled && isParentActive(item.path, item.exact)
+              const parentActive = !item.disabled && isParentActive(item.path, item.exact, item.excludeIfSearch)
               const hasSub = sub.length > 0
               const isExpanded = expandedItem === item.label
 
