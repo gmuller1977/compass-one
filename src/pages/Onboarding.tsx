@@ -723,7 +723,7 @@ export default function Onboarding() {
 
   const pct = STEP_PCT[phase] ?? 0
   const lbl = STEP_LBL[phase] ?? ''
-  const hasBack = phase !== 'final'
+  const hasBack = true
 
   function renderConfig() {
     // ── BANCO ──────────────────────────────────────────────────────────
@@ -1139,7 +1139,7 @@ export default function Onboarding() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <BtnPrimary onClick={irParaPlano}>Começar meu plano →</BtnPrimary>
+          <BtnPrimary onClick={() => navigate('/wizard-planejamento', { replace: true })}>Começar meu plano →</BtnPrimary>
           <BtnGhost onClick={() => setPhase('final')}>Fazer depois — quero explorar o app primeiro</BtnGhost>
         </div>
       </>
