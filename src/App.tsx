@@ -22,6 +22,9 @@ import LandingPage         from './pages/LandingPage'
 import AurixPage          from './pages/Aurix'
 import NorthAgent          from './components/NorthAgent'
 import AurixToast          from './components/aurix/AurixToast'
+import { supabase } from './lib/supabase'
+import { creditarAurix, atualizarStreak } from './utils/aurix'
+import { dispararToastAurix } from './components/aurix/AurixToast'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -35,6 +38,38 @@ function useIsMobile() {
 
 function AppShell({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile()
+  const { user } = useApp()
+
+  useEffect(() => {
+    if (!user?.id) return
+    const userId = user.id
+
+    async function iniciarSessao() {
+      const r = await creditarAurix(userId, 'acao', 'Login diário', 3, 'acao_login')
+      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Login diário', pontos: 3 })
+
+      const { data: prefs } = await supabase
+        .from('user_preferences')
+        .select('streak_atual, maior_streak, ultimo_acesso_ativo')
+        .eq('user_id', userId)
+        .single()
+
+      if (prefs) {
+        const { novoStreak, bonusGanho } = await atualizarStreak(
+          userId,
+          prefs.streak_atual ?? 0,
+          prefs.maior_streak ?? 0,
+          prefs.ultimo_acesso_ativo ?? null
+        )
+        if (bonusGanho) {
+          dispararToastAurix({ tipo: 'acao', titulo: `Streak de ${novoStreak} dias!`, pontos: 50 })
+        }
+      }
+    }
+
+    iniciarSessao()
+  }, [user?.id])
+
   if (isMobile) return <>{children}<NorthAgent /><AurixToast /></>
   return (
     <>

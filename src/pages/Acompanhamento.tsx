@@ -7,6 +7,8 @@ import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
+import { creditarAurix } from '../utils/aurix'
+import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import AcResumoBoxes from '../components/acompanhamento/AcResumoBoxes'
 import AcSecao from '../components/acompanhamento/AcSecao'
@@ -34,6 +36,13 @@ export default function Acompanhamento() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { contas, categorias, planos, planosReal, planejamentoLockado, extratoData, faturaData, user } = useApp()
+
+  useEffect(() => {
+    if (!user) return
+    creditarAurix(user.id, 'acao', 'Viu a Evolução', 2, 'acao_evolucao').then(r => {
+      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Viu a Evolução', pontos: 2 })
+    })
+  }, [user?.id])
 
   const mesStr    = String(mes+1).padStart(2,'0')
   const totalDias = diasNoMes(mes, ano)

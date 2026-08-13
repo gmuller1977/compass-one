@@ -6,6 +6,8 @@ import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import TutorialCard from '../components/TutorialCard'
 import { COR } from '../utils/cores'
+import { creditarAurix } from '../utils/aurix'
+import { dispararToastAurix } from '../components/aurix/AurixToast'
 
 type SimAtivaRow = {
   id: string
@@ -166,6 +168,13 @@ export default function Dashboard() {
 
   // ── Simulações ativas ─────────────────────────────────────────────────
   const [simAtivas, setSimAtivas] = useState<SimAtivaRow[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    creditarAurix(user.id, 'acao', 'Acessou o Início', 2, 'acao_dashboard').then(r => {
+      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Acessou o Início', pontos: 2 })
+    })
+  }, [user?.id])
 
   useEffect(() => {
     if (!user) return

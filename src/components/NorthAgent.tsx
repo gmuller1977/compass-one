@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import NorthPanel from './NorthPanel'
+import { creditarAurix } from '../utils/aurix'
+import { dispararToastAurix } from './aurix/AurixToast'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -65,7 +67,7 @@ export default function NorthAgent() {
     return () => document.removeEventListener('openNorth', handler)
   }, [])
 
-  const { contas, extratoData, faturaData, planos, planosReal, perfil, metaSim } = useApp()
+  const { contas, extratoData, faturaData, planos, planosReal, perfil, metaSim, user } = useApp()
 
   function buildContext() {
     const hoje = new Date()
@@ -222,6 +224,12 @@ ${metaSim
         ?? 'Desculpe, não consegui processar sua pergunta.'
 
       setMessages(prev => [...prev, { role: 'assistant', content: text, ts: Date.now() }])
+
+      if (user?.id) {
+        creditarAurix(user.id, 'acao', 'Consultou o North', 3, 'acao_north').then(r => {
+          if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Consultou o North', pontos: 3 })
+        })
+      }
     } catch {
       clearTimeout(timeout)
       setMessages(prev => [...prev, {
