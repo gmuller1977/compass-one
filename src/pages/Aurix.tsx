@@ -133,7 +133,7 @@ export default function Aurix() {
 
   if (carregando) return (
     <div style={{ minHeight: '100vh', background: COR.fundo, padding: isMobile ? '12px 12px 80px' : '20px 28px' }}>
-      {isMobile && <AppHeader title="Programa Aurix" />}
+      {isMobile && <AppHeader currentPath="/aurix" />}
       <div style={{ textAlign: 'center', paddingTop: 60, color: COR.textoSuave, fontSize: 14 }}>
         Carregando...
       </div>
@@ -142,7 +142,7 @@ export default function Aurix() {
 
   return (
     <div style={{ minHeight: '100vh', background: COR.fundo, padding: isMobile ? '12px 12px 80px' : '20px 28px' }}>
-      {isMobile && <AppHeader title="Programa Aurix" />}
+      {isMobile && <AppHeader currentPath="/aurix" />}
 
       <PageHeader
         icon="ti-sparkles"
@@ -231,7 +231,7 @@ export default function Aurix() {
             key={aba}
             onClick={() => setAbaAtiva(i)}
             style={{
-              padding: '8px 14px', borderRadius: 8, border: 'none',
+              padding: '8px 14px', borderRadius: 8,
               fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
               whiteSpace: 'nowrap', flexShrink: 0,
               background: abaAtiva === i ? COR.azul : COR.branco,
@@ -408,7 +408,7 @@ export default function Aurix() {
                 key={f.value}
                 onClick={() => onFiltroChange(f.value)}
                 style={{
-                  padding: '5px 12px', borderRadius: 20, border: 'none',
+                  padding: '5px 12px', borderRadius: 20,
                   fontFamily: 'inherit', fontSize: 11, fontWeight: 500, cursor: 'pointer',
                   background: filtroTipo === f.value ? COR.azul : COR.branco,
                   color: filtroTipo === f.value ? '#fff' : COR.textoSuave,
