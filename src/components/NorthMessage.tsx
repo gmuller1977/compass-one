@@ -31,7 +31,7 @@ function fmtHora(ts: number) {
   return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function NorteMessage({ role, content, ts }: Props) {
+export default function NorthMessage({ role, content, ts }: Props) {
   const isUser = role === 'user'
 
   return (

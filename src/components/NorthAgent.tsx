@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
-import NortePanel from './NortePanel'
+import NorthPanel from './NorthPanel'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -20,7 +20,7 @@ function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-const SYSTEM_PROMPT = `Você é o Norte, assistente financeiro pessoal do app Compass One.
+const SYSTEM_PROMPT = `Você é o North, assistente financeiro pessoal do app Compass One.
 
 ## Quem você é
 - Consultor financeiro amigável, direto e prático
@@ -51,7 +51,7 @@ const SYSTEM_PROMPT = `Você é o Norte, assistente financeiro pessoal do app Co
 ## Dados do usuário
 {CONTEXTO_DINAMICO}`
 
-export default function NorteAgent() {
+export default function NorthAgent() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Mensagem[]>([])
   const [loading, setLoading] = useState(false)
@@ -61,8 +61,8 @@ export default function NorteAgent() {
   // Sidebar Norte card dispatches this event on desktop
   useEffect(() => {
     const handler = () => setOpen(true)
-    document.addEventListener('openNorte', handler)
-    return () => document.removeEventListener('openNorte', handler)
+    document.addEventListener('openNorth', handler)
+    return () => document.removeEventListener('openNorth', handler)
   }, [])
 
   const { contas, extratoData, faturaData, planos, planosReal, perfil, metaSim } = useApp()
@@ -240,7 +240,7 @@ ${metaSim
       {/* Botão flutuante */}
       <button
         onClick={() => setOpen(o => !o)}
-        title="Abrir assistente Norte"
+        title="Abrir assistente North"
         style={{
           position: 'fixed',
           bottom: isMobile ? 80 : 24,
@@ -269,7 +269,7 @@ ${metaSim
         🧭
       </button>
 
-      <NortePanel
+      <NorthPanel
         open={open}
         onClose={() => setOpen(false)}
         messages={messages}

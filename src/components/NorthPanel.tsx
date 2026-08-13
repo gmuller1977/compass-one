@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
-import NorteMessage from './NorteMessage'
-import type { Mensagem } from './NorteAgent'
+import NorthMessage from './NorthMessage'
+import type { Mensagem } from './NorthAgent'
 
 const CHIPS = [
   'Qual meu saldo?',
@@ -28,7 +28,7 @@ function useIsMobile() {
   return v
 }
 
-export default function NortePanel({ open, onClose, messages, loading, onEnviar, nomeUsuario }: Props) {
+export default function NorthPanel({ open, onClose, messages, loading, onEnviar, nomeUsuario }: Props) {
   const isMobile = useIsMobile()
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -61,18 +61,18 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
     }
   }
 
-  const welcomeText = `Olá${nomeUsuario ? ', ' + nomeUsuario : ''}! Sou o Norte, seu assistente financeiro. Posso te ajudar com:\n• Consultar saldos e faturas\n• Analisar seus gastos do mês\n• Comparar planejado vs realizado\n• Dar dicas para melhorar suas finanças\n\nComo posso te ajudar?`
+  const welcomeText = `Olá${nomeUsuario ? ', ' + nomeUsuario : ''}! Sou o North, seu assistente financeiro. Posso te ajudar com:\n• Consultar saldos e faturas\n• Analisar seus gastos do mês\n• Comparar planejado vs realizado\n• Dar dicas para melhorar suas finanças\n\nComo posso te ajudar?`
 
   return (
     <>
       <style>{`
-        @keyframes norte-dot {
+        @keyframes north-dot {
           0%, 80%, 100% { transform: translateY(0); opacity: 0.4 }
           40%            { transform: translateY(-5px); opacity: 1 }
         }
-        .norte-panel-scrollbar::-webkit-scrollbar { width: 4px }
-        .norte-panel-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px }
-        .norte-chip:hover { background: #1a56db !important; color: #fff !important; border-color: #1a56db !important }
+        .north-panel-scrollbar::-webkit-scrollbar { width: 4px }
+        .north-panel-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px }
+        .north-chip:hover { background: #1a56db !important; color: #fff !important; border-color: #1a56db !important }
       `}</style>
 
       {/* Backdrop — mobile apenas */}
@@ -117,7 +117,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
             🧭
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>Norte</div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>North</div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>Seu assistente financeiro</div>
           </div>
           <button
@@ -138,7 +138,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
         {/* Mensagens */}
         <div
           ref={scrollRef}
-          className="norte-panel-scrollbar"
+          className="north-panel-scrollbar"
           style={{
             flex: 1, overflowY: 'auto',
             padding: '20px 16px 8px',
@@ -147,7 +147,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
         >
           {/* Mensagem de boas-vindas (antes de qualquer interação) */}
           {messages.length === 0 && (
-            <NorteMessage role="assistant" content={welcomeText} ts={Date.now()} />
+            <NorthMessage role="assistant" content={welcomeText} ts={Date.now()} />
           )}
 
           {/* Chips de sugestão */}
@@ -156,7 +156,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
               {CHIPS.map(chip => (
                 <button
                   key={chip}
-                  className="norte-chip"
+                  className="north-chip"
                   onClick={() => onEnviar(chip)}
                   style={{
                     padding: '7px 14px', borderRadius: 20,
@@ -174,7 +174,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
 
           {/* Histórico */}
           {messages.map((m, i) => (
-            <NorteMessage key={i} role={m.role} content={m.content} ts={m.ts} />
+            <NorthMessage key={i} role={m.role} content={m.content} ts={m.ts} />
           ))}
 
           {/* Indicador digitando */}
@@ -195,7 +195,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
                 {[0, 1, 2].map(i => (
                   <div key={i} style={{
                     width: 6, height: 6, borderRadius: '50%', background: '#64748b',
-                    animation: 'norte-dot 1.2s ease-in-out infinite',
+                    animation: 'north-dot 1.2s ease-in-out infinite',
                     animationDelay: `${i * 0.2}s`,
                   }} />
                 ))}
@@ -226,7 +226,7 @@ export default function NortePanel({ open, onClose, messages, loading, onEnviar,
             value={texto}
             onChange={e => setTexto(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Pergunte ao Norte..."
+            placeholder="Pergunte ao North..."
             disabled={loading}
             rows={1}
             style={{

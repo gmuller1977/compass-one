@@ -296,8 +296,8 @@ export default function Sidebar() {
     setExpandedSub2(prev => prev === key ? null : key)
   }
 
-  function abrirNorte() {
-    document.dispatchEvent(new CustomEvent('openNorte'))
+  function abrirNorth() {
+    document.dispatchEvent(new CustomEvent('openNorth'))
   }
 
   // Determine which account is active at level 3
@@ -491,9 +491,9 @@ export default function Sidebar() {
         flexShrink: 0,
       }}>
 
-        {/* Norte card */}
+        {/* North card */}
         <div
-          onClick={abrirNorte}
+          onClick={abrirNorth}
           style={{
             display: 'flex', alignItems: 'center', gap: 9,
             padding: '9px 10px', borderRadius: 10, cursor: 'pointer',
@@ -511,7 +511,7 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
           }}>🧭</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Norte</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>North</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Assistente financeiro</div>
           </div>
           <div style={{

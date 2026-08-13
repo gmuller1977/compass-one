@@ -371,7 +371,7 @@ export default function Onboarding() {
                   }}>
                     <span style={{ color: '#93c5fd', fontWeight: 700 }}>5 min/dia + 30 min/mês + 1h/ano</span>
                     {' '}= controle total das suas finanças.<br />
-                    A bússola te avisa se algo sair do rumo. O Norte te ajuda quando tiver dúvida.
+                    A bússola te avisa se algo sair do rumo. O North te ajuda quando tiver dúvida.
                   </div>
 
                   {/* Dots + Botão */}
