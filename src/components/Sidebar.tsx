@@ -193,42 +193,6 @@ function SubItemRow({
   )
 }
 
-function Sub2ItemRow({
-  label, color, active, onClick,
-}: {
-  label: string; color?: string; active: boolean; onClick: () => void
-}) {
-  const [hovered, setHovered] = useState(false)
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 7,
-        width: '100%', padding: '6px 10px 6px 30px', marginBottom: 1,
-        border: 'none', borderRadius: 8, cursor: 'pointer',
-        fontFamily: 'inherit', textAlign: 'left',
-        background: active
-          ? 'rgba(255,255,255,.9)'
-          : hovered ? 'rgba(255,255,255,.05)' : 'transparent',
-        color: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.35)',
-        fontSize: 11,
-        fontWeight: active ? 800 : 400,
-        boxShadow: active ? '0 1px 3px rgba(0,0,0,.08)' : 'none',
-        transition: 'background .1s, color .1s',
-      }}
-    >
-      <div style={{
-        width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-        background: active ? '#1a56db' : (color ?? (hovered ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.2)')),
-        transition: 'background .1s',
-      }}/>
-      {label}
-    </button>
-  )
-}
-
 function SubDividerRow({ label }: { label: string }) {
   return (
     <div style={{
@@ -265,8 +229,6 @@ export default function Sidebar() {
 
   const params     = new URLSearchParams(search)
   const tipoParam  = params.get('tipo')
-  const contaParam = params.get('conta')
-
   const lancActive      = pathname.startsWith('/novo-lancamento')
   const cartaoSubActive = lancActive && tipoParam === 'cartao'
 
