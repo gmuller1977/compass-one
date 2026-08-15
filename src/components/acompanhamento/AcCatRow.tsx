@@ -130,20 +130,18 @@ export default function AcCatRow({
         }}>›</div>
       </div>
 
-      {/* Acordeon de lançamentos */}
+      {/* Acordeon — 3 colunas: Banco | Cartão | Dinheiro */}
       {aberto && (() => {
-        const banco    = lancamentos.filter(l => l.fonte === 'banco')
-        const cartao   = lancamentos.filter(l => l.fonte === 'cartao')
-        const dinheiro = lancamentos.filter(l => l.fonte === 'dinheiro')
-        const grupos = [
-          { label: '🏦 Banco',    itens: banco    },
-          { label: '💳 Cartão',   itens: cartao   },
-          { label: '💵 Dinheiro', itens: dinheiro },
-        ].filter(g => g.itens.length > 0)
+        const colunas = [
+          { label: '🏦 Banco',    itens: lancamentos.filter(l => l.fonte === 'banco')    },
+          { label: '💳 Cartão',   itens: lancamentos.filter(l => l.fonte === 'cartao')   },
+          { label: '💵 Dinheiro', itens: lancamentos.filter(l => l.fonte === 'dinheiro') },
+        ]
+        const temAlgum = colunas.some(c => c.itens.length > 0)
 
-        if (grupos.length === 0) {
+        if (!temAlgum) {
           return (
-            <div style={{ padding: '8px 15px 10px', color: COR.textoSuave, fontSize: 12,
+            <div style={{ padding: '10px 16px', color: COR.textoSuave, fontSize: 12,
               background: '#f8faff', borderTop: `1px solid #f1f5f9` }}>
               Nenhum lançamento neste mês
             </div>
@@ -151,21 +149,41 @@ export default function AcCatRow({
         }
 
         return (
-          <div style={{ background: '#f8faff', borderTop: `1px solid #f1f5f9` }}>
-            {grupos.map(g => (
-              <div key={g.label}>
-                <div style={{ padding: '5px 15px 3px', fontSize: 9, fontWeight: 700,
-                  color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .5 }}>
-                  {g.label}
+          <div style={{
+            background: '#f8faff', borderTop: `1px solid #f1f5f9`,
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+          }}>
+            {colunas.map((col, ci) => (
+              <div key={col.label} style={{
+                borderRight: ci < 2 ? `1px solid #f1f5f9` : 'none',
+              }}>
+                {/* Cabeçalho da coluna */}
+                <div style={{
+                  padding: '7px 12px 5px',
+                  fontSize: 9, fontWeight: 700, color: '#94a3b8',
+                  textTransform: 'uppercase' as const, letterSpacing: .5,
+                  borderBottom: `1px solid #f1f5f9`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <span>{col.label}</span>
+                  {col.itens.length > 0 && (
+                    <span style={{ fontWeight: 700, color: isEntrada ? COR.verde : COR.azul }}>
+                      {fmt(col.itens.reduce((s, l) => s + l.valor, 0))}
+                    </span>
+                  )}
                 </div>
-                {g.itens.map((l, i) => (
+
+                {/* Lançamentos */}
+                {col.itens.length === 0 ? (
+                  <div style={{ padding: '8px 12px', fontSize: 11, color: '#d1d5db' }}>—</div>
+                ) : col.itens.map((l, i) => (
                   <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 15px',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 12px',
                     borderTop: i === 0 ? 'none' : `1px solid #f1f5f9`,
                   }}>
-                    <span style={{ fontSize: 10, color: COR.textoSuave, flexShrink: 0, minWidth: 36 }}>
-                      dia {String(l.dia).padStart(2, '0')}
+                    <span style={{ fontSize: 10, color: '#94a3b8', flexShrink: 0 }}>
+                      {String(l.dia).padStart(2, '0')}
                     </span>
                     <span style={{ fontSize: 11, color: COR.texto, flex: 1,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
