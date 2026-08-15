@@ -14,7 +14,7 @@ type Props = {
   contasExtrato: Conta[]
   setContaId: (id: string) => void
   setMobileDiaForm: (v: null) => void
-  // Calendário
+  // Calendário (banco/dinheiro)
   mes: number
   ano: number
   mostrarCalendario: boolean
@@ -24,6 +24,16 @@ type Props = {
   onMesSelect: (mes: number, ano: number) => void
   onMesPrev: () => void
   onMesNext: () => void
+  // Calendário cartão
+  cartaoMes: number
+  cartaoAno: number
+  cartaoMostrarCal: boolean
+  cartaoAnoCal: number
+  setCartaoMostrarCal: (v: boolean | ((p: boolean) => boolean)) => void
+  setCartaoAnoCal: (fn: (a: number) => number) => void
+  onCartaoMesSelect: (mes: number, ano: number) => void
+  onCartaoMesPrev: () => void
+  onCartaoMesNext: () => void
 }
 
 export default function NleHeader({
@@ -32,15 +42,22 @@ export default function NleHeader({
   contasExtrato, setContaId, setMobileDiaForm,
   mes, ano, mostrarCalendario, anoCalendario,
   setMostrarCalendario, setAnoCalendario, onMesSelect, onMesPrev, onMesNext,
+  cartaoMes, cartaoAno, cartaoMostrarCal, cartaoAnoCal,
+  setCartaoMostrarCal, setCartaoAnoCal, onCartaoMesSelect, onCartaoMesPrev, onCartaoMesNext,
 }: Props) {
   if (!isMobile) {
     const isDinheiro = tabPrincipal === 'dinheiro'
+    const isCartao   = tabPrincipal === 'cartao'
+
     const contaDefault = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
-    const subtitle = isDinheiro
+    const subtitle = (isDinheiro || isCartao)
       ? undefined
       : contaDefault
         ? `${contaDefault.banco}${contaDefault.apelido ? ' · ' + contaDefault.apelido : ''}`
         : undefined
+
+    const icon  = isCartao ? 'ti-credit-card' : isDinheiro ? 'ti-cash' : 'ti-building-bank'
+    const title = isCartao ? 'Fatura do Cartão' : isDinheiro ? 'Movimentação de dinheiro' : 'Movimentação do banco'
 
     const arrowBtn = {
       width: 28, height: 28, borderRadius: 8, border: 'none',
@@ -50,62 +67,107 @@ export default function NleHeader({
       fontFamily: 'inherit',
     } as const
 
+    // Cartão month nav (own calendar popover)
+    const cartaoNav = (
+      <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={onCartaoMesPrev} style={arrowBtn}>‹</button>
+          <button
+            onClick={e => { e.stopPropagation(); setCartaoAnoCal(() => cartaoAno); setCartaoMostrarCal(v => !v) }}
+            style={{
+              fontSize: 20, fontWeight: 800, color: '#fff',
+              border: 'none', background: 'rgba(255,255,255,0.12)',
+              borderRadius: 8, padding: '4px 14px',
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+            {NOMES_MESES[cartaoMes]} {cartaoAno}
+          </button>
+          <button onClick={onCartaoMesNext} style={arrowBtn}>›</button>
+        </div>
+
+        {cartaoMostrarCal && (
+          <div
+            style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 300, background: '#fff', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.22)', padding: 16, minWidth: 272 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <button onClick={() => setCartaoAnoCal(a => a - 1)}
+                style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>‹</button>
+              <span style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{cartaoAnoCal}</span>
+              <button onClick={() => setCartaoAnoCal(a => a + 1)}
+                style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>›</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+              {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev, i) => {
+                const ativo = i === cartaoMes && cartaoAnoCal === cartaoAno
+                return (
+                  <button key={i}
+                    onClick={() => { onCartaoMesSelect(i, cartaoAnoCal); setCartaoMostrarCal(false) }}
+                    style={{ padding: '8px 4px', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: ativo ? 700 : 500, background: ativo ? COR.azul : '#f1f5f9', color: ativo ? '#fff' : COR.texto }}>
+                    {abrev}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+
+    // Banco/dinheiro month nav
+    const bancoNav = (
+      <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={onMesPrev} style={arrowBtn}>‹</button>
+          <button
+            onClick={e => { e.stopPropagation(); setAnoCalendario(() => ano); setMostrarCalendario(v => !v) }}
+            style={{
+              fontSize: 20, fontWeight: 800, color: '#fff',
+              border: 'none', background: 'rgba(255,255,255,0.12)',
+              borderRadius: 8, padding: '4px 14px',
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+            {NOMES_MESES[mes]} {ano}
+          </button>
+          <button onClick={onMesNext} style={arrowBtn}>›</button>
+        </div>
+
+        {mostrarCalendario && (
+          <div
+            style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 300, background: '#fff', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.22)', padding: 16, minWidth: 272 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <button onClick={() => setAnoCalendario(a => a - 1)}
+                style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>‹</button>
+              <span style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{anoCalendario}</span>
+              <button onClick={() => setAnoCalendario(a => a + 1)}
+                style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>›</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+              {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev, i) => {
+                const ativo = i === mes && anoCalendario === ano
+                return (
+                  <button key={i}
+                    onClick={() => { onMesSelect(i, anoCalendario); setMostrarCalendario(false) }}
+                    style={{ padding: '8px 4px', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: ativo ? 700 : 500, background: ativo ? COR.azul : '#f1f5f9', color: ativo ? '#fff' : COR.texto }}>
+                    {abrev}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+
     return (
       <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
         <PageHeader
-          icon={isDinheiro ? 'ti-cash' : 'ti-building-bank'}
+          icon={icon}
           breadcrumb="LANÇAMENTOS"
-          title={isDinheiro ? 'Movimentação de dinheiro' : 'Movimentação do banco'}
+          title={title}
           subtitle={subtitle}
           mb={0}
-          rightContent={
-            <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button onClick={onMesPrev} style={arrowBtn}>‹</button>
-                <button
-                  onClick={e => { e.stopPropagation(); setAnoCalendario(() => ano); setMostrarCalendario(v => !v) }}
-                  style={{
-                    fontSize: 20, fontWeight: 800, color: '#fff',
-                    border: 'none', background: 'rgba(255,255,255,0.12)',
-                    borderRadius: 8, padding: '4px 14px',
-                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                  }}>
-                  {NOMES_MESES[mes]} {ano}
-                </button>
-                <button onClick={onMesNext} style={arrowBtn}>›</button>
-              </div>
-
-              {mostrarCalendario && (
-                <div
-                  style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 300,
-                    background: '#fff', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.22)',
-                    padding: 16, minWidth: 272 }}
-                  onClick={e => e.stopPropagation()}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <button onClick={() => setAnoCalendario(a => a - 1)}
-                      style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>‹</button>
-                    <span style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{anoCalendario}</span>
-                    <button onClick={() => setAnoCalendario(a => a + 1)}
-                      style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>›</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
-                    {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev, i) => {
-                      const ativo = i === mes && anoCalendario === ano
-                      return (
-                        <button key={i}
-                          onClick={() => { onMesSelect(i, anoCalendario); setMostrarCalendario(false) }}
-                          style={{ padding: '8px 4px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                            fontFamily: 'inherit', fontSize: 12, fontWeight: ativo ? 700 : 500,
-                            background: ativo ? COR.azul : '#f1f5f9', color: ativo ? '#fff' : COR.texto }}>
-                          {abrev}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          }
+          rightContent={isCartao ? cartaoNav : bancoNav}
         />
       </div>
     )

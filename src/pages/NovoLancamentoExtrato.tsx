@@ -38,6 +38,10 @@ export default function NovoLancamentoExtrato() {
   const [ano, setAno]          = useState(anoHoje)
   const [mostrarCalendario, setMostrarCalendario] = useState(false)
   const [anoCalendario,     setAnoCalendario]     = useState(anoHoje)
+  const [cartaoMes,         setCartaoMes]         = useState(mesHoje)
+  const [cartaoAno,         setCartaoAno]         = useState(anoHoje)
+  const [cartaoMostrarCal,  setCartaoMostrarCal]  = useState(false)
+  const [cartaoAnoCal,      setCartaoAnoCal]      = useState(anoHoje)
   const [diaSel,  setDiaSel]  = useState<number>(diaHoje)
   const [editandoId, setEditandoId] = useState<string|null>(null)
   const [editandoDiaOriginal, setEditandoDiaOriginal] = useState<number|null>(null)
@@ -313,6 +317,13 @@ export default function NovoLancamentoExtrato() {
     document.addEventListener('click', fechar)
     return () => document.removeEventListener('click', fechar)
   }, [mostrarCalendario])
+
+  useEffect(() => {
+    if (!cartaoMostrarCal) return
+    const fechar = () => setCartaoMostrarCal(false)
+    document.addEventListener('click', fechar)
+    return () => document.removeEventListener('click', fechar)
+  }, [cartaoMostrarCal])
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     return (novoMes===mesHoje && novoAno===anoHoje) ? diaHoje : 1
@@ -725,6 +736,17 @@ export default function NovoLancamentoExtrato() {
     let m=mes+1, a=ano; if(m>11){m=0;a++}
     setMes(m); resetarParaNovo(diaDefaultPara(m, a))
   }
+  function onCartaoMesPrev() {
+    let m=cartaoMes-1, a=cartaoAno; if(m<0){m=11;a--}
+    setCartaoMes(m); setCartaoAno(a)
+  }
+  function onCartaoMesNext() {
+    let m=cartaoMes+1, a=cartaoAno; if(m>11){m=0;a++}
+    setCartaoMes(m); setCartaoAno(a)
+  }
+  function onCartaoMesSelect(m: number, a: number) {
+    setCartaoMes(m); setCartaoAno(a)
+  }
 
   // ── JSX ────────────────────────────────────────────────────────────
   return (
@@ -755,6 +777,15 @@ export default function NovoLancamentoExtrato() {
         onMesSelect={(m, a) => { setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m, a)) }}
         onMesPrev={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
         onMesNext={() => { let m=mes+1,a=ano; if(m>11){m=0;a++}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
+        cartaoMes={cartaoMes}
+        cartaoAno={cartaoAno}
+        cartaoMostrarCal={cartaoMostrarCal}
+        cartaoAnoCal={cartaoAnoCal}
+        setCartaoMostrarCal={setCartaoMostrarCal}
+        setCartaoAnoCal={setCartaoAnoCal}
+        onCartaoMesSelect={onCartaoMesSelect}
+        onCartaoMesPrev={onCartaoMesPrev}
+        onCartaoMesNext={onCartaoMesNext}
       />
 
       <NleMobileWizard
@@ -852,6 +883,10 @@ export default function NovoLancamentoExtrato() {
           mobileSelecionado={isMobile ? (mobileCartaoId ?? undefined) : cartaoNavId}
           onCartaoChange={id => setCartaoAtualId(id)}
           onVoltar={() => setMobileStep('tipo')}
+          mes={cartaoMes}
+          setMes={setCartaoMes}
+          ano={cartaoAno}
+          setAno={setCartaoAno}
         />
       ) : tabPrincipal === 'consolidado' ? (
         <NleConsolidado

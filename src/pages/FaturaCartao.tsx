@@ -7,6 +7,7 @@ import {
   type TipoLanc, type FormaPag, type Lancamento, type DadosMes,
 } from '../components/faturaCartao/FcShared'
 import FcMobileView from '../components/faturaCartao/FcMobileView'
+import FcBanner from '../components/faturaCartao/FcBanner'
 import FcDesktopLeft from '../components/faturaCartao/FcDesktopLeft'
 import FcDesktopPanel from '../components/faturaCartao/FcDesktopPanel'
 import FcModal from '../components/faturaCartao/FcModal'
@@ -21,7 +22,17 @@ function useIsMobile() {
   return m
 }
 
-export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mobileSelecionado?: string; onVoltar?: () => void; onCartaoChange?: (id: string) => void } = {}) {
+type Props = {
+  mobileSelecionado?: string
+  onVoltar?: () => void
+  onCartaoChange?: (id: string) => void
+  mes: number
+  setMes: React.Dispatch<React.SetStateAction<number>>
+  ano: number
+  setAno: React.Dispatch<React.SetStateAction<number>>
+}
+
+export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, setMes, ano, setAno }: Props) {
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
@@ -38,8 +49,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
   useEffect(() => { extratoRef.current = extratoData }, [extratoData])
 
   const [contaId,  setContaId]  = useState(() => mobileSelecionado ?? contasCartao[0]?.id ?? 'c1')
-  const [mes,      setMes]      = useState(mesHoje)
-  const [ano,      setAno]      = useState(anoHoje)
   const [diaSel,   setDiaSel]   = useState<number>(diaHoje)
   const [editandoId,           setEditandoId]           = useState<string|null>(null)
   const [editandoDiaOriginal,  setEditandoDiaOriginal]  = useState<number|null>(null)
@@ -57,26 +66,19 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
 
-  const [mostrarCalendario, setMostrarCalendario] = useState(false)
-  const [anoCalendario,     setAnoCalendario]     = useState(anoHoje)
-  const [calPos,            setCalPos]            = useState({top:0,left:0})
-  const calBtnRef      = useRef<HTMLButtonElement>(null)
   const categoriaSelectRef  = useRef<HTMLSelectElement>(null)
   const valorInputRef       = useRef<HTMLInputElement>(null)
   const dataCompraRef       = useRef<HTMLInputElement>(null)
   const parcelasBtnRefs     = useRef<(HTMLButtonElement|null)[]>([])
 
   const contaInfo        = contas.find(c => c.id === contaId)
-  // Datas base do cartão
   const diaFechamentoBase = contaInfo?.diaFechamento ?? 1
   const diaVencimentoBase = contaInfo?.diaVencimento ?? 1
-  // billingOffset: vencimento cai no mês seguinte ao fechamento quando diaVenc < diaFech
   const billingOffset    = diaVencimentoBase < diaFechamentoBase ? 1 : 0
 
-  // Tab = mês de VENCIMENTO (pagamento). Mês de compra = tab - offset
   let _pMes = mes - billingOffset, _pAno = ano
   if (_pMes < 0) { _pMes += 12; _pAno-- }
-  const purchaseMes   = _pMes   // mês do calendário onde as compras ocorreram
+  const purchaseMes   = _pMes
   const purchaseAno   = _pAno
 
   const totalDias     = diasNoMes(purchaseMes, purchaseAno)
@@ -84,20 +86,16 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
   const key           = mesKey(contaId, purchaseAno, purchaseMes)
   const mesDados      = dados[key] ?? DADOS_MES_VAZIO
 
-  // Datas efetivas (com override por mês)
   const diaFechamento = mesDados.fechamentoOverride ?? diaFechamentoBase
   const diaVencimento = mesDados.vencimentoOverride ?? diaVencimentoBase
 
-  // Vencimento = a própria aba (mes = mês de pagamento)
   const mesVenc = mes
   const anoVenc = ano
 
-  // Status da fatura
   const faturaStatus =
     new Date(anoVenc, mesVenc, diaVencimento) <= hoje ? 'paga' :
     new Date(purchaseAno, purchaseMes, diaFechamento) <= hoje ? 'fechada' : 'aberta'
 
-  // Todas as categorias de saída ativas — cartão pode cobrir qualquer tipo de gasto
   const categoriasCartao = categorias
     .filter(c => c.tipo === 'saida' && c.ativa)
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
@@ -111,7 +109,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
       if (parts.length !== 3) continue
       const [cId, aStr, mStr] = parts
       const a = parseInt(aStr)
-      const m = parseInt(mStr) - 1  // mês de compra (0-based)
+      const m = parseInt(mStr) - 1
       if (isNaN(a) || isNaN(m)) continue
 
       const contaCartao = contas.find(c => c.id === cId && c.tipo === 'cartao')
@@ -120,14 +118,12 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
       const diaFechBase = contaCartao.diaFechamento ?? 1
       const diaVencBase = contaCartao.diaVencimento ?? 1
 
-      // Mês de vencimento: próximo mês quando diaVenc < diaFech (caso comum)
       let vencMes = m, vencAno = a
       if (diaVencBase < diaFechBase) {
         vencMes = m + 1
         if (vencMes > 11) { vencMes = 0; vencAno++ }
       }
 
-      // Débito automático → banco vinculado; caso contrário → todos os bancos correntes
       const bankIds: string[] = contaCartao.formaPagamentoFatura === 'automatico' && contaCartao.contaPagamentoId
         ? [contaCartao.contaPagamentoId]
         : contas.filter(c => c.tipo === 'corrente').map(c => c.id)
@@ -175,7 +171,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
     const diaFech = conta?.diaFechamento ?? 1
     const diaVenc = conta?.diaVencimento ?? 1
     const offset  = diaVenc < diaFech ? 1 : 0
-    // Tab = mês de vencimento: antes do fechamento → mesHoje+offset; depois → mesHoje+1+offset
     const rawM = (diaHoje >= diaFech ? mesHoje + 1 : mesHoje) + offset
     let tabMes = rawM, tabAno = anoHoje
     if (tabMes > 11) { tabMes -= 12; tabAno++ }
@@ -187,7 +182,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
   useEffect(() => { onCartaoChange?.(contaId) }, [contaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Modal "valor da fatura" — abre uma vez por dia por fatura
-  // Delay de 50ms: aguarda o auto-avança (efeito anterior) corrigir o mês/key antes de abrir
   useEffect(() => {
     if (carregando) return
     const dm = dados[key] ?? DADOS_MES_VAZIO
@@ -207,18 +201,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
     })
   }
 
-  // Limpa dias fechados ao trocar de conta/mês
   useEffect(() => { setDiasFechados(new Set()) }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!mostrarCalendario) return
-    const fechar = () => setMostrarCalendario(false)
-    document.addEventListener('click', fechar)
-    return () => document.removeEventListener('click', fechar)
-  }, [mostrarCalendario])
-
   function diaDefaultPara(novoMes: number, novoAno: number) {
-    // novoMes é mês de vencimento; mês de compra = novoMes - billingOffset
     let pMes = novoMes - billingOffset, pAno = novoAno
     if (pMes < 0) { pMes += 12; pAno-- }
     return (pMes === mesHoje && pAno === anoHoje) ? diaHoje : 1
@@ -313,13 +298,11 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
     if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
-    // Resolve data de compra a partir do campo livre
     const parsedCompra = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
     const diaCompraFinal = parsedCompra?.dia ?? diaSel
     const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
     const anoCompraFinal = parsedCompra?.ano ?? purchaseAno
 
-    // Se a data de compra for após o fechamento desta fatura → lança na próxima
     const routeToNext = !editandoId && (() => {
       if (anoCompraFinal > purchaseAno) return true
       if (anoCompraFinal < purchaseAno) return false
@@ -359,13 +342,11 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
               },
             }
         let result = { ...prev, [key]: dmUpdated }
-        // Propagate category/description changes to sibling installments in other months
         const novaDesc = fDesc.trim() || fCat
         if (entrada.parcelas && entrada.parcelas > 1 && (fCat !== entrada.categoria || novaDesc !== entrada.descricao)) {
           const baseId = entrada.id.replace(/-\d+$/, '')
           const totalParcelas = entrada.parcelas
           const currentParcela = entrada.parcelaAtual ?? 1
-          // Compute the purchase month of installment 1
           let baseMes = purchaseMes - (currentParcela - 1)
           let baseAno = purchaseAno
           while (baseMes < 0) { baseMes += 12; baseAno-- }
@@ -394,7 +375,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
         return result
       })
     } else if (nParcelas > 1) {
-      // Cria entrada em cada mês subsequente (começa no targetMes se após fechamento)
       setDados(prev => {
         let result = { ...prev }
         for (let p = 1; p <= nParcelas; p++) {
@@ -425,7 +405,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
         return result
       })
     } else {
-      // Avista — vai para targetKey (próxima fatura se após fechamento)
       const lancKey = routeToNext ? mesKey(contaId, targetAno, targetMes) : key
       setDados(prev => {
         const dm = prev[lancKey] ?? DADOS_MES_VAZIO
@@ -523,61 +502,70 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange }: { mo
 
   // ── Desktop ─────────────────────────────────────────────────────────
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'row',overflow:'hidden',background:COR.fundo}}>
-      <FcDesktopLeft
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: COR.fundo }}>
+      <FcBanner
         contasCartao={contasCartao}
-        contaId={contaId} setContaId={setContaId}
-        mes={mes} setMes={setMes} ano={ano} setAno={setAno}
+        contaId={contaId}
+        onContaSelect={id => { setContaId(id); resetarParaNovo(diaDefaultPara(mes, ano)) }}
+        totalPrevisto={totalPrevisto}
         totalFatura={totalFatura}
-        totalPrevisto={totalPrevisto} grandTotalFaturas={grandTotalFaturas}
-        diferenca={diferenca} conciliado={conciliado}
+        grandTotalFaturas={grandTotalFaturas}
         faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
-        diaFechamento={diaFechamento} diaVencimento={diaVencimento}
-        mesDados={mesDados} totalDias={totalDias}
-        purchaseMes={purchaseMes} purchaseAno={purchaseAno}
-        mesVenc={mesVenc} anoVenc={anoVenc}
-        editandoId={editandoId}
-        diasFechados={diasFechados}
-        categorias={categorias}
-        mostrarCalendario={mostrarCalendario} setMostrarCalendario={setMostrarCalendario}
-        anoCalendario={anoCalendario} setAnoCalendario={setAnoCalendario}
-        calPos={calPos} setCalPos={setCalPos}
-        calBtnRef={calBtnRef}
-        resetarParaNovo={resetarParaNovo}
-        diaDefaultPara={diaDefaultPara}
-        editarLancamento={editarLancamento}
-        excluir={excluir}
-        toggleDia={toggleDia}
-        setDiaSel={setDiaSel}
-      />
-      <FcDesktopPanel
-        editandoId={editandoId}
-        editandoFechamento={editandoFechamento} setEditandoFechamento={setEditandoFechamento}
-        editandoVencimento={editandoVencimento} setEditandoVencimento={setEditandoVencimento}
-        fTipo={fTipo} setFTipo={setFTipo}
-        fCat={fCat} setFCat={setFCat}
-        fDesc={fDesc} setFDesc={setFDesc}
-        fValor={fValor} setFValor={setFValor}
-        fParcelas={fParcelas} setFParcelas={setFParcelas}
-        fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
-        diaFechamento={diaFechamento} diaVencimento={diaVencimento}
-        diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
+        diaVencimento={diaVencimento}
         mesDados={mesDados}
-        purchaseMes={purchaseMes} purchaseAno={purchaseAno}
-        diaSel={diaSel} setDiaSel={setDiaSel}
-        mesVenc={mesVenc} anoVenc={anoVenc}
-        categoriasCartao={categoriasCartao}
-        dataCompraRef={dataCompraRef}
-        categoriaSelectRef={categoriaSelectRef}
-        valorInputRef={valorInputRef}
-        parcelasBtnRefs={parcelasBtnRefs}
-        resetarParaNovo={resetarParaNovo}
-        excluirAtual={excluirAtual}
-        lancar={lancar}
-        updateMes={updateMes}
+        diferenca={diferenca}
+        conciliado={conciliado}
         setModalFatura={setModalFatura}
         setModalFaturaValor={setModalFaturaValor}
       />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
+        <FcDesktopLeft
+          mesDados={mesDados}
+          totalDias={totalDias}
+          purchaseMes={purchaseMes}
+          purchaseAno={purchaseAno}
+          totalFatura={totalFatura}
+          diaFechamento={diaFechamento}
+          diaVencimento={diaVencimento}
+          mesVenc={mesVenc}
+          anoVenc={anoVenc}
+          editandoId={editandoId}
+          diasFechados={diasFechados}
+          categorias={categorias}
+          editarLancamento={editarLancamento}
+          excluir={excluir}
+          toggleDia={toggleDia}
+          setDiaSel={setDiaSel}
+        />
+        <FcDesktopPanel
+          editandoId={editandoId}
+          editandoFechamento={editandoFechamento} setEditandoFechamento={setEditandoFechamento}
+          editandoVencimento={editandoVencimento} setEditandoVencimento={setEditandoVencimento}
+          fTipo={fTipo} setFTipo={setFTipo}
+          fCat={fCat} setFCat={setFCat}
+          fDesc={fDesc} setFDesc={setFDesc}
+          fValor={fValor} setFValor={setFValor}
+          fParcelas={fParcelas} setFParcelas={setFParcelas}
+          fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
+          diaFechamento={diaFechamento} diaVencimento={diaVencimento}
+          diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
+          mesDados={mesDados}
+          purchaseMes={purchaseMes} purchaseAno={purchaseAno}
+          diaSel={diaSel} setDiaSel={setDiaSel}
+          mesVenc={mesVenc} anoVenc={anoVenc}
+          categoriasCartao={categoriasCartao}
+          dataCompraRef={dataCompraRef}
+          categoriaSelectRef={categoriaSelectRef}
+          valorInputRef={valorInputRef}
+          parcelasBtnRefs={parcelasBtnRefs}
+          resetarParaNovo={resetarParaNovo}
+          excluirAtual={excluirAtual}
+          lancar={lancar}
+          updateMes={updateMes}
+          setModalFatura={setModalFatura}
+          setModalFaturaValor={setModalFaturaValor}
+        />
+      </div>
       <FcModal
         modalFatura={modalFatura} setModalFatura={setModalFatura}
         modalFaturaValor={modalFaturaValor} setModalFaturaValor={setModalFaturaValor}
