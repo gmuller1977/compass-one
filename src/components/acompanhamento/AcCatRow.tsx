@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { COR, fmt, barCor, type CatSel } from './AcShared'
+import { COR, fmt, barCor } from './AcShared'
 
 export interface AcCatRowProps {
-  uid: string
   nome: string
   descricao?: string
   prev: number
@@ -12,15 +12,14 @@ export interface AcCatRowProps {
   realDinheiro: number
   lancamentos: import('./AcShared').Lanc[]
   isEntrada?: boolean
-  selecionada: boolean
-  onSelect: (cat: CatSel) => void
   categorias: Categoria[]
 }
 
 export default function AcCatRow({
-  uid, nome, descricao, prev, realBanc, realCart, realDinheiro, lancamentos,
-  isEntrada, selecionada, onSelect, categorias,
+  nome, descricao, prev, realBanc, realCart, realDinheiro, lancamentos,
+  isEntrada, categorias,
 }: AcCatRowProps) {
+  const [aberto, setAberto] = useState(false)
   const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
   const lancAbs    = realBanc + realCart + realDinheiro
   const disponivel = prev - lancAbs
@@ -41,18 +40,15 @@ export default function AcCatRow({
     : isEntrada ? (disponivel > 0 ? COR.verde : '#94a3b8')
     : (disponivel >= 0 ? COR.verde : COR.vermelho)
 
-  const handleClick = () =>
-    onSelect({ uid, nome, descricao, tipo: isEntrada ? 'entrada' : 'saida', prev, realBanc, realCart, realDinheiro, lancamentos })
-
   return (
     <div style={{ borderBottom: `1px solid ${COR.borda}` }}>
       <div
-        onClick={handleClick}
+        onClick={() => setAberto(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
           cursor: 'pointer',
-          background: selecionada ? '#eff6ff' : 'transparent',
-          borderLeft: selecionada ? `3px solid ${COR.azul}` : '3px solid transparent',
+          background: aberto ? '#eff6ff' : 'transparent',
+          borderLeft: aberto ? `3px solid ${COR.azul}` : '3px solid transparent',
           transition: 'background .12s',
         }}
       >
@@ -104,7 +100,8 @@ export default function AcCatRow({
           </span>
         </div>
 
-        <div style={{ flexShrink: 0, fontSize: 12, color: '#cbd5e1', width: 14, textAlign: 'center' }}>›</div>
+        <div style={{ flexShrink: 0, fontSize: 12, color: '#cbd5e1', width: 14, textAlign: 'center',
+          transition: 'transform .2s', transform: aberto ? 'rotate(90deg)' : 'none' }}>›</div>
       </div>
 
       {/* Barra de progresso */}
@@ -116,6 +113,56 @@ export default function AcCatRow({
           </div>
         </div>
       )}
+
+      {/* Acordeon de lançamentos */}
+      {aberto && (() => {
+        const banco    = lancamentos.filter(l => l.fonte === 'banco')
+        const cartao   = lancamentos.filter(l => l.fonte === 'cartao')
+        const dinheiro = lancamentos.filter(l => l.fonte === 'dinheiro')
+        const grupos = [
+          { label: '🏦 Banco',    itens: banco    },
+          { label: '💳 Cartão',   itens: cartao   },
+          { label: '💵 Dinheiro', itens: dinheiro },
+        ].filter(g => g.itens.length > 0)
+
+        if (grupos.length === 0) {
+          return (
+            <div style={{ padding: '8px 15px 10px', color: COR.textoSuave, fontSize: 12 }}>
+              Nenhum lançamento neste mês
+            </div>
+          )
+        }
+
+        return (
+          <div style={{ background: '#f8faff', borderTop: `1px solid ${COR.borda}` }}>
+            {grupos.map(g => (
+              <div key={g.label}>
+                <div style={{ padding: '6px 15px 4px', fontSize: 10, fontWeight: 700,
+                  color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: .5 }}>
+                  {g.label}
+                </div>
+                {g.itens.map((l, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '4px 15px', borderTop: i === 0 ? 'none' : `1px solid ${COR.borda}` }}>
+                    <span style={{ fontSize: 11, color: COR.textoSuave, flexShrink: 0, minWidth: 40 }}>
+                      dia {String(l.dia).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: 12, color: COR.texto, flex: 1,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {l.descricao || nome}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0,
+                      color: isEntrada ? COR.verde : COR.texto,
+                      fontVariantNumeric: 'tabular-nums' }}>
+                      {fmt(l.valor)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )
+      })()}
     </div>
   )
 }

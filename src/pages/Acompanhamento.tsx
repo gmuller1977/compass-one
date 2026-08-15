@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
-import { COR, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal, type CatSel } from '../components/acompanhamento/AcShared'
+import { COR, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
@@ -31,8 +31,7 @@ export default function Acompanhamento() {
   const isMobile = useIsMobile()
   const [mes, setMes]               = useState(mesHoje)
   const [ano, setAno]               = useState(anoHoje)
-  const [abertos, setAbertos]       = useState<Set<string>>(new Set())
-  const [catSel,  setCatSel]        = useState<CatSel | null>(null)
+  const [abertos, setAbertos] = useState<Set<string>>(new Set())
   const [mostrarCal, setMostrarCal] = useState(false)
   const [anoCal, setAnoCal]         = useState(anoHoje)
 
@@ -322,8 +321,6 @@ export default function Acompanhamento() {
                   categorias={categorias}
                   cartaoNomes={cartaoNomes}
                   mes={mes}
-                  catSelUid={catSel?.uid ?? null}
-                  onCatSelect={setCatSel}
                 />
               </div>
             )}
@@ -344,8 +341,6 @@ export default function Acompanhamento() {
                   categorias={categorias}
                   cartaoNomes={cartaoNomes}
                   mes={mes}
-                  catSelUid={catSel?.uid ?? null}
-                  onCatSelect={setCatSel}
                 />
               </div>
             )}

@@ -1,5 +1,5 @@
 import type { Categoria } from '../../context/AppContext'
-import { COR, type CatReal, type CatSel } from './AcShared'
+import { COR, type CatReal } from './AcShared'
 import AcCatRow from './AcCatRow'
 
 interface AcSecaoProps {
@@ -10,13 +10,10 @@ interface AcSecaoProps {
   categorias: Categoria[]
   cartaoNomes: Set<string>
   mes: number
-  catSelUid: string | null
-  onCatSelect: (cat: CatSel) => void
 }
 
 export default function AcSecao({
-  tipo, grupos, planCats, realMap, categorias, cartaoNomes,
-  mes, catSelUid, onCatSelect,
+  tipo, grupos, planCats, realMap, categorias, cartaoNomes, mes,
 }: AcSecaoProps) {
   const isEntrada  = tipo === 'entrada'
   const corGrupo   = isEntrada ? COR.verde     : COR.vermelho
@@ -75,7 +72,6 @@ export default function AcSecao({
                 return (
                   <AcCatRow
                     key={uid}
-                    uid={uid}
                     nome={cat.nome}
                     descricao={cat.descricao}
                     prev={cat.v[mes] ?? 0}
@@ -84,8 +80,6 @@ export default function AcSecao({
                     realDinheiro={cd?.totalDinheiro ?? 0}
                     lancamentos={cd?.lancamentos ?? []}
                     isEntrada={isEntrada}
-                    selecionada={catSelUid === uid}
-                    onSelect={onCatSelect}
                     categorias={categorias}
                   />
                 )
