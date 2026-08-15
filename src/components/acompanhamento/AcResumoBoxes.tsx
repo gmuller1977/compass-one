@@ -13,66 +13,42 @@ export default function AcResumoBoxes({
 }: AcResumoBoxesProps) {
   const saldoPrev = totalPrevE - totalPrevS
   const saldoReal = totalRealE - totalRealS
-  const diffE     = totalPrevE - totalRealE   // positivo = a receber
-  const diffS     = totalPrevS - totalRealS   // positivo = economizou
-  const diffSaldo = saldoPrev - saldoReal
+  const diffE     = totalRealE - totalPrevE   // realizado vs previsto
+  const diffS     = totalRealS - totalPrevS
+  const diffSaldo = saldoReal - saldoPrev
+  const semDados  = totalRealE === 0 && totalRealS === 0 && totalPrevE === 0 && totalPrevS === 0
 
-  const semDados = totalRealE === 0 && totalRealS === 0 && totalPrevE === 0 && totalPrevS === 0
-
-  // ── Cores ────────────────────────────────────────────────
-  const corSaldoPrev = semDados ? '#94a3b8' : saldoPrev >= 0 ? COR.verde : COR.vermelho
-  const corSaldoReal = semDados ? '#94a3b8' : saldoReal >= 0 ? COR.verde : COR.vermelho
-
+  // ── Mobile compacto ─────────────────────────────────────
   if (isMobile) {
-    // Mobile: compacto, 2 linhas (prev + real) + saldo
     const percE = totalPrevE > 0 ? Math.min(totalRealE / totalPrevE, 1) : (totalRealE > 0 ? 1 : 0)
     const percS = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
-    const barCorE = percE >= 1 ? COR.azul : COR.verde
-    const barCorS = percS >= 1 ? COR.vermelho : percS >= 0.8 ? '#f59e0b' : COR.azul
-
     return (
       <div style={{background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
         padding:'10px 14px 12px',flexShrink:0,display:'flex',flexDirection:'column',gap:8}}>
-        <div>
-          <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
-            <span style={{fontSize:11,fontWeight:700,color:COR.verde}}>Receitas</span>
-            <div style={{display:'flex',alignItems:'baseline',gap:4}}>
-              <span style={{fontSize:14,fontWeight:800,color:COR.verde,fontVariantNumeric:'tabular-nums'}}>
-                {totalRealE > 0 ? fmt(totalRealE) : '—'}
-              </span>
-              {totalPrevE > 0 && (
-                <span style={{fontSize:10,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
-                  de {fmt(totalPrevE)}
+        {[
+          {label:'Receitas',cor:COR.verde,real:totalRealE,prev:totalPrevE,perc:percE},
+          {label:'Despesas',cor:COR.vermelho,real:totalRealS,prev:totalPrevS,perc:percS},
+        ].map(({label,cor,real,prev,perc}) => (
+          <div key={label}>
+            <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
+              <span style={{fontSize:11,fontWeight:700,color:cor}}>{label}</span>
+              <div style={{display:'flex',alignItems:'baseline',gap:4}}>
+                <span style={{fontSize:14,fontWeight:800,color:cor,fontVariantNumeric:'tabular-nums'}}>
+                  {real > 0 ? fmt(real) : '—'}
                 </span>
-              )}
+                {prev > 0 && <span style={{fontSize:10,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>de {fmt(prev)}</span>}
+              </div>
+            </div>
+            <div style={{background:'#e9edf2',borderRadius:99,height:4,overflow:'hidden'}}>
+              <div style={{width:`${perc*100}%`,height:4,borderRadius:99,background:cor,transition:'width .3s'}}/>
             </div>
           </div>
-          <div style={{background:'#e9edf2',borderRadius:99,height:4,overflow:'hidden'}}>
-            <div style={{width:`${percE*100}%`,height:4,borderRadius:99,background:barCorE,transition:'width .3s'}}/>
-          </div>
-        </div>
-        <div>
-          <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:4}}>
-            <span style={{fontSize:11,fontWeight:700,color:COR.vermelho}}>Despesas</span>
-            <div style={{display:'flex',alignItems:'baseline',gap:4}}>
-              <span style={{fontSize:14,fontWeight:800,color:COR.vermelho,fontVariantNumeric:'tabular-nums'}}>
-                {totalRealS > 0 ? fmt(totalRealS) : '—'}
-              </span>
-              {totalPrevS > 0 && (
-                <span style={{fontSize:10,color:COR.textoSuave,fontVariantNumeric:'tabular-nums'}}>
-                  de {fmt(totalPrevS)}
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{background:'#e9edf2',borderRadius:99,height:4,overflow:'hidden'}}>
-            <div style={{width:`${percS*100}%`,height:4,borderRadius:99,background:barCorS,transition:'width .3s'}}/>
-          </div>
-        </div>
+        ))}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
           paddingTop:8,borderTop:`1px solid ${COR.borda}`}}>
           <span style={{fontSize:11,fontWeight:600,color:COR.textoSuave}}>Resultado do mês</span>
-          <span style={{fontSize:14,fontWeight:800,color:corSaldoReal,fontVariantNumeric:'tabular-nums'}}>
+          <span style={{fontSize:14,fontWeight:800,fontVariantNumeric:'tabular-nums',
+            color:semDados?'#94a3b8':saldoReal>=0?COR.verde:COR.vermelho}}>
             {semDados ? '—' : fmt(saldoReal)}
           </span>
         </div>
@@ -80,110 +56,88 @@ export default function AcResumoBoxes({
     )
   }
 
-  // ── Desktop: tabela 3 linhas × 3 colunas ─────────────────
-  const COL_LABEL = 100 // largura da coluna de rótulo (px)
+  // ── Desktop: 3 caixas no estilo NleBanner ───────────────
+  const grad = 'linear-gradient(135deg,#0f2878,#1e40af)'
+  const box  = { display:'flex' as const, flexDirection:'column' as const,
+    background:grad, border:'1px solid rgba(255,255,255,.15)', borderRadius:14, padding:'14px 16px', flex:1 }
 
-  const linhas = [
+  const caixas = [
     {
-      rotulo: 'Previsto',
-      rotuloCor: '#64748b',
-      e: { val: totalPrevE, cor: '#64748b', fmt: (v: number) => v > 0 ? fmt(v) : '—' },
-      s: { val: totalPrevS, cor: '#64748b', fmt: (v: number) => v > 0 ? fmt(v) : '—' },
-      b: { val: saldoPrev,  cor: corSaldoPrev, fmt: (v: number) => semDados ? '—' : fmt(v) },
+      icon: '↑', label: 'Entradas',
+      prev: totalPrevE,
+      real: totalRealE,
+      realCor: '#93c5fd',
+      diff: diffE,
+      diffPos: diffE >= 0,   // positivo = recebeu mais que o previsto
     },
     {
-      rotulo: 'Realizado',
-      rotuloCor: COR.azul,
-      e: { val: totalRealE, cor: totalRealE > 0 ? COR.azul : '#94a3b8', fmt: (v: number) => v > 0 ? fmt(v) : '—' },
-      s: { val: totalRealS, cor: totalRealS > 0 ? (totalRealS > totalPrevS ? COR.vermelho : COR.azul) : '#94a3b8', fmt: (v: number) => v > 0 ? fmt(v) : '—' },
-      b: { val: saldoReal,  cor: corSaldoReal, fmt: (v: number) => semDados ? '—' : fmt(v) },
+      icon: '↓', label: 'Saídas',
+      prev: totalPrevS,
+      real: totalRealS,
+      realCor: '#fca5a5',
+      diff: diffS,
+      diffPos: diffS <= 0,   // positivo = gastou menos que o previsto
     },
     {
-      rotulo: 'Diferença',
-      rotuloCor: '#94a3b8',
-      e: {
-        val: diffE,
-        cor: diffE >= 0 ? '#64748b' : COR.vermelho,
-        fmt: (v: number) => semDados ? '—' : (v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v)}`),
-      },
-      s: {
-        val: diffS,
-        cor: diffS >= 0 ? COR.verde : COR.vermelho,
-        fmt: (v: number) => semDados ? '—' : (v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v)}`),
-      },
-      b: {
-        val: diffSaldo,
-        cor: diffSaldo >= 0 ? COR.verde : COR.vermelho,
-        fmt: (v: number) => semDados ? '—' : (v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v)}`),
-      },
+      icon: '=', label: 'Saldo',
+      prev: saldoPrev,
+      real: saldoReal,
+      realCor: saldoReal >= 0 ? '#86efac' : '#fca5a5',
+      diff: diffSaldo,
+      diffPos: diffSaldo >= 0,
     },
   ]
 
   return (
     <div style={{
-      background: COR.branco,
+      background: '#f0f4ff',
       borderBottom: `2px solid ${COR.borda}`,
+      padding: '12px 16px',
       flexShrink: 0,
-      overflow: 'hidden',
+      display: 'flex',
+      gap: 10,
     }}>
-      {/* Cabeçalho das colunas */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `${COL_LABEL}px 1fr 1fr 1fr`,
-        borderBottom: `1px solid ${COR.borda}`,
-      }}>
-        <div style={{ padding: '6px 16px' }} />
-        {['Entradas', 'Saídas', 'Saldo'].map((h, i) => (
-          <div key={h} style={{
-            padding: '6px 16px', textAlign: 'right',
-            borderLeft: `1px solid ${COR.borda}`,
-            fontSize: 9, fontWeight: 700, color: '#94a3b8',
-            textTransform: 'uppercase' as const, letterSpacing: .5,
-          }}>
-            {h === 'Entradas' ? '↑ ' : h === 'Saídas' ? '↓ ' : ''}{h}
-          </div>
-        ))}
-      </div>
+      {caixas.map(c => {
+        const difStr = c.diff === 0 ? null
+          : `${c.diff > 0 ? '+' : ''}${fmt(c.diff)}`
+        const difCor = c.diffPos ? '#86efac' : '#fca5a5'
+        const difBg  = c.diffPos ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)'
 
-      {/* Linhas de dados */}
-      {linhas.map((linha, li) => (
-        <div key={linha.rotulo} style={{
-          display: 'grid',
-          gridTemplateColumns: `${COL_LABEL}px 1fr 1fr 1fr`,
-          borderBottom: li < linhas.length - 1 ? `1px solid #f1f5f9` : 'none',
-          background: li === 2 ? '#f8faff' : COR.branco,
-        }}>
-          {/* Rótulo da linha */}
-          <div style={{
-            padding: '8px 16px', display: 'flex', alignItems: 'center',
-            fontSize: 10, fontWeight: 700, color: linha.rotuloCor,
-            textTransform: 'uppercase' as const, letterSpacing: .4,
-          }}>
-            {linha.rotulo}
-          </div>
+        return (
+          <div key={c.label} style={box}>
+            {/* Label */}
+            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.65)',
+              textTransform:'uppercase' as const,letterSpacing:.6,marginBottom:8}}>
+              {c.icon} {c.label}
+            </div>
 
-          {/* Entradas */}
-          <div style={{ padding: '8px 16px', textAlign: 'right', borderLeft: `1px solid ${COR.borda}` }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: linha.e.cor, fontVariantNumeric: 'tabular-nums' }}>
-              {linha.e.fmt(linha.e.val)}
-            </span>
-          </div>
+            {/* Realizado — valor principal */}
+            <div style={{fontSize:20,fontWeight:800,color:c.realCor,
+              letterSpacing:'-.5px',fontVariantNumeric:'tabular-nums',marginBottom:6}}>
+              {c.real > 0 || c.label === 'Saldo' ? fmt(c.real) : '—'}
+            </div>
 
-          {/* Saídas */}
-          <div style={{ padding: '8px 16px', textAlign: 'right', borderLeft: `1px solid ${COR.borda}` }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: linha.s.cor, fontVariantNumeric: 'tabular-nums' }}>
-              {linha.s.fmt(linha.s.val)}
-            </span>
+            {/* Linha inferior: previsto + diferença */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
+              <div style={{display:'flex',flexDirection:'column' as const,gap:1}}>
+                <span style={{fontSize:8,fontWeight:600,color:'rgba(255,255,255,.45)',
+                  textTransform:'uppercase' as const,letterSpacing:.4}}>Previsto</span>
+                <span style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.6)',
+                  fontVariantNumeric:'tabular-nums'}}>
+                  {c.prev > 0 || c.label === 'Saldo' ? fmt(c.prev) : '—'}
+                </span>
+              </div>
+              {difStr && (
+                <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,
+                  background:difBg,color:difCor,whiteSpace:'nowrap' as const,
+                  fontVariantNumeric:'tabular-nums'}}>
+                  {difStr}
+                </span>
+              )}
+            </div>
           </div>
-
-          {/* Saldo */}
-          <div style={{ padding: '8px 16px', textAlign: 'right', borderLeft: `1px solid ${COR.borda}` }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: linha.b.cor, fontVariantNumeric: 'tabular-nums' }}>
-              {linha.b.fmt(linha.b.val)}
-            </span>
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
