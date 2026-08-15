@@ -179,9 +179,6 @@ export default function NovoLancamentoExtrato() {
     return contasExtrato.map(c => {
       const key = `${c.id}-${ano}-${mesStr}`
       const dm = dados[key]
-      const manualStr = dm?.saldoBanco ?? ''
-      const manual = parseFloat(manualStr.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
-      if (manual > 0) return { conta: c, saldo: manual }
       let te = 0, ts = 0
       if (dm) {
         for (let d = 1; d <= totalDiasM; d++) {
@@ -190,9 +187,19 @@ export default function NovoLancamentoExtrato() {
           })
         }
       }
-      return { conta: c, saldo: c.saldoInicial + te - ts }
+      const calculado = c.saldoInicial + te - ts
+      const manualStr = dm?.saldoBanco ?? ''
+      const manual = parseFloat(manualStr.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
+      return { conta: c, saldo: manual > 0 ? manual : calculado, calculado }
     })
   }, [contasExtrato, dados, ano, mes])
+
+  // Saldo calculado formatado por conta (para sugerir no modal — sem override manual)
+  const saldoSugerido = useMemo(() => {
+    const m: Record<string, string> = {}
+    saldoAtualPorConta.forEach(({ conta, calculado }) => { m[conta.id] = fmt(calculado) })
+    return m
+  }, [saldoAtualPorConta])
 
   const faturaAtualPorCartao = useMemo(() => {
     const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
@@ -292,7 +299,7 @@ export default function NovoLancamentoExtrato() {
     if (tabPrincipal === 'dinheiro') {
       const k = mesKey('dinheiro', ano, mes)
       if (dados[k]?.saldoBancoData === hojeStr) return
-      setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+      setModalSaldoValor('')
       setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
       return
     }
@@ -301,7 +308,7 @@ export default function NovoLancamentoExtrato() {
     if (!conta) return
     const k = mesKey(conta.id, ano, mes)
     if (dados[k]?.saldoBancoData === hojeStr) return
-    setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+    setModalSaldoValor(saldoSugerido[conta.id] ?? '')
     setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
   }, [tabPrincipal])
 
@@ -774,6 +781,7 @@ export default function NovoLancamentoExtrato() {
         setModalSaldo={setModalSaldo}
         setModalSaldoValor={setModalSaldoValor}
         mesKey={mesKey}
+        saldoSugerido={saldoSugerido}
       />
 
       <NleMobileSubheader
@@ -795,6 +803,7 @@ export default function NovoLancamentoExtrato() {
         setModalSaldo={setModalSaldo}
         setModalSaldoValor={setModalSaldoValor}
         mesKey={mesKey}
+        saldoSugerido={saldoSugerido}
         onMesAnterior={onMesAnterior}
         onMesProximo={onMesProximo}
         isDinheiro={isDinheiro}

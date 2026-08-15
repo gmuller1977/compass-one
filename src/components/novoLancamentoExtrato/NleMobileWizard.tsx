@@ -31,6 +31,7 @@ type Props = {
   setModalSaldo: (v: ModalSaldoInfo | null) => void
   setModalSaldoValor: (v: string) => void
   mesKey: (conta: string, ano: number, mes: number) => string
+  saldoSugerido: Record<string, string>
 }
 
 export default function NleMobileWizard({
@@ -40,7 +41,7 @@ export default function NleMobileWizard({
   setContaId, setMobileCartaoId, setMobileView,
   mes, ano, dados, hojeStr,
   resetarParaNovo, diaDefaultPara,
-  setModalSaldo, setModalSaldoValor, mesKey,
+  setModalSaldo, setModalSaldoValor, mesKey, saldoSugerido,
 }: Props) {
   if (!isMobile) return null
 
@@ -67,7 +68,7 @@ export default function NleMobileWizard({
                     resetarParaNovo(diaDefaultPara(mes, ano))
                     const k = mesKey(c.id, ano, mes)
                     if (dados[k]?.saldoBancoData !== hojeStr) {
-                      setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+                      setModalSaldoValor(saldoSugerido[c.id] ?? '')
                       setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
                     }
                     setMobileView('extrato'); setMobileStep('extrato')

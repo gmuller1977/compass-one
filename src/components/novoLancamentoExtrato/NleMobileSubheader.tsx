@@ -39,6 +39,7 @@ type Props = {
   setModalSaldo: (v: ModalSaldoInfo | null) => void
   setModalSaldoValor: (v: string) => void
   mesKey: (conta: string, ano: number, mes: number) => string
+  saldoSugerido: Record<string, string>
   onMesAnterior: () => void
   onMesProximo: () => void
 
@@ -57,7 +58,7 @@ export default function NleMobileSubheader({
   alertaDesvio, setAlertaDesvio, mesLabel,
   onAlertaRevisar, onAlertaAjustarMes,
   contasExtrato, contaIdEfetivo, dados, hojeStr, mes, ano, mesNome,
-  setContaId, setModalSaldo, setModalSaldoValor, mesKey,
+  setContaId, setModalSaldo, setModalSaldoValor, mesKey, saldoSugerido,
   onMesAnterior, onMesProximo,
   isDinheiro, contaInfo, mesDados, saldoMes, diferenca, conciliado, chaveAtual,
 }: Props) {
@@ -90,7 +91,7 @@ export default function NleMobileSubheader({
                     setContaId(c.id)
                     const k = mesKey(c.id, ano, mes)
                     if (dados[k]?.saldoBancoData !== hojeStr) {
-                      setModalSaldoValor(dados[k]?.saldoBanco ?? '')
+                      setModalSaldoValor(saldoSugerido[c.id] ?? '')
                       setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
                     }
                   }} style={{
@@ -141,7 +142,7 @@ export default function NleMobileSubheader({
             padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f0f4ff`}}
             onClick={e => {
               e.stopPropagation()
-              setModalSaldoValor(mesDados.saldoBanco ?? '')
+              setModalSaldoValor(isDinheiro ? '' : (saldoSugerido[contaIdEfetivo] ?? ''))
               isDinheiro
                 ? setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:COR.verde, key:chaveAtual})
                 : setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
