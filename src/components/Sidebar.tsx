@@ -297,32 +297,19 @@ export default function Sidebar() {
     return null
   })
 
-  const [expandedSub2, setExpandedSub2] = useState<boolean>(() => {
-    if (!pathname.startsWith('/novo-lancamento')) return false
-    return tipoParam === 'cartao'
-  })
-
   useEffect(() => {
     if (pathname.startsWith('/novo-lancamento')) {
       setExpandedItem('Lançamentos')
-      if (tipoParam === 'cartao' && !expandedSub2) setExpandedSub2(true)
     }
   }, [pathname, tipoParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleExpand(label: string) {
     setExpandedItem(prev => prev === label ? null : label)
   }
-  function toggleSub2() {
-    setExpandedSub2(prev => !prev)
-  }
 
   function abrirNorth() {
     document.dispatchEvent(new CustomEvent('openNorth'))
   }
-
-  const activeCartaoId = cartaoSubActive
-    ? (contaParam ?? cartoes[0]?.id)
-    : null
 
   return (
     <div style={{
@@ -406,30 +393,14 @@ export default function Sidebar() {
                           onClick={() => navigate('/novo-lancamento?tipo=banco')}
                         />
 
-                        {cartoes.length > 0 && (<>
+                        {cartoes.length > 0 && (
                           <SubItemRow
                             label="Cartão"
                             icon="💳"
                             active={cartaoSubActive}
-                            hasSub={cartoes.length > 1}
-                            expanded={expandedSub2}
-                            onClick={() => {
-                              if (cartoes.length > 1) toggleSub2()
-                              navigate(`/novo-lancamento?tipo=cartao&conta=${cartoes[0].id}`)
-                            }}
+                            onClick={() => navigate('/novo-lancamento?tipo=cartao')}
                           />
-                          {(expandedSub2 || cartaoSubActive) && (
-                            <div style={{ animation: 'subExpand .15s ease' }}>
-                              {cartoes.map(c => (
-                                <Sub2ItemRow
-                                  key={c.id} label={c.banco} color={c.cor}
-                                  active={activeCartaoId === c.id}
-                                  onClick={() => navigate(`/novo-lancamento?tipo=cartao&conta=${c.id}`)}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </>)}
+                        )}
 
                         <SubItemRow
                           label="Dinheiro" icon="💵"

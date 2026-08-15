@@ -301,7 +301,7 @@ export default function NleDesktopPanel({
                     </select>
                   )
                 })()}
-                {subDescsDisponiveis.length >= 1 && (
+                {subDescsDisponiveis.length > 1 && (
                   <div style={{marginTop:8}}>
                     <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                       letterSpacing:.5,marginBottom:5}}>🔖 Variante</div>

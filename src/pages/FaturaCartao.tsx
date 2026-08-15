@@ -562,8 +562,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           excluirAtual={excluirAtual}
           lancar={lancar}
           updateMes={updateMes}
-          setModalFatura={setModalFatura}
-          setModalFaturaValor={setModalFaturaValor}
         />
       </div>
       <FcModal

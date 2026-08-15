@@ -56,8 +56,6 @@ type Props = {
   excluirAtual: () => void
   lancar: () => void
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
-  setModalFatura: React.Dispatch<React.SetStateAction<boolean>>
-  setModalFaturaValor: React.Dispatch<React.SetStateAction<string>>
 }
 
 export default function FcDesktopPanel({
@@ -71,7 +69,7 @@ export default function FcDesktopPanel({
   mesDados, purchaseMes, purchaseAno, diaSel, setDiaSel, mesVenc, anoVenc,
   categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs,
-  resetarParaNovo, excluirAtual, lancar, updateMes, setModalFatura, setModalFaturaValor,
+  resetarParaNovo, excluirAtual, lancar, updateMes,
 }: Props) {
   return (
     <div style={{width:340,flexShrink:0,background:COR.branco,
@@ -148,23 +146,6 @@ export default function FcDesktopPanel({
             <span style={{fontSize:11,color:COR.vermelho}}>✎</span>
           </div>
         )}
-        {/* Saldo atual da fatura — editável */}
-        <div onClick={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
-          title="Clique para atualizar"
-          style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',
-            background: mesDados.faturaAtual ? '#f0fdf4' : '#f8faff',
-            border: mesDados.faturaAtual ? '1px solid #86efac' : '1.5px dashed #e2e8f0',
-            borderRadius:8,padding:'6px 12px'}}>
-          <span style={{fontSize:11,fontWeight:600,
-            color: mesDados.faturaAtual ? COR.verde : '#64748b',flex:1}}>
-            Fatura informada
-          </span>
-          <span style={{fontSize:13,fontWeight:800,
-            color: mesDados.faturaAtual ? COR.texto : '#94a3b8'}}>
-            {mesDados.faturaAtual || 'Informar'}
-          </span>
-          <span style={{fontSize:11,color: mesDados.faturaAtual ? COR.verde : '#94a3b8'}}>✎</span>
-        </div>
       </div>
 
       {/* Compra / Estorno */}
