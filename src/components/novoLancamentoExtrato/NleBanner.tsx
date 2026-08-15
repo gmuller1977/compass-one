@@ -17,7 +17,6 @@ type Props = {
   mostrarCalendario: boolean
   anoCalendario: number
   setAnoCalendario: (fn: (a: number) => number) => void
-  calPos: { top: number; left: number }
   onMesSelect: (mes: number, ano: number) => void
   setMostrarCalendario: (v: boolean) => void
   contasExtrato: Conta[]
@@ -31,7 +30,7 @@ export default function NleBanner({
   mes, ano,
   saldoBancoInline, setSaldoBancoInline,
   onSaldoBancoBlur, onSaldoBancoEnter,
-  mostrarCalendario, anoCalendario, setAnoCalendario, calPos,
+  mostrarCalendario, anoCalendario, setAnoCalendario,
   onMesSelect, setMostrarCalendario,
   contasExtrato, contaIdEfetivo, onContaSelect,
 }: Props) {
@@ -48,7 +47,7 @@ export default function NleBanner({
   }
 
   return (
-    <>
+    <div style={{position:'relative'}}>
       <div style={{background:'#f8faff',borderBottom:'1px solid #e2e8f0',padding:'14px 16px',display:'flex',alignItems:'flex-start',flexShrink:0,gap:8}}>
 
         {/* Left: 4 stat boxes + bank selectors */}
@@ -122,9 +121,9 @@ export default function NleBanner({
         </div>
       </div>
 
-      {/* Calendar popup */}
+      {/* Calendar popup — ancorado no canto direito do header */}
       {mostrarCalendario && (
-        <div style={{position:'fixed',top:calPos.top,left:calPos.left,zIndex:200,background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.18)',padding:16,minWidth:272}}
+        <div style={{position:'absolute',top:'calc(100% + 4px)',right:16,zIndex:200,background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.18)',padding:16,minWidth:272}}
           onClick={e=>e.stopPropagation()}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
             <button onClick={()=>setAnoCalendario(a=>a-1)} style={{border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
@@ -144,6 +143,6 @@ export default function NleBanner({
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

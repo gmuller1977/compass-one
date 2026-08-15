@@ -911,7 +911,6 @@ export default function NovoLancamentoExtrato() {
             mostrarCalendario={mostrarCalendario}
             anoCalendario={anoCalendario}
             setAnoCalendario={setAnoCalendario}
-            calPos={calPos}
             onMesSelect={(m, a) => { setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m, a)) }}
             setMostrarCalendario={setMostrarCalendario}
             contasExtrato={contasExtrato}

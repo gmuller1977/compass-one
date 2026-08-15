@@ -432,7 +432,7 @@ export default function NleExtrato({
                               background:fTipo===t?COR.branco:'transparent',
                               color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):'#0369a1',
                               boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                              {t==='saida'?'Despesa':'Receita'}
+                              {t==='saida'?'Pagamento':'Recebimento'}
                             </button>
                           ))}
                         </div>

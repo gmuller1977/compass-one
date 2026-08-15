@@ -194,7 +194,7 @@ export default function NleDesktopPanel({
                     color:ativo?corTxt:'#94a3b8',
                     boxShadow:ativo?`0 1px 4px ${sombra}`:'none',
                   }}>
-                    {t==='saida'?'↓ Despesa':'↑ Receita'}
+                    {t==='saida'?'↓ Pagamento':'↑ Recebimento'}
                   </button>
                 )
               })}

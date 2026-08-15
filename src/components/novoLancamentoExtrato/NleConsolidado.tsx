@@ -283,7 +283,7 @@ export default function NleConsolidado({
               background:fTipo===t?COR.branco:'transparent',
               color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
               boxShadow:fTipo===t?'0 1px 2px rgba(0,0,0,.08)':'none'}}>
-              {t==='entrada'?'Receita':'Despesa'}
+              {t==='entrada'?'Recebimento':'Pagamento'}
             </button>
           ))}
         </div>
