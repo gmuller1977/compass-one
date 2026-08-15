@@ -102,31 +102,34 @@ export default function NleExtrato({
     <>
       {/* EXTRATO section */}
       <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
+
+        {/* Aviso fixo — fica acima do scroll */}
+        {totalEntradas === 0 && totalSaidas === 0 &&
+         fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria)).length === 0 && (
+          <div style={{
+            margin: isMobile ? '6px 16px 0' : '12px 20px 0 32px',
+            padding:'13px 16px', flexShrink: 0,
+            background:'#eff6ff',borderRadius:12,
+            border:'1px solid #bfdbfe',
+            display:'flex',alignItems:'flex-start',gap:12,
+          }}>
+            <span style={{fontSize:20,lineHeight:1,flexShrink:0}}>💡</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:COR.azul,marginBottom:3}}>
+                Nenhum lançamento este mês
+              </div>
+              <div style={{fontSize:12,color:'#3b82f6',lineHeight:1.5}}>
+                {isMobile
+                  ? 'Toque em qualquer dia abaixo para registrar.'
+                  : 'Clique em um dia e use o painel à direita para registrar.'}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{flex:1,overflowY:'auto',
           display:'flex',flexDirection:'column',gap:isMobile?6:10,
           padding:isMobile?'0 0 0 0':'20px 20px 20px 32px'}}>
-
-          {totalEntradas === 0 && totalSaidas === 0 &&
-           fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria)).length === 0 && (
-            <div style={{
-              margin:'0 16px 6px',padding:'13px 16px',
-              background:'#eff6ff',borderRadius:12,
-              border:'1px solid #bfdbfe',
-              display:'flex',alignItems:'flex-start',gap:12,flexShrink:0,
-            }}>
-              <span style={{fontSize:20,lineHeight:1,flexShrink:0}}>💡</span>
-              <div>
-                <div style={{fontSize:13,fontWeight:600,color:COR.azul,marginBottom:3}}>
-                  Nenhum lançamento este mês
-                </div>
-                <div style={{fontSize:12,color:'#3b82f6',lineHeight:1.5}}>
-                  {isMobile
-                    ? 'Toque em qualquer dia abaixo para registrar.'
-                    : 'Clique em um dia e use o painel à direita para registrar.'}
-                </div>
-              </div>
-            </div>
-          )}
 
           {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
             const ehHoje   = eMesAtual && dia===diaHoje
@@ -443,7 +446,19 @@ export default function NleExtrato({
                               onChange={e=>{const n=e.target.value;setFCat(n);setFSubDesc('');const c=categorias.find((x: Categoria)=>x.nome===n);if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento));if(n)setTimeout(()=>valorInputRef.current?.focus(),50)}}
                               style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                               <option value="">Selecione...</option>
-                              {categoriasSelect.map((c: Categoria)=><option key={c.id} value={c.nome}>{c.nome}</option>)}
+                              {(() => {
+                                const grps = new Map<string, Categoria[]>()
+                                for (const c of categoriasSelect) {
+                                  const g = c.grupo ?? ''
+                                  if (!grps.has(g)) grps.set(g, [])
+                                  grps.get(g)!.push(c)
+                                }
+                                return Array.from(grps.entries())
+                                  .sort(([a],[b]) => a===''?1:b===''?-1:a.localeCompare(b,'pt-BR'))
+                                  .map(([grupo, cats]) => grupo
+                                    ? <optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}</optgroup>
+                                    : cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>))
+                              })()}
                             </select>
                           </div>
                           <div style={{flex:'2 1 120px',display:'flex',flexDirection:'column',gap:3}}>

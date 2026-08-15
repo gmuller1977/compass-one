@@ -913,10 +913,10 @@ export default function NovoLancamentoExtrato() {
             saldoMes={saldoMes}
             mes={mes}
             ano={ano}
-            saldoBancoInline={saldoBancoInline}
-            setSaldoBancoInline={setSaldoBancoInline}
-            onSaldoBancoBlur={onSaldoBancoSave}
-            onSaldoBancoEnter={onSaldoBancoSave}
+            saldoBancoSalvo={mesDados.saldoBanco ?? ''}
+            setModalSaldo={setModalSaldo}
+            setModalSaldoValor={setModalSaldoValor}
+            saldoSugerido={saldoSugerido}
             contasExtrato={contasExtrato}
             contaIdEfetivo={contaIdEfetivo}
             onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}

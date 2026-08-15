@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { ehCartaoCategoria } from '../../utils/categoriaIcone'
 import {
@@ -88,8 +88,11 @@ export default function NleDesktopPanel({
 }: Props) {
   if (isMobile) return null
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [mostrarCalDia, setMostrarCalDia] = useState(false)
+
   // Resumo do mês data
-  const fixasDoMes       = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
+  const fixasDoMes = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
   const fixasPend        = fixasDoMes.filter(f => mesDados.fixasConsolidadas?.[f.id] !== true)
   const numFixasPendentes = fixasPend.length
   const planejadoTotal   = fixasDoMes.filter(f => f.tipo==='saida')
@@ -126,7 +129,10 @@ export default function NleDesktopPanel({
         <div style={{padding:'16px 20px'}}>
 
           {/* Dia */}
-          <div style={{marginBottom:14}}>
+          {mostrarCalDia && (
+            <div style={{position:'fixed',inset:0,zIndex:399}} onClick={() => setMostrarCalDia(false)} />
+          )}
+          <div style={{marginBottom:14,position:'relative'}}>
             <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
               letterSpacing:.5,marginBottom:5}}>📅 Dia</div>
             {editandoFixaId && fixaEhAutomatica ? (
@@ -136,16 +142,67 @@ export default function NleDesktopPanel({
                 <div style={{fontSize:11,color:'#94a3b8'}}>{NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}</div>
               </div>
             ) : (
-              <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 12px',
-                background:'#fff',display:'flex',alignItems:'center',gap:8}}>
-                <input type="number" min={1} max={totalDias} value={diaSel}
-                  onChange={e => setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
-                  onFocus={e => { realcarFoco(e); e.currentTarget.select() }} onBlur={removerRealce}
-                  style={{fontSize:18,fontWeight:800,color:'#0f172a',lineHeight:1,width:36,
-                    border:'none',outline:'none',background:'transparent',fontFamily:'inherit',padding:0}} />
-                <div style={{fontSize:11,color:'#94a3b8'}}>{NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}</div>
-              </div>
+              <button onClick={() => setMostrarCalDia(v => !v)} style={{
+                width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 12px',
+                background:'#fff',display:'flex',alignItems:'center',gap:8,
+                cursor:'pointer',fontFamily:'inherit',textAlign:'left' as const,
+              }}>
+                <span style={{fontSize:18,fontWeight:800,color:'#0f172a',lineHeight:1,minWidth:24}}>{diaSel}</span>
+                <span style={{fontSize:11,color:'#94a3b8'}}>{NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}</span>
+                <span style={{marginLeft:'auto',fontSize:12,color:'#94a3b8'}}>▾</span>
+              </button>
             )}
+
+            {mostrarCalDia && !editandoFixaId && (() => {
+              const diasComFixa = new Set(fixasDoMes.map(f => mesDados.fixasMovidas?.[f.id] ?? f.diaVencimento))
+              const offset  = new Date(ano, mes, 1).getDay()
+              const hojeD   = new Date()
+              const diaHoje = hojeD.getFullYear()===ano && hojeD.getMonth()===mes ? hojeD.getDate() : -1
+              const SEMs    = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+              return (
+                <div style={{
+                  position:'absolute',top:'calc(100% + 4px)',left:0,zIndex:400,
+                  background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.18)',
+                  padding:12,minWidth:264,border:'1px solid #e2e8f0',
+                }} onClick={e => e.stopPropagation()}>
+                  <div style={{fontSize:12,fontWeight:700,color:COR.texto,textAlign:'center' as const,marginBottom:8}}>
+                    {NOMES_MESES[mes]} {ano}
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:2,marginBottom:4}}>
+                    {SEMs.map(s => (
+                      <div key={s} style={{fontSize:9,fontWeight:700,color:'#94a3b8',textAlign:'center' as const,padding:'2px 0'}}>{s}</div>
+                    ))}
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:2}}>
+                    {Array.from({length:offset}).map((_,i) => <div key={`e${i}`} />)}
+                    {Array.from({length:totalDias},(_,i)=>i+1).map(d => {
+                      const ativo   = d === diaSel
+                      const ehHoje  = d === diaHoje
+                      const temFixa = diasComFixa.has(d)
+                      return (
+                        <button key={d} onClick={() => { setDiaSel(d); setMostrarCalDia(false) }} style={{
+                          display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+                          padding:'4px 2px',border:'none',borderRadius:8,cursor:'pointer',
+                          fontFamily:'inherit',fontSize:12,fontWeight:ativo?700:400,
+                          background: ativo ? COR.azul : ehHoje ? '#eff6ff' : 'transparent',
+                          color: ativo ? '#fff' : ehHoje ? COR.azul : COR.texto,
+                          outline: ehHoje && !ativo ? `1.5px solid ${COR.azul}` : 'none',
+                          minHeight:32,
+                        }}>
+                          {d}
+                          {temFixa && (
+                            <span style={{
+                              width:4,height:4,borderRadius:'50%',marginTop:1,
+                              background: ativo ? 'rgba(255,255,255,.7)' : COR.azul,
+                            }} />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           {/* Tipo toggle */}
@@ -220,44 +277,56 @@ export default function NleDesktopPanel({
               </select>
             ) : (
               <>
-                <select ref={categoriaSelectRef} autoFocus value={fCat}
-                  onChange={e => {
-                    const nome = e.target.value
-                    setFCat(nome); setFSubDesc('')
-                    const cat = categorias.find(c => c.nome === nome)
-                    if (cat) setFPag(fTipo === 'entrada'
-                      ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
-                      : formaPagCategoria(cat.formaPagamento, cat.tipoMovimento))
-                  }}
-                  onFocus={realcarFoco} onBlur={removerRealce}
-                  style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
-                    fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
-                  <option value="">Selecione...</option>
-                  {categoriasSelect.map(c=>(
-                    <option key={c.id} value={c.nome}>{c.nome}</option>
-                  ))}
-                </select>
-                {subDescsDisponiveis.length > 1 && (
-                  <div style={{marginTop:6}}>
-                    <div style={{fontSize:9,color:'#1a56db',fontWeight:700,
-                      textTransform:'uppercase',letterSpacing:.4,marginBottom:4}}>
-                      Qual variante?
-                    </div>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                {(() => {
+                  const grupos = new Map<string, typeof categoriasSelect>()
+                  for (const c of categoriasSelect) {
+                    const g = c.grupo ?? ''
+                    if (!grupos.has(g)) grupos.set(g, [])
+                    grupos.get(g)!.push(c)
+                  }
+                  const gruposOrdenados = Array.from(grupos.entries())
+                    .sort(([a],[b]) => {
+                      if (a==='' && b!=='') return 1
+                      if (a!=='' && b==='') return -1
+                      return a.localeCompare(b,'pt-BR')
+                    })
+                  return (
+                    <select ref={categoriaSelectRef} autoFocus value={fCat}
+                      onChange={e => {
+                        const nome = e.target.value
+                        setFCat(nome); setFSubDesc('')
+                        const cat = categorias.find(c => c.nome === nome)
+                        if (cat) setFPag(fTipo === 'entrada'
+                          ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
+                          : formaPagCategoria(cat.formaPagamento, cat.tipoMovimento))
+                      }}
+                      onFocus={realcarFoco} onBlur={removerRealce}
+                      style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
+                        fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
+                      <option value="">Selecione...</option>
+                      {gruposOrdenados.map(([grupo, cats]) =>
+                        grupo ? (
+                          <optgroup key={grupo} label={grupo}>
+                            {cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                          </optgroup>
+                        ) : cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)
+                      )}
+                    </select>
+                  )
+                })()}
+                {subDescsDisponiveis.length >= 1 && (
+                  <div style={{marginTop:8}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+                      letterSpacing:.5,marginBottom:5}}>🔖 Variante</div>
+                    <select value={fSubDesc} onChange={e => setFSubDesc(e.target.value)}
+                      onFocus={realcarFoco} onBlur={removerRealce}
+                      style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
+                        fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
+                      <option value="">Selecione a variante...</option>
                       {subDescsDisponiveis.map(desc => (
-                        <button key={desc} type="button"
-                          onClick={() => setFSubDesc(desc === fSubDesc ? '' : desc)}
-                          style={{
-                            padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:600,
-                            border:`1.5px solid ${fSubDesc===desc?'#1a56db':'#bae6fd'}`,
-                            background:fSubDesc===desc?'#1a56db':'#eff6ff',
-                            color:fSubDesc===desc?'#fff':'#1a56db',
-                            cursor:'pointer',fontFamily:'inherit',
-                          }}>
-                          {desc}
-                        </button>
+                        <option key={desc} value={desc}>{desc}</option>
                       ))}
-                    </div>
+                    </select>
                   </div>
                 )}
               </>
