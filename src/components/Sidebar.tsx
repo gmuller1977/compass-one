@@ -400,6 +400,12 @@ export default function Sidebar() {
                     {isExpanded && (
                       <div style={{ animation: 'subExpand .18s ease' }}>
 
+                        <SubItemRow
+                          label="Banco" icon="🏦"
+                          active={lancActive && tipoParam === 'banco'}
+                          onClick={() => navigate('/novo-lancamento?tipo=banco')}
+                        />
+
                         {cartoes.length > 0 && (<>
                           <SubItemRow
                             label="Cartão"
