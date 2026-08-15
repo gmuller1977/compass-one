@@ -510,18 +510,25 @@ export default function NleExtrato({
         {/* Saldo final previsto — barra fixa desktop */}
         {!isMobile && (() => {
           const sf = saldosDia[totalDias] ?? saldoMes
+          const positivo = sf >= 0
           return (
-            <div style={{background:'linear-gradient(135deg,#0f2878,#2563eb)',
-              padding:'14px 28px',display:'flex',justifyContent:'space-between',
-              alignItems:'center',flexShrink:0,borderTop:'1px solid rgba(255,255,255,.1)'}}>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Saldo final previsto</div>
-                <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
+            <div style={{padding:'8px 16px',flexShrink:0,borderTop:'1px solid #e2e8f0',background:'#f8faff'}}>
+              <div style={{
+                borderRadius:12,
+                background: positivo
+                  ? 'linear-gradient(135deg,#0f2878,#2563eb)'
+                  : 'linear-gradient(135deg,#7f1d1d,#dc2626)',
+                padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',
+              }}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Saldo final previsto</div>
+                  <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
+                </div>
+                <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
+                  color: positivo ? '#86efac' : '#fca5a5'}}>
+                  {fmt(sf)}
+                </span>
               </div>
-              <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
-                color:sf>=0?'#86efac':'#fca5a5'}}>
-                {fmt(sf)}
-              </span>
             </div>
           )
         })()}
