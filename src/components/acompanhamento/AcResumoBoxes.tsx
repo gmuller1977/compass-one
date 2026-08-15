@@ -128,11 +128,15 @@ export default function AcResumoBoxes({
                 </span>
               </div>
               {difStr && (
-                <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,
-                  background:difBg,color:difCor,whiteSpace:'nowrap' as const,
-                  fontVariantNumeric:'tabular-nums'}}>
-                  {difStr}
-                </span>
+                <div style={{display:'flex',flexDirection:'column' as const,alignItems:'flex-end',gap:2}}>
+                  <span style={{fontSize:8,fontWeight:600,color:'rgba(255,255,255,.45)',
+                    textTransform:'uppercase' as const,letterSpacing:.4}}>Diferença</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,
+                    background:difBg,color:difCor,whiteSpace:'nowrap' as const,
+                    fontVariantNumeric:'tabular-nums'}}>
+                    {difStr}
+                  </span>
+                </div>
               )}
             </div>
           </div>
