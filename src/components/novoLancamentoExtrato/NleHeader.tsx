@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import type { Conta } from '../../context/AppContext'
-import { COR } from './NleShared'
+import { COR, NOMES_MESES } from './NleShared'
 import PageHeader from '../PageHeader'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
@@ -14,18 +14,39 @@ type Props = {
   contasExtrato: Conta[]
   setContaId: (id: string) => void
   setMobileDiaForm: (v: null) => void
+  // Calendário
+  mes: number
+  ano: number
+  mostrarCalendario: boolean
+  anoCalendario: number
+  setMostrarCalendario: (v: boolean | ((p: boolean) => boolean)) => void
+  setAnoCalendario: (fn: (a: number) => number) => void
+  onMesSelect: (mes: number, ano: number) => void
+  onMesPrev: () => void
+  onMesNext: () => void
 }
 
 export default function NleHeader({
   isMobile, user, sairDaConta,
   tabPrincipal, setTabPrincipal,
   contasExtrato, setContaId, setMobileDiaForm,
+  mes, ano, mostrarCalendario, anoCalendario,
+  setMostrarCalendario, setAnoCalendario, onMesSelect, onMesPrev, onMesNext,
 }: Props) {
   if (!isMobile) {
     const contaDefault = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
     const subtitle = contaDefault
       ? `${contaDefault.banco}${contaDefault.apelido ? ' · ' + contaDefault.apelido : ''}`
       : undefined
+
+    const arrowBtn = {
+      width: 28, height: 28, borderRadius: 8, border: 'none',
+      background: 'rgba(255,255,255,0.15)', color: '#fff',
+      cursor: 'pointer', fontSize: 16, fontWeight: 700,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'inherit',
+    } as const
+
     return (
       <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
         <PageHeader
@@ -34,6 +55,54 @@ export default function NleHeader({
           title="Movimentação do banco"
           subtitle={subtitle}
           mb={0}
+          rightContent={
+            <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button onClick={onMesPrev} style={arrowBtn}>‹</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setAnoCalendario(() => ano); setMostrarCalendario(v => !v) }}
+                  style={{
+                    fontSize: 20, fontWeight: 800, color: '#fff',
+                    border: 'none', background: 'rgba(255,255,255,0.12)',
+                    borderRadius: 8, padding: '4px 14px',
+                    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}>
+                  {NOMES_MESES[mes]} {ano}
+                </button>
+                <button onClick={onMesNext} style={arrowBtn}>›</button>
+              </div>
+
+              {mostrarCalendario && (
+                <div
+                  style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 300,
+                    background: '#fff', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.22)',
+                    padding: 16, minWidth: 272 }}
+                  onClick={e => e.stopPropagation()}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <button onClick={() => setAnoCalendario(a => a - 1)}
+                      style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>‹</button>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{anoCalendario}</span>
+                    <button onClick={() => setAnoCalendario(a => a + 1)}
+                      style={{ border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6, padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}>›</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+                    {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((abrev, i) => {
+                      const ativo = i === mes && anoCalendario === ano
+                      return (
+                        <button key={i}
+                          onClick={() => { onMesSelect(i, anoCalendario); setMostrarCalendario(false) }}
+                          style={{ padding: '8px 4px', border: 'none', borderRadius: 8, cursor: 'pointer',
+                            fontFamily: 'inherit', fontSize: 12, fontWeight: ativo ? 700 : 500,
+                            background: ativo ? COR.azul : '#f1f5f9', color: ativo ? '#fff' : COR.texto }}>
+                          {abrev}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          }
         />
       </div>
     )

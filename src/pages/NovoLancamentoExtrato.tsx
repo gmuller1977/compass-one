@@ -756,6 +756,15 @@ export default function NovoLancamentoExtrato() {
         contasExtrato={contasExtrato}
         setContaId={setContaId}
         setMobileDiaForm={setMobileDiaForm}
+        mes={mes}
+        ano={ano}
+        mostrarCalendario={mostrarCalendario}
+        anoCalendario={anoCalendario}
+        setMostrarCalendario={setMostrarCalendario}
+        setAnoCalendario={setAnoCalendario}
+        onMesSelect={(m, a) => { setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m, a)) }}
+        onMesPrev={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
+        onMesNext={() => { let m=mes+1,a=ano; if(m>11){m=0;a++}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
       />
 
       <NleMobileWizard
@@ -908,13 +917,6 @@ export default function NovoLancamentoExtrato() {
             setSaldoBancoInline={setSaldoBancoInline}
             onSaldoBancoBlur={onSaldoBancoSave}
             onSaldoBancoEnter={onSaldoBancoSave}
-            mostrarCalendario={mostrarCalendario}
-            anoCalendario={anoCalendario}
-            setAnoCalendario={setAnoCalendario}
-            onMesSelect={(m, a) => { setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m, a)) }}
-            setMostrarCalendario={setMostrarCalendario}
-            onMesPrev={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
-            onMesNext={() => { let m=mes+1,a=ano; if(m>11){m=0;a++}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
             contasExtrato={contasExtrato}
             contaIdEfetivo={contaIdEfetivo}
             onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}
