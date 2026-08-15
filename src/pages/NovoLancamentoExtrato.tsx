@@ -155,7 +155,7 @@ export default function NovoLancamentoExtrato() {
         const nDias = new Date(pAno, pMes + 1, 0).getDate()
         for (let d = 1; d <= nDias; d++) {
           ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-            l.tipo === 'saida' ? total += l.valor : total -= l.valor
+            l.tipo === 'entrada' ? total += l.valor : total -= l.valor
           })
         }
       }
@@ -215,7 +215,7 @@ export default function NovoLancamentoExtrato() {
       if (dm?.lancamentos) {
         for (let d = 1; d <= totalDiasM; d++) {
           ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-            l.tipo === 'saida' ? total += l.valor : total -= l.valor
+            l.tipo === 'entrada' ? total += l.valor : total -= l.valor
           })
         }
       }
