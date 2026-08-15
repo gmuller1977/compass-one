@@ -508,7 +508,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         contaId={contaId}
         onContaSelect={id => { setContaId(id); resetarParaNovo(diaDefaultPara(mes, ano)) }}
         totalPrevisto={totalPrevisto}
-        totalFatura={totalFatura}
         grandTotalFaturas={grandTotalFaturas}
         faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
         diaVencimento={diaVencimento}

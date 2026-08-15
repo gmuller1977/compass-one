@@ -6,7 +6,6 @@ type Props = {
   contaId: string
   onContaSelect: (id: string) => void
   totalPrevisto: number
-  totalFatura: number
   grandTotalFaturas: number
   faturaStatus: 'paga' | 'fechada' | 'aberta'
   diaVencimento: number
@@ -19,7 +18,7 @@ type Props = {
 
 export default function FcBanner({
   contasCartao, contaId, onContaSelect,
-  totalPrevisto, totalFatura, grandTotalFaturas,
+  totalPrevisto, grandTotalFaturas,
   faturaStatus, diaVencimento,
   mesDados, diferenca, conciliado,
   setModalFatura, setModalFaturaValor,
