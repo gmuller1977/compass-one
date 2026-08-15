@@ -32,24 +32,42 @@ export default function AcCatRow({
     ? (lancAbs > 0 ? COR.azul : '#d1d5db')
     : (lancAbs === 0 ? '#d1d5db' : (lancAbs <= prev || prev === 0) ? COR.azul : COR.vermelho)
 
+  const cols = [
+    {
+      label: 'Previsto',
+      value: prev > 0 ? fmt(prev) : '—',
+      cor: prev > 0 ? '#64748b' : '#d1d5db',
+    },
+    {
+      label: 'Realizado',
+      value: lancAbs > 0 ? fmt(lancAbs) : '—',
+      cor: realColor,
+    },
+    {
+      label: isEntrada ? 'A receber' : 'Disponível',
+      value: (prev === 0 && lancAbs === 0) ? '—' : fmt(disponivel),
+      cor: dispColor,
+    },
+  ]
+
   return (
     <div style={{ borderBottom: `1px solid #f1f5f9` }}>
-      {/* Linha principal — mesmo padrão das linhas de dia do banco */}
+      {/* Linha principal — mesmo padrão exato do cabeçalho dos dias do banco */}
       <div
         onClick={() => setAberto(v => !v)}
         style={{
           display: 'flex', alignItems: 'stretch', cursor: 'pointer',
-          background: aberto ? '#f8faff' : COR.branco,
+          background: aberto ? '#eff6ff' : '#fafbff',
           borderLeft: aberto ? `3px solid ${COR.azul}` : '3px solid transparent',
-          transition: 'background .1s',
-          minHeight: 52,
+          minHeight: 54,
         }}
       >
-        {/* Ícone + nome */}
+        {/* Ícone + nome — mesma estrutura da coluna de data no banco */}
         <div style={{
+          width: 200, flexShrink: 0,
+          padding: '11px 13px',
+          borderRight: '1px solid #f1f5f9',
           display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 12px 10px 10px',
-          flex: 1, minWidth: 0,
         }}>
           <div style={{
             width: 28, height: 28, borderRadius: 7, background: corIcone, flexShrink: 0,
@@ -61,42 +79,29 @@ export default function AcCatRow({
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{nome}</div>
             {descricao && (
-              <div style={{ fontSize: 10, color: COR.textoSuave }}>{descricao}</div>
+              <div style={{ fontSize: 10, color: COR.textoSuave,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {descricao}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Previsto */}
-        <div style={{ padding: '10px 20px', textAlign: 'right', minWidth: 100 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
-            Previsto
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
-            {prev > 0 ? fmt(prev) : '—'}
-          </div>
+        {/* Grid de colunas — mesmo flex:1 + grid 1fr do banco */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
+          {cols.map(col => (
+            <div key={col.label} style={{ padding: '10px 12px', textAlign: 'right', borderRight: '1px solid #f8faff' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
+                {col.label}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: col.cor, fontVariantNumeric: 'tabular-nums' }}>
+                {col.value}
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Realizado */}
-        <div style={{ padding: '10px 20px', textAlign: 'right', minWidth: 100 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
-            Realizado
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: realColor, fontVariantNumeric: 'tabular-nums' }}>
-            {lancAbs > 0 ? fmt(lancAbs) : '—'}
-          </div>
-        </div>
-
-        {/* A receber / Disponível */}
-        <div style={{ padding: '10px 20px', textAlign: 'right', minWidth: 100 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
-            {isEntrada ? 'A receber' : 'Disponível'}
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: dispColor, fontVariantNumeric: 'tabular-nums' }}>
-            {(prev === 0 && lancAbs === 0) ? '—' : fmt(disponivel)}
-          </div>
-        </div>
-
-        {/* Seta */}
+        {/* Seta — mesma largura do botão ＋ do banco */}
         <div style={{
           width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0, fontSize: 13, color: '#cbd5e1',
