@@ -203,17 +203,50 @@ export default function FcDesktopPanel({
         })()}
         <div>
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
-          <select ref={categoriaSelectRef} value={fCat}
-            onChange={e=>setFCat(e.target.value)}
-            onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
-              fontSize:12,outline:'none',background:'#fff',
-              fontFamily:'inherit',color:COR.texto,width:'100%'}}>
-            <option value="">Selecione...</option>
-            {categoriasCartao.map(c=>(
-              <option key={c.id} value={c.nome}>{c.nome}</option>
-            ))}
-          </select>
+          {(() => {
+            const catsSemDup = categoriasCartao.filter((c, i, arr) => arr.findIndex(x => x.nome === c.nome) === i)
+            const subDescs = fCat ? categoriasCartao.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!) : []
+            const grupos = new Map<string, typeof catsSemDup>()
+            for (const c of catsSemDup) {
+              const g = c.grupo ?? ''
+              if (!grupos.has(g)) grupos.set(g, [])
+              grupos.get(g)!.push(c)
+            }
+            const gruposOrdenados = Array.from(grupos.entries())
+              .sort(([a],[b]) => { if(a===''&&b!=='')return 1; if(a!==''&&b==='')return -1; return a.localeCompare(b,'pt-BR') })
+            return (
+              <>
+                <select ref={categoriaSelectRef} value={fCat}
+                  onChange={e => { setFCat(e.target.value); setFDesc('') }}
+                  onFocus={realcarFoco} onBlur={removerRealce}
+                  style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
+                    fontSize:12,outline:'none',background:'#fff',
+                    fontFamily:'inherit',color:COR.texto,width:'100%'}}>
+                  <option value="">Selecione...</option>
+                  {gruposOrdenados.map(([grupo, cats]) =>
+                    grupo ? (
+                      <optgroup key={grupo} label={grupo}>
+                        {cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                      </optgroup>
+                    ) : cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)
+                  )}
+                </select>
+                {subDescs.length > 1 && (
+                  <div style={{marginTop:6}}>
+                    <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Variante</div>
+                    <select value={fDesc} onChange={e => setFDesc(e.target.value)}
+                      onFocus={realcarFoco} onBlur={removerRealce}
+                      style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
+                        fontSize:12,outline:'none',background:'#fff',
+                        fontFamily:'inherit',color:COR.texto,width:'100%'}}>
+                      <option value="">Selecione a variante...</option>
+                      {subDescs.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
         <div>
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
