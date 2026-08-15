@@ -38,8 +38,6 @@ export default function NovoLancamentoExtrato() {
   const [ano, setAno]          = useState(anoHoje)
   const [mostrarCalendario, setMostrarCalendario] = useState(false)
   const [anoCalendario,     setAnoCalendario]     = useState(anoHoje)
-  const [calPos,            setCalPos]            = useState({top:0,left:0})
-  const calBtnRef = useRef<HTMLButtonElement>(null)
   const [diaSel,  setDiaSel]  = useState<number>(diaHoje)
   const [editandoId, setEditandoId] = useState<string|null>(null)
   const [editandoDiaOriginal, setEditandoDiaOriginal] = useState<number|null>(null)
@@ -58,7 +56,6 @@ export default function NovoLancamentoExtrato() {
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
   const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number; valorAtual:number; descricao:string}|null>(null)
-  const [saldoBancoInline, setSaldoBancoInline] = useState('')
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
   const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('extrato')
@@ -255,8 +252,6 @@ export default function NovoLancamentoExtrato() {
   const key       = mesKey(contaIdEfetivo, ano, mes)
   const mesDados  = dados[key] ?? { lancamentos:{}, saldoBanco:'' }
   const saldoExtNum = parseBRL(mesDados.saldoBanco)
-
-  useEffect(() => { setSaldoBancoInline(mesDados.saldoBanco ?? '') }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const bancos = contas.filter(c => c.tipo==='corrente'||c.tipo==='poupanca')
@@ -722,11 +717,6 @@ export default function NovoLancamentoExtrato() {
     setAlertaDesvio(null)
   }
 
-  function onSaldoBancoSave() {
-    const n = parseBRL(saldoBancoInline)
-    updateMes(prev => ({...prev, saldoBanco: saldoBancoInline ? fmt(n) : '', saldoBancoData: hojeStr}))
-  }
-
   function onMesAnterior() {
     let m=mes-1, a=ano; if(m<0){m=11;a--}
     setMes(m); resetarParaNovo(diaDefaultPara(m, a))
@@ -1008,19 +998,9 @@ export default function NovoLancamentoExtrato() {
               fixas={fixas}
               mesDados={mesDados}
               totalSaidas={totalSaidas}
-              calBtnRef={calBtnRef}
               categoriaSelectRef={categoriaSelectRef}
               valorInputRef={valorInputRef}
-              mostrarCalendario={mostrarCalendario}
-              anoCalendario={anoCalendario}
-              setAnoCalendario={setAnoCalendario}
-              calPos={calPos}
-              setCalPos={setCalPos}
-              setMostrarCalendario={setMostrarCalendario}
-              setMes={setMes}
-              setAno={setAno}
               resetarParaNovo={resetarParaNovo}
-              diaDefaultPara={diaDefaultPara}
               setFTipo={setFTipo}
               setFPag={setFPag}
               setFCat={setFCat}

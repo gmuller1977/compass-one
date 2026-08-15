@@ -45,23 +45,11 @@ type Props = {
   totalSaidas: number
 
   // Refs
-  calBtnRef: React.RefObject<HTMLButtonElement | null>
   categoriaSelectRef: React.RefObject<HTMLSelectElement | null>
   valorInputRef: React.RefObject<HTMLInputElement | null>
 
-  // Calendar state
-  mostrarCalendario: boolean
-  anoCalendario: number
-  setAnoCalendario: (fn: (a: number) => number) => void
-  calPos: { top: number; left: number }
-  setCalPos: (pos: { top: number; left: number }) => void
-  setMostrarCalendario: (v: boolean | ((prev: boolean) => boolean)) => void
-
   // Handlers
-  setMes: React.Dispatch<React.SetStateAction<number>>
-  setAno: React.Dispatch<React.SetStateAction<number>>
   resetarParaNovo: (dia: number) => void
-  diaDefaultPara: (mes: number, ano: number) => number
   setFTipo: (v: TipoLanc) => void
   setFPag: (v: FormaPag) => void
   setFCat: (v: string) => void
@@ -80,9 +68,8 @@ export default function NleDesktopPanel({
   isDinheiro, contaInfo,
   categoriasSelect, subDescsDisponiveis, contasExtrato, contaIdEfetivo, categorias,
   fixas, mesDados, totalSaidas,
-  calBtnRef, categoriaSelectRef, valorInputRef,
-  setAnoCalendario, setCalPos, setMostrarCalendario,
-  setMes, setAno, resetarParaNovo, diaDefaultPara,
+  categoriaSelectRef, valorInputRef,
+  resetarParaNovo,
   setFTipo, setFPag, setFCat, setFSubDesc, setFContaDestino, setFDesc, setFValor,
   lancar, excluirAtual,
 }: Props) {
