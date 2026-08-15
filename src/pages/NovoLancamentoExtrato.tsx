@@ -296,7 +296,7 @@ export default function NovoLancamentoExtrato() {
     if (tipo === 'cartao' && conta) {
       setCartaoNavId(conta)
     }
-  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.search, contasExtrato.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (tabPrincipal === 'dinheiro') {

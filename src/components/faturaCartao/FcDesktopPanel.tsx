@@ -211,7 +211,8 @@ export default function FcDesktopPanel({
               _seen.add(k)
               return true
             })
-            const subDescs = fCat ? categoriasCartao.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!) : []
+            const fCatNorm = fCat.trim().toLowerCase()
+            const subDescs = fCat ? categoriasCartao.filter(c => c.nome.trim().toLowerCase() === fCatNorm && c.descricao).map(c => c.descricao!) : []
             const grupos = new Map<string, typeof catsSemDup>()
             for (const c of catsSemDup) {
               const g = c.grupo ?? ''
