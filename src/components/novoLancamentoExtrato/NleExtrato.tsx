@@ -86,8 +86,8 @@ export default function NleExtrato({
   totalEntradas, totalSaidas,
   contas,
   diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
-  fTipo, fCat, fDesc, fValor, fPag,
-  categoriasSelect,
+  fTipo, fCat, fSubDesc, fDesc, fValor, fPag,
+  categoriasSelect, subDescsDisponiveis,
   valorInputRef, categoriaSelectRef, hojeRef,
   toggleDia, resetarParaNovo, setDiaSel,
   editarFixa, editarLancamento, excluir, lancar,
@@ -443,8 +443,18 @@ export default function NleExtrato({
                         <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap' as never}}>
                           <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
                             <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
-                            <select ref={categoriaSelectRef} value={fCat}
-                              onChange={e=>{const n=e.target.value;setFCat(n);setFSubDesc('');const c=categorias.find((x: Categoria)=>x.nome===n);if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento));if(n)setTimeout(()=>valorInputRef.current?.focus(),50)}}
+                            <select ref={categoriaSelectRef}
+                              value={fSubDesc ? `${fCat}||${fSubDesc}` : fCat}
+                              onChange={e=>{
+                                const val=e.target.value
+                                const pi=val.indexOf('||')
+                                const nome=pi>=0?val.slice(0,pi):val
+                                const desc=pi>=0?val.slice(pi+2):''
+                                setFCat(nome);setFSubDesc(desc)
+                                const c=categorias.find((x: Categoria)=>x.nome===nome)
+                                if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))
+                                if(nome)setTimeout(()=>valorInputRef.current?.focus(),50)
+                              }}
                               style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                               <option value="">Selecione...</option>
                               {(() => {
@@ -454,14 +464,26 @@ export default function NleExtrato({
                                   if (!grps.has(g)) grps.set(g, [])
                                   grps.get(g)!.push(c)
                                 }
+                                const cv=(c:Categoria)=>c.descricao?`${c.nome}||${c.descricao}`:c.nome
+                                const cl=(c:Categoria)=>c.descricao?`${c.nome} / ${c.descricao}`:c.nome
                                 return Array.from(grps.entries())
                                   .sort(([a],[b]) => a===''?1:b===''?-1:a.localeCompare(b,'pt-BR'))
                                   .map(([grupo, cats]) => grupo
-                                    ? <optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}</optgroup>
-                                    : cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>))
+                                    ? <optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>)}</optgroup>
+                                    : cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>))
                               })()}
                             </select>
                           </div>
+                          {subDescsDisponiveis.length > 1 && !fSubDesc && (
+                            <div style={{flex:'1 1 80px',display:'flex',flexDirection:'column',gap:3}}>
+                              <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Variante</div>
+                              <select value={fSubDesc} onChange={e=>setFSubDesc(e.target.value)}
+                                style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
+                                <option value="">Selecione...</option>
+                                {subDescsDisponiveis.map(desc=><option key={desc} value={desc}>{desc}</option>)}
+                              </select>
+                            </div>
+                          )}
                           <div style={{flex:'2 1 120px',display:'flex',flexDirection:'column',gap:3}}>
                             <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Descrição</div>
                             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}

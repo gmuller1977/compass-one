@@ -277,11 +277,19 @@ export default function NleDesktopPanel({
                       if (a!=='' && b==='') return -1
                       return a.localeCompare(b,'pt-BR')
                     })
+                  const catVal = (c: import('../../context/AppContext').Categoria) =>
+                    c.descricao ? `${c.nome}||${c.descricao}` : c.nome
+                  const catLabel = (c: import('../../context/AppContext').Categoria) =>
+                    c.descricao ? `${c.nome} / ${c.descricao}` : c.nome
                   return (
-                    <select ref={categoriaSelectRef} autoFocus value={fCat}
+                    <select ref={categoriaSelectRef} autoFocus
+                      value={fSubDesc ? `${fCat}||${fSubDesc}` : fCat}
                       onChange={e => {
-                        const nome = e.target.value
-                        setFCat(nome); setFSubDesc('')
+                        const val = e.target.value
+                        const pi = val.indexOf('||')
+                        const nome = pi >= 0 ? val.slice(0, pi) : val
+                        const desc = pi >= 0 ? val.slice(pi + 2) : ''
+                        setFCat(nome); setFSubDesc(desc)
                         const cat = categorias.find(c => c.nome === nome)
                         if (cat) setFPag(fTipo === 'entrada'
                           ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
@@ -294,9 +302,9 @@ export default function NleDesktopPanel({
                       {gruposOrdenados.map(([grupo, cats]) =>
                         grupo ? (
                           <optgroup key={grupo} label={grupo}>
-                            {cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                            {cats.map(c => <option key={c.id} value={catVal(c)}>{catLabel(c)}</option>)}
                           </optgroup>
-                        ) : cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)
+                        ) : cats.map(c => <option key={c.id} value={catVal(c)}>{catLabel(c)}</option>)
                       )}
                     </select>
                   )

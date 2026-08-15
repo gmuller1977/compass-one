@@ -250,7 +250,7 @@ export default function NovoLancamentoExtrato() {
     .filter(c => c.ativa && c.tipo === fTipo && (isDinheiro ? c.formaPagamento !== 'automatico' : true))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
   const categoriasSelect = categoriasVariaveis.filter((c, idx, arr) =>
-    arr.findIndex(x => x.nome === c.nome) === idx
+    arr.findIndex(x => x.nome === c.nome && (x.descricao ?? '') === (c.descricao ?? '')) === idx
   )
   const subDescsDisponiveis = fCat
     ? categoriasVariaveis.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!)
