@@ -365,10 +365,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setObjetivoUsuarioState(pref?.objetivo_usuario ?? '')
     setMetaSimState(pref?.meta_simulacao ?? null)
 
-    // Extrato — filtra contas excluídas
+    // Extrato — filtra contas excluídas (permite 'dinheiro' que não tem conta registrada)
     const extratoLoaded: Record<string, DadosMes> = {}
     for (const row of (extratoRows ?? [])) {
-      if (!contaIdSet.has(row.conta_id)) continue
+      if (row.conta_id !== 'dinheiro' && !contaIdSet.has(row.conta_id)) continue
       extratoLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados as DadosMes
     }
     setExtratoState(extratoLoaded)
