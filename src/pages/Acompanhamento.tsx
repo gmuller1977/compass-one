@@ -72,13 +72,14 @@ export default function Acompanhamento() {
 
     for (const [key, dados] of Object.entries(extratoData)) {
       if (!key.endsWith(sufixo)) continue
-      if (!contas.some(c => key.startsWith(c.id))) continue   // ignora contas excluídas
-      if (contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) continue
+      const isDinheiroKey = key.startsWith('dinheiro')
+      if (!isDinheiroKey && !contas.some(c => key.startsWith(c.id))) continue   // ignora contas excluídas
+      if (!isDinheiroKey && contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) continue
       const dm = dados as DadosMes
 
       for (let d = 1; d <= totalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
-          const fonte = l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco'
+          const fonte = isDinheiroKey ? 'dinheiro' : (l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco')
           const sub   = (l as { subCategoria?: string }).subCategoria
           if (l.tipo === 'saida') {
             const c = getSaida(rKey(l.categoria, sub))
