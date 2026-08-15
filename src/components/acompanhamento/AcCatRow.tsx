@@ -50,7 +50,6 @@ export default function AcCatRow({
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '10px 12px 10px 10px',
           flex: 1, minWidth: 0,
-          borderRight: '1px solid #f1f5f9',
         }}>
           <div style={{
             width: 28, height: 28, borderRadius: 7, background: corIcone, flexShrink: 0,
@@ -68,7 +67,7 @@ export default function AcCatRow({
         </div>
 
         {/* Previsto */}
-        <div style={{ padding: '10px 12px', textAlign: 'right', borderRight: '1px solid #f1f5f9', minWidth: 80 }}>
+        <div style={{ padding: '10px 20px', textAlign: 'right', minWidth: 100 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
             Previsto
           </div>
@@ -78,7 +77,7 @@ export default function AcCatRow({
         </div>
 
         {/* Realizado */}
-        <div style={{ padding: '10px 12px', textAlign: 'right', borderRight: '1px solid #f1f5f9', minWidth: 90 }}>
+        <div style={{ padding: '10px 20px', textAlign: 'right', minWidth: 100 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
             Realizado
           </div>
@@ -88,7 +87,7 @@ export default function AcCatRow({
         </div>
 
         {/* A receber / Disponível */}
-        <div style={{ padding: '10px 12px', textAlign: 'right', borderRight: '1px solid #f1f5f9', minWidth: 90 }}>
+        <div style={{ padding: '10px 20px', textAlign: 'right', minWidth: 100 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
             {isEntrada ? 'A receber' : 'Disponível'}
           </div>
