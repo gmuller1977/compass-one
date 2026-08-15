@@ -34,10 +34,13 @@ export default function NleHeader({
   setMostrarCalendario, setAnoCalendario, onMesSelect, onMesPrev, onMesNext,
 }: Props) {
   if (!isMobile) {
+    const isDinheiro = tabPrincipal === 'dinheiro'
     const contaDefault = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
-    const subtitle = contaDefault
-      ? `${contaDefault.banco}${contaDefault.apelido ? ' · ' + contaDefault.apelido : ''}`
-      : undefined
+    const subtitle = isDinheiro
+      ? undefined
+      : contaDefault
+        ? `${contaDefault.banco}${contaDefault.apelido ? ' · ' + contaDefault.apelido : ''}`
+        : undefined
 
     const arrowBtn = {
       width: 28, height: 28, borderRadius: 8, border: 'none',
@@ -50,9 +53,9 @@ export default function NleHeader({
     return (
       <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
         <PageHeader
-          icon="ti-building-bank"
+          icon={isDinheiro ? 'ti-cash' : 'ti-building-bank'}
           breadcrumb="LANÇAMENTOS"
-          title="Movimentação do banco"
+          title={isDinheiro ? 'Movimentação de dinheiro' : 'Movimentação do banco'}
           subtitle={subtitle}
           mb={0}
           rightContent={

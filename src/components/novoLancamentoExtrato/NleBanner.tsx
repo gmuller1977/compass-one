@@ -126,7 +126,7 @@ export default function NleBanner({
         <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}>🔄 Conciliação</div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>Saldo no banco</span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>{isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}</span>
           <span style={{ fontSize: 14, fontWeight: 800, color: saldoBancoSalvo ? '#fff' : 'rgba(255,255,255,.4)', fontVariantNumeric: 'tabular-nums' }}>
             {saldoBancoSalvo || <span style={{ fontSize: 11, fontStyle: 'italic' }}>Informar ✎</span>}
           </span>
