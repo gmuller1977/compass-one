@@ -67,7 +67,7 @@ export default function AcSecao({
             <div style={{ background: COR.branco }}>
               {allCats.map((cat, idx) => {
                 const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
-                const cd  = realMap[realKey] ?? realMap[cat.nome]
+                const cd  = realMap[realKey]
                 const uid = `${tipo}-${grupo}-${cat.nome}-${idx}`
                 return (
                   <AcCatRow
