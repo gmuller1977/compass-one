@@ -103,33 +103,6 @@ export default function NleDesktopPanel({
 
       {/* Form header: month nav + title + badge */}
       <div style={{padding:'14px 18px 12px',borderBottom:'1px solid #e2e8f0',flexShrink:0}}>
-        {/* Month nav */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-          <button onClick={() => {
-            let m=mes-1,a=ano; if(m<0){m=11;a--}
-            setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a))
-          }} style={{width:24,height:24,borderRadius:6,border:'1.5px solid #e2e8f0',background:'#f8faff',cursor:'pointer',fontSize:13,color:'#1a56db',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>‹</button>
-
-          <button ref={calBtnRef}
-            onClick={e => {
-              e.stopPropagation()
-              const rect = calBtnRef.current?.getBoundingClientRect()
-              if (rect) setCalPos({top:rect.bottom+8, left:Math.min(rect.left, window.innerWidth-290)})
-              setAnoCalendario(() => ano)
-              setMostrarCalendario(v => !v)
-            }}
-            style={{fontSize:13,fontWeight:800,color:'#0f172a',border:'none',background:'transparent',cursor:'pointer',fontFamily:'inherit',padding:'3px 8px',borderRadius:6}}
-            onMouseEnter={e=>(e.currentTarget.style.background='#f1f5f9')}
-            onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
-            {NOMES_MESES[mes]} {ano}
-          </button>
-
-          <button onClick={() => {
-            let m=mes+1,a=ano; if(m>11){m=0;a++}
-            setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a))
-          }} style={{width:24,height:24,borderRadius:6,border:'1.5px solid #e2e8f0',background:'#f8faff',cursor:'pointer',fontSize:13,color:'#1a56db',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>›</button>
-        </div>
-
         {/* Title + account badge */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>

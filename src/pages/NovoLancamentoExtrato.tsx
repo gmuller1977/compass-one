@@ -913,6 +913,8 @@ export default function NovoLancamentoExtrato() {
             setAnoCalendario={setAnoCalendario}
             onMesSelect={(m, a) => { setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m, a)) }}
             setMostrarCalendario={setMostrarCalendario}
+            onMesPrev={() => { let m=mes-1,a=ano; if(m<0){m=11;a--}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
+            onMesNext={() => { let m=mes+1,a=ano; if(m>11){m=0;a++}; setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m,a)) }}
             contasExtrato={contasExtrato}
             contaIdEfetivo={contaIdEfetivo}
             onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}

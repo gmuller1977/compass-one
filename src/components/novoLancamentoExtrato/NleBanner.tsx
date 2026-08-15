@@ -19,6 +19,8 @@ type Props = {
   setAnoCalendario: (fn: (a: number) => number) => void
   onMesSelect: (mes: number, ano: number) => void
   setMostrarCalendario: (v: boolean) => void
+  onMesPrev: () => void
+  onMesNext: () => void
   contasExtrato: Conta[]
   contaIdEfetivo: string
   onContaSelect: (id: string) => void
@@ -32,6 +34,7 @@ export default function NleBanner({
   onSaldoBancoBlur, onSaldoBancoEnter,
   mostrarCalendario, anoCalendario, setAnoCalendario,
   onMesSelect, setMostrarCalendario,
+  onMesPrev, onMesNext,
   contasExtrato, contaIdEfetivo, onContaSelect,
 }: Props) {
   if (isMobile || (tabPrincipal !== 'extrato' && tabPrincipal !== 'dinheiro')) return null
@@ -50,8 +53,25 @@ export default function NleBanner({
     <div style={{position:'relative'}}>
       <div style={{background:'#f8faff',borderBottom:'1px solid #e2e8f0',padding:'14px 16px',display:'flex',alignItems:'flex-start',flexShrink:0,gap:8}}>
 
-        {/* Left: 4 stat boxes + bank selectors */}
+        {/* Left: month nav + 4 stat boxes + bank selectors */}
         <div style={{flex:1,display:'flex',flexDirection:'column',gap:8}}>
+
+          {/* Month navigator */}
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <button onClick={onMesPrev}
+              style={{width:26,height:26,borderRadius:7,border:'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',
+                fontSize:14,color:'#1a56db',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>‹</button>
+            <button
+              onClick={e => { e.stopPropagation(); setAnoCalendario(() => ano); setMostrarCalendario(v => !v) }}
+              style={{fontSize:13,fontWeight:800,color:'#0f172a',border:'1.5px solid #e2e8f0',background:'#fff',
+                cursor:'pointer',fontFamily:'inherit',padding:'4px 12px',borderRadius:7}}>
+              {NOMES_MESES[mes]} {ano} 📅
+            </button>
+            <button onClick={onMesNext}
+              style={{width:26,height:26,borderRadius:7,border:'1.5px solid #e2e8f0',background:'#fff',cursor:'pointer',
+                fontSize:14,color:'#1a56db',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit'}}>›</button>
+          </div>
+
           <div style={{display:'flex',gap:8}}>
             <div style={{...boxStyle,flex:1}}>
               <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>💰 Saldo inicial</div>
