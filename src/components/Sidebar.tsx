@@ -261,17 +261,13 @@ export default function Sidebar() {
       .then(({ data }) => { if (data) setStreakAtual(data.streak_atual ?? 0) })
   }, [user?.id])
 
-  const contasExtrato = contas
-    .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-    .sort((a, b) => (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0))
   const cartoes = contas.filter(c => c.tipo === 'cartao')
 
   const params     = new URLSearchParams(search)
   const tipoParam  = params.get('tipo')
   const contaParam = params.get('conta')
 
-  const lancActive     = pathname.startsWith('/novo-lancamento')
-  const bancoActive    = lancActive && tipoParam === 'banco'
+  const lancActive      = pathname.startsWith('/novo-lancamento')
   const cartaoSubActive = lancActive && tipoParam === 'cartao'
 
   function isParentActive(path: string, exact: boolean, excludeIfSearch?: string) {
@@ -301,36 +297,29 @@ export default function Sidebar() {
     return null
   })
 
-  const [expandedSub2, setExpandedSub2] = useState<'banco' | 'cartao' | null>(() => {
-    if (!pathname.startsWith('/novo-lancamento')) return null
-    if (tipoParam === 'banco') return 'banco'
-    if (tipoParam === 'cartao') return 'cartao'
-    return null
+  const [expandedSub2, setExpandedSub2] = useState<boolean>(() => {
+    if (!pathname.startsWith('/novo-lancamento')) return false
+    return tipoParam === 'cartao'
   })
 
   useEffect(() => {
     if (pathname.startsWith('/novo-lancamento')) {
       setExpandedItem('Lançamentos')
-      if (tipoParam === 'banco' && expandedSub2 !== 'banco') setExpandedSub2('banco')
-      else if (tipoParam === 'cartao' && expandedSub2 !== 'cartao') setExpandedSub2('cartao')
+      if (tipoParam === 'cartao' && !expandedSub2) setExpandedSub2(true)
     }
   }, [pathname, tipoParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleExpand(label: string) {
     setExpandedItem(prev => prev === label ? null : label)
   }
-  function toggleSub2(key: 'banco' | 'cartao') {
-    setExpandedSub2(prev => prev === key ? null : key)
+  function toggleSub2() {
+    setExpandedSub2(prev => !prev)
   }
 
   function abrirNorth() {
     document.dispatchEvent(new CustomEvent('openNorth'))
   }
 
-  // Determine which account is active at level 3
-  const activeContaId  = bancoActive
-    ? (contaParam ?? contasExtrato.find(c => c.preferida)?.id ?? contasExtrato[0]?.id)
-    : null
   const activeCartaoId = cartaoSubActive
     ? (contaParam ?? cartoes[0]?.id)
     : null
@@ -411,48 +400,19 @@ export default function Sidebar() {
                     {isExpanded && (
                       <div style={{ animation: 'subExpand .18s ease' }}>
 
-                        {contasExtrato.length > 0 && (<>
-                          <SubItemRow
-                            label="Banco"
-                            icon="🏦"
-                            active={bancoActive}
-                            hasSub={contasExtrato.length > 1}
-                            expanded={expandedSub2 === 'banco'}
-                            onClick={() => {
-                              if (contasExtrato.length > 1) {
-                                toggleSub2('banco')
-                              } else {
-                                const pref = contasExtrato[0]
-                                if (pref) navigate(`/novo-lancamento?tipo=banco&conta=${pref.id}`)
-                              }
-                            }}
-                          />
-                          {(expandedSub2 === 'banco' || bancoActive) && (
-                            <div style={{ animation: 'subExpand .15s ease' }}>
-                              {contasExtrato.map(c => (
-                                <Sub2ItemRow
-                                  key={c.id} label={c.banco} color={c.cor}
-                                  active={activeContaId === c.id}
-                                  onClick={() => navigate(`/novo-lancamento?tipo=banco&conta=${c.id}`)}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </>)}
-
                         {cartoes.length > 0 && (<>
                           <SubItemRow
                             label="Cartão"
                             icon="💳"
                             active={cartaoSubActive}
                             hasSub={cartoes.length > 1}
-                            expanded={expandedSub2 === 'cartao'}
+                            expanded={expandedSub2}
                             onClick={() => {
-                              if (cartoes.length > 1) toggleSub2('cartao')
+                              if (cartoes.length > 1) toggleSub2()
                               navigate(`/novo-lancamento?tipo=cartao&conta=${cartoes[0].id}`)
                             }}
                           />
-                          {(expandedSub2 === 'cartao' || cartaoSubActive) && (
+                          {(expandedSub2 || cartaoSubActive) && (
                             <div style={{ animation: 'subExpand .15s ease' }}>
                               {cartoes.map(c => (
                                 <Sub2ItemRow

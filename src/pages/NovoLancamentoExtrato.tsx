@@ -914,6 +914,9 @@ export default function NovoLancamentoExtrato() {
             calPos={calPos}
             onMesSelect={(m, a) => { setMes(m); setAno(a); resetarParaNovo(diaDefaultPara(m, a)) }}
             setMostrarCalendario={setMostrarCalendario}
+            contasExtrato={contasExtrato}
+            contaIdEfetivo={contaIdEfetivo}
+            onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}
           />
 
           <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',overflow:isMobile?'auto':'hidden', paddingBottom:isMobile?120:0}}>
