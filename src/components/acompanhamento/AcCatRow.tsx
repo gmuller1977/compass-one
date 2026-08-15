@@ -9,6 +9,7 @@ export interface AcCatRowProps {
   prev: number
   realBanc: number
   realCart: number
+  realDinheiro: number
   lancamentos: import('./AcShared').Lanc[]
   isEntrada?: boolean
   selecionada: boolean
@@ -17,11 +18,11 @@ export interface AcCatRowProps {
 }
 
 export default function AcCatRow({
-  uid, nome, descricao, prev, realBanc, realCart, lancamentos,
+  uid, nome, descricao, prev, realBanc, realCart, realDinheiro, lancamentos,
   isEntrada, selecionada, onSelect, categorias,
 }: AcCatRowProps) {
   const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
-  const lancAbs    = realBanc + realCart
+  const lancAbs    = realBanc + realCart + realDinheiro
   const disponivel = prev - lancAbs
   const perc       = prev > 0 ? lancAbs / prev : (lancAbs > 0 ? 1 : 0)
   const bc         = barCor(perc, isEntrada)
@@ -41,14 +42,14 @@ export default function AcCatRow({
     : (disponivel >= 0 ? COR.verde : COR.vermelho)
 
   const handleClick = () =>
-    onSelect({ uid, nome, descricao, tipo: isEntrada ? 'entrada' : 'saida', prev, realBanc, realCart, lancamentos })
+    onSelect({ uid, nome, descricao, tipo: isEntrada ? 'entrada' : 'saida', prev, realBanc, realCart, realDinheiro, lancamentos })
 
   return (
     <div style={{ borderBottom: `1px solid ${COR.borda}` }}>
       <div
         onClick={handleClick}
         style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+          display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
           cursor: 'pointer',
           background: selecionada ? '#eff6ff' : 'transparent',
           borderLeft: selecionada ? `3px solid ${COR.azul}` : '3px solid transparent',
@@ -69,6 +70,17 @@ export default function AcCatRow({
           </div>
         </div>
 
+        {/* Previsto */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0,
+          padding: '4px 8px', borderRadius: 8, minWidth: 74,
+          background: '#f8faff', border: `1px solid ${COR.borda}` }}>
+          <span style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase' as const,
+            letterSpacing: .4, marginBottom: 1, color: '#94a3b8' }}>Previsto</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, fontVariantNumeric: 'tabular-nums' }}>
+            {prev > 0 ? fmt(prev) : '—'}
+          </span>
+        </div>
+
         {/* Realizado */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0,
           padding: '4px 8px', borderRadius: 8, minWidth: 74,
@@ -80,7 +92,7 @@ export default function AcCatRow({
           </span>
         </div>
 
-        {/* Disponível */}
+        {/* A receber / Disponível */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0,
           padding: '4px 8px', borderRadius: 8, minWidth: 74 }}>
           <span style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase' as const,

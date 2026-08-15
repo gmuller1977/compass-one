@@ -83,11 +83,13 @@ export default function Acompanhamento() {
           const sub   = (l as { subCategoria?: string }).subCategoria
           if (l.tipo === 'saida') {
             const c = getSaida(rKey(l.categoria, sub))
-            c.total += l.valor; c.totalBanc += l.valor
+            c.total += l.valor
+            if (fonte === 'dinheiro') c.totalDinheiro += l.valor; else c.totalBanc += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
           } else {
             const c = getEntrada(rKey(l.categoria, sub))
-            c.total += l.valor; c.totalBanc += l.valor
+            c.total += l.valor
+            if (fonte === 'dinheiro') c.totalDinheiro += l.valor; else c.totalBanc += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
           }
         }

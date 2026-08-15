@@ -81,6 +81,7 @@ export default function AcSecao({
                     prev={cat.v[mes] ?? 0}
                     realBanc={cd?.totalBanc ?? 0}
                     realCart={cd?.totalCart ?? 0}
+                    realDinheiro={cd?.totalDinheiro ?? 0}
                     lancamentos={cd?.lancamentos ?? []}
                     isEntrada={isEntrada}
                     selecionada={catSelUid === uid}

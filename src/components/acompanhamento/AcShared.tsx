@@ -7,7 +7,7 @@ export const MESES_FULL   = ['Janeiro','Fevereiro','Março','Abril','Maio','Junh
 
 // ── Tipos ─────────────────────────────────────────────────────────────
 export type Lanc = { dia: number; descricao: string; valor: number; sub: string; fonte: 'banco'|'cartao'|'dinheiro' }
-export type CatReal = { total: number; totalBanc: number; totalCart: number; lancamentos: Lanc[] }
+export type CatReal = { total: number; totalBanc: number; totalCart: number; totalDinheiro: number; lancamentos: Lanc[] }
 export type CatSel = {
   uid: string
   nome: string
@@ -16,11 +16,12 @@ export type CatSel = {
   prev: number
   realBanc: number
   realCart: number
+  realDinheiro: number
   lancamentos: Lanc[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
-export function mkCatReal(): CatReal { return { total:0, totalBanc:0, totalCart:0, lancamentos:[] } }
+export function mkCatReal(): CatReal { return { total:0, totalBanc:0, totalCart:0, totalDinheiro:0, lancamentos:[] } }
 export function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
 export function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
 export function barCor(perc: number, isEntrada?: boolean) {
