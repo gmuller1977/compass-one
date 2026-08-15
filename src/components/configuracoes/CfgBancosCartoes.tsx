@@ -65,8 +65,11 @@ export default function CfgBancosCartoes({
 
         <div style={{ overflowY:'auto', flex:1 }}>
           {(aba==='bancos' ? (['corrente','poupanca'] as const) : (['cartao'] as const)).map(tipo => {
-            const grupo = contas.filter(c => c.tipo===tipo)
-            if (!grupo.length) return null
+            const isBanco = tipo === 'corrente' || tipo === 'poupanca'
+            const grupo = contas.filter(c => c.tipo===tipo && (isBanco ? !c.preferida : true))
+            const favorita = isBanco ? contas.find(c => c.tipo===tipo && c.preferida) : null
+            const itens = favorita ? [favorita, ...grupo] : grupo
+            if (!itens.length) return null
             const titulo = tipo==='corrente' ? '🏦 Contas Correntes'
               : tipo==='poupanca' ? '🏧 Poupanças' : '💳 Cartões de Crédito'
             return (
@@ -76,21 +79,23 @@ export default function CfgBancosCartoes({
                   {titulo}
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                  {grupo.map((c) => (
+                  {itens.map((c) => (
                     <div key={c.id} style={{
-                      background:COR.branco, border:`1px solid ${COR.borda}`,
+                      background: c.preferida ? '#fffbeb' : COR.branco,
+                      border: c.preferida ? '1px solid #fbbf24' : `1px solid ${COR.borda}`,
                       borderRadius:12, padding:'14px 16px', cursor:'pointer',
                       display:'flex', alignItems:'center', gap:14,
-                      borderLeft:`4px solid ${c.cor}`,
-                      boxShadow: editContaId===c.id ? `0 0 0 2px ${COR.azul}` : '0 1px 4px rgba(0,0,0,.05)' }}>
+                      borderLeft: c.preferida ? `4px solid #f59e0b` : `4px solid ${c.cor}`,
+                      boxShadow: editContaId===c.id ? `0 0 0 2px ${COR.azul}` : c.preferida ? '0 2px 8px rgba(245,158,11,.15)' : '0 1px 4px rgba(0,0,0,.05)' }}>
                       <div style={{ width:48, height:48, borderRadius:14, background:c.cor+'22',
                         display:'flex', alignItems:'center', justifyContent:'center',
                         fontSize:22, flexShrink:0 }}>
                         {c.icone}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:14, fontWeight:700, color:COR.texto }}>
+                        <div style={{ fontSize:14, fontWeight:700, color:COR.texto, display:'flex', alignItems:'center', gap:6 }}>
                           {c.tipo==='cartao' ? (c.apelido || c.banco) : c.banco}
+                          {c.preferida && <span style={{ fontSize:11, fontWeight:700, color:'#92400e', background:'#fef3c7', border:'1px solid #fbbf24', borderRadius:6, padding:'1px 6px' }}>⭐ Favorito</span>}
                         </div>
                         <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>
                           {c.tipo==='cartao'
