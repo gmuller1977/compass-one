@@ -769,6 +769,7 @@ export default function NovoLancamentoExtrato() {
         tabPrincipal={tabPrincipal}
         setTabPrincipal={setTabPrincipal}
         contasExtrato={contasExtrato}
+        contaId={contaIdEfetivo}
         setContaId={setContaId}
         setMobileDiaForm={setMobileDiaForm}
         mes={mes}

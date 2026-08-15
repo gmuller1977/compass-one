@@ -12,6 +12,7 @@ type Props = {
   tabPrincipal: TabPrincipal
   setTabPrincipal: (v: TabPrincipal) => void
   contasExtrato: Conta[]
+  contaId: string
   setContaId: (id: string) => void
   setMobileDiaForm: (v: null) => void
   // Calendário (banco/dinheiro)
@@ -39,7 +40,7 @@ type Props = {
 export default function NleHeader({
   isMobile, user, sairDaConta,
   tabPrincipal, setTabPrincipal,
-  contasExtrato, setContaId, setMobileDiaForm,
+  contasExtrato, contaId, setContaId, setMobileDiaForm,
   mes, ano, mostrarCalendario, anoCalendario,
   setMostrarCalendario, setAnoCalendario, onMesSelect, onMesPrev, onMesNext,
   cartaoMes, cartaoAno, cartaoMostrarCal, cartaoAnoCal,
@@ -49,11 +50,11 @@ export default function NleHeader({
     const isDinheiro = tabPrincipal === 'dinheiro'
     const isCartao   = tabPrincipal === 'cartao'
 
-    const contaDefault = contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
+    const contaSel = contasExtrato.find(c => c.id === contaId) ?? contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
     const subtitle = (isDinheiro || isCartao)
       ? undefined
-      : contaDefault
-        ? `${contaDefault.banco}${contaDefault.apelido ? ' · ' + contaDefault.apelido : ''}`
+      : contaSel
+        ? `${contaSel.banco}${contaSel.apelido ? ' · ' + contaSel.apelido : ''}`
         : undefined
 
     const icon  = isCartao ? 'ti-credit-card' : isDinheiro ? 'ti-cash' : 'ti-building-bank'
