@@ -206,7 +206,14 @@ export default function Configuracoes() {
       }))
       toast('Conta atualizada')
     } else {
-      setContas(prev => [...prev, { id: contaId, ...contaFinal }])
+      setContas(prev => [
+        ...prev.map(c =>
+          contaFinal.preferida && (c.tipo === 'corrente' || c.tipo === 'poupanca')
+            ? { ...c, preferida: false }
+            : c
+        ),
+        { id: contaId, ...contaFinal },
+      ])
       toast('Conta cadastrada')
     }
     if (ehCartao && faturaStr.trim()) {

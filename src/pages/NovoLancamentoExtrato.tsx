@@ -261,11 +261,12 @@ export default function NovoLancamentoExtrato() {
   const saldoExtNum = parseBRL(mesDados.saldoBanco)
 
   useEffect(() => {
+    if (tabPrincipal !== 'extrato') return
     const bancos = contas.filter(c => c.tipo==='corrente'||c.tipo==='poupanca')
     const preferida = bancos.find(c => c.preferida)
     const inicial = preferida ?? bancos[0]
     if (inicial) { setContaId(inicial.id); setFBancoConsolidado(inicial.id) }
-  }, [])
+  }, [tabPrincipal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (eMesAtual)
