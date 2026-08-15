@@ -8,6 +8,16 @@ export const MESES_FULL   = ['Janeiro','Fevereiro','Março','Abril','Maio','Junh
 // ── Tipos ─────────────────────────────────────────────────────────────
 export type Lanc = { dia: number; descricao: string; valor: number; sub: string; fonte: 'banco'|'cartao'|'dinheiro' }
 export type CatReal = { total: number; totalBanc: number; totalCart: number; lancamentos: Lanc[] }
+export type CatSel = {
+  uid: string
+  nome: string
+  descricao?: string
+  tipo: 'entrada' | 'saida'
+  prev: number
+  realBanc: number
+  realCart: number
+  lancamentos: Lanc[]
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────
 export function mkCatReal(): CatReal { return { total:0, totalBanc:0, totalCart:0, lancamentos:[] } }

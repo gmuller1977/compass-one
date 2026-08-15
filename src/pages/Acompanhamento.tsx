@@ -29,9 +29,11 @@ export default function Acompanhamento() {
   const anoHoje = hoje.getFullYear()
 
   const isMobile = useIsMobile()
-  const [mes, setMes]     = useState(mesHoje)
-  const [ano, setAno]     = useState(anoHoje)
-  const [abertos, setAbertos] = useState<Set<string>>(new Set())
+  const [mes, setMes]               = useState(mesHoje)
+  const [ano, setAno]               = useState(anoHoje)
+  const [abertos, setAbertos]       = useState<Set<string>>(new Set())
+  const [mostrarCal, setMostrarCal] = useState(false)
+  const [anoCal, setAnoCal]         = useState(anoHoje)
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -43,6 +45,13 @@ export default function Acompanhamento() {
       if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Viu a Evolução', pontos: 2 })
     })
   }, [user?.id])
+
+  useEffect(() => {
+    if (!mostrarCal) return
+    const fechar = () => setMostrarCal(false)
+    document.addEventListener('click', fechar)
+    return () => document.removeEventListener('click', fechar)
+  }, [mostrarCal])
 
   const mesStr    = String(mes+1).padStart(2,'0')
   const totalDias = diasNoMes(mes, ano)
@@ -195,92 +204,67 @@ export default function Acompanhamento() {
       fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
-      {/* PageHeader */}
-      {!isMobile && (
-        <div style={{ padding: '12px 16px 0', background: COR.branco, borderBottom: 'none', flexShrink: 0 }}>
-          <PageHeader
-            icon="ti-refresh"
-            breadcrumb="MEU PLANO"
-            title="Revisão mensal"
-            subtitle={`${MESES_FULL[mes]} ${ano}`}
-            mb={12}
-            rightContent={
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden',
-              }}>
-                <button onClick={() => setMes(m => Math.max(0, m-1))} style={{
-                  border: 'none', background: 'transparent', cursor: mes===0?'default':'pointer',
-                  padding: '5px 9px', color: mes===0?'rgba(255,255,255,0.3)':'#fff', fontSize: 11, lineHeight: 1,
-                }}>◀</button>
-                <span style={{
-                  fontSize: 12, fontWeight: 500, color: '#fff',
-                  padding: '5px 10px', borderLeft: '1px solid rgba(255,255,255,0.2)',
-                  borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: 80, textAlign: 'center',
-                }}>{MESES_FULL[mes]}</span>
-                <button onClick={() => setMes(m => Math.min(11, m+1))} style={{
-                  border: 'none', background: 'transparent', cursor: mes===11?'default':'pointer',
-                  padding: '5px 9px', color: mes===11?'rgba(255,255,255,0.3)':'#fff', fontSize: 11, lineHeight: 1,
-                }}>▶</button>
+      {/* PageHeader — mesmo estilo do banco */}
+      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        <PageHeader
+          icon="ti-chart-bar"
+          breadcrumb="MEU PLANO"
+          title="Evolução Mensal"
+          mb={0}
+          rightContent={
+            <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button onClick={() => { const m=mes-1<0?11:mes-1; const a=mes-1<0?ano-1:ano; setMes(m); setAno(a) }}
+                  style={{ width:28,height:28,borderRadius:8,border:'none',background:'rgba(255,255,255,0.15)',
+                    color:'#fff',cursor:'pointer',fontSize:16,fontWeight:700,display:'flex',
+                    alignItems:'center',justifyContent:'center',fontFamily:'inherit' }}>‹</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setAnoCal(ano); setMostrarCal(v => !v) }}
+                  style={{ fontSize:20,fontWeight:800,color:'#fff',border:'none',
+                    background:'rgba(255,255,255,0.12)',borderRadius:8,padding:'4px 14px',
+                    cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' }}>
+                  {MESES_FULL[mes]} {ano}
+                </button>
+                <button onClick={() => { const m=mes+1>11?0:mes+1; const a=mes+1>11?ano+1:ano; setMes(m); setAno(a) }}
+                  style={{ width:28,height:28,borderRadius:8,border:'none',background:'rgba(255,255,255,0.15)',
+                    color:'#fff',cursor:'pointer',fontSize:16,fontWeight:700,display:'flex',
+                    alignItems:'center',justifyContent:'center',fontFamily:'inherit' }}>›</button>
               </div>
-            }
-          />
-        </div>
-      )}
 
-      {/* ABAS DE MÊS */}
-      <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,flexShrink:0}}>
-        {isMobile ? (
-          /* Mobile: ano + setas de mês na mesma linha */
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'10px 16px 10px',gap:8}}>
-            <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <button onClick={() => setAno(a => a-1)} style={{background:'none',border:'none',
-                cursor:'pointer',color:COR.textoSuave,fontSize:16,padding:'0 4px',lineHeight:1}}>‹</button>
-              <span style={{fontSize:13,fontWeight:700,color:COR.texto}}>{ano}</span>
-              <button onClick={() => setAno(a => a+1)} style={{background:'none',border:'none',
-                cursor:'pointer',color:COR.textoSuave,fontSize:16,padding:'0 4px',lineHeight:1}}>›</button>
+              {mostrarCal && (
+                <div
+                  style={{ position:'absolute',top:'calc(100% + 8px)',right:0,zIndex:300,
+                    background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.22)',
+                    padding:16,minWidth:272 }}
+                  onClick={e => e.stopPropagation()}>
+                  <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12 }}>
+                    <button onClick={() => setAnoCal(a => a-1)}
+                      style={{ border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
+                        padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit' }}>‹</button>
+                    <span style={{ fontWeight:700,fontSize:15,color:COR.texto }}>{anoCal}</span>
+                    <button onClick={() => setAnoCal(a => a+1)}
+                      style={{ border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
+                        padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit' }}>›</button>
+                  </div>
+                  <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6 }}>
+                    {MESES_CURTOS.map((abrev, i) => {
+                      const ativo = i === mes && anoCal === ano
+                      return (
+                        <button key={i}
+                          onClick={() => { setMes(i); setAno(anoCal); setMostrarCal(false) }}
+                          style={{ padding:'8px 4px',border:'none',borderRadius:8,cursor:'pointer',
+                            fontFamily:'inherit',fontSize:12,fontWeight:ativo?700:500,
+                            background:ativo?COR.azul:'#f1f5f9',color:ativo?'#fff':COR.texto }}>
+                          {abrev}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <button onClick={() => setMes(m => Math.max(0, m-1))} style={{
-                border:'none',background:mes===0?'#f1f5f9':'#eff6ff',color:mes===0?'#cbd5e1':COR.azul,
-                borderRadius:8,padding:'5px 14px',fontSize:16,cursor:mes===0?'default':'pointer',fontFamily:'inherit'}}>‹</button>
-              <span style={{fontWeight:700,fontSize:15,color:COR.texto,minWidth:80,textAlign:'center'}}>
-                {MESES_FULL[mes]}
-              </span>
-              <button onClick={() => setMes(m => Math.min(11, m+1))} style={{
-                border:'none',background:mes===11?'#f1f5f9':'#eff6ff',color:mes===11?'#cbd5e1':COR.azul,
-                borderRadius:8,padding:'5px 14px',fontSize:16,cursor:mes===11?'default':'pointer',fontFamily:'inherit'}}>›</button>
-            </div>
-          </div>
-        ) : (
-          /* Desktop: ano acima, 12 abas de mês */
-          <>
-            <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px 0'}}>
-              <button onClick={() => setAno(a => a-1)} style={{background:'none',border:'none',
-                cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>‹</button>
-              <span style={{fontSize:13,fontWeight:600,color:COR.texto}}>{ano}</span>
-              <button onClick={() => setAno(a => a+1)} style={{background:'none',border:'none',
-                cursor:'pointer',color:COR.textoSuave,fontSize:18,padding:'0 4px',lineHeight:1}}>›</button>
-            </div>
-            <div style={{display:'flex',gap:3,padding:'6px 0 0',overflowX:'auto',paddingBottom:4}}>
-              {MESES_CURTOS.map((m,i) => {
-                const ativo = i === mes
-                return (
-                  <button key={m} onClick={() => setMes(i)} style={{
-                    padding:'6px 14px 8px',borderRadius:'8px 8px 0 0',
-                    border:`1px solid ${ativo?COR.azul:COR.borda}`,
-                    cursor:'pointer',fontSize:12,fontWeight:ativo?700:500,fontFamily:'inherit',
-                    whiteSpace:'nowrap',background:ativo?COR.azul:'#f8faff',
-                    color:ativo?'#fff':COR.textoSuave,position:'relative',zIndex:ativo?1:0,
-                    display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-                    {m}
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        )}
+          }
+        />
       </div>
 
       {/* CAIXINHAS DE RESUMO */}
@@ -325,7 +309,7 @@ export default function Acompanhamento() {
                 border:`1px solid ${COR.borda}`,overflow:'hidden',flexShrink:0}}>
                 <div style={{padding:'10px 12px 8px',borderBottom:`1px solid ${COR.borda}`,
                   display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:14,fontWeight:700,color:COR.verde}}>↑ Entrou</span>
+                  <span style={{fontSize:14,fontWeight:700,color:COR.verde}}>↑ Recebimento</span>
                 </div>
                 <AcSecao
                   tipo="entrada"
@@ -348,7 +332,7 @@ export default function Acompanhamento() {
                 border:`1px solid ${COR.borda}`,overflow:'hidden',flexShrink:0}}>
                 <div style={{padding:'10px 12px 8px',borderBottom:`1px solid ${COR.borda}`,
                   display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:14,fontWeight:700,color:COR.vermelho}}>↓ Gastei</span>
+                  <span style={{fontSize:14,fontWeight:700,color:COR.vermelho}}>↓ Pagamento</span>
                 </div>
                 <AcSecao
                   tipo="saida"
