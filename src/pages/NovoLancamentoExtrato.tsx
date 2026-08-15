@@ -101,7 +101,10 @@ export default function NovoLancamentoExtrato() {
 
   const contasExtrato = contas
     .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-    .sort((a, b) => (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0))
+    .sort((a, b) => {
+      const pDiff = (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0)
+      return pDiff !== 0 ? pDiff : a.nome.localeCompare(b.nome, 'pt-BR')
+    })
   const isDinheiro = tabPrincipal === 'dinheiro'
 
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
