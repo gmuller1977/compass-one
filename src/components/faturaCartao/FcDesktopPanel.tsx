@@ -204,7 +204,13 @@ export default function FcDesktopPanel({
         <div>
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
           {(() => {
-            const catsSemDup = categoriasCartao.filter((c, i, arr) => arr.findIndex(x => x.nome === c.nome) === i)
+            const _seen = new Set<string>()
+            const catsSemDup = categoriasCartao.filter(c => {
+              const k = c.nome.trim().toLowerCase()
+              if (_seen.has(k)) return false
+              _seen.add(k)
+              return true
+            })
             const subDescs = fCat ? categoriasCartao.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!) : []
             const grupos = new Map<string, typeof catsSemDup>()
             for (const c of catsSemDup) {

@@ -145,11 +145,14 @@ export default function NovoLancamentoExtrato() {
           .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[`cartao-${c.id}`] === true)
         if (jaPaga) return
       }
-      const fatKey = mesKey(c.id, ano, mes)
+      const bOffset = (c.diaVencimento ?? 1) < (c.diaFechamento ?? 1) ? 1 : 0
+      let pMes = mes - bOffset, pAno = ano
+      if (pMes < 0) { pMes += 12; pAno-- }
+      const fatKey = mesKey(c.id, pAno, pMes)
       const dm = faturasDados[fatKey]
       let total = 0
       if (dm) {
-        const nDias = new Date(ano, mes + 1, 0).getDate()
+        const nDias = new Date(pAno, pMes + 1, 0).getDate()
         for (let d = 1; d <= nDias; d++) {
           ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
             l.tipo === 'saida' ? total += l.valor : total -= l.valor
