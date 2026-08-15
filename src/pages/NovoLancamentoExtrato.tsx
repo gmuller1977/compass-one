@@ -445,7 +445,7 @@ export default function NovoLancamentoExtrato() {
             let total = 0
             for (let d = 1; d <= tdm; d++) {
               ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-                l.tipo === 'saida' ? total += l.valor : total -= l.valor
+                l.tipo === 'entrada' ? total += l.valor : total -= l.valor  // entrada=Compra, saida=Estorno
               })
             }
             if (total > 0) acc -= total
