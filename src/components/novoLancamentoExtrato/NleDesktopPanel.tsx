@@ -239,7 +239,7 @@ export default function NleDesktopPanel({
                 💳 {fTipo === 'entrada' ? 'Forma de recebimento' : 'Forma de pagamento'}
               </div>
               <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).map(p => (
+                {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).filter(p => isDinheiro || p.id !== 'dinheiro').map(p => (
                   <button key={p.id} onClick={() => { setFPag(p.id); if(p.id!=='transferencia') setFContaDestino('') }} style={{
                     padding:'6px 12px',borderRadius:8,
                     border:`1.5px solid ${fPag===p.id?COR.azul:'#e2e8f0'}`,

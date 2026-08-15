@@ -12,6 +12,7 @@ type Props = {
   // Layout
   isMobile: boolean
   mobileView: 'extrato' | 'form'
+  isDinheiro: boolean
 
   // Time
   mes: number
@@ -79,7 +80,7 @@ type Props = {
 }
 
 export default function NleExtrato({
-  isMobile, mobileView,
+  isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
   fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes,
   totalEntradas, totalSaidas,
@@ -478,7 +479,7 @@ export default function NleExtrato({
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as never,marginBottom:8}}>
                           <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>Pgto:</span>
-                          {(fTipo==='entrada'?FORMAS_ENT:FORMAS_SAI).map(p=>(
+                          {(fTipo==='entrada'?FORMAS_ENT:FORMAS_SAI).filter(p=>isDinheiro||p.id!=='dinheiro').map(p=>(
                             <button key={p.id} onClick={()=>setFPag(p.id)} style={{
                               padding:'4px 10px',border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
                               borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:600,

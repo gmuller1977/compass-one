@@ -926,6 +926,7 @@ export default function NovoLancamentoExtrato() {
             <NleExtrato
               isMobile={isMobile}
               mobileView={mobileView}
+              isDinheiro={isDinheiro}
               mes={mes}
               ano={ano}
               totalDias={totalDias}
