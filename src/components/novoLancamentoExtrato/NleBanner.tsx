@@ -38,28 +38,28 @@ export default function NleBanner({
 
   return (
     <>
-      <div style={{background:'linear-gradient(135deg,#0f2878,#1e40af)',padding:'14px 16px',display:'flex',alignItems:'center',flexShrink:0}}>
-        <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+      <div style={{background:'#f8faff',borderBottom:'1px solid #e2e8f0',padding:'14px 16px',display:'flex',alignItems:'center',flexShrink:0,gap:8}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',background:'linear-gradient(135deg,#0f2878,#1e40af)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px'}}>
           <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>💰 Saldo inicial</div>
           <div style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.4px'}}>{fmt(saldoBase)}</div>
           <div style={{fontSize:10,color:'rgba(255,255,255,.55)',marginTop:3}}>{NOMES_MESES[mes]} {ano}</div>
         </div>
-        <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',background:'linear-gradient(135deg,#0f2878,#1e40af)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px'}}>
           <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>↑ Entradas</div>
           <div style={{fontSize:17,fontWeight:800,color:'#93c5fd',letterSpacing:'-.4px'}}>{fmt(totalEntradas)}</div>
           <div style={{fontSize:10,color:'rgba(255,255,255,.55)',marginTop:3}}>lançadas</div>
         </div>
-        <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',background:'linear-gradient(135deg,#0f2878,#1e40af)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px'}}>
           <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>↓ Saídas</div>
           <div style={{fontSize:17,fontWeight:800,color:'#fca5a5',letterSpacing:'-.4px'}}>{fmt(totalSaidas)}</div>
           <div style={{fontSize:10,color:'rgba(255,255,255,.55)',marginTop:3}}>lançadas</div>
         </div>
-        <div style={{flex:1,display:'flex',flexDirection:'column',background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',marginRight:8}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',background:'linear-gradient(135deg,#0f2878,#1e40af)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px'}}>
           <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:6}}>= Saldo atual</div>
           <div style={{fontSize:17,fontWeight:800,color:saldoMes>=0?'#86efac':'#fca5a5',letterSpacing:'-.4px'}}>{fmt(saldoMes)}</div>
           <div style={{fontSize:10,color:saldoMes>=0?'#86efac':'#fca5a5',marginTop:3}}>{saldoMes>=0?'↑ positivo':'↓ negativo'}</div>
         </div>
-        <div style={{display:'flex',flexDirection:'column',gap:5,background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',flexShrink:0}}>
+        <div style={{display:'flex',flexDirection:'column',gap:5,background:'linear-gradient(135deg,#0f2878,#1e40af)',border:'1px solid rgba(255,255,255,.15)',borderRadius:12,padding:'12px 14px',flexShrink:0}}>
           <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.7)',textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>🔄 Conciliação</div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:10,color:'rgba(255,255,255,.6)',minWidth:80}}>Saldo no banco</span>
