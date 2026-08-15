@@ -55,8 +55,8 @@ export default function FcBanner({
           </div>
 
           <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>↓ Total fatura</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: totalFatura > 0 ? '#fca5a5' : '#86efac', letterSpacing: '-.4px' }}>{fmt(totalFatura)}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>Total de Todas as Faturas</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: grandTotalFaturas > 0 ? '#fca5a5' : '#86efac', letterSpacing: '-.4px' }}>{fmt(grandTotalFaturas)}</div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>lançado</div>
           </div>
 

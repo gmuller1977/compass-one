@@ -152,18 +152,20 @@ export default function FcDesktopLeft({
       </div>
 
       {/* Footer: total da fatura */}
-      <div style={{ flexShrink: 0, background: totalFatura < 0 ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : `linear-gradient(135deg,#0f2878,#1e40af)`, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)' }}>
-            Total da fatura — {NOMES_MESES[purchaseMes]} {purchaseAno}
+      <div style={{ flexShrink: 0, padding: '0 12px 12px' }}>
+        <div style={{ background: totalFatura < 0 ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : `linear-gradient(135deg,#0f2878,#1e40af)`, borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)' }}>
+              Total da fatura — {NOMES_MESES[purchaseMes]} {purchaseAno}
+            </div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.4)', marginTop: 1 }}>
+              Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
+            </div>
           </div>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,.4)', marginTop: 1 }}>
-            Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-          </div>
+          <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' as const }}>
+            {fmt(totalFatura)}
+          </span>
         </div>
-        <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' as const }}>
-          {fmt(totalFatura)}
-        </span>
       </div>
 
     </div>
