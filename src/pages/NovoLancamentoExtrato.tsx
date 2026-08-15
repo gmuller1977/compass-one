@@ -439,9 +439,13 @@ export default function NovoLancamentoExtrato() {
           const cardId = catId.slice(7)
           const override = fixasOvr[catId]
           if (override !== undefined && override > 0) { acc -= override; continue }
-          const dm = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[`${cardId}-${sufixo}`]
+          const cartaoConta = contas.find(c => c.id === cardId)
+          const bOffset = cartaoConta && (cartaoConta.diaVencimento ?? 1) < (cartaoConta.diaFechamento ?? 1) ? 1 : 0
+          let bMes = km - bOffset, bAno = ky
+          if (bMes < 0) { bMes += 12; bAno-- }
+          const dm = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[mesKey(cardId, bAno, bMes)]
           if (dm?.lancamentos) {
-            const tdm = new Date(ky, km + 1, 0).getDate()
+            const tdm = new Date(bAno, bMes + 1, 0).getDate()
             let total = 0
             for (let d = 1; d <= tdm; d++) {
               ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
