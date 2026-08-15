@@ -32,6 +32,12 @@ export default function AcCatRow({
     ? (lancAbs > 0 ? COR.azul : '#d1d5db')
     : (lancAbs === 0 ? '#d1d5db' : (lancAbs <= prev || prev === 0) ? COR.azul : COR.vermelho)
 
+  const perc    = prev > 0 ? lancAbs / prev : (lancAbs > 0 ? 1 : 0)
+  const percPct = Math.round(Math.min(perc, 1) * 100)
+  const barCor  = isEntrada
+    ? (perc >= 1 ? COR.verde : perc >= 0.8 ? COR.amarelo : '#94a3b8')
+    : (perc > 1 ? COR.vermelho : perc >= 0.9 ? COR.amarelo : COR.verde)
+
   const cols = [
     {
       label: 'Previsto',
@@ -88,7 +94,7 @@ export default function AcCatRow({
         </div>
 
         {/* Grid de colunas — mesmo flex:1 + grid 1fr do banco */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 88px' }}>
           {cols.map(col => (
             <div key={col.label} style={{ padding: '10px 12px', textAlign: 'right', borderRight: '1px solid #f8faff' }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, marginBottom: 3 }}>
@@ -99,6 +105,21 @@ export default function AcCatRow({
               </div>
             </div>
           ))}
+
+          {/* Coluna de progresso */}
+          <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 5 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: .4, textAlign: 'right' }}>
+              {(prev === 0 && lancAbs === 0) ? '—' : `${percPct}%`}
+            </div>
+            <div style={{ background: '#e9edf2', borderRadius: 99, height: 4, overflow: 'hidden' }}>
+              <div style={{
+                width: `${Math.min(perc * 100, 100)}%`,
+                height: 4, borderRadius: 99,
+                background: (prev === 0 && lancAbs === 0) ? '#e9edf2' : barCor,
+                transition: 'width .3s',
+              }} />
+            </div>
+          </div>
         </div>
 
         {/* Seta — mesma largura do botão ＋ do banco */}
