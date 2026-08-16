@@ -44,7 +44,7 @@ export default function Configuracoes() {
           metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
           setOnboardingCompleto,
-          saldoInicialDinheiro, setSaldoInicialDinheiro } = useApp()
+          saldoInicialDinheiro, salvarSaldoInicialDinheiro } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [modalExcluirConta, setModalExcluirConta] = useState(false)
   const [confirmInput,      setConfirmInput]      = useState('')
@@ -544,7 +544,7 @@ export default function Configuracoes() {
               faturaStr={faturaStr}
               setFaturaStr={setFaturaStr}
               saldoInicialDinheiro={saldoInicialDinheiro}
-              onSaveSaldoDinheiro={setSaldoInicialDinheiro}
+              onSaveSaldoDinheiro={salvarSaldoInicialDinheiro}
               erroConta={erroConta}
               nomeContaRef={nomeContaRef}
               tipoBancoRefs={tipoBancoRefs}

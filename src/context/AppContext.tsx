@@ -97,6 +97,7 @@ type AppCtx = {
   setPercentualAlerta: (v: number) => void
   setMetodoSugestao: (v: string) => void
   setSaldoInicialDinheiro: (v: number) => void
+  salvarSaldoInicialDinheiro: (v: number) => Promise<void>
   setPerfil: (v: Perfil) => void
   onboardingCompleto: boolean
   setOnboardingCompleto: (v: boolean) => void
@@ -579,6 +580,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (error) console.error('save user_preferences:', error)
   }
 
+  async function salvarSaldoInicialDinheiro(v: number) {
+    setSaldoInicialDinheiroState(v)
+    if (!canSave()) return
+    const uid = userIdRef.current!
+    const { error } = await supabase.from('user_preferences').upsert({
+      user_id: uid,
+      saldo_inicial_dinheiro: v,
+      atualizado_em: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+    if (error) console.error('save saldo_inicial_dinheiro:', error)
+  }
+
   // ── Auto-save effects ────────────────────────────────────────────────
   // dataLoaded é state (não ref) para que o effect re-execute quando o load terminar,
   // garantindo que itens adicionados durante o load sejam salvos no banco.
@@ -688,7 +701,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user, carregando,
       contas, categorias, extratoData, faturaData, planos, planosReal,
       planejamentoLockado, desvioMinPerc, percentualAlerta, metodoSugestao, perfil,
-      saldoInicialDinheiro, setSaldoInicialDinheiro: setSaldoInicialDinheiroState,
+      saldoInicialDinheiro, setSaldoInicialDinheiro: setSaldoInicialDinheiroState, salvarSaldoInicialDinheiro,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
