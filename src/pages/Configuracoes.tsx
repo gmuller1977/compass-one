@@ -441,7 +441,7 @@ export default function Configuracoes() {
           </h1>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, width:'100%', maxWidth:420 }}>
             {[
-              { icon:'🏦', label:'Bancos',       fn: () => { setAba('bancos');     setMobileView('list'); novaConta('bancos') } },
+              { icon:'🏦', label:'Minhas contas', fn: () => { setAba('bancos');     setMobileView('list'); novaConta('bancos') } },
               { icon:'💳', label:'Cartões',      fn: () => { setAba('cartoes');    setMobileView('list'); novaConta('cartoes') } },
               { icon:'🏷', label:'Categorias',   fn: () => { setAba('categorias'); setSubAbaCat('categorias'); setMobileView('list') } },
               { icon:'📁', label:'Grupos',       fn: () => { setAba('categorias'); setSubAbaCat('grupos');     setMobileView('list') } },
@@ -472,7 +472,7 @@ export default function Configuracoes() {
             ‹ Voltar
           </button>
           <span style={{ fontSize:14, fontWeight:700, color:COR.texto, marginLeft:4 }}>
-            {aba === 'bancos' ? '🏦 Bancos'
+            {aba === 'bancos' ? '🏦 Minhas contas'
               : aba === 'cartoes' ? '💳 Cartões'
               : aba === 'categorias' ? (subAbaCat === 'grupos' ? '📁 Grupos' : '🏷 Categorias')
               : aba === 'perfil' ? '👤 Perfil' : '⚙️ Preferências'}

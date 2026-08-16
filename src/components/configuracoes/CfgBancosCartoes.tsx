@@ -146,13 +146,10 @@ export default function CfgBancosCartoes({
           })}
           {/* Divisor + Card Dinheiro — só na aba Bancos */}
           {aba === 'bancos' && (
-            <div style={{ marginTop: 4, marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 12px' }}>
-                <div style={{ flex: 1, height: 1, background: COR.borda }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: .6, whiteSpace: 'nowrap' }}>
-                  💵 Dinheiro em carteira
-                </span>
-                <div style={{ flex: 1, height: 1, background: COR.borda }} />
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave,
+                textTransform: 'uppercase', letterSpacing: .6, marginBottom: 8 }}>
+                💵 Dinheiro em carteira
               </div>
 
               <div style={{
