@@ -134,10 +134,15 @@ export default function Acompanhamento() {
 
     const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; descricao?: string; valor: number }[]> }>
     for (const card of contas.filter(c => c.tipo === 'cartao')) {
-      const key = `${card.id}-${ano}-${mesStr}`
+      const billingOff = (card.diaVencimento ?? 1) < (card.diaFechamento ?? 1) ? 1 : 0
+      let pMes = mes - billingOff, pAno = ano
+      if (pMes < 0) { pMes += 12; pAno-- }
+      const pMesStr = String(pMes + 1).padStart(2, '0')
+      const key = `${card.id}-${pAno}-${pMesStr}`
       const dm = fat[key]
       if (!dm) continue
-      for (let d = 1; d <= totalDias; d++) {
+      const pTotalDias = new Date(pAno, pMes + 1, 0).getDate()
+      for (let d = 1; d <= pTotalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           if (l.tipo === 'entrada') {
             const c = getSaida(l.categoria)
