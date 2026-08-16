@@ -69,34 +69,62 @@ export default function EvolucaoGrupo({
     ? (totalReal === 0 ? '#fcd34d' : totalReal >= totalPrev ? '#4ade80' : '#fcd34d')
     : (totalReal === 0 ? '#93c5fd' : totalReal <= totalPrev ? '#93c5fd' : '#fca5a5')
 
+  const perc      = totalPrev > 0 ? totalReal / totalPrev : (totalReal > 0 ? 1 : 0)
+  const percClamp = Math.min(perc, 1)
+  const percLabel = totalPrev > 0 || totalReal > 0 ? `${Math.round(perc * 100)}%` : '—'
+  const barCor    = isEntrada
+    ? (totalReal === 0 ? '#fbbf24' : totalReal >= totalPrev ? '#4ade80' : '#fbbf24')
+    : (totalReal === 0 ? '#fbbf24' : totalReal > totalPrev ? '#f87171' : '#4ade80')
+  const barPctCor = perc === 0 ? 'rgba(255,255,255,0.5)' : perc > 1 ? '#fca5a5' : '#fff'
+
   const gradient = isEntrada
     ? 'linear-gradient(135deg,#0f2878,#1a56db)'
     : 'linear-gradient(135deg,#7f1d1d,#b91c1c)'
   const tipoLabel = isEntrada ? 'Recebimento' : 'Pagamento'
 
-  const hdrCol = (label: string, valor: string, cor?: string) => (
-    <div style={{ textAlign: 'right' }}>
-      <div style={{ fontSize: 8, opacity: .6, textTransform: 'uppercase' as const, letterSpacing: .3 }}>{label}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: cor ?? '#fff', marginTop: 2 }}>{valor}</div>
-    </div>
-  )
-
   return (
     <div style={{ flexShrink: 0 }}>
-      {/* Header gradiente */}
+      {/* Header gradiente — mesmo layout das linhas para alinhar colunas */}
       <div style={{
         background: gradient, borderRadius: '12px 12px 0 0',
-        padding: '12px 16px', color: '#fff',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+        padding: '10px 14px', color: '#fff',
+        display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 18 }}>{grupoIcone}</span>
-          {tipoLabel} — {grupoLabel}
+        {/* Espaçador invisível no lugar da barra lateral (3px) */}
+        <div style={{ width: 3, flexShrink: 0 }} />
+        {/* Ícone no mesmo tamanho do ícone das categorias */}
+        <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+          background: 'rgba(255,255,255,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+          {grupoIcone}
         </div>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-          {hdrCol('Previsto', totalPrev > 0 ? fmt(totalPrev) : '—')}
-          {hdrCol('Realizado', totalReal > 0 ? fmt(totalReal) : '—')}
-          {hdrCol(difLabel, (totalPrev === 0 && totalReal === 0) ? '—' : fmt(difVal), difCor)}
+        {/* Título */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700 }}>{tipoLabel} — {grupoLabel}</div>
+        </div>
+        {/* Previsto */}
+        <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
+          <div style={{ fontSize: 8, opacity: .6, textTransform: 'uppercase', letterSpacing: .3 }}>Previsto</div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>{totalPrev > 0 ? fmt(totalPrev) : '—'}</div>
+        </div>
+        {/* Realizado */}
+        <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
+          <div style={{ fontSize: 8, opacity: .6, textTransform: 'uppercase', letterSpacing: .3 }}>Realizado</div>
+          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>{totalReal > 0 ? fmt(totalReal) : '—'}</div>
+        </div>
+        {/* Diferença */}
+        <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
+          <div style={{ fontSize: 8, opacity: .6, textTransform: 'uppercase', letterSpacing: .3 }}>{difLabel}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: difCor }}>
+            {(totalPrev === 0 && totalReal === 0) ? '—' : fmt(difVal)}
+          </div>
+        </div>
+        {/* Barra de progresso */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, width: 90, justifyContent: 'flex-end', flexShrink: 0 }}>
+          <div style={{ width: 50, height: 5, background: 'rgba(255,255,255,0.25)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 2, width: `${percClamp * 100}%`, background: barCor }} />
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, minWidth: 32, textAlign: 'right', color: barPctCor }}>{percLabel}</div>
         </div>
       </div>
 
