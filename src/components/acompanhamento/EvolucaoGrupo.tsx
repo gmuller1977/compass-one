@@ -118,6 +118,11 @@ export default function EvolucaoGrupo({
               real={cd?.total ?? 0}
               isEntrada={isEntrada}
               categorias={categorias}
+              lancamentos={cd?.lancamentos ?? []}
+              totalBanc={cd?.totalBanc ?? 0}
+              totalCart={cd?.totalCart ?? 0}
+              totalDinheiro={cd?.totalDinheiro ?? 0}
+              mes={mes}
             />
           )
         })}
