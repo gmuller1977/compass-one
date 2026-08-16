@@ -11,7 +11,7 @@ import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import AcResumoBoxes from '../components/acompanhamento/AcResumoBoxes'
-import AcSecao from '../components/acompanhamento/AcSecao'
+import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -318,45 +318,33 @@ export default function Acompanhamento() {
           />
         ) : (
           <>
-            {/* ENTRADAS */}
-            {(dadosAno.entradas ?? []).length > 0 && (
-              <div style={{background:COR.branco,borderRadius:12,
-                border:`1px solid ${COR.borda}`,overflow:'hidden',flexShrink:0}}>
-                <div style={{padding:'10px 12px 8px',borderBottom:`1px solid ${COR.borda}`,
-                  display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:14,fontWeight:700,color:COR.verde}}>↑ Recebimento</span>
-                </div>
-                <AcSecao
-                  tipo="entrada"
-                  grupos={gruposEntrada}
-                  planCats={dadosAno.entradas ?? []}
-                  realMap={entradasMap}
-                  categorias={categorias}
-                  cartaoNomes={cartaoNomes}
-                  mes={mes}
-                />
-              </div>
-            )}
+            {/* ENTRADAS — um card por grupo */}
+            {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
+              <EvolucaoGrupo
+                key={`entrada-${grupo}`}
+                tipo="entrada"
+                grupo={grupo}
+                planCats={dadosAno.entradas ?? []}
+                realMap={entradasMap}
+                categorias={categorias}
+                cartaoNomes={cartaoNomes}
+                mes={mes}
+              />
+            ))}
 
-            {/* SAÍDAS */}
-            {(dadosAno.saidas ?? []).length > 0 && (
-              <div style={{background:COR.branco,borderRadius:12,
-                border:`1px solid ${COR.borda}`,overflow:'hidden',flexShrink:0}}>
-                <div style={{padding:'10px 12px 8px',borderBottom:`1px solid ${COR.borda}`,
-                  display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:14,fontWeight:700,color:COR.vermelho}}>↓ Pagamento</span>
-                </div>
-                <AcSecao
-                  tipo="saida"
-                  grupos={gruposSaida}
-                  planCats={dadosAno.saidas ?? []}
-                  realMap={saidasMap}
-                  categorias={categorias}
-                  cartaoNomes={cartaoNomes}
-                  mes={mes}
-                />
-              </div>
-            )}
+            {/* SAÍDAS — um card por grupo */}
+            {(dadosAno.saidas ?? []).length > 0 && gruposSaida.map(grupo => (
+              <EvolucaoGrupo
+                key={`saida-${grupo}`}
+                tipo="saida"
+                grupo={grupo}
+                planCats={dadosAno.saidas ?? []}
+                realMap={saidasMap}
+                categorias={categorias}
+                cartaoNomes={cartaoNomes}
+                mes={mes}
+              />
+            ))}
           </>
         )}
       </div>
