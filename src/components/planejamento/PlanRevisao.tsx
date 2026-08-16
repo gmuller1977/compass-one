@@ -3,6 +3,17 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { supabase } from '../../lib/supabase'
 import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
 import PageHeader from '../PageHeader'
+import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
+
+function useIsMobile() {
+  const [v, setV] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const h = () => setV(window.innerWidth < 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
 
 interface Props {
   anoAtual: number
@@ -73,6 +84,7 @@ export default function PlanRevisao({
   const [etapa2Erro, setEtapa2Erro] = useState('')
   const [mostrarCal, setMostrarCal] = useState(false)
   const calRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!mostrarCal) return
@@ -334,48 +346,13 @@ export default function PlanRevisao({
           {etapa === 1 && (
             <div>
               {/* Resumo financeiro */}
-              <div style={{
-                background: COR.branco, borderRadius: 14,
-                boxShadow: '0 1px 6px rgba(0,0,0,.07)', overflow: 'hidden', marginBottom: 16,
-              }}>
-                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${COR.borda}` }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto }}>
-                    {MESES_FULL[mesSel]} {anoAtual}
-                  </div>
-                  <div style={{ fontSize: 11, color: COR.textoSuave }}>Planejado vs realizado</div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: COR.borda }}>
-                  {[
-                    { label: 'Receitas previstas', val: totalRecPrev, cor: COR.verde },
-                    { label: 'Receitas realizadas', val: totalRecReal, cor: COR.verde },
-                    { label: 'Despesas previstas', val: totalDesPrev, cor: COR.vermelho },
-                    { label: 'Despesas realizadas', val: totalDesReal, cor: COR.vermelho },
-                  ].map((row, i) => (
-                    <div key={i} style={{ background: COR.branco, padding: '12px 16px' }}>
-                      <div style={{ fontSize: 10, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                        {row.label}
-                      </div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: row.cor, marginTop: 2 }}>
-                        {fmt(row.val, true)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ background: '#f8fafc' }}>
-                  <div style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: COR.textoSuave }}>Resultado previsto</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: (totalRecPrev - totalDesPrev) >= 0 ? COR.verde : COR.vermelho }}>
-                      {fmt(totalRecPrev - totalDesPrev, true)}
-                    </span>
-                  </div>
-                  <div style={{ padding: '4px 16px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${COR.borda}` }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: COR.textoSuave }}>Resultado realizado</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: (totalRecReal - totalDesReal) >= 0 ? COR.verde : COR.vermelho }}>
-                      {fmt(totalRecReal - totalDesReal, true)}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <AcResumoBoxes
+                isMobile={isMobile}
+                totalPrevE={totalRecPrev}
+                totalPrevS={totalDesPrev}
+                totalRealE={totalRecReal}
+                totalRealS={totalDesReal}
+              />
 
               {/* Categorias com desvio */}
               {catsDesvio.length > 0 ? (
