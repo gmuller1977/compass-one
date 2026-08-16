@@ -51,10 +51,6 @@ export default function AcSecao({
         const allCats = [...catsComDesc, ...extraCats]
         if (allCats.length === 0) return null
 
-        // Rastreia quais chaves-base já foram "consumidas" pelo fallback
-        // para evitar duplicar o mesmo valor em múltiplas variantes do mesmo nome
-        const usedFallbackBase = new Set<string>()
-
         return (
           <div key={grupo}>
             <div style={{
@@ -71,12 +67,7 @@ export default function AcSecao({
             <div style={{ background: COR.branco }}>
               {allCats.map((cat, idx) => {
                 const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
-                let cd = realMap[realKey]
-                // Fallback: lançamentos antigos sem subCategoria gravados como nome simples
-                if (!cd && cat.descricao && !usedFallbackBase.has(cat.nome)) {
-                  const base = realMap[cat.nome]
-                  if (base) { cd = base; usedFallbackBase.add(cat.nome) }
-                }
+                const cd = realMap[realKey]
                 const uid = `${tipo}-${grupo}-${cat.nome}-${idx}`
                 return (
                   <AcCatRow
