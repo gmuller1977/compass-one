@@ -25,7 +25,7 @@ type JustState = {
 
 type CatDesvio = {
   tipo: 'e' | 's'
-  cat: { nome: string; v: number[] }
+  cat: { nome: string; descricao?: string; v: number[] }
   ri: number
   planejado: number
   real: number
@@ -125,7 +125,8 @@ export default function PlanRevisao({
     for (const { tipo, cat, ri, desvioPercent } of catsDesvio) {
       const key = `${tipo}-${ri}`
       if (desvioPercent > 20 && !getJust(key).justificativa.trim()) {
-        return `Justificativa obrigatória: ${cat.nome} (desvio ${Math.round(desvioPercent)}%)`
+        const nomeExib = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
+        return `Justificativa obrigatória: ${nomeExib} (desvio ${Math.round(desvioPercent)}%)`
       }
     }
     return null
@@ -400,7 +401,9 @@ export default function PlanRevisao({
                       }}>
                         <span style={{ fontSize: 16, flexShrink: 0 }}>{icone}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto }}>{cat.nome}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto }}>
+                            {cat.nome}{cat.descricao && <span style={{ fontWeight: 400, color: COR.textoSuave }}> · {cat.descricao}</span>}
+                          </div>
                           <div style={{ display: 'flex', gap: 10, marginTop: 2, flexWrap: 'wrap' }}>
                             <span style={{ fontSize: 11, color: COR.textoSuave }}>
                               Plan: <b style={{ color: COR.texto }}>{fmt(planejado)}</b>
@@ -478,7 +481,9 @@ export default function PlanRevisao({
                     }}>
                       <span style={{ fontSize: 18 }}>{icone}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto }}>{cat.nome}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto }}>
+                          {cat.nome}{cat.descricao && <span style={{ fontWeight: 400, color: COR.textoSuave }}> · {cat.descricao}</span>}
+                        </div>
                         <div style={{ display: 'flex', gap: 10, marginTop: 2 }}>
                           <span style={{ fontSize: 11, color: COR.textoSuave }}>
                             Prev: <b>{fmt(planejado)}</b>
@@ -750,7 +755,7 @@ export default function PlanRevisao({
                       <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icone}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>
-                          {cat.nome}
+                          {cat.nome}{cat.descricao && <span style={{ fontWeight: 400, color: COR.textoSuave }}> · {cat.descricao}</span>}
                           <span style={{ fontSize: 11, fontWeight: 400, color: COR.textoMuted }}>{tipoLabel}</span>
                         </div>
                         <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>{acaoLabel}</div>
