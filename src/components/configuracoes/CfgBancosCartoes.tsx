@@ -461,7 +461,7 @@ export default function CfgBancosCartoes({
                 </>
               )}
               <div>
-                <label style={labelSt}>Saldo atual</label>
+                <label style={labelSt}>Saldo inicial</label>
                 <input value={saldoStr}
                   onChange={e => {
                     const raw = e.target.value.replace(/[^0-9.,]/g, '')
