@@ -64,8 +64,18 @@ export default function Acompanhamento() {
     const entradas: Record<string, CatReal> = {}
     const sufixo = `-${ano}-${mesStr}`
 
-    // Chave do bucket: "nome" para categorias únicas, "nome||subCategoria" quando subCategoria está definida
+    // Chave do bucket: "nome||subCategoria" quando subCategoria definida, caso contrário só "nome"
     function rKey(nome: string, sub?: string) { return sub ? `${nome}||${sub}` : nome }
+
+    // Se o lançamento não tem subCategoria, tenta resolver automaticamente:
+    // quando existe UMA única variante ativa para esse nome+tipo, usa a descricao dela.
+    function resolverSub(nome: string, tipo: 'saida' | 'entrada', sub?: string): string | undefined {
+      if (sub) return sub
+      const variantes = categorias.filter(
+        (c: Categoria) => c.nome === nome && c.tipo === tipo && c.ativa && c.descricao
+      )
+      return variantes.length === 1 ? variantes[0].descricao : undefined
+    }
 
     const getSaida   = (k: string) => { if (!saidas[k])   saidas[k]  = mkCatReal(); return saidas[k] }
     const getEntrada = (k: string) => { if (!entradas[k]) entradas[k] = mkCatReal(); return entradas[k] }
@@ -80,7 +90,8 @@ export default function Acompanhamento() {
       for (let d = 1; d <= totalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           const fonte = isDinheiroKey ? 'dinheiro' : (l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco')
-          const sub   = (l as { subCategoria?: string }).subCategoria
+          const sub   = resolverSub(l.categoria, l.tipo === 'saida' ? 'saida' : 'entrada',
+            (l as { subCategoria?: string }).subCategoria)
           if (l.tipo === 'saida') {
             const c = getSaida(rKey(l.categoria, sub))
             c.total += l.valor
@@ -106,12 +117,13 @@ export default function Acompanhamento() {
           const planVal = planList?.find(c => c.nome === fixaCat.nome)?.v[mes] ?? 0
           const val = dm.fixasValorOverride?.[fixaCat.id] ?? (planVal > 0 ? planVal : 0)
           if (val <= 0) continue
+          const fixaSub = resolverSub(fixaCat.nome, fixaCat.tipo as 'saida' | 'entrada', fixaCat.descricao)
           if (fixaCat.tipo === 'saida') {
-            const c = getSaida(fixaCat.nome)
+            const c = getSaida(rKey(fixaCat.nome, fixaSub))
             c.total += val; c.totalBanc += val
             c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
           } else {
-            const c = getEntrada(fixaCat.nome)
+            const c = getEntrada(rKey(fixaCat.nome, fixaSub))
             c.total += val; c.totalBanc += val
             c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
           }
