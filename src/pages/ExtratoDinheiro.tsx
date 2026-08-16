@@ -18,7 +18,7 @@ function mesKey(ano: number, mes: number) { return `dinheiro-${ano}-${String(mes
 type TipoLanc = 'entrada' | 'saida'
 
 export default function ExtratoDinheiro() {
-  const { categorias, extratoData, updateExtratoMes } = useApp()
+  const { categorias, extratoData, updateExtratoMes, saldoInicialDinheiro } = useApp()
   const hoje = new Date()
   const [mes,  setMes]  = useState(hoje.getMonth())
   const [ano,  setAno]  = useState(hoje.getFullYear())
@@ -56,6 +56,26 @@ export default function ExtratoDinheiro() {
     }
     return { totalEnt, totalSai }
   }, [mesDados, totalDias])
+
+  // Saldo acumulado dos meses anteriores + saldo inicial (igual saldoBase no ExtratoConsolidado)
+  const saldoAnterior = useMemo(() => {
+    let acc = saldoInicialDinheiro
+    for (const [k, dados] of Object.entries(extratoData)) {
+      if (!k.startsWith('dinheiro-')) continue
+      const sufixo = k.slice('dinheiro-'.length)
+      const ky = parseInt(sufixo.slice(0, 4))
+      const km = parseInt(sufixo.slice(5, 7)) - 1
+      if (isNaN(ky) || isNaN(km)) continue
+      if (ky > ano || (ky === ano && km >= mes)) continue
+      const d = dados as { lancamentos?: Record<number, { tipo: string; valor: number }[]> }
+      for (const itens of Object.values(d.lancamentos ?? {})) {
+        for (const item of itens) {
+          acc += item.tipo === 'entrada' ? item.valor : -item.valor
+        }
+      }
+    }
+    return acc
+  }, [saldoInicialDinheiro, extratoData, ano, mes])
 
   function salvar() {
     if (!fCat || !fValor) return
@@ -115,7 +135,7 @@ export default function ExtratoDinheiro() {
     setEditId(null); setFValor(''); setFDesc(''); setFCat('')
   }
 
-  const saldo = totalEnt - totalSai
+  const saldo = saldoAnterior + totalEnt - totalSai
 
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:COR.fundo }}>
@@ -150,6 +170,10 @@ export default function ExtratoDinheiro() {
           borderRadius:8, padding:'5px 12px', cursor:'pointer', fontSize:16, color:COR.textoSuave }}>›</button>
         <div style={{ flex:1 }}/>
         <div style={{ display:'flex', gap:8 }}>
+          <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, padding:'5px 12px', textAlign:'center' }}>
+            <div style={{ fontSize:9, color:COR.azul, fontWeight:700, textTransform:'uppercase', letterSpacing:.4 }}>Saldo anterior</div>
+            <div style={{ fontSize:13, fontWeight:700, color:COR.azul }}>{fmt(saldoAnterior)}</div>
+          </div>
           <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'5px 12px', textAlign:'center' }}>
             <div style={{ fontSize:9, color:COR.verde, fontWeight:700, textTransform:'uppercase', letterSpacing:.4 }}>Entradas</div>
             <div style={{ fontSize:13, fontWeight:700, color:COR.verde }}>{fmt(totalEnt)}</div>
@@ -161,7 +185,7 @@ export default function ExtratoDinheiro() {
           <div style={{ background: saldo>=0?'#f0fdf4':'#fff5f5', border:`1px solid ${saldo>=0?'#bbf7d0':'#fecaca'}`,
             borderRadius:8, padding:'5px 12px', textAlign:'center' }}>
             <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:.4,
-              color:saldo>=0?COR.verde:COR.vermelho }}>Saldo</div>
+              color:saldo>=0?COR.verde:COR.vermelho }}>Saldo atual</div>
             <div style={{ fontSize:13, fontWeight:700, color:saldo>=0?COR.verde:COR.vermelho }}>{fmt(saldo)}</div>
           </div>
         </div>
