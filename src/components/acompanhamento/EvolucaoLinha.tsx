@@ -43,7 +43,7 @@ function calcDif(isEntrada: boolean, prev: number, real: number) {
 export default function EvolucaoLinha({
   nome, descricao, prev, real, isEntrada, categorias, isSubtotal, grupoLabel,
 }: EvolucaoLinhaProps) {
-  const { icone, cor: corIcone } = iconeCategoria(categorias, nome)
+  const { icone } = iconeCategoria(categorias, nome)
   const status = calcStatus(isEntrada, prev, real)
   const dif    = calcDif(isEntrada, prev, real)
 
