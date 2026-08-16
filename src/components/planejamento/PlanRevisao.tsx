@@ -281,7 +281,7 @@ export default function PlanRevisao({
   )
 
   return (
-    <div style={{ padding: '16px 20px', maxWidth: 680, margin: '0 auto' }}>
+    <div>
       {/* Toast */}
       {toastMsg && (
         <div style={{
@@ -295,17 +295,19 @@ export default function PlanRevisao({
         </div>
       )}
 
-      {/* Header com navegação de mês */}
-      {mesesPassados.length === 0 ? (
-        <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal"
-          subtitle="Nenhum mês passado disponível para revisão" />
-      ) : (
-        <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal"
-          rightContent={calNav} />
-      )}
+      {/* Header — largura total, igual ao Acompanhamento */}
+      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+        {mesesPassados.length === 0 ? (
+          <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal"
+            subtitle="Nenhum mês passado disponível para revisão" />
+        ) : (
+          <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal"
+            rightContent={calNav} />
+        )}
+      </div>
 
       {mesesPassados.length > 0 && (
-        <>
+        <div style={{ padding: '16px 16px 80px' }}>
           {/* Indicador de etapas */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f1f5f9', borderRadius: 10, padding: 4 }}>
             {(['1. Visão Geral', '2. Justificar', '3. Confirmar'] as const).map((label, idx) => {
@@ -807,7 +809,7 @@ export default function PlanRevisao({
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   )
