@@ -5,7 +5,7 @@ export function nomeExibicao(cat: Cat) {
 }
 export type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 export type Editando = { tipo: 'e' | 's'; row: number; mes: number } | null
-export type ViewMode = 'grade' | 'planilha' | 'lista' | 'revisao'
+export type ViewMode = 'grade' | 'planilha' | 'lista'
 export type Aba = 'meu-plano' | 'realizado' | 'revisao'
 
 export const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']

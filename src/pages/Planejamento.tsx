@@ -8,7 +8,6 @@ import { type Aba, type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPlanilha from '../components/planejamento/PlanPlanilha'
 import PlanLista from '../components/planejamento/PlanLista'
-import PlanRevisao from '../components/planejamento/PlanRevisao'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -47,7 +46,6 @@ export default function Planejamento({
   const viewMode: ViewMode =
     modoParam === 'planilha' ? 'planilha'
     : modoParam === 'lista' ? 'lista'
-    : modoParam === 'revisao' ? 'revisao'
     : 'grade'
 
   const dadosAtivos = aba === 'realizado' ? plan.dadosRealizadoFinal : plan.dadosPrevistoFinal
@@ -55,12 +53,6 @@ export default function Planejamento({
 
   function handleSave(tipo: 'e' | 's', ri: number, mi: number, valor: number) {
     plan.editarValor(tipo, ri, mi, valor, aba)
-  }
-
-  function handleAjustar(tipo: 'e' | 's', ri: number, mesInicio: number, valor: number) {
-    for (let mi = mesInicio; mi <= 11; mi++) {
-      plan.editarValor(tipo, ri, mi, valor, aba)
-    }
   }
 
   function handleAtivar() {
@@ -115,7 +107,6 @@ export default function Planejamento({
               {([
                 ['grade', 'Grade'],
                 ['lista', 'Lista'],
-                ['revisao', 'Revisão'],
               ] as [ViewMode, string][]).map(([v, label]) => (
                 <button
                   key={v}
@@ -193,7 +184,7 @@ export default function Planejamento({
   }
 
   const viewModeLabels: Record<ViewMode, string> = {
-    grade: 'Grade', planilha: 'Planilha', lista: 'Lista', revisao: 'Revisão',
+    grade: 'Grade', planilha: 'Planilha', lista: 'Lista',
   }
 
   return (
@@ -236,16 +227,7 @@ export default function Planejamento({
       {renderAvisoPlanoBloqueado()}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {viewMode === 'revisao' ? (
-          <PlanRevisao
-            anoAtual={anoAtual}
-            mesAtual={plan.mesAtual}
-            dadosPrevisto={plan.dadosPrevistoFinal}
-            lancadoPorCatMes={plan.lancadoPorCatMes}
-            categorias={plan.categorias}
-            onAjustar={handleAjustar}
-          />
-        ) : viewMode === 'grade' ? (
+        {viewMode === 'grade' ? (
           <PlanGrade
             aba={aba as 'meu-plano' | 'realizado'}
             anoAtual={anoAtual}

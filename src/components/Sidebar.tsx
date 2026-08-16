@@ -33,7 +33,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: '📆 Todo mês',
     items: [
-      { icon: '🔄', label: 'Revisão mensal', path: '/planejamento?modo=revisao', exact: true  },
+      { icon: '🔄', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
       { icon: '🔮', label: 'Simulador',      path: '/simulacao',                 exact: false },
     ],
   },
@@ -42,7 +42,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       {
         icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
-        excludeIfSearch: '?modo=revisao',
         sub: [
           { label: 'Assistente', path: '/planejamento?modo=wizard'   },
           { label: 'Grade',      path: '/planejamento?modo=grade'    },
