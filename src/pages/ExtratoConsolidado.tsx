@@ -270,7 +270,7 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   //   + lançamentos variáveis de meses anteriores
   //   + fixas confirmadas (fixasConsolidadas) de meses anteriores
   const saldoBase = useMemo(() => {
-    const base = contasExtrato.reduce((s, c) => s + (c.saldoInicial ?? 0), 0)
+    const base = contasExtrato.reduce((s, c) => s + (c.saldoInicial ?? 0), 0) + saldoInicialDinheiro
     const todasContas = [...contasExtrato.map(c => c.id), 'dinheiro']
     let acc = base
 
@@ -347,7 +347,7 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
     }
 
     return acc
-  }, [contasExtrato, extratoData, faturaData, planos, planosReal, categorias, ano, mes])
+  }, [contasExtrato, extratoData, faturaData, planos, planosReal, categorias, ano, mes, saldoInicialDinheiro])
 
   // saldosConf: apenas itens confirmados → INICIAL/ATUAL/FINAL para dias passados e hoje
   // saldosAll:  até hoje = confirmados; a partir de amanhã = todos os itens
