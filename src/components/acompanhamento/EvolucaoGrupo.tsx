@@ -59,10 +59,27 @@ export default function EvolucaoGrupo({
     return iconeCategoria(categorias, primNome).icone
   })()
 
+  const difVal = isEntrada
+    ? (totalReal === 0 ? totalPrev : totalReal >= totalPrev ? totalReal - totalPrev : totalPrev - totalReal)
+    : (totalReal === 0 ? totalPrev : totalReal <= totalPrev ? totalPrev - totalReal : totalReal - totalPrev)
+  const difLabel = isEntrada
+    ? (totalReal === 0 ? 'A receber' : totalReal >= totalPrev ? 'Diferença' : 'Faltou')
+    : (totalReal === 0 ? 'Disponível' : totalReal <= totalPrev ? 'Disponível' : 'Estourou')
+  const difCor = isEntrada
+    ? (totalReal === 0 ? '#fcd34d' : totalReal >= totalPrev ? '#4ade80' : '#fcd34d')
+    : (totalReal === 0 ? '#93c5fd' : totalReal <= totalPrev ? '#93c5fd' : '#fca5a5')
+
   const gradient = isEntrada
     ? 'linear-gradient(135deg,#0f2878,#1a56db)'
     : 'linear-gradient(135deg,#7f1d1d,#b91c1c)'
   const tipoLabel = isEntrada ? 'Recebimento' : 'Pagamento'
+
+  const hdrCol = (label: string, valor: string, cor?: string) => (
+    <div style={{ textAlign: 'right' }}>
+      <div style={{ fontSize: 8, opacity: .6, textTransform: 'uppercase' as const, letterSpacing: .3 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: cor ?? '#fff', marginTop: 2 }}>{valor}</div>
+    </div>
+  )
 
   return (
     <div style={{ flexShrink: 0 }}>
@@ -70,15 +87,16 @@ export default function EvolucaoGrupo({
       <div style={{
         background: gradient, borderRadius: '12px 12px 0 0',
         padding: '12px 16px', color: '#fff',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span style={{ fontSize: 18 }}>{grupoIcone}</span>
           {tipoLabel} — {grupoLabel}
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 8, opacity: .6, textTransform: 'uppercase', letterSpacing: .3 }}>Total previsto</div>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>{totalPrev > 0 ? fmt(totalPrev) : '—'}</div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          {hdrCol('Previsto', totalPrev > 0 ? fmt(totalPrev) : '—')}
+          {hdrCol('Realizado', totalReal > 0 ? fmt(totalReal) : '—')}
+          {hdrCol(difLabel, (totalPrev === 0 && totalReal === 0) ? '—' : fmt(difVal), difCor)}
         </div>
       </div>
 
@@ -102,16 +120,6 @@ export default function EvolucaoGrupo({
             />
           )
         })}
-
-        <EvolucaoLinha
-          nome="__subtotal__"
-          prev={totalPrev}
-          real={totalReal}
-          isEntrada={isEntrada}
-          categorias={categorias}
-          isSubtotal
-          grupoLabel={grupoLabel}
-        />
       </div>
     </div>
   )
