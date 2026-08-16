@@ -82,6 +82,7 @@ type AppCtx = {
   desvioMinPerc: number
   percentualAlerta: number
   metodoSugestao: string
+  saldoInicialDinheiro: number
   perfil: Perfil
   setContas:      Dispatch<SetStateAction<Conta[]>>
   setCategorias:  Dispatch<SetStateAction<Categoria[]>>
@@ -95,6 +96,7 @@ type AppCtx = {
   setDesvioMinPerc: (v: number) => void
   setPercentualAlerta: (v: number) => void
   setMetodoSugestao: (v: string) => void
+  setSaldoInicialDinheiro: (v: number) => void
   setPerfil: (v: Perfil) => void
   onboardingCompleto: boolean
   setOnboardingCompleto: (v: boolean) => void
@@ -250,6 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [onboardingCompleto,  setOnboardingCompletoState]  = useState(false)
   const [objetivoUsuario,     setObjetivoUsuarioState]     = useState('')
   const [metaSim,             setMetaSimState]             = useState<MetaSim | null>(null)
+  const [saldoInicialDinheiro, setSaldoInicialDinheiroState] = useState(0)
 
   // ── Auth ─────────────────────────────────────────────────────────────
   // Usamos SOMENTE onAuthStateChange (não getSession separado) para garantir que
@@ -364,6 +367,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMetodoSugestaoState(pref?.metodo_sugestao ?? 'media_3_meses')
     setObjetivoUsuarioState(pref?.objetivo_usuario ?? '')
     setMetaSimState(pref?.meta_simulacao ?? null)
+    setSaldoInicialDinheiroState(Number(pref?.saldo_inicial_dinheiro ?? 0))
 
     // Extrato — filtra contas excluídas (permite 'dinheiro' que não tem conta registrada)
     const extratoLoaded: Record<string, DadosMes> = {}
@@ -554,7 +558,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function saveUserPrefs(
     p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null,
-    pa = 5, metodo = 'media_3_meses'
+    pa = 5, metodo = 'media_3_meses', sid = 0
   ) {
     if (!canSave()) return
     const uid = userIdRef.current!
@@ -569,6 +573,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       metodo_sugestao: metodo,
       objetivo_usuario: ou || null,
       meta_simulacao: ms ?? null,
+      saldo_inicial_dinheiro: sid,
       atualizado_em: new Date().toISOString(),
     })
     if (error) console.error('save user_preferences:', error)
@@ -607,8 +612,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [planosReal])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) return
-    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao)
-  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao])
+    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro)
+  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -665,7 +670,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveFaturaData(faturaData),
         savePlanosData(planos, 'previsto'),
         savePlanosData(planosReal, 'real'),
-        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao),
+        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro),
       ])
     }
     await supabase.auth.signOut()
@@ -683,6 +688,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user, carregando,
       contas, categorias, extratoData, faturaData, planos, planosReal,
       planejamentoLockado, desvioMinPerc, percentualAlerta, metodoSugestao, perfil,
+      saldoInicialDinheiro, setSaldoInicialDinheiro: setSaldoInicialDinheiroState,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,

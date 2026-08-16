@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import PageHeader, { PH_BTN_SOLID } from '../PageHeader'
 import type { Conta } from '../../context/AppContext'
 import {
@@ -26,6 +26,8 @@ interface Props {
   setLimiteStr: (v: string) => void
   faturaStr: string
   setFaturaStr: (v: string) => void
+  saldoInicialDinheiro: number
+  onSaveSaldoDinheiro: (v: number) => void
   erroConta: string
   nomeContaRef: React.RefObject<HTMLInputElement | null>
   tipoBancoRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>
@@ -40,9 +42,12 @@ export default function CfgBancosCartoes({
   contas, editContaId, formConta, setFormConta,
   bancoCustom, setBancoCustom, saldoStr, setSaldoStr,
   limiteStr, setLimiteStr, faturaStr, setFaturaStr,
+  saldoInicialDinheiro, onSaveSaldoDinheiro,
   erroConta, nomeContaRef, tipoBancoRefs,
   novaConta, editarConta, salvarConta, excluirConta,
 }: Props) {
+  const [editandoDinheiro, setEditandoDinheiro] = useState(false)
+  const [localDinheiro, setLocalDinheiro] = useState('')
   return (
     <>
       <div style={{ flex:1, display: (isMobile && mobileView==='form') || nenhumaConta ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
@@ -139,6 +144,82 @@ export default function CfgBancosCartoes({
               </div>
             )
           })}
+          {/* Divisor + Card Dinheiro — só na aba Bancos */}
+          {aba === 'bancos' && (
+            <div style={{ marginTop: 4, marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 12px' }}>
+                <div style={{ flex: 1, height: 1, background: COR.borda }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: .6, whiteSpace: 'nowrap' }}>
+                  💵 Dinheiro em carteira
+                </span>
+                <div style={{ flex: 1, height: 1, background: COR.borda }} />
+              </div>
+
+              <div style={{
+                background: COR.branco, border: `1px solid ${COR.borda}`,
+                borderRadius: 12, padding: '14px 16px',
+                display: 'flex', alignItems: 'center', gap: 14,
+                borderLeft: '4px solid #16a34a',
+                boxShadow: '0 1px 4px rgba(0,0,0,.05)',
+              }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                  💵
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto }}>Dinheiro em carteira</div>
+                  <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>Saldo inicial em espécie</div>
+                  {editandoDinheiro ? (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
+                      <input
+                        autoFocus
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={localDinheiro}
+                        onChange={e => setLocalDinheiro(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            const v = parseFloat(localDinheiro.replace(',', '.')) || 0
+                            onSaveSaldoDinheiro(v)
+                            setEditandoDinheiro(false)
+                          }
+                          if (e.key === 'Escape') setEditandoDinheiro(false)
+                        }}
+                        placeholder="0.00"
+                        style={{ width: 120, border: `1.5px solid ${COR.azul}`, borderRadius: 8, padding: '5px 8px', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                      />
+                      <button
+                        onClick={() => {
+                          const v = parseFloat(localDinheiro.replace(',', '.')) || 0
+                          onSaveSaldoDinheiro(v)
+                          setEditandoDinheiro(false)
+                        }}
+                        style={{ border: 'none', borderRadius: 8, background: COR.azul, color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Salvar
+                      </button>
+                      <button
+                        onClick={() => setEditandoDinheiro(false)}
+                        style={{ border: `1px solid ${COR.borda}`, borderRadius: 8, background: 'transparent', color: COR.textoSuave, fontSize: 12, fontWeight: 600, padding: '5px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setLocalDinheiro(saldoInicialDinheiro > 0 ? saldoInicialDinheiro.toString() : ''); setEditandoDinheiro(true) }}
+                      style={{ marginTop: 6, border: `1px solid ${COR.borda}`, borderRadius: 8, background: COR.branco, color: COR.azul, fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '3px 10px', fontFamily: 'inherit' }}>
+                      ✏ Editar
+                    </button>
+                  )}
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: COR.verde }}>
+                    {fmt(saldoInicialDinheiro)}
+                  </div>
+                  <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 2 }}>Saldo inicial</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

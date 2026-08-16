@@ -43,7 +43,8 @@ export default function Configuracoes() {
           percentualAlerta, setPercentualAlerta,
           metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
-          setOnboardingCompleto } = useApp()
+          setOnboardingCompleto,
+          saldoInicialDinheiro, setSaldoInicialDinheiro } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [modalExcluirConta, setModalExcluirConta] = useState(false)
   const [confirmInput,      setConfirmInput]      = useState('')
@@ -542,6 +543,8 @@ export default function Configuracoes() {
               setLimiteStr={setLimiteStr}
               faturaStr={faturaStr}
               setFaturaStr={setFaturaStr}
+              saldoInicialDinheiro={saldoInicialDinheiro}
+              onSaveSaldoDinheiro={setSaldoInicialDinheiro}
               erroConta={erroConta}
               nomeContaRef={nomeContaRef}
               tipoBancoRefs={tipoBancoRefs}

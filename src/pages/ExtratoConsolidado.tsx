@@ -39,7 +39,7 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
   const calBtnRef = useRef<HTMLButtonElement>(null)
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
 
-  const { contas, categorias, extratoData, faturaData, planos, planosReal } = useApp()
+  const { contas, categorias, extratoData, faturaData, planos, planosReal, saldoInicialDinheiro } = useApp()
 
   const contasExtrato = useMemo(
     () => contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca'),
@@ -402,8 +402,8 @@ export default function ExtratoConsolidado({ mesProp, onMesProp }: { mesProp?: n
         }
       }
     }
-    return te - ts
-  }, [itensPorDia])
+    return saldoInicialDinheiro + te - ts
+  }, [itensPorDia, saldoInicialDinheiro])
 
   const saldoDisponivel = saldoBase + entradasConf - saidasConf
 
