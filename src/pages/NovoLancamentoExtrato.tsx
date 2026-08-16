@@ -69,7 +69,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, planejamentoLockado, updatePlanoReal, faturaData, setFaturaData, user, sairDaConta, percentualAlerta } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, planejamentoLockado, updatePlanoReal, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -256,7 +256,7 @@ export default function NovoLancamentoExtrato() {
     ? categoriasVariaveis.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!)
     : []
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
-  const SALDO_INICIAL = contaInfo?.saldoInicial ?? 0
+  const SALDO_INICIAL = isDinheiro ? saldoInicialDinheiro : (contaInfo?.saldoInicial ?? 0)
   const totalDias = diasNoMes(mes, ano)
   const eMesAtual = mes===mesHoje && ano===anoHoje
   const key       = mesKey(contaIdEfetivo, ano, mes)
@@ -475,7 +475,7 @@ export default function NovoLancamentoExtrato() {
       }
     }
     return acc
-  }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, planosReal, faturaData])
+  }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, planosReal, faturaData, saldoInicialDinheiro])
 
   const saldosDia = useMemo(() => {
     const dadosMesAtual = dados[key]
