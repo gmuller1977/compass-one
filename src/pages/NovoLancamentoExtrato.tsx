@@ -314,7 +314,7 @@ export default function NovoLancamentoExtrato() {
     if (!conta) return
     const k = mesKey(conta.id, ano, mes)
     if (dados[k]?.saldoBancoData === hojeStr) return
-    setModalSaldoValor(saldoSugerido[conta.id] ?? '')
+    setModalSaldoValor(fmt(saldoMes))
     setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
   }, [tabPrincipal])
 
