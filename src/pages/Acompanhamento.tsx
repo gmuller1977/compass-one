@@ -7,6 +7,7 @@ import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
+import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
@@ -175,12 +176,23 @@ export default function Acompanhamento() {
   const gruposEntrada = useMemo(() => buildGrupos('entrada'), [categorias, cartaoNomes])
 
   const { totalPrevS, totalRealS, totalPrevE, totalRealE } = useMemo(() => {
-    const totalPrevS = (dadosAno?.saidas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
-    const totalRealS = Object.values(saidasMap).reduce((s,c) => s + c.total, 0)
-    const totalPrevE = (dadosAno?.entradas ?? []).reduce((s,c) => s + (c.v[mes]??0), 0)
-    const totalRealE = Object.values(entradasMap).reduce((s,c) => s + c.total, 0)
-    return { totalPrevS, totalRealS, totalPrevE, totalRealE }
-  }, [dadosAno, mes, saidasMap, entradasMap])
+    const somarGrupos = (
+      tipo: 'saida' | 'entrada',
+      grupos: string[],
+      planCats: { nome: string; v: number[] }[],
+      realMap: Record<string, CatReal>,
+    ) => grupos.reduce((acc, grupo) => {
+      const cats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
+      return {
+        prev: acc.prev + calcGrupoPrev(cats, mes),
+        real: acc.real + calcGrupoReal(cats, realMap),
+      }
+    }, { prev: 0, real: 0 })
+
+    const e = somarGrupos('entrada', gruposEntrada, dadosAno?.entradas ?? [], entradasMap)
+    const s = somarGrupos('saida',   gruposSaida,   dadosAno?.saidas   ?? [], saidasMap)
+    return { totalPrevE: e.prev, totalRealE: e.real, totalPrevS: s.prev, totalRealS: s.real }
+  }, [dadosAno, mes, entradasMap, saidasMap, gruposEntrada, gruposSaida, categorias, cartaoNomes])
 
   function toggleAberto(uid: string) {
     setAbertos(prev => { const n = new Set(prev); n.has(uid)?n.delete(uid):n.add(uid); return n })
