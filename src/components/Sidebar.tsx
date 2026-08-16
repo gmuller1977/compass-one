@@ -349,7 +349,7 @@ export default function Sidebar() {
                       <div style={{ animation: 'subExpand .18s ease' }}>
 
                         <SubItemRow
-                          label="Banco" icon="🏦"
+                          label="Contas" icon="🏦"
                           active={lancActive && tipoParam === 'banco'}
                           onClick={() => navigate('/novo-lancamento?tipo=banco')}
                         />
