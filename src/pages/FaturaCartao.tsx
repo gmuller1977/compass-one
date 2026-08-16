@@ -265,15 +265,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const conciliado   = diferenca !== null && Math.abs(diferenca) < 0.01
 
   const totalPrevisto = useMemo(() => {
-    const planosAno = (planos as Record<number, { saidas: { nome: string; v: number[] }[] }>)[purchaseAno]
+    const planosAno = (planos as Record<number, { saidas: { nome: string; v: number[] }[] }>)[ano]
     if (!planosAno) return 0
     return planosAno.saidas
       .filter(pc => {
         const cat = categorias.find(c => c.nome === pc.nome)
         return cat?.tipoMovimento === 'cartao' && cat?.ativa
       })
-      .reduce((s, pc) => s + (pc.v[purchaseMes] ?? 0), 0)
-  }, [planos, categorias, purchaseAno, purchaseMes])
+      .reduce((s, pc) => s + (pc.v[mes] ?? 0), 0)
+  }, [planos, categorias, ano, mes])
 
   const grandTotalFaturas = useMemo(() => {
     return contas.filter(c => c.tipo === 'cartao').reduce((total, c) => {
