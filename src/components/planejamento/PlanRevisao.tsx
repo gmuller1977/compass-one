@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { supabase } from '../../lib/supabase'
 import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
+import PageHeader from '../PageHeader'
 
 interface Props {
   anoAtual: number
@@ -70,6 +71,17 @@ export default function PlanRevisao({
   const [toastMsg, setToastMsg] = useState('')
   const [toastOk, setToastOk] = useState(true)
   const [etapa2Erro, setEtapa2Erro] = useState('')
+  const [mostrarCal, setMostrarCal] = useState(false)
+  const calRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!mostrarCal) return
+    const handler = (e: MouseEvent) => {
+      if (calRef.current && !calRef.current.contains(e.target as Node)) setMostrarCal(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [mostrarCal])
 
   const lancado = lancadoPorCatMes[mesSel] ?? { entrada: {}, saida: {} }
 
@@ -194,6 +206,80 @@ export default function PlanRevisao({
     transition: 'all .15s',
   } as React.CSSProperties)
 
+  const idxSel   = mesesPassados.indexOf(mesSel)
+  const prevMes  = idxSel > 0 ? () => mudarMes(mesesPassados[idxSel - 1]) : null
+  const nextMes  = idxSel < mesesPassados.length - 1 ? () => mudarMes(mesesPassados[idxSel + 1]) : null
+
+  const arrowBtn = {
+    width: 28, height: 28, borderRadius: 8, border: 'none',
+    background: 'rgba(255,255,255,0.15)', color: '#fff',
+    cursor: 'pointer', fontSize: 16, fontWeight: 700,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: 'inherit', opacity: 1,
+  } as const
+
+  const calNav = (
+    <div style={{ position: 'relative' }} ref={calRef}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button
+          onClick={() => prevMes?.()}
+          style={{ ...arrowBtn, opacity: prevMes ? 1 : 0.3, cursor: prevMes ? 'pointer' : 'default' }}
+        >‹</button>
+        <button
+          onClick={e => { e.stopPropagation(); setMostrarCal(v => !v) }}
+          style={{
+            fontSize: 20, fontWeight: 800, color: '#fff',
+            border: 'none', background: 'rgba(255,255,255,0.12)',
+            borderRadius: 8, padding: '4px 14px',
+            cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+          }}
+        >
+          {MESES_FULL[mesSel]} {anoAtual}
+        </button>
+        <button
+          onClick={() => nextMes?.()}
+          style={{ ...arrowBtn, opacity: nextMes ? 1 : 0.3, cursor: nextMes ? 'pointer' : 'default' }}
+        >›</button>
+      </div>
+
+      {mostrarCal && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 300,
+            background: '#fff', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.22)',
+            padding: 16, minWidth: 272,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 14, color: COR.texto, textAlign: 'center', marginBottom: 12 }}>
+            {anoAtual}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+            {MESES.map((abrev, i) => {
+              const disponivel = mesesPassados.includes(i)
+              const ativo      = i === mesSel
+              return (
+                <button
+                  key={i}
+                  disabled={!disponivel}
+                  onClick={() => { mudarMes(i); setMostrarCal(false) }}
+                  style={{
+                    padding: '8px 4px', border: 'none', borderRadius: 8,
+                    cursor: disponivel ? 'pointer' : 'default',
+                    fontFamily: 'inherit', fontSize: 12,
+                    fontWeight: ativo ? 700 : 500,
+                    background: ativo ? COR.azul : disponivel ? '#f1f5f9' : 'transparent',
+                    color: ativo ? '#fff' : disponivel ? COR.texto : '#cbd5e1',
+                  }}
+                >{abrev}</button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div style={{ padding: '16px 20px', maxWidth: 680, margin: '0 auto' }}>
       {/* Toast */}
@@ -209,26 +295,14 @@ export default function PlanRevisao({
         </div>
       )}
 
-      {/* Seletor de mês */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        {mesesPassados.length === 0 ? (
-          <div style={{ fontSize: 13, color: COR.textoSuave, padding: '8px 0' }}>
-            Nenhum mês passado disponível para revisão.
-          </div>
-        ) : mesesPassados.map(mi => (
-          <button
-            key={mi}
-            onClick={() => mudarMes(mi)}
-            style={{
-              border: 'none', borderRadius: 8, padding: '6px 14px',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              background: mesSel === mi ? COR.azul : '#f1f5f9',
-              color: mesSel === mi ? '#fff' : COR.textoSuave,
-              transition: 'all .15s',
-            }}
-          >{MESES[mi]}</button>
-        ))}
-      </div>
+      {/* Header com navegação de mês */}
+      {mesesPassados.length === 0 ? (
+        <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal"
+          subtitle="Nenhum mês passado disponível para revisão" />
+      ) : (
+        <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal"
+          rightContent={calNav} />
+      )}
 
       {mesesPassados.length > 0 && (
         <>
