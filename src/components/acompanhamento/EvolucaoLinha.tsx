@@ -63,9 +63,9 @@ export default function EvolucaoLinha({
     const bordaCor = isEntrada ? '#1a56db' : '#dc2626'
     return (
       <div style={{
-        padding: '10px 14px', background: '#f1f5f9',
+        padding: '10px 14px', background: '#dbeafe',
         display: 'flex', alignItems: 'center', gap: 8,
-        borderTop: '2px solid #e2e8f0',
+        borderTop: '2px solid #93c5fd',
       }}>
         <div style={{ width: 3, height: 32, borderRadius: 2, background: bordaCor, flexShrink: 0 }} />
         <div style={{
