@@ -4,6 +4,7 @@ import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import PlanRevisao from '../components/planejamento/PlanRevisao'
+import { useApp } from '../context/AppContext'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -18,6 +19,7 @@ function useIsMobile() {
 export default function RevisaoMensal() {
   const location = useLocation()
   const isMobile = useIsMobile()
+  const { desvioMinPerc } = useApp()
 
   const anoAtual = new Date().getFullYear()
   const plan     = usePlanejamento(anoAtual)
@@ -46,6 +48,7 @@ export default function RevisaoMensal() {
           lancadoPorCatMes={plan.lancadoPorCatMes}
           categorias={plan.categorias}
           onAjustar={handleAjustar}
+          desvioMinPerc={desvioMinPerc}
         />
       </div>
 
