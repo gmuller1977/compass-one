@@ -247,7 +247,9 @@ export default function NovoLancamentoExtrato() {
     const lancs: { dia: number; banco: string; icone: string; cor: string; categoria: string; descricao: string; valor: number; tipo: string }[] = []
 
     for (const c of contasExtrato) {
-      const dm = dados[`${c.id}-${ano}-${mesStr}`]
+      const key = `${c.id}-${ano}-${mesStr}`
+      const dm = dados[key]
+      console.log('[consolidado] conta', c.banco, 'key', key, 'dm?', !!dm, 'lancs dias', dm ? Object.keys(dm.lancamentos ?? {}) : [])
       if (!dm) continue
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
@@ -256,6 +258,7 @@ export default function NovoLancamentoExtrato() {
         }
       }
     }
+    console.log('[consolidado] te=', te, 'ts=', ts, 'lancs=', lancs.length)
 
     const dmDinheiro = dados[`dinheiro-${ano}-${mesStr}`]
     if (dmDinheiro) {
