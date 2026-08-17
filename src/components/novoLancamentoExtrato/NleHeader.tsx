@@ -47,18 +47,21 @@ export default function NleHeader({
   setCartaoMostrarCal, setCartaoAnoCal, onCartaoMesSelect, onCartaoMesPrev, onCartaoMesNext,
 }: Props) {
   if (!isMobile) {
-    const isDinheiro = tabPrincipal === 'dinheiro'
-    const isCartao   = tabPrincipal === 'cartao'
+    const isDinheiro    = tabPrincipal === 'dinheiro'
+    const isCartao      = tabPrincipal === 'cartao'
+    const isConsolidado = tabPrincipal === 'consolidado'
 
     const contaSel = contasExtrato.find(c => c.id === contaId) ?? contasExtrato.find(c => c.preferida) ?? contasExtrato[0]
-    const subtitle = (isDinheiro || isCartao)
-      ? undefined
-      : contaSel
-        ? `${contaSel.banco}${contaSel.apelido ? ' · ' + contaSel.apelido : ''}`
-        : undefined
+    const subtitle = isConsolidado
+      ? `${NOMES_MESES[mes]} ${ano}`
+      : (isDinheiro || isCartao)
+        ? undefined
+        : contaSel
+          ? `${contaSel.banco}${contaSel.apelido ? ' · ' + contaSel.apelido : ''}`
+          : undefined
 
-    const icon  = isCartao ? 'ti-credit-card' : isDinheiro ? 'ti-cash' : 'ti-building-bank'
-    const title = isCartao ? 'Fatura do Cartão' : isDinheiro ? 'Movimentação de dinheiro' : 'Movimentação do banco'
+    const icon  = isConsolidado ? 'ti-list-details' : isCartao ? 'ti-credit-card' : isDinheiro ? 'ti-cash' : 'ti-building-bank'
+    const title = isConsolidado ? 'Resumo mensal' : isCartao ? 'Fatura do Cartão' : isDinheiro ? 'Movimentação de dinheiro' : 'Movimentação do banco'
 
     const arrowBtn = {
       width: 28, height: 28, borderRadius: 8, border: 'none',

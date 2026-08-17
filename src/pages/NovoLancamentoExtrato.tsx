@@ -226,24 +226,62 @@ export default function NovoLancamentoExtrato() {
     })
   }, [contas, faturaData, ano, mes])
 
+  const saldoDinheiro = useMemo(() => {
+    const mesStr = String(mes + 1).padStart(2, '0')
+    const totalDiasM = new Date(ano, mes + 1, 0).getDate()
+    const dm = dados[`dinheiro-${ano}-${mesStr}`]
+    if (!dm) return saldoInicialDinheiro
+    let te = 0, ts = 0
+    for (let d = 1; d <= totalDiasM; d++) {
+      for (const l of dm.lancamentos?.[d] ?? []) {
+        l.tipo === 'entrada' ? te += l.valor : ts += l.valor
+      }
+    }
+    return saldoInicialDinheiro + te - ts
+  }, [dados, ano, mes, saldoInicialDinheiro])
+
   const { totalEntradasMes, totalSaidasMes, recentLancs } = useMemo(() => {
     const mesStr = String(mes + 1).padStart(2, '0')
     const totalDiasM = new Date(ano, mes + 1, 0).getDate()
     let te = 0, ts = 0
     const lancs: { dia: number; banco: string; icone: string; cor: string; categoria: string; descricao: string; valor: number; tipo: string }[] = []
+
     for (const c of contasExtrato) {
       const dm = dados[`${c.id}-${ano}-${mesStr}`]
       if (!dm) continue
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           l.tipo === 'entrada' ? te += l.valor : ts += l.valor
-          lancs.push({ dia: d, banco: c.banco, icone: c.icone, cor: c.cor, categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
+          lancs.push({ dia: d, banco: c.apelido ?? c.banco, icone: c.icone, cor: c.cor, categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
         }
       }
     }
+
+    const dmDinheiro = dados[`dinheiro-${ano}-${mesStr}`]
+    if (dmDinheiro) {
+      for (let d = 1; d <= totalDiasM; d++) {
+        for (const l of dmDinheiro.lancamentos?.[d] ?? []) {
+          lancs.push({ dia: d, banco: 'Dinheiro', icone: '💵', cor: '#16a34a', categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
+        }
+      }
+    }
+
+    const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; categoria: string; descricao?: string; valor: number }[]> }>
+    for (const c of contas.filter(ct => ct.tipo === 'cartao')) {
+      const dm = fat[`${c.id}-${ano}-${mesStr}`]
+      if (!dm?.lancamentos) continue
+      for (let d = 1; d <= totalDiasM; d++) {
+        for (const l of dm.lancamentos[d] ?? []) {
+          if (l.tipo === 'entrada') {
+            lancs.push({ dia: d, banco: c.apelido ?? c.nome, icone: c.icone || '💳', cor: c.cor || '#6366f1', categoria: l.categoria, descricao: l.descricao ?? '', valor: l.valor, tipo: 'saida' })
+          }
+        }
+      }
+    }
+
     lancs.sort((a, b) => b.dia - a.dia)
-    return { totalEntradasMes: te, totalSaidasMes: ts, recentLancs: lancs.slice(0, 40) }
-  }, [contasExtrato, dados, ano, mes])
+    return { totalEntradasMes: te, totalSaidasMes: ts, recentLancs: lancs }
+  }, [contasExtrato, contas, dados, faturaData, ano, mes])
 
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
@@ -911,6 +949,7 @@ export default function NovoLancamentoExtrato() {
           totalEntradasMes={totalEntradasMes}
           totalSaidasMes={totalSaidasMes}
           recentLancs={recentLancs}
+          saldoDinheiro={saldoDinheiro}
           mes={mes}
           ano={ano}
           fBancoConsolidado={fBancoConsolidado}

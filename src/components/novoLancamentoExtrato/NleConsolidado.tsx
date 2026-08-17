@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import {
-  COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
+  COR, fmt, NOMES_MESES, DIAS_SEM, FORMAS_SAI, FORMAS_ENT,
   realcarFoco, removerRealce, diaSemana,
   formaPagCategoria, formaRecebCategoria,
   type TipoLanc, type FormaPag,
@@ -19,16 +19,15 @@ type Props = {
   mobileView: 'extrato' | 'form'
   setMobileView: (v: 'extrato' | 'form') => void
 
-  // Visão Geral data
   saldoAtualPorConta: SaldoConta[]
   faturaAtualPorCartao: FaturaCartao[]
   totalEntradasMes: number
   totalSaidasMes: number
   recentLancs: RecentLanc[]
+  saldoDinheiro: number
   mes: number
   ano: number
 
-  // Consolidado form state
   fBancoConsolidado: string
   setFBancoConsolidado: (v: string) => void
   diaSel: number
@@ -57,10 +56,25 @@ type Props = {
   resetarParaNovo: (dia: number) => void
 }
 
+// ── Gradient header ───────────────────────────────────────────────────────────
+function SecaoHeader({ icone, titulo, right }: { icone: string; titulo: string; right?: React.ReactNode }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+      padding: '10px 16px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{icone} {titulo}</span>
+      {right && <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.85)' }}>{right}</span>}
+    </div>
+  )
+}
+
 export default function NleConsolidado({
   isMobile, mobileView, setMobileView,
   saldoAtualPorConta, faturaAtualPorCartao,
   totalEntradasMes, totalSaidasMes, recentLancs,
+  saldoDinheiro,
   mes, ano,
   fBancoConsolidado, setFBancoConsolidado,
   diaSel, setDiaSel, totalDias,
@@ -72,153 +86,302 @@ export default function NleConsolidado({
   valorInputRef, categoriaSelectRef,
   lancarConsolidado, resetarParaNovo,
 }: Props) {
-  const patrimonioTotal = saldoAtualPorConta.reduce((s, x) => s + x.saldo, 0)
-  const faturaTotal     = faturaAtualPorCartao.reduce((s, x) => s + x.fatura, 0)
-  const resultadoMes    = totalEntradasMes - totalSaidasMes
 
-  const metricas = [
-    { icon: '💰', label: 'Patrimônio total', val: patrimonioTotal },
-    { icon: '↑',  label: 'Total entradas',   val: totalEntradasMes },
-    { icon: '↓',  label: 'Total saídas',     val: totalSaidasMes },
-    { icon: '=',  label: 'Resultado mês',    val: resultadoMes },
-    { icon: '💳', label: 'Fatura cartões',   val: faturaTotal },
-  ]
+  const hoje = new Date()
+  const diaHoje = hoje.getDate()
+  const mesHoje = hoje.getMonth()
+  const anoHoje = hoje.getFullYear()
+  const eMesAtual = mes === mesHoje && ano === anoHoje
+
+  const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => {
+    const dias = new Set<number>()
+    for (let i = 0; i <= 3; i++) { if (diaHoje - i >= 1) dias.add(diaHoje - i) }
+    return dias
+  })
+
+  function toggleDia(dia: number) {
+    setDiasAbertos(prev => {
+      const n = new Set(prev); n.has(dia) ? n.delete(dia) : n.add(dia); return n
+    })
+  }
+
+  // Group recentLancs by day
+  const itensPorDia = recentLancs.reduce<Record<number, RecentLanc[]>>((acc, l) => {
+    if (!acc[l.dia]) acc[l.dia] = []
+    acc[l.dia].push(l)
+    return acc
+  }, {})
+
+  // Days from most recent to oldest, only days with transactions
+  const diasComItens = Object.keys(itensPorDia)
+    .map(Number)
+    .sort((a, b) => b - a)
+
+  // Totals
+  const totalContasBancarias = saldoAtualPorConta.reduce((s, x) => s + x.saldo, 0)
+  const faturaTotal     = faturaAtualPorCartao.reduce((s, x) => s + x.fatura, 0)
+  const limiteTotal     = faturaAtualPorCartao.reduce((s, x) => s + (x.conta.limiteCartao ?? 0), 0)
+  const disponivelTotal = limiteTotal - faturaTotal
+  const resultadoMes    = totalEntradasMes - totalSaidasMes
 
   return (
     <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',
       gap:isMobile?0:16,padding:isMobile?0:'10px 16px',overflow:isMobile?'auto':'hidden'}}>
 
-      {/* PAINEL ESQUERDO: Visao Geral */}
+      {/* ── PAINEL ESQUERDO ────────────────────────────────────────────── */}
       <div style={{flex:1,display:isMobile&&mobileView==='form'?'none':'flex',
         flexDirection:'column',overflow:'hidden',position:'relative'}}>
 
-        {/* BANNER GRADIENTE: 5 métricas */}
-        <div style={{background:'linear-gradient(135deg,#0f2878,#1e40af)',padding:'10px 14px',
-          flexShrink:0,display:'flex',overflowX:'auto',gap:0}}>
-          {metricas.map((m, i) => (
-            <div key={i} style={{flex:1,minWidth:90,
-              background:'rgba(255,255,255,.10)',border:'1px solid rgba(255,255,255,.15)',
-              borderRadius:12,padding:'10px 12px',marginRight:i<metricas.length-1?7:0}}>
-              <div style={{fontSize:9,color:'rgba(255,255,255,.7)',fontWeight:700,
-                textTransform:'uppercase',letterSpacing:.4,marginBottom:5}}>{m.icon} {m.label}</div>
-              <div style={{fontSize:14,fontWeight:800,fontVariantNumeric:'tabular-nums',
-                color:m.val>=0?'#86efac':'#fca5a5',letterSpacing:'-.4px'}}>{fmt(m.val)}</div>
+        {/* Resumo mês */}
+        <div style={{flexShrink:0,display:'flex',gap:8,padding:isMobile?'10px 12px 0':'0 0 10px',flexWrap:'wrap'}}>
+          {[
+            { label:'Entradas', valor:totalEntradasMes, cor:COR.verde, bg:'#f0fdf4', bord:'#bbf7d0' },
+            { label:'Saídas',   valor:totalSaidasMes,  cor:COR.vermelho, bg:'#fff1f2', bord:'#fecdd3' },
+            { label:'Resultado', valor:resultadoMes, cor:resultadoMes<0?COR.vermelho:'#0f172a', bg:resultadoMes<0?'#fff1f2':'#f8faff', bord:resultadoMes<0?'#fecdd3':COR.borda },
+          ].map(({label,valor,cor,bg,bord}) => (
+            <div key={label} style={{flex:1,minWidth:90,padding:'7px 10px',borderRadius:8,
+              background:bg,border:`1px solid ${bord}`}}>
+              <div style={{fontSize:9,fontWeight:700,color:cor,textTransform:'uppercase',letterSpacing:.5,marginBottom:1}}>{label}</div>
+              <div style={{fontSize:13,fontWeight:700,color:cor,fontVariantNumeric:'tabular-nums'}}>{fmt(valor)}</div>
             </div>
           ))}
         </div>
 
-        {/* AREA ROLAVEL */}
-        <div style={{flex:1,overflowY:'auto',padding:'16px 16px 84px'}}>
+        {/* Scrollable area */}
+        <div style={{flex:1,overflowY:'auto',padding:isMobile?'0 12px 80px':'0'}}>
 
-          {/* Contas bancárias */}
-          <div style={{fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase' as const,
-            letterSpacing:.6,marginBottom:8}}>Contas bancárias</div>
-          {saldoAtualPorConta.length===0
-            ? <div style={{fontSize:12,color:'#94a3b8',marginBottom:16}}>Nenhuma conta cadastrada</div>
-            : <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
-                {saldoAtualPorConta.map(({conta,saldo}) => (
-                  <div key={conta.id} style={{background:'#fff',border:'1px solid #e2e8f0',
-                    borderRadius:10,padding:'10px 14px',display:'flex',
-                    alignItems:'center',justifyContent:'space-between'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontSize:18}}>{conta.icone}</span>
-                      <div>
-                        <div style={{fontSize:12,fontWeight:600,color:'#0f172a'}}>{conta.nome}</div>
-                        <div style={{fontSize:10,color:'#64748b'}}>{conta.banco}</div>
-                      </div>
-                    </div>
-                    <div style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
-                      color:saldo>=0?'#16a34a':'#dc2626'}}>{fmt(saldo)}</div>
-                  </div>
-                ))}
+          {/* ── SEÇÃO A: Contas bancárias ────────────────────────────── */}
+          <div style={{borderRadius:10,overflow:'hidden',marginBottom:12,
+            border:`1px solid ${COR.borda}`}}>
+            <SecaoHeader icone="🏦" titulo="Contas bancárias" right={fmt(totalContasBancarias + saldoDinheiro)} />
+
+            {/* Dinheiro */}
+            <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+              borderLeft:'4px solid #16a34a',background:COR.branco,
+              borderBottom:`1px solid #f1f5f9`}}>
+              <span style={{fontSize:18,flexShrink:0}}>💵</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:600,color:COR.texto}}>Dinheiro</div>
+                <div style={{fontSize:10,color:'#94a3b8'}}>Em carteira</div>
               </div>
-          }
+              <span style={{fontSize:13,fontWeight:700,color:saldoDinheiro<0?COR.vermelho:COR.texto,
+                fontVariantNumeric:'tabular-nums'}}>{fmt(saldoDinheiro)}</span>
+            </div>
 
-          {/* Cartões de crédito */}
-          {faturaAtualPorCartao.length>0 && (
-            <>
-              <div style={{fontSize:10,fontWeight:700,color:'#64748b',
-                textTransform:'uppercase' as const,letterSpacing:.6,marginBottom:8}}>Cartões de crédito</div>
-              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
-                {faturaAtualPorCartao.map(({conta,fatura}) => {
-                  const limite   = conta.limiteCartao ?? 0
-                  const pct      = limite>0 ? Math.min(fatura/limite*100,100) : 0
-                  const corBarra = pct>80?'#dc2626':pct>50?'#f59e0b':'#16a34a'
-                  return (
-                    <div key={conta.id} style={{background:'#fff',border:'1px solid #e2e8f0',
-                      borderRadius:10,padding:'10px 14px'}}>
-                      <div style={{display:'flex',alignItems:'center',
-                        justifyContent:'space-between',marginBottom:limite>0?8:0}}>
-                        <div style={{display:'flex',alignItems:'center',gap:8}}>
-                          <span style={{fontSize:18}}>{conta.icone||'💳'}</span>
-                          <div>
-                            <div style={{fontSize:12,fontWeight:600,color:'#0f172a'}}>{conta.nome}</div>
-                            <div style={{fontSize:10,color:'#64748b'}}>{conta.banco}</div>
+            {saldoAtualPorConta.length === 0
+              ? <div style={{padding:'10px 14px',fontSize:12,color:'#94a3b8'}}>Nenhuma conta cadastrada</div>
+              : saldoAtualPorConta.map(({conta,saldo},idx) => (
+                <div key={conta.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+                  borderLeft:`4px solid ${conta.cor}`,background:COR.branco,
+                  borderBottom:idx<saldoAtualPorConta.length-1?`1px solid #f1f5f9`:'none'}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{conta.icone}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:600,color:COR.texto,
+                      overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {conta.apelido ?? conta.nome}
+                    </div>
+                    <div style={{fontSize:10,color:'#94a3b8'}}>{conta.banco}</div>
+                  </div>
+                  <span style={{fontSize:13,fontWeight:700,color:saldo<0?COR.vermelho:COR.texto,
+                    fontVariantNumeric:'tabular-nums'}}>{fmt(saldo)}</span>
+                </div>
+              ))
+            }
+
+            {/* Subtotal */}
+            <div style={{padding:'8px 14px',background:'#f8faff',display:'flex',justifyContent:'space-between',
+              borderTop:`1px solid ${COR.borda}`}}>
+              <span style={{fontSize:11,fontWeight:700,color:'#64748b'}}>Total disponível</span>
+              <span style={{fontSize:12,fontWeight:700,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
+                {fmt(totalContasBancarias + saldoDinheiro)}
+              </span>
+            </div>
+          </div>
+
+          {/* ── SEÇÃO A: Cartões de crédito ──────────────────────────── */}
+          {faturaAtualPorCartao.length > 0 && (
+            <div style={{borderRadius:10,overflow:'hidden',marginBottom:12,
+              border:`1px solid ${COR.borda}`}}>
+              <SecaoHeader icone="💳" titulo="Cartões de crédito" />
+
+              {faturaAtualPorCartao.map(({conta,fatura},idx) => {
+                const limite     = conta.limiteCartao ?? 0
+                const disponivel = limite - fatura
+                const pct        = limite > 0 ? Math.min(fatura / limite, 1) : 0
+                const corBar     = pct > .9 ? COR.vermelho : pct > .7 ? '#f59e0b' : COR.verde
+                const cor        = conta.cor || '#6366f1'
+                return (
+                  <div key={conta.id} style={{background:COR.branco,
+                    borderLeft:`4px solid ${cor}`,
+                    borderBottom:idx<faturaAtualPorCartao.length-1?`1px solid #f1f5f9`:'none',
+                    padding:'10px 14px'}}>
+
+                    <div style={{display:'grid',
+                      gridTemplateColumns:`1fr ${limite>0?'80px ':' '}80px 80px`,
+                      gap:8,alignItems:'center',marginBottom:limite>0?6:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+                        <span style={{fontSize:18,flexShrink:0}}>{conta.icone||'💳'}</span>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontSize:12,fontWeight:600,color:COR.texto,
+                            overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                            {conta.apelido ?? conta.nome}
                           </div>
-                        </div>
-                        <div style={{textAlign:'right' as const}}>
-                          <div style={{fontSize:13,fontWeight:700,fontVariantNumeric:'tabular-nums',
-                            color:'#dc2626'}}>{fmt(fatura)}</div>
-                          {limite>0 && <div style={{fontSize:9,color:'#94a3b8'}}>de {fmt(limite)}</div>}
+                          <div style={{fontSize:10,color:'#94a3b8'}}>{conta.banco}</div>
                         </div>
                       </div>
-                      {limite>0 && (
-                        <div style={{background:'#f1f5f9',borderRadius:6,height:4,overflow:'hidden'}}>
-                          <div style={{width:`${pct}%`,height:'100%',background:corBarra,borderRadius:6,transition:'width .3s'}} />
+                      {limite > 0 && (
+                        <div style={{textAlign:'right' as const}}>
+                          <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Limite</div>
+                          <div style={{fontSize:12,fontWeight:600,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>{fmt(limite)}</div>
                         </div>
                       )}
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-
-          {/* Últimos lançamentos */}
-          <div style={{fontSize:10,fontWeight:700,color:'#64748b',textTransform:'uppercase' as const,
-            letterSpacing:.6,marginBottom:8}}>Últimos lançamentos</div>
-          {recentLancs.length===0
-            ? <div style={{fontSize:12,color:'#94a3b8'}}>Nenhum lançamento neste mês</div>
-            : <div style={{display:'flex',flexDirection:'column',gap:2}}>
-                {recentLancs.map((l,i) => (
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,
-                    padding:'8px 10px',background:'#fff',borderRadius:8,
-                    borderLeft:`3px solid ${l.cor||'#94a3b8'}`}}>
-                    <div style={{fontSize:11,color:'#94a3b8',fontWeight:600,
-                      minWidth:22,textAlign:'center' as const}}>{l.dia}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:12,fontWeight:600,color:'#0f172a',
-                        whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{l.categoria}</div>
-                      <div style={{fontSize:10,color:'#64748b',
-                        whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                        {l.icone} {l.banco}{l.descricao?` · ${l.descricao}`:''}
+                      <div style={{textAlign:'right' as const}}>
+                        <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Fatura</div>
+                        <div style={{fontSize:12,fontWeight:700,color:COR.vermelho,fontVariantNumeric:'tabular-nums'}}>{fmt(fatura)}</div>
+                      </div>
+                      <div style={{textAlign:'right' as const}}>
+                        <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Disponível</div>
+                        <div style={{fontSize:12,fontWeight:700,
+                          color:disponivel<0?COR.vermelho:COR.verde,fontVariantNumeric:'tabular-nums'}}>
+                          {limite > 0 ? fmt(disponivel) : '—'}
+                        </div>
                       </div>
                     </div>
-                    <div style={{fontSize:12,fontWeight:700,fontVariantNumeric:'tabular-nums',
-                      color:l.tipo==='entrada'?'#16a34a':'#dc2626',flexShrink:0}}>
-                      {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+
+                    {limite > 0 && (
+                      <div style={{height:5,borderRadius:3,background:'#e2e8f0',overflow:'hidden'}}>
+                        <div style={{height:'100%',borderRadius:3,background:corBar,
+                          width:`${pct*100}%`,transition:'width .3s'}} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Subtotal */}
+              <div style={{padding:'8px 14px',background:'#f8faff',
+                display:'flex',justifyContent:'space-between',gap:8,
+                borderTop:`1px solid ${COR.borda}`}}>
+                <div>
+                  <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Total faturas</div>
+                  <div style={{fontSize:12,fontWeight:700,color:COR.vermelho,fontVariantNumeric:'tabular-nums'}}>{fmt(faturaTotal)}</div>
+                </div>
+                {limiteTotal > 0 && (
+                  <div style={{textAlign:'right' as const}}>
+                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Disponível total</div>
+                    <div style={{fontSize:12,fontWeight:700,color:COR.verde,fontVariantNumeric:'tabular-nums'}}>{fmt(disponivelTotal)}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── SEÇÃO B: Movimentações do mês ───────────────────────── */}
+          <div style={{borderRadius:10,overflow:'hidden',border:`1px solid ${COR.borda}`}}>
+            <SecaoHeader icone="🗓️" titulo={`Movimentações de ${NOMES_MESES[mes]}`}
+              right={diasComItens.length === 0 ? undefined : `${diasComItens.length} dias`} />
+
+            {diasComItens.length === 0 ? (
+              <div style={{padding:'16px 14px',fontSize:12,color:'#94a3b8',textAlign:'center' as const}}>
+                Nenhuma movimentação registrada neste mês
+              </div>
+            ) : diasComItens.map((dia, diaIdx) => {
+              const itens   = itensPorDia[dia]
+              const ehHoje  = eMesAtual && dia === diaHoje
+              const aberto  = diasAbertos.has(dia)
+              const semana  = DIAS_SEM[new Date(ano, mes, dia).getDay()]
+              const entsDia = itens.reduce((s, l) => l.tipo === 'entrada' ? s + l.valor : s, 0)
+              const saisDia = itens.reduce((s, l) => l.tipo !== 'entrada' ? s + l.valor : s, 0)
+
+              return (
+                <div key={dia} style={{borderBottom:diaIdx<diasComItens.length-1?`1px solid #f1f5f9`:'none'}}>
+                  {/* Day header */}
+                  <div
+                    onClick={() => toggleDia(dia)}
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+                      cursor:'pointer',background:ehHoje?'#f0f7ff':'#fafbff',
+                      borderLeft:aberto?`4px solid ${ehHoje?COR.azul:'#64748b'}`:'4px solid transparent'}}>
+
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',
+                      minWidth:30,flexShrink:0}}>
+                      <span style={{fontSize:16,fontWeight:700,color:ehHoje?COR.azul:COR.texto,lineHeight:1}}>
+                        {String(dia).padStart(2,'0')}
+                      </span>
+                      <span style={{fontSize:9,color:'#94a3b8',textTransform:'uppercase' as const,marginTop:1}}>
+                        {semana}
+                      </span>
+                    </div>
+
+                    {ehHoje && (
+                      <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:5,
+                        background:'#dbeafe',color:COR.azul,textTransform:'uppercase' as const,letterSpacing:.5}}>
+                        Hoje
+                      </span>
+                    )}
+
+                    <div style={{flex:1}}/>
+
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      {entsDia > 0 && (
+                        <span style={{fontSize:12,fontWeight:700,color:COR.azul,fontVariantNumeric:'tabular-nums'}}>
+                          +{fmt(entsDia)}
+                        </span>
+                      )}
+                      {entsDia > 0 && saisDia > 0 && (
+                        <span style={{fontSize:10,color:'#94a3b8'}}>·</span>
+                      )}
+                      {saisDia > 0 && (
+                        <span style={{fontSize:12,fontWeight:700,color:COR.vermelho,fontVariantNumeric:'tabular-nums'}}>
+                          -{fmt(saisDia)}
+                        </span>
+                      )}
+                      <span style={{fontSize:13,color:'#94a3b8',opacity:itens.length>0?1:0,
+                        transform:aberto?'rotate(180deg)':'rotate(0deg)',
+                        display:'inline-block',transition:'transform .15s',marginLeft:4}}>⌄</span>
                     </div>
                   </div>
-                ))}
-              </div>
-          }
-        </div>
 
-        {/* RODAPE FIXO: Patrimônio total */}
-        <div style={{position:'absolute',bottom:0,left:0,right:0,
-          background:'linear-gradient(135deg,#0f2878,#1e40af)',
-          padding:'10px 16px',display:'flex',alignItems:'center',
-          justifyContent:'space-between',flexShrink:0}}>
-          <div>
-            <div style={{fontSize:11,fontWeight:700,color:'#fff'}}>Patrimônio total</div>
-            <div style={{fontSize:10,color:'rgba(255,255,255,.7)'}}>{NOMES_MESES[mes]} {ano}</div>
+                  {/* Items */}
+                  {aberto && itens.map((l, idx) => (
+                    <div key={idx} style={{display:'flex',alignItems:'center',gap:8,
+                      padding:'8px 14px 8px 18px',
+                      borderLeft:`4px solid ${l.cor}`,
+                      background:COR.branco,
+                      borderBottom:idx<itens.length-1?`1px solid #f8fafc`:'none'}}>
+                      {/* Source badge */}
+                      <span style={{flexShrink:0,fontSize:9,fontWeight:700,
+                        padding:'2px 6px',borderRadius:4,whiteSpace:'nowrap' as const,
+                        background:l.cor+'20',color:l.cor}}>
+                        {l.icone} {l.banco}
+                      </span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:600,color:COR.texto,
+                          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>
+                          {l.categoria}
+                        </div>
+                        {l.descricao && l.descricao !== l.categoria && (
+                          <div style={{fontSize:10,color:'#94a3b8',
+                            overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>
+                            {l.descricao}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{fontSize:13,fontWeight:700,flexShrink:0,
+                        fontVariantNumeric:'tabular-nums',
+                        color:l.tipo==='entrada'?COR.azul:COR.vermelho}}>
+                        {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
           </div>
-          <div style={{fontSize:22,fontWeight:800,fontVariantNumeric:'tabular-nums',
-            color:patrimonioTotal>=0?'#86efac':'#fca5a5'}}>{fmt(patrimonioTotal)}</div>
+
         </div>
       </div>
 
-      {/* FORMULARIO DE LANCAMENTO (consolidado) */}
+      {/* ── FORMULÁRIO DE LANÇAMENTO (direita) ──────────────────────────── */}
       <div style={{width:isMobile?'100%':340,flexShrink:0,background:COR.branco,
         border:isMobile?'none':`1px solid ${COR.borda}`,
         borderRadius:isMobile?0:12,padding:isMobile?'16px 12px':20,overflowY:'auto',
@@ -288,7 +451,7 @@ export default function NleConsolidado({
           ))}
         </div>
 
-        {/* Forma de pagamento — apenas para contas bancárias */}
+        {/* Forma de pagamento */}
         {contas.find(c=>c.id===fBancoConsolidado)?.tipo!=='cartao' && (
           <div style={{marginBottom:12}}>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:6}}>
