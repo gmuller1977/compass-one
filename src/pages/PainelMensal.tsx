@@ -24,7 +24,7 @@ function useIsMobile() {
   return v
 }
 
-export default function Acompanhamento() {
+export default function PainelMensal() {
   const hoje    = new Date()
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
@@ -42,8 +42,8 @@ export default function Acompanhamento() {
 
   useEffect(() => {
     if (!user) return
-    creditarAurix(user.id, 'acao', 'Viu a Evolução', 2, 'acao_evolucao').then(r => {
-      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Viu a Evolução', pontos: 2 })
+    creditarAurix(user.id, 'acao', 'Viu o Painel mensal', 2, 'acao_evolucao').then(r => {
+      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Viu o Painel mensal', pontos: 2 })
     })
   }, [user?.id])
 
@@ -65,11 +65,8 @@ export default function Acompanhamento() {
     const entradas: Record<string, CatReal> = {}
     const sufixo = `-${ano}-${mesStr}`
 
-    // Chave do bucket: "nome||subCategoria" quando subCategoria definida, caso contrário só "nome"
     function rKey(nome: string, sub?: string) { return sub ? `${nome}||${sub}` : nome }
 
-    // Se o lançamento não tem subCategoria, tenta resolver automaticamente:
-    // quando existe UMA única variante ativa para esse nome+tipo, usa a descricao dela.
     function resolverSub(nome: string, tipo: 'saida' | 'entrada', sub?: string): string | undefined {
       if (sub) return sub
       const variantes = categorias.filter(
@@ -84,7 +81,7 @@ export default function Acompanhamento() {
     for (const [key, dados] of Object.entries(extratoData)) {
       if (!key.endsWith(sufixo)) continue
       const isDinheiroKey = key.startsWith('dinheiro')
-      if (!isDinheiroKey && !contas.some(c => key.startsWith(c.id))) continue   // ignora contas excluídas
+      if (!isDinheiroKey && !contas.some(c => key.startsWith(c.id))) continue
       if (!isDinheiroKey && contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) continue
       const dm = dados as DadosMes
 
@@ -236,12 +233,11 @@ export default function Acompanhamento() {
       fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
-      {/* PageHeader — mesmo estilo do banco */}
       <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
         <PageHeader
           icon="ti-chart-bar"
-          breadcrumb="MEU PLANO"
-          title="Evolução Mensal"
+          breadcrumb="TODO DIA"
+          title="Painel mensal"
           mb={0}
           rightContent={
             <div style={{ position: 'relative' }}>
@@ -314,7 +310,7 @@ export default function Acompanhamento() {
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
         display:'flex',flexDirection:'column',gap:12}}>
         <TutorialCard
-          tela="evolucao"
+          tela="painel"
           icon="📈"
           title="Veja como você está indo"
           description="Aqui o app compara o que você planejou com o que realmente gastou. É assim que você descobre onde pode melhorar."
@@ -323,7 +319,7 @@ export default function Acompanhamento() {
             { icon: '🟡', text: 'Amarelo = chegando no limite' },
             { icon: '🔴', text: 'Vermelho = passou do planejado' },
           ]}
-          buttonLabel="Ver minha evolução →"
+          buttonLabel="Ver meu painel →"
         />
         {!dadosAno ? (
           <EmptyState

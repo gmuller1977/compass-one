@@ -73,7 +73,7 @@ const NAV_ITEMS = [
   { label: 'Configurações', path: '/configuracoes'   },
   { label: 'Planejamento',  path: '/planejamento'    },
   { label: 'Lançamentos',   path: '/novo-lancamento' },
-  { label: 'Evolução',      path: '/evolucao'        },
+  { label: 'Painel mensal', path: '/painel'          },
 ]
 
 type TabDef =
@@ -82,7 +82,7 @@ type TabDef =
 
 const BOTTOM_TABS: TabDef[] = [
   { path: '/dashboard',       label: 'Início',  type: 'icon', Icon: IcHome     },
-  { path: '/evolucao',        label: 'Evol.',   type: 'icon', Icon: IcChart    },
+  { path: '/painel',          label: 'Painel',  type: 'icon', Icon: IcChart    },
   { path: '/novo-lancamento', label: 'Lançar',  type: 'fab'                    },
   { path: '/planejamento',    label: 'Plano',   type: 'icon', Icon: IcCalendar },
   { path: '/configuracoes',   label: 'Config.', type: 'icon', Icon: IcGear     },

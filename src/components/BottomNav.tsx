@@ -13,7 +13,7 @@ function useIsMobile() {
 
 const NAV = [
   { icon: '⚡', label: 'Início',   path: '/' },
-  { icon: '📈', label: 'Evol.',    path: '/evolucao' },
+  { icon: '📈', label: 'Painel',   path: '/painel' },
   null, // floating + button
   { icon: '📊', label: 'Plano',    path: '/planejamento' },
   { icon: '⚙️', label: 'Config',   path: '/configuracoes' },

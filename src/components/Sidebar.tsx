@@ -27,7 +27,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
       { icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
-      { icon: '📈', label: 'Evolução',    path: '/evolucao',        exact: false },
+      { icon: '📈', label: 'Painel mensal', path: '/painel',          exact: false },
     ],
   },
   {
