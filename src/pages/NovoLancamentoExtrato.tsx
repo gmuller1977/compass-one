@@ -261,6 +261,7 @@ export default function NovoLancamentoExtrato() {
     if (dmDinheiro) {
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dmDinheiro.lancamentos?.[d] ?? []) {
+          l.tipo === 'entrada' ? te += l.valor : ts += l.valor
           lancs.push({ dia: d, banco: 'Dinheiro', icone: '💵', cor: '#16a34a', categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
         }
       }
@@ -273,6 +274,7 @@ export default function NovoLancamentoExtrato() {
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dm.lancamentos[d] ?? []) {
           if (l.tipo === 'entrada') {
+            ts += l.valor
             lancs.push({ dia: d, banco: c.apelido ?? c.nome, icone: c.icone || '💳', cor: c.cor || '#6366f1', categoria: l.categoria, descricao: l.descricao ?? '', valor: l.valor, tipo: 'saida' })
           }
         }

@@ -188,14 +188,6 @@ export default function NleConsolidado({
               ))
             }
 
-            {/* Subtotal */}
-            <div style={{padding:'8px 14px',background:'#f8faff',display:'flex',justifyContent:'space-between',
-              borderTop:`1px solid ${COR.borda}`}}>
-              <span style={{fontSize:11,fontWeight:700,color:'#64748b'}}>Total disponível</span>
-              <span style={{fontSize:12,fontWeight:700,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
-                {fmt(totalContasBancarias + saldoDinheiro)}
-              </span>
-            </div>
           </div>
 
           {/* ── SEÇÃO A: Cartões de crédito ──────────────────────────── */}
