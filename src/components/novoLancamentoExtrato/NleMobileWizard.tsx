@@ -57,7 +57,7 @@ export default function NleMobileWizard({
               {tipo:'extrato'     as const, icone:'🏦', label:'Banco',             desc: contasExtrato.length > 0 ? contasExtrato.slice(0,2).map(c=>c.banco).join(', ')+(contasExtrato.length>2?' ...':'') : 'Extrato bancário'},
               {tipo:'cartao'      as const, icone:'💳', label:'Cartão de Crédito', desc:'Faturas e gastos no cartão'},
               {tipo:'dinheiro'    as const, icone:'💵', label:'Dinheiro',           desc:'Lançamentos em espécie'},
-              {tipo:'consolidado' as const, icone:'📊', label:'Visão geral',        desc:'Visão geral de todas as contas'},
+              {tipo:'consolidado' as const, icone:'📊', label:'Resumo mensal',      desc:'Resumo de todas as contas e movimentações'},
             ] as const).map(({tipo,icone,label,desc}) => (
               <button key={tipo} onClick={() => {
                 setTabPrincipal(tipo)

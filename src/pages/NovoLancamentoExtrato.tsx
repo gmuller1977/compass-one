@@ -286,6 +286,7 @@ export default function NovoLancamentoExtrato() {
     const conta   = params.get('conta')
     if (!rawTipo && !conta) return
     if (rawTipo === 'banco') rawTipo = 'extrato'
+    if (rawTipo === 'resumo') rawTipo = 'consolidado'
     const tipo = rawTipo as typeof tabPrincipal | null
     if (tipo && tipo !== tabPrincipal) setTabPrincipal(tipo)
     if (tipo === 'extrato') {
@@ -888,7 +889,7 @@ export default function NovoLancamentoExtrato() {
           { icon: '🔍', text: 'Visão completa de todas as movimentações do mês' },
           { icon: '📈', text: 'Compare entradas e saídas de todas as fontes' },
           { icon: '🗓️', text: 'Navegue entre os meses para ver o histórico' },
-        ]} buttonLabel="Ver visão geral →" />}
+        ]} buttonLabel="Ver resumo mensal →" />}
 
       {tabPrincipal === 'cartao' ? (
         <FaturaCartao

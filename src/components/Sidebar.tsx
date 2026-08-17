@@ -369,9 +369,9 @@ export default function Sidebar() {
                           onClick={() => navigate('/novo-lancamento?tipo=dinheiro')}
                         />
                         <SubItemRow
-                          label="Visão geral" icon="📊"
-                          active={lancActive && tipoParam === 'consolidado'}
-                          onClick={() => navigate('/novo-lancamento?tipo=consolidado')}
+                          label="Resumo mensal" icon="📊"
+                          active={lancActive && (tipoParam === 'resumo' || tipoParam === 'consolidado')}
+                          onClick={() => navigate('/novo-lancamento?tipo=resumo')}
                         />
                       </div>
                     )}
