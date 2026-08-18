@@ -145,6 +145,11 @@ export default function PainelMensal() {
             const c = getSaida(l.categoria)
             c.total += l.valor; c.totalCart += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
+          } else if (l.tipo === 'saida') {
+            // Estorno: abate da categoria de saída
+            const c = getSaida(l.categoria)
+            c.total -= l.valor; c.totalCart -= l.valor
+            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
           }
         }
       }
