@@ -241,19 +241,25 @@ export default function NovoLancamentoExtrato() {
   }, [dados, ano, mes, saldoInicialDinheiro])
 
   // Mapa de catId → {valor, tipo, diaVencimento, nome} para fixas consolidadas
+  // Usa mesma lógica do PainelMensal: planosReal só quando planejamentoLockado
   const fixasValorPorId = useMemo(() => {
+    const dadosAno = (planejamentoLockado && planosReal[ano]) ? planosReal[ano] : planos[ano]
     const map: Record<string, { valor: number; tipo: string; diaVencimento: number; nome: string }> = {}
     for (const cat of categorias) {
       if (!cat.fixa || !cat.ativa) continue
+      const planList = cat.tipo === 'saida'
+        ? (dadosAno as { saidas?: { nome: string; v: number[] }[] } | undefined)?.saidas
+        : (dadosAno as { entradas?: { nome: string; v: number[] }[] } | undefined)?.entradas
+      const planVal = planList?.find(c => c.nome === cat.nome)?.v[mes] ?? 0
       map[cat.id] = {
-        valor: valorPrevistoCat(cat.id, cat.nome, cat.tipo as TipoLanc),
+        valor: planVal,
         tipo: cat.tipo,
         diaVencimento: cat.diaVencimento ?? 1,
         nome: cat.nome,
       }
     }
     return map
-  }, [categorias, planosReal, planos, mes, ano, planejamentoLockado]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [categorias, planosReal, planos, mes, ano, planejamentoLockado])
 
   const { totalEntradasMes, totalSaidasMes, recentLancs } = useMemo(() => {
     const mesStr = String(mes + 1).padStart(2, '0')
