@@ -240,16 +240,43 @@ export default function NovoLancamentoExtrato() {
     return saldoInicialDinheiro + te - ts
   }, [dados, ano, mes, saldoInicialDinheiro])
 
+  // Mapa de catId → {valor, tipo, diaVencimento, nome} para fixas consolidadas
+  const fixasValorPorId = useMemo(() => {
+    const map: Record<string, { valor: number; tipo: string; diaVencimento: number; nome: string }> = {}
+    for (const cat of categorias) {
+      if (!cat.fixa || !cat.ativa) continue
+      map[cat.id] = {
+        valor: valorPrevistoCat(cat.id, cat.nome, cat.tipo as TipoLanc),
+        tipo: cat.tipo,
+        diaVencimento: cat.diaVencimento ?? 1,
+        nome: cat.nome,
+      }
+    }
+    return map
+  }, [categorias, planosReal, planos, mes, ano, planejamentoLockado]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const { totalEntradasMes, totalSaidasMes, recentLancs } = useMemo(() => {
     const mesStr = String(mes + 1).padStart(2, '0')
     const totalDiasM = new Date(ano, mes + 1, 0).getDate()
     let te = 0, ts = 0
     const lancs: { dia: number; banco: string; icone: string; cor: string; categoria: string; descricao: string; valor: number; tipo: string }[] = []
 
+    function contarFixasConsolidadas(dm: DadosMes, banco: string, icone: string, cor: string) {
+      for (const [catId, confirmed] of Object.entries(dm.fixasConsolidadas ?? {})) {
+        if (!confirmed || catId.startsWith('cartao-')) continue
+        const f = fixasValorPorId[catId]
+        if (!f) continue
+        const override = dm.fixasValorOverride?.[catId]
+        const valor = override !== undefined ? override : f.valor
+        if (valor <= 0) continue
+        f.tipo === 'entrada' ? te += valor : ts += valor
+        const dia = dm.fixasMovidas?.[catId] ?? f.diaVencimento
+        lancs.push({ dia, banco, icone, cor, categoria: f.nome, descricao: f.nome, valor, tipo: f.tipo })
+      }
+    }
+
     for (const c of contasExtrato) {
-      const key = `${c.id}-${ano}-${mesStr}`
-      const dm = dados[key]
-      console.log('[consolidado] conta', c.banco, 'key', key, 'dm?', !!dm, 'lancs dias', dm ? Object.keys(dm.lancamentos ?? {}) : [])
+      const dm = dados[`${c.id}-${ano}-${mesStr}`]
       if (!dm) continue
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
@@ -257,8 +284,8 @@ export default function NovoLancamentoExtrato() {
           lancs.push({ dia: d, banco: c.apelido ?? c.banco, icone: c.icone, cor: c.cor, categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
         }
       }
+      contarFixasConsolidadas(dm, c.apelido ?? c.banco, c.icone, c.cor)
     }
-    console.log('[consolidado] te=', te, 'ts=', ts, 'lancs=', lancs.length)
 
     const dmDinheiro = dados[`dinheiro-${ano}-${mesStr}`]
     if (dmDinheiro) {
@@ -268,6 +295,7 @@ export default function NovoLancamentoExtrato() {
           lancs.push({ dia: d, banco: 'Dinheiro', icone: '💵', cor: '#16a34a', categoria: l.categoria, descricao: (l as { descricao?: string }).descricao ?? '', valor: l.valor, tipo: l.tipo })
         }
       }
+      contarFixasConsolidadas(dmDinheiro, 'Dinheiro', '💵', '#16a34a')
     }
 
     const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; categoria: string; descricao?: string; valor: number }[]> }>
@@ -286,7 +314,7 @@ export default function NovoLancamentoExtrato() {
 
     lancs.sort((a, b) => b.dia - a.dia)
     return { totalEntradasMes: te, totalSaidasMes: ts, recentLancs: lancs }
-  }, [contasExtrato, contas, dados, faturaData, ano, mes])
+  }, [contasExtrato, contas, dados, faturaData, ano, mes, fixasValorPorId])
 
   const fixas = [...fixasCategoria, ...fixasCartao]
   const categoriasVariaveis = categorias
