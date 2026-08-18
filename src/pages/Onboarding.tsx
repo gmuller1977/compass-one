@@ -24,6 +24,7 @@ const SLIDE_COUNT = 6
 const FERRAMENTAS = [
   { icon: '🏠', nome: 'Início',       desc: 'Seu painel de comando. A bússola mostra se você está no rumo certo.' },
   { icon: '📋', nome: 'Lançamentos',  desc: 'Registre suas despesas e receitas. Banco, cartão e dinheiro.' },
+  { icon: '📊', nome: 'Resumo mensal', desc: 'A foto completa do mês: patrimônio, receitas, despesas e projeção.' },
   { icon: '📈', nome: 'Radar financeiro', desc: 'Compare o que planejou com o que realmente aconteceu.' },
   { icon: '🎯', nome: 'Planejamento', desc: 'Defina seu orçamento anual. Categoria por categoria.' },
   { icon: '🔮', nome: 'Simulador',    desc: 'Simule cenários antes de decidir. Dívidas, metas, investimentos.' },
@@ -43,6 +44,7 @@ const ROTINA = [
   {
     titulo: '📆 Todo mês', tempo: '30 min',
     passos: [
+      { titulo: 'Ver o resumo do mês',  pill: '📊 Resumo mensal' },
       { titulo: 'Revisar o mês',        pill: '🔄 Revisão mensal' },
       { titulo: 'Ajustar o plano',      pill: '🎯 Planejamento' },
       { titulo: 'Simular cenários',     pill: '🔮 Simulador' },

@@ -11,6 +11,7 @@ import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import RadarFinanceiro from './pages/RadarFinanceiro'
+import ResumoMensal    from './pages/ResumoMensal'
 import Configuracoes       from './pages/Configuracoes'
 import Onboarding          from './pages/Onboarding'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
@@ -146,6 +147,7 @@ export default function App() {
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
+          <Route path="/resumo-mensal"       element={<Protegido><ResumoMensal /></Protegido>} />
           <Route path="/revisaomensal"      element={<Protegido><RevisaoMensal /></Protegido>} />
           <Route path="/aurix"             element={<Protegido><AurixPage /></Protegido>} />
           <Route path="*"                   element={<Navigate to="/" replace />} />

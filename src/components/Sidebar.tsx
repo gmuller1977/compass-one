@@ -33,7 +33,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: '📆 Todo mês',
     items: [
-      { icon: '📊', label: 'Resumo mensal',  path: '/novo-lancamento?tipo=resumo', exact: false },
+      { icon: '📊', label: 'Resumo mensal',  path: '/resumo-mensal', exact: false },
       { icon: '🔄', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
       { icon: '🔮', label: 'Simulador',      path: '/simulacao',     exact: false },
     ],
@@ -246,7 +246,7 @@ export default function Sidebar() {
   }
 
   const [expandedItem, setExpandedItem] = useState<string|null>(() => {
-    if (pathname.startsWith('/novo-lancamento') && new URLSearchParams(window.location.search).get('tipo') !== 'resumo') return 'Lançamentos'
+    if (pathname.startsWith('/novo-lancamento')) return 'Lançamentos'
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
         if (!item.disabled && !item.path.includes('?') && item.sub &&
@@ -260,10 +260,10 @@ export default function Sidebar() {
   })
 
   useEffect(() => {
-    if (pathname.startsWith('/novo-lancamento') && tipoParam !== 'resumo') {
+    if (pathname.startsWith('/novo-lancamento')) {
       setExpandedItem('Lançamentos')
     }
-  }, [pathname, tipoParam]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleExpand(label: string) {
     setExpandedItem(prev => prev === label ? null : label)

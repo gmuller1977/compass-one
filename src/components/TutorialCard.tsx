@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 const TELAS = [
-  'inicio', 'lancamentos', 'planejamento', 'radar', 'configuracoes',
+  'inicio', 'lancamentos', 'planejamento', 'radar', 'resumo_mensal', 'configuracoes',
   'lanc_banco', 'lanc_cartao', 'lanc_dinheiro', 'lanc_visaogeral',
   'plan_comece', 'plan_grade', 'plan_planilha', 'plan_lista', 'plan_revisao',
   'config_bancos', 'config_cartoes', 'config_categorias', 'config_perfil', 'config_preferencias',
