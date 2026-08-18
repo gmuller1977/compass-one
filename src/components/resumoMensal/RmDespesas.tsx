@@ -118,7 +118,7 @@ export default function RmDespesas({ despesas, totalPrevisto, totalPago, mes, te
                         >
                           {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                         </Pie>
-                        <Tooltip formatter={(v: number) => fmt(v)} />
+                        <Tooltip formatter={(v) => fmt(Number(v))} />
                       </PieChart>
                     </ResponsiveContainer>
                     <div style={{

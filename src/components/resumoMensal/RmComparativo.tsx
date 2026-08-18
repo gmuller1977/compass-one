@@ -27,11 +27,6 @@ function variacao(atual: number, anterior: number) {
   return ((atual - anterior) / anterior) * 100
 }
 
-function corVariacao(tipo: string, v: number) {
-  if (tipo === 'despesas') return v <= 0 ? '#16a34a' : '#dc2626'
-  return v >= 0 ? '#16a34a' : '#dc2626'
-}
-
 function pillCor(tipo: string, v: number) {
   if (tipo === 'despesas') return v <= 0 ? { bg: '#f0fdf4', color: '#16a34a' } : { bg: '#fef2f2', color: '#dc2626' }
   return v >= 0 ? { bg: '#f0fdf4', color: '#16a34a' } : { bg: '#fef2f2', color: '#dc2626' }
