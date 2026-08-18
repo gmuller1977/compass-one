@@ -24,7 +24,7 @@ const SLIDE_COUNT = 6
 const FERRAMENTAS = [
   { icon: '🏠', nome: 'Início',       desc: 'Seu painel de comando. A bússola mostra se você está no rumo certo.' },
   { icon: '📋', nome: 'Lançamentos',  desc: 'Registre suas despesas e receitas. Banco, cartão e dinheiro.' },
-  { icon: '📈', nome: 'Painel mensal', desc: 'Compare o que planejou com o que realmente aconteceu.' },
+  { icon: '📈', nome: 'Radar financeiro', desc: 'Compare o que planejou com o que realmente aconteceu.' },
   { icon: '🎯', nome: 'Planejamento', desc: 'Defina seu orçamento anual. Categoria por categoria.' },
   { icon: '🔮', nome: 'Simulador',    desc: 'Simule cenários antes de decidir. Dívidas, metas, investimentos.' },
   { icon: '🧭', nome: 'North',        desc: 'Seu assistente com inteligência artificial. Pergunte qualquer coisa.' },
@@ -36,7 +36,7 @@ const ROTINA = [
     passos: [
       { titulo: 'Conferir o saldo',    pill: '🏦 Lançamentos → Banco' },
       { titulo: 'Registrar gastos',     pill: '📋 Lançamentos' },
-      { titulo: 'Acompanhar painel mensal', pill: '📈 Painel mensal' },
+      { titulo: 'Acompanhar radar financeiro', pill: '📈 Radar financeiro' },
       { titulo: 'Olhar a bússola',      pill: '🏠 Início' },
     ],
   },
@@ -364,7 +364,7 @@ export default function Onboarding() {
               Aqui você vai descobrir para onde vai o seu dinheiro, planejar o futuro e tomar decisões com segurança. Tudo de forma simples e visual.
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap' }}>
-              {[['📊','Controle'],['🎯','Planejamento'],['📈','Painel'],['🧭','Direção']].map(([ico, lbl]) => (
+              {[['📊','Controle'],['🎯','Planejamento'],['📈','Radar'],['🧭','Direção']].map(([ico, lbl]) => (
                 <div key={lbl} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 4 }}>{ico}</div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>{lbl}</div>

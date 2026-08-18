@@ -10,7 +10,7 @@ import Dashboard      from './pages/Dashboard'
 import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
-import PainelMensal    from './pages/PainelMensal'
+import RadarFinanceiro from './pages/RadarFinanceiro'
 import Configuracoes       from './pages/Configuracoes'
 import Onboarding          from './pages/Onboarding'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
@@ -137,9 +137,10 @@ export default function App() {
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
-          <Route path="/painel"          element={<Protegido><PainelMensal /></Protegido>} />
-          <Route path="/evolucao"       element={<Navigate to="/painel" replace />} />
-          <Route path="/acompanhamento" element={<Navigate to="/painel" replace />} />
+          <Route path="/radar"           element={<Protegido><RadarFinanceiro /></Protegido>} />
+          <Route path="/painel"          element={<Navigate to="/radar" replace />} />
+          <Route path="/evolucao"       element={<Navigate to="/radar" replace />} />
+          <Route path="/acompanhamento" element={<Navigate to="/radar" replace />} />
           <Route path="/novo-lancamento"    element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />

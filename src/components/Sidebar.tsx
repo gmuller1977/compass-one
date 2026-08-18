@@ -27,14 +27,15 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
       { icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
-      { icon: '📈', label: 'Painel mensal', path: '/painel',          exact: false },
+      { icon: '📈', label: 'Radar financeiro', path: '/radar',         exact: false },
     ],
   },
   {
     label: '📆 Todo mês',
     items: [
+      { icon: '📊', label: 'Resumo mensal',  path: '/novo-lancamento?tipo=resumo', exact: false },
       { icon: '🔄', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
-      { icon: '🔮', label: 'Simulador',      path: '/simulacao',                 exact: false },
+      { icon: '🔮', label: 'Simulador',      path: '/simulacao',     exact: false },
     ],
   },
   {
@@ -245,7 +246,7 @@ export default function Sidebar() {
   }
 
   const [expandedItem, setExpandedItem] = useState<string|null>(() => {
-    if (pathname.startsWith('/novo-lancamento')) return 'Lançamentos'
+    if (pathname.startsWith('/novo-lancamento') && new URLSearchParams(window.location.search).get('tipo') !== 'resumo') return 'Lançamentos'
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
         if (!item.disabled && !item.path.includes('?') && item.sub &&
@@ -259,7 +260,7 @@ export default function Sidebar() {
   })
 
   useEffect(() => {
-    if (pathname.startsWith('/novo-lancamento')) {
+    if (pathname.startsWith('/novo-lancamento') && tipoParam !== 'resumo') {
       setExpandedItem('Lançamentos')
     }
   }, [pathname, tipoParam]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -367,11 +368,6 @@ export default function Sidebar() {
                           label="Dinheiro" icon="💵"
                           active={lancActive && tipoParam === 'dinheiro'}
                           onClick={() => navigate('/novo-lancamento?tipo=dinheiro')}
-                        />
-                        <SubItemRow
-                          label="Resumo mensal" icon="📊"
-                          active={lancActive && (tipoParam === 'resumo' || tipoParam === 'consolidado')}
-                          onClick={() => navigate('/novo-lancamento?tipo=resumo')}
                         />
                       </div>
                     )}
