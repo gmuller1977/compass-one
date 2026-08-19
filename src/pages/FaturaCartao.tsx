@@ -350,7 +350,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             }
         let result = { ...prev, [key]: dmUpdated }
         const novaDesc = fDesc.trim() || fCat
-        if (entrada.parcelas && entrada.parcelas > 1 && (fCat !== entrada.categoria || novaDesc !== entrada.descricao)) {
+        if (entrada.parcelas && entrada.parcelas > 1 && (fCat !== entrada.categoria || novaDesc !== entrada.descricao || valorParcela !== entrada.valor)) {
           const baseId = entrada.id.replace(/-\d+$/, '')
           const totalParcelas = entrada.parcelas
           const currentParcela = entrada.parcelaAtual ?? 1
@@ -371,7 +371,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             for (const [dStr, list] of Object.entries(sibDm.lancamentos)) {
               const d = parseInt(dStr)
               const newList = (list as Lancamento[]).map(l => {
-                if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc, subCategoria: subCatToSave } }
+                if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc, subCategoria: subCatToSave, valor: valorParcela } }
                 return l
               })
               newLancs[d] = newList
