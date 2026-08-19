@@ -64,6 +64,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const [editFechVal, setEditFechVal] = useState(1)
   const [editVencVal, setEditVencVal] = useState(1)
   const [diasFechados, setDiasFechados] = useState<Set<string>>(new Set())
+  const [fVariante, setFVariante] = useState('')
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
   const [confirmacao, setConfirmacao] = useState<{ mensagem: string; detalhe?: string; onConfirmar: () => void } | null>(null)
@@ -234,13 +235,13 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   function resetarParaNovo(novoDia: number) {
     setDiaSel(novoDia); setEditandoId(null); setEditandoDiaOriginal(null)
-    setFTipo('entrada'); setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1'); setFDataCompra('')
+    setFTipo('entrada'); setFCat(''); setFDesc(''); setFVariante(''); setFValor(''); setFParcelas('1'); setFDataCompra('')
     setTimeout(() => dataCompraRef.current?.focus(), 50)
   }
 
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia)
-    setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao)
+    setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao); setFVariante(l.subCategoria ?? '')
     setFValor(String(l.valor).replace('.', ','))
     setFParcelas(String(l.parcelas ?? 1))
     const dc = l.diaCompra ?? dia
@@ -305,12 +306,13 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
     if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
-    // Detecta se fDesc é variante (subCategoria) ou descrição livre
     const norm = fCat.trim().toLowerCase()
     const subDescsDisponiveis = categoriasCartao
       .filter(c => c.nome.trim().toLowerCase() === norm && c.descricao)
       .map(c => c.descricao!)
-    const subCatToSave = subDescsDisponiveis.length > 1 && subDescsDisponiveis.includes(fDesc) ? fDesc : undefined
+    const subCatToSave = subDescsDisponiveis.length > 1 && fVariante
+      ? (subDescsDisponiveis.includes(fVariante) ? fVariante : undefined)
+      : undefined
     const parsedCompra = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
     const diaCompraFinal = parsedCompra?.dia ?? diaSel
     const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
@@ -503,7 +505,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     pedirConfirmacao(mensagem, () => {
       excluirTodasParcelas(idAlvo, diaAlvo)
       setEditandoId(null); setEditandoDiaOriginal(null)
-      setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+      setFCat(''); setFDesc(''); setFVariante(''); setFValor(''); setFParcelas('1')
+      if (isMobile) setMobileView('extrato')
     }, detalhe)
   }
 
@@ -514,8 +517,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
       excluirTodasParcelas(id, dia)
       if (editandoId === id) {
         setEditandoId(null); setEditandoDiaOriginal(null)
-        setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+        setFCat(''); setFDesc(''); setFVariante(''); setFValor(''); setFParcelas('1')
       }
+      if (isMobile) setMobileView('extrato')
     }
     if (totalParcelas > 1) {
       pedirConfirmacao('Excluir parcelamento?', doExcluir, `Todas as ${totalParcelas} parcelas serão removidas.`)
@@ -541,6 +545,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         fTipo={fTipo} setFTipo={setFTipo}
         fCat={fCat} setFCat={setFCat}
         fDesc={fDesc} setFDesc={setFDesc}
+        fVariante={fVariante} setFVariante={setFVariante}
         fValor={fValor} setFValor={setFValor}
         fParcelas={fParcelas} setFParcelas={setFParcelas}
         fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
@@ -621,6 +626,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           fTipo={fTipo} setFTipo={setFTipo}
           fCat={fCat} setFCat={setFCat}
           fDesc={fDesc} setFDesc={setFDesc}
+          fVariante={fVariante} setFVariante={setFVariante}
           fValor={fValor} setFValor={setFValor}
           fParcelas={fParcelas} setFParcelas={setFParcelas}
           fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}

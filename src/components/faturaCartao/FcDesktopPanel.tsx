@@ -22,6 +22,8 @@ type Props = {
   setFCat: React.Dispatch<React.SetStateAction<string>>
   fDesc: string
   setFDesc: React.Dispatch<React.SetStateAction<string>>
+  fVariante: string
+  setFVariante: React.Dispatch<React.SetStateAction<string>>
   fValor: string
   setFValor: React.Dispatch<React.SetStateAction<string>>
   fParcelas: string
@@ -62,7 +64,7 @@ export default function FcDesktopPanel({
   editandoId,
   editandoFechamento, setEditandoFechamento,
   editandoVencimento, setEditandoVencimento,
-  fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc,
+  fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc, fVariante, setFVariante,
   fValor, setFValor, fParcelas, setFParcelas,
   fDataCompra, setFDataCompra,
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
@@ -224,7 +226,7 @@ export default function FcDesktopPanel({
             return (
               <>
                 <select ref={categoriaSelectRef} value={fCat}
-                  onChange={e => { setFCat(e.target.value); setFDesc('') }}
+                  onChange={e => { setFCat(e.target.value); setFDesc(''); setFVariante('') }}
                   onFocus={realcarFoco} onBlur={removerRealce}
                   style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
                     fontSize:12,outline:'none',background:'#fff',
@@ -241,7 +243,7 @@ export default function FcDesktopPanel({
                 {subDescs.length > 1 && (
                   <div style={{marginTop:6}}>
                     <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Variante</div>
-                    <select value={fDesc} onChange={e => setFDesc(e.target.value)}
+                    <select value={fVariante} onChange={e => setFVariante(e.target.value)}
                       onFocus={realcarFoco} onBlur={removerRealce}
                       style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
                         fontSize:12,outline:'none',background:'#fff',

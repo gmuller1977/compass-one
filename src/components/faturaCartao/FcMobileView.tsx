@@ -41,6 +41,8 @@ type Props = {
   setFCat: React.Dispatch<React.SetStateAction<string>>
   fDesc: string
   setFDesc: React.Dispatch<React.SetStateAction<string>>
+  fVariante: string
+  setFVariante: React.Dispatch<React.SetStateAction<string>>
   fValor: string
   setFValor: React.Dispatch<React.SetStateAction<string>>
   fParcelas: string
@@ -97,7 +99,7 @@ export default function FcMobileView({
   editandoVencimento, setEditandoVencimento,
   editFechVal, setEditFechVal,
   editVencVal, setEditVencVal,
-  fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc,
+  fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc, fVariante, setFVariante,
   fValor, setFValor, fParcelas, setFParcelas,
   fDataCompra, setFDataCompra,
   editandoId, setEditandoId, editandoDiaOriginal, setEditandoDiaOriginal,
@@ -413,7 +415,7 @@ export default function FcMobileView({
               <label style={{fontSize:10,fontWeight:700,color:COR.azul,
                 textTransform:'uppercase' as const,letterSpacing:.5,
                 marginBottom:5,display:'block'}}>🏷 Categoria</label>
-              <select ref={categoriaSelectRef} value={fCat} onChange={e => setFCat(e.target.value)}
+              <select ref={categoriaSelectRef} value={fCat} onChange={e => { setFCat(e.target.value); setFVariante('') }}
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                   padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,
@@ -426,6 +428,29 @@ export default function FcMobileView({
                 ))}
               </select>
             </div>
+
+            {/* Variante */}
+            {(() => {
+              const norm = fCat.trim().toLowerCase()
+              const subDescs = fCat ? categoriasCartao.filter(c => c.nome.trim().toLowerCase() === norm && c.descricao).map(c => c.descricao!) : []
+              return subDescs.length > 1 ? (
+                <div style={{marginBottom:14}}>
+                  <label style={{fontSize:10,fontWeight:700,color:COR.azul,
+                    textTransform:'uppercase' as const,letterSpacing:.5,
+                    marginBottom:5,display:'block'}}>🔖 Variante</label>
+                  <select value={fVariante} onChange={e => setFVariante(e.target.value)}
+                    style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
+                      padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
+                      fontFamily:'inherit',color:COR.texto,
+                      appearance:'none' as const,cursor:'pointer',
+                      backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E\")",
+                      backgroundRepeat:'no-repeat',backgroundPosition:'calc(100% - 14px) center'}}>
+                    <option value="">Selecione a variante...</option>
+                    {subDescs.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              ) : null
+            })()}
 
             {/* Valor da parcela */}
             <div style={{marginBottom:14}}>
@@ -508,13 +533,9 @@ export default function FcMobileView({
             <div style={{display:'flex',gap:8,marginTop:4,paddingBottom:20}}>
               {editandoId && (
                 <button onClick={() => {
-                  if (!editandoId || !window.confirm('Excluir este lançamento?')) return
+                  if (!editandoId) return
                   const diaAlvo = editandoDiaOriginal ?? diaSel
-                  const idAtual = editandoId
-                  updateMes(prev => ({...prev, lancamentos:{ ...prev.lancamentos, [diaAlvo]:(prev.lancamentos[diaAlvo]??[]).filter(l=>l.id!==idAtual) }}))
-                  setEditandoId(null); setEditandoDiaOriginal(null)
-                  setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
-                  setMobileView('extrato')
+                  excluir(diaAlvo, editandoId)
                 }} style={{
                   flex:1,padding:'13px 0',border:`1.5px solid ${COR.borda}`,
                   borderRadius:12,cursor:'pointer',fontSize:14,fontWeight:600,
