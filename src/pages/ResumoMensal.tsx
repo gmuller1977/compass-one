@@ -344,13 +344,21 @@ export default function ResumoMensal() {
             const dm = dados[`${c.id}-${ano}-${mesStr}`]
             if (dm?.fixasValorOverride?.[cat.id] !== undefined) return dm.fixasValorOverride[cat.id]
           }
+          const dmDin = dados[`dinheiro-${ano}-${mesStr}`]
+          if (dmDin?.fixasValorOverride?.[cat.id] !== undefined) return dmDin.fixasValorOverride[cat.id]
           return undefined
         })()
-        recebido = confirmedCats.has(cat.id)
-        realizado = recebido ? (override !== undefined ? override : (fixasValorPorId[cat.id]?.valor ?? previsto)) : 0
+        const isConsolidada = confirmedCats.has(cat.id)
+        // Fallback: fixa paga via lançamento variável (sem consolidação)
+        const realizadoVar = (realizadoPorCat[rKey(nome, variante)] ?? 0) ||
+          (variante ? (realizadoPorCat[nome] ?? 0) : 0)
+        recebido = isConsolidada || realizadoVar > 0
+        realizado = isConsolidada
+          ? (override !== undefined ? override : (fixasValorPorId[cat.id]?.valor ?? previsto))
+          : realizadoVar
       } else {
         const exactVal = realizadoPorCat[rKey(nome, variante)] ?? 0
-        // Fallback: lançamentos antigos sem subCategoria ficam na chave sem variante
+        // Fallback: lançamentos sem subCategoria ficam na chave sem variante
         realizado = exactVal > 0 ? exactVal : (variante ? (realizadoPorCat[nome] ?? 0) : 0)
         recebido  = realizado > 0
       }
