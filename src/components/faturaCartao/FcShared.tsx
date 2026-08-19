@@ -11,6 +11,7 @@ export type FormaPag = 'credito'
 export type Lancamento = {
   id: string; tipo: TipoLanc
   descricao: string; categoria: string
+  subCategoria?: string
   valor: number; formaPagamento: FormaPag
   tipoLanc: 'fixa'|'variavel'
   consolidado?: boolean

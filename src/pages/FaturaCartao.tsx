@@ -298,6 +298,12 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
     if (!fCat || valorParcela <= 0) return
     const baseId = `v-${Date.now()}`
+    // Detecta se fDesc é variante (subCategoria) ou descrição livre
+    const norm = fCat.trim().toLowerCase()
+    const subDescsDisponiveis = categoriasCartao
+      .filter(c => c.nome.trim().toLowerCase() === norm && c.descricao)
+      .map(c => c.descricao!)
+    const subCatToSave = subDescsDisponiveis.length > 1 && subDescsDisponiveis.includes(fDesc) ? fDesc : undefined
     const parsedCompra = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
     const diaCompraFinal = parsedCompra?.dia ?? diaSel
     const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
@@ -327,6 +333,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         const novoConsolidado = diaOrigem !== diaSel ? !futuroAlvo : entrada.consolidado
         const atualizada: Lancamento = {
           ...entrada, tipo:fTipo, descricao:fDesc.trim()||fCat, categoria:fCat,
+          subCategoria: subCatToSave,
           valor:valorParcela, formaPagamento:'credito', consolidado:novoConsolidado,
           parcelas:nParcelas>1?nParcelas:undefined, parcelaAtual:entrada.parcelaAtual,
           diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
@@ -364,7 +371,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             for (const [dStr, list] of Object.entries(sibDm.lancamentos)) {
               const d = parseInt(dStr)
               const newList = (list as Lancamento[]).map(l => {
-                if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc } }
+                if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc, subCategoria: subCatToSave } }
                 return l
               })
               newLancs[d] = newList
@@ -392,7 +399,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
                 ...dadosMes.lancamentos,
                 [diaSel]: [...(dadosMes.lancamentos[diaSel]??[]), {
                   id:`${baseId}-${p}`, tipo:fTipo,
-                  descricao:desc, categoria:fCat,
+                  descricao:desc, categoria:fCat, subCategoria:subCatToSave,
                   valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
                   consolidado: p===1 ? !ehDiaFuturo(diaSel) : false,
                   parcelas:nParcelas, parcelaAtual:p,
@@ -416,7 +423,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
               ...dm.lancamentos,
               [diaSel]: [...(dm.lancamentos[diaSel]??[]), {
                 id:`${baseId}-1`, tipo:fTipo,
-                descricao:fDesc.trim()||fCat, categoria:fCat,
+                descricao:fDesc.trim()||fCat, categoria:fCat, subCategoria:subCatToSave,
                 valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
                 consolidado: !ehDiaFuturo(diaSel),
                 diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
