@@ -432,24 +432,65 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     setTimeout(() => { const el = dataCompraRef.current; if (el) { el.focus(); el.select() } }, 80)
   }
 
+  function excluirTodasParcelas(id: string, diaOrigem: number) {
+    const lancamento = (dados[key]?.lancamentos[diaOrigem] ?? []).find(l => l.id === id)
+    const totalParcelas = lancamento?.parcelas ?? 1
+    const currentParcela = lancamento?.parcelaAtual ?? 1
+    if (totalParcelas <= 1) {
+      updateMes(prev => ({
+        ...prev,
+        lancamentos: { ...prev.lancamentos, [diaOrigem]: (prev.lancamentos[diaOrigem]??[]).filter(l=>l.id!==id) }
+      }))
+      return
+    }
+    const baseId = id.replace(/-\d+$/, '')
+    setDados(prev => {
+      let result = { ...prev }
+      for (let p = 1; p <= totalParcelas; p++) {
+        let m = mes - (currentParcela - 1) + (p - 1)
+        let a = ano
+        while (m < 0) { m += 12; a-- }
+        while (m > 11) { m -= 12; a++ }
+        const sibKey = mesKey(contaId, a, m)
+        const sibDm = result[sibKey] as DadosMes | undefined
+        if (!sibDm?.lancamentos) continue
+        const targetId = `${baseId}-${p}`
+        const newLancs: Record<number, Lancamento[]> = {}
+        let changed = false
+        for (const [dStr, list] of Object.entries(sibDm.lancamentos)) {
+          const d = parseInt(dStr)
+          const orig = list as Lancamento[]
+          const filtered = orig.filter(l => l.id !== targetId)
+          if (filtered.length !== orig.length) changed = true
+          newLancs[d] = filtered
+        }
+        if (changed) result = { ...result, [sibKey]: { ...sibDm, lancamentos: newLancs } }
+      }
+      return result
+    })
+  }
+
   function excluirAtual() {
     if (!editandoId) return
-    if (!window.confirm('Excluir este lançamento?')) return
     const diaAlvo = editandoDiaOriginal ?? diaSel
-    const idAtual = editandoId
-    updateMes(prev => ({
-      ...prev,
-      lancamentos: { ...prev.lancamentos, [diaAlvo]: (prev.lancamentos[diaAlvo]??[]).filter(l=>l.id!==idAtual) }
-    }))
+    const lancamento = (dados[key]?.lancamentos[diaAlvo] ?? []).find(l => l.id === editandoId)
+    const totalParcelas = lancamento?.parcelas ?? 1
+    const msg = totalParcelas > 1
+      ? `Excluir todas as ${totalParcelas} parcelas?`
+      : 'Excluir este lançamento?'
+    if (!window.confirm(msg)) return
+    excluirTodasParcelas(editandoId, diaAlvo)
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
   }
 
   function excluir(dia: number, id: string) {
-    updateMes(prev => ({
-      ...prev,
-      lancamentos: { ...prev.lancamentos, [dia]: (prev.lancamentos[dia]??[]).filter(l=>l.id!==id) }
-    }))
+    const lancamento = (dados[key]?.lancamentos[dia] ?? []).find(l => l.id === id)
+    const totalParcelas = lancamento?.parcelas ?? 1
+    if (totalParcelas > 1) {
+      if (!window.confirm(`Excluir todas as ${totalParcelas} parcelas?`)) return
+    }
+    excluirTodasParcelas(id, dia)
     if (editandoId === id) {
       setEditandoId(null); setEditandoDiaOriginal(null)
       setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
