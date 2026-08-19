@@ -129,7 +129,7 @@ export default function RadarFinanceiro() {
       }
     }
 
-    const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; descricao?: string; valor: number }[]> }>
+    const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number }[]> }>
     for (const card of contas.filter(c => c.tipo === 'cartao')) {
       const billingOff = (card.diaVencimento ?? 1) < (card.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - billingOff, pAno = ano
@@ -141,13 +141,15 @@ export default function RadarFinanceiro() {
       const pTotalDias = new Date(pAno, pMes + 1, 0).getDate()
       for (let d = 1; d <= pTotalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
+          const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
+          const k   = rKey(l.categoria, sub)
           if (l.tipo === 'entrada') {
-            const c = getSaida(l.categoria)
+            const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
           } else if (l.tipo === 'saida') {
             // Estorno: abate da categoria de saída
-            const c = getSaida(l.categoria)
+            const c = getSaida(k)
             c.total -= l.valor; c.totalCart -= l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
           }
