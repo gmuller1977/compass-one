@@ -11,6 +11,7 @@ import FcBanner from '../components/faturaCartao/FcBanner'
 import FcDesktopLeft from '../components/faturaCartao/FcDesktopLeft'
 import FcDesktopPanel from '../components/faturaCartao/FcDesktopPanel'
 import FcModal from '../components/faturaCartao/FcModal'
+import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 
 function useIsMobile() {
   const [m, setM] = useState(() => window.innerWidth < 640)
@@ -65,6 +66,11 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const [diasFechados, setDiasFechados] = useState<Set<string>>(new Set())
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
+  const [confirmacao, setConfirmacao] = useState<{ mensagem: string; detalhe?: string; onConfirmar: () => void } | null>(null)
+
+  function pedirConfirmacao(mensagem: string, onConfirmar: () => void, detalhe?: string) {
+    setConfirmacao({ mensagem, detalhe, onConfirmar })
+  }
 
   const categoriaSelectRef  = useRef<HTMLSelectElement>(null)
   const valorInputRef       = useRef<HTMLInputElement>(null)
@@ -489,33 +495,39 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   function excluirAtual() {
     if (!editandoId) return
     const diaAlvo = editandoDiaOriginal ?? diaSel
-    const lancamento = (dados[key]?.lancamentos[diaAlvo] ?? []).find(l => l.id === editandoId)
+    const idAlvo = editandoId
+    const lancamento = (dados[key]?.lancamentos[diaAlvo] ?? []).find(l => l.id === idAlvo)
     const totalParcelas = lancamento?.parcelas ?? 1
-    const msg = totalParcelas > 1
-      ? `Excluir todas as ${totalParcelas} parcelas?`
-      : 'Excluir este lançamento?'
-    if (!window.confirm(msg)) return
-    excluirTodasParcelas(editandoId, diaAlvo)
-    setEditandoId(null); setEditandoDiaOriginal(null)
-    setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+    const mensagem = totalParcelas > 1 ? 'Excluir parcelamento?' : 'Excluir lançamento?'
+    const detalhe = totalParcelas > 1 ? `Todas as ${totalParcelas} parcelas serão removidas.` : undefined
+    pedirConfirmacao(mensagem, () => {
+      excluirTodasParcelas(idAlvo, diaAlvo)
+      setEditandoId(null); setEditandoDiaOriginal(null)
+      setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+    }, detalhe)
   }
 
   function excluir(dia: number, id: string) {
     const lancamento = (dados[key]?.lancamentos[dia] ?? []).find(l => l.id === id)
     const totalParcelas = lancamento?.parcelas ?? 1
-    if (totalParcelas > 1) {
-      if (!window.confirm(`Excluir todas as ${totalParcelas} parcelas?`)) return
+    const doExcluir = () => {
+      excluirTodasParcelas(id, dia)
+      if (editandoId === id) {
+        setEditandoId(null); setEditandoDiaOriginal(null)
+        setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+      }
     }
-    excluirTodasParcelas(id, dia)
-    if (editandoId === id) {
-      setEditandoId(null); setEditandoDiaOriginal(null)
-      setFCat(''); setFDesc(''); setFValor(''); setFParcelas('1')
+    if (totalParcelas > 1) {
+      pedirConfirmacao('Excluir parcelamento?', doExcluir, `Todas as ${totalParcelas} parcelas serão removidas.`)
+    } else {
+      pedirConfirmacao('Excluir lançamento?', doExcluir)
     }
   }
 
   // ── Mobile ──────────────────────────────────────────────────────────
   if (isMobile) {
     return (
+      <>
       <FcMobileView
         contasCartao={contasCartao}
         contaId={contaId} setContaId={setContaId}
@@ -554,6 +566,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         lancar={lancar}
         diaDefaultPara={diaDefaultPara}
       />
+      {confirmacao && (
+        <FcConfirmModal
+          mensagem={confirmacao.mensagem}
+          detalhe={confirmacao.detalhe}
+          onConfirmar={() => { confirmacao.onConfirmar(); setConfirmacao(null) }}
+          onCancelar={() => setConfirmacao(null)}
+        />
+      )}
+      </>
     )
   }
 
@@ -628,6 +649,14 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         confirmarModalFatura={confirmarModalFatura}
         updateMes={updateMes}
       />
+      {confirmacao && (
+        <FcConfirmModal
+          mensagem={confirmacao.mensagem}
+          detalhe={confirmacao.detalhe}
+          onConfirmar={() => { confirmacao.onConfirmar(); setConfirmacao(null) }}
+          onCancelar={() => setConfirmacao(null)}
+        />
+      )}
     </div>
   )
 }
