@@ -14,10 +14,10 @@ function SecaoHeader({ titulo }: { titulo: string }) {
     <div style={{
       background: 'linear-gradient(135deg,#0f172a,#1e293b)',
       borderRadius: '12px 12px 0 0',
-      padding: '11px 16px',
+      padding: '13px 20px',
       color: '#fff',
     }}>
-      <span style={{ fontSize: 12, fontWeight: 700 }}>{titulo}</span>
+      <span style={{ fontSize: 14, fontWeight: 700 }}>{titulo}</span>
     </div>
   )
 }
@@ -43,28 +43,28 @@ export default function RmProjecao({ saldoContas, receitasAReceber, despesasPend
   return (
     <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
       <SecaoHeader titulo={`🔮 Projeção de Fechamento — ${NOMES_MESES_RM[mes]}`} />
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderTop: 0, borderRadius: '0 0 12px 12px', padding: 14 }}>
-        <div style={{ background: '#fff', border: '2px solid #1a56db', borderRadius: 12, padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, color: '#475569' }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderTop: 0, borderRadius: '0 0 12px 12px', padding: 20 }}>
+        <div style={{ background: '#fff', border: '2px solid #1a56db', borderRadius: 12, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: 14, color: '#475569' }}>
             <span>Saldo atual das contas</span>
-            <span style={{ fontWeight: 600 }}>{fmt(saldoContas)}</span>
+            <span style={{ fontWeight: 700 }}>{fmt(saldoContas)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, color: '#475569' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: 14, color: '#475569' }}>
             <span>+ Receitas a receber</span>
-            <span style={{ fontWeight: 600, color: '#16a34a' }}>{fmt(receitasAReceber)}</span>
+            <span style={{ fontWeight: 700, color: '#16a34a' }}>{fmt(receitasAReceber)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, color: '#475569' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: 14, color: '#475569' }}>
             <span>- Despesas pendentes</span>
-            <span style={{ fontWeight: 600, color: '#dc2626' }}>{fmt(despesasPendentes)}</span>
+            <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(despesasPendentes)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 12, color: '#475569' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: 14, color: '#475569' }}>
             <span>- Faturas dos cartões</span>
-            <span style={{ fontWeight: 600, color: '#dc2626' }}>{fmt(totalFaturas)}</span>
+            <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(totalFaturas)}</span>
           </div>
           <div style={{
             display: 'flex', justifyContent: 'space-between',
-            borderTop: '2px solid #e2e8f0', paddingTop: 8, marginTop: 4,
-            fontWeight: 800, fontSize: 14,
+            borderTop: '2px solid #e2e8f0', paddingTop: 10, marginTop: 6,
+            fontWeight: 800, fontSize: 16,
           }}>
             <span style={{ color: '#1e293b' }}>= Saldo previsto final</span>
             <span style={{ color: projecao >= 0 ? '#16a34a' : '#dc2626' }}>
@@ -72,7 +72,7 @@ export default function RmProjecao({ saldoContas, receitasAReceber, despesasPend
             </span>
           </div>
 
-          <div style={{ ...mensagem.style, marginTop: 10, padding: 8, borderRadius: 8, fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ ...mensagem.style, marginTop: 12, padding: '10px 14px', borderRadius: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
             {mensagem.texto}
           </div>
         </div>

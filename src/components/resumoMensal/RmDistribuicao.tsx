@@ -37,10 +37,10 @@ function SecaoHeader({ titulo }: { titulo: string }) {
     <div style={{
       background: 'linear-gradient(135deg,#0f2878,#1a56db)',
       borderRadius: '12px 12px 0 0',
-      padding: '11px 16px',
+      padding: '13px 20px',
       color: '#fff',
     }}>
-      <span style={{ fontSize: 12, fontWeight: 700 }}>{titulo}</span>
+      <span style={{ fontSize: 14, fontWeight: 700 }}>{titulo}</span>
     </div>
   )
 }
@@ -61,18 +61,18 @@ export default function RmDistribuicao({ despesas, fmt }: Props) {
       cor: CORES_GRUPOS[nome] ?? CORES_FALLBACK[i % CORES_FALLBACK.length],
     }))
 
-  const total = dados.reduce((s, d) => s + d.valor, 0)
-  const size  = isMobile ? 180 : 220
-  const inner = isMobile ? 55 : 65
-  const outer = isMobile ? 83 : 95
+  const total  = dados.reduce((s, d) => s + d.valor, 0)
+  const size   = isMobile ? 200 : 240
+  const inner  = isMobile ? 62 : 72
+  const outer  = isMobile ? 93 : 108
 
   return (
     <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
       <SecaoHeader titulo="💸 Para onde foi seu dinheiro" />
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderTop: 0, borderRadius: '0 0 12px 12px', padding: 20 }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderTop: 0, borderRadius: '0 0 12px 12px', padding: 24 }}>
 
         {dados.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 14 }}>
             Nenhuma despesa registrada para este mês.
           </div>
         ) : (
@@ -80,7 +80,7 @@ export default function RmDistribuicao({ despesas, fmt }: Props) {
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
             alignItems: 'center',
-            gap: 24,
+            gap: 32,
             justifyContent: 'center',
           }}>
             {/* Donut */}
@@ -109,17 +109,17 @@ export default function RmDistribuicao({ despesas, fmt }: Props) {
                 textAlign: 'center', pointerEvents: 'none',
               }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{fmt(total)}</div>
-                <div style={{ fontSize: 8, color: '#94a3b8' }}>total gasto</div>
+                <div style={{ fontSize: 10, color: '#94a3b8' }}>total gasto</div>
               </div>
             </div>
 
             {/* Legenda */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {dados.map(d => (
-                <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.cor, flexShrink: 0 }} />
-                  <b style={{ color: '#1e293b', minWidth: 80 }}>{d.nome}</b>
-                  <span style={{ color: '#475569' }}>{fmt(d.valor)}</span>
+                <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: d.cor, flexShrink: 0 }} />
+                  <b style={{ color: '#1e293b', minWidth: 100 }}>{d.nome}</b>
+                  <span style={{ color: '#475569', fontWeight: 600 }}>{fmt(d.valor)}</span>
                   <span style={{ color: '#94a3b8' }}>({total > 0 ? Math.round((d.valor / total) * 100) : 0}%)</span>
                 </div>
               ))}
