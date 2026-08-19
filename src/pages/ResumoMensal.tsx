@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
@@ -133,6 +133,8 @@ export default function ResumoMensal() {
 
   const [mes, setMes] = useState(mesHoje)
   const [ano, setAno] = useState(anoHoje)
+  const [activeSection, setActiveSection] = useState(0)
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const {
     contas, categorias, extratoData, faturaData,
@@ -146,6 +148,36 @@ export default function ResumoMensal() {
       if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Viu o Resumo mensal', pontos: 2 })
     })
   }, [user?.id])
+
+  // Scroll snap no root do documento
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.scrollSnapType = 'y mandatory'
+    root.style.scrollBehavior = 'smooth'
+    return () => {
+      root.style.scrollSnapType = ''
+      root.style.scrollBehavior = ''
+    }
+  }, [])
+
+  // IntersectionObserver para dot ativo
+  useEffect(() => {
+    const refs = sectionRefs.current.filter(Boolean) as HTMLDivElement[]
+    if (refs.length === 0) return
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const idx = sectionRefs.current.findIndex(r => r === e.target)
+            if (idx !== -1) setActiveSection(idx)
+          }
+        })
+      },
+      { threshold: 0.4 }
+    )
+    refs.forEach(r => observer.observe(r))
+    return () => observer.disconnect()
+  }, [mes, ano]) // recriar ao mudar mês (faturas podem aparecer/sumir)
 
   const contasExtrato = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const dados = extratoData as Record<string, DadosMesRm>
@@ -317,7 +349,9 @@ export default function ResumoMensal() {
         recebido = confirmedCats.has(cat.id)
         realizado = recebido ? (override !== undefined ? override : (fixasValorPorId[cat.id]?.valor ?? previsto)) : 0
       } else {
-        realizado = realizadoPorCat[rKey(nome, variante)] ?? 0
+        const exactVal = realizadoPorCat[rKey(nome, variante)] ?? 0
+        // Fallback: lançamentos antigos sem subCategoria ficam na chave sem variante
+        realizado = exactVal > 0 ? exactVal : (variante ? (realizadoPorCat[nome] ?? 0) : 0)
         recebido  = realizado > 0
       }
 
@@ -485,59 +519,81 @@ export default function ResumoMensal() {
           mb={16}
         />
 
-        <RmPatrimonio
-          saldoAtualPorConta={saldoAtualPorConta}
-          faturaAtualPorCartao={faturaAtualPorCartao}
-          saldoDinheiro={saldoDinheiro}
-          fmt={fmt}
-        />
+        {(() => {
+          const hasFaturas = faturaAtualPorCartao.length > 0
+          const sections: { id: string; label: string; node: React.ReactNode }[] = [
+            {
+              id: 'patrimonio', label: 'Patrimônio',
+              node: <RmPatrimonio saldoAtualPorConta={saldoAtualPorConta} faturaAtualPorCartao={faturaAtualPorCartao} saldoDinheiro={saldoDinheiro} fmt={fmt} />,
+            },
+            {
+              id: 'receitas', label: 'Receitas',
+              node: <RmReceitas receitas={receitasInfo} totalPrevisto={totalReceitasPrevisto} totalRecebido={totalReceitasRecebido} mes={mes} fmt={fmt} />,
+            },
+            {
+              id: 'despesas', label: 'Despesas',
+              node: <RmDespesas despesas={despesasInfo} totalPrevisto={totalDespesasPrevisto} totalPago={totalDespesasPago} mes={mes} temPlanejamento={!!dadosAno} fmt={fmt} />,
+            },
+            ...(hasFaturas ? [{
+              id: 'faturas', label: 'Faturas',
+              node: <RmFaturas faturas={faturaAtualPorCartao} hoje={hoje} fmt={fmt} />,
+            }] : []),
+            {
+              id: 'projecao', label: 'Projeção',
+              node: <RmProjecao saldoContas={saldoContas} receitasAReceber={receitasAReceber} despesasPendentes={despesasPendentes} totalFaturas={totalFaturas} mes={mes} fmt={fmt} />,
+            },
+            {
+              id: 'comparativo', label: 'Comparativo',
+              node: <RmComparativo atual={totaisAtuais} anterior={totaisAnterior} mesAtual={mes} mesAnterior={mes === 0 ? 11 : mes - 1} fmt={fmt} />,
+            },
+            {
+              id: 'distribuicao', label: 'Distribuição',
+              node: <RmDistribuicao despesas={despesasInfo} fmt={fmt} />,
+            },
+          ]
 
-        <RmReceitas
-          receitas={receitasInfo}
-          totalPrevisto={totalReceitasPrevisto}
-          totalRecebido={totalReceitasRecebido}
-          mes={mes}
-          fmt={fmt}
-        />
+          return (
+            <>
+              {sections.map((s, i) => (
+                <div
+                  key={s.id}
+                  ref={el => { sectionRefs.current[i] = el }}
+                  style={{ scrollSnapAlign: 'start', scrollMarginTop: 16 }}
+                >
+                  {s.node}
+                </div>
+              ))}
 
-        <RmDespesas
-          despesas={despesasInfo}
-          totalPrevisto={totalDespesasPrevisto}
-          totalPago={totalDespesasPago}
-          mes={mes}
-          temPlanejamento={!!dadosAno}
-          fmt={fmt}
-        />
-
-        {faturaAtualPorCartao.length > 0 && (
-          <RmFaturas
-            faturas={faturaAtualPorCartao}
-            hoje={hoje}
-            fmt={fmt}
-          />
-        )}
-
-        <RmProjecao
-          saldoContas={saldoContas}
-          receitasAReceber={receitasAReceber}
-          despesasPendentes={despesasPendentes}
-          totalFaturas={totalFaturas}
-          mes={mes}
-          fmt={fmt}
-        />
-
-        <RmComparativo
-          atual={totaisAtuais}
-          anterior={totaisAnterior}
-          mesAtual={mes}
-          mesAnterior={mes === 0 ? 11 : mes - 1}
-          fmt={fmt}
-        />
-
-        <RmDistribuicao
-          despesas={despesasInfo}
-          fmt={fmt}
-        />
+              {/* Dots de navegação — desktop only */}
+              {!isMobile && (
+                <div style={{
+                  position: 'fixed', right: 12, top: '50%',
+                  transform: 'translateY(-50%)',
+                  display: 'flex', flexDirection: 'column', gap: 8,
+                  zIndex: 200,
+                }}>
+                  {sections.map((s, i) => (
+                    <button
+                      key={s.id}
+                      title={s.label}
+                      onClick={() => sectionRefs.current[i]?.scrollIntoView({ behavior: 'smooth' })}
+                      style={{
+                        width: 8, height: 8, borderRadius: '50%', border: 'none',
+                        padding: 0, cursor: 'pointer',
+                        transition: 'all 0.25s',
+                        background: i === activeSection ? '#1a56db' : 'rgba(255,255,255,0.6)',
+                        boxShadow: i === activeSection
+                          ? '0 0 0 2px #1a56db'
+                          : '0 0 0 1.5px rgba(0,0,0,0.18)',
+                        transform: i === activeSection ? 'scale(1.4)' : 'scale(1)',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        })()}
 
       </div>
     </>
