@@ -102,7 +102,7 @@ export default function RmReceitas({ receitas, totalPrevisto, totalRecebido, mes
                       >
                         {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
-                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Tooltip formatter={(v) => fmt(Number(v))} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div style={{

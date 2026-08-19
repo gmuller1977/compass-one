@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
@@ -127,6 +128,7 @@ export default function ResumoMensal() {
   const mesHoje = hoje.getMonth()
   const anoHoje = hoje.getFullYear()
   const isMobile = useIsMobile()
+  const { pathname } = useLocation()
 
   const [mes, setMes] = useState(mesHoje)
   const [ano, setAno] = useState(anoHoje)
@@ -161,7 +163,6 @@ export default function ResumoMensal() {
     [planejamentoLockado, planosReal, planos, ano]
   )
   const dadosAnoAnterior = useMemo(() => {
-    const mesAnterior = mes === 0 ? 11 : mes - 1
     const anoAnterior = mes === 0 ? ano - 1 : ano
     return (planejamentoLockado && planosReal[anoAnterior]) ? planosReal[anoAnterior] : planos[anoAnterior]
   }, [planejamentoLockado, planosReal, planos, mes, ano])
@@ -444,7 +445,7 @@ export default function ResumoMensal() {
 
   return (
     <>
-      {isMobile && <AppHeader />}
+      {isMobile && <AppHeader currentPath={pathname} />}
       <div style={{ padding: isMobile ? '12px 12px 80px' : '20px 24px', fontFamily: "-apple-system,'Inter',sans-serif" }}>
 
         <TutorialCard

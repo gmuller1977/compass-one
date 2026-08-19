@@ -100,7 +100,7 @@ export default function RmDistribuicao({ despesas, fmt }: Props) {
                   >
                     {dados.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => fmt(v)} />
+                  <Tooltip formatter={(v) => fmt(Number(v))} />
                 </PieChart>
               </ResponsiveContainer>
               <div style={{
