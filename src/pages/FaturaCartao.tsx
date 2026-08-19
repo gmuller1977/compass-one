@@ -294,6 +294,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   }, [dados, mes, ano, contas])
 
   function lancar() {
+    console.log('[lancar] chamado editandoId=', editandoId)
     const valorParcela = parseBRL(fValor)
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
     if (!fCat || valorParcela <= 0) return
@@ -350,6 +351,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             }
         let result = { ...prev, [key]: dmUpdated }
         const novaDesc = fDesc.trim() || fCat
+        console.log('[parcelas-edit] entrada:', { id: entrada.id, parcelas: entrada.parcelas, parcelaAtual: entrada.parcelaAtual, valor: entrada.valor, categoria: entrada.categoria, descricao: entrada.descricao })
+        console.log('[parcelas-edit] novo:', { fCat, novaDesc, valorParcela })
         if (entrada.parcelas && entrada.parcelas > 1 && (fCat !== entrada.categoria || novaDesc !== entrada.descricao || valorParcela !== entrada.valor)) {
           const baseId = entrada.id.replace(/-\d+$/, '')
           const totalParcelas = entrada.parcelas
@@ -357,6 +360,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           let baseMes = purchaseMes - (currentParcela - 1)
           let baseAno = purchaseAno
           while (baseMes < 0) { baseMes += 12; baseAno-- }
+          console.log('[parcelas-edit] propagando', { baseId, totalParcelas, currentParcela, baseMes, baseAno, purchaseMes, purchaseAno })
           for (let p = 1; p <= totalParcelas; p++) {
             if (p === currentParcela) continue
             let m = baseMes + (p - 1)
@@ -364,20 +368,25 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             while (m > 11) { m -= 12; a++ }
             const sibKey = mesKey(contaId, a, m)
             const sibDm = result[sibKey] as DadosMes | undefined
-            if (!sibDm?.lancamentos) continue
             const targetId = `${baseId}-${p}`
+            console.log(`[parcelas-edit] p=${p} sibKey=${sibKey} exists=${!!sibDm} targetId=${targetId}`)
+            if (!sibDm?.lancamentos) { console.log(`[parcelas-edit] p=${p} SEM DADOS`); continue }
             let dmChanged = false
             const newLancs: Record<number, Lancamento[]> = {}
             for (const [dStr, list] of Object.entries(sibDm.lancamentos)) {
               const d = parseInt(dStr)
               const newList = (list as Lancamento[]).map(l => {
+                console.log(`[parcelas-edit] p=${p} dia=${d} l.id=${l.id} vs targetId=${targetId}`)
                 if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc, subCategoria: subCatToSave, valor: valorParcela } }
                 return l
               })
               newLancs[d] = newList
             }
             if (dmChanged) result = { ...result, [sibKey]: { ...sibDm, lancamentos: newLancs } }
+            else console.log(`[parcelas-edit] p=${p} NÃO ENCONTROU targetId no mês`)
           }
+        } else {
+          console.log('[parcelas-edit] NÃO PROPAGOU - condição falsa:', { parcelas: entrada.parcelas, catMudou: fCat !== entrada.categoria, descMudou: novaDesc !== entrada.descricao, valMudou: valorParcela !== entrada.valor })
         }
         return result
       })
