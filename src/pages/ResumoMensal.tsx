@@ -39,6 +39,7 @@ export type FaturaCartao = { conta: Conta; fatura: number }
 
 export type ReceitaItem = {
   catId: string; nome: string; icone: string; cor: string
+  variante?: string
   previsto: number; realizado: number; recebido: boolean
 }
 
@@ -254,6 +255,15 @@ export default function ResumoMensal() {
     const mesStr = String(mes + 1).padStart(2, '0')
     const totalDiasM = new Date(ano, mes + 1, 0).getDate()
 
+    function rKey(nome: string, sub?: string) { return sub ? `${nome}||${sub}` : nome }
+    function resolverSub(nome: string, sub?: string): string | undefined {
+      if (sub) return sub
+      const variantes = (categorias as Categoria[]).filter(
+        c => c.nome === nome && c.tipo === 'entrada' && c.ativa && c.descricao
+      )
+      return variantes.length === 1 ? variantes[0].descricao : undefined
+    }
+
     const realizadoPorCat: Record<string, number> = {}
     const confirmedCats = new Set<string>()
 
@@ -261,7 +271,9 @@ export default function ResumoMensal() {
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           if (l.tipo !== 'entrada') continue
-          realizadoPorCat[l.categoria] = (realizadoPorCat[l.categoria] ?? 0) + l.valor
+          const sub = resolverSub(l.categoria, (l as { subCategoria?: string }).subCategoria)
+          const k = rKey(l.categoria, sub)
+          realizadoPorCat[k] = (realizadoPorCat[k] ?? 0) + l.valor
         }
       }
       for (const [catId, confirmed] of Object.entries(dm.fixasConsolidadas ?? {})) {
@@ -281,9 +293,12 @@ export default function ResumoMensal() {
 
     for (const cat of categorias as Categoria[]) {
       if (cat.tipo !== 'entrada' || !cat.ativa) continue
+      const chave = `${cat.nome}||${cat.descricao ?? ''}`
+      if (vistos.has(chave)) continue
+      vistos.add(chave)
+
       const nome = cat.nome
-      if (vistos.has(nome)) continue
-      vistos.add(nome)
+      const variante = cat.descricao || undefined
 
       const planList = (dadosAno as { entradas?: { nome: string; v: number[] }[] } | undefined)?.entradas
       const previsto = planList?.find(c => c.nome === nome)?.v[mes] ?? 0
@@ -302,13 +317,13 @@ export default function ResumoMensal() {
         recebido = confirmedCats.has(cat.id)
         realizado = recebido ? (override !== undefined ? override : (fixasValorPorId[cat.id]?.valor ?? previsto)) : 0
       } else {
-        realizado = realizadoPorCat[nome] ?? 0
+        realizado = realizadoPorCat[rKey(nome, variante)] ?? 0
         recebido  = realizado > 0
       }
 
       if (previsto <= 0 && realizado <= 0) continue
 
-      result.push({ catId: cat.id, nome, icone: cat.icone, cor: cat.cor, previsto, realizado, recebido })
+      result.push({ catId: cat.id, nome, icone: cat.icone, cor: cat.cor, variante, previsto, realizado, recebido })
     }
 
     result.sort((a, b) => b.realizado - a.realizado || b.previsto - a.previsto)

@@ -30,7 +30,11 @@ export default function RmReceitas({ receitas, totalPrevisto, totalRecebido, mes
 
   const pieData = receitas
     .filter(r => r.realizado > 0)
-    .map((r, i) => ({ name: r.nome, value: r.realizado, color: CORES_GRAFICO[i % CORES_GRAFICO.length] }))
+    .map((r, i) => ({
+      name: r.variante ? `${r.nome} · ${r.variante}` : r.nome,
+      value: r.realizado,
+      color: CORES_GRAFICO[i % CORES_GRAFICO.length],
+    }))
 
   return (
     <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
@@ -57,7 +61,9 @@ export default function RmReceitas({ receitas, totalPrevisto, totalRecebido, mes
                     {r.icone || '💰'}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: '#1e293b' }}>{r.nome}</div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#1e293b' }}>
+                      {r.nome}{r.variante ? <span style={{ color: '#64748b', fontWeight: 400 }}> · {r.variante}</span> : null}
+                    </div>
                     <div style={{ fontSize: 10, color: r.recebido ? '#16a34a' : '#d97706', marginTop: 1 }}>
                       {r.recebido ? 'Recebido' : 'A receber'}
                     </div>
