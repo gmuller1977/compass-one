@@ -1,5 +1,6 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, parseBRL, NOMES_MESES } from './NleShared'
+import KpiCard from '../KpiCard'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -53,38 +54,21 @@ export default function NleBanner({
     }
   }
 
-  const boxStyle = {
-    display: 'flex' as const, flexDirection: 'column' as const,
-    background: 'linear-gradient(135deg,#0f2878,#1e40af)',
-    border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '12px 14px',
-  }
-
   return (
     <div style={{ background: '#f8faff', borderBottom: '1px solid #e2e8f0', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', flexShrink: 0, gap: 8 }}>
 
       {/* Left: 4 stat boxes + bank selectors */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>💰 Saldo inicial</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-.4px' }}>{fmt(saldoBase)}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>{NOMES_MESES[mes]} {ano}</div>
-          </div>
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>↑ Entradas</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#93c5fd', letterSpacing: '-.4px' }}>{fmt(totalEntradas)}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>lançadas</div>
-          </div>
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>↓ Saídas</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#fca5a5', letterSpacing: '-.4px' }}>{fmt(totalSaidas)}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>lançadas</div>
-          </div>
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>= Saldo atual</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: saldoMes >= 0 ? '#86efac' : '#fca5a5', letterSpacing: '-.4px' }}>{fmt(saldoMes)}</div>
-            <div style={{ fontSize: 10, color: saldoMes >= 0 ? '#86efac' : '#fca5a5', marginTop: 3 }}>{saldoMes >= 0 ? '↑ positivo' : '↓ negativo'}</div>
-          </div>
+          <KpiCard icon="💰" label="Saldo inicial" value={fmt(saldoBase)}
+            sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
+          <KpiCard icon="↑" label="Entradas" value={fmt(totalEntradas)}
+            valueColor="#4ade80" sublabel="lançadas" style={{ flex: 1 }} />
+          <KpiCard icon="↓" label="Saídas" value={fmt(totalSaidas)}
+            valueColor="#f87171" sublabel="lançadas" style={{ flex: 1 }} />
+          <KpiCard icon="=" label="Saldo atual" value={fmt(saldoMes)}
+            valueColor={saldoMes >= 0 ? '#fff' : '#f87171'}
+            sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
         </div>
 
         {/* Bank selector buttons */}

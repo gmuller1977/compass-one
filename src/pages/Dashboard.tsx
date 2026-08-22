@@ -8,6 +8,7 @@ import TutorialCard from '../components/TutorialCard'
 import { COR } from '../utils/cores'
 import { creditarAurix, saldoAurix, acoesHoje } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
+import KpiCard from '../components/KpiCard'
 
 const ACOES_DIARIAS_REFS = ['acao_login', 'acao_dashboard', 'acao_lancamento', 'acao_north', 'acao_evolucao']
 const ACOES_DIARIAS_TOTAL = 5
@@ -355,47 +356,14 @@ export default function Dashboard() {
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
           gap: 12, marginBottom: 20,
         }}>
-          {[
-            {
-              label: 'Meu saldo',
-              hint:  'Saldo de todas as contas',
-              valor: saldoDisponivel,
-              cor:   saldoDisponivel < 0 ? COR.vermelho : COR.azul,
-              icone: '◎',
-            },
-            {
-              label: 'Receitas do mês',
-              hint:  'Salário + extras',
-              valor: totalEntradas,
-              cor:   COR.verde,
-              icone: '↑',
-            },
-            {
-              label: 'Despesas do mês',
-              hint:  percGastei !== null ? `${percGastei}% do planejado` : 'Gastos do mês',
-              valor: totalSaidas,
-              cor:   COR.vermelho,
-              icone: '↓',
-            },
-          ].map(card => (
-            <div key={card.label} style={{
-              background: COR.branco, borderRadius: 12,
-              padding: '18px 20px', border: `.5px solid ${COR.borda}`,
-            }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10,
-              }}>
-                <span style={{ fontSize: 12, color: COR.textoMuted, fontWeight: 500 }}>{card.label}</span>
-                <span style={{ fontSize: 15, color: card.cor, opacity: .65 }}>{card.icone}</span>
-              </div>
-              <div style={{
-                fontSize: isMobile ? 20 : 24, fontWeight: 700, color: card.cor,
-                fontFamily: 'Georgia, serif', letterSpacing: '-.5px',
-                fontVariantNumeric: 'tabular-nums', marginBottom: 6,
-              }}>{fmt(card.valor)}</div>
-              <div style={{ fontSize: 11, color: '#b0b8c4' }}>{card.hint}</div>
-            </div>
-          ))}
+          <KpiCard icon="◎" label="Meu saldo" value={fmt(saldoDisponivel)}
+            valueColor={saldoDisponivel < 0 ? '#f87171' : '#fff'}
+            sublabel="Saldo de todas as contas" />
+          <KpiCard icon="↑" label="Receitas do mês" value={fmt(totalEntradas)}
+            valueColor="#4ade80" sublabel="Salário + extras" />
+          <KpiCard icon="↓" label="Despesas do mês" value={fmt(totalSaidas)}
+            valueColor="#f87171"
+            sublabel={percGastei !== null ? `${percGastei}% do planejado` : 'Gastos do mês'} />
         </div>
 
         {/* ── Card Aurix ── */}

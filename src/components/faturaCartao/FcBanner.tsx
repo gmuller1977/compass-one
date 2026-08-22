@@ -1,5 +1,6 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, type DadosMes } from './FcShared'
+import KpiCard from '../KpiCard'
 
 type Props = {
   contasCartao: Conta[]
@@ -29,12 +30,6 @@ export default function FcBanner({
   const statusLbl = faturaStatus === 'paga' ? 'Paga' : faturaStatus === 'fechada' ? 'Fechada' : 'Aberta'
   const statusSimb = faturaStatus === 'paga' ? '✓' : faturaStatus === 'fechada' ? '■' : '●'
 
-  const boxStyle = {
-    display: 'flex' as const, flexDirection: 'column' as const,
-    background: 'linear-gradient(135deg,#0f2878,#1e40af)',
-    border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '12px 14px',
-  }
-
   function abrirModal() {
     setModalFaturaValor(mesDados.faturaAtual ?? '')
     setModalFatura(true)
@@ -46,31 +41,16 @@ export default function FcBanner({
       {/* Left: 4 stat boxes + card pills */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>💳 Limite planejado</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-.4px' }}>{fmt(totalPrevisto)}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>por mês</div>
-          </div>
-
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>Total de Todas as Faturas</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: grandTotalFaturas > 0 ? '#fca5a5' : '#86efac', letterSpacing: '-.4px' }}>{fmt(grandTotalFaturas)}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>lançado</div>
-          </div>
-
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>= Disponível</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: disponivel >= 0 ? '#86efac' : '#fca5a5', letterSpacing: '-.4px' }}>{fmt(disponivel)}</div>
-            <div style={{ fontSize: 10, color: disponivel >= 0 ? '#86efac' : '#fca5a5', marginTop: 3 }}>{disponivel >= 0 ? '↑ no limite' : '↓ excedido'}</div>
-          </div>
-
-          <div style={{ ...boxStyle, flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 6 }}>{statusSimb} Status</div>
-            <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-.4px', color: statusCor }}>{statusLbl}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>Vence dia {diaVencimento}</div>
-          </div>
-
+          <KpiCard icon="💳" label="Limite planejado" value={fmt(totalPrevisto)}
+            sublabel="por mês" style={{ flex: 1 }} />
+          <KpiCard label="Total de todas as faturas" value={fmt(grandTotalFaturas)}
+            valueColor={grandTotalFaturas > 0 ? '#f87171' : '#4ade80'}
+            sublabel="lançado" style={{ flex: 1 }} />
+          <KpiCard icon="=" label="Disponível" value={fmt(disponivel)}
+            valueColor={disponivel >= 0 ? '#4ade80' : '#f87171'}
+            sublabel={disponivel >= 0 ? '↑ no limite' : '↓ excedido'} style={{ flex: 1 }} />
+          <KpiCard icon={statusSimb} label="Status" value={statusLbl}
+            valueColor={statusCor} sublabel={`Vence dia ${diaVencimento}`} style={{ flex: 1 }} />
         </div>
 
         {/* Card selector pills */}

@@ -1,3 +1,4 @@
+import KpiCard from '../KpiCard'
 import { fmt } from './types'
 
 interface Props {
@@ -9,64 +10,44 @@ interface Props {
   onChangeAno: (delta: 1 | -1) => void
 }
 
+const NAV_BG = 'linear-gradient(135deg,#0f2878,#1a56db)'
+const BTN: React.CSSProperties = {
+  background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 6,
+  color: '#fff', cursor: 'pointer', padding: '4px 9px', fontSize: 13, lineHeight: 1,
+}
+
 export default function PlanResumoAnual({
   saldoInicial, totalReceitas, totalDespesas, resultado, anoAtual, onChangeAno,
 }: Props) {
   const anoCorrente = new Date().getFullYear()
-  const tiles = [
-    { label: `Saldo inicial ${anoAtual}`, valor: saldoInicial, cor: 'rgba(255,255,255,.9)' },
-    { label: 'Receitas', valor: totalReceitas, cor: '#86efac' },
-    { label: 'Despesas', valor: totalDespesas, cor: '#fca5a5' },
-    { label: `Saldo final Dez/${anoAtual}`, valor: resultado, cor: resultado >= 0 ? '#86efac' : '#fca5a5' },
-  ]
-
-  const btnStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 6,
-    color: '#fff', cursor: 'pointer', padding: '4px 9px', fontSize: 13, lineHeight: 1,
-  }
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'auto repeat(4, 1fr)',
-      borderRadius: 14, overflow: 'hidden', marginBottom: 16,
-      background: 'linear-gradient(135deg,#0f2878,#2563eb)',
-      gap: 1,
-    }}>
+    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+
       {/* Seletor de ano */}
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '14px 20px', gap: 6,
-        borderRight: '1px solid rgba(255,255,255,.1)',
+        background: NAV_BG, border: '1px solid rgba(255,255,255,.15)',
+        borderRadius: 10, padding: '12px 16px', gap: 6, flexShrink: 0,
       }}>
-        <div style={{
-          fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
-          letterSpacing: '.4px', color: 'rgba(255,255,255,.6)', marginBottom: 2,
-        }}>Ano</div>
+        <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)', textTransform: 'uppercase', letterSpacing: '.3px' }}>Ano</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button style={btnStyle} onClick={() => onChangeAno(-1)}>◄</button>
+          <button style={BTN} onClick={() => onChangeAno(-1)}>◄</button>
           <span style={{
             fontSize: 16, fontWeight: 800, minWidth: 44, textAlign: 'center',
             color: anoAtual === anoCorrente ? '#fbbf24' : '#fff',
-          }}>
-            {anoAtual}
-          </span>
-          <button style={btnStyle} onClick={() => onChangeAno(1)}>►</button>
+          }}>{anoAtual}</span>
+          <button style={BTN} onClick={() => onChangeAno(1)}>►</button>
         </div>
       </div>
 
-      {/* 4 cards de totais */}
-      {tiles.map(t => (
-        <div key={t.label} style={{ padding: '14px 16px' }}>
-          <div style={{
-            fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '.4px', color: 'rgba(255,255,255,.65)', marginBottom: 4,
-          }}>{t.label}</div>
-          <div style={{
-            fontSize: 18, fontWeight: 800, color: t.cor, fontVariantNumeric: 'tabular-nums',
-          }}>{fmt(t.valor, true)}</div>
-        </div>
-      ))}
+      {/* 4 KPI tiles */}
+      <KpiCard label={`Saldo inicial ${anoAtual}`} value={fmt(saldoInicial, true)} style={{ flex: 1 }} />
+      <KpiCard icon="↑" label="Receitas" value={fmt(totalReceitas, true)} valueColor="#4ade80" style={{ flex: 1 }} />
+      <KpiCard icon="↓" label="Despesas" value={fmt(totalDespesas, true)} valueColor="#f87171" style={{ flex: 1 }} />
+      <KpiCard label={`Saldo final Dez/${anoAtual}`} value={fmt(resultado, true)}
+        valueColor={resultado >= 0 ? '#4ade80' : '#f87171'} style={{ flex: 1 }} />
+
     </div>
   )
 }
