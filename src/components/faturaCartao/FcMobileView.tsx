@@ -50,9 +50,7 @@ type Props = {
   fDataCompra: string
   setFDataCompra: React.Dispatch<React.SetStateAction<string>>
   editandoId: string | null
-  setEditandoId: React.Dispatch<React.SetStateAction<string | null>>
   editandoDiaOriginal: number | null
-  setEditandoDiaOriginal: React.Dispatch<React.SetStateAction<number | null>>
   diaSel: number
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
 
@@ -102,7 +100,7 @@ export default function FcMobileView({
   fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc, fVariante, setFVariante,
   fValor, setFValor, fParcelas, setFParcelas,
   fDataCompra, setFDataCompra,
-  editandoId, setEditandoId, editandoDiaOriginal, setEditandoDiaOriginal,
+  editandoId, editandoDiaOriginal,
   diaSel, setDiaSel,
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
   mesDados, totalDias, purchaseMes, purchaseAno,

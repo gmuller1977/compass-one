@@ -549,8 +549,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         fValor={fValor} setFValor={setFValor}
         fParcelas={fParcelas} setFParcelas={setFParcelas}
         fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
-        editandoId={editandoId} setEditandoId={setEditandoId}
-        editandoDiaOriginal={editandoDiaOriginal} setEditandoDiaOriginal={setEditandoDiaOriginal}
+        editandoId={editandoId}
+        editandoDiaOriginal={editandoDiaOriginal}
         diaSel={diaSel} setDiaSel={setDiaSel}
         diaFechamento={diaFechamento} diaVencimento={diaVencimento}
         diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
