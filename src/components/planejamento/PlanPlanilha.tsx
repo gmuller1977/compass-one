@@ -12,6 +12,7 @@ interface Props {
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   planejamentoLockado: boolean
   categorias: any[]
+  setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
 }
@@ -30,7 +31,7 @@ function groupBy(cats: any[], categorias: any[]) {
 }
 
 export default function PlanPlanilha({
-  aba, anoAtual, mesAtual, dadosAtivos, previsto, planejamentoLockado, categorias, onSave, lancadoPorCatMes,
+  aba, anoAtual, mesAtual, dadosAtivos, previsto, planejamentoLockado, categorias, setAnoAtual, onSave, lancadoPorCatMes,
 }: Props) {
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
   const ehAtualMes = (mi: number) => mi === mesAtual && anoAtual === new Date().getFullYear()
@@ -58,6 +59,8 @@ export default function PlanPlanilha({
         totalReceitas={receitasAnuais}
         totalDespesas={despesasAnuais}
         resultado={previsto.saldoFinal[11]}
+        anoAtual={anoAtual}
+        onChangeAno={delta => setAnoAtual(a => a + delta)}
       />
 
       <div style={{ background: COR.branco, borderRadius: 14, boxShadow: '0 1px 3px rgba(0,0,0,.06)', overflow: 'hidden' }}>

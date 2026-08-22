@@ -8,19 +8,17 @@ interface Props {
   saldoFinal: number
   isAtual: boolean
   isFuturo: boolean
-  top3: { nome: string; valor: number }[]
   onClick: () => void
 }
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, isFuturo, top3, onClick,
+  isAtual, isFuturo, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
   const negativo = resultado < 0
   const stripColor = isAtual ? COR.azul : negativo ? COR.vermelho : COR.verde
-  const maxTop3 = top3.length > 0 ? Math.max(...top3.map(c => c.valor)) : 1
 
   return (
     <div
@@ -126,29 +124,7 @@ export default function PlanCardMes({
           {Math.round(percDespesas)}% utilizado
         </div>
 
-        {/* 6. Top 3 categorias */}
-        {top3.length > 0 && (
-          <div style={{ marginBottom: 8 }}>
-            {top3.map((cat, i) => (
-              <div key={i} style={{ marginBottom: i < top3.length - 1 ? 4 : 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: COR.textoSuave, marginBottom: 2 }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{cat.nome}</span>
-                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(cat.valor, true)}</span>
-                </div>
-                <div style={{ height: 3, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${maxTop3 > 0 ? (cat.valor / maxTop3) * 100 : 0}%`,
-                    background: i === 0 ? '#6366f1' : i === 1 ? '#8b5cf6' : '#a78bfa',
-                    borderRadius: 4,
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 7. Saldo final */}
+        {/* 6. Saldo final */}
         <div style={{
           background: saldoFinal >= 0 ? '#f0fdf4' : '#fef2f2',
           border: `1px solid ${saldoFinal >= 0 ? '#bbf7d0' : '#fecaca'}`,

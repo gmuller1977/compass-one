@@ -65,111 +65,6 @@ export default function Planejamento({
     setAba('realizado')
   }
 
-  function renderTopBar() {
-    const bloqueado = plan.planejamentoLockado
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: isMobile ? '8px 12px' : '10px 24px',
-        background: COR.branco, borderBottom: `1px solid ${COR.borda}`,
-        gap: 12, flexWrap: 'wrap',
-      }}>
-        {/* Abas */}
-        {!hideTabs && (
-          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 3 }}>
-            {([['meu-plano', 'Meu plano'], ['realizado', 'Atualizado']] as [Aba, string][])
-              .filter(([a]) => a !== 'realizado' || plan.realExiste)
-              .map(([a, label]) => (
-                <button
-                  key={a}
-                  onClick={() => setAba(a)}
-                  style={{
-                    border: 'none', borderRadius: 8, padding: '6px 16px',
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    background: aba === a ? COR.branco : 'transparent',
-                    color: aba === a ? COR.azul : COR.textoSuave,
-                    boxShadow: aba === a ? '0 1px 4px rgba(0,0,0,.08)' : 'none',
-                    transition: 'all .15s',
-                  }}
-                >
-                  {label}
-                  {a === 'meu-plano' && bloqueado ? ' 🔒' : ''}
-                </button>
-              ))}
-          </div>
-        )}
-
-        {/* Controles a direita */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
-          {/* Seletor de view — apenas no mobile */}
-          {isMobile && (
-            <div style={{ display: 'flex', gap: 2, background: '#f1f5f9', borderRadius: 8, padding: 2 }}>
-              {([
-                ['grade', 'Grade'],
-                ['lista', 'Lista'],
-              ] as [ViewMode, string][]).map(([v, label]) => (
-                <button
-                  key={v}
-                  onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
-                  style={{
-                    border: 'none', borderRadius: 6, padding: '5px 10px',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    background: viewMode === v ? COR.branco : 'transparent',
-                    color: viewMode === v ? COR.azul : COR.textoSuave,
-                    boxShadow: viewMode === v ? '0 1px 3px rgba(0,0,0,.06)' : 'none',
-                  }}
-                >{label}</button>
-              ))}
-            </div>
-          )}
-
-          {/* Navegacao de ano */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              onClick={() => setAnoAtual(a => a - 1)}
-              style={{ border: 'none', background: '#f1f5f9', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 14 }}
-            >◄</button>
-            <span style={{ fontSize: 14, fontWeight: 700, color: COR.texto, minWidth: 40, textAlign: 'center' }}>{anoAtual}</span>
-            <button
-              onClick={() => setAnoAtual(a => a + 1)}
-              style={{ border: 'none', background: '#f1f5f9', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 14 }}
-            >►</button>
-          </div>
-
-          {/* Botao Ativar plano */}
-          {aba === 'meu-plano' && !plan.planejamentoLockado && (
-            <button
-              onClick={handleAtivar}
-              style={{
-                border: 'none', borderRadius: 10, padding: '8px 18px',
-                fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                background: COR.verde, color: '#fff',
-                boxShadow: '0 2px 8px rgba(22,163,74,.3)',
-              }}
-              title="Ao ativar, o plano vira sua referencia. Voce podera acompanhar o realizado vs planejado."
-            >
-              Ativar plano
-            </button>
-          )}
-
-          {/* Botao Aplicar mudancas */}
-          {aba === 'meu-plano' && plan.planejamentoLockado && plan.realExiste && (
-            <button
-              onClick={handleAtualizar}
-              style={{
-                border: 'none', borderRadius: 10, padding: '8px 18px',
-                fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                background: COR.azul, color: '#fff',
-              }}
-            >
-              Aplicar mudancas
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
-
   function renderAvisoPlanoBloqueado() {
     if (!plan.planejamentoLockado || aba !== 'meu-plano') return null
     return (
@@ -202,12 +97,36 @@ export default function Planejamento({
         <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
           <PageHeader
             icon="ti-target"
-            breadcrumb="MEU PLANO"
+            breadcrumb="TODO ANO"
             title="Planejamento"
-            subtitle={`${anoAtual} · Visão ${viewModeLabels[viewMode] ?? 'Grade'}`}
+            subtitle={`Visão ${viewModeLabels[viewMode] ?? 'Grade'}`}
             mb={12}
             rightContent={
               <>
+                {/* Aba toggle */}
+                {!hideTabs && (
+                  <>
+                    {(['meu-plano', 'realizado'] as Aba[])
+                      .filter(a => a !== 'realizado' || plan.realExiste)
+                      .map(a => (
+                        <button key={a} onClick={() => setAba(a)} style={aba === a ? PH_BTN_WHITE_ACTIVE : PH_BTN_WHITE}>
+                          {a === 'meu-plano' ? `Meu plano${plan.planejamentoLockado ? ' 🔒' : ''}` : 'Atualizado'}
+                        </button>
+                      ))}
+                  </>
+                )}
+                {/* Ativar / Aplicar */}
+                {aba === 'meu-plano' && !plan.planejamentoLockado && (
+                  <button onClick={handleAtivar} style={{ ...PH_BTN_WHITE_ACTIVE, background: COR.verde }}>
+                    Ativar plano
+                  </button>
+                )}
+                {aba === 'meu-plano' && plan.planejamentoLockado && plan.realExiste && (
+                  <button onClick={handleAtualizar} style={PH_BTN_WHITE_ACTIVE}>
+                    Aplicar mudanças
+                  </button>
+                )}
+                {/* View mode */}
                 {(['grade', 'planilha', 'lista'] as ViewMode[]).map(v => (
                   <button
                     key={v}
@@ -223,7 +142,49 @@ export default function Planejamento({
         </div>
       )}
 
-      {renderTopBar()}
+      {/* Mobile: aba toggle */}
+      {isMobile && !hideTabs && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 12px', background: COR.branco, borderBottom: `1px solid ${COR.borda}`,
+          gap: 8, flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 3 }}>
+            {(['meu-plano', 'realizado'] as Aba[])
+              .filter(a => a !== 'realizado' || plan.realExiste)
+              .map(a => (
+                <button
+                  key={a}
+                  onClick={() => setAba(a)}
+                  style={{
+                    border: 'none', borderRadius: 8, padding: '6px 14px',
+                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    background: aba === a ? COR.branco : 'transparent',
+                    color: aba === a ? COR.azul : COR.textoSuave,
+                    boxShadow: aba === a ? '0 1px 4px rgba(0,0,0,.08)' : 'none',
+                  }}
+                >
+                  {a === 'meu-plano' ? `Meu plano${plan.planejamentoLockado ? ' 🔒' : ''}` : 'Atualizado'}
+                </button>
+              ))}
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {(['grade', 'lista'] as ViewMode[]).map(v => (
+              <button
+                key={v}
+                onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
+                style={{
+                  border: 'none', borderRadius: 6, padding: '5px 10px',
+                  fontSize: 12, cursor: 'pointer', background: '#f1f5f9',
+                  color: viewMode === v ? COR.azul : COR.textoSuave,
+                  fontWeight: viewMode === v ? 700 : 500,
+                }}
+              >{viewModeLabels[v]}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {renderAvisoPlanoBloqueado()}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
@@ -242,6 +203,7 @@ export default function Planejamento({
             hasFaturaCat={plan.hasFaturaCat}
             somaCartaoMes={plan.somaCartaoMes}
             planejamentoLockado={plan.planejamentoLockado}
+            setAnoAtual={setAnoAtual}
             onSave={handleSave}
           />
         ) : viewMode === 'planilha' ? (
@@ -253,6 +215,7 @@ export default function Planejamento({
             previsto={totaisAtivos}
             planejamentoLockado={plan.planejamentoLockado}
             categorias={plan.categorias}
+            setAnoAtual={setAnoAtual}
             onSave={handleSave}
             lancadoPorCatMes={aba === 'realizado' ? plan.lancadoPorCatMes : undefined}
           />

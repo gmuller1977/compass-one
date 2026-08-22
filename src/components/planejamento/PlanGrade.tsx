@@ -2,7 +2,7 @@ import { useState } from 'react'
 import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
-import { type AnoData } from './types'
+import { type AnoData, COR } from './types'
 
 interface Props {
   aba: 'meu-plano' | 'realizado'
@@ -18,7 +18,14 @@ interface Props {
   hasFaturaCat: boolean
   somaCartaoMes: number[]
   planejamentoLockado: boolean
+  setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
+}
+
+const FERRAMENTA_BTN: React.CSSProperties = {
+  border: `1px solid ${COR.borda}`, borderRadius: 8, padding: '6px 14px',
+  fontSize: 12, fontWeight: 600, cursor: 'pointer', background: COR.branco,
+  color: COR.textoSuave, display: 'flex', alignItems: 'center', gap: 5,
 }
 
 export default function PlanGrade(props: Props) {
@@ -26,11 +33,10 @@ export default function PlanGrade(props: Props) {
 
   const {
     aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado,
-    previsto, realizadoPlan,
+    previsto, realizadoPlan, setAnoAtual,
   } = props
 
   const planTotais = aba === 'realizado' ? realizadoPlan : previsto
-  const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
 
   const receitasAnuais = planTotais.totalEntradas.reduce((a, b) => a + b, 0)
   const despesasAnuais = planTotais.totalSaidas.reduce((a, b) => a + b, 0)
@@ -39,15 +45,6 @@ export default function PlanGrade(props: Props) {
 
   const anoCorrente = new Date().getFullYear()
 
-  function top3Mes(mi: number): { nome: string; valor: number }[] {
-    const saidas = dadosAtivos.saidas
-    return saidas
-      .filter(c => c.v[mi] > 0)
-      .map(c => ({ nome: c.descricao ? `${c.nome} · ${c.descricao}` : c.nome, valor: c.v[mi] }))
-      .sort((a, b) => b.valor - a.valor)
-      .slice(0, 3)
-  }
-
   return (
     <div style={{ padding: '16px 20px' }}>
       <PlanResumoAnual
@@ -55,7 +52,17 @@ export default function PlanGrade(props: Props) {
         totalReceitas={receitasAnuais}
         totalDespesas={despesasAnuais}
         resultado={resultadoDez}
+        anoAtual={anoAtual}
+        onChangeAno={delta => setAnoAtual(a => a + delta)}
       />
+
+      {/* Ferramentas de lote */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+        <button style={FERRAMENTA_BTN}>📋 Copiar mês</button>
+        <button style={FERRAMENTA_BTN}>💱 Aplicar valor</button>
+        <button style={FERRAMENTA_BTN}>📈 Reajuste %</button>
+        <button style={FERRAMENTA_BTN}>📅 Copiar ano</button>
+      </div>
 
       <div
         style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}
@@ -74,7 +81,6 @@ export default function PlanGrade(props: Props) {
               saldoFinal={planTotais.saldoFinal[mi]}
               isAtual={isAtual}
               isFuturo={isFuturo}
-              top3={top3Mes(mi)}
               onClick={() => setModalMes(mi)}
             />
           )
