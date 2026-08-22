@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
+import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
 import { type AnoData, COR } from './types'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   mesAtual: number
   dadosPrevisto: AnoData
   dadosRealizado: AnoData | null
+  dadosAnoAnterior: AnoData | null
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   realizadoPlan: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
@@ -20,19 +22,22 @@ interface Props {
   planejamentoLockado: boolean
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
+  onBulkSave: (ops: BulkOp[]) => void
 }
 
-const FERRAMENTA_BTN: React.CSSProperties = {
-  border: `1px solid ${COR.borda}`, borderRadius: 8, padding: '6px 14px',
-  fontSize: 12, fontWeight: 600, cursor: 'pointer', background: COR.branco,
-  color: COR.textoSuave, display: 'flex', alignItems: 'center', gap: 5,
-}
+const FERRAMENTAS: { id: 'copiar' | 'valor' | 'reajuste' | 'ano'; label: string; icon: string }[] = [
+  { id: 'copiar',   label: 'Copiar mês',    icon: '📋' },
+  { id: 'valor',    label: 'Aplicar valor', icon: '💱' },
+  { id: 'reajuste', label: 'Reajuste %',    icon: '📈' },
+  { id: 'ano',      label: 'Copiar ano',    icon: '📅' },
+]
 
 export default function PlanGrade(props: Props) {
   const [modalMes, setModalMes] = useState<number | null>(null)
+  const [toolAberta, setToolAberta] = useState<'copiar' | 'valor' | 'reajuste' | 'ano' | null>(null)
 
   const {
-    aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado,
+    aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado, dadosAnoAnterior,
     previsto, realizadoPlan, setAnoAtual,
   } = props
 
@@ -44,6 +49,10 @@ export default function PlanGrade(props: Props) {
   const saldoIni = planTotais.saldoInicial[0]
 
   const anoCorrente = new Date().getFullYear()
+
+  function toggleTool(id: 'copiar' | 'valor' | 'reajuste' | 'ano') {
+    setToolAberta(prev => prev === id ? null : id)
+  }
 
   return (
     <div style={{ padding: '16px 20px' }}>
@@ -57,13 +66,42 @@ export default function PlanGrade(props: Props) {
       />
 
       {/* Ferramentas de lote */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-        <button style={FERRAMENTA_BTN}>📋 Copiar mês</button>
-        <button style={FERRAMENTA_BTN}>💱 Aplicar valor</button>
-        <button style={FERRAMENTA_BTN}>📈 Reajuste %</button>
-        <button style={FERRAMENTA_BTN}>📅 Copiar ano</button>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        {FERRAMENTAS.map(f => {
+          const ativa = toolAberta === f.id
+          return (
+            <button
+              key={f.id}
+              onClick={() => toggleTool(f.id)}
+              style={{
+                border: `1.5px solid ${ativa ? '#1a56db' : COR.borda}`,
+                borderRadius: 8, padding: '6px 14px',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: ativa ? '#eff6ff' : COR.branco,
+                color: ativa ? '#1a56db' : COR.textoSuave,
+                display: 'flex', alignItems: 'center', gap: 5,
+                transition: 'all .12s',
+              }}
+            >
+              {f.icon} {f.label}
+            </button>
+          )
+        })}
       </div>
 
+      {/* Painel da ferramenta */}
+      <PlanFerramentas
+        toolAberta={toolAberta}
+        mesAtual={mesAtual}
+        anoAtual={anoAtual}
+        dadosPrevisto={dadosPrevisto}
+        dadosAnoAnterior={dadosAnoAnterior}
+        categorias={props.categorias}
+        onBulkSave={props.onBulkSave}
+        onClose={() => setToolAberta(null)}
+      />
+
+      {/* Grade de meses */}
       <div
         style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}
         className="plan-grade-grid"

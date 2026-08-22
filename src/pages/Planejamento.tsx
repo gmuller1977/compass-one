@@ -55,6 +55,10 @@ export default function Planejamento({
     plan.editarValor(tipo, ri, mi, valor, aba)
   }
 
+  function handleBulkSave(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
+    plan.editarMultiplosValores(ops, aba)
+  }
+
   function handleAtivar() {
     plan.ativarPlano()
     setAba('realizado')
@@ -184,6 +188,7 @@ export default function Planejamento({
             mesAtual={plan.mesAtual}
             dadosPrevisto={plan.dadosPrevistoFinal}
             dadosRealizado={plan.realExiste ? plan.dadosRealizadoFinal : null}
+            dadosAnoAnterior={plan.planoAnoAnterior}
             previsto={plan.previsto}
             realizadoPlan={plan.realizadoPlan}
             lancadoPorCatMes={plan.lancadoPorCatMes}
@@ -194,6 +199,7 @@ export default function Planejamento({
             planejamentoLockado={plan.planejamentoLockado}
             setAnoAtual={setAnoAtual}
             onSave={handleSave}
+            onBulkSave={handleBulkSave}
           />
         ) : viewMode === 'planilha' ? (
           <PlanPlanilha

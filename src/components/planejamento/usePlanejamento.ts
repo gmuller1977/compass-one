@@ -337,6 +337,22 @@ export function usePlanejamento(anoAtual: number) {
     }, aba)
   }
 
+  function editarMultiplosValores(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[], aba: Aba) {
+    updateAno(d => {
+      const entradas = d.entradas.map(c => ({ ...c, v: [...c.v] }))
+      const saidas = d.saidas.map(c => ({ ...c, v: [...c.v] }))
+      for (const op of ops) {
+        const lista = op.tipo === 'e' ? entradas : saidas
+        if (lista[op.ri]) lista[op.ri].v[op.mi] = op.valor
+      }
+      return { ...d, entradas, saidas }
+    }, aba)
+  }
+
+  const planoAnoAnterior: AnoData | null = useMemo(() =>
+    (planos[anoAtual - 1] as AnoData | undefined) ?? null,
+  [planos, anoAtual])
+
   function ativarPlano() {
     finalizarPlanejamento(anoAtual, dadosPrevisto as PlanoAnoData)
   }
@@ -374,8 +390,10 @@ export function usePlanejamento(anoAtual: number) {
     planejamentoLockado,
     // Ações
     editarValor,
+    editarMultiplosValores,
     ativarPlano,
     atualizarPlano,
+    planoAnoAnterior,
     // Dados contexto (para passar para componentes)
     contas,
     categorias,
