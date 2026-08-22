@@ -1,4 +1,4 @@
-import { fmt, COR, MESES_FULL } from './types'
+import { fmt, MESES_FULL } from './types'
 
 interface Props {
   mes: number
@@ -18,83 +18,96 @@ export default function PlanCardMes({
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
   const negativo = resultado < 0
-  const stripColor = isAtual ? COR.azul : negativo ? COR.vermelho : COR.verde
+
+  const bgCard = isAtual
+    ? 'linear-gradient(145deg, #0f2878, #1a56db)'
+    : 'linear-gradient(145deg, #0f172a, #1e293b)'
+
+  const saldoFinalBg = isAtual
+    ? 'rgba(255,255,255,0.15)'
+    : negativo
+      ? 'rgba(248,113,113,0.15)'
+      : 'rgba(255,255,255,0.08)'
+
+  const barFill = percDespesas > 85
+    ? '#f87171'
+    : percDespesas > 65
+      ? '#fbbf24'
+      : '#4ade80'
 
   return (
     <div
       onClick={onClick}
       style={{
         borderRadius: 14,
-        border: `${isAtual ? '2' : '1.5'}px solid ${isAtual ? COR.azul : COR.borda}`,
-        background: negativo
-          ? 'linear-gradient(160deg, #fff 55%, #fff5f5 100%)'
-          : COR.branco,
+        border: isAtual ? '2px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.06)',
+        background: bgCard,
         cursor: 'pointer',
         overflow: 'hidden',
-        transition: 'box-shadow .15s, border-color .15s',
+        transition: 'transform .15s, box-shadow .15s, opacity .15s',
         opacity: isFuturo ? 0.7 : 1,
+        boxShadow: isAtual
+          ? '0 4px 16px rgba(26,86,219,0.4)'
+          : '0 1px 4px rgba(0,0,0,0.3)',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.boxShadow = '0 4px 16px rgba(26,86,219,.12)'
-        el.style.borderColor = COR.azul
+        el.style.transform = 'translateY(-2px)'
+        el.style.boxShadow = isAtual
+          ? '0 8px 28px rgba(26,86,219,0.5)'
+          : '0 8px 24px rgba(0,0,0,0.3)'
+        el.style.opacity = '1'
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
-        el.style.boxShadow = ''
-        el.style.borderColor = isAtual ? COR.azul : COR.borda
+        el.style.transform = ''
+        el.style.boxShadow = isAtual
+          ? '0 4px 16px rgba(26,86,219,0.4)'
+          : '0 1px 4px rgba(0,0,0,0.3)'
+        el.style.opacity = isFuturo ? '0.7' : '1'
       }}
     >
-      {/* Strip */}
-      <div style={{ height: 4, background: stripColor }} />
-
-      <div style={{ padding: '10px 12px' }}>
+      <div style={{ padding: '12px 12px 10px' }}>
 
         {/* 1. Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>{MESES_FULL[mes]}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{MESES_FULL[mes]}</span>
           {isAtual && (
             <span style={{
-              fontSize: 9, fontWeight: 700, background: COR.azul, color: '#fff',
-              padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: '.4px',
+              fontSize: 9, fontWeight: 700, background: '#fff', color: '#1a56db',
+              padding: '2px 7px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: '.5px',
             }}>ATUAL</span>
           )}
         </div>
 
         {/* 2. Saldo inicial */}
         <div style={{
-          background: '#eff6ff', borderRadius: 8, padding: '5px 8px',
+          background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '5px 8px',
           marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <span style={{ fontSize: 8, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+          <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '.5px' }}>
             Saldo inicial
           </span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: COR.azul, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
             {fmt(saldoInicial, true)}
           </span>
         </div>
 
         {/* 3. KPIs Receitas / Despesas */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
-          <div style={{
-            flex: 1, background: '#f0fdf4', borderRadius: 8, padding: '5px 7px',
-            border: '1px solid #bbf7d0',
-          }}>
-            <div style={{ fontSize: 8, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 2 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
               Receitas
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: COR.verde, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
               {fmt(receitas, true)}
             </div>
           </div>
-          <div style={{
-            flex: 1, background: '#fef2f2', borderRadius: 8, padding: '5px 7px',
-            border: '1px solid #fecaca',
-          }}>
-            <div style={{ fontSize: 8, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 2 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
               Despesas
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: COR.vermelho, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#f87171', fontVariantNumeric: 'tabular-nums' }}>
               {fmt(despesas, true)}
             </div>
           </div>
@@ -104,37 +117,35 @@ export default function PlanCardMes({
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           fontSize: 12, marginBottom: 7,
-          borderTop: `1px solid ${COR.borda}`, paddingTop: 6,
+          borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 6,
         }}>
-          <span style={{ color: COR.textoSuave }}>= Resultado</span>
-          <span style={{ fontWeight: 800, color: negativo ? COR.vermelho : COR.verde, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>= Resultado</span>
+          <span style={{ fontWeight: 700, color: negativo ? '#f87171' : '#4ade80', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
             {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
           </span>
         </div>
 
         {/* 5. Barra de progresso */}
-        <div style={{ height: 4, background: '#f1f5f9', borderRadius: 6, overflow: 'hidden', marginBottom: 3 }}>
+        <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 6, overflow: 'hidden', marginBottom: 3 }}>
           <div style={{
             height: '100%', width: `${percDespesas}%`,
-            background: percDespesas > 85 ? COR.vermelho : percDespesas > 65 ? '#f59e0b' : COR.verde,
+            background: barFill,
             borderRadius: 6, transition: 'width .3s',
           }} />
         </div>
-        <div style={{ textAlign: 'right', fontSize: 9, color: COR.textoSuave, marginBottom: 7 }}>
+        <div style={{ textAlign: 'right', fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
           {Math.round(percDespesas)}% utilizado
         </div>
 
         {/* 6. Saldo final */}
         <div style={{
-          background: saldoFinal >= 0 ? '#f0fdf4' : '#fef2f2',
-          border: `1px solid ${saldoFinal >= 0 ? '#bbf7d0' : '#fecaca'}`,
+          background: saldoFinalBg,
           borderRadius: 8, padding: '6px 10px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <span style={{ fontSize: 11, color: COR.textoSuave }}>Saldo final</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Saldo final</span>
           <span style={{
-            fontSize: 13, fontWeight: 700,
-            color: saldoFinal >= 0 ? COR.verde : COR.vermelho,
+            fontSize: 13, fontWeight: 700, color: '#fff',
             fontVariantNumeric: 'tabular-nums',
           }}>{fmt(saldoFinal, true)}</span>
         </div>
