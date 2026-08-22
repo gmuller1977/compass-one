@@ -18,10 +18,10 @@ const LABEL_STYLE: React.CSSProperties = {
 }
 const VALUE_STYLE: React.CSSProperties = {
   fontSize: 18, fontWeight: 800, letterSpacing: '-.4px',
-  fontVariantNumeric: 'tabular-nums',
+  fontVariantNumeric: 'tabular-nums', textAlign: 'right',
 }
 const SUBLABEL_STYLE: React.CSSProperties = {
-  fontSize: 10, color: 'rgba(255,255,255,.5)', marginTop: 4,
+  fontSize: 10, color: 'rgba(255,255,255,.5)', marginTop: 4, textAlign: 'right',
 }
 
 export default function KpiCard({
