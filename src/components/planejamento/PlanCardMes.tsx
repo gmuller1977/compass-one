@@ -18,6 +18,7 @@ export default function PlanCardMes({
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
   const negativo = resultado < 0
+  const semPlano = receitas === 0 && despesas === 0
 
   const bgCard = isAtual
     ? 'linear-gradient(145deg, #0f2878, #1a56db)'
@@ -38,6 +39,7 @@ export default function PlanCardMes({
   return (
     <div
       onClick={onClick}
+      title={semPlano ? 'Clique para definir valores deste mês' : undefined}
       style={{
         borderRadius: 14,
         border: isAtual ? '2px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.06)',
@@ -93,55 +95,70 @@ export default function PlanCardMes({
           </span>
         </div>
 
-        {/* 3. KPIs Receitas / Despesas */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
-              Receitas
+        {/* 3. Receitas / Despesas ou "Sem plano" */}
+        {semPlano ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: 48, marginBottom: 7,
+            color: 'rgba(255,255,255,0.3)', fontSize: 11, fontStyle: 'italic',
+          }}>
+            Sem plano
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
+            <div style={{ flex: 1, background: 'rgba(74,222,128,0.15)', borderRadius: 8, padding: '6px 8px' }}>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
+                Receitas
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(receitas, true)}
+              </div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
-              {fmt(receitas, true)}
+            <div style={{ flex: 1, background: 'rgba(248,113,113,0.15)', borderRadius: 8, padding: '6px 8px' }}>
+              <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
+                Despesas
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#f87171', fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(despesas, true)}
+              </div>
             </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
-              Despesas
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#f87171', fontVariantNumeric: 'tabular-nums' }}>
-              {fmt(despesas, true)}
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* 4. Resultado */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          fontSize: 12, marginBottom: 7,
-          borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 6,
-        }}>
-          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>= Resultado</span>
-          <span style={{ fontWeight: 700, color: negativo ? '#f87171' : '#4ade80', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
-            {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
-          </span>
-        </div>
+        {!semPlano && (
+          <>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              fontSize: 12, marginBottom: 7,
+              borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 6,
+            }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>= Resultado</span>
+              <span style={{ fontWeight: 700, color: negativo ? '#f87171' : '#4ade80', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
+              </span>
+            </div>
 
-        {/* 5. Barra de progresso */}
-        <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 6, overflow: 'hidden', marginBottom: 3 }}>
-          <div style={{
-            height: '100%', width: `${percDespesas}%`,
-            background: barFill,
-            borderRadius: 6, transition: 'width .3s',
-          }} />
-        </div>
-        <div style={{ textAlign: 'right', fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
-          {Math.round(percDespesas)}% utilizado
-        </div>
+            {/* 5. Barra de progresso */}
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 6, overflow: 'hidden', marginBottom: 3 }}>
+              <div style={{
+                height: '100%', width: `${percDespesas}%`,
+                background: barFill,
+                borderRadius: 6, transition: 'width .3s',
+              }} />
+            </div>
+            <div style={{ textAlign: 'right', fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
+              {Math.round(percDespesas)}% utilizado
+            </div>
+          </>
+        )}
 
         {/* 6. Saldo final */}
         <div style={{
           background: saldoFinalBg,
           borderRadius: 8, padding: '6px 10px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: semPlano ? 4 : 0,
         }}>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Saldo final</span>
           <span style={{

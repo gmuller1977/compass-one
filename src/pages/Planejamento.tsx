@@ -99,7 +99,6 @@ export default function Planejamento({
             icon="ti-target"
             breadcrumb="TODO ANO"
             title="Planejamento"
-            subtitle={`Visão ${viewModeLabels[viewMode] ?? 'Grade'}`}
             mb={12}
             rightContent={
               <>
@@ -126,16 +125,6 @@ export default function Planejamento({
                     Aplicar mudanças
                   </button>
                 )}
-                {/* View mode */}
-                {(['grade', 'planilha', 'lista'] as ViewMode[]).map(v => (
-                  <button
-                    key={v}
-                    onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
-                    style={viewMode === v ? PH_BTN_WHITE_ACTIVE : PH_BTN_WHITE}
-                  >
-                    {viewModeLabels[v]}
-                  </button>
-                ))}
               </>
             }
           />
