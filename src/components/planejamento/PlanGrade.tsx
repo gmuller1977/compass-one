@@ -30,11 +30,23 @@ export default function PlanGrade(props: Props) {
   } = props
 
   const planTotais = aba === 'realizado' ? realizadoPlan : previsto
+  const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
 
   const receitasAnuais = planTotais.totalEntradas.reduce((a, b) => a + b, 0)
   const despesasAnuais = planTotais.totalSaidas.reduce((a, b) => a + b, 0)
   const resultadoDez = planTotais.saldoFinal[11]
   const saldoIni = planTotais.saldoInicial[0]
+
+  const anoCorrente = new Date().getFullYear()
+
+  function top3Mes(mi: number): { nome: string; valor: number }[] {
+    const saidas = dadosAtivos.saidas
+    return saidas
+      .filter(c => c.v[mi] > 0)
+      .map(c => ({ nome: c.descricao ? `${c.nome} · ${c.descricao}` : c.nome, valor: c.v[mi] }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 3)
+  }
 
   return (
     <div style={{ padding: '16px 20px' }}>
@@ -46,20 +58,27 @@ export default function PlanGrade(props: Props) {
       />
 
       <div
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}
         className="plan-grade-grid"
       >
-        {Array.from({ length: 12 }, (_, mi) => (
-          <PlanCardMes
-            key={mi}
-            mes={mi}
-            receitas={planTotais.totalEntradas[mi]}
-            despesas={planTotais.totalSaidas[mi]}
-            saldoPrevisto={planTotais.saldoFinal[mi]}
-            isAtual={mi === mesAtual && anoAtual === new Date().getFullYear()}
-            onClick={() => setModalMes(mi)}
-          />
-        ))}
+        {Array.from({ length: 12 }, (_, mi) => {
+          const isAtual = mi === mesAtual && anoAtual === anoCorrente
+          const isFuturo = anoAtual > anoCorrente || (anoAtual === anoCorrente && mi > mesAtual)
+          return (
+            <PlanCardMes
+              key={mi}
+              mes={mi}
+              receitas={planTotais.totalEntradas[mi]}
+              despesas={planTotais.totalSaidas[mi]}
+              saldoInicial={planTotais.saldoInicial[mi]}
+              saldoFinal={planTotais.saldoFinal[mi]}
+              isAtual={isAtual}
+              isFuturo={isFuturo}
+              top3={top3Mes(mi)}
+              onClick={() => setModalMes(mi)}
+            />
+          )
+        })}
       </div>
 
       <style>{`
