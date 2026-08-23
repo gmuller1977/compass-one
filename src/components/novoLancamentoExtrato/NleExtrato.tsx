@@ -9,12 +9,9 @@ import {
 } from './NleShared'
 
 type Props = {
-  // Layout
   isMobile: boolean
   mobileView: 'extrato' | 'form'
   isDinheiro: boolean
-
-  // Time
   mes: number
   ano: number
   totalDias: number
@@ -22,8 +19,6 @@ type Props = {
   diaHoje: number
   anoHoje: number
   mesHoje: number
-
-  // Data
   fixas: CatFixa[]
   categorias: Categoria[]
   mesDados: DadosMes
@@ -33,16 +28,12 @@ type Props = {
   totalEntradas: number
   totalSaidas: number
   contas: Conta[]
-
-  // Selection state
   diaSel: number
   diasAbertos: Set<number>
   highlightDia: number | null
   editandoId: string | null
   editandoFixaId: string | null
   mobileDiaForm: number | null
-
-  // Form state
   fTipo: TipoLanc
   fCat: string
   fSubDesc: string
@@ -51,13 +42,9 @@ type Props = {
   fPag: FormaPag
   categoriasSelect: Categoria[]
   subDescsDisponiveis: string[]
-
-  // Refs
   valorInputRef: React.RefObject<HTMLInputElement | null>
   categoriaSelectRef: React.RefObject<HTMLSelectElement | null>
   hojeRef: React.RefObject<HTMLDivElement | null>
-
-  // Handlers
   toggleDia: (dia: number) => void
   resetarParaNovo: (dia: number) => void
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
@@ -77,6 +64,97 @@ type Props = {
   setEditandoId: (v: string | null) => void
   setEditandoFixaId: (v: string | null) => void
   ehAutomatico: (f: CatFixa) => boolean
+}
+
+// ── Temas temporais ──────────────────────────────────────────────────────────
+const TEMA = {
+  past: {
+    cardBg:        '#1e293b',
+    text:          '#e2e8f0',
+    label:         'rgba(255,255,255,0.5)',
+    rec:           '#4ade80',
+    desp:          '#f87171',
+    saldo:         '#e2e8f0',
+    zero:          'rgba(255,255,255,0.25)',
+    divider:       'rgba(255,255,255,0.06)',
+    boxBg:         'rgba(255,255,255,0.06)',
+    cardBorder:    '1px solid rgba(255,255,255,0.06)',
+    cardShadow:    'none',
+    selBorder:     '2px solid rgba(255,255,255,0.65)',
+    selShadow:     '0 0 0 3px rgba(255,255,255,0.08)',
+    semanaColor:   'rgba(255,255,255,0.4)',
+    diaNumColor:   '#e2e8f0',
+    listHover:     'rgba(255,255,255,0.04)',
+    listEditBg:    'rgba(255,255,255,0.08)',
+    listItemBdr:   'rgba(255,255,255,0.06)',
+    delColor:      'rgba(255,255,255,0.3)',
+    delHover:      '#f87171',
+    addColor:      'rgba(255,255,255,0.3)',
+    addHoverColor: '#fff',
+    addHoverBg:    'rgba(255,255,255,0.08)',
+    mobBoxBg:      'rgba(255,255,255,0.07)',
+    mobBoxBdr:     'rgba(255,255,255,0.1)',
+    fixaBadgeBg:   'rgba(253,230,138,0.2)',
+    fixaBadgeText: '#fde68a',
+  },
+  current: {
+    cardBg:        '#0f2878',
+    text:          '#fff',
+    label:         'rgba(255,255,255,0.65)',
+    rec:           '#4ade80',
+    desp:          '#f87171',
+    saldo:         '#93c5fd',
+    zero:          'rgba(255,255,255,0.3)',
+    divider:       'rgba(255,255,255,0.08)',
+    boxBg:         'rgba(255,255,255,0.08)',
+    cardBorder:    '2px solid rgba(255,255,255,0.3)',
+    cardShadow:    '0 4px 16px rgba(26,86,219,0.3)',
+    selBorder:     '2px solid rgba(255,255,255,0.7)',
+    selShadow:     '0 0 0 3px rgba(255,255,255,0.12)',
+    semanaColor:   'rgba(255,255,255,0.5)',
+    diaNumColor:   '#fff',
+    listHover:     'rgba(255,255,255,0.05)',
+    listEditBg:    'rgba(255,255,255,0.1)',
+    listItemBdr:   'rgba(255,255,255,0.08)',
+    delColor:      'rgba(255,255,255,0.3)',
+    delHover:      '#f87171',
+    addColor:      'rgba(255,255,255,0.4)',
+    addHoverColor: '#fff',
+    addHoverBg:    'rgba(255,255,255,0.08)',
+    mobBoxBg:      'rgba(255,255,255,0.08)',
+    mobBoxBdr:     'rgba(255,255,255,0.15)',
+    fixaBadgeBg:   'rgba(253,230,138,0.25)',
+    fixaBadgeText: '#fde68a',
+  },
+  future: {
+    cardBg:        '#e2e8f0',
+    text:          '#475569',
+    label:         '#94a3b8',
+    rec:           '#16a34a',
+    desp:          '#dc2626',
+    saldo:         '#1a56db',
+    zero:          '#cbd5e1',
+    divider:       'rgba(0,0,0,0.04)',
+    boxBg:         'rgba(0,0,0,0.03)',
+    cardBorder:    '1px solid rgba(0,0,0,0.06)',
+    cardShadow:    'none',
+    selBorder:     `1.5px solid ${COR.azul}`,
+    selShadow:     '0 0 0 3px rgba(26,86,219,0.12)',
+    semanaColor:   '#94a3b8',
+    diaNumColor:   '#475569',
+    listHover:     'rgba(0,0,0,0.02)',
+    listEditBg:    '#eff6ff',
+    listItemBdr:   'rgba(0,0,0,0.04)',
+    delColor:      '#cbd5e1',
+    delHover:      COR.vermelho,
+    addColor:      '#94a3b8',
+    addHoverColor: '#1a56db',
+    addHoverBg:    '#f0f7ff',
+    mobBoxBg:      '#f8faff',
+    mobBoxBdr:     COR.borda,
+    fixaBadgeBg:   '#fde68a',
+    fixaBadgeText: '#92400e',
+  },
 }
 
 export default function NleExtrato({
@@ -101,202 +179,159 @@ export default function NleExtrato({
 
   return (
     <>
-      {/* EXTRATO section */}
-      <div style={{flex:1,display: isMobile && mobileView==='form' ? 'none' : 'flex',flexDirection:'column',overflow: isMobile ? 'visible' : 'hidden'}}>
+      <div style={{flex:1,display:isMobile&&mobileView==='form'?'none':'flex',flexDirection:'column',overflow:isMobile?'visible':'hidden'}}>
 
-        {/* Aviso fixo — fica acima do scroll */}
-        {totalEntradas === 0 && totalSaidas === 0 &&
-         fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria)).length === 0 && (
-          <div style={{
-            margin: isMobile ? '6px 16px 0' : '12px 20px 0 32px',
-            padding:'13px 16px', flexShrink: 0,
-            background:'#eff6ff',borderRadius:12,
-            border:'1px solid #bfdbfe',
-            display:'flex',alignItems:'flex-start',gap:12,
-          }}>
+        {totalEntradas===0&&totalSaidas===0&&
+         fixas.filter(f=>!ehCartaoCategoria(categorias,f.categoria)).length===0&&(
+          <div style={{margin:isMobile?'6px 16px 0':'12px 20px 0 32px',padding:'13px 16px',flexShrink:0,
+            background:'#eff6ff',borderRadius:12,border:'1px solid #bfdbfe',
+            display:'flex',alignItems:'flex-start',gap:12}}>
             <span style={{fontSize:20,lineHeight:1,flexShrink:0}}>💡</span>
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:COR.azul,marginBottom:3}}>
-                Nenhum lançamento este mês
-              </div>
+              <div style={{fontSize:13,fontWeight:600,color:COR.azul,marginBottom:3}}>Nenhum lançamento este mês</div>
               <div style={{fontSize:12,color:'#3b82f6',lineHeight:1.5}}>
-                {isMobile
-                  ? 'Toque em qualquer dia abaixo para registrar.'
-                  : 'Clique em um dia e use o painel à direita para registrar.'}
+                {isMobile?'Toque em qualquer dia abaixo para registrar.':'Clique em um dia e use o painel à direita para registrar.'}
               </div>
             </div>
           </div>
         )}
 
-        <div style={{flex:1,overflowY:'auto',
-          display:'flex',flexDirection:'column',gap:isMobile?6:10,
-          padding:isMobile?'0 0 0 0':'20px 20px 20px 32px'}}>
+        <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:isMobile?6:10,
+          padding:isMobile?'0':'20px 20px 20px 32px'}}>
 
-          {Array.from({length:totalDias},(_,i)=>i+1).map(dia => {
-            const ehHoje   = eMesAtual && dia===diaHoje
-            const passado  = eMesAtual ? dia<diaHoje : ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
-            const semana   = diaSemana(dia, mes, ano)
-            const fs       = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
-            const lsRaw    = mesDados.lancamentos[dia] ?? []
-            const ls       = lsRaw
-            const temItens = fs.length>0 || ls.length>0
-            const temFixaPend = fs.some(f => {
-              const conf = mesDados.fixasConsolidadas?.[f.id] !== undefined
-                ? mesDados.fixasConsolidadas[f.id]
-                : (ehAutomatico(f) && !eMesAtual && passado)
+          {Array.from({length:totalDias},(_,i)=>i+1).map(dia=>{
+            const ehHoje  = eMesAtual&&dia===diaHoje
+            const passado = eMesAtual?dia<diaHoje:ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
+            const semana  = diaSemana(dia,mes,ano)
+            const fs      = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
+            const lsRaw   = mesDados.lancamentos[dia]??[]
+            const ls      = lsRaw
+            const temItens= fs.length>0||ls.length>0
+            const temFixaPend=fs.some(f=>{
+              const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined
+                ?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)
               return !conf
             })
-            const saldoIni  = dia===1 ? saldoBase : (saldosDia[dia-1] ?? saldoBase)
-            const diaFuturo = !passado && !ehHoje
+            const saldoIni = dia===1?saldoBase:(saldosDia[dia-1]??saldoBase)
+            const diaFuturo= !passado&&!ehHoje
 
-            const entradasDia = fs.filter(f=>f.tipo==='entrada')
+            const entradasDia=fs.filter(f=>f.tipo==='entrada')
               .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
-              + ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
-            const saidasDia = fs.filter(f=>f.tipo==='saida')
+              +ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
+            const saidasDia=fs.filter(f=>f.tipo==='saida')
               .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
-              + ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
+              +ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
+            const entradasConf=
+              fs.filter(f=>f.tipo==='entrada'&&(mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)))
+              .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
+              +ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
+            const saidasConf=
+              fs.filter(f=>f.tipo==='saida'&&(mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)))
+              .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
+              +ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
 
-            const entradasConf =
-              fs.filter(f => f.tipo==='entrada' && (
-                mesDados.fixasConsolidadas?.[f.id] !== undefined
-                  ? mesDados.fixasConsolidadas[f.id]
-                  : (ehAutomatico(f) && !eMesAtual && passado)
-              ))
-              .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
-              + ls.filter(l => l.tipo==='entrada').reduce((s,l) => s + l.valor, 0)
-            const saidasConf =
-              fs.filter(f => f.tipo==='saida' && (
-                mesDados.fixasConsolidadas?.[f.id] !== undefined
-                  ? mesDados.fixasConsolidadas[f.id]
-                  : (ehAutomatico(f) && !eMesAtual && passado)
-              ))
-              .reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
-              + ls.filter(l => l.tipo==='saida').reduce((s,l) => s + l.valor, 0)
+            const saldoDia = diaFuturo?(saldosDia[dia]??saldoIni):saldoIni+entradasConf-saidasConf
+            const selecionado=diaSel===dia
+            const aberto=diasAbertos.has(dia)
 
-            const entradasBoxVal = entradasConf
-            const saidasBoxVal   = saidasConf
-            const saldoDia = diaFuturo
-              ? saldosDia[dia] ?? saldoIni
-              : saldoIni + entradasConf - saidasConf
-            const selecionado = diaSel===dia
-            const aberto      = diasAbertos.has(dia)
-            const corSaldo    = saldoDia<0 ? COR.vermelho : COR.verde
+            // ── Tema temporal ──────────────────────────────────────────────
+            const temaNome = passado?'past':ehHoje?'current':'future'
+            const tc = TEMA[temaNome]
+
+            const cardBorder = selecionado?tc.selBorder:tc.cardBorder
+            const cardShadow = selecionado?tc.selShadow:tc.cardShadow
 
             return (
               <div key={dia}
-                ref={ehHoje ? hojeRef : undefined}
-                onClick={() => { setMobileDiaForm(null); toggleDia(dia); if(!isMobile) resetarParaNovo(dia); else setDiaSel(dia) }}
+                ref={ehHoje?hojeRef:undefined}
+                onClick={()=>{setMobileDiaForm(null);toggleDia(dia);if(!isMobile)resetarParaNovo(dia);else setDiaSel(dia)}}
                 style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
                   position:'relative',zIndex:selecionado?7:6,
-                  border:`1.5px solid ${selecionado?COR.azul:ehHoje?'#93c5fd':temFixaPend?'#fde68a':COR.borda}`,
-                  background:COR.branco,
-                  boxShadow:selecionado?`0 0 0 3px rgba(26,86,219,0.12)`:
-                    ehHoje?`0 0 0 2px rgba(147,197,253,0.3)`:'none',
-                  animation: highlightDia===dia ? 'rowSaved 1.2s ease-out' : undefined,
+                  border:cardBorder,
+                  background:tc.cardBg,
+                  boxShadow:cardShadow,
+                  animation:highlightDia===dia?'rowSaved 1.2s ease-out':undefined,
                 }}>
 
                 {/* Cabeçalho */}
                 <div style={{display:'flex',alignItems:'stretch',minHeight:54,
-                  background:selecionado?'#eff6ff':ehHoje?'#f0f7ff':temFixaPend?'#fffbeb':'#fafbff',
-                  borderBottom:aberto&&(temItens||selecionado)?`1px solid ${selecionado?'#bfdbfe':COR.borda}`:'none'}}>
+                  background:tc.cardBg,
+                  borderBottom:aberto&&(temItens||selecionado)?`1px solid ${tc.divider}`:'none'}}>
 
+                  {/* Coluna dia */}
                   <div style={{width:isMobile?44:62,flexShrink:0,padding:isMobile?'8px 10px':'11px 13px',
-                    borderRight:'1px solid #f1f5f9',display:'flex',flexDirection:'column',justifyContent:'center'}}>
-                    <div style={{fontSize:18,fontWeight:800,lineHeight:1,
-                      color:selecionado||ehHoje?COR.azul:temFixaPend?'#92400e':COR.texto}}>
+                    borderRight:`1px solid ${tc.divider}`,display:'flex',flexDirection:'column',justifyContent:'center'}}>
+                    <div style={{fontSize:18,fontWeight:800,lineHeight:1,color:tc.diaNumColor}}>
                       {String(dia).padStart(2,'0')}
                     </div>
-                    <div style={{fontSize:9,fontWeight:600,color:'#94a3b8',
-                      textTransform:'uppercase',letterSpacing:.3,marginTop:1}}>
+                    <div style={{fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:.3,marginTop:1,color:tc.semanaColor}}>
                       {semana}
                     </div>
-                    {ehHoje && (
+                    {ehHoje&&(
                       <div style={{fontSize:7,fontWeight:800,padding:'1px 5px',borderRadius:3,
                         display:'inline-block',marginTop:3,letterSpacing:.3,
-                        background:'#1a56db',color:'#fff'}}>HOJE</div>
+                        background:'rgba(255,255,255,0.25)',color:'#fff'}}>HOJE</div>
                     )}
-                    {temFixaPend && (
+                    {temFixaPend&&(
                       <div style={{fontSize:7,fontWeight:800,padding:'1px 5px',borderRadius:3,
                         display:'inline-block',marginTop:ehHoje?2:3,letterSpacing:.3,
-                        background:'#fde68a',color:'#92400e'}}>FIXA</div>
+                        background:tc.fixaBadgeBg,color:tc.fixaBadgeText}}>FIXA</div>
                     )}
                   </div>
 
-                  {/* Boxes: mobile → Inicial|Movimentação|Final  desktop → Entradas|Saídas|Planejado|Saldo */}
+                  {/* Boxes de resumo */}
                   <div style={{flex:1,display:'flex',alignItems:'center',
                     justifyContent:'flex-end',gap:isMobile?4:6,padding:isMobile?'0 8px':0}}>
-                    {isMobile ? (<>
-                      {/* Inicial */}
-                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                        padding:'5px 8px',borderRadius:10,flex:1,
-                        background:'#f8faff',border:`1px solid ${COR.borda}`}}>
-                        <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
-                          letterSpacing:.4,marginBottom:2,color:'#94a3b8'}}>Inicial</span>
-                        <span style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'-.3px'}}>
-                          {fmt(saldoIni)}
-                        </span>
-                      </div>
-                      {/* Movimentação */}
-                      {(() => {
-                        const mov = diaFuturo ? (entradasDia - saidasDia) : (entradasConf - saidasConf)
-                        const pos = mov > 0; const neg = mov < 0
-                        return (
-                          <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                            padding:'5px 8px',borderRadius:10,flex:1,
-                            background:pos?'#f0fdf4':neg?'#fff1f2':'#f8faff',
-                            border:`1px solid ${pos?'#bbf7d0':neg?'#fecdd3':COR.borda}`}}>
-                            <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
-                              letterSpacing:.4,marginBottom:2,
-                              color:pos?COR.verde:neg?COR.vermelho:'#94a3b8'}}>Mov.</span>
-                            <span style={{fontSize:11,fontWeight:700,letterSpacing:'-.3px',
-                              color:pos?COR.verde:neg?COR.vermelho:'#94a3b8'}}>
-                              {mov===0?'—':`${mov>0?'+':'-'}${fmt(Math.abs(mov))}`}
-                            </span>
-                          </div>
-                        )
-                      })()}
-                      {/* Final */}
-                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                        padding:'5px 8px',borderRadius:10,flex:1,
-                        background:diaFuturo?'#f8faff':ehHoje?'#eff6ff':saldoDia<0?'#fff1f2':'#f0fdf4',
-                        border:`1px solid ${diaFuturo?COR.borda:ehHoje?'#bfdbfe':saldoDia<0?'#fecdd3':'#bbf7d0'}`}}>
-                        <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',
-                          letterSpacing:.4,marginBottom:2,
-                          color:diaFuturo?'#94a3b8':ehHoje?COR.azul:corSaldo}}>
-                          {diaFuturo?'Prev.':ehHoje?'Atual':'Final'}
-                        </span>
-                        <span style={{fontSize:11,fontWeight:700,letterSpacing:'-.3px',
-                          color:diaFuturo?'#64748b':ehHoje?COR.azul:corSaldo}}>
-                          {fmt(saldoDia)}
-                        </span>
-                      </div>
-                    </>) : (() => {
-                      const planejadoDia = fs.filter(f => f.tipo==='saida' && !(
-                        mesDados.fixasConsolidadas?.[f.id] !== undefined
-                          ? mesDados.fixasConsolidadas[f.id]
-                          : (ehAutomatico(f) && !eMesAtual && passado)
-                      )).reduce((s,f) => s + (mesDados.fixasValorOverride?.[f.id] ?? f.valor), 0)
-                      return (
+
+                    {isMobile?(<>
+                      {/* Mobile: Inicial | Mov | Final */}
+                      {[
+                        {label:'Inicial',val:saldoIni,color:tc.text,fmt:(v:number)=>fmt(v)},
+                        {label:'Mov.',val:diaFuturo?(entradasDia-saidasDia):(entradasConf-saidasConf),
+                          color:(diaFuturo?(entradasDia-saidasDia):(entradasConf-saidasConf))>0?tc.rec:
+                                (diaFuturo?(entradasDia-saidasDia):(entradasConf-saidasConf))<0?tc.desp:tc.label,
+                          fmt:(v:number)=>v===0?'—':`${v>0?'+':'-'}${fmt(Math.abs(v))}`},
+                        {label:diaFuturo?'Prev.':ehHoje?'Atual':'Final',val:saldoDia,
+                          color:saldoDia<0?tc.desp:tc.saldo,
+                          fmt:(v:number)=>fmt(v)},
+                      ].map(col=>(
+                        <div key={col.label} style={{display:'flex',flexDirection:'column',alignItems:'center',
+                          padding:'5px 8px',borderRadius:10,flex:1,
+                          background:tc.mobBoxBg,border:`1px solid ${tc.mobBoxBdr}`}}>
+                          <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',letterSpacing:.4,marginBottom:2,color:tc.label}}>{col.label}</span>
+                          <span style={{fontSize:11,fontWeight:700,letterSpacing:'-.3px',color:col.color,fontVariantNumeric:'tabular-nums'}}>{col.fmt(col.val)}</span>
+                        </div>
+                      ))}
+                    </>):(()=>{
+                      // Desktop: 4-col grid
+                      const planejadoDia=fs.filter(f=>f.tipo==='saida'&&!(
+                        mesDados.fixasConsolidadas?.[f.id]!==undefined
+                          ?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)
+                      )).reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
+                      const saldoColor=saldoDia<0?tc.desp:diaFuturo?tc.saldo:saldoDia===0?tc.zero:tc.saldo
+                      return(
                         <>
-                          {/* 4-col grid: Entradas | Saídas | Planejado | Saldo */}
                           <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr'}}>
                             {[
-                              {label:'Entradas', val:entradasBoxVal, fmt:(v:number)=>v===0?'—':`+${fmt(v)}`, cor:entradasConf>0?COR.azul:'#d1d5db'},
-                              {label:'Saídas',   val:saidasBoxVal,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:saidasConf>0?COR.vermelho:'#d1d5db'},
-                              {label:'Previsto', val:planejadoDia,   fmt:(v:number)=>v===0?'—':`-${fmt(v)}`, cor:planejadoDia>0?'#64748b':'#d1d5db'},
-                              {label:diaFuturo?'Saldo previsto':passado?'Saldo final':'Saldo atual', val:saldoDia, fmt:(v:number)=>fmt(v), cor:diaFuturo?'#64748b':corSaldo},
-                            ].map(col => (
-                              <div key={col.label} style={{padding:'10px 12px',textAlign:'right',borderRight:'1px solid #f8faff'}}>
-                                <div style={{fontSize:9,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:.4,marginBottom:3}}>{col.label}</div>
-                                <div style={{fontSize:13,fontWeight:700,color:col.cor,fontVariantNumeric:'tabular-nums'}}>{col.fmt(col.val)}</div>
+                              {label:'Entradas',val:entradasConf,color:entradasConf>0?tc.rec:tc.zero,fmt:(v:number)=>v===0?'—':`+${fmt(v)}`},
+                              {label:'Saídas',  val:saidasConf,  color:saidasConf>0?tc.desp:tc.zero,  fmt:(v:number)=>v===0?'—':`-${fmt(v)}`},
+                              {label:'Previsto',val:planejadoDia,color:planejadoDia>0?tc.label:tc.zero,fmt:(v:number)=>v===0?'—':`-${fmt(v)}`},
+                              {label:diaFuturo?'Saldo previsto':passado?'Saldo final':'Saldo atual',
+                               val:saldoDia,color:saldoColor,fmt:(v:number)=>fmt(v)},
+                            ].map(col=>(
+                              <div key={col.label} style={{padding:'10px 12px',textAlign:'right',borderRight:`1px solid ${tc.divider}`}}>
+                                <div style={{fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:.4,marginBottom:3,color:tc.label}}>{col.label}</div>
+                                <div style={{fontSize:13,fontWeight:700,color:col.color,fontVariantNumeric:'tabular-nums'}}>{col.fmt(col.val)}</div>
                               </div>
                             ))}
                           </div>
                           {/* Botão ＋ */}
-                          <div onClick={e => { e.stopPropagation(); resetarParaNovo(dia); setTimeout(()=>valorInputRef.current?.focus(),80) }}
-                            style={{width:48,display:'flex',alignItems:'center',justifyContent:'center',borderLeft:'1px solid #f1f5f9',flexShrink:0,cursor:'pointer',fontSize:20,color:'#e2e8f0',transition:'all .15s'}}
-                            onMouseEnter={e=>(e.currentTarget.style.cssText='width:48px;display:flex;align-items:center;justify-content:center;border-left:1px solid #f1f5f9;flex-shrink:0;cursor:pointer;font-size:20px;color:#1a56db;background:#f0f7ff;transition:all .15s')}
-                            onMouseLeave={e=>(e.currentTarget.style.cssText='width:48px;display:flex;align-items:center;justify-content:center;border-left:1px solid #f1f5f9;flex-shrink:0;cursor:pointer;font-size:20px;color:#e2e8f0;transition:all .15s')}>
+                          <div onClick={e=>{e.stopPropagation();resetarParaNovo(dia);setTimeout(()=>valorInputRef.current?.focus(),80)}}
+                            style={{width:48,display:'flex',alignItems:'center',justifyContent:'center',
+                              borderLeft:`1px solid ${tc.divider}`,flexShrink:0,cursor:'pointer',
+                              fontSize:20,color:tc.addColor,transition:'all .15s'}}
+                            onMouseEnter={e=>{e.currentTarget.style.color=tc.addHoverColor;e.currentTarget.style.background=tc.addHoverBg}}
+                            onMouseLeave={e=>{e.currentTarget.style.color=tc.addColor;e.currentTarget.style.background='transparent'}}>
                             ＋
                           </div>
                         </>
@@ -306,52 +341,46 @@ export default function NleExtrato({
                 </div>
 
                 {/* Fixas */}
-                {aberto && fs.map(f => {
-                  const ehFaturaFixa = f.id.startsWith('cartao-')
-                  const catVisual    = iconeCategoria(categorias, f.categoria)
-                  const automatico   = ehAutomatico(f)
-                  const consolidada  = mesDados.fixasConsolidadas?.[f.id] !== undefined
-                    ? mesDados.fixasConsolidadas[f.id]
-                    : (automatico && !eMesAtual && passado)
-                  const corValor     = consolidada ? (f.tipo==='entrada'?COR.azul:COR.vermelho) : '#94a3b8'
-                  const emEdicaoFixa = editandoFixaId === f.id
-                  const valorMostrado = mesDados.fixasValorOverride?.[f.id] ?? f.valor
-                  return (
-                    <div key={f.id} onClick={e => e.stopPropagation()}
-                      style={{background:emEdicaoFixa?'#eff6ff':'transparent'}}>
-                      <div onClick={() => editarFixa(dia, f)}
+                {aberto&&fs.map(f=>{
+                  const ehFaturaFixa=f.id.startsWith('cartao-')
+                  const catVisual=iconeCategoria(categorias,f.categoria)
+                  const automatico=ehAutomatico(f)
+                  const consolidada=mesDados.fixasConsolidadas?.[f.id]!==undefined
+                    ?mesDados.fixasConsolidadas[f.id]:(automatico&&!eMesAtual&&passado)
+                  const corValor=consolidada?(f.tipo==='entrada'?tc.rec:tc.desp):tc.label
+                  const emEdicaoFixa=editandoFixaId===f.id
+                  const valorMostrado=mesDados.fixasValorOverride?.[f.id]??f.valor
+                  return(
+                    <div key={f.id} onClick={e=>e.stopPropagation()}
+                      style={{background:emEdicaoFixa?tc.listEditBg:'transparent'}}>
+                      <div onClick={()=>editarFixa(dia,f)}
                         style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
-                        padding:'10px 16px',borderBottom:`1px solid #f1f5f9`}}>
+                          padding:'10px 16px',borderBottom:`1px solid ${tc.listItemBdr}`}}>
                         <input type="checkbox" checked={consolidada}
-                          onClick={e => e.stopPropagation()}
-                          onChange={() => {
-                            if (consolidada) { desconsolidarFixa(f.id) }
-                            else             { consolidarFixa(f.id) }
-                          }}
+                          onClick={e=>e.stopPropagation()}
+                          onChange={()=>{if(consolidada)desconsolidarFixa(f.id);else consolidarFixa(f.id)}}
                           title="Marcar como paga ✓"
-                          style={{cursor:'pointer',width:15,height:15,flexShrink:0}} />
+                          style={{cursor:'pointer',width:15,height:15,flexShrink:0}}/>
                         <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                           display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
                           background:catVisual.cor,opacity:consolidada?1:0.5}}>
                           {catVisual.icone}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,fontWeight:500,
-                            color:consolidada?COR.texto:'#94a3b8',
+                          <div style={{fontSize:12,fontWeight:500,color:consolidada?tc.text:tc.label,
                             display:'flex',alignItems:'center',gap:5}}>
-                            {ehFaturaFixa ? 'Cartão de Crédito' : f.nome}
+                            {ehFaturaFixa?'Cartão de Crédito':f.nome}
                             <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                              background:consolidada?'#e0f2fe':'#f1f5f9',
-                              color:consolidada?'#0369a1':'#94a3b8'}}>
-                              {consolidada ? (automatico && !eMesAtual && passado ? 'automática ✓' : 'paga ✓') : 'previsto'}
+                              background:consolidada?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.07)',
+                              color:consolidada?tc.rec:tc.label}}>
+                              {consolidada?(automatico&&!eMesAtual&&passado?'automática ✓':'paga ✓'):'previsto'}
                             </span>
                           </div>
-                          <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
-                            display:'flex',alignItems:'center',gap:4}}>
+                          <div style={{fontSize:10,color:tc.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>
                             {ehFaturaFixa
-                              ? `${f.categoria}${f.nome !== f.categoria ? ' · ' + f.nome : ''}`
-                              : (f.descricao ?? f.subtitulo ?? f.categoria)
-                            } <BadgePag fp={f.formaPagamento}/>
+                              ?`${f.categoria}${f.nome!==f.categoria?' · '+f.nome:''}`
+                              :(f.descricao??f.subtitulo??f.categoria)
+                            }<BadgePag fp={f.formaPagamento}/>
                           </div>
                         </div>
                         <div style={{fontSize:13,fontWeight:600,color:corValor}}>
@@ -363,175 +392,169 @@ export default function NleExtrato({
                 })}
 
                 {/* Lançamentos variáveis */}
-                {aberto && ls.map(l => {
-                  const catVisual   = iconeCategoria(categorias, l.categoria)
-                  const corValor    = l.tipo==='entrada' ? COR.azul : COR.vermelho
-                  const emEdicao    = editandoId === l.id
-                  const catLower    = l.categoria.toLowerCase()
-                  const ehFaturaLanc = cartaoNomesExtrato.has(catLower) ||
-                    (catLower.includes('cart') && (/cr[eé]d/.test(catLower) || catLower.includes('fatura')))
-                  return (
+                {aberto&&ls.map(l=>{
+                  const catVisual=iconeCategoria(categorias,l.categoria)
+                  const corValor=l.tipo==='entrada'?tc.rec:tc.desp
+                  const emEdicao=editandoId===l.id
+                  const catLower=l.categoria.toLowerCase()
+                  const ehFaturaLanc=cartaoNomesExtrato.has(catLower)||
+                    (catLower.includes('cart')&&(/cr[eé]d/.test(catLower)||catLower.includes('fatura')))
+                  return(
                     <div key={l.id}
-                      onClick={e => { e.stopPropagation(); if(!l.id.startsWith('fatura-')) editarLancamento(dia, l) }}
-                      style={{display:'flex',alignItems:'center',gap:10,cursor:l.id.startsWith('fatura-')?'default':'pointer',
-                        padding:'10px 16px',borderBottom:`1px solid #f1f5f9`,
-                        background:emEdicao?'#eff6ff':'transparent'}}
-                      onMouseEnter={e=>{ if(!emEdicao) e.currentTarget.style.background='#fafbff' }}
-                      onMouseLeave={e=>{ if(!emEdicao) e.currentTarget.style.background='transparent' }}>
+                      onClick={e=>{e.stopPropagation();if(!l.id.startsWith('fatura-'))editarLancamento(dia,l)}}
+                      style={{display:'flex',alignItems:'center',gap:10,
+                        cursor:l.id.startsWith('fatura-')?'default':'pointer',
+                        padding:'10px 16px',borderBottom:`1px solid ${tc.listItemBdr}`,
+                        background:emEdicao?tc.listEditBg:'transparent'}}
+                      onMouseEnter={e=>{if(!emEdicao)e.currentTarget.style.background=tc.listHover}}
+                      onMouseLeave={e=>{if(!emEdicao)e.currentTarget.style.background='transparent'}}>
                       <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                         display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
                         background:catVisual.cor}}>
                         {catVisual.icone}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:600,color:COR.texto,
-                          display:'flex',alignItems:'center',gap:5}}>
-                          {ehFaturaLanc ? 'Cartão de Crédito' : l.categoria}
+                        <div style={{fontSize:12,fontWeight:600,color:tc.text,display:'flex',alignItems:'center',gap:5}}>
+                          {ehFaturaLanc?'Cartão de Crédito':l.categoria}
                           <BadgePag fp={l.formaPagamento}/>
                         </div>
-                        <div style={{fontSize:11,color:'#64748b',marginTop:1}}>
-                          {ehFaturaLanc ? l.categoria : (l.subCategoria || l.descricao)}
+                        <div style={{fontSize:11,color:tc.label,marginTop:1}}>
+                          {ehFaturaLanc?l.categoria:(l.subCategoria||l.descricao)}
                         </div>
                       </div>
                       <div style={{fontSize:13,fontWeight:600,color:corValor}}>
                         {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
                       </div>
-                      {!l.id.startsWith('fatura-') && (
-                        <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                      {!l.id.startsWith('fatura-')&&(
+                        <button onClick={e=>{e.stopPropagation();excluir(dia,l.id)}}
                           style={{border:'none',background:'transparent',cursor:'pointer',
-                            color:'#cbd5e1',fontSize:14,padding:'2px 5px',borderRadius:6}}
-                          onMouseEnter={e=>(e.currentTarget.style.color=COR.vermelho)}
-                          onMouseLeave={e=>(e.currentTarget.style.color='#cbd5e1')}>✕</button>
+                            color:tc.delColor,fontSize:14,padding:'2px 5px',borderRadius:6}}
+                          onMouseEnter={e=>(e.currentTarget.style.color=tc.delHover)}
+                          onMouseLeave={e=>(e.currentTarget.style.color=tc.delColor)}>✕</button>
                       )}
                     </div>
                   )
                 })}
 
-                {/* INLINE FORM — mobile only, dentro do dia card */}
-                {isMobile && aberto && (
-                  <>
-                    <button
-                      onClick={e => { e.stopPropagation()
-                        if (mobileDiaForm===dia) { setMobileDiaForm(null) } else {
-                          setMobileDiaForm(dia); setDiaSel(dia)
-                          setFTipo('saida'); setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFPag('debito')
-                          setEditandoId(null); setEditandoFixaId(null)
-                          setTimeout(()=>categoriaSelectRef.current?.focus(),80)
-                        }
-                      }}
-                      style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                        padding:9,fontSize:11,fontWeight:600,color:COR.azul,
-                        cursor:'pointer',border:'none',background:'#f8faff',width:'100%',
-                        borderTop:`1px dashed #bfdbfe`}}>
-                      + Adicionar neste dia
-                    </button>
-                    {mobileDiaForm === dia && (
-                      <div onClick={e=>e.stopPropagation()}
-                        style={{background:'#f0f9ff',borderTop:`2px solid ${COR.azul}`,padding:'12px 14px'}}>
-                        <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,padding:3,marginBottom:10,width:'fit-content'}}>
-                          {(['saida','entrada'] as const).map(t=>(
-                            <button key={t} onClick={()=>{setFTipo(t);setFPag(t==='entrada'?'pix':'debito')}} style={{
-                              padding:'5px 14px',border:'none',borderRadius:6,cursor:'pointer',
-                              fontSize:11,fontWeight:600,fontFamily:'inherit',
-                              background:fTipo===t?COR.branco:'transparent',
-                              color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):'#0369a1',
-                              boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                              {t==='saida'?'Pagamento':'Recebimento'}
-                            </button>
-                          ))}
+                {/* INLINE FORM — mobile only */}
+                {isMobile&&aberto&&(<>
+                  <button
+                    onClick={e=>{e.stopPropagation()
+                      if(mobileDiaForm===dia){setMobileDiaForm(null)}else{
+                        setMobileDiaForm(dia);setDiaSel(dia)
+                        setFTipo('saida');setFCat('');setFSubDesc('');setFDesc('');setFValor('');setFPag('debito')
+                        setEditandoId(null);setEditandoFixaId(null)
+                        setTimeout(()=>categoriaSelectRef.current?.focus(),80)
+                      }
+                    }}
+                    style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                      padding:9,fontSize:11,fontWeight:600,color:tc.addHoverColor,
+                      cursor:'pointer',border:'none',background:tc.addHoverBg,width:'100%',
+                      borderTop:`1px dashed ${tc.divider}`}}>
+                    + Adicionar neste dia
+                  </button>
+                  {mobileDiaForm===dia&&(
+                    <div onClick={e=>e.stopPropagation()}
+                      style={{background:'#f0f9ff',borderTop:`2px solid ${COR.azul}`,padding:'12px 14px'}}>
+                      <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,padding:3,marginBottom:10,width:'fit-content'}}>
+                        {(['saida','entrada'] as const).map(t=>(
+                          <button key={t} onClick={()=>{setFTipo(t);setFPag(t==='entrada'?'pix':'debito')}} style={{
+                            padding:'5px 14px',border:'none',borderRadius:6,cursor:'pointer',
+                            fontSize:11,fontWeight:600,fontFamily:'inherit',
+                            background:fTipo===t?COR.branco:'transparent',
+                            color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):'#0369a1',
+                            boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+                            {t==='saida'?'Pagamento':'Recebimento'}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap' as never}}>
+                        <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
+                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
+                          <select ref={categoriaSelectRef}
+                            value={fSubDesc?`${fCat}||${fSubDesc}`:fCat}
+                            onChange={e=>{
+                              const val=e.target.value
+                              const pi=val.indexOf('||')
+                              const nome=pi>=0?val.slice(0,pi):val
+                              const desc=pi>=0?val.slice(pi+2):''
+                              setFCat(nome);setFSubDesc(desc)
+                              const c=categorias.find((x:Categoria)=>x.nome===nome)
+                              if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))
+                              if(nome)setTimeout(()=>valorInputRef.current?.focus(),50)
+                            }}
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
+                            <option value="">Selecione...</option>
+                            {(()=>{
+                              const grps=new Map<string,Categoria[]>()
+                              for(const c of categoriasSelect){const g=c.grupo??'';if(!grps.has(g))grps.set(g,[]);grps.get(g)!.push(c)}
+                              const cv=(c:Categoria)=>c.descricao?`${c.nome}||${c.descricao}`:c.nome
+                              const cl=(c:Categoria)=>c.descricao?`${c.nome} / ${c.descricao}`:c.nome
+                              return Array.from(grps.entries())
+                                .sort(([a],[b])=>a===''?1:b===''?-1:a.localeCompare(b,'pt-BR'))
+                                .map(([grupo,cats])=>grupo
+                                  ?<optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>)}</optgroup>
+                                  :cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>))
+                            })()}
+                          </select>
                         </div>
-                        <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap' as never}}>
-                          <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
-                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
-                            <select ref={categoriaSelectRef}
-                              value={fSubDesc ? `${fCat}||${fSubDesc}` : fCat}
-                              onChange={e=>{
-                                const val=e.target.value
-                                const pi=val.indexOf('||')
-                                const nome=pi>=0?val.slice(0,pi):val
-                                const desc=pi>=0?val.slice(pi+2):''
-                                setFCat(nome);setFSubDesc(desc)
-                                const c=categorias.find((x: Categoria)=>x.nome===nome)
-                                if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))
-                                if(nome)setTimeout(()=>valorInputRef.current?.focus(),50)
-                              }}
+                        {subDescsDisponiveis.length>1&&!fSubDesc&&(
+                          <div style={{flex:'1 1 80px',display:'flex',flexDirection:'column',gap:3}}>
+                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Variante</div>
+                            <select value={fSubDesc} onChange={e=>setFSubDesc(e.target.value)}
                               style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                               <option value="">Selecione...</option>
-                              {(() => {
-                                const grps = new Map<string, Categoria[]>()
-                                for (const c of categoriasSelect) {
-                                  const g = c.grupo ?? ''
-                                  if (!grps.has(g)) grps.set(g, [])
-                                  grps.get(g)!.push(c)
-                                }
-                                const cv=(c:Categoria)=>c.descricao?`${c.nome}||${c.descricao}`:c.nome
-                                const cl=(c:Categoria)=>c.descricao?`${c.nome} / ${c.descricao}`:c.nome
-                                return Array.from(grps.entries())
-                                  .sort(([a],[b]) => a===''?1:b===''?-1:a.localeCompare(b,'pt-BR'))
-                                  .map(([grupo, cats]) => grupo
-                                    ? <optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>)}</optgroup>
-                                    : cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>))
-                              })()}
+                              {subDescsDisponiveis.map(desc=><option key={desc} value={desc}>{desc}</option>)}
                             </select>
                           </div>
-                          {subDescsDisponiveis.length > 1 && !fSubDesc && (
-                            <div style={{flex:'1 1 80px',display:'flex',flexDirection:'column',gap:3}}>
-                              <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Variante</div>
-                              <select value={fSubDesc} onChange={e=>setFSubDesc(e.target.value)}
-                                style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
-                                <option value="">Selecione...</option>
-                                {subDescsDisponiveis.map(desc=><option key={desc} value={desc}>{desc}</option>)}
-                              </select>
-                            </div>
-                          )}
-                          <div style={{flex:'2 1 120px',display:'flex',flexDirection:'column',gap:3}}>
-                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Descrição</div>
-                            <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-                              placeholder="Ex: Mercado Extra..."
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
-                              onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-                          </div>
-                          <div style={{flex:'0 0 90px',display:'flex',flexDirection:'column',gap:3}}>
-                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
-                            <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
-                              placeholder="R$ 0,00" inputMode="decimal"
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
-                              onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-                          </div>
+                        )}
+                        <div style={{flex:'2 1 120px',display:'flex',flexDirection:'column',gap:3}}>
+                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Descrição</div>
+                          <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
+                            placeholder="Ex: Mercado Extra..."
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                            onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as never,marginBottom:8}}>
-                          <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>Pgto:</span>
-                          {(fTipo==='entrada'?FORMAS_ENT:FORMAS_SAI).filter(p=>isDinheiro||p.id!=='dinheiro').map(p=>(
-                            <button key={p.id} onClick={()=>setFPag(p.id)} style={{
-                              padding:'4px 10px',border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
-                              borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:600,
-                              background:fPag===p.id?'#eff6ff':'#fff',color:fPag===p.id?COR.azul:'#0369a1',
-                              fontFamily:'inherit'}}>
-                              {p.label}
-                            </button>
-                          ))}
+                        <div style={{flex:'0 0 90px',display:'flex',flexDirection:'column',gap:3}}>
+                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
+                          <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+                            placeholder="R$ 0,00" inputMode="decimal"
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                            onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                         </div>
-                        <div style={{display:'flex',gap:6}}>
-                          <button onClick={()=>setMobileDiaForm(null)}
-                            style={{flex:1,padding:'9px 0',border:`1.5px solid ${COR.borda}`,borderRadius:8,
-                              background:'#fff',color:COR.textoSuave,fontSize:12,fontWeight:600,
-                              cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
-                          <button onClick={lancar}
-                            style={{flex:2,padding:'9px 0',border:'none',borderRadius:8,
-                              background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                              color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Lançar</button>
-                        </div>
-                        <div style={{fontSize:9,color:'#0369a1',marginTop:8,opacity:.7}}>↵ Enter no valor para salvar</div>
                       </div>
-                    )}
-                  </>
-                )}
+                      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as never,marginBottom:8}}>
+                        <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>Pgto:</span>
+                        {(fTipo==='entrada'?FORMAS_ENT:FORMAS_SAI).filter(p=>isDinheiro||p.id!=='dinheiro').map(p=>(
+                          <button key={p.id} onClick={()=>setFPag(p.id)} style={{
+                            padding:'4px 10px',border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
+                            borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:600,
+                            background:fPag===p.id?'#eff6ff':'#fff',color:fPag===p.id?COR.azul:'#0369a1',
+                            fontFamily:'inherit'}}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{display:'flex',gap:6}}>
+                        <button onClick={()=>setMobileDiaForm(null)}
+                          style={{flex:1,padding:'9px 0',border:`1.5px solid ${COR.borda}`,borderRadius:8,
+                            background:'#fff',color:COR.textoSuave,fontSize:12,fontWeight:600,
+                            cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                        <button onClick={lancar}
+                          style={{flex:2,padding:'9px 0',border:'none',borderRadius:8,
+                            background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                            color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Lançar</button>
+                      </div>
+                      <div style={{fontSize:9,color:'#0369a1',marginTop:8,opacity:.7}}>↵ Enter no valor para salvar</div>
+                    </div>
+                  )}
+                </>)}
               </div>
             )
           })}
 
           {/* Saldo final — mobile inline */}
-          {isMobile && (
+          {isMobile&&(
             <div style={{margin:'4px 0 8px',borderRadius:14,
               background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
               padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
@@ -546,24 +569,20 @@ export default function NleExtrato({
         </div>
 
         {/* Saldo final previsto — barra fixa desktop */}
-        {!isMobile && (() => {
-          const sf = saldosDia[totalDias] ?? saldoMes
-          const positivo = sf >= 0
-          return (
+        {!isMobile&&(()=>{
+          const sf=saldosDia[totalDias]??saldoMes
+          const positivo=sf>=0
+          return(
             <div style={{padding:'8px 16px',flexShrink:0,borderTop:'1px solid #e2e8f0',background:'#f8faff'}}>
-              <div style={{
-                borderRadius:12,
-                background: positivo
-                  ? 'linear-gradient(135deg,#0f2878,#2563eb)'
-                  : 'linear-gradient(135deg,#7f1d1d,#dc2626)',
-                padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',
-              }}>
+              <div style={{borderRadius:12,
+                background:positivo?'linear-gradient(135deg,#0f2878,#2563eb)':'linear-gradient(135deg,#7f1d1d,#dc2626)',
+                padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Saldo final previsto</div>
                   <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
                 </div>
                 <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
-                  color: positivo ? '#86efac' : '#fca5a5'}}>
+                  color:positivo?'#86efac':'#fca5a5'}}>
                   {fmt(sf)}
                 </span>
               </div>

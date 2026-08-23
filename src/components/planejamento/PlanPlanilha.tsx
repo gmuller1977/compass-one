@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import type React from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, COR, MESES, type AnoData } from './types'
+import { fmt, MESES, type AnoData } from './types'
 import PlanResumoAnual from './PlanResumoAnual'
 import PlanCelulaNav from './PlanCelulaNav'
 
