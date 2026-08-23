@@ -50,7 +50,7 @@ export default function PlanGrupoAccordion({
           <span style={{ fontSize: 11, color: COR.textoSuave }}>{cats.length} categorias</span>
           <span style={{
             fontSize: 15, fontWeight: 800,
-            color: tipo === 'e' ? COR.verde : COR.vermelho,
+            color: '#1e293b',
             fontVariantNumeric: 'tabular-nums',
           }}>{fmt(aba === 'realizado' ? lancadoTotal : total, true)}</span>
         </div>
@@ -66,7 +66,7 @@ export default function PlanGrupoAccordion({
                   padding: '8px 16px 8px 44px', borderBottom: `1px solid ${COR.borda}`,
                 }}>
                   <span style={{ fontSize: 14 }}>{icone}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{nomeExibicao(cat)}</span>
+                  <span style={{ flex: 1, fontSize: 13, color: '#1e293b' }}>{nomeExibicao(cat)}</span>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <PlanCelulaEditavel
                       valor={cat.v[mesSelecionado]}

@@ -99,7 +99,7 @@ export default function PlanLista({
           }}>
             <div style={{
               fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '.4px', color: COR.textoSuave, marginBottom: 6,
+              letterSpacing: '.4px', color: '#1e293b', marginBottom: 6,
             }}>{label}</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: cor, fontVariantNumeric: 'tabular-nums' }}>
               {fmt(valor, true)}
@@ -112,7 +112,7 @@ export default function PlanLista({
       <div style={{ marginBottom: 8 }}>
         <div style={{
           fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-          letterSpacing: '.5px', color: COR.verde, marginBottom: 8,
+          letterSpacing: '.5px', color: '#1e293b', marginBottom: 8,
         }}>Receitas</div>
         {gruposE.map(([grupo, cats]) => (
           <PlanGrupoAccordion
@@ -139,7 +139,7 @@ export default function PlanLista({
       <div>
         <div style={{
           fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-          letterSpacing: '.5px', color: COR.vermelho, marginBottom: 8,
+          letterSpacing: '.5px', color: '#1e293b', marginBottom: 8,
         }}>Despesas</div>
         {gruposS.map(([grupo, cats]) => (
           <PlanGrupoAccordion

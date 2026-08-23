@@ -50,7 +50,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, al
 
   const corVal = readOnly
     ? (valor === 0 ? '#c4b5fd' : '#7c3aed')
-    : (valor === 0 ? '#c0cce0' : '#475569')
+    : (valor === 0 ? '#c0cce0' : '#1e293b')
 
   return (
     <span

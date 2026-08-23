@@ -35,24 +35,24 @@ const W_MES  = 130
 const TC = {
   past: {
     header: 'linear-gradient(135deg, #60a5fa, #3b82f6)', body: '#3b82f6', text: '#fff',
-    rec: '#4ade80', desp: '#f87171', saldo: '#bfdbfe',
+    rec: '#4ade80', desp: '#fbbf24', saldo: '#bfdbfe',
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.08)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   current: {
     header: 'linear-gradient(135deg, #1e3a8a, #0f2878)', body: '#0f2878', text: '#fff',
-    rec: '#4ade80', desp: '#f87171', saldo: '#93c5fd',
+    rec: '#4ade80', desp: '#fbbf24', saldo: '#93c5fd',
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   future: {
-    header: 'linear-gradient(135deg, #bfdbfe, #93c5fd)', body: '#dbeafe', text: '#1e3a8a',
+    header: 'linear-gradient(135deg, #bfdbfe, #93c5fd)', body: '#93c5fd', text: '#1e3a8a',
     rec: '#16a34a', desp: '#dc2626', saldo: '#1e3a8a',
     grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
     border: 'rgba(0,0,0,0.04)',
-    hover: 'rgba(0,0,0,0.04)', stripe: 'rgba(0,0,0,0.03)',
+    hover: 'rgba(0,0,0,0.05)', stripe: 'rgba(0,0,0,0.03)',
   },
 }
 
@@ -272,7 +272,7 @@ export default function PlanPlanilha({
               const divider = tema === 'future' ? 'rgba(30,58,138,0.08)' : 'rgba(255,255,255,0.06)'
               const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
               return (
-                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: 2, marginRight: 2 }}>
+                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: 2, marginRight: 2, borderRight: mi < 11 ? '1px solid rgba(255,255,255,0.15)' : undefined }}>
                   {/* Month header */}
                   <div style={{
                     height: SH, background: tc.header, color: tc.text,
