@@ -35,22 +35,22 @@ const W_MES  = 130
 
 const TC = {
   past: {
-    header: '#334155', body: '#475569', text: '#e2e8f0',
-    rec: '#4ade80', desp: '#f87171', saldo: '#e2e8f0',
-    grp: 'rgba(255,255,255,0.05)', tot: 'rgba(255,255,255,0.07)',
-    border: 'rgba(255,255,255,0.07)',
-    hover: 'rgba(255,255,255,0.08)', stripe: 'rgba(255,255,255,0.04)',
+    header: 'linear-gradient(135deg, #60a5fa, #3b82f6)', body: '#3b82f6', text: '#fff',
+    rec: '#4ade80', desp: '#f87171', saldo: '#bfdbfe',
+    grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.08)',
+    border: 'rgba(255,255,255,0.08)',
+    hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   current: {
-    header: '#1a56db', body: '#0f2878', text: '#fff',
+    header: 'linear-gradient(135deg, #1e3a8a, #0f2878)', body: '#0f2878', text: '#fff',
     rec: '#4ade80', desp: '#f87171', saldo: '#93c5fd',
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   future: {
-    header: '#94a3b8', body: '#e2e8f0', text: '#475569',
-    rec: '#16a34a', desp: '#dc2626', saldo: '#1a56db',
+    header: 'linear-gradient(135deg, #bfdbfe, #93c5fd)', body: '#dbeafe', text: '#1e3a8a',
+    rec: '#16a34a', desp: '#dc2626', saldo: '#1e3a8a',
     grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
     border: 'rgba(0,0,0,0.04)',
     hover: 'rgba(0,0,0,0.04)', stripe: 'rgba(0,0,0,0.03)',
@@ -425,7 +425,7 @@ export default function PlanPlanilha({
                 {/* Month header — sticky */}
                 <div style={{
                   height: HH, position: 'sticky', top: 0, zIndex: 5,
-                  background: tc.header, color: '#fff',
+                  background: tc.header, color: tc.text,
                   borderRadius: '8px 8px 0 0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 13, fontWeight: 700, gap: 4, flexShrink: 0,
