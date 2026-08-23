@@ -23,10 +23,13 @@ type Tema = 'past' | 'current' | 'future'
 
 // Row heights — must be identical in cats column and month columns
 const HH = 44  // header
-const HS = 48  // saldo
 const HG = 32  // group
 const HC = 38  // category
 const HT = 42  // total / resultado
+
+// Summary panel row heights
+const SR = 36  // summary row height
+const SH = 40  // summary header height
 
 const W_CATS = 200
 const W_MES  = 130
@@ -36,23 +39,30 @@ const TC = {
     header: '#334155', body: '#475569', text: '#e2e8f0',
     rec: '#4ade80', desp: '#f87171', saldo: '#e2e8f0',
     grp: 'rgba(255,255,255,0.05)', tot: 'rgba(255,255,255,0.07)',
-    saldoBg: '#334155', border: 'rgba(255,255,255,0.07)',
+    border: 'rgba(255,255,255,0.07)',
     hover: 'rgba(255,255,255,0.08)', stripe: 'rgba(255,255,255,0.04)',
   },
   current: {
     header: '#1a56db', body: '#0f2878', text: '#fff',
     rec: '#4ade80', desp: '#f87171', saldo: '#93c5fd',
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
-    saldoBg: '#0c2270', border: 'rgba(255,255,255,0.08)',
+    border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   future: {
     header: '#94a3b8', body: '#e2e8f0', text: '#475569',
     rec: '#16a34a', desp: '#dc2626', saldo: '#1a56db',
     grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
-    saldoBg: '#d4dce8', border: 'rgba(0,0,0,0.04)',
+    border: 'rgba(0,0,0,0.04)',
     hover: 'rgba(0,0,0,0.04)', stripe: 'rgba(0,0,0,0.03)',
   },
+}
+
+// Summary panel month header bg by tema
+const SUM_HDR: Record<Tema, string> = {
+  past:    'rgba(255,255,255,0.1)',
+  current: 'rgba(255,255,255,0.2)',
+  future:  'rgba(255,255,255,0.05)',
 }
 
 function temaMes(mi: number, mesAtual: number, anoAtual: number): Tema {
@@ -72,7 +82,10 @@ export default function PlanPlanilha({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
   planejamentoLockado, categorias, setAnoAtual, onSave,
 }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollResRef = useRef<HTMLDivElement>(null)  // painel resumo
+  const scrollCatRef = useRef<HTMLDivElement>(null)  // planilha categorias
+  const syncLock     = useRef(false)
+
   const [activeCell, setActiveCell] = useState<CellPos | null>(null)
   const [editingCell, setEditingCell] = useState<CellPos | null>(null)
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
@@ -122,8 +135,26 @@ export default function PlanPlanilha({
     else if (/^\d$/.test(e.key))     { startEdit(activeCell) }
   }
 
+  function handleScrollRes() {
+    if (syncLock.current) return
+    syncLock.current = true
+    if (scrollCatRef.current && scrollResRef.current)
+      scrollCatRef.current.scrollLeft = scrollResRef.current.scrollLeft
+    requestAnimationFrame(() => { syncLock.current = false })
+  }
+
+  function handleScrollCat() {
+    if (syncLock.current) return
+    syncLock.current = true
+    if (scrollResRef.current && scrollCatRef.current)
+      scrollResRef.current.scrollLeft = scrollCatRef.current.scrollLeft
+    requestAnimationFrame(() => { syncLock.current = false })
+  }
+
   function scrollMes(delta: number) {
-    scrollRef.current?.scrollBy({ left: delta * (W_MES + 4), behavior: 'smooth' })
+    const dist = delta * (W_MES + 4)
+    scrollResRef.current?.scrollBy({ left: dist, behavior: 'smooth' })
+    scrollCatRef.current?.scrollBy({ left: dist, behavior: 'smooth' })
   }
 
   const receitasAnuais = previsto.totalEntradas.reduce((a, b) => a + b, 0)
@@ -157,10 +188,24 @@ export default function PlanPlanilha({
   }
 
   const catBtnStyle: React.CSSProperties = {
-    border: '1px solid #e2e8f0', borderRadius: 6, width: 24, height: 24,
-    background: '#fff', cursor: 'pointer', fontSize: 9,
+    border: '1px solid rgba(255,255,255,0.25)', borderRadius: 6, width: 24, height: 24,
+    background: 'rgba(255,255,255,0.12)', cursor: 'pointer', fontSize: 9,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#475569', padding: 0,
+    color: '#fff', padding: 0,
+  }
+
+  // ── Summary panel row ─────────────────────────────────────────────────────
+  function SumRow({ label, style }: { label: string; style?: React.CSSProperties }) {
+    return (
+      <div style={{
+        height: SR, display: 'flex', alignItems: 'center', padding: '0 14px',
+        fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        ...style,
+      }}>
+        {label}
+      </div>
+    )
   }
 
   return (
@@ -178,10 +223,100 @@ export default function PlanPlanilha({
         onChangeAno={delta => setAnoAtual(a => a + delta)}
       />
 
-      {/* ─── Planilha ──────────────────────────────────────────────────────── */}
+      {/* ─── PAINEL DE RESUMO ───────────────────────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg,#0f2878,#1a56db)',
+        borderRadius: 12, marginBottom: 4, overflow: 'hidden',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'row', minWidth: 'max-content' }}>
+
+          {/* Left label column */}
+          <div style={{
+            minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0,
+            position: 'sticky', left: 0, zIndex: 10,
+            background: 'linear-gradient(135deg,#0f2878,#1a56db)',
+          }}>
+            {/* Header */}
+            <div style={{
+              height: SH, display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', padding: '0 8px 0 14px',
+              fontSize: 11, fontWeight: 700, color: '#fff',
+              letterSpacing: '.5px', textTransform: 'uppercase',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              <span>Resumo</span>
+              <div style={{ display: 'flex', gap: 2 }}>
+                <button style={catBtnStyle} onClick={() => scrollMes(-1)}>◄</button>
+                <button style={catBtnStyle} onClick={() => scrollMes(1)}>►</button>
+              </div>
+            </div>
+            <SumRow label="Saldo inicial" />
+            <SumRow label="(+) Receitas" />
+            <SumRow label="(-) Despesas" />
+            <SumRow label="Saldo final" style={{ borderBottom: 'none' }} />
+          </div>
+
+          {/* Scrollable month columns for summary */}
+          <div
+            ref={scrollResRef}
+            onScroll={handleScrollRes}
+            style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+              {Array.from({ length: 12 }, (_, mi) => {
+                const tema = temaMes(mi, mesAtual, anoAtual)
+                const si = previsto.saldoInicial[mi]
+                const sf = previsto.saldoFinal[mi]
+                const te = previsto.totalEntradas[mi]
+                const ts = previsto.totalSaidas[mi]
+                const sfColor = sf < 0 ? '#f87171' : '#fff'
+
+                return (
+                  <div key={mi} style={{
+                    minWidth: W_MES, maxWidth: W_MES, flexShrink: 0,
+                    marginLeft: 2, marginRight: 2,
+                  }}>
+                    {/* Month header */}
+                    <div style={{
+                      height: SH, background: SUM_HDR[tema],
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 13, fontWeight: 700, color: '#fff', gap: 4,
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    }}>
+                      {MESES[mi]}
+                      {tema === 'current' && (
+                        <span style={{ fontSize: 7, background: 'rgba(255,255,255,0.25)', padding: '2px 5px', borderRadius: 6, fontWeight: 600 }}>ATUAL</span>
+                      )}
+                    </div>
+                    {/* Saldo inicial */}
+                    <div style={{ height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.8)', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      {fmt(si)}
+                    </div>
+                    {/* Receitas */}
+                    <div style={{ height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 700, color: '#4ade80', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      {fmt(te)}
+                    </div>
+                    {/* Despesas */}
+                    <div style={{ height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 700, color: '#f87171', fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      {fmt(ts)}
+                    </div>
+                    {/* Saldo final */}
+                    <div style={{ height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 700, color: sfColor, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmt(sf)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── PLANILHA DE CATEGORIAS ──────────────────────────────────────────── */}
       <div
-        ref={scrollRef}
-        style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 290px)', outline: 'none', borderRadius: 10 }}
+        ref={scrollCatRef}
+        onScroll={handleScrollCat}
+        style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 360px)', outline: 'none', borderRadius: 10 }}
       >
         <div style={{ display: 'flex', flexDirection: 'row', minWidth: 'max-content', alignItems: 'flex-start' }}>
 
@@ -196,25 +331,12 @@ export default function PlanPlanilha({
             <div style={{
               height: HH, position: 'sticky', top: 0, zIndex: 26,
               background: '#f0f4ff',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 8px 0 12px',
+              display: 'flex', alignItems: 'center',
+              padding: '0 12px',
               fontSize: 12, fontWeight: 700, color: '#1e293b',
             }}>
-              <span>Categorias</span>
-              <div style={{ display: 'flex', gap: 2 }}>
-                <button style={catBtnStyle} onClick={() => scrollMes(-1)}>◄</button>
-                <button style={catBtnStyle} onClick={() => scrollMes(1)}>►</button>
-              </div>
+              Categorias
             </div>
-
-            {/* Saldo inicial (fixo top) */}
-            <div style={{
-              height: HS, position: 'sticky', top: HH, zIndex: 25,
-              background: '#fff',
-              border: '1px solid #e2e8f0', borderRadius: '10px 0 0 0',
-              display: 'flex', alignItems: 'center', padding: '0 12px',
-              fontSize: 16, fontWeight: 800, color: '#1e293b',
-            }}>Saldo inicial</div>
 
             {/* Middle rows */}
             <div style={{ background: '#fff', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', flex: 1 }}>
@@ -263,27 +385,15 @@ export default function PlanPlanilha({
               <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#dc2626' }}>Total despesas</div>
               <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
             </div>
-
-            {/* Saldo final (fixo bottom) */}
-            <div style={{
-              height: HS, position: 'sticky', bottom: 0, zIndex: 25,
-              background: '#fff',
-              border: '1px solid #e2e8f0', borderRadius: '0 0 0 10px',
-              display: 'flex', alignItems: 'center', padding: '0 12px',
-              fontSize: 16, fontWeight: 800, color: '#1e293b',
-            }}>Saldo final</div>
           </div>
 
           {/* ── MONTH COLUMNS ──────────────────────────────────────────────── */}
           {Array.from({ length: 12 }, (_, mi) => {
             const tema = temaMes(mi, mesAtual, anoAtual)
             const tc = TC[tema]
-            const si     = previsto.saldoInicial[mi]
-            const sf     = previsto.saldoFinal[mi]
             const totalE = previsto.totalEntradas[mi]
             const totalS = previsto.totalSaidas[mi]
             const res    = totalE - totalS
-            const sfColor = sf < 0 ? '#f87171' : tc.saldo
 
             const cell = (tipo: 'e' | 's', ri: number) => {
               const rowKey = `${tipo}-${ri}`
@@ -321,19 +431,6 @@ export default function PlanPlanilha({
                   )}
                 </div>
 
-                {/* Saldo inicial */}
-                <div style={{
-                  height: HS, position: 'sticky', top: HH, zIndex: 4,
-                  background: tc.saldoBg, color: tc.saldo,
-                  display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  padding: '0 10px', fontSize: 16, fontWeight: 800,
-                  fontVariantNumeric: 'tabular-nums',
-                  borderBottom: `1px solid ${tc.border}`,
-                  flexShrink: 0,
-                }}>
-                  {fmt(si)}
-                </div>
-
                 {/* Middle: categories */}
                 <div style={{ background: tc.body, color: tc.text, flex: 1 }}>
                   {/* Receitas group header */}
@@ -358,20 +455,6 @@ export default function PlanPlanilha({
                   <div style={{ height: HT, background: tc.tot, color: res >= 0 ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}` }}>
                     {res === 0 ? '—' : `${res > 0 ? '+' : ''}${res.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
                   </div>
-                </div>
-
-                {/* Saldo final */}
-                <div style={{
-                  height: HS, position: 'sticky', bottom: 0, zIndex: 4,
-                  background: tc.saldoBg, color: sfColor,
-                  display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  padding: '0 10px', fontSize: 16, fontWeight: 800,
-                  fontVariantNumeric: 'tabular-nums',
-                  borderTop: `1px solid ${tc.border}`,
-                  borderRadius: '0 0 8px 8px',
-                  flexShrink: 0,
-                }}>
-                  {fmt(sf)}
                 </div>
               </div>
             )
