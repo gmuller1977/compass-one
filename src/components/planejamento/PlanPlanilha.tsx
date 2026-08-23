@@ -25,6 +25,10 @@ const HG = 30  // group
 const HC = 36  // category
 const HT = 40  // resultado
 
+// Summary panel
+const SH = 34  // summary header row
+const SR = 26  // summary value row
+
 const W_CATS = 200
 const W_MES  = 130
 
@@ -35,7 +39,6 @@ const TC = {
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.08)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
-    labelOp: 'rgba(255,255,255,0.6)',
   },
   current: {
     header: 'linear-gradient(135deg, #1e3a8a, #0f2878)', body: '#0f2878', text: '#fff',
@@ -43,7 +46,6 @@ const TC = {
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
-    labelOp: 'rgba(255,255,255,0.6)',
   },
   future: {
     header: 'linear-gradient(135deg, #bfdbfe, #93c5fd)', body: '#dbeafe', text: '#1e3a8a',
@@ -51,7 +53,6 @@ const TC = {
     grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
     border: 'rgba(0,0,0,0.04)',
     hover: 'rgba(0,0,0,0.04)', stripe: 'rgba(0,0,0,0.03)',
-    labelOp: 'rgba(30,58,138,0.55)',
   },
 }
 
@@ -222,30 +223,42 @@ export default function PlanPlanilha({
         borderRadius: 10, marginBottom: 4,
         display: 'flex', flexDirection: 'row', overflow: 'hidden',
       }}>
-        {/* Sticky left: year nav */}
-        <div style={{
-          minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0,
-          background: 'linear-gradient(135deg,#0f2878,#1a56db)',
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', padding: '0 8px 0 14px',
-        }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.5px', textTransform: 'uppercase' }}>
-            Resumo
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a - 1)}>◄</button>
-            <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fbbf24' : '#fff', minWidth: 34, textAlign: 'center' }}>
-              {anoAtual}
+        {/* Coluna fixa de labels */}
+        <div style={{ minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0, background: 'linear-gradient(135deg,#0f2878,#1a56db)' }}>
+          {/* Header: RESUMO + year nav */}
+          <div style={{
+            height: SH, display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', padding: '0 8px 0 14px',
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.5px', textTransform: 'uppercase' }}>
+              Resumo
             </span>
-            <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a + 1)}>►</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a - 1)}>◄</button>
+              <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fbbf24' : '#fff', minWidth: 34, textAlign: 'center' }}>
+                {anoAtual}
+              </span>
+              <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a + 1)}>►</button>
+            </div>
           </div>
+          {/* Labels */}
+          {(['Saldo inicial', 'Receitas', 'Despesas', 'Resultado', 'Saldo final'] as const).map((lbl, i) => (
+            <div key={lbl} style={{
+              height: SR, display: 'flex', alignItems: 'center', padding: '0 14px',
+              fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.7)',
+              borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            }}>
+              {lbl}
+            </div>
+          ))}
         </div>
 
-        {/* Scrollable month cards */}
+        {/* Scrollable month columns */}
         <div
           ref={scrollResRef}
           onScroll={handleScrollRes}
-          style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none', padding: '6px 0' }}
+          style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}
         >
           <div style={{ display: 'flex', minWidth: 'max-content' }}>
             {Array.from({ length: 12 }, (_, mi) => {
@@ -255,37 +268,43 @@ export default function PlanPlanilha({
               const te   = previsto.totalEntradas[mi]
               const ts   = previsto.totalSaidas[mi]
               const sf   = previsto.saldoFinal[mi]
-              const divider = tema === 'future' ? 'rgba(30,58,138,0.08)' : 'rgba(255,255,255,0.08)'
+              const res  = te - ts
+              const divider = tema === 'future' ? 'rgba(30,58,138,0.08)' : 'rgba(255,255,255,0.06)'
+              const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
               return (
-                <div key={mi} style={{
-                  minWidth: W_MES, maxWidth: W_MES, flexShrink: 0,
-                  marginLeft: 2, marginRight: 2,
-                  background: tc.header, borderRadius: 10,
-                  padding: '6px 8px', color: tc.text,
-                }}>
-                  {/* Month name + badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800 }}>{MESES[mi]}</span>
+                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: 2, marginRight: 2 }}>
+                  {/* Month header */}
+                  <div style={{
+                    height: SH, background: tc.header, color: tc.text,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 4, fontSize: 12, fontWeight: 700,
+                    borderRadius: '6px 6px 0 0',
+                    borderBottom: `1px solid ${divider}`,
+                  }}>
+                    {MESES[mi]}
                     {tema === 'current' && (
                       <span style={{ fontSize: 7, fontWeight: 700, background: 'rgba(255,255,255,0.25)', color: '#fff', padding: '1px 4px', borderRadius: 4 }}>ATUAL</span>
                     )}
                   </div>
-                  {/* Value rows */}
-                  {([
-                    { label: 'Saldo ini',  v: si,      color: tc.text,                              bold: false },
-                    { label: 'Receitas',   v: te,      color: tc.rec,                               bold: false },
-                    { label: 'Despesas',   v: ts,      color: tc.desp,                              bold: false },
-                    { label: 'Resultado',  v: te - ts, color: (te - ts) >= 0 ? tc.rec : tc.desp,   bold: true  },
-                    { label: 'Saldo fin',  v: sf,      color: sf < 0 ? tc.desp : tc.text,           bold: false },
-                  ]).map(({ label, v, color, bold }) => (
-                    <div key={label} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '2px 0', borderTop: `1px solid ${divider}`,
-                    }}>
-                      <span style={{ fontSize: 9, fontWeight: 600, color: tc.labelOp, whiteSpace: 'nowrap' }}>{label}</span>
-                      <span style={{ fontSize: 11, fontWeight: bold ? 800 : 700, color, fontVariantNumeric: 'tabular-nums' }}>{fmt(v, true)}</span>
-                    </div>
-                  ))}
+                  {/* Value rows — same heights as label rows */}
+                  <div style={{ background: tc.body, borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                    {[
+                      { v: si,  color: tc.text,                         bold: false, fmt: (v: number) => fmt(v, true) },
+                      { v: te,  color: tc.rec,                          bold: false, fmt: (v: number) => fmt(v, true) },
+                      { v: ts,  color: tc.desp,                         bold: false, fmt: (v: number) => fmt(v, true) },
+                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  fmt: fmtRes },
+                      { v: sf,  color: sf < 0 ? tc.desp : tc.text,      bold: false, fmt: (v: number) => fmt(v, true) },
+                    ].map(({ v, color, bold, fmt: fv }, idx, arr) => (
+                      <div key={idx} style={{
+                        height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                        padding: '0 10px', fontSize: 12, fontWeight: bold ? 800 : 700,
+                        color, fontVariantNumeric: 'tabular-nums',
+                        borderBottom: idx < arr.length - 1 ? `1px solid ${divider}` : 'none',
+                      }}>
+                        {fv(v)}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )
             })}
