@@ -427,7 +427,7 @@ export default function PlanPlanilha({
                 </div>
 
                 {/* Categories body */}
-                <div style={{ background: tc.body, color: tc.text, flex: 1 }}>
+                <div style={{ background: tc.header, color: tc.text, flex: 1 }}>
                   <div style={{ height: HG, background: tc.grp, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${tc.border}` }}>
                     {fmt(totalE)}
                   </div>
