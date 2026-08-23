@@ -11,7 +11,6 @@ import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompa
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
-import AcResumoBoxes from '../components/acompanhamento/AcResumoBoxes'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard from '../components/KpiCard'
 
@@ -344,17 +343,6 @@ export default function RadarFinanceiro() {
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
           sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
       </div>
-
-      {/* CAIXINHAS DE RESUMO */}
-      {dadosAno && (
-        <AcResumoBoxes
-          isMobile={isMobile}
-          totalPrevE={totalPrevE}
-          totalPrevS={totalPrevS}
-          totalRealE={totalRealE}
-          totalRealS={totalRealS}
-        />
-      )}
 
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
