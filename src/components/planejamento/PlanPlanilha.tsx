@@ -166,10 +166,10 @@ export default function PlanPlanilha({
   function handleContainerKey(e: React.KeyboardEvent) {
     if (editingCell) return
     if (!activeCell) return
-    if (e.key === 'ArrowLeft')       { e.preventDefault(); setActiveCell(navCell(activeCell, 'left')) }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); setActiveCell(navCell(activeCell, 'right')) }
-    else if (e.key === 'ArrowUp')    { e.preventDefault(); setActiveCell(navCell(activeCell, 'up')) }
-    else if (e.key === 'ArrowDown')  { e.preventDefault(); setActiveCell(navCell(activeCell, 'down')) }
+    if (e.key === 'ArrowLeft')       { e.preventDefault(); setActiveCell(navCell(activeCell, 'left')  ?? activeCell) }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); setActiveCell(navCell(activeCell, 'right') ?? activeCell) }
+    else if (e.key === 'ArrowUp')    { e.preventDefault(); setActiveCell(navCell(activeCell, 'up')    ?? activeCell) }
+    else if (e.key === 'ArrowDown')  { e.preventDefault(); setActiveCell(navCell(activeCell, 'down')  ?? activeCell) }
     else if (e.key === 'Enter')      { e.preventDefault(); startEdit(activeCell) }
     else if (e.key === 'Escape')     { setActiveCell(null) }
     else if (e.key === 'Home')       { setActiveCell({ ...activeCell, mi: 0 }) }
@@ -210,7 +210,7 @@ export default function PlanPlanilha({
         editavel={!bloqueado} ativa={ativa} editando={editando}
         color={tipo === 'e' ? tc.rec : tc.desp}
         onChange={v => handleChange(tipo, ri, mi, v)}
-        onNavigate={dir => { setEditingCell(null); setActiveCell(navCell(pos, dir)) }}
+        onNavigate={dir => { setEditingCell(null); setActiveCell(navCell(pos, dir) ?? pos) }}
         onStartEdit={() => startEdit(pos)}
         onCancelEdit={() => activate(pos)}
         onClick={() => { if (ativa && !editando) startEdit(pos); else activate(pos) }}
