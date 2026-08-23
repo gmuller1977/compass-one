@@ -23,32 +23,35 @@ type Tema = 'past' | 'current' | 'future'
 
 // Row heights — must be identical in cats column and month columns
 const HH = 44  // header
-const HS = 40  // saldo
+const HS = 48  // saldo
 const HG = 32  // group
-const HC = 32  // category
-const HT = 36  // total / resultado
+const HC = 38  // category
+const HT = 42  // total / resultado
 
-const W_CATS = 180
-const W_MES  = 110
+const W_CATS = 200
+const W_MES  = 130
 
 const TC = {
   past: {
-    header: '#0f172a', body: '#1e293b', text: '#e2e8f0',
+    header: '#334155', body: '#475569', text: '#e2e8f0',
     rec: '#4ade80', desp: '#f87171', saldo: '#e2e8f0',
-    grp: 'rgba(255,255,255,0.04)', tot: 'rgba(255,255,255,0.06)',
-    saldoBg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.06)',
+    grp: 'rgba(255,255,255,0.05)', tot: 'rgba(255,255,255,0.07)',
+    saldoBg: '#334155', border: 'rgba(255,255,255,0.07)',
+    hover: 'rgba(255,255,255,0.08)', stripe: 'rgba(255,255,255,0.04)',
   },
   current: {
     header: '#1a56db', body: '#0f2878', text: '#fff',
     rec: '#4ade80', desp: '#f87171', saldo: '#93c5fd',
-    grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.08)',
-    saldoBg: 'rgba(255,255,255,0.12)', border: 'rgba(255,255,255,0.08)',
+    grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
+    saldoBg: '#0c2270', border: 'rgba(255,255,255,0.08)',
+    hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   future: {
     header: '#94a3b8', body: '#e2e8f0', text: '#475569',
     rec: '#16a34a', desp: '#dc2626', saldo: '#1a56db',
     grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
-    saldoBg: 'rgba(0,0,0,0.06)', border: 'rgba(0,0,0,0.04)',
+    saldoBg: '#d4dce8', border: 'rgba(0,0,0,0.04)',
+    hover: 'rgba(0,0,0,0.04)', stripe: 'rgba(0,0,0,0.03)',
   },
 }
 
@@ -72,12 +75,12 @@ export default function PlanPlanilha({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeCell, setActiveCell] = useState<CellPos | null>(null)
   const [editingCell, setEditingCell] = useState<CellPos | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
   const nE = dadosAtivos.entradas.length
   const nS = dadosAtivos.saidas.length
 
-  // Flat navigation index: 0..nE-1 = receitas, nE..nE+nS-1 = saidas
   function toFlat(pos: CellPos) { return pos.tipo === 'e' ? pos.ri : nE + pos.ri }
   function fromFlat(fi: number, mi: number): CellPos | null {
     if (fi < 0 || fi >= nE + nS) return null
@@ -126,7 +129,6 @@ export default function PlanPlanilha({
   const receitasAnuais = previsto.totalEntradas.reduce((a, b) => a + b, 0)
   const despesasAnuais = previsto.totalSaidas.reduce((a, b) => a + b, 0)
 
-  // Renders a single editable category value cell (no wrapper div)
   function catCell(tipo: 'e' | 's', ri: number, mi: number, tema: Tema) {
     const tc = TC[tema]
     const pos: CellPos = { tipo, ri, mi }
@@ -149,12 +151,11 @@ export default function PlanPlanilha({
           if (ativa && !editando) startEdit(pos)
           else activate(pos)
         }}
-        style={{ fontSize: 10, fontWeight: 600 }}
+        style={{ fontSize: 13, fontWeight: 600 }}
       />
     )
   }
 
-  // ─── Shared row style helpers ─────────────────────────────────────────────
   const catBtnStyle: React.CSSProperties = {
     border: '1px solid #e2e8f0', borderRadius: 6, width: 24, height: 24,
     background: '#fff', cursor: 'pointer', fontSize: 9,
@@ -167,7 +168,6 @@ export default function PlanPlanilha({
       style={{ padding: '16px 20px' }}
       tabIndex={0}
       onKeyDown={handleContainerKey}
-      onMouseDown={e => { if ((e.target as HTMLElement).dataset.noFocus) return }}
     >
       <PlanResumoAnual
         saldoInicial={previsto.saldoInicial[0]}
@@ -182,7 +182,6 @@ export default function PlanPlanilha({
       <div
         ref={scrollRef}
         style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 290px)', outline: 'none', borderRadius: 10 }}
-        onMouseDown={() => {}} // capture focus
       >
         <div style={{ display: 'flex', flexDirection: 'row', minWidth: 'max-content', alignItems: 'flex-start' }}>
 
@@ -214,41 +213,55 @@ export default function PlanPlanilha({
               background: '#fff',
               border: '1px solid #e2e8f0', borderRadius: '10px 0 0 0',
               display: 'flex', alignItems: 'center', padding: '0 12px',
-              fontSize: 11, fontWeight: 800, color: '#1e293b',
+              fontSize: 16, fontWeight: 800, color: '#1e293b',
             }}>Saldo inicial</div>
 
             {/* Middle rows */}
             <div style={{ background: '#fff', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', flex: 1 }}>
               {/* RECEITAS group */}
-              <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 10, fontWeight: 700, color: '#1e293b', gap: 4 }}>
+              <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 12, fontWeight: 700, color: '#1e293b', gap: 4 }}>
                 ↑ RECEITAS
               </div>
               {dadosAtivos.entradas.map((cat, ri) => {
                 const { icone } = iconeCategoria(categorias, cat.nome)
+                const rowKey = `e-${ri}`
+                const isHovered = hoveredRow === rowKey
+                const isOdd = ri % 2 === 1
                 return (
-                  <div key={ri} style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 20px', fontSize: 10, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden' }}>
+                  <div key={ri}
+                    style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 20px', fontSize: 12, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden', background: isHovered ? 'rgba(26,86,219,0.06)' : isOdd ? 'rgba(0,0,0,0.02)' : undefined, transition: 'background .1s' }}
+                    onMouseEnter={() => setHoveredRow(rowKey)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
                     <span style={{ flexShrink: 0 }}>{icone}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catLabel(cat)}</span>
                   </div>
                 )
               })}
-              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 10, fontWeight: 700, color: '#16a34a' }}>Total receitas</div>
+              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#16a34a' }}>Total receitas</div>
 
               {/* DESPESAS group */}
-              <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 10, fontWeight: 700, color: '#1e293b', gap: 4 }}>
+              <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 12, fontWeight: 700, color: '#1e293b', gap: 4 }}>
                 ↓ DESPESAS
               </div>
               {dadosAtivos.saidas.map((cat, ri) => {
                 const { icone } = iconeCategoria(categorias, cat.nome)
+                const rowKey = `s-${ri}`
+                const isHovered = hoveredRow === rowKey
+                const isOdd = ri % 2 === 1
                 return (
-                  <div key={ri} style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 20px', fontSize: 10, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden' }}>
+                  <div key={ri}
+                    style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 20px', fontSize: 12, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden', background: isHovered ? 'rgba(26,86,219,0.06)' : isOdd ? 'rgba(0,0,0,0.02)' : undefined, transition: 'background .1s' }}
+                    onMouseEnter={() => setHoveredRow(rowKey)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
                     <span style={{ flexShrink: 0 }}>{icone}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catLabel(cat)}</span>
                   </div>
                 )
               })}
-              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 10, fontWeight: 700, color: '#dc2626' }}>Total despesas</div>
-              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 10, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
+              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#dc2626' }}>Total despesas</div>
+              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
             </div>
 
             {/* Saldo final (fixo bottom) */}
@@ -257,7 +270,7 @@ export default function PlanPlanilha({
               background: '#fff',
               border: '1px solid #e2e8f0', borderRadius: '0 0 0 10px',
               display: 'flex', alignItems: 'center', padding: '0 12px',
-              fontSize: 11, fontWeight: 800, color: '#1e293b',
+              fontSize: 16, fontWeight: 800, color: '#1e293b',
             }}>Saldo final</div>
           </div>
 
@@ -270,13 +283,23 @@ export default function PlanPlanilha({
             const totalE = previsto.totalEntradas[mi]
             const totalS = previsto.totalSaidas[mi]
             const res    = totalE - totalS
-            const sfColor = sf < 0 ? '#dc2626' : tc.saldo
+            const sfColor = sf < 0 ? '#f87171' : tc.saldo
 
-            const cell = (tipo: 'e' | 's', ri: number) => (
-              <div key={ri} style={{ height: HC, borderBottom: `1px solid ${tc.border}` }}>
-                {catCell(tipo, ri, mi, tema)}
-              </div>
-            )
+            const cell = (tipo: 'e' | 's', ri: number) => {
+              const rowKey = `${tipo}-${ri}`
+              const isHovered = hoveredRow === rowKey
+              const isOdd = ri % 2 === 1
+              const bg = isHovered ? tc.hover : isOdd ? tc.stripe : undefined
+              return (
+                <div key={ri}
+                  style={{ height: HC, borderBottom: `1px solid ${tc.border}`, background: bg, transition: 'background .1s' }}
+                  onMouseEnter={() => setHoveredRow(rowKey)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  {catCell(tipo, ri, mi, tema)}
+                </div>
+              )
+            }
 
             return (
               <div key={mi} style={{
@@ -290,7 +313,7 @@ export default function PlanPlanilha({
                   background: tc.header, color: '#fff',
                   borderRadius: '8px 8px 0 0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 700, gap: 4, flexShrink: 0,
+                  fontSize: 14, fontWeight: 700, gap: 4, flexShrink: 0,
                 }}>
                   {MESES[mi]}
                   {tema === 'current' && (
@@ -303,7 +326,7 @@ export default function PlanPlanilha({
                   height: HS, position: 'sticky', top: HH, zIndex: 4,
                   background: tc.saldoBg, color: tc.saldo,
                   display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  padding: '0 8px', fontSize: 12, fontWeight: 800,
+                  padding: '0 10px', fontSize: 16, fontWeight: 800,
                   fontVariantNumeric: 'tabular-nums',
                   borderBottom: `1px solid ${tc.border}`,
                   flexShrink: 0,
@@ -314,25 +337,25 @@ export default function PlanPlanilha({
                 {/* Middle: categories */}
                 <div style={{ background: tc.body, color: tc.text, flex: 1 }}>
                   {/* Receitas group header */}
-                  <div style={{ height: HG, background: tc.grp, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: 10, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${tc.border}` }}>
+                  <div style={{ height: HG, background: tc.grp, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${tc.border}` }}>
                     {fmt(totalE)}
                   </div>
                   {dadosAtivos.entradas.map((_, ri) => cell('e', ri))}
                   {/* Total receitas */}
-                  <div style={{ height: HT, background: tc.tot, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: 11, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ height: HT, background: tc.tot, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(totalE)}
                   </div>
                   {/* Despesas group header */}
-                  <div style={{ height: HG, background: tc.grp, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: 10, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}`, borderBottom: `1px solid ${tc.border}` }}>
+                  <div style={{ height: HG, background: tc.grp, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}`, borderBottom: `1px solid ${tc.border}` }}>
                     {fmt(totalS)}
                   </div>
                   {dadosAtivos.saidas.map((_, ri) => cell('s', ri))}
                   {/* Total despesas */}
-                  <div style={{ height: HT, background: tc.tot, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: 11, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ height: HT, background: tc.tot, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(totalS)}
                   </div>
                   {/* Resultado */}
-                  <div style={{ height: HT, background: tc.tot, color: res >= 0 ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: 11, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}` }}>
+                  <div style={{ height: HT, background: tc.tot, color: res >= 0 ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}` }}>
                     {res === 0 ? '—' : `${res > 0 ? '+' : ''}${res.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
                   </div>
                 </div>
@@ -342,7 +365,7 @@ export default function PlanPlanilha({
                   height: HS, position: 'sticky', bottom: 0, zIndex: 4,
                   background: tc.saldoBg, color: sfColor,
                   display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  padding: '0 8px', fontSize: 12, fontWeight: 800,
+                  padding: '0 10px', fontSize: 16, fontWeight: 800,
                   fontVariantNumeric: 'tabular-nums',
                   borderTop: `1px solid ${tc.border}`,
                   borderRadius: '0 0 8px 8px',
@@ -355,11 +378,6 @@ export default function PlanPlanilha({
           })}
         </div>
       </div>
-
-      <style>{`
-        /* Hover sutil em células editáveis */
-        .plan-cat-cell:hover { background: rgba(26,86,219,0.06); }
-      `}</style>
     </div>
   )
 }
