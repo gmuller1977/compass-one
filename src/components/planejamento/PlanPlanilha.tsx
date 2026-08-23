@@ -81,12 +81,6 @@ const GHOST_BTN: React.CSSProperties = {
   color: '#fff', cursor: 'pointer', padding: '2px 7px', fontSize: 11, lineHeight: 1,
   fontFamily: 'inherit',
 }
-const NAV_BTN: React.CSSProperties = {
-  border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', borderRadius: 5,
-  color: '#fff', cursor: 'pointer', width: 22, height: 22, fontSize: 9,
-  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-  flexShrink: 0,
-}
 const CAT_BTN: React.CSSProperties = {
   border: '1px solid #e2e8f0', borderRadius: 5, width: 22, height: 22,
   background: '#fff', cursor: 'pointer', fontSize: 9,
