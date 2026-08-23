@@ -6,13 +6,14 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
-import { COR, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
+import { COR, fmt, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import AcResumoBoxes from '../components/acompanhamento/AcResumoBoxes'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
+import KpiCard from '../components/KpiCard'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -38,7 +39,7 @@ export default function RadarFinanceiro() {
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { contas, categorias, planos, planosReal, planejamentoLockado, extratoData, faturaData, user } = useApp()
+  const { contas, categorias, planos, planosReal, planejamentoLockado, extratoData, faturaData, user, saldoInicialDinheiro } = useApp()
 
   useEffect(() => {
     if (!user) return
@@ -203,6 +204,35 @@ export default function RadarFinanceiro() {
     return { totalPrevE: e.prev, totalRealE: e.real, totalPrevS: s.prev, totalRealS: s.real }
   }, [dadosAno, mes, entradasMap, saidasMap, gruposEntrada, gruposSaida, categorias, cartaoNomes])
 
+  const saldoInicial = useMemo(() => {
+    let acc = contas
+      .filter(c => c.tipo !== 'cartao')
+      .reduce((s, c) => s + (c.saldoInicial ?? 0), 0)
+    acc += (saldoInicialDinheiro ?? 0)
+
+    for (const [key, dados] of Object.entries(extratoData)) {
+      const m = key.match(/-(\d{4})-(\d{2})$/)
+      if (!m) continue
+      const ky = parseInt(m[1])
+      const km = parseInt(m[2]) - 1
+      if (ky > ano || (ky === ano && km >= mes)) continue
+
+      const isDinheiroKey = key.startsWith('dinheiro')
+      if (!isDinheiroKey && !contas.some(c => c.tipo !== 'cartao' && key.startsWith(c.id))) continue
+
+      const dm = dados as DadosMes
+      const totalDiasK = new Date(ky, km + 1, 0).getDate()
+      for (let d = 1; d <= totalDiasK; d++) {
+        for (const l of (dm.lancamentos?.[d] ?? [])) {
+          acc += l.tipo === 'entrada' ? l.valor : -l.valor
+        }
+      }
+    }
+    return acc
+  }, [contas, saldoInicialDinheiro, extratoData, ano, mes])
+
+  const saldoAtual = saldoInicial + totalRealE - totalRealS
+
   function toggleAberto(uid: string) {
     setAbertos(prev => { const n = new Set(prev); n.has(uid)?n.delete(uid):n.add(uid); return n })
   }
@@ -300,6 +330,19 @@ export default function RadarFinanceiro() {
             </div>
           }
         />
+      </div>
+
+      {/* KPIs CONSOLIDADOS */}
+      <div style={{ padding: '8px 16px', flexShrink: 0, display: 'flex', gap: 8 }}>
+        <KpiCard icon="🔒" label="Saldo inicial" value={fmt(saldoInicial)}
+          sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }} />
+        <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
+          valueColor="#4ade80" sublabel={`de ${fmt(totalPrevE)}`} style={{ flex: 1 }} />
+        <KpiCard icon="↓" label="Despesas" value={fmt(totalRealS)}
+          valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}`} style={{ flex: 1 }} />
+        <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
+          valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
+          sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
       </div>
 
       {/* CAIXINHAS DE RESUMO */}
