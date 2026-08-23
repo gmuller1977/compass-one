@@ -20,15 +20,10 @@ interface Props {
 type CellPos = { tipo: 'e' | 's'; ri: number; mi: number }
 type Tema = 'past' | 'current' | 'future'
 
-// Row heights — must be identical in cats column and month columns
 const HH = 40  // header
 const HG = 30  // group
 const HC = 36  // category
-const HT = 40  // total / resultado
-
-// Summary panel
-const SH = 34  // summary header
-const SR = 26  // summary row
+const HT = 40  // resultado
 
 const W_CATS = 200
 const W_MES  = 130
@@ -40,6 +35,7 @@ const TC = {
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.08)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
+    labelOp: 'rgba(255,255,255,0.6)',
   },
   current: {
     header: 'linear-gradient(135deg, #1e3a8a, #0f2878)', body: '#0f2878', text: '#fff',
@@ -47,6 +43,7 @@ const TC = {
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
     border: 'rgba(255,255,255,0.08)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
+    labelOp: 'rgba(255,255,255,0.6)',
   },
   future: {
     header: 'linear-gradient(135deg, #bfdbfe, #93c5fd)', body: '#dbeafe', text: '#1e3a8a',
@@ -54,13 +51,8 @@ const TC = {
     grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
     border: 'rgba(0,0,0,0.04)',
     hover: 'rgba(0,0,0,0.04)', stripe: 'rgba(0,0,0,0.03)',
+    labelOp: 'rgba(30,58,138,0.55)',
   },
-}
-
-const SUM_HDR: Record<Tema, string> = {
-  past:    'rgba(255,255,255,0.08)',
-  current: 'rgba(255,255,255,0.18)',
-  future:  'rgba(255,255,255,0.04)',
 }
 
 function temaMes(mi: number, mesAtual: number, anoAtual: number): Tema {
@@ -111,7 +103,6 @@ export default function PlanPlanilha({
     const container = scrollCatRef.current
     if (!container) return
 
-    // ── Horizontal: show the active month column ───────────────────────────
     const colLeft  = activeCell.mi * (W_MES + 4)
     const colRight = colLeft + W_MES
     const visLeft  = container.scrollLeft
@@ -124,12 +115,12 @@ export default function PlanPlanilha({
       if (scrollResRef.current) scrollResRef.current.scrollLeft = container.scrollLeft
     }
 
-    // ── Vertical: show the active row ─────────────────────────────────────
+    // Vertical scroll — no HT offset for saidas since Total receitas removed
     const rowTop = activeCell.tipo === 'e'
       ? HH + HG + activeCell.ri * HC
-      : HH + 2 * HG + nE * HC + HT + activeCell.ri * HC
+      : HH + 2 * HG + nE * HC + activeCell.ri * HC
     const rowBottom = rowTop + HC
-    const visTop    = container.scrollTop + HH  // sticky header occupies HH
+    const visTop    = container.scrollTop + HH
     const visBottom = container.scrollTop + container.clientHeight
     if (rowTop < visTop) {
       container.scrollTop = rowTop - HH - 4
@@ -219,20 +210,6 @@ export default function PlanPlanilha({
     )
   }
 
-  // ── Summary value cell ────────────────────────────────────────────────────
-  function SumVal({ v, color }: { v: number; color?: string }) {
-    return (
-      <div style={{
-        height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-        padding: '0 10px', fontSize: 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-        color: color ?? 'rgba(255,255,255,0.85)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-      }}>
-        {fmt(v, true)}
-      </div>
-    )
-  }
-
   return (
     <div
       style={{ padding: '8px 16px' }}
@@ -242,80 +219,76 @@ export default function PlanPlanilha({
       {/* ─── PAINEL DE RESUMO ─────────────────────────────────────────────── */}
       <div style={{
         background: 'linear-gradient(135deg,#0f2878,#1a56db)',
-        borderRadius: 10, marginBottom: 4, overflow: 'hidden',
+        borderRadius: 10, marginBottom: 4,
+        display: 'flex', flexDirection: 'row', overflow: 'hidden',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'row', minWidth: 'max-content' }}>
-
-          {/* Sticky left label column */}
-          <div style={{
-            minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0,
-            position: 'sticky', left: 0, zIndex: 10,
-            background: 'linear-gradient(135deg,#0f2878,#1a56db)',
-          }}>
-            {/* Header: RESUMO + year nav */}
-            <div style={{
-              height: SH, display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', padding: '0 8px 0 14px',
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.5px', textTransform: 'uppercase' }}>
-                Resumo
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a - 1)}>◄</button>
-                <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fbbf24' : '#fff', minWidth: 34, textAlign: 'center' }}>
-                  {anoAtual}
-                </span>
-                <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a + 1)}>►</button>
-              </div>
-            </div>
-            {/* Row labels */}
-            {['Saldo inicial', 'Receitas', 'Despesas', 'Saldo final'].map((lbl, i) => (
-              <div key={lbl} style={{
-                height: SR, display: 'flex', alignItems: 'center', padding: '0 14px',
-                fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
-                borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-              }}>
-                {lbl}
-              </div>
-            ))}
+        {/* Sticky left: year nav */}
+        <div style={{
+          minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0,
+          background: 'linear-gradient(135deg,#0f2878,#1a56db)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', padding: '0 8px 0 14px',
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.5px', textTransform: 'uppercase' }}>
+            Resumo
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a - 1)}>◄</button>
+            <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fbbf24' : '#fff', minWidth: 34, textAlign: 'center' }}>
+              {anoAtual}
+            </span>
+            <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a + 1)}>►</button>
           </div>
+        </div>
 
-          {/* Scrollable month values */}
-          <div
-            ref={scrollResRef}
-            onScroll={handleScrollRes}
-            style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'row' }}>
-              {Array.from({ length: 12 }, (_, mi) => {
-                const tema = temaMes(mi, mesAtual, anoAtual)
-                const si = previsto.saldoInicial[mi]
-                const sf = previsto.saldoFinal[mi]
-                const te = previsto.totalEntradas[mi]
-                const ts = previsto.totalSaidas[mi]
-                return (
-                  <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: 2, marginRight: 2 }}>
-                    {/* Month header */}
-                    <div style={{
-                      height: SH, background: SUM_HDR[tema],
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, fontWeight: 700, color: '#fff', gap: 3,
-                      borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    }}>
-                      {MESES[mi]}
-                      {tema === 'current' && (
-                        <span style={{ fontSize: 7, background: 'rgba(255,255,255,0.25)', padding: '1px 4px', borderRadius: 4, fontWeight: 600 }}>ATUAL</span>
-                      )}
-                    </div>
-                    <SumVal v={si} />
-                    <SumVal v={te} color="#4ade80" />
-                    <SumVal v={ts} color="#f87171" />
-                    <SumVal v={sf} color={sf < 0 ? '#f87171' : '#fff'} />
+        {/* Scrollable month cards */}
+        <div
+          ref={scrollResRef}
+          onScroll={handleScrollRes}
+          style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none', padding: '6px 0' }}
+        >
+          <div style={{ display: 'flex', minWidth: 'max-content' }}>
+            {Array.from({ length: 12 }, (_, mi) => {
+              const tema = temaMes(mi, mesAtual, anoAtual)
+              const tc   = TC[tema]
+              const si   = previsto.saldoInicial[mi]
+              const te   = previsto.totalEntradas[mi]
+              const ts   = previsto.totalSaidas[mi]
+              const sf   = previsto.saldoFinal[mi]
+              const divider = tema === 'future' ? 'rgba(30,58,138,0.08)' : 'rgba(255,255,255,0.08)'
+              return (
+                <div key={mi} style={{
+                  minWidth: W_MES, maxWidth: W_MES, flexShrink: 0,
+                  marginLeft: 2, marginRight: 2,
+                  background: tc.header, borderRadius: 10,
+                  padding: '6px 8px', color: tc.text,
+                }}>
+                  {/* Month name + badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800 }}>{MESES[mi]}</span>
+                    {tema === 'current' && (
+                      <span style={{ fontSize: 7, fontWeight: 700, background: 'rgba(255,255,255,0.25)', color: '#fff', padding: '1px 4px', borderRadius: 4 }}>ATUAL</span>
+                    )}
                   </div>
-                )
-              })}
-            </div>
+                  {/* Value rows */}
+                  {([
+                    { label: 'Saldo ini',  v: si,      color: tc.text,                              bold: false },
+                    { label: 'Receitas',   v: te,      color: tc.rec,                               bold: false },
+                    { label: 'Despesas',   v: ts,      color: tc.desp,                              bold: false },
+                    { label: 'Resultado',  v: te - ts, color: (te - ts) >= 0 ? tc.rec : tc.desp,   bold: true  },
+                    { label: 'Saldo fin',  v: sf,      color: sf < 0 ? tc.desp : tc.text,           bold: false },
+                  ]).map(({ label, v, color, bold }) => (
+                    <div key={label} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '2px 0', borderTop: `1px solid ${divider}`,
+                    }}>
+                      <span style={{ fontSize: 9, fontWeight: 600, color: tc.labelOp, whiteSpace: 'nowrap' }}>{label}</span>
+                      <span style={{ fontSize: 11, fontWeight: bold ? 800 : 700, color, fontVariantNumeric: 'tabular-nums' }}>{fmt(v, true)}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -370,7 +343,6 @@ export default function PlanPlanilha({
                   </div>
                 )
               })}
-              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#16a34a' }}>Total receitas</div>
 
               <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>
                 ↓ DESPESAS
@@ -391,7 +363,6 @@ export default function PlanPlanilha({
                   </div>
                 )
               })}
-              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#dc2626' }}>Total despesas</div>
               <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
             </div>
           </div>
@@ -436,22 +407,18 @@ export default function PlanPlanilha({
                   )}
                 </div>
 
-                {/* Categories */}
+                {/* Categories body */}
                 <div style={{ background: tc.body, color: tc.text, flex: 1 }}>
                   <div style={{ height: HG, background: tc.grp, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${tc.border}` }}>
                     {fmt(totalE)}
                   </div>
                   {dadosAtivos.entradas.map((_, ri) => cell('e', ri))}
-                  <div style={{ height: HT, background: tc.tot, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-                    {fmt(totalE)}
-                  </div>
+
                   <div style={{ height: HG, background: tc.grp, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}`, borderBottom: `1px solid ${tc.border}` }}>
                     {fmt(totalS)}
                   </div>
                   {dadosAtivos.saidas.map((_, ri) => cell('s', ri))}
-                  <div style={{ height: HT, background: tc.tot, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-                    {fmt(totalS)}
-                  </div>
+
                   <div style={{ height: HT, background: tc.tot, color: res >= 0 ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}` }}>
                     {res === 0 ? '—' : `${res > 0 ? '+' : ''}${res.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
                   </div>
