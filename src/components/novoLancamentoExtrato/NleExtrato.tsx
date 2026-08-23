@@ -69,7 +69,7 @@ type Props = {
 // ── Temas temporais ──────────────────────────────────────────────────────────
 const TEMA = {
   past: {
-    cardBg:        '#1e293b',
+    cardBg:        '#334155',
     text:          '#e2e8f0',
     label:         'rgba(255,255,255,0.5)',
     rec:           '#4ade80',
@@ -82,8 +82,8 @@ const TEMA = {
     cardShadow:    'none',
     selBorder:     '2px solid rgba(255,255,255,0.65)',
     selShadow:     '0 0 0 3px rgba(255,255,255,0.08)',
-    semanaColor:   'rgba(255,255,255,0.4)',
-    diaNumColor:   '#e2e8f0',
+    semanaColor:   'rgba(255,255,255,0.5)',
+    diaNumColor:   '#fff',
     listHover:     'rgba(255,255,255,0.04)',
     listEditBg:    'rgba(255,255,255,0.08)',
     listItemBdr:   'rgba(255,255,255,0.06)',
@@ -141,7 +141,7 @@ const TEMA = {
     selBorder:     `1.5px solid ${COR.azul}`,
     selShadow:     '0 0 0 3px rgba(26,86,219,0.12)',
     semanaColor:   '#94a3b8',
-    diaNumColor:   '#475569',
+    diaNumColor:   '#1e293b',
     listHover:     'rgba(0,0,0,0.02)',
     listEditBg:    '#eff6ff',
     listItemBdr:   'rgba(0,0,0,0.04)',
