@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type React from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, MESES, type AnoData } from './types'
@@ -104,6 +104,39 @@ export default function PlanPlanilha({
   const nE = dadosAtivos.entradas.length
   const nS = dadosAtivos.saidas.length
   const anoCorrente = new Date().getFullYear()
+
+  // Auto-scroll to keep active cell visible
+  useEffect(() => {
+    if (!activeCell) return
+    const container = scrollCatRef.current
+    if (!container) return
+
+    // ── Horizontal: show the active month column ───────────────────────────
+    const colLeft  = activeCell.mi * (W_MES + 4)
+    const colRight = colLeft + W_MES
+    const visLeft  = container.scrollLeft
+    const visRight = container.scrollLeft + container.clientWidth - W_CATS
+    if (colLeft < visLeft) {
+      container.scrollLeft = colLeft - 4
+      if (scrollResRef.current) scrollResRef.current.scrollLeft = container.scrollLeft
+    } else if (colRight > visRight) {
+      container.scrollLeft = colRight - (container.clientWidth - W_CATS) + 4
+      if (scrollResRef.current) scrollResRef.current.scrollLeft = container.scrollLeft
+    }
+
+    // ── Vertical: show the active row ─────────────────────────────────────
+    const rowTop = activeCell.tipo === 'e'
+      ? HH + HG + activeCell.ri * HC
+      : HH + 2 * HG + nE * HC + HT + activeCell.ri * HC
+    const rowBottom = rowTop + HC
+    const visTop    = container.scrollTop + HH  // sticky header occupies HH
+    const visBottom = container.scrollTop + container.clientHeight
+    if (rowTop < visTop) {
+      container.scrollTop = rowTop - HH - 4
+    } else if (rowBottom > visBottom) {
+      container.scrollTop = rowBottom - container.clientHeight + 4
+    }
+  }, [activeCell, nE])
 
   function toFlat(pos: CellPos) { return pos.tipo === 'e' ? pos.ri : nE + pos.ri }
   function fromFlat(fi: number, mi: number): CellPos | null {
