@@ -219,7 +219,7 @@ export default function PlanPlanilha({
     >
       {/* ─── PAINEL DE RESUMO ─────────────────────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg,#0f2878,#1a56db)',
+        background: '#f0f4ff',
         borderRadius: 10, marginBottom: 4,
         display: 'flex', flexDirection: 'row', overflow: 'hidden',
       }}>
@@ -260,7 +260,7 @@ export default function PlanPlanilha({
           onScroll={handleScrollRes}
           style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}
         >
-          <div style={{ display: 'flex', minWidth: 'max-content' }}>
+          <div style={{ display: 'flex', minWidth: 'max-content', gap: 6 }}>
             {Array.from({ length: 12 }, (_, mi) => {
               const tema = temaMes(mi, mesAtual, anoAtual)
               const tc   = TC[tema]
@@ -272,13 +272,12 @@ export default function PlanPlanilha({
               const divider = tema === 'future' ? 'rgba(30,58,138,0.08)' : 'rgba(255,255,255,0.06)'
               const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
               return (
-                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: 2, marginRight: 2, borderRight: mi < 11 ? '1px solid rgba(255,255,255,0.15)' : undefined }}>
+                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, borderRadius: 8, overflow: 'hidden' }}>
                   {/* Month header */}
                   <div style={{
                     height: SH, background: tc.header, color: tc.text,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     gap: 4, fontSize: 12, fontWeight: 700,
-                    borderRadius: '6px 6px 0 0',
                     borderBottom: `1px solid ${divider}`,
                   }}>
                     {MESES[mi]}
@@ -287,7 +286,7 @@ export default function PlanPlanilha({
                     )}
                   </div>
                   {/* Value rows — same heights as label rows */}
-                  <div style={{ background: tc.body, borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                  <div style={{ background: tc.header, overflow: 'hidden' }}>
                     {[
                       { v: si,  color: tc.text,                         bold: false, fmt: (v: number) => fmt(v, true) },
                       { v: te,  color: tc.rec,                          bold: false, fmt: (v: number) => fmt(v, true) },
@@ -411,7 +410,7 @@ export default function PlanPlanilha({
             }
 
             return (
-              <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: 2, marginRight: 2, display: 'flex', flexDirection: 'column' }}>
+              <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: mi > 0 ? 6 : 0, display: 'flex', flexDirection: 'column' }}>
                 {/* Month header — sticky */}
                 <div style={{
                   height: HH, position: 'sticky', top: 0, zIndex: 5,
@@ -427,7 +426,7 @@ export default function PlanPlanilha({
                 </div>
 
                 {/* Categories body */}
-                <div style={{ background: tc.body, color: tc.text, flex: 1 }}>
+                <div style={{ background: tc.header, color: tc.text, flex: 1 }}>
                   <div style={{ height: HG, background: tc.grp, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${tc.border}` }}>
                     {fmt(totalE)}
                   </div>
