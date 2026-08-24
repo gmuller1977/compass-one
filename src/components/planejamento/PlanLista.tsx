@@ -16,33 +16,15 @@ interface Props {
   totaisReais?: { te: number[]; ts: number[] }
 }
 
-type Tema = 'past' | 'current' | 'future'
-
 const TL = {
-  past: {
-    bg: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
-    text: '#fff', rec: '#4ade80', desp: '#fbbf24', neg: '#fbbf24', saldo: '#fff',
-    shadow: 'none',
-  },
-  current: {
+  com: {
     bg: 'linear-gradient(135deg, #1e3a8a, #0f2878)',
     text: '#fff', rec: '#4ade80', desp: '#fbbf24', neg: '#fbbf24', saldo: '#fff',
-    shadow: '0 4px 16px rgba(15,40,120,0.4)',
   },
-  future: {
-    bg: 'linear-gradient(135deg, #bfdbfe, #93c5fd)',
-    text: '#1e3a8a', rec: '#16a34a', desp: '#dc2626', neg: '#dc2626', saldo: '#1e3a8a',
-    shadow: 'none',
+  sem: {
+    bg: 'linear-gradient(135deg, #64748b, #475569)',
+    text: 'rgba(255,255,255,0.7)', rec: 'rgba(255,255,255,0.4)', desp: 'rgba(255,255,255,0.4)', neg: 'rgba(255,255,255,0.4)', saldo: 'rgba(255,255,255,0.4)',
   },
-}
-
-function temaMes(mi: number, mesAtual: number, anoAtual: number): Tema {
-  const y = new Date().getFullYear()
-  if (anoAtual < y) return 'past'
-  if (anoAtual > y) return 'future'
-  if (mi < mesAtual) return 'past'
-  if (mi === mesAtual) return 'current'
-  return 'future'
 }
 
 const COL_MES = 100
@@ -95,15 +77,15 @@ export default function PlanLista({
       {/* 12 meses */}
       <div style={{ minWidth: COL_MES + COL_VAL * 5 }}>
         {Array.from({ length: 12 }, (_, mi) => {
-          const tema = temaMes(mi, mesAtual, anoAtual)
-          const tl = TL[tema]
-          const isAtual = mi === mesAtual && anoAtual === anoCorrente
-          const isAberto = aberto === mi
-          const si = previsto.saldoInicial[mi]
           const te = previsto.totalEntradas[mi]
           const ts = previsto.totalSaidas[mi]
+          const si = previsto.saldoInicial[mi]
           const sf = previsto.saldoFinal[mi]
           const res = te - ts
+          const comPlano = te > 0 || ts > 0
+          const tl = TL[comPlano ? 'com' : 'sem']
+          const isAtual = mi === mesAtual && anoAtual === anoCorrente
+          const isAberto = aberto === mi
           const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
 
           return (
@@ -119,7 +101,8 @@ export default function PlanLista({
                   cursor: 'pointer',
                   background: tl.bg,
                   color: tl.text,
-                  boxShadow: tl.shadow,
+                  border: isAtual ? '2px solid rgba(255,255,255,0.4)' : undefined,
+                  boxShadow: isAtual ? '0 4px 16px rgba(26,86,219,0.5)' : 'none',
                   transition: 'transform .15s',
                   userSelect: 'none',
                 }}

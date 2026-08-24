@@ -18,7 +18,7 @@ interface Props {
 }
 
 type CellPos = { tipo: 'e' | 's'; ri: number; mi: number }
-type Tema = 'past' | 'current' | 'future'
+type Tema = 'com' | 'sem'
 
 const HH = 40  // header
 const HG = 30  // group
@@ -33,36 +33,20 @@ const W_CATS = 200
 const W_MES  = 130
 
 const TC = {
-  past: {
-    header: 'linear-gradient(135deg, #60a5fa, #3b82f6)', body: '#3b82f6', text: '#fff',
-    rec: '#4ade80', desp: '#fbbf24', saldo: '#bfdbfe',
-    grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.08)',
-    border: 'rgba(255,255,255,0.08)',
-    hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
-  },
-  current: {
+  com: {
     header: 'linear-gradient(135deg, #1e3a8a, #0f2878)', body: '#0f2878', text: '#fff',
-    rec: '#4ade80', desp: '#fbbf24', saldo: '#93c5fd',
+    rec: '#4ade80', desp: '#fbbf24', saldo: '#fff',
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
-    border: 'rgba(255,255,255,0.08)',
+    border: 'rgba(255,255,255,0.08)', divider: 'rgba(255,255,255,0.06)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
-  future: {
-    header: 'linear-gradient(135deg, #bfdbfe, #93c5fd)', body: '#93c5fd', text: '#1e3a8a',
-    rec: '#16a34a', desp: '#dc2626', saldo: '#1e3a8a',
-    grp: 'rgba(0,0,0,0.03)', tot: 'rgba(0,0,0,0.05)',
-    border: 'rgba(0,0,0,0.04)',
-    hover: 'rgba(0,0,0,0.05)', stripe: 'rgba(0,0,0,0.03)',
+  sem: {
+    header: 'linear-gradient(135deg, #64748b, #475569)', body: '#475569', text: 'rgba(255,255,255,0.7)',
+    rec: 'rgba(255,255,255,0.4)', desp: 'rgba(255,255,255,0.4)', saldo: 'rgba(255,255,255,0.4)',
+    grp: 'rgba(255,255,255,0.04)', tot: 'rgba(255,255,255,0.06)',
+    border: 'rgba(255,255,255,0.06)', divider: 'rgba(255,255,255,0.05)',
+    hover: 'rgba(255,255,255,0.08)', stripe: 'rgba(255,255,255,0.03)',
   },
-}
-
-function temaMes(mi: number, mesAtual: number, anoAtual: number): Tema {
-  const y = new Date().getFullYear()
-  if (anoAtual < y) return 'past'
-  if (anoAtual > y) return 'future'
-  if (mi < mesAtual) return 'past'
-  if (mi === mesAtual) return 'current'
-  return 'future'
 }
 
 function catLabel(cat: { nome: string; descricao?: string }) {
@@ -262,26 +246,26 @@ export default function PlanPlanilha({
         >
           <div style={{ display: 'flex', minWidth: 'max-content', gap: 6 }}>
             {Array.from({ length: 12 }, (_, mi) => {
-              const tema = temaMes(mi, mesAtual, anoAtual)
-              const tc   = TC[tema]
               const si   = previsto.saldoInicial[mi]
               const te   = previsto.totalEntradas[mi]
               const ts   = previsto.totalSaidas[mi]
               const sf   = previsto.saldoFinal[mi]
               const res  = te - ts
-              const divider = tema === 'future' ? 'rgba(30,58,138,0.08)' : 'rgba(255,255,255,0.06)'
+              const comPlano = te > 0 || ts > 0
+              const tc   = TC[comPlano ? 'com' : 'sem']
+              const isAtual = mi === mesAtual && anoAtual === anoCorrente
               const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
               return (
-                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, borderRadius: 8, overflow: 'hidden' }}>
+                <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, borderRadius: 8, overflow: 'hidden', boxShadow: isAtual ? '0 0 0 2px rgba(255,255,255,0.4), 0 4px 16px rgba(26,86,219,0.5)' : undefined }}>
                   {/* Month header */}
                   <div style={{
                     height: SH, background: tc.header, color: tc.text,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     gap: 4, fontSize: 12, fontWeight: 700,
-                    borderBottom: `1px solid ${divider}`,
+                    borderBottom: `1px solid ${tc.divider}`,
                   }}>
                     {MESES[mi]}
-                    {tema === 'current' && (
+                    {isAtual && (
                       <span style={{ fontSize: 7, fontWeight: 700, background: 'rgba(255,255,255,0.25)', color: '#fff', padding: '1px 4px', borderRadius: 4 }}>ATUAL</span>
                     )}
                   </div>
@@ -298,7 +282,7 @@ export default function PlanPlanilha({
                         height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                         padding: '0 10px', fontSize: 12, fontWeight: bold ? 800 : 700,
                         color, fontVariantNumeric: 'tabular-nums',
-                        borderBottom: idx < arr.length - 1 ? `1px solid ${divider}` : 'none',
+                        borderBottom: idx < arr.length - 1 ? `1px solid ${tc.divider}` : 'none',
                       }}>
                         {fv(v)}
                       </div>
@@ -387,11 +371,12 @@ export default function PlanPlanilha({
 
           {/* ── MONTH COLUMNS ─────────────────────────────────────────────── */}
           {Array.from({ length: 12 }, (_, mi) => {
-            const tema = temaMes(mi, mesAtual, anoAtual)
-            const tc = TC[tema]
             const totalE = previsto.totalEntradas[mi]
             const totalS = previsto.totalSaidas[mi]
             const res    = totalE - totalS
+            const comPlano = totalE > 0 || totalS > 0
+            const tc = TC[comPlano ? 'com' : 'sem']
+            const isAtual = mi === mesAtual && anoAtual === anoCorrente
 
             const cell = (tipo: 'e' | 's', ri: number) => {
               const rowKey = `${tipo}-${ri}`
@@ -404,13 +389,13 @@ export default function PlanPlanilha({
                   onMouseEnter={() => setHoveredRow(rowKey)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
-                  {catCell(tipo, ri, mi, tema)}
+                  {catCell(tipo, ri, mi, comPlano ? 'com' : 'sem')}
                 </div>
               )
             }
 
             return (
-              <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: mi > 0 ? 6 : 0, display: 'flex', flexDirection: 'column' }}>
+              <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, marginLeft: mi > 0 ? 6 : 0, display: 'flex', flexDirection: 'column', boxShadow: isAtual ? '0 0 0 2px rgba(255,255,255,0.4), 0 4px 16px rgba(26,86,219,0.5)' : undefined, borderRadius: 8 }}>
                 {/* Month header — sticky */}
                 <div style={{
                   height: HH, position: 'sticky', top: 0, zIndex: 5,
@@ -420,7 +405,7 @@ export default function PlanPlanilha({
                   fontSize: 13, fontWeight: 700, gap: 4, flexShrink: 0,
                 }}>
                   {MESES[mi]}
-                  {tema === 'current' && (
+                  {isAtual && (
                     <span style={{ fontSize: 7, background: 'rgba(255,255,255,0.25)', padding: '2px 5px', borderRadius: 6, fontWeight: 600 }}>ATUAL</span>
                   )}
                 </div>

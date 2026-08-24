@@ -7,92 +7,73 @@ interface Props {
   saldoInicial: number
   saldoFinal: number
   isAtual: boolean
-  isFuturo: boolean
+  isFuturo?: boolean
   onClick: () => void
 }
 
 const TH = {
-  past: {
-    bg:           'linear-gradient(145deg, #60a5fa, #3b82f6)',
+  com: {
+    bg:           'linear-gradient(145deg, #1e3a8a, #0f2878)',
     text:         '#fff',
-    label:        'rgba(255,255,255,0.6)',
+    label:        'rgba(255,255,255,0.5)',
     border:       '1px solid rgba(255,255,255,0.12)',
-    shadow:       '0 1px 4px rgba(59,130,246,0.2)',
-    shadowHover:  '0 8px 24px rgba(59,130,246,0.45)',
+    shadow:       '0 1px 4px rgba(15,40,120,0.25)',
+    shadowHover:  '0 8px 24px rgba(15,40,120,0.5)',
     recBg:        'rgba(255,255,255,0.12)',
     recText:      '#4ade80',
     despBg:       'rgba(255,255,255,0.12)',
-    despText:     '#f87171',
-    saldoIniBg:   'rgba(255,255,255,0.1)',
+    despText:     '#fbbf24',
+    saldoIniBg:   'rgba(255,255,255,0.08)',
     saldoFinalBg: 'rgba(255,255,255,0.1)',
     barTrack:     'rgba(255,255,255,0.15)',
     progLabel:    'rgba(255,255,255,0.5)',
-    divider:      'rgba(255,255,255,0.12)',
-    semPlano:     'rgba(255,255,255,0.35)',
-    resultLabel:  'rgba(255,255,255,0.6)',
-    badgeBg:      'rgba(255,255,255,0.2)',
-    badgeText:    '#fff',
-  },
-  current: {
-    bg:           'linear-gradient(145deg, #1e3a8a, #0f2878)',
-    text:         '#fff',
-    label:        'rgba(255,255,255,0.6)',
-    border:       '2px solid rgba(255,255,255,0.3)',
-    shadow:       '0 4px 16px rgba(15,40,120,0.4)',
-    shadowHover:  '0 8px 28px rgba(15,40,120,0.6)',
-    recBg:        'rgba(255,255,255,0.15)',
-    recText:      '#4ade80',
-    despBg:       'rgba(255,255,255,0.15)',
-    despText:     '#f87171',
-    saldoIniBg:   'rgba(255,255,255,0.08)',
-    saldoFinalBg: 'rgba(255,255,255,0.12)',
-    barTrack:     'rgba(255,255,255,0.12)',
-    progLabel:    'rgba(255,255,255,0.5)',
     divider:      'rgba(255,255,255,0.1)',
-    semPlano:     'rgba(255,255,255,0.3)',
+    semPlano:     'rgba(255,255,255,0.35)',
     resultLabel:  'rgba(255,255,255,0.5)',
     badgeBg:      'rgba(255,255,255,0.25)',
     badgeText:    '#fff',
   },
-  future: {
-    bg:           'linear-gradient(145deg, #bfdbfe, #93c5fd)',
-    text:         '#1e3a8a',
-    label:        'rgba(30,58,138,0.5)',
-    border:       '1px solid rgba(30,58,138,0.12)',
-    shadow:       '0 1px 4px rgba(30,58,138,0.1)',
-    shadowHover:  '0 8px 24px rgba(30,58,138,0.3)',
-    recBg:        'rgba(30,58,138,0.08)',
-    recText:      '#16a34a',
-    despBg:       'rgba(30,58,138,0.08)',
-    despText:     '#dc2626',
-    saldoIniBg:   'rgba(30,58,138,0.06)',
-    saldoFinalBg: 'rgba(30,58,138,0.06)',
-    barTrack:     'rgba(30,58,138,0.1)',
-    progLabel:    'rgba(30,58,138,0.4)',
-    divider:      'rgba(30,58,138,0.1)',
-    semPlano:     'rgba(30,58,138,0.3)',
-    resultLabel:  'rgba(30,58,138,0.5)',
-    badgeBg:      'rgba(30,58,138,0.12)',
-    badgeText:    '#1e3a8a',
+  sem: {
+    bg:           'linear-gradient(145deg, #64748b, #475569)',
+    text:         'rgba(255,255,255,0.7)',
+    label:        'rgba(255,255,255,0.4)',
+    border:       '1px solid rgba(255,255,255,0.08)',
+    shadow:       '0 1px 4px rgba(0,0,0,0.1)',
+    shadowHover:  '0 8px 20px rgba(0,0,0,0.2)',
+    recBg:        'rgba(255,255,255,0.08)',
+    recText:      'rgba(255,255,255,0.35)',
+    despBg:       'rgba(255,255,255,0.08)',
+    despText:     'rgba(255,255,255,0.35)',
+    saldoIniBg:   'rgba(255,255,255,0.06)',
+    saldoFinalBg: 'rgba(255,255,255,0.06)',
+    barTrack:     'rgba(255,255,255,0.1)',
+    progLabel:    'rgba(255,255,255,0.4)',
+    divider:      'rgba(255,255,255,0.08)',
+    semPlano:     'rgba(255,255,255,0.35)',
+    resultLabel:  'rgba(255,255,255,0.4)',
+    badgeBg:      'rgba(255,255,255,0.2)',
+    badgeText:    'rgba(255,255,255,0.8)',
   },
 }
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, isFuturo, onClick,
+  isAtual, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
   const negativo = resultado < 0
   const semPlano = receitas === 0 && despesas === 0
 
-  const theme = isAtual ? 'current' : isFuturo ? 'future' : 'past'
-  const th = TH[theme]
+  const th = TH[semPlano ? 'sem' : 'com']
+  const border      = isAtual ? '2px solid rgba(255,255,255,0.4)' : th.border
+  const shadow      = isAtual ? '0 4px 16px rgba(26,86,219,0.5)' : th.shadow
+  const shadowHover = isAtual ? '0 8px 28px rgba(26,86,219,0.65)' : th.shadowHover
 
-  const saldoFinalBg   = negativo ? 'rgba(248,113,113,0.2)' : th.saldoFinalBg
-  const saldoFinalText = negativo ? '#f87171' : th.text
+  const saldoFinalBg   = negativo ? 'rgba(251,191,36,0.2)' : th.saldoFinalBg
+  const saldoFinalText = negativo ? '#fbbf24' : th.text
 
-  const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : th.recText
+  const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : '#4ade80'
 
   return (
     <div
@@ -100,22 +81,22 @@ export default function PlanCardMes({
       title={semPlano ? 'Clique para definir valores deste mês' : undefined}
       style={{
         borderRadius: 14,
-        border: th.border,
+        border,
         background: th.bg,
         cursor: 'pointer',
         overflow: 'hidden',
         transition: 'transform .15s, box-shadow .15s',
-        boxShadow: th.shadow,
+        boxShadow: shadow,
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = 'translateY(-2px)'
-        el.style.boxShadow = th.shadowHover
+        el.style.boxShadow = shadowHover
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement
         el.style.transform = ''
-        el.style.boxShadow = th.shadow
+        el.style.boxShadow = shadow
       }}
     >
       <div style={{ padding: '12px 12px 10px' }}>
@@ -185,7 +166,7 @@ export default function PlanCardMes({
               borderTop: `1px solid ${th.divider}`, paddingTop: 6,
             }}>
               <span style={{ color: th.resultLabel, fontSize: 11 }}>= Resultado</span>
-              <span style={{ fontWeight: 700, color: negativo ? '#f87171' : th.recText, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+              <span style={{ fontWeight: 700, color: negativo ? '#fbbf24' : th.recText, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
                 {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
               </span>
             </div>
