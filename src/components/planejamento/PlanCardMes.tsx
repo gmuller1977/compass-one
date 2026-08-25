@@ -103,11 +103,11 @@ export default function PlanCardMes({
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: semPlano ? 0 : 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: th.text }}>{MESES_FULL[mes]}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{MESES_FULL[mes]}</span>
           {isAtual && (
             <span style={{
               fontSize: 9, fontWeight: 700,
-              background: th.badgeBg, color: th.badgeText,
+              background: th.badgeBg, color: '#fff',
               padding: '2px 7px', borderRadius: 6,
               textTransform: 'uppercase', letterSpacing: '.5px',
             }}>ATUAL</span>
@@ -118,7 +118,6 @@ export default function PlanCardMes({
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             height: 60, color: '#fff', fontSize: 11, fontWeight: 600,
-            opacity: 0.6,
           }}>
             Sem Planejamento
           </div>
