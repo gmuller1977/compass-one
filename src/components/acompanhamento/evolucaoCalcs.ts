@@ -112,14 +112,39 @@ export function buildAllCats(
 ): CatComDesc[] {
   const resolvidas = resolverPlanCats(tipo, planCats, categorias)
 
+  /**
+   * Cadastro correspondente a (nome + variante). Uma variante excluida NAO cai
+   * no registro de uma irma: senao a categoria deletada continuava aparecendo,
+   * emprestando o "ativa" da variante que sobrou.
+   */
+  const acharReg = (nome: string, descricao: string, herdarDeIrma = false) => {
+    const doNome = categorias.filter(c => c.tipo === tipo && norm(c.nome) === norm(nome))
+    const exato = descricao
+      ? doNome.find(c => norm(c.descricao) === descricao)
+      : doNome.find(c => !norm(c.descricao))
+    // So a chave crua (lancamento sem variante marcada) herda grupo/ativa de
+    // qualquer registro do nome — e dinheiro real, precisa aparecer em algum
+    // lugar. Linha de plano exige registro exato, senao ressuscita excluida.
+    return exato ?? (herdarDeIrma && !descricao ? doNome[0] : undefined)
+  }
+  const visivel = (nome: string, descricao: string, herdarDeIrma = false) => {
+    const reg = acharReg(nome, descricao, herdarDeIrma)
+    return !!reg && !!reg.ativa && !cartaoNomes.has(norm(reg.nome).toLowerCase())
+  }
+
+  // Linha do plano so aparece se a categoria ainda existir e estiver ativa.
+  // O plano persistido nao e limpo ao excluir uma categoria, entao sem isso
+  // a linha orfa continuava no radar depois da exclusao.
+  const vivas = resolvidas.filter(c => visivel(c.nome, c.descricao))
+
   // Chaves do realMap já consumidas por alguma linha do plano (de qualquer grupo)
   const cobertas = new Set<string>()
-  for (const c of resolvidas) {
+  for (const c of vivas) {
     const k = resolverRealKey(realMap, c.nome, c.descricao)
     if (k) cobertas.add(k)
   }
 
-  const doGrupo: CatComDesc[] = resolvidas
+  const doGrupo: CatComDesc[] = vivas
     .filter(c => c.grupo === grupo)
     .map(({ nome, v, descricao }) => ({ nome, v, descricao }))
 
@@ -129,9 +154,8 @@ export function buildAllCats(
     .filter(k => !cobertas.has(k))
     .flatMap(k => {
       const { nome, descricao } = splitCatKey(k)
-      const doNome = categorias.filter(c => c.tipo === tipo && norm(c.nome) === norm(nome))
-      const reg = (descricao ? doNome.find(c => norm(c.descricao) === descricao) : undefined) ?? doNome[0]
-      if (!reg || !reg.ativa || cartaoNomes.has(norm(reg.nome).toLowerCase())) return []
+      if (!visivel(nome, descricao, true)) return []
+      const reg = acharReg(nome, descricao, true)!
       if ((reg.grupo ?? SEM_GRUPO) !== grupo) return []
       return [{ nome, v: Array(12).fill(0) as number[], descricao }]
     })
