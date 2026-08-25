@@ -102,7 +102,7 @@ export default function PlanCardMes({
       <div style={{ padding: '12px 12px 10px' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: semPlano ? 0 : 10 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: th.text }}>{MESES_FULL[mes]}</span>
           {isAtual && (
             <span style={{
@@ -114,52 +114,42 @@ export default function PlanCardMes({
           )}
         </div>
 
-        {/* Saldo inicial */}
-        <div style={{
-          background: th.saldoIniBg, borderRadius: 8, padding: '5px 8px',
-          marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          <span style={{ fontSize: 8, fontWeight: 700, color: th.label, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-            Saldo inicial
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: th.text, fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(saldoInicial, true)}
-          </span>
-        </div>
-
-        {/* Receitas / Despesas */}
         {semPlano ? (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            height: 48, marginBottom: 7,
-            color: th.semPlano, fontSize: 11, fontStyle: 'italic',
+            height: 60, color: '#fff', fontSize: 11, fontWeight: 600,
+            opacity: 0.6,
           }}>
-            Sem plano
+            Sem Planejamento
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
-            <div style={{ flex: 1, background: th.recBg, borderRadius: 8, padding: '6px 8px' }}>
-              <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
-                Receitas
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: th.recText, fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(receitas, true)}
-              </div>
-            </div>
-            <div style={{ flex: 1, background: th.despBg, borderRadius: 8, padding: '6px 8px' }}>
-              <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
-                Despesas
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: th.despText, fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(despesas, true)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Resultado */}
-        {!semPlano && (
           <>
+            {/* Saldo inicial */}
+            <div style={{
+              background: th.saldoIniBg, borderRadius: 8, padding: '5px 8px',
+              marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ fontSize: 8, fontWeight: 700, color: th.label, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                Saldo inicial
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: th.text, fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(saldoInicial, true)}
+              </span>
+            </div>
+
+            {/* Receitas / Despesas */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
+              <div style={{ flex: 1, background: th.recBg, borderRadius: 8, padding: '6px 8px' }}>
+                <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Receitas</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: th.recText, fontVariantNumeric: 'tabular-nums' }}>{fmt(receitas, true)}</div>
+              </div>
+              <div style={{ flex: 1, background: th.despBg, borderRadius: 8, padding: '6px 8px' }}>
+                <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Despesas</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: th.despText, fontVariantNumeric: 'tabular-nums' }}>{fmt(despesas, true)}</div>
+              </div>
+            </div>
+
+            {/* Resultado */}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               fontSize: 12, marginBottom: 7,
@@ -178,20 +168,19 @@ export default function PlanCardMes({
             <div style={{ textAlign: 'right', fontSize: 9, color: th.progLabel, marginBottom: 8 }}>
               {Math.round(percDespesas)}% utilizado
             </div>
+
+            {/* Saldo final */}
+            <div style={{
+              background: saldoFinalBg, borderRadius: 8, padding: '6px 10px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ fontSize: 11, color: th.label }}>Saldo final</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: saldoFinalText, fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(saldoFinal, true)}
+              </span>
+            </div>
           </>
         )}
-
-        {/* Saldo final */}
-        <div style={{
-          background: saldoFinalBg, borderRadius: 8, padding: '6px 10px',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: semPlano ? 4 : 0,
-        }}>
-          <span style={{ fontSize: 11, color: th.label }}>Saldo final</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: saldoFinalText, fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(saldoFinal, true)}
-          </span>
-        </div>
 
       </div>
     </div>

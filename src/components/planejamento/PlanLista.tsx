@@ -34,7 +34,8 @@ export default function PlanLista({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
   planejamentoLockado, categorias, onSave, lancadoPorCatMes,
 }: Props) {
-  const [aberto, setAberto] = useState<number>(mesAtual)
+  const temPlanoInicial = (previsto.totalEntradas[mesAtual] ?? 0) > 0 || (previsto.totalSaidas[mesAtual] ?? 0) > 0
+  const [aberto, setAberto] = useState<number>(temPlanoInicial ? mesAtual : -1)
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
   const anoCorrente = new Date().getFullYear()
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -47,7 +48,8 @@ export default function PlanLista({
     }
   }, [aberto])
 
-  function toggleMes(mi: number) {
+  function toggleMes(mi: number, comPlano: boolean) {
+    if (!comPlano) return
     setAberto(prev => prev === mi ? -1 : mi)
   }
 
@@ -92,13 +94,13 @@ export default function PlanLista({
             <div key={mi} ref={el => { rowRefs.current[mi] = el }}>
               {/* Linha do mês */}
               <div
-                onClick={() => toggleMes(mi)}
+                onClick={() => toggleMes(mi, comPlano)}
                 style={{
                   display: 'flex', alignItems: 'center',
                   padding: '10px 0',
                   borderRadius: isAberto ? '10px 10px 0 0' : 10,
                   marginBottom: isAberto ? 0 : 2,
-                  cursor: 'pointer',
+                  cursor: comPlano ? 'pointer' : 'default',
                   background: tl.bg,
                   color: tl.text,
                   border: isAtual ? '2px solid rgba(255,255,255,0.4)' : undefined,
@@ -106,21 +108,29 @@ export default function PlanLista({
                   transition: 'transform .15s',
                   userSelect: 'none',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)' }}
+                onMouseEnter={e => { if (comPlano) (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = '' }}
               >
                 <div style={{ width: COL_MES, display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 12, flexShrink: 0 }}>
-                  <span style={{ fontSize: 10, transition: 'transform .2s', transform: isAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▸</span>
+                  {comPlano && <span style={{ fontSize: 10, transition: 'transform .2s', transform: isAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▸</span>}
                   <span style={{ fontSize: 13, fontWeight: 700 }}>{MESES[mi]}</span>
                   {isAtual && (
                     <span style={{ fontSize: 7, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff', flexShrink: 0 }}>ATUAL</span>
                   )}
                 </div>
-                <div className="plista-si" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(si, true)}</div>
-                <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.rec, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(te, true)}</div>
-                <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.desp, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(ts, true)}</div>
-                <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: res >= 0 ? tl.rec : tl.neg, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmtRes(res)}</div>
-                <div className="plista-sf" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(sf, true)}</div>
+                {comPlano ? (
+                  <>
+                    <div className="plista-si" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(si, true)}</div>
+                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.rec, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(te, true)}</div>
+                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.desp, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(ts, true)}</div>
+                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: res >= 0 ? tl.rec : tl.neg, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmtRes(res)}</div>
+                    <div className="plista-sf" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(sf, true)}</div>
+                  </>
+                ) : (
+                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#fff', opacity: 0.6 }}>
+                    Sem Planejamento
+                  </div>
+                )}
               </div>
 
               {/* Painel expandido */}
