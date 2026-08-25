@@ -4,8 +4,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import EmptyState from '../EmptyState'
 import BottomNav from '../BottomNav'
 import { COR, MESES_FULL, fmt, type Lanc, type CatReal } from './AcShared'
-
-type PlanCat = { nome: string; v: number[] }
+import { buildAllCats, pickReal, type PlanCat } from './evolucaoCalcs'
 
 interface AcMobileViewProps {
   mes: number
@@ -230,31 +229,7 @@ export default function AcMobileView({
   ) => {
     const isEntrada = tipo === 'entrada'
     return grupos.flatMap(grupo => {
-      const catsPlan = planCats.filter(cat => {
-        const g = categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)?.grupo ?? '__sem_grupo__'
-        return g === grupo
-      })
-      const nomeOcorrencia = new Map<string, number>()
-      const catsComDesc = catsPlan.map(cat => {
-        const ocorrencia = nomeOcorrencia.get(cat.nome) ?? 0
-        nomeOcorrencia.set(cat.nome, ocorrencia + 1)
-        const matching = categorias.filter((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)
-        const descricao = matching[ocorrencia]?.descricao ?? ''
-        const catInfo   = matching[ocorrencia] ?? matching[0]
-        return { nome:cat.nome, v:cat.v, descricao, catInfo }
-      })
-      // Include categories with actual transactions but no plan entry
-      const plannedNames = new Set(catsPlan.map(c => c.nome))
-      const extraCats = Object.keys(realMap)
-        .map(k => k.includes('||') ? k.split('||')[0] : k)
-        .filter((n,i,a) => a.indexOf(n)===i && !plannedNames.has(n))
-        .flatMap(nome => {
-          const cat = categorias.find((c: Categoria) => c.nome===nome && c.tipo===tipo)
-          if (!cat || !cat.ativa || cartaoNomes.has(cat.nome.toLowerCase())) return []
-          if ((cat.grupo ?? '__sem_grupo__') !== grupo) return []
-          return [{ nome, v: Array(12).fill(0) as number[], descricao: cat.descricao ?? '', catInfo: cat }]
-        })
-      const allCats = [...catsComDesc, ...extraCats]
+      const allCats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
       if (allCats.length === 0) return []
       const grupoLabel = grupo==='__sem_grupo__' ? 'Outras' : grupo
       const grupoIcone = (() => {
@@ -272,12 +247,16 @@ export default function AcMobileView({
           </div>
         ] : []),
         ...allCats.map((cat, idx) => {
-          const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
-          const cd      = realMap[realKey] ?? realMap[cat.nome]
+          const cd      = pickReal(realMap, cat.nome, cat.descricao)
           const prev    = cat.v[mes] ?? 0
           const lancAbs = (cd?.totalBanc ?? 0) + (cd?.totalCart ?? 0)
-          const uid     = `m-${tipo}-${grupo}-${cat.nome}-${idx}`
-          return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, cat.catInfo, uid, cd?.lancamentos ?? [])
+          const uid     = `m-${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`
+          const catInfo =
+            (cat.descricao
+              ? categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo && c.descricao===cat.descricao)
+              : undefined)
+            ?? categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)
+          return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, catInfo, uid, cd?.lancamentos ?? [])
         }),
       ]
     })

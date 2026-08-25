@@ -1,7 +1,7 @@
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev } from './evolucaoCalcs'
+import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
 const GRADIENT_STEPS = [
@@ -29,7 +29,7 @@ function corHeaderGrupo(percentual: number) {
 interface EvolucaoGrupoProps {
   tipo: 'saida' | 'entrada'
   grupo: string
-  planCats: { nome: string; v: number[] }[]
+  planCats: PlanCat[]
   realMap: Record<string, CatReal>
   categorias: Categoria[]
   cartaoNomes: Set<string>
@@ -99,11 +99,10 @@ export default function EvolucaoGrupo({
         borderTop: 0, borderRadius: '0 0 12px 12px', overflow: 'hidden',
       }}>
         {allCats.map((cat, idx) => {
-          const realKey = cat.descricao ? `${cat.nome}||${cat.descricao}` : cat.nome
-          const cd = realMap[realKey]
+          const cd = pickReal(realMap, cat.nome, cat.descricao)
           return (
             <EvolucaoLinha
-              key={`${tipo}-${grupo}-${cat.nome}-${idx}`}
+              key={`${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`}
               nome={cat.nome}
               descricao={cat.descricao || undefined}
               prev={cat.v[mes] ?? 0}
