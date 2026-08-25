@@ -5,8 +5,10 @@ import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 import { useToast } from '../components/Toast'
-import type { Conta, Categoria, TipoCategoria, FormaPagamentoFatura } from '../context/AppContext'
+import type { Conta, Categoria, TipoCategoria, FormaPagamentoFatura, PlanoCat } from '../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
+
+const MESES_CURTOS_CFG = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 import ModalConfirmacao from '../components/ModalConfirmacao'
 
 import {
@@ -342,12 +344,75 @@ export default function Configuracoes() {
     }
     novaCategoria()
   }
+  /**
+   * Meses com planejamento futuro desta categoria + variante, por ano.
+   * Casa por id, ou por nome + variante. Casar so pelo nome faria uma variante
+   * bloquear pelos valores de outra (ex.: Seguro·Civic travando Seguro·March).
+   */
+  function planejamentoFuturo(cat: Categoria): { ano: number; meses: number[] }[] {
+    const anoAtual = new Date().getFullYear()
+    const mesAtual = new Date().getMonth()
+    const nomeNorm = cat.nome.trim().toLowerCase()
+    const descNorm = (cat.descricao ?? '').trim().toLowerCase()
+
+    const mesmaCat = (c: PlanoCat) =>
+      (c.id && cat.id && c.id === cat.id) ||
+      (c.nome.trim().toLowerCase() === nomeNorm &&
+       (c.descricao ?? '').trim().toLowerCase() === descNorm)
+
+    const porAno = new Map<number, Set<number>>()
+    for (const fonte of [planos, planosReal]) {
+      for (const [anoStr, pd] of Object.entries(fonte)) {
+        const ano = Number(anoStr)
+        if (ano < anoAtual) continue
+        // no ano corrente so contam os meses depois do atual
+        const limite = ano === anoAtual ? mesAtual : -1
+        const lista = cat.tipo === 'entrada' ? (pd.entradas ?? []) : (pd.saidas ?? [])
+        for (const c of lista) {
+          if (!mesmaCat(c)) continue
+          c.v.forEach((valor, i) => {
+            if (i > limite && valor !== 0) {
+              const s = porAno.get(ano) ?? new Set<number>()
+              s.add(i)
+              porAno.set(ano, s)
+            }
+          })
+        }
+      }
+    }
+    return [...porAno.entries()]
+      .map(([ano, s]) => ({ ano, meses: [...s].sort((a, b) => a - b) }))
+      .sort((a, b) => a.ano - b.ano)
+  }
+
+  /** Bloqueia e orienta quando a categoria ainda tem planejamento futuro. */
+  function bloqueadoPorPlanejamento(cat: Categoria, acao: 'excluir' | 'desativar'): boolean {
+    const futuros = planejamentoFuturo(cat)
+    if (futuros.length === 0) return false
+    const rotulo = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
+    const onde = futuros
+      .map(({ ano, meses }) => `${ano} (${meses.map(m => MESES_CURTOS_CFG[m]).join(', ')})`)
+      .join(' · ')
+    confirmar({
+      titulo: `Não é possível ${acao}`,
+      mensagem:
+        `"${rotulo}" ainda tem planejamento em meses futuros. Abra o Planejamento, ` +
+        `zere os valores desta categoria nesses meses e tente ${acao} de novo.`,
+      detalhe: `Meses planejados: ${onde}`,
+      apenasFechar: true,
+      onConfirmar: fecharConfirm,
+    })
+    return true
+  }
+
   function excluirCategoria(id: string) {
     const cat = categorias.find(c => c.id === id)
+    if (!cat) return
+    if (bloqueadoPorPlanejamento(cat, 'excluir')) return
     confirmar({
       titulo: 'Excluir categoria?',
       mensagem: 'Esta ação não pode ser desfeita.',
-      detalhe: cat?.nome,
+      detalhe: cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome,
       onConfirmar: () => {
         setCategorias(prev => prev.filter(c => c.id !== id))
         if (editCatId === id) { setEditCatId(null); setFormCat({...catVazia, tipo:abaCat}) }
@@ -360,26 +425,7 @@ export default function Configuracoes() {
   function toggleAtiva(id: string) {
     const cat = categorias.find(c => c.id === id)
     if (!cat) return
-    if (cat.ativa) {
-      const anoAtual = new Date().getFullYear()
-      const mesAtual = new Date().getMonth()
-      const temLancFuturo = (lista: { id?: string; nome: string; v: number[] }[]) => {
-        const entry = lista.find(c => (c.id && c.id === id) || c.nome === cat.nome)
-        return entry ? entry.v.some((v, i) => i > mesAtual && v !== 0) : false
-      }
-      const anoFuturo = Object.entries(planos)
-        .filter(([ano]) => Number(ano) > anoAtual)
-        .some(([, pd]) => {
-          const lista = cat.tipo === 'entrada' ? pd.entradas : pd.saidas
-          return lista.some(c => ((c.id && c.id === id) || c.nome === cat.nome) && c.v.some(v => v !== 0))
-        })
-      const listaAtual = cat.tipo === 'entrada' ? (planos[anoAtual]?.entradas ?? []) : (planos[anoAtual]?.saidas ?? [])
-      const listaRealAtual = cat.tipo === 'entrada' ? (planosReal[anoAtual]?.entradas ?? []) : (planosReal[anoAtual]?.saidas ?? [])
-      if (temLancFuturo(listaAtual) || temLancFuturo(listaRealAtual) || anoFuturo) {
-        window.alert('Não é possível inativar esta categoria pois ela possui lançamentos planejados em meses futuros. Remova os valores dos meses futuros no planejamento antes de inativar.')
-        return
-      }
-    }
+    if (cat.ativa && bloqueadoPorPlanejamento(cat, 'desativar')) return
     setCategorias(prev => prev.map(c => c.id===id ? {...c, ativa:!c.ativa} : c))
   }
   function importarSugestoes() {

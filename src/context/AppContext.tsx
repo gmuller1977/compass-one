@@ -39,7 +39,9 @@ export type Categoria = {
   pinQuick?: boolean
 }
 
-export type PlanoCat     = { id?: string; nome: string; t?: string; v: number[] }
+// descricao = variante (ex.: Seguro · Civic) e grupo sao gravados no plano
+// desde usePlanejamento; declarar aqui evita casar categoria so pelo nome.
+export type PlanoCat     = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[] }
 export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number; mesInicio?: number }
 
 export type MetaSim = {
