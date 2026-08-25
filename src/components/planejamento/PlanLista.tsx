@@ -109,9 +109,9 @@ export default function PlanLista({
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = '' }}
               >
-                <div style={{ width: COL_MES, display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 12, flexShrink: 0 }}>
+                <div style={{ width: COL_MES, display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 12, flexShrink: 0, color: '#fff' }}>
                   <span style={{ fontSize: 10, transition: 'transform .2s', transform: isAberto ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>▸</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{MESES[mi]}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{MESES[mi]}</span>
                   {isAtual && (
                     <span style={{ fontSize: 7, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff', flexShrink: 0 }}>ATUAL</span>
                   )}
