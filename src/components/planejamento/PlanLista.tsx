@@ -34,7 +34,7 @@ export default function PlanLista({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
   planejamentoLockado, categorias, onSave, lancadoPorCatMes,
 }: Props) {
-  const [aberto, setAberto] = useState<number>(mesAtual)
+  const [aberto, setAberto] = useState<number>(-1)
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
   const anoCorrente = new Date().getFullYear()
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
