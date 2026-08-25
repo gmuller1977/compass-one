@@ -12,6 +12,7 @@ import RmFaturas from '../components/resumoMensal/RmFaturas'
 import RmProjecao from '../components/resumoMensal/RmProjecao'
 import RmComparativo from '../components/resumoMensal/RmComparativo'
 import RmDistribuicao from '../components/resumoMensal/RmDistribuicao'
+import { catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 
@@ -287,13 +288,14 @@ export default function ResumoMensal() {
     const mesStr = String(mes + 1).padStart(2, '0')
     const totalDiasM = new Date(ano, mes + 1, 0).getDate()
 
-    function rKey(nome: string, sub?: string) { return sub ? `${nome}||${sub}` : nome }
+    // catKey normaliza nome/variante: "Senac " e "Senac" viram a mesma chave
+    const rKey = catKey
     function resolverSub(nome: string, sub?: string): string | undefined {
-      if (sub) return sub
+      if (norm(sub)) return norm(sub)
       const variantes = (categorias as Categoria[]).filter(
-        c => c.nome === nome && c.tipo === 'entrada' && c.ativa && c.descricao
+        c => norm(c.nome) === norm(nome) && c.tipo === 'entrada' && c.ativa && norm(c.descricao)
       )
-      return variantes.length === 1 ? variantes[0].descricao : undefined
+      return variantes.length === 1 ? norm(variantes[0].descricao) : undefined
     }
 
     const realizadoPorCat: Record<string, number> = {}
@@ -303,7 +305,7 @@ export default function ResumoMensal() {
       for (let d = 1; d <= totalDiasM; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           if (l.tipo !== 'entrada') continue
-          const sub = resolverSub(l.categoria, (l as { subCategoria?: string }).subCategoria)
+          const sub = resolverSub(l.categoria, norm((l as { subCategoria?: string }).subCategoria))
           const k = rKey(l.categoria, sub)
           realizadoPorCat[k] = (realizadoPorCat[k] ?? 0) + l.valor
         }
@@ -325,15 +327,21 @@ export default function ResumoMensal() {
 
     for (const cat of categorias as Categoria[]) {
       if (cat.tipo !== 'entrada' || !cat.ativa) continue
-      const chave = `${cat.nome}||${cat.descricao ?? ''}`
+      const chave = catKey(cat.nome, cat.descricao)
       if (vistos.has(chave)) continue
       vistos.add(chave)
 
       const nome = cat.nome
-      const variante = cat.descricao || undefined
+      const variante = norm(cat.descricao) || undefined
 
-      const planList = (dadosAno as { entradas?: { nome: string; v: number[] }[] } | undefined)?.entradas
-      const previsto = planList?.find(c => c.nome === nome)?.v[mes] ?? 0
+      // Casa por nome + variante; só cai no nome puro se o plano não tiver a
+      // variante (plano legado), senão todas as variantes herdam o mesmo previsto
+      const planList = (dadosAno as { entradas?: { nome: string; descricao?: string; v: number[] }[] } | undefined)?.entradas
+      const doNome = planList?.filter(c => norm(c.nome) === norm(nome)) ?? []
+      const planCat =
+        (variante ? doNome.find(c => norm(c.descricao) === variante) : doNome.find(c => !norm(c.descricao)))
+        ?? (doNome.some(c => norm(c.descricao)) ? undefined : doNome[0])
+      const previsto = planCat?.v[mes] ?? 0
 
       let realizado = 0
       let recebido = false
@@ -351,7 +359,7 @@ export default function ResumoMensal() {
         const isConsolidada = confirmedCats.has(cat.id)
         // Fallback: fixa paga via lançamento variável (sem consolidação)
         const realizadoVar = (realizadoPorCat[rKey(nome, variante)] ?? 0) ||
-          (variante ? (realizadoPorCat[nome] ?? 0) : 0)
+          (variante ? (realizadoPorCat[rKey(nome)] ?? 0) : 0)
         recebido = isConsolidada || realizadoVar > 0
         realizado = isConsolidada
           ? (override !== undefined ? override : (fixasValorPorId[cat.id]?.valor ?? previsto))
@@ -359,7 +367,7 @@ export default function ResumoMensal() {
       } else {
         const exactVal = realizadoPorCat[rKey(nome, variante)] ?? 0
         // Fallback: lançamentos sem subCategoria ficam na chave sem variante
-        realizado = exactVal > 0 ? exactVal : (variante ? (realizadoPorCat[nome] ?? 0) : 0)
+        realizado = exactVal > 0 ? exactVal : (variante ? (realizadoPorCat[rKey(nome)] ?? 0) : 0)
         recebido  = realizado > 0
       }
 

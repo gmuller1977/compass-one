@@ -7,9 +7,17 @@ export type CatComDesc = { nome: string; v: number[]; descricao: string }
 
 const SEM_GRUPO = '__sem_grupo__'
 
+/**
+ * Normaliza nome/variante antes de virar chave. Espaco sobrando no cadastro
+ * ("Civic " vs "Civic") renderiza identico na tela mas gerava duas chaves
+ * distintas — e a categoria aparecia duplicada no radar.
+ */
+export function norm(s?: string) { return (s ?? '').trim() }
+
 /** Chave composta (nome + variante) usada nas chaves do realMap. */
 export function catKey(nome: string, descricao?: string) {
-  return descricao ? `${nome}||${descricao}` : nome
+  const d = norm(descricao)
+  return d ? `${norm(nome)}||${d}` : norm(nome)
 }
 
 export function splitCatKey(key: string): { nome: string; descricao: string } {
@@ -33,8 +41,8 @@ export function resolverRealKey(
 ): string | undefined {
   const exata = catKey(nome, descricao)
   if (realMap[exata]) return exata
-  if (descricao) return undefined
-  const doNome = Object.keys(realMap).filter(k => splitCatKey(k).nome === nome)
+  if (norm(descricao)) return undefined
+  const doNome = Object.keys(realMap).filter(k => norm(splitCatKey(k).nome) === norm(nome))
   return doNome.length === 1 ? doNome[0] : undefined
 }
 
@@ -59,35 +67,37 @@ export function resolverPlanCats(
 ): (CatComDesc & { grupo: string })[] {
   const doTipo = categorias.filter(c => c.tipo === tipo)
   const ativas = doTipo.filter(c => c.ativa)
+  const mesmoNome = (c: Categoria, nome: string) => norm(c.nome) === norm(nome)
 
   // 1ª passada — linhas que já trazem a variante
   const claimed = new Set<string>()
   const exatas = planCats.map(cat => {
-    if (!cat.descricao) return null
-    const reg = doTipo.find(c => c.nome === cat.nome && c.descricao === cat.descricao)
-    claimed.add(catKey(cat.nome, cat.descricao))
+    const descricao = norm(cat.descricao)
+    if (!descricao) return null
+    const reg = doTipo.find(c => mesmoNome(c, cat.nome) && norm(c.descricao) === descricao)
+    claimed.add(catKey(cat.nome, descricao))
     return {
       nome: cat.nome,
       v: cat.v,
-      descricao: cat.descricao,
+      descricao,
       grupo: cat.grupo ?? reg?.grupo ?? SEM_GRUPO,
     }
   })
 
-  // 2ª passada — fallback legado sobre as variantes ainda não reivindicadas
-  const ocorrencia = new Map<string, number>()
+  // 2ª passada — fallback legado sobre as variantes ainda não reivindicadas.
+  // Se não sobrar variante livre, a linha fica SEM variante: reaproveitar uma
+  // já reivindicada criaria linha duplicada e contaria o realizado duas vezes.
   return planCats.map((cat, i) => {
     const exata = exatas[i]
     if (exata) return exata
-    const livres = ativas.filter(c => c.nome === cat.nome && !claimed.has(catKey(c.nome, c.descricao)))
-    const k = ocorrencia.get(cat.nome) ?? 0
-    ocorrencia.set(cat.nome, k + 1)
-    const reg = livres[k] ?? livres[0] ?? ativas.find(c => c.nome === cat.nome)
+    // claimed cresce a cada atribuição, então a próxima livre é sempre a [0]
+    const reg = ativas.find(c => mesmoNome(c, cat.nome) && !claimed.has(catKey(c.nome, c.descricao)))
+    if (reg) claimed.add(catKey(reg.nome, reg.descricao))
     return {
       nome: cat.nome,
       v: cat.v,
-      descricao: reg?.descricao ?? '',
-      grupo: cat.grupo ?? reg?.grupo ?? SEM_GRUPO,
+      descricao: norm(reg?.descricao),
+      grupo: cat.grupo ?? reg?.grupo ?? ativas.find(c => mesmoNome(c, cat.nome))?.grupo ?? SEM_GRUPO,
     }
   })
 }
@@ -119,10 +129,9 @@ export function buildAllCats(
     .filter(k => !cobertas.has(k))
     .flatMap(k => {
       const { nome, descricao } = splitCatKey(k)
-      const reg =
-        (descricao ? categorias.find(c => c.nome === nome && c.tipo === tipo && c.descricao === descricao) : undefined)
-        ?? categorias.find(c => c.nome === nome && c.tipo === tipo)
-      if (!reg || !reg.ativa || cartaoNomes.has(reg.nome.toLowerCase())) return []
+      const doNome = categorias.filter(c => c.tipo === tipo && norm(c.nome) === norm(nome))
+      const reg = (descricao ? doNome.find(c => norm(c.descricao) === descricao) : undefined) ?? doNome[0]
+      if (!reg || !reg.ativa || cartaoNomes.has(norm(reg.nome).toLowerCase())) return []
       if ((reg.grupo ?? SEM_GRUPO) !== grupo) return []
       return [{ nome, v: Array(12).fill(0) as number[], descricao }]
     })

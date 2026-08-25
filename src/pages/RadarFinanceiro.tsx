@@ -7,7 +7,7 @@ import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
+import { buildAllCats, calcGrupoReal, calcGrupoPrev, catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
@@ -65,14 +65,15 @@ export default function RadarFinanceiro() {
     const entradas: Record<string, CatReal> = {}
     const sufixo = `-${ano}-${mesStr}`
 
-    function rKey(nome: string, sub?: string) { return sub ? `${nome}||${sub}` : nome }
+    // catKey normaliza nome/variante: "Civic " e "Civic" viram a mesma chave
+    const rKey = catKey
 
     function resolverSub(nome: string, tipo: 'saida' | 'entrada', sub?: string): string | undefined {
-      if (sub) return sub
+      if (norm(sub)) return norm(sub)
       const variantes = categorias.filter(
-        (c: Categoria) => c.nome === nome && c.tipo === tipo && c.ativa && c.descricao
+        (c: Categoria) => norm(c.nome) === norm(nome) && c.tipo === tipo && c.ativa && norm(c.descricao)
       )
-      return variantes.length === 1 ? variantes[0].descricao : undefined
+      return variantes.length === 1 ? norm(variantes[0].descricao) : undefined
     }
 
     const getSaida   = (k: string) => { if (!saidas[k])   saidas[k]  = mkCatReal(); return saidas[k] }
