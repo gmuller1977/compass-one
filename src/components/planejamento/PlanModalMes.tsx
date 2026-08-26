@@ -1,5 +1,5 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat } from './types'
+import { COR, MESES_FULL, fmt, nomeExibicao, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 
 interface Props {
@@ -70,6 +70,7 @@ export default function PlanModalMes({
         <PlanCelulaEditavel
           valor={cat.v[mes]}
           readOnly={readOnly}
+          motivoBloqueio={readOnly ? MOTIVO_PLANO_LOCKADO : undefined}
           onSave={v => onSave(tipo, ri, v)}
         />
       </div>

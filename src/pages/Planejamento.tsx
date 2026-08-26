@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
-import PageHeader, { PH_BTN_WHITE, PH_BTN_WHITE_ACTIVE } from '../components/PageHeader'
+import PageHeader, { PH_BTN_WHITE, PH_BTN_WHITE_ACTIVE, PH_BTN_TAB_ATIVA } from '../components/PageHeader'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type Aba, type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
@@ -77,7 +77,8 @@ export default function Planejamento({
         background: '#eff6ff', border: '1px solid #bfdbfe',
         borderRadius: 10, fontSize: 12, color: COR.azulEscuro,
       }}>
-        Este plano esta ativo. Para editar valores, use a aba <strong>Realizado</strong> ou clique em "Aplicar mudancas" apos editar aqui.
+        🔒 Você está em <strong>Meu plano</strong>, que está bloqueado porque o plano foi ativado.
+        Para alterar valores, mude para a aba <strong>Atualizado</strong>.
       </div>
     )
   }
@@ -112,7 +113,7 @@ export default function Planejamento({
                     {(['meu-plano', 'realizado'] as Aba[])
                       .filter(a => a !== 'realizado' || plan.realExiste)
                       .map(a => (
-                        <button key={a} onClick={() => setAba(a)} style={aba === a ? PH_BTN_WHITE_ACTIVE : PH_BTN_WHITE}>
+                        <button key={a} onClick={() => setAba(a)} style={aba === a ? PH_BTN_TAB_ATIVA : PH_BTN_WHITE}>
                           {a === 'meu-plano' ? `Meu plano${plan.planejamentoLockado ? ' 🔒' : ''}` : 'Atualizado'}
                         </button>
                       ))}

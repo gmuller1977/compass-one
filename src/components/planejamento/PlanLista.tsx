@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, type AnoData } from './types'
+import { fmt, MESES, nomeExibicao, MOTIVO_PLANO_LOCKADO, MOTIVO_REALIZADO, type AnoData } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 
 interface Props {
@@ -36,6 +36,7 @@ export default function PlanLista({
 }: Props) {
   const [aberto, setAberto] = useState<number>(-1)
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
+  const motivoBloqueio = bloqueado ? MOTIVO_PLANO_LOCKADO : aba === 'realizado' ? MOTIVO_REALIZADO : undefined
   const anoCorrente = new Date().getFullYear()
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -153,7 +154,7 @@ export default function PlanLista({
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
                         <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{nomeExibicao(cat)}</span>
-                        <PlanCelulaEditavel valor={v} readOnly={bloqueado || aba === 'realizado'} onSave={nv => onSave('e', ri, mi, nv)} />
+                        <PlanCelulaEditavel valor={v} readOnly={bloqueado || aba === 'realizado'} motivoBloqueio={motivoBloqueio} onSave={nv => onSave('e', ri, mi, nv)} />
                       </div>
                     )
                   })}
@@ -175,7 +176,7 @@ export default function PlanLista({
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
                         <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{nomeExibicao(cat)}</span>
-                        <PlanCelulaEditavel valor={v} readOnly={bloqueado || aba === 'realizado'} onSave={nv => onSave('s', ri, mi, nv)} />
+                        <PlanCelulaEditavel valor={v} readOnly={bloqueado || aba === 'realizado'} motivoBloqueio={motivoBloqueio} onSave={nv => onSave('s', ri, mi, nv)} />
                       </div>
                     )
                   })}

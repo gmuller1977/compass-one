@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
+import { useToast } from '../Toast'
 import { parseBRL } from './types'
 
 interface Props {
@@ -15,12 +16,15 @@ interface Props {
   style?: React.CSSProperties
   /** Digito que abriu a edicao: entra no campo e o cursor vai para o fim. */
   initChar?: string
+  /** Explicacao mostrada ao clicar numa celula bloqueada. */
+  motivoBloqueio?: string
 }
 
 export default function PlanCelulaNav({
   valor, editavel, ativa, editando,
-  onChange, onNavigate, onStartEdit, onCancelEdit, onClick, color, style, initChar,
+  onChange, onNavigate, onStartEdit, onCancelEdit, onClick, color, style, initChar, motivoBloqueio,
 }: Props) {
+  const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [inputVal, setInputVal] = useState('')
   // Evita a segunda gravacao: ao navegar, o input antigo perde o foco e o
@@ -101,12 +105,16 @@ export default function PlanCelulaNav({
 
   return (
     <div
-      onClick={editavel ? (onClick ?? (() => onStartEdit())) : undefined}
+      onClick={() => {
+        if (!editavel) { if (motivoBloqueio) toast(motivoBloqueio, 'info'); return }
+        ;(onClick ?? (() => onStartEdit()))()
+      }}
+      title={!editavel ? motivoBloqueio : undefined}
       style={{
         width: '100%', height: '100%',
         display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
         padding: '0 8px',
-        cursor: editavel ? 'pointer' : 'default',
+        cursor: editavel ? 'pointer' : (motivoBloqueio ? 'not-allowed' : 'default'),
         color,
         userSelect: 'none',
         boxSizing: 'border-box',

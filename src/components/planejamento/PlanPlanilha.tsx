@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type React from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, type AnoData, type Cat } from './types'
+import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat } from './types'
+import { useToast } from '../Toast'
 import PlanCelulaNav from './PlanCelulaNav'
 
 interface Props {
@@ -113,6 +114,7 @@ export default function PlanPlanilha({
   const [activeCell, setActiveCell] = useState<CellPos | null>(null)
   const [editingCell, setEditingCell] = useState<CellPos | null>(null)
   const [initChar, setInitChar] = useState<string | undefined>(undefined)
+  const { toast } = useToast()
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
@@ -181,9 +183,10 @@ export default function PlanPlanilha({
   }, [])
 
   const startEdit = useCallback((pos: CellPos, char?: string) => {
-    if (bloqueado) return
+    // tambem cobre teclado (Enter ou digitar um numero), nao so o clique
+    if (bloqueado) { toast(MOTIVO_PLANO_LOCKADO, 'info'); return }
     setInitChar(char); setActiveCell(pos); setEditingCell(pos)
-  }, [bloqueado])
+  }, [bloqueado, toast])
 
   const handleChange = useCallback((tipo: 'e' | 's', ri: number, mi: number, v: number) => {
     onSave(tipo, ri, mi, v)
@@ -239,6 +242,7 @@ export default function PlanPlanilha({
         editavel={!bloqueado} ativa={ativa} editando={editando}
         color={tipo === 'e' ? tc.rec : tc.desp}
         initChar={editando ? initChar : undefined}
+        motivoBloqueio={bloqueado ? MOTIVO_PLANO_LOCKADO : undefined}
         onChange={v => handleChange(tipo, ri, mi, v)}
         onNavigate={dir => {
           // Excel-like: a seta salva e ja abre a proxima celula em edicao.

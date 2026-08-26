@@ -1,14 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
+import { useToast } from '../Toast'
 import { fmt, parseBRL, COR } from './types'
 
 interface Props {
   valor: number
   readOnly?: boolean
+  /** Explicacao mostrada ao clicar numa celula bloqueada. Sem isso o clique
+   *  nao dava retorno nenhum e parecia que a tela tinha travado. */
+  motivoBloqueio?: string
   onSave: (novoValor: number) => void
   align?: 'right' | 'left'
 }
 
-export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, align = 'right' }: Props) {
+export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right' }: Props) {
+  const { toast } = useToast()
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
   const skipBlurRef = useRef(false)
@@ -22,7 +27,10 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, al
   }, [editando])
 
   function iniciar() {
-    if (readOnly) return
+    if (readOnly) {
+      if (motivoBloqueio) toast(motivoBloqueio, 'info')
+      return
+    }
     setTemp(valor > 0 ? valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '')
     setEditando(true)
   }
@@ -62,10 +70,11 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, al
 
   return (
     <span
-      onClick={readOnly ? undefined : iniciar}
+      onClick={iniciar}
+      title={readOnly ? motivoBloqueio : undefined}
       style={{
         padding: '3px 7px', borderRadius: 6,
-        cursor: readOnly ? 'default' : 'pointer',
+        cursor: readOnly ? (motivoBloqueio ? 'not-allowed' : 'default') : 'pointer',
         display: 'inline-block', minWidth: 60,
         textAlign: align, fontVariantNumeric: 'tabular-nums',
         transition: 'background .15s', color: corVal,

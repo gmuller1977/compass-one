@@ -45,6 +45,18 @@ export const PH_BTN_WHITE_ACTIVE: CSSProperties = {
   fontWeight: 600,
 }
 
+/**
+ * Aba selecionada. Contraste forte de proposito: 0.15 vs 0.28 de branco sobre
+ * o header azul e quase imperceptivel, e nao dava para saber em que aba se esta.
+ */
+export const PH_BTN_TAB_ATIVA: CSSProperties = {
+  ...PH_BTN_WHITE,
+  background: '#fff',
+  color: '#1a56db',
+  fontWeight: 700,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+}
+
 type Props = {
   icon: string
   breadcrumb?: string
