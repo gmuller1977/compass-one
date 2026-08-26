@@ -34,18 +34,41 @@ export function mergeCats(base: Cat[], saved: Cat[]): Cat[] {
   }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
-export function calcSaldos(data: AnoData, exclCartao = false) {
-  const totalE = Array.from({ length: 12 }, (_, i) =>
+/**
+ * Ancora do fluxo de caixa: ate `ateMes` (inclusive) o movimento vem dos
+ * lancamentos; dali em diante, do plano. Sem ancora, a cascata e 100% plano —
+ * uma projecao que nunca olha para a realidade.
+ */
+export type AncoraReal = {
+  /** Ultimo mes fechado, 0-11. -1 = nenhum mes fechado ainda. */
+  ateMes: number
+  te: number[]
+  ts: number[]
+}
+
+export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraReal) {
+  const planE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
-  const totalS = Array.from({ length: 12 }, (_, i) =>
+  const planS = Array.from({ length: 12 }, (_, i) =>
     (exclCartao ? data.saidas.filter(c => c.t !== 'cartao') : data.saidas)
       .reduce((s, c) => s + c.v[i], 0))
+
+  const fechado = (i: number) => !!ancora && i <= ancora.ateMes
+
+  // Mes fechado mostra o que ACONTECEU; mes aberto, o que esta planejado
+  const totalE = planE.map((v, i) => fechado(i) ? (ancora!.te[i] ?? 0) : v)
+  const totalS = planS.map((v, i) => fechado(i) ? (ancora!.ts[i] ?? 0) : v)
+
   const si: number[] = [], sf: number[] = []
   for (let i = 0; i < 12; i++) {
     const s = i === 0 ? data.saldoInicialJan : sf[i - 1]
     si.push(s); sf.push(s + totalE[i] - totalS[i])
   }
-  return { totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf }
+  return {
+    totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf,
+    /** Ate que mes os numeros acima sao realizados (-1 = nenhum). */
+    realizadoAte: ancora?.ateMes ?? -1,
+  }
 }
 
 export function fmt(v: number, sempre = false) {

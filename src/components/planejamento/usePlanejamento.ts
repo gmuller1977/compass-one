@@ -4,7 +4,7 @@ import type { PlanoAnoData } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
   mergeCats, calcSaldos, nomeFaturaCartao, MESES,
-  type Cat, type AnoData, type Aba,
+  type Cat, type AnoData, type Aba, type AncoraReal,
 } from './types'
 
 // iconeCategoria imported above; suppress unused warning
@@ -159,12 +159,6 @@ export function usePlanejamento(anoAtual: number) {
     [dadosPrevisto.saidas, cartaoNomes]
   )
 
-  // Totais para "Meu plano" (previsto)
-  const previsto = useMemo(() => calcSaldos(dadosPrevistoFinal, hasFaturaCat), [dadosPrevistoFinal, hasFaturaCat])
-
-  // Totais para "Realizado" (planosReal)
-  const realizadoPlan = useMemo(() => calcSaldos(dadosRealizadoFinal, hasFaturaCat), [dadosRealizadoFinal, hasFaturaCat])
-
   // Lançamentos reais por categoria e mês (do extrato/fatura)
   const lancadoPorCatMes = useMemo(() => {
     const result: Record<number, {
@@ -292,6 +286,29 @@ export function usePlanejamento(anoAtual: number) {
     return { te, ts }
   }, [contas, categorias, extratoData, faturaData, anoAtual, planoRef])
 
+  /**
+   * Ultimo mes fechado. Regra: mes anterior ao corrente (opcao "por data").
+   * Ano passado -> tudo fechado. Ano futuro -> nada fechado.
+   */
+  const ancoraMes = anoAtual < anoCorrente ? 11
+    : anoAtual > anoCorrente ? -1
+    : mesAtual - 1
+
+  const ancora = useMemo<AncoraReal>(
+    () => ({ ateMes: ancoraMes, te: totaisReais.te, ts: totaisReais.ts }),
+    [ancoraMes, totaisReais],
+  )
+
+  // Totais para "Meu plano" (previsto) — realizado ate a ancora, plano depois
+  const previsto = useMemo(
+    () => calcSaldos(dadosPrevistoFinal, hasFaturaCat, ancora),
+    [dadosPrevistoFinal, hasFaturaCat, ancora])
+
+  // Totais para "Realizado" (planosReal)
+  const realizadoPlan = useMemo(
+    () => calcSaldos(dadosRealizadoFinal, hasFaturaCat, ancora),
+    [dadosRealizadoFinal, hasFaturaCat, ancora])
+
   // Saldo real (calculado dos lançamentos)
   const { saldoInicialReal, saldoFinalReal } = useMemo(() => {
     const si: number[] = []
@@ -405,6 +422,7 @@ export function usePlanejamento(anoAtual: number) {
     totaisReais,
     saldoInicialReal,
     saldoFinalReal,
+    ancoraMes,
     lancadoPorCatMes,
     mesTemDadosReais,
     // Estado bloqueio

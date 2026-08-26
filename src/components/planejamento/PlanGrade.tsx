@@ -3,6 +3,7 @@ import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
+import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 import { type AnoData, MOTIVO_PLANO_LOCKADO } from './types'
 
@@ -24,6 +25,7 @@ interface Props {
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
+  ancoraMes: number
 }
 
 export default function PlanGrade(props: Props) {
@@ -31,7 +33,7 @@ export default function PlanGrade(props: Props) {
 
   const {
     aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado, dadosAnoAnterior,
-    previsto, realizadoPlan, setAnoAtual,
+    previsto, realizadoPlan, setAnoAtual, ancoraMes,
   } = props
 
   const planTotais = aba === 'realizado' ? realizadoPlan : previsto
@@ -56,6 +58,12 @@ export default function PlanGrade(props: Props) {
         resultado={resultadoDez}
         anoAtual={anoAtual}
         onChangeAno={delta => setAnoAtual(a => a + delta)}
+      />
+
+      <PlanAncoraBadge
+        ancoraMes={ancoraMes}
+        anoAtual={anoAtual}
+        saldoAncora={ancoraMes >= 0 ? planTotais.saldoFinal[ancoraMes] : planTotais.saldoInicial[0]}
       />
 
       <PlanBarraFerramentas

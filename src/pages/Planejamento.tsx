@@ -201,6 +201,7 @@ export default function Planejamento({
             setAnoAtual={setAnoAtual}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
+            ancoraMes={plan.ancoraMes}
           />
         ) : viewMode === 'planilha' ? (
           <PlanPlanilha
@@ -215,6 +216,7 @@ export default function Planejamento({
             onSave={handleSave}
             onBulkSave={handleBulkSave}
             dadosAnoAnterior={plan.planoAnoAnterior}
+            ancoraMes={plan.ancoraMes}
             lancadoPorCatMes={aba === 'realizado' ? plan.lancadoPorCatMes : undefined}
           />
         ) : (
@@ -229,6 +231,7 @@ export default function Planejamento({
             onSave={handleSave}
             onBulkSave={handleBulkSave}
             dadosAnoAnterior={plan.planoAnoAnterior}
+            ancoraMes={plan.ancoraMes}
             lancadoPorCatMes={aba === 'realizado' ? plan.lancadoPorCatMes : undefined}
             totaisReais={plan.totaisReais}
           />

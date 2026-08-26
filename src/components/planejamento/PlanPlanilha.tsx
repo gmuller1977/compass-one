@@ -5,6 +5,7 @@ import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat } from './type
 import { useToast } from '../Toast'
 import PlanCelulaNav from './PlanCelulaNav'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
+import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   dadosAnoAnterior: AnoData | null
+  ancoraMes: number
   lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
 }
 
@@ -109,7 +111,7 @@ const CAT_BTN: React.CSSProperties = {
 
 export default function PlanPlanilha({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
-  planejamentoLockado, categorias, setAnoAtual, onSave, onBulkSave, dadosAnoAnterior,
+  planejamentoLockado, categorias, setAnoAtual, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
 }: Props) {
   const scrollResRef = useRef<HTMLDivElement>(null)
   const scrollCatRef = useRef<HTMLDivElement>(null)
@@ -270,6 +272,12 @@ export default function PlanPlanilha({
       tabIndex={0}
       onKeyDown={handleContainerKey}
     >
+      <PlanAncoraBadge
+        ancoraMes={ancoraMes}
+        anoAtual={anoAtual}
+        saldoAncora={ancoraMes >= 0 ? previsto.saldoFinal[ancoraMes] : previsto.saldoInicial[0]}
+      />
+
       <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}

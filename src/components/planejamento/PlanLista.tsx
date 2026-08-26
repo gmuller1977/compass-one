@@ -3,6 +3,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, MESES, nomeExibicao, MOTIVO_PLANO_LOCKADO, MOTIVO_REALIZADO, type AnoData } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
+import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   dadosAnoAnterior: AnoData | null
+  ancoraMes: number
   lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   totaisReais?: { te: number[]; ts: number[] }
 }
@@ -36,7 +38,7 @@ const COL_VAL = 110
 
 export default function PlanLista({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
-  planejamentoLockado, categorias, onSave, onBulkSave, dadosAnoAnterior, lancadoPorCatMes,
+  planejamentoLockado, categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes, lancadoPorCatMes,
 }: Props) {
   const [aberto, setAberto] = useState<number>(-1)
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
@@ -66,6 +68,12 @@ export default function PlanLista({
 
   return (
     <div style={{ padding: '8px 16px', overflowX: 'auto' }}>
+      <PlanAncoraBadge
+        ancoraMes={ancoraMes}
+        anoAtual={anoAtual}
+        saldoAncora={ancoraMes >= 0 ? previsto.saldoFinal[ancoraMes] : previsto.saldoInicial[0]}
+      />
+
       <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}
