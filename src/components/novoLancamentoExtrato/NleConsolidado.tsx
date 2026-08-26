@@ -489,7 +489,7 @@ export default function NleConsolidado({
                 <option key={c.id} value={c.nome}>{c.nome}</option>
               ))}
             </select>
-            {subDescsDisponiveis.length>1 && (
+            {subDescsDisponiveis.length>0 && (
               <div style={{marginTop:6}}>
                 <div style={{fontSize:9,color:'#0369a1',fontWeight:600,
                   textTransform:'uppercase' as const,letterSpacing:.4,marginBottom:4}}>Qual variante?</div>

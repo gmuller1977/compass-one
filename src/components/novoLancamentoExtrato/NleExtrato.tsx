@@ -472,13 +472,10 @@ export default function NleExtrato({
                         <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
                           <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
                           <select ref={categoriaSelectRef}
-                            value={fSubDesc?`${fCat}||${fSubDesc}`:fCat}
+                            value={fCat}
                             onChange={e=>{
-                              const val=e.target.value
-                              const pi=val.indexOf('||')
-                              const nome=pi>=0?val.slice(0,pi):val
-                              const desc=pi>=0?val.slice(pi+2):''
-                              setFCat(nome);setFSubDesc(desc)
+                              const nome=e.target.value
+                              setFCat(nome);setFSubDesc('')
                               const c=categorias.find((x:Categoria)=>x.nome===nome)
                               if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))
                               if(nome)setTimeout(()=>valorInputRef.current?.focus(),50)
@@ -488,17 +485,15 @@ export default function NleExtrato({
                             {(()=>{
                               const grps=new Map<string,Categoria[]>()
                               for(const c of categoriasSelect){const g=c.grupo??'';if(!grps.has(g))grps.set(g,[]);grps.get(g)!.push(c)}
-                              const cv=(c:Categoria)=>c.descricao?`${c.nome}||${c.descricao}`:c.nome
-                              const cl=(c:Categoria)=>c.descricao?`${c.nome} / ${c.descricao}`:c.nome
                               return Array.from(grps.entries())
                                 .sort(([a],[b])=>a===''?1:b===''?-1:a.localeCompare(b,'pt-BR'))
                                 .map(([grupo,cats])=>grupo
-                                  ?<optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>)}</optgroup>
-                                  :cats.map(c=><option key={c.id} value={cv(c)}>{cl(c)}</option>))
+                                  ?<optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}</optgroup>
+                                  :cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>))
                             })()}
                           </select>
                         </div>
-                        {subDescsDisponiveis.length>1&&!fSubDesc&&(
+                        {subDescsDisponiveis.length>0&&!fSubDesc&&(
                           <div style={{flex:'1 1 80px',display:'flex',flexDirection:'column',gap:3}}>
                             <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Variante</div>
                             <select value={fSubDesc} onChange={e=>setFSubDesc(e.target.value)}

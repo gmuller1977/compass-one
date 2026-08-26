@@ -34,22 +34,6 @@ export type DadosMes = {
 }
 
 // ── Categoria + variante ──────────────────────────────────────────────
-// O select de categoria carrega a variante junto (nome||variante), igual ao
-// do extrato. Antes o select era so pelo nome e a variante dependia de um
-// segundo campo que so aparecia com 2+ variantes — com uma variante so, ela
-// nunca era gravada nem exibida.
-type CatLike = { nome: string; descricao?: string }
-
-export const catOptValue = (c: CatLike) =>
-  c.descricao?.trim() ? `${c.nome}||${c.descricao.trim()}` : c.nome
-export const catOptLabel = (c: CatLike) =>
-  c.descricao?.trim() ? `${c.nome} · ${c.descricao.trim()}` : c.nome
-
-export function parseCatOpt(v: string): { nome: string; variante: string } {
-  const i = v.indexOf('||')
-  return i === -1 ? { nome: v, variante: '' } : { nome: v.slice(0, i), variante: v.slice(i + 2) }
-}
-
 /** Rotulo do lancamento: "Seguro · Civic" quando ha variante. */
 export const lancLabel = (l: { categoria: string; subCategoria?: string }) =>
   l.subCategoria?.trim() ? `${l.categoria} · ${l.subCategoria.trim()}` : l.categoria

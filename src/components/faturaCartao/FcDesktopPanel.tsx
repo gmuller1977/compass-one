@@ -3,7 +3,6 @@ import type { Categoria } from '../../context/AppContext'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
   realcarFoco, removerRealce,
-  catOptValue, catOptLabel, parseCatOpt,
   type TipoLanc, type DadosMes,
 } from './FcShared'
 
@@ -207,10 +206,9 @@ export default function FcDesktopPanel({
         <div>
           <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
           {(() => {
-            // Deduplica por nome + variante: cada variante e uma opcao propria
             const _seen = new Set<string>()
             const catsSemDup = categoriasCartao.filter(c => {
-              const k = `${c.nome.trim().toLowerCase()}||${(c.descricao ?? '').trim().toLowerCase()}`
+              const k = c.nome.trim().toLowerCase()
               if (_seen.has(k)) return false
               _seen.add(k)
               return true
@@ -227,12 +225,8 @@ export default function FcDesktopPanel({
               .sort(([a],[b]) => { if(a===''&&b!=='')return 1; if(a!==''&&b==='')return -1; return a.localeCompare(b,'pt-BR') })
             return (
               <>
-                <select ref={categoriaSelectRef}
-                  value={fVariante ? `${fCat}||${fVariante}` : fCat}
-                  onChange={e => {
-                    const { nome, variante } = parseCatOpt(e.target.value)
-                    setFCat(nome); setFVariante(variante); setFDesc('')
-                  }}
+                <select ref={categoriaSelectRef} value={fCat}
+                  onChange={e => { setFCat(e.target.value); setFDesc(''); setFVariante('') }}
                   onFocus={realcarFoco} onBlur={removerRealce}
                   style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
                     fontSize:12,outline:'none',background:'#fff',
@@ -241,9 +235,9 @@ export default function FcDesktopPanel({
                   {gruposOrdenados.map(([grupo, cats]) =>
                     grupo ? (
                       <optgroup key={grupo} label={grupo}>
-                        {cats.map(c => <option key={c.id} value={catOptValue(c)}>{catOptLabel(c)}</option>)}
+                        {cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
                       </optgroup>
-                    ) : cats.map(c => <option key={c.id} value={catOptValue(c)}>{catOptLabel(c)}</option>)
+                    ) : cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)
                   )}
                 </select>
                 {subDescs.length > 0 && (

@@ -277,19 +277,12 @@ export default function NleDesktopPanel({
                       if (a!=='' && b==='') return -1
                       return a.localeCompare(b,'pt-BR')
                     })
-                  const catVal = (c: import('../../context/AppContext').Categoria) =>
-                    c.descricao ? `${c.nome}||${c.descricao}` : c.nome
-                  const catLabel = (c: import('../../context/AppContext').Categoria) =>
-                    c.descricao ? `${c.nome} / ${c.descricao}` : c.nome
                   return (
                     <select ref={categoriaSelectRef} autoFocus
-                      value={fSubDesc ? `${fCat}||${fSubDesc}` : fCat}
+                      value={fCat}
                       onChange={e => {
-                        const val = e.target.value
-                        const pi = val.indexOf('||')
-                        const nome = pi >= 0 ? val.slice(0, pi) : val
-                        const desc = pi >= 0 ? val.slice(pi + 2) : ''
-                        setFCat(nome); setFSubDesc(desc)
+                        const nome = e.target.value
+                        setFCat(nome); setFSubDesc('')
                         const cat = categorias.find(c => c.nome === nome)
                         if (cat) setFPag(fTipo === 'entrada'
                           ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
@@ -302,14 +295,14 @@ export default function NleDesktopPanel({
                       {gruposOrdenados.map(([grupo, cats]) =>
                         grupo ? (
                           <optgroup key={grupo} label={grupo}>
-                            {cats.map(c => <option key={c.id} value={catVal(c)}>{catLabel(c)}</option>)}
+                            {cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
                           </optgroup>
-                        ) : cats.map(c => <option key={c.id} value={catVal(c)}>{catLabel(c)}</option>)
+                        ) : cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)
                       )}
                     </select>
                   )
                 })()}
-                {subDescsDisponiveis.length > 1 && (
+                {subDescsDisponiveis.length > 0 && (
                   <div style={{marginTop:8}}>
                     <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                       letterSpacing:.5,marginBottom:5}}>🔖 Variante</div>

@@ -3,7 +3,7 @@ import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
-  catOptValue, catOptLabel, parseCatOpt, lancLabel,
+  lancLabel,
   type TipoLanc, type Lancamento, type DadosMes,
 } from './FcShared'
 
@@ -414,9 +414,7 @@ export default function FcMobileView({
               <label style={{fontSize:10,fontWeight:700,color:COR.azul,
                 textTransform:'uppercase' as const,letterSpacing:.5,
                 marginBottom:5,display:'block'}}>🏷 Categoria</label>
-              <select ref={categoriaSelectRef}
-                value={fVariante ? `${fCat}||${fVariante}` : fCat}
-                onChange={e => { const { nome, variante } = parseCatOpt(e.target.value); setFCat(nome); setFVariante(variante) }}
+              <select ref={categoriaSelectRef} value={fCat} onChange={e => { setFCat(e.target.value); setFVariante('') }}
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                   padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,
@@ -425,7 +423,7 @@ export default function FcMobileView({
                   backgroundRepeat:'no-repeat',backgroundPosition:'calc(100% - 14px) center'}}>
                 <option value="">Selecione...</option>
                 {categoriasCartao.map(c => (
-                  <option key={c.id} value={catOptValue(c)}>{catOptLabel(c)}</option>
+                  <option key={c.id} value={c.nome}>{c.nome}</option>
                 ))}
               </select>
             </div>

@@ -326,11 +326,14 @@ export default function NovoLancamentoExtrato() {
   const categoriasVariaveis = categorias
     .filter(c => c.ativa && c.tipo === fTipo && (isDinheiro ? c.formaPagamento !== 'automatico' : true))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+  // Uma opcao por NOME: a variante e escolhida no campo Variante ao lado
   const categoriasSelect = categoriasVariaveis.filter((c, idx, arr) =>
-    arr.findIndex(x => x.nome === c.nome && (x.descricao ?? '') === (c.descricao ?? '')) === idx
+    arr.findIndex(x => x.nome.trim().toLowerCase() === c.nome.trim().toLowerCase()) === idx
   )
   const subDescsDisponiveis = fCat
-    ? categoriasVariaveis.filter(c => c.nome === fCat && c.descricao).map(c => c.descricao!)
+    ? categoriasVariaveis
+        .filter(c => c.nome.trim().toLowerCase() === fCat.trim().toLowerCase() && c.descricao?.trim())
+        .map(c => c.descricao!.trim())
     : []
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
   const SALDO_INICIAL = isDinheiro ? saldoInicialDinheiro : (contaInfo?.saldoInicial ?? 0)
