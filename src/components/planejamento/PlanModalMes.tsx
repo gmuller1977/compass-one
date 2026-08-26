@@ -16,13 +16,23 @@ interface Props {
   somaCartaoMes: number[]
 }
 
-function groupCats(cats: Cat[]): [string, { cat: Cat; ri: number }[]][] {
-  const map = new Map<string, { cat: Cat; ri: number }[]>()
-  cats.forEach((cat, ri) => {
-    const g = cat.grupo ?? '__sem_grupo__'
+type CatIdx = { cat: Cat; ri: number }
+
+/**
+ * ri e o indice na lista ORIGINAL de dadosAtivos — e por ele que onSave grava
+ * (editarValor escreve em d.saidas[ri]). Por isso a indexacao acontece antes
+ * de qualquer filtro: indexar depois de filtrar deslocava tudo e o valor caia
+ * na categoria errada.
+ */
+const comIndice = (cats: Cat[]): CatIdx[] => cats.map((cat, ri) => ({ cat, ri }))
+
+function groupCats(items: CatIdx[]): [string, CatIdx[]][] {
+  const map = new Map<string, CatIdx[]>()
+  for (const item of items) {
+    const g = item.cat.grupo ?? '__sem_grupo__'
     if (!map.has(g)) map.set(g, [])
-    map.get(g)!.push({ cat, ri })
-  })
+    map.get(g)!.push(item)
+  }
   return [...map.entries()].sort(([a], [b]) =>
     a === '__sem_grupo__' ? 1 : b === '__sem_grupo__' ? -1 : a.localeCompare(b, 'pt-BR')
   )
@@ -36,15 +46,16 @@ export default function PlanModalMes({
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
   const readOnly = bloqueado && aba === 'meu-plano'
 
+  const entradasIdx = comIndice(dadosAtivos.entradas)
   const saidasVisiveis = hasFaturaCat
-    ? dadosAtivos.saidas.filter(c => c.t !== 'cartao')
-    : dadosAtivos.saidas
+    ? comIndice(dadosAtivos.saidas).filter(x => x.cat.t !== 'cartao')
+    : comIndice(dadosAtivos.saidas)
 
   const teTotal = dadosAtivos.entradas.reduce((s, c) => s + c.v[mes], 0)
-  const tsTotal = saidasVisiveis.reduce((s, c) => s + c.v[mes], 0)
+  const tsTotal = saidasVisiveis.reduce((s, x) => s + x.cat.v[mes], 0)
   const resultado = teTotal - tsTotal
 
-  const gruposEntradas = groupCats(dadosAtivos.entradas)
+  const gruposEntradas = groupCats(entradasIdx)
   const gruposSaidas = groupCats(saidasVisiveis)
 
   function renderCat(cat: Cat, ri: number, tipo: 'e' | 's') {
