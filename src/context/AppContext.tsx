@@ -528,7 +528,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function savePlanosData(dict: Record<number, PlanoAnoData>, tipo: 'previsto' | 'real') {
-    if (!canSave()) { console.warn(`[plan-save] ${tipo}: canSave() falso — NAO gravou no banco`); return }
+    if (!canSave()) return
     const uid = userIdRef.current!
     const entries = Object.entries(dict)
     const countKey = tipo === 'previsto' ? 'planos' : 'planosReal'
@@ -552,7 +552,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .from('planejamento_data')
       .upsert(rows, { onConflict: 'user_id,ano,tipo_plano' })
     if (error) { console.error('save planejamento_data:', error); return }
-    console.log(`[plan-save] ${tipo}: gravado no banco`, { anos: entries.map(([a]) => a) })
     const anos = entries.map(([a]) => a).join(',')
     await supabase.from('planejamento_data')
       .delete().eq('user_id', uid).eq('tipo_plano', tipo)
