@@ -363,12 +363,16 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             }
         let result = { ...prev, [key]: dmUpdated }
         const novaDesc = fDesc.trim() || fCat
-        console.log('[parcelas-edit] entrada:', { id: entrada.id, parcelas: entrada.parcelas, parcelaAtual: entrada.parcelaAtual, valor: entrada.valor, categoria: entrada.categoria, descricao: entrada.descricao })
+        // So a parcela 1 (mae) propaga para as demais. Editar uma filha altera
+        // apenas ela — parcelas podem ter valores diferentes entre si.
+        const currentParcela = entrada.parcelaAtual ?? 1
+        const ehMae = currentParcela === 1
+        const mudouAlgo = fCat !== entrada.categoria || novaDesc !== entrada.descricao || valorParcela !== entrada.valor
+        console.log('[parcelas-edit] entrada:', { id: entrada.id, parcelas: entrada.parcelas, parcelaAtual: entrada.parcelaAtual, ehMae, valor: entrada.valor, categoria: entrada.categoria, descricao: entrada.descricao })
         console.log('[parcelas-edit] novo:', { fCat, novaDesc, valorParcela })
-        if (entrada.parcelas && entrada.parcelas > 1 && (fCat !== entrada.categoria || novaDesc !== entrada.descricao || valorParcela !== entrada.valor)) {
+        if (ehMae && entrada.parcelas && entrada.parcelas > 1 && mudouAlgo) {
           const baseId = entrada.id.replace(/-\d+$/, '')
           const totalParcelas = entrada.parcelas
-          const currentParcela = entrada.parcelaAtual ?? 1
           let baseMes = purchaseMes - (currentParcela - 1)
           let baseAno = purchaseAno
           while (baseMes < 0) { baseMes += 12; baseAno-- }
@@ -398,7 +402,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             else console.log(`[parcelas-edit] p=${p} NÃO ENCONTROU targetId no mês`)
           }
         } else {
-          console.log('[parcelas-edit] NÃO PROPAGOU - condição falsa:', { parcelas: entrada.parcelas, catMudou: fCat !== entrada.categoria, descMudou: novaDesc !== entrada.descricao, valMudou: valorParcela !== entrada.valor })
+          console.log('[parcelas-edit] NÃO PROPAGOU:', { ehMae, parcelaAtual: currentParcela, parcelas: entrada.parcelas, mudouAlgo })
         }
         return result
       })
