@@ -4,7 +4,7 @@ import type { PlanoAnoData } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
   mergeCats, calcSaldos, nomeFaturaCartao, MESES,
-  type Cat, type AnoData, type Aba, type AncoraReal,
+  type Cat, type AnoData, type AncoraReal,
 } from './types'
 
 // iconeCategoria imported above; suppress unused warning
@@ -14,8 +14,6 @@ export function usePlanejamento(anoAtual: number) {
   const {
     contas, categorias, extratoData, faturaData,
     planos, setPlanos,
-    planosReal, planejamentoLockado,
-    finalizarPlanejamento, updatePlanoReal,
   } = useApp()
 
   const anoCorrente = new Date().getFullYear()
@@ -42,9 +40,8 @@ export function usePlanejamento(anoAtual: number) {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
   }), [SALDO_INICIAL_FIXO, categorias])
 
-  const realExiste = !!planosReal[anoAtual]
-
-  // Plano original com todas as categorias ativas
+  // Plano unico do ano. planosReal deixou de ser escrito na migracao para
+  // plano unico — as linhas antigas ficam no banco so como historico.
   const dadosPrevisto: AnoData = useMemo(() => {
     const salvo = planos[anoAtual] as AnoData | undefined
     if (!salvo) return dadosBase
@@ -56,39 +53,9 @@ export function usePlanejamento(anoAtual: number) {
     }
   }, [anoAtual, dadosBase, planos, SALDO_INICIAL_FIXO])
 
-  // Plano realizado (planosReal mergeado com dadosBase)
-  const dadosRealizado: AnoData = useMemo(() => {
-    const realSalvo = planosReal[anoAtual] as AnoData | undefined
-    if (!realSalvo) return { saldoInicialJan: SALDO_INICIAL_FIXO, entradas: [], saidas: [] }
-    return {
-      ...realSalvo,
-      saldoInicialJan: SALDO_INICIAL_FIXO,
-      entradas: mergeCats(dadosBase.entradas, realSalvo.entradas),
-      saidas: mergeCats(dadosBase.saidas, realSalvo.saidas),
-    }
-  }, [anoAtual, dadosBase, planosReal, SALDO_INICIAL_FIXO])
-
-  // Plano de referência para comparações (previsto vs realizado)
   const planoRef = useMemo(() =>
-    ((planejamentoLockado && planosReal[anoAtual] ? planosReal[anoAtual] : planos[anoAtual]) as PlanoAnoData | undefined),
-  [planejamentoLockado, planosReal, planos, anoAtual])
-
-  // Categorias ativas + históricas (para aba Realizado)
-  const entradasComHistorico = useMemo(() => {
-    const realSaved = (planosReal[anoAtual] as PlanoAnoData | undefined)?.entradas ?? []
-    const inativas = realSaved.filter(rs =>
-      !dadosBase.entradas.some(be => be.nome === rs.nome || (be.id && rs.id && be.id === rs.id))
-    )
-    return [...dadosBase.entradas, ...inativas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-  }, [dadosBase.entradas, planosReal, anoAtual])
-
-  const saidasComHistorico = useMemo(() => {
-    const realSaved = (planosReal[anoAtual] as PlanoAnoData | undefined)?.saidas ?? []
-    const inativas = realSaved.filter(rs =>
-      !dadosBase.saidas.some(bs => bs.nome === rs.nome || (bs.id && rs.id && bs.id === rs.id))
-    )
-    return [...dadosBase.saidas, ...inativas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-  }, [dadosBase.saidas, planosReal, anoAtual])
+    (planos[anoAtual] as PlanoAnoData | undefined),
+  [planos, anoAtual])
 
   // Cálculo de fatura de cartão por mês: informado → lançamentos reais mês anterior → R$0
   const somaCartaoMes = useMemo(() => {
@@ -142,15 +109,6 @@ export function usePlanejamento(anoAtual: number) {
     )
     return { ...dadosPrevisto, saidas }
   }, [dadosPrevisto, somaCartaoMes, cartaoNomes])
-
-  // dadosRealizado com fatura de cartão substituída pelo valor calculado
-  const dadosRealizadoFinal: AnoData = useMemo(() => {
-    const isFatura = (cat: Cat) => nomeFaturaCartao(cat.nome, cartaoNomes) || cat.t === 'fatura_cartao'
-    const saidas = dadosRealizado.saidas.map(cat =>
-      isFatura(cat) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
-    )
-    return { ...dadosRealizado, saidas }
-  }, [dadosRealizado, somaCartaoMes, cartaoNomes])
 
   // Excluir t='cartao' dos totais só se existir fatura_cartao (evita dupla contagem)
   // Sem fatura_cartao, as categorias cartao são o único planejamento do cartão
@@ -304,11 +262,6 @@ export function usePlanejamento(anoAtual: number) {
     () => calcSaldos(dadosPrevistoFinal, hasFaturaCat, ancora),
     [dadosPrevistoFinal, hasFaturaCat, ancora])
 
-  // Totais para "Realizado" (planosReal)
-  const realizadoPlan = useMemo(
-    () => calcSaldos(dadosRealizadoFinal, hasFaturaCat, ancora),
-    [dadosRealizadoFinal, hasFaturaCat, ancora])
-
   // Saldo real (calculado dos lançamentos)
   const { saldoInicialReal, saldoFinalReal } = useMemo(() => {
     const si: number[] = []
@@ -336,34 +289,24 @@ export function usePlanejamento(anoAtual: number) {
     }), [contas, extratoData, anoAtual])
 
   // Ações
-  function updateAno(fn: (d: AnoData) => AnoData, aba: Aba) {
-    if (planejamentoLockado && aba === 'meu-plano') return
-    if (aba === 'meu-plano') {
-      setPlanos(prev => ({ ...prev, [anoAtual]: fn(dadosPrevisto) as PlanoAnoData }))
-    } else {
-      // A tela mostra e indexa a lista MESCLADA (dadosRealizado), entao a
-      // edicao tem que ser aplicada nela, nao no bruto salvo. No bruto ainda
-      // ha linhas com id de categoria excluida: o valor era gravado nessa
-      // linha orfa e o mergeCats, que casa por id do cadastro atual, nunca
-      // mais o encontrava — o campo voltava a zero.
-      updatePlanoReal(anoAtual, prev => {
-        const temMescla = dadosRealizado.entradas.length > 0 || dadosRealizado.saidas.length > 0
-        return fn(temMescla ? dadosRealizado : (prev as AnoData)) as PlanoAnoData
-      })
-    }
+  // A edicao e aplicada na lista MESCLADA (dadosPrevisto), que e a mesma que a
+  // tela indexa. Aplicar no bruto salvo desalinhava os indices sempre que o
+  // cadastro mudava depois do plano ter sido gravado.
+  function updateAno(fn: (d: AnoData) => AnoData) {
+    setPlanos(prev => ({ ...prev, [anoAtual]: fn(dadosPrevisto) as PlanoAnoData }))
   }
 
-  function editarValor(tipo: 'e' | 's', ri: number, mi: number, novoValor: number, aba: Aba) {
+  function editarValor(tipo: 'e' | 's', ri: number, mi: number, novoValor: number) {
     updateAno(d => {
       const lista = tipo === 'e' ? [...d.entradas] : [...d.saidas]
       const alvo = lista[ri]
       if (!alvo) return d
       lista[ri] = { ...alvo, v: alvo.v.map((v, i) => i === mi ? novoValor : v) }
       return tipo === 'e' ? { ...d, entradas: lista } : { ...d, saidas: lista }
-    }, aba)
+    })
   }
 
-  function editarMultiplosValores(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[], aba: Aba) {
+  function editarMultiplosValores(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
     updateAno(d => {
       const entradas = d.entradas.map(c => ({ ...c, v: [...c.v] }))
       const saidas = d.saidas.map(c => ({ ...c, v: [...c.v] }))
@@ -372,20 +315,12 @@ export function usePlanejamento(anoAtual: number) {
         if (lista[op.ri]) lista[op.ri].v[op.mi] = op.valor
       }
       return { ...d, entradas, saidas }
-    }, aba)
+    })
   }
 
   const planoAnoAnterior: AnoData | null = useMemo(() =>
     (planos[anoAtual - 1] as AnoData | undefined) ?? null,
   [planos, anoAtual])
-
-  function ativarPlano() {
-    finalizarPlanejamento(anoAtual, dadosPrevisto as PlanoAnoData)
-  }
-
-  function atualizarPlano() {
-    finalizarPlanejamento(anoAtual, dadosPrevisto as PlanoAnoData)
-  }
 
   return {
     // Dados
@@ -393,33 +328,23 @@ export function usePlanejamento(anoAtual: number) {
     mesAtual,
     dadosBase,
     dadosPrevisto,
-    dadosRealizado,
     dadosPrevistoFinal,
-    dadosRealizadoFinal,
     planoRef,
-    entradasComHistorico,
-    saidasComHistorico,
-    realExiste,
     hasFaturaCat,
     somaCartaoMes,
     somaCartaoBadges,
     cartaoNomes,
     // Totais
     previsto,
-    realizadoPlan,
     totaisReais,
     saldoInicialReal,
     saldoFinalReal,
     ancoraMes,
     lancadoPorCatMes,
     mesTemDadosReais,
-    // Estado bloqueio
-    planejamentoLockado,
     // Ações
     editarValor,
     editarMultiplosValores,
-    ativarPlano,
-    atualizarPlano,
     planoAnoAnterior,
     // Dados contexto (para passar para componentes)
     contas,

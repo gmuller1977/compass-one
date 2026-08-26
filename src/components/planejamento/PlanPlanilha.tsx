@@ -9,19 +9,16 @@ import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 
 interface Props {
-  aba: 'meu-plano' | 'realizado'
   anoAtual: number
   mesAtual: number
   dadosAtivos: AnoData
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  planejamentoLockado: boolean
   categorias: any[]
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   dadosAnoAnterior: AnoData | null
   ancoraMes: number
-  lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
 }
 
 type CellPos = { tipo: 'e' | 's'; ri: number; mi: number }
@@ -110,8 +107,8 @@ const CAT_BTN: React.CSSProperties = {
 }
 
 export default function PlanPlanilha({
-  aba, anoAtual, mesAtual, dadosAtivos, previsto,
-  planejamentoLockado, categorias, setAnoAtual, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
+  anoAtual, mesAtual, dadosAtivos, previsto,
+  categorias, setAnoAtual, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
 }: Props) {
   const scrollResRef = useRef<HTMLDivElement>(null)
   const scrollCatRef = useRef<HTMLDivElement>(null)
@@ -123,7 +120,7 @@ export default function PlanPlanilha({
   const { toast } = useToast()
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
-  const bloqueado = planejamentoLockado && aba === 'meu-plano'
+  const bloqueado = false
   const anoCorrente = new Date().getFullYear()
 
   const linhas = useMemo<Linha[]>(() => {

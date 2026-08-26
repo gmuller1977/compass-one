@@ -67,7 +67,7 @@ export default function NorthAgent() {
     return () => document.removeEventListener('openNorth', handler)
   }, [])
 
-  const { contas, extratoData, faturaData, planos, planosReal, perfil, metaSim, user } = useApp()
+  const { contas, extratoData, faturaData, planos, perfil, metaSim, user } = useApp()
 
   function buildContext() {
     const hoje = new Date()
@@ -102,20 +102,17 @@ export default function NorthAgent() {
     // Top 5 despesas individuais
     const top5 = [...despesas].sort((a, b) => b.valor - a.valor).slice(0, 5)
 
-    // Planejamento vs realizado
+    // Planejado do mes. O comparativo com o realizado saiu daqui: ele usava
+    // planosReal como se fosse realizado, mas planosReal era um segundo
+    // PLANO — nunca lancamento. O realizado de verdade esta no Radar.
     const planoAno = planos[ano]
-    const realAno = planosReal[ano]
     const linhasPlano: string[] = []
     if (planoAno) {
       const previstas = [...(planoAno.entradas ?? []), ...(planoAno.saidas ?? [])]
-      const reais = [...(realAno?.entradas ?? []), ...(realAno?.saidas ?? [])]
       previstas.forEach(p => {
         const prev = p.v[mes] ?? 0
         if (prev === 0) return
-        const realItem = reais.find(r => (r.id && r.id === p.id) || r.nome === p.nome)
-        const real = realItem?.v[mes] ?? 0
-        const icon = real <= prev ? '✅' : '⚠️'
-        linhasPlano.push(`- ${p.nome}: Previsto ${fmtBRL(prev)} | Realizado ${fmtBRL(real)} ${icon}`)
+        linhasPlano.push(`- ${p.nome}: Planejado ${fmtBRL(prev)}`)
       })
     }
 

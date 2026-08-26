@@ -38,7 +38,7 @@ export default function PainelMensal() {
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { contas, categorias, planos, planosReal, planejamentoLockado, extratoData, faturaData, user } = useApp()
+  const { contas, categorias, planos, extratoData, faturaData, user } = useApp()
 
   useEffect(() => {
     if (!user) return
@@ -56,7 +56,7 @@ export default function PainelMensal() {
 
   const mesStr    = String(mes+1).padStart(2,'0')
   const totalDias = diasNoMes(mes, ano)
-  const dadosAno  = (planejamentoLockado && planosReal[ano]) ? planosReal[ano] : planos[ano]
+  const dadosAno  = planos[ano]
   const isPastMonth = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
 
   // ── Realizados ────────────────────────────────────────────────────────

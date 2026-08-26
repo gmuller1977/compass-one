@@ -139,7 +139,7 @@ export default function ResumoMensal() {
 
   const {
     contas, categorias, extratoData, faturaData,
-    planos, planosReal, planejamentoLockado,
+    planos,
     saldoInicialDinheiro, user,
   } = useApp()
 
@@ -193,13 +193,13 @@ export default function ResumoMensal() {
 
   // ── Planning data ────────────────────────────────────────────────────
   const dadosAno = useMemo(
-    () => (planejamentoLockado && planosReal[ano]) ? planosReal[ano] : planos[ano],
-    [planejamentoLockado, planosReal, planos, ano]
+    () => planos[ano],
+    [planos, ano]
   )
   const dadosAnoAnterior = useMemo(() => {
     const anoAnterior = mes === 0 ? ano - 1 : ano
-    return (planejamentoLockado && planosReal[anoAnterior]) ? planosReal[anoAnterior] : planos[anoAnterior]
-  }, [planejamentoLockado, planosReal, planos, mes, ano])
+    return planos[anoAnterior]
+  }, [planos, mes, ano])
 
   // ── fixasValorPorId ──────────────────────────────────────────────────
   const fixasValorPorId = useMemo(() => {

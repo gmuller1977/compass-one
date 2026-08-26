@@ -26,7 +26,7 @@ export default function RevisaoMensal() {
 
   function handleAjustar(tipo: 'e' | 's', ri: number, mesInicio: number, valor: number) {
     for (let mi = mesInicio; mi <= 11; mi++) {
-      plan.editarValor(tipo, ri, mi, valor, 'meu-plano')
+      plan.editarValor(tipo, ri, mi, valor)
     }
   }
 

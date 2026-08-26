@@ -9,8 +9,6 @@ interface Props {
   setPercentualAlerta: (v: number) => void
   metodoSugestao: string
   setMetodoSugestao: (v: string) => void
-  planejamentoLockado: boolean
-  setPlanejamentoLockado: (v: boolean) => void
   setOnboardingCompleto: (v: boolean) => void
   navigate: (path: string, options?: { state?: unknown }) => void
   toast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -20,7 +18,6 @@ export default function CfgPreferencias({
   desvioMinPerc, setDesvioMinPerc,
   percentualAlerta, setPercentualAlerta,
   metodoSugestao, setMetodoSugestao,
-  planejamentoLockado, setPlanejamentoLockado,
   setOnboardingCompleto,
   navigate, toast,
 }: Props) {
@@ -195,29 +192,6 @@ export default function CfgPreferencias({
             </div>
           </div>
 
-          <div style={{ height:1, background:COR.borda, margin:'0 0 16px' }} />
-
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'12px 14px', borderRadius:10,
-            background: planejamentoLockado ? '#fff7ed' : '#f0fdf4',
-            border:`1px solid ${planejamentoLockado ? '#fed7aa' : '#bbf7d0'}` }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>
-                {planejamentoLockado ? '🔒 Planejamento bloqueado' : '🔓 Planejamento desbloqueado'}
-              </div>
-              <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
-                {planejamentoLockado
-                  ? 'Desbloqueie para editar o previsto, o real ou refinalizar.'
-                  : 'Edição livre. Finalize o planejamento para bloqueá-lo novamente.'}
-              </div>
-            </div>
-            <button onClick={() => setPlanejamentoLockado(!planejamentoLockado)} style={{
-              padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
-              fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
-              background: planejamentoLockado ? '#ea580c' : '#16a34a', color:'#fff' }}>
-              {planejamentoLockado ? 'Desbloquear' : 'Bloquear'}
-            </button>
-          </div>
 
           <div style={{ height:1, background:COR.borda, margin:'16px 0' }} />
 

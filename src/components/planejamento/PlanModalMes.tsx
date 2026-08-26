@@ -1,13 +1,10 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { COR, MESES_FULL, fmt, nomeExibicao, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat } from './types'
+import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 
 interface Props {
   mes: number
   dadosPrevisto: AnoData
-  dadosRealizado: AnoData | null
-  aba: 'meu-plano' | 'realizado'
-  planejamentoLockado: boolean
   hasFaturaCat: boolean
   planoRef?: AnoData
   categorias: any[]
@@ -39,12 +36,10 @@ function groupCats(items: CatIdx[]): [string, CatIdx[]][] {
 }
 
 export default function PlanModalMes({
-  mes, dadosPrevisto, dadosRealizado, aba, planejamentoLockado, hasFaturaCat,
+  mes, dadosPrevisto, hasFaturaCat,
   categorias, onSave, onClose,
 }: Props) {
-  const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
-  const bloqueado = planejamentoLockado && aba === 'meu-plano'
-  const readOnly = bloqueado && aba === 'meu-plano'
+  const dadosAtivos = dadosPrevisto
 
   const entradasIdx = comIndice(dadosAtivos.entradas)
   const saidasVisiveis = hasFaturaCat
@@ -69,8 +64,6 @@ export default function PlanModalMes({
         <span style={{ flex: 1, fontSize: 13, color: COR.texto }}>{nomeExibicao(cat)}</span>
         <PlanCelulaEditavel
           valor={cat.v[mes]}
-          readOnly={readOnly}
-          motivoBloqueio={readOnly ? MOTIVO_PLANO_LOCKADO : undefined}
           onSave={v => onSave(tipo, ri, v)}
         />
       </div>
@@ -134,10 +127,7 @@ export default function PlanModalMes({
         }}>
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: COR.texto }}>{MESES_FULL[mes]}</div>
-            <div style={{ fontSize: 11, color: COR.textoSuave }}>
-              {aba === 'meu-plano' ? 'Meu plano' : 'Atualizado'}
-              {bloqueado ? ' · 🔒 bloqueado' : ''}
-            </div>
+            <div style={{ fontSize: 11, color: COR.textoSuave }}>Planejamento</div>
           </div>
           <button
             onClick={onClose}

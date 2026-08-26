@@ -39,8 +39,7 @@ export default function Configuracoes() {
   })
   const { user, contas, categorias, setContas, setCategorias,
           extratoData, faturaData,
-          planos, planosReal, setPlanos,
-          planejamentoLockado, setPlanejamentoLockado,
+          planos, setPlanos,
           desvioMinPerc, setDesvioMinPerc,
           percentualAlerta, setPercentualAlerta,
           metodoSugestao, setMetodoSugestao,
@@ -361,7 +360,9 @@ export default function Configuracoes() {
        (c.descricao ?? '').trim().toLowerCase() === descNorm)
 
     const porAno = new Map<number, Set<number>>()
-    for (const fonte of [planos, planosReal]) {
+    // So o plano vigente. planosReal virou historico inerte na migracao para
+    // plano unico — bloquear exclusao por causa dele travaria por dado morto.
+    for (const fonte of [planos]) {
       for (const [anoStr, pd] of Object.entries(fonte)) {
         const ano = Number(anoStr)
         if (ano < anoAtual) continue
@@ -676,8 +677,6 @@ export default function Configuracoes() {
               setPercentualAlerta={setPercentualAlerta}
               metodoSugestao={metodoSugestao}
               setMetodoSugestao={setMetodoSugestao}
-              planejamentoLockado={planejamentoLockado}
-              setPlanejamentoLockado={setPlanejamentoLockado}
               setOnboardingCompleto={setOnboardingCompleto}
               navigate={navigate}
               toast={toast}

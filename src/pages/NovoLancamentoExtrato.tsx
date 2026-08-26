@@ -69,29 +69,17 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, planosReal, planejamentoLockado, updatePlanoReal, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
-    const planoReal = planosReal[ano] as typeof planos[number] | undefined
-    const previsto  = planos[ano]    as typeof planos[number] | undefined
-    const buscar = (lista: { id?: string; nome: string; v: number[] }[] | undefined) => {
-      if (!lista) return undefined
-      return catId
-        ? (lista.find(c => c.id === catId) ?? lista.find(c => c.nome === catNome))
-        : lista.find(c => c.nome === catNome)
-    }
-    if (planejamentoLockado) {
-      const lista = tipoLanc === 'entrada' ? planoReal?.entradas : planoReal?.saidas
-      return buscar(lista)?.v[mes] ?? 0
-    }
-    if (planoReal) {
-      const lista = tipoLanc === 'entrada' ? planoReal.entradas : planoReal.saidas
-      const found = buscar(lista)
-      if (found) return found.v[mes] ?? 0
-    }
-    const lista = tipoLanc === 'entrada' ? previsto?.entradas : previsto?.saidas
-    return buscar(lista)?.v[mes] ?? 0
+    const plano = planos[ano] as typeof planos[number] | undefined
+    const lista = tipoLanc === 'entrada' ? plano?.entradas : plano?.saidas
+    if (!lista) return 0
+    const found = catId
+      ? (lista.find(c => c.id === catId) ?? lista.find(c => c.nome === catNome))
+      : lista.find(c => c.nome === catNome)
+    return found?.v[mes] ?? 0
   }
 
   function valorPrevistoPorNome(catNome: string, tipoLanc: TipoLanc): number {
@@ -241,9 +229,8 @@ export default function NovoLancamentoExtrato() {
   }, [dados, ano, mes, saldoInicialDinheiro])
 
   // Mapa de catId → {valor, tipo, diaVencimento, nome} para fixas consolidadas
-  // Usa mesma lógica do PainelMensal: planosReal só quando planejamentoLockado
   const fixasValorPorId = useMemo(() => {
-    const dadosAno = (planejamentoLockado && planosReal[ano]) ? planosReal[ano] : planos[ano]
+    const dadosAno = planos[ano]
     const map: Record<string, { valor: number; tipo: string; diaVencimento: number; nome: string }> = {}
     for (const cat of categorias) {
       if (!cat.fixa || !cat.ativa) continue
@@ -259,7 +246,7 @@ export default function NovoLancamentoExtrato() {
       }
     }
     return map
-  }, [categorias, planosReal, planos, mes, ano, planejamentoLockado])
+  }, [categorias, planos, mes, ano])
 
   const { totalEntradasMes, totalSaidasMes, recentLancs } = useMemo(() => {
     const mesStr = String(mes + 1).padStart(2, '0')
@@ -515,7 +502,7 @@ export default function NovoLancamentoExtrato() {
       for (const itens of Object.values(dadosK.lancamentos ?? {}))
         for (const item of itens)
           acc += item.tipo === 'entrada' ? item.valor : -item.valor
-      const planoAno = planosReal[ky] ?? planos[ky]
+      const planoAno = planos[ky]
       for (const [catId, confirmed] of Object.entries(dadosK.fixasConsolidadas ?? {})) {
         if (!confirmed) continue
         const fixasOvr = dadosK.fixasValorOverride ?? {}
@@ -556,7 +543,7 @@ export default function NovoLancamentoExtrato() {
       }
     }
     return acc
-  }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, planosReal, faturaData, saldoInicialDinheiro])
+  }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, faturaData, saldoInicialDinheiro])
 
   const saldosDia = useMemo(() => {
     const dadosMesAtual = dados[key]
@@ -804,18 +791,17 @@ export default function NovoLancamentoExtrato() {
   function onAlertaAjustarMes(novoVal: number) {
     if (!alertaDesvio) return
     const catNome = alertaDesvio.catNome
-    const baseReal = planosReal[ano] ?? planos[ano]
-    if (baseReal) {
-      const planoBase = (planosReal[ano]?.saidas?.length || planosReal[ano]?.entradas?.length)
-        ? planosReal[ano]
-        : baseReal
-      const novoPlano = {
-        ...planoBase,
-        saidas: (planoBase.saidas ?? []).map(c =>
-          c.nome === catNome ? { ...c, v: c.v.map((v, mi) => mi === mes ? novoVal : v) } : c
-        ),
-      }
-      updatePlanoReal(ano, () => novoPlano)
+    const planoBase = planos[ano]
+    if (planoBase) {
+      setPlanos(prev => ({
+        ...prev,
+        [ano]: {
+          ...planoBase,
+          saidas: (planoBase.saidas ?? []).map(c =>
+            c.nome === catNome ? { ...c, v: c.v.map((v, mi) => mi === mes ? novoVal : v) } : c
+          ),
+        },
+      }))
     }
     setAlertaDesvio(null)
   }

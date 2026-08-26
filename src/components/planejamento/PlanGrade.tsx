@@ -8,20 +8,16 @@ import { type BulkOp } from './PlanFerramentas'
 import { type AnoData, MOTIVO_PLANO_LOCKADO } from './types'
 
 interface Props {
-  aba: 'meu-plano' | 'realizado'
   anoAtual: number
   mesAtual: number
   dadosPrevisto: AnoData
-  dadosRealizado: AnoData | null
   dadosAnoAnterior: AnoData | null
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  realizadoPlan: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   planoRef?: AnoData
   categorias: any[]
   hasFaturaCat: boolean
   somaCartaoMes: number[]
-  planejamentoLockado: boolean
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
@@ -32,11 +28,11 @@ export default function PlanGrade(props: Props) {
   const [modalMes, setModalMes] = useState<number | null>(null)
 
   const {
-    aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado, dadosAnoAnterior,
-    previsto, realizadoPlan, setAnoAtual, ancoraMes,
+    anoAtual, mesAtual, dadosPrevisto, dadosAnoAnterior,
+    previsto, setAnoAtual, ancoraMes,
   } = props
 
-  const planTotais = aba === 'realizado' ? realizadoPlan : previsto
+  const planTotais = previsto
 
   const receitasAnuais = planTotais.totalEntradas.reduce((a, b) => a + b, 0)
   const despesasAnuais = planTotais.totalSaidas.reduce((a, b) => a + b, 0)
@@ -45,9 +41,8 @@ export default function PlanGrade(props: Props) {
 
   const anoCorrente = new Date().getFullYear()
 
-  // As ferramentas leem e gravam na aba corrente
-  const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
-  const bloqueado = props.planejamentoLockado && aba === 'meu-plano'
+  const dadosAtivos = dadosPrevisto
+  const bloqueado = false
 
   return (
     <div style={{ padding: '16px 20px' }}>
@@ -110,10 +105,7 @@ export default function PlanGrade(props: Props) {
         <PlanModalMes
           mes={modalMes}
           dadosPrevisto={dadosPrevisto}
-          dadosRealizado={dadosRealizado}
-          aba={aba}
           hasFaturaCat={props.hasFaturaCat}
-          planejamentoLockado={props.planejamentoLockado}
           planoRef={props.planoRef as any}
           categorias={props.categorias}
           onSave={(tipo, ri, valor) => props.onSave(tipo, ri, modalMes, valor)}

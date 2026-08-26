@@ -228,7 +228,7 @@ function TabelaImpacto({ parcela, planos, cor }: {
 
 export default function Simulacao() {
   const isMobile                          = useIsMobile()
-  const { user, planos, finalizarPlanejamento } = useApp()
+  const { user, planos, setPlanos } = useApp()
   const hoje                              = new Date()
 
   const [aba, setAba] = useState<'divida' | 'meta'>('divida')
@@ -371,7 +371,9 @@ export default function Simulacao() {
       ? planoBase.saidas.map(c => c.nome === nome ? { ...c, v } : c)
       : [...planoBase.saidas, { nome, t: 'Outros', v }]
 
-    finalizarPlanejamento(anoAtual, { ...planoBase, saidas: novasSaidas })
+    // Grava no plano unico. Antes chamava finalizarPlanejamento, que
+    // sobrescrevia o plano "real" e travava o planejamento a partir daqui.
+    setPlanos(prev => ({ ...prev, [anoAtual]: { ...planoBase, saidas: novasSaidas } }))
 
     // Mark simulation as integrated in DB if it was saved
     const simSalvada = simList.find(s => s.tipo === aba && !s.integrado_planejamento)

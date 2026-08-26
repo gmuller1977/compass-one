@@ -1,18 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, MOTIVO_PLANO_LOCKADO, MOTIVO_REALIZADO, type AnoData } from './types'
+import { fmt, MESES, nomeExibicao, type AnoData } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 
 interface Props {
-  aba: 'meu-plano' | 'realizado'
   anoAtual: number
   mesAtual: number
   dadosAtivos: AnoData
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  planejamentoLockado: boolean
   categorias: any[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
@@ -37,12 +35,10 @@ const COL_MES = 100
 const COL_VAL = 110
 
 export default function PlanLista({
-  aba, anoAtual, mesAtual, dadosAtivos, previsto,
-  planejamentoLockado, categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes, lancadoPorCatMes,
+  anoAtual, mesAtual, dadosAtivos, previsto,
+  categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
 }: Props) {
   const [aberto, setAberto] = useState<number>(-1)
-  const bloqueado = planejamentoLockado && aba === 'meu-plano'
-  const motivoBloqueio = bloqueado ? MOTIVO_PLANO_LOCKADO : aba === 'realizado' ? MOTIVO_REALIZADO : undefined
   const anoCorrente = new Date().getFullYear()
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -58,13 +54,7 @@ export default function PlanLista({
     setAberto(prev => prev === mi ? -1 : mi)
   }
 
-  function catValor(tipo: 'e' | 's', cat: any, mi: number): number {
-    if (aba === 'realizado') {
-      const mapa = lancadoPorCatMes?.[mi]
-      return mapa ? (tipo === 'e' ? (mapa.entrada[cat.nome] ?? 0) : (mapa.saida[cat.nome] ?? 0)) : 0
-    }
-    return cat.v[mi]
-  }
+  const catValor = (cat: any, mi: number): number => cat.v[mi]
 
   return (
     <div style={{ padding: '8px 16px', overflowX: 'auto' }}>
@@ -81,8 +71,6 @@ export default function PlanLista({
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={categorias}
         onBulkSave={onBulkSave}
-        bloqueado={!!motivoBloqueio}
-        motivoBloqueio={motivoBloqueio}
       />
 
       {/* Header fixo */}
@@ -168,7 +156,7 @@ export default function PlanLista({
                   <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: '#16a34a', padding: '10px 16px 4px' }}>↑ RECEITAS</div>
                   {dadosAtivos.entradas.map((cat, ri) => {
                     const { icone } = iconeCategoria(categorias, cat.nome)
-                    const v = catValor('e', cat, mi)
+                    const v = catValor(cat, mi)
                     return (
                       <div key={cat.id ?? cat.nome}
                         style={{ display: 'flex', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f8fafc' }}
@@ -177,7 +165,7 @@ export default function PlanLista({
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
                         <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{nomeExibicao(cat)}</span>
-                        <PlanCelulaEditavel valor={v} readOnly={bloqueado || aba === 'realizado'} motivoBloqueio={motivoBloqueio} onSave={nv => onSave('e', ri, mi, nv)} />
+                        <PlanCelulaEditavel valor={v} onSave={nv => onSave('e', ri, mi, nv)} />
                       </div>
                     )
                   })}
@@ -190,7 +178,7 @@ export default function PlanLista({
                   <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: '#dc2626', padding: '10px 16px 4px' }}>↓ DESPESAS</div>
                   {dadosAtivos.saidas.map((cat, ri) => {
                     const { icone } = iconeCategoria(categorias, cat.nome)
-                    const v = catValor('s', cat, mi)
+                    const v = catValor(cat, mi)
                     return (
                       <div key={cat.id ?? cat.nome}
                         style={{ display: 'flex', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f8fafc' }}
@@ -199,7 +187,7 @@ export default function PlanLista({
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
                         <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{nomeExibicao(cat)}</span>
-                        <PlanCelulaEditavel valor={v} readOnly={bloqueado || aba === 'realizado'} motivoBloqueio={motivoBloqueio} onSave={nv => onSave('s', ri, mi, nv)} />
+                        <PlanCelulaEditavel valor={v} onSave={nv => onSave('s', ri, mi, nv)} />
                       </div>
                     )
                   })}
