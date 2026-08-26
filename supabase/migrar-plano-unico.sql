@@ -15,9 +15,9 @@
 -- A linha 'real' NAO e apagada — fica como historico.
 -- ============================================================
 
--- Guilherme
-\set uid '57558480-96e3-476d-aced-dccbc7977990'
-\set ano 2026
+-- Alvo: user_id 57558480-96e3-476d-aced-dccbc7977990 (Guilherme), ano 2026.
+-- O UUID aparece escrito por extenso em cada consulta — o editor do Supabase
+-- nao aceita variaveis do psql (\set), so SQL puro.
 
 
 -- ── PASSO 1 — CONFERIR (somente leitura) ────────────────────
