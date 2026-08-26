@@ -2,7 +2,7 @@ import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, NOMES_MESES, fmt, diaSemana,
+  COR, NOMES_MESES, fmt, diaSemana, lancLabel,
   type Lancamento, type DadosMes,
 } from './FcShared'
 
@@ -119,7 +119,7 @@ export default function FcDesktopLeft({
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {l.categoria}
+                          {lancLabel(l)}
                         </div>
                         {l.descricao && l.descricao !== l.categoria && (
                           <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

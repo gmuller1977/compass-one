@@ -3,6 +3,7 @@ import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
+  catOptValue, catOptLabel, parseCatOpt, lancLabel,
   type TipoLanc, type Lancamento, type DadosMes,
 } from './FcShared'
 
@@ -413,7 +414,9 @@ export default function FcMobileView({
               <label style={{fontSize:10,fontWeight:700,color:COR.azul,
                 textTransform:'uppercase' as const,letterSpacing:.5,
                 marginBottom:5,display:'block'}}>🏷 Categoria</label>
-              <select ref={categoriaSelectRef} value={fCat} onChange={e => { setFCat(e.target.value); setFVariante('') }}
+              <select ref={categoriaSelectRef}
+                value={fVariante ? `${fCat}||${fVariante}` : fCat}
+                onChange={e => { const { nome, variante } = parseCatOpt(e.target.value); setFCat(nome); setFVariante(variante) }}
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                   padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,
@@ -422,7 +425,7 @@ export default function FcMobileView({
                   backgroundRepeat:'no-repeat',backgroundPosition:'calc(100% - 14px) center'}}>
                 <option value="">Selecione...</option>
                 {categoriasCartao.map(c => (
-                  <option key={c.id} value={c.nome}>{c.nome}</option>
+                  <option key={c.id} value={catOptValue(c)}>{catOptLabel(c)}</option>
                 ))}
               </select>
             </div>
@@ -430,8 +433,8 @@ export default function FcMobileView({
             {/* Variante */}
             {(() => {
               const norm = fCat.trim().toLowerCase()
-              const subDescs = fCat ? categoriasCartao.filter(c => c.nome.trim().toLowerCase() === norm && c.descricao).map(c => c.descricao!) : []
-              return subDescs.length > 1 ? (
+              const subDescs = fCat ? categoriasCartao.filter(c => c.nome.trim().toLowerCase() === norm && c.descricao?.trim()).map(c => c.descricao!.trim()) : []
+              return subDescs.length > 0 ? (
                 <div style={{marginBottom:14}}>
                   <label style={{fontSize:10,fontWeight:700,color:COR.azul,
                     textTransform:'uppercase' as const,letterSpacing:.5,
@@ -589,7 +592,7 @@ export default function FcMobileView({
                 {allItems.map(({dia, dc, mc, ac, l}, idx) => {
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
-                  const nomePrimario = hasDesc ? l.descricao : l.categoria
+                  const nomePrimario = hasDesc ? l.descricao : lancLabel(l)
                   const mesCompraLabel = (mc !== purchaseMes || ac !== purchaseAno)
                     ? ` de ${NOMES_MESES[mc].slice(0,3)}`
                     : ''
@@ -613,7 +616,7 @@ export default function FcMobileView({
                         <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
                           display:'flex',alignItems:'center',gap:5}}>
                           <span>
-                            {hasDesc ? `${l.categoria} · ` : ''}dia {dc}{mesCompraLabel}
+                            {hasDesc ? `${lancLabel(l)} · ` : ''}dia {dc}{mesCompraLabel}
                           </span>
                           {l.parcelas && l.parcelas > 1 && (
                             <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,

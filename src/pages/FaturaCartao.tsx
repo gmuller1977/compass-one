@@ -241,7 +241,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia)
-    setFTipo(l.tipo); setFCat(l.categoria); setFDesc(l.descricao); setFVariante(l.subCategoria ?? '')
+    setFTipo(l.tipo); setFCat(l.categoria.trim()); setFDesc(l.descricao); setFVariante((l.subCategoria ?? '').trim())
     setFValor(String(l.valor).replace('.', ','))
     setFParcelas(String(l.parcelas ?? 1))
     const dc = l.diaCompra ?? dia
@@ -308,10 +308,14 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     const baseId = `v-${Date.now()}`
     const norm = fCat.trim().toLowerCase()
     const subDescsDisponiveis = categoriasCartao
-      .filter(c => c.nome.trim().toLowerCase() === norm && c.descricao)
-      .map(c => c.descricao!)
-    const subCatToSave = subDescsDisponiveis.length > 1 && fVariante
-      ? (subDescsDisponiveis.includes(fVariante) ? fVariante : undefined)
+      .filter(c => c.nome.trim().toLowerCase() === norm && c.descricao?.trim())
+      .map(c => c.descricao!.trim())
+    // Grava a variante sempre que ela for valida para a categoria. Antes exigia
+    // 2+ variantes cadastradas: com uma variante so, nada era gravado e o
+    // lancamento ficava orfao ("Seguro" puro, sem casar com o planejamento).
+    const varianteEscolhida = fVariante.trim()
+    const subCatToSave = varianteEscolhida && subDescsDisponiveis.includes(varianteEscolhida)
+      ? varianteEscolhida
       : undefined
     const parsedCompra = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
     const diaCompraFinal = parsedCompra?.dia ?? diaSel
