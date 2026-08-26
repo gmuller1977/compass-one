@@ -2,8 +2,9 @@ import { useState } from 'react'
 import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
-import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
-import { type AnoData, COR } from './types'
+import PlanBarraFerramentas from './PlanBarraFerramentas'
+import { type BulkOp } from './PlanFerramentas'
+import { type AnoData, MOTIVO_PLANO_LOCKADO } from './types'
 
 interface Props {
   aba: 'meu-plano' | 'realizado'
@@ -25,16 +26,8 @@ interface Props {
   onBulkSave: (ops: BulkOp[]) => void
 }
 
-const FERRAMENTAS: { id: 'copiar' | 'valor' | 'reajuste' | 'ano'; label: string; icon: string }[] = [
-  { id: 'copiar',   label: 'Copiar mês',    icon: '📋' },
-  { id: 'valor',    label: 'Aplicar valor', icon: '💱' },
-  { id: 'reajuste', label: 'Reajuste %',    icon: '📈' },
-  { id: 'ano',      label: 'Copiar ano',    icon: '📅' },
-]
-
 export default function PlanGrade(props: Props) {
   const [modalMes, setModalMes] = useState<number | null>(null)
-  const [toolAberta, setToolAberta] = useState<'copiar' | 'valor' | 'reajuste' | 'ano' | null>(null)
 
   const {
     aba, anoAtual, mesAtual, dadosPrevisto, dadosRealizado, dadosAnoAnterior,
@@ -50,9 +43,9 @@ export default function PlanGrade(props: Props) {
 
   const anoCorrente = new Date().getFullYear()
 
-  function toggleTool(id: 'copiar' | 'valor' | 'reajuste' | 'ano') {
-    setToolAberta(prev => prev === id ? null : id)
-  }
+  // As ferramentas leem e gravam na aba corrente
+  const dadosAtivos = aba === 'realizado' && dadosRealizado ? dadosRealizado : dadosPrevisto
+  const bloqueado = props.planejamentoLockado && aba === 'meu-plano'
 
   return (
     <div style={{ padding: '16px 20px' }}>
@@ -65,40 +58,15 @@ export default function PlanGrade(props: Props) {
         onChangeAno={delta => setAnoAtual(a => a + delta)}
       />
 
-      {/* Ferramentas de lote */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        {FERRAMENTAS.map(f => {
-          const ativa = toolAberta === f.id
-          return (
-            <button
-              key={f.id}
-              onClick={() => toggleTool(f.id)}
-              style={{
-                border: `1.5px solid ${ativa ? '#1a56db' : COR.borda}`,
-                borderRadius: 8, padding: '6px 14px',
-                fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: ativa ? '#eff6ff' : COR.branco,
-                color: ativa ? '#1a56db' : COR.textoSuave,
-                display: 'flex', alignItems: 'center', gap: 5,
-                transition: 'all .12s',
-              }}
-            >
-              {f.icon} {f.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Painel da ferramenta */}
-      <PlanFerramentas
-        toolAberta={toolAberta}
+      <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}
-        dadosPrevisto={dadosPrevisto}
+        dadosAtivos={dadosAtivos}
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={props.categorias}
         onBulkSave={props.onBulkSave}
-        onClose={() => setToolAberta(null)}
+        bloqueado={bloqueado}
+        motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />
 
       {/* Grade de meses */}

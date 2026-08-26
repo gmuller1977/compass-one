@@ -13,7 +13,13 @@ interface Props {
   toolAberta: 'copiar' | 'valor' | 'reajuste' | 'ano' | null
   mesAtual: number
   anoAtual: number
-  dadosPrevisto: AnoData
+  /**
+   * Dados da ABA CORRENTE — nao do previsto. As ferramentas leem valores daqui
+   * (origem da copia, base do reajuste) e gravam na aba ativa; receber o
+   * previsto enquanto se edita o Atualizado copiava numeros de um plano para
+   * o outro.
+   */
+  dadosAtivos: AnoData
   dadosAnoAnterior: AnoData | null
   categorias: any[]
   onBulkSave: (ops: BulkOp[]) => void
@@ -32,7 +38,7 @@ const BTN_OK: React.CSSProperties = { background: '#1a56db', color: '#fff', bord
 const BTN_CANCEL: React.CSSProperties = { background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }
 
 export default function PlanFerramentas({
-  toolAberta, mesAtual, anoAtual, dadosPrevisto, dadosAnoAnterior, categorias,
+  toolAberta, mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior, categorias,
   onBulkSave, onClose,
 }: Props) {
   const defaultMeses = () => Array.from({ length: 12 }, (_, i) => i > mesAtual)
@@ -81,10 +87,10 @@ export default function PlanFerramentas({
     if (!dest.length) return
     const ops: BulkOp[] = []
     if (copiarReceitas)
-      dadosPrevisto.entradas.forEach((cat, ri) =>
+      dadosAtivos.entradas.forEach((cat, ri) =>
         dest.forEach(mi => ops.push({ tipo: 'e', ri, mi, valor: cat.v[origemMes] })))
     if (copiarDespesas)
-      dadosPrevisto.saidas.forEach((cat, ri) =>
+      dadosAtivos.saidas.forEach((cat, ri) =>
         dest.forEach(mi => ops.push({ tipo: 's', ri, mi, valor: cat.v[origemMes] })))
     onBulkSave(ops)
     showToast(`Valores copiados para ${dest.length} ${dest.length === 1 ? 'mês' : 'meses'} ✓`)
@@ -95,7 +101,7 @@ export default function PlanFerramentas({
     if (!dest.length || !valorStr) return
     const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'))
     if (isNaN(valor)) return
-    const lista = valorTipo === 'e' ? dadosPrevisto.entradas : dadosPrevisto.saidas
+    const lista = valorTipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas
     if (!lista[valorRi]) return
     onBulkSave(dest.map(mi => ({ tipo: valorTipo, ri: valorRi, mi, valor })))
     showToast(`${fmt(valor)} aplicado em ${dest.length} ${dest.length === 1 ? 'mês' : 'meses'} ✓`)
@@ -111,10 +117,10 @@ export default function PlanFerramentas({
     const round2 = (n: number) => Math.round(n * 100) / 100
 
     if (reajFiltro === 'todas')
-      dadosPrevisto.entradas.forEach((cat, ri) =>
+      dadosAtivos.entradas.forEach((cat, ri) =>
         dest.forEach(mi => { if (cat.v[mi] > 0) ops.push({ tipo: 'e', ri, mi, valor: round2(cat.v[mi] * fator) }) }))
 
-    dadosPrevisto.saidas.forEach((cat, ri) => {
+    dadosAtivos.saidas.forEach((cat, ri) => {
       if (reajFiltro !== 'todas') {
         const info = categorias.find((c: any) => c.id === cat.id || c.nome === cat.nome)
         const ehFixa = info?.fixa === true
@@ -132,12 +138,12 @@ export default function PlanFerramentas({
     if (!dadosAnoAnterior) return
     const ops: BulkOp[] = []
     dadosAnoAnterior.entradas.forEach(cat => {
-      const ri = dadosPrevisto.entradas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
+      const ri = dadosAtivos.entradas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
       if (ri < 0) return
       cat.v.forEach((valor, mi) => ops.push({ tipo: 'e', ri, mi, valor }))
     })
     dadosAnoAnterior.saidas.forEach(cat => {
-      const ri = dadosPrevisto.saidas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
+      const ri = dadosAtivos.saidas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
       if (ri < 0) return
       cat.v.forEach((valor, mi) => ops.push({ tipo: 's', ri, mi, valor }))
     })
@@ -223,7 +229,7 @@ export default function PlanFerramentas({
               <div style={{ flex: 2 }}>
                 <label style={LABEL}>Categoria:</label>
                 <select value={valorRi} onChange={e => setValorRi(+e.target.value)} style={INPUT}>
-                  {(valorTipo === 'e' ? dadosPrevisto.entradas : dadosPrevisto.saidas).map((cat, ri) => (
+                  {(valorTipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas).map((cat, ri) => (
                     <option key={ri} value={ri}>{cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome}</option>
                   ))}
                 </select>

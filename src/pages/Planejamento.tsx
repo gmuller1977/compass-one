@@ -213,6 +213,8 @@ export default function Planejamento({
             categorias={plan.categorias}
             setAnoAtual={setAnoAtual}
             onSave={handleSave}
+            onBulkSave={handleBulkSave}
+            dadosAnoAnterior={plan.planoAnoAnterior}
             lancadoPorCatMes={aba === 'realizado' ? plan.lancadoPorCatMes : undefined}
           />
         ) : (
@@ -225,6 +227,8 @@ export default function Planejamento({
             planejamentoLockado={plan.planejamentoLockado}
             categorias={plan.categorias}
             onSave={handleSave}
+            onBulkSave={handleBulkSave}
+            dadosAnoAnterior={plan.planoAnoAnterior}
             lancadoPorCatMes={aba === 'realizado' ? plan.lancadoPorCatMes : undefined}
             totaisReais={plan.totaisReais}
           />

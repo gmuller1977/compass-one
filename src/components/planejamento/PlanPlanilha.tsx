@@ -4,6 +4,8 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat } from './types'
 import { useToast } from '../Toast'
 import PlanCelulaNav from './PlanCelulaNav'
+import PlanBarraFerramentas from './PlanBarraFerramentas'
+import { type BulkOp } from './PlanFerramentas'
 
 interface Props {
   aba: 'meu-plano' | 'realizado'
@@ -15,6 +17,8 @@ interface Props {
   categorias: any[]
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
+  onBulkSave: (ops: BulkOp[]) => void
+  dadosAnoAnterior: AnoData | null
   lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
 }
 
@@ -105,7 +109,7 @@ const CAT_BTN: React.CSSProperties = {
 
 export default function PlanPlanilha({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
-  planejamentoLockado, categorias, setAnoAtual, onSave,
+  planejamentoLockado, categorias, setAnoAtual, onSave, onBulkSave, dadosAnoAnterior,
 }: Props) {
   const scrollResRef = useRef<HTMLDivElement>(null)
   const scrollCatRef = useRef<HTMLDivElement>(null)
@@ -266,6 +270,17 @@ export default function PlanPlanilha({
       tabIndex={0}
       onKeyDown={handleContainerKey}
     >
+      <PlanBarraFerramentas
+        mesAtual={mesAtual}
+        anoAtual={anoAtual}
+        dadosAtivos={dadosAtivos}
+        dadosAnoAnterior={dadosAnoAnterior}
+        categorias={categorias}
+        onBulkSave={onBulkSave}
+        bloqueado={bloqueado}
+        motivoBloqueio={MOTIVO_PLANO_LOCKADO}
+      />
+
       {/* ─── PAINEL DE RESUMO ─────────────────────────────────────────────── */}
       <div style={{
         background: '#f0f4ff',

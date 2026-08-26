@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, MESES, nomeExibicao, MOTIVO_PLANO_LOCKADO, MOTIVO_REALIZADO, type AnoData } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import PlanBarraFerramentas from './PlanBarraFerramentas'
+import { type BulkOp } from './PlanFerramentas'
 
 interface Props {
   aba: 'meu-plano' | 'realizado'
@@ -12,6 +14,8 @@ interface Props {
   planejamentoLockado: boolean
   categorias: any[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
+  onBulkSave: (ops: BulkOp[]) => void
+  dadosAnoAnterior: AnoData | null
   lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   totaisReais?: { te: number[]; ts: number[] }
 }
@@ -32,7 +36,7 @@ const COL_VAL = 110
 
 export default function PlanLista({
   aba, anoAtual, mesAtual, dadosAtivos, previsto,
-  planejamentoLockado, categorias, onSave, lancadoPorCatMes,
+  planejamentoLockado, categorias, onSave, onBulkSave, dadosAnoAnterior, lancadoPorCatMes,
 }: Props) {
   const [aberto, setAberto] = useState<number>(-1)
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
@@ -62,6 +66,17 @@ export default function PlanLista({
 
   return (
     <div style={{ padding: '8px 16px', overflowX: 'auto' }}>
+      <PlanBarraFerramentas
+        mesAtual={mesAtual}
+        anoAtual={anoAtual}
+        dadosAtivos={dadosAtivos}
+        dadosAnoAnterior={dadosAnoAnterior}
+        categorias={categorias}
+        onBulkSave={onBulkSave}
+        bloqueado={!!motivoBloqueio}
+        motivoBloqueio={motivoBloqueio}
+      />
+
       {/* Header fixo */}
       <div className="plista-header" style={{
         display: 'flex', padding: '8px 0',
