@@ -320,7 +320,10 @@ export function usePlanejamento(anoAtual: number) {
 
   // Ações
   function updateAno(fn: (d: AnoData) => AnoData, aba: Aba) {
-    if (planejamentoLockado && aba === 'meu-plano') return
+    if (planejamentoLockado && aba === 'meu-plano') {
+      console.warn('[plan-edit] BLOQUEADO: plano ativado e aba = "Meu plano". Nada foi gravado.')
+      return
+    }
     if (aba === 'meu-plano') {
       setPlanos(prev => ({ ...prev, [anoAtual]: fn(dadosPrevisto) as PlanoAnoData }))
     } else {
@@ -337,10 +340,20 @@ export function usePlanejamento(anoAtual: number) {
   }
 
   function editarValor(tipo: 'e' | 's', ri: number, mi: number, novoValor: number, aba: Aba) {
+    console.log('[plan-edit] pedido:', { aba, planejamentoLockado, tipo, ri, mes: MESES[mi], novoValor })
     updateAno(d => {
       const lista = tipo === 'e' ? [...d.entradas] : [...d.saidas]
-      if (!lista[ri]) return d
-      lista[ri] = { ...lista[ri], v: lista[ri].v.map((v, i) => i === mi ? novoValor : v) }
+      const alvo = lista[ri]
+      if (!alvo) {
+        console.error('[plan-edit] ri FORA DA LISTA — nada gravado.', { ri, tamanho: lista.length,
+          lista: lista.map((c, i) => `${i}:${c.descricao ? `${c.nome}/${c.descricao}` : c.nome}`) })
+        return d
+      }
+      console.log('[plan-edit] gravando em:', {
+        rotulo: alvo.descricao ? `${alvo.nome} · ${alvo.descricao}` : alvo.nome,
+        id: alvo.id, valorAntes: alvo.v[mi], valorDepois: novoValor,
+      })
+      lista[ri] = { ...alvo, v: alvo.v.map((v, i) => i === mi ? novoValor : v) }
       return tipo === 'e' ? { ...d, entradas: lista } : { ...d, saidas: lista }
     }, aba)
   }
