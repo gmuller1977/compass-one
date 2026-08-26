@@ -324,7 +324,15 @@ export function usePlanejamento(anoAtual: number) {
     if (aba === 'meu-plano') {
       setPlanos(prev => ({ ...prev, [anoAtual]: fn(dadosPrevisto) as PlanoAnoData }))
     } else {
-      updatePlanoReal(anoAtual, prev => fn(prev as AnoData) as PlanoAnoData)
+      // A tela mostra e indexa a lista MESCLADA (dadosRealizado), entao a
+      // edicao tem que ser aplicada nela, nao no bruto salvo. No bruto ainda
+      // ha linhas com id de categoria excluida: o valor era gravado nessa
+      // linha orfa e o mergeCats, que casa por id do cadastro atual, nunca
+      // mais o encontrava — o campo voltava a zero.
+      updatePlanoReal(anoAtual, prev => {
+        const temMescla = dadosRealizado.entradas.length > 0 || dadosRealizado.saidas.length > 0
+        return fn(temMescla ? dadosRealizado : (prev as AnoData)) as PlanoAnoData
+      })
     }
   }
 
