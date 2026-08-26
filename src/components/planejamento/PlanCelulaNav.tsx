@@ -13,23 +13,32 @@ interface Props {
   onClick?: () => void
   color?: string
   style?: React.CSSProperties
+  /** Digito que abriu a edicao: entra no campo e o cursor vai para o fim. */
+  initChar?: string
 }
 
 export default function PlanCelulaNav({
   valor, editavel, ativa, editando,
-  onChange, onNavigate, onStartEdit, onCancelEdit, onClick, color, style,
+  onChange, onNavigate, onStartEdit, onCancelEdit, onClick, color, style, initChar,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [inputVal, setInputVal] = useState('')
 
   useEffect(() => {
-    if (editando) {
-      const formatted = valor === 0
-        ? ''
-        : valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      setInputVal(formatted)
-      setTimeout(() => inputRef.current?.select(), 0)
-    }
+    if (!editando) return
+    const seed = initChar ?? ''
+    setInputVal(seed || (valor === 0
+      ? ''
+      : valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })))
+    // Um unico rAF, nunca um setTimeout: o timer competia com a insercao do
+    // caractere e reselecionava o que ja tinha sido digitado, fazendo o
+    // segundo digito substituir o primeiro.
+    requestAnimationFrame(() => {
+      const inp = inputRef.current
+      if (!inp) return
+      if (seed) inp.setSelectionRange(inp.value.length, inp.value.length) // segue digitando
+      else inp.select()                                                   // pronto para redigitar
+    })
   }, [editando])
 
   function save(dir?: 'up' | 'down' | 'left' | 'right') {

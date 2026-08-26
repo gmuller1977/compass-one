@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { fmt, parseBRL, COR } from './types'
 
 interface Props {
@@ -12,6 +12,14 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, al
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
   const skipBlurRef = useRef(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Seleciona UMA vez ao abrir. Antes isso vinha de onFocus, que podia
+  // disparar de novo e reselecionar o que ja havia sido digitado.
+  useEffect(() => {
+    if (!editando) return
+    requestAnimationFrame(() => inputRef.current?.select())
+  }, [editando])
 
   function iniciar() {
     if (readOnly) return
@@ -28,10 +36,10 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, onSave, al
   if (editando) {
     return (
       <input
+        ref={inputRef}
         autoFocus
         value={temp}
         onChange={e => setTemp(e.target.value)}
-        onFocus={e => e.target.select()}
         onBlur={() => { if (skipBlurRef.current) { skipBlurRef.current = false } else confirmar() }}
         onKeyDown={e => {
           if (e.key === 'Enter') { skipBlurRef.current = true; confirmar() }

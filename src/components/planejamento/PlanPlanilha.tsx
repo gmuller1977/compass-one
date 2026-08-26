@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type React from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, type AnoData } from './types'
+import { fmt, MESES, type AnoData, type Cat } from './types'
 import PlanCelulaNav from './PlanCelulaNav'
 
 interface Props {
@@ -21,9 +21,46 @@ type CellPos = { tipo: 'e' | 's'; ri: number; mi: number }
 type Tema = 'com' | 'sem'
 
 const HH = 40  // header
-const HG = 30  // group
+const HG = 30  // secao (RECEITAS / DESPESAS)
+const HGR = 26 // cabecalho de grupo
 const HC = 36  // category
 const HT = 40  // resultado
+
+const SEM_GRUPO = '__sem_grupo__'
+
+/**
+ * Modelo de linhas compartilhado pela coluna de categorias e pelas 12 colunas
+ * de meses. As duas percorrem ESTA lista, entao o alinhamento vertical e
+ * garantido por construcao — nao por acerto manual de alturas.
+ */
+type Linha =
+  | { k: 'secao'; tipo: 'e' | 's' }
+  | { k: 'grupo'; tipo: 'e' | 's'; grupo: string; ris: number[] }
+  | { k: 'cat';   tipo: 'e' | 's'; ri: number; cat: Cat; vi: number }
+  | { k: 'total' }
+
+const ALTURA: Record<Linha['k'], number> = { secao: HG, grupo: HGR, cat: HC, total: HT }
+
+/** ri e sempre o indice na lista ORIGINAL — e por ele que onSave grava. */
+function agrupar(cats: Cat[], tipo: 'e' | 's', viInicial: number): Linha[] {
+  const porGrupo = new Map<string, { ri: number; cat: Cat }[]>()
+  cats.forEach((cat, ri) => {
+    const g = cat.grupo ?? SEM_GRUPO
+    if (!porGrupo.has(g)) porGrupo.set(g, [])
+    porGrupo.get(g)!.push({ ri, cat })
+  })
+  const ordenados = [...porGrupo.entries()].sort(([a], [b]) =>
+    a === SEM_GRUPO ? 1 : b === SEM_GRUPO ? -1 : a.localeCompare(b, 'pt-BR'))
+  const temGrupoReal = ordenados.some(([g]) => g !== SEM_GRUPO)
+
+  const out: Linha[] = []
+  let vi = viInicial
+  for (const [grupo, items] of ordenados) {
+    if (temGrupoReal) out.push({ k: 'grupo', tipo, grupo, ris: items.map(i => i.ri) })
+    for (const { ri, cat } of items) out.push({ k: 'cat', tipo, ri, cat, vi: vi++ })
+  }
+  return out
+}
 
 // Summary panel
 const SH = 34  // summary header row
@@ -75,12 +112,22 @@ export default function PlanPlanilha({
 
   const [activeCell, setActiveCell] = useState<CellPos | null>(null)
   const [editingCell, setEditingCell] = useState<CellPos | null>(null)
+  const [initChar, setInitChar] = useState<string | undefined>(undefined)
   const [hoveredRow, setHoveredRow] = useState<string | null>(null)
 
   const bloqueado = planejamentoLockado && aba === 'meu-plano'
-  const nE = dadosAtivos.entradas.length
-  const nS = dadosAtivos.saidas.length
   const anoCorrente = new Date().getFullYear()
+
+  const linhas = useMemo<Linha[]>(() => {
+    const e = agrupar(dadosAtivos.entradas, 'e', 0)
+    const s = agrupar(dadosAtivos.saidas, 's', 0)
+    return [{ k: 'secao', tipo: 'e' }, ...e, { k: 'secao', tipo: 's' }, ...s, { k: 'total' }]
+  }, [dadosAtivos])
+
+  const idxDaCelula = useCallback(
+    (pos: CellPos) => linhas.findIndex(l => l.k === 'cat' && l.tipo === pos.tipo && l.ri === pos.ri),
+    [linhas],
+  )
 
   // Auto-scroll to keep active cell visible
   useEffect(() => {
@@ -100,10 +147,11 @@ export default function PlanPlanilha({
       if (scrollResRef.current) scrollResRef.current.scrollLeft = container.scrollLeft
     }
 
-    // Vertical scroll — no HT offset for saidas since Total receitas removed
-    const rowTop = activeCell.tipo === 'e'
-      ? HH + HG + activeCell.ri * HC
-      : HH + 2 * HG + nE * HC + activeCell.ri * HC
+    // Vertical: soma as alturas das linhas anteriores (grupos tem altura propria)
+    const idx = idxDaCelula(activeCell)
+    if (idx === -1) return
+    let rowTop = HH
+    for (let i = 0; i < idx; i++) rowTop += ALTURA[linhas[i].k]
     const rowBottom = rowTop + HC
     const visTop    = container.scrollTop + HH
     const visBottom = container.scrollTop + container.clientHeight
@@ -112,27 +160,29 @@ export default function PlanPlanilha({
     } else if (rowBottom > visBottom) {
       container.scrollTop = rowBottom - container.clientHeight + 4
     }
-  }, [activeCell, nE])
+  }, [activeCell, linhas, idxDaCelula])
 
-  function toFlat(pos: CellPos) { return pos.tipo === 'e' ? pos.ri : nE + pos.ri }
-  function fromFlat(fi: number, mi: number): CellPos | null {
-    if (fi < 0 || fi >= nE + nS) return null
-    return fi < nE ? { tipo: 'e', ri: fi, mi } : { tipo: 's', ri: fi - nE, mi }
-  }
-
+  /** Cima/baixo seguem a ordem VISUAL: o agrupamento reordena as categorias. */
   function navCell(pos: CellPos, dir: 'up' | 'down' | 'left' | 'right'): CellPos | null {
     if (dir === 'left')  return pos.mi > 0  ? { ...pos, mi: pos.mi - 1 } : null
     if (dir === 'right') return pos.mi < 11 ? { ...pos, mi: pos.mi + 1 } : null
-    return fromFlat(toFlat(pos) + (dir === 'up' ? -1 : 1), pos.mi)
+    const idx = idxDaCelula(pos)
+    if (idx === -1) return null
+    const passo = dir === 'up' ? -1 : 1
+    for (let i = idx + passo; i >= 0 && i < linhas.length; i += passo) {
+      const l = linhas[i]
+      if (l.k === 'cat') return { tipo: l.tipo, ri: l.ri, mi: pos.mi }
+    }
+    return null
   }
 
   const activate = useCallback((pos: CellPos | null) => {
-    setEditingCell(null); setActiveCell(pos)
+    setEditingCell(null); setInitChar(undefined); setActiveCell(pos)
   }, [])
 
-  const startEdit = useCallback((pos: CellPos) => {
+  const startEdit = useCallback((pos: CellPos, char?: string) => {
     if (bloqueado) return
-    setActiveCell(pos); setEditingCell(pos)
+    setInitChar(char); setActiveCell(pos); setEditingCell(pos)
   }, [bloqueado])
 
   const handleChange = useCallback((tipo: 'e' | 's', ri: number, mi: number, v: number) => {
@@ -150,7 +200,9 @@ export default function PlanPlanilha({
     else if (e.key === 'Escape')     { setActiveCell(null) }
     else if (e.key === 'Home')       { setActiveCell({ ...activeCell, mi: 0 }) }
     else if (e.key === 'End')        { setActiveCell({ ...activeCell, mi: 11 }) }
-    else if (/^\d$/.test(e.key))     { startEdit(activeCell) }
+    // preventDefault: sem isso o navegador ainda insere o digito no input que
+    // acabou de ganhar foco, e ele apareceria duas vezes
+    else if (/^\d$/.test(e.key))     { e.preventDefault(); startEdit(activeCell, e.key) }
   }
 
   function handleScrollRes() {
@@ -185,6 +237,7 @@ export default function PlanPlanilha({
         valor={(tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]?.v[mi] ?? 0}
         editavel={!bloqueado} ativa={ativa} editando={editando}
         color={tipo === 'e' ? tc.rec : tc.desp}
+        initChar={editando ? initChar : undefined}
         onChange={v => handleChange(tipo, ri, mi, v)}
         onNavigate={dir => { setEditingCell(null); setActiveCell(navCell(pos, dir) ?? pos) }}
         onStartEdit={() => startEdit(pos)}
@@ -326,46 +379,35 @@ export default function PlanPlanilha({
 
             {/* Rows */}
             <div style={{ background: '#fff', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', flex: 1 }}>
-              <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>
-                ↑ RECEITAS
-              </div>
-              {dadosAtivos.entradas.map((cat, ri) => {
-                const { icone } = iconeCategoria(categorias, cat.nome)
-                const rowKey = `e-${ri}`
+              {linhas.map((l, li) => {
+                if (l.k === 'secao') return (
+                  <div key={li} style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>
+                    {l.tipo === 'e' ? '↑ RECEITAS' : '↓ DESPESAS'}
+                  </div>
+                )
+                if (l.k === 'grupo') return (
+                  <div key={li} style={{ height: HGR, display: 'flex', alignItems: 'center', padding: '0 12px 0 14px', background: '#f1f5f9', fontSize: 9, fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                    {l.grupo === SEM_GRUPO ? 'Outros' : l.grupo}
+                  </div>
+                )
+                if (l.k === 'total') return (
+                  <div key={li} style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
+                )
+                const { icone } = iconeCategoria(categorias, l.cat.nome)
+                const rowKey = `${l.tipo}-${l.ri}`
                 const isHovered = hoveredRow === rowKey
-                const isOdd = ri % 2 === 1
+                const isOdd = l.vi % 2 === 1
                 return (
-                  <div key={ri}
-                    style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 18px', fontSize: 12, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden', background: isHovered ? 'rgba(26,86,219,0.06)' : isOdd ? 'rgba(0,0,0,0.02)' : undefined, transition: 'background .1s' }}
+                  <div key={li}
+                    style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 22px', fontSize: 12, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden', background: isHovered ? 'rgba(26,86,219,0.06)' : isOdd ? 'rgba(0,0,0,0.02)' : undefined, transition: 'background .1s' }}
                     onMouseEnter={() => setHoveredRow(rowKey)}
                     onMouseLeave={() => setHoveredRow(null)}
                   >
                     <span style={{ flexShrink: 0 }}>{icone}</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catLabel(cat)}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catLabel(l.cat)}</span>
                   </div>
                 )
               })}
-
-              <div style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>
-                ↓ DESPESAS
-              </div>
-              {dadosAtivos.saidas.map((cat, ri) => {
-                const { icone } = iconeCategoria(categorias, cat.nome)
-                const rowKey = `s-${ri}`
-                const isHovered = hoveredRow === rowKey
-                const isOdd = ri % 2 === 1
-                return (
-                  <div key={ri}
-                    style={{ height: HC, display: 'flex', alignItems: 'center', padding: '0 12px 0 18px', fontSize: 12, color: '#64748b', borderBottom: '1px solid #f8fafc', gap: 4, overflow: 'hidden', background: isHovered ? 'rgba(26,86,219,0.06)' : isOdd ? 'rgba(0,0,0,0.02)' : undefined, transition: 'background .1s' }}
-                    onMouseEnter={() => setHoveredRow(rowKey)}
-                    onMouseLeave={() => setHoveredRow(null)}
-                  >
-                    <span style={{ flexShrink: 0 }}>{icone}</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{catLabel(cat)}</span>
-                  </div>
-                )
-              })}
-              <div style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
             </div>
           </div>
 
@@ -378,20 +420,9 @@ export default function PlanPlanilha({
             const tc = TC[comPlano ? 'com' : 'sem']
             const isAtual = mi === mesAtual && anoAtual === anoCorrente
 
-            const cell = (tipo: 'e' | 's', ri: number) => {
-              const rowKey = `${tipo}-${ri}`
-              const isHovered = hoveredRow === rowKey
-              const isOdd = ri % 2 === 1
-              const bg = isHovered ? tc.hover : isOdd ? tc.stripe : undefined
-              return (
-                <div key={ri}
-                  style={{ height: HC, borderBottom: `1px solid ${tc.border}`, background: bg, transition: 'background .1s' }}
-                  onMouseEnter={() => setHoveredRow(rowKey)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                >
-                  {catCell(tipo, ri, mi, comPlano ? 'com' : 'sem')}
-                </div>
-              )
+            const subtotal = (l: Extract<Linha, { k: 'grupo' }>) => {
+              const lista = l.tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas
+              return l.ris.reduce((s, ri) => s + (lista[ri]?.v[mi] ?? 0), 0)
             }
 
             return (
@@ -410,21 +441,40 @@ export default function PlanPlanilha({
                   )}
                 </div>
 
-                {/* Categories body */}
+                {/* Categories body — percorre a MESMA lista da coluna de categorias */}
                 <div style={{ background: tc.header, color: tc.text, flex: 1 }}>
-                  <div style={{ height: HG, background: tc.grp, color: tc.rec, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderBottom: `1px solid ${tc.border}` }}>
-                    {fmt(totalE)}
-                  </div>
-                  {dadosAtivos.entradas.map((_, ri) => cell('e', ri))}
-
-                  <div style={{ height: HG, background: tc.grp, color: tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}`, borderBottom: `1px solid ${tc.border}` }}>
-                    {fmt(totalS)}
-                  </div>
-                  {dadosAtivos.saidas.map((_, ri) => cell('s', ri))}
-
-                  <div style={{ height: HT, background: tc.tot, color: res >= 0 ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}` }}>
-                    {res === 0 ? '—' : `${res > 0 ? '+' : ''}${res.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
-                  </div>
+                  {linhas.map((l, li) => {
+                    if (l.k === 'secao') {
+                      const v = l.tipo === 'e' ? totalE : totalS
+                      return (
+                        <div key={li} style={{ height: HG, background: tc.grp, color: l.tipo === 'e' ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 11, fontWeight: 700, fontVariantNumeric: 'tabular-nums', borderTop: l.tipo === 's' ? `1px solid ${tc.border}` : undefined, borderBottom: `1px solid ${tc.border}` }}>
+                          {fmt(v)}
+                        </div>
+                      )
+                    }
+                    if (l.k === 'grupo') return (
+                      <div key={li} style={{ height: HGR, background: tc.stripe, color: l.tipo === 'e' ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 10, fontWeight: 700, fontVariantNumeric: 'tabular-nums', opacity: 0.85, borderBottom: `1px solid ${tc.border}` }}>
+                        {fmt(subtotal(l))}
+                      </div>
+                    )
+                    if (l.k === 'total') return (
+                      <div key={li} style={{ height: HT, background: tc.tot, color: res >= 0 ? tc.rec : tc.desp, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 10px', fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${tc.border}` }}>
+                        {res === 0 ? '—' : `${res > 0 ? '+' : ''}${res.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                      </div>
+                    )
+                    const rowKey = `${l.tipo}-${l.ri}`
+                    const isHovered = hoveredRow === rowKey
+                    const bg = isHovered ? tc.hover : l.vi % 2 === 1 ? tc.stripe : undefined
+                    return (
+                      <div key={li}
+                        style={{ height: HC, borderBottom: `1px solid ${tc.border}`, background: bg, transition: 'background .1s' }}
+                        onMouseEnter={() => setHoveredRow(rowKey)}
+                        onMouseLeave={() => setHoveredRow(null)}
+                      >
+                        {catCell(l.tipo, l.ri, mi, comPlano ? 'com' : 'sem')}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )
