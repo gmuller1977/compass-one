@@ -196,6 +196,7 @@ export default function PlanPlanilha({
     else if (e.key === 'ArrowRight') { e.preventDefault(); setActiveCell(navCell(activeCell, 'right') ?? activeCell) }
     else if (e.key === 'ArrowUp')    { e.preventDefault(); setActiveCell(navCell(activeCell, 'up')    ?? activeCell) }
     else if (e.key === 'ArrowDown')  { e.preventDefault(); setActiveCell(navCell(activeCell, 'down')  ?? activeCell) }
+    else if (e.key === 'Tab')        { e.preventDefault(); setActiveCell(navCell(activeCell, e.shiftKey ? 'left' : 'right') ?? activeCell) }
     else if (e.key === 'Enter')      { e.preventDefault(); startEdit(activeCell) }
     else if (e.key === 'Escape')     { setActiveCell(null) }
     else if (e.key === 'Home')       { setActiveCell({ ...activeCell, mi: 0 }) }
@@ -239,7 +240,14 @@ export default function PlanPlanilha({
         color={tipo === 'e' ? tc.rec : tc.desp}
         initChar={editando ? initChar : undefined}
         onChange={v => handleChange(tipo, ri, mi, v)}
-        onNavigate={dir => { setEditingCell(null); setActiveCell(navCell(pos, dir) ?? pos) }}
+        onNavigate={dir => {
+          // Excel-like: a seta salva e ja abre a proxima celula em edicao.
+          // Sem proxima (borda da planilha), fecha e mantem a atual ativa.
+          const prox = navCell(pos, dir)
+          setInitChar(undefined)
+          if (!prox) { setEditingCell(null); setActiveCell(pos); return }
+          setActiveCell(prox); setEditingCell(prox)
+        }}
         onStartEdit={() => startEdit(pos)}
         onCancelEdit={() => activate(pos)}
         onClick={() => { if (ativa && !editando) startEdit(pos); else activate(pos) }}
