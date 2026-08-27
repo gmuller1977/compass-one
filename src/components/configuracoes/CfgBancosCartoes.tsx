@@ -6,6 +6,8 @@ import {
   ColorPicker, IconPicker,
   inputSt, labelSt,
 } from './CfgShared'
+import { useToast } from '../Toast'
+import { parseBRL, parseValor } from '../../utils/moeda'
 import type { Aba } from './CfgShared'
 
 interface Props {
@@ -46,6 +48,7 @@ export default function CfgBancosCartoes({
   erroConta, nomeContaRef, tipoBancoRefs,
   novaConta, editarConta, salvarConta, excluirConta,
 }: Props) {
+  const { toast } = useToast()
   const [editandoDinheiro, setEditandoDinheiro] = useState(false)
   const [localDinheiro, setLocalDinheiro] = useState('')
   return (
@@ -176,7 +179,8 @@ export default function CfgBancosCartoes({
                         onChange={e => setLocalDinheiro(e.target.value)}
                         onKeyDown={e => {
                           if (e.key === 'Enter') {
-                            const v = parseFloat(localDinheiro.replace(',', '.')) || 0
+                            const v = parseValor(localDinheiro)
+                            if (v === null) { toast(`"${localDinheiro.trim()}" não é um valor`, 'error'); return }
                             onSaveSaldoDinheiro(v)
                             setEditandoDinheiro(false)
                           }
@@ -187,7 +191,8 @@ export default function CfgBancosCartoes({
                       />
                       <button
                         onClick={() => {
-                          const v = parseFloat(localDinheiro.replace(',', '.')) || 0
+                          const v = parseValor(localDinheiro)
+                          if (v === null) { toast(`"${localDinheiro.trim()}" não é um valor`, 'error'); return }
                           onSaveSaldoDinheiro(v)
                           setEditandoDinheiro(false)
                         }}
@@ -338,7 +343,7 @@ export default function CfgBancosCartoes({
                   onChange={e => {
                     const raw = e.target.value.replace(/[^0-9.,]/g, '')
                     setLimiteStr(raw)
-                    setFormConta(p=>({...p, limiteCartao:parseFloat(raw.replace(',','.'))||0}))
+                    setFormConta(p=>({...p, limiteCartao:parseBRL(raw)}))
                   }}
                   placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
               </div>
@@ -466,7 +471,7 @@ export default function CfgBancosCartoes({
                   onChange={e => {
                     const raw = e.target.value.replace(/[^0-9.,]/g, '')
                     setSaldoStr(raw)
-                    setFormConta(p=>({...p, saldoInicial:parseFloat(raw.replace(',','.'))||0}))
+                    setFormConta(p=>({...p, saldoInicial:parseBRL(raw)}))
                   }}
                   placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
                 <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>

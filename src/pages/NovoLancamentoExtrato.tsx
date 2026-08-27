@@ -184,7 +184,7 @@ export default function NovoLancamentoExtrato() {
       }
       const calculado = c.saldoInicial + te - ts
       const manualStr = dm?.saldoBanco ?? ''
-      const manual = parseFloat(manualStr.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
+      const manual = parseBRL(manualStr)
       return { conta: c, saldo: manual > 0 ? manual : calculado, calculado }
     })
   }, [contasExtrato, dados, ano, mes])

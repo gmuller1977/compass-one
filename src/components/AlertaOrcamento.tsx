@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useToast } from './Toast'
+import { parseValor } from '../utils/moeda'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -27,6 +29,7 @@ type Props = {
 }
 
 export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAtual, descricao, mesLabel, onRevisar, onAjustarMes, onIgnorar }: Props) {
+  const { toast } = useToast()
   const isMobile = useIsMobile()
   const [ajustando, setAjustando] = useState(false)
   const [novoValor, setNovoValor] = useState(totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
@@ -83,7 +86,8 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
         />
         <button
           onClick={() => {
-            const val = parseFloat(novoValor.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
+            const val = parseValor(novoValor)
+            if (val === null) { toast(`"${novoValor.trim()}" não é um valor`, 'error'); return }
             onAjustarMes(val)
           }}
           style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: '#d97706', color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}

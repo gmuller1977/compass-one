@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import MesesSelector from './MesesSelector'
-import { MESES_FULL, type AnoData, fmt } from './types'
+import { MESES_FULL, type AnoData, fmt, parseValor } from './types'
 
 export interface BulkOp {
   tipo: 'e' | 's'
@@ -99,8 +99,10 @@ export default function PlanFerramentas({
   function aplicarValor() {
     const dest = getMesesDest(valorMeses)
     if (!dest.length || !valorStr) return
-    const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'))
-    if (isNaN(valor)) return
+    const valor = parseValor(valorStr)
+    // Antes: parseFloat com strip de ponto. "1234.56" virava 123456 e o erro
+    // de 100x ia para todos os meses escolhidos de uma vez.
+    if (valor === null) { showToast(`"${valorStr.trim()}" não é um valor`); return }
     const lista = valorTipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas
     if (!lista[valorRi]) return
     onBulkSave(dest.map(mi => ({ tipo: valorTipo, ri: valorRi, mi, valor })))

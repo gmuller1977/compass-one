@@ -5,6 +5,7 @@ import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 import { useToast } from '../components/Toast'
+import { parseValor } from '../utils/moeda'
 import type { Conta, Categoria, TipoCategoria, FormaPagamentoFatura, PlanoCat } from '../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 
@@ -219,7 +220,8 @@ export default function Configuracoes() {
       toast('Conta cadastrada')
     }
     if (ehCartao && faturaStr.trim()) {
-      const faturaVal = parseFloat(faturaStr.replace(',', '.')) || 0
+      const faturaVal = parseValor(faturaStr)
+      if (faturaVal === null) { toast(`"${faturaStr.trim()}" não é um valor de fatura`, 'error'); return }
       if (faturaVal > 0) {
         const ano = new Date().getFullYear()
         const mes = new Date().getMonth()

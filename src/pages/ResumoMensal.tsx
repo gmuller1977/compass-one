@@ -15,6 +15,7 @@ import RmDistribuicao from '../components/resumoMensal/RmDistribuicao'
 import { catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
+import { parseBRL } from '../utils/moeda'
 
 export const NOMES_MESES_RM = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 export const MESES_CURTOS_RM = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -245,7 +246,7 @@ export default function ResumoMensal() {
         }
       }
       const calculado = c.saldoInicial + te - ts
-      const manual = parseFloat((dm?.saldoBanco ?? '').replace(/[R$\s.]/g, '').replace(',', '.')) || 0
+      const manual = parseBRL(dm?.saldoBanco ?? '')
       return { conta: c, saldo: manual > 0 ? manual : calculado }
     })
   }, [contasExtrato, dados, ano, mes])
