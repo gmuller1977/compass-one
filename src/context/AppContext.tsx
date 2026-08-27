@@ -79,8 +79,6 @@ type AppCtx = {
   extratoData: Record<string, DadosMes>
   faturaData:  Record<string, unknown>
   planos:     Record<number, PlanoAnoData>
-  planosReal: Record<number, PlanoAnoData>
-  planejamentoLockado: boolean
   desvioMinPerc: number
   percentualAlerta: number
   metodoSugestao: string
@@ -92,9 +90,6 @@ type AppCtx = {
   setExtratoData: (v: Record<string, DadosMes>) => void
   setFaturaData:  Dispatch<SetStateAction<Record<string, unknown>>>
   setPlanos:      Dispatch<SetStateAction<Record<number, PlanoAnoData>>>
-  finalizarPlanejamento:  (ano: number, dados: PlanoAnoData) => void
-  updatePlanoReal:        (ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) => void
-  setPlanejamentoLockado: (v: boolean) => void
   setDesvioMinPerc: (v: number) => void
   setPercentualAlerta: (v: number) => void
   setMetodoSugestao: (v: string) => void
@@ -640,19 +635,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  function finalizarPlanejamento(ano: number, dados: PlanoAnoData) {
-    setPlanosRealState(prev => ({ ...prev, [ano]: JSON.parse(JSON.stringify(dados)) }))
-    setPlanejamentoLockadoState(true)
-  }
+  // finalizarPlanejamento / updatePlanoReal / setPlanejamentoLockado foram
+  // removidos na migracao para plano unico. Eram as duas operacoes que
+  // sobrescreviam um plano inteiro e travavam a edicao; manter exportadas
+  // deixaria o modelo de dois planos voltar pela porta dos fundos.
+  // planosReal continua sendo carregado e salvo apenas como historico.
 
-  function updatePlanoReal(ano: number, fn: (prev: PlanoAnoData) => PlanoAnoData) {
-    setPlanosRealState(prev => ({
-      ...prev,
-      [ano]: fn(prev[ano] ?? { saldoInicialJan: 0, entradas: [], saidas: [] }),
-    }))
-  }
-
-  function setPlanejamentoLockado(v: boolean) { setPlanejamentoLockadoState(v) }
   function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
   function setPercentualAlerta(v: number) { setPercentualAlertaState(v) }
   function setMetodoSugestao(v: string) { setMetodoSugestaoState(v) }
@@ -701,14 +689,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       user, carregando,
-      contas, categorias, extratoData, faturaData, planos, planosReal,
-      planejamentoLockado, desvioMinPerc, percentualAlerta, metodoSugestao, perfil,
+      contas, categorias, extratoData, faturaData, planos,
+      desvioMinPerc, percentualAlerta, metodoSugestao, perfil,
       saldoInicialDinheiro, setSaldoInicialDinheiro: setSaldoInicialDinheiroState, salvarSaldoInicialDinheiro,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
-      finalizarPlanejamento, updatePlanoReal, setPlanejamentoLockado,
       setDesvioMinPerc, setPercentualAlerta, setMetodoSugestao, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
       objetivoUsuario, setObjetivoUsuario,
