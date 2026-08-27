@@ -69,33 +69,53 @@ Deno.serve(async (req) => {
   }
 
   // ── Gemini ────────────────────────────────────────────────
-  try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: history,
-        }),
-        signal: AbortSignal.timeout(25000),
-      },
-    )
+  // Dois modelos em cascata, contra duas falhas diferentes:
+  //   alias  -> acompanha as trocas do Google. O gemini-2.0-flash foi
+  //             descontinuado e derrubou o North sem ninguem perceber.
+  //   fixo   -> assume quando o alias esta sobrecarregado. O alias aponta
+  //             para o modelo mais novo, que e tambem o mais concorrido.
+  // So cai para o proximo em falha TEMPORARIA (429/503) ou erro de rede.
+  // Em 400/401/404 nao adianta insistir — para e reporta.
+  const MODELOS = ['gemini-flash-latest', 'gemini-3.6-flash']
 
-    if (!resp.ok) {
+  const payload = JSON.stringify({
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: history,
+  })
+
+  let ultimoStatus = 0
+
+  for (const modelo of MODELOS) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          signal: AbortSignal.timeout(20000),
+        },
+      )
+
+      if (resp.ok) {
+        const data = await resp.json()
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+          ?? 'Desculpe, não consegui processar sua pergunta.'
+        return json({ text })
+      }
+
+      ultimoStatus = resp.status
       // O corpo do erro pode citar a chave — nunca repassar para o cliente
-      console.error('[north-chat] Gemini respondeu', resp.status)
-      return json({ error: 'Assistente indisponível' }, 502)
+      console.error(`[north-chat] ${modelo} respondeu ${resp.status}`)
+
+      const valeTentarOutro = resp.status === 429 || resp.status >= 500
+      if (!valeTentarOutro) break
+    } catch (e) {
+      console.error(`[north-chat] ${modelo} falhou:`, e instanceof Error ? e.message : e)
+      // rede/timeout: vale tentar o proximo
     }
-
-    const data = await resp.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-      ?? 'Desculpe, não consegui processar sua pergunta.'
-
-    return json({ text })
-  } catch (e) {
-    console.error('[north-chat] falha ao chamar o Gemini:', e instanceof Error ? e.message : e)
-    return json({ error: 'Assistente indisponível' }, 502)
   }
+
+  console.error('[north-chat] nenhum modelo respondeu. Ultimo status:', ultimoStatus)
+  return json({ error: 'Assistente indisponível' }, 502)
 })
