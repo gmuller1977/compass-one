@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { parseBRL } from '../utils/moeda'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
@@ -67,10 +68,6 @@ const AURIX_EXEMPLOS = [
 ]
 
 const NIVEIS = ['🐣 Iniciante', '🧭 Navegador', '⭐ Explorador', '🔥 Disciplinado', '🏆 Mestre', '👑 Lenda']
-
-function parseBRL(s: string) {
-  return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
-}
 
 function newId() {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`

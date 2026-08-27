@@ -59,7 +59,10 @@ export function mesKey(conta: string, ano: number, mes: number) {
 
 export function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
 
-export function parseBRL(s: string) { return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0 }
+export { parseBRL, parseValor } from '../../utils/moeda'
+
+/** Realce do campo de valor quando o texto digitado nao e um numero. */
+export const REALCE_ERRO = { borderColor: '#dc2626', background: '#fef2f2', color: '#dc2626' }
 
 export function parseDateFatura(s: string, mesDefault: number, anoDefault: number): {dia:number;mes:number;ano:number}|null {
   const t = s.trim()

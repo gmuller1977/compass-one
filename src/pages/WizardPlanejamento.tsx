@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { parseBRL } from '../utils/moeda'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData, Categoria } from '../context/AppContext'
@@ -22,9 +23,6 @@ const OBJETIVOS: { id: Objetivo; emoji: string; titulo: string; sub: string }[] 
   { id:'dividas',    emoji:'📈', titulo:'Sair das dívidas',       sub:'Organizar as contas e criar um plano para quitar o que devo' },
 ]
 
-function parseBRL(s: string): number {
-  return parseFloat(s.replace(/[^\d,]/g, '').replace(',', '.')) || 0
-}
 function fmtBRL(v: number): string {
   return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' })
 }

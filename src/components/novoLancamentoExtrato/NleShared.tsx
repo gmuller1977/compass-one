@@ -84,7 +84,10 @@ export function removerRealce(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.boxShadow = 'none'
 }
 export function fmt(v: number) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
-export function parseBRL(s: string) { return parseFloat(s.replace(/[R$\s.]/g,'').replace(',','.')) || 0 }
+export { parseBRL, parseValor } from '../../utils/moeda'
+
+/** Realce do campo de valor quando o texto digitado nao e um numero. */
+export const REALCE_ERRO = { borderColor: '#dc2626', background: '#fef2f2', color: '#dc2626' }
 export function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
 export function diaSemana(d: number, m: number, a: number) { return DIAS_SEM[new Date(a,m,d).getDay()] }
 export function mesKey(conta: string, ano: number, mes: number) {

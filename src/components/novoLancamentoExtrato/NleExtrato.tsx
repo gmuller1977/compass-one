@@ -6,6 +6,8 @@ import {
   diaSemana, diaEfetivoFixa, BadgePag,
   formaPagCategoria, formaRecebCategoria,
   type CatFixa, type Lancamento, type DadosMes, type TipoLanc, type FormaPag,
+  parseValor,
+  REALCE_ERRO,
 } from './NleShared'
 
 type Props = {
@@ -175,6 +177,11 @@ export default function NleExtrato({
   setEditandoId, setEditandoFixaId,
   ehAutomatico,
 }: Props) {
+  // Texto que nao e um valor: parseValor devolve null. O salvamento ja
+  // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
+  // nada. O realce diz ao usuario por que.
+  const valorRuim = parseValor(fValor) === null
+
   const cartaoNomesExtrato = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
 
   return (
@@ -514,7 +521,7 @@ export default function NleExtrato({
                           <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
                           <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
                             placeholder="R$ 0,00" inputMode="decimal"
-                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
+                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto,...(valorRuim?REALCE_ERRO:{})}}
                             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                         </div>
                       </div>

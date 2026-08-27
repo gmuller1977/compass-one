@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { parseBRL } from '../utils/moeda'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -14,9 +15,6 @@ function useIsMobile() {
 }
 
 
-function parseBRL(s: string): number {
-  return parseFloat(s.replace(/[^\d,]/g, '').replace(',', '.')) || 0
-}
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }

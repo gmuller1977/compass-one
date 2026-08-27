@@ -6,6 +6,8 @@ import {
   realcarFoco, removerRealce, diaSemana,
   formaPagCategoria, formaRecebCategoria,
   type CatFixa, type DadosMes, type TipoLanc, type FormaPag,
+  parseValor,
+  REALCE_ERRO,
 } from './NleShared'
 
 type Props = {
@@ -73,6 +75,11 @@ export default function NleDesktopPanel({
   setFTipo, setFPag, setFCat, setFSubDesc, setFContaDestino, setFDesc, setFValor,
   lancar, excluirAtual,
 }: Props) {
+  // Texto que nao e um valor: parseValor devolve null. O salvamento ja
+  // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
+  // nada. O realce diz ao usuario por que.
+  const valorRuim = parseValor(fValor) === null
+
   if (isMobile) return null
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -330,7 +337,7 @@ export default function NleDesktopPanel({
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{width:'100%',border:'2px solid #1a56db',borderRadius:10,padding:'10px 14px',
                 fontSize:20,fontWeight:800,color:'#1a56db',background:'#eff6ff',outline:'none',
-                fontFamily:'inherit',textAlign:'center',letterSpacing:'-.4px'}}
+                fontFamily:'inherit',textAlign:'center',letterSpacing:'-.4px',...(valorRuim?REALCE_ERRO:{})}}
               onKeyDown={e=>e.key==='Enter'&&lancar()}/>
           </div>
 

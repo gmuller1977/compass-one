@@ -5,6 +5,8 @@ import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
   lancLabel,
   type TipoLanc, type Lancamento, type DadosMes,
+  parseValor,
+  REALCE_ERRO,
 } from './FcShared'
 
 type Props = {
@@ -111,6 +113,11 @@ export default function FcMobileView({
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs,
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
 }: Props) {
+  // Texto que nao e um valor: parseValor devolve null. O salvamento ja
+  // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
+  // nada. O realce diz ao usuario por que.
+  const valorRuim = parseValor(fValor) === null
+
   const prevMesNav = () => { if (mes === 0) { setMes(11); setAno(y => y-1) } else setMes(m => m-1) }
   const nextMesNav = () => { if (mes === 11) { setMes(0); setAno(y => y+1) } else setMes(m => m+1) }
   const statusCor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#d97706'
@@ -463,7 +470,7 @@ export default function FcMobileView({
                   padding:'12px 14px',fontSize:22,fontWeight:800,color:COR.azul,
                   background:'#eff6ff',outline:'none',fontFamily:'inherit',
                   textAlign:'center' as const,letterSpacing:-.4,
-                  boxSizing:'border-box' as const}}
+                  boxSizing:'border-box' as const,...(valorRuim?REALCE_ERRO:{})}}
                 onKeyDown={e => e.key==='Enter' && lancar()}/>
             </div>
 

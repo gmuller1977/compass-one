@@ -76,9 +76,7 @@ export function fmt(v: number, sempre = false) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-export function parseBRL(s: string): number {
-  return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
-}
+export { parseBRL, parseValor } from '../../utils/moeda'
 
 export function nomeFaturaCartao(nome: string, cartaoNomes: Set<string>): boolean {
   if (cartaoNomes.has(nome.toLowerCase())) return true

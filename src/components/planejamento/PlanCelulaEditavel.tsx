@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useToast } from '../Toast'
-import { fmt, parseBRL, COR } from './types'
+import { fmt, parseValor, COR } from './types'
 
 interface Props {
   valor: number
@@ -36,7 +36,13 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
   }
 
   function confirmar() {
-    const v = parseBRL(temp)
+    const v = parseValor(temp)
+    // Ver PlanCelulaNav: valor invalido nao vira zero, senao apaga a celula.
+    if (v === null) {
+      toast(`"${temp.trim()}" não é um valor. A célula ficou como estava.`, 'error')
+      setEditando(false)
+      return
+    }
     onSave(v >= 0 ? v : 0)
     setEditando(false)
   }

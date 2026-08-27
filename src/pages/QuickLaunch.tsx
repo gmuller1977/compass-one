@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { parseBRL } from '../utils/moeda'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
@@ -31,9 +32,6 @@ function mesKey(conta: string, ano: number, mes: number) {
 }
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-function parseBRL(s: string) {
-  return parseFloat(s.replace(/[R$\s.]/g, '').replace(',', '.')) || 0
 }
 function NOMES_MESES_SHORT() {
   return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']

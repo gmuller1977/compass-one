@@ -5,6 +5,8 @@ import {
   realcarFoco, removerRealce, diaSemana,
   formaPagCategoria, formaRecebCategoria,
   type TipoLanc, type FormaPag,
+  parseValor,
+  REALCE_ERRO,
 } from './NleShared'
 
 type SaldoConta  = { conta: Conta; saldo: number }
@@ -86,6 +88,11 @@ export default function NleConsolidado({
   valorInputRef, categoriaSelectRef,
   lancarConsolidado, resetarParaNovo,
 }: Props) {
+  // Texto que nao e um valor: parseValor devolve null. O salvamento ja
+  // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
+  // nada. O realce diz ao usuario por que.
+  const valorRuim = parseValor(fValor) === null
+
 
   const hoje = new Date()
   const diaHoje = hoje.getDate()
@@ -513,7 +520,7 @@ export default function NleConsolidado({
               placeholder="R$ 0,00" onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',
-                fontFamily:'inherit',color:COR.texto,width:'100%'}}
+                fontFamily:'inherit',color:COR.texto,width:'100%',...(valorRuim?REALCE_ERRO:{})}}
               onKeyDown={e=>e.key==='Enter'&&lancarConsolidado()}/>
           </div>
           <div>

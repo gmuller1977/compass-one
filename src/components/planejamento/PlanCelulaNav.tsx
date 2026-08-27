@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { useToast } from '../Toast'
-import { parseBRL } from './types'
+import { parseValor } from './types'
 
 interface Props {
   valor: number
@@ -51,7 +51,15 @@ export default function PlanCelulaNav({
 
   function save(dir?: 'up' | 'down' | 'left' | 'right') {
     jaSalvouRef.current = true
-    onChange(parseBRL(inputVal || '0'))
+    const v = parseValor(inputVal || '0')
+    // Texto invalido nao pode virar zero: gravar 0 aqui apagaria o valor que
+    // ja estava na celula. Avisa e devolve a celula como estava.
+    if (v === null) {
+      toast(`"${inputVal.trim()}" não é um valor. A célula ficou como estava.`, 'error')
+      onCancelEdit()
+      return
+    }
+    onChange(v)
     if (dir) onNavigate(dir)
   }
 

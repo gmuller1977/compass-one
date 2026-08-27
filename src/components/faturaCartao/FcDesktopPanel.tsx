@@ -4,6 +4,8 @@ import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
   realcarFoco, removerRealce,
   type TipoLanc, type DadosMes,
+  parseValor,
+  REALCE_ERRO,
 } from './FcShared'
 
 type Props = {
@@ -73,6 +75,11 @@ export default function FcDesktopPanel({
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs,
   resetarParaNovo, excluirAtual, lancar, updateMes,
 }: Props) {
+  // Texto que nao e um valor: parseValor devolve null. O salvamento ja
+  // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
+  // nada. O realce diz ao usuario por que.
+  const valorRuim = parseValor(fValor) === null
+
   return (
     <div style={{width:340,flexShrink:0,background:COR.branco,
       borderLeft:`1px solid ${COR.borda}`,padding:20,overflowY:'auto'}}>
@@ -264,7 +271,7 @@ export default function FcDesktopPanel({
             onFocus={realcarFoco} onBlur={removerRealce}
             style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
               fontSize:12,outline:'none',background:'#fff',
-              fontFamily:'inherit',color:COR.texto,width:'100%'}}
+              fontFamily:'inherit',color:COR.texto,width:'100%',...(valorRuim?REALCE_ERRO:{})}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
         </div>
         <div>
