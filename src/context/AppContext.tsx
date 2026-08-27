@@ -279,7 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Load data ────────────────────────────────────────────────────────
   async function loadData(userId: string) {
     if (loadingForUserRef.current === userId) return
-    console.log('🔄 [loadData] iniciando para userId:', userId.slice(0, 8))
+    if (import.meta.env.DEV) console.log('🔄 [loadData] iniciando para userId:', userId.slice(0, 8))
     loadingForUserRef.current = userId
     setCarregando(true)
     dataLoadedRef.current = false
@@ -301,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
     ])
 
-    console.log('📊 [loadData] resultado do banco:', {
+    if (import.meta.env.DEV) console.log('📊 [loadData] resultado do banco:', {
       contas: contasRows?.length ?? 'ERRO',
       categorias: categoriasRows?.length ?? 'ERRO',
       erros: { contasErr: !!contasErr, catsErr: !!catsErr, extratoErr: !!extratoErr, faturaErr: !!faturaErr, planosErr: !!planosErr }
@@ -330,7 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const contasDbIds = new Set(contasLoaded.map(c => c.id))
     const userOnlyContas = contasRef.current.filter(c => !contasDbIds.has(c.id))
     const mergedContas = userOnlyContas.length > 0 ? [...contasLoaded, ...userOnlyContas] : contasLoaded
-    if (userOnlyContas.length > 0) console.log('🔀 [loadData] mesclando', userOnlyContas.length, 'contas adicionadas durante o load')
+    if (import.meta.env.DEV && userOnlyContas.length > 0) console.log('🔀 [loadData] mesclando', userOnlyContas.length, 'contas adicionadas durante o load')
     setContasState(mergedContas)
     const contaIdSet = new Set(mergedContas.map(c => c.id))
 
@@ -448,7 +448,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function saveContas(list: Conta[]) {
     if (!canSave()) return
     const uid = userIdRef.current!
-    console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
+    if (import.meta.env.DEV) console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
     if (list.length === 0) {
       if (!safeSaveCheck('contas', 0)) return
       console.error('⚠️ [saveContas] DELETE ALL contas!')
@@ -458,7 +458,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const { data: upserted, error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid))).select('id')
     if (error) { console.error('❌ [saveContas] upsert error:', error.message, error.code); return }
-    console.log('✅ [saveContas] upsert OK:', upserted?.length, 'rows. IDs:', list.map(c => c.id))
+    if (import.meta.env.DEV) console.log('✅ [saveContas] upsert OK:', upserted?.length, 'rows. IDs:', list.map(c => c.id))
     const ids = list.map(c => c.id).join(',')
     const { error: delErr, count } = await supabase.from('contas').delete({ count: 'exact' }).eq('user_id', uid).not('id', 'in', `(${ids})`)
     if (delErr) console.error('❌ [saveContas] delete-stale error:', delErr.message)
