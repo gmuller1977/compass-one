@@ -5,6 +5,7 @@ import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
 import PageHeader from '../PageHeader'
 import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
 import { resolverRealKey } from '../acompanhamento/evolucaoCalcs'
+import { ehZero } from '../../utils/moeda'
 
 /**
  * Valor lancado de uma categoria. As chaves do mapa sao (nome + variante),
@@ -136,7 +137,7 @@ export default function PlanRevisao({
   const allEntradas: CatRow[] = dadosPrevisto.entradas.map((cat, ri) => {
     const planejado = cat.v[mesSel] ?? 0
     const real      = lancadoDaCat(lancado.entrada, cat)
-    if (planejado === 0 && real === 0) return null
+    if (ehZero(planejado) && ehZero(real)) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
     return { tipo: 'e' as const, cat, ri, planejado, real, desvioPercent, temDesvio: desvioPercent > desvioMinPerc }
   }).filter(Boolean) as CatRow[]
@@ -144,7 +145,7 @@ export default function PlanRevisao({
   const allSaidas: CatRow[] = dadosPrevisto.saidas.map((cat, ri) => {
     const planejado = cat.v[mesSel] ?? 0
     const real      = lancadoDaCat(lancado.saida, cat)
-    if (planejado === 0 && real === 0) return null
+    if (ehZero(planejado) && ehZero(real)) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
     return { tipo: 's' as const, cat, ri, planejado, real, desvioPercent, temDesvio: desvioPercent > desvioMinPerc }
   }).filter(Boolean) as CatRow[]

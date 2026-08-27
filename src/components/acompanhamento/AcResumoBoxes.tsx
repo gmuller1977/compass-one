@@ -1,5 +1,6 @@
 import { COR, fmt } from './AcShared'
 import KpiCard from '../KpiCard'
+import { ehZero } from '../../utils/moeda'
 
 interface AcResumoBoxesProps {
   isMobile: boolean
@@ -70,7 +71,7 @@ export default function AcResumoBoxes({
       padding: '12px 16px', flexShrink: 0, display: 'flex', gap: 10,
     }}>
       {caixas.map(c => {
-        const difStr = c.diff === 0 ? null : `${c.diff > 0 ? '+' : ''}${fmt(c.diff)}`
+        const difStr = ehZero(c.diff) ? null : `${c.diff > 0 ? '+' : ''}${fmt(c.diff)}`
         const difCor = c.diffPos ? '#4ade80' : '#f87171'
         const difBg  = c.diffPos ? 'rgba(34,197,94,.18)' : 'rgba(239,68,68,.18)'
         return (
