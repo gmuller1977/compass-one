@@ -4,6 +4,17 @@ import { supabase } from '../../lib/supabase'
 import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
 import PageHeader from '../PageHeader'
 import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
+import { resolverRealKey } from '../acompanhamento/evolucaoCalcs'
+
+/**
+ * Valor lancado de uma categoria. As chaves do mapa sao (nome + variante),
+ * entao Seguro·Civic e Seguro·March nao se somam. Ler so por cat.nome, como
+ * antes, juntava as duas — e a revisao sugeria ajustar uma delas com o total.
+ */
+function lancadoDaCat(map: Record<string, number>, cat: { nome: string; descricao?: string }) {
+  const k = resolverRealKey(map, cat.nome, cat.descricao)
+  return k ? (map[k] ?? 0) : 0
+}
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -118,13 +129,13 @@ export default function PlanRevisao({
   const lancado = lancadoPorCatMes[mesSel] ?? { entrada: {}, saida: {} }
 
   const totalRecPrev = dadosPrevisto.entradas.reduce((s, c) => s + (c.v[mesSel] ?? 0), 0)
-  const totalRecReal = dadosPrevisto.entradas.reduce((s, c) => s + (lancado.entrada[c.nome] ?? 0), 0)
+  const totalRecReal = dadosPrevisto.entradas.reduce((s, c) => s + lancadoDaCat(lancado.entrada, c), 0)
   const totalDesPrev = dadosPrevisto.saidas.reduce((s, c) => s + (c.v[mesSel] ?? 0), 0)
-  const totalDesReal = dadosPrevisto.saidas.reduce((s, c) => s + (lancado.saida[c.nome] ?? 0), 0)
+  const totalDesReal = dadosPrevisto.saidas.reduce((s, c) => s + lancadoDaCat(lancado.saida, c), 0)
 
   const allEntradas: CatRow[] = dadosPrevisto.entradas.map((cat, ri) => {
     const planejado = cat.v[mesSel] ?? 0
-    const real      = lancado.entrada[cat.nome] ?? 0
+    const real      = lancadoDaCat(lancado.entrada, cat)
     if (planejado === 0 && real === 0) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
     return { tipo: 'e' as const, cat, ri, planejado, real, desvioPercent, temDesvio: desvioPercent > desvioMinPerc }
@@ -132,7 +143,7 @@ export default function PlanRevisao({
 
   const allSaidas: CatRow[] = dadosPrevisto.saidas.map((cat, ri) => {
     const planejado = cat.v[mesSel] ?? 0
-    const real      = lancado.saida[cat.nome] ?? 0
+    const real      = lancadoDaCat(lancado.saida, cat)
     if (planejado === 0 && real === 0) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
     return { tipo: 's' as const, cat, ri, planejado, real, desvioPercent, temDesvio: desvioPercent > desvioMinPerc }

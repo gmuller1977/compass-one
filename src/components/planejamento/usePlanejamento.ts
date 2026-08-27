@@ -6,9 +6,29 @@ import {
   mergeCats, calcSaldos, nomeFaturaCartao, MESES,
   type Cat, type AnoData, type AncoraReal,
 } from './types'
+import { catKey, norm, resolverSub } from '../acompanhamento/evolucaoCalcs'
 
 // iconeCategoria imported above; suppress unused warning
 void iconeCategoria
+
+/**
+ * Linha do plano correspondente a uma categoria do cadastro.
+ * Casa pelo par (nome, variante). O fallback pelo nome puro so entra quando
+ * existe UMA linha com aquele nome — plano antigo, gravado antes das variantes.
+ * Com duas linhas nao ha fallback: escolher uma somaria no lugar errado.
+ */
+function acharPlanCat<T extends { nome: string; descricao?: string }>(
+  cats: T[] | undefined,
+  nome: string,
+  descricao?: string,
+): T | undefined {
+  if (!cats) return undefined
+  const alvo = catKey(nome, descricao)
+  const exato = cats.find(c => catKey(c.nome, c.descricao) === alvo)
+  if (exato) return exato
+  const doNome = cats.filter(c => norm(c.nome) === norm(nome))
+  return doNome.length === 1 ? doNome[0] : undefined
+}
 
 export function usePlanejamento(anoAtual: number) {
   const {
@@ -123,7 +143,7 @@ export function usePlanejamento(anoAtual: number) {
       entrada: Record<string, number>; saida: Record<string, number>
       entradaCartao: Record<string, number>; saidaCartao: Record<string, number>
     }> = {}
-    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string }[]> }>
+    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string; subCategoria?: string }[]> }>
     const _hoje = new Date()
     const mesHojeRef = _hoje.getMonth()
     const anoHojeRef = _hoje.getFullYear()
@@ -135,7 +155,11 @@ export function usePlanejamento(anoAtual: number) {
       Object.entries(extratoData).forEach(([key, dados]) => {
         if (!key.endsWith(sufixo)) return
         Object.values(dados.lancamentos).flat().forEach(l => {
-          result[mes][l.tipo][l.categoria] = (result[mes][l.tipo][l.categoria] ?? 0) + l.valor
+          const k = catKey(l.categoria, resolverSub(
+            categorias, l.categoria, l.tipo,
+            (l as { subCategoria?: string }).subCategoria,
+          ))
+          result[mes][l.tipo][k] = (result[mes][l.tipo][k] ?? 0) + l.valor
         })
         const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
         if (!ehCartaoKey) {
@@ -147,10 +171,11 @@ export function usePlanejamento(anoAtual: number) {
               : (ehAuto && ehMesPassado)
             if (!estaConsolidada) return
             const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
-            const planVal = planCats?.find(c => c.nome === f.nome)?.v[mes] ?? 0
+            const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
             const fValor = (f as unknown as { valor?: number }).valor ?? 0
             const val = dados.fixasValorOverride?.[f.id] ?? (planVal > 0 ? planVal : fValor)
-            result[mes][f.tipo][f.nome] = (result[mes][f.tipo][f.nome] ?? 0) + val
+            const kf = catKey(f.nome, f.descricao)
+            result[mes][f.tipo][kf] = (result[mes][f.tipo][kf] ?? 0) + val
           })
         }
       })
@@ -168,13 +193,13 @@ export function usePlanejamento(anoAtual: number) {
         const nDias = new Date(pAno, pMes + 1, 0).getDate()
         for (let d = 1; d <= nDias; d++) {
           ;(dm.lancamentos[d] ?? []).forEach(l => {
-            if (l.tipo === 'entrada') {
-              result[mes]['saida'][l.categoria] = (result[mes]['saida'][l.categoria] ?? 0) + l.valor
-              result[mes]['saidaCartao'][l.categoria] = (result[mes]['saidaCartao'][l.categoria] ?? 0) + l.valor
-            } else {
-              result[mes]['saida'][l.categoria] = (result[mes]['saida'][l.categoria] ?? 0) - l.valor
-              result[mes]['saidaCartao'][l.categoria] = (result[mes]['saidaCartao'][l.categoria] ?? 0) - l.valor
-            }
+            // Tudo que vem da fatura cai no balde de saida — inclusive o estorno,
+            // que entra com sinal negativo. Por isso a variante resolve sempre
+            // contra as categorias de saida.
+            const k = catKey(l.categoria, resolverSub(categorias, l.categoria, 'saida', l.subCategoria))
+            const sinal = l.tipo === 'entrada' ? 1 : -1
+            result[mes]['saida'][k] = (result[mes]['saida'][k] ?? 0) + sinal * l.valor
+            result[mes]['saidaCartao'][k] = (result[mes]['saidaCartao'][k] ?? 0) + sinal * l.valor
           })
         }
       })
@@ -211,7 +236,7 @@ export function usePlanejamento(anoAtual: number) {
           categorias.filter(c => c.fixa && c.ativa).forEach(f => {
             if (!dados.fixasConsolidadas?.[f.id]) return
             const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
-            const planVal = planCats?.find(c => c.nome === f.nome)?.v[mes] ?? 0
+            const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
             const val = dados.fixasValorOverride?.[f.id] ?? planVal
             if (f.tipo === 'entrada') te[mes] += val
             else ts[mes] += val

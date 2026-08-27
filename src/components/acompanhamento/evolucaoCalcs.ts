@@ -35,15 +35,36 @@ export function splitCatKey(key: string): { nome: string; descricao: string } {
  *   variante única feita ao montar o realMap (resolverSub).
  */
 export function resolverRealKey(
-  realMap: Record<string, CatReal>,
+  realMap: Record<string, unknown>,
   nome: string,
   descricao?: string,
 ): string | undefined {
   const exata = catKey(nome, descricao)
-  if (realMap[exata]) return exata
+  if (exata in realMap) return exata
   if (norm(descricao)) return undefined
   const doNome = Object.keys(realMap).filter(k => norm(splitCatKey(k).nome) === norm(nome))
   return doNome.length === 1 ? doNome[0] : undefined
+}
+
+/**
+ * Variante de um lancamento. O lancamento novo ja grava subCategoria; o antigo
+ * nao tem, e ai so da para inferir quando a categoria tem UMA variante ativa —
+ * com duas, chutar somaria no lugar errado.
+ *
+ * Existem copias locais desta funcao em RadarFinanceiro e ResumoMensal. Ficaram
+ * la de proposito: as duas telas funcionam e nao vale mexer agora.
+ */
+export function resolverSub(
+  categorias: Categoria[],
+  nome: string,
+  tipo: 'entrada' | 'saida',
+  sub?: string,
+): string | undefined {
+  if (norm(sub)) return norm(sub)
+  const variantes = categorias.filter(
+    c => norm(c.nome) === norm(nome) && c.tipo === tipo && c.ativa && norm(c.descricao),
+  )
+  return variantes.length === 1 ? norm(variantes[0].descricao) : undefined
 }
 
 export function pickReal(
