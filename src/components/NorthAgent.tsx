@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
+import { supabase } from '../lib/supabase'
 import NorthPanel from './NorthPanel'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from './aurix/AurixToast'
@@ -196,14 +197,23 @@ ${metaSim
       const history = newMessages.slice(-20)
       const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXTO_DINAMICO}', buildContext())
 
+      // A chamada ao Gemini passou para a Edge Function north-chat: a chave da
+      // API ia embutida no bundle e era legivel por qualquer um.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('sem sessao')
+
       const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY ?? ''}`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/north-chat`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+          },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: history.map(m => ({
+            systemPrompt,
+            history: history.map(m => ({
               role: m.role === 'assistant' ? 'model' : 'user',
               parts: [{ text: m.content }],
             })),
@@ -216,9 +226,8 @@ ${metaSim
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
 
-      const data = await resp.json() as { candidates?: { content: { parts: { text: string }[] } }[] }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-        ?? 'Desculpe, não consegui processar sua pergunta.'
+      const data = await resp.json() as { text?: string }
+      const text = data.text ?? 'Desculpe, não consegui processar sua pergunta.'
 
       setMessages(prev => [...prev, { role: 'assistant', content: text, ts: Date.now() }])
 
