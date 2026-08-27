@@ -71,11 +71,11 @@ type Props = {
 // ── Temas temporais ──────────────────────────────────────────────────────────
 const TEMA = {
   past: {
-    cardBg:        'linear-gradient(135deg, #60a5fa, #3b82f6)',
+    cardBg:        'linear-gradient(135deg, #1d4ed8, #1e40af)',
     text:          '#fff',
-    label:         'rgba(255,255,255,0.6)',
-    rec:           '#4ade80',
-    desp:          '#f87171',
+    label:         'rgba(255,255,255,0.75)',
+    rec:           '#86efac',
+    desp:          '#fecaca',
     saldo:         '#e2e8f0',
     zero:          'rgba(255,255,255,0.25)',
     divider:       'rgba(255,255,255,0.08)',
@@ -102,9 +102,9 @@ const TEMA = {
   current: {
     cardBg:        'linear-gradient(135deg, #1e3a8a, #0f2878)',
     text:          '#fff',
-    label:         'rgba(255,255,255,0.65)',
-    rec:           '#4ade80',
-    desp:          '#f87171',
+    label:         'rgba(255,255,255,0.75)',
+    rec:           '#86efac',
+    desp:          '#fecaca',
     saldo:         '#93c5fd',
     zero:          'rgba(255,255,255,0.3)',
     divider:       'rgba(255,255,255,0.08)',
@@ -131,9 +131,9 @@ const TEMA = {
   future: {
     cardBg:        'linear-gradient(135deg, #bfdbfe, #93c5fd)',
     text:          '#1e3a8a',
-    label:         'rgba(30,58,138,0.5)',
-    rec:           '#16a34a',
-    desp:          '#dc2626',
+    label:         'rgba(15,23,42,0.7)',
+    rec:           '#14532d',
+    desp:          '#7f1d1d',
     saldo:         '#1e3a8a',
     zero:          'rgba(30,58,138,0.2)',
     divider:       'rgba(30,58,138,0.1)',
