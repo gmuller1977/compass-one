@@ -426,7 +426,7 @@ export default function PlanRevisao({
     setExpandOk: (v: boolean) => void,
   ) {
     if (rows.length === 0) return null
-    const gradBg  = tipo === 'e' ? 'linear-gradient(135deg,#0f2878,#1a56db)' : 'linear-gradient(135deg,#7f1d1d,#b91c1c)'
+    const gradBg  = tipo === 'e' ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)'
     const desvioRows = rows.filter(r => r.temDesvio)
     const okRows     = rows.filter(r => !r.temDesvio)
 

@@ -162,7 +162,7 @@ export default function PlanModalMes({
         {/* Rodape */}
         <div style={{
           padding: '14px 20px',
-          background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+          background: 'linear-gradient(135deg,#0f2878,#1e40af)',
           display: 'flex', gap: 12,
         }}>
           <div style={{ flex: 1, textAlign: 'center' }}>

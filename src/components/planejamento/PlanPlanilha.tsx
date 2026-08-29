@@ -76,14 +76,14 @@ const W_MES  = 130
 const TC = {
   com: {
     header: 'linear-gradient(135deg, #1e3a8a, #0f2878)', body: '#0f2878', text: '#fff',
-    rec: '#4ade80', desp: '#fbbf24', saldo: '#fff',
+    rec: '#86efac', desp: '#fde047', saldo: '#fff',
     grp: 'rgba(255,255,255,0.06)', tot: 'rgba(255,255,255,0.09)',
     border: 'rgba(255,255,255,0.08)', divider: 'rgba(255,255,255,0.06)',
     hover: 'rgba(255,255,255,0.1)', stripe: 'rgba(255,255,255,0.04)',
   },
   sem: {
-    header: 'linear-gradient(135deg, #64748b, #475569)', body: '#475569', text: 'rgba(255,255,255,0.7)',
-    rec: 'rgba(255,255,255,0.4)', desp: 'rgba(255,255,255,0.4)', saldo: 'rgba(255,255,255,0.4)',
+    header: 'linear-gradient(135deg, #475569, #334155)', body: '#334155', text: '#fff',
+    rec: 'rgba(255,255,255,0.75)', desp: 'rgba(255,255,255,0.75)', saldo: 'rgba(255,255,255,0.75)',
     grp: 'rgba(255,255,255,0.04)', tot: 'rgba(255,255,255,0.06)',
     border: 'rgba(255,255,255,0.06)', divider: 'rgba(255,255,255,0.05)',
     hover: 'rgba(255,255,255,0.08)', stripe: 'rgba(255,255,255,0.03)',
@@ -293,7 +293,7 @@ export default function PlanPlanilha({
         display: 'flex', flexDirection: 'row', overflow: 'hidden',
       }}>
         {/* Coluna fixa de labels */}
-        <div style={{ minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0, background: 'linear-gradient(135deg,#0f2878,#1a56db)' }}>
+        <div style={{ minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0, background: 'linear-gradient(135deg,#0f2878,#1e40af)' }}>
           {/* Header: RESUMO + year nav */}
           <div style={{
             height: SH, display: 'flex', alignItems: 'center',
@@ -305,7 +305,7 @@ export default function PlanPlanilha({
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a - 1)}>◄</button>
-              <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fbbf24' : '#fff', minWidth: 34, textAlign: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fde047' : '#fff', minWidth: 34, textAlign: 'center' }}>
                 {anoAtual}
               </span>
               <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a + 1)}>►</button>

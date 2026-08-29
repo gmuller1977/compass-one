@@ -15,28 +15,28 @@ const TH = {
   com: {
     bg:           'linear-gradient(145deg, #1e3a8a, #0f2878)',
     text:         '#fff',
-    label:        'rgba(255,255,255,0.5)',
+    label:        'rgba(255,255,255,0.75)',
     border:       '1px solid rgba(255,255,255,0.12)',
     shadow:       '0 1px 4px rgba(15,40,120,0.25)',
     shadowHover:  '0 8px 24px rgba(15,40,120,0.5)',
     recBg:        'rgba(255,255,255,0.12)',
-    recText:      '#4ade80',
+    recText:      '#86efac',
     despBg:       'rgba(255,255,255,0.12)',
-    despText:     '#fbbf24',
+    despText:     '#fde047',
     saldoIniBg:   'rgba(255,255,255,0.08)',
     saldoFinalBg: 'rgba(255,255,255,0.1)',
     barTrack:     'rgba(255,255,255,0.15)',
-    progLabel:    'rgba(255,255,255,0.5)',
+    progLabel:    'rgba(255,255,255,0.75)',
     divider:      'rgba(255,255,255,0.1)',
     semPlano:     'rgba(255,255,255,0.35)',
-    resultLabel:  'rgba(255,255,255,0.5)',
+    resultLabel:  'rgba(255,255,255,0.75)',
     badgeBg:      'rgba(255,255,255,0.25)',
     badgeText:    '#fff',
   },
   sem: {
-    bg:           'linear-gradient(145deg, #64748b, #475569)',
-    text:         'rgba(255,255,255,0.7)',
-    label:        'rgba(255,255,255,0.4)',
+    bg:           'linear-gradient(145deg, #475569, #334155)',
+    text:         '#fff',
+    label:        'rgba(255,255,255,0.75)',
     border:       '1px solid rgba(255,255,255,0.08)',
     shadow:       '0 1px 4px rgba(0,0,0,0.1)',
     shadowHover:  '0 8px 20px rgba(0,0,0,0.2)',
@@ -47,10 +47,10 @@ const TH = {
     saldoIniBg:   'rgba(255,255,255,0.06)',
     saldoFinalBg: 'rgba(255,255,255,0.06)',
     barTrack:     'rgba(255,255,255,0.1)',
-    progLabel:    'rgba(255,255,255,0.4)',
+    progLabel:    'rgba(255,255,255,0.75)',
     divider:      'rgba(255,255,255,0.08)',
     semPlano:     'rgba(255,255,255,0.35)',
-    resultLabel:  'rgba(255,255,255,0.4)',
+    resultLabel:  'rgba(255,255,255,0.75)',
     badgeBg:      'rgba(255,255,255,0.2)',
     badgeText:    'rgba(255,255,255,0.8)',
   },
@@ -71,7 +71,7 @@ export default function PlanCardMes({
   const shadowHover = isAtual ? '0 8px 28px rgba(26,86,219,0.65)' : th.shadowHover
 
   const saldoFinalBg   = negativo ? 'rgba(251,191,36,0.2)' : th.saldoFinalBg
-  const saldoFinalText = negativo ? '#fbbf24' : th.text
+  const saldoFinalText = negativo ? '#fde047' : th.text
 
   const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : '#4ade80'
 
@@ -155,7 +155,7 @@ export default function PlanCardMes({
               borderTop: `1px solid ${th.divider}`, paddingTop: 6,
             }}>
               <span style={{ color: th.resultLabel, fontSize: 11 }}>= Resultado</span>
-              <span style={{ fontWeight: 700, color: negativo ? '#fbbf24' : th.recText, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+              <span style={{ fontWeight: 700, color: negativo ? '#fde047' : th.recText, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
                 {resultado >= 0 ? '+' : ''}{fmt(resultado, true)}
               </span>
             </div>

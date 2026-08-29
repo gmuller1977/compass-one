@@ -558,7 +558,7 @@ export default function NleExtrato({
           {/* Saldo final — mobile inline */}
           {isMobile&&(
             <div style={{margin:'4px 0 8px',borderRadius:14,
-              background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#dc2626)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
+              background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#991b1b)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
               padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
               <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)'}}>
                 Saldo final — {NOMES_MESES[mes]} {ano}
@@ -577,7 +577,7 @@ export default function NleExtrato({
           return(
             <div style={{padding:'8px 16px',flexShrink:0,borderTop:'1px solid #e2e8f0',background:'#f8faff'}}>
               <div style={{borderRadius:12,
-                background:positivo?'linear-gradient(135deg,#0f2878,#2563eb)':'linear-gradient(135deg,#7f1d1d,#dc2626)',
+                background:positivo?'linear-gradient(135deg,#0f2878,#1e40af)':'linear-gradient(135deg,#7f1d1d,#991b1b)',
                 padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
                   <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Saldo final previsto</div>

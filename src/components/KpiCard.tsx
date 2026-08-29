@@ -10,7 +10,7 @@ export interface KpiCardProps {
   style?: React.CSSProperties
 }
 
-const KPI_BG = 'linear-gradient(135deg,#0f2878,#1a56db)'
+const KPI_BG = 'linear-gradient(135deg,#0f2878,#1e40af)'
 const KPI_BORDER = '1px solid rgba(255,255,255,.15)'
 const LABEL_STYLE: React.CSSProperties = {
   fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)',

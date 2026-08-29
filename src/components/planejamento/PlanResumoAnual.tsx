@@ -10,7 +10,7 @@ interface Props {
   onChangeAno: (delta: 1 | -1) => void
 }
 
-const NAV_BG = 'linear-gradient(135deg,#0f2878,#1a56db)'
+const NAV_BG = 'linear-gradient(135deg,#0f2878,#1e40af)'
 const BTN: React.CSSProperties = {
   background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 6,
   color: '#fff', cursor: 'pointer', padding: '4px 9px', fontSize: 13, lineHeight: 1,
@@ -35,7 +35,7 @@ export default function PlanResumoAnual({
           <button style={BTN} onClick={() => onChangeAno(-1)}>◄</button>
           <span style={{
             fontSize: 16, fontWeight: 800, minWidth: 44, textAlign: 'center',
-            color: anoAtual === anoCorrente ? '#fbbf24' : '#fff',
+            color: anoAtual === anoCorrente ? '#fde047' : '#fff',
           }}>{anoAtual}</span>
           <button style={BTN} onClick={() => onChangeAno(1)}>►</button>
         </div>
@@ -43,10 +43,10 @@ export default function PlanResumoAnual({
 
       {/* 4 KPI tiles */}
       <KpiCard label={`Saldo inicial ${anoAtual}`} value={fmt(saldoInicial, true)} style={{ flex: 1 }} />
-      <KpiCard icon="↑" label="Receitas" value={fmt(totalReceitas, true)} valueColor="#4ade80" style={{ flex: 1 }} />
+      <KpiCard icon="↑" label="Receitas" value={fmt(totalReceitas, true)} valueColor="#86efac" style={{ flex: 1 }} />
       <KpiCard icon="↓" label="Despesas" value={fmt(totalDespesas, true)} valueColor="#f87171" style={{ flex: 1 }} />
       <KpiCard label={`Saldo final Dez/${anoAtual}`} value={fmt(resultado, true)}
-        valueColor={resultado >= 0 ? '#4ade80' : '#f87171'} style={{ flex: 1 }} />
+        valueColor={resultado >= 0 ? '#86efac' : '#fecaca'} style={{ flex: 1 }} />
 
     </div>
   )

@@ -23,11 +23,11 @@ interface Props {
 const TL = {
   com: {
     bg: 'linear-gradient(135deg, #1e3a8a, #0f2878)',
-    text: '#fff', rec: '#4ade80', desp: '#fbbf24', neg: '#fbbf24', saldo: '#fff',
+    text: '#fff', rec: '#86efac', desp: '#fde047', neg: '#fde047', saldo: '#fff',
   },
   sem: {
-    bg: 'linear-gradient(135deg, #64748b, #475569)',
-    text: 'rgba(255,255,255,0.7)', rec: 'rgba(255,255,255,0.4)', desp: 'rgba(255,255,255,0.4)', neg: 'rgba(255,255,255,0.4)', saldo: 'rgba(255,255,255,0.4)',
+    bg: 'linear-gradient(135deg, #475569, #334155)',
+    text: '#fff', rec: 'rgba(255,255,255,0.75)', desp: 'rgba(255,255,255,0.75)', neg: 'rgba(255,255,255,0.75)', saldo: 'rgba(255,255,255,0.75)',
   },
 }
 
