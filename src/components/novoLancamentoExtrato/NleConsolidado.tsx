@@ -207,7 +207,7 @@ export default function NleConsolidado({
                 const limite     = conta.limiteCartao ?? 0
                 const disponivel = limite - fatura
                 const pct        = limite > 0 ? Math.min(fatura / limite, 1) : 0
-                const corBar     = pct > .9 ? COR.vermelho : pct > .7 ? '#f59e0b' : COR.verde
+                const corBar     = pct > .9 ? COR.vermelho : pct > .7 ? '#b45309' : COR.verde
                 const cor        = conta.cor || '#6366f1'
                 return (
                   <div key={conta.id} style={{background:COR.branco,

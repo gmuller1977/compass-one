@@ -103,7 +103,7 @@ export default function PlanCelulaNav({
           fontSize: 10, fontWeight: 600,
           textAlign: 'right',
           padding: '0 4px',
-          color: '#1e293b',
+          color: '#0f172a',
           boxSizing: 'border-box',
           outline: 'none',
         }}

@@ -88,7 +88,7 @@ function AppMockup() {
           ].map(k => (
             <div key={k.label} style={{
               background:'#fff', borderRadius:10, padding:'9px 9px',
-              border:'1px solid #e8edf3',
+              border:'1px solid #e2e8f0',
             }}>
               <div style={{ fontSize:8, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', letterSpacing:'.3px', marginBottom:3 }}>{k.label}</div>
               <div style={{ fontSize:12, fontWeight:800, color:k.color, fontVariantNumeric:'tabular-nums' }}>{k.value}</div>
@@ -97,7 +97,7 @@ function AppMockup() {
         </div>
 
         {/* Onde mais gastei */}
-        <div style={{ background:'#fff', borderRadius:10, padding:'10px 12px', border:'1px solid #e8edf3' }}>
+        <div style={{ background:'#fff', borderRadius:10, padding:'10px 12px', border:'1px solid #e2e8f0' }}>
           <div style={{ fontSize:11, fontWeight:600, color:'#0f172a', marginBottom:9 }}>Últimos lançamentos</div>
           {[
             { icon:'🛒', name:'Supermercado',   value:'-R$ 284', color:'#dc2626' },
@@ -366,7 +366,7 @@ export default function LandingPage() {
         className="lp-fade"
         style={{
           padding: isMobile ? '72px 20px' : '96px 24px',
-          background: 'linear-gradient(180deg, #f8faff 0%, #f0f4ff 100%)',
+          background: 'linear-gradient(180deg, #f8faff 0%, #f8faff 100%)',
         }}
       >
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
@@ -405,7 +405,7 @@ export default function LandingPage() {
             ].map(p => (
               <div key={p.title} style={{
                 background: '#fff', borderRadius: 14, padding: '22px 24px',
-                border: '1.5px solid #e8edf3',
+                border: '1.5px solid #e2e8f0',
                 display: 'flex', alignItems: 'flex-start', gap: 20,
               }}>
                 <div style={{
@@ -487,7 +487,7 @@ export default function LandingPage() {
                 {/* Content */}
                 <div style={{
                   flex: 1, background: '#fff', borderRadius: 14, padding: '18px 22px',
-                  border: '1.5px solid #e8edf3',
+                  border: '1.5px solid #e2e8f0',
                   boxShadow: '0 2px 8px rgba(0,0,0,.04)',
                   marginTop: 4,
                 }}>
@@ -510,7 +510,7 @@ export default function LandingPage() {
       <div
         ref={sP}
         className="lp-fade"
-        style={{ padding: isMobile ? '72px 20px' : '96px 24px', background: 'linear-gradient(180deg,#f8faff 0%,#f0f4ff 100%)' }}
+        style={{ padding: isMobile ? '72px 20px' : '96px 24px', background: 'linear-gradient(180deg,#f8faff 0%,#f8faff 100%)' }}
       >
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <h2 style={{
@@ -604,7 +604,7 @@ export default function LandingPage() {
                 emoji: '👑', name: 'VIP', badge: 'EM BREVE',
                 badgeBg: '#fef9c3', badgeColor: '#854d0e',
                 desc: 'Experiência premium com acompanhamento profissional.',
-                accent: '#d97706', border: '1.5px solid #e2e8f0',
+                accent: '#b45309', border: '1.5px solid #e2e8f0',
                 headerBg: '#fffbeb',
                 features: [
                   'Tudo dos planos anteriores',
@@ -686,7 +686,7 @@ export default function LandingPage() {
         className="lp-fade"
         style={{
           padding: isMobile ? '72px 20px' : '96px 24px',
-          background: 'linear-gradient(180deg, #f0f4ff 0%, #e8eeff 100%)',
+          background: 'linear-gradient(180deg, #f8faff 0%, #e8eeff 100%)',
           textAlign: 'center',
         }}
       >
@@ -752,7 +752,7 @@ export default function LandingPage() {
         className="lp-fade"
         style={{
           padding: '24px 20px',
-          borderTop: '1px solid #e8edf3',
+          borderTop: '1px solid #e2e8f0',
           background: '#fafbff',
         }}
       >

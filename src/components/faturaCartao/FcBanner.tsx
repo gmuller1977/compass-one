@@ -26,7 +26,7 @@ export default function FcBanner({
 }: Props) {
   const disponivel = totalPrevisto - grandTotalFaturas
 
-  const statusCor = faturaStatus === 'paga' ? '#16a34a' : faturaStatus === 'fechada' ? '#0369a1' : '#d97706'
+  const statusCor = faturaStatus === 'paga' ? '#16a34a' : faturaStatus === 'fechada' ? '#0369a1' : '#b45309'
   const statusLbl = faturaStatus === 'paga' ? 'Paga' : faturaStatus === 'fechada' ? 'Fechada' : 'Aberta'
   const statusSimb = faturaStatus === 'paga' ? '✓' : faturaStatus === 'fechada' ? '■' : '●'
 

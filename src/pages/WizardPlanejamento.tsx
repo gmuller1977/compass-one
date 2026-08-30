@@ -482,7 +482,7 @@ export default function WizardPlanejamento() {
           {saldoInicialJan > 0 && (
             <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid #f8faff' }}>
               <span style={{ fontSize:12, color:'#64748b' }}>🏦 Saldo inicial</span>
-              <span style={{ fontSize:13, fontWeight:700, color:'#d97706' }}>{fmtBRL(saldoInicialJan)}</span>
+              <span style={{ fontSize:13, fontWeight:700, color:'#b45309' }}>{fmtBRL(saldoInicialJan)}</span>
             </div>
           )}
           <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid #f8faff' }}>
@@ -585,7 +585,7 @@ export default function WizardPlanejamento() {
        renderStep5()]
 
   return (
-    <div style={{ minHeight:'100dvh', background:'#f0f4ff', display:'flex', flexDirection:'column',
+    <div style={{ minHeight:'100dvh', background:'#f8faff', display:'flex', flexDirection:'column',
       fontFamily:"-apple-system,'Inter',sans-serif", maxWidth:480, margin:'0 auto' }}>
       {header}
       <div style={{ flex:1, overflowY:'auto', padding:'20px 16px', scrollbarWidth:'none' }}>

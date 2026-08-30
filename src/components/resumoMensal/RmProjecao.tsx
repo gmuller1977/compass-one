@@ -31,7 +31,7 @@ export default function RmProjecao({ saldoContas, receitasAReceber, despesasPend
       texto: '✅ Boa! Você deve fechar o mês com folga.',
     }
     if (projecao >= 0) return {
-      style: { background: '#fffbeb', border: '1px solid #fde68a', color: '#d97706' },
+      style: { background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309' },
       texto: '⚠️ Margem apertada. Evite gastos não planejados até o final do mês.',
     }
     return {
@@ -66,7 +66,7 @@ export default function RmProjecao({ saldoContas, receitasAReceber, despesasPend
             borderTop: '2px solid #e2e8f0', paddingTop: 10, marginTop: 6,
             fontWeight: 800, fontSize: 16,
           }}>
-            <span style={{ color: '#1e293b' }}>= Saldo previsto final</span>
+            <span style={{ color: '#0f172a' }}>= Saldo previsto final</span>
             <span style={{ color: projecao >= 0 ? '#16a34a' : '#dc2626' }}>
               {projecao < 0 ? `-${fmt(Math.abs(projecao))}` : fmt(projecao)}
             </span>

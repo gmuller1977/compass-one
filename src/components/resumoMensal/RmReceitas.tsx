@@ -2,7 +2,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { ReceitaItem } from '../../pages/ResumoMensal'
 import { NOMES_MESES_RM } from '../../pages/ResumoMensal'
 
-const CORES_GRAFICO = ['#1a56db','#16a34a','#d97706','#7c3aed','#0891b2','#dc2626','#be185d','#ea580c','#4f46e5','#64748b']
+const CORES_GRAFICO = ['#1a56db','#16a34a','#b45309','#7c3aed','#0891b2','#dc2626','#be185d','#ea580c','#4f46e5','#64748b']
 
 type Props = {
   receitas: ReceitaItem[]
@@ -61,10 +61,10 @@ export default function RmReceitas({ receitas, totalPrevisto, totalRecebido, mes
                     {r.icone || '💰'}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: '#1e293b' }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>
                       {r.nome}{r.variante ? <span style={{ color: '#64748b', fontWeight: 400 }}> · {r.variante}</span> : null}
                     </div>
-                    <div style={{ fontSize: 10, color: r.recebido ? '#16a34a' : '#d97706', marginTop: 1 }}>
+                    <div style={{ fontSize: 10, color: r.recebido ? '#16a34a' : '#b45309', marginTop: 1 }}>
                       {r.recebido ? 'Recebido' : 'A receber'}
                     </div>
                   </div>
@@ -77,7 +77,7 @@ export default function RmReceitas({ receitas, totalPrevisto, totalRecebido, mes
               {/* Subtotal com barra */}
               <div style={{ padding: '10px 16px', background: '#f1f5f9', borderRadius: 8, marginTop: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>Total</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Total</span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: '#16a34a' }}>{fmt(totalRecebido)}</span>
                 </div>
                 {totalPrevisto > 0 && (
@@ -116,7 +116,7 @@ export default function RmReceitas({ receitas, totalPrevisto, totalRecebido, mes
                     transform: 'translate(-50%,-50%)',
                     textAlign: 'center', pointerEvents: 'none',
                   }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{fmt(totalRecebido)}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{fmt(totalRecebido)}</div>
                     <div style={{ fontSize: 10, color: '#94a3b8' }}>recebido</div>
                   </div>
                 </div>

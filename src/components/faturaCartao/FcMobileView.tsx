@@ -120,7 +120,7 @@ export default function FcMobileView({
 
   const prevMesNav = () => { if (mes === 0) { setMes(11); setAno(y => y-1) } else setMes(m => m-1) }
   const nextMesNav = () => { if (mes === 11) { setMes(0); setAno(y => y+1) } else setMes(m => m+1) }
-  const statusCor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#d97706'
+  const statusCor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#b45309'
   const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
 
@@ -154,7 +154,7 @@ export default function FcMobileView({
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
           padding:'8px 14px 10px'}}>
           <button onClick={prevMesNav} style={{width:30,height:30,borderRadius:10,border:'none',
-            background:'#f0f4ff',display:'flex',alignItems:'center',justifyContent:'center',
+            background:'#f8faff',display:'flex',alignItems:'center',justifyContent:'center',
             cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>‹</button>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:15,fontWeight:700,color:COR.texto}}>
@@ -166,7 +166,7 @@ export default function FcMobileView({
             </span>
           </div>
           <button onClick={nextMesNav} style={{width:30,height:30,borderRadius:10,border:'none',
-            background:'#f0f4ff',display:'flex',alignItems:'center',justifyContent:'center',
+            background:'#f8faff',display:'flex',alignItems:'center',justifyContent:'center',
             cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>›</button>
         </div>
       </div>

@@ -288,7 +288,7 @@ export default function PlanPlanilha({
 
       {/* ─── PAINEL DE RESUMO ─────────────────────────────────────────────── */}
       <div style={{
-        background: '#f0f4ff',
+        background: '#f8faff',
         borderRadius: 10, marginBottom: 4,
         display: 'flex', flexDirection: 'row', overflow: 'hidden',
       }}>
@@ -392,15 +392,15 @@ export default function PlanPlanilha({
           <div style={{
             minWidth: W_CATS, maxWidth: W_CATS, flexShrink: 0,
             position: 'sticky', left: 0, zIndex: 20,
-            background: '#f0f4ff', display: 'flex', flexDirection: 'column',
+            background: '#f8faff', display: 'flex', flexDirection: 'column',
           }}>
             {/* Header with month scroll buttons */}
             <div style={{
               height: HH, position: 'sticky', top: 0, zIndex: 26,
-              background: '#f0f4ff',
+              background: '#f8faff',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '0 8px 0 12px',
-              fontSize: 12, fontWeight: 700, color: '#1e293b',
+              fontSize: 12, fontWeight: 700, color: '#0f172a',
             }}>
               <span>Categorias</span>
               <div style={{ display: 'flex', gap: 2 }}>
@@ -413,7 +413,7 @@ export default function PlanPlanilha({
             <div style={{ background: '#fff', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', flex: 1 }}>
               {linhas.map((l, li) => {
                 if (l.k === 'secao') return (
-                  <div key={li} style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>
+                  <div key={li} style={{ height: HG, display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#0f172a' }}>
                     {l.tipo === 'e' ? '↑ RECEITAS' : '↓ DESPESAS'}
                   </div>
                 )
@@ -423,7 +423,7 @@ export default function PlanPlanilha({
                   </div>
                 )
                 if (l.k === 'total') return (
-                  <div key={li} style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>= Resultado</div>
+                  <div key={li} style={{ height: HT, display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, fontWeight: 700, color: '#0f172a' }}>= Resultado</div>
                 )
                 const { icone } = iconeCategoria(categorias, l.cat.nome)
                 const rowKey = `${l.tipo}-${l.ri}`

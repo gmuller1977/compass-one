@@ -187,7 +187,7 @@ export default function LegalPage({ rawMd }: { rawMd: string }) {
   if (isMobile) {
     return (
       <div style={{ height:'100dvh', display:'flex', flexDirection:'column',
-        background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+        background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
         <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', padding:'24px 20px 40px' }}>
           {backBtn}

@@ -386,11 +386,11 @@ export default function NleDesktopPanel({
             <div style={{marginBottom:12}}>
               <div style={{display:'flex',justifyContent:'space-between',fontSize:10,marginBottom:3}}>
                 <span style={{color:'#64748b',fontWeight:600}}>Saídas vs planejado</span>
-                <span style={{color:pctSaidas>80?'#d97706':COR.azul,fontWeight:700}}>{pctSaidas}%</span>
+                <span style={{color:pctSaidas>80?'#b45309':COR.azul,fontWeight:700}}>{pctSaidas}%</span>
               </div>
               <div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
                 <div style={{height:'100%',width:`${pctSaidas}%`,borderRadius:3,
-                  background:pctSaidas>100?COR.vermelho:pctSaidas>80?'#d97706':COR.azul}}/>
+                  background:pctSaidas>100?COR.vermelho:pctSaidas>80?'#b45309':COR.azul}}/>
               </div>
             </div>
           )}
@@ -399,13 +399,13 @@ export default function NleDesktopPanel({
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
                 padding:'8px 0',borderBottom:'1px solid #f8faff',marginTop:4}}>
                 <span style={{fontSize:11,color:'#64748b'}}>📅 Fixas pendentes</span>
-                <span style={{fontSize:12,fontWeight:700,color:'#d97706'}}>{numFixasPendentes} {numFixasPendentes===1?'conta':'contas'}</span>
+                <span style={{fontSize:12,fontWeight:700,color:'#b45309'}}>{numFixasPendentes} {numFixasPendentes===1?'conta':'contas'}</span>
               </div>
               {fixasPend.slice(0,4).map(f => (
                 <div key={f.id} style={{display:'flex',justifyContent:'space-between',
                   alignItems:'center',padding:'5px 0',borderBottom:'1px solid #f8faff'}}>
                   <span style={{fontSize:10,color:'#94a3b8'}}>↳ {f.nome} · dia {mesDados.fixasMovidas?.[f.id] ?? f.diaVencimento}</span>
-                  <span style={{fontSize:11,fontWeight:600,color:'#d97706'}}>
+                  <span style={{fontSize:11,fontWeight:600,color:'#b45309'}}>
                     {fmt(mesDados.fixasValorOverride?.[f.id] ?? f.valor)}
                   </span>
                 </div>

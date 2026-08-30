@@ -51,9 +51,9 @@ const COMPASS_CFG: Record<CompassStatus, {
   bg: string; border: string; cor: string; icon: string; title: string; msg: (s: number, e: number) => string
 }> = {
   verde:     { bg: '#f0fdf4', border: '#86efac', cor: '#16a34a', icon: '🧭', title: 'Você está no caminho certo!',          msg: (s) => `No caminho certo. Resultado positivo de +${fmt(s)} este mês.` },
-  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#d97706', icon: '⚠️', title: 'Atenção!',                             msg: () => 'Atenção. Suas despesas estão perto do limite planejado para este mês.' },
+  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#b45309', icon: '⚠️', title: 'Atenção!',                             msg: () => 'Atenção. Suas despesas estão perto do limite planejado para este mês.' },
   vermelho:  { bg: '#fff1f2', border: '#fecdd3', cor: '#dc2626', icon: '🔴', title: 'Fora do rumo.',                        msg: (_s, e) => `Acima do planejado. Despesas ultrapassaram o previsto em ${fmt(e)}.` },
-  'sem-plano': { bg: '#f0f4ff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem planejamento ainda',             msg: () => 'Crie seu planejamento para ativar a bússola e acompanhar seu progresso.' },
+  'sem-plano': { bg: '#f8faff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem planejamento ainda',             msg: () => 'Crie seu planejamento para ativar a bússola e acompanhar seu progresso.' },
   'sem-dados': { bg: COR.fundo,  border: COR.borda,  cor: COR.textoSuave, icon: '📊', title: 'Sem movimentação',           msg: () => 'Sem movimentação este mês. Registre sua primeira despesa ou receita para ativar a bússola.' },
 }
 
@@ -280,7 +280,7 @@ export default function Dashboard() {
               Complete seu planejamento para ter uma visão completa
             </span>
             <button onClick={() => navigate('/planejamento', { state: { openQuiz: true } })} style={{
-              background: '#d97706', color: '#fff', border: 'none', borderRadius: 8,
+              background: '#b45309', color: '#fff', border: 'none', borderRadius: 8,
               padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
               fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}>Começar →</button>

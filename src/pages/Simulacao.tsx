@@ -542,7 +542,7 @@ export default function Simulacao() {
                 <TabelaImpacto parcela={resultDiv.parcela} planos={planos} cor={COR.vermelho} />
 
                 {/* Ações */}
-                <div style={{ ...card, background: 'linear-gradient(135deg,#f0f4ff,#f8faff)', border: '1px solid #dbeafe' }}>
+                <div style={{ ...card, background: 'linear-gradient(135deg,#f8faff,#f8faff)', border: '1px solid #dbeafe' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 12 }}>O que você quer fazer?</div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button onClick={salvarSimulacao} disabled={simSalva} style={{

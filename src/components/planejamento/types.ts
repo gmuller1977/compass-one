@@ -86,6 +86,6 @@ export function nomeFaturaCartao(nome: string, cartaoNomes: Set<string>): boolea
 
 export function corSaldo(v: number) {
   if (v < 0) return '#dc2626'
-  if (v < 1000) return '#d97706'
+  if (v < 1000) return '#b45309'
   return '#16a34a'
 }

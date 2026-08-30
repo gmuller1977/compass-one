@@ -72,9 +72,9 @@ export default function AcMobileView({
       dispLabel = isEntrada ? 'A receber' : 'Disponível'; dispValue = '—'; dispColor = '#94a3b8'
     } else if (isEntrada) {
       if (lancAbs >= prev && prev > 0) { dispLabel = 'Recebido';  dispValue = fmt(lancAbs);               dispColor = '#16a34a' }
-      else                             { dispLabel = 'A receber'; dispValue = fmt(Math.max(disponivel,0)); dispColor = '#d97706' }
+      else                             { dispLabel = 'A receber'; dispValue = fmt(Math.max(disponivel,0)); dispColor = '#b45309' }
     } else {
-      if (lancAbs === 0 && catInfo?.fixa) { dispLabel = 'A pagar';    dispValue = fmt(prev);         dispColor = '#d97706' }
+      if (lancAbs === 0 && catInfo?.fixa) { dispLabel = 'A pagar';    dispValue = fmt(prev);         dispColor = '#b45309' }
       else if (disponivel >= 0)            { dispLabel = 'Disponível'; dispValue = fmt(disponivel);   dispColor = '#16a34a' }
       else                                 { dispLabel = 'Excedido';   dispValue = fmt(-disponivel);  dispColor = '#dc2626' }
     }
@@ -164,7 +164,7 @@ export default function AcMobileView({
                 background:statusBg, color:statusColor }}>{statusLabel}</span>
             </div>
             <div style={{ display:'flex', gap:6, marginBottom: colunas.length > 0 ? 10 : 0 }}>
-              <div style={{ flex:1, background:'#f0f4ff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' as const }}>
+              <div style={{ flex:1, background:'#f8faff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' as const }}>
                 <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.4, color:'#94a3b8', marginBottom:4 }}>Previsto</div>
                 <div style={{ fontSize:13, fontWeight:800, color:'#64748b', fontVariantNumeric:'tabular-nums' }}>{prev>0?fmt(prev):'—'}</div>
               </div>
@@ -264,7 +264,7 @@ export default function AcMobileView({
 
   return (
     <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden',
-      background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
+      background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
       {/* GRADIENT HEADER */}
       <div style={{ background:'linear-gradient(135deg,#0f2878,#1e40af)', padding:'16px 20px 14px', flexShrink:0 }}>
@@ -384,7 +384,7 @@ export default function AcMobileView({
                 padding:'10px 16px', background:'#f0fdf4', borderTop:'1px solid #dcfce7' }}>
                 <span style={{ fontSize:12, fontWeight:800, color:'#16a34a' }}>Total receitas</span>
                 <div style={{ display:'flex', gap:12 }}>
-                  {([['Previsto','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#d97706',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
+                  {([['Previsto','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#b45309',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
                     <div key={lbl} style={{ display:'flex', flexDirection:'column', alignItems:'flex-end' }}>
                       <span style={{ fontSize:8, fontWeight:700, textTransform:'uppercase', letterSpacing:.3, color:'#94a3b8', marginBottom:1 }}>{lbl}</span>
                       <span style={{ fontSize:13, fontWeight:800, color:cor, fontVariantNumeric:'tabular-nums' }}>{val}</span>

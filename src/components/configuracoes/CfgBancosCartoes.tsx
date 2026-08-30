@@ -93,7 +93,7 @@ export default function CfgBancosCartoes({
                       border: c.preferida ? '1px solid #fbbf24' : `1px solid ${COR.borda}`,
                       borderRadius:12, padding:'14px 16px', cursor:'pointer',
                       display:'flex', alignItems:'center', gap:14,
-                      borderLeft: c.preferida ? `4px solid #f59e0b` : `4px solid ${c.cor}`,
+                      borderLeft: c.preferida ? `4px solid #b45309` : `4px solid ${c.cor}`,
                       boxShadow: editContaId===c.id ? `0 0 0 2px ${COR.azul}` : c.preferida ? '0 2px 8px rgba(245,158,11,.15)' : '0 1px 4px rgba(0,0,0,.05)' }}>
                       <div style={{ width:48, height:48, borderRadius:14, background:c.cor+'22',
                         display:'flex', alignItems:'center', justifyContent:'center',

@@ -72,7 +72,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
 
   const corVal = readOnly
     ? (valor === 0 ? '#c4b5fd' : '#7c3aed')
-    : (valor === 0 ? '#c0cce0' : '#1e293b')
+    : (valor === 0 ? '#c0cce0' : '#0f172a')
 
   return (
     <span

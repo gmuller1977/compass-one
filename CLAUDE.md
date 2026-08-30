@@ -54,6 +54,17 @@ claros não deixam a hierarquia de opacidade funcionar — em `#64748b`, mesmo
 Os tokens estão em [`src/utils/cores.ts`](src/utils/cores.ts), cada um com o
 ratio medido ao lado.
 
+### Sobre fundo claro, cuidado com o âmbar
+
+O âmbar rotula estados no app — "A receber", "Pendente", "Faltou". Os dois tons
+que existiam reprovavam como texto: `#f59e0b` dá 1,95:1 e `#d97706` dá 2,90:1
+sobre o fundo do app. O token vale **`#b45309`** (4,6:1).
+
+`#fbbf24` continua nas barras: elemento gráfico segue o limite de 3:1.
+
+Fica pendente e não medido: `#16a34a` sobre branco dá **3,13:1** e reprova como
+texto. São 77 usos, fora do recorte "fundo azul" desta rodada.
+
 ### Como medir
 
 **Em gradiente, o limite é o extremo mais claro, não a média.** Medir pela média

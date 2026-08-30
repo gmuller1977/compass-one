@@ -58,7 +58,7 @@ function usoCor(pct: number) {
 }
 
 function saldoCor(v: number) {
-  return v > 0 ? '#1a56db' : v < 0 ? '#dc2626' : '#d97706'
+  return v > 0 ? '#1a56db' : v < 0 ? '#dc2626' : '#b45309'
 }
 
 function IconeCircle({ emoji, bg }: { emoji: string; bg: string }) {
@@ -76,9 +76,9 @@ function ContaLinha({ icone, nome, sub, saldo, fmt }: { icone: string; nome: str
       borderBottom: '1px solid #f1f5f9', borderLeft: `3px solid ${saldoCor(saldo)}`,
       borderRadius: 4, marginBottom: 4,
     }}>
-      <IconeCircle emoji={icone} bg="#f0f4ff" />
+      <IconeCircle emoji={icone} bg="#f8faff" />
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: '#1e293b' }}>{nome}</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: '#0f172a' }}>{nome}</div>
         <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>{sub}</div>
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, color: saldoCor(saldo), textAlign: 'right', minWidth: 90 }}>
@@ -91,7 +91,7 @@ function ContaLinha({ icone, nome, sub, saldo, fmt }: { icone: string; nome: str
 function Subtotal({ label, valor, cor, fmt }: { label: string; valor: number; cor: string; fmt: (v: number) => string }) {
   return (
     <div style={{ padding: '10px 16px', background: '#f1f5f9', display: 'flex', alignItems: 'center', gap: 10, borderRadius: 8, marginTop: 6 }}>
-      <div style={{ flex: 1, fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{label}</div>
+      <div style={{ flex: 1, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 800, color: cor }}>{fmt(valor)}</div>
     </div>
   )
@@ -208,7 +208,7 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <IconeCircle emoji={conta.icone || '💳'} bg="#fef2f2" />
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: '#1e293b' }}>{conta.apelido ?? conta.nome}</div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#0f172a' }}>{conta.apelido ?? conta.nome}</div>
                         {limite > 0 && <div style={{ fontSize: 10, color: '#94a3b8' }}>{pct}% do limite</div>}
                       </div>
                     </div>
@@ -217,7 +217,7 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
                       {limite > 0 ? fmt(limite) : '—'}
                     </div>
                     {/* Planejado */}
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b', textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', textAlign: 'right' }}>
                       {planejado > 0 ? fmt(planejado) : '—'}
                     </div>
                     {/* Fatura real */}
@@ -247,9 +247,9 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
               borderTop: '2px solid #e2e8f0',
               alignItems: 'center',
             }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>Total</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Total</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textAlign: 'right' }}>—</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', textAlign: 'right' }}>{totalPlanejadoCartoes > 0 ? fmt(totalPlanejadoCartoes) : '—'}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', textAlign: 'right' }}>{totalPlanejadoCartoes > 0 ? fmt(totalPlanejadoCartoes) : '—'}</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', textAlign: 'right' }}>{fmt(totalFaturas)}</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: totalDiffCartoes >= 0 ? '#16a34a' : '#dc2626', textAlign: 'right' }}>
                 {totalDiffCartoes >= 0 ? '+' : ''}{totalPlanejadoCartoes > 0 ? fmt(totalDiffCartoes) : '—'}
@@ -292,10 +292,10 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
                     return (
                       <div key={sim.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 8, marginBottom: 4 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 90px 80px', gap: 8, padding: '10px 4px 4px', alignItems: 'center' }}>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: '#1e293b' }}>{sim.nome}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#0f172a' }}>{sim.nome}</div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', textAlign: 'right' }}>{fmt(sim.valor_total)}</div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', textAlign: 'right' }}>{fmt(poupado)}</div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#d97706', textAlign: 'right' }}>{fmt(falta)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#b45309', textAlign: 'right' }}>{fmt(falta)}</div>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#0d9488', textAlign: 'right' }}>{pct}%</div>
                         </div>
                         <div style={{ padding: '0 4px' }}>
@@ -329,10 +329,10 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
                     return (
                       <div key={sim.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 8, marginBottom: 4 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 90px 80px', gap: 8, padding: '10px 4px 4px', alignItems: 'center' }}>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: '#1e293b' }}>{sim.nome}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#0f172a' }}>{sim.nome}</div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', textAlign: 'right' }}>{fmt(sim.valor_total)}</div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', textAlign: 'right' }}>{fmt(Math.min(pagoAprox, sim.valor_total))}</div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#d97706', textAlign: 'right' }}>{fmt(restante)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#b45309', textAlign: 'right' }}>{fmt(restante)}</div>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', textAlign: 'right' }}>{pct}%</div>
                         </div>
                         <div style={{ padding: '0 4px' }}>
@@ -365,21 +365,21 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
           { label: 'Poupança / Investimentos',  valor: totalPoupanca, cor: '#1d4ed8' },
         ].map(row => (
           <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #bfdbfe' }}>
-            <span style={{ fontSize: 13, color: '#1e293b' }}>{row.label}</span>
+            <span style={{ fontSize: 13, color: '#0f172a' }}>{row.label}</span>
             <span style={{ fontSize: 15, fontWeight: 700, color: row.cor, fontVariantNumeric: 'tabular-nums' }}>{fmt(row.valor)}</span>
           </div>
         ))}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '2px solid #1a56db', marginBottom: 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>Total positivo</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Total positivo</span>
           <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>{fmt(totalPositivo)}</span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #bfdbfe' }}>
-          <span style={{ fontSize: 13, color: '#1e293b' }}>Faturas dos cartões</span>
+          <span style={{ fontSize: 13, color: '#0f172a' }}>Faturas dos cartões</span>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{fmt(totalFaturas)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0 8px' }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>Patrimônio líquido</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Patrimônio líquido</span>
           <span style={{ fontSize: 20, fontWeight: 800, color: patrimonioLiquido >= 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>
             {fmt(patrimonioLiquido)}
           </span>

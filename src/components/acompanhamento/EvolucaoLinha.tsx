@@ -21,11 +21,11 @@ interface EvolucaoLinhaProps {
 
 function calcStatus(isEntrada: boolean, prev: number, real: number) {
   if (isEntrada) {
-    if (real === 0) return { texto: '○ A receber', cor: '#d97706', barra: '#fbbf24' }
+    if (real === 0) return { texto: '○ A receber', cor: '#b45309', barra: '#fbbf24' }
     if (real >= prev) return { texto: '✓ Recebido', cor: '#16a34a', barra: '#4ade80' }
-    return { texto: '◐ Parcial', cor: '#d97706', barra: '#fbbf24' }
+    return { texto: '◐ Parcial', cor: '#b45309', barra: '#fbbf24' }
   }
-  if (real === 0) return { texto: '○ Pendente', cor: '#d97706', barra: '#fbbf24' }
+  if (real === 0) return { texto: '○ Pendente', cor: '#b45309', barra: '#fbbf24' }
   if (real <= prev) {
     if (real === prev) return { texto: '✓ Pago', cor: '#16a34a', barra: '#4ade80' }
     return { texto: 'Dentro do previsto', cor: '#16a34a', barra: '#4ade80' }
@@ -36,9 +36,9 @@ function calcStatus(isEntrada: boolean, prev: number, real: number) {
 function calcDif(isEntrada: boolean, prev: number, real: number) {
   if (isEntrada) {
     if (real === 0 && prev === 0) return { label: '—', valor: 0, cor: '#cbd5e1', vazio: true }
-    if (real === 0) return { label: 'A receber', valor: prev, cor: '#d97706', vazio: false }
+    if (real === 0) return { label: 'A receber', valor: prev, cor: '#b45309', vazio: false }
     if (real >= prev) return { label: 'Diferença', valor: real - prev, cor: '#16a34a', vazio: false }
-    return { label: 'Faltou', valor: prev - real, cor: '#d97706', vazio: false }
+    return { label: 'Faltou', valor: prev - real, cor: '#b45309', vazio: false }
   }
   if (real === 0 && prev === 0) return { label: '—', valor: 0, cor: '#cbd5e1', vazio: true }
   if (real === 0) return { label: 'Disponível', valor: prev, cor: '#1a56db', vazio: false }
@@ -63,7 +63,7 @@ export default function EvolucaoLinha({
   const percLabel  = prev > 0 || real > 0 ? `${Math.round(perc * 100)}%` : '—'
   const percCor    = perc === 0 ? '#cbd5e1' : perc > 1 ? '#dc2626' : '#16a34a'
   const barCor     = perc > 1 ? '#f87171' : barraFundo
-  const realCor    = real === 0 ? '#cbd5e1' : isEntrada ? '#1e293b' : (real > prev && prev > 0 ? '#dc2626' : '#1e293b')
+  const realCor    = real === 0 ? '#cbd5e1' : isEntrada ? '#0f172a' : (real > prev && prev > 0 ? '#dc2626' : '#0f172a')
 
   // ── Subtotal (sem acordeão) ───────────────────────────────────────────
   if (isSubtotal) {
@@ -78,7 +78,7 @@ export default function EvolucaoLinha({
         <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: '#e2e8f0',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#475569' }}>∑</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b' }}>Total {grupoLabel}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Total {grupoLabel}</div>
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>Previsto</div>
@@ -86,7 +86,7 @@ export default function EvolucaoLinha({
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>Realizado</div>
-          <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: '#1e293b' }}>{real > 0 ? fmt(real) : '—'}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: '#0f172a' }}>{real > 0 ? fmt(real) : '—'}</div>
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>{dif.label}</div>
@@ -134,7 +134,7 @@ export default function EvolucaoLinha({
           {icone}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 500, color: '#1e293b',
+          <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {displayName}
           </div>
@@ -176,7 +176,7 @@ export default function EvolucaoLinha({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b',
                     textTransform: 'uppercase', letterSpacing: .5 }}>{col.label}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: isEntrada ? '#16a34a' : '#1e293b' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: isEntrada ? '#16a34a' : '#0f172a' }}>
                     {fmt(col.total)}
                   </span>
                 </div>
@@ -189,7 +189,7 @@ export default function EvolucaoLinha({
                           {String(l.dia).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0,
-                          color: isEntrada ? '#16a34a' : '#1e293b', fontVariantNumeric: 'tabular-nums' }}>
+                          color: isEntrada ? '#16a34a' : '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                           {fmt(l.valor)}
                         </span>
                       </div>

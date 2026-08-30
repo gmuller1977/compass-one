@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DespesaItem } from '../../pages/ResumoMensal'
 import { NOMES_MESES_RM } from '../../pages/ResumoMensal'
 
-const CORES_GRAFICO = ['#dc2626','#16a34a','#1a56db','#7c3aed','#0891b2','#d97706','#4f46e5','#be185d','#ea580c','#94a3b8']
+const CORES_GRAFICO = ['#dc2626','#16a34a','#1a56db','#7c3aed','#0891b2','#b45309','#4f46e5','#be185d','#ea580c','#94a3b8']
 
 type Props = {
   despesas: DespesaItem[]
@@ -72,7 +72,7 @@ export default function RmDespesas({ despesas, totalPrevisto, totalPago, mes, te
                       {d.icone || '💸'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nome}</div>
                       <div style={{ width: '100%', height: 4, background: '#e2e8f0', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
                         <div style={{
                           width: `${Math.min(100, Math.round((d.realizado / maxVal) * 100))}%`,
@@ -125,7 +125,7 @@ export default function RmDespesas({ despesas, totalPrevisto, totalPago, mes, te
                       transform: 'translate(-50%,-50%)',
                       textAlign: 'center', pointerEvents: 'none',
                     }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{fmt(totalPago)}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{fmt(totalPago)}</div>
                       <div style={{ fontSize: 10, color: '#94a3b8' }}>gasto</div>
                     </div>
                   </div>

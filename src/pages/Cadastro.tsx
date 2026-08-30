@@ -28,8 +28,8 @@ function forcaSenha(s: string) {
   const temNumero = /[0-9]/.test(s)
   const temEspec  = /[^a-zA-Z0-9]/.test(s)
   if (temLetra && temNumero && temEspec) return { nivel: 2, label: 'Forte', cor: '#16a34a' }
-  if (temLetra && temNumero)             return { nivel: 1, label: 'Média — adicione símbolos para fortalecer', cor: '#d97706' }
-  return { nivel: 1, label: 'Média', cor: '#d97706' }
+  if (temLetra && temNumero)             return { nivel: 1, label: 'Média — adicione símbolos para fortalecer', cor: '#b45309' }
+  return { nivel: 1, label: 'Média', cor: '#b45309' }
 }
 
 function Campo({
@@ -259,14 +259,14 @@ export default function Cadastro() {
 
     if (isMobile) {
       return (
-        <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+        <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
           {hero(true)}
           <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>{confirmacao}</div>
         </div>
       )
     }
     return (
-      <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f0f4ff' }}>
+      <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
         {hero(false)}
         <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
           <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)' }}>
@@ -379,7 +379,7 @@ export default function Cadastro() {
 
   if (isMobile) {
     return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
         <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>
           {form}
@@ -389,7 +389,7 @@ export default function Cadastro() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f0f4ff' }}>
+    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
       {hero(false)}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
         <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>

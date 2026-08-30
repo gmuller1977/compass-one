@@ -33,7 +33,7 @@ export default function RevisaoMensal() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#f0f4ff',
+      background: '#f8faff',
       fontFamily: "-apple-system,'Inter',sans-serif",
       display: 'flex',
       flexDirection: 'column',

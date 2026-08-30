@@ -37,7 +37,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
   const pct = previsto > 0 ? Math.round((totalGasto / previsto) * 100) : 0
   const ultrapassou = totalGasto - previsto
 
-  const barColor = pct <= 80 ? '#16a34a' : pct <= 100 ? '#d97706' : '#dc2626'
+  const barColor = pct <= 80 ? '#16a34a' : pct <= 100 ? '#b45309' : '#dc2626'
   const barWidth = Math.min(pct, 140)
 
   const progresso = (
@@ -81,7 +81,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
         <input
           value={novoValor}
           onChange={e => setNovoValor(e.target.value)}
-          style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #d97706', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', textAlign: 'right', background: '#fff' }}
+          style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #b45309', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', textAlign: 'right', background: '#fff' }}
           autoFocus
         />
         <button
@@ -90,7 +90,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
             if (val === null) { toast(`"${novoValor.trim()}" não é um valor`, 'error'); return }
             onAjustarMes(val)
           }}
-          style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: '#d97706', color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          style={{ padding: '8px 16px', border: 'none', borderRadius: 8, background: '#b45309', color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
           Salvar
         </button>

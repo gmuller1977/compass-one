@@ -121,12 +121,12 @@ export default function NleMobileSubheader({
           )}
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px 10px'}}>
             <button onClick={onMesAnterior}
-              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f0f4ff',
+              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f8faff',
                 display:'flex',alignItems:'center',justifyContent:'center',
                 cursor:'pointer',fontSize:16,color:COR.azul,fontWeight:700}}>‹</button>
             <span style={{fontSize:15,fontWeight:700,color:COR.texto}}>{mesNome} {ano}</span>
             <button onClick={onMesProximo}
-              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f0f4ff',
+              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f8faff',
                 display:'flex',alignItems:'center',justifyContent:'center',
                 cursor:'pointer',fontSize:16,color:COR.azul,fontWeight:700}}>›</button>
           </div>
@@ -139,7 +139,7 @@ export default function NleMobileSubheader({
           boxShadow:'0 2px 12px rgba(0,0,0,.07)',flexShrink:0}}>
           {/* Banco (extrato) */}
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f0f4ff`}}
+            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f8faff`}}
             onClick={e => {
               e.stopPropagation()
               setModalSaldoValor(isDinheiro ? '' : (saldoSugerido[contaIdEfetivo] ?? ''))
@@ -157,7 +157,7 @@ export default function NleMobileSubheader({
           </div>
           {/* Sistema */}
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f0f4ff`}}>
+            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f8faff`}}>
             <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500,display:'flex',alignItems:'center',gap:5}}>
               📱 Sistema
             </span>

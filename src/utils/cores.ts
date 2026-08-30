@@ -1,10 +1,17 @@
 // ── Paleta de cores centralizada ─────────────────────────────────────
 // Fonte única de verdade para todas as cores do app.
-// Conflitos documentados:
-//   fundo:  spec '#f0f4ff'; Dashboard/Simulacao usavam '#f8faff'
-//   borda:  spec '#e2e8f0'; Dashboard/Simulacao usavam '#e8edf3'
-//   texto:  spec '#1e293b'; todos os locais usam '#0f172a'
-//   amarelo: spec '#f59e0b'; Dashboard/AcShared usavam '#d97706'
+//
+// Os quatro conflitos que este arquivo documentava foram resolvidos em
+// 30/08/2026. Onde a spec e o código divergiam, venceu quem tinha mais uso
+// — menos arquivos para mudar, menos risco:
+//   fundo   #f8faff  (o código; a spec pedia #f0f4ff)
+//   borda   #e2e8f0  (a spec; só 7 lugares usavam #e8edf3)
+//   texto   #0f172a  (o código; a spec pedia #1e293b)
+//
+// O âmbar foi exceção: nenhum dos dois candidatos servia como TEXTO.
+// #f59e0b dava 1,95:1 e #d97706 dava 2,90:1 sobre o fundo do app — os dois
+// reprovavam, e o âmbar rotula "A receber", "Pendente" e "Faltou".
+// #b45309 dá 4,56:1. As barras seguem em #fbbf24, que é gráfico e vale 3:1.
 // ─────────────────────────────────────────────────────────────────────
 export const COR = {
   // Azuis
@@ -15,20 +22,20 @@ export const COR = {
   // Destaque
   verde:    '#16a34a',
   vermelho: '#dc2626',
-  amarelo:  '#d97706',  // conflito: spec '#f59e0b'; local usa '#d97706'
+  amarelo:  '#b45309',  // 4,6:1 sobre o fundo do app
   roxo:     '#7c3aed',
 
   // Fundos
-  fundo:  '#f0f4ff',  // conflito: Dashboard/Simulacao usavam '#f8faff'
+  fundo:  '#f8faff',
   branco: '#ffffff',
 
   // Texto
-  texto:      '#0f172a',  // conflito: spec '#1e293b'; todos os locais usam '#0f172a'
+  texto:      '#0f172a',  // 17,9:1 sobre branco
   textoSuave: '#64748b',
   textoMuted: '#94a3b8',
 
   // Bordas
-  borda:      '#e2e8f0',  // conflito: Dashboard/Simulacao usavam '#e8edf3'
+  borda:      '#e2e8f0',
   bordaSuave: '#f1f5f9',
 
 

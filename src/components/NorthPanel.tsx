@@ -189,7 +189,7 @@ export default function NorthPanel({ open, onClose, messages, loading, onEnviar,
                 🧭
               </div>
               <div style={{
-                background: '#f0f4ff', borderRadius: '12px 12px 12px 4px',
+                background: '#f8faff', borderRadius: '12px 12px 12px 4px',
                 padding: '12px 16px', display: 'flex', gap: 5, alignItems: 'center',
               }}>
                 {[0, 1, 2].map(i => (

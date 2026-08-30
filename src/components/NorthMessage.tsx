@@ -55,7 +55,7 @@ export default function NorthMessage({ role, content, ts }: Props) {
       <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         <div
           style={{
-            background: isUser ? '#1a56db' : '#f0f4ff',
+            background: isUser ? '#1a56db' : '#f8faff',
             color: isUser ? '#fff' : '#0f172a',
             borderRadius: isUser ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
             padding: '10px 14px',

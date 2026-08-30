@@ -68,7 +68,7 @@ export default function CompassCard({ style }: { style?: React.CSSProperties }) 
       iconBg: '#fef3c7', iconBorder: '#fde68a',
       title: 'Atenção!',
       msg: 'Seus gastos estão perto do limite planejado.',
-      cor: '#d97706',
+      cor: '#b45309',
     },
     vermelho: {
       bg: '#fff1f2', border: '#fecdd3', icon: '🔴',

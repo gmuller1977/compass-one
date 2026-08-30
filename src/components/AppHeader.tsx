@@ -290,7 +290,7 @@ function MenuItem({ icon, label, onClick, danger = false }:
         padding: '9px 16px', border: 'none', cursor: 'pointer',
         fontSize: 13, fontWeight: danger ? 600 : 500,
         color: danger ? '#dc2626' : '#0f172a', fontFamily: 'inherit',
-        background: hover ? (danger ? '#fff1f2' : '#f0f4ff') : 'transparent',
+        background: hover ? (danger ? '#fff1f2' : '#f8faff') : 'transparent',
         transition: 'background .1s',
       }}>
       <span style={{ marginRight: 8, fontSize: 14 }}>{icon}</span>

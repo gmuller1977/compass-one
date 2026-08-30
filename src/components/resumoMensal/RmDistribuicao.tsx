@@ -8,14 +8,14 @@ const CORES_GRUPOS: Record<string, string> = {
   'Transporte': '#1a56db',
   'Lazer': '#7c3aed',
   'Saúde': '#0891b2',
-  'Educação': '#d97706',
+  'Educação': '#b45309',
   'Tecnologia': '#4f46e5',
   'Pet': '#be185d',
   'Vestuário': '#ea580c',
   'Outros': '#94a3b8',
 }
 
-const CORES_FALLBACK = ['#dc2626','#16a34a','#1a56db','#7c3aed','#0891b2','#d97706','#4f46e5','#be185d','#ea580c','#94a3b8']
+const CORES_FALLBACK = ['#dc2626','#16a34a','#1a56db','#7c3aed','#0891b2','#b45309','#4f46e5','#be185d','#ea580c','#94a3b8']
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -108,7 +108,7 @@ export default function RmDistribuicao({ despesas, fmt }: Props) {
                 transform: 'translate(-50%,-50%)',
                 textAlign: 'center', pointerEvents: 'none',
               }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{fmt(total)}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{fmt(total)}</div>
                 <div style={{ fontSize: 10, color: '#94a3b8' }}>total gasto</div>
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function RmDistribuicao({ despesas, fmt }: Props) {
               {dados.map(d => (
                 <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: d.cor, flexShrink: 0 }} />
-                  <b style={{ color: '#1e293b', minWidth: 100 }}>{d.nome}</b>
+                  <b style={{ color: '#0f172a', minWidth: 100 }}>{d.nome}</b>
                   <span style={{ color: '#475569', fontWeight: 600 }}>{fmt(d.valor)}</span>
                   <span style={{ color: '#94a3b8' }}>({total > 0 ? Math.round((d.valor / total) * 100) : 0}%)</span>
                 </div>

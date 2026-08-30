@@ -411,7 +411,7 @@ export default function QuickLaunch() {
             const realizado  = c.tipo === 'saida' ? realizadoMes(c.nome) : 0
             const disponivel = previsto - realizado
             const temPrevisto = previsto > 0
-            const corDisp = disponivel < 0 ? COR.vermelho : disponivel < previsto * .2 ? '#f59e0b' : COR.verde
+            const corDisp = disponivel < 0 ? COR.vermelho : disponivel < previsto * .2 ? '#b45309' : COR.verde
             const ult = temPrevisto ? null : ultimoValorCat(c.nome)
             return (
               <button

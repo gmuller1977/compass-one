@@ -17,7 +17,7 @@ export { COR }
 
 // ── Constantes ───────────────────────────────────────────────────────
 export const CORES_PRESET = [
-  '#1a56db','#16a34a','#dc2626','#d97706','#7c3aed',
+  '#1a56db','#16a34a','#dc2626','#b45309','#7c3aed',
   '#0891b2','#db2777','#65a30d','#ea580c','#6b7280',
   '#0f172a','#be123c',
 ]
@@ -241,7 +241,7 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
             const conta = contas.find(x => x.id === c.contaDebitoId)
             return conta ? (
               <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
-                background:'#f0f4ff', color:'#1a56db' }}>
+                background:'#f8faff', color:'#1a56db' }}>
                 {conta.icone} {conta.banco}
               </span>
             ) : null

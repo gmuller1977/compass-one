@@ -261,7 +261,7 @@ export default function RedefinirSenha() {
 
   if (isMobile) {
     return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
         <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>
           {form}
@@ -271,7 +271,7 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f0f4ff' }}>
+    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
       {hero(false)}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
         <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>

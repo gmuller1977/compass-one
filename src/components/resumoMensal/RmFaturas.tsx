@@ -49,16 +49,16 @@ export default function RmFaturas({ faturas, hoje, fmt }: Props) {
                 background: '#f8fafc', border: '1px solid #e2e8f0',
                 borderRadius: 12, padding: '16px 18px',
               }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                   💳 {conta.apelido ?? conta.nome}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
-                  <span>Fatura:</span><b style={{ color: '#1e293b', fontSize: 14, fontWeight: 700 }}>{fmt(fatura)}</b>
+                  <span>Fatura:</span><b style={{ color: '#0f172a', fontSize: 14, fontWeight: 700 }}>{fmt(fatura)}</b>
                 </div>
                 {limite > 0 && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
-                      <span>Limite:</span><b style={{ color: '#1e293b' }}>{fmt(limite)}</b>
+                      <span>Limite:</span><b style={{ color: '#0f172a' }}>{fmt(limite)}</b>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 8 }}>
                       <span>Disponível:</span><b style={{ color: '#16a34a' }}>{fmt(disponivel)}</b>
@@ -71,7 +71,7 @@ export default function RmFaturas({ faturas, hoje, fmt }: Props) {
                 {vence > 0 && (
                   <div style={{
                     fontSize: 10, marginTop: 6,
-                    color: vencido ? '#dc2626' : (diasAte < 5 ? '#d97706' : '#94a3b8'),
+                    color: vencido ? '#dc2626' : (diasAte < 5 ? '#b45309' : '#94a3b8'),
                     fontWeight: vencido || diasAte < 5 ? 600 : 400,
                   }}>
                     {limite > 0 ? `${pct}% usado · ` : ''}

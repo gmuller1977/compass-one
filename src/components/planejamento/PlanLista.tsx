@@ -77,7 +77,7 @@ export default function PlanLista({
       <div className="plista-header" style={{
         display: 'flex', padding: '8px 0',
         borderBottom: '2px solid #e2e8f0', marginBottom: 4,
-        position: 'sticky', top: 0, zIndex: 5, background: '#f0f4ff',
+        position: 'sticky', top: 0, zIndex: 5, background: '#f8faff',
         minWidth: COL_MES + COL_VAL * 5,
       }}>
         <div style={{ width: COL_MES, fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.3px', paddingLeft: 12 }}>Mês</div>
@@ -198,7 +198,7 @@ export default function PlanLista({
 
                   {/* Resultado */}
                   <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', background: '#f1f5f9', borderTop: '2px solid #e2e8f0' }}>
-                    <span style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#1e293b' }}>= Resultado</span>
+                    <span style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#0f172a' }}>= Resultado</span>
                     <span style={{ fontSize: 15, fontWeight: 800, minWidth: 90, textAlign: 'right', padding: '0 8px', color: res >= 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{fmtRes(res)}</span>
                   </div>
                 </div>

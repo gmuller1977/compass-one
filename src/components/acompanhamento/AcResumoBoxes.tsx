@@ -67,7 +67,7 @@ export default function AcResumoBoxes({
 
   return (
     <div style={{
-      background: '#f0f4ff', borderBottom: `2px solid ${COR.borda}`,
+      background: '#f8faff', borderBottom: `2px solid ${COR.borda}`,
       padding: '12px 16px', flexShrink: 0, display: 'flex', gap: 10,
     }}>
       {caixas.map(c => {
