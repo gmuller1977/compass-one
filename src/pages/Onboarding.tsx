@@ -146,7 +146,6 @@ export default function Onboarding() {
   // ── Cartão ─────────────────────────────────────────────────────────────
   const [cartoesLocal, setCartoesLocal]   = useState<Conta[]>([])
   const [cartaoBanco,   setCartaoBanco]   = useState('')
-  const [cartaoLimite,  setCartaoLimite]  = useState('')
   const [cartaoVenc,    setCartaoVenc]    = useState('')
   const [cartaoApelido, setCartaoApelido] = useState('')
 
@@ -215,12 +214,11 @@ export default function Onboarding() {
       id: newId(), nome: cartaoApelido || cartaoBanco, banco: cartaoBanco,
       tipo: 'cartao', saldoInicial: 0,
       cor: '#7c3aed', icone: '💳',
-      limiteCartao: parseBRL(cartaoLimite) || undefined,
       diaVencimento: parseInt(cartaoVenc) || undefined,
       preferida: false, incluirNoSaldoInicial: false,
     }
     setCartoesLocal(prev => [...prev, c])
-    setCartaoBanco(''); setCartaoLimite(''); setCartaoVenc(''); setCartaoApelido('')
+    setCartaoBanco(''); setCartaoVenc(''); setCartaoApelido('')
   }
 
   function removeCartao(id: string) { setCartoesLocal(prev => prev.filter(c => c.id !== id)) }
@@ -232,7 +230,6 @@ export default function Onboarding() {
         tudo.push({
           id: newId(), nome: cartaoApelido || cartaoBanco, banco: cartaoBanco,
           tipo: 'cartao', saldoInicial: 0, cor: '#7c3aed', icone: '💳',
-          limiteCartao: parseBRL(cartaoLimite) || undefined,
           diaVencimento: parseInt(cartaoVenc) || undefined,
           preferida: false, incluirNoSaldoInicial: false,
         })
@@ -877,11 +874,6 @@ export default function Onboarding() {
               style={inputSt} />
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <FL>Limite total</FL>
-              <input value={cartaoLimite} onChange={e => setCartaoLimite(e.target.value)}
-                placeholder="5.000,00" style={inputSt} />
-            </div>
             <div style={{ flex: 1 }}>
               <FL>Dia de vencimento</FL>
               <input type="number" min={1} max={31} value={cartaoVenc}

@@ -18,7 +18,7 @@ export type FormaPagamentoFatura = 'automatico' | 'pix' | 'boleto' | 'transferen
 export type Conta = {
   id: string; nome: string; banco: string; tipo: TipoConta
   saldoInicial: number; cor: string; icone: string
-  limiteCartao?: number; diaVencimento?: number; diaFechamento?: number
+  diaVencimento?: number; diaFechamento?: number
   incluirNoSaldoInicial?: boolean
   agencia?: string; numeroConta?: string
   formaPagamentoFatura?: FormaPagamentoFatura
@@ -122,7 +122,6 @@ function contaToRow(c: Conta, userId: string) {
     saldo_inicial: c.saldoInicial,
     cor: c.cor,
     icone: c.icone,
-    limite_cartao: c.limiteCartao ?? null,
     dia_vencimento: c.diaVencimento ?? null,
     dia_fechamento: c.diaFechamento ?? null,
     incluir_no_saldo_inicial: c.incluirNoSaldoInicial ?? true,
@@ -154,7 +153,6 @@ type ContaRow = {
   saldo_inicial?: number | string | null
   cor?: string | null
   icone?: string | null
-  limite_cartao?: number | string | null
   dia_vencimento?: number | string | null
   dia_fechamento?: number | string | null
   incluir_no_saldo_inicial?: boolean | null
@@ -209,7 +207,6 @@ function rowToConta(row: ContaRow): Conta {
     saldoInicial: Number(row.saldo_inicial ?? 0),
     cor: row.cor ?? '',
     icone: row.icone ?? '',
-    limiteCartao: row.limite_cartao != null ? Number(row.limite_cartao) : undefined,
     diaVencimento: row.dia_vencimento != null ? Number(row.dia_vencimento) : undefined,
     diaFechamento: row.dia_fechamento != null ? Number(row.dia_fechamento) : undefined,
     incluirNoSaldoInicial: row.incluir_no_saldo_inicial ?? true,

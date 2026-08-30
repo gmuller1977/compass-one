@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { parseBRL } from '../utils/moeda'
+import { limiteCartaoPlanejado } from '../utils/limiteCartao'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
@@ -119,16 +120,27 @@ export default function QuickLaunch() {
     lancamentos: {}, faturaAtual: '',
   }
 
+  // Limite planejado e total das faturas: os dois sao AGREGADOS, do conjunto
+  // dos cartoes. O planejamento e por total, nao por cartao — nao ha no dado a
+  // que cartao cada categoria pertence. Ver utils/limiteCartao.
+  const limitePlanejadoCartoes = useMemo(
+    () => limiteCartaoPlanejado(planos[ano], categorias, mes),
+    [planos, ano, categorias, mes],
+  )
+  const totalFaturasMes = useMemo(() => {
+    const fat = faturaData as Record<string, FaturaMes>
+    return contas.filter(c => c.tipo === 'cartao').reduce((soma, c) => {
+      const dm = fat[mesKey(c.id, ano, mes)]
+      return soma + Object.values(dm?.lancamentos ?? {}).flat()
+        .filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
+    }, 0)
+  }, [contas, faturaData, ano, mes])
+
   const saldoAtual = useMemo(() => {
     if (!contaSel) return 0
-    if (isCartao) {
-      const limite = contaSel.limiteCartao ?? 0
-      const total  = Object.values(mesDadosCartao.lancamentos ?? {})
-        .flat().filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
-      return limite - total
-    }
+    if (isCartao) return limitePlanejadoCartoes - totalFaturasMes
     return calcSaldoBanco(contaSel.id, contaSel.saldoInicial, extratoData as Record<string, DadosMes>, ano, mes, dia)
-  }, [contaSel, isCartao, extratoData, mesDadosCartao, ano, mes, dia])
+  }, [contaSel, isCartao, extratoData, ano, mes, dia, limitePlanejadoCartoes, totalFaturasMes])
 
   const saldosBanco = useMemo(() => {
     const map: Record<string, number> = {}
@@ -328,7 +340,7 @@ export default function QuickLaunch() {
               }
             </div>
             <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>
-              {isCartao ? `Disponível · Limite ${fmt(contaSel.limiteCartao ?? 0)}` : contaSel.nome}
+              {isCartao ? `Disponível de todos os cartões · Planejado ${fmt(limitePlanejadoCartoes)}` : contaSel.nome}
             </div>
           </div>
           <div style={{
@@ -616,7 +628,7 @@ export default function QuickLaunch() {
                     const fatMes = (faturaData as Record<string, FaturaMes>)[mesKey(c.id, ano, mes)] ?? { lancamentos: {}, faturaAtual: '' }
                     const totalFat = Object.values(fatMes.lancamentos ?? {}).flat()
                       .filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
-                    const disponivel = (c.limiteCartao ?? 0) - totalFat
+
                     return (
                       <div
                         key={c.id}
@@ -636,7 +648,7 @@ export default function QuickLaunch() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{c.nome}</div>
                           <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1 }}>
-                            Disponível: {fmt(disponivel)}
+                            Fatura: {fmt(totalFat)}
                           </div>
                         </div>
                         {sel && (

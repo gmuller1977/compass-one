@@ -128,7 +128,6 @@ export default function Configuracoes() {
   const [editContaId, setEditContaId] = useState<string|null>(null)
   const [erroConta,   setErroConta]   = useState('')
   const [saldoStr,       setSaldoStr]       = useState('')
-  const [limiteStr,      setLimiteStr]      = useState('')
   const [faturaStr,      setFaturaStr]      = useState('')
   const [bancoCustom,    setBancoCustom]    = useState('')
   const nomeContaRef = useRef<HTMLInputElement>(null)
@@ -158,7 +157,7 @@ export default function Configuracoes() {
     setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
     setEditContaId(null)
     setErroConta('')
-    setSaldoStr(''); setLimiteStr(''); setFaturaStr(''); setBancoCustom('')
+    setSaldoStr(''); setFaturaStr(''); setBancoCustom('')
     setTimeout(() => nomeContaRef.current?.focus(), 0)
   }
   function editarConta(c: Conta) {
@@ -178,7 +177,6 @@ export default function Configuracoes() {
     setEditContaId(id)
     setErroConta('')
     setSaldoStr(c.saldoInicial ? String(c.saldoInicial).replace('.', ',') : '')
-    setLimiteStr(c.limiteCartao ? String(c.limiteCartao).replace('.', ',') : '')
     if (c.tipo === 'cartao') {
       const ano = new Date().getFullYear()
       const mes = new Date().getMonth()
@@ -588,8 +586,6 @@ export default function Configuracoes() {
               setBancoCustom={setBancoCustom}
               saldoStr={saldoStr}
               setSaldoStr={setSaldoStr}
-              limiteStr={limiteStr}
-              setLimiteStr={setLimiteStr}
               faturaStr={faturaStr}
               setFaturaStr={setFaturaStr}
               saldoInicialDinheiro={saldoInicialDinheiro}

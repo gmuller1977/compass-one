@@ -24,8 +24,6 @@ interface Props {
   setBancoCustom: (v: string) => void
   saldoStr: string
   setSaldoStr: (v: string) => void
-  limiteStr: string
-  setLimiteStr: (v: string) => void
   faturaStr: string
   setFaturaStr: (v: string) => void
   saldoInicialDinheiro: number
@@ -43,7 +41,7 @@ export default function CfgBancosCartoes({
   aba, isMobile, mobileView, setMobileView, nenhumaConta,
   contas, editContaId, formConta, setFormConta,
   bancoCustom, setBancoCustom, saldoStr, setSaldoStr,
-  limiteStr, setLimiteStr, faturaStr, setFaturaStr,
+  faturaStr, setFaturaStr,
   saldoInicialDinheiro, onSaveSaldoDinheiro,
   erroConta, nomeContaRef, tipoBancoRefs,
   novaConta, editarConta, salvarConta, excluirConta,
@@ -120,12 +118,6 @@ export default function CfgBancosCartoes({
                       <div style={{ textAlign:'right', flexShrink:0 }}>
                         {c.tipo==='cartao' ? (
                           <>
-                            <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>
-                              {fmt(c.limiteCartao??0)}
-                            </div>
-                            <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
-                              Limite
-                            </div>
                             <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
                               Fecha {c.diaFechamento} · Vence {c.diaVencimento}
                             </div>
@@ -309,10 +301,6 @@ export default function CfgBancosCartoes({
               </div>
             </div>
             <div style={{ textAlign:'right', flexShrink:0 }}>
-              <div style={{ fontSize:14, fontWeight:800 }}>
-                {fmt(formConta.limiteCartao ?? 0)}
-              </div>
-              <div style={{ fontSize:10, opacity:.7, marginTop:2 }}>Limite</div>
             </div>
           </div>
         )}
@@ -337,16 +325,6 @@ export default function CfgBancosCartoes({
                     placeholder="Nome do banco" className="campo-cfg" style={inputSt} />
                 </div>
               )}
-              <div>
-                <label style={labelSt}>Limite do cartão</label>
-                <input value={limiteStr}
-                  onChange={e => {
-                    const raw = e.target.value.replace(/[^0-9.,]/g, '')
-                    setLimiteStr(raw)
-                    setFormConta(p=>({...p, limiteCartao:parseBRL(raw)}))
-                  }}
-                  placeholder="R$ 0,00" className="campo-cfg" style={inputSt} />
-              </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <label style={labelSt}>Dia fechamento</label>

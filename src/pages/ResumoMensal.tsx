@@ -16,6 +16,7 @@ import { catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import { parseBRL } from '../utils/moeda'
+import { limiteCartaoPlanejado } from '../utils/limiteCartao'
 
 export const NOMES_MESES_RM = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 export const MESES_CURTOS_RM = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -467,28 +468,18 @@ export default function ResumoMensal() {
   }, [categorias, dadosAno, dados, contasExtrato, contas, fat, fixasValorPorId, mes, ano])
 
   // ── Planejado por cartão: soma do planejamento das categorias que apareceram na fatura ──
-  const cartoesPlanejado = useMemo<Record<string, number>>(() => {
-    const mesStr = String(mes + 1).padStart(2, '0')
-    const totalDiasM = new Date(ano, mes + 1, 0).getDate()
-    const saidas = (dadosAno as { saidas?: { nome: string; v: number[] }[] } | undefined)?.saidas ?? []
-    const map: Record<string, number> = {}
-    for (const c of contas.filter(ct => ct.tipo === 'cartao')) {
-      const dm = fat[`${c.id}-${ano}-${mesStr}`]
-      if (!dm?.lancamentos) continue
-      const catsUsadas = new Set<string>()
-      for (let d = 1; d <= totalDiasM; d++) {
-        for (const l of (dm.lancamentos[d] ?? [])) {
-          if (l.tipo === 'entrada') catsUsadas.add(l.categoria)
-        }
-      }
-      let total = 0
-      for (const nome of catsUsadas) {
-        total += saidas.find(s => s.nome === nome)?.v[mes] ?? 0
-      }
-      map[c.id] = total
-    }
-    return map
-  }, [dadosAno, contas, fat, ano, mes])
+  // Limite do cartao: soma do planejado nas categorias pagas com cartao.
+  // Agregado, nunca por cartao — o usuario planeja por total, e nao ha no
+  // dado a que cartao cada categoria pertence. Ver utils/limiteCartao.
+  //
+  // A versao anterior somava so as categorias que JA tinham lancamento na
+  // fatura, entao o planejado crescia conforme se lancava e o disponivel
+  // tendia a zero. Alem disso casava a categoria por nome puro, somando
+  // Seguro-Civic com Seguro-March.
+  const limitePlanejadoCartoes = useMemo(
+    () => limiteCartaoPlanejado(dadosAno, categorias, mes),
+    [dadosAno, categorias, mes],
+  )
 
   // ── Totais ───────────────────────────────────────────────────────────
   const totalReceitasPrevisto = receitasInfo.reduce((s, r) => s + r.previsto, 0)
@@ -565,7 +556,7 @@ export default function ResumoMensal() {
           const sections: { id: string; label: string; node: React.ReactNode }[] = [
             {
               id: 'patrimonio', label: 'Patrimônio',
-              node: <RmPatrimonio saldoAtualPorConta={saldoAtualPorConta} faturaAtualPorCartao={faturaAtualPorCartao} saldoDinheiro={saldoDinheiro} cartoesPlanejado={cartoesPlanejado} userId={user?.id ?? ''} fmt={fmt} />,
+              node: <RmPatrimonio saldoAtualPorConta={saldoAtualPorConta} faturaAtualPorCartao={faturaAtualPorCartao} saldoDinheiro={saldoDinheiro} limitePlanejadoCartoes={limitePlanejadoCartoes} userId={user?.id ?? ''} fmt={fmt} />,
             },
             {
               id: 'receitas', label: 'Receitas',

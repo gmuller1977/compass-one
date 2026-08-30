@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
+import { useApp } from '../../context/AppContext'
+import { limiteCartaoPlanejado } from '../../utils/limiteCartao'
 import {
   COR, fmt, NOMES_MESES, DIAS_SEM, FORMAS_SAI, FORMAS_ENT,
   realcarFoco, removerRealce, diaSemana,
@@ -88,6 +90,8 @@ export default function NleConsolidado({
   valorInputRef, categoriaSelectRef,
   lancarConsolidado, resetarParaNovo,
 }: Props) {
+  const { planos } = useApp()
+
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.
@@ -127,8 +131,12 @@ export default function NleConsolidado({
   // Totals
   const totalContasBancarias = saldoAtualPorConta.reduce((s, x) => s + x.saldo, 0)
   const faturaTotal     = faturaAtualPorCartao.reduce((s, x) => s + x.fatura, 0)
-  const limiteTotal     = faturaAtualPorCartao.reduce((s, x) => s + (x.conta.limiteCartao ?? 0), 0)
+  // O limite vem do planejamento, nao mais do campo do cadastro: e a soma do
+  // que foi planejado nas categorias pagas com cartao. Ver utils/limiteCartao.
+  const limiteTotal     = limiteCartaoPlanejado(planos[ano], categorias, mes)
   const disponivelTotal = limiteTotal - faturaTotal
+  const pctUso          = limiteTotal > 0 ? Math.min(faturaTotal / limiteTotal, 1) : 0
+  const corUso          = pctUso > .9 ? COR.vermelho : pctUso > .7 ? '#b45309' : COR.verde
   const resultadoMes    = totalEntradasMes - totalSaidasMes
 
   return (
@@ -204,10 +212,9 @@ export default function NleConsolidado({
               <SecaoHeader icone="💳" titulo="Cartões de crédito" />
 
               {faturaAtualPorCartao.map(({conta,fatura},idx) => {
-                const limite     = conta.limiteCartao ?? 0
-                const disponivel = limite - fatura
-                const pct        = limite > 0 ? Math.min(fatura / limite, 1) : 0
-                const corBar     = pct > .9 ? COR.vermelho : pct > .7 ? '#b45309' : COR.verde
+                // Sem disponivel por cartao: o planejamento e por total de
+                // cartoes, e nao ha no dado a que cartao cada categoria
+                // pertence. Cada linha mostra so a propria fatura.
                 const cor        = conta.cor || '#6366f1'
                 return (
                   <div key={conta.id} style={{background:COR.branco,
@@ -216,8 +223,8 @@ export default function NleConsolidado({
                     padding:'10px 14px'}}>
 
                     <div style={{display:'grid',
-                      gridTemplateColumns:`1fr ${limite>0?'80px ':' '}80px 80px`,
-                      gap:8,alignItems:'center',marginBottom:limite>0?6:0}}>
+                      gridTemplateColumns:'1fr 90px',
+                      gap:8,alignItems:'center',marginBottom:0}}>
                       <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
                         <span style={{fontSize:18,flexShrink:0}}>{conta.icone||'💳'}</span>
                         <div style={{minWidth:0}}>
@@ -228,39 +235,28 @@ export default function NleConsolidado({
                           <div style={{fontSize:10,color:'#94a3b8'}}>{conta.banco}</div>
                         </div>
                       </div>
-                      {limite > 0 && (
-                        <div style={{textAlign:'right' as const}}>
-                          <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Limite</div>
-                          <div style={{fontSize:12,fontWeight:600,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>{fmt(limite)}</div>
-                        </div>
-                      )}
                       <div style={{textAlign:'right' as const}}>
                         <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Fatura</div>
                         <div style={{fontSize:12,fontWeight:700,color:COR.vermelho,fontVariantNumeric:'tabular-nums'}}>{fmt(fatura)}</div>
                       </div>
-                      <div style={{textAlign:'right' as const}}>
-                        <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Disponível</div>
-                        <div style={{fontSize:12,fontWeight:700,
-                          color:disponivel<0?COR.vermelho:COR.verde,fontVariantNumeric:'tabular-nums'}}>
-                          {limite > 0 ? fmt(disponivel) : '—'}
-                        </div>
-                      </div>
                     </div>
 
-                    {limite > 0 && (
-                      <div style={{height:5,borderRadius:3,background:'#e2e8f0',overflow:'hidden'}}>
-                        <div style={{height:'100%',borderRadius:3,background:corBar,
-                          width:`${pct*100}%`,transition:'width .3s'}} />
-                      </div>
-                    )}
                   </div>
                 )
               })}
 
-              {/* Subtotal */}
+              {/* Subtotal — o disponivel e agregado, ver utils/limiteCartao */}
+              {limiteTotal > 0 && (
+                <div style={{padding:'0 14px',background:'#f8faff'}}>
+                  <div style={{height:5,borderRadius:3,background:COR.borda,overflow:'hidden',marginTop:8}}>
+                    <div style={{height:'100%',borderRadius:3,background:corUso,
+                      width:`${pctUso*100}%`,transition:'width .3s'}} />
+                  </div>
+                </div>
+              )}
               <div style={{padding:'8px 14px',background:'#f8faff',
                 display:'flex',justifyContent:'space-between',gap:8,
-                borderTop:`1px solid ${COR.borda}`}}>
+                borderTop:limiteTotal>0?'none':`1px solid ${COR.borda}`}}>
                 <div>
                   <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,textTransform:'uppercase' as const,letterSpacing:.4}}>Total faturas</div>
                   <div style={{fontSize:12,fontWeight:700,color:COR.vermelho,fontVariantNumeric:'tabular-nums'}}>{fmt(faturaTotal)}</div>

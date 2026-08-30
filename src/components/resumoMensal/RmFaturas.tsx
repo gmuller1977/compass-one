@@ -20,12 +20,6 @@ function SecaoHeader({ titulo }: { titulo: string }) {
   )
 }
 
-function usoCor(pct: number) {
-  if (pct < 50) return '#4ade80'
-  if (pct < 80) return '#fbbf24'
-  return '#f87171'
-}
-
 export default function RmFaturas({ faturas, hoje, fmt }: Props) {
   const mesNome = NOMES_MESES_RM[hoje.getMonth()]
   const diaHoje = hoje.getDate()
@@ -36,10 +30,9 @@ export default function RmFaturas({ faturas, hoje, fmt }: Props) {
       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderTop: 0, borderRadius: '0 0 12px 12px', padding: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
           {faturas.map(({ conta, fatura }) => {
-            const limite     = conta.limiteCartao ?? 0
-            const pct        = limite > 0 ? Math.min(100, Math.round((fatura / limite) * 100)) : 0
-            const cor        = usoCor(pct)
-            const disponivel = Math.max(0, limite - fatura)
+            // Sem limite por cartao: o planejamento e por total de cartoes. O
+            // agregado fica no bloco Patrimonio; aqui cada cartao mostra a propria
+            // fatura e o vencimento.
             const vence      = conta.diaVencimento ?? 0
             const diasAte    = vence - diaHoje
             const vencido    = diasAte < 0
@@ -55,26 +48,12 @@ export default function RmFaturas({ faturas, hoje, fmt }: Props) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
                   <span>Fatura:</span><b style={{ color: '#0f172a', fontSize: 14, fontWeight: 700 }}>{fmt(fatura)}</b>
                 </div>
-                {limite > 0 && (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
-                      <span>Limite:</span><b style={{ color: '#0f172a' }}>{fmt(limite)}</b>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 8 }}>
-                      <span>Disponível:</span><b style={{ color: '#16a34a' }}>{fmt(disponivel)}</b>
-                    </div>
-                    <div style={{ width: '100%', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: cor, borderRadius: 4 }} />
-                    </div>
-                  </>
-                )}
                 {vence > 0 && (
                   <div style={{
                     fontSize: 10, marginTop: 6,
                     color: vencido ? '#dc2626' : (diasAte < 5 ? '#b45309' : '#94a3b8'),
                     fontWeight: vencido || diasAte < 5 ? 600 : 400,
                   }}>
-                    {limite > 0 ? `${pct}% usado · ` : ''}
                     {vencido ? 'Vencido!' : diasAte < 5 ? `Vence em ${diasAte} dias!` : `Vence dia ${vence}`}
                   </div>
                 )}

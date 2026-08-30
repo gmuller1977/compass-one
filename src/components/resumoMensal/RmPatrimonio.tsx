@@ -13,7 +13,8 @@ export type Props = {
   saldoAtualPorConta: SaldoConta[]
   faturaAtualPorCartao: FaturaCartao[]
   saldoDinheiro: number
-  cartoesPlanejado: Record<string, number>
+  /** Total planejado nas categorias pagas com cartao. Agregado, nunca por cartao. */
+  limitePlanejadoCartoes: number
   userId: string
   fmt: (v: number) => string
 }
@@ -103,7 +104,7 @@ function elapsedMonths(created_at: string): number {
   return Math.max(0, (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()))
 }
 
-export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao, saldoDinheiro, cartoesPlanejado, userId, fmt }: Props) {
+export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao, saldoDinheiro, limitePlanejadoCartoes, userId, fmt }: Props) {
   const navigate = useNavigate()
   const [sims, setSims] = useState<SimRow[]>([])
 
@@ -121,7 +122,7 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
   const totalPositivo = totalCorrente + totalPoupanca
   const patrimonioLiquido = totalPositivo - totalFaturas
 
-  const totalPlanejadoCartoes = faturaAtualPorCartao.reduce((s, f) => s + (cartoesPlanejado[f.conta.id] ?? 0), 0)
+  const totalPlanejadoCartoes = limitePlanejadoCartoes
   const totalDiffCartoes = totalPlanejadoCartoes - totalFaturas
 
   const metas   = sims.filter(s => s.tipo === 'meta')
@@ -180,80 +181,56 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
             {/* Header da tabela */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 90px 95px 95px 100px',
+              gridTemplateColumns: '1fr 110px',
               gap: 8, padding: '0 4px 8px',
               borderBottom: '2px solid #e2e8f0',
             }}>
-              {['Cartão', 'Limite', 'Planejado', 'Fatura real', 'Diferença'].map(h => (
+              {['Cartão', 'Fatura real'].map(h => (
                 <div key={h} style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', letterSpacing: '.3px', textTransform: 'uppercase', textAlign: h === 'Cartão' ? 'left' : 'right' }}>{h}</div>
               ))}
             </div>
 
             {/* Linhas */}
-            {faturaAtualPorCartao.map(({ conta, fatura }) => {
-              const limite     = conta.limiteCartao ?? 0
-              const planejado  = cartoesPlanejado[conta.id] ?? 0
-              const diff       = planejado - fatura
-              const pct        = limite > 0 ? Math.min(100, Math.round((fatura / limite) * 100)) : 0
-              const diffEmoji  = diff > 0 ? '✅' : diff < -300 ? '🔴' : diff < 0 ? '⚠️' : '✅'
-              return (
-                <div key={conta.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 10, marginBottom: 6 }}>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 90px 95px 95px 100px',
-                    gap: 8, padding: '10px 4px 6px',
-                    alignItems: 'center',
-                  }}>
-                    {/* Nome */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <IconeCircle emoji={conta.icone || '💳'} bg="#fef2f2" />
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: '#0f172a' }}>{conta.apelido ?? conta.nome}</div>
-                        {limite > 0 && <div style={{ fontSize: 10, color: '#94a3b8' }}>{pct}% do limite</div>}
-                      </div>
-                    </div>
-                    {/* Limite */}
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', textAlign: 'right' }}>
-                      {limite > 0 ? fmt(limite) : '—'}
-                    </div>
-                    {/* Planejado */}
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', textAlign: 'right' }}>
-                      {planejado > 0 ? fmt(planejado) : '—'}
-                    </div>
-                    {/* Fatura real */}
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', textAlign: 'right' }}>
-                      {fmt(fatura)}
-                    </div>
-                    {/* Diferença */}
-                    <div style={{ fontSize: 12, fontWeight: 700, color: diff >= 0 ? '#16a34a' : '#dc2626', textAlign: 'right' }}>
-                      {diff >= 0 ? '+' : ''}{fmt(diff)} {diffEmoji}
+            {faturaAtualPorCartao.map(({ conta, fatura }) => (
+              // Sem limite nem planejado por cartao: o planejamento e por total de
+              // cartoes. O agregado aparece no resumo abaixo.
+              <div key={conta.id} style={{
+                display: 'grid', gridTemplateColumns: '1fr 110px',
+                gap: 8, padding: '10px 4px', alignItems: 'center',
+                borderBottom: '1px solid #f1f5f9',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <IconeCircle emoji={conta.icone || '💳'} bg="#fef2f2" />
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#0f172a' }}>{conta.apelido ?? conta.nome}</div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', textAlign: 'right' }}>{fmt(fatura)}</div>
+              </div>
+            ))}
+            
+            {/* Resumo agregado — o planejamento do cartao e por total, nunca por cartao */}
+            <div style={{ padding: '12px 4px 0', borderTop: '2px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Planejado no cartão', valor: totalPlanejadoCartoes, cor: '#0f172a' },
+                  { label: 'Faturas do mês',      valor: totalFaturas,          cor: '#dc2626' },
+                  { label: 'Disponível',          valor: totalDiffCartoes,      cor: totalDiffCartoes >= 0 ? '#15803d' : '#dc2626' },
+                ].map(({ label, valor, cor }) => (
+                  <div key={label}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.3px' }}>{label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: cor, fontVariantNumeric: 'tabular-nums' }}>
+                      {totalPlanejadoCartoes > 0 ? fmt(valor) : '—'}
                     </div>
                   </div>
-                  {/* Barra uso do limite */}
-                  {limite > 0 && (
-                    <div style={{ padding: '0 4px' }}>
-                      <BarraProgresso pct={pct} cor={usoCor(pct)} />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-
-            {/* Subtotal */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 90px 95px 95px 100px',
-              gap: 8, padding: '10px 4px 0',
-              borderTop: '2px solid #e2e8f0',
-              alignItems: 'center',
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Total</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textAlign: 'right' }}>—</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', textAlign: 'right' }}>{totalPlanejadoCartoes > 0 ? fmt(totalPlanejadoCartoes) : '—'}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', textAlign: 'right' }}>{fmt(totalFaturas)}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: totalDiffCartoes >= 0 ? '#16a34a' : '#dc2626', textAlign: 'right' }}>
-                {totalDiffCartoes >= 0 ? '+' : ''}{totalPlanejadoCartoes > 0 ? fmt(totalDiffCartoes) : '—'}
+                ))}
               </div>
+              {totalPlanejadoCartoes > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <BarraProgresso
+                    pct={Math.min(100, Math.round((totalFaturas / totalPlanejadoCartoes) * 100))}
+                    cor={usoCor(Math.min(100, Math.round((totalFaturas / totalPlanejadoCartoes) * 100)))}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </Bloco>

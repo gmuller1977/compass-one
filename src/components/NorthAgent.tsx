@@ -125,9 +125,9 @@ export default function NorthAgent() {
         const raw = faturaData[key] as { lancamentos?: Record<number, { valor?: number }[]> } | undefined
         if (!raw?.lancamentos) return null
         const total = Object.values(raw.lancamentos).flat().reduce((s, l) => s + (l.valor ?? 0), 0)
-        return { cartao: c.apelido || c.banco, total, limite: c.limiteCartao ?? 0 }
+        return { cartao: c.apelido || c.banco, total }
       })
-      .filter(Boolean) as { cartao: string; total: number; limite: number }[]
+      .filter(Boolean) as { cartao: string; total: number }[]
 
     return `
 ### Perfil
@@ -142,7 +142,7 @@ ${contas.filter(c => c.tipo !== 'cartao').map(c =>
 
 ### Cartões de crédito
 ${contas.filter(c => c.tipo === 'cartao').map(c =>
-  `- ${c.apelido || c.banco}: Limite ${fmtBRL(c.limiteCartao ?? 0)}${c.diaVencimento ? `, vencimento dia ${c.diaVencimento}` : ''}${c.diaFechamento ? `, fechamento dia ${c.diaFechamento}` : ''}`
+  `- ${c.apelido || c.banco}${c.diaVencimento ? `: vencimento dia ${c.diaVencimento}` : ''}${c.diaFechamento ? `, fechamento dia ${c.diaFechamento}` : ''}`
 ).join('\n') || '- Nenhum cartão cadastrado'}
 
 ### Receitas do mês (${MESES[mes]})
@@ -171,7 +171,7 @@ ${linhasPlano.join('\n') || '- Sem planejamento cadastrado para este mês'}
 
 ### Faturas de cartão (${MESES[mes]})
 ${faturas.map(f =>
-  `- ${f.cartao}: ${fmtBRL(f.total)}${f.limite > 0 ? ` de ${fmtBRL(f.limite)} (${Math.round(f.total / f.limite * 100)}% do limite)` : ''}`
+  `- ${f.cartao}: ${fmtBRL(f.total)}`
 ).join('\n') || '- Sem dados de fatura'}
 
 ### Metas/Simulações ativas
