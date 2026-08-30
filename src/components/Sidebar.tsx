@@ -48,6 +48,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
           { label: 'Planilha',   path: '/planejamento?modo=planilha' },
           { label: 'Lista',      path: '/planejamento?modo=lista'    },
           // Por ultimo de proposito: sobrescreve o plano do ano inteiro.
+          { divider: 'Recomeçar' },
           { label: 'Planejamento do Zero', path: '/wizard-planejamento'    },
         ],
       },
@@ -242,7 +243,6 @@ export default function Sidebar() {
     return exact ? pathname === path : pathname.startsWith(path)
   }
   function isSubActive(subPath: string) {
-    if (subPath.includes('modo=wizard')) return false
     return (pathname + search) === subPath
   }
 
