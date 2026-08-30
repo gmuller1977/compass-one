@@ -92,6 +92,17 @@ pedido explícito.
 no **Radar**. No **Planejamento** ela foi removida de propósito: lá o que separa
 os meses é ter ou não planejamento, não a posição no tempo.
 
+**`PageHeader` não vai na `QuickLaunch`**, que é a home do mobile. O componente
+traz ícone, breadcrumb, título e subtítulo — vocabulário de tela interna. Numa
+home ele viraria navegação para lugar nenhum. Decidido em 30/08/2026.
+
+Antes de concluir que uma tela "não tem `PageHeader`", conferir os **componentes
+filhos**: em Configuracoes, NovoLancamentoExtrato e RevisaoMensal o cabeçalho
+vive num filho (`CfgPerfil`, `NleHeader`, `PlanRevisao`). Uma auditoria que olhou
+só o arquivo da página contou as três como ausentes. A `FaturaCartao` também não
+leva: ela é a aba "cartão" **dentro** do NovoLancamentoExtrato, e ganharia um
+segundo cabeçalho empilhado.
+
 **Despesas sobre fundo azul** aparecem em amarelo no Planejamento e em vermelho
 claro em Lançamentos. As duas telas divergem por decisão de design, não por
 descuido.
