@@ -109,6 +109,30 @@ descuido.
 
 ---
 
+## Paleta
+
+`cores.ts` nomeia **86%** das cores usadas no app. Antes de escrever um hex
+literal, procurar o token — em especial os de estado (`infoFundo`/`infoTexto`,
+`sucessoFundo`/`sucessoTexto`, `avisoFundo`, `erroFundo`), que já vêm com o par
+fundo + texto medido.
+
+Dois nomes existem justamente para evitar erro:
+
+- `sucessoTexto` (`#15803d`), **não** `COR.verde` — o verde padrão dá 3,2:1
+  sobre `sucessoFundo` e reprova.
+- `barraVerde` / `barraVermelha` / `barraAmarela` — elemento gráfico vale 3:1.
+  As três reprovam como texto; o nome deixa isso explícito.
+
+As cores literais que ainda existem **não foram migradas de propósito**: são
+1.184 substituições mecânicas num app visual, sem ganho para o usuário. Migrar
+uma tela é bem-vindo quando ela for mexida por outro motivo; migração em massa,
+não. Decidido em 30/08/2026.
+
+**A `LandingPage` fica fora da paleta.** É design de marketing, com identidade
+própria e 112 cores só dela. Não migrar, agora nem depois.
+
+---
+
 ## Dinheiro
 
 **Um único parser**, em [`src/utils/moeda.ts`](src/utils/moeda.ts):

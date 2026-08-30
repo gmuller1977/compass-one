@@ -62,6 +62,40 @@ export const COR = {
   azulMedioFundoDe:        '#1d4ed8',
   azulMedioFundoPara:      '#1e40af',
 
+
+  // ── Superfícies de estado ────────────────────────────────────────────
+  // Cada estado tem fundo, borda e texto. Estavam literais no código, sem
+  // nome: 62 usos de #eff6ff, 34 de #f0fdf4, 31 de #0369a1.
+  infoFundo:     '#eff6ff',
+  infoBorda:     '#bae6fd',
+  infoTexto:     '#0369a1',  // 5,5:1 sobre infoFundo
+
+  sucessoFundo:  '#f0fdf4',
+  sucessoBorda:  '#bbf7d0',
+  sucessoTexto:  '#15803d',  // 4,8:1 — NAO usar COR.verde (#16a34a) aqui,
+                             // que da 3,2:1 sobre este fundo e reprova
+
+  avisoFundo:    '#fffbeb',
+  avisoBorda:    '#fde68a',
+  avisoTexto:    '#92400e',  // 6,8:1 sobre avisoFundo
+
+  erroFundo:     '#fff1f2',
+  erroTexto:     '#b91c1c',  // 5,9:1 — COR.vermelho (#dc2626) da 4,4:1 e
+                             // reprova por pouco sobre este fundo
+
+  // ── Neutros ──────────────────────────────────────────────────────────
+  superficie:    '#f8fafc',  // linha alternada, hover, caixa recuada
+  cinzaSemPlano: '#475569',  // tema "Sem Planejamento"; ver CLAUDE.md
+  textoVazio:    '#cbd5e1',  // SO para o travessao de celula vazia. Como
+                             // texto de verdade da 1,5:1 e reprova.
+
+  // ── Barras, ícones e outros gráficos ─────────────────────────────────
+  // Elemento gráfico vale 3:1, texto vale 4,5:1. Estes três passam como
+  // barra e reprovam como texto — o nome existe para deixar isso explícito.
+  barraVerde:    '#4ade80',
+  barraVermelha: '#f87171',
+  barraAmarela:  '#fbbf24',
+
   // Extras (usados em Acompanhamento)
   vermelhoFundoGrupo: '#ffeaea',
   verdeFundoGrupo:    '#e8fdf0',
