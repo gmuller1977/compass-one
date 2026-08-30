@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { supabase } from '../../lib/supabase'
 import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
@@ -6,6 +6,7 @@ import PageHeader from '../PageHeader'
 import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
 import { resolverRealKey } from '../acompanhamento/evolucaoCalcs'
 import { ehZero } from '../../utils/moeda'
+import SeletorMesAno from '../SeletorMesAno'
 import type { Categoria } from '../../context/AppContext'
 
 /**
@@ -113,20 +114,10 @@ export default function PlanRevisao({
   const [toastMsg, setToastMsg]     = useState('')
   const [toastOk, setToastOk]       = useState(true)
   const [etapa2Erro, setEtapa2Erro] = useState('')
-  const [mostrarCal, setMostrarCal] = useState(false)
   const [expandOkE, setExpandOkE]   = useState(false)
   const [expandOkS, setExpandOkS]   = useState(false)
-  const calRef   = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
 
-  useEffect(() => {
-    if (!mostrarCal) return
-    const handler = (e: MouseEvent) => {
-      if (calRef.current && !calRef.current.contains(e.target as Node)) setMostrarCal(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [mostrarCal])
 
   const lancado = lancadoPorCatMes[mesSel] ?? { entrada: {}, saida: {} }
 
@@ -267,49 +258,15 @@ export default function PlanRevisao({
   const colW = 90
 
   // ── Calendar nav ─────────────────────────────────────────────────────────
-  const idxSel  = mesesPassados.indexOf(mesSel)
-  const prevMes = idxSel > 0 ? () => mudarMes(mesesPassados[idxSel - 1]) : null
-  const nextMes = idxSel < mesesPassados.length - 1 ? () => mudarMes(mesesPassados[idxSel + 1]) : null
 
-  const arrowBtn = {
-    width: 28, height: 28, borderRadius: 8, border: 'none',
-    background: 'rgba(255,255,255,0.15)', color: '#fff',
-    cursor: 'pointer', fontSize: 16, fontWeight: 700,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'inherit',
-  } as const
 
   const calNav = (
-    <div style={{ position: 'relative' }} ref={calRef}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <button onClick={() => prevMes?.()} style={{ ...arrowBtn, opacity: prevMes ? 1 : 0.3, cursor: prevMes ? 'pointer' : 'default' }}>‹</button>
-        <button
-          onClick={e => { e.stopPropagation(); setMostrarCal(v => !v) }}
-          style={{ fontSize: 20, fontWeight: 800, color: '#fff', border: 'none', background: 'rgba(255,255,255,0.12)', borderRadius: 8, padding: '4px 14px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-        >
-          {MESES_FULL[mesSel]} {anoAtual}
-        </button>
-        <button onClick={() => nextMes?.()} style={{ ...arrowBtn, opacity: nextMes ? 1 : 0.3, cursor: nextMes ? 'pointer' : 'default' }}>›</button>
-      </div>
-
-      {mostrarCal && (
-        <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 300, background: '#fff', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,.22)', padding: 16, minWidth: 272 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: COR.texto, textAlign: 'center', marginBottom: 12 }}>{anoAtual}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
-            {MESES.map((abrev, i) => {
-              const disponivel = mesesPassados.includes(i)
-              const ativo = i === mesSel
-              return (
-                <button key={i} disabled={!disponivel} onClick={() => { mudarMes(i); setMostrarCal(false) }}
-                  style={{ padding: '8px 4px', border: 'none', borderRadius: 8, cursor: disponivel ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 12, fontWeight: ativo ? 700 : 500, background: ativo ? COR.azul : disponivel ? '#f1f5f9' : 'transparent', color: ativo ? '#fff' : disponivel ? COR.texto : '#cbd5e1' }}>
-                  {abrev}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+    <SeletorMesAno
+      mes={mesSel} ano={anoAtual}
+      onSelect={m => mudarMes(m)}
+      habilitado={(m, a) => a === anoAtual && mesesPassados.includes(m)}
+      anoFixo
+    />
   )
 
   // ── Row renderer ─────────────────────────────────────────────────────────

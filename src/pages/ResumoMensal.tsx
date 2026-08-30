@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
-import PageHeader, { PH_BTN_WHITE } from '../components/PageHeader'
+import PageHeader from '../components/PageHeader'
 import TutorialCard from '../components/TutorialCard'
 import RmPatrimonio from '../components/resumoMensal/RmPatrimonio'
 import RmReceitas from '../components/resumoMensal/RmReceitas'
@@ -17,6 +17,7 @@ import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import { parseBRL } from '../utils/moeda'
 import { limiteCartaoPlanejado } from '../utils/limiteCartao'
+import SeletorMesAno from '../components/SeletorMesAno'
 
 export const NOMES_MESES_RM = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 export const MESES_CURTOS_RM = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -186,12 +187,6 @@ export default function ResumoMensal() {
   const dados = extratoData as Record<string, DadosMesRm>
   const fat   = faturaData  as Record<string, DadosMesRm>
 
-  function navMes(delta: number) {
-    let m = mes + delta, a = ano
-    if (m < 0) { m = 11; a-- }
-    if (m > 11) { m = 0; a++ }
-    setMes(m); setAno(a)
-  }
 
   // ── Planning data ────────────────────────────────────────────────────
   const dadosAno = useMemo(
@@ -511,17 +506,11 @@ export default function ResumoMensal() {
   const mesNome = NOMES_MESES_RM[mes]
 
   const navContent = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <button style={PH_BTN_WHITE} onClick={() => navMes(-1)}>◀</button>
-      <button style={{ ...PH_BTN_WHITE, fontWeight: 700, padding: '6px 16px' }}>
-        {mesNome} {ano}
-      </button>
-      <button
-        style={{ ...PH_BTN_WHITE, opacity: (mes === mesHoje && ano === anoHoje) ? 0.4 : 1 }}
-        onClick={() => navMes(1)}
-        disabled={mes === mesHoje && ano === anoHoje}
-      >▶</button>
-    </div>
+    <SeletorMesAno
+      mes={mes} ano={ano}
+      onSelect={(m, a) => { setMes(m); setAno(a) }}
+      habilitado={(m, a) => a < anoHoje || (a === anoHoje && m <= mesHoje)}
+    />
   )
 
   return (

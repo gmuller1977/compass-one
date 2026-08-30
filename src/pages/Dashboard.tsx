@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
+import SeletorMesAno from '../components/SeletorMesAno'
 import TutorialCard from '../components/TutorialCard'
 import { COR } from '../utils/cores'
 import { creditarAurix, saldoAurix, acoesHoje } from '../utils/aurix'
@@ -68,18 +69,6 @@ export default function Dashboard() {
 
   const nome = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
 
-  function prevMes() {
-    if (viewMes === 0) { setViewMes(11); setViewAno(a => a - 1) }
-    else setViewMes(m => m - 1)
-  }
-  function nextMes() {
-    const now = new Date()
-    if (viewAno > now.getFullYear() || (viewAno === now.getFullYear() && viewMes >= now.getMonth())) return
-    if (viewMes === 11) { setViewMes(0); setViewAno(a => a + 1) }
-    else setViewMes(m => m + 1)
-  }
-  const isCurrent = viewMes === hoje.getMonth() && viewAno === hoje.getFullYear()
-  const isAtMax   = isCurrent
 
   // ── Cálculos do mês ──────────────────────────────────────────────────
   const { totalEntradas, totalSaidas, saldoDisponivel, topCategorias, ultimosLanc } = useMemo(() => {
@@ -221,28 +210,12 @@ export default function Dashboard() {
             subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
             rightContent={
               <>
-                <div style={{
-                  display: 'flex', alignItems: 'center',
-                  background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden',
-                }}>
-                  <button onClick={prevMes} style={{
-                    border: 'none', background: 'transparent', cursor: 'pointer',
-                    padding: '5px 9px', color: '#fff', fontSize: 11, lineHeight: 1,
-                  }}>◀</button>
-                  <span style={{
-                    fontSize: 12, fontWeight: 500, color: '#fff',
-                    padding: '5px 8px',
-                    borderLeft: '1px solid rgba(255,255,255,0.2)',
-                    borderRight: '1px solid rgba(255,255,255,0.2)',
-                    minWidth: isMobile ? 56 : 80, textAlign: 'center',
-                  }}>{MESES_FULL[viewMes].slice(0, isMobile ? 3 : 9)} {viewAno}</span>
-                  <button onClick={nextMes} style={{
-                    border: 'none', background: 'transparent',
-                    cursor: isAtMax ? 'not-allowed' : 'pointer',
-                    padding: '5px 9px', color: isAtMax ? 'rgba(255,255,255,0.3)' : '#fff',
-                    fontSize: 11, lineHeight: 1,
-                  }}>▶</button>
-                </div>
+                <SeletorMesAno
+                  mes={viewMes} ano={viewAno}
+                  onSelect={(m, a) => { setViewMes(m); setViewAno(a) }}
+                  habilitado={(m, a) => a < hoje.getFullYear() || (a === hoje.getFullYear() && m <= hoje.getMonth())}
+                  compacto={isMobile}
+                />
                 <button onClick={() => navigate('/novo-lancamento')} style={PH_BTN_SOLID}>
                   + Lançar
                 </button>

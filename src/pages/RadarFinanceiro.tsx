@@ -4,9 +4,10 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes, Categoria } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
+import SeletorMesAno from '../components/SeletorMesAno'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
-import { COR, fmt, MESES_CURTOS, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
+import { COR, fmt, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
@@ -33,8 +34,6 @@ export default function RadarFinanceiro() {
   const [mes, setMes]               = useState(mesHoje)
   const [ano, setAno]               = useState(anoHoje)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
-  const [mostrarCal, setMostrarCal] = useState(false)
-  const [anoCal, setAnoCal]         = useState(anoHoje)
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -47,12 +46,6 @@ export default function RadarFinanceiro() {
     })
   }, [user?.id])
 
-  useEffect(() => {
-    if (!mostrarCal) return
-    const fechar = () => setMostrarCal(false)
-    document.addEventListener('click', fechar)
-    return () => document.removeEventListener('click', fechar)
-  }, [mostrarCal])
 
   const mesStr    = String(mes+1).padStart(2,'0')
   const totalDias = diasNoMes(mes, ano)
@@ -277,57 +270,10 @@ export default function RadarFinanceiro() {
           title="Radar financeiro"
           mb={0}
           rightContent={
-            <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button onClick={() => { const m=mes-1<0?11:mes-1; const a=mes-1<0?ano-1:ano; setMes(m); setAno(a) }}
-                  style={{ width:28,height:28,borderRadius:8,border:'none',background:'rgba(255,255,255,0.15)',
-                    color:'#fff',cursor:'pointer',fontSize:16,fontWeight:700,display:'flex',
-                    alignItems:'center',justifyContent:'center',fontFamily:'inherit' }}>‹</button>
-                <button
-                  onClick={e => { e.stopPropagation(); setAnoCal(ano); setMostrarCal(v => !v) }}
-                  style={{ fontSize:20,fontWeight:800,color:'#fff',border:'none',
-                    background:'rgba(255,255,255,0.12)',borderRadius:8,padding:'4px 14px',
-                    cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' }}>
-                  {MESES_FULL[mes]} {ano}
-                </button>
-                <button onClick={() => { const m=mes+1>11?0:mes+1; const a=mes+1>11?ano+1:ano; setMes(m); setAno(a) }}
-                  style={{ width:28,height:28,borderRadius:8,border:'none',background:'rgba(255,255,255,0.15)',
-                    color:'#fff',cursor:'pointer',fontSize:16,fontWeight:700,display:'flex',
-                    alignItems:'center',justifyContent:'center',fontFamily:'inherit' }}>›</button>
-              </div>
-
-              {mostrarCal && (
-                <div
-                  style={{ position:'absolute',top:'calc(100% + 8px)',right:0,zIndex:300,
-                    background:'#fff',borderRadius:14,boxShadow:'0 8px 32px rgba(0,0,0,.22)',
-                    padding:16,minWidth:272 }}
-                  onClick={e => e.stopPropagation()}>
-                  <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12 }}>
-                    <button onClick={() => setAnoCal(a => a-1)}
-                      style={{ border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
-                        padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit' }}>‹</button>
-                    <span style={{ fontWeight:700,fontSize:15,color:COR.texto }}>{anoCal}</span>
-                    <button onClick={() => setAnoCal(a => a+1)}
-                      style={{ border:'none',background:'#eff6ff',color:COR.azul,borderRadius:6,
-                        padding:'4px 12px',fontSize:16,cursor:'pointer',fontFamily:'inherit' }}>›</button>
-                  </div>
-                  <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6 }}>
-                    {MESES_CURTOS.map((abrev, i) => {
-                      const ativo = i === mes && anoCal === ano
-                      return (
-                        <button key={i}
-                          onClick={() => { setMes(i); setAno(anoCal); setMostrarCal(false) }}
-                          style={{ padding:'8px 4px',border:'none',borderRadius:8,cursor:'pointer',
-                            fontFamily:'inherit',fontSize:12,fontWeight:ativo?700:500,
-                            background:ativo?COR.azul:'#f1f5f9',color:ativo?'#fff':COR.texto }}>
-                          {abrev}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            <SeletorMesAno
+              mes={mes} ano={ano}
+              onSelect={(m, a) => { setMes(m); setAno(a) }}
+            />
           }
         />
       </div>
