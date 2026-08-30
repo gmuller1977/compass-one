@@ -190,7 +190,10 @@ export default function Dashboard() {
     if (!user) return
     supabase.from('simulacoes').select('*').eq('ativo', true)
       .order('created_at', { ascending: false })
-      .then(({ data }) => { if (data) setSimAtivas(data as SimAtivaRow[]) })
+      .then(({ data, error }) => {
+        if (error) { console.error('simulacoes (dashboard):', error.message); return }
+        if (data) setSimAtivas(data as SimAtivaRow[])
+      })
   }, [user])
 
   // ── Render ────────────────────────────────────────────────────────────

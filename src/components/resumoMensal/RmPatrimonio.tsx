@@ -110,7 +110,10 @@ export default function RmPatrimonio({ saldoAtualPorConta, faturaAtualPorCartao,
 
   useEffect(() => {
     supabase.from('simulacoes').select('*').eq('ativo', true).eq('user_id', userId)
-      .then(({ data }) => { if (data) setSims(data as SimRow[]) })
+      .then(({ data, error }) => {
+        if (error) { console.error('simulacoes (patrimonio):', error.message); return }
+        if (data) setSims(data as SimRow[])
+      })
   }, [userId])
 
   const contasCorrente = saldoAtualPorConta.filter(s => s.conta.tipo === 'corrente')

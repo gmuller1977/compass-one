@@ -235,14 +235,17 @@ export default function Simulacao() {
   const [simList,      setSimList]      = useState<SimRow[]>([])
   const [listLoading,  setListLoading]  = useState(true)
   const [simSalva,     setSimSalva]     = useState(false)
+  const [erroSalvar,   setErroSalvar]   = useState('')
   const [integrado,    setIntegrado]    = useState(false)
 
   const loadSims = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('simulacoes')
       .select('*')
       .order('created_at', { ascending: false })
+    // Sem isto, uma falha do banco fica indistinguivel de "nenhuma simulacao".
+    if (error) console.error('simulacoes (lista):', error.message)
     if (data) setSimList(data as SimRow[])
     setListLoading(false)
   }, [user])
@@ -340,7 +343,15 @@ export default function Simulacao() {
     } else return
 
     const { data, error } = await supabase.from('simulacoes').insert([row]).select().single()
-    if (!error && data) {
+    // O botao nao podia mais "nao fazer nada": era o unico sintoma quando a
+    // tabela simulacoes nao existia no banco.
+    if (error) {
+      console.error('simulacoes (gravar):', error.message)
+      setErroSalvar('Não foi possível salvar a simulação. Tente novamente.')
+      return
+    }
+    if (data) {
+      setErroSalvar('')
       setSimList(prev => [data as SimRow, ...prev])
       setSimSalva(true)
     }
@@ -556,6 +567,12 @@ export default function Simulacao() {
                     }}>
                       {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
                     </button>
+                    {erroSalvar && (
+                      <div style={{ flexBasis: '100%', fontSize: 12, color: COR.erroTexto,
+                        background: COR.erroFundo, borderRadius: 8, padding: '8px 12px', marginTop: 8 }}>
+                        {erroSalvar}
+                      </div>
+                    )}
                     <button onClick={incluirNoPlanejamento} disabled={integrado} style={{
                       flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 10,
                       background: integrado ? '#f0fdf4' : COR.branco,
@@ -689,6 +706,12 @@ export default function Simulacao() {
                     }}>
                       {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
                     </button>
+                    {erroSalvar && (
+                      <div style={{ flexBasis: '100%', fontSize: 12, color: COR.erroTexto,
+                        background: COR.erroFundo, borderRadius: 8, padding: '8px 12px', marginTop: 8 }}>
+                        {erroSalvar}
+                      </div>
+                    )}
                     <button onClick={incluirNoPlanejamento} disabled={integrado} style={{
                       flex: 1, minWidth: 140, padding: '11px 16px', border: `1px solid ${integrado ? '#bbf7d0' : COR.borda}`, borderRadius: 10,
                       background: integrado ? '#f0fdf4' : COR.branco,
