@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
+import { catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { parseBRL } from '../utils/moeda'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -104,8 +105,8 @@ export default function WizardPlanejamento() {
     return r
   })
 
-  const totalEntradas = useMemo(() => catsEntrada.reduce((s,c) => s + parseBRL(entradas[c.nome] ?? ''), 0), [entradas, catsEntrada])
-  const totalSaidas   = useMemo(() => catsSaida.reduce((s,c) => s + parseBRL(saidas[c.nome] ?? ''), 0), [saidas, catsSaida])
+  const totalEntradas = useMemo(() => catsEntrada.reduce((s,c) => s + parseBRL(entradas[catKey(c.nome, c.descricao)] ?? ''), 0), [entradas, catsEntrada])
+  const totalSaidas   = useMemo(() => catsSaida.reduce((s,c) => s + parseBRL(saidas[catKey(c.nome, c.descricao)] ?? ''), 0), [saidas, catsSaida])
   const saldoInicialJan = useMemo(() => {
     if (!usarSaldo || !contasBanco.length) return 0
     return contasBanco.reduce((s,c) => s + (parseBRL(saldos[c.id] ?? '') || c.saldoInicial || 0), 0)
@@ -154,14 +155,14 @@ export default function WizardPlanejamento() {
       })
     const novoPlano: PlanoAnoData = {
       saldoInicialJan,
-      entradas: catsEntrada.filter(c => parseBRL(entradas[c.nome] ?? '') > 0).map(c => ({
-        nome: c.nome, id: c.id, v: buildV(parseBRL(entradas[c.nome] ?? '')),
+      entradas: catsEntrada.filter(c => parseBRL(entradas[catKey(c.nome, c.descricao)] ?? '') > 0).map(c => ({
+        nome: c.nome, id: c.id, descricao: c.descricao, grupo: c.grupo, v: buildV(parseBRL(entradas[catKey(c.nome, c.descricao)] ?? '')),
       })),
       saidas: [
-        ...catsSaida.filter(c => parseBRL(saidas[c.nome] ?? '') > 0).map(c => ({
-          nome: c.nome, id: c.id,
+        ...catsSaida.filter(c => parseBRL(saidas[catKey(c.nome, c.descricao)] ?? '') > 0).map(c => ({
+          nome: c.nome, id: c.id, descricao: c.descricao, grupo: c.grupo,
           t: c.tipoMovimento === 'cartao' ? 'cartao' : undefined,
-          v: buildV(parseBRL(saidas[c.nome] ?? '')),
+          v: buildV(parseBRL(saidas[catKey(c.nome, c.descricao)] ?? '')),
         })),
         ...faturaCats,
       ],
@@ -456,8 +457,8 @@ export default function WizardPlanejamento() {
                   {c.descricao && <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>{c.descricao}</div>}
                 </div>
                 <input
-                  value={values[c.nome] ?? ''}
-                  onChange={e => setValues(prev => ({ ...prev, [c.nome]: maskBRL(e.target.value) }))}
+                  value={values[catKey(c.nome, c.descricao)] ?? ''}
+                  onChange={e => setValues(prev => ({ ...prev, [catKey(c.nome, c.descricao)]: maskBRL(e.target.value) }))}
                   onFocus={e => { e.target.style.borderColor='#1a56db'; e.target.style.background='#fff' }}
                   onBlur={e  => { e.target.style.borderColor='#e2e8f0'; e.target.style.background='#f8fafc' }}
                   placeholder="R$ 0,00"
