@@ -7,6 +7,39 @@ const NOMES_MESES = [
 ]
 const ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
+/** Seta de navegação. Compartilhada para os dois seletores não divergirem. */
+export const seta = (ativa = true) => ({
+  width: 28, height: 28, borderRadius: 8, border: 'none',
+  background: 'rgba(255,255,255,0.15)', color: '#fff',
+  cursor: ativa ? 'pointer' : 'default', opacity: ativa ? 1 : 0.35,
+  fontSize: 16, fontWeight: 700,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontFamily: 'inherit',
+} as const)
+
+/** Botão central. `largura` fixa para as setas não mudarem de lugar. */
+export const botaoCentral = (largura: number) => ({
+  fontSize: 20, fontWeight: 800, color: '#fff',
+  border: 'none', background: 'rgba(255,255,255,0.12)',
+  borderRadius: 8, padding: '4px 14px',
+  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+  minWidth: largura, textAlign: 'center',
+} as const)
+
+/**
+ * Só o ano, para o Planejamento, que é anual e não tem mês.
+ * Mesmas setas, mesma fonte e mesma altura do seletor de mês.
+ */
+export function SeletorAno({ ano, onChange }: { ano: number; onChange: (a: number) => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <button onClick={() => onChange(ano - 1)} aria-label="Ano anterior" style={seta()}>‹</button>
+      <span style={{ ...botaoCentral(96), cursor: 'default', display: 'inline-block' }}>{ano}</span>
+      <button onClick={() => onChange(ano + 1)} aria-label="Próximo ano" style={seta()}>›</button>
+    </div>
+  )
+}
+
 type Props = {
   mes: number
   ano: number
@@ -55,15 +88,6 @@ export default function SeletorMesAno({ mes, ano, onSelect, habilitado, compacto
   const podeVoltar  = !habilitado || habilitado(mes === 0 ? 11 : mes - 1, mes === 0 ? ano - 1 : ano)
   const podeAvancar = !habilitado || habilitado(mes === 11 ? 0 : mes + 1, mes === 11 ? ano + 1 : ano)
 
-  const seta = (ativa: boolean) => ({
-    width: 28, height: 28, borderRadius: 8, border: 'none',
-    background: 'rgba(255,255,255,0.15)', color: '#fff',
-    cursor: ativa ? 'pointer' : 'default', opacity: ativa ? 1 : 0.35,
-    fontSize: 16, fontWeight: 700,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'inherit',
-  } as const)
-
   const btnAno = {
     border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 6,
     padding: '4px 12px', fontSize: 16, cursor: 'pointer', fontFamily: 'inherit',
@@ -78,15 +102,9 @@ export default function SeletorMesAno({ mes, ano, onSelect, habilitado, compacto
         <button
           onClick={e => { e.stopPropagation(); setAnoCal(ano); setAberto(v => !v) }}
           aria-label="Escolher mês"
-          style={{
-            fontSize: compacto ? 15 : 20, fontWeight: 800, color: '#fff',
-            border: 'none', background: 'rgba(255,255,255,0.12)',
-            borderRadius: 8, padding: '4px 14px',
-            cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-            // Largura fixa pelo maior rótulo ("Fevereiro"). Sem isso as setas
-            // mudam de lugar a cada mês, porque "Maio" é bem mais estreito.
-            minWidth: compacto ? 96 : 178, textAlign: 'center',
-          }}>
+          // Largura fixa pelo maior rótulo ("Fevereiro"). Sem isso as setas
+          // mudam de lugar a cada mês, porque "Maio" é bem mais estreito.
+          style={{ ...botaoCentral(compacto ? 110 : 178), fontSize: compacto ? 15 : 20 }}>
           {compacto ? ABREV[mes] : NOMES_MESES[mes]} {ano}
         </button>
 

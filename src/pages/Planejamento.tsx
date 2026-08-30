@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
+import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
@@ -48,10 +49,6 @@ export default function Planejamento() {
     padding: '5px 8px', color: COR.textoSuave, fontSize: 11, lineHeight: 1,
   }
 
-  const PH_BTN_ANO: React.CSSProperties = {
-    border: 'none', background: 'transparent', cursor: 'pointer',
-    padding: '5px 9px', color: '#fff', fontSize: 11, lineHeight: 1,
-  }
 
   function handleBulkSave(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
     plan.editarMultiplosValores(ops)
@@ -79,15 +76,7 @@ export default function Planejamento() {
             breadcrumb="TODO ANO"
             title="Planejamento"
             mb={12}
-            rightContent={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2,
-                background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden' }}>
-                <button onClick={() => setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={PH_BTN_ANO}>◄</button>
-                <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', padding: '0 6px',
-                  fontVariantNumeric: 'tabular-nums' }}>{anoAtual}</span>
-                <button onClick={() => setAnoAtual(a => a + 1)} aria-label="Próximo ano" style={PH_BTN_ANO}>►</button>
-              </div>
-            }
+            rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
           />
         </div>
       )}
