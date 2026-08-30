@@ -213,43 +213,45 @@ export default function Dashboard() {
       {/* Mobile top bar */}
       <AppHeader currentPath="/dashboard" />
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 40px' }}>
+      {/* Header em largura cheia, como na tela de Lancamentos */}
+      <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
+          <PageHeader
+            icon="ti-layout-dashboard"
+            title={`Olá, ${nome}`}
+            subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
+            rightContent={
+              <>
+                <div style={{
+                  display: 'flex', alignItems: 'center',
+                  background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden',
+                }}>
+                  <button onClick={prevMes} style={{
+                    border: 'none', background: 'transparent', cursor: 'pointer',
+                    padding: '5px 9px', color: '#fff', fontSize: 11, lineHeight: 1,
+                  }}>◀</button>
+                  <span style={{
+                    fontSize: 12, fontWeight: 500, color: '#fff',
+                    padding: '5px 8px',
+                    borderLeft: '1px solid rgba(255,255,255,0.2)',
+                    borderRight: '1px solid rgba(255,255,255,0.2)',
+                    minWidth: isMobile ? 56 : 80, textAlign: 'center',
+                  }}>{MESES_FULL[viewMes].slice(0, isMobile ? 3 : 9)} {viewAno}</span>
+                  <button onClick={nextMes} style={{
+                    border: 'none', background: 'transparent',
+                    cursor: isAtMax ? 'not-allowed' : 'pointer',
+                    padding: '5px 9px', color: isAtMax ? 'rgba(255,255,255,0.3)' : '#fff',
+                    fontSize: 11, lineHeight: 1,
+                  }}>▶</button>
+                </div>
+                <button onClick={() => navigate('/novo-lancamento')} style={PH_BTN_SOLID}>
+                  + Lançar
+                </button>
+              </>
+            }
+          />
+      </div>
 
-        {/* ── PageHeader ── */}
-        <PageHeader
-          icon="ti-layout-dashboard"
-          title={`Olá, ${nome}`}
-          subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
-          rightContent={
-            <>
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden',
-              }}>
-                <button onClick={prevMes} style={{
-                  border: 'none', background: 'transparent', cursor: 'pointer',
-                  padding: '5px 9px', color: '#fff', fontSize: 11, lineHeight: 1,
-                }}>◀</button>
-                <span style={{
-                  fontSize: 12, fontWeight: 500, color: '#fff',
-                  padding: '5px 8px',
-                  borderLeft: '1px solid rgba(255,255,255,0.2)',
-                  borderRight: '1px solid rgba(255,255,255,0.2)',
-                  minWidth: isMobile ? 56 : 80, textAlign: 'center',
-                }}>{MESES_FULL[viewMes].slice(0, isMobile ? 3 : 9)} {viewAno}</span>
-                <button onClick={nextMes} style={{
-                  border: 'none', background: 'transparent',
-                  cursor: isAtMax ? 'not-allowed' : 'pointer',
-                  padding: '5px 9px', color: isAtMax ? 'rgba(255,255,255,0.3)' : '#fff',
-                  fontSize: 11, lineHeight: 1,
-                }}>▶</button>
-              </div>
-              <button onClick={() => navigate('/novo-lancamento')} style={PH_BTN_SOLID}>
-                + Lançar
-              </button>
-            </>
-          }
-        />
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 40px' }}>
 
         {/* ── Banners de setup ── */}
         {(!temBanco || !temCategorias) && (

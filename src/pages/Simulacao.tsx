@@ -391,20 +391,22 @@ export default function Simulacao() {
     <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath="/simulacao" />
 
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px' }}>
+      {/* Header em largura cheia, como na tela de Lancamentos */}
+      <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
+          <PageHeader
+            icon="ti-calculator"
+            breadcrumb="MEU PLANO"
+            title="Simulador"
+            subtitle={simList.length > 0 ? `${simList.length} simulaç${simList.length === 1 ? 'ão salva' : 'ões salvas'}` : 'Nenhuma simulação salva'}
+            rightContent={
+              <button onClick={() => { setAba('divida'); setSimSalva(false) }} style={PH_BTN_SOLID}>
+                + Nova simulação
+              </button>
+            }
+          />
+      </div>
 
-        {/* Cabeçalho */}
-        <PageHeader
-          icon="ti-calculator"
-          breadcrumb="MEU PLANO"
-          title="Simulador"
-          subtitle={simList.length > 0 ? `${simList.length} simulaç${simList.length === 1 ? 'ão salva' : 'ões salvas'}` : 'Nenhuma simulação salva'}
-          rightContent={
-            <button onClick={() => { setAba('divida'); setSimSalva(false) }} style={PH_BTN_SOLID}>
-              + Nova simulação
-            </button>
-          }
-        />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px' }}>
 
         {/* Abas */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${COR.borda}`, marginBottom: 24 }}>

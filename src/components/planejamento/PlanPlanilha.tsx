@@ -15,7 +15,6 @@ interface Props {
   dadosAtivos: AnoData
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   categorias: Categoria[]
-  setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   dadosAnoAnterior: AnoData | null
@@ -95,11 +94,6 @@ function catLabel(cat: { nome: string; descricao?: string }) {
   return cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
 }
 
-const GHOST_BTN: React.CSSProperties = {
-  border: 'none', background: 'rgba(255,255,255,0.15)', borderRadius: 5,
-  color: '#fff', cursor: 'pointer', padding: '2px 7px', fontSize: 11, lineHeight: 1,
-  fontFamily: 'inherit',
-}
 const CAT_BTN: React.CSSProperties = {
   border: '1px solid #e2e8f0', borderRadius: 5, width: 22, height: 22,
   background: '#fff', cursor: 'pointer', fontSize: 9,
@@ -109,7 +103,7 @@ const CAT_BTN: React.CSSProperties = {
 
 export default function PlanPlanilha({
   anoAtual, mesAtual, dadosAtivos, previsto,
-  categorias, setAnoAtual, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
+  categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
 }: Props) {
   const scrollResRef = useRef<HTMLDivElement>(null)
   const scrollCatRef = useRef<HTMLDivElement>(null)
@@ -304,13 +298,6 @@ export default function PlanPlanilha({
             <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '.5px', textTransform: 'uppercase' }}>
               Resumo
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a - 1)}>◄</button>
-              <span style={{ fontSize: 13, fontWeight: 800, color: anoAtual === anoCorrente ? '#fde047' : '#fff', minWidth: 34, textAlign: 'center' }}>
-                {anoAtual}
-              </span>
-              <button style={GHOST_BTN} onClick={() => setAnoAtual(a => a + 1)}>►</button>
-            </div>
           </div>
           {/* Labels */}
           {(['Saldo inicial', 'Receitas', 'Despesas', 'Resultado', 'Saldo final'] as const).map((lbl, i) => (

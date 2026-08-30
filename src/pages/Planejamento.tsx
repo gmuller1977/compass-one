@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
-import PageHeader, { PH_BTN_WHITE, PH_BTN_TAB_ATIVA } from '../components/PageHeader'
+import PageHeader from '../components/PageHeader'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
@@ -43,6 +43,16 @@ export default function Planejamento() {
     plan.editarValor(tipo, ri, mi, valor)
   }
 
+  const BTN_ANO_MOB: React.CSSProperties = {
+    border: 'none', background: '#f1f5f9', borderRadius: 6, cursor: 'pointer',
+    padding: '5px 8px', color: COR.textoSuave, fontSize: 11, lineHeight: 1,
+  }
+
+  const PH_BTN_ANO: React.CSSProperties = {
+    border: 'none', background: 'transparent', cursor: 'pointer',
+    padding: '5px 9px', color: '#fff', fontSize: 11, lineHeight: 1,
+  }
+
   function handleBulkSave(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
     plan.editarMultiplosValores(ops)
   }
@@ -70,15 +80,13 @@ export default function Planejamento() {
             title="Planejamento"
             mb={12}
             rightContent={
-              <>
-                {(['grade', 'planilha', 'lista'] as ViewMode[]).map(v => (
-                  <button
-                    key={v}
-                    onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
-                    style={viewMode === v ? PH_BTN_TAB_ATIVA : PH_BTN_WHITE}
-                  >{viewModeLabels[v]}</button>
-                ))}
-              </>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2,
+                background: 'rgba(255,255,255,0.12)', borderRadius: 8, overflow: 'hidden' }}>
+                <button onClick={() => setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={PH_BTN_ANO}>◄</button>
+                <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', padding: '0 6px',
+                  fontVariantNumeric: 'tabular-nums' }}>{anoAtual}</span>
+                <button onClick={() => setAnoAtual(a => a + 1)} aria-label="Próximo ano" style={PH_BTN_ANO}>►</button>
+              </div>
             }
           />
         </div>
@@ -102,6 +110,12 @@ export default function Planejamento() {
               }}
             >{viewModeLabels[v]}</button>
           ))}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <button onClick={() => setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={BTN_ANO_MOB}>◄</button>
+            <span style={{ fontSize: 13, fontWeight: 800, color: COR.texto, minWidth: 38,
+              textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{anoAtual}</span>
+            <button onClick={() => setAnoAtual(a => a + 1)} aria-label="Próximo ano" style={BTN_ANO_MOB}>►</button>
+          </div>
         </div>
       )}
 
@@ -118,7 +132,6 @@ export default function Planejamento() {
             categorias={plan.categorias}
             hasFaturaCat={plan.hasFaturaCat}
             somaCartaoMes={plan.somaCartaoMes}
-            setAnoAtual={setAnoAtual}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
             ancoraMes={plan.ancoraMes}
@@ -130,7 +143,6 @@ export default function Planejamento() {
             dadosAtivos={dadosAtivos}
             previsto={totaisAtivos}
             categorias={plan.categorias}
-            setAnoAtual={setAnoAtual}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
             dadosAnoAnterior={plan.planoAnoAnterior}

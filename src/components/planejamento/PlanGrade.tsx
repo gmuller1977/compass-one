@@ -19,7 +19,6 @@ interface Props {
   categorias: Categoria[]
   hasFaturaCat: boolean
   somaCartaoMes: number[]
-  setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   ancoraMes: number
@@ -30,7 +29,7 @@ export default function PlanGrade(props: Props) {
 
   const {
     anoAtual, mesAtual, dadosPrevisto, dadosAnoAnterior,
-    previsto, setAnoAtual, ancoraMes,
+    previsto, ancoraMes,
   } = props
 
   const planTotais = previsto
@@ -53,7 +52,6 @@ export default function PlanGrade(props: Props) {
         totalDespesas={despesasAnuais}
         resultado={resultadoDez}
         anoAtual={anoAtual}
-        onChangeAno={delta => setAnoAtual(a => a + delta)}
       />
 
       <PlanAncoraBadge
