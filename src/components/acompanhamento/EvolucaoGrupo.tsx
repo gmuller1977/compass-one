@@ -4,13 +4,17 @@ import { fmt, type CatReal } from './AcShared'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
+// A rampa PULA a faixa #60a5fa..#3b82f6 de proposito: ali nenhum texto
+// funciona. Escuro (#1e3a8a) da 2,8:1 e branco da 3,7:1 — os dois reprovam.
+// O salto do 25% para o 50% e o preco de ter contraste em todos os degraus,
+// e acaba ajudando: marca visualmente a virada da metade do orcamento.
 const GRADIENT_STEPS = [
-  { pct: 0,   from: '#bfdbfe', to: '#93c5fd', text: '#1e3a8a' },
-  { pct: 25,  from: '#93c5fd', to: '#60a5fa', text: '#1e3a8a' },
-  { pct: 50,  from: '#60a5fa', to: '#3b82f6', text: '#fff' },
-  { pct: 75,  from: '#3b82f6', to: '#2563eb', text: '#fff' },
-  { pct: 90,  from: '#2563eb', to: '#1e40af', text: '#fff' },
-  { pct: 100, from: '#1e3a8a', to: '#0f2878', text: '#fff' },
+  { pct: 0,   from: '#dbeafe', to: '#bfdbfe', text: '#1e3a8a' },  //  6,9:1
+  { pct: 25,  from: '#bfdbfe', to: '#93c5fd', text: '#1e3a8a' },  //  5,7:1
+  { pct: 50,  from: '#2563eb', to: '#1d4ed8', text: '#fff'    },  //  5,2:1
+  { pct: 75,  from: '#1d4ed8', to: '#1e40af', text: '#fff'    },  //  6,7:1
+  { pct: 90,  from: '#1e40af', to: '#1e3a8a', text: '#fff'    },  //  8,7:1
+  { pct: 100, from: '#1e3a8a', to: '#0f2878', text: '#fff'    },  // 10,4:1
 ]
 
 function corHeaderGrupo(percentual: number) {

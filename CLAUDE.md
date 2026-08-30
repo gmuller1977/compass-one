@@ -17,9 +17,17 @@ Mínimo **4.5:1** para texto. As cores da paleta padrão (`#16a34a`, `#dc2626`,
 
 ### A regra que sustenta tudo
 
-> **Nenhum fundo azul pode ser mais claro que `#1e40af`.**
+> **Nenhum fundo azul que carregue valor colorido ou label secundário
+> pode ser mais claro que `#1e40af`.**
 
-Com ela, uma paleta única passa em todos os fundos escuros do app:
+A segunda metade da frase importa. Onde há **só branco puro** — cabeçalho de
+seção, navegação, botão, telas de login —, `#1a56db` (6,2:1) e `#2563eb`
+(5,2:1) passam e devem ficar como estão. Escurecê-los repintaria a identidade
+visual do app inteiro sem ganho nenhum de acessibilidade. O que não passa sobre
+esses dois é label em opacidade reduzida: `rgba(255,255,255,0.75)` dá 4,4:1 e
+3,6:1.
+
+Com a regra, uma paleta única passa em todos os fundos escuros do app:
 
 | Uso | Cor | Pior caso medido |
 |---|---|---|

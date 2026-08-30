@@ -267,7 +267,7 @@ export default function AcMobileView({
       background:'#f0f4ff', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
       {/* GRADIENT HEADER */}
-      <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'16px 20px 14px', flexShrink:0 }}>
+      <div style={{ background:'linear-gradient(135deg,#0f2878,#1e40af)', padding:'16px 20px 14px', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.15)',
@@ -307,7 +307,7 @@ export default function AcMobileView({
             <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
               <div style={{ width:`${Math.min(percE,1)*100}%`, height:'100%', borderRadius:3, background:'#4ade80' }}/>
             </div>
-            {totalPrevE>0 && <span style={{ fontSize:10, color:'rgba(255,255,255,.6)', whiteSpace:'nowrap' }}>{fmtK(totalRealE)} / {fmtK(totalPrevE)}</span>}
+            {totalPrevE>0 && <span style={{ fontSize:10, color:'rgba(255,255,255,.75)', whiteSpace:'nowrap' }}>{fmtK(totalRealE)} / {fmtK(totalPrevE)}</span>}
             <span style={{ fontSize:10, fontWeight:800, minWidth:28, textAlign:'right', color:'#fbbf24' }}>
               {totalPrevE>0 ? `${Math.round(percE*100)}%` : '—'}
             </span>
@@ -317,7 +317,7 @@ export default function AcMobileView({
             <div style={{ flex:1, height:6, background:'rgba(255,255,255,.15)', borderRadius:3, overflow:'hidden' }}>
               <div style={{ width:`${Math.min(percS,1)*100}%`, height:'100%', borderRadius:3, background:'#f87171' }}/>
             </div>
-            {totalPrevS>0 && <span style={{ fontSize:10, color:'rgba(255,255,255,.6)', whiteSpace:'nowrap' }}>{fmtK(totalRealS)} / {fmtK(totalPrevS)}</span>}
+            {totalPrevS>0 && <span style={{ fontSize:10, color:'rgba(255,255,255,.75)', whiteSpace:'nowrap' }}>{fmtK(totalRealS)} / {fmtK(totalPrevS)}</span>}
             <span style={{ fontSize:10, fontWeight:800, minWidth:28, textAlign:'right',
               color:percS<0.5?'#4ade80':percS<0.8?'#fbbf24':'#f87171' }}>
               {totalPrevS>0 ? `${Math.round(percS*100)}%` : '—'}
@@ -428,11 +428,11 @@ export default function AcMobileView({
             </div>
           )}
 
-          <div style={{ borderRadius:20, background:'linear-gradient(135deg,#0f2878,#2563eb)',
+          <div style={{ borderRadius:20, background:'linear-gradient(135deg,#0f2878,#1e40af)',
             padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between',
             boxShadow:'0 4px 16px rgba(26,86,219,.25)' }}>
             <div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,.6)', fontWeight:600, marginBottom:3 }}>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.75)', fontWeight:600, marginBottom:3 }}>
                 Saldo previsto fim do mês
               </div>
               <div style={{ fontSize:9, color:'rgba(255,255,255,.4)' }}>
