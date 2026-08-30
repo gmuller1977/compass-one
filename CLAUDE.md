@@ -92,6 +92,17 @@ pedido explícito.
 no **Radar**. No **Planejamento** ela foi removida de propósito: lá o que separa
 os meses é ter ou não planejamento, não a posição no tempo.
 
+**O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
+(`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
+Onboarding e **"Planejamento do Zero"** no menu. Na primeira vez não há nada
+para refazer, e "do zero" ali soaria estranho; no menu, o nome precisa avisar
+que a ação sobrescreve o ano. Não unificar.
+
+Vale lembrar a divisão: o **Onboarding não cria plano** — ele cadastra contas,
+cartões e categorias, e no fim manda para o wizard. O **wizard** preenche os
+valores, mas replica o mesmo valor em todos os meses. Ajuste mês a mês só na
+Grade, Planilha ou Lista.
+
 **`PageHeader` não vai na `QuickLaunch`**, que é a home do mobile. O componente
 traz ícone, breadcrumb, título e subtítulo — vocabulário de tela interna. Numa
 home ele viraria navegação para lugar nenhum. Decidido em 30/08/2026.
