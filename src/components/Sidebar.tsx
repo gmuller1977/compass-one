@@ -44,10 +44,11 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
         sub: [
-          { label: 'Assistente', path: '/planejamento?modo=wizard'   },
           { label: 'Grade',      path: '/planejamento?modo=grade'    },
           { label: 'Planilha',   path: '/planejamento?modo=planilha' },
           { label: 'Lista',      path: '/planejamento?modo=lista'    },
+          // Por ultimo de proposito: sobrescreve o plano do ano inteiro.
+          { label: 'Planejamento do Zero', path: '/wizard-planejamento'    },
         ],
       },
     ],

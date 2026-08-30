@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 import { parseBRL } from '../utils/moeda'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -127,6 +128,22 @@ export default function WizardPlanejamento() {
     return Array(12).fill(0).map((_,i) => aplicar === 'todos' || i >= MES_ATU ? val : 0)
   }
 
+  // O assistente SOBRESCREVE o plano do ano — nao mescla. Enquanto o link do
+  // menu estava quebrado ninguem chegava aqui por acidente; agora que ele
+  // funciona, um plano ja montado precisa de confirmacao antes de virar pó.
+  const planoExistente = useMemo(() => {
+    const p = planos[ANO] as { entradas?: { v: number[] }[]; saidas?: { v: number[] }[] } | undefined
+    const temValor = (l?: { v: number[] }[]) => (l ?? []).some(c => c.v.some(v => v > 0))
+    return temValor(p?.entradas) || temValor(p?.saidas)
+  }, [planos])
+
+  const [confirmando, setConfirmando] = useState(false)
+
+  function concluir() {
+    if (planoExistente) { setConfirmando(true); return }
+    criarPlanejamento()
+  }
+
   function criarPlanejamento() {
     const faturaCats = cartoes
       .filter(c => parseBRL(faturas[c.id] ?? '') > 0)
@@ -222,7 +239,7 @@ export default function WizardPlanejamento() {
           fontFamily:'inherit', boxShadow:'0 4px 12px rgba(26,86,219,.3)',
         }}>Próximo →</button>
       ) : (
-        <button onClick={criarPlanejamento} style={{
+        <button onClick={concluir} style={{
           flex:2, padding:13, border:'none', borderRadius:12,
           background:'linear-gradient(135deg,#16a34a,#15803d)',
           color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer',
@@ -587,6 +604,15 @@ export default function WizardPlanejamento() {
         {stepContent[step - 1]}
       </div>
       {footer}
+      {confirmando && (
+        <FcConfirmModal
+          mensagem={`Substituir o planejamento de ${ANO}?`}
+          detalhe="Já existe planejamento neste ano. O assistente grava por cima: os valores que você ajustou mês a mês serão perdidos."
+          labelConfirmar="Substituir"
+          onConfirmar={() => { setConfirmando(false); criarPlanejamento() }}
+          onCancelar={() => setConfirmando(false)}
+        />
+      )}
     </div>
   )
 }
