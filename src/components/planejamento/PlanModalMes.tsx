@@ -1,13 +1,14 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import type { Categoria } from '../../context/AppContext'
 
 interface Props {
   mes: number
   dadosPrevisto: AnoData
   hasFaturaCat: boolean
   planoRef?: AnoData
-  categorias: any[]
+  categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, valor: number) => void
   onClose: () => void
   somaCartaoMes: number[]

@@ -114,7 +114,7 @@ export default function Planejamento() {
             dadosAnoAnterior={plan.planoAnoAnterior}
             previsto={plan.previsto}
             lancadoPorCatMes={plan.lancadoPorCatMes}
-            planoRef={plan.planoRef as any}
+            planoRef={plan.planoRef}
             categorias={plan.categorias}
             hasFaturaCat={plan.hasFaturaCat}
             somaCartaoMes={plan.somaCartaoMes}

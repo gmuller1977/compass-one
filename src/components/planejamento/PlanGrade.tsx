@@ -6,6 +6,7 @@ import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 import { type AnoData, MOTIVO_PLANO_LOCKADO } from './types'
+import type { Categoria } from '../../context/AppContext'
 
 interface Props {
   anoAtual: number
@@ -15,7 +16,7 @@ interface Props {
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
   lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   planoRef?: AnoData
-  categorias: any[]
+  categorias: Categoria[]
   hasFaturaCat: boolean
   somaCartaoMes: number[]
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
@@ -106,7 +107,7 @@ export default function PlanGrade(props: Props) {
           mes={modalMes}
           dadosPrevisto={dadosPrevisto}
           hasFaturaCat={props.hasFaturaCat}
-          planoRef={props.planoRef as any}
+          planoRef={props.planoRef}
           categorias={props.categorias}
           onSave={(tipo, ri, valor) => props.onSave(tipo, ri, modalMes, valor)}
           onClose={() => setModalMes(null)}

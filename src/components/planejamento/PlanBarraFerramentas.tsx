@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useToast } from '../Toast'
 import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
 import { COR, type AnoData } from './types'
+import type { Categoria } from '../../context/AppContext'
 
 type ToolId = 'copiar' | 'valor' | 'reajuste' | 'ano'
 
@@ -18,7 +19,7 @@ interface Props {
   /** Dados da aba corrente: e deles que as ferramentas leem e para eles que gravam. */
   dadosAtivos: AnoData
   dadosAnoAnterior: AnoData | null
-  categorias: any[]
+  categorias: Categoria[]
   onBulkSave: (ops: BulkOp[]) => void
   /** Edicao indisponivel (plano travado, ou aba so de leitura). */
   bloqueado?: boolean

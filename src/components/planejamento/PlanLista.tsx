@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, type AnoData } from './types'
+import { fmt, MESES, nomeExibicao, type AnoData, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
+import type { Categoria } from '../../context/AppContext'
 
 interface Props {
   anoAtual: number
   mesAtual: number
   dadosAtivos: AnoData
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  categorias: any[]
+  categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   dadosAnoAnterior: AnoData | null
@@ -54,7 +55,7 @@ export default function PlanLista({
     setAberto(prev => prev === mi ? -1 : mi)
   }
 
-  const catValor = (cat: any, mi: number): number => cat.v[mi]
+  const catValor = (cat: Cat, mi: number): number => cat.v[mi]
 
   return (
     <div style={{ padding: '8px 16px', overflowX: 'auto' }}>

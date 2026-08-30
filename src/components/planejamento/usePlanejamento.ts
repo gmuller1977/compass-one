@@ -181,8 +181,8 @@ export function usePlanejamento(anoAtual: number) {
       })
 
       contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
-        const diaFech = (cartao as any).diaFechamento ?? 1
-        const diaVenc = (cartao as any).diaVencimento ?? 1
+        const diaFech = cartao.diaFechamento ?? 1
+        const diaVenc = cartao.diaVencimento ?? 1
         const offset = diaVenc < diaFech ? 1 : 0
         let pMes = mes - offset
         let pAno = anoAtual
@@ -244,8 +244,8 @@ export function usePlanejamento(anoAtual: number) {
         }
       })
       contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
-        const diaFech = (cartao as any).diaFechamento ?? 1
-        const diaVenc = (cartao as any).diaVencimento ?? 1
+        const diaFech = cartao.diaFechamento ?? 1
+        const diaVenc = cartao.diaVencimento ?? 1
         const offset = diaVenc < diaFech ? 1 : 0
         let pMes = mes - offset
         let pAno = anoAtual

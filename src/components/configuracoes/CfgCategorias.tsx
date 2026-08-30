@@ -314,7 +314,7 @@ export default function CfgCategorias({
 
               <div>
                 <label style={labelSt}>Variante</label>
-                <input value={(formCat as any).descricao||''}
+                <input value={formCat.descricao || ''}
                   onChange={e => setFormCat(p=>({...p, descricao:e.target.value||undefined}))}
                   placeholder="Ex: Banco, Prefeitura, Fitway..."
                   className="campo-cfg" style={inputSt} />

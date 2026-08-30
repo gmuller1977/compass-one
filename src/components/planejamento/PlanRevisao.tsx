@@ -6,6 +6,7 @@ import PageHeader from '../PageHeader'
 import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
 import { resolverRealKey } from '../acompanhamento/evolucaoCalcs'
 import { ehZero } from '../../utils/moeda'
+import type { Categoria } from '../../context/AppContext'
 
 /**
  * Valor lancado de uma categoria. As chaves do mapa sao (nome + variante),
@@ -32,7 +33,7 @@ interface Props {
   mesAtual: number
   dadosPrevisto: AnoData
   lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
-  categorias: any[]
+  categorias: Categoria[]
   onAjustar: (tipo: 'e' | 's', ri: number, mesInicio: number, valor: number) => void
   desvioMinPerc: number
 }

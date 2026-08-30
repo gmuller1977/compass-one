@@ -136,8 +136,71 @@ function contaToRow(c: Conta, userId: string) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToConta(row: any): Conta {
+/**
+ * Formato das linhas como o Supabase devolve: snake_case, e qualquer coluna
+ * pode vir null. Descrever isso aqui e o que faz o compilador avisar se uma
+ * coluna for renomeada no banco. Com `any`, a leitura de uma coluna que
+ * deixou de existir virava `undefined` em silencio e caia no valor padrao —
+ * um cartao perdia o dia de fechamento e passava a fechar no dia 1.
+ *
+ * Numeros vem como number ou string dependendo do tipo da coluna, por isso
+ * os `Number(...)` na conversao.
+ */
+type ContaRow = {
+  id: string
+  nome: string
+  banco?: string | null
+  tipo?: string | null
+  saldo_inicial?: number | string | null
+  cor?: string | null
+  icone?: string | null
+  limite_cartao?: number | string | null
+  dia_vencimento?: number | string | null
+  dia_fechamento?: number | string | null
+  incluir_no_saldo_inicial?: boolean | null
+  agencia?: string | null
+  numero_conta?: string | null
+  forma_pagamento_fatura?: FormaPagamentoFatura | null
+  conta_pagamento_id?: string | null
+  apelido?: string | null
+  preferida?: boolean | null
+}
+
+type CategoriaRow = {
+  id: string
+  nome: string
+  tipo?: string | null
+  fixa?: boolean | null
+  tipo_movimento?: string | null
+  forma_pagamento?: FormaPagamentoCategoria | null
+  cor?: string | null
+  icone?: string | null
+  ativa?: boolean | null
+  grupo?: string | null
+  dia_vencimento?: number | string | null
+  descricao?: string | null
+  numero_parcelas?: number | string | null
+  conta_debito_id?: string | null
+  pin_quick?: boolean | null
+}
+
+type PrefRow = {
+  perfil_nome?: string | null
+  perfil_apelido?: string | null
+  onboarding_completo?: boolean | null
+  planejamento_lockado?: boolean | null
+  desvio_min_perc?: number | string | null
+  percentual_alerta?: number | string | null
+  metodo_sugestao?: string | null
+  objetivo_usuario?: string | null
+  streak_atual?: number | string | null
+  maior_streak?: number | string | null
+  ultimo_acesso_ativo?: string | null
+  meta_simulacao?: MetaSim | null
+  saldo_inicial_dinheiro?: number | string | null
+}
+
+function rowToConta(row: ContaRow): Conta {
   return {
     id: row.id,
     nome: row.nome,
@@ -180,8 +243,7 @@ function categoriaToRow(c: Categoria, userId: string) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToCategoria(row: any): Categoria {
+function rowToCategoria(row: CategoriaRow): Categoria {
   return {
     id: row.id,
     nome: row.nome,
@@ -354,8 +416,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCategoriasState(mergedCats)
 
     // Preferences
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pref = prefRow as any
+    const pref = prefRow as PrefRow | null
     setPerfilState({ nome: pref?.perfil_nome ?? '', apelido: pref?.perfil_apelido ?? '' })
     const hasData = contasLoaded.length > 0 || (categoriasRows ?? []).length > 0
     setOnboardingCompletoState(pref?.onboarding_completo ?? hasData)

@@ -7,13 +7,14 @@ import PlanCelulaNav from './PlanCelulaNav'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
+import type { Categoria } from '../../context/AppContext'
 
 interface Props {
   anoAtual: number
   mesAtual: number
   dadosAtivos: AnoData
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  categorias: any[]
+  categorias: Categoria[]
   setAnoAtual: React.Dispatch<React.SetStateAction<number>>
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void

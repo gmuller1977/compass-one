@@ -45,7 +45,7 @@ export default function AcMobileView({
   const percS     = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
   const corSaldoR = (totalRealE===0&&totalRealS===0) ? '#94a3b8' : saldoReal>=0 ? COR.verde : COR.vermelho
   const corSaldoP = (totalPrevE===0&&totalPrevS===0) ? '#94a3b8' : saldoPrev>=0 ? COR.verde : COR.vermelho
-  const userInitial = (() => { const u = user as any; return u?.displayName?.[0] ?? u?.email?.[0]?.toUpperCase() ?? '?' })()
+  const userInitial = (() => { const u = user as { displayName?: string; email?: string } | null; return u?.displayName?.[0] ?? u?.email?.[0]?.toUpperCase() ?? '?' })()
   const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
   const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)

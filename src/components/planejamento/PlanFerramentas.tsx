@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import MesesSelector from './MesesSelector'
 import { MESES_FULL, type AnoData, fmt, parseValor } from './types'
+import type { Categoria } from '../../context/AppContext'
 
 export interface BulkOp {
   tipo: 'e' | 's'
@@ -21,7 +22,7 @@ interface Props {
    */
   dadosAtivos: AnoData
   dadosAnoAnterior: AnoData | null
-  categorias: any[]
+  categorias: Categoria[]
   onBulkSave: (ops: BulkOp[]) => void
   onClose: () => void
 }
@@ -124,7 +125,7 @@ export default function PlanFerramentas({
 
     dadosAtivos.saidas.forEach((cat, ri) => {
       if (reajFiltro !== 'todas') {
-        const info = categorias.find((c: any) => c.id === cat.id || c.nome === cat.nome)
+        const info = categorias.find(c => c.id === cat.id || c.nome === cat.nome)
         const ehFixa = info?.fixa === true
         if (reajFiltro === 'fixas' && !ehFixa) return
         if (reajFiltro === 'variaveis' && ehFixa) return
