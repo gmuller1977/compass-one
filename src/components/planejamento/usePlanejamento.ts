@@ -6,30 +6,11 @@ import {
   mergeCats, calcSaldos, nomeFaturaCartao, MESES,
   type Cat, type AnoData, type AncoraReal,
 } from './types'
-import { catKey, norm, resolverSub } from '../acompanhamento/evolucaoCalcs'
+import { catKey, resolverSub, acharPlanCat } from '../acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../../utils/fixasDoMes'
 
 // iconeCategoria imported above; suppress unused warning
 void iconeCategoria
-
-/**
- * Linha do plano correspondente a uma categoria do cadastro.
- * Casa pelo par (nome, variante). O fallback pelo nome puro so entra quando
- * existe UMA linha com aquele nome — plano antigo, gravado antes das variantes.
- * Com duas linhas nao ha fallback: escolher uma somaria no lugar errado.
- */
-function acharPlanCat<T extends { nome: string; descricao?: string }>(
-  cats: T[] | undefined,
-  nome: string,
-  descricao?: string,
-): T | undefined {
-  if (!cats) return undefined
-  const alvo = catKey(nome, descricao)
-  const exato = cats.find(c => catKey(c.nome, c.descricao) === alvo)
-  if (exato) return exato
-  const doNome = cats.filter(c => norm(c.nome) === norm(nome))
-  return doNome.length === 1 ? doNome[0] : undefined
-}
 
 export function usePlanejamento(anoAtual: number) {
   const {

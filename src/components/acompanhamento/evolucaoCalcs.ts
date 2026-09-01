@@ -67,6 +67,30 @@ export function resolverSub(
   return variantes.length === 1 ? norm(variantes[0].descricao) : undefined
 }
 
+/**
+ * Linha do plano correspondente a uma categoria.
+ *
+ * Casa pelo par (nome, variante). O fallback pelo nome puro so entra quando
+ * existe UMA linha com aquele nome — plano antigo, gravado antes das
+ * variantes, que resolverPlanCats exibe com a variante inferida. Exigir o
+ * par exato ali fazia a categoria aparecer com previsto e sem realizado.
+ *
+ * Com duas linhas de mesmo nome nao ha fallback: escolher uma somaria no
+ * lugar errado.
+ */
+export function acharPlanCat<T extends { nome: string; descricao?: string }>(
+  cats: T[] | undefined,
+  nome: string,
+  descricao?: string,
+): T | undefined {
+  if (!cats) return undefined
+  const alvo = catKey(nome, descricao)
+  const exato = cats.find(c => catKey(c.nome, c.descricao) === alvo)
+  if (exato) return exato
+  const doNome = cats.filter(c => norm(c.nome) === norm(nome))
+  return doNome.length === 1 ? doNome[0] : undefined
+}
+
 export function pickReal(
   realMap: Record<string, CatReal>,
   nome: string,

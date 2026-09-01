@@ -6,6 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
+import { acharPlanCat } from '../components/acompanhamento/evolucaoCalcs'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
@@ -113,7 +114,7 @@ export default function RadarFinanceiro() {
         fixaCat.id, fixaCat.formaPagamento === 'automatico', isPastMonth, dmsBanco)
       if (!consolidada) continue
       const planList = fixaCat.tipo === 'saida' ? dadosAno?.saidas : dadosAno?.entradas
-      const planVal = planList?.find(c => catKey(c.nome, c.descricao) === catKey(fixaCat.nome, fixaCat.descricao))?.v[mes] ?? 0
+      const planVal = acharPlanCat(planList, fixaCat.nome, fixaCat.descricao)?.v[mes] ?? 0
       const val = override ?? (planVal > 0 ? planVal : 0)
       if (val <= 0) continue
       const fixaSub = resolverSub(fixaCat.nome, fixaCat.tipo as 'saida' | 'entrada', fixaCat.descricao)
