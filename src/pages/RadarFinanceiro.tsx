@@ -5,6 +5,7 @@ import type { DadosMes, Categoria } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
+import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
@@ -98,29 +99,27 @@ export default function RadarFinanceiro() {
         }
       }
 
-      if (dm.fixasConsolidadas) {
-        for (const fixaCat of categorias.filter((c: Categoria) => c.fixa && c.ativa)) {
-          const ehAuto = fixaCat.formaPagamento === 'automatico'
-          const confirmada = dm.fixasConsolidadas[fixaCat.id] !== undefined
-            ? dm.fixasConsolidadas[fixaCat.id]
-            : (ehAuto && isPastMonth)
-          if (!confirmada) continue
-          const planList = fixaCat.tipo === 'saida' ? dadosAno?.saidas : dadosAno?.entradas
-          const planVal = planList?.find(c => c.nome === fixaCat.nome)?.v[mes] ?? 0
-          const val = dm.fixasValorOverride?.[fixaCat.id] ?? (planVal > 0 ? planVal : 0)
-          if (val <= 0) continue
-          const fixaSub = resolverSub(fixaCat.nome, fixaCat.tipo as 'saida' | 'entrada', fixaCat.descricao)
-          if (fixaCat.tipo === 'saida') {
-            const c = getSaida(rKey(fixaCat.nome, fixaSub))
-            c.total += val; c.totalBanc += val
-            c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
-          } else {
-            const c = getEntrada(rKey(fixaCat.nome, fixaSub))
-            c.total += val; c.totalBanc += val
-            c.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
-          }
-        }
-      }
+    }
+
+    // Fixas sao do MES, nao da conta: somadas uma vez so, fora do laco.
+    // Ver utils/fixasDoMes — antes cada conta bancaria somava de novo.
+    const dmsBanco = dadosBancariosDoMes(
+      extratoData as Record<string, DadosMes>,
+      sufixo,
+      key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
+    )
+    for (const fixaCat of categorias.filter((c: Categoria) => c.fixa && c.ativa)) {
+      const { consolidada, override } = resolverFixaDoMes(
+        fixaCat.id, fixaCat.formaPagamento === 'automatico', isPastMonth, dmsBanco)
+      if (!consolidada) continue
+      const planList = fixaCat.tipo === 'saida' ? dadosAno?.saidas : dadosAno?.entradas
+      const planVal = planList?.find(c => catKey(c.nome, c.descricao) === catKey(fixaCat.nome, fixaCat.descricao))?.v[mes] ?? 0
+      const val = override ?? (planVal > 0 ? planVal : 0)
+      if (val <= 0) continue
+      const fixaSub = resolverSub(fixaCat.nome, fixaCat.tipo as 'saida' | 'entrada', fixaCat.descricao)
+      const alvo = fixaCat.tipo === 'saida' ? getSaida(rKey(fixaCat.nome, fixaSub)) : getEntrada(rKey(fixaCat.nome, fixaSub))
+      alvo.total += val; alvo.totalBanc += val
+      alvo.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
     }
 
     const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number }[]> }>

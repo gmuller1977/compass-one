@@ -7,6 +7,7 @@ import {
   type Cat, type AnoData, type AncoraReal,
 } from './types'
 import { catKey, norm, resolverSub } from '../acompanhamento/evolucaoCalcs'
+import { resolverFixaDoMes, dadosBancariosDoMes } from '../../utils/fixasDoMes'
 
 // iconeCategoria imported above; suppress unused warning
 void iconeCategoria
@@ -161,23 +162,26 @@ export function usePlanejamento(anoAtual: number) {
           ))
           result[mes][l.tipo][k] = (result[mes][l.tipo][k] ?? 0) + l.valor
         })
-        const ehCartaoKey = contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))
-        if (!ehCartaoKey) {
-          const ehMesPassado = mes < mesHojeRef || anoAtual < anoHojeRef
-          categorias.filter(c => c.fixa && c.ativa).forEach(f => {
-            const ehAuto = (f as unknown as { formaPagamento?: string }).formaPagamento === 'automatico'
-            const estaConsolidada = dados.fixasConsolidadas?.[f.id] !== undefined
-              ? dados.fixasConsolidadas[f.id]
-              : (ehAuto && ehMesPassado)
-            if (!estaConsolidada) return
-            const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
-            const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
-            const fValor = (f as unknown as { valor?: number }).valor ?? 0
-            const val = dados.fixasValorOverride?.[f.id] ?? (planVal > 0 ? planVal : fValor)
-            const kf = catKey(f.nome, f.descricao)
-            result[mes][f.tipo][kf] = (result[mes][f.tipo][kf] ?? 0) + val
-          })
-        }
+      })
+
+      // Fixas sao do MES, nao da conta. Somar dentro do laco acima contava a
+      // mesma fixa uma vez por conta bancaria. Ver utils/fixasDoMes.
+      const ehMesPassado = mes < mesHojeRef || anoAtual < anoHojeRef
+      const dmsBanco = dadosBancariosDoMes(
+        extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean>; fixasValorOverride?: Record<string, number> }>,
+        sufixo,
+        key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
+      )
+      categorias.filter(c => c.fixa && c.ativa).forEach(f => {
+        const ehAuto = (f as unknown as { formaPagamento?: string }).formaPagamento === 'automatico'
+        const { consolidada, override } = resolverFixaDoMes(f.id, ehAuto, ehMesPassado, dmsBanco)
+        if (!consolidada) return
+        const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
+        const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
+        const fValor = (f as unknown as { valor?: number }).valor ?? 0
+        const val = override ?? (planVal > 0 ? planVal : fValor)
+        const kf = catKey(f.nome, f.descricao)
+        result[mes][f.tipo][kf] = (result[mes][f.tipo][kf] ?? 0) + val
       })
 
       contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
@@ -232,16 +236,24 @@ export function usePlanejamento(anoAtual: number) {
           if (l.tipo === 'entrada') te[mes] += l.valor
           else ts[mes] += l.valor
         })
-        if (dados.fixasConsolidadas) {
-          categorias.filter(c => c.fixa && c.ativa).forEach(f => {
-            if (!dados.fixasConsolidadas?.[f.id]) return
-            const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
-            const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
-            const val = dados.fixasValorOverride?.[f.id] ?? planVal
-            if (f.tipo === 'entrada') te[mes] += val
-            else ts[mes] += val
-          })
-        }
+      })
+      // Mesma regra do lancadoPorCatMes: a fixa e do mes, nao da conta. Aqui o
+      // efeito era pior — este total alimenta a ancora do saldo inicial.
+      const mesPassadoT = mes < new Date().getMonth() || anoAtual < new Date().getFullYear()
+      const dmsBancoT = dadosBancariosDoMes(
+        extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean>; fixasValorOverride?: Record<string, number> }>,
+        sufixo,
+        key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
+      )
+      categorias.filter(c => c.fixa && c.ativa).forEach(f => {
+        const ehAutoT = (f as unknown as { formaPagamento?: string }).formaPagamento === 'automatico'
+        const { consolidada, override } = resolverFixaDoMes(f.id, ehAutoT, mesPassadoT, dmsBancoT)
+        if (!consolidada) return
+        const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
+        const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
+        const val = override ?? planVal
+        if (f.tipo === 'entrada') te[mes] += val
+        else ts[mes] += val
       })
       contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
         const diaFech = cartao.diaFechamento ?? 1
