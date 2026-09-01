@@ -17,7 +17,6 @@ interface Props {
   onBulkSave: (ops: BulkOp[]) => void
   dadosAnoAnterior: AnoData | null
   ancoraMes: number
-  lancadoPorCatMes?: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   totaisReais?: { te: number[]; ts: number[] }
 }
 

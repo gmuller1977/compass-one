@@ -14,7 +14,6 @@ interface Props {
   dadosPrevisto: AnoData
   dadosAnoAnterior: AnoData | null
   previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
-  lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   planoRef?: AnoData
   categorias: Categoria[]
   hasFaturaCat: boolean

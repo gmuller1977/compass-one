@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { supabase } from '../../lib/supabase'
 import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
@@ -7,6 +7,10 @@ import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
 import { resolverRealKey } from '../acompanhamento/evolucaoCalcs'
 import { ehZero } from '../../utils/moeda'
 import SeletorMesAno from '../SeletorMesAno'
+import { useApp } from '../../context/AppContext'
+import type { DadosMes } from '../../context/AppContext'
+import { construirRealizadoMes } from '../../utils/realizadoMes'
+import type { CatReal } from '../acompanhamento/AcShared'
 import type { Categoria } from '../../context/AppContext'
 
 /**
@@ -14,9 +18,9 @@ import type { Categoria } from '../../context/AppContext'
  * entao Seguro·Civic e Seguro·March nao se somam. Ler so por cat.nome, como
  * antes, juntava as duas — e a revisao sugeria ajustar uma delas com o total.
  */
-function lancadoDaCat(map: Record<string, number>, cat: { nome: string; descricao?: string }) {
+function lancadoDaCat(map: Record<string, CatReal>, cat: { nome: string; descricao?: string }) {
   const k = resolverRealKey(map, cat.nome, cat.descricao)
-  return k ? (map[k] ?? 0) : 0
+  return k ? (map[k]?.total ?? 0) : 0
 }
 
 function useIsMobile() {
@@ -33,7 +37,6 @@ interface Props {
   anoAtual: number
   mesAtual: number
   dadosPrevisto: AnoData
-  lancadoPorCatMes: Record<number, { entrada: Record<string, number>; saida: Record<string, number> }>
   categorias: Categoria[]
   onAjustar: (tipo: 'e' | 's', ri: number, mesInicio: number, valor: number) => void
   desvioMinPerc: number
@@ -94,7 +97,7 @@ function diffMeta(tipo: 'e' | 's', planejado: number, real: number) {
 }
 
 export default function PlanRevisao({
-  anoAtual, mesAtual, dadosPrevisto, lancadoPorCatMes, categorias, onAjustar, desvioMinPerc,
+  anoAtual, mesAtual, dadosPrevisto, categorias, onAjustar, desvioMinPerc,
 }: Props) {
   const hoje = new Date()
   const anoHoje = hoje.getFullYear()
@@ -104,6 +107,8 @@ export default function PlanRevisao({
     if (anoAtual > anoHoje) return false
     return i < mesAtual
   })
+
+  const { extratoData, faturaData, contas, planos } = useApp()
 
   const [mesSel, setMesSel] = useState<number>(
     mesesPassados.length > 0 ? mesesPassados[mesesPassados.length - 1] : 0
@@ -119,7 +124,17 @@ export default function PlanRevisao({
   const isMobile = useIsMobile()
 
 
-  const lancado = lancadoPorCatMes[mesSel] ?? { entrada: {}, saida: {} }
+  // Mesma funcao que o Radar usa. Antes a Revisao tinha o proprio calculo e os
+  // dois discordavam sobre o mesmo mes — ver utils/realizadoMes.
+  const { entradasMap, saidasMap } = useMemo(
+    () => construirRealizadoMes({
+      ano: anoAtual, mes: mesSel,
+      extratoData: extratoData as Record<string, DadosMes>,
+      faturaData, contas, categorias, planoAno: planos[anoAtual],
+    }),
+    [anoAtual, mesSel, extratoData, faturaData, contas, categorias, planos],
+  )
+  const lancado = { entrada: entradasMap, saida: saidasMap }
 
   const totalRecPrev = dadosPrevisto.entradas.reduce((s, c) => s + (c.v[mesSel] ?? 0), 0)
   const totalRecReal = dadosPrevisto.entradas.reduce((s, c) => s + lancadoDaCat(lancado.entrada, c), 0)

@@ -116,7 +116,6 @@ export default function Planejamento() {
             dadosPrevisto={plan.dadosPrevistoFinal}
             dadosAnoAnterior={plan.planoAnoAnterior}
             previsto={plan.previsto}
-            lancadoPorCatMes={plan.lancadoPorCatMes}
             planoRef={plan.planoRef}
             categorias={plan.categorias}
             hasFaturaCat={plan.hasFaturaCat}
@@ -148,7 +147,6 @@ export default function Planejamento() {
             onBulkSave={handleBulkSave}
             dadosAnoAnterior={plan.planoAnoAnterior}
             ancoraMes={plan.ancoraMes}
-            lancadoPorCatMes={plan.lancadoPorCatMes}
             totaisReais={plan.totaisReais}
           />
         )}

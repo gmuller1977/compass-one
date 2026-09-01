@@ -6,7 +6,7 @@ import {
   mergeCats, calcSaldos, nomeFaturaCartao, MESES,
   type Cat, type AnoData, type AncoraReal,
 } from './types'
-import { catKey, resolverSub, acharPlanCat } from '../acompanhamento/evolucaoCalcs'
+import { acharPlanCat } from '../acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../../utils/fixasDoMes'
 
 // iconeCategoria imported above; suppress unused warning
@@ -119,73 +119,6 @@ export function usePlanejamento(anoAtual: number) {
     [dadosPrevisto.saidas, cartaoNomes]
   )
 
-  // Lançamentos reais por categoria e mês (do extrato/fatura)
-  const lancadoPorCatMes = useMemo(() => {
-    const result: Record<number, {
-      entrada: Record<string, number>; saida: Record<string, number>
-      entradaCartao: Record<string, number>; saidaCartao: Record<string, number>
-    }> = {}
-    const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string; subCategoria?: string }[]> }>
-    for (let mes = 0; mes < 12; mes++) {
-      result[mes] = { entrada: {}, saida: {}, entradaCartao: {}, saidaCartao: {} }
-      const mesStr = String(mes + 1).padStart(2, '0')
-      const sufixo = `-${anoAtual}-${mesStr}`
-
-      Object.entries(extratoData).forEach(([key, dados]) => {
-        if (!key.endsWith(sufixo)) return
-        Object.values(dados.lancamentos).flat().forEach(l => {
-          const k = catKey(l.categoria, resolverSub(
-            categorias, l.categoria, l.tipo,
-            (l as { subCategoria?: string }).subCategoria,
-          ))
-          result[mes][l.tipo][k] = (result[mes][l.tipo][k] ?? 0) + l.valor
-        })
-      })
-
-      // Fixas sao do MES, nao da conta. Somar dentro do laco acima contava a
-      // mesma fixa uma vez por conta bancaria. Ver utils/fixasDoMes.
-      const dmsBanco = dadosBancariosDoMes(
-        extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean>; fixasValorOverride?: Record<string, number> }>,
-        sufixo,
-        key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
-      )
-      categorias.filter(c => c.fixa && c.ativa).forEach(f => {
-        const { consolidada, override } = resolverFixaDoMes(f.id, dmsBanco)
-        if (!consolidada) return
-        const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
-        const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
-        const fValor = (f as unknown as { valor?: number }).valor ?? 0
-        const val = override ?? (planVal > 0 ? planVal : fValor)
-        const kf = catKey(f.nome, f.descricao)
-        result[mes][f.tipo][kf] = (result[mes][f.tipo][kf] ?? 0) + val
-      })
-
-      contas.filter(c => c.tipo === 'cartao').forEach(cartao => {
-        const diaFech = cartao.diaFechamento ?? 1
-        const diaVenc = cartao.diaVencimento ?? 1
-        const offset = diaVenc < diaFech ? 1 : 0
-        let pMes = mes - offset
-        let pAno = anoAtual
-        if (pMes < 0) { pMes += 12; pAno-- }
-        const fatKey = `${cartao.id}-${pAno}-${String(pMes + 1).padStart(2, '0')}`
-        const dm = fatDados[fatKey]
-        if (!dm) return
-        const nDias = new Date(pAno, pMes + 1, 0).getDate()
-        for (let d = 1; d <= nDias; d++) {
-          ;(dm.lancamentos[d] ?? []).forEach(l => {
-            // Tudo que vem da fatura cai no balde de saida — inclusive o estorno,
-            // que entra com sinal negativo. Por isso a variante resolve sempre
-            // contra as categorias de saida.
-            const k = catKey(l.categoria, resolverSub(categorias, l.categoria, 'saida', l.subCategoria))
-            const sinal = l.tipo === 'entrada' ? 1 : -1
-            result[mes]['saida'][k] = (result[mes]['saida'][k] ?? 0) + sinal * l.valor
-            result[mes]['saidaCartao'][k] = (result[mes]['saidaCartao'][k] ?? 0) + sinal * l.valor
-          })
-        }
-      })
-    }
-    return result
-  }, [contas, categorias, extratoData, faturaData, anoAtual, planoRef])
 
   // Totais reais (lançamentos do extrato) por mês
   const totaisReais = useMemo(() => {
@@ -213,7 +146,7 @@ export function usePlanejamento(anoAtual: number) {
           else ts[mes] += l.valor
         })
       })
-      // Mesma regra do lancadoPorCatMes: a fixa e do mes, nao da conta. Aqui o
+      // A fixa e do mes, nao da conta. Somar por chave do extrato contaria aqui o
       // efeito era pior — este total alimenta a ancora do saldo inicial.
       const dmsBancoT = dadosBancariosDoMes(
         extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean>; fixasValorOverride?: Record<string, number> }>,
@@ -351,7 +284,6 @@ export function usePlanejamento(anoAtual: number) {
     saldoInicialReal,
     saldoFinalReal,
     ancoraMes,
-    lancadoPorCatMes,
     mesTemDadosReais,
     // Ações
     editarValor,

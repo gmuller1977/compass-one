@@ -45,7 +45,6 @@ export default function RevisaoMensal() {
           anoAtual={anoAtual}
           mesAtual={plan.mesAtual}
           dadosPrevisto={plan.dadosPrevistoFinal}
-          lancadoPorCatMes={plan.lancadoPorCatMes}
           categorias={plan.categorias}
           onAjustar={handleAjustar}
           desvioMinPerc={desvioMinPerc}
