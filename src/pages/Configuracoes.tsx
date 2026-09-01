@@ -324,20 +324,29 @@ export default function Configuracoes() {
   function salvarCategoria() {
     if (!formCat.nome.trim()) return setErroCat('Informe o nome da categoria')
     setErroCat('')
+    // A validacao ja usava trim, mas o que ia para o banco era o texto cru.
+    // Um "Financiamento " com espaco no fim nao casava com a linha do plano
+    // em nenhuma comparacao por nome, e a categoria sumia do Radar.
+    const limpo = {
+      ...formCat,
+      nome: formCat.nome.trim(),
+      descricao: formCat.descricao?.trim() || undefined,
+      grupo: formCat.grupo?.trim() || undefined,
+    }
     if (editCatId) {
-      setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...formCat, ativa:true} : c))
+      setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...limpo, ativa:true} : c))
       toast('Categoria atualizada')
       setMobileView('list')
     } else {
-      const nomeNorm = formCat.nome.trim().toLowerCase()
-      const descNorm = (formCat.descricao ?? '').trim().toLowerCase()
+      const nomeNorm = limpo.nome.toLowerCase()
+      const descNorm = (limpo.descricao ?? '').toLowerCase()
       const duplicata = categorias.find(c =>
         c.nome.trim().toLowerCase() === nomeNorm &&
         c.tipo === formCat.tipo &&
         (c.descricao ?? '').trim().toLowerCase() === descNorm
       )
       if (duplicata) return setErroCat(`Já existe uma categoria "${duplicata.nome}${duplicata.descricao ? ` · ${duplicata.descricao}` : ''}" neste tipo`)
-      setCategorias(prev => [...prev, {id:gerarId(),...formCat, ativa:true}])
+      setCategorias(prev => [...prev, {id:gerarId(),...limpo, ativa:true}])
       toast('Categoria criada')
       setMobileView('list')
     }
