@@ -88,6 +88,19 @@ bancário e no dinheiro**. Radar Financeiro e Resumo Mensal são telas de consul
 não de edição — não levam conciliação. Decidido em 29/08/2026; não reabrir sem
 pedido explícito.
 
+**Categoria fixa só conta quando confirmada.** Não presumir que débito
+automático de mês passado aconteceu. Havia esse atalho — `automatica &&
+mesPassado` — e ele fazia o Radar discordar da conciliação sobre o mesmo mês:
+uma fixa de R$ 25,00 nunca marcada aparecia como paga num lado e não no outro,
+e o saldo divergia do extrato. Débito automático falha, muda de valor e é
+cancelado; presumir esconde isso. Decidido em 31/08/2026.
+
+Consolidação vive no `DadosMes` de cada **conta**, mas a fixa é do **mês**.
+Somar percorrendo as chaves do extrato conta a mesma fixa uma vez por conta —
+com três contas, triplicava. Usar `resolverFixaDoMes` de
+[`utils/fixasDoMes.ts`](src/utils/fixasDoMes.ts), que resolve o mês inteiro de
+uma vez.
+
 **Distinção temporal por cor** (passado / hoje / futuro) vale em **Lançamentos** e
 no **Radar**. No **Planejamento** ela foi removida de propósito: lá o que separa
 os meses é ter ou não planejamento, não a posição no tempo.

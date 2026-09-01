@@ -215,25 +215,24 @@ export default function NleExtrato({
             const ls      = lsRaw
             const temItens= fs.length>0||ls.length>0
             const temFixaPend=fs.some(f=>{
-              const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined
-                ?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)
+              const conf=mesDados.fixasConsolidadas?.[f.id]===true
               return !conf
             })
             const saldoIni = dia===1?saldoBase:(saldosDia[dia-1]??saldoBase)
             const diaFuturo= !passado&&!ehHoje
 
             const entradasDia=fs.filter(f=>f.tipo==='entrada')
-              .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
+              .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]===true;return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
               +ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
             const saidasDia=fs.filter(f=>f.tipo==='saida')
-              .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado);return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
+              .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]===true;return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
               +ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
             const entradasConf=
-              fs.filter(f=>f.tipo==='entrada'&&(mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)))
+              fs.filter(f=>f.tipo==='entrada'&&(mesDados.fixasConsolidadas?.[f.id]===true))
               .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
               +ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
             const saidasConf=
-              fs.filter(f=>f.tipo==='saida'&&(mesDados.fixasConsolidadas?.[f.id]!==undefined?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)))
+              fs.filter(f=>f.tipo==='saida'&&(mesDados.fixasConsolidadas?.[f.id]===true))
               .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
               +ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
 
@@ -312,8 +311,7 @@ export default function NleExtrato({
                     </>):(()=>{
                       // Desktop: 4-col grid
                       const planejadoDia=fs.filter(f=>f.tipo==='saida'&&!(
-                        mesDados.fixasConsolidadas?.[f.id]!==undefined
-                          ?mesDados.fixasConsolidadas[f.id]:(ehAutomatico(f)&&!eMesAtual&&passado)
+                        mesDados.fixasConsolidadas?.[f.id]===true
                       )).reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
                       const saldoColor=saldoDia<0?tc.desp:diaFuturo?tc.saldo:saldoDia===0?tc.zero:tc.saldo
                       return(
@@ -352,8 +350,7 @@ export default function NleExtrato({
                   const ehFaturaFixa=f.id.startsWith('cartao-')
                   const catVisual=iconeCategoria(categorias,f.categoria)
                   const automatico=ehAutomatico(f)
-                  const consolidada=mesDados.fixasConsolidadas?.[f.id]!==undefined
-                    ?mesDados.fixasConsolidadas[f.id]:(automatico&&!eMesAtual&&passado)
+                  const consolidada=mesDados.fixasConsolidadas?.[f.id]===true
                   const corValor=consolidada?(f.tipo==='entrada'?tc.rec:tc.desp):tc.label
                   const emEdicaoFixa=editandoFixaId===f.id
                   const valorMostrado=mesDados.fixasValorOverride?.[f.id]??f.valor
@@ -380,7 +377,7 @@ export default function NleExtrato({
                             <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                               background:consolidada?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.07)',
                               color:consolidada?tc.rec:tc.label}}>
-                              {consolidada?(automatico&&!eMesAtual&&passado?'automática ✓':'paga ✓'):'previsto'}
+                              {consolidada?(automatico?'automática ✓':'paga ✓'):'previsto'}
                             </span>
                           </div>
                           <div style={{fontSize:10,color:tc.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>

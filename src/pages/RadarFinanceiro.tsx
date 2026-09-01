@@ -114,8 +114,7 @@ export default function RadarFinanceiro() {
       entrada: resolverPlanCats('entrada', dadosAno?.entradas ?? [], categorias),
     }
     for (const fixaCat of categorias.filter((c: Categoria) => c.fixa && c.ativa)) {
-      const { consolidada, override } = resolverFixaDoMes(
-        fixaCat.id, fixaCat.formaPagamento === 'automatico', isPastMonth, dmsBanco)
+      const { consolidada, override } = resolverFixaDoMes(fixaCat.id, dmsBanco)
       if (!consolidada) continue
       // O plano tem de ser o RESOLVIDO, nao o cru. Plano antigo guarda a linha
       // so com o nome; e o resolverPlanCats que atribui a variante por posicao
@@ -262,9 +261,8 @@ export default function RadarFinanceiro() {
         entrada: resolverPlanCats('entrada', planoK?.entradas ?? [], categorias),
       }
       for (const f of fixasAtivas) {
-        const ehAuto = f.formaPagamento === 'automatico'
         // Todo mes aqui e passado, por construcao do filtro acima.
-        const { consolidada, override } = resolverFixaDoMes(f.id, ehAuto, true, dms)
+        const { consolidada, override } = resolverFixaDoMes(f.id, dms)
         if (!consolidada) continue
         const lista = f.tipo === 'saida' ? resolvidasK.saida : resolvidasK.entrada
         const planVal = acharPlanCat(lista, f.nome, f.descricao)?.v[kMes] ?? 0

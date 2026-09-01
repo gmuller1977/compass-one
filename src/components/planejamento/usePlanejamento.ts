@@ -126,9 +126,6 @@ export function usePlanejamento(anoAtual: number) {
       entradaCartao: Record<string, number>; saidaCartao: Record<string, number>
     }> = {}
     const fatDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number; categoria: string; subCategoria?: string }[]> }>
-    const _hoje = new Date()
-    const mesHojeRef = _hoje.getMonth()
-    const anoHojeRef = _hoje.getFullYear()
     for (let mes = 0; mes < 12; mes++) {
       result[mes] = { entrada: {}, saida: {}, entradaCartao: {}, saidaCartao: {} }
       const mesStr = String(mes + 1).padStart(2, '0')
@@ -147,15 +144,13 @@ export function usePlanejamento(anoAtual: number) {
 
       // Fixas sao do MES, nao da conta. Somar dentro do laco acima contava a
       // mesma fixa uma vez por conta bancaria. Ver utils/fixasDoMes.
-      const ehMesPassado = mes < mesHojeRef || anoAtual < anoHojeRef
       const dmsBanco = dadosBancariosDoMes(
         extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean>; fixasValorOverride?: Record<string, number> }>,
         sufixo,
         key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
       )
       categorias.filter(c => c.fixa && c.ativa).forEach(f => {
-        const ehAuto = (f as unknown as { formaPagamento?: string }).formaPagamento === 'automatico'
-        const { consolidada, override } = resolverFixaDoMes(f.id, ehAuto, ehMesPassado, dmsBanco)
+        const { consolidada, override } = resolverFixaDoMes(f.id, dmsBanco)
         if (!consolidada) return
         const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
         const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0
@@ -220,15 +215,13 @@ export function usePlanejamento(anoAtual: number) {
       })
       // Mesma regra do lancadoPorCatMes: a fixa e do mes, nao da conta. Aqui o
       // efeito era pior — este total alimenta a ancora do saldo inicial.
-      const mesPassadoT = mes < new Date().getMonth() || anoAtual < new Date().getFullYear()
       const dmsBancoT = dadosBancariosDoMes(
         extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean>; fixasValorOverride?: Record<string, number> }>,
         sufixo,
         key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
       )
       categorias.filter(c => c.fixa && c.ativa).forEach(f => {
-        const ehAutoT = (f as unknown as { formaPagamento?: string }).formaPagamento === 'automatico'
-        const { consolidada, override } = resolverFixaDoMes(f.id, ehAutoT, mesPassadoT, dmsBancoT)
+        const { consolidada, override } = resolverFixaDoMes(f.id, dmsBancoT)
         if (!consolidada) return
         const planCats = f.tipo === 'entrada' ? planoRef?.entradas : planoRef?.saidas
         const planVal = acharPlanCat(planCats, f.nome, f.descricao)?.v[mes] ?? 0

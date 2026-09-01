@@ -16,10 +16,18 @@
  * ouviram falar daquela fixa. Com duas contas o valor dobrava; com três,
  * triplicava. No Radar aparecia o mesmo "Tarifa · automático" repetido.
  *
- * A regra aqui olha o mês inteiro de uma vez:
- *   - alguma conta marcou `true`  -> consolidada, com o override daquela conta
- *   - alguma conta marcou `false` -> não consolidada (escolha explícita manda)
- *   - ninguém marcou             -> automática em mês passado conta sozinha
+ * A regra aqui olha o mês inteiro de uma vez: consolidada só quando alguma
+ * conta marcou `true`. Nada de assumir.
+ *
+ * Assumir era o comportamento antigo — fixa automática em mês passado contava
+ * sozinha. Foi removido em 31/08/2026: o Radar assumia e a conciliação exigia
+ * a marcação, então os dois discordavam sobre o mesmo mês. Uma "Cotas Sicredi"
+ * de R$ 25,00 que nunca foi confirmada aparecia como paga no Radar e fazia o
+ * saldo divergir do extrato.
+ *
+ * A conciliação venceu, por decisão do Guilherme: débito automático pode
+ * falhar, mudar de valor ou ser cancelado. Assumir esconde isso. Agora ele
+ * fica pendente até alguém confirmar — que é o que ele é.
  */
 
 type DadosMesFixas = {
@@ -35,22 +43,14 @@ export type FixaResolvida = {
 
 export function resolverFixaDoMes(
   fixaId: string,
-  ehAutomatica: boolean,
-  mesPassado: boolean,
   dadosDoMes: DadosMesFixas[],
 ): FixaResolvida {
-  let viuFalse = false
-
   for (const dm of dadosDoMes) {
-    const marca = dm.fixasConsolidadas?.[fixaId]
-    if (marca === true) {
+    if (dm.fixasConsolidadas?.[fixaId] === true) {
       return { consolidada: true, override: dm.fixasValorOverride?.[fixaId] }
     }
-    if (marca === false) viuFalse = true
   }
-
-  if (viuFalse) return { consolidada: false }
-  return { consolidada: ehAutomatica && mesPassado }
+  return { consolidada: false }
 }
 
 /**
