@@ -585,9 +585,9 @@ export default function FcMobileView({
                 </div>
               )
             }
-            // Mesma ordem do desktop: como foi digitado, para conferir contra a
-            // fatura do banco na sequencia em que se lanca.
-            allItems.sort((a, b) => ordemLancamento(a.l.id) - ordemLancamento(b.l.id))
+            // Mesma ordem do desktop: o ultimo digitado no topo, para ver de
+            // imediato onde parou de lancar a fatura.
+            allItems.sort((a, b) => ordemLancamento(b.l.id) - ordemLancamento(a.l.id))
             return (
               <div style={{background:COR.branco,borderRadius:14,
                 border:`1.5px solid ${COR.borda}`,overflow:'hidden',

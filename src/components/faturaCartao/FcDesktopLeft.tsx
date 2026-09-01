@@ -58,7 +58,7 @@ export default function FcDesktopLeft({
             )
           }
 
-          itens.sort((a, b) => ordemLancamento(a.l.id) - ordemLancamento(b.l.id))
+          itens.sort((a, b) => ordemLancamento(b.l.id) - ordemLancamento(a.l.id))
 
           return (
             <div style={{ background: COR.branco, borderRadius: 12,
