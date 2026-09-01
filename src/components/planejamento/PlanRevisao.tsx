@@ -131,7 +131,11 @@ export default function PlanRevisao({
     const real      = lancadoDaCat(lancado.entrada, cat)
     if (ehZero(planejado) && ehZero(real)) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
-    return { tipo: 'e' as const, cat, ri, planejado, real, desvioPercent, temDesvio: desvioPercent > desvioMinPerc }
+    // So o sentido desfavoravel pede justificativa. Numa receita, isso e
+    // receber MENOS do que o planejado; receber mais e boa noticia.
+    const desfavoravel = real < planejado
+    return { tipo: 'e' as const, cat, ri, planejado, real, desvioPercent,
+      temDesvio: desfavoravel && desvioPercent > desvioMinPerc }
   }).filter(Boolean) as CatRow[]
 
   const allSaidas: CatRow[] = dadosPrevisto.saidas.map((cat, ri) => {
@@ -139,7 +143,11 @@ export default function PlanRevisao({
     const real      = lancadoDaCat(lancado.saida, cat)
     if (ehZero(planejado) && ehZero(real)) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
-    return { tipo: 's' as const, cat, ri, planejado, real, desvioPercent, temDesvio: desvioPercent > desvioMinPerc }
+    // Numa despesa, o sentido desfavoravel e gastar MAIS do que o planejado.
+    // Gastar menos nao precisa de justificativa — era o ruido da tela.
+    const desfavoravel = real > planejado
+    return { tipo: 's' as const, cat, ri, planejado, real, desvioPercent,
+      temDesvio: desfavoravel && desvioPercent > desvioMinPerc }
   }).filter(Boolean) as CatRow[]
 
   const catsDesvio = [...allEntradas, ...allSaidas].filter(c => c.temDesvio)
