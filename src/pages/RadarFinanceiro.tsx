@@ -231,8 +231,51 @@ export default function RadarFinanceiro() {
         }
       }
     }
+    // As fixas consolidadas dos meses anteriores tambem movimentaram a conta.
+    // Sem isto o saldo acumulado ignorava toda fixa de janeiro ate o mes
+    // passado — quase sempre despesa, entao o saldo vinha alto, e o erro
+    // crescia a cada mes. O laco acima so soma lancamentos.
+    //
+    // Agrupado por MES, nao por conta: contar por chave do extrato somaria a
+    // mesma fixa uma vez por conta bancaria. Ver utils/fixasDoMes.
+    const porMes = new Map<string, DadosMes[]>()
+    for (const [key, dados] of Object.entries(extratoData)) {
+      if (key.length < 8) continue
+      const ky = parseInt(key.slice(-7, -3))
+      const km = parseInt(key.slice(-2)) - 1
+      if (!Number.isFinite(ky) || !Number.isFinite(km)) continue
+      if (ky > ano || (ky === ano && km >= mes)) continue
+      if (contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) continue
+      const id = ky + '|' + km
+      if (!porMes.has(id)) porMes.set(id, [])
+      porMes.get(id)!.push(dados as DadosMes)
+    }
+    
+    const fixasAtivas = categorias.filter((c: Categoria) => c.fixa && c.ativa)
+    for (const [id, dms] of porMes) {
+      const [kyS, kmS] = id.split('|')
+      const kAno = parseInt(kyS)
+      const kMes = parseInt(kmS)
+      const planoK = planos[kAno]
+      const resolvidasK = {
+        saida:   resolverPlanCats('saida',   planoK?.saidas   ?? [], categorias),
+        entrada: resolverPlanCats('entrada', planoK?.entradas ?? [], categorias),
+      }
+      for (const f of fixasAtivas) {
+        const ehAuto = f.formaPagamento === 'automatico'
+        // Todo mes aqui e passado, por construcao do filtro acima.
+        const { consolidada, override } = resolverFixaDoMes(f.id, ehAuto, true, dms)
+        if (!consolidada) continue
+        const lista = f.tipo === 'saida' ? resolvidasK.saida : resolvidasK.entrada
+        const planVal = acharPlanCat(lista, f.nome, f.descricao)?.v[kMes] ?? 0
+        const val = override ?? planVal
+        if (val <= 0) continue
+        acc += f.tipo === 'entrada' ? val : -val
+      }
+    }
+    
     return acc
-  }, [contas, saldoInicialDinheiro, extratoData, ano, mes])
+  }, [contas, saldoInicialDinheiro, extratoData, ano, mes, categorias, planos])
 
   const saldoAtual = saldoInicial + totalRealE - totalRealS
 
