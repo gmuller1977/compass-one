@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
-import { acharPlanCat } from '../components/acompanhamento/evolucaoCalcs'
+import { acharPlanCat, resolverPlanCats } from '../components/acompanhamento/evolucaoCalcs'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
@@ -109,11 +109,21 @@ export default function RadarFinanceiro() {
       sufixo,
       key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
     )
+    const planResolvidas = {
+      saida:   resolverPlanCats('saida',   dadosAno?.saidas   ?? [], categorias),
+      entrada: resolverPlanCats('entrada', dadosAno?.entradas ?? [], categorias),
+    }
     for (const fixaCat of categorias.filter((c: Categoria) => c.fixa && c.ativa)) {
       const { consolidada, override } = resolverFixaDoMes(
         fixaCat.id, fixaCat.formaPagamento === 'automatico', isPastMonth, dmsBanco)
       if (!consolidada) continue
-      const planList = fixaCat.tipo === 'saida' ? dadosAno?.saidas : dadosAno?.entradas
+      // O plano tem de ser o RESOLVIDO, nao o cru. Plano antigo guarda a linha
+      // so com o nome; e o resolverPlanCats que atribui a variante por posicao
+      // — e por isso que a tela mostra "Financiamento · Casa" e
+      // "Financiamento · Civic". Procurando no cru, as duas linhas se chamam
+      // "Financiamento", acharPlanCat se recusa a escolher (certo) e o valor
+      // some. Aqui olhamos a mesma lista que a tela olha.
+      const planList = fixaCat.tipo === 'saida' ? planResolvidas.saida : planResolvidas.entrada
       const planVal = acharPlanCat(planList, fixaCat.nome, fixaCat.descricao)?.v[mes] ?? 0
       const val = override ?? (planVal > 0 ? planVal : 0)
       if (val <= 0) continue
