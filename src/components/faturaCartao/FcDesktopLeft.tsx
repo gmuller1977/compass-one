@@ -2,7 +2,7 @@ import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, NOMES_MESES, fmt, diaSemana, lancLabel,
+  COR, NOMES_MESES, fmt, diaSemana, lancLabel, ordemLancamento,
   type Lancamento, type DadosMes,
 } from './FcShared'
 
@@ -17,40 +17,40 @@ type Props = {
   mesVenc: number
   anoVenc: number
   editandoId: string | null
-  diasFechados: Set<string>
   categorias: Categoria[]
   editarLancamento: (dia: number, l: Lancamento) => void
   excluir: (dia: number, id: string) => void
-  toggleDia: (dateKey: string) => void
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
 }
 
 export default function FcDesktopLeft({
   mesDados, totalDias, purchaseMes, purchaseAno,
   totalFatura, diaFechamento, diaVencimento, mesVenc, anoVenc,
-  editandoId, diasFechados, categorias,
-  editarLancamento, excluir, toggleDia, setDiaSel,
+  editandoId, categorias,
+  editarLancamento, excluir, setDiaSel,
 }: Props) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Lista de lançamentos agrupados por data de compra */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 16px' }}>
+      {/* Lista plana, na ordem em que foi digitada. Antes era um acordeão por
+          dia de compra: conferir contra a fatura do banco exigia abrir grupo a
+          grupo e a data não aparecia ao lado do lançamento. */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
         {(() => {
-          type DiaGroup = { dateKey: string; dc: number; mc: number; ac: number; items: Array<{ dia: number; l: Lancamento }> }
-          const groupMap = new Map<string, DiaGroup>()
+          const itens: Array<{ dia: number; dc: number; mc: number; ac: number; l: Lancamento }> = []
           for (let d = 1; d <= totalDias; d++) {
             for (const l of (mesDados.lancamentos[d] ?? [])) {
-              const dc = l.diaCompra ?? d
-              const mc = l.mesCompra ?? purchaseMes
-              const ac = l.anoCompra ?? purchaseAno
-              const dateKey = `${ac}-${String(mc + 1).padStart(2, '0')}-${String(dc).padStart(2, '0')}`
-              if (!groupMap.has(dateKey)) groupMap.set(dateKey, { dateKey, dc, mc, ac, items: [] })
-              groupMap.get(dateKey)!.items.push({ dia: d, l })
+              itens.push({
+                dia: d,
+                dc: l.diaCompra ?? d,
+                mc: l.mesCompra ?? purchaseMes,
+                ac: l.anoCompra ?? purchaseAno,
+                l,
+              })
             }
           }
 
-          if (groupMap.size === 0) {
+          if (itens.length === 0) {
             return (
               <div style={{ textAlign: 'center', color: COR.textoSuave, padding: 40, fontSize: 13 }}>
                 Nenhum lançamento nesta fatura.
@@ -58,96 +58,90 @@ export default function FcDesktopLeft({
             )
           }
 
-          // Decrescente: mais recente primeiro
-          const grupos = [...groupMap.values()].sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+          itens.sort((a, b) => ordemLancamento(a.l.id) - ordemLancamento(b.l.id))
 
-          const isAfterClosing = (g: DiaGroup) => {
-            if (g.ac > purchaseAno) return true
-            if (g.ac < purchaseAno) return false
-            if (g.mc > purchaseMes) return true
-            if (g.mc < purchaseMes) return false
-            return g.dc > diaFechamento
-          }
+          return (
+            <div style={{ background: COR.branco, borderRadius: 12,
+              border: `1.5px solid ${COR.borda}`, overflow: 'hidden' }}>
+            {itens.map(({ dia, dc, mc, ac, l }, idx) => {
+              const catVisual = iconeCategoria(categorias, l.categoria)
+              const emEdicao  = editandoId === l.id
+              const outroMes  = mc !== purchaseMes || ac !== purchaseAno
+              // O acordeao antigo separava as compras posteriores ao fechamento com um
+              // divisor. Numa lista por ordem de digitacao isso nao cabe, entao a
+              // informacao vira marcador na propria linha — ela nao podia se perder.
+              const posFechamento = ac > purchaseAno
+                || (ac === purchaseAno && mc > purchaseMes)
+                || (ac === purchaseAno && mc === purchaseMes && dc > diaFechamento)
+              return (
+                <div key={l.id}
+                  onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                    padding: '10px 14px',
+                    background: emEdicao ? '#eff6ff' : COR.branco,
+                    borderBottom: idx < itens.length - 1 ? `1px solid ${COR.borda}` : 'none',
+                    borderLeft: emEdicao ? `3px solid ${COR.azul}` : '3px solid transparent',
+                  }}
+                  onMouseEnter={e => { if (!emEdicao) e.currentTarget.style.background = '#fafbff' }}
+                  onMouseLeave={e => { if (!emEdicao) e.currentTarget.style.background = COR.branco }}>
 
-          return grupos.map((grupo, gIdx) => {
-            const { dateKey, dc, mc, ac, items } = grupo
-            const aberto = !diasFechados.has(dateKey)
-            const semana = diaSemana(dc, mc, ac)
-            const mesAno = (mc !== purchaseMes || ac !== purchaseAno)
-              ? `${NOMES_MESES[mc]}${ac !== purchaseAno ? ' ' + ac : ''}`
-              : NOMES_MESES[mc]
-            const prevGrupo = gIdx > 0 ? grupos[gIdx - 1] : null
-            const showFechDiv = prevGrupo !== null && isAfterClosing(prevGrupo) && !isAfterClosing(grupo)
-
-            return [
-              showFechDiv ? (
-                <div key={`div-${dateKey}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  <div style={{ flex: 1, height: 1, background: COR.borda }} />
-                  <span style={{ fontSize: 10, color: COR.textoSuave, fontWeight: 600, letterSpacing: .3 }}>
-                    Período da fatura
-                  </span>
-                  <div style={{ flex: 1, height: 1, background: COR.borda }} />
-                </div>
-              ) : null,
-
-              <div key={dateKey}
-                style={{ borderRadius: 12, overflow: 'hidden', flexShrink: 0, border: `1.5px solid ${COR.borda}`, background: COR.branco }}>
-
-                <div
-                  onClick={() => toggleDia(dateKey)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', userSelect: 'none', background: '#fafbff', borderBottom: aberto ? `1px solid ${COR.borda}` : 'none' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 32, flexShrink: 0 }}>
-                    <span style={{ fontSize: 18, fontWeight: 700, lineHeight: 1, color: COR.texto }}>{String(dc).padStart(2, '0')}</span>
-                    <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500, textTransform: 'uppercase', letterSpacing: .3, marginTop: 1 }}>{semana}</span>
-                  </div>
-                  <span style={{ fontSize: 12, color: COR.textoSuave, flex: 1 }}>{mesAno}</span>
-                  <span style={{ fontSize: 16, color: '#94a3b8', display: 'inline-block', transition: 'transform .2s', transform: aberto ? 'rotate(180deg)' : 'rotate(0deg)' }}>⌄</span>
-                </div>
-
-                {aberto && items.map(({ dia, l }) => {
-                  const catVisual = iconeCategoria(categorias, l.categoria)
-                  const emEdicao = editandoId === l.id
-                  return (
-                    <div key={l.id}
-                      onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: '12px 14px', flexShrink: 0, background: emEdicao ? '#eff6ff' : COR.branco, borderBottom: `1px solid ${COR.borda}`, borderLeft: emEdicao ? `3px solid ${COR.azul}` : '3px solid transparent' }}
-                      onMouseEnter={e => { if (!emEdicao) e.currentTarget.style.background = '#fafbff' }}
-                      onMouseLeave={e => { if (!emEdicao) e.currentTarget.style.background = COR.branco }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, background: catVisual.cor }}>
-                        {catVisual.icone}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {lancLabel(l)}
-                        </div>
-                        {l.descricao && l.descricao !== l.categoria && (
-                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {l.descricao}
-                          </div>
-                        )}
-                      </div>
-                      {l.parcelas && l.parcelas > 1 && (
-                        <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, fontWeight: 700, flexShrink: 0, background: '#ede9fe', color: '#7c3aed' }}>
-                          {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
-                        </span>
-                      )}
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: l.tipo === 'entrada' ? COR.azul : COR.vermelho }}>
-                          {l.tipo === 'entrada' ? '+' : '-'}{fmt(l.valor)}
-                        </div>
-                      </div>
-                      <button
-                        onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#cbd5e1', fontSize: 14, padding: '2px 5px', borderRadius: 6, flexShrink: 0 }}
-                        onMouseEnter={e => (e.currentTarget.style.color = COR.vermelho)}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#cbd5e1')}>✕</button>
+                  {/* Data primeiro: é por ela que se confere contra a fatura do banco */}
+                  <div style={{ minWidth: 46, flexShrink: 0, textAlign: 'center' }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1, color: COR.texto,
+                      fontVariantNumeric: 'tabular-nums' }}>{String(dc).padStart(2, '0')}/{String(mc + 1).padStart(2, '0')}</div>
+                    <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase',
+                      letterSpacing: .3, marginTop: 2 }}>
+                      {outroMes ? (ac !== purchaseAno ? ac : NOMES_MESES[mc].slice(0, 3)) : diaSemana(dc, mc, ac)}
                     </div>
-                  )
-                })}
-              </div>
-            ]
-          })
+                  </div>
+
+                  <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', fontSize: 16, background: catVisual.cor }}>
+                    {catVisual.icone}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, whiteSpace: 'nowrap',
+                      overflow: 'hidden', textOverflow: 'ellipsis' }}>{lancLabel(l)}</div>
+                    {l.descricao && l.descricao !== l.categoria && (
+                      <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1, whiteSpace: 'nowrap',
+                        overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.descricao}</div>
+                    )}
+                  </div>
+
+                  {posFechamento && (
+                    <span title="Compra após o fechamento: entra na próxima fatura"
+                      style={{ fontSize: 10, padding: '3px 7px', borderRadius: 6, fontWeight: 700,
+                        flexShrink: 0, background: COR.avisoFundo, color: COR.avisoTexto }}>
+                      próxima
+                    </span>
+                  )}
+
+                  {l.parcelas && l.parcelas > 1 && (
+                    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
+                      flexShrink: 0, background: '#ede9fe', color: '#7c3aed' }}>
+                      {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
+                    </span>
+                  )}
+
+                  <div style={{ fontSize: 14, fontWeight: 700, flexShrink: 0,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: l.tipo === 'entrada' ? COR.azul : COR.vermelho }}>
+                    {l.tipo === 'entrada' ? '+' : '-'}{fmt(l.valor)}
+                  </div>
+
+                  <button
+                    onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
+                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#cbd5e1',
+                      fontSize: 14, padding: '2px 5px', borderRadius: 6, flexShrink: 0 }}
+                    onMouseEnter={e => (e.currentTarget.style.color = COR.vermelho)}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#cbd5e1')}>✕</button>
+                </div>
+              )
+            })}
+            </div>
+          )
         })()}
       </div>
 

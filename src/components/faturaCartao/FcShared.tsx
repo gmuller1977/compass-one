@@ -35,6 +35,21 @@ export type DadosMes = {
 
 // ── Categoria + variante ──────────────────────────────────────────────
 /** Rotulo do lancamento: "Seguro · Civic" quando ha variante. */
+/**
+ * Ordem em que o lançamento foi digitado.
+ *
+ * Não há campo de timestamp no Lancamento, mas o id carrega um: ele nasce
+ * como `v-<Date.now()>`, e as parcelas viram `v-<ts>-<n>`. Ler o número do
+ * meio dá a ordem de entrada sem precisar migrar dado.
+ *
+ * Id em formato antigo devolve 0 e cai no começo da lista, em vez de
+ * quebrar a ordenação.
+ */
+export function ordemLancamento(id: string): number {
+  const ts = Number(id.split('-')[1])
+  return Number.isFinite(ts) ? ts : 0
+}
+
 export const lancLabel = (l: { categoria: string; subCategoria?: string }) =>
   l.subCategoria?.trim() ? `${l.categoria} · ${l.subCategoria.trim()}` : l.categoria
 

@@ -3,7 +3,7 @@ import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
-  lancLabel,
+  lancLabel, ordemLancamento,
   type TipoLanc, type Lancamento, type DadosMes,
   parseValor,
   REALCE_ERRO,
@@ -585,11 +585,9 @@ export default function FcMobileView({
                 </div>
               )
             }
-            allItems.sort((a, b) => {
-              const ka = `${a.ac}-${String(a.mc+1).padStart(2,'0')}-${String(a.dc).padStart(2,'0')}`
-              const kb = `${b.ac}-${String(b.mc+1).padStart(2,'0')}-${String(b.dc).padStart(2,'0')}`
-              return kb.localeCompare(ka)
-            })
+            // Mesma ordem do desktop: como foi digitado, para conferir contra a
+            // fatura do banco na sequencia em que se lanca.
+            allItems.sort((a, b) => ordemLancamento(a.l.id) - ordemLancamento(b.l.id))
             return (
               <div style={{background:COR.branco,borderRadius:14,
                 border:`1.5px solid ${COR.borda}`,overflow:'hidden',
@@ -598,9 +596,6 @@ export default function FcMobileView({
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
                   const nomePrimario = hasDesc ? l.descricao : lancLabel(l)
-                  const mesCompraLabel = (mc !== purchaseMes || ac !== purchaseAno)
-                    ? ` de ${NOMES_MESES[mc].slice(0,3)}`
-                    : ''
                   return (
                     <div key={l.id}
                       onClick={() => { editarLancamento(dia, l); setMobileView('form') }}
@@ -608,6 +603,16 @@ export default function FcMobileView({
                         padding:'11px 14px',cursor:'pointer',
                         borderBottom: idx < allItems.length-1 ? `1px solid ${COR.borda}` : 'none',
                         background:COR.branco}}>
+                      {/* Data primeiro: e por ela que se confere contra a fatura do banco */}
+                      <div style={{minWidth:38,flexShrink:0,textAlign:'center' as const}}>
+                        <div style={{fontSize:13,fontWeight:700,lineHeight:1,color:COR.texto,
+                          fontVariantNumeric:'tabular-nums' as const}}>
+                          {String(dc).padStart(2,'0')}/{String(mc+1).padStart(2,'0')}
+                          </div>
+                          {ac !== purchaseAno && (
+                            <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,marginTop:1}}>{ac}</div>
+                          )}
+                      </div>
                       <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
                         display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
                         background:catVisual.cor}}>
@@ -621,7 +626,7 @@ export default function FcMobileView({
                         <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
                           display:'flex',alignItems:'center',gap:5}}>
                           <span>
-                            {hasDesc ? `${lancLabel(l)} · ` : ''}dia {dc}{mesCompraLabel}
+                            {hasDesc ? lancLabel(l) : ''}
                           </span>
                           {l.parcelas && l.parcelas > 1 && (
                             <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,

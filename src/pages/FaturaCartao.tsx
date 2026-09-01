@@ -63,7 +63,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const [editandoVencimento, setEditandoVencimento] = useState(false)
   const [editFechVal, setEditFechVal] = useState(1)
   const [editVencVal, setEditVencVal] = useState(1)
-  const [diasFechados, setDiasFechados] = useState<Set<string>>(new Set())
   const [fVariante, setFVariante] = useState('')
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
@@ -200,15 +199,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     return () => clearTimeout(t)
   }, [key, carregando]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function toggleDia(dateKey: string) {
-    setDiasFechados(prev => {
-      const next = new Set(prev)
-      next.has(dateKey) ? next.delete(dateKey) : next.add(dateKey)
-      return next
-    })
-  }
 
-  useEffect(() => { setDiasFechados(new Set()) }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     let pMes = novoMes - billingOffset, pAno = novoAno
@@ -611,11 +602,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           mesVenc={mesVenc}
           anoVenc={anoVenc}
           editandoId={editandoId}
-          diasFechados={diasFechados}
           categorias={categorias}
           editarLancamento={editarLancamento}
           excluir={excluir}
-          toggleDia={toggleDia}
           setDiaSel={setDiaSel}
         />
         <FcDesktopPanel
