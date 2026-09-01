@@ -181,7 +181,18 @@ Chavear por `nome` puro soma as duas. Usar `catKey(nome, descricao)` de
 Ao casar uma categoria com a linha do plano: tentar o par exato primeiro; só cair
 para o nome puro quando existir **uma única** linha com aquele nome (plano antigo,
 de antes das variantes). Com duas, não há fallback — escolher uma somaria no
-lugar errado.
+lugar errado. Use `acharPlanCat` de `evolucaoCalcs.ts`, não escreva de novo.
+
+**Casar sempre contra o plano RESOLVIDO, nunca contra o cru.** Plano antigo guarda
+a linha só com o nome; é o `resolverPlanCats` que atribui a variante por posição —
+por isso a tela mostra `Financiamento · Casa` mesmo com `descricao` nula no banco.
+Quem procura no plano cru encontra duas linhas chamadas "Financiamento", se recusa
+a escolher (corretamente) e o valor some.
+
+O sintoma é traiçoeiro: **o previsto aparece e o realizado não**, porque os dois
+vêm de caminhos diferentes. E só quebra a variante cuja linha está nua — a irmã,
+que tem `descricao` gravada, continua funcionando, o que faz o erro parecer
+aleatório. Aconteceu em 31/08/2026 no Radar.
 
 ---
 
