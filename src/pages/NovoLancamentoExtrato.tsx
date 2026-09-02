@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
+import { valorFixaNoMes } from '../utils/valorFixa'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
@@ -69,13 +70,11 @@ export default function NovoLancamentoExtrato() {
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
-    const plano = planos[ano] as typeof planos[number] | undefined
-    const lista = tipoLanc === 'entrada' ? plano?.entradas : plano?.saidas
-    if (!lista) return 0
-    const found = catId
-      ? (lista.find(c => c.id === catId) ?? lista.find(c => c.nome === catNome))
-      : lista.find(c => c.nome === catNome)
-    return found?.v[mes] ?? 0
+    // Mesma valoracao dos meses passados no saldoBase. Ver utils/valorFixa.
+    const cat = categorias.find(c => c.id === catId)
+      ?? categorias.find(c => c.nome === catNome && c.tipo === tipoLanc)
+    if (!cat) return 0
+    return valorFixaNoMes(cat, planos[ano], mes, categorias)
   }
 
   function valorPrevistoPorNome(catNome: string, tipoLanc: TipoLanc): number {
@@ -512,15 +511,10 @@ export default function NovoLancamentoExtrato() {
         } else {
           const cat = categorias.find(c => c.id === catId)
           if (!cat) continue
-          const override = fixasOvr[catId]
-          let valor = 0
-          if (override !== undefined) {
-            valor = override
-          } else if (planoAno) {
-            const lista = cat.tipo === 'entrada' ? planoAno.entradas : planoAno.saidas
-            const found = lista.find(c => c.id === catId || c.nome === cat.nome)
-            valor = found?.v[km] ?? 0
-          }
+          // Valoracao compartilhada com o mes corrente. Ver utils/valorFixa: as
+          // duas versoes casavam a linha do plano de formas diferentes, e o saldo
+          // final de um mes nao batia com o saldo inicial do seguinte.
+          const valor = valorFixaNoMes(cat, planoAno, km, categorias, fixasOvr[catId])
           if (valor <= 0) continue
           acc += cat.tipo === 'entrada' ? valor : -valor
         }
