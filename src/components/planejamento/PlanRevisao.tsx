@@ -3,7 +3,6 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { supabase } from '../../lib/supabase'
 import { fmt, COR, MESES, MESES_FULL, type AnoData } from './types'
 import PageHeader from '../PageHeader'
-import AcResumoBoxes from '../acompanhamento/AcResumoBoxes'
 import { resolverRealKey } from '../acompanhamento/evolucaoCalcs'
 import { ehZero } from '../../utils/moeda'
 import SeletorMesAno from '../SeletorMesAno'
@@ -525,8 +524,6 @@ export default function PlanRevisao({
           {/* ── ETAPA 1: Visão Geral ──────────────────────────────────────── */}
           {etapa === 1 && (
             <div>
-              <AcResumoBoxes isMobile={isMobile} totalPrevE={totalRecPrev} totalPrevS={totalDesPrev} totalRealE={totalRecReal} totalRealS={totalDesReal} />
-
               {renderGroup('e', allEntradas, 'Receitas', '💰', totalRecPrev, totalRecReal, expandOkE, setExpandOkE)}
               {renderGroup('s', allSaidas,   'Despesas', '💸', totalDesPrev, totalDesReal, expandOkS, setExpandOkS)}
 
