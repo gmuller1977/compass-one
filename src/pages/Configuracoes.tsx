@@ -328,7 +328,16 @@ export default function Configuracoes() {
   function editarCategoria(c: Categoria) {
     setMobileView('form')
     const { id, ...rest } = c
-    setFormCat(rest); setEditCatId(id)
+    // Categoria antiga, cadastrada antes de o campo existir, nao tem conta de
+    // debito. Sugere a favorita para o campo nunca abrir vazio — quem paga de
+    // outra conta troca ali, e a troca vale a partir do proximo salvamento.
+    setFormCat({
+      ...rest,
+      contaDebitoId: rest.tipoMovimento === 'banco'
+        ? (rest.contaDebitoId ?? contaFavoritaId)
+        : rest.contaDebitoId,
+    })
+    setEditCatId(id)
     setErroCat('')
   }
   function salvarCategoria() {
