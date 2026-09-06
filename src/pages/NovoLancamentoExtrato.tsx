@@ -336,8 +336,18 @@ export default function NovoLancamentoExtrato() {
   useEffect(() => {
     if (eMesAtual)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'start'}), 150)
-    setDiasAbertos(new Set(eMesAtual ? [diaHoje] : []))
-  }, [contaId, mes, ano, tabPrincipal])
+
+    // Abre tambem os dias com fixa ainda nao confirmada — o que a tela chama
+    // de "previsto". Sao justamente os que exigem acao, e antes ficavam
+    // fechados no meio do mes, sem nada indicando onde procurar.
+    const dm = dados[key]
+    const comPrevisto = fixas
+      .filter(f => dm?.fixasConsolidadas?.[f.id] !== true)
+      .map(f => diaEfetivoFixa(f, dm?.fixasMovidas, ehAutomatico(f), mes, ano, totalDias))
+      .filter(d => d >= 1 && d <= totalDias)
+
+    setDiasAbertos(new Set([...(eMesAtual ? [diaHoje] : []), ...comPrevisto]))
+  }, [contaId, mes, ano, tabPrincipal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [tabPrincipal])
 
