@@ -1,6 +1,7 @@
 import type { Conta, Categoria, DadosMes, PlanoAnoData } from '../context/AppContext'
 import { parseBRL } from './moeda'
 import { valorFixaNoMes } from './valorFixa'
+import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 
 type Deps = {
   extratoData: Record<string, DadosMes>
@@ -151,4 +152,69 @@ export function saldoBancosEDinheiro(ano: number, mes: number, deps: Deps): numb
     .filter(c => c.tipo !== 'cartao')
     .reduce((s, c) => s + saldoFinalConta(c, ano, mes, deps), 0)
   return bancos + saldoFinalDinheiro(ano, mes, deps)
+}
+
+
+/**
+ * Saldo do fim de um mês, dizendo se é realizado ou projetado.
+ *
+ * Mês passado devolve o realizado. Mês futuro devolve a projeção: o realizado
+ * mais as fixas planejadas ainda não confirmadas, do mês corrente até o mês
+ * pedido. A projeção encadeia, então novembro já carrega o previsto de
+ * setembro e outubro.
+ *
+ * O mês CORRENTE depende da pergunta, e por isso existe `comoAbertura`:
+ *
+ *   "quanto tenho hoje"        -> realizado, bate com o extrato do banco
+ *   "com quanto abre outubro"  -> previsto, inclui o que ainda vai cair
+ *
+ * São o mesmo mês e respostas diferentes. Sem essa distinção, ou o saldo atual
+ * mente, ou o mês seguinte abre ignorando as contas que faltam pagar.
+ *
+ * A fixa planejada e contada UMA VEZ POR MES, via resolverFixaDoMes, nao uma
+ * vez por conta. Fixa sem contaDebitoId aparece em todas as contas ate ser
+ * confirmada em alguma — projetar por conta e somar contaria a mesma varias
+ * vezes.
+ */
+export function saldoTotalNoFim(
+  ano: number,
+  mes: number,
+  deps: Deps,
+  opts: { comoAbertura?: boolean; hoje?: Date } = {},
+): { valor: number; previsto: boolean } {
+  const hoje = opts.hoje ?? new Date()
+  const realizado = saldoBancosEDinheiro(ano, mes, deps)
+  const alvo = ym(ano, mes)
+  const corrente = ym(hoje.getFullYear(), hoje.getMonth())
+  const projetar = opts.comoAbertura ? alvo >= corrente : alvo > corrente
+  if (!projetar) return { valor: realizado, previsto: false }
+
+  let projecao = 0
+  let a = hoje.getFullYear()
+  let m = hoje.getMonth()
+  while (ym(a, m) <= alvo) {
+    projecao += fixasPlanejadasEmAberto(a, m, deps)
+    m++
+    if (m > 11) { m = 0; a++ }
+  }
+  return { valor: realizado + projecao, previsto: true }
+}
+
+/** Fixas do mês ainda não confirmadas, com sinal. Uma vez cada. */
+function fixasPlanejadasEmAberto(ano: number, mes: number, deps: Deps): number {
+  const { extratoData, contas, categorias, planos } = deps
+  const sufixo = `-${ano}-${String(mes + 1).padStart(2, '0')}`
+  const dms = dadosBancariosDoMes(
+    extratoData,
+    sufixo,
+    k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
+  )
+  return categorias
+    .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao')
+    .reduce((acc, cat) => {
+      if (resolverFixaDoMes(cat.id, dms).consolidada) return acc
+      const valor = valorFixaNoMes(cat, planos[ano], mes, categorias)
+      if (valor <= 0) return acc
+      return acc + (cat.tipo === 'entrada' ? valor : -valor)
+    }, 0)
 }
