@@ -131,14 +131,17 @@ export default function NovoLancamentoExtrato() {
     contas.filter(c => c.tipo === 'cartao' && c.diaVencimento).forEach(c => {
       const isAutomatico = c.formaPagamentoFatura === 'automatico'
         || (!c.formaPagamentoFatura && !!c.contaPagamentoId)
-      if (isAutomatico) {
-        if (c.contaPagamentoId !== contaIdEfetivo) return
-      } else {
-        const jaPaga = contasExtrato
-          .filter(ct => ct.id !== contaIdEfetivo)
-          .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[`cartao-${c.id}`] === true)
-        if (jaPaga) return
-      }
+      // A fatura tem dono, como a categoria tem conta de debito: aparece so na
+      // conta de pagamento do cartao — debito automatico, boleto ou PIX, tanto
+      // faz. Cartao sem conta definida cai na preferida, para nunca aparecer em
+      // todas. Confirmada em outra conta, some daqui.
+      const fixaId = `cartao-${c.id}`
+      const confirmadaFora = contasExtrato
+        .filter(ct => ct.id !== contaIdEfetivo)
+        .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[fixaId] === true)
+      if (confirmadaFora) return
+      const confirmadaAqui = dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[fixaId] === true
+      if (!confirmadaAqui && (c.contaPagamentoId ?? contaPadraoFixas) !== contaIdEfetivo) return
       const bOffset = (c.diaVencimento ?? 1) < (c.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - bOffset, pAno = ano
       if (pMes < 0) { pMes += 12; pAno-- }
@@ -626,14 +629,17 @@ export default function NovoLancamentoExtrato() {
       .flatMap(c => {
         const isAuto = c.formaPagamentoFatura === 'automatico'
           || (!c.formaPagamentoFatura && !!c.contaPagamentoId)
-        if (isAuto) {
-          if (c.contaPagamentoId !== contaIdEfetivo) return []
-        } else {
-          const jaPaga = contasExtrato
-            .filter(ct => ct.id !== contaIdEfetivo)
-            .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[`cartao-${c.id}`] === true)
-          if (jaPaga) return []
-        }
+        // A fatura tem dono, como a categoria tem conta de debito: aparece so na
+        // conta de pagamento do cartao — debito automatico, boleto ou PIX, tanto
+        // faz. Cartao sem conta definida cai na preferida, para nunca aparecer em
+        // todas. Confirmada em outra conta, some daqui.
+        const fixaId = `cartao-${c.id}`
+        const confirmadaFora = contasExtrato
+          .filter(ct => ct.id !== contaIdEfetivo)
+          .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[fixaId] === true)
+        if (confirmadaFora) return []
+        const confirmadaAqui = dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[fixaId] === true
+        if (!confirmadaAqui && (c.contaPagamentoId ?? contaPadraoFixas) !== contaIdEfetivo) return []
         const bOff = (c.diaVencimento ?? 1) < (c.diaFechamento ?? 1) ? 1 : 0
         let pM = m - bOff, pA = a
         if (pM < 0) { pM += 12; pA-- }
@@ -684,9 +690,21 @@ export default function NovoLancamentoExtrato() {
     // crescer. Fechada, vale o real.
     //
     // A estimativa e do MES, nao de um cartao: o plano nao diz em qual cartao
-    // o gasto vai cair. Com mais de um cartao, o complemento entra no de
-    // vencimento mais cedo.
-    const cartaoRef = contas.find(c => c.tipo === 'cartao' && c.diaVencimento)
+    // o gasto vai cair. Ela so cabe numa conta que paga alguma fatura, e por
+    // isso sai de fatMes — que ja esta filtrado por conta de pagamento.
+    //
+    // Antes vinha de contas.find(...), o PRIMEIRO cartao da lista, sem filtro
+    // de conta nenhum: o complemento entrava em todas as contas de banco. Numa
+    // conta que nao paga cartao, fatMes e vazio, entao o "real" descontado era
+    // zero e ela levava o gasto planejado do mes inteiro no cartao.
+    //
+    // Com mais de um cartao aqui, entra no de vencimento mais cedo.
+    const cartaoRef = (() => {
+      const aqui = new Set(fatMes.map(f => f.id.slice('cartao-'.length)))
+      return contas
+        .filter(c => c.tipo === 'cartao' && c.diaVencimento && aqui.has(c.id))
+        .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))[0]
+    })()
     const complementoFatura: CatFixa[] = (() => {
       if (isDinheiro || !cartaoRef) return []
       const bOff = (cartaoRef.diaVencimento ?? 1) < (cartaoRef.diaFechamento ?? 1) ? 1 : 0
