@@ -557,21 +557,79 @@ export default function NovoLancamentoExtrato() {
     const lancs  = (dmMes ?? { lancamentos:{} }).lancamentos
     const ovr    = dmMes?.fixasMovidas
     const totalD = new Date(a, m + 1, 0).getDate()
-    // Fixas com o valor planejado DAQUELE mes, nao do mes exibido.
-    const fcMes = fixas
-      .filter(f => !ehCartaoCategoria(categorias, f.categoria))
-      .map(f => {
-        const cat = categorias.find(c => c.id === f.id)
-        return cat ? { ...f, valor: valorFixaNoMes(cat, planos[a], m, categorias) } : f
+    // A lista tem de ser montada PARA (a, m). Usar a lista `fixas` do escopo
+    // nao serve: ela ja foi filtrada para o mes exibido — a regra da fixa
+    // flutuante consulta as consolidacoes daquele mes. Com outubro na tela, a
+    // cascata de setembro rodava com a lista de outubro.
+    //
+    // O filtro abaixo e o mesmo do fixasCategoria, so que parametrizado.
+    const fcMes: CatFixa[] = categorias
+      .filter(c => {
+        if (!c.fixa || !c.ativa) return false
+        if (isDinheiro) return c.tipoMovimento === 'dinheiro'
+        if (c.tipoMovimento === 'cartao') return false
+        if (c.tipoMovimento === 'dinheiro') return false
+        if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
+        if (!c.contaDebitoId) {
+          const jaPaga = contasExtrato
+            .filter(ct => ct.id !== contaIdEfetivo)
+            .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[c.id] === true)
+          if (jaPaga) return false
+        }
+        return true
+      })
+      .filter(c => !ehCartaoCategoria(categorias, c.nome))
+      .map(c => ({
+        id: c.id, nome: c.nome, categoria: c.nome,
+        subtitulo: c.grupo, descricao: c.descricao,
+        valor: valorFixaNoMes(c, planos[a], m, categorias),
+        tipo: c.tipo as TipoLanc,
+        formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
+        diaVencimento: c.diaVencimento ?? 1,
+      }))
+
+    // A fatura do cartao tambem entra na cascata: o nome do cartao nao e uma
+    // categoria, entao ela passa pelo filtro de ehCartaoCategoria. Montada aqui
+    // para (a, m) pelo mesmo motivo das demais.
+    const fatMes: CatFixa[] = isDinheiro ? [] : contas
+      .filter(c => c.tipo === 'cartao' && c.diaVencimento)
+      .flatMap(c => {
+        const isAuto = c.formaPagamentoFatura === 'automatico'
+          || (!c.formaPagamentoFatura && !!c.contaPagamentoId)
+        if (isAuto) {
+          if (c.contaPagamentoId !== contaIdEfetivo) return []
+        } else {
+          const jaPaga = contasExtrato
+            .filter(ct => ct.id !== contaIdEfetivo)
+            .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[`cartao-${c.id}`] === true)
+          if (jaPaga) return []
+        }
+        const bOff = (c.diaVencimento ?? 1) < (c.diaFechamento ?? 1) ? 1 : 0
+        let pM = m - bOff, pA = a
+        if (pM < 0) { pM += 12; pA-- }
+        const dmFat = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[mesKey(c.id, pA, pM)]
+        let total = 0
+        for (const itens of Object.values(dmFat?.lancamentos ?? {}))
+          for (const l of itens) total += l.tipo === 'entrada' ? l.valor : -l.valor
+        const fp = c.formaPagamentoFatura
+        const formaPagamento: FormaPag =
+          !fp || fp === 'automatico' || fp === 'boleto' ? 'debito' :
+          fp === 'pix' ? 'pix' : 'transferencia'
+        return [{
+          id: `cartao-${c.id}`, nome: c.nome, categoria: c.banco,
+          valor: total, tipo: 'saida' as TipoLanc, formaPagamento,
+          diaVencimento: c.diaVencimento!, ehFaturaCartao: isAuto,
+        }]
       })
     const mesPast   = a < anoHoje || (a === anoHoje && m < mesHoje)
     const ehCorrente = a === anoHoje && m === mesHoje
+    const todasFixas = [...fcMes, ...fatMes]
     let saldo = abertura
     const res: Record<number,number> = {}
     for (let d = 1; d <= totalD; d++) {
       const dPast = mesPast || (ehCorrente && d < diaHoje)
       const dHoje = ehCorrente && d === diaHoje
-      fcMes.filter(f => diaEfetivoFixa(f, ovr, ehAutomatico(f), m, a, totalD) === d)
+      todasFixas.filter(f => diaEfetivoFixa(f, ovr, ehAutomatico(f), m, a, totalD) === d)
         .forEach(f => {
           if (dPast || dHoje) {
             if (dmMes?.fixasConsolidadas?.[f.id] !== true) return
@@ -583,7 +641,7 @@ export default function NovoLancamentoExtrato() {
       res[d] = saldo
     }
     return { porDia: res, fechamento: saldo }
-  }, [dados, contaIdEfetivo, fixas, categorias, planos, anoHoje, mesHoje, diaHoje])
+  }, [dados, contaIdEfetivo, contasExtrato, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
 
   // O saldo inicial de um mes futuro e o FECHAMENTO do anterior, calculado pela
   // mesma cascata — nao por uma segunda conta que tenta chegar no mesmo lugar.
