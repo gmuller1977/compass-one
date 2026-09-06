@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -543,54 +543,62 @@ export default function NovoLancamentoExtrato() {
   // dela, fixa sem contaDebitoId aparece em todas ate ser confirmada.
   const mesFuturo = ano > anoHoje || (ano === anoHoje && mes > mesHoje)
 
+  // A MESMA cascata, agora parametrizada pelo mes. O corpo e o de sempre:
+  // dia passado (ou hoje) so conta fixa confirmada; dia futuro conta sempre.
+  // A unica coisa que mudou e receber (a, m) em vez de usar o mes exibido, para
+  // poder fechar tambem os meses anteriores e encadear a abertura.
+  const cascataDoMes = useCallback((a: number, m: number, abertura: number) => {
+    const dmMes  = dados[mesKey(contaIdEfetivo, a, m)]
+    const lancs  = (dmMes ?? { lancamentos:{} }).lancamentos
+    const ovr    = dmMes?.fixasMovidas
+    const totalD = new Date(a, m + 1, 0).getDate()
+    // Fixas com o valor planejado DAQUELE mes, nao do mes exibido.
+    const fcMes = fixas
+      .filter(f => !ehCartaoCategoria(categorias, f.categoria))
+      .map(f => {
+        const cat = categorias.find(c => c.id === f.id)
+        return cat ? { ...f, valor: valorFixaNoMes(cat, planos[a], m, categorias) } : f
+      })
+    const mesPast   = a < anoHoje || (a === anoHoje && m < mesHoje)
+    const ehCorrente = a === anoHoje && m === mesHoje
+    let saldo = abertura
+    const res: Record<number,number> = {}
+    for (let d = 1; d <= totalD; d++) {
+      const dPast = mesPast || (ehCorrente && d < diaHoje)
+      const dHoje = ehCorrente && d === diaHoje
+      fcMes.filter(f => diaEfetivoFixa(f, ovr, ehAutomatico(f), m, a, totalD) === d)
+        .forEach(f => {
+          if (dPast || dHoje) {
+            if (dmMes?.fixasConsolidadas?.[f.id] !== true) return
+          }
+          const v = (dPast || dHoje) ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
+          saldo += f.tipo === 'entrada' ? v : -v
+        })
+      ;(lancs[d] ?? []).forEach(l => { saldo += l.tipo === 'entrada' ? l.valor : -l.valor })
+      res[d] = saldo
+    }
+    return { porDia: res, fechamento: saldo }
+  }, [dados, contaIdEfetivo, fixas, categorias, planos, anoHoje, mesHoje, diaHoje])
+
+  // O saldo inicial de um mes futuro e o FECHAMENTO do anterior, calculado pela
+  // mesma cascata — nao por uma segunda conta que tenta chegar no mesmo lugar.
+  // E a regra que ja vale entre dias, aplicada entre meses: o fim do dia 01 e o
+  // inicio do dia 02.
   const saldoBaseExibido = useMemo(() => {
     if (!mesFuturo) return saldoBase
-    const emAberto = (a: number, m: number) => {
-      const dm = dados[mesKey(contaIdEfetivo, a, m)]
-      return categorias
-        .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
-          && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
-        .reduce((acc, cat) => {
-          if (dm?.fixasConsolidadas?.[cat.id] === true) return acc
-          const v = valorFixaNoMes(cat, planos[a], m, categorias)
-          if (v <= 0) return acc
-          return acc + (cat.tipo === 'entrada' ? v : -v)
-        }, 0)
-    }
     let acc = saldoBase
     let a = anoHoje, m = mesHoje
     while (a * 100 + m < ano * 100 + mes) {
-      acc += emAberto(a, m)
+      acc = cascataDoMes(a, m, acc).fechamento
       m++; if (m > 11) { m = 0; a++ }
     }
     return acc
-  }, [saldoBase, mesFuturo, dados, contaIdEfetivo, categorias, planos, ano, mes, anoHoje, mesHoje])
+  }, [saldoBase, mesFuturo, cascataDoMes, ano, mes, anoHoje, mesHoje])
 
-  const saldosDia = useMemo(() => {
-    const dadosMesAtual = dados[key]
-    const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
-    const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
-    const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
-    let saldo = saldoBaseExibido
-    const res: Record<number,number> = {}
-    for (let d=1; d<=totalDias; d++) {
-      const dPast = mesPast || (eMesAtual && d < diaHoje)
-      const dHoje = eMesAtual && d === diaHoje
-      fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
-        .forEach(f => {
-          if (dPast || dHoje) {
-            const confirmada = dadosMesAtual?.fixasConsolidadas?.[f.id] === true
-            if (!confirmada) return
-          }
-          const v = (dPast || dHoje) ? (dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
-          saldo += f.tipo==='entrada' ? v : -v
-        })
-      ;(lancs[d]??[]).forEach(l=>{ saldo += l.tipo==='entrada'?l.valor:-l.valor })
-      res[d] = saldo
-    }
-    return res
-  }, [saldoBaseExibido, dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
+  const saldosDia = useMemo(
+    () => cascataDoMes(ano, mes, saldoBaseExibido).porDia,
+    [cascataDoMes, ano, mes, saldoBaseExibido],
+  )
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
     const dadosMesAtual = dados[key]
