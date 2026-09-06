@@ -484,11 +484,31 @@ export default function NovoLancamentoExtrato() {
     }))
   }
 
+  // Fixa sem conta de debito cadastrada pode ter sido paga de qualquer conta.
+  // Em vez de adivinhar, pergunta — com a preferida ja selecionada, que e o
+  // caso comum. A escolha vale para aquele mes, que e como o
+  // fixasConsolidadas ja funciona; para fixar de vez, o caminho e cadastrar a
+  // conta de debito na categoria.
+  const [escolherContaFixa, setEscolherContaFixa] = useState<string | null>(null)
+
   function consolidarFixa(fixaId: string) {
+    const cat = categorias.find(c => c.id === fixaId)
+    const precisaEscolher = !fixaId.startsWith('cartao-')
+      && !cat?.contaDebitoId
+      && contasExtrato.length > 1
+    if (precisaEscolher) { setEscolherContaFixa(fixaId); return }
     updateMes(prev => ({
       ...prev,
       fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: true },
     }))
+  }
+
+  function confirmarFixaEm(fixaId: string, contaAlvo: string) {
+    updateMesPorKey(mesKey(contaAlvo, ano, mes), prev => ({
+      ...prev,
+      fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: true },
+    }))
+    setEscolherContaFixa(null)
   }
 
   // Acumulado realizado dos meses ANTERIORES a (aLim, mLim). O corpo e o de
@@ -1285,6 +1305,50 @@ export default function NovoLancamentoExtrato() {
       )}
 
       <BottomNav />
+
+      {escolherContaFixa && (() => {
+        const cat = categorias.find(c => c.id === escolherContaFixa)
+        const nome = cat ? (cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome) : ''
+        return (
+          <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(15,23,42,.45)',
+            display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+            onClick={() => setEscolherContaFixa(null)}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background:'#fff', borderRadius:14, padding:20, minWidth:300, maxWidth:380,
+                boxShadow:'0 8px 32px rgba(0,0,0,.22)' }}>
+              <div style={{ fontSize:15, fontWeight:700, color:COR.texto, marginBottom:4 }}>
+                Pagar de qual conta?
+              </div>
+              <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:14 }}>{nome}</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                {contasExtrato.map(c => (
+                  <button key={c.id} onClick={() => confirmarFixaEm(escolherContaFixa, c.id)}
+                    style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+                      borderRadius:10, cursor:'pointer', fontFamily:'inherit', textAlign:'left' as const,
+                      border: c.preferida ? `1.5px solid ${COR.azul}` : `1px solid ${COR.borda}`,
+                      background: c.preferida ? '#eff6ff' : '#fff' }}>
+                    <span style={{ fontSize:18 }}>{c.icone || '🏦'}</span>
+                    <span style={{ flex:1 }}>
+                      <span style={{ display:'block', fontSize:13, fontWeight:600, color:COR.texto }}>
+                        {c.apelido ?? c.banco ?? c.nome}
+                      </span>
+                      {c.preferida && (
+                        <span style={{ display:'block', fontSize:10, color:COR.azul, fontWeight:600 }}>favorita</span>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setEscolherContaFixa(null)}
+                style={{ marginTop:12, width:'100%', padding:'8px 12px', borderRadius:10,
+                  border:`1px solid ${COR.borda}`, background:'#fff', color:COR.textoSuave,
+                  fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       <NleModal
         modalSaldo={modalSaldo}
