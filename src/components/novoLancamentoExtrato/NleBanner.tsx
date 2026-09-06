@@ -8,6 +8,8 @@ type Props = {
   isMobile: boolean
   tabPrincipal: 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
   saldoBase: number
+  /** O saldo inicial veio de projecao, nao do realizado. */
+  saldoBasePrevisto?: boolean
   totalEntradas: number
   totalSaidas: number
   saldoMes: number
@@ -27,7 +29,7 @@ type Props = {
 
 export default function NleBanner({
   isMobile, tabPrincipal,
-  saldoBase, totalEntradas, totalSaidas, saldoMes,
+  saldoBase, saldoBasePrevisto, totalEntradas, totalSaidas, saldoMes,
   mes, ano,
   saldoBancoSalvo,
   setModalSaldo, setModalSaldoValor, saldoSugerido,
@@ -60,7 +62,7 @@ export default function NleBanner({
       {/* Left: 4 stat boxes + bank selectors */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <KpiCard icon="💰" label="Saldo inicial" value={fmt(saldoBase)}
+          <KpiCard icon="💰" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
             sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
           <KpiCard icon="↑" label="Entradas" value={fmt(totalEntradas)}
             valueColor="#4ade80" sublabel="lançadas" style={{ flex: 1 }} />

@@ -533,13 +533,46 @@ export default function NovoLancamentoExtrato() {
     return acc
   }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, faturaData, saldoInicialDinheiro])
 
+  // Mes futuro abre com o PREVISTO do mes anterior, nao com o realizado: as
+  // fixas que ainda vao cair entre hoje e la ja contam. Encadeia, entao
+  // novembro carrega o previsto de setembro e outubro.
+  //
+  // Aqui a projecao e POR CONTA, ao contrario do Radar, que projeta por mes.
+  // Sao perguntas diferentes: esta tela mostra uma conta de cada vez, e usa a
+  // mesma atribuicao do resto do extrato — fixa com contaDebitoId vai para a
+  // dela, fixa sem contaDebitoId aparece em todas ate ser confirmada.
+  const mesFuturo = ano > anoHoje || (ano === anoHoje && mes > mesHoje)
+
+  const saldoBaseExibido = useMemo(() => {
+    if (!mesFuturo) return saldoBase
+    const emAberto = (a: number, m: number) => {
+      const dm = dados[mesKey(contaIdEfetivo, a, m)]
+      return categorias
+        .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
+          && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
+        .reduce((acc, cat) => {
+          if (dm?.fixasConsolidadas?.[cat.id] === true) return acc
+          const v = valorFixaNoMes(cat, planos[a], m, categorias)
+          if (v <= 0) return acc
+          return acc + (cat.tipo === 'entrada' ? v : -v)
+        }, 0)
+    }
+    let acc = saldoBase
+    let a = anoHoje, m = mesHoje
+    while (a * 100 + m < ano * 100 + mes) {
+      acc += emAberto(a, m)
+      m++; if (m > 11) { m = 0; a++ }
+    }
+    return acc
+  }, [saldoBase, mesFuturo, dados, contaIdEfetivo, categorias, planos, ano, mes, anoHoje, mesHoje])
+
   const saldosDia = useMemo(() => {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
     const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
     const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
-    let saldo = saldoBase
+    let saldo = saldoBaseExibido
     const res: Record<number,number> = {}
     for (let d=1; d<=totalDias; d++) {
       const dPast = mesPast || (eMesAtual && d < diaHoje)
@@ -557,7 +590,7 @@ export default function NovoLancamentoExtrato() {
       res[d] = saldo
     }
     return res
-  }, [saldoBase, dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
+  }, [saldoBaseExibido, dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
     const dadosMesAtual = dados[key]
@@ -574,7 +607,7 @@ export default function NovoLancamentoExtrato() {
     return { totalEntradas:te, totalSaidas:ts }
   }, [dados, key, contaId, totalDias, mes, ano, categorias])
 
-  const saldoMes   = saldoBase + totalEntradas - totalSaidas
+  const saldoMes   = saldoBaseExibido + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
 
@@ -980,7 +1013,8 @@ export default function NovoLancamentoExtrato() {
           <NleBanner
             isMobile={isMobile}
             tabPrincipal={tabPrincipal}
-            saldoBase={saldoBase}
+            saldoBase={saldoBaseExibido}
+            saldoBasePrevisto={mesFuturo}
             totalEntradas={totalEntradas}
             totalSaidas={totalSaidas}
             saldoMes={saldoMes}
@@ -1011,7 +1045,7 @@ export default function NovoLancamentoExtrato() {
               categorias={categorias}
               mesDados={mesDados}
               saldosDia={saldosDia}
-              saldoBase={saldoBase}
+              saldoBase={saldoBaseExibido}
               saldoMes={saldoMes}
               totalEntradas={totalEntradas}
               totalSaidas={totalSaidas}
