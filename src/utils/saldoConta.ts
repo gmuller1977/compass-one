@@ -159,8 +159,8 @@ export function saldoBancosEDinheiro(ano: number, mes: number, deps: Deps): numb
  * Saldo do fim de um mês, dizendo se é realizado ou projetado.
  *
  * Mês passado devolve o realizado. Mês futuro devolve a projeção: o realizado
- * mais as fixas planejadas ainda não confirmadas, do mês corrente até o mês
- * pedido. A projeção encadeia, então novembro já carrega o previsto de
+ * mais tudo que ainda vai acontecer, do mês corrente até o mês pedido — ver
+ * projecaoDoMes. A projeção encadeia, então novembro já carrega o previsto de
  * setembro e outubro.
  *
  * O mês CORRENTE depende da pergunta, e por isso existe `comoAbertura`:
@@ -171,10 +171,9 @@ export function saldoBancosEDinheiro(ano: number, mes: number, deps: Deps): numb
  * São o mesmo mês e respostas diferentes. Sem essa distinção, ou o saldo atual
  * mente, ou o mês seguinte abre ignorando as contas que faltam pagar.
  *
- * A fixa planejada e contada UMA VEZ POR MES, via resolverFixaDoMes, nao uma
- * vez por conta. Fixa sem contaDebitoId aparece em todas as contas ate ser
- * confirmada em alguma — projetar por conta e somar contaria a mesma varias
- * vezes.
+ * A projeção é do MÊS, não da conta: contada uma vez, via projecaoDoMes.
+ * Fixa sem contaDebitoId aparece em todas as contas até ser confirmada em
+ * alguma — projetar por conta e somar contaria a mesma várias vezes.
  */
 export function saldoTotalNoFim(
   ano: number,
@@ -193,28 +192,89 @@ export function saldoTotalNoFim(
   let a = hoje.getFullYear()
   let m = hoje.getMonth()
   while (ym(a, m) <= alvo) {
-    projecao += fixasPlanejadasEmAberto(a, m, deps)
+    projecao += projecaoDoMes(a, m, deps, hoje)
     m++
     if (m > 11) { m = 0; a++ }
   }
   return { valor: realizado + projecao, previsto: true }
 }
 
-/** Fixas do mês ainda não confirmadas, com sinal. Uma vez cada. */
-function fixasPlanejadasEmAberto(ano: number, mes: number, deps: Deps): number {
-  const { extratoData, contas, categorias, planos } = deps
+/**
+ * O que ainda vai acontecer num mês, em valor líquido. Uma vez cada.
+ *
+ * São as mesmas três coisas que a cascata de Lançamentos projeta:
+ *
+ *   - as fixas de banco ainda não confirmadas
+ *   - a fatura de cada cartão ainda não paga
+ *   - os gastos variáveis planejados, só em mês INTEIRAMENTE futuro
+ *
+ * As duas últimas faltavam, e era por isso que o Radar discordava de
+ * Lançamentos: outubro fechava com o realizado mais as fixas em aberto, sem a
+ * fatura do cartão nem o planejado das variáveis, e por isso alto demais.
+ *
+ * Variável só em mês inteiramente futuro pelo mesmo motivo de lá: no mês
+ * corrente os lançamentos reais já contam, e somar o planejado por cima
+ * cobraria o mesmo gasto duas vezes.
+ *
+ * Nada aqui olha conta. `contaDebitoId` e `contaPagamentoId` dizem em qual
+ * conta cada coisa APARECE, não se ela acontece — e o Radar quer o total.
+ * Percorrer contas somaria a mesma fixa uma vez por conta.
+ */
+function projecaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date): number {
+  const { extratoData, contas, categorias, planos, faturaData } = deps
   const sufixo = `-${ano}-${String(mes + 1).padStart(2, '0')}`
   const dms = dadosBancariosDoMes(
     extratoData,
     sufixo,
     k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
   )
-  return categorias
+
+  let acc = categorias
     .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao')
-    .reduce((acc, cat) => {
-      if (resolverFixaDoMes(cat.id, dms).consolidada) return acc
+    .reduce((s, cat) => {
+      if (resolverFixaDoMes(cat.id, dms).consolidada) return s
       const valor = valorFixaNoMes(cat, planos[ano], mes, categorias)
-      if (valor <= 0) return acc
-      return acc + (cat.tipo === 'entrada' ? valor : -valor)
+      if (valor <= 0) return s
+      return s + (cat.tipo === 'entrada' ? valor : -valor)
     }, 0)
+
+  // Faturas ainda não pagas. A paga já entrou pelo saldo da própria conta.
+  const abertas = contas
+    .filter(c => c.tipo === 'cartao' && c.diaVencimento)
+    .filter(c => !resolverFixaDoMes(`cartao-${c.id}`, dms).consolidada)
+    .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))
+
+  const real = abertas.reduce(
+    (s, c) => s + totalFatura(c.id, ano, mes, contas, faturaData), 0)
+  acc -= real
+
+  // Fatura que ainda não fechou vale o MAIOR entre o lançado e o planejado do
+  // mês da compra — só o lançado subestima uma fatura que ainda vai crescer.
+  // O complemento é do MÊS: o plano não diz em qual cartão o gasto cai.
+  const ref = abertas[0]
+  if (ref) {
+    const off = (ref.diaVencimento ?? 1) < (ref.diaFechamento ?? 1) ? 1 : 0
+    let pMes = mes - off, pAno = ano
+    if (pMes < 0) { pMes += 12; pAno-- }
+    if (new Date(pAno, pMes, ref.diaFechamento ?? 1) > hoje)
+      acc -= Math.max(0, planejadoVariavel(pAno, pMes, deps, true) - real)
+  }
+
+  if (ym(ano, mes) > ym(hoje.getFullYear(), hoje.getMonth()))
+    acc -= planejadoVariavel(ano, mes, deps, false)
+
+  return acc
+}
+
+/**
+ * Soma planejada das categorias variáveis de saída de um mês, no cartão ou
+ * fora dele. Entrada variável fica de fora — Lançamentos também não projeta,
+ * e incluir aqui faria as duas telas discordarem de novo.
+ */
+function planejadoVariavel(ano: number, mes: number, deps: Deps, doCartao: boolean): number {
+  const { categorias, planos } = deps
+  return categorias
+    .filter(c => c.tipo === 'saida' && c.ativa && !c.fixa
+      && (c.tipoMovimento === 'cartao') === doCartao)
+    .reduce((s, c) => s + valorFixaNoMes(c, planos[ano], mes, categorias), 0)
 }
