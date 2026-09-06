@@ -88,6 +88,10 @@ export default function NovoLancamentoExtrato() {
       const pDiff = (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0)
       return pDiff !== 0 ? pDiff : a.nome.localeCompare(b.nome, 'pt-BR')
     })
+  // Fixa sem conta de debito cadastrada precisa de um dono, senao aparece em
+  // todas as contas — e num mes futuro, onde nada esta confirmado, cada conta
+  // projeta todas elas. Era o que deixava a Caixa negativa.
+  const contaPadraoFixas = (contasExtrato.find(c => c.preferida) ?? contasExtrato[0])?.id
   const isDinheiro = tabPrincipal === 'dinheiro'
 
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
@@ -100,10 +104,14 @@ export default function NovoLancamentoExtrato() {
       if (c.tipoMovimento === 'dinheiro') return false
       if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
       if (!c.contaDebitoId) {
-        const jaPaga = contasExtrato
+        // Confirmada em outra conta: aparece so la.
+        const confirmadaFora = contasExtrato
           .filter(ct => ct.id !== contaIdEfetivo)
           .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[c.id] === true)
-        if (jaPaga) return false
+        if (confirmadaFora) return false
+        // Ainda em aberto: fica so na conta preferida, para nao aparecer em todas.
+        const confirmadaAqui = dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[c.id] === true
+        if (!confirmadaAqui && contaIdEfetivo !== contaPadraoFixas) return false
       }
       return true
     })
@@ -571,10 +579,14 @@ export default function NovoLancamentoExtrato() {
         if (c.tipoMovimento === 'dinheiro') return false
         if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
         if (!c.contaDebitoId) {
-          const jaPaga = contasExtrato
+          // Confirmada em outra conta: aparece so la.
+          const confirmadaFora = contasExtrato
             .filter(ct => ct.id !== contaIdEfetivo)
             .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[c.id] === true)
-          if (jaPaga) return false
+          if (confirmadaFora) return false
+          // Ainda em aberto: fica so na conta preferida, para nao aparecer em todas.
+          const confirmadaAqui = dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true
+          if (!confirmadaAqui && contaIdEfetivo !== contaPadraoFixas) return false
         }
         return true
       })
@@ -699,7 +711,7 @@ export default function NovoLancamentoExtrato() {
       res[d] = saldo
     }
     return { porDia: res, fechamento: saldo, entradas, saidas }
-  }, [dados, contaIdEfetivo, contasExtrato, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
+  }, [dados, contaIdEfetivo, contasExtrato, contaPadraoFixas, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
 
   // O saldo inicial de um mes futuro e o FECHAMENTO do anterior, calculado pela
   // mesma cascata — nao por uma segunda conta que tenta chegar no mesmo lugar.
