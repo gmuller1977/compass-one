@@ -483,7 +483,10 @@ export default function NovoLancamentoExtrato() {
     }))
   }
 
-  const saldoBase = useMemo(() => {
+  // Acumulado realizado dos meses ANTERIORES a (aLim, mLim). O corpo e o de
+  // sempre; so o limite virou parametro, para a cadeia poder partir do mes
+  // corrente em vez do mes exibido.
+  const acumuladoAte = useCallback((aLim: number, mLim: number) => {
     let acc = SALDO_INICIAL
     for (const [k, dadosK] of Object.entries(dados)) {
       if (!k.startsWith(`${contaIdEfetivo}-`)) continue
@@ -491,7 +494,7 @@ export default function NovoLancamentoExtrato() {
       const ky = parseInt(sufixo.slice(0, 4))
       const km = parseInt(sufixo.slice(5, 7)) - 1
       if (isNaN(ky) || isNaN(km)) continue
-      if (ky > ano || (ky === ano && km >= mes)) continue
+      if (ky > aLim || (ky === aLim && km >= mLim)) continue
       for (const itens of Object.values(dadosK.lancamentos ?? {}))
         for (const item of itens)
           acc += item.tipo === 'entrada' ? item.valor : -item.valor
@@ -531,7 +534,9 @@ export default function NovoLancamentoExtrato() {
       }
     }
     return acc
-  }, [SALDO_INICIAL, dados, contaIdEfetivo, ano, mes, categorias, planos, faturaData, saldoInicialDinheiro])
+  }, [SALDO_INICIAL, dados, contaIdEfetivo, categorias, planos, faturaData, saldoInicialDinheiro])
+
+  const saldoBase = useMemo(() => acumuladoAte(ano, mes), [acumuladoAte, ano, mes])
 
   // Mes futuro abre com o PREVISTO do mes anterior, nao com o realizado: as
   // fixas que ainda vao cair entre hoje e la ja contam. Encadeia, entao
@@ -586,14 +591,16 @@ export default function NovoLancamentoExtrato() {
   // inicio do dia 02.
   const saldoBaseExibido = useMemo(() => {
     if (!mesFuturo) return saldoBase
-    let acc = saldoBase
+    // Parte do acumulado ate ANTES do mes corrente. Usar saldoBase aqui somaria
+    // o mes corrente duas vezes: ele ja esta no acumulado do mes exibido.
+    let acc = acumuladoAte(anoHoje, mesHoje)
     let a = anoHoje, m = mesHoje
     while (a * 100 + m < ano * 100 + mes) {
       acc = cascataDoMes(a, m, acc).fechamento
       m++; if (m > 11) { m = 0; a++ }
     }
     return acc
-  }, [saldoBase, mesFuturo, cascataDoMes, ano, mes, anoHoje, mesHoje])
+  }, [saldoBase, mesFuturo, acumuladoAte, cascataDoMes, ano, mes, anoHoje, mesHoje])
 
   const saldosDia = useMemo(
     () => cascataDoMes(ano, mes, saldoBaseExibido).porDia,
