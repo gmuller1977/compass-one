@@ -623,7 +623,61 @@ export default function NovoLancamentoExtrato() {
       })
     const mesPast   = a < anoHoje || (a === anoHoje && m < mesHoje)
     const ehCorrente = a === anoHoje && m === mesHoje
-    const todasFixas = [...fcMes, ...fatMes]
+    // ── Projecao do que ainda nao aconteceu ──────────────────────────────
+    // Ate aqui a cascata so projetava categorias FIXAS. O planejamento tem
+    // tambem as variaveis, e elas caem em meses diferentes conforme a forma de
+    // pagamento: PIX e debito no proprio mes, cartao no mes em que a fatura e
+    // paga. Sem isso o saldo de um mes futuro subia indefinidamente.
+    //
+    // So vale para mes INTEIRAMENTE futuro. No mes corrente os lancamentos
+    // reais ja estao na cascata, e somar o planejado por cima contaria duas
+    // vezes o mesmo gasto.
+    const mesFuturoInteiro = a > anoHoje || (a === anoHoje && m > mesHoje)
+
+    const planejadoDoMes = (aa: number, mm: number, doCartao: boolean) =>
+      categorias
+        .filter(c => c.tipo === 'saida' && c.ativa && !c.fixa
+          && (c.tipoMovimento === 'cartao') === doCartao
+          && (doCartao || !c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
+        .reduce((t, c) => t + valorFixaNoMes(c, planos[aa], mm, categorias), 0)
+
+    const variaveisBanco: CatFixa[] = !mesFuturoInteiro ? [] : (() => {
+      const v = planejadoDoMes(a, m, false)
+      if (v <= 0) return []
+      return [{
+        id: '__variaveis_banco__', nome: 'Gastos variáveis', categoria: 'Gastos variáveis',
+        valor: v, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+        diaVencimento: totalD,
+      }]
+    })()
+
+    // A fatura em aberto vale o MAIOR entre o ja lancado e o planejado do mes
+    // da compra — usar so o lancado subestimaria uma fatura que ainda vai
+    // crescer. Fechada, vale o real.
+    //
+    // A estimativa e do MES, nao de um cartao: o plano nao diz em qual cartao
+    // o gasto vai cair. Com mais de um cartao, o complemento entra no de
+    // vencimento mais cedo.
+    const cartaoRef = contas.find(c => c.tipo === 'cartao' && c.diaVencimento)
+    const complementoFatura: CatFixa[] = (() => {
+      if (isDinheiro || !cartaoRef) return []
+      const bOff = (cartaoRef.diaVencimento ?? 1) < (cartaoRef.diaFechamento ?? 1) ? 1 : 0
+      let pM = m - bOff, pA = a
+      if (pM < 0) { pM += 12; pA-- }
+      const fechada = new Date(pA, pM, cartaoRef.diaFechamento ?? 1) <= new Date()
+      if (fechada) return []
+      const real = fatMes.reduce((t, f) => t + f.valor, 0)
+      const planejado = planejadoDoMes(pA, pM, true)
+      const falta = planejado - real
+      if (falta <= 0) return []
+      return [{
+        id: '__fatura_estimada__', nome: 'Fatura estimada', categoria: 'Fatura estimada',
+        valor: falta, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+        diaVencimento: cartaoRef.diaVencimento!,
+      }]
+    })()
+
+    const todasFixas = [...fcMes, ...fatMes, ...variaveisBanco, ...complementoFatura]
     let saldo = abertura
     const res: Record<number,number> = {}
     for (let d = 1; d <= totalD; d++) {
