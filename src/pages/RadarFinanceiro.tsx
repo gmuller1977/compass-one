@@ -209,7 +209,8 @@ export default function RadarFinanceiro() {
 
       {detalheContas && (
         <div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
-          <RadarDetalheContas linhas={linhasContas} />
+          <RadarDetalheContas linhas={linhasContas}
+            proximoMes={MESES_FULL[(mes + 1) % 12].toLowerCase()} />
         </div>
       )}
 

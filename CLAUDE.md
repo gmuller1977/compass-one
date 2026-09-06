@@ -116,6 +116,32 @@ cartões e categorias, e no fim manda para o wizard. O **wizard** preenche os
 valores, mas replica o mesmo valor em todos os meses. Ajuste mês a mês só na
 Grade, Planilha ou Lista.
 
+**O mês corrente tem dois saldos, e os dois estão certos.** "Quanto tenho hoje"
+é o realizado — bate com o extrato do banco. "Com quanto abre o mês que vem" já
+desconta o que ainda falta acontecer até o dia 31. É o `comoAbertura` de
+[`saldoConta.ts`](src/utils/saldoConta.ts). Sem a distinção, ou o saldo atual
+mente, ou o mês seguinte abre ignorando as contas a pagar.
+
+A confusão que isso gera é previsível e já apareceu duas vezes: setembro fecha
+com 621,04, outubro abre com 1,04, e parece erro. Por isso o detalhe do Radar
+mostra as duas colunas lado a lado no mês corrente. Não unificar os números —
+mostrar os dois.
+
+**Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
+`projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da
+categoria, conta de pagamento do cartão, preferida quando não há nenhuma — e
+`projecaoDoMes` é a soma dela. Nunca o contrário: enquanto os dois eram
+calculados em separado, discordavam. O complemento da fatura é a única exceção,
+porque o plano não diz em qual cartão o gasto cai; ele entra uma vez, na conta
+que paga o cartão de vencimento mais cedo.
+
+**A fatura do cartão tem dono, como a categoria tem conta de débito.** Ela
+aparece na conta de pagamento do cartão — débito automático, boleto ou PIX,
+tanto faz —, e na preferida quando o cartão não tem conta definida. Nunca em
+todas: enquanto flutuava, cada banco projetava a fatura de todos os cartões.
+Só existem essas três formas de pagar fatura; transferência foi removida do
+tipo em 06/09/2026.
+
 **`PageHeader` não vai na `QuickLaunch`**, que é a home do mobile. O componente
 traz ícone, breadcrumb, título e subtítulo — vocabulário de tela interna. Numa
 home ele viraria navegação para lugar nenhum. Decidido em 30/08/2026.

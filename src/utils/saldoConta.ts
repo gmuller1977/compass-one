@@ -407,6 +407,15 @@ export type LinhaMes = {
    */
   ajuste: number
   final: number
+  /**
+   * Com quanto esta conta ABRE o mês seguinte. Igual a `final`, menos no mês
+   * corrente: lá `final` é o realizado — o que o extrato do banco mostra hoje
+   * —, e a abertura já desconta o que ainda falta acontecer até o dia 31.
+   *
+   * Sem mostrar os dois, o usuário fecha setembro com 621,04, abre outubro com
+   * 1,04 e vai procurar o erro. Não há erro: são perguntas diferentes.
+   */
+  aberturaSeguinte: number
   previsto: boolean
 }
 
@@ -436,6 +445,8 @@ export function detalharMes(
     const ini = saldoContaNoFim(a.id, aAnt, mAnt, deps, { comoAbertura: true, hoje })
     const fim = saldoContaNoFim(a.id, ano, mes, deps, { hoje })
 
+    const abre = saldoContaNoFim(a.id, ano, mes, deps, { comoAbertura: true, hoje })
+
     const real = movimentoRealDoMes(a.id, ano, mes, deps)
     const prev = futuroInteiro
       ? projecaoDaConta(a.id, ano, mes, deps, hoje)
@@ -448,6 +459,7 @@ export function detalharMes(
       inicial: ini.valor, entradas, saidas,
       ajuste: fim.valor - (ini.valor + entradas - saidas),
       final: fim.valor,
+      aberturaSeguinte: abre.valor,
       previsto: fim.previsto,
     }
   })
