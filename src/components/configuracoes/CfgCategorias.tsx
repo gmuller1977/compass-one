@@ -82,6 +82,10 @@ export default function CfgCategorias({
   excluirCategoria, toggleAtiva, importarSugestoes,
   confirmar, fecharConfirm,
 }: Props) {
+  // A conta sugerida por padrao nas categorias de banco.
+  const contaFavoritaId = (contas.find(c => c.tipo !== 'cartao' && c.preferida)
+    ?? contas.find(c => c.tipo !== 'cartao'))?.id
+
   const gruposCustom = Array.from(new Set([
     ...gruposExtra,
     ...categorias.map(c => c.grupo).filter((g): g is string => !!g && !GRUPOS_PADRAO.includes(g)),
@@ -377,7 +381,7 @@ export default function CfgCategorias({
                             formaPagamento: t.id==='dinheiro' ? undefined
                               : t.id==='cartao' ? 'avista'
                               : p.tipo==='entrada' ? 'pix' : 'automatico',
-                            contaDebitoId: undefined,
+                            contaDebitoId: t.id==='banco' ? (p.contaDebitoId ?? contaFavoritaId) : undefined,
                           }))}
                           onKeyDown={e => {
                             const total = tiposVisiveis.length
@@ -425,7 +429,6 @@ export default function CfgCategorias({
                             tabIndex={formCat.formaPagamento===f.id ? 0 : -1}
                             onClick={() => setFormCat(p=>({
                               ...p, formaPagamento:f.id,
-                              contaDebitoId: f.id === 'automatico' ? p.contaDebitoId : undefined,
                             }))}
                             onKeyDown={e => {
                               const total = formasVisiveis.length
@@ -461,7 +464,7 @@ export default function CfgCategorias({
                 </div>
               )}
 
-              {formCat.tipoMovimento==='banco' && formCat.formaPagamento==='automatico' && (
+              {formCat.tipoMovimento==='banco' && (
                 <div>
                   <label style={labelSt}>Conta de débito</label>
                   <select value={formCat.contaDebitoId ?? ''}
@@ -472,6 +475,9 @@ export default function CfgCategorias({
                       <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
                     ))}
                   </select>
+                  <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>
+                    Em qual conta esta categoria aparece nos lançamentos.
+                  </div>
                 </div>
               )}
 

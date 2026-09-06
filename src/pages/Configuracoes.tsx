@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
@@ -132,9 +132,19 @@ export default function Configuracoes() {
   const [bancoCustom,    setBancoCustom]    = useState('')
   const nomeContaRef = useRef<HTMLInputElement>(null)
 
+  // Toda categoria de banco diz em qual conta aparece. A favorita ja vem
+  // sugerida: e o caso comum, e sem um dono a categoria fixa aparecia em todas
+  // as contas — o que deixava o saldo previsto de cada uma errado.
+  const contaFavoritaId = useMemo(
+    () => (contas.find(c => c.tipo !== 'cartao' && c.preferida)
+        ?? contas.find(c => c.tipo !== 'cartao'))?.id,
+    [contas],
+  )
+
   const catVazia: Omit<Categoria,'id'> = {
     nome:'', tipo:'saida', fixa:false, tipoMovimento:'banco', formaPagamento:'debito',
     cor:CORES_PRESET[0], icone:ICONES_CAT[0], ativa:true, grupo: undefined,
+    contaDebitoId: contaFavoritaId,
   }
   const [formCat,   setFormCat]   = useState<Omit<Categoria,'id'>>(catVazia)
   const [editCatId, setEditCatId] = useState<string|null>(null)
