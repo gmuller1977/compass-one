@@ -6,8 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { resolverFixaDoMes } from '../utils/fixasDoMes'
-import { acharPlanCat, resolverPlanCats } from '../components/acompanhamento/evolucaoCalcs'
+import { saldoBancosEDinheiro } from '../utils/saldoConta'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, type CatReal } from '../components/acompanhamento/AcShared'
@@ -100,76 +99,28 @@ export default function RadarFinanceiro() {
     return { totalPrevE: e.prev, totalRealE: e.real, totalPrevS: s.prev, totalRealS: s.real }
   }, [dadosAno, mes, entradasMap, saidasMap, gruposEntrada, gruposSaida, categorias, cartaoNomes])
 
+  // O Radar nao calcula saldo proprio: soma os saldos das contas de banco e
+  // do dinheiro, os mesmos que Lancamentos mostra. Assim o saldo inicial de
+  // um mes e, por construcao, o saldo final do anterior.
+  //
+  // Cartao fica de fora: nao tem saldo, tem fatura.
+  const depsSaldo = useMemo(() => ({
+    extratoData: extratoData as Record<string, DadosMes>,
+    faturaData: faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>,
+    contas, categorias, planos, saldoInicialDinheiro,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+
   const saldoInicial = useMemo(() => {
-    let acc = contas
-      .filter(c => c.tipo !== 'cartao')
-      .reduce((s, c) => s + (c.saldoInicial ?? 0), 0)
-    acc += (saldoInicialDinheiro ?? 0)
+    const mAnt = mes === 0 ? 11 : mes - 1
+    const aAnt = mes === 0 ? ano - 1 : ano
+    return saldoBancosEDinheiro(aAnt, mAnt, depsSaldo)
+  }, [ano, mes, depsSaldo])
 
-    for (const [key, dados] of Object.entries(extratoData)) {
-      const m = key.match(/-(\d{4})-(\d{2})$/)
-      if (!m) continue
-      const ky = parseInt(m[1])
-      const km = parseInt(m[2]) - 1
-      if (ky > ano || (ky === ano && km >= mes)) continue
+  const saldoAtual = useMemo(
+    () => saldoBancosEDinheiro(ano, mes, depsSaldo),
+    [ano, mes, depsSaldo],
+  )
 
-      const isDinheiroKey = key.startsWith('dinheiro')
-      if (!isDinheiroKey && !contas.some(c => c.tipo !== 'cartao' && key.startsWith(c.id))) continue
-
-      const dm = dados as DadosMes
-      const totalDiasK = new Date(ky, km + 1, 0).getDate()
-      for (let d = 1; d <= totalDiasK; d++) {
-        for (const l of (dm.lancamentos?.[d] ?? [])) {
-          acc += l.tipo === 'entrada' ? l.valor : -l.valor
-        }
-      }
-    }
-    // As fixas consolidadas dos meses anteriores tambem movimentaram a conta.
-    // Sem isto o saldo acumulado ignorava toda fixa de janeiro ate o mes
-    // passado — quase sempre despesa, entao o saldo vinha alto, e o erro
-    // crescia a cada mes. O laco acima so soma lancamentos.
-    //
-    // Agrupado por MES, nao por conta: contar por chave do extrato somaria a
-    // mesma fixa uma vez por conta bancaria. Ver utils/fixasDoMes.
-    const porMes = new Map<string, DadosMes[]>()
-    for (const [key, dados] of Object.entries(extratoData)) {
-      if (key.length < 8) continue
-      const ky = parseInt(key.slice(-7, -3))
-      const km = parseInt(key.slice(-2)) - 1
-      if (!Number.isFinite(ky) || !Number.isFinite(km)) continue
-      if (ky > ano || (ky === ano && km >= mes)) continue
-      if (contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id))) continue
-      const id = ky + '|' + km
-      if (!porMes.has(id)) porMes.set(id, [])
-      porMes.get(id)!.push(dados as DadosMes)
-    }
-    
-    const fixasAtivas = categorias.filter((c: Categoria) => c.fixa && c.ativa)
-    for (const [id, dms] of porMes) {
-      const [kyS, kmS] = id.split('|')
-      const kAno = parseInt(kyS)
-      const kMes = parseInt(kmS)
-      const planoK = planos[kAno]
-      const resolvidasK = {
-        saida:   resolverPlanCats('saida',   planoK?.saidas   ?? [], categorias),
-        entrada: resolverPlanCats('entrada', planoK?.entradas ?? [], categorias),
-      }
-      for (const f of fixasAtivas) {
-        // Todo mes aqui e passado, por construcao do filtro acima.
-        const { consolidada, override } = resolverFixaDoMes(f.id, dms)
-        if (!consolidada) continue
-        const lista = f.tipo === 'saida' ? resolvidasK.saida : resolvidasK.entrada
-        const planVal = acharPlanCat(lista, f.nome, f.descricao)?.v[kMes] ?? 0
-        const val = override ?? planVal
-        if (val <= 0) continue
-        acc += f.tipo === 'entrada' ? val : -val
-      }
-    }
-    
-    return acc
-  }, [contas, saldoInicialDinheiro, extratoData, ano, mes, categorias, planos])
-
-  const saldoAtual = saldoInicial + totalRealE - totalRealS
 
   function toggleAberto(uid: string) {
     setAbertos(prev => { const n = new Set(prev); n.has(uid)?n.delete(uid):n.add(uid); return n })
