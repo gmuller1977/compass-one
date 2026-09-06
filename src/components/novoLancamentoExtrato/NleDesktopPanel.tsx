@@ -129,13 +129,8 @@ export default function NleDesktopPanel({
           <div style={{marginBottom:14,position:'relative'}}>
             <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
               letterSpacing:.5,marginBottom:5}}>📅 Dia</div>
-            {editandoFixaId && fixaEhAutomatica ? (
-              <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 12px',
-                background:'#f8faff',display:'flex',alignItems:'center',gap:8}}>
-                <div style={{fontSize:18,fontWeight:800,color:'#0f172a',lineHeight:1}}>{diaSel}</div>
-                <div style={{fontSize:11,color:'#94a3b8'}}>{NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}</div>
-              </div>
-            ) : (
+            {/* Toda fixa pode ter a data trocada, inclusive a de debito automatico:
+                o banco pode antecipar ou atrasar, e o fixasMovidas cobre isso. */}
               <button onClick={() => setMostrarCalDia(v => !v)} style={{
                 width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'8px 12px',
                 background:'#fff',display:'flex',alignItems:'center',gap:8,
@@ -145,12 +140,8 @@ export default function NleDesktopPanel({
                 <span style={{fontSize:11,color:'#94a3b8'}}>{NOMES_MESES[mes]} · {diaSemana(diaSel,mes,ano)}</span>
                 <span style={{marginLeft:'auto',fontSize:12,color:'#94a3b8'}}>▾</span>
               </button>
-            )}
 
-            {/* So a fixa AUTOMATICA tem o dia travado — o banco define a data. Nas
-              demais, o dia e escolhido aqui. A condicao espelha a do botao acima:
-              antes bloqueava qualquer fixa, entao o botao abria e nada aparecia. */}
-            {mostrarCalDia && !(editandoFixaId && fixaEhAutomatica) && (() => {
+            {mostrarCalDia && (() => {
               const diasComFixa = new Set(fixasDoMes.map(f => mesDados.fixasMovidas?.[f.id] ?? f.diaVencimento))
               const offset  = new Date(ano, mes, 1).getDay()
               const hojeD   = new Date()
