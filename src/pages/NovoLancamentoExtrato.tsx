@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -543,54 +543,82 @@ export default function NovoLancamentoExtrato() {
   // dela, fixa sem contaDebitoId aparece em todas ate ser confirmada.
   const mesFuturo = ano > anoHoje || (ano === anoHoje && mes > mesHoje)
 
+  // Deltas diarios de um mes nesta conta. E a UNICA definicao de "o que
+  // acontece num dia": usada pela cascata que desenha o extrato, pela barra de
+  // saldo previsto e pelo encadeamento que abre os meses seguintes. Enquanto
+  // havia duas, a barra de setembro e a abertura de outubro divergiam.
+  //
+  // Dia ja passado (ou hoje): fixa so conta se confirmada — nao assumimos.
+  // Dia futuro: a fixa conta, e disso que a previsao e feita.
+  const deltasDoMes = useCallback((a: number, m: number): number[] => {
+    const dm = dados[mesKey(contaIdEfetivo, a, m)]
+    const totalD = new Date(a, m + 1, 0).getDate()
+    const mesPast = a < anoHoje || (a === anoHoje && m < mesHoje)
+    const ehMesCorrente = a === anoHoje && m === mesHoje
+    const doMes = categorias.filter(c =>
+      c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
+      && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
+
+    const out = new Array(totalD + 1).fill(0)
+    for (const cat of doMes) {
+      const auto = ehAutomaticoCategoria(categorias, cat.nome)
+      const dia = diaEfetivoFixa(
+        { id: cat.id, diaVencimento: cat.diaVencimento ?? 1 } as never,
+        dm?.fixasMovidas, auto, m, a, totalD)
+      if (dia < 1 || dia > totalD) continue
+      // Fixa sem conta de debito flutua entre as contas ate ser confirmada em
+      // alguma; depois disso sai daqui. Mesma regra do fixasCategoria.
+      if (!cat.contaDebitoId && contasExtrato.some(ct =>
+        ct.id !== contaIdEfetivo &&
+        dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[cat.id] === true)) continue
+      const passou = mesPast || (ehMesCorrente && dia <= diaHoje)
+      if (passou && dm?.fixasConsolidadas?.[cat.id] !== true) continue
+      const v = valorFixaNoMes(cat, planos[a], m, categorias, dm?.fixasValorOverride?.[cat.id])
+      if (v <= 0) continue
+      out[dia] += cat.tipo === 'entrada' ? v : -v
+    }
+    for (const [dStr, itens] of Object.entries(dm?.lancamentos ?? {})) {
+      const d = Number(dStr)
+      if (d < 1 || d > totalD) continue
+      for (const l of itens) out[d] += l.tipo === 'entrada' ? l.valor : -l.valor
+    }
+    return out
+  }, [dados, contaIdEfetivo, contasExtrato, categorias, planos, anoHoje, mesHoje, diaHoje])
+
+  /** Saldo no fim de um mes, partindo de uma abertura. */
+  const fecharMes = useCallback(
+    (abertura: number, a: number, m: number) =>
+      deltasDoMes(a, m).reduce((s, d) => s + d, abertura),
+    [deltasDoMes],
+  )
+
   const saldoBaseExibido = useMemo(() => {
     if (!mesFuturo) return saldoBase
-    const emAberto = (a: number, m: number) => {
-      const dm = dados[mesKey(contaIdEfetivo, a, m)]
-      return categorias
-        .filter(c => c.fixa && c.ativa && c.tipoMovimento !== 'cartao'
-          && (!c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
-        .reduce((acc, cat) => {
-          if (dm?.fixasConsolidadas?.[cat.id] === true) return acc
-          const v = valorFixaNoMes(cat, planos[a], m, categorias)
-          if (v <= 0) return acc
-          return acc + (cat.tipo === 'entrada' ? v : -v)
-        }, 0)
-    }
+    // Encadeia usando fecharMes — o mesmo calculo que produz a barra de saldo
+    // previsto. Assim a abertura de um mes E o fechamento exibido do anterior,
+    // por construcao, e nao por duas contas que por acaso coincidem.
     let acc = saldoBase
     let a = anoHoje, m = mesHoje
     while (a * 100 + m < ano * 100 + mes) {
-      acc += emAberto(a, m)
+      acc = fecharMes(acc, a, m)
       m++; if (m > 11) { m = 0; a++ }
     }
     return acc
-  }, [saldoBase, mesFuturo, dados, contaIdEfetivo, categorias, planos, ano, mes, anoHoje, mesHoje])
+  }, [saldoBase, mesFuturo, fecharMes, ano, mes, anoHoje, mesHoje])
 
+  // Cascata do extrato: soma acumulada dos MESMOS deltas que fecham o mes.
+  // O ultimo dia e, por construcao, o saldo previsto da barra — e a abertura
+  // do mes seguinte.
   const saldosDia = useMemo(() => {
-    const dadosMesAtual = dados[key]
-    const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
-    const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
-    const mesPast = ano < anoHoje || (ano === anoHoje && mes < mesHoje)
+    const deltas = deltasDoMes(ano, mes)
+    const res: Record<number, number> = {}
     let saldo = saldoBaseExibido
-    const res: Record<number,number> = {}
-    for (let d=1; d<=totalDias; d++) {
-      const dPast = mesPast || (eMesAtual && d < diaHoje)
-      const dHoje = eMesAtual && d === diaHoje
-      fc.filter(f=>diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)
-        .forEach(f => {
-          if (dPast || dHoje) {
-            const confirmada = dadosMesAtual?.fixasConsolidadas?.[f.id] === true
-            if (!confirmada) return
-          }
-          const v = (dPast || dHoje) ? (dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
-          saldo += f.tipo==='entrada' ? v : -v
-        })
-      ;(lancs[d]??[]).forEach(l=>{ saldo += l.tipo==='entrada'?l.valor:-l.valor })
-      res[d] = saldo
+    for (let dia = 1; dia <= totalDias; dia++) {
+      saldo += deltas[dia] ?? 0
+      res[dia] = saldo
     }
     return res
-  }, [saldoBaseExibido, dados, key, contaId, totalDias, mes, ano, categorias, eMesAtual, diaHoje, anoHoje, mesHoje])
+  }, [saldoBaseExibido, deltasDoMes, ano, mes, totalDias])
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
     const dadosMesAtual = dados[key]
