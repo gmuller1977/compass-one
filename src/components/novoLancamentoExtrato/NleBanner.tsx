@@ -65,10 +65,10 @@ export default function NleBanner({
           <KpiCard icon="💰" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
             sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
           <KpiCard icon="↑" label="Entradas" value={fmt(totalEntradas)}
-            valueColor="#4ade80" sublabel="lançadas" style={{ flex: 1 }} />
+            valueColor="#4ade80" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="↓" label="Saídas" value={fmt(totalSaidas)}
-            valueColor="#f87171" sublabel="lançadas" style={{ flex: 1 }} />
-          <KpiCard icon="=" label="Saldo atual" value={fmt(saldoMes)}
+            valueColor="#f87171" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+          <KpiCard icon="=" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
             valueColor={saldoMes >= 0 ? '#fff' : '#f87171'}
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
         </div>

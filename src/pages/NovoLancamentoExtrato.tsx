@@ -679,6 +679,7 @@ export default function NovoLancamentoExtrato() {
 
     const todasFixas = [...fcMes, ...fatMes, ...variaveisBanco, ...complementoFatura]
     let saldo = abertura
+    let entradas = 0, saidas = 0
     const res: Record<number,number> = {}
     for (let d = 1; d <= totalD; d++) {
       const dPast = mesPast || (ehCorrente && d < diaHoje)
@@ -689,12 +690,15 @@ export default function NovoLancamentoExtrato() {
             if (dmMes?.fixasConsolidadas?.[f.id] !== true) return
           }
           const v = (dPast || dHoje) ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
-          saldo += f.tipo === 'entrada' ? v : -v
+          if (f.tipo === 'entrada') { saldo += v; entradas += v } else { saldo -= v; saidas += v }
         })
-      ;(lancs[d] ?? []).forEach(l => { saldo += l.tipo === 'entrada' ? l.valor : -l.valor })
+      ;(lancs[d] ?? []).forEach(l => {
+        if (l.tipo === 'entrada') { saldo += l.valor; entradas += l.valor }
+        else { saldo -= l.valor; saidas += l.valor }
+      })
       res[d] = saldo
     }
-    return { porDia: res, fechamento: saldo }
+    return { porDia: res, fechamento: saldo, entradas, saidas }
   }, [dados, contaIdEfetivo, contasExtrato, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
 
   // O saldo inicial de um mes futuro e o FECHAMENTO do anterior, calculado pela
@@ -714,12 +718,20 @@ export default function NovoLancamentoExtrato() {
     return acc
   }, [saldoBase, mesFuturo, acumuladoAte, cascataDoMes, ano, mes, anoHoje, mesHoje])
 
-  const saldosDia = useMemo(
-    () => cascataDoMes(ano, mes, saldoBaseExibido).porDia,
+  const cascata = useMemo(
+    () => cascataDoMes(ano, mes, saldoBaseExibido),
     [cascataDoMes, ano, mes, saldoBaseExibido],
   )
+  const saldosDia = cascata.porDia
 
+  // Mes futuro mostra o PREVISTO — vindo da mesma cascata que projeta o saldo,
+  // para as caixas fecharem entre si. Mes corrente e passado mostram so o
+  // realizado: o que foi lancado ou confirmado.
   const { totalEntradas, totalSaidas } = useMemo(() => {
+    if (mesFuturo) return { totalEntradas: cascata.entradas, totalSaidas: cascata.saidas }
+    return calcularRealizado()
+
+    function calcularRealizado() {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
@@ -731,8 +743,9 @@ export default function NovoLancamentoExtrato() {
         .forEach(f=>{ const v = dadosMesAtual?.fixasValorOverride?.[f.id] ?? f.valor; f.tipo==='entrada'?te+=v:ts+=v })
       ;(lancs[d]??[]).forEach(l=>{ l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
     }
-    return { totalEntradas:te, totalSaidas:ts }
-  }, [dados, key, contaId, totalDias, mes, ano, categorias])
+      return { totalEntradas:te, totalSaidas:ts }
+    }
+  }, [mesFuturo, cascata, dados, key, contaId, totalDias, mes, ano, categorias])
 
   const saldoMes   = saldoBaseExibido + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
