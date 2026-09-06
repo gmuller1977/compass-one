@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { saldoTotalNoFim } from '../utils/saldoConta'
+import { saldoTotalNoFim, detalharMes } from '../utils/saldoConta'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, type CatReal } from '../components/acompanhamento/AcShared'
@@ -16,6 +16,7 @@ import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard from '../components/KpiCard'
+import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -36,6 +37,7 @@ export default function RadarFinanceiro() {
   const [mes, setMes]               = useState(mesHoje)
   const [ano, setAno]               = useState(anoHoje)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
+  const [detalheContas, setDetalheContas] = useState(false)
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -126,6 +128,15 @@ export default function RadarFinanceiro() {
   const saldoInicial = fechamentoAnterior.valor
   const saldoAtual   = fechamento.valor
 
+  // O detalhe sai das mesmas funcoes dos dois cartoes de saldo, entao a linha
+  // Total bate com eles por construcao.
+  const linhasContas = useMemo(
+    () => detalharMes(ano, mes, depsSaldo),
+    [ano, mes, depsSaldo],
+  )
+
+
+  const alternarDetalhe = () => setDetalheContas(v => !v)
 
   function toggleAberto(uid: string) {
     setAbertos(prev => { const n = new Set(prev); n.has(uid)?n.delete(uid):n.add(uid); return n })
@@ -179,18 +190,28 @@ export default function RadarFinanceiro() {
         />
       </div>
 
-      {/* KPIs CONSOLIDADOS */}
+      {/* KPIs CONSOLIDADOS — clicar em qualquer um abre o detalhe por conta */}
       <div style={{ padding: '8px 16px', flexShrink: 0, display: 'flex', gap: 8 }}>
         <KpiCard icon="🔒" label={fechamentoAnterior.previsto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoInicial)}
-          sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }} />
+          sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
-          valueColor="#4ade80" sublabel={`de ${fmt(totalPrevE)}`} style={{ flex: 1 }} />
+          valueColor="#4ade80" sublabel={`de ${fmt(totalPrevE)}`} style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="↓" label="Despesas" value={fmt(totalRealS)}
-          valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}`} style={{ flex: 1 }} />
+          valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}`} style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="=" label={fechamento.previsto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoAtual)}
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
-          sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
+          sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas} />
       </div>
+
+      {detalheContas && (
+        <div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
+          <RadarDetalheContas linhas={linhasContas} />
+        </div>
+      )}
 
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',

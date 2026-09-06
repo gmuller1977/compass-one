@@ -8,6 +8,9 @@ export interface KpiCardProps {
   valueColor?: string
   children?: ReactNode
   style?: React.CSSProperties
+  /** Quando existe, o cartao vira botao e ganha a seta de expandir. */
+  onClick?: () => void
+  expandido?: boolean
 }
 
 const KPI_BG = 'linear-gradient(135deg,#0f2878,#1e40af)'
@@ -26,15 +29,28 @@ const SUBLABEL_STYLE: React.CSSProperties = {
 
 export default function KpiCard({
   icon, label, value, sublabel, valueColor = '#fff', children, style,
+  onClick, expandido,
 }: KpiCardProps) {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      background: KPI_BG, border: KPI_BORDER,
-      borderRadius: 10, padding: '12px 16px',
-      ...style,
-    }}>
-      <div style={LABEL_STYLE}>{icon ? `${icon} ${label}` : label}</div>
+    <div
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-expanded={onClick ? !!expandido : undefined}
+      onKeyDown={onClick ? e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() }
+      } : undefined}
+      style={{
+        display: 'flex', flexDirection: 'column',
+        background: KPI_BG, border: KPI_BORDER,
+        borderRadius: 10, padding: '12px 16px',
+        cursor: onClick ? 'pointer' : undefined,
+        ...style,
+      }}>
+      <div style={{ ...LABEL_STYLE, display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+        <span>{icon ? `${icon} ${label}` : label}</span>
+        {onClick && <span aria-hidden>{expandido ? '▾' : '▸'}</span>}
+      </div>
       <div style={{ ...VALUE_STYLE, color: valueColor }}>{value}</div>
       {sublabel && <div style={SUBLABEL_STYLE}>{sublabel}</div>}
       {children}
