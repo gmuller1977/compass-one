@@ -12,6 +12,7 @@ import FcDesktopLeft from '../components/faturaCartao/FcDesktopLeft'
 import FcDesktopPanel from '../components/faturaCartao/FcDesktopPanel'
 import FcModal from '../components/faturaCartao/FcModal'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
+import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 
 function useIsMobile() {
   const [m, setM] = useState(() => window.innerWidth < 640)
@@ -98,8 +99,24 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const mesVenc = mes
   const anoVenc = ano
 
+  // "Paga" passa a significar CONCILIADA no extrato, nao "a data de vencimento
+  // ja passou". A data so diz que era para ter sido paga — o banco pode recusar,
+  // a fatura pode ser contestada. Mesma correcao feita nas fixas automaticas:
+  // nao assumir o que ninguem confirmou.
+  //
+  // O pagamento entra no extrato bancario como a fixa "cartao-<id>", no mes de
+  // VENCIMENTO, em qualquer conta de banco.
+  const faturaPaga = useMemo(() => {
+    const dms = dadosBancariosDoMes(
+      dados as Record<string, { fixasConsolidadas?: Record<string, boolean> }>,
+      `-${anoVenc}-${String(mesVenc + 1).padStart(2, '0')}`,
+      k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
+    )
+    return resolverFixaDoMes(`cartao-${contaId}`, dms).consolidada
+  }, [dados, contas, contaId, anoVenc, mesVenc])
+
   const faturaStatus =
-    new Date(anoVenc, mesVenc, diaVencimento) <= hoje ? 'paga' :
+    faturaPaga ? 'paga' :
     new Date(purchaseAno, purchaseMes, diaFechamento) <= hoje ? 'fechada' : 'aberta'
 
   const categoriasCartao = categorias
@@ -192,12 +209,14 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     if (carregando) return
     const dm = dados[key] ?? DADOS_MES_VAZIO
     if (dm.faturaAtualData === hojeStr) return
+    // Fatura ja conciliada no banco nao precisa mais do valor informado.
+    if (faturaPaga) return
     const t = setTimeout(() => {
       setModalFaturaValor(dm.faturaAtual ?? '')
       setModalFatura(true)
     }, 50)
     return () => clearTimeout(t)
-  }, [key, carregando]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, carregando, faturaPaga]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
 
