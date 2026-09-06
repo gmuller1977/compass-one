@@ -13,7 +13,7 @@ export type TipoMovimento = 'banco' | 'cartao' | 'dinheiro'
 export type FormaPagamentoBanco  = 'automatico' | 'debito' | 'pix' | 'boleto' | 'transferencia'
 export type FormaPagamentoCartao = 'avista' | 'parcelado'
 export type FormaPagamentoCategoria = FormaPagamentoBanco | FormaPagamentoCartao
-export type FormaPagamentoFatura = 'automatico' | 'pix' | 'boleto' | 'transferencia'
+export type FormaPagamentoFatura = 'automatico' | 'pix' | 'boleto'
 
 export type Conta = {
   id: string; nome: string; banco: string; tipo: TipoConta

@@ -154,9 +154,7 @@ export default function NovoLancamentoExtrato() {
         }
       }
       const fp = c.formaPagamentoFatura
-      const formaPagamento: FormaPag =
-        !fp || fp === 'automatico' || fp === 'boleto' ? 'debito' :
-        fp === 'pix' ? 'pix' : 'transferencia'
+      const formaPagamento: FormaPag = fp === 'pix' ? 'pix' : 'debito'
       result.push({
         id: `cartao-${c.id}`,
         nome: c.nome,
@@ -644,9 +642,7 @@ export default function NovoLancamentoExtrato() {
         for (const itens of Object.values(dmFat?.lancamentos ?? {}))
           for (const l of itens) total += l.tipo === 'entrada' ? l.valor : -l.valor
         const fp = c.formaPagamentoFatura
-        const formaPagamento: FormaPag =
-          !fp || fp === 'automatico' || fp === 'boleto' ? 'debito' :
-          fp === 'pix' ? 'pix' : 'transferencia'
+        const formaPagamento: FormaPag = fp === 'pix' ? 'pix' : 'debito'
         return [{
           id: `cartao-${c.id}`, nome: c.nome, categoria: c.banco,
           valor: total, tipo: 'saida' as TipoLanc, formaPagamento,

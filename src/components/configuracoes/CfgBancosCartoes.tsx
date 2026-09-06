@@ -14,10 +14,9 @@ import type { Aba } from './CfgShared'
 // e EM QUAL conta aparece. Sem isso ela flutuava — projetava em todas as contas
 // de banco ate alguem confirmar, e o saldo previsto de cada uma saia errado.
 const FORMAS_FATURA: { id: FormaPagamentoFatura; label: string }[] = [
-  { id: 'automatico',    label: 'Débito autom.' },
-  { id: 'boleto',        label: 'Boleto' },
-  { id: 'pix',           label: 'PIX' },
-  { id: 'transferencia', label: 'Transferência' },
+  { id: 'automatico', label: 'Débito autom.' },
+  { id: 'boleto',     label: 'Boleto' },
+  { id: 'pix',        label: 'PIX' },
 ]
 
 interface Props {
