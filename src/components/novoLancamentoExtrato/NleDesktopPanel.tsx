@@ -147,7 +147,10 @@ export default function NleDesktopPanel({
               </button>
             )}
 
-            {mostrarCalDia && !editandoFixaId && (() => {
+            {/* So a fixa AUTOMATICA tem o dia travado — o banco define a data. Nas
+              demais, o dia e escolhido aqui. A condicao espelha a do botao acima:
+              antes bloqueava qualquer fixa, entao o botao abria e nada aparecia. */}
+            {mostrarCalDia && !(editandoFixaId && fixaEhAutomatica) && (() => {
               const diasComFixa = new Set(fixasDoMes.map(f => mesDados.fixasMovidas?.[f.id] ?? f.diaVencimento))
               const offset  = new Date(ano, mes, 1).getDay()
               const hojeD   = new Date()
