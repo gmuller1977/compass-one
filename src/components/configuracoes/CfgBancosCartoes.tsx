@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import PageHeader, { PH_BTN_SOLID } from '../PageHeader'
-import type { Conta } from '../../context/AppContext'
+import type { Conta, FormaPagamentoFatura } from '../../context/AppContext'
 import {
   COR, BANCOS, ICONES_CONTA, fmt,
   ColorPicker, IconPicker,
@@ -9,6 +9,16 @@ import {
 import { useToast } from '../Toast'
 import { parseBRL, parseValor } from '../../utils/moeda'
 import type { Aba } from './CfgShared'
+
+// A fatura do cartao e uma fixa como outra qualquer: precisa dizer COMO e paga
+// e EM QUAL conta aparece. Sem isso ela flutuava — projetava em todas as contas
+// de banco ate alguem confirmar, e o saldo previsto de cada uma saia errado.
+const FORMAS_FATURA: { id: FormaPagamentoFatura; label: string }[] = [
+  { id: 'automatico',    label: 'Débito autom.' },
+  { id: 'boleto',        label: 'Boleto' },
+  { id: 'pix',           label: 'PIX' },
+  { id: 'transferencia', label: 'Transferência' },
+]
 
 interface Props {
   aba: Aba
@@ -26,6 +36,7 @@ interface Props {
   setSaldoStr: (v: string) => void
   faturaStr: string
   setFaturaStr: (v: string) => void
+  contaFavoritaId?: string
   saldoInicialDinheiro: number
   onSaveSaldoDinheiro: (v: number) => void
   erroConta: string
@@ -42,11 +53,18 @@ export default function CfgBancosCartoes({
   contas, editContaId, formConta, setFormConta,
   bancoCustom, setBancoCustom, saldoStr, setSaldoStr,
   faturaStr, setFaturaStr,
+  contaFavoritaId,
   saldoInicialDinheiro, onSaveSaldoDinheiro,
   erroConta, nomeContaRef, tipoBancoRefs,
   novaConta, editarConta, salvarConta, excluirConta,
 }: Props) {
   const { toast } = useToast()
+  const formaFatRefs = useRef<(HTMLButtonElement | null)[]>([])
+  // Cartao antigo so tinha contaPagamentoId; ter conta gravada significava
+  // debito automatico. Ler assim evita o campo abrir vazio para quem ja
+  // configurou antes de a forma existir.
+  const formaFaturaAtual: FormaPagamentoFatura | undefined =
+    formConta.formaPagamentoFatura ?? (formConta.contaPagamentoId ? 'automatico' : undefined)
   const [editandoDinheiro, setEditandoDinheiro] = useState(false)
   const [localDinheiro, setLocalDinheiro] = useState('')
   return (
@@ -352,6 +370,56 @@ export default function CfgBancosCartoes({
                   className="campo-cfg" style={inputSt} />
                 <div style={{ fontSize:10, color:'#94a3b8', marginTop:3 }}>
                   Se não informado, o banco será usado como identificador do cartão.
+                </div>
+              </div>
+              <div>
+                <label style={labelSt}>Pagamento da fatura</label>
+                <div style={{ display:'flex', gap:6 }}>
+                  {FORMAS_FATURA.map((f, i) => (
+                    <button key={f.id}
+                      ref={el => { formaFatRefs.current[i] = el }}
+                      tabIndex={formaFaturaAtual===f.id ? 0 : -1}
+                      onClick={() => setFormConta(p=>({
+                        ...p,
+                        formaPagamentoFatura: f.id,
+                        contaPagamentoId: p.contaPagamentoId ?? contaFavoritaId,
+                      }))}
+                      onKeyDown={e => {
+                        const total = FORMAS_FATURA.length
+                        if (e.key==='ArrowRight'||e.key==='ArrowDown') {
+                          e.preventDefault(); const n=formaFatRefs.current[(i+1)%total]; n?.click(); n?.focus()
+                        } else if (e.key==='ArrowLeft'||e.key==='ArrowUp') {
+                          e.preventDefault(); const n=formaFatRefs.current[(i-1+total)%total]; n?.click(); n?.focus()
+                        }
+                      }}
+                      style={{
+                        flex:1, padding:'7px 0', fontFamily:'inherit', outline:'none',
+                        border:`1.5px solid ${formaFaturaAtual===f.id ? COR.azul : COR.borda}`,
+                        borderRadius:8, cursor:'pointer', fontSize:11, fontWeight:500,
+                        background: formaFaturaAtual===f.id ? '#eff6ff' : COR.branco,
+                        color: formaFaturaAtual===f.id ? COR.azul : COR.textoSuave }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize:11, color:COR.textoSuave, marginTop:6, lineHeight:1.5 }}>
+                  {formaFaturaAtual==='automatico'
+                    ? 'A fatura é debitada sozinha na conta abaixo, no dia do vencimento.'
+                    : 'Você confirma o pagamento no extrato da conta em que pagar.'}
+                </div>
+              </div>
+              <div>
+                <label style={labelSt}>Conta de pagamento</label>
+                <select value={formConta.contaPagamentoId ?? ''}
+                  onChange={e => setFormConta(p=>({...p, contaPagamentoId: e.target.value || undefined}))}
+                  className="campo-cfg" style={inputSt}>
+                  <option value="">Selecione a conta...</option>
+                  {contas.filter(c => c.tipo !== 'cartao').map(c => (
+                    <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                  ))}
+                </select>
+                <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>
+                  Em qual conta esta fatura aparece nos lançamentos.
                 </div>
               </div>
               <div style={{ background:'#f5f3ff', border:'1px solid #ede9fe', borderRadius:10, padding:'12px 14px' }}>

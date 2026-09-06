@@ -132,9 +132,9 @@ export default function Configuracoes() {
   const [bancoCustom,    setBancoCustom]    = useState('')
   const nomeContaRef = useRef<HTMLInputElement>(null)
 
-  // Toda categoria de banco diz em qual conta aparece. A favorita ja vem
-  // sugerida: e o caso comum, e sem um dono a categoria fixa aparecia em todas
-  // as contas — o que deixava o saldo previsto de cada uma errado.
+  // Toda categoria de banco — e toda fatura de cartao — diz em qual conta
+  // aparece. A favorita ja vem sugerida: e o caso comum, e sem um dono a fixa
+  // aparecia em todas as contas, deixando o saldo previsto de cada uma errado.
   const contaFavoritaId = useMemo(
     () => (contas.find(c => c.tipo !== 'cartao' && c.preferida)
         ?? contas.find(c => c.tipo !== 'cartao'))?.id,
@@ -164,7 +164,15 @@ export default function Configuracoes() {
 
   // ── Ações Conta ──
   function novaConta(tipoAba: Aba = aba) {
-    setFormConta({...contaVazia, tipo: tipoAba==='cartoes' ? 'cartao' : 'corrente'})
+    const ehCartaoNovo = tipoAba === 'cartoes'
+    setFormConta({
+      ...contaVazia,
+      tipo: ehCartaoNovo ? 'cartao' : 'corrente',
+      ...(ehCartaoNovo ? {
+        formaPagamentoFatura: 'automatico' as FormaPagamentoFatura,
+        contaPagamentoId: contaFavoritaId,
+      } : {}),
+    })
     setEditContaId(null)
     setErroConta('')
     setSaldoStr(''); setFaturaStr(''); setBancoCustom('')
@@ -173,8 +181,16 @@ export default function Configuracoes() {
   function editarConta(c: Conta) {
     setMobileView('form')
     const { id, ...rest } = c
-    const restFinal = (rest.tipo === 'cartao' && rest.contaPagamentoId && !rest.formaPagamentoFatura)
-      ? { ...rest, formaPagamentoFatura: 'automatico' as FormaPagamentoFatura }
+    // Cartao cadastrado antes de os campos existirem nao diz como a fatura e
+    // paga. Ter conta gravada ja significava debito automatico; sem nada,
+    // sugere o caso comum para o campo nunca abrir vazio.
+    const restFinal = rest.tipo === 'cartao'
+      ? {
+          ...rest,
+          formaPagamentoFatura: rest.formaPagamentoFatura
+            ?? ('automatico' as FormaPagamentoFatura),
+          contaPagamentoId: rest.contaPagamentoId ?? contaFavoritaId,
+        }
       : rest
     const bancoNaLista = BANCOS.includes(c.banco)
     if (c.tipo === 'cartao' && !bancoNaLista && c.banco) {
@@ -616,6 +632,7 @@ export default function Configuracoes() {
               setSaldoStr={setSaldoStr}
               faturaStr={faturaStr}
               setFaturaStr={setFaturaStr}
+              contaFavoritaId={contaFavoritaId}
               saldoInicialDinheiro={saldoInicialDinheiro}
               onSaveSaldoDinheiro={salvarSaldoInicialDinheiro}
               erroConta={erroConta}
