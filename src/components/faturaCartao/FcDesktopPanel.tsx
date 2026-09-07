@@ -158,12 +158,12 @@ export default function FcDesktopPanel({
       </div>
 
       {/* Compra / Estorno */}
-      <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,
-        padding:3,marginBottom:12,width:'100%'}}>
+      <div style={{display:'flex',background:'#f1f5f9',borderRadius:10,
+        padding:3,gap:3,marginBottom:14,width:'100%'}}>
         {(['entrada','saida'] as const).map(t => (
           <button key={t} tabIndex={-1} onClick={() => setFTipo(t)} style={{
-            flex:1,padding:'7px 0',border:'none',borderRadius:6,
-            cursor:'pointer',fontSize:12,fontWeight:600,
+            flex:1,padding:'8px',border:'none',borderRadius:8,
+            cursor:'pointer',fontSize:12,fontWeight:700,
             fontFamily:'inherit',transition:'all .15s',
             background:fTipo===t?COR.branco:'transparent',
             color:fTipo===t?(t==='entrada'?COR.azul:COR.vermelho):'#0369a1',
@@ -173,7 +173,7 @@ export default function FcDesktopPanel({
         ))}
       </div>
 
-      <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
+      <div style={{display:'flex',flexDirection:'column',gap:14,marginBottom:10}}>
         {/* Data da compra — campo livre */}
         {(() => {
           const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
@@ -183,7 +183,8 @@ export default function FcDesktopPanel({
           const label = `${String(dispDia).padStart(2,'0')} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
           return (
             <div>
-              <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Data da compra</div>
+              <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+                letterSpacing:.5,marginBottom:5}}>Data da compra</div>
               <input
                 ref={dataCompraRef}
                 autoFocus
@@ -201,17 +202,18 @@ export default function FcDesktopPanel({
                 }}
                 onFocus={realcarFoco}
                 placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
-                style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
-                  fontSize:12,outline:'none',background:'#fff',
+                style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
+                  fontSize:13,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}
                 onKeyDown={e => { if (e.key==='Enter') { (e.target as HTMLInputElement).blur() } }}
               />
-              <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>{label}</div>
+              <div style={{fontSize:10,color:'#94a3b8',marginTop:4}}>{label}</div>
             </div>
           )
         })()}
         <div>
-          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
+          <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+            letterSpacing:.5,marginBottom:5}}>Categoria</div>
           {(() => {
             const _seen = new Set<string>()
             const catsSemDup = categoriasCartao.filter(c => {
@@ -235,8 +237,8 @@ export default function FcDesktopPanel({
                 <select ref={categoriaSelectRef} value={fCat}
                   onChange={e => { setFCat(e.target.value); setFDesc(''); setFVariante('') }}
                   onFocus={realcarFoco} onBlur={removerRealce}
-                  style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
-                    fontSize:12,outline:'none',background:'#fff',
+                  style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
+                    fontSize:13,outline:'none',background:'#fff',
                     fontFamily:'inherit',color:COR.texto,width:'100%'}}>
                   <option value="">Selecione...</option>
                   {gruposOrdenados.map(([grupo, cats]) =>
@@ -249,11 +251,12 @@ export default function FcDesktopPanel({
                 </select>
                 {subDescs.length > 0 && (
                   <div style={{marginTop:6}}>
-                    <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Variante</div>
+                    <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+                      letterSpacing:.5,marginBottom:5}}>Variante</div>
                     <select value={fVariante} onChange={e => setFVariante(e.target.value)}
                       onFocus={realcarFoco} onBlur={removerRealce}
-                      style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
-                        fontSize:12,outline:'none',background:'#fff',
+                      style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
+                        fontSize:13,outline:'none',background:'#fff',
                         fontFamily:'inherit',color:COR.texto,width:'100%'}}>
                       <option value="">Selecione a variante...</option>
                       {subDescs.map(d => <option key={d} value={d}>{d}</option>)}
@@ -265,17 +268,19 @@ export default function FcDesktopPanel({
           })()}
         </div>
         <div>
-          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor da parcela *</div>
+          <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+            letterSpacing:.5,marginBottom:5}}>Valor da parcela *</div>
           <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
             placeholder="R$ 0,00"
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
-              fontSize:12,outline:'none',background:'#fff',
+            style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
+              fontSize:13,outline:'none',background:'#fff',
               fontFamily:'inherit',color:COR.texto,width:'100%',...(valorRuim?REALCE_ERRO:{})}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
         </div>
         <div>
-          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Parcelas</div>
+          <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+            letterSpacing:.5,marginBottom:5}}>Parcelas</div>
           <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
             {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
               const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
@@ -297,10 +302,10 @@ export default function FcDesktopPanel({
                     }
                   }}
                   style={{
-                    padding:'4px 8px',border:`1.5px solid ${ativo?COR.azul:'#bae6fd'}`,
-                    borderRadius:6,cursor:'pointer',fontSize:11,fontWeight:500,
+                    padding:'6px 12px',border:`1.5px solid ${ativo?COR.azul:'#e2e8f0'}`,
+                    borderRadius:8,cursor:'pointer',fontSize:11,fontWeight:600,
                     background:ativo?'#eff6ff':'#fff',
-                    color:ativo?COR.azul:'#0369a1',fontFamily:'inherit'}}>
+                    color:ativo?COR.azul:'#0369a1',fontFamily:'inherit',transition:'all .15s'}}>
                   {n}x
                 </button>
               )
@@ -313,8 +318,8 @@ export default function FcDesktopPanel({
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); lancar() } }}
               onFocus={e => { e.currentTarget.style.border=`1.5px solid ${COR.azul}`; e.currentTarget.style.boxShadow='0 0 0 3px rgba(26,86,219,0.15)' }}
               onBlur={e => { e.currentTarget.style.border='1.5px solid #bae6fd'; e.currentTarget.style.boxShadow='none'; if(!e.target.value) setFParcelas('1') }}
-              style={{width:52,border:`1.5px solid ${parseInt(fParcelas)>12?COR.azul:'#bae6fd'}`,
-                borderRadius:6,padding:'4px 6px',fontSize:11,outline:'none',
+              style={{width:56,border:`1.5px solid ${parseInt(fParcelas)>12?COR.azul:'#e2e8f0'}`,
+                borderRadius:8,padding:'6px 8px',fontSize:11,outline:'none',
                 background:parseInt(fParcelas)>12?'#eff6ff':'#fff',
                 color:parseInt(fParcelas)>12?COR.azul:'#94a3b8',fontFamily:'inherit',textAlign:'center'}}/>
           </div>
@@ -325,12 +330,13 @@ export default function FcDesktopPanel({
           )}
         </div>
         <div>
-          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Descrição</div>
+          <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+            letterSpacing:.5,marginBottom:5}}>Descrição</div>
           <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
             placeholder="Ex: Mercado Extra, Farmácia..."
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #bae6fd`,borderRadius:8,padding:'7px 10px',
-              fontSize:12,outline:'none',background:'#fff',
+            style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
+              fontSize:13,outline:'none',background:'#fff',
               fontFamily:'inherit',color:COR.texto,width:'100%'}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
         </div>
@@ -343,17 +349,17 @@ export default function FcDesktopPanel({
       <div style={{display:'flex',gap:8}}>
         {editandoId && (
           <button onClick={excluirAtual} style={{
-            flex:1,padding:'10px 0',border:`1.5px solid ${COR.borda}`,
-            borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:500,
+            flex:1,padding:13,border:`1.5px solid ${COR.borda}`,
+            borderRadius:10,cursor:'pointer',fontSize:13,fontWeight:500,
             background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>
             Excluir
           </button>
         )}
         <button onClick={lancar} style={{
-          flex:2,padding:'10px 0',border:'none',borderRadius:8,
+          flex:2,padding:13,border:'none',borderRadius:10,
           background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-          color:'#fff',fontSize:13,fontWeight:600,
-          cursor:'pointer',fontFamily:'inherit'}}>
+          color:'#fff',fontSize:14,fontWeight:800,
+          cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(26,86,219,.3)'}}>
           {editandoId ? 'Salvar alterações' : 'Lançar'}
         </button>
       </div>
