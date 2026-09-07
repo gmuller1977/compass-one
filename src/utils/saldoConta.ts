@@ -3,7 +3,7 @@ import { parseBRL } from './moeda'
 import { valorFixaNoMes } from './valorFixa'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 
-type Deps = {
+export type Deps = {
   extratoData: Record<string, DadosMes>
   faturaData: Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
   contas: Conta[]

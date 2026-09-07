@@ -8,6 +8,7 @@ import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import { COR } from '../utils/cores'
+import SimCompra from '../components/simulacao/SimCompra'
 
 function useIsMobile() {
   const [v] = useState(() => window.innerWidth < 640)
@@ -229,7 +230,7 @@ export default function Simulacao() {
   const { user, planos, setPlanos } = useApp()
   const hoje                              = new Date()
 
-  const [aba, setAba] = useState<'divida' | 'meta'>('divida')
+  const [aba, setAba] = useState<'compra' | 'divida' | 'meta'>('compra')
 
   // ── Saved simulations ────────────────────────────────────────────────
   const [simList,      setSimList]      = useState<SimRow[]>([])
@@ -396,7 +397,7 @@ export default function Simulacao() {
 
   // ── Render ───────────────────────────────────────────────────────────
   const isDivida = aba === 'divida'
-  const corAba   = isDivida ? COR.vermelho : COR.verde
+  const corAba   = aba === 'compra' ? COR.azul : isDivida ? COR.vermelho : COR.verde
 
   return (
     <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
@@ -410,7 +411,7 @@ export default function Simulacao() {
             title="Simulador"
             subtitle={simList.length > 0 ? `${simList.length} simulaç${simList.length === 1 ? 'ão salva' : 'ões salvas'}` : 'Nenhuma simulação salva'}
             rightContent={
-              <button onClick={() => { setAba('divida'); setSimSalva(false) }} style={PH_BTN_SOLID}>
+              <button onClick={() => { setAba('compra'); setSimSalva(false) }} style={PH_BTN_SOLID}>
                 + Nova simulação
               </button>
             }
@@ -421,7 +422,7 @@ export default function Simulacao() {
 
         {/* Abas */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${COR.borda}`, marginBottom: 24 }}>
-          {([['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => (
+          {([['compra', '🛒 Posso comprar?'], ['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => (
             <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
               padding: '10px 20px', border: 'none', fontFamily: 'inherit',
               borderBottom: `2px solid ${aba === v ? corAba : 'transparent'}`,
@@ -446,6 +447,9 @@ export default function Simulacao() {
             <div style={{ height: 1, background: COR.borda, margin: '20px 0' }} />
           </div>
         )}
+
+        {/* ═══ ABA COMPRA ═══ */}
+        {aba === 'compra' && <SimCompra isMobile={isMobile} />}
 
         {/* ═══ ABA DÍVIDA ═══ */}
         {isDivida && (
