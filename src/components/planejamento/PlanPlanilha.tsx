@@ -72,6 +72,7 @@ function agrupar(cats: Cat[], tipo: 'e' | 's', viInicial: number): Linha[] {
 // Summary panel
 const SH = 34  // summary header row
 const SR = 26  // summary value row
+const SB = 30  // summary meta bar row
 
 const W_CATS = 200
 const W_MES  = 130
@@ -109,6 +110,7 @@ export default function PlanPlanilha({
   categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
   objetivos, sobraPrevista, onMetaSave,
 }: Props) {
+  const temAlgumaMeta = objetivos.some(v => v > 0)
   const scrollResRef = useRef<HTMLDivElement>(null)
   const scrollCatRef = useRef<HTMLDivElement>(null)
   const syncLock     = useRef(false)
@@ -307,15 +309,26 @@ export default function PlanPlanilha({
             </span>
           </div>
           {/* Labels */}
-          {(['Saldo inicial', 'Receitas', 'Despesas', 'Resultado', 'Saldo final'] as const).map((lbl, i) => (
+          {/* Resultado desceu para depois do Saldo final: as duas cadeias de
+              cima ficam intactas — receitas menos despesas, e saldo inicial mais
+              o movimento —, e o fechamento do mes vai para o pe, junto da meta. */}
+          {(['Saldo inicial', 'Receitas', 'Despesas', 'Saldo final', 'Resultado'] as const).map((lbl, i) => (
             <div key={lbl} style={{
               height: SR, display: 'flex', alignItems: 'center', padding: '0 14px',
               fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.7)',
-              borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+              borderBottom: i < 4 || temAlgumaMeta ? '1px solid rgba(255,255,255,0.06)' : 'none',
             }}>
               {lbl}
             </div>
           ))}
+          {temAlgumaMeta && (
+            <div style={{
+              height: SB, display: 'flex', alignItems: 'center', padding: '0 14px',
+              fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.7)',
+            }}>
+              🎯 Meta
+            </div>
+          )}
         </div>
 
         {/* Scrollable month columns */}
@@ -355,18 +368,47 @@ export default function PlanPlanilha({
                       { v: si,  color: tc.text,                         bold: false, fmt: (v: number) => fmt(v, true) },
                       { v: te,  color: tc.rec,                          bold: false, fmt: (v: number) => fmt(v, true) },
                       { v: ts,  color: tc.desp,                         bold: false, fmt: (v: number) => fmt(v, true) },
-                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  fmt: fmtRes },
                       { v: sf,  color: sf < 0 ? tc.desp : tc.text,      bold: false, fmt: (v: number) => fmt(v, true) },
+                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  fmt: fmtRes },
                     ].map(({ v, color, bold, fmt: fv }, idx, arr) => (
                       <div key={idx} style={{
                         height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                         padding: '0 10px', fontSize: 12, fontWeight: bold ? 800 : 700,
                         color, fontVariantNumeric: 'tabular-nums',
-                        borderBottom: idx < arr.length - 1 ? `1px solid ${tc.divider}` : 'none',
+                        borderBottom: idx < arr.length - 1 || temAlgumaMeta ? `1px solid ${tc.divider}` : 'none',
                       }}>
                         {fv(v)}
                       </div>
                     ))}
+                    {temAlgumaMeta && (() => {
+                      // A mesma barra do card da Grade, na largura da coluna.
+                      const meta = objetivos[mi] ?? 0
+                      const perc = meta > 0 ? Math.max(0, Math.min(100, (res / meta) * 100)) : 0
+                      const fill = perc >= 100 ? '#4ade80' : perc >= 70 ? '#fbbf24' : '#f87171'
+                      return (
+                        <div style={{ height: SB, padding: '0 10px',
+                          display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3 }}>
+                          {meta > 0 ? (
+                            <>
+                              <div style={{ height: 4, background: 'rgba(255,255,255,0.15)',
+                                borderRadius: 6, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${perc}%`, background: fill,
+                                  borderRadius: 6, transition: 'width .3s' }} />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between',
+                                fontSize: 8, color: 'rgba(255,255,255,0.75)',
+                                fontVariantNumeric: 'tabular-nums' }}>
+                                <span>{fmt(meta, true)}</span>
+                                <span>{Math.round(perc)}%</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.35)',
+                              textAlign: 'right' }}>sem meta</div>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               )

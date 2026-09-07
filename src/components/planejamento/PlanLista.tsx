@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, type AnoData, type Cat } from './types'
+import { fmt, MESES, nomeExibicao, COR, type AnoData, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
@@ -203,10 +203,34 @@ export default function PlanLista({
                     <span style={{ fontSize: 13, fontWeight: 800, color: '#dc2626', minWidth: 90, textAlign: 'right', padding: '0 8px', fontVariantNumeric: 'tabular-nums' }}>{fmt(ts, true)}</span>
                   </div>
 
-                  {/* Resultado */}
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', background: '#f1f5f9', borderTop: '2px solid #e2e8f0' }}>
-                    <span style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#0f172a' }}>= Resultado</span>
-                    <span style={{ fontSize: 15, fontWeight: 800, minWidth: 90, textAlign: 'right', padding: '0 8px', color: res >= 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{fmtRes(res)}</span>
+                  {/* Resultado, e a barra da meta logo abaixo — a mesma
+                      leitura do card da Grade, no idioma do card da Lista. */}
+                  <div style={{ padding: '10px 16px', background: '#f1f5f9', borderTop: '2px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#0f172a' }}>= Resultado</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, minWidth: 90, textAlign: 'right', padding: '0 8px', color: res >= 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{fmtRes(res)}</span>
+                    </div>
+                    {(objetivos[mi] ?? 0) > 0 && (() => {
+                      const meta = objetivos[mi]
+                      const perc = Math.max(0, Math.min(100, (res / meta) * 100))
+                      // Barra e elemento grafico: vale o limite de 3:1, e por
+                      // isso os tokens barra* e nao os de texto. Ver CLAUDE.md.
+                      const fill = perc >= 100 ? COR.barraVerde
+                        : perc >= 70 ? COR.barraAmarela : COR.barraVermelha
+                      return (
+                        <div style={{ marginTop: 8 }}>
+                          <div style={{ height: 5, background: COR.borda, borderRadius: 6, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${perc}%`, background: fill,
+                              borderRadius: 6, transition: 'width .3s' }} />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between',
+                            marginTop: 4, fontSize: 10, color: COR.textoSuave }}>
+                            <span>🎯 meta {fmt(meta, true)}</span>
+                            <span>{Math.round(perc)}%</span>
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               )}
