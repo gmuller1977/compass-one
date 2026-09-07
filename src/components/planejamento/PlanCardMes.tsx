@@ -1,4 +1,5 @@
 import { fmt, MESES_FULL, PREVISTO } from './types'
+import { COR } from '../../utils/cores'
 
 interface Props {
   mes: number
@@ -74,16 +75,26 @@ export default function PlanCardMes({
   const shadow      = isAtual ? '0 4px 16px rgba(26,86,219,0.5)' : th.shadow
   const shadowHover = isAtual ? '0 8px 28px rgba(26,86,219,0.65)' : th.shadowHover
 
-  // Cheio para o que aconteceu, contornado para o que ainda e projecao — o
-  // mesmo tracejado que marca estimativa no resto do app. So o italico do
-  // numero era discreto demais para uma distincao que muda a leitura inteira.
-  const saldoFinalBg = negativo ? 'rgba(251,191,36,0.2)'
-    : saldoFinalReal ? th.saldoFinalBg
+  // O saldo que ACONTECEU ganha cor cheia: verde no azul, vermelho no
+  // vermelho. O que ainda e projecao fica contornado, com o tracejado que marca
+  // estimativa no resto do app. Antes os dois eram o mesmo cinza e so o
+  // italico separava — discreto demais para uma distincao que mudam a leitura
+  // inteira do mes.
+  //
+  // sucessoTexto e erroTexto, e nao COR.verde: sobre o verde padrao o branco da
+  // 3,3:1 e reprova. Estes dao 5,0:1 e 6,5:1. Pelo mesmo motivo o rotulo aqui e
+  // branco puro — a 75% cairia para 3,5:1.
+  const saldoFinalBg = saldoFinalReal
+    ? (saldoFinal >= 0 ? COR.sucessoTexto : COR.erroTexto)
+    : negativo ? 'rgba(251,191,36,0.2)'
     : 'transparent'
   const saldoFinalBorda = saldoFinalReal
     ? '1px solid transparent'
     : `1px dashed ${th.semPlano}`
-  const saldoFinalText = negativo ? '#fde047' : th.text
+  const saldoFinalText = saldoFinalReal ? '#fff'
+    : negativo ? '#fde047'
+    : th.text
+  const saldoFinalLabel = saldoFinalReal ? '#fff' : th.label
 
   const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : '#4ade80'
 
@@ -201,9 +212,11 @@ export default function PlanCardMes({
               borderRadius: 8, padding: '6px 10px',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              <span style={{ fontSize: 11, color: th.label }}>
+              <span style={{ fontSize: 11, color: saldoFinalLabel }}>
                 Saldo final
-                <span style={{ fontSize: 9, marginLeft: 5, opacity: .85 }}>
+                {/* Hierarquia por peso, nao por opacidade: sobre o verde e o
+                    vermelho, branco esmaecido nao passa como texto. */}
+                <span style={{ fontSize: 9, marginLeft: 5, fontWeight: 400 }}>
                   {saldoFinalReal ? 'real' : 'previsto'}
                 </span>
               </span>
