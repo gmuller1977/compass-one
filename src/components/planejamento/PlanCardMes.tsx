@@ -1,4 +1,4 @@
-import { fmt, MESES_FULL } from './types'
+import { fmt, MESES_FULL, PREVISTO } from './types'
 
 interface Props {
   mes: number
@@ -74,7 +74,15 @@ export default function PlanCardMes({
   const shadow      = isAtual ? '0 4px 16px rgba(26,86,219,0.5)' : th.shadow
   const shadowHover = isAtual ? '0 8px 28px rgba(26,86,219,0.65)' : th.shadowHover
 
-  const saldoFinalBg   = negativo ? 'rgba(251,191,36,0.2)' : th.saldoFinalBg
+  // Cheio para o que aconteceu, contornado para o que ainda e projecao — o
+  // mesmo tracejado que marca estimativa no resto do app. So o italico do
+  // numero era discreto demais para uma distincao que muda a leitura inteira.
+  const saldoFinalBg = negativo ? 'rgba(251,191,36,0.2)'
+    : saldoFinalReal ? th.saldoFinalBg
+    : 'transparent'
+  const saldoFinalBorda = saldoFinalReal
+    ? '1px solid transparent'
+    : `1px dashed ${th.semPlano}`
   const saldoFinalText = negativo ? '#fde047' : th.text
 
   const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : '#4ade80'
@@ -189,7 +197,8 @@ export default function PlanCardMes({
 
             {/* Saldo final */}
             <div style={{
-              background: saldoFinalBg, borderRadius: 8, padding: '6px 10px',
+              background: saldoFinalBg, border: saldoFinalBorda,
+              borderRadius: 8, padding: '6px 10px',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <span style={{ fontSize: 11, color: th.label }}>
@@ -198,7 +207,9 @@ export default function PlanCardMes({
                   {saldoFinalReal ? 'real' : 'previsto'}
                 </span>
               </span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: saldoFinalText, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: saldoFinalText,
+                fontVariantNumeric: 'tabular-nums',
+                ...(saldoFinalReal ? {} : PREVISTO) }}>
                 {fmt(saldoFinal, true)}
               </span>
             </div>
