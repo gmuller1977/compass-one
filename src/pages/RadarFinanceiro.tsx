@@ -190,6 +190,7 @@ export default function RadarFinanceiro() {
           icon="ti-chart-bar"
           breadcrumb="TODO DIA"
           title="Radar financeiro"
+          subtitle="Previsto × Realizado"
           mb={0}
           rightContent={
             <SeletorMesAno
