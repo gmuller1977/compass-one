@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AreaChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -249,6 +250,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   parcelas: number
 }) {
   const valorParcela = valorTotal / parcelas
+  const navigate = useNavigate()
   const [detalhes, setDetalhes] = useState(false)
   const oQue = nome.trim() || 'a compra'
 
@@ -318,13 +320,23 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
         )}
       </div>
 
-      {r.anosSemPlano.length > 0 && (
-        <div style={{ ...card, background: COR.avisoFundo, border: `1px solid ${COR.avisoTexto}33`,
-          fontSize: 13, color: COR.avisoTexto, lineHeight: 1.6 }}>
-          ⚠ Você ainda não montou o planejamento de {r.anosSemPlano.join(' e ')}.
-          A partir de janeiro a conta congela o saldo — para de somar o que
-          entra e o que sai. Se você costuma sobrar dinheiro todo mês, esses
-          meses aparecem piores do que provavelmente serão.
+      {r.anosEstimados.length > 0 && (
+        <div style={{ ...card, background: COR.avisoFundo, border: `1px solid ${COR.avisoTexto}33` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COR.avisoTexto }}>
+            ≈ Os meses de {r.anosEstimados.join(' e ')} são uma estimativa
+          </div>
+          <div style={{ fontSize: 13, color: COR.avisoTexto, marginTop: 6, lineHeight: 1.6 }}>
+            Você ainda não montou o planejamento desse período, então repetimos
+            o seu último ano. Serve para ter uma ideia, mas o número de verdade
+            só sai depois que você montar.
+          </div>
+          <button onClick={() => navigate(`/planejamento?ano=${r.anosEstimados[0]}`)} style={{
+            marginTop: 12, padding: '9px 16px', borderRadius: 8, cursor: 'pointer',
+            border: `1.5px solid ${COR.avisoTexto}55`, background: COR.branco,
+            color: COR.avisoTexto, fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+          }}>
+            Montar o planejamento de {r.anosEstimados[0]} →
+          </button>
         </div>
       )}
 
@@ -342,19 +354,20 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
             return (
               <div key={`${p.ano}-${p.mes}`} style={{
                 flex: '0 0 auto', minWidth: 78, textAlign: 'center',
-                border: `1px solid ${COR.borda}`, borderRadius: 10, padding: '10px 8px',
-                background: COR.branco,
+                border: `1px ${p.estimado ? 'dashed' : 'solid'} ${COR.borda}`,
+                borderRadius: 10, padding: '10px 8px',
+                background: p.estimado ? COR.fundo : COR.branco,
               }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: COR.textoSuave }}>
                   {MESES_CURTOS[p.mes]}
                 </div>
                 <div style={{
                   width: 10, height: 10, borderRadius: '50%', margin: '7px auto',
-                  background: CORES[s].ponto,
+                  background: CORES[s].ponto, opacity: p.estimado ? .55 : 1,
                 }} />
                 <div style={{ fontSize: 12, fontWeight: 700, color: CORES[s].texto,
                   fontVariantNumeric: 'tabular-nums' }}>
-                  {fmt(p.comCompra)}
+                  {p.estimado && <span style={{ fontWeight: 500 }}>≈ </span>}{fmt(p.comCompra)}
                 </div>
               </div>
             )
@@ -369,6 +382,13 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
               {txt}
             </span>
           ))}
+          {meses.some(p => p.estimado) && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3,
+                border: `1px dashed ${COR.textoSuave}` }} />
+              ≈ estimado, repetindo o seu último ano
+            </span>
+          )}
         </div>
 
         <button onClick={() => setDetalhes(v => !v)} style={{
@@ -417,6 +437,15 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
               formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Comprando' : 'Sem comprar']}
               contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
             <ReferenceLine y={0} stroke={COR.erroTexto} strokeDasharray="4 4" />
+            {(() => {
+              const i = meses.findIndex(p => p.estimado)
+              return i > 0 ? (
+                <ReferenceLine x={MESES_CURTOS[meses[i].mes]} stroke={COR.textoSuave}
+                  strokeDasharray="3 3"
+                  label={{ value: 'estimado →', position: 'insideTopLeft',
+                    fontSize: 10, fill: COR.textoSuave }} />
+              ) : null
+            })()}
             <Area type="monotone" dataKey="sem" stroke="#94a3b8" fill="#94a3b8" fillOpacity={.18} />
             <Area type="monotone" dataKey="com" stroke={COR.azul} fill={COR.azul} fillOpacity={.28} />
           </AreaChart>

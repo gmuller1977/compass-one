@@ -30,8 +30,11 @@ export type PontoFluxo = {
   comCompra: number
   /** Quanto a compra tira NESTE mês. */
   parcela: number
-  /** Não há plano cadastrado para este ano — a projeção está otimista demais. */
-  semPlano: boolean
+  /**
+   * Este mês não tem planejamento próprio: os números vieram do último ano
+   * cadastrado, repetidos. Vale mostrar como estimativa, não como plano.
+   */
+  estimado: boolean
 }
 
 const ym = (ano: number, mes: number) => ano * 100 + (mes + 1)
@@ -60,20 +63,49 @@ export function saidasDoParcelamento(p: Parcelamento, contas: Conta[]) {
   }))
 }
 
-/** A projeção sem a compra, mês a mês, a partir do mês corrente. */
-function serieBase(deps: Deps, horizonte: number, hoje: Date): PontoFluxo[] {
-  const anosComPlano = new Set(
-    Object.entries(deps.planos)
-      .filter(([, plano]) => !!plano)
-      .map(([ano]) => Number(ano)),
+function anosComPlano(planos: Deps['planos']) {
+  return new Set(
+    Object.entries(planos).filter(([, p]) => !!p).map(([ano]) => Number(ano)),
   )
+}
+
+/**
+ * Preenche os anos sem planejamento repetindo o último ano cadastrado.
+ *
+ * Sem isso a projeção CONGELA no ano sem plano: `valorFixaNoMes` devolve zero
+ * e o saldo para de subir e de descer, enquanto as parcelas continuam caindo
+ * por cima. Quem tem sobra todo mês via a compra parecer bem pior do que é —
+ * medido, R$ 1.600 no lugar de R$ 3.800.
+ *
+ * Repetir o ano inteiro, e não um mês, preserva a sazonalidade: o 13º continua
+ * em dezembro e o IPVA em janeiro. É a mesma operação que o Planejamento já
+ * oferece com o nome "Copiar ano anterior".
+ *
+ * O que ele não sabe: quando uma parcela termina. Um financiamento que acaba
+ * em março volta cheio o ano seguinte, porque o plano guarda doze números e
+ * nenhuma data final. O erro superestima a despesa — para "posso comprar?",
+ * é o lado certo de errar.
+ */
+function continuarPlanos(planos: Deps['planos'], anos: number[]): Deps['planos'] {
+  const conhecidos = [...anosComPlano(planos)].sort((a, b) => a - b)
+  const ultimo = conhecidos[conhecidos.length - 1]
+  if (ultimo === undefined) return planos
+  const saida = { ...planos }
+  for (const ano of anos) if (!saida[ano]) saida[ano] = planos[ultimo]
+  return saida
+}
+
+/** A projeção sem a compra, mês a mês, a partir do mês corrente. */
+function serieBase(
+  deps: Deps, horizonte: number, hoje: Date, comPlanoProprio: Set<number>,
+): PontoFluxo[] {
   return Array.from({ length: horizonte }, (_, i) => {
     const { ano, mes } = somaMes(hoje.getFullYear(), hoje.getMonth(), i)
     const valor = saldoTotalNoFim(ano, mes, deps, { hoje }).valor
     return {
       ano, mes,
       semCompra: valor, comCompra: valor, parcela: 0,
-      semPlano: !anosComPlano.has(ano),
+      estimado: !comPlanoProprio.has(ano),
     }
   })
 }
@@ -102,8 +134,8 @@ export type ResultadoCompra = {
   adiarPara: { ano: number; mes: number; meses: number } | null
   /** Menor número de parcelas que cabe mantendo a data. `null` se nenhum cabe. */
   parcelasQueCabem: number | null
-  /** Anos do horizonte sem plano cadastrado: a projeção fica otimista. */
-  anosSemPlano: number[]
+  /** Anos que a compra alcança sem planejamento próprio, estimados por repetição. */
+  anosEstimados: number[]
 }
 
 /**
@@ -129,7 +161,11 @@ function avaliar(
 export function simularCompra(
   p: Parcelamento,
   deps: Deps,
-  opts: { piso?: number; hoje?: Date; maxAdiamento?: number; maxParcelas?: number } = {},
+  opts: {
+    piso?: number; hoje?: Date; maxAdiamento?: number; maxParcelas?: number
+    /** Repetir o último ano nos anos sem plano. Ligado por padrão. */
+    repetirPlano?: boolean
+  } = {},
 ): ResultadoCompra {
   const hoje = opts.hoje ?? new Date()
   const piso = opts.piso ?? 0
@@ -139,7 +175,18 @@ export function simularCompra(
   // Cabe o adiamento maximo, o parcelamento maximo e uma folga para o mes
   // seguinte a ultima parcela aparecer no grafico.
   const horizonte = maxAdiamento + Math.max(p.parcelas, maxParcelas) + 2
-  const base = serieBase(deps, horizonte, hoje)
+
+  // O "estimado" e medido contra os planos ORIGINAIS: o calculo usa os anos
+  // preenchidos, mas a tela precisa dizer quais numeros o usuario montou.
+  const proprios = anosComPlano(deps.planos)
+  const depsCalc = opts.repetirPlano === false ? deps : {
+    ...deps,
+    planos: continuarPlanos(
+      deps.planos,
+      Array.from({ length: horizonte }, (_, i) => somaMes(hoje.getFullYear(), hoje.getMonth(), i).ano),
+    ),
+  }
+  const base = serieBase(depsCalc, horizonte, hoje, proprios)
 
   const { fluxo, pior, cabe } = avaliar(base, saidasDoParcelamento(p, deps.contas), piso)
 
@@ -169,11 +216,11 @@ export function simularCompra(
   // So os anos que a compra realmente alcanca — avisar sobre 2028 num
   // parcelamento que acaba em marco so faria ruido.
   const ultimo = fluxo.reduce((a, b) => (b.parcela > 0 ? b : a), fluxo[0])
-  const anosSemPlano = [...new Set(
+  const anosEstimados = [...new Set(
     fluxo
-      .filter(pt => pt.semPlano && ym(pt.ano, pt.mes) <= ym(ultimo.ano, ultimo.mes))
+      .filter(pt => pt.estimado && ym(pt.ano, pt.mes) <= ym(ultimo.ano, ultimo.mes))
       .map(pt => pt.ano),
   )]
 
-  return { fluxo, pior, cabe, adiarPara, parcelasQueCabem, anosSemPlano }
+  return { fluxo, pior, cabe, adiarPara, parcelasQueCabem, anosEstimados }
 }

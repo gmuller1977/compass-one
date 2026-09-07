@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
@@ -26,7 +26,12 @@ export default function Planejamento() {
   const isMobile = useIsMobile()
 
   const anoCorrente = new Date().getFullYear()
-  const [anoAtual, setAnoAtual] = useState(anoCorrente)
+  // ?ano= permite cair direto no ano que se quer montar — o Simulador manda
+  // para ca quando a compra alcanca um ano sem planejamento.
+  const [searchParams] = useSearchParams()
+  const [anoAtual, setAnoAtual] = useState(
+    () => Number(searchParams.get('ano')) || anoCorrente,
+  )
 
   const plan = usePlanejamento(anoAtual)
 
