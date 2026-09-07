@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
+import PlanMeta from '../components/planejamento/PlanMeta'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
@@ -112,6 +113,14 @@ export default function Planejamento() {
           </div>
         </div>
       )}
+
+      <PlanMeta
+        mesAtual={plan.mesAtual}
+        objetivos={plan.objetivos}
+        sobraPrevista={plan.previsto.totalEntradas.map(
+          (e: number, i: number) => e - plan.previsto.totalSaidas[i])}
+        onSalvar={plan.editarMetas}
+      />
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {viewMode === 'grade' ? (

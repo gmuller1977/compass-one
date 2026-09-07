@@ -250,6 +250,27 @@ export function usePlanejamento(anoAtual: number) {
     })
   }
 
+  /**
+   * A meta de sobra de cada mês, sempre com doze posições. Zero = sem meta.
+   */
+  const objetivos = useMemo(() => {
+    const salvo = (planos[anoAtual] as PlanoAnoData | undefined)?.objetivos
+    return Array.from({ length: 12 }, (_, i) => salvo?.[i] ?? 0)
+  }, [planos, anoAtual])
+
+  /**
+   * Grava as metas sem passar por updateAno: `AnoData` não declara
+   * `objetivos`, e escrever por lá exigiria alargar um tipo que existe para
+   * falar de categorias. A base é dadosPrevisto, como em updateAno, para que o
+   * primeiro save também crie o plano do ano quando ainda não existe.
+   */
+  function editarMetas(valores: number[]) {
+    setPlanos(prev => ({
+      ...prev,
+      [anoAtual]: { ...(dadosPrevisto as unknown as PlanoAnoData), objetivos: valores },
+    }))
+  }
+
   function editarMultiplosValores(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
     updateAno(d => {
       const entradas = d.entradas.map(c => ({ ...c, v: [...c.v] }))
@@ -288,6 +309,8 @@ export function usePlanejamento(anoAtual: number) {
     // Ações
     editarValor,
     editarMultiplosValores,
+    objetivos,
+    editarMetas,
     planoAnoAnterior,
     // Dados contexto (para passar para componentes)
     contas,
