@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, COR, type AnoData, type Cat } from './types'
+import { fmt, MESES, nomeExibicao, type AnoData, type Cat } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
@@ -36,12 +36,14 @@ const TL = {
 
 const COL_MES = 100
 const COL_VAL = 110
+const COL_META = 96
 
 export default function PlanLista({
   anoAtual, mesAtual, dadosAtivos, previsto,
   categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
   objetivos, sobraPrevista, onMetaSave,
 }: Props) {
+  const temAlgumaMeta = objetivos.some(v => v > 0)
   const [aberto, setAberto] = useState<number>(-1)
   const anoCorrente = new Date().getFullYear()
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -85,16 +87,23 @@ export default function PlanLista({
         display: 'flex', padding: '8px 0',
         borderBottom: '2px solid #e2e8f0', marginBottom: 4,
         position: 'sticky', top: 0, zIndex: 5, background: '#f8faff',
-        minWidth: COL_MES + COL_VAL * 5,
+        minWidth: COL_MES + COL_VAL * 5 + (temAlgumaMeta ? COL_META : 0),
       }}>
         <div style={{ width: COL_MES, fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.3px', paddingLeft: 12 }}>Mês</div>
-        {['Saldo inicial', 'Receitas', 'Despesas', 'Resultado', 'Saldo final'].map((h, i) => (
-          <div key={h} className={i === 0 ? 'plista-si' : i === 4 ? 'plista-sf' : ''} style={{ width: COL_VAL, fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.3px', textAlign: 'right', paddingRight: 8 }}>{h}</div>
+        {/* A meta entra entre Resultado e Saldo final: ali ela e lida junto do
+            numero que cobra, sem precisar abrir o mes. */}
+        {(temAlgumaMeta
+          ? ['Saldo inicial', 'Receitas', 'Despesas', 'Resultado', 'Meta', 'Saldo final']
+          : ['Saldo inicial', 'Receitas', 'Despesas', 'Resultado', 'Saldo final']
+        ).map((h, i, arr) => (
+          <div key={h}
+            className={i === 0 ? 'plista-si' : i === arr.length - 1 ? 'plista-sf' : h === 'Meta' ? 'plista-meta' : ''}
+            style={{ width: h === 'Meta' ? COL_META : COL_VAL, fontSize: 9, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.3px', textAlign: 'right', paddingRight: 8 }}>{h}</div>
         ))}
       </div>
 
       {/* 12 meses */}
-      <div style={{ minWidth: COL_MES + COL_VAL * 5 }}>
+      <div style={{ minWidth: COL_MES + COL_VAL * 5 + (temAlgumaMeta ? COL_META : 0) }}>
         {Array.from({ length: 12 }, (_, mi) => {
           const te = previsto.totalEntradas[mi]
           const ts = previsto.totalSaidas[mi]
@@ -141,6 +150,33 @@ export default function PlanLista({
                     <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.rec, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(te, true)}</div>
                     <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.desp, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(ts, true)}</div>
                     <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: res >= 0 ? tl.rec : tl.neg, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmtRes(res)}</div>
+                    {temAlgumaMeta && (() => {
+                      const meta = objetivos[mi] ?? 0
+                      const perc = meta > 0 ? Math.max(0, Math.min(100, (res / meta) * 100)) : 0
+                      // Barra e elemento grafico: limite de 3:1. Sobre o azul
+                      // valem estes tons, os mesmos do card da Grade.
+                      const fill = perc >= 100 ? '#4ade80' : perc >= 70 ? '#fbbf24' : '#f87171'
+                      return (
+                        <div className="plista-meta" style={{ width: COL_META, paddingRight: 8, flexShrink: 0,
+                          display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 3 }}>
+                          {meta > 0 ? (
+                            <>
+                              <div style={{ height: 4, background: 'rgba(255,255,255,0.18)', borderRadius: 6, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${perc}%`, background: fill,
+                                  borderRadius: 6, transition: 'width .3s' }} />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between',
+                                fontSize: 8, color: 'rgba(255,255,255,0.75)', fontVariantNumeric: 'tabular-nums' }}>
+                                <span>{fmt(meta, true)}</span>
+                                <span>{Math.round(perc)}%</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>—</div>
+                          )}
+                        </div>
+                      )
+                    })()}
                     <div className="plista-sf" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(sf, true)}</div>
                   </>
                 ) : (
@@ -210,27 +246,6 @@ export default function PlanLista({
                       <span style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#0f172a' }}>= Resultado</span>
                       <span style={{ fontSize: 15, fontWeight: 800, minWidth: 90, textAlign: 'right', padding: '0 8px', color: res >= 0 ? '#16a34a' : '#dc2626', fontVariantNumeric: 'tabular-nums' }}>{fmtRes(res)}</span>
                     </div>
-                    {(objetivos[mi] ?? 0) > 0 && (() => {
-                      const meta = objetivos[mi]
-                      const perc = Math.max(0, Math.min(100, (res / meta) * 100))
-                      // Barra e elemento grafico: vale o limite de 3:1, e por
-                      // isso os tokens barra* e nao os de texto. Ver CLAUDE.md.
-                      const fill = perc >= 100 ? COR.barraVerde
-                        : perc >= 70 ? COR.barraAmarela : COR.barraVermelha
-                      return (
-                        <div style={{ marginTop: 8 }}>
-                          <div style={{ height: 5, background: COR.borda, borderRadius: 6, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${perc}%`, background: fill,
-                              borderRadius: 6, transition: 'width .3s' }} />
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between',
-                            marginTop: 4, fontSize: 10, color: COR.textoSuave }}>
-                            <span>🎯 meta {fmt(meta, true)}</span>
-                            <span>{Math.round(perc)}%</span>
-                          </div>
-                        </div>
-                      )
-                    })()}
                   </div>
                 </div>
               )}
@@ -241,6 +256,7 @@ export default function PlanLista({
 
       <style>{`
         @media (max-width: 1023px) { .plista-si { display: none !important; } }
+        @media (max-width: 767px)  { .plista-meta { display: none !important; } }
         @media (max-width: 639px)  { .plista-sf { display: none !important; } }
       `}</style>
     </div>
