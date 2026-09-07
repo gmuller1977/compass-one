@@ -15,6 +15,9 @@ interface Props {
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
+  objetivos: number[]
+  sobraPrevista: number[]
+  onMetaSave: (objetivos: number[]) => void
   dadosAnoAnterior: AnoData | null
   ancoraMes: number
   totaisReais?: { te: number[]; ts: number[] }
@@ -37,6 +40,7 @@ const COL_VAL = 110
 export default function PlanLista({
   anoAtual, mesAtual, dadosAtivos, previsto,
   categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
+  objetivos, sobraPrevista, onMetaSave,
 }: Props) {
   const [aberto, setAberto] = useState<number>(-1)
   const anoCorrente = new Date().getFullYear()
@@ -71,6 +75,9 @@ export default function PlanLista({
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={categorias}
         onBulkSave={onBulkSave}
+        objetivos={objetivos}
+        sobraPrevista={sobraPrevista}
+        onMetaSave={onMetaSave}
       />
 
       {/* Header fixo */}

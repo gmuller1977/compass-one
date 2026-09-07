@@ -8,6 +8,8 @@ interface Props {
   saldoFinal: number
   isAtual: boolean
   isFuturo?: boolean
+  /** Meta de sobra do mês. Zero ou ausente = sem meta. */
+  meta?: number
   onClick: () => void
 }
 
@@ -58,7 +60,7 @@ const TH = {
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, onClick,
+  isAtual, meta = 0, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
@@ -74,6 +76,12 @@ export default function PlanCardMes({
   const saldoFinalText = negativo ? '#fde047' : th.text
 
   const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : '#4ade80'
+
+  // Havendo meta, a barra mede ela: sobrar o que se planejou diz mais do que
+  // "quanto da receita foi comprometida". Sem meta, segue medindo o gasto.
+  const temMeta = meta > 0
+  const percMeta = temMeta ? Math.max(0, Math.min(100, (resultado / meta) * 100)) : 0
+  const metaFill = percMeta >= 100 ? '#4ade80' : percMeta >= 70 ? '#fbbf24' : '#f87171'
 
   return (
     <div
@@ -162,10 +170,19 @@ export default function PlanCardMes({
 
             {/* Barra de progresso */}
             <div style={{ height: 4, background: th.barTrack, borderRadius: 6, overflow: 'hidden', marginBottom: 3 }}>
-              <div style={{ height: '100%', width: `${percDespesas}%`, background: barFill, borderRadius: 6, transition: 'width .3s' }} />
+              <div style={{ height: '100%', width: `${temMeta ? percMeta : percDespesas}%`,
+                background: temMeta ? metaFill : barFill, borderRadius: 6, transition: 'width .3s' }} />
             </div>
-            <div style={{ textAlign: 'right', fontSize: 9, color: th.progLabel, marginBottom: 8 }}>
-              {Math.round(percDespesas)}% utilizado
+            <div style={{ display: 'flex', justifyContent: 'space-between',
+              fontSize: 9, color: th.progLabel, marginBottom: 8 }}>
+              {temMeta ? (
+                <>
+                  <span>🎯 meta {fmt(meta, true)}</span>
+                  <span>{Math.round(percMeta)}%</span>
+                </>
+              ) : (
+                <span style={{ marginLeft: 'auto' }}>{Math.round(percDespesas)}% utilizado</span>
+              )}
             </div>
 
             {/* Saldo final */}

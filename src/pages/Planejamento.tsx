@@ -3,7 +3,6 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
-import PlanMeta from '../components/planejamento/PlanMeta'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
@@ -45,6 +44,10 @@ export default function Planejamento() {
   // Plano unico: nao ha mais aba nem escolha de qual plano editar
   const dadosAtivos = plan.dadosPrevistoFinal
   const totaisAtivos = plan.previsto
+
+  // A meta e comparada com o resultado do mes: entradas menos saidas.
+  const sobraPrevista = plan.previsto.totalEntradas.map(
+    (e: number, i: number) => e - plan.previsto.totalSaidas[i])
 
   function handleSave(tipo: 'e' | 's', ri: number, mi: number, valor: number) {
     plan.editarValor(tipo, ri, mi, valor)
@@ -114,14 +117,6 @@ export default function Planejamento() {
         </div>
       )}
 
-      <PlanMeta
-        mesAtual={plan.mesAtual}
-        objetivos={plan.objetivos}
-        sobraPrevista={plan.previsto.totalEntradas.map(
-          (e: number, i: number) => e - plan.previsto.totalSaidas[i])}
-        onSalvar={plan.editarMetas}
-      />
-
       <div style={{ flex: 1, overflow: 'auto' }}>
         {viewMode === 'grade' ? (
           <PlanGrade
@@ -136,6 +131,9 @@ export default function Planejamento() {
             somaCartaoMes={plan.somaCartaoMes}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
+            objetivos={plan.objetivos}
+            sobraPrevista={sobraPrevista}
+            onMetaSave={plan.editarMetas}
             ancoraMes={plan.ancoraMes}
           />
         ) : viewMode === 'planilha' ? (
@@ -147,6 +145,9 @@ export default function Planejamento() {
             categorias={plan.categorias}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
+            objetivos={plan.objetivos}
+            sobraPrevista={sobraPrevista}
+            onMetaSave={plan.editarMetas}
             dadosAnoAnterior={plan.planoAnoAnterior}
             ancoraMes={plan.ancoraMes}
           />
@@ -159,6 +160,9 @@ export default function Planejamento() {
             categorias={plan.categorias}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
+            objetivos={plan.objetivos}
+            sobraPrevista={sobraPrevista}
+            onMetaSave={plan.editarMetas}
             dadosAnoAnterior={plan.planoAnoAnterior}
             ancoraMes={plan.ancoraMes}
             totaisReais={plan.totaisReais}

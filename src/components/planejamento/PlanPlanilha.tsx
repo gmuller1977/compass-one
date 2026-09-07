@@ -17,6 +17,9 @@ interface Props {
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
+  objetivos: number[]
+  sobraPrevista: number[]
+  onMetaSave: (objetivos: number[]) => void
   dadosAnoAnterior: AnoData | null
   ancoraMes: number
 }
@@ -104,6 +107,7 @@ const CAT_BTN: React.CSSProperties = {
 export default function PlanPlanilha({
   anoAtual, mesAtual, dadosAtivos, previsto,
   categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
+  objetivos, sobraPrevista, onMetaSave,
 }: Props) {
   const scrollResRef = useRef<HTMLDivElement>(null)
   const scrollCatRef = useRef<HTMLDivElement>(null)
@@ -277,6 +281,9 @@ export default function PlanPlanilha({
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={categorias}
         onBulkSave={onBulkSave}
+        objetivos={objetivos}
+        sobraPrevista={sobraPrevista}
+        onMetaSave={onMetaSave}
         bloqueado={bloqueado}
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />

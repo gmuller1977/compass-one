@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useToast } from '../Toast'
 import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
+import PlanModalMeta from './PlanModalMeta'
 import { COR, type AnoData } from './types'
 import type { Categoria } from '../../context/AppContext'
 
@@ -13,6 +14,9 @@ const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
   { id: 'ano',      label: 'Copiar ano',    icon: '📅' },
 ]
 
+/** A meta abre modal em vez de painel: nao e edicao em lote como as outras. */
+const META = { label: 'Meta mensal', icon: '🎯' }
+
 interface Props {
   mesAtual: number
   anoAtual: number
@@ -21,6 +25,11 @@ interface Props {
   dadosAnoAnterior: AnoData | null
   categorias: Categoria[]
   onBulkSave: (ops: BulkOp[]) => void
+  /** Doze metas de sobra, uma por mes. Zero = sem meta. */
+  objetivos: number[]
+  /** Resultado previsto de cada mes, para o modal comparar com a meta. */
+  sobraPrevista: number[]
+  onMetaSave: (objetivos: number[]) => void
   /** Edicao indisponivel (plano travado, ou aba so de leitura). */
   bloqueado?: boolean
   motivoBloqueio?: string
@@ -32,10 +41,13 @@ interface Props {
  */
 export default function PlanBarraFerramentas({
   mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior, categorias,
-  onBulkSave, bloqueado = false, motivoBloqueio,
+  onBulkSave, objetivos, sobraPrevista, onMetaSave,
+  bloqueado = false, motivoBloqueio,
 }: Props) {
   const [toolAberta, setToolAberta] = useState<ToolId | null>(null)
+  const [metaAberta, setMetaAberta] = useState(false)
   const { toast } = useToast()
+  const temMeta = objetivos.some(v => v > 0)
 
   function toggleTool(id: ToolId) {
     if (bloqueado) {
@@ -71,7 +83,39 @@ export default function PlanBarraFerramentas({
             </button>
           )
         })}
+
+        {/* Ao lado das de lote, mas separada: abre modal, nao painel. */}
+        <button
+          onClick={() => {
+            if (bloqueado) { if (motivoBloqueio) toast(motivoBloqueio, 'info'); return }
+            setMetaAberta(true)
+          }}
+          title={bloqueado ? motivoBloqueio : 'Quanto você quer que sobre por mês'}
+          style={{
+            border: `1.5px solid ${temMeta ? '#1a56db' : COR.borda}`,
+            borderRadius: 8, padding: '6px 14px',
+            fontSize: 12, fontWeight: 600,
+            cursor: bloqueado ? 'not-allowed' : 'pointer',
+            background: temMeta ? '#eff6ff' : COR.branco,
+            color: temMeta ? '#1a56db' : COR.textoSuave,
+            opacity: bloqueado ? 0.55 : 1,
+            display: 'flex', alignItems: 'center', gap: 5,
+            transition: 'all .12s',
+          }}
+        >
+          {META.icon} {META.label}
+        </button>
       </div>
+
+      {metaAberta && (
+        <PlanModalMeta
+          mesAtual={mesAtual}
+          objetivos={objetivos}
+          sobraPrevista={sobraPrevista}
+          onSalvar={onMetaSave}
+          onFechar={() => setMetaAberta(false)}
+        />
+      )}
 
       <PlanFerramentas
         toolAberta={bloqueado ? null : toolAberta}

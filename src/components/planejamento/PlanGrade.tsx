@@ -20,6 +20,9 @@ interface Props {
   somaCartaoMes: number[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
+  objetivos: number[]
+  sobraPrevista: number[]
+  onMetaSave: (objetivos: number[]) => void
   ancoraMes: number
 }
 
@@ -28,7 +31,7 @@ export default function PlanGrade(props: Props) {
 
   const {
     anoAtual, mesAtual, dadosPrevisto, dadosAnoAnterior,
-    previsto, ancoraMes,
+    previsto, ancoraMes, objetivos, sobraPrevista, onMetaSave,
   } = props
 
   const planTotais = previsto
@@ -66,6 +69,9 @@ export default function PlanGrade(props: Props) {
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={props.categorias}
         onBulkSave={props.onBulkSave}
+        objetivos={objetivos}
+        sobraPrevista={sobraPrevista}
+        onMetaSave={onMetaSave}
         bloqueado={bloqueado}
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />
@@ -88,6 +94,7 @@ export default function PlanGrade(props: Props) {
               saldoFinal={planTotais.saldoFinal[mi]}
               isAtual={isAtual}
               isFuturo={isFuturo}
+              meta={objetivos[mi]}
               onClick={() => setModalMes(mi)}
             />
           )
