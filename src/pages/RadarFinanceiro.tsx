@@ -9,13 +9,13 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, detalharMes } from '../utils/saldoConta'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
-import { COR, fmt, MESES_FULL, diasNoMes, type CatReal } from '../components/acompanhamento/AcShared'
+import { COR, fmt, MESES_FULL, diasNoMes, barCorSobreAzul, type CatReal } from '../components/acompanhamento/AcShared'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
-import KpiCard from '../components/KpiCard'
+import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 
 function useIsMobile() {
@@ -126,6 +126,18 @@ export default function RadarFinanceiro() {
     [ano, mes, depsSaldo],
   )
 
+  // Onde o mes deveria fechar se o plano se cumprisse: o saldo REAL de abertura
+  // mais o planejado do mes. Nao e projecao — nao olha o que ja caiu nem o que
+  // falta cair, so compara o realizado com o plano, a mesma lente das
+  // categorias logo abaixo.
+  const saldoPrevisto = saldoInicial + totalPrevE - totalPrevS
+
+  const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
+  const percE = perc(totalRealE, totalPrevE)
+  const percS = perc(totalRealS, totalPrevS)
+  const percSaldo = perc(saldoAtual, saldoPrevisto)
+  const comPlano = (p: number | null) => (p === null ? '' : ` · ${Math.round(p * 100)}%`)
+
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
   const linhasContas = useMemo(
@@ -194,15 +206,24 @@ export default function RadarFinanceiro() {
           sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
-          valueColor="#4ade80" sublabel={`de ${fmt(totalPrevE)}`} style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas} />
+          valueColor="#4ade80" sublabel={`de ${fmt(totalPrevE)}${comPlano(percE)}`} style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas}>
+          {percE !== null && <KpiBarra perc={percE} cor={barCorSobreAzul(percE, true)} />}
+        </KpiCard>
         <KpiCard icon="↓" label="Despesas" value={fmt(totalRealS)}
-          valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}`} style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas} />
+          valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}${comPlano(percS)}`} style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas}>
+          {percS !== null && <KpiBarra perc={percS} cor={barCorSobreAzul(percS)} />}
+        </KpiCard>
         <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
-          sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas} />
+          sublabel={percSaldo === null
+            ? (saldoAtual >= 0 ? '↑ positivo' : '↓ negativo')
+            : `de ${fmt(saldoPrevisto)}${comPlano(percSaldo)}`}
+          style={{ flex: 1 }}
+          onClick={alternarDetalhe} expandido={detalheContas}>
+          {percSaldo !== null && <KpiBarra perc={percSaldo} cor={barCorSobreAzul(percSaldo, true)} />}
+        </KpiCard>
       </div>
 
       {detalheContas && (

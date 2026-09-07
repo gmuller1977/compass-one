@@ -27,6 +27,27 @@ const SUBLABEL_STYLE: React.CSSProperties = {
   fontSize: 10, color: 'rgba(255,255,255,.5)', marginTop: 4, textAlign: 'right',
 }
 
+/**
+ * Barra de progresso dentro de um KpiCard: realizado sobre o planejado.
+ *
+ * Vive sobre o azul do cartão, então é elemento gráfico e vale o limite de
+ * 3:1, não o de texto — ver CLAUDE.md. As cores são as que AcMobileView já usa
+ * sobre o mesmo fundo.
+ */
+export function KpiBarra({ perc, cor }: { perc: number; cor: string }) {
+  return (
+    <div style={{
+      marginTop: 6, height: 5, borderRadius: 3, overflow: 'hidden',
+      background: 'rgba(255,255,255,.18)',
+    }}>
+      <div style={{
+        width: `${Math.max(0, Math.min(perc, 1)) * 100}%`, height: '100%',
+        borderRadius: 3, background: cor, transition: 'width .3s',
+      }} />
+    </div>
+  )
+}
+
 export default function KpiCard({
   icon, label, value, sublabel, valueColor = '#fff', children, style,
   onClick, expandido,

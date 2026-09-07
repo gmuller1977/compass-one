@@ -30,3 +30,16 @@ export function barCor(perc: number, isEntrada?: boolean) {
   if (perc >= 0.9) return COR.amarelo
   return COR.verde
 }
+/**
+ * A mesma leitura de barCor, sobre fundo azul. Os tons de barCor são de fundo
+ * claro e somem no azul do KpiCard; estes já são os que AcMobileView usa lá.
+ *
+ * A leitura é a de sempre: em receita, chegar ao planejado é bom; em despesa,
+ * passar dele é ruim.
+ */
+export function barCorSobreAzul(perc: number, isEntrada?: boolean) {
+  if (isEntrada) return perc >= 1 ? '#4ade80' : (perc >= 0.8 ? '#fbbf24' : 'rgba(255,255,255,.45)')
+  if (perc > 1) return '#f87171'
+  if (perc >= 0.9) return '#fbbf24'
+  return '#4ade80'
+}
