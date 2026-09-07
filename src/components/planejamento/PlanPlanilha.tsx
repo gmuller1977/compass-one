@@ -1,11 +1,10 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type React from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat, type Saldos, PREVISTO } from './types'
+import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat, type Saldos, PREVISTO, tituloValor } from './types'
 import { useToast } from '../Toast'
 import PlanCelulaNav from './PlanCelulaNav'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
-import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 import type { Categoria } from '../../context/AppContext'
 
@@ -21,7 +20,6 @@ interface Props {
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
   dadosAnoAnterior: AnoData | null
-  ancoraMes: number
 }
 
 type CellPos = { tipo: 'e' | 's'; ri: number; mi: number }
@@ -107,7 +105,7 @@ const CAT_BTN: React.CSSProperties = {
 
 export default function PlanPlanilha({
   anoAtual, mesAtual, dadosAtivos, previsto,
-  categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
+  categorias, onSave, onBulkSave, dadosAnoAnterior,
   objetivos, sobraPrevista, onMetaSave,
 }: Props) {
   const temAlgumaMeta = objetivos.some(v => v > 0)
@@ -270,12 +268,6 @@ export default function PlanPlanilha({
       tabIndex={0}
       onKeyDown={handleContainerKey}
     >
-      <PlanAncoraBadge
-        ancoraMes={ancoraMes}
-        anoAtual={anoAtual}
-        saldoAncora={ancoraMes >= 0 ? previsto.saldoFinal[ancoraMes] : previsto.saldoInicial[0]}
-      />
-
       <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}
@@ -375,7 +367,7 @@ export default function PlanPlanilha({
                       { v: sf,  color: sf < 0 ? tc.desp : tc.text,      bold: false, real: previsto.finalReal[mi],   fmt: (v: number) => fmt(v, true) },
                       { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  real: mesReal,                  fmt: fmtRes },
                     ].map(({ v, color, bold, real, fmt: fv }, idx, arr) => (
-                      <div key={idx} style={{
+                      <div key={idx} title={tituloValor(real)} style={{
                         height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                         padding: '0 10px', fontSize: 12, fontWeight: bold ? 800 : 700,
                         color, fontVariantNumeric: 'tabular-nums',

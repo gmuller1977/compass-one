@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, type AnoData, type Cat, type Saldos, PREVISTO } from './types'
+import { fmt, MESES, nomeExibicao, type AnoData, type Cat, type Saldos, PREVISTO, tituloValor } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
-import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 import type { Categoria } from '../../context/AppContext'
 
@@ -19,7 +18,6 @@ interface Props {
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
   dadosAnoAnterior: AnoData | null
-  ancoraMes: number
   totaisReais?: { te: number[]; ts: number[] }
 }
 
@@ -40,7 +38,7 @@ const COL_META = 96
 
 export default function PlanLista({
   anoAtual, mesAtual, dadosAtivos, previsto,
-  categorias, onSave, onBulkSave, dadosAnoAnterior, ancoraMes,
+  categorias, onSave, onBulkSave, dadosAnoAnterior,
   objetivos, sobraPrevista, onMetaSave,
 }: Props) {
   const temAlgumaMeta = objetivos.some(v => v > 0)
@@ -64,12 +62,6 @@ export default function PlanLista({
 
   return (
     <div style={{ padding: '8px 16px', overflowX: 'auto' }}>
-      <PlanAncoraBadge
-        ancoraMes={ancoraMes}
-        anoAtual={anoAtual}
-        saldoAncora={ancoraMes >= 0 ? previsto.saldoFinal[ancoraMes] : previsto.saldoInicial[0]}
-      />
-
       <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}
@@ -147,7 +139,7 @@ export default function PlanLista({
                 </div>
                 {comPlano ? (
                   <>
-                    <div className="plista-si" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(previsto.inicialReal[mi] ? {} : PREVISTO) }}>{fmt(si, true)}</div>
+                    <div className="plista-si" title={tituloValor(previsto.inicialReal[mi])} style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(previsto.inicialReal[mi] ? {} : PREVISTO) }}>{fmt(si, true)}</div>
                     <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.rec, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(mesReal ? {} : PREVISTO) }}>{fmt(te, true)}</div>
                     <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.desp, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(mesReal ? {} : PREVISTO) }}>{fmt(ts, true)}</div>
                     <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: res >= 0 ? tl.rec : tl.neg, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(mesReal ? {} : PREVISTO) }}>{fmtRes(res)}</div>
@@ -178,7 +170,7 @@ export default function PlanLista({
                         </div>
                       )
                     })()}
-                    <div className="plista-sf" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(previsto.finalReal[mi] ? {} : PREVISTO) }}>{fmt(sf, true)}</div>
+                    <div className="plista-sf" title={tituloValor(previsto.finalReal[mi])} style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(previsto.finalReal[mi] ? {} : PREVISTO) }}>{fmt(sf, true)}</div>
                   </>
                 ) : (
                   <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#fff' }}>

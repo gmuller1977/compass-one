@@ -68,6 +68,14 @@ export type Saldos = ReturnType<typeof calcSaldos>
  */
 export const PREVISTO: React.CSSProperties = { fontStyle: 'italic' }
 
+/**
+ * O que dizer no hover de um valor. A legenda do itálico vivia no badge da
+ * âncora, que saiu por repetir o que a marcação célula a célula já diz; o
+ * título mantém a convenção descobrível sem ocupar altura em três telas.
+ */
+export const tituloValor = (real: boolean) =>
+  real ? 'Valor realizado' : 'Valor previsto'
+
 export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraReal) {
   const planE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))

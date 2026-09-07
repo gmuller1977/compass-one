@@ -134,7 +134,6 @@ export default function Planejamento() {
             objetivos={plan.objetivos}
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}
-            ancoraMes={plan.ancoraMes}
           />
         ) : viewMode === 'planilha' ? (
           <PlanPlanilha
@@ -149,7 +148,6 @@ export default function Planejamento() {
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}
             dadosAnoAnterior={plan.planoAnoAnterior}
-            ancoraMes={plan.ancoraMes}
           />
         ) : (
           <PlanLista
@@ -164,7 +162,6 @@ export default function Planejamento() {
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}
             dadosAnoAnterior={plan.planoAnoAnterior}
-            ancoraMes={plan.ancoraMes}
             totaisReais={plan.totaisReais}
           />
         )}

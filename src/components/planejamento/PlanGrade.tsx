@@ -3,7 +3,6 @@ import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
-import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
 import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos } from './types'
 import type { Categoria } from '../../context/AppContext'
@@ -23,7 +22,6 @@ interface Props {
   objetivos: number[]
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
-  ancoraMes: number
 }
 
 export default function PlanGrade(props: Props) {
@@ -31,7 +29,7 @@ export default function PlanGrade(props: Props) {
 
   const {
     anoAtual, mesAtual, dadosPrevisto, dadosAnoAnterior,
-    previsto, ancoraMes, objetivos, sobraPrevista, onMetaSave,
+    previsto, objetivos, sobraPrevista, onMetaSave,
   } = props
 
   const planTotais = previsto
@@ -54,12 +52,6 @@ export default function PlanGrade(props: Props) {
         totalDespesas={despesasAnuais}
         resultado={resultadoDez}
         anoAtual={anoAtual}
-      />
-
-      <PlanAncoraBadge
-        ancoraMes={ancoraMes}
-        anoAtual={anoAtual}
-        saldoAncora={ancoraMes >= 0 ? planTotais.saldoFinal[ancoraMes] : planTotais.saldoInicial[0]}
       />
 
       <PlanBarraFerramentas
