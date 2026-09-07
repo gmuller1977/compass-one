@@ -184,7 +184,7 @@ export default function FcDesktopPanel({
           return (
             <div>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-                letterSpacing:.5,marginBottom:5}}>Data da compra</div>
+                letterSpacing:.5,marginBottom:5}}>📅 Data da compra</div>
               <input
                 ref={dataCompraRef}
                 autoFocus
@@ -213,7 +213,7 @@ export default function FcDesktopPanel({
         })()}
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-            letterSpacing:.5,marginBottom:5}}>Categoria</div>
+            letterSpacing:.5,marginBottom:5}}>🏷 Categoria</div>
           {(() => {
             const _seen = new Set<string>()
             const catsSemDup = categoriasCartao.filter(c => {
@@ -250,9 +250,9 @@ export default function FcDesktopPanel({
                   )}
                 </select>
                 {subDescs.length > 0 && (
-                  <div style={{marginTop:6}}>
+                  <div style={{marginTop:8}}>
                     <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-                      letterSpacing:.5,marginBottom:5}}>Variante</div>
+                      letterSpacing:.5,marginBottom:5}}>🔖 Variante</div>
                     <select value={fVariante} onChange={e => setFVariante(e.target.value)}
                       onFocus={realcarFoco} onBlur={removerRealce}
                       style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
@@ -269,18 +269,18 @@ export default function FcDesktopPanel({
         </div>
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-            letterSpacing:.5,marginBottom:5}}>Valor da parcela *</div>
+            letterSpacing:.5,marginBottom:5}}>💰 Valor da parcela *</div>
           <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
             placeholder="R$ 0,00"
             onFocus={realcarFoco} onBlur={removerRealce}
-            style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
-              fontSize:13,outline:'none',background:'#fff',
-              fontFamily:'inherit',color:COR.texto,width:'100%',...(valorRuim?REALCE_ERRO:{})}}
+            style={{width:'100%',border:'2px solid #1a56db',borderRadius:10,padding:'10px 14px',
+              fontSize:20,fontWeight:800,color:'#1a56db',background:'#eff6ff',outline:'none',
+              fontFamily:'inherit',textAlign:'center',letterSpacing:'-.4px',...(valorRuim?REALCE_ERRO:{})}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
         </div>
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-            letterSpacing:.5,marginBottom:5}}>Parcelas</div>
+            letterSpacing:.5,marginBottom:5}}>🔢 Parcelas</div>
           <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
             {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
               const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
@@ -331,7 +331,10 @@ export default function FcDesktopPanel({
         </div>
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-            letterSpacing:.5,marginBottom:5}}>Descrição</div>
+            letterSpacing:.5,marginBottom:5}}>
+            📝 Descrição{' '}
+            <span style={{fontWeight:400,color:'#94a3b8',textTransform:'none',fontSize:9}}>(opcional)</span>
+          </div>
           <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
             placeholder="Ex: Mercado Extra, Farmácia..."
             onFocus={realcarFoco} onBlur={removerRealce}
