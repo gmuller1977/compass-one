@@ -58,6 +58,16 @@ export type AncoraReal = {
   fim?: (mes: number) => number
 }
 
+export type Saldos = ReturnType<typeof calcSaldos>
+
+/**
+ * Marca um valor PREVISTO. Real fica em pé; previsto, em itálico.
+ *
+ * Itálico e não opacidade: sobre o azul do Planejamento, baixar a opacidade
+ * derrubaria o contraste do número — e ele é texto, não elemento gráfico.
+ */
+export const PREVISTO: React.CSSProperties = { fontStyle: 'italic' }
+
 export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraReal) {
   const planE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
@@ -74,15 +84,27 @@ export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraRea
   // Mes fechado usa o saldo REAL nas duas pontas; o primeiro mes aberto herda
   // o real do anterior e so entao passa a encadear o planejado.
   const si: number[] = [], sf: number[] = []
+  const siReal: boolean[] = [], sfReal: boolean[] = []
   for (let i = 0; i < 12; i++) {
-    const abertura = ancora?.fim && fechado(i - 1) ? ancora.fim(i - 1)
+    const temReal = !!ancora?.fim
+    const aberturaReal = temReal && fechado(i - 1)
+    const abertura = aberturaReal ? ancora!.fim!(i - 1)
       : i === 0 ? data.saldoInicialJan
       : sf[i - 1]
     si.push(abertura)
-    sf.push(ancora?.fim && fechado(i) ? ancora.fim(i) : abertura + totalE[i] - totalS[i])
+    siReal.push(aberturaReal)
+    const fechamentoReal = temReal && fechado(i)
+    sf.push(fechamentoReal ? ancora!.fim!(i) : abertura + totalE[i] - totalS[i])
+    sfReal.push(fechamentoReal)
   }
   return {
     totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf,
+    /**
+     * Real ou previsto, celula a celula. As duas pontas de um mes podem
+     * discordar: o primeiro mes aberto ABRE com o saldo real do anterior e
+     * FECHA com o previsto. Sao os quatro numeros que a tela precisa nomear.
+     */
+    inicialReal: siReal, finalReal: sfReal,
     /** Ate que mes os numeros acima sao realizados (-1 = nenhum). */
     realizadoAte: ancora?.ateMes ?? -1,
   }

@@ -5,7 +5,7 @@ import PlanModalMes from './PlanModalMes'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
 import { type BulkOp } from './PlanFerramentas'
-import { type AnoData, MOTIVO_PLANO_LOCKADO } from './types'
+import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos } from './types'
 import type { Categoria } from '../../context/AppContext'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   mesAtual: number
   dadosPrevisto: AnoData
   dadosAnoAnterior: AnoData | null
-  previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
+  previsto: Saldos
   planoRef?: AnoData
   categorias: Categoria[]
   hasFaturaCat: boolean
@@ -95,6 +95,7 @@ export default function PlanGrade(props: Props) {
               isAtual={isAtual}
               isFuturo={isFuturo}
               meta={objetivos[mi]}
+              saldoFinalReal={planTotais.finalReal[mi]}
               onClick={() => setModalMes(mi)}
             />
           )

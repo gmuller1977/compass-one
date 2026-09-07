@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, type AnoData, type Cat } from './types'
+import { fmt, MESES, nomeExibicao, type AnoData, type Cat, type Saldos, PREVISTO } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanAncoraBadge from './PlanAncoraBadge'
@@ -11,7 +11,7 @@ interface Props {
   anoAtual: number
   mesAtual: number
   dadosAtivos: AnoData
-  previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
+  previsto: Saldos
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
@@ -115,6 +115,7 @@ export default function PlanLista({
           const isAtual = mi === mesAtual && anoAtual === anoCorrente
           const isAberto = aberto === mi
           const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
+          const mesReal = mi <= previsto.realizadoAte
 
           return (
             <div key={mi} ref={el => { rowRefs.current[mi] = el }}>
@@ -146,10 +147,10 @@ export default function PlanLista({
                 </div>
                 {comPlano ? (
                   <>
-                    <div className="plista-si" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(si, true)}</div>
-                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.rec, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(te, true)}</div>
-                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.desp, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(ts, true)}</div>
-                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: res >= 0 ? tl.rec : tl.neg, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmtRes(res)}</div>
+                    <div className="plista-si" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(previsto.inicialReal[mi] ? {} : PREVISTO) }}>{fmt(si, true)}</div>
+                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.rec, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(mesReal ? {} : PREVISTO) }}>{fmt(te, true)}</div>
+                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: tl.desp, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(mesReal ? {} : PREVISTO) }}>{fmt(ts, true)}</div>
+                    <div style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: res >= 0 ? tl.rec : tl.neg, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(mesReal ? {} : PREVISTO) }}>{fmtRes(res)}</div>
                     {temAlgumaMeta && (() => {
                       const meta = objetivos[mi] ?? 0
                       const perc = meta > 0 ? Math.max(0, Math.min(100, (res / meta) * 100)) : 0
@@ -177,7 +178,7 @@ export default function PlanLista({
                         </div>
                       )
                     })()}
-                    <div className="plista-sf" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(sf, true)}</div>
+                    <div className="plista-sf" style={{ width: COL_VAL, textAlign: 'right', paddingRight: 8, fontSize: 13, fontWeight: 600, color: sf < 0 ? tl.neg : tl.saldo, fontVariantNumeric: 'tabular-nums', flexShrink: 0, ...(previsto.finalReal[mi] ? {} : PREVISTO) }}>{fmt(sf, true)}</div>
                   </>
                 ) : (
                   <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#fff' }}>

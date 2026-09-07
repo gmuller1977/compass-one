@@ -1,4 +1,4 @@
-import { fmt, MESES_FULL } from './types'
+import { fmt, MESES_FULL, PREVISTO } from './types'
 
 interface Props {
   /** Ultimo mes fechado (0-11). -1 = nenhum: tudo projetado. */
@@ -24,7 +24,7 @@ export default function PlanAncoraBadge({ ancoraMes, anoAtual, saldoAncora }: Pr
       fontSize: 11, color: '#334155',
     }}>
       {nada ? (
-        <span>📄 Nenhum mês fechado em {anoAtual} — todos os valores são <strong>planejados</strong>.</span>
+        <span>📄 Nenhum mês fechado em {anoAtual} — todos os valores são <strong>previstos</strong>.</span>
       ) : (
         <>
           <span>
@@ -32,8 +32,14 @@ export default function PlanAncoraBadge({ ancoraMes, anoAtual, saldoAncora }: Pr
             saldo de <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(saldoAncora, true)}</strong>
           </span>
           <span style={{ color: '#94a3b8' }}>
-            — daí em diante, planejado
+            — número <span style={PREVISTO}>em itálico</span> é previsto
           </span>
+          {ancoraMes < 11 && (
+            <span style={{ color: '#94a3b8', flexBasis: '100%' }}>
+              {MESES_FULL[ancoraMes + 1]} abre com saldo inicial <strong>real</strong> e
+              fecha com saldo final <span style={PREVISTO}>previsto</span>.
+            </span>
+          )}
         </>
       )}
     </div>

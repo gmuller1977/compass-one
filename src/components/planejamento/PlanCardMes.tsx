@@ -10,6 +10,8 @@ interface Props {
   isFuturo?: boolean
   /** Meta de sobra do mês. Zero ou ausente = sem meta. */
   meta?: number
+  /** O saldo final deste mês já aconteceu, ou ainda é projeção? */
+  saldoFinalReal?: boolean
   onClick: () => void
 }
 
@@ -60,7 +62,7 @@ const TH = {
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, meta = 0, onClick,
+  isAtual, meta = 0, saldoFinalReal = false, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
@@ -190,7 +192,12 @@ export default function PlanCardMes({
               background: saldoFinalBg, borderRadius: 8, padding: '6px 10px',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              <span style={{ fontSize: 11, color: th.label }}>Saldo final</span>
+              <span style={{ fontSize: 11, color: th.label }}>
+                Saldo final
+                <span style={{ fontSize: 9, marginLeft: 5, opacity: .85 }}>
+                  {saldoFinalReal ? 'real' : 'previsto'}
+                </span>
+              </span>
               <span style={{ fontSize: 13, fontWeight: 700, color: saldoFinalText, fontVariantNumeric: 'tabular-nums' }}>
                 {fmt(saldoFinal, true)}
               </span>

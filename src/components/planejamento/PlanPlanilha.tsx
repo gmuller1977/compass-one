@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type React from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat } from './types'
+import { fmt, MESES, MOTIVO_PLANO_LOCKADO, type AnoData, type Cat, type Saldos, PREVISTO } from './types'
 import { useToast } from '../Toast'
 import PlanCelulaNav from './PlanCelulaNav'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
@@ -13,7 +13,7 @@ interface Props {
   anoAtual: number
   mesAtual: number
   dadosAtivos: AnoData
-  previsto: { totalEntradas: number[]; totalSaidas: number[]; saldoInicial: number[]; saldoFinal: number[] }
+  previsto: Saldos
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
@@ -348,6 +348,10 @@ export default function PlanPlanilha({
               const tc   = TC[comPlano ? 'com' : 'sem']
               const isAtual = mi === mesAtual && anoAtual === anoCorrente
               const fmtRes = (v: number) => v === 0 ? '—' : `${v > 0 ? '+' : ''}${fmt(v, true)}`
+              // Receitas, despesas e resultado sao do mes inteiro: reais quando
+              // o mes fechou. Ja as duas pontas do saldo podem discordar entre
+              // si, e por isso cada uma tem sua marca.
+              const mesReal = mi <= previsto.realizadoAte
               return (
                 <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, borderRadius: 8, overflow: 'hidden', boxShadow: isAtual ? '0 0 0 2px rgba(255,255,255,0.4), 0 4px 16px rgba(26,86,219,0.5)' : undefined }}>
                   {/* Month header */}
@@ -365,16 +369,17 @@ export default function PlanPlanilha({
                   {/* Value rows — same heights as label rows */}
                   <div style={{ background: tc.header, overflow: 'hidden' }}>
                     {[
-                      { v: si,  color: tc.text,                         bold: false, fmt: (v: number) => fmt(v, true) },
-                      { v: te,  color: tc.rec,                          bold: false, fmt: (v: number) => fmt(v, true) },
-                      { v: ts,  color: tc.desp,                         bold: false, fmt: (v: number) => fmt(v, true) },
-                      { v: sf,  color: sf < 0 ? tc.desp : tc.text,      bold: false, fmt: (v: number) => fmt(v, true) },
-                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  fmt: fmtRes },
-                    ].map(({ v, color, bold, fmt: fv }, idx, arr) => (
+                      { v: si,  color: tc.text,                         bold: false, real: previsto.inicialReal[mi], fmt: (v: number) => fmt(v, true) },
+                      { v: te,  color: tc.rec,                          bold: false, real: mesReal,                  fmt: (v: number) => fmt(v, true) },
+                      { v: ts,  color: tc.desp,                         bold: false, real: mesReal,                  fmt: (v: number) => fmt(v, true) },
+                      { v: sf,  color: sf < 0 ? tc.desp : tc.text,      bold: false, real: previsto.finalReal[mi],   fmt: (v: number) => fmt(v, true) },
+                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  real: mesReal,                  fmt: fmtRes },
+                    ].map(({ v, color, bold, real, fmt: fv }, idx, arr) => (
                       <div key={idx} style={{
                         height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                         padding: '0 10px', fontSize: 12, fontWeight: bold ? 800 : 700,
                         color, fontVariantNumeric: 'tabular-nums',
+                        ...(real ? {} : PREVISTO),
                         borderBottom: idx < arr.length - 1 || temAlgumaMeta ? `1px solid ${tc.divider}` : 'none',
                       }}>
                         {fv(v)}
