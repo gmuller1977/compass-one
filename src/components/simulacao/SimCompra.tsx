@@ -321,7 +321,8 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   const valorParcela = valorTotal / parcelas
   const navigate = useNavigate()
   const [detalhes, setDetalhes] = useState(false)
-  const oQue = nome.trim() || 'a compra'
+  const oQue = nome.trim()
+  const fim = r.fluxo[r.fluxo.length - 1]
 
   // Só até dois meses depois da última parcela: daí em diante é a projeção
   // normal subindo, e não diz nada sobre a compra.
@@ -349,20 +350,32 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
       }}>
         <div style={{ fontSize: 17, fontWeight: 800,
           color: r.cabe ? COR.sucessoTexto : COR.erroTexto }}>
-          {r.cabe ? `Sim, dá para comprar ${oQue}.` : `Assim não cabe.`}
+          {r.cabe
+            ? (oQue ? `Sim, dá para comprar ${oQue}.` : 'Sim, dá para comprar.')
+            : 'Assim não cabe.'}
         </div>
 
         <div style={{ fontSize: 14, color: COR.texto, marginTop: 10, lineHeight: 1.6 }}>
           {r.cabe ? (
-            <>No mês mais apertado, <b>{MESES[r.pior.mes]}</b>, você ainda fica com</>
+            <>No fim de <b>{MESES[fim.mes].toLowerCase()}</b> você fica com</>
           ) : (
             <>Já em <b>{MESES[aperto.mes]}</b> ia faltar</>
           )}
         </div>
         <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-1px', marginTop: 2,
           color: r.cabe ? COR.sucessoTexto : COR.erroTexto }}>
-          {fmt(r.cabe ? r.pior.comCompra : falta)}
+          {fmt(r.cabe ? fim.comCompra : falta)}
         </div>
+
+        {/* Cabendo, o mes mais magro e contexto, nao manchete: a pergunta era
+            onde se chega. Nao cabendo, o fundo do poco mostra o tamanho do
+            problema depois de dizer quando ele comeca. */}
+        {r.cabe && r.pior !== fim && (
+          <div style={{ fontSize: 13, color: COR.texto, marginTop: 6 }}>
+            O mês mais apertado é <b>{MESES[r.pior.mes].toLowerCase()}</b>, com{' '}
+            <b>{fmt(r.pior.comCompra)}</b>.
+          </div>
+        )}
         {piorDepois && (
           <div style={{ fontSize: 13, color: COR.texto, marginTop: 6 }}>
             E aperta mais até <b>{MESES[piorDepois.mes]}</b>, quando faltariam{' '}
