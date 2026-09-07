@@ -32,6 +32,7 @@ type Props = {
   fDesc: string
   fValor: string
   fPag: FormaPag
+  fContaFixa: string
   fContaDestino: string
 
   // Context
@@ -54,6 +55,7 @@ type Props = {
   resetarParaNovo: (dia: number) => void
   setFTipo: (v: TipoLanc) => void
   setFPag: (v: FormaPag) => void
+  setFContaFixa: (v: string) => void
   setFCat: (v: string) => void
   setFSubDesc: (v: string) => void
   setFContaDestino: (v: string) => void
@@ -66,13 +68,13 @@ type Props = {
 export default function NleDesktopPanel({
   isMobile, mes, ano, diaSel, totalDias, setDiaSel,
   editandoId, editandoFixaId, fixaEhAutomatica,
-  fTipo, fCat, fSubDesc, fDesc, fValor, fPag, fContaDestino,
+  fTipo, fCat, fSubDesc, fDesc, fValor, fPag, fContaFixa, fContaDestino,
   isDinheiro, contaInfo,
   categoriasSelect, subDescsDisponiveis, contasExtrato, contaIdEfetivo, categorias,
   fixas, mesDados, totalSaidas,
   categoriaSelectRef, valorInputRef,
   resetarParaNovo,
-  setFTipo, setFPag, setFCat, setFSubDesc, setFContaDestino, setFDesc, setFValor,
+  setFTipo, setFPag, setFCat, setFSubDesc, setFContaFixa, setFContaDestino, setFDesc, setFValor,
   lancar, excluirAtual,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
@@ -250,8 +252,32 @@ export default function NleDesktopPanel({
               🏷 {fPag==='transferencia'?(fTipo==='saida'?'Transferir para':'Receber de'):'Categoria'}
             </div>
             {editandoFixaId ? (
-              <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
-                fontSize:13,background:'#f8faff',color:'#64748b',fontFamily:'inherit'}}>{fCat}</div>
+              <>
+                <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
+                  fontSize:13,background:'#f8faff',color:'#64748b',fontFamily:'inherit'}}>{fCat}</div>
+                {/* A conta do cadastro manda, mas o mes pode discordar: neste mes
+                    voce pagou por outro banco. Muda so o mes. */}
+                {fContaFixa && (
+                  <div style={{marginTop:12}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+                      letterSpacing:.5,marginBottom:5}}>
+                      🏦 Debitar na conta
+                    </div>
+                    <select value={fContaFixa}
+                      onChange={e => setFContaFixa(e.target.value)}
+                      onFocus={realcarFoco} onBlur={removerRealce}
+                      style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
+                        fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
+                      {contasExtrato.map(c=>(
+                        <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                      ))}
+                    </select>
+                    <div style={{fontSize:10,color:'#94a3b8',marginTop:4}}>
+                      Vale só para este mês. O cadastro da categoria não muda.
+                    </div>
+                  </div>
+                )}
+              </>
             ) : fPag === 'transferencia' ? (
               <select ref={categoriaSelectRef} value={fContaDestino}
                 onChange={e => setFContaDestino(e.target.value)}

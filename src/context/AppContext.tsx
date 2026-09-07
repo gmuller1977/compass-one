@@ -68,6 +68,15 @@ export type DadosMes = {
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>
   fixasPagOverride?: Record<string, string>
+  /**
+   * Em qual conta esta fixa cai NESTE mês, quando não é a do cadastro.
+   *
+   * Gravado sempre no DadosMes da conta de origem — a do cadastro, ou a
+   * preferida quando a categoria não tem nenhuma. Assim existe um lugar só
+   * para consultar, mesmo depois de a fixa já ter se mudado; guardar no destino
+   * obrigaria a varrer todas as contas para descobrir quem a recebeu.
+   */
+  fixasContaOverride?: Record<string, string>
 }
 
 // ── Context type ─────────────────────────────────────────────────────

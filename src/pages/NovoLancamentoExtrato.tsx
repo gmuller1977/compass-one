@@ -9,7 +9,7 @@ import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 import {
   COR, NOMES_MESES,
-  diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey,
+  contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey,
   formaPagCategoria, useIsMobile,
   type TipoLanc, type FormaPag, type CatFixa, type Lancamento, type DadosMes,
 } from '../components/novoLancamentoExtrato/NleShared'
@@ -102,18 +102,15 @@ export default function NovoLancamentoExtrato() {
       if (isDinheiro) return c.tipoMovimento === 'dinheiro'
       if (c.tipoMovimento === 'cartao') return false
       if (c.tipoMovimento === 'dinheiro') return false
-      if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
-      if (!c.contaDebitoId) {
-        // Confirmada em outra conta: aparece so la.
-        const confirmadaFora = contasExtrato
-          .filter(ct => ct.id !== contaIdEfetivo)
-          .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[c.id] === true)
-        if (confirmadaFora) return false
-        // Ainda em aberto: fica so na conta preferida, para nao aparecer em todas.
-        const confirmadaAqui = dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[c.id] === true
-        if (!confirmadaAqui && contaIdEfetivo !== contaPadraoFixas) return false
-      }
-      return true
+      // Confirmada em outra conta vence tudo: quem pagou, pagou. Vale tambem
+      // para fixa com conta de debito — se saiu de outro banco, nao segue
+      // pendente no de origem.
+      const confirmadaFora = contasExtrato
+        .filter(ct => ct.id !== contaIdEfetivo)
+        .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[c.id] === true)
+      if (confirmadaFora) return false
+      if (dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[c.id] === true) return true
+      return contaDaFixaNoMes(c, ano, mes, dados, contaPadraoFixas) === contaIdEfetivo
     })
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
@@ -447,12 +444,37 @@ export default function NovoLancamentoExtrato() {
     setTimeout(() => categoriaSelectRef.current?.focus(), 50)
   }
 
+  // Conta escolhida no modal de edicao de uma fixa. Vazio = nao aplicavel.
+  const [fContaFixa, setFContaFixa] = useState('')
+
+  /**
+   * Grava (ou remove) a conta daquele mes. Vai sempre no DadosMes da conta de
+   * ORIGEM, mesmo quando a fixa ja se mudou e esta sendo editada no destino —
+   * senao a proxima leitura procuraria no lugar errado.
+   */
+  function gravarContaDaFixa(fixaId: string) {
+    const cat = categorias.find(c => c.id === fixaId)
+    if (!cat || cat.tipoMovimento !== 'banco') return
+    const origem = cat.contaDebitoId ?? contaPadraoFixas
+    if (!origem || !fContaFixa) return
+    updateMesPorKey(mesKey(origem, ano, mes), prev => {
+      const mapa = { ...prev.fixasContaOverride }
+      if (fContaFixa === origem) delete mapa[fixaId]
+      else mapa[fixaId] = fContaFixa
+      return { ...prev, fixasContaOverride: mapa }
+    })
+  }
+
   function editarFixa(dia: number, f: CatFixa) {
     setDiaSel(dia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(f.id); if (isMobile) setMobileView('form')
     setFTipo(f.tipo); setFCat(f.categoria)
     setFDesc(mesDados.fixasDescOverride?.[f.id] ?? f.nome)
     setFValor(String(mesDados.fixasValorOverride?.[f.id] ?? f.valor).replace('.', ','))
     setFPag(mesDados.fixasPagOverride?.[f.id] ?? f.formaPagamento)
+    const catFixa = categorias.find(c => c.id === f.id)
+    setFContaFixa(catFixa && catFixa.tipoMovimento === 'banco'
+      ? (contaDaFixaNoMes(catFixa, ano, mes, dados, contaPadraoFixas) ?? '')
+      : '')
     setTimeout(() => valorInputRef.current?.focus(), 50)
   }
 
@@ -571,10 +593,9 @@ export default function NovoLancamentoExtrato() {
   // fixas que ainda vao cair entre hoje e la ja contam. Encadeia, entao
   // novembro carrega o previsto de setembro e outubro.
   //
-  // Aqui a projecao e POR CONTA, ao contrario do Radar, que projeta por mes.
-  // Sao perguntas diferentes: esta tela mostra uma conta de cada vez, e usa a
-  // mesma atribuicao do resto do extrato — fixa com contaDebitoId vai para a
-  // dela, fixa sem contaDebitoId aparece em todas ate ser confirmada.
+  // A projecao e POR CONTA: esta tela mostra uma conta de cada vez. Quem manda
+  // e contaDaFixaNoMes — a conta escolhida naquele mes, senao a do cadastro,
+  // senao a preferida. O Radar nao projeta nada; previsao e do Planejamento.
   const mesFuturo = ano > anoHoje || (ano === anoHoje && mes > mesHoje)
 
   // A MESMA cascata, agora parametrizada pelo mes. O corpo e o de sempre:
@@ -598,18 +619,13 @@ export default function NovoLancamentoExtrato() {
         if (isDinheiro) return c.tipoMovimento === 'dinheiro'
         if (c.tipoMovimento === 'cartao') return false
         if (c.tipoMovimento === 'dinheiro') return false
-        if (c.contaDebitoId && c.contaDebitoId !== contaIdEfetivo) return false
-        if (!c.contaDebitoId) {
-          // Confirmada em outra conta: aparece so la.
-          const confirmadaFora = contasExtrato
-            .filter(ct => ct.id !== contaIdEfetivo)
-            .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[c.id] === true)
-          if (confirmadaFora) return false
-          // Ainda em aberto: fica so na conta preferida, para nao aparecer em todas.
-          const confirmadaAqui = dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true
-          if (!confirmadaAqui && contaIdEfetivo !== contaPadraoFixas) return false
-        }
-        return true
+        // Mesma regra do mes exibido, so que para (a, m).
+        const confirmadaFora = contasExtrato
+          .filter(ct => ct.id !== contaIdEfetivo)
+          .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[c.id] === true)
+        if (confirmadaFora) return false
+        if (dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true) return true
+        return contaDaFixaNoMes(c, a, m, dados, contaPadraoFixas) === contaIdEfetivo
       })
       .filter(c => !ehCartaoCategoria(categorias, c.nome))
       .map(c => ({
@@ -812,6 +828,7 @@ export default function NovoLancamentoExtrato() {
         fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
         fixasPagOverride:   { ...prev.fixasPagOverride,   [editandoFixaId]: fPag },
       }))
+      gravarContaDaFixa(editandoFixaId)
       setEditandoFixaId(null)
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
       if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
@@ -1290,6 +1307,7 @@ export default function NovoLancamentoExtrato() {
               fDesc={fDesc}
               fValor={fValor}
               fPag={fPag}
+              fContaFixa={fContaFixa}
               fContaDestino={fContaDestino}
               isDinheiro={isDinheiro}
               contaInfo={contaInfo}
@@ -1308,6 +1326,7 @@ export default function NovoLancamentoExtrato() {
               setFPag={setFPag}
               setFCat={setFCat}
               setFSubDesc={setFSubDesc}
+              setFContaFixa={setFContaFixa}
               setFContaDestino={setFContaDestino}
               setFDesc={setFDesc}
               setFValor={setFValor}

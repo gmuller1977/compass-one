@@ -37,6 +37,29 @@ export type DadosMes = {
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>
   fixasPagOverride?: Record<string, FormaPag>
+  fixasContaOverride?: Record<string, string>
+}
+
+/**
+ * Em qual conta uma fixa de banco cai num mês.
+ *
+ * A conta do cadastro manda, e o mês pode discordar: a fatura de novembro sai
+ * do Sicredi, mas em novembro você pagou pelo Caixa. O override vale só
+ * naquele mês e não toca o cadastro da categoria.
+ *
+ * Ele mora no DadosMes da conta de ORIGEM, sempre — por isso a consulta é uma
+ * leitura direta e não uma varredura pelas contas.
+ */
+export function contaDaFixaNoMes(
+  cat: { id: string; contaDebitoId?: string },
+  ano: number,
+  mes: number,
+  dados: Record<string, DadosMes>,
+  contaPadrao: string | undefined,
+): string | undefined {
+  const origem = cat.contaDebitoId ?? contaPadrao
+  if (!origem) return undefined
+  return dados[mesKey(origem, ano, mes)]?.fixasContaOverride?.[cat.id] ?? origem
 }
 
 // ── Constantes ────────────────────────────────────────────────────────
