@@ -322,8 +322,9 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
         <div style={{ ...card, background: COR.avisoFundo, border: `1px solid ${COR.avisoTexto}33`,
           fontSize: 13, color: COR.avisoTexto, lineHeight: 1.6 }}>
           ⚠ Você ainda não montou o planejamento de {r.anosSemPlano.join(' e ')}.
-          Nesses meses a conta fica otimista demais, porque não sabe o que você
-          vai gastar.
+          A partir de janeiro a conta congela o saldo — para de somar o que
+          entra e o que sai. Se você costuma sobrar dinheiro todo mês, esses
+          meses aparecem piores do que provavelmente serão.
         </div>
       )}
 
