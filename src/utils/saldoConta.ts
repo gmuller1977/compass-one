@@ -362,7 +362,23 @@ function movimentoRealDoMes(
   return movimentoDoMes(dm, ano, mes, deps)
 }
 
-/** Saldo de UMA conta ao fim de um mês, realizado ou projetado. */
+/**
+ * Saldo REALIZADO de uma conta ao fim de um mês: o que o extrato explica.
+ * Mês futuro devolve o saldo de hoje, porque saldoFinalConta acumula até o mês
+ * pedido e para.
+ */
+function saldoRealizadoConta(alvo: string, ano: number, mes: number, deps: Deps): number {
+  if (alvo === 'dinheiro') return saldoFinalDinheiro(ano, mes, deps)
+  const conta = deps.contas.find(c => c.id === alvo)
+  return conta ? saldoFinalConta(conta, ano, mes, deps) : 0
+}
+
+/**
+ * Saldo de UMA conta ao fim de um mês, realizado ou projetado.
+ *
+ * O Radar NÃO usa isto: ele é acompanhamento em tempo real e só mostra
+ * realizado. Fica para a visão de previsão do Planejamento.
+ */
 export function saldoContaNoFim(
   alvo: string,
   ano: number,
@@ -371,10 +387,7 @@ export function saldoContaNoFim(
   opts: { comoAbertura?: boolean; hoje?: Date } = {},
 ): { valor: number; previsto: boolean } {
   const hoje = opts.hoje ?? new Date()
-  const conta = deps.contas.find(c => c.id === alvo)
-  const realizado = alvo === 'dinheiro'
-    ? saldoFinalDinheiro(ano, mes, deps)
-    : conta ? saldoFinalConta(conta, ano, mes, deps) : 0
+  const realizado = saldoRealizadoConta(alvo, ano, mes, deps)
 
   const alvoYM = ym(ano, mes)
   const corrente = ym(hoje.getFullYear(), hoje.getMonth())
@@ -407,60 +420,37 @@ export type LinhaMes = {
    */
   ajuste: number
   final: number
-  /**
-   * Com quanto esta conta ABRE o mês seguinte. Igual a `final`, menos no mês
-   * corrente: lá `final` é o realizado — o que o extrato do banco mostra hoje
-   * —, e a abertura já desconta o que ainda falta acontecer até o dia 31.
-   *
-   * Sem mostrar os dois, o usuário fecha setembro com 621,04, abre outubro com
-   * 1,04 e vai procurar o erro. Não há erro: são perguntas diferentes.
-   */
-  aberturaSeguinte: number
-  previsto: boolean
 }
 
 /**
  * Como o saldo do mês se formou, conta por conta.
  *
- * `inicial` e `final` saem das MESMAS funções que alimentam os cartões do topo
- * do Radar, então a soma das linhas bate com eles por construção, não por
+ * `inicial` e `final` saem da MESMA função que alimenta os cartões do topo do
+ * Radar, então a soma das linhas bate com eles por construção, não por
  * coincidência.
+ *
+ * Só realizado, como todo o Radar. O mês seguinte abre com o saldo que a conta
+ * tem hoje: `saldoFinalConta` acumula até o mês pedido e para, então um mês
+ * futuro devolve o saldo de agora.
  *
  * `entradas` e `saidas` são movimentação da CONTA — não são as Receitas e
  * Despesas por categoria dos outros dois cartões, que respondem outra
  * pergunta e não têm por que dar o mesmo número.
  */
-export function detalharMes(
-  ano: number,
-  mes: number,
-  deps: Deps,
-  opts: { hoje?: Date } = {},
-): LinhaMes[] {
-  const hoje = opts.hoje ?? new Date()
+export function detalharMes(ano: number, mes: number, deps: Deps): LinhaMes[] {
   const mAnt = mes === 0 ? 11 : mes - 1
   const aAnt = mes === 0 ? ano - 1 : ano
-  const futuroInteiro = ym(ano, mes) > ym(hoje.getFullYear(), hoje.getMonth())
 
   return alvosDeSaldo(deps.contas).map(a => {
-    const ini = saldoContaNoFim(a.id, aAnt, mAnt, deps, { comoAbertura: true, hoje })
-    const fim = saldoContaNoFim(a.id, ano, mes, deps, { hoje })
-
-    const abre = saldoContaNoFim(a.id, ano, mes, deps, { comoAbertura: true, hoje })
-
-    const real = movimentoRealDoMes(a.id, ano, mes, deps)
-    const prev = futuroInteiro
-      ? projecaoDaConta(a.id, ano, mes, deps, hoje)
-      : { entradas: 0, saidas: 0 }
-    const entradas = real.entradas + prev.entradas
-    const saidas   = real.saidas + prev.saidas
+    const inicial = saldoRealizadoConta(a.id, aAnt, mAnt, deps)
+    const final = saldoRealizadoConta(a.id, ano, mes, deps)
+    const { entradas, saidas } = movimentoRealDoMes(a.id, ano, mes, deps)
 
     return {
       id: a.id, nome: a.nome, icone: a.icone,
-      inicial: ini.valor, entradas, saidas,
-      ajuste: fim.valor - (ini.valor + entradas - saidas),
-      final: fim.valor,
-      aberturaSeguinte: abre.valor,
-      previsto: fim.previsto,
+      inicial, entradas, saidas,
+      ajuste: final - (inicial + entradas - saidas),
+      final,
     }
   })
 }

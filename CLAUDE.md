@@ -116,16 +116,27 @@ cartões e categorias, e no fim manda para o wizard. O **wizard** preenche os
 valores, mas replica o mesmo valor em todos os meses. Ajuste mês a mês só na
 Grade, Planilha ou Lista.
 
-**O mês corrente tem dois saldos, e os dois estão certos.** "Quanto tenho hoje"
-é o realizado — bate com o extrato do banco. "Com quanto abre o mês que vem" já
-desconta o que ainda falta acontecer até o dia 31. É o `comoAbertura` de
-[`saldoConta.ts`](src/utils/saldoConta.ts). Sem a distinção, ou o saldo atual
-mente, ou o mês seguinte abre ignorando as contas a pagar.
+**O Radar é acompanhamento em tempo real: só realizado.** O saldo inicial é o
+saldo real com que o mês abriu, entradas e saídas são as que aconteceram, o
+saldo atual é o que está no banco hoje — e o mês seguinte abre exatamente com
+ele. Nenhuma projeção entra ali, nem fixa em aberto, nem fatura, nem variável
+planejada. Decidido em 07/09/2026.
 
-A confusão que isso gera é previsível e já apareceu duas vezes: setembro fecha
-com 621,04, outubro abre com 1,04, e parece erro. Por isso o detalhe do Radar
-mostra as duas colunas lado a lado no mês corrente. Não unificar os números —
-mostrar os dois.
+Antes disso o Radar projetava, e a consequência era esta: setembro fechava com
+621,04 e outubro abria com 1,04. Os dois números estavam certos e respondiam
+perguntas diferentes, mas a tela não é o lugar dessa pergunta. **A visão de
+previsão é assunto do Planejamento.**
+
+O maquinário de projeção continua em [`saldoConta.ts`](src/utils/saldoConta.ts)
+— `saldoContaNoFim`, `projecaoDaConta`, `projecaoDoMes` —, testado e hoje sem
+consumidor. Não apagar enquanto o Planejamento não o usar.
+
+**O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
+**Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o
+realizado, bate com o extrato do banco; "com quanto abre o mês que vem" já
+desconta o que falta acontecer até o dia 31. É o `comoAbertura`. Sem a
+distinção, ou o saldo do dia mente, ou o mês seguinte abre ignorando as contas
+a pagar.
 
 **Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
 `projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da

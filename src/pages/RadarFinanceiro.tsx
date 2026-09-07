@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { saldoTotalNoFim, detalharMes } from '../utils/saldoConta'
+import { saldoBancosEDinheiro, detalharMes } from '../utils/saldoConta'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, type CatReal } from '../components/acompanhamento/AcShared'
@@ -112,23 +112,21 @@ export default function RadarFinanceiro() {
     contas, categorias, planos, saldoInicialDinheiro,
   }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
 
-  // Mes futuro mostra o previsto: o realizado mais as fixas ainda em aberto,
-  // encadeando desde o mes corrente. Passado e corrente mostram o realizado.
-  const fechamentoAnterior = useMemo(() => {
+  // So realizado, em qualquer mes. O Radar e acompanhamento em tempo real: o
+  // saldo atual e o que esta no banco hoje, e o mes seguinte abre com ele.
+  // Projecao existe, mas e assunto do Planejamento — ver saldoContaNoFim.
+  const saldoInicial = useMemo(() => {
     const mAnt = mes === 0 ? 11 : mes - 1
     const aAnt = mes === 0 ? ano - 1 : ano
-    return saldoTotalNoFim(aAnt, mAnt, depsSaldo, { comoAbertura: true })
+    return saldoBancosEDinheiro(aAnt, mAnt, depsSaldo)
   }, [ano, mes, depsSaldo])
 
-  const fechamento = useMemo(
-    () => saldoTotalNoFim(ano, mes, depsSaldo),
+  const saldoAtual = useMemo(
+    () => saldoBancosEDinheiro(ano, mes, depsSaldo),
     [ano, mes, depsSaldo],
   )
 
-  const saldoInicial = fechamentoAnterior.valor
-  const saldoAtual   = fechamento.valor
-
-  // O detalhe sai das mesmas funcoes dos dois cartoes de saldo, entao a linha
+  // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
   const linhasContas = useMemo(
     () => detalharMes(ano, mes, depsSaldo),
@@ -192,7 +190,7 @@ export default function RadarFinanceiro() {
 
       {/* KPIs CONSOLIDADOS — clicar em qualquer um abre o detalhe por conta */}
       <div style={{ padding: '8px 16px', flexShrink: 0, display: 'flex', gap: 8 }}>
-        <KpiCard icon="🔒" label={fechamentoAnterior.previsto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoInicial)}
+        <KpiCard icon="🔒" label="Saldo inicial" value={fmt(saldoInicial)}
           sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
@@ -201,7 +199,7 @@ export default function RadarFinanceiro() {
         <KpiCard icon="↓" label="Despesas" value={fmt(totalRealS)}
           valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
-        <KpiCard icon="=" label={fechamento.previsto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoAtual)}
+        <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
           sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
@@ -209,8 +207,7 @@ export default function RadarFinanceiro() {
 
       {detalheContas && (
         <div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
-          <RadarDetalheContas linhas={linhasContas}
-            proximoMes={MESES_FULL[(mes + 1) % 12].toLowerCase()} />
+          <RadarDetalheContas linhas={linhasContas} />
         </div>
       )}
 
