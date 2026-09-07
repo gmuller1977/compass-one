@@ -8,7 +8,7 @@ import type { DadosMes, PlanoAnoData } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
 import {
-  simularCompra, fimDoPlanejamento, parcelasQueOPlanoCobre,
+  simularCompra, fimDoPlanejamento, parcelasQueOPlanoCobre, diagnosticar,
   type PontoFluxo, type ResultadoCompra,
 } from '../../utils/simulacaoCompra'
 import type { Deps } from '../../utils/saldoConta'
@@ -304,6 +304,13 @@ function situacao(saldo: number, piso: number, parcela: number): Situacao {
   return 'ok'
 }
 
+/** O tom do cartao de resposta. Fundo e texto medidos em par, ver CLAUDE.md. */
+const TOM = {
+  ok:      { fundo: COR.sucessoFundo, texto: COR.sucessoTexto },
+  atencao: { fundo: COR.avisoFundo,   texto: COR.avisoTexto },
+  nao:     { fundo: COR.erroFundo,    texto: COR.erroTexto },
+} as const
+
 const CORES: Record<Situacao, { ponto: string; texto: string }> = {
   ok:       { ponto: '#16a34a', texto: COR.sucessoTexto },
   apertado: { ponto: '#f59e0b', texto: COR.avisoTexto },
@@ -322,7 +329,6 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   const navigate = useNavigate()
   const [detalhes, setDetalhes] = useState(false)
   const oQue = nome.trim()
-  const fim = r.fluxo[r.fluxo.length - 1]
 
   // Só até dois meses depois da última parcela: daí em diante é a projeção
   // normal subindo, e não diz nada sobre a compra.
@@ -334,56 +340,79 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   // placar dizia novembro no lugar de dezembro.
   const meses = r.fluxo
 
-  // Quando nao cabe, o que importa e QUANDO comeca — nao onde e mais fundo.
-  // Mostrar o fundo do poco fazia a frase apontar julho enquanto a tira de
-  // meses ja mostrava janeiro vermelho.
+  const d = diagnosticar(r, piso, valorParcela)
   const aperto = r.primeiroAperto ?? r.pior
-  const falta = piso - aperto.comCompra
-  const piorDepois = !r.cabe && r.pior !== aperto ? r.pior : null
+  const nMeses = (n: number) => `${n} ${n === 1 ? 'mês' : 'meses'}`
+
+  const titulo = {
+    'folgado':             oQue ? `Sim, dá para comprar ${oQue}.` : 'Sim, dá para comprar.',
+    'no-limite':           'Dá, mas fica no limite.',
+    'mexe-na-reserva':     'Dá, mas mexe no seu dinheiro guardado.',
+    'vermelho-passageiro': 'Aperta, mas você se recupera.',
+    'vermelho-ate-o-fim':  'Assim não dá.',
+  }[d.caso]
+
+  // O numero grande responde a pergunta de cada caso: onde se chega, quando
+  // cabe; quanto falta, quando nao cabe.
+  const destaque = d.gravidade === 'nao'
+    ? { rotulo: <>Já em <b>{MESES[aperto.mes].toLowerCase()}</b> ia faltar</>,
+        valor: piso - aperto.comCompra }
+    : { rotulo: <>No fim de <b>{MESES[d.fim.mes].toLowerCase()}</b> você fica com</>,
+        valor: d.fim.comCompra }
+
+  const explicacao = {
+    'folgado': d.pior !== d.fim
+      ? <>O mês mais apertado é <b>{MESES[d.pior.mes].toLowerCase()}</b>, com <b>{fmt(d.pior.comCompra)}</b>.</>
+      : <>Todos os meses ficam tranquilos.</>,
+    'no-limite':
+      <>Em <b>{MESES[d.pior.mes].toLowerCase()}</b> sobra pouco: <b>{fmt(d.pior.comCompra)}</b>.
+        Qualquer imprevisto nesse mês aperta.</>,
+    'mexe-na-reserva':
+      <>Em {nMeses(d.abaixo.length)} você fica abaixo dos <b>{fmt(piso)}</b> que
+        queria manter guardados — o menor é <b>{fmt(d.pior.comCompra)}</b>. Dinheiro
+        na conta não falta.</>,
+    'vermelho-passageiro':
+      <>{nMeses(d.negativos.length)} no vermelho, o pior em <b>{MESES[d.pior.mes].toLowerCase()}</b> com{' '}
+        <b>{fmt(d.pior.comCompra)}</b>. Depois você volta ao azul.</>,
+    'vermelho-ate-o-fim':
+      <>A partir de <b>{MESES[aperto.mes].toLowerCase()}</b> o saldo não se
+        recupera: em <b>{MESES[d.fim.mes].toLowerCase()}</b> você ainda estaria
+        com <b>{fmt(d.fim.comCompra)}</b>.</>,
+  }[d.caso]
 
   return (
     <>
       <div style={{
         ...card,
-        background: r.cabe ? COR.sucessoFundo : COR.erroFundo,
-        border: `1px solid ${(r.cabe ? COR.sucessoTexto : COR.erroTexto)}33`,
+        background: TOM[d.gravidade].fundo,
+        border: `1px solid ${TOM[d.gravidade].texto}33`,
       }}>
-        <div style={{ fontSize: 17, fontWeight: 800,
-          color: r.cabe ? COR.sucessoTexto : COR.erroTexto }}>
-          {r.cabe
-            ? (oQue ? `Sim, dá para comprar ${oQue}.` : 'Sim, dá para comprar.')
-            : 'Assim não cabe.'}
+        <div style={{ fontSize: 17, fontWeight: 800, color: TOM[d.gravidade].texto }}>
+          {titulo}
         </div>
 
         <div style={{ fontSize: 14, color: COR.texto, marginTop: 10, lineHeight: 1.6 }}>
-          {r.cabe ? (
-            <>No fim de <b>{MESES[fim.mes].toLowerCase()}</b> você fica com</>
-          ) : (
-            <>Já em <b>{MESES[aperto.mes]}</b> ia faltar</>
-          )}
+          {destaque.rotulo}
         </div>
         <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-1px', marginTop: 2,
-          color: r.cabe ? COR.sucessoTexto : COR.erroTexto }}>
-          {fmt(r.cabe ? fim.comCompra : falta)}
+          color: TOM[d.gravidade].texto }}>
+          {fmt(destaque.valor)}
         </div>
 
-        {/* Cabendo, o mes mais magro e contexto, nao manchete: a pergunta era
-            onde se chega. Nao cabendo, o fundo do poco mostra o tamanho do
-            problema depois de dizer quando ele comeca. */}
-        {r.cabe && r.pior !== fim && (
-          <div style={{ fontSize: 13, color: COR.texto, marginTop: 6 }}>
-            O mês mais apertado é <b>{MESES[r.pior.mes].toLowerCase()}</b>, com{' '}
-            <b>{fmt(r.pior.comCompra)}</b>.
-          </div>
-        )}
-        {piorDepois && (
-          <div style={{ fontSize: 13, color: COR.texto, marginTop: 6 }}>
-            E aperta mais até <b>{MESES[piorDepois.mes]}</b>, quando faltariam{' '}
-            <b>{fmt(piso - piorDepois.comCompra)}</b>.
+        <div style={{ fontSize: 13, color: COR.texto, marginTop: 8, lineHeight: 1.6 }}>
+          {explicacao}
+        </div>
+
+        {/* O mes ja seria ruim sem a compra. Muda a conversa: o problema nao e
+            o que se quer comprar, e o mes. */}
+        {d.apertoPreexistente && (
+          <div style={{ fontSize: 13, color: COR.texto, marginTop: 8, lineHeight: 1.6 }}>
+            Vale notar: <b>{MESES[d.abaixo[0].mes].toLowerCase()}</b> já ficaria
+            apertado mesmo sem essa compra.
           </div>
         )}
 
-        {!r.cabe && (r.adiarPara || r.parcelasQueCabem) && (
+        {d.gravidade !== 'ok' && (r.adiarPara || r.parcelasQueCabem) && (
           <div style={{ marginTop: 18 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 8 }}>
               O que dá para fazer:
@@ -407,7 +436,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
           </div>
         )}
 
-        {!r.cabe && !r.adiarPara && !r.parcelasQueCabem && (
+        {d.gravidade === 'nao' && !r.adiarPara && !r.parcelasQueCabem && (
           <div style={{ fontSize: 14, color: COR.texto, marginTop: 16, lineHeight: 1.6 }}>
             {r.limitadoPeloPlano
               ? 'Dentro do que você já planejou não há saída — nem esperando, nem dividindo em mais vezes.'

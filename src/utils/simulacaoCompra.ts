@@ -147,6 +147,11 @@ function aplicar(base: PontoFluxo[], saidas: { ano: number; mes: number; valor: 
 
 export type ResultadoCompra = {
   fluxo: PontoFluxo[]
+  /**
+   * Os meses julgados: do primeiro desembolso em diante. É sobre eles que o
+   * diagnóstico fala — os meses antes da compra não são responsabilidade dela.
+   */
+  janela: PontoFluxo[]
   /** O mês mais fundo depois da compra — onde o saldo chega ao mínimo. */
   pior: PontoFluxo
   /**
@@ -191,7 +196,7 @@ function avaliar(
   const janela = fluxo.filter(pt => ym(pt.ano, pt.mes) >= inicio)
   const pior = janela.reduce((a, b) => (b.comCompra < a.comCompra ? b : a), janela[0] ?? fluxo[0])
   const primeiroAperto = janela.find(pt => pt.comCompra < piso) ?? null
-  return { fluxo, pior, primeiroAperto, cabe: !primeiroAperto }
+  return { fluxo, janela, pior, primeiroAperto, cabe: !primeiroAperto }
 }
 
 /** `null` quando não há planejamento nenhum: aí não há o que simular. */
@@ -221,7 +226,7 @@ export function simularCompra(
 
   const saidas = saidasDoParcelamento(p, deps.contas)
   cabeNoPlano(saidas)
-  const { fluxo, pior, primeiroAperto, cabe } = avaliar(base, saidas, piso)
+  const { fluxo, janela, pior, primeiroAperto, cabe } = avaliar(base, saidas, piso)
 
   // Adiar: mesma compra, mês a mês para a frente, até caber. Passou do fim do
   // plano, para: adiar mais só afasta ainda mais.
@@ -247,7 +252,75 @@ export function simularCompra(
   }
 
   return {
-    fluxo, pior, primeiroAperto, cabe,
+    fluxo, janela, pior, primeiroAperto, cabe,
     adiarPara, parcelasQueCabem, limitadoPeloPlano, fimDoPlano,
   }
+}
+
+export type Gravidade = 'ok' | 'atencao' | 'nao'
+
+export type Diagnostico = {
+  gravidade: Gravidade
+  caso:
+    | 'folgado'             // nenhum mês encosta no limite
+    | 'no-limite'           // não fura, mas sobra pouco em algum mês
+    | 'mexe-na-reserva'     // fica abaixo do que se quer guardar, nunca negativo
+    | 'vermelho-passageiro' // fica negativo e volta ao azul até o fim
+    | 'vermelho-ate-o-fim'  // fica negativo e não se recupera
+  /** Meses abaixo do piso — a reserva quando há uma, senão zero. */
+  abaixo: PontoFluxo[]
+  /** Passam do piso, mas por menos de uma parcela: mais um mês assim e furam. */
+  apertados: PontoFluxo[]
+  /** Meses de saldo negativo de verdade, independentemente da reserva. */
+  negativos: PontoFluxo[]
+  pior: PontoFluxo
+  fim: PontoFluxo
+  /** O saldo volta ao piso no último mês da janela. */
+  recupera: boolean
+  /**
+   * O primeiro mês que fura já furaria SEM a compra. Muda a conversa: o
+   * problema não é o que se quer comprar, é o mês.
+   */
+  apertoPreexistente: boolean
+}
+
+/**
+ * Que tipo de situação é esta — e não só "cabe ou não cabe".
+ *
+ * Duas coisas separam um aviso de uma negativa, e nenhuma delas é a
+ * profundidade do buraco:
+ *
+ *   - furar a RESERVA é diferente de ficar NEGATIVO. Na primeira ainda há
+ *     dinheiro, só se encostou no que se queria guardar.
+ *   - RECUPERAR é diferente de não recuperar. Um mês no vermelho que volta ao
+ *     azul é um aperto; ficar no vermelho até o fim é outra coisa.
+ *
+ * Quantidade de meses no vermelho, sozinha, não decide: cinco meses que se
+ * recuperam continuam sendo um aviso, e um só que não se recupera é uma
+ * negativa. Ela entra na frase, não no veredito.
+ */
+export function diagnosticar(
+  r: ResultadoCompra,
+  piso: number,
+  valorParcela: number,
+): Diagnostico {
+  const janela = r.janela.length ? r.janela : r.fluxo
+  const fim = janela[janela.length - 1]
+  const abaixo = janela.filter(p => p.comCompra < piso)
+  const negativos = janela.filter(p => p.comCompra < 0)
+  const apertados = janela.filter(
+    p => p.comCompra >= piso && p.comCompra < piso + valorParcela)
+  const recupera = fim.comCompra >= piso
+  const apertoPreexistente = !!r.primeiroAperto && r.primeiroAperto.semCompra < piso
+
+  const base = { abaixo, apertados, negativos, pior: r.pior, fim, recupera, apertoPreexistente }
+
+  if (!abaixo.length) {
+    return apertados.length
+      ? { ...base, gravidade: 'ok', caso: 'no-limite' }
+      : { ...base, gravidade: 'ok', caso: 'folgado' }
+  }
+  if (!negativos.length) return { ...base, gravidade: 'atencao', caso: 'mexe-na-reserva' }
+  if (recupera)          return { ...base, gravidade: 'atencao', caso: 'vermelho-passageiro' }
+  return { ...base, gravidade: 'nao', caso: 'vermelho-ate-o-fim' }
 }
