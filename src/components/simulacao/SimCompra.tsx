@@ -262,7 +262,12 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
     return r.fluxo.slice(0, corte + 3)
   }, [r])
 
-  const falta = piso - r.pior.comCompra
+  // Quando nao cabe, o que importa e QUANDO comeca — nao onde e mais fundo.
+  // Mostrar o fundo do poco fazia a frase apontar julho enquanto a tira de
+  // meses ja mostrava janeiro vermelho.
+  const aperto = r.primeiroAperto ?? r.pior
+  const falta = piso - aperto.comCompra
+  const piorDepois = !r.cabe && r.pior !== aperto ? r.pior : null
 
   return (
     <>
@@ -280,13 +285,19 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
           {r.cabe ? (
             <>No mês mais apertado, <b>{MESES[r.pior.mes]}</b>, você ainda fica com</>
           ) : (
-            <>Em <b>{MESES[r.pior.mes]}</b> ia faltar</>
+            <>Já em <b>{MESES[aperto.mes]}</b> ia faltar</>
           )}
         </div>
         <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-1px', marginTop: 2,
           color: r.cabe ? COR.sucessoTexto : COR.erroTexto }}>
           {fmt(r.cabe ? r.pior.comCompra : falta)}
         </div>
+        {piorDepois && (
+          <div style={{ fontSize: 13, color: COR.texto, marginTop: 6 }}>
+            E aperta mais até <b>{MESES[piorDepois.mes]}</b>, quando faltariam{' '}
+            <b>{fmt(piso - piorDepois.comCompra)}</b>.
+          </div>
+        )}
 
         {!r.cabe && (r.adiarPara || r.parcelasQueCabem) && (
           <div style={{ marginTop: 18 }}>

@@ -124,8 +124,14 @@ function aplicar(base: PontoFluxo[], saidas: { ano: number; mes: number; valor: 
 
 export type ResultadoCompra = {
   fluxo: PontoFluxo[]
-  /** O mês mais apertado depois da compra. */
+  /** O mês mais fundo depois da compra — onde o saldo chega ao mínimo. */
   pior: PontoFluxo
+  /**
+   * O PRIMEIRO mês que fura o piso. Não é o mesmo que `pior`: com o saldo
+   * caindo mês a mês, o fundo do poço fica lá na frente, mas o problema começa
+   * antes — e é sobre o começo que a pessoa decide.
+   */
+  primeiroAperto: PontoFluxo | null
   cabe: boolean
   /**
    * Quando a compra passa a caber, adiando o início. `null` quando não cabe
@@ -155,7 +161,8 @@ function avaliar(
   const inicio = saidas.length ? Math.min(...saidas.map(s => ym(s.ano, s.mes))) : 0
   const janela = fluxo.filter(pt => ym(pt.ano, pt.mes) >= inicio)
   const pior = janela.reduce((a, b) => (b.comCompra < a.comCompra ? b : a), janela[0] ?? fluxo[0])
-  return { fluxo, pior, cabe: janela.every(pt => pt.comCompra >= piso) }
+  const primeiroAperto = janela.find(pt => pt.comCompra < piso) ?? null
+  return { fluxo, pior, primeiroAperto, cabe: !primeiroAperto }
 }
 
 export function simularCompra(
@@ -188,7 +195,7 @@ export function simularCompra(
   }
   const base = serieBase(depsCalc, horizonte, hoje, proprios)
 
-  const { fluxo, pior, cabe } = avaliar(base, saidasDoParcelamento(p, deps.contas), piso)
+  const { fluxo, pior, primeiroAperto, cabe } = avaliar(base, saidasDoParcelamento(p, deps.contas), piso)
 
   // Adiar: mesma compra, mês a mês para a frente, até caber.
   let adiarPara: ResultadoCompra['adiarPara'] = null
@@ -222,5 +229,5 @@ export function simularCompra(
       .map(pt => pt.ano),
   )]
 
-  return { fluxo, pior, cabe, adiarPara, parcelasQueCabem, anosEstimados }
+  return { fluxo, pior, primeiroAperto, cabe, adiarPara, parcelasQueCabem, anosEstimados }
 }
