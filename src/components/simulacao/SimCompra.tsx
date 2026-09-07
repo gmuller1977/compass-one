@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AreaChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -7,7 +7,10 @@ import { useApp } from '../../context/AppContext'
 import type { DadosMes, PlanoAnoData } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
-import { simularCompra, type PontoFluxo, type ResultadoCompra } from '../../utils/simulacaoCompra'
+import {
+  simularCompra, fimDoPlanejamento, parcelasQueOPlanoCobre,
+  type PontoFluxo, type ResultadoCompra,
+} from '../../utils/simulacaoCompra'
 import type { Deps } from '../../utils/saldoConta'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
@@ -44,6 +47,7 @@ const card: React.CSSProperties = {
  */
 export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   const { contas, categorias, planos, extratoData, faturaData, saldoInicialDinheiro } = useApp()
+  const navigate = useNavigate()
   const hoje = new Date()
 
   const [nome, setNome]         = useState('')
@@ -62,6 +66,23 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   const cartoes = contas.filter(c => c.tipo === 'cartao')
   const valorNum = parseValor(valorStr) ?? 0
 
+  // O planejamento e o horizonte: nada aqui extrapola. Comprar mais tarde ou
+  // no cartao que vence antes de fechar come meses desse teto.
+  const inicioCompra = new Date(hoje.getFullYear(), hoje.getMonth() + inicio, 1)
+  const fimDoPlano = useMemo(
+    () => fimDoPlanejamento(planos as Record<number, PlanoAnoData | undefined>),
+    [planos],
+  )
+  const tetoParcelas = useMemo(
+    () => parcelasQueOPlanoCobre(
+      planos as Record<number, PlanoAnoData | undefined>,
+      { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), cartaoId: ondeId || undefined },
+      contas,
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [planos, contas, ondeId, inicio],
+  )
+
   const deps: Deps = useMemo(() => ({
     extratoData: extratoData as Record<string, DadosMes>,
     faturaData: faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>,
@@ -75,6 +96,14 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [pedido, deps],
   )
+
+  // Trocar de cartao ou adiar a compra pode derrubar o teto abaixo do que ja
+  // estava escolhido. Sem isto o botao ficaria selecionado e desabilitado.
+  useEffect(() => {
+    if (tetoParcelas > 0 && parcelas > tetoParcelas) {
+      setParcelas([...PARCELAS_COMUNS].reverse().find(n => n <= tetoParcelas) ?? 1)
+    }
+  }, [tetoParcelas, parcelas])
 
   function simular() {
     const valor = parseValor(valorStr)
@@ -91,6 +120,31 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
       ano: alvo.getFullYear(), mes: alvo.getMonth(),
       piso: guardar,
     })
+  }
+
+  // Sem nada planejado nao ha o que simular, e inventar seria pior do que nao
+  // responder. O convite e a unica coisa util aqui.
+  if (!fimDoPlano) {
+    return (
+      <div style={{ ...card, textAlign: 'center', padding: '36px 24px' }}>
+        <div style={{ fontSize: 34 }}>🗓</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto, marginTop: 10 }}>
+          Antes, monte o seu planejamento
+        </div>
+        <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 8,
+          lineHeight: 1.6, maxWidth: 420, margin: '8px auto 0' }}>
+          Para dizer se uma compra cabe, a conta precisa saber o que entra e o
+          que sai nos seus próximos meses. Sem isso, qualquer resposta seria
+          chute.
+        </div>
+        <button onClick={() => navigate('/planejamento')} style={{
+          marginTop: 20, padding: '12px 22px', border: 'none', borderRadius: 10,
+          background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+          color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+          fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(26,86,219,.3)',
+        }}>Montar meu planejamento</button>
+      </div>
+    )
   }
 
   return (
@@ -115,17 +169,32 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {PARCELAS_COMUNS.map(n => {
               const ativo = parcelas === n
+              const fora = n > tetoParcelas
               return (
-                <button key={n} onClick={() => setParcelas(n)} style={{
-                  padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                  border: `1.5px solid ${ativo ? COR.azul : COR.borda}`,
-                  background: ativo ? '#eff6ff' : COR.branco,
-                  color: ativo ? COR.azul : COR.textoSuave,
-                  fontSize: 13, fontWeight: ativo ? 700 : 500, transition: 'all .15s',
-                }}>{n}x</button>
+                <button key={n} disabled={fora} onClick={() => setParcelas(n)}
+                  title={fora ? 'Seu planejamento não alcança tantos meses' : undefined}
+                  style={{
+                    padding: '8px 14px', borderRadius: 8, fontFamily: 'inherit',
+                    cursor: fora ? 'not-allowed' : 'pointer',
+                    border: `1.5px solid ${ativo ? COR.azul : COR.borda}`,
+                    background: ativo ? '#eff6ff' : COR.branco,
+                    color: fora ? COR.borda : ativo ? COR.azul : COR.textoSuave,
+                    fontSize: 13, fontWeight: ativo ? 700 : 500, transition: 'all .15s',
+                  }}>{n}x</button>
               )
             })}
           </div>
+          {fimDoPlano && (
+            <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
+              Seu planejamento vai até <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b>,
+              então dá para simular até <b>{tetoParcelas}x</b>.{' '}
+              <button onClick={() => navigate(`/planejamento?ano=${fimDoPlano.ano + 1}`)} style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 12, color: COR.azul, fontWeight: 600,
+                textDecoration: 'underline',
+              }}>Planejar mais meses</button> para ir além.
+            </div>
+          )}
           {valorNum > 0 && (
             <div style={{ fontSize: 20, fontWeight: 800, color: COR.azul, marginTop: 12,
               letterSpacing: '-.4px' }}>
@@ -325,28 +394,30 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
 
         {!r.cabe && !r.adiarPara && !r.parcelasQueCabem && (
           <div style={{ fontSize: 14, color: COR.texto, marginTop: 16, lineHeight: 1.6 }}>
-            Nem esperando um ano, nem dividindo em mais vezes. Para esta compra
-            caber, o caminho é sobrar mais dinheiro por mês.
+            {r.limitadoPeloPlano
+              ? 'Dentro do que você já planejou não há saída — nem esperando, nem dividindo em mais vezes.'
+              : 'Nem esperando um ano, nem dividindo em mais vezes. Para esta compra caber, o caminho é sobrar mais dinheiro por mês.'}
           </div>
         )}
       </div>
 
-      {r.anosEstimados.length > 0 && (
+      {r.limitadoPeloPlano && (
         <div style={{ ...card, background: COR.avisoFundo, border: `1px solid ${COR.avisoTexto}33` }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: COR.avisoTexto }}>
-            ≈ Os meses de {r.anosEstimados.join(' e ')} são uma estimativa
+            Só dá para olhar até {MESES[r.fimDoPlano.mes].toLowerCase()} de {r.fimDoPlano.ano}
           </div>
           <div style={{ fontSize: 13, color: COR.avisoTexto, marginTop: 6, lineHeight: 1.6 }}>
-            Você ainda não montou o planejamento desse período, então repetimos
-            o seu último ano. Serve para ter uma ideia, mas o número de verdade
-            só sai depois que você montar.
+            Seu planejamento termina aí. Pode haver uma saída depois disso — mais
+            meses para pagar, ou comprar mais tarde —, mas a conta não tem como
+            saber o que entra e o que sai nesses meses, e chutar seria pior do
+            que não responder.
           </div>
-          <button onClick={() => navigate(`/planejamento?ano=${r.anosEstimados[0]}`)} style={{
+          <button onClick={() => navigate(`/planejamento?ano=${r.fimDoPlano.ano + 1}`)} style={{
             marginTop: 12, padding: '9px 16px', borderRadius: 8, cursor: 'pointer',
             border: `1.5px solid ${COR.avisoTexto}55`, background: COR.branco,
             color: COR.avisoTexto, fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
           }}>
-            Montar o planejamento de {r.anosEstimados[0]} →
+            Planejar mais meses →
           </button>
         </div>
       )}
@@ -365,20 +436,19 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
             return (
               <div key={`${p.ano}-${p.mes}`} style={{
                 flex: '0 0 auto', minWidth: 78, textAlign: 'center',
-                border: `1px ${p.estimado ? 'dashed' : 'solid'} ${COR.borda}`,
-                borderRadius: 10, padding: '10px 8px',
-                background: p.estimado ? COR.fundo : COR.branco,
+                border: `1px solid ${COR.borda}`, borderRadius: 10, padding: '10px 8px',
+                background: COR.branco,
               }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: COR.textoSuave }}>
                   {MESES_CURTOS[p.mes]}
                 </div>
                 <div style={{
                   width: 10, height: 10, borderRadius: '50%', margin: '7px auto',
-                  background: CORES[s].ponto, opacity: p.estimado ? .55 : 1,
+                  background: CORES[s].ponto,
                 }} />
                 <div style={{ fontSize: 12, fontWeight: 700, color: CORES[s].texto,
                   fontVariantNumeric: 'tabular-nums' }}>
-                  {p.estimado && <span style={{ fontWeight: 500 }}>≈ </span>}{fmt(p.comCompra)}
+                  {fmt(p.comCompra)}
                 </div>
               </div>
             )
@@ -393,13 +463,6 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
               {txt}
             </span>
           ))}
-          {meses.some(p => p.estimado) && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 3,
-                border: `1px dashed ${COR.textoSuave}` }} />
-              ≈ estimado, repetindo o seu último ano
-            </span>
-          )}
         </div>
 
         <button onClick={() => setDetalhes(v => !v)} style={{
@@ -448,15 +511,6 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
               formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Comprando' : 'Sem comprar']}
               contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
             <ReferenceLine y={0} stroke={COR.erroTexto} strokeDasharray="4 4" />
-            {(() => {
-              const i = meses.findIndex(p => p.estimado)
-              return i > 0 ? (
-                <ReferenceLine x={MESES_CURTOS[meses[i].mes]} stroke={COR.textoSuave}
-                  strokeDasharray="3 3"
-                  label={{ value: 'estimado →', position: 'insideTopLeft',
-                    fontSize: 10, fill: COR.textoSuave }} />
-              ) : null
-            })()}
             <Area type="monotone" dataKey="sem" stroke="#94a3b8" fill="#94a3b8" fillOpacity={.18} />
             <Area type="monotone" dataKey="com" stroke={COR.azul} fill={COR.azul} fillOpacity={.28} />
           </AreaChart>

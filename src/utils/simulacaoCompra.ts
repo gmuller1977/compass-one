@@ -11,6 +11,16 @@ import { saldoTotalNoFim, type Deps } from './saldoConta'
  *
  * É isso que torna a busca por "quando dá" barata: varrer doze meses de início
  * não custa doze projeções, custa doze somas.
+ *
+ * NADA aqui extrapola. A simulação para onde o planejamento para, e quem chama
+ * descobre esse limite por `fimDoPlanejamento`.
+ *
+ * Houve uma tentativa de estender o plano repetindo o último ano. Ela furava no
+ * caso comum: quem começou a planejar em setembro tem janeiro a agosto zerados,
+ * e a cópia levava os zeros junto — oito meses congelados, rotulados como
+ * estimativa. Congelar ao menos era honesto; o "≈" afirmava um fundamento que
+ * não existia. O erro de raiz era tratar o plano como ANO quando ele é um
+ * conjunto de MESES.
  */
 
 export type Parcelamento = {
@@ -30,18 +40,51 @@ export type PontoFluxo = {
   comCompra: number
   /** Quanto a compra tira NESTE mês. */
   parcela: number
-  /**
-   * Este mês não tem planejamento próprio: os números vieram do último ano
-   * cadastrado, repetidos. Vale mostrar como estimativa, não como plano.
-   */
-  estimado: boolean
 }
 
-const ym = (ano: number, mes: number) => ano * 100 + (mes + 1)
+export type Mes = { ano: number; mes: number }
 
-function somaMes(ano: number, mes: number, n: number) {
+const ym = (ano: number, mes: number) => ano * 100 + (mes + 1)
+const ymDe = (m: Mes) => ym(m.ano, m.mes)
+
+function somaMes(ano: number, mes: number, n: number): Mes {
   const total = mes + n
   return { ano: ano + Math.floor(total / 12), mes: ((total % 12) + 12) % 12 }
+}
+
+/** Quantos meses de `a` até `b`, contando as duas pontas. Zero se b vier antes. */
+function mesesAte(a: Mes, b: Mes) {
+  return Math.max(0, (b.ano - a.ano) * 12 + (b.mes - a.mes) + 1)
+}
+
+/**
+ * O último mês com algum valor planejado — em receita ou em despesa.
+ *
+ * É o horizonte de tudo nesta tela. Medido no MÊS, e não no ano: um plano que
+ * cobre só setembro a dezembro tem horizonte em dezembro, mesmo existindo a
+ * entrada `planos[2026]` inteira, com onze meses vazios.
+ *
+ * `null` quando não há nada planejado em lugar nenhum.
+ */
+export function fimDoPlanejamento(planos: Deps['planos']): Mes | null {
+  let melhor: Mes | null = null
+  for (const [anoStr, plano] of Object.entries(planos)) {
+    if (!plano) continue
+    const ano = Number(anoStr)
+    for (const linha of [...(plano.entradas ?? []), ...(plano.saidas ?? [])]) {
+      for (let mes = 11; mes >= 0; mes--) {
+        if ((linha.v?.[mes] ?? 0) <= 0) continue
+        if (!melhor || ym(ano, mes) > ymDe(melhor)) melhor = { ano, mes }
+        break
+      }
+    }
+  }
+  return melhor
+}
+
+function deslocamentoDoCartao(cartaoId: string | undefined, contas: Conta[]) {
+  const cartao = cartaoId ? contas.find(c => c.id === cartaoId) : undefined
+  return cartao && (cartao.diaVencimento ?? 1) < (cartao.diaFechamento ?? 1) ? 1 : 0
 }
 
 /**
@@ -53,8 +96,7 @@ function somaMes(ano: number, mes: number, n: number) {
  * seguinte.
  */
 export function saidasDoParcelamento(p: Parcelamento, contas: Conta[]) {
-  const cartao = p.cartaoId ? contas.find(c => c.id === p.cartaoId) : undefined
-  const desloc = cartao && (cartao.diaVencimento ?? 1) < (cartao.diaFechamento ?? 1) ? 1 : 0
+  const desloc = deslocamentoDoCartao(p.cartaoId, contas)
   const valor = p.parcelas > 0 ? p.valorTotal / p.parcelas : 0
 
   return Array.from({ length: Math.max(0, p.parcelas) }, (_, k) => ({
@@ -63,50 +105,31 @@ export function saidasDoParcelamento(p: Parcelamento, contas: Conta[]) {
   }))
 }
 
-function anosComPlano(planos: Deps['planos']) {
-  return new Set(
-    Object.entries(planos).filter(([, p]) => !!p).map(([ano]) => Number(ano)),
-  )
-}
-
 /**
- * Preenche os anos sem planejamento repetindo o último ano cadastrado.
+ * Quantas parcelas o planejamento cobre, comprando numa data.
  *
- * Sem isso a projeção CONGELA no ano sem plano: `valorFixaNoMes` devolve zero
- * e o saldo para de subir e de descer, enquanto as parcelas continuam caindo
- * por cima. Quem tem sobra todo mês via a compra parecer bem pior do que é —
- * medido, R$ 1.600 no lugar de R$ 3.800.
- *
- * Repetir o ano inteiro, e não um mês, preserva a sazonalidade: o 13º continua
- * em dezembro e o IPVA em janeiro. É a mesma operação que o Planejamento já
- * oferece com o nome "Copiar ano anterior".
- *
- * O que ele não sabe: quando uma parcela termina. Um financiamento que acaba
- * em março volta cheio o ano seguinte, porque o plano guarda doze números e
- * nenhuma data final. O erro superestima a despesa — para "posso comprar?",
- * é o lado certo de errar.
+ * Zero significa que nem a primeira parcela cabe — o plano acabou antes dela.
+ * No cartão que vence antes de fechar a primeira parcela já nasce um mês à
+ * frente, e isso come um mês do teto.
  */
-function continuarPlanos(planos: Deps['planos'], anos: number[]): Deps['planos'] {
-  const conhecidos = [...anosComPlano(planos)].sort((a, b) => a - b)
-  const ultimo = conhecidos[conhecidos.length - 1]
-  if (ultimo === undefined) return planos
-  const saida = { ...planos }
-  for (const ano of anos) if (!saida[ano]) saida[ano] = planos[ultimo]
-  return saida
+export function parcelasQueOPlanoCobre(
+  planos: Deps['planos'],
+  compra: { ano: number; mes: number; cartaoId?: string },
+  contas: Conta[],
+): number {
+  const fim = fimDoPlanejamento(planos)
+  if (!fim) return 0
+  const primeira = somaMes(compra.ano, compra.mes, deslocamentoDoCartao(compra.cartaoId, contas))
+  return mesesAte(primeira, fim)
 }
 
-/** A projeção sem a compra, mês a mês, a partir do mês corrente. */
-function serieBase(
-  deps: Deps, horizonte: number, hoje: Date, comPlanoProprio: Set<number>,
-): PontoFluxo[] {
-  return Array.from({ length: horizonte }, (_, i) => {
-    const { ano, mes } = somaMes(hoje.getFullYear(), hoje.getMonth(), i)
+/** A projeção sem a compra, mês a mês, do mês corrente até o fim do plano. */
+function serieBase(deps: Deps, hoje: Date, fim: Mes): PontoFluxo[] {
+  const inicio = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
+  return Array.from({ length: mesesAte(inicio, fim) }, (_, i) => {
+    const { ano, mes } = somaMes(inicio.ano, inicio.mes, i)
     const valor = saldoTotalNoFim(ano, mes, deps, { hoje }).valor
-    return {
-      ano, mes,
-      semCompra: valor, comCompra: valor, parcela: 0,
-      estimado: !comPlanoProprio.has(ano),
-    }
+    return { ano, mes, semCompra: valor, comCompra: valor, parcela: 0 }
   })
 }
 
@@ -135,13 +158,19 @@ export type ResultadoCompra = {
   cabe: boolean
   /**
    * Quando a compra passa a caber, adiando o início. `null` quando não cabe
-   * dentro da janela procurada — aí o problema não é a data.
+   * dentro do que o planejamento alcança.
    */
   adiarPara: { ano: number; mes: number; meses: number } | null
   /** Menor número de parcelas que cabe mantendo a data. `null` se nenhum cabe. */
   parcelasQueCabem: number | null
-  /** Anos que a compra alcança sem planejamento próprio, estimados por repetição. */
-  anosEstimados: number[]
+  /**
+   * Alguma alternativa foi descartada por passar do fim do planejamento. A tela
+   * precisa dizer isso: "não achei saída" e "não posso olhar tão longe" são
+   * respostas diferentes.
+   */
+  limitadoPeloPlano: boolean
+  /** Último mês que o planejamento alcança. */
+  fimDoPlano: Mes
 }
 
 /**
@@ -165,69 +194,60 @@ function avaliar(
   return { fluxo, pior, primeiroAperto, cabe: !primeiroAperto }
 }
 
+/** `null` quando não há planejamento nenhum: aí não há o que simular. */
 export function simularCompra(
   p: Parcelamento,
   deps: Deps,
-  opts: {
-    piso?: number; hoje?: Date; maxAdiamento?: number; maxParcelas?: number
-    /** Repetir o último ano nos anos sem plano. Ligado por padrão. */
-    repetirPlano?: boolean
-  } = {},
-): ResultadoCompra {
+  opts: { piso?: number; hoje?: Date; maxAdiamento?: number; maxParcelas?: number } = {},
+): ResultadoCompra | null {
   const hoje = opts.hoje ?? new Date()
   const piso = opts.piso ?? 0
   const maxAdiamento = opts.maxAdiamento ?? 12
   const maxParcelas = opts.maxParcelas ?? 24
 
-  // Cabe o adiamento maximo, o parcelamento maximo e uma folga para o mes
-  // seguinte a ultima parcela aparecer no grafico.
-  const horizonte = maxAdiamento + Math.max(p.parcelas, maxParcelas) + 2
+  const fimDoPlano = fimDoPlanejamento(deps.planos)
+  if (!fimDoPlano) return null
 
-  // O "estimado" e medido contra os planos ORIGINAIS: o calculo usa os anos
-  // preenchidos, mas a tela precisa dizer quais numeros o usuario montou.
-  const proprios = anosComPlano(deps.planos)
-  const depsCalc = opts.repetirPlano === false ? deps : {
-    ...deps,
-    planos: continuarPlanos(
-      deps.planos,
-      Array.from({ length: horizonte }, (_, i) => somaMes(hoje.getFullYear(), hoje.getMonth(), i).ano),
-    ),
+  const base = serieBase(deps, hoje, fimDoPlano)
+  if (!base.length) return null
+
+  let limitadoPeloPlano = false
+  /** Uma alternativa só vale se TODAS as parcelas couberem no planejamento. */
+  const cabeNoPlano = (saidas: Mes[]) => {
+    const dentro = saidas.every(s => ymDe(s) <= ymDe(fimDoPlano))
+    if (!dentro) limitadoPeloPlano = true
+    return dentro
   }
-  const base = serieBase(depsCalc, horizonte, hoje, proprios)
 
-  const { fluxo, pior, primeiroAperto, cabe } = avaliar(base, saidasDoParcelamento(p, deps.contas), piso)
+  const saidas = saidasDoParcelamento(p, deps.contas)
+  cabeNoPlano(saidas)
+  const { fluxo, pior, primeiroAperto, cabe } = avaliar(base, saidas, piso)
 
-  // Adiar: mesma compra, mês a mês para a frente, até caber.
+  // Adiar: mesma compra, mês a mês para a frente, até caber. Passou do fim do
+  // plano, para: adiar mais só afasta ainda mais.
   let adiarPara: ResultadoCompra['adiarPara'] = null
   if (!cabe) {
     for (let d = 1; d <= maxAdiamento; d++) {
       const alvo = somaMes(p.ano, p.mes, d)
-      if (avaliar(base, saidasDoParcelamento({ ...p, ...alvo }, deps.contas), piso).cabe) {
-        adiarPara = { ...alvo, meses: d }
-        break
-      }
+      const s = saidasDoParcelamento({ ...p, ...alvo }, deps.contas)
+      if (!cabeNoPlano(s)) break
+      if (avaliar(base, s, piso).cabe) { adiarPara = { ...alvo, meses: d }; break }
     }
   }
 
-  // Esticar: mesma data, mais parcelas.
+  // Esticar: mesma data, mais parcelas. Mesma regra — mais parcelas terminam
+  // mais tarde, então uma vez fora do plano não volta.
   let parcelasQueCabem: number | null = null
   if (!cabe) {
     for (let n = p.parcelas + 1; n <= maxParcelas; n++) {
-      if (avaliar(base, saidasDoParcelamento({ ...p, parcelas: n }, deps.contas), piso).cabe) {
-        parcelasQueCabem = n
-        break
-      }
+      const s = saidasDoParcelamento({ ...p, parcelas: n }, deps.contas)
+      if (!cabeNoPlano(s)) break
+      if (avaliar(base, s, piso).cabe) { parcelasQueCabem = n; break }
     }
   }
 
-  // So os anos que a compra realmente alcanca — avisar sobre 2028 num
-  // parcelamento que acaba em marco so faria ruido.
-  const ultimo = fluxo.reduce((a, b) => (b.parcela > 0 ? b : a), fluxo[0])
-  const anosEstimados = [...new Set(
-    fluxo
-      .filter(pt => pt.estimado && ym(pt.ano, pt.mes) <= ym(ultimo.ano, ultimo.mes))
-      .map(pt => pt.ano),
-  )]
-
-  return { fluxo, pior, primeiroAperto, cabe, adiarPara, parcelasQueCabem, anosEstimados }
+  return {
+    fluxo, pior, primeiroAperto, cabe,
+    adiarPara, parcelasQueCabem, limitadoPeloPlano, fimDoPlano,
+  }
 }
