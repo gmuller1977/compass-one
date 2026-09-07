@@ -424,10 +424,10 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
 
       <div style={card}>
         <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 3 }}>
-          Como fica cada mês
+          Mês a mês, antes e depois
         </div>
         <div style={{ fontSize: 12, color: COR.textoSuave, marginBottom: 16 }}>
-          Quanto sobra na conta no fim do mês, já pagando as parcelas.
+          Em cima, o que sobraria sem a compra. Embaixo, já pagando as parcelas.
         </div>
 
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
@@ -435,18 +435,22 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
             const s = situacao(p.comCompra, piso, valorParcela)
             return (
               <div key={`${p.ano}-${p.mes}`} style={{
-                flex: '0 0 auto', minWidth: 78, textAlign: 'center',
+                flex: '0 0 auto', minWidth: 88, textAlign: 'center',
                 border: `1px solid ${COR.borda}`, borderRadius: 10, padding: '10px 8px',
                 background: COR.branco,
               }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: COR.textoSuave }}>
                   {MESES_CURTOS[p.mes]}
                 </div>
+                <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 6,
+                  fontVariantNumeric: 'tabular-nums' }}>
+                  {fmt(p.semCompra)}
+                </div>
                 <div style={{
-                  width: 10, height: 10, borderRadius: '50%', margin: '7px auto',
+                  width: 10, height: 10, borderRadius: '50%', margin: '5px auto',
                   background: CORES[s].ponto,
                 }} />
-                <div style={{ fontSize: 12, fontWeight: 700, color: CORES[s].texto,
+                <div style={{ fontSize: 13, fontWeight: 700, color: CORES[s].texto,
                   fontVariantNumeric: 'tabular-nums' }}>
                   {fmt(p.comCompra)}
                 </div>
@@ -454,6 +458,8 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
             )
           })}
         </div>
+
+        <Fechamento meses={meses} isMobile={isMobile} />
 
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 14,
           fontSize: 12, color: COR.textoSuave }}>
@@ -463,6 +469,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
               {txt}
             </span>
           ))}
+          <span>o semáforo olha o número de baixo</span>
         </div>
 
         <button onClick={() => setDetalhes(v => !v)} style={{
@@ -475,6 +482,58 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
         {detalhes && <Detalhes meses={meses} isMobile={isMobile} />}
       </div>
     </>
+  )
+}
+
+/**
+ * O placar do fim do periodo: onde voce chega com e sem a compra.
+ *
+ * A diferenca e o quanto da compra ja foi pago ate ali — nao o preco dela,
+ * quando o planejamento acaba antes da ultima parcela. Por isso o rotulo fala
+ * do periodo, e nao da compra.
+ */
+function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean }) {
+  const fim = meses[meses.length - 1]
+  if (!fim) return null
+  const diferenca = fim.semCompra - fim.comCompra
+
+  const celula: React.CSSProperties = {
+    flex: 1, textAlign: 'center', padding: '10px 8px',
+  }
+  const rotulo: React.CSSProperties = {
+    fontSize: 11, color: COR.textoSuave, marginBottom: 4,
+  }
+  const valor: React.CSSProperties = {
+    fontSize: isMobile ? 15 : 17, fontWeight: 800,
+    fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px',
+  }
+
+  return (
+    <div style={{ marginTop: 16, border: `1px solid ${COR.borda}`, borderRadius: 10,
+      background: COR.fundo, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+        <div style={celula}>
+          <div style={rotulo}>Sem a compra</div>
+          <div style={{ ...valor, color: COR.textoSuave }}>{fmt(fim.semCompra)}</div>
+        </div>
+        <div style={{ width: 1, background: COR.borda }} />
+        <div style={celula}>
+          <div style={rotulo}>Comprando</div>
+          <div style={{ ...valor, color: fim.comCompra < 0 ? COR.erroTexto : COR.texto }}>
+            {fmt(fim.comCompra)}
+          </div>
+        </div>
+        <div style={{ width: 1, background: COR.borda }} />
+        <div style={celula}>
+          <div style={rotulo}>Diferença</div>
+          <div style={{ ...valor, color: COR.erroTexto }}>− {fmt(diferenca)}</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: COR.textoSuave, textAlign: 'center',
+        padding: '0 8px 10px' }}>
+        onde você chega em {MESES[fim.mes].toLowerCase()} de {fim.ano}
+      </div>
+    </div>
   )
 }
 
