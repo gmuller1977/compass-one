@@ -8,6 +8,7 @@ import {
 } from './types'
 import { acharPlanCat } from '../acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../../utils/fixasDoMes'
+import { saldoBancosEDinheiro, type Deps } from '../../utils/saldoConta'
 
 // iconeCategoria imported above; suppress unused warning
 void iconeCategoria
@@ -15,7 +16,7 @@ void iconeCategoria
 export function usePlanejamento(anoAtual: number) {
   const {
     contas, categorias, extratoData, faturaData,
-    planos, setPlanos,
+    planos, setPlanos, saldoInicialDinheiro,
   } = useApp()
 
   const anoCorrente = new Date().getFullYear()
@@ -196,9 +197,25 @@ export function usePlanejamento(anoAtual: number) {
     : anoAtual > anoCorrente ? -1
     : mesAtual - 1
 
+  // O realizado sai de saldoConta, a mesma fonte dos cartoes do Radar. O
+  // Planejamento nao recalcula o passado: so encadeia o futuro a partir dele.
+  const depsSaldo: Deps = useMemo(() => ({
+    extratoData,
+    faturaData: faturaData as Deps['faturaData'],
+    contas, categorias,
+    planos: planos as Deps['planos'],
+    saldoInicialDinheiro,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+
+  const fimReal = useMemo(() => (mes: number) => (
+    mes < 0
+      ? saldoBancosEDinheiro(anoAtual - 1, 11, depsSaldo)
+      : saldoBancosEDinheiro(anoAtual, mes, depsSaldo)
+  ), [anoAtual, depsSaldo])
+
   const ancora = useMemo<AncoraReal>(
-    () => ({ ateMes: ancoraMes, te: totaisReais.te, ts: totaisReais.ts }),
-    [ancoraMes, totaisReais],
+    () => ({ ateMes: ancoraMes, te: totaisReais.te, ts: totaisReais.ts, fim: fimReal }),
+    [ancoraMes, totaisReais, fimReal],
   )
 
   // Totais para "Meu plano" (previsto) — realizado ate a ancora, plano depois
@@ -207,16 +224,12 @@ export function usePlanejamento(anoAtual: number) {
     [dadosPrevistoFinal, hasFaturaCat, ancora])
 
   // Saldo real (calculado dos lançamentos)
+  // A mesma fonte, para nao existir uma segunda versao do realizado.
   const { saldoInicialReal, saldoFinalReal } = useMemo(() => {
-    const si: number[] = []
-    const sf: number[] = []
-    for (let i = 0; i < 12; i++) {
-      const s = i === 0 ? SALDO_INICIAL_FIXO : sf[i - 1]
-      si.push(s)
-      sf.push(s + totaisReais.te[i] - totaisReais.ts[i])
-    }
+    const sf = Array.from({ length: 12 }, (_, i) => fimReal(i))
+    const si = sf.map((_, i) => (i === 0 ? fimReal(-1) : sf[i - 1]))
     return { saldoInicialReal: si, saldoFinalReal: sf }
-  }, [totaisReais, SALDO_INICIAL_FIXO])
+  }, [fimReal])
 
   // Meses com dados reais
   const mesTemDadosReais = useMemo(() =>

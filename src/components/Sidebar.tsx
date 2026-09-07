@@ -60,7 +60,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       {
         icon: '⚙️', label: 'Configurações', path: '/configuracoes', exact: false,
         sub: [
-          { label: 'Bancos',       path: '/configuracoes?aba=bancos'       },
+          { label: 'Minhas Contas', path: '/configuracoes?aba=bancos'      },
           { label: 'Cartões',      path: '/configuracoes?aba=cartoes'      },
           { label: 'Categorias',   path: '/configuracoes?aba=categorias'   },
           { label: 'Grupos',       path: '/configuracoes?aba=grupos'       },

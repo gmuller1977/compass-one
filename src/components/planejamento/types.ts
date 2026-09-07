@@ -44,6 +44,18 @@ export type AncoraReal = {
   ateMes: number
   te: number[]
   ts: number[]
+  /**
+   * Saldo REAL ao fim de um mes — bancos mais dinheiro, o mesmo numero que o
+   * Radar mostra. `-1` pede o fim de dezembro do ano anterior, que e com o que
+   * janeiro abre.
+   *
+   * Existe porque o Planejamento calculava o realizado por conta propria,
+   * partindo da soma dos saldos de CADASTRO das contas correntes e poupancas.
+   * Isso deixava de fora o dinheiro em carteira, ignorava a conciliacao e
+   * incluia contas marcadas para ficar fora do saldo inicial — tres motivos
+   * para agosto abrir com um numero aqui e outro no Radar.
+   */
+  fim?: (mes: number) => number
 }
 
 export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraReal) {
@@ -59,10 +71,15 @@ export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraRea
   const totalE = planE.map((v, i) => fechado(i) ? (ancora!.te[i] ?? 0) : v)
   const totalS = planS.map((v, i) => fechado(i) ? (ancora!.ts[i] ?? 0) : v)
 
+  // Mes fechado usa o saldo REAL nas duas pontas; o primeiro mes aberto herda
+  // o real do anterior e so entao passa a encadear o planejado.
   const si: number[] = [], sf: number[] = []
   for (let i = 0; i < 12; i++) {
-    const s = i === 0 ? data.saldoInicialJan : sf[i - 1]
-    si.push(s); sf.push(s + totalE[i] - totalS[i])
+    const abertura = ancora?.fim && fechado(i - 1) ? ancora.fim(i - 1)
+      : i === 0 ? data.saldoInicialJan
+      : sf[i - 1]
+    si.push(abertura)
+    sf.push(ancora?.fim && fechado(i) ? ancora.fim(i) : abertura + totalE[i] - totalS[i])
   }
   return {
     totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf,
