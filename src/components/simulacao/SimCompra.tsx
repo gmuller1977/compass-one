@@ -325,11 +325,13 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
 
   // Só até dois meses depois da última parcela: daí em diante é a projeção
   // normal subindo, e não diz nada sobre a compra.
-  const meses = useMemo(() => {
-    const ultima = r.fluxo.reduce((a, b) => (b.parcela > 0 ? b : a), r.fluxo[0])
-    const corte = r.fluxo.findIndex(p => p.ano === ultima.ano && p.mes === ultima.mes)
-    return r.fluxo.slice(0, corte + 3)
-  }, [r])
+  // O fluxo inteiro, sem aparar. Ele ja vai do mes corrente ate o fim do
+  // planejamento — a janela que faz sentido. Havia um corte em "ultima parcela
+  // mais dois meses", herdado de quando o fluxo ia 38 meses adiante; com o
+  // fluxo limitado pelo plano, ele so escondia meses reais. Numa compra a
+  // vista em setembro, com plano ate dezembro, a tira parava em novembro e o
+  // placar dizia novembro no lugar de dezembro.
+  const meses = r.fluxo
 
   // Quando nao cabe, o que importa e QUANDO comeca — nao onde e mais fundo.
   // Mostrar o fundo do poco fazia a frase apontar julho enquanto a tira de
