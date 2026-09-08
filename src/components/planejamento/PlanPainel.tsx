@@ -45,6 +45,17 @@ const Z = { canto: 6, faixa: 5, rotulo: 3 }
 
 const AZUL = 'linear-gradient(135deg,#0f2878,#1e40af)'
 
+/**
+ * O detalhe é claro; só o resumo é azul. Além de separar as duas leituras, isso
+ * conserta a legibilidade: PlanCelulaEditavel pinta o número em #0f172a, que
+ * sobre o azul escuro sumia.
+ *
+ * O cinza do grupo usa #475569 e não o #64748b de sempre — sobre #f1f5f9 aquele
+ * dá 4,34:1 e reprova para texto de 9px. Este dá 6,9:1.
+ */
+const CINZA = '#f1f5f9'
+const CINZA_TEXTO = '#475569'
+
 type LinhaCat =
   | { k: 'grupo'; tipo: 'e' | 's'; grupo: string; ris: number[] }
   | { k: 'cat'; tipo: 'e' | 's'; ri: number; cat: Cat }
@@ -380,21 +391,21 @@ function Secao({
           return (
             <div key={`${tipo}-g-${li}`} style={{ display: 'contents' }}>
               <div style={{
-                position: 'sticky', left: 0, zIndex: Z.rotulo, background: '#132f6b',
+                position: 'sticky', left: 0, zIndex: Z.rotulo, background: CINZA,
                 height: H_GRP, display: 'flex', alignItems: 'center',
                 padding: '0 14px 0 30px', fontSize: 9, fontWeight: 800,
                 letterSpacing: '.5px', textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.65)',
-                borderRight: '1px solid rgba(255,255,255,0.12)',
+                color: CINZA_TEXTO,
+                borderRight: `1px solid ${COR.borda}`,
                 overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
               }}>
                 {l.grupo === SEM_GRUPO ? 'Outros' : l.grupo}
               </div>
               {meses.map(mi => (
                 <div key={`${tipo}-g-${li}-${mi}`} style={{
-                  height: H_GRP, background: '#132f6b', display: 'flex', alignItems: 'center',
+                  height: H_GRP, background: CINZA, display: 'flex', alignItems: 'center',
                   justifyContent: 'flex-end', padding: '0 10px', fontSize: 10, fontWeight: 700,
-                  color: 'rgba(255,255,255,0.65)', fontVariantNumeric: 'tabular-nums',
+                  color: CINZA_TEXTO, fontVariantNumeric: 'tabular-nums',
                 }}>
                   {fmt(soma(mi), true)}
                 </div>
@@ -407,11 +418,12 @@ function Secao({
         return (
           <div key={`${tipo}-c-${l.ri}`} style={{ display: 'contents' }}>
             <div style={{
-              position: 'sticky', left: 0, zIndex: Z.rotulo, background: '#0f2878',
+              position: 'sticky', left: 0, zIndex: Z.rotulo, background: COR.branco,
               height: H_CAT, display: 'flex', alignItems: 'center', gap: 5,
-              padding: '0 14px 0 38px', fontSize: 11,
-              color: 'rgba(255,255,255,0.85)',
-              borderRight: '1px solid rgba(255,255,255,0.12)',
+              padding: '0 14px 0 38px', fontSize: 11, fontWeight: 500,
+              color: COR.texto,
+              borderRight: `1px solid ${COR.borda}`,
+              borderBottom: `1px solid ${COR.bordaSuave}`,
               overflow: 'hidden', whiteSpace: 'nowrap',
             }}>
               <span style={{ flexShrink: 0 }}>{icone}</span>
@@ -421,8 +433,8 @@ function Secao({
             </div>
             {meses.map(mi => (
               <div key={`${tipo}-c-${l.ri}-${mi}`} style={{
-                height: H_CAT, display: 'flex', alignItems: 'center',
-                justifyContent: 'flex-end', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                height: H_CAT, background: COR.branco, display: 'flex', alignItems: 'center',
+                justifyContent: 'flex-end', borderBottom: `1px solid ${COR.bordaSuave}`,
               }}>
                 <PlanCelulaEditavel
                   valor={l.cat.v[mi] ?? 0}
