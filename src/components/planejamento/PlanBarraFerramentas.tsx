@@ -17,6 +17,31 @@ const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
 /** A meta abre modal em vez de painel: nao e edicao em lote como as outras. */
 const META = { label: 'Meta mensal', icon: '🎯' }
 
+/**
+ * Azul escuro com fonte branca — 10,4:1, o mesmo tom das faixas de resumo do
+ * Planejamento, para a barra pertencer visualmente à tabela que ela edita.
+ *
+ * A ferramenta ABERTA inverte: fundo branco, letra azul. Com todos os botões
+ * escuros, o realce não podia ser "mais escuro ainda"; inverter é o contraste
+ * mais forte disponível e não precisa de uma terceira cor.
+ */
+const BTN_ESCURO = '#1e3a8a'
+const BTN_ATIVO_TEXTO = '#1a56db'
+
+function estiloBotao(ativa: boolean, bloqueado: boolean): React.CSSProperties {
+  return {
+    border: `1.5px solid ${ativa ? BTN_ATIVO_TEXTO : BTN_ESCURO}`,
+    borderRadius: 8, padding: '6px 14px',
+    fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+    cursor: bloqueado ? 'not-allowed' : 'pointer',
+    background: ativa ? COR.branco : BTN_ESCURO,
+    color: ativa ? BTN_ATIVO_TEXTO : '#fff',
+    opacity: bloqueado ? 0.55 : 1,
+    display: 'flex', alignItems: 'center', gap: 5,
+    transition: 'all .12s',
+  }
+}
+
 interface Props {
   mesAtual: number
   anoAtual: number
@@ -67,17 +92,7 @@ export default function PlanBarraFerramentas({
               key={f.id}
               onClick={() => toggleTool(f.id)}
               title={bloqueado ? motivoBloqueio : undefined}
-              style={{
-                border: `1.5px solid ${ativa ? '#1a56db' : COR.borda}`,
-                borderRadius: 8, padding: '6px 14px',
-                fontSize: 12, fontWeight: 600,
-                cursor: bloqueado ? 'not-allowed' : 'pointer',
-                background: ativa ? '#eff6ff' : COR.branco,
-                color: ativa ? '#1a56db' : COR.textoSuave,
-                opacity: bloqueado ? 0.55 : 1,
-                display: 'flex', alignItems: 'center', gap: 5,
-                transition: 'all .12s',
-              }}
+              style={estiloBotao(ativa, bloqueado)}
             >
               {f.icon} {f.label}
             </button>
@@ -91,19 +106,17 @@ export default function PlanBarraFerramentas({
             setMetaAberta(true)
           }}
           title={bloqueado ? motivoBloqueio : 'Quanto você quer que sobre por mês'}
-          style={{
-            border: `1.5px solid ${temMeta ? '#1a56db' : COR.borda}`,
-            borderRadius: 8, padding: '6px 14px',
-            fontSize: 12, fontWeight: 600,
-            cursor: bloqueado ? 'not-allowed' : 'pointer',
-            background: temMeta ? '#eff6ff' : COR.branco,
-            color: temMeta ? '#1a56db' : COR.textoSuave,
-            opacity: bloqueado ? 0.55 : 1,
-            display: 'flex', alignItems: 'center', gap: 5,
-            transition: 'all .12s',
-          }}
+          style={estiloBotao(metaAberta, bloqueado)}
         >
           {META.icon} {META.label}
+          {/* Ja existe meta em algum mes. Antes isso pintava o botao inteiro de
+              azul claro, o que com a barra escura viraria "sempre ativo". */}
+          {temMeta && !metaAberta && (
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#86efac', marginLeft: 1,
+            }} />
+          )}
         </button>
       </div>
 
