@@ -19,6 +19,30 @@ export type CatFixa = {
   ehFaturaCartao?: boolean
 }
 
+/**
+ * De onde veio o saldo final previsto, parcela por parcela.
+ *
+ * Sai da propria cascata: a mesma passagem que soma o saldo classifica cada
+ * valor. Uma segunda funcao que tentasse explicar o numero acabaria
+ * discordando dele — foi o que aconteceu em toda tela deste app onde havia
+ * dois caminhos para a mesma pergunta.
+ */
+export type Memoria = {
+  abertura: number
+  entradasReais: number
+  saidasReais: number
+  entradasPrevistas: number
+  /** Fixas de saida ainda nao confirmadas, fora fatura. */
+  fixasPrevistas: number
+  /** Fatura do cartao ja lancada e ainda nao paga. */
+  faturaEmAberto: number
+  /** O que o plano diz que ainda vai entrar na fatura antes de fechar. */
+  faturaEstimada: number
+  /** O que falta gastar do plano das categorias de banco e dinheiro. */
+  variaveisARealizar: number
+  fechamento: number
+}
+
 export type Lancamento = {
   id: string; tipo: TipoLanc
   descricao: string; categoria: string

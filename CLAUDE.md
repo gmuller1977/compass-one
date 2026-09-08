@@ -253,6 +253,25 @@ O realizado é do **MÊS**, não da conta — um gasto pago por outro banco tamb
 consumiu o plano da categoria. Só a **sobra** se atribui a uma conta, e é isso
 que mantém a soma por conta igual ao total.
 
+**O saldo final previsto abre a memória de cálculo ao ser clicado.** Ela sai da
+própria cascata: a mesma passagem que soma o saldo classifica cada parcela num
+balde (`Memoria`, em [`NleShared.tsx`](src/components/novoLancamentoExtrato/NleShared.tsx)).
+Uma segunda função para explicar o número acabaria discordando dele — foi o que
+aconteceu em toda tela deste app onde havia dois caminhos para a mesma pergunta.
+Linha zerada não aparece: quem só tem lançamento não lê sobre fatura estimada.
+
+**Tentativa descartada, para não repetir:** desenhar `Gastos variáveis a
+realizar` e `Fatura estimada` como linhas no dia, junto dos lançamentos.
+Tecnicamente correto e recusado pelo Guilherme em 08/09/2026 — misturar
+previsão com lançamento no mesmo lugar confunde, e a tela já está cheia. A
+informação é a mesma; o lugar é que era errado.
+
+O painel pinta **fundo próprio** (`#0f2878` / `#7f1d1d`) em vez de herdar o do
+cartão. A caixa do mobile usa `COR.azulMedio` (`#2563eb`), mais claro que o
+limite de `#1e40af`, e sobre ele o verde e o vermelho claro reprovariam.
+Medido: branco 10,4:1 e 9,9:1; `#86efac` 4,8:1 e 7,1:1; `#fecaca` 4,6:1 e
+6,8:1; label a 75% 5,1:1 e 6,1:1.
+
 **Entrada variável continua fora da projeção**, nas duas telas. Projetar receita
 que não é fixa é chute; e incluir só num lado faria as duas discordarem.
 

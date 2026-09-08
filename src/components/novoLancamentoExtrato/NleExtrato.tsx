@@ -5,7 +5,7 @@ import {
   COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
   diaSemana, diaEfetivoFixa, BadgePag,
   formaPagCategoria, formaRecebCategoria,
-  type CatFixa, type Lancamento, type DadosMes, type TipoLanc, type FormaPag,
+  type CatFixa, type Lancamento, type DadosMes, type TipoLanc, type FormaPag, type Memoria,
   parseValor,
   REALCE_ERRO,
 } from './NleShared'
@@ -27,6 +27,8 @@ type Props = {
   saldosDia: Record<number, number>
   saldoBase: number
   saldoMes: number
+  /** De onde veio o saldo final previsto, parcela por parcela. */
+  memoria: Memoria
   totalEntradas: number
   totalSaidas: number
   contas: Conta[]
@@ -159,10 +161,64 @@ const TEMA = {
   },
 }
 
+
+/**
+ * Memoria de calculo do saldo final previsto.
+ *
+ * Uma linha por parcela, na ordem em que o mes acontece: o que ja aconteceu,
+ * o que ainda vai acontecer, e o total. Linha zerada nao aparece — quem tem so
+ * lancamento nao precisa ler sobre fatura estimada.
+ *
+ * Nada aqui recalcula nada: os numeros vem da mesma passagem que formou o
+ * saldo, entao as parcelas fecham no total por construcao.
+ */
+function MemoriaSaldo({ m, positivo }: { m: Memoria; positivo: boolean }) {
+  // Fundo PROPRIO, e nao o do cartao. A caixa do mobile usa COR.azulMedio
+  // (#2563eb), mais claro que o limite de #1e40af do CLAUDE.md — sobre ele o
+  // verde e o vermelho claro reprovariam. Sobre #0f2878 e #7f1d1d a paleta
+  // passa com folga: branco 10,4:1 e 9,9:1; #86efac 4,8:1 e 7,1:1;
+  // #fecaca 4,6:1 e 6,8:1; label a 75% 5,1:1 e 6,1:1.
+  const fundo = positivo ? '#0f2878' : '#7f1d1d'
+  const previstas: [string, number, string][] = [
+    ['Receitas ainda previstas',      m.entradasPrevistas,   'Fixas de entrada que ainda nao foram confirmadas'],
+    ['Despesas fixas a pagar',        -m.fixasPrevistas,     'Fixas ainda nao confirmadas'],
+    ['Fatura do cartao',              -m.faturaEmAberto,     'Ja lancada, ainda nao paga'],
+    ['Compras que faltam no cartao',  -m.faturaEstimada,     'O que o plano espera que ainda entre na fatura'],
+    ['Gastos variaveis a realizar',   -m.variaveisARealizar, 'O que falta gastar do plano, fora do cartao'],
+  ]
+  const linhas: [string, number, string][] = [
+    ['Saldo inicial do mes', m.abertura,      'Com quanto a conta abriu'],
+    ['Receitas recebidas',   m.entradasReais, 'Lancamentos e fixas ja confirmadas'],
+    ['Despesas pagas',       -m.saidasReais,  'Lancamentos e fixas ja confirmadas'],
+    ...previstas.filter(([, v]) => Math.abs(v) > 0.005),
+  ]
+  const linha = (rotulo: string, valor: number, ajuda: string, forte = false) => (
+    <div key={rotulo} style={{display:'flex',alignItems:'baseline',gap:10,padding:'7px 0',
+      borderTop: forte ? '1px solid rgba(255,255,255,.25)' : 'none', marginTop: forte ? 4 : 0}}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:12,fontWeight:forte?700:500,color:'#fff'}}>{rotulo}</div>
+        {!forte && <div style={{fontSize:9,color:'rgba(255,255,255,.75)',marginTop:1}}>{ajuda}</div>}
+      </div>
+      <span style={{fontSize:forte?15:13,fontWeight:forte?800:600,fontVariantNumeric:'tabular-nums',
+        whiteSpace:'nowrap',
+        color: forte ? (valor>=0?'#86efac':'#fca5a5') : valor<0 ? '#fecaca' : '#fff'}}>
+        {valor<0?'−':''}{fmt(Math.abs(valor))}
+      </span>
+    </div>
+  )
+  return (
+    <div style={{padding:'10px 20px 12px',background:fundo,
+      borderRadius:'0 0 12px 12px',borderTop:'1px solid rgba(255,255,255,.18)'}}>
+      {linhas.map(([r,v,a]) => linha(r,v,a))}
+      {linha('Saldo final previsto', m.fechamento, '', true)}
+    </div>
+  )
+}
+
 export default function NleExtrato({
   isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
-  fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes,
+  fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes, memoria,
   totalEntradas, totalSaidas,
   contas,
   diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
@@ -177,6 +233,8 @@ export default function NleExtrato({
   setEditandoId, setEditandoFixaId,
   ehAutomatico,
 }: Props) {
+  // Fechada por padrao: a memoria e consulta, nao leitura obrigatoria.
+  const [memoriaAberta, setMemoriaAberta] = React.useState(false)
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.
@@ -556,34 +614,56 @@ export default function NleExtrato({
           {isMobile&&(
             <div style={{margin:'4px 0 8px',borderRadius:14,
               background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#991b1b)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-              padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-              <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)'}}>
-                Saldo final — {NOMES_MESES[mes]} {ano}
-              </span>
-              <span style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.5px'}}>
-                {fmt(saldosDia[totalDias]??saldoMes)}
-              </span>
+              flexShrink:0}}>
+              <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
+                onClick={()=>setMemoriaAberta(v=>!v)}
+                onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMemoriaAberta(v=>!v)}}}
+                style={{padding:'14px 16px',display:'flex',alignItems:'center',
+                  justifyContent:'space-between',cursor:'pointer'}}>
+                <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)'}}>
+                  Saldo final — {NOMES_MESES[mes]} {ano}
+                  <span style={{marginLeft:6,fontSize:9}}>{memoriaAberta?'▲':'▼'}</span>
+                </span>
+                <span style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.5px'}}>
+                  {fmt(saldosDia[totalDias]??saldoMes)}
+                </span>
+              </div>
+              {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}/>}
             </div>
           )}
         </div>
 
-        {/* Saldo final previsto — barra fixa desktop */}
+        {/* Saldo final previsto — barra fixa desktop. Clicar abre a memoria de
+            calculo: era o unico numero da tela sem nenhuma forma de descobrir
+            de onde ele veio. */}
         {!isMobile&&(()=>{
           const sf=saldosDia[totalDias]??saldoMes
           const positivo=sf>=0
           return(
             <div style={{padding:'8px 16px',flexShrink:0,borderTop:'1px solid #e2e8f0',background:'#f8faff'}}>
               <div style={{borderRadius:12,
-                background:positivo?'linear-gradient(135deg,#0f2878,#1e40af)':'linear-gradient(135deg,#7f1d1d,#991b1b)',
-                padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div>
-                  <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Saldo final previsto</div>
-                  <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
+                background:positivo?'linear-gradient(135deg,#0f2878,#1e40af)':'linear-gradient(135deg,#7f1d1d,#991b1b)'}}>
+                <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
+                  onClick={()=>setMemoriaAberta(v=>!v)}
+                  onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMemoriaAberta(v=>!v)}}}
+                  style={{padding:'12px 20px',display:'flex',justifyContent:'space-between',
+                    alignItems:'center',cursor:'pointer'}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#fff',display:'flex',alignItems:'center',gap:6}}>
+                      Saldo final previsto
+                      <span style={{fontSize:9,fontWeight:600,padding:'1px 6px',borderRadius:4,
+                        background:'rgba(255,255,255,.15)',color:'rgba(255,255,255,.9)'}}>
+                        {memoriaAberta?'ocultar cálculo':'ver cálculo'}
+                      </span>
+                    </div>
+                    <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
+                  </div>
+                  <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
+                    color:positivo?'#86efac':'#fca5a5'}}>
+                    {fmt(sf)}
+                  </span>
                 </div>
-                <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
-                  color:positivo?'#86efac':'#fca5a5'}}>
-                  {fmt(sf)}
-                </span>
+                {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={positivo}/>}
               </div>
             </div>
           )

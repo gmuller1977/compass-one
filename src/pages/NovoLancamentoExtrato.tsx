@@ -10,7 +10,7 @@ import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
 import {
   COR, NOMES_MESES,
-  contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey,
+  contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey, type Memoria,
   formaPagCategoria, useIsMobile,
   type TipoLanc, type FormaPag, type CatFixa, type Lancamento, type DadosMes,
 } from '../components/novoLancamentoExtrato/NleShared'
@@ -739,25 +739,44 @@ export default function NovoLancamentoExtrato() {
     const todasFixas = [...fcMes, ...fatMes, ...variaveisBanco, ...complementoFatura]
     let saldo = abertura
     let entradas = 0, saidas = 0
+    // Memoria de calculo: a MESMA passagem que forma o saldo vai classificando
+    // cada parcela. Nao ha segunda conta para explicar a primeira — as linhas
+    // fecham no fechamento por construcao.
+    const mem: Memoria = {
+      abertura, entradasReais: 0, saidasReais: 0,
+      entradasPrevistas: 0, fixasPrevistas: 0,
+      faturaEmAberto: 0, faturaEstimada: 0, variaveisARealizar: 0,
+      fechamento: 0,
+    }
     const res: Record<number,number> = {}
     for (let d = 1; d <= totalD; d++) {
       const dPast = mesPast || (ehCorrente && d < diaHoje)
       const dHoje = ehCorrente && d === diaHoje
       todasFixas.filter(f => diaEfetivoFixa(f, ovr, ehAutomatico(f), m, a, totalD) === d)
         .forEach(f => {
-          if (dPast || dHoje) {
-            if (dmMes?.fixasConsolidadas?.[f.id] !== true) return
-          }
+          const confirmada = dmMes?.fixasConsolidadas?.[f.id] === true
+          if ((dPast || dHoje) && !confirmada) return
           const v = (dPast || dHoje) ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
-          if (f.tipo === 'entrada') { saldo += v; entradas += v } else { saldo -= v; saidas += v }
+          if (f.tipo === 'entrada') {
+            saldo += v; entradas += v
+            if (confirmada) mem.entradasReais += v; else mem.entradasPrevistas += v
+          } else {
+            saldo -= v; saidas += v
+            if (confirmada) mem.saidasReais += v
+            else if (f.id === '__fatura_estimada__') mem.faturaEstimada += v
+            else if (f.id === '__variaveis_banco__') mem.variaveisARealizar += v
+            else if (f.id.startsWith('cartao-')) mem.faturaEmAberto += v
+            else mem.fixasPrevistas += v
+          }
         })
       ;(lancs[d] ?? []).forEach(l => {
-        if (l.tipo === 'entrada') { saldo += l.valor; entradas += l.valor }
-        else { saldo -= l.valor; saidas += l.valor }
+        if (l.tipo === 'entrada') { saldo += l.valor; entradas += l.valor; mem.entradasReais += l.valor }
+        else { saldo -= l.valor; saidas += l.valor; mem.saidasReais += l.valor }
       })
       res[d] = saldo
     }
-    return { porDia: res, fechamento: saldo, entradas, saidas }
+    mem.fechamento = saldo
+    return { porDia: res, fechamento: saldo, entradas, saidas, memoria: mem }
   }, [dados, depsSaldo, contaIdEfetivo, contasExtrato, contaPadraoFixas, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
 
   // O saldo inicial de um mes futuro e o FECHAMENTO do anterior, calculado pela
@@ -1245,6 +1264,7 @@ export default function NovoLancamentoExtrato() {
               categorias={categorias}
               mesDados={mesDados}
               saldosDia={saldosDia}
+              memoria={cascata.memoria}
               saldoBase={saldoBaseExibido}
               saldoMes={saldoMes}
               totalEntradas={totalEntradas}
