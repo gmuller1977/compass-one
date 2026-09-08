@@ -286,14 +286,14 @@ export default function PlanPainel({
               tipo="e" titulo="Receitas" aberto={aberto === 'e'}
               onToggle={() => setAberto(a => (a === 'e' ? null : 'e'))}
               topo={H_CAB + H_RES} totais={previsto.totalEntradas}
-              meses={meses} realizadoAte={previsto.realizadoAte} cor="#86efac"
+              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
               fundoMes={fundoMes} divisor={divisor}
             />
             <LinhaSecao
               tipo="s" titulo="Despesas" aberto={aberto === 's'}
               onToggle={() => setAberto(a => (a === 's' ? null : 's'))}
               topo={H_CAB + H_RES * 2} totais={previsto.totalSaidas}
-              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fde047"
+              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
               fundoMes={fundoMes} divisor={divisor}
             />
 
@@ -421,6 +421,11 @@ function LinhaSecao({
   totais: number[]
   meses: number[]
   realizadoAte: number
+  /**
+   * Hoje branco nas duas seções. A cor saiu daqui porque era redundante: o
+   * rótulo da linha já diz se é receita ou despesa. Ela fica onde carrega algo
+   * que o rótulo não carrega — o sinal do Resultado e a distância da Meta.
+   */
   cor: string
   fundoMes: (mi: number) => string
   divisor: (mi: number, claro?: boolean) => React.CSSProperties
