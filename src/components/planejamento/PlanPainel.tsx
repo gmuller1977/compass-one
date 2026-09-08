@@ -50,16 +50,21 @@ const AZUL = 'linear-gradient(135deg,#0f2878,#1e40af)'
  * conserta a legibilidade: PlanCelulaEditavel pinta o número em #0f172a, que
  * sobre o azul escuro sumia.
  *
- * O grupo é uma FAIXA, não um realce. Ele era #f1f5f9 com texto #475569: o
- * texto passava com folga (6,9:1), mas a faixa separava só 1,10:1 das linhas
- * brancas em volta — dava para não notar que ali começava um grupo. Invertido,
- * separa 7,58:1, e o texto ganha os mesmos 7,58:1.
+ * O grupo é uma FAIXA, não um realce. Era #f1f5f9 com texto #475569, e o
+ * problema não estava no texto — ele passava com folga — e sim na faixa, que
+ * separava só 1,10:1 das linhas brancas em volta.
  *
- * O resultado é uma hierarquia de três degraus: azul escuro no resumo, slate
- * no grupo, branco na categoria.
+ * Este azul dá 14,87:1 com preto, o melhor de todos os tons medidos. A faixa em
+ * si separa 1,41:1 do branco, número baixo, mas a razão de contraste só mede
+ * luminância: o TOM azul distingue a faixa de um jeito que ela não captura.
+ *
+ * Fica uma hierarquia de três degraus: azul escuro no resumo, azul claro no
+ * grupo, branco na categoria.
  */
-const CINZA = '#475569'
-const CINZA_TEXTO = '#fff'
+const GRUPO_FUNDO = '#c9daf8'
+const GRUPO_TEXTO = '#000'
+/** Sobre o azul claro, uma linha escura de leve — a clara sumiria. */
+const GRUPO_BORDA = 'rgba(15,23,42,0.15)'
 
 type LinhaCat =
   | { k: 'grupo'; tipo: 'e' | 's'; grupo: string; ris: number[] }
@@ -426,21 +431,21 @@ function Detalhe({
           return (
             <div key={`${tipo}-g-${li}`} style={{ display: 'contents' }}>
               <div style={{
-                position: 'sticky', left: 0, zIndex: Z.rotulo, background: CINZA,
+                position: 'sticky', left: 0, zIndex: Z.rotulo, background: GRUPO_FUNDO,
                 height: H_GRP, display: 'flex', alignItems: 'center',
                 padding: '0 14px 0 30px', fontSize: 10, fontWeight: 800,
                 letterSpacing: '.5px', textTransform: 'uppercase',
-                color: CINZA_TEXTO,
-                borderRight: '1px solid rgba(255,255,255,0.15)',
+                color: GRUPO_TEXTO,
+                borderRight: `1px solid ${GRUPO_BORDA}`,
                 overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
               }}>
                 {l.grupo === SEM_GRUPO ? 'Outros' : l.grupo}
               </div>
               {meses.map(mi => (
                 <div key={`${tipo}-g-${li}-${mi}`} style={{
-                  height: H_GRP, background: CINZA, display: 'flex', alignItems: 'center',
+                  height: H_GRP, background: GRUPO_FUNDO, display: 'flex', alignItems: 'center',
                   justifyContent: 'flex-end', padding: '0 10px', fontSize: 12, fontWeight: 700,
-                  color: CINZA_TEXTO, fontVariantNumeric: 'tabular-nums',
+                  color: GRUPO_TEXTO, fontVariantNumeric: 'tabular-nums',
                 }}>
                   {fmt(soma(mi), true)}
                 </div>
