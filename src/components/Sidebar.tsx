@@ -46,6 +46,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         sub: [
           { label: 'Grade',      path: '/planejamento?modo=grade'    },
           { label: 'Planilha',   path: '/planejamento?modo=planilha' },
+          { label: 'Painel',     path: '/planejamento?modo=painel'   },
           { label: 'Lista',      path: '/planejamento?modo=lista'    },
           // Por ultimo de proposito: sobrescreve o plano do ano inteiro.
           { divider: 'Recomeçar' },

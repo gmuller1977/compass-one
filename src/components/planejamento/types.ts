@@ -5,7 +5,7 @@ export function nomeExibicao(cat: Cat) {
 }
 export type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 export type Editando = { tipo: 'e' | 's'; row: number; mes: number } | null
-export type ViewMode = 'grade' | 'planilha' | 'lista'
+export type ViewMode = 'grade' | 'planilha' | 'painel' | 'lista'
 export type Aba = 'meu-plano' | 'realizado' | 'revisao'
 
 // Motivos de bloqueio de edicao — mostrados ao clicar na celula, para o clique
