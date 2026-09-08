@@ -17,11 +17,6 @@ export type CatFixa = {
   formaPagamento: FormaPag
   diaVencimento: number
   ehFaturaCartao?: boolean
-  /**
-   * Linha que o PLANO projeta — nao ha o que confirmar nem editar. O valor
-   * encolhe sozinho conforme o gasto acontece e some quando o plano se esgota.
-   */
-  estimada?: boolean
 }
 
 export type Lancamento = {
