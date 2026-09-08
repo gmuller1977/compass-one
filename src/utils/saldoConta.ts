@@ -217,49 +217,78 @@ function contaDaCategoria(cat: Categoria, padrao: string | undefined) {
 }
 
 /**
- * O que ainda FALTA gastar do planejado variável fora do cartão, numa conta.
+ * O que ainda FALTA gastar do planejado variável, por categoria, numa conta.
  *
- * `max(0, planejado − realizado)` por categoria — a mesma fórmula que a fatura
- * em aberto já usava. Antes o mês corrente não projetava variável nenhuma:
- * somar o planejado por cima dos lançamentos reais contaria o mesmo gasto duas
- * vezes, então a escolha tinha sido não somar nada. O preço era um saldo final
- * otimista, que escondia dinheiro que já se sabe que vai sair.
+ * `max(0, plano − realizado)`, e o **realizado soma tudo**: extrato, dinheiro e
+ * fatura. `tipoMovimento` é a intenção de onde pagar, não uma trava — mercado
+ * planejado no banco e pago no cartão consumiu o mesmo plano.
  *
- * Mês inteiramente futuro cai na mesma conta: sem lançamento, o realizado é 0
- * e sobra o planejado inteiro. Estourado o plano, a sobra é 0 e vale o
- * realizado, que já está no extrato.
+ * É exatamente o "Disponível" que o Radar mostra na linha da categoria, mesmo
+ * mês e mesmos dois números. Antes eram três contas diferentes tentando
+ * responder isso: o Radar por categoria, a projeção só pelo extrato, e a
+ * estimativa da fatura pelo agregado do cartão. Plano de 1.000 com 200 no
+ * débito e 500 no cartão dava 300 no Radar e reservava 800 no saldo previsto.
  *
- * O realizado é do MÊS, não da conta: um gasto pago por outro banco também
- * consumiu o planejado da categoria. Só a SOBRA se atribui a uma conta — a
- * mesma de `contaDaCategoria` —, e é isso que mantém `projecaoDoMes` igual à
- * soma de `projecaoDaConta`.
+ * O rateio não muda o total, só o endereço:
+ *   - categoria de banco/dinheiro → a conta de débito dela;
+ *   - categoria de cartão → a conta que paga o cartão em aberto de vencimento
+ *     mais cedo, e só enquanto aquela fatura não fechou. Fechada, o que faltou
+ *     já não cabe nela: cai na próxima, que é paga no mês seguinte.
  *
- * Compra no cartão fica de fora (`totalCart`): ela consome o planejado do
- * cartão, que tem o complemento próprio.
+ * O rateio do cartão é do MÊS, não de um cartão: o plano não diz em qual cartão
+ * o gasto vai cair. Por isso ele sai inteiro numa conta só — dividir entre as
+ * contas que pagam cartão o contaria de novo em cada uma.
  */
-export function faltaVariavelBanco(
-  alvo: string, ano: number, mes: number, deps: Deps,
-): number {
-  const { categorias, planos, contas } = deps
+export function faltaVariavelDoMes(
+  alvo: string, ano: number, mes: number, deps: Deps, hoje: Date = new Date(),
+): { banco: number; cartao: number; diaCartao?: number } {
+  const { categorias, planos, contas, extratoData } = deps
   const padrao = contaPadrao(contas)
-  const daConta = categorias.filter(c =>
-    c.tipo === 'saida' && c.ativa && !c.fixa && contaDaCategoria(c, padrao) === alvo)
-  if (!daConta.length) return 0
+  const variaveis = categorias.filter(c => c.tipo === 'saida' && c.ativa && !c.fixa)
+  if (!variaveis.length) return { banco: 0, cartao: 0 }
+
+  // O cartão em aberto de vencimento mais cedo decide quem paga a sobra do
+  // cartão — a mesma regra que já valia para o complemento da fatura.
+  const dms = dadosBancariosDoMes(
+    extratoData, `-${ano}-${String(mes + 1).padStart(2, '0')}`,
+    k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
+  )
+  const ref = contas
+    .filter(c => c.tipo === 'cartao' && c.diaVencimento)
+    .filter(c => !resolverFixaDoMes(`cartao-${c.id}`, dms).consolidada)
+    .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))[0]
+  const refAberta = (() => {
+    if (!ref) return false
+    const off = (ref.diaVencimento ?? 1) < (ref.diaFechamento ?? 1) ? 1 : 0
+    let pM = mes - off, pA = ano
+    if (pM < 0) { pM += 12; pA-- }
+    return new Date(pA, pM, ref.diaFechamento ?? 1) > hoje
+  })()
+  const contaDoCartao = ref ? (ref.contaPagamentoId ?? padrao) : undefined
 
   const { saidasMap } = construirRealizadoMes({
-    ano, mes, extratoData: deps.extratoData, faturaData: deps.faturaData,
+    ano, mes, extratoData, faturaData: deps.faturaData,
     contas, categorias, planoAno: planos[ano],
   })
 
-  let falta = 0
-  for (const cat of daConta) {
-    const plan = valorFixaNoMes(cat, planos[ano], mes, categorias)
-    if (plan <= 0) continue
+  let banco = 0
+  let cartao = 0
+  for (const cat of variaveis) {
+    const plano = valorFixaNoMes(cat, planos[ano], mes, categorias)
+    if (plano <= 0) continue
     const k = resolverRealKey(saidasMap, cat.nome, cat.descricao)
-    const feito = k ? saidasMap[k].totalBanc + saidasMap[k].totalDinheiro : 0
-    if (plan > feito) falta += plan - feito
+    const feito = k ? saidasMap[k].total : 0
+    const falta = plano - feito
+    if (falta <= 0) continue
+
+    if (cat.tipoMovimento === 'cartao') {
+      if (refAberta && contaDoCartao === alvo) cartao += falta
+      continue
+    }
+    if (contaDaCategoria(cat, padrao) === alvo) banco += falta
   }
-  return falta
+
+  return { banco, cartao, diaCartao: ref?.diaVencimento }
 }
 
 function contaPadrao(contas: Conta[]) {
@@ -327,7 +356,8 @@ function projecaoDaConta(
     // não projeta, e incluir só aqui faria as duas telas discordarem.
   }
 
-  saidas += faltaVariavelBanco(alvo, ano, mes, deps)
+  const falta = faltaVariavelDoMes(alvo, ano, mes, deps, hoje)
+  saidas += falta.banco + falta.cartao
 
   const abertas = contas
     .filter(c => c.tipo === 'cartao' && c.diaVencimento)
@@ -337,20 +367,6 @@ function projecaoDaConta(
   for (const c of abertas)
     if ((c.contaPagamentoId ?? padrao) === alvo)
       saidas += totalFatura(c.id, ano, mes, contas, faturaData)
-
-  // Fatura que ainda não fechou vale o MAIOR entre o lançado e o planejado do
-  // mês da compra — só o lançado subestima uma fatura que ainda vai crescer.
-  const ref = abertas[0]
-  if (ref && (ref.contaPagamentoId ?? padrao) === alvo) {
-    const off = (ref.diaVencimento ?? 1) < (ref.diaFechamento ?? 1) ? 1 : 0
-    let pMes = mes - off, pAno = ano
-    if (pMes < 0) { pMes += 12; pAno-- }
-    if (new Date(pAno, pMes, ref.diaFechamento ?? 1) > hoje) {
-      const lancado = abertas.reduce(
-        (s, c) => s + totalFatura(c.id, ano, mes, contas, faturaData), 0)
-      saidas += Math.max(0, planejadoVariavel(pAno, pMes, deps, true) - lancado)
-    }
-  }
 
   return { entradas, saidas }
 }
@@ -376,18 +392,6 @@ function projecaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date): number
     const { entradas, saidas } = projecaoDaConta(a.id, ano, mes, deps, hoje)
     return acc + entradas - saidas
   }, 0)
-}
-
-/**
- * Soma planejada das categorias variáveis de saída de um mês, no cartão ou
- * fora dele.
- */
-function planejadoVariavel(ano: number, mes: number, deps: Deps, doCartao: boolean): number {
-  const { categorias, planos } = deps
-  return categorias
-    .filter(c => c.tipo === 'saida' && c.ativa && !c.fixa
-      && (c.tipoMovimento === 'cartao') === doCartao)
-    .reduce((s, c) => s + valorFixaNoMes(c, planos[ano], mes, categorias), 0)
 }
 
 /** Movimento REAL de uma conta num mês, já separado em entradas e saídas. */

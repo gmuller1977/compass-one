@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import { valorFixaNoMes } from '../utils/valorFixa'
-import { faltaVariavelBanco, type Deps as DepsSaldo } from '../utils/saldoConta'
+import { faltaVariavelDoMes, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
@@ -688,24 +688,21 @@ export default function NovoLancamentoExtrato() {
     // pagamento: PIX e debito no proprio mes, cartao no mes em que a fatura e
     // paga. Sem isso o saldo de um mes futuro subia indefinidamente.
     //
-    // No mes corrente vale o que FALTA gastar: max(0, planejado - realizado),
-    // por categoria. Somar o planejado inteiro por cima dos lancamentos reais
-    // contaria duas vezes o mesmo gasto, e nao somar nada deixava o saldo
-    // otimista — mostrava um dinheiro que ja se sabe que vai sair. E a mesma
-    // formula que a fatura em aberto sempre usou.
+    // No mes corrente vale o que FALTA gastar: max(0, plano - realizado), por
+    // categoria, com o realizado somando extrato, dinheiro E fatura. Somar o
+    // plano inteiro por cima dos lancamentos reais contaria duas vezes o mesmo
+    // gasto; nao somar nada deixava o saldo otimista.
     //
-    // Quem calcula e faltaVariavelBanco, no saldoConta: uma funcao so, a mesma
-    // que a projecao do Radar usa. Mes futuro cai nela tambem — sem lancamento,
-    // o realizado e 0 e sobra o planejado inteiro.
-    const planejadoDoMes = (aa: number, mm: number, doCartao: boolean) =>
-      categorias
-        .filter(c => c.tipo === 'saida' && c.ativa && !c.fixa
-          && (c.tipoMovimento === 'cartao') === doCartao
-          && (doCartao || !c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
-        .reduce((t, c) => t + valorFixaNoMes(c, planos[aa], mm, categorias), 0)
+    // Quem calcula e faltaVariavelDoMes, no saldoConta: uma funcao so, a mesma
+    // que a projecao do Radar usa, e o numero dela e o mesmo "Disponivel" que
+    // o Radar mostra na linha da categoria. Mes futuro cai nela tambem — sem
+    // lancamento, o realizado e 0 e sobra o plano inteiro.
+    const falta = mesPast
+      ? { banco: 0, cartao: 0, diaCartao: undefined as number | undefined }
+      : faltaVariavelDoMes(contaIdEfetivo, a, m, depsSaldo)
 
-    const variaveisBanco: CatFixa[] = mesPast ? [] : (() => {
-      const v = faltaVariavelBanco(contaIdEfetivo, a, m, depsSaldo)
+    const variaveisBanco: CatFixa[] = (() => {
+      const v = falta.banco
       if (v <= 0) return []
       return [{
         id: '__variaveis_banco__', nome: 'Gastos variáveis a realizar',
@@ -715,20 +712,15 @@ export default function NovoLancamentoExtrato() {
       }]
     })()
 
-    // A fatura em aberto vale o MAIOR entre o ja lancado e o planejado do mes
-    // da compra — usar so o lancado subestimaria uma fatura que ainda vai
-    // crescer. Fechada, vale o real.
+    // A fatura em aberto ainda vai crescer com o que falta gastar das
+    // categorias de cartao. Esse complemento vem de faltaVariavelDoMes, que ja
+    // decidiu quanto e e qual conta paga — o cartaoRef daqui so serve para
+    // escolher o DIA em que a linha cai, quando a funcao nao devolve um.
     //
-    // A estimativa e do MES, nao de um cartao: o plano nao diz em qual cartao
-    // o gasto vai cair. Ela so cabe numa conta que paga alguma fatura, e por
-    // isso sai de fatMes — que ja esta filtrado por conta de pagamento.
-    //
-    // Antes vinha de contas.find(...), o PRIMEIRO cartao da lista, sem filtro
-    // de conta nenhum: o complemento entrava em todas as contas de banco. Numa
-    // conta que nao paga cartao, fatMes e vazio, entao o "real" descontado era
-    // zero e ela levava o gasto planejado do mes inteiro no cartao.
-    //
-    // Com mais de um cartao aqui, entra no de vencimento mais cedo.
+    // Antes a estimativa era agregada: planejado do cartao menos o total ja
+    // lancado na fatura, sem saber de qual categoria veio cada compra. Mercado
+    // planejado no banco e pago no cartao abatia o orcamento do cartao e nao
+    // abatia o proprio — as duas telas divergiam sobre a mesma categoria.
     const cartaoRef = (() => {
       const aqui = new Set(fatMes.map(f => f.id.slice('cartao-'.length)))
       return contas
@@ -736,20 +728,11 @@ export default function NovoLancamentoExtrato() {
         .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))[0]
     })()
     const complementoFatura: CatFixa[] = (() => {
-      if (isDinheiro || !cartaoRef) return []
-      const bOff = (cartaoRef.diaVencimento ?? 1) < (cartaoRef.diaFechamento ?? 1) ? 1 : 0
-      let pM = m - bOff, pA = a
-      if (pM < 0) { pM += 12; pA-- }
-      const fechada = new Date(pA, pM, cartaoRef.diaFechamento ?? 1) <= new Date()
-      if (fechada) return []
-      const real = fatMes.reduce((t, f) => t + f.valor, 0)
-      const planejado = planejadoDoMes(pA, pM, true)
-      const falta = planejado - real
-      if (falta <= 0) return []
+      if (isDinheiro || falta.cartao <= 0) return []
       return [{
         id: '__fatura_estimada__', nome: 'Fatura estimada', categoria: 'Fatura estimada',
-        valor: falta, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
-        diaVencimento: cartaoRef.diaVencimento!,
+        valor: falta.cartao, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+        diaVencimento: falta.diaCartao ?? cartaoRef?.diaVencimento ?? totalD,
       }]
     })()
 

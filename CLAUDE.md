@@ -224,18 +224,34 @@ vezes —, mas a saída escolhida (não somar nada) deixava o saldo final previs
 otimista: escondia dinheiro que já se sabe que vai sair. A fórmula do
 `max` sempre existiu no complemento da fatura; agora vale nos dois.
 
-Quem calcula é `faltaVariavelBanco` em [`saldoConta.ts`](src/utils/saldoConta.ts),
+**O realizado soma extrato, dinheiro E fatura.** `tipoMovimento` na categoria é
+a **intenção** de onde pagar — uma previsão de uso do cartão —, não uma trava.
+Mercado planejado no banco e pago no cartão consumiu o mesmo plano. Decidido
+pelo Guilherme em 08/09/2026.
+
+Quem calcula é `faltaVariavelDoMes` em [`saldoConta.ts`](src/utils/saldoConta.ts),
 e tanto a cascata de Lançamentos quanto a projeção do Radar chamam **essa**
-função — não duas que tentam chegar no mesmo lugar. Mês futuro cai nela também:
-sem lançamento, o realizado é 0 e sobra o planejado inteiro.
+função. O número dela é, por construção, o mesmo **"Disponível"** que o Radar
+mostra na linha da categoria: mesmo mês, mesmos dois números. Mês futuro cai
+nela também — sem lançamento, o realizado é 0 e sobra o plano inteiro.
 
-Duas assimetrias de propósito:
+Antes eram três contas para a mesma pergunta, e elas divergiam: o Radar somava
+tudo por categoria, a projeção olhava só o extrato, e a fatura em aberto usava
+um agregado (`planejado do cartão − total lançado na fatura`) que não sabia de
+qual categoria veio cada compra. Plano de 1.000 com 200 no débito e 500 no
+cartão dava **300** no Radar e reservava **800** no saldo previsto. Pior: os
+mesmos 500 abatiam o orçamento do cartão sem abater o da própria categoria.
 
-- o realizado é do **MÊS**, não da conta — um gasto pago por outro banco também
-  consumiu o planejado da categoria. Só a **sobra** se atribui a uma conta, a
-  de `contaDaCategoria`, e é isso que mantém a soma por conta igual ao total.
-- compra no **cartão** não abate (`totalCart` fica de fora): ela consome o
-  planejado do cartão, que tem o complemento próprio.
+O rateio não muda o total, só o endereço:
+
+- categoria de banco/dinheiro → a conta de débito dela;
+- categoria de cartão → a conta que paga o cartão em aberto de vencimento mais
+  cedo, e **só enquanto aquela fatura não fechou**. Fechada, o que faltou já não
+  cabe nela: cai na próxima, paga no mês seguinte.
+
+O realizado é do **MÊS**, não da conta — um gasto pago por outro banco também
+consumiu o plano da categoria. Só a **sobra** se atribui a uma conta, e é isso
+que mantém a soma por conta igual ao total.
 
 **Entrada variável continua fora da projeção**, nas duas telas. Projetar receita
 que não é fixa é chute; e incluir só num lado faria as duas discordarem.
