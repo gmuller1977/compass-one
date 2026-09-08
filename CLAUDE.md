@@ -127,9 +127,19 @@ Antes disso o Radar projetava, e a consequência era esta: setembro fechava com
 perguntas diferentes, mas a tela não é o lugar dessa pergunta. **A visão de
 previsão é assunto do Planejamento.**
 
-O maquinário de projeção continua em [`saldoConta.ts`](src/utils/saldoConta.ts)
-— `saldoContaNoFim`, `projecaoDaConta`, `projecaoDoMes` —, testado e hoje sem
-consumidor. Não apagar enquanto o Planejamento não o usar.
+O maquinário de projeção vive em [`saldoConta.ts`](src/utils/saldoConta.ts):
+`saldoContaNoFim`, `projecaoDaConta`, `projecaoDoMes`.
+
+**O cartão "Saldo atual" do Radar usa esse maquinário como REFERÊNCIA, e isso
+não reabre a regra acima.** O número grande continua sendo o saldo de hoje; o
+previsto entra embaixo, como "Saldo final previsto", para a barra ter contra o
+que medir — do mesmo jeito que Receitas e Despesas se medem contra o planejado.
+
+Ele sai de `saldoTotalNoFim(ano, mes, deps, { comoAbertura: true })`, e é por
+construção a soma dos saldos finais previstos das contas de banco e do dinheiro,
+porque `projecaoDoMes` é a soma de `projecaoDaConta`. O `comoAbertura` é o que
+faz o mês corrente projetar até o dia 31 — sem ele o previsto sairia igual ao
+atual e a barra marcaria 100% sempre.
 
 **O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
 **Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o

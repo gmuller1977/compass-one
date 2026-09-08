@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { saldoBancosEDinheiro, detalharMes } from '../utils/saldoConta'
+import { saldoBancosEDinheiro, saldoTotalNoFim, detalharMes } from '../utils/saldoConta'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, barCorSobreAzul, type CatReal } from '../components/acompanhamento/AcShared'
@@ -130,7 +130,23 @@ export default function RadarFinanceiro() {
   // mais o planejado do mes. Nao e projecao — nao olha o que ja caiu nem o que
   // falta cair, so compara o realizado com o plano, a mesma lente das
   // categorias logo abaixo.
-  const saldoPrevisto = saldoInicial + totalPrevE - totalPrevS
+  // Com quanto o mes FECHA. Sai de saldoTotalNoFim, que e a soma de
+  // saldoContaNoFim por conta — bancos e dinheiro —, entao o numero do cartao e
+  // a soma dos saldos finais previstos das contas por construcao, e nao por
+  // duas contas que precisam concordar.
+  //
+  // comoAbertura vale por causa do mes corrente: sem ele saldoTotalNoFim
+  // devolveria o realizado, o previsto seria igual ao atual e a barra marcaria
+  // 100% sempre. Com ele, o mes corrente projeta ate o dia 31.
+  //
+  // Isto nao reabre a regra de que o Radar so mostra realizado: o numero grande
+  // do cartao segue sendo o saldo de hoje. O previsto entra como REFERENCIA
+  // contra a qual ele e medido, do mesmo jeito que Receitas e Despesas se medem
+  // contra o planejado.
+  const saldoPrevisto = useMemo(
+    () => saldoTotalNoFim(ano, mes, depsSaldo, { comoAbertura: true }).valor,
+    [ano, mes, depsSaldo],
+  )
 
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
   const percE = perc(totalRealE, totalPrevE)
@@ -220,7 +236,7 @@ export default function RadarFinanceiro() {
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
           sublabel={percSaldo === null
             ? (saldoAtual >= 0 ? '↑ positivo' : '↓ negativo')
-            : `de ${fmt(saldoPrevisto)}${comPlano(percSaldo)}`}
+            : `Saldo final previsto ${fmt(saldoPrevisto)}${comPlano(percSaldo)}`}
           style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas}>
           {percSaldo !== null && <KpiBarra perc={percSaldo} cor={barCorSobreAzul(percSaldo, true)} />}
