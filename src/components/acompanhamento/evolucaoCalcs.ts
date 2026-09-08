@@ -20,6 +20,25 @@ export function catKey(nome: string, descricao?: string) {
   return d ? `${norm(nome)}||${d}` : norm(nome)
 }
 
+/**
+ * Transferência entre contas próprias.
+ *
+ * `lancar()` grava os DOIS lados com esta categoria literal — ela nunca foi um
+ * cadastro, e por isso não caía em grupo nenhum. Agora mora em "Finanças", que
+ * já existe no cadastro padrão, e é INFORMATIVA: aparece na tela mas não soma
+ * em Receitas nem em Despesas. O dinheiro só trocou de conta.
+ *
+ * Isso é o que mantém o Radar somável: quem soma os grupos na tela chega no
+ * mesmo número do cartão, porque as duas contas ignoram a transferência.
+ */
+export const GRUPO_TRANSFERENCIA = 'Finanças'
+
+const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+export function ehTransferencia(nome: string) {
+  return semAcento(norm(nome).toLowerCase()) === 'transferencia'
+}
+
 export function splitCatKey(key: string): { nome: string; descricao: string } {
   const i = key.indexOf('||')
   return i === -1
@@ -203,11 +222,12 @@ export function buildAllCats(
       if (cartaoNomes.has(norm(nome).toLowerCase())) return []
       const reg = acharReg(nome, descricao, true)
       // Dinheiro que se moveu tem de aparecer em algum lugar. Sem cadastro
-      // vivo — categoria excluída, desativada, ou "Transferência", que nunca
-      // foi um cadastro — a linha cai em "Outras" em vez de sumir: era por
-      // isso que a soma dos grupos ficava abaixo da saída das contas, e o
-      // Radar deixava de ser o consolidado dos bancos e do dinheiro.
-      const g = reg?.ativa ? (reg.grupo ?? SEM_GRUPO) : SEM_GRUPO
+      // vivo — categoria excluída ou desativada — a linha cai em "Outras" em
+      // vez de sumir: era por isso que a soma dos grupos ficava abaixo da
+      // saída das contas. Transferência tem endereço próprio.
+      const g = ehTransferencia(nome) ? GRUPO_TRANSFERENCIA
+        : reg?.ativa ? (reg.grupo ?? SEM_GRUPO)
+        : SEM_GRUPO
       if (g !== grupo) return []
       return [{ nome, v: Array(12).fill(0) as number[], descricao }]
     })
@@ -215,10 +235,15 @@ export function buildAllCats(
   return [...doGrupo, ...extraCats]
 }
 
+// Transferência fica de fora dos dois totais: ela aparece na lista do grupo,
+// mas não é receita nem despesa. Filtrar aqui — e não em cada tela — é o que
+// garante que o total do grupo, o total do cartão e a soma na tela concordem.
+const somaveis = (allCats: CatComDesc[]) => allCats.filter(c => !ehTransferencia(c.nome))
+
 export function calcGrupoReal(allCats: CatComDesc[], realMap: Record<string, CatReal>): number {
-  return allCats.reduce((s, cat) => s + (pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0), 0)
+  return somaveis(allCats).reduce((s, cat) => s + (pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0), 0)
 }
 
 export function calcGrupoPrev(allCats: CatComDesc[], mes: number): number {
-  return allCats.reduce((s, cat) => s + (cat.v[mes] ?? 0), 0)
+  return somaveis(allCats).reduce((s, cat) => s + (cat.v[mes] ?? 0), 0)
 }

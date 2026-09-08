@@ -156,10 +156,22 @@ caso. A regra: **linha do plano** só aparece se a categoria existir e estiver
 ativa (senão uma exclusão ressuscita); **dinheiro que se moveu** aparece sempre,
 nem que seja em "Outras".
 
-Transferência entre contas próprias cai nos dois lados — sai de uma conta, entra
-na outra —, então infla Receitas e Despesas pelo mesmo valor e não mexe no
-Resultado. A fatura continua fora: ela entra pelo lançamento do cartão, não pela
-categoria homônima.
+**Transferência entre contas próprias é informativa: aparece e não soma.** Ela
+mora no grupo **"Finanças"** (que já existe em `GRUPOS_PADRAO`) e é reconhecida
+por `ehTransferencia` — `lancar()` grava os dois lados com a string literal
+`'Transferência'`, que nunca foi um cadastro. Decidido em 08/09/2026.
+
+O filtro vive dentro de `calcGrupoReal`/`calcGrupoPrev`, e não em cada tela: é
+isso que faz o total do grupo, o total do cartão e a soma visível na tela darem
+o mesmo número. Somar a transferência infla Receitas e Despesas pelo mesmo valor
+sem mexer no Resultado, mas chamaria de despesa dinheiro que só trocou de conta.
+
+Consequência aceita: a saída da conta de origem continua **maior** que o total de
+Despesas, pelo valor transferido. É correto — o dinheiro saiu de lá e entrou na
+outra conta —, e agora está visível numa linha com nome, em vez de sumir.
+
+A fatura continua fora: ela entra pelo lançamento do cartão, não pela categoria
+homônima.
 
 **O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
 **Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o
