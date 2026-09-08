@@ -63,23 +63,6 @@ const DIVISOR_ESCURO = 'rgba(255,255,255,0.45)'
 const DIVISOR_CLARO = '#94a3b8'
 
 /**
- * O corpo do resumo — saldo inicial, receitas e despesas — em célula clara com
- * texto escuro, como numa planilha. Azul escuro em tudo pesava, e essas três
- * linhas vezes doze meses eram a maior mancha da tela.
- *
- * Escuro fica onde ele ancora: cabeçalho, coluna de rótulos e o rodapé dos
- * totais. O rodapé continua escuro por medição, não por gosto: sobre o tom
- * realizado o verde do Resultado dá 3,18:1 e o vermelho 4,11:1, e os dois
- * reprovam.
- *
- * #b6d0f5 contra #f8faff separa 1,51:1 — o melhor par claro medido —, com o
- * texto em 11,3:1 e 17,1:1.
- */
-const CELULA_REAL = '#b6d0f5'
-const CELULA_PREV = '#f8faff'
-const CELULA_TEXTO = '#0f172a'
-
-/**
  * O detalhe é claro; só o resumo é azul. Além de separar as duas leituras, isso
  * conserta a legibilidade: PlanCelulaEditavel pinta o número em #0f172a, que
  * sobre o azul escuro sumia.
@@ -192,7 +175,6 @@ export default function PlanPainel({
   const ehPrevisto = (mi: number) => !previsto.inicialReal[mi]
   const primeiroPrevisto = meses.find(ehPrevisto)
   const fundoMes = (mi: number) => (ehPrevisto(mi) ? AZUL : AZUL_REAL)
-  const fundoCorpo = (mi: number) => (ehPrevisto(mi) ? CELULA_PREV : CELULA_REAL)
   const divisor = (mi: number, claro = false): React.CSSProperties =>
     mi === primeiroPrevisto && mi !== meses[0]
       ? { borderLeft: `2px solid ${claro ? DIVISOR_CLARO : DIVISOR_ESCURO}` }
@@ -293,11 +275,11 @@ export default function PlanPainel({
             {meses.map(mi => (
               <div key={`si-${mi}`} title={tituloValor(previsto.inicialReal[mi])}
                 style={{
-                  ...divisor(mi, true),
-                  position: 'sticky', top: H_CAB, zIndex: Z.faixa, background: fundoCorpo(mi),
+                  ...divisor(mi),
+                  position: 'sticky', top: H_CAB, zIndex: Z.faixa, background: fundoMes(mi),
                   height: H_RES, display: 'flex', alignItems: 'center',
                   justifyContent: 'flex-end', padding: '0 10px', fontSize: 12,
-                  fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: CELULA_TEXTO,
+                  fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#fff',
                   ...(previsto.inicialReal[mi] ? {} : PREVISTO),
                 }}>
                 {fmt(previsto.saldoInicial[mi], true)}
@@ -309,15 +291,15 @@ export default function PlanPainel({
               tipo="e" titulo="Receitas" aberto={aberto === 'e'}
               onToggle={() => setAberto(a => (a === 'e' ? null : 'e'))}
               topo={H_CAB + H_RES} totais={previsto.totalEntradas}
-              meses={meses} realizadoAte={previsto.realizadoAte} cor={CELULA_TEXTO}
-              fundoMes={fundoCorpo} divisor={divisor}
+              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
+              fundoMes={fundoMes} divisor={divisor}
             />
             <LinhaSecao
               tipo="s" titulo="Despesas" aberto={aberto === 's'}
               onToggle={() => setAberto(a => (a === 's' ? null : 's'))}
               topo={H_CAB + H_RES * 2} totais={previsto.totalSaidas}
-              meses={meses} realizadoAte={previsto.realizadoAte} cor={CELULA_TEXTO}
-              fundoMes={fundoCorpo} divisor={divisor}
+              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
+              fundoMes={fundoMes} divisor={divisor}
             />
 
             {aberto && (
@@ -469,7 +451,7 @@ function LinhaSecao({
       </div>
       {meses.map(mi => (
         <div key={`${tipo}-tot-${mi}`} onClick={onToggle} style={{
-          ...divisor(mi, true),
+          ...divisor(mi),
           position: 'sticky', top: topo, zIndex: Z.faixa, background: fundoMes(mi),
           height: H_RES, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
           padding: '0 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
