@@ -11,7 +11,11 @@ interface Props {
   isFuturo?: boolean
   /** Meta de sobra do mês. Zero ou ausente = sem meta. */
   meta?: number
-  /** O saldo final deste mês já aconteceu, ou ainda é projeção? */
+  /**
+   * Cada ponta tem a sua natureza: no primeiro mês aberto o saldo inicial já
+   * aconteceu e o final ainda é projeção.
+   */
+  saldoInicialReal?: boolean
   saldoFinalReal?: boolean
   onClick: () => void
 }
@@ -28,7 +32,6 @@ const TH = {
     recText:      '#86efac',
     despBg:       'rgba(255,255,255,0.12)',
     despText:     '#fde047',
-    saldoIniBg:   'rgba(255,255,255,0.08)',
     saldoFinalBg: 'rgba(255,255,255,0.1)',
     barTrack:     'rgba(255,255,255,0.15)',
     progLabel:    'rgba(255,255,255,0.75)',
@@ -49,7 +52,6 @@ const TH = {
     recText:      'rgba(255,255,255,0.35)',
     despBg:       'rgba(255,255,255,0.08)',
     despText:     'rgba(255,255,255,0.35)',
-    saldoIniBg:   'rgba(255,255,255,0.06)',
     saldoFinalBg: 'rgba(255,255,255,0.06)',
     barTrack:     'rgba(255,255,255,0.1)',
     progLabel:    'rgba(255,255,255,0.75)',
@@ -63,7 +65,7 @@ const TH = {
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, meta = 0, saldoFinalReal = false, onClick,
+  isAtual, meta = 0, saldoInicialReal = false, saldoFinalReal = false, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
@@ -95,6 +97,17 @@ export default function PlanCardMes({
     : negativo ? '#fde047'
     : th.text
   const saldoFinalLabel = saldoFinalReal ? '#fff' : th.label
+
+  // A mesma regra na outra ponta. O saldo inicial nao tem o caso do ambar: ele
+  // nao e o fechamento previsto do mes, e sim de onde o mes partiu.
+  const saldoIniBg = saldoInicialReal
+    ? (saldoInicial >= 0 ? COR.sucessoTexto : COR.erroTexto)
+    : 'transparent'
+  const saldoIniBorda = saldoInicialReal
+    ? '1px solid transparent'
+    : `1px dashed ${th.semPlano}`
+  const saldoIniText = saldoInicialReal ? '#fff' : th.text
+  const saldoIniLabel = saldoInicialReal ? '#fff' : th.label
 
   const barFill = percDespesas > 85 ? '#f87171' : percDespesas > 65 ? '#fbbf24' : '#4ade80'
 
@@ -154,13 +167,16 @@ export default function PlanCardMes({
           <>
             {/* Saldo inicial */}
             <div style={{
-              background: th.saldoIniBg, borderRadius: 8, padding: '5px 8px',
+              background: saldoIniBg, border: saldoIniBorda,
+              borderRadius: 8, padding: '5px 8px',
               marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              <span style={{ fontSize: 8, fontWeight: 700, color: th.label, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                Saldo inicial
+              <span style={{ fontSize: 8, fontWeight: 700, color: saldoIniLabel, textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                Saldo inicial <span style={{ fontWeight: 400 }}>{saldoInicialReal ? 'real' : 'previsto'}</span>
               </span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: th.text, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: saldoIniText,
+                fontVariantNumeric: 'tabular-nums',
+                ...(saldoInicialReal ? {} : PREVISTO) }}>
                 {fmt(saldoInicial, true)}
               </span>
             </div>
