@@ -186,9 +186,20 @@ homônima.
    achavam linhas diferentes. Agora só existe `valorFixaNoMes` — ela já casa
    contra o plano resolvido, então `Financiamento · Casa` continua certo.
 
-Segue aberto, e é legítimo: `movimentoDoMes` debita a fatura pelo **override**
-quando ele existe, e o Radar soma as **compras** do período. Confirmar a fatura
-com valor diferente da soma das compras separa os dois de propósito.
+**A fatura confirmada com valor ajustado ganha uma linha de reconciliação.**
+As duas telas medem coisas diferentes de propósito: a despesa acontece na
+**compra** (é assim que ela se compara ao plano), mas o que sai da conta é o
+**pagamento**. Enquanto os dois batem, ninguém percebe. Quando a fatura é
+confirmada com outro valor — juros, IOF, compra não lançada, arredondamento —,
+`movimentoDoMes` debita o valor digitado e o Radar soma as compras, e a
+diferença saía do banco sem aparecer em lugar nenhum. Foram 3 centavos num mês
+real; no mês do juro seria a fatura inteira.
+
+Hoje o `realizadoMes` acrescenta `Ajuste de fatura · <cartão>` com
+`override − compras`, e a identidade fecha: compras + ajuste = o que foi pago =
+o que `saldoConta` debita. A linha pode ser **negativa** (pagou menos que as
+compras) — por isso `EvolucaoLinha` mostra realizado `!== 0` e não `> 0`, senão
+o número sumia num travessão.
 
 **O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
 **Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o

@@ -118,6 +118,7 @@ export function construirRealizadoMes(params: {
       const dm = fat[key]
       if (!dm) continue
       const pTotalDias = new Date(pAno, pMes + 1, 0).getDate()
+      let compras = 0
       for (let d = 1; d <= pTotalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
@@ -125,13 +126,41 @@ export function construirRealizadoMes(params: {
           if (l.tipo === 'entrada') {
             const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor
+            compras += l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
           } else if (l.tipo === 'saida') {
             // Estorno: abate da categoria de saída
             const c = getSaida(k)
             c.total -= l.valor; c.totalCart -= l.valor
+            compras -= l.valor
             c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
           }
+        }
+      }
+
+      // Fatura confirmada com valor diferente da soma das compras.
+      //
+      // As duas telas medem coisas diferentes de propósito: a despesa acontece
+      // na COMPRA (é assim que ela se compara ao plano), mas o que sai da conta
+      // é o PAGAMENTO. Enquanto os dois batem, ninguém percebe. Quando você
+      // confirma a fatura com outro valor — juros, IOF, uma compra que não foi
+      // lançada, arredondamento —, a diferença saía do banco e não aparecia em
+      // lugar nenhum.
+      //
+      // A linha fecha a conta: compras + ajuste = o que foi pago, que é
+      // exatamente o que saldoConta debita da conta. Sem cadastro, ela cai em
+      // "Outras". Pode ser negativa, quando se paga menos que as compras.
+      const { consolidada, override } = resolverFixaDoMes(`cartao-${card.id}`, dmsBanco)
+      if (consolidada && override !== undefined && override > 0) {
+        // Math.max espelha o clamp de totalFatura: fatura negativa vale zero.
+        const ajuste = override - Math.max(compras, 0)
+        if (Math.abs(ajuste) >= 0.005) {
+          const c = getSaida(rKey('Ajuste de fatura', card.apelido ?? card.nome))
+          c.total += ajuste; c.totalBanc += ajuste
+          c.lancamentos.push({
+            dia: 1, descricao: 'Fatura confirmada com valor ajustado',
+            valor: ajuste, sub: 'ajuste', fonte: 'banco',
+          })
         }
       }
     }

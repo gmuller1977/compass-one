@@ -101,7 +101,7 @@ export default function EvolucaoLinha({
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>Realizado</div>
-          <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: '#0f172a' }}>{real > 0 ? fmt(real) : '—'}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: '#0f172a' }}>{real !== 0 ? fmt(real) : '—'}</div>
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>{dif.label}</div>
@@ -161,7 +161,7 @@ export default function EvolucaoLinha({
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>Realizado</div>
-          <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: realCor }}>{real > 0 ? fmt(real) : '—'}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: realCor }}>{real !== 0 ? fmt(real) : '—'}</div>
         </div>
         <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>{dif.label}</div>
