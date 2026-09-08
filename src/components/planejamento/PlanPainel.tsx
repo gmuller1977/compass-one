@@ -166,7 +166,28 @@ export default function PlanPainel({
   const grade = useRef<HTMLDivElement>(null)
 
   /**
-   * Setas, Home e End sobre as células editáveis.
+   * Deixa a célula no centro da caixa.
+   *
+   * scrollIntoView não serve aqui, por dois motivos. Com `nearest` ele não faz
+   * nada quando a célula já está tecnicamente visível — e ela pode estar
+   * DEBAIXO do rodapé preso, que ele não conhece: era isso que fazia a seta
+   * parecer não rolar. E qualquer opção dele rola também os ancestrais, o que
+   * arrastaria a página inteira junto.
+   *
+   * Centralizar na mão resolve os dois: só a caixa se move, e o centro está
+   * sempre longe das faixas presas em cima e embaixo.
+   */
+  function centralizar(el: HTMLElement) {
+    const caixa = grade.current?.parentElement
+    if (!caixa) return
+    const c = el.getBoundingClientRect()
+    const b = caixa.getBoundingClientRect()
+    caixa.scrollTop += (c.top + c.height / 2) - (b.top + b.height / 2)
+    caixa.scrollLeft += (c.left + c.width / 2) - (b.left + b.width / 2)
+  }
+
+  /**
+   * Setas, Home, End e Tab sobre as células editáveis.
    *
    * A posição sai do DOM, não de um índice guardado em estado: basta listar os
    * elementos com `data-celula` na ordem em que estão na página. Isso resolve
@@ -175,9 +196,12 @@ export default function PlanPainel({
    *
    * Cada linha de categoria rende exatamente um elemento por mês, então subir e
    * descer é somar ou subtrair a quantidade de meses.
+   *
+   * O Tab entra aqui em vez de ficar nativo para passar pela mesma
+   * centralização — senão ele levaria o foco para debaixo do rodapé.
    */
   function navegar(e: React.KeyboardEvent) {
-    const chaves = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End']
+    const chaves = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Tab']
     if (!chaves.includes(e.key)) return
     const celulas = Array.from(
       grade.current?.querySelectorAll<HTMLElement>('[data-celula]') ?? [])
@@ -192,13 +216,16 @@ export default function PlanPainel({
       : e.key === 'ArrowDown' ? i + n
       : e.key === 'ArrowUp' ? i - n
       : e.key === 'Home' ? inicioDaLinha
-      : inicioDaLinha + n - 1
+      : e.key === 'End' ? inicioDaLinha + n - 1
+      : e.shiftKey ? i - 1 : i + 1
 
     const destino = celulas[alvo]
+    // Sem destino, o Tab segue o caminho natural e sai da grade — que é o que
+    // se espera dele na primeira e na última célula.
     if (!destino) return
     e.preventDefault()
-    destino.focus()
-    destino.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    destino.focus({ preventScroll: true })
+    centralizar(destino)
   }
 
   // Os meses estão lado a lado, em ordem: a fronteira entre realizado e
@@ -445,9 +472,9 @@ export default function PlanPainel({
         em <span style={PREVISTO}>itálico</span> dentro do bloco escuro ainda não
         aconteceu — é o caso do saldo final do mês corrente.
         <br />
-        Sem mouse: <b>Tab</b> chega às células, <b>setas</b> andam pela grade,
-        <b>Home</b> e <b>End</b> vão ao primeiro e ao último mês, <b>Enter</b> ou
-        um número abre a edição, <b>Esc</b> cancela.
+        Sem mouse: <b>Tab</b> e <b>setas</b> andam pela grade mantendo a célula no
+        centro, <b>Home</b> e <b>End</b> vão ao primeiro e ao último mês,
+        <b>Enter</b> ou um número abre a edição, <b>Esc</b> cancela.
       </div>
     </div>
   )
