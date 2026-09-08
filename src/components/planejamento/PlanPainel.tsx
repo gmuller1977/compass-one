@@ -5,7 +5,8 @@ import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
 import {
   fmt, MESES, nomeExibicao, MOTIVO_PLANO_LOCKADO,
-  PREVISTO, tituloValor, type AnoData, type Cat, type Saldos,
+  PREVISTO, tituloValor, SEM_GRUPO, agrupar, somaDoGrupo,
+  type AnoData, type Cat, type Saldos, type LinhaCat,
 } from './types'
 import { COR } from '../../utils/cores'
 import type { Categoria } from '../../context/AppContext'
@@ -23,8 +24,6 @@ interface Props {
   onMetaSave: (objetivos: number[]) => void
   dadosAnoAnterior: AnoData | null
 }
-
-const SEM_GRUPO = '__sem_grupo__'
 
 const W_CATS = 210
 const W_MES = 128
@@ -82,30 +81,6 @@ const GRUPO_FUNDO = '#c9daf8'
 const GRUPO_TEXTO = '#000'
 /** Sobre o azul claro, uma linha escura de leve — a clara sumiria. */
 const GRUPO_BORDA = 'rgba(15,23,42,0.15)'
-
-type LinhaCat =
-  | { k: 'grupo'; tipo: 'e' | 's'; grupo: string; ris: number[] }
-  | { k: 'cat'; tipo: 'e' | 's'; ri: number; cat: Cat }
-
-/** `ri` é sempre o índice na lista ORIGINAL — é por ele que onSave grava. */
-function agrupar(cats: Cat[], tipo: 'e' | 's'): LinhaCat[] {
-  const porGrupo = new Map<string, { ri: number; cat: Cat }[]>()
-  cats.forEach((cat, ri) => {
-    const g = cat.grupo ?? SEM_GRUPO
-    if (!porGrupo.has(g)) porGrupo.set(g, [])
-    porGrupo.get(g)!.push({ ri, cat })
-  })
-  const ordenados = [...porGrupo.entries()].sort(([a], [b]) =>
-    a === SEM_GRUPO ? 1 : b === SEM_GRUPO ? -1 : a.localeCompare(b, 'pt-BR'))
-  const temGrupoReal = ordenados.some(([g]) => g !== SEM_GRUPO)
-
-  const out: LinhaCat[] = []
-  for (const [grupo, items] of ordenados) {
-    if (temGrupoReal) out.push({ k: 'grupo', tipo, grupo, ris: items.map(i => i.ri) })
-    for (const { ri, cat } of items) out.push({ k: 'cat', tipo, ri, cat })
-  }
-  return out
-}
 
 /**
  * O Planejamento em painel: resumo em cima, detalhe embaixo do acordeão.
@@ -551,7 +526,7 @@ function Detalhe({
     <>
       {linhas.map((l, li) => {
         if (l.k === 'grupo') {
-          const soma = (mi: number) => l.ris.reduce((s, ri) => s + (cats[ri]?.v[mi] ?? 0), 0)
+          const soma = (mi: number) => somaDoGrupo(l, cats, mi)
           return (
             <div key={`${tipo}-g-${li}`} style={{ display: 'contents' }}>
               <div style={{

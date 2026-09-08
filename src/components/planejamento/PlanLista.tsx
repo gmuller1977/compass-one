@@ -1,6 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, MESES, nomeExibicao, type AnoData, type Cat, type Saldos, PREVISTO, tituloValor } from './types'
+import {
+  fmt, MESES, nomeExibicao, PREVISTO, tituloValor,
+  SEM_GRUPO, agrupar, somaDoGrupo,
+  type AnoData, type Cat, type Saldos,
+} from './types'
+import { COR } from '../../utils/cores'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
@@ -32,6 +37,10 @@ const TL = {
   },
 }
 
+/** Os mesmos tons do Painel: a faixa do grupo se le igual nas duas telas. */
+const GRUPO_FUNDO = '#c9daf8'
+const GRUPO_TEXTO = '#000'
+
 const COL_MES = 100
 const COL_VAL = 110
 const COL_META = 96
@@ -43,7 +52,28 @@ export default function PlanLista({
 }: Props) {
   const temAlgumaMeta = objetivos.some(v => v > 0)
   const [aberto, setAberto] = useState<number>(-1)
+  const [mostrarPassado, setMostrarPassado] = useState(false)
   const anoCorrente = new Date().getFullYear()
+
+  // Mesma regra do Painel: mes passado sem NADA planejado nao ajuda a planejar.
+  // Olha o plano, e nao os totais — mes fechado mostra realizado, e gasto que
+  // aconteceu sem ter sido planejado nao e planejamento.
+  const { mesesVisiveis, escondidos } = useMemo(() => {
+    const temPlano = (mi: number) =>
+      dadosAtivos.entradas.some(c => (c.v[mi] ?? 0) > 0) ||
+      dadosAtivos.saidas.some(c => (c.v[mi] ?? 0) > 0)
+    const passado = (mi: number) =>
+      anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
+    const todos = Array.from({ length: 12 }, (_, i) => i)
+    const ocultos = todos.filter(mi => passado(mi) && !temPlano(mi))
+    return {
+      mesesVisiveis: mostrarPassado ? todos : todos.filter(mi => !ocultos.includes(mi)),
+      escondidos: ocultos.length,
+    }
+  }, [dadosAtivos, anoAtual, anoCorrente, mesAtual, mostrarPassado])
+
+  const linhasE = useMemo(() => agrupar(dadosAtivos.entradas, 'e'), [dadosAtivos.entradas])
+  const linhasS = useMemo(() => agrupar(dadosAtivos.saidas, 's'), [dadosAtivos.saidas])
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
@@ -74,6 +104,17 @@ export default function PlanLista({
         onMetaSave={onMetaSave}
       />
 
+      {escondidos > 0 && (
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+          fontSize: 12, color: COR.textoSuave, marginBottom: 8,
+        }}>
+          <input type="checkbox" checked={mostrarPassado}
+            onChange={e => setMostrarPassado(e.target.checked)} />
+          Mostrar {escondidos === 1 ? 'o mês passado' : 'os ' + escondidos + ' meses passados'} sem planejamento
+        </label>
+      )}
+
       {/* Header fixo */}
       <div className="plista-header" style={{
         display: 'flex', padding: '8px 0',
@@ -96,7 +137,7 @@ export default function PlanLista({
 
       {/* 12 meses */}
       <div style={{ minWidth: COL_MES + COL_VAL * 5 + (temAlgumaMeta ? COL_META : 0) }}>
-        {Array.from({ length: 12 }, (_, mi) => {
+        {mesesVisiveis.map(mi => {
           const te = previsto.totalEntradas[mi]
           const ts = previsto.totalSaidas[mi]
           const si = previsto.saldoInicial[mi]
@@ -190,18 +231,30 @@ export default function PlanLista({
                 }}>
                   {/* Receitas */}
                   <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: '#16a34a', padding: '10px 16px 4px' }}>↑ RECEITAS</div>
-                  {dadosAtivos.entradas.map((cat, ri) => {
-                    const { icone } = iconeCategoria(categorias, cat.nome)
-                    const v = catValor(cat, mi)
+                  {linhasE.map((l, li) => {
+                    if (l.k === 'grupo') return (
+                      <div key={`g-${li}`} style={{
+                        display: 'flex', alignItems: 'center', padding: '5px 16px',
+                        background: GRUPO_FUNDO, color: GRUPO_TEXTO,
+                      }}>
+                        <span style={{ flex: 1, fontSize: 9, fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase' }}>
+                          {l.grupo === SEM_GRUPO ? 'Outros' : l.grupo}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, minWidth: 90, textAlign: 'right', padding: '0 8px', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmt(somaDoGrupo(l, dadosAtivos.entradas, mi), true)}
+                        </span>
+                      </div>
+                    )
+                    const { icone } = iconeCategoria(categorias, l.cat.nome)
                     return (
-                      <div key={cat.id ?? cat.nome}
+                      <div key={`c-${l.ri}`}
                         style={{ display: 'flex', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f8fafc' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '' }}
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
-                        <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{nomeExibicao(cat)}</span>
-                        <PlanCelulaEditavel valor={v} onSave={nv => onSave('e', ri, mi, nv)} />
+                        <span style={{ flex: 1, fontSize: 12, color: '#475569', paddingLeft: 8 }}>{nomeExibicao(l.cat)}</span>
+                        <PlanCelulaEditavel valor={catValor(l.cat, mi)} onSave={nv => onSave('e', l.ri, mi, nv)} />
                       </div>
                     )
                   })}
@@ -212,18 +265,30 @@ export default function PlanLista({
 
                   {/* Despesas */}
                   <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: '#dc2626', padding: '10px 16px 4px' }}>↓ DESPESAS</div>
-                  {dadosAtivos.saidas.map((cat, ri) => {
-                    const { icone } = iconeCategoria(categorias, cat.nome)
-                    const v = catValor(cat, mi)
+                  {linhasS.map((l, li) => {
+                    if (l.k === 'grupo') return (
+                      <div key={`g-${li}`} style={{
+                        display: 'flex', alignItems: 'center', padding: '5px 16px',
+                        background: GRUPO_FUNDO, color: GRUPO_TEXTO,
+                      }}>
+                        <span style={{ flex: 1, fontSize: 9, fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase' }}>
+                          {l.grupo === SEM_GRUPO ? 'Outros' : l.grupo}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, minWidth: 90, textAlign: 'right', padding: '0 8px', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmt(somaDoGrupo(l, dadosAtivos.saidas, mi), true)}
+                        </span>
+                      </div>
+                    )
+                    const { icone } = iconeCategoria(categorias, l.cat.nome)
                     return (
-                      <div key={cat.id ?? cat.nome}
+                      <div key={`c-${l.ri}`}
                         style={{ display: 'flex', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f8fafc' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '' }}
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
-                        <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{nomeExibicao(cat)}</span>
-                        <PlanCelulaEditavel valor={v} onSave={nv => onSave('s', ri, mi, nv)} />
+                        <span style={{ flex: 1, fontSize: 12, color: '#475569', paddingLeft: 8 }}>{nomeExibicao(l.cat)}</span>
+                        <PlanCelulaEditavel valor={catValor(l.cat, mi)} onSave={nv => onSave('s', l.ri, mi, nv)} />
                       </div>
                     )
                   })}

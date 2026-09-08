@@ -60,6 +60,46 @@ export type AncoraReal = {
 
 export type Saldos = ReturnType<typeof calcSaldos>
 
+export const SEM_GRUPO = '__sem_grupo__'
+
+/** Uma linha de detalhe: o cabeçalho de um grupo, ou uma categoria dele. */
+export type LinhaCat =
+  | { k: 'grupo'; tipo: 'e' | 's'; grupo: string; ris: number[] }
+  | { k: 'cat'; tipo: 'e' | 's'; ri: number; cat: Cat }
+
+/**
+ * Quebra a lista de categorias em grupos, na ordem de exibição.
+ *
+ * `ri` é sempre o índice na lista ORIGINAL — é por ele que onSave grava, e por
+ * isso ele viaja junto em vez de ser recalculado depois da ordenação.
+ *
+ * Sem nenhum grupo de verdade, não emite cabeçalho nenhum: uma tela com doze
+ * categorias soltas não ganha nada com um "Outros" sozinho no topo.
+ */
+export function agrupar(cats: Cat[], tipo: 'e' | 's'): LinhaCat[] {
+  const porGrupo = new Map<string, { ri: number; cat: Cat }[]>()
+  cats.forEach((cat, ri) => {
+    const g = cat.grupo ?? SEM_GRUPO
+    if (!porGrupo.has(g)) porGrupo.set(g, [])
+    porGrupo.get(g)!.push({ ri, cat })
+  })
+  const ordenados = [...porGrupo.entries()].sort(([a], [b]) =>
+    a === SEM_GRUPO ? 1 : b === SEM_GRUPO ? -1 : a.localeCompare(b, 'pt-BR'))
+  const temGrupoReal = ordenados.some(([g]) => g !== SEM_GRUPO)
+
+  const out: LinhaCat[] = []
+  for (const [grupo, items] of ordenados) {
+    if (temGrupoReal) out.push({ k: 'grupo', tipo, grupo, ris: items.map(i => i.ri) })
+    for (const { ri, cat } of items) out.push({ k: 'cat', tipo, ri, cat })
+  }
+  return out
+}
+
+/** Soma do grupo num mês. */
+export function somaDoGrupo(l: Extract<LinhaCat, { k: 'grupo' }>, cats: Cat[], mi: number) {
+  return l.ris.reduce((s, ri) => s + (cats[ri]?.v[mi] ?? 0), 0)
+}
+
 /**
  * Marca um valor PREVISTO. Real fica em pé; previsto, em itálico.
  *
