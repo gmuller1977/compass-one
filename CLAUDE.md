@@ -141,9 +141,24 @@ porque `projecaoDoMes` é a soma de `projecaoDaConta`. O `comoAbertura` é o que
 faz o mês corrente projetar até o dia 31 — sem ele o previsto sairia igual ao
 atual e a barra marcaria 100% sempre.
 
-**O Radar é o consolidado das contas: a soma dos grupos tem de fechar com o
-que saiu delas.** A soma dos grupos de Despesas ficava abaixo da saída das
-contas — 12.008,11 contra 12.706,83 num mês real. Os grupos eram montados só a
+**O que tem de bater entre as contas e o Radar é o saldo inicial e o final —
+não o movimento.** Dentro do mês a pergunta é outra: quanto foi realizado
+contra o que estava planejado. Decidido em 08/09/2026, depois de uma rodada
+inteira tentando fazer o total de Despesas igualar a saída da conta.
+
+Isso é o que decide o destino da **transferência entre contas próprias**: ela
+fica **fora do realizado**, filtrada na origem por `ehTransferencia` dentro do
+`realizadoMes`. Não é receita nem despesa — o dinheiro só trocou de conta — e
+por isso não existe linha nem grupo para ela em tela nenhuma. O que ela move
+continua no saldo das contas, que é onde precisa aparecer.
+
+Tentativa descartada, para não repetir: dar a ela o grupo "Finanças" com a linha
+marcada como informativa. Fazia o total de Despesas igualar a saída da conta,
+mas ao custo de listar como categoria uma coisa que não é despesa.
+
+**Ainda assim, todo realizado que não é transferência tem de estar em algum
+grupo.** A soma dos grupos de Despesas ficava abaixo da saída das contas —
+12.008,11 contra 12.706,83 num mês real. Os grupos eram montados só a
 partir do cadastro de categorias, então todo realizado sem cadastro vivo não
 entrava em grupo nenhum e sumia do total: **"Transferência"**, que é uma string
 literal escrita por `lancar()` e nunca foi uma categoria, e qualquer categoria
@@ -156,19 +171,9 @@ caso. A regra: **linha do plano** só aparece se a categoria existir e estiver
 ativa (senão uma exclusão ressuscita); **dinheiro que se moveu** aparece sempre,
 nem que seja em "Outras".
 
-**Transferência entre contas próprias é informativa: aparece e não soma.** Ela
-mora no grupo **"Finanças"** (que já existe em `GRUPOS_PADRAO`) e é reconhecida
-por `ehTransferencia` — `lancar()` grava os dois lados com a string literal
-`'Transferência'`, que nunca foi um cadastro. Decidido em 08/09/2026.
-
-O filtro vive dentro de `calcGrupoReal`/`calcGrupoPrev`, e não em cada tela: é
-isso que faz o total do grupo, o total do cartão e a soma visível na tela darem
-o mesmo número. Somar a transferência infla Receitas e Despesas pelo mesmo valor
-sem mexer no Resultado, mas chamaria de despesa dinheiro que só trocou de conta.
-
-Consequência aceita: a saída da conta de origem continua **maior** que o total de
+Consequência aceita: a saída da conta de origem fica **maior** que o total de
 Despesas, pelo valor transferido. É correto — o dinheiro saiu de lá e entrou na
-outra conta —, e agora está visível numa linha com nome, em vez de sumir.
+outra conta —, e o saldo das duas contas mostra isso.
 
 A fatura continua fora: ela entra pelo lançamento do cartão, não pela categoria
 homônima.

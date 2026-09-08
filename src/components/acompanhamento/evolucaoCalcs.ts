@@ -21,18 +21,14 @@ export function catKey(nome: string, descricao?: string) {
 }
 
 /**
- * Transferência entre contas próprias.
+ * Transferência entre contas próprias — `lancar()` grava os DOIS lados com esta
+ * categoria literal, que nunca foi um cadastro.
  *
- * `lancar()` grava os DOIS lados com esta categoria literal — ela nunca foi um
- * cadastro, e por isso não caía em grupo nenhum. Agora mora em "Finanças", que
- * já existe no cadastro padrão, e é INFORMATIVA: aparece na tela mas não soma
- * em Receitas nem em Despesas. O dinheiro só trocou de conta.
- *
- * Isso é o que mantém o Radar somável: quem soma os grupos na tela chega no
- * mesmo número do cartão, porque as duas contas ignoram a transferência.
+ * Quem filtra é o `realizadoMes`, na origem: ela não entra no realizado, então
+ * não existe linha nem grupo para ela em tela nenhuma. O dinheiro que ela move
+ * aparece no saldo inicial e final das contas, que é o que precisa bater entre
+ * o Radar e o extrato.
  */
-export const GRUPO_TRANSFERENCIA = 'Finanças'
-
 const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 export function ehTransferencia(nome: string) {
@@ -225,9 +221,7 @@ export function buildAllCats(
       // vivo — categoria excluída ou desativada — a linha cai em "Outras" em
       // vez de sumir: era por isso que a soma dos grupos ficava abaixo da
       // saída das contas. Transferência tem endereço próprio.
-      const g = ehTransferencia(nome) ? GRUPO_TRANSFERENCIA
-        : reg?.ativa ? (reg.grupo ?? SEM_GRUPO)
-        : SEM_GRUPO
+      const g = reg?.ativa ? (reg.grupo ?? SEM_GRUPO) : SEM_GRUPO
       if (g !== grupo) return []
       return [{ nome, v: Array(12).fill(0) as number[], descricao }]
     })
@@ -235,15 +229,10 @@ export function buildAllCats(
   return [...doGrupo, ...extraCats]
 }
 
-// Transferência fica de fora dos dois totais: ela aparece na lista do grupo,
-// mas não é receita nem despesa. Filtrar aqui — e não em cada tela — é o que
-// garante que o total do grupo, o total do cartão e a soma na tela concordem.
-const somaveis = (allCats: CatComDesc[]) => allCats.filter(c => !ehTransferencia(c.nome))
-
 export function calcGrupoReal(allCats: CatComDesc[], realMap: Record<string, CatReal>): number {
-  return somaveis(allCats).reduce((s, cat) => s + (pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0), 0)
+  return allCats.reduce((s, cat) => s + (pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0), 0)
 }
 
 export function calcGrupoPrev(allCats: CatComDesc[], mes: number): number {
-  return somaveis(allCats).reduce((s, cat) => s + (cat.v[mes] ?? 0), 0)
+  return allCats.reduce((s, cat) => s + (cat.v[mes] ?? 0), 0)
 }

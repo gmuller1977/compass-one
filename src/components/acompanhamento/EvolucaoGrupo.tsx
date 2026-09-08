@@ -1,7 +1,7 @@
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, ehTransferencia, type PlanCat } from './evolucaoCalcs'
+import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
 // A rampa PULA a faixa #60a5fa..#3b82f6 de proposito: ali nenhum texto
@@ -117,7 +117,6 @@ export default function EvolucaoGrupo({
               totalBanc={cd?.totalBanc ?? 0}
               totalCart={cd?.totalCart ?? 0}
               totalDinheiro={cd?.totalDinheiro ?? 0}
-              informativa={ehTransferencia(cat.nome)}
               mes={mes}
             />
           )

@@ -1,7 +1,7 @@
 import type { Conta, Categoria, PlanoAnoData } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
-import { catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
+import { catKey, norm, ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { valorFixaNoMes } from './valorFixa'
 
@@ -60,6 +60,12 @@ export function construirRealizadoMes(params: {
 
       for (let d = 1; d <= totalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
+          // Transferência entre contas próprias fica FORA do realizado: o
+          // dinheiro só trocou de conta, não é receita nem despesa. O que ela
+          // move aparece no saldo inicial e final das contas — que é o que
+          // precisa bater entre o Radar e o extrato. Aqui dentro a pergunta é
+          // outra: quanto foi realizado contra o que estava planejado.
+          if (ehTransferencia(l.categoria)) continue
           const fonte = isDinheiroKey ? 'dinheiro' : (l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco')
           const sub   = resolverSub(l.categoria, l.tipo === 'saida' ? 'saida' : 'entrada',
             (l as { subCategoria?: string }).subCategoria)

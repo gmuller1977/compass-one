@@ -10,7 +10,7 @@ import { saldoBancosEDinheiro, saldoTotalNoFim, detalharMes } from '../utils/sal
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, barCorSobreAzul, type CatReal } from '../components/acompanhamento/AcShared'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev, GRUPO_TRANSFERENCIA } from '../components/acompanhamento/evolucaoCalcs'
+import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
@@ -72,12 +72,10 @@ export default function RadarFinanceiro() {
       c.tipo === tipo && c.ativa && !cartaoNomes.has(c.nome.toLowerCase())
     )
     const gs = Array.from(new Set(cats.map((c: Categoria) => c.grupo ?? '__sem_grupo__')))
-    // "Outras" e "Finanças" entram sempre: é onde cai o realizado sem cadastro
-    // vivo (categoria excluída/desativada) e a transferência entre contas. Sem
-    // eles na lista esse dinheiro não apareceria em lugar nenhum. Vazios, os
-    // grupos não são renderizados.
-    for (const g of ['__sem_grupo__', GRUPO_TRANSFERENCIA])
-      if (!gs.includes(g)) gs.push(g)
+    // "Outras" entra sempre: é onde cai o realizado sem cadastro vivo —
+    // categoria excluída ou desativada, ajuste de fatura. Sem ele na lista
+    // esse dinheiro não seria somado por ninguém. Vazio, não é renderizado.
+    if (!gs.includes('__sem_grupo__')) gs.push('__sem_grupo__')
     return gs.sort((a,b) => {
       if (a === '__sem_grupo__') return 1
       if (b === '__sem_grupo__') return -1

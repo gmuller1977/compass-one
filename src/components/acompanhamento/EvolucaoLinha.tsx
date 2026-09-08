@@ -17,12 +17,6 @@ interface EvolucaoLinhaProps {
   mes: number
   isSubtotal?: boolean
   grupoLabel?: string
-  /**
-   * Linha que aparece mas não soma — hoje só a transferência entre contas.
-   * Sem previsto, sem % e sem "estourou": comparar contra o plano não faz
-   * sentido para dinheiro que apenas trocou de conta.
-   */
-  informativa?: boolean
 }
 
 function calcStatus(isEntrada: boolean, prev: number, real: number) {
@@ -55,30 +49,21 @@ function calcDif(isEntrada: boolean, prev: number, real: number) {
 export default function EvolucaoLinha({
   nome, descricao, prev, real, isEntrada, categorias,
   lancamentos = [], totalBanc = 0, totalCart = 0, totalDinheiro = 0,
-  mes, isSubtotal, grupoLabel, informativa,
+  mes, isSubtotal, grupoLabel,
 }: EvolucaoLinhaProps) {
   const [aberto, setAberto] = useState(false)
-  const { icone: iconeCad } = iconeCategoria(categorias, nome)
-  const icone  = informativa ? '🔁' : iconeCad
-  const status = informativa
-    ? { texto: isEntrada ? '↔ Entre contas — não é receita' : '↔ Entre contas — não é despesa',
-        cor: '#1a56db', barra: '#93c5fd' }
-    : calcStatus(isEntrada, prev, real)
-  const dif    = informativa
-    ? { label: '—', valor: 0, cor: '#cbd5e1', vazio: true }
-    : calcDif(isEntrada, prev, real)
+  const { icone } = iconeCategoria(categorias, nome)
+  const status = calcStatus(isEntrada, prev, real)
+  const dif    = calcDif(isEntrada, prev, real)
 
   const barraFundo = status.barra
   const iconeFundo = status.barra === '#4ade80' ? '#f0fdf4' : status.barra === '#f87171' ? '#fef2f2' : '#fffbeb'
   const perc       = prev > 0 ? real / prev : (real > 0 ? 1 : 0)
-  const percClamp  = informativa ? 0 : Math.min(perc, 1)
-  const percLabel  = informativa ? '—' : (prev > 0 || real > 0 ? `${Math.round(perc * 100)}%` : '—')
+  const percClamp  = Math.min(perc, 1)
+  const percLabel  = prev > 0 || real > 0 ? `${Math.round(perc * 100)}%` : '—'
   const percCor    = perc === 0 ? '#cbd5e1' : perc > 1 ? '#dc2626' : '#16a34a'
   const barCor     = perc > 1 ? '#f87171' : barraFundo
-  const realCor    = informativa ? '#1a56db'
-    : real === 0 ? '#cbd5e1'
-    : isEntrada ? '#0f172a'
-    : (real > prev && prev > 0 ? '#dc2626' : '#0f172a')
+  const realCor    = real === 0 ? '#cbd5e1' : isEntrada ? '#0f172a' : (real > prev && prev > 0 ? '#dc2626' : '#0f172a')
 
   // ── Subtotal (sem acordeão) ───────────────────────────────────────────
   if (isSubtotal) {
