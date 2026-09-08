@@ -72,6 +72,10 @@ export default function RadarFinanceiro() {
       c.tipo === tipo && c.ativa && !cartaoNomes.has(c.nome.toLowerCase())
     )
     const gs = Array.from(new Set(cats.map((c: Categoria) => c.grupo ?? '__sem_grupo__')))
+    // "Outras" entra sempre: é onde cai o realizado sem cadastro vivo, e sem
+    // ele na lista esse dinheiro não seria somado por ninguém. Quando não há
+    // nada nesse caso o grupo fica vazio e não é renderizado.
+    if (!gs.includes('__sem_grupo__')) gs.push('__sem_grupo__')
     return gs.sort((a,b) => {
       if (a === '__sem_grupo__') return 1
       if (b === '__sem_grupo__') return -1

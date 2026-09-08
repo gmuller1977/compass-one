@@ -141,6 +141,26 @@ porque `projecaoDoMes` é a soma de `projecaoDaConta`. O `comoAbertura` é o que
 faz o mês corrente projetar até o dia 31 — sem ele o previsto sairia igual ao
 atual e a barra marcaria 100% sempre.
 
+**O Radar é o consolidado das contas: a soma dos grupos tem de fechar com o
+que saiu delas.** A soma dos grupos de Despesas ficava abaixo da saída das
+contas — 12.008,11 contra 12.706,83 num mês real. Os grupos eram montados só a
+partir do cadastro de categorias, então todo realizado sem cadastro vivo não
+entrava em grupo nenhum e sumia do total: **"Transferência"**, que é uma string
+literal escrita por `lancar()` e nunca foi uma categoria, e qualquer categoria
+**excluída ou desativada** com movimento no mês.
+
+Hoje o `extraCats` de [`evolucaoCalcs.ts`](src/components/acompanhamento/evolucaoCalcs.ts)
+joga esse dinheiro em **"Outras"**, e o Radar sempre inclui `__sem_grupo__` na
+lista de grupos. O grupo fica vazio e não é renderizado quando não há nada nesse
+caso. A regra: **linha do plano** só aparece se a categoria existir e estiver
+ativa (senão uma exclusão ressuscita); **dinheiro que se moveu** aparece sempre,
+nem que seja em "Outras".
+
+Transferência entre contas próprias cai nos dois lados — sai de uma conta, entra
+na outra —, então infla Receitas e Despesas pelo mesmo valor e não mexe no
+Resultado. A fatura continua fora: ela entra pelo lançamento do cartão, não pela
+categoria homônima.
+
 **O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
 **Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o
 realizado, bate com o extrato do banco; "com quanto abre o mês que vem" já

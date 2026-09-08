@@ -199,9 +199,16 @@ export function buildAllCats(
     .filter(k => !cobertas.has(k))
     .flatMap(k => {
       const { nome, descricao } = splitCatKey(k)
-      if (!visivel(nome, descricao, true)) return []
-      const reg = acharReg(nome, descricao, true)!
-      if ((reg.grupo ?? SEM_GRUPO) !== grupo) return []
+      // A fatura entra pelo lançamento do cartão, não pela categoria homônima.
+      if (cartaoNomes.has(norm(nome).toLowerCase())) return []
+      const reg = acharReg(nome, descricao, true)
+      // Dinheiro que se moveu tem de aparecer em algum lugar. Sem cadastro
+      // vivo — categoria excluída, desativada, ou "Transferência", que nunca
+      // foi um cadastro — a linha cai em "Outras" em vez de sumir: era por
+      // isso que a soma dos grupos ficava abaixo da saída das contas, e o
+      // Radar deixava de ser o consolidado dos bancos e do dinheiro.
+      const g = reg?.ativa ? (reg.grupo ?? SEM_GRUPO) : SEM_GRUPO
+      if (g !== grupo) return []
       return [{ nome, v: Array(12).fill(0) as number[], descricao }]
     })
 
