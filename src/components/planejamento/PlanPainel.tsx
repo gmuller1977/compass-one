@@ -46,6 +46,23 @@ const Z = { canto: 6, faixa: 5, rotulo: 3 }
 const AZUL = 'linear-gradient(135deg,#0f2878,#1e40af)'
 
 /**
+ * O bloco do que já aconteceu.
+ *
+ * A direção óbvia seria CLAREAR os meses previstos, mas o CLAUDE.md proíbe:
+ * nenhum fundo azul que carregue valor colorido pode passar de #1e40af, e as
+ * linhas de Receitas e Despesas carregam verde e amarelo. Então o realizado
+ * escurece em vez de o previsto clarear — o que de quebra melhora todos os
+ * textos por cima dele.
+ *
+ * #081642 separa 2,00:1 do extremo claro do gradiente e 1,33:1 do escuro.
+ */
+const AZUL_REAL = '#081642'
+
+/** A fronteira entre o que aconteceu e o que ainda vai acontecer. */
+const DIVISOR_ESCURO = 'rgba(255,255,255,0.45)'
+const DIVISOR_CLARO = '#94a3b8'
+
+/**
  * O detalhe é claro; só o resumo é azul. Além de separar as duas leituras, isso
  * conserta a legibilidade: PlanCelulaEditavel pinta o número em #0f172a, que
  * sobre o azul escuro sumia.
@@ -146,6 +163,18 @@ export default function PlanPainel({
 
   const colunas = `${W_CATS}px repeat(${meses.length}, ${W_MES}px)`
 
+  // Os meses estão lado a lado, em ordem: a fronteira entre realizado e
+  // previsto é uma LINHA, não uma propriedade de cada célula. O itálico fica
+  // para o que a coluna não sabe dizer — no primeiro mês aberto o saldo inicial
+  // é real enquanto o resto da coluna é previsto.
+  const ehPrevisto = (mi: number) => mi > previsto.realizadoAte
+  const primeiroPrevisto = meses.find(ehPrevisto)
+  const fundoMes = (mi: number) => (ehPrevisto(mi) ? AZUL : AZUL_REAL)
+  const divisor = (mi: number, claro = false): React.CSSProperties =>
+    mi === primeiroPrevisto && mi !== meses[0]
+      ? { borderLeft: `2px solid ${claro ? DIVISOR_CLARO : DIVISOR_ESCURO}` }
+      : {}
+
   // Rodapé preso: cada linha para na altura das que vêm depois dela.
   const baseMeta = 0
   const baseResultado = temAlgumaMeta ? H_META : 0
@@ -216,7 +245,8 @@ export default function PlanPainel({
               const isAtual = mi === mesAtual && anoAtual === anoCorrente
               return (
                 <div key={`cab-${mi}`} style={{
-                  position: 'sticky', top: 0, zIndex: Z.faixa, background: AZUL,
+                  ...divisor(mi),
+                  position: 'sticky', top: 0, zIndex: Z.faixa, background: fundoMes(mi),
                   height: H_CAB, display: 'flex', alignItems: 'center',
                   justifyContent: 'center', gap: 4, fontSize: 12, fontWeight: 700,
                   color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.12)',
@@ -240,7 +270,8 @@ export default function PlanPainel({
             {meses.map(mi => (
               <div key={`si-${mi}`} title={tituloValor(previsto.inicialReal[mi])}
                 style={{
-                  position: 'sticky', top: H_CAB, zIndex: Z.faixa, background: AZUL,
+                  ...divisor(mi),
+                  position: 'sticky', top: H_CAB, zIndex: Z.faixa, background: fundoMes(mi),
                   height: H_RES, display: 'flex', alignItems: 'center',
                   justifyContent: 'flex-end', padding: '0 10px', fontSize: 12,
                   fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#fff',
@@ -256,12 +287,14 @@ export default function PlanPainel({
               onToggle={() => setAberto(a => (a === 'e' ? null : 'e'))}
               topo={H_CAB + H_RES} totais={previsto.totalEntradas}
               meses={meses} realizadoAte={previsto.realizadoAte} cor="#86efac"
+              fundoMes={fundoMes} divisor={divisor}
             />
             <LinhaSecao
               tipo="s" titulo="Despesas" aberto={aberto === 's'}
               onToggle={() => setAberto(a => (a === 's' ? null : 's'))}
               topo={H_CAB + H_RES * 2} totais={previsto.totalSaidas}
               meses={meses} realizadoAte={previsto.realizadoAte} cor="#fde047"
+              fundoMes={fundoMes} divisor={divisor}
             />
 
             {aberto && (
@@ -270,6 +303,7 @@ export default function PlanPainel({
                 linhas={aberto === 'e' ? linhasE : linhasS}
                 cats={aberto === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas}
                 meses={meses} categorias={categorias} onSave={onSave}
+                divisor={divisor}
               />
             )}
 
@@ -281,7 +315,8 @@ export default function PlanPainel({
             {meses.map(mi => (
               <div key={`sf-${mi}`} title={tituloValor(previsto.finalReal[mi])}
                 style={{
-                  position: 'sticky', bottom: baseSaldoFinal, zIndex: Z.faixa, background: AZUL,
+                  ...divisor(mi),
+                  position: 'sticky', bottom: baseSaldoFinal, zIndex: Z.faixa, background: fundoMes(mi),
                   height: H_RES, display: 'flex', alignItems: 'center',
                   justifyContent: 'flex-end', padding: '0 10px', fontSize: 12,
                   fontWeight: 700, fontVariantNumeric: 'tabular-nums',
@@ -301,7 +336,8 @@ export default function PlanPainel({
               const res = previsto.totalEntradas[mi] - previsto.totalSaidas[mi]
               return (
                 <div key={`res-${mi}`} style={{
-                  position: 'sticky', bottom: baseResultado, zIndex: Z.faixa, background: AZUL,
+                  ...divisor(mi),
+                  position: 'sticky', bottom: baseResultado, zIndex: Z.faixa, background: fundoMes(mi),
                   height: H_RES, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                   padding: '0 10px', fontSize: 12, fontWeight: 800,
                   fontVariantNumeric: 'tabular-nums',
@@ -326,7 +362,8 @@ export default function PlanPainel({
                   const fill = perc >= 100 ? '#4ade80' : perc >= 70 ? '#fbbf24' : '#f87171'
                   return (
                     <div key={`meta-${mi}`} style={{
-                      position: 'sticky', bottom: baseMeta, zIndex: Z.faixa, background: AZUL,
+                      ...divisor(mi),
+                      position: 'sticky', bottom: baseMeta, zIndex: Z.faixa, background: fundoMes(mi),
                       height: H_META, padding: '0 10px', display: 'flex',
                       flexDirection: 'column', justifyContent: 'center', gap: 3,
                     }}>
@@ -360,7 +397,9 @@ export default function PlanPainel({
       <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
         Clique em <b>Receitas</b> ou <b>Despesas</b> para trocar de detalhe — uma
         de cada vez, para as duas continuarem visíveis ao rolar.
-        Número em <span style={PREVISTO}>itálico</span> é previsto.
+        À esquerda da linha, o que já aconteceu; à direita, o previsto. Um número
+        em <span style={PREVISTO}>itálico</span> dentro do bloco escuro ainda não
+        aconteceu — é o caso do saldo final do mês corrente.
       </div>
     </div>
   )
@@ -371,6 +410,7 @@ export default function PlanPainel({
 /** Linha do resumo que também é o botão do acordeão. Fica presa no topo. */
 function LinhaSecao({
   tipo, titulo, aberto, onToggle, topo, totais, meses, realizadoAte, cor,
+  fundoMes, divisor,
 }: {
   tipo: 'e' | 's'
   titulo: string
@@ -382,6 +422,8 @@ function LinhaSecao({
   meses: number[]
   realizadoAte: number
   cor: string
+  fundoMes: (mi: number) => string
+  divisor: (mi: number, claro?: boolean) => React.CSSProperties
 }) {
   return (
     <>
@@ -399,7 +441,8 @@ function LinhaSecao({
       </div>
       {meses.map(mi => (
         <div key={`${tipo}-tot-${mi}`} onClick={onToggle} style={{
-          position: 'sticky', top: topo, zIndex: Z.faixa, background: AZUL,
+          ...divisor(mi),
+          position: 'sticky', top: topo, zIndex: Z.faixa, background: fundoMes(mi),
           height: H_RES, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
           padding: '0 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
           fontVariantNumeric: 'tabular-nums', color: cor,
@@ -414,7 +457,7 @@ function LinhaSecao({
 
 /** Grupos e categorias da seção aberta. É a única parte que rola. */
 function Detalhe({
-  tipo, linhas, cats, meses, categorias, onSave,
+  tipo, linhas, cats, meses, categorias, onSave, divisor,
 }: {
   tipo: 'e' | 's'
   linhas: LinhaCat[]
@@ -422,6 +465,7 @@ function Detalhe({
   meses: number[]
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
+  divisor: (mi: number, claro?: boolean) => React.CSSProperties
 }) {
   return (
     <>
@@ -443,6 +487,7 @@ function Detalhe({
               </div>
               {meses.map(mi => (
                 <div key={`${tipo}-g-${li}-${mi}`} style={{
+                  ...divisor(mi, true),
                   height: H_GRP, background: GRUPO_FUNDO, display: 'flex', alignItems: 'center',
                   justifyContent: 'flex-end', padding: '0 10px', fontSize: 12, fontWeight: 700,
                   color: GRUPO_TEXTO, fontVariantNumeric: 'tabular-nums',
@@ -473,6 +518,7 @@ function Detalhe({
             </div>
             {meses.map(mi => (
               <div key={`${tipo}-c-${l.ri}-${mi}`} style={{
+                ...divisor(mi, true),
                 height: H_CAT, background: COR.branco, display: 'flex', alignItems: 'center',
                 justifyContent: 'flex-end', borderBottom: `1px solid ${COR.bordaSuave}`,
                 // PlanCelulaEditavel nao define corpo no estado de leitura: ele
