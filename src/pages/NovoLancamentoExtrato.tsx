@@ -23,6 +23,40 @@ import NleExtrato         from '../components/novoLancamentoExtrato/NleExtrato'
 import NleDesktopPanel   from '../components/novoLancamentoExtrato/NleDesktopPanel'
 import NleModal           from '../components/novoLancamentoExtrato/NleModal'
 
+/**
+ * As duas linhas que o PLANO projeta, e que nao sao lancamento nem fixa:
+ * o que ainda falta gastar das categorias de banco/dinheiro e o que ainda
+ * falta cair na fatura em aberto.
+ *
+ * Elas sempre mexeram no saldo e nunca apareciam na tela — somar o que estava
+ * visivel num mes futuro nao dava o saldo do rodape, e a diferenca era isto.
+ * Construidas aqui, num lugar so, para a cascata e a lista mostrarem
+ * exatamente as mesmas linhas.
+ *
+ * `estimada` marca que nao ha o que confirmar: o valor e do plano, encolhe
+ * sozinho conforme o gasto acontece e some quando o plano se esgota.
+ */
+function linhasEstimadas(
+  falta: { banco: number; cartao: number; diaCartao?: number },
+  isDinheiro: boolean,
+  ultimoDia: number,
+): CatFixa[] {
+  const out: CatFixa[] = []
+  if (falta.banco > 0) out.push({
+    id: '__variaveis_banco__', nome: 'Gastos variáveis a realizar',
+    categoria: 'Gastos variáveis a realizar', subtitulo: 'Previsto pelo plano',
+    valor: falta.banco, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+    diaVencimento: ultimoDia, estimada: true,
+  })
+  if (!isDinheiro && falta.cartao > 0) out.push({
+    id: '__fatura_estimada__', nome: 'Fatura estimada',
+    categoria: 'Fatura estimada', subtitulo: 'Previsto pelo plano',
+    valor: falta.cartao, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+    diaVencimento: Math.min(falta.diaCartao ?? ultimoDia, ultimoDia), estimada: true,
+  })
+  return out
+}
+
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
   const navigate  = useNavigate()
@@ -701,42 +735,12 @@ export default function NovoLancamentoExtrato() {
       ? { banco: 0, cartao: 0, diaCartao: undefined as number | undefined }
       : faltaVariavelDoMes(contaIdEfetivo, a, m, depsSaldo)
 
-    const variaveisBanco: CatFixa[] = (() => {
-      const v = falta.banco
-      if (v <= 0) return []
-      return [{
-        id: '__variaveis_banco__', nome: 'Gastos variáveis a realizar',
-        categoria: 'Gastos variáveis a realizar',
-        valor: v, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
-        diaVencimento: totalD,
-      }]
-    })()
 
-    // A fatura em aberto ainda vai crescer com o que falta gastar das
-    // categorias de cartao. Esse complemento vem de faltaVariavelDoMes, que ja
-    // decidiu quanto e e qual conta paga — o cartaoRef daqui so serve para
-    // escolher o DIA em que a linha cai, quando a funcao nao devolve um.
-    //
-    // Antes a estimativa era agregada: planejado do cartao menos o total ja
-    // lancado na fatura, sem saber de qual categoria veio cada compra. Mercado
+    // Antes a estimativa da fatura era agregada: planejado do cartao menos o
+    // total ja lancado, sem saber de qual categoria veio cada compra. Mercado
     // planejado no banco e pago no cartao abatia o orcamento do cartao e nao
     // abatia o proprio — as duas telas divergiam sobre a mesma categoria.
-    const cartaoRef = (() => {
-      const aqui = new Set(fatMes.map(f => f.id.slice('cartao-'.length)))
-      return contas
-        .filter(c => c.tipo === 'cartao' && c.diaVencimento && aqui.has(c.id))
-        .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))[0]
-    })()
-    const complementoFatura: CatFixa[] = (() => {
-      if (isDinheiro || falta.cartao <= 0) return []
-      return [{
-        id: '__fatura_estimada__', nome: 'Fatura estimada', categoria: 'Fatura estimada',
-        valor: falta.cartao, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
-        diaVencimento: falta.diaCartao ?? cartaoRef?.diaVencimento ?? totalD,
-      }]
-    })()
-
-    const todasFixas = [...fcMes, ...fatMes, ...variaveisBanco, ...complementoFatura]
+    const todasFixas = [...fcMes, ...fatMes, ...linhasEstimadas(falta, isDinheiro, totalD)]
     let saldo = abertura
     let entradas = 0, saidas = 0
     const res: Record<number,number> = {}
@@ -805,6 +809,14 @@ export default function NovoLancamentoExtrato() {
       return { totalEntradas:te, totalSaidas:ts }
     }
   }, [mesFuturo, cascata, dados, key, contaId, totalDias, mes, ano, categorias])
+
+  // As mesmas linhas que a cascata usa para mover o saldo, agora tambem para a
+  // lista mostrar. Mes passado nao projeta nada.
+  const estimativasDoMes = useMemo<CatFixa[]>(() => {
+    if (ano < anoHoje || (ano === anoHoje && mes < mesHoje)) return []
+    return linhasEstimadas(
+      faltaVariavelDoMes(contaIdEfetivo, ano, mes, depsSaldo), isDinheiro, totalDias)
+  }, [ano, mes, anoHoje, mesHoje, contaIdEfetivo, depsSaldo, isDinheiro, totalDias])
 
   const saldoMes   = saldoBaseExibido + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
@@ -1242,6 +1254,7 @@ export default function NovoLancamentoExtrato() {
               anoHoje={anoHoje}
               mesHoje={mesHoje}
               fixas={fixas}
+              estimativas={estimativasDoMes}
               categorias={categorias}
               mesDados={mesDados}
               saldosDia={saldosDia}

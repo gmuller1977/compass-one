@@ -253,6 +253,22 @@ O realizado é do **MÊS**, não da conta — um gasto pago por outro banco tamb
 consumiu o plano da categoria. Só a **sobra** se atribui a uma conta, e é isso
 que mantém a soma por conta igual ao total.
 
+**As duas linhas estimadas aparecem na lista de Lançamentos.** `Gastos variáveis
+a realizar` (último dia do mês) e `Fatura estimada` (vencimento do cartão) são o
+que o plano projeta, e sempre mexeram no saldo sem serem desenhadas: somar o que
+estava visível num dia não dava o saldo do rodapé, e a diferença era exatamente
+isso. `linhasEstimadas` constrói as duas num lugar só, e a cascata e a lista
+consomem a mesma função.
+
+Elas não são lançamento nem fixa: **sem caixinha de confirmar, sem clique, sem
+edição**. O valor é do plano, encolhe conforme o gasto acontece e some quando o
+plano se esgota. Ficam propositalmente discretas — o Guilherme já avisou que a
+tela está ficando cheia —, marcadas por um traço pontilhado à esquerda.
+
+O dia é clampado ao tamanho do mês. `diaEfetivoFixa` não clampa para fixa não
+automática, então vencimento 31 em mês de 30 dias caía fora do laço da cascata e
+a linha sumia do saldo em silêncio. Vale conferir o mesmo para a fatura real.
+
 **Entrada variável continua fora da projeção**, nas duas telas. Projetar receita
 que não é fixa é chute; e incluir só num lado faria as duas discordarem.
 

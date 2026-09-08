@@ -22,6 +22,8 @@ type Props = {
   anoHoje: number
   mesHoje: number
   fixas: CatFixa[]
+  /** O que o plano ainda projeta para o mes. Nao sao lancamentos. */
+  estimativas: CatFixa[]
   categorias: Categoria[]
   mesDados: DadosMes
   saldosDia: Record<number, number>
@@ -162,7 +164,7 @@ const TEMA = {
 export default function NleExtrato({
   isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
-  fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes,
+  fixas, estimativas, categorias, mesDados, saldosDia, saldoBase, saldoMes,
   totalEntradas, totalSaidas,
   contas,
   diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
@@ -213,7 +215,11 @@ export default function NleExtrato({
             const fs      = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
             const lsRaw   = mesDados.lancamentos[dia]??[]
             const ls      = lsRaw
-            const temItens= fs.length>0||ls.length>0
+            // Estimativas do plano: entram na contagem de itens do dia para o
+            // dia nao parecer vazio enquanto mexe no saldo, mas ficam fora de
+            // entradasDia/saidasDia — la o que vale e o que foi lancado.
+            const es      = estimativas.filter(f=>Math.min(f.diaVencimento,totalDias)===dia)
+            const temItens= fs.length>0||ls.length>0||es.length>0
             const temFixaPend=fs.some(f=>{
               const conf=mesDados.fixasConsolidadas?.[f.id]===true
               return !conf
@@ -394,6 +400,27 @@ export default function NleExtrato({
                     </div>
                   )
                 })}
+
+                {/* Estimativas do plano — nota, nao linha de lancamento.
+                    Sem caixinha, sem quadrado de icone e sem clique: nao ha o
+                    que confirmar. So explicam de onde vem a parte do saldo que
+                    nenhum lancamento explica. */}
+                {aberto&&es.map(f=>(
+                  <div key={f.id} onClick={e=>e.stopPropagation()}
+                    style={{display:'flex',alignItems:'center',gap:8,
+                      padding:'7px 16px 7px 20px',
+                      borderBottom:`1px solid ${tc.listItemBdr}`,
+                      borderLeft:`2px dashed ${tc.label}`}}>
+                    <div style={{flex:1,minWidth:0,fontSize:11,color:tc.label,
+                      overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {f.nome}
+                      <span style={{marginLeft:6,fontSize:9,opacity:.8}}>previsto pelo plano</span>
+                    </div>
+                    <div style={{fontSize:12,fontWeight:500,color:tc.label,whiteSpace:'nowrap'}}>
+                      -{fmt(f.valor)}
+                    </div>
+                  </div>
+                ))}
 
                 {/* Lançamentos variáveis */}
                 {aberto&&ls.map(l=>{
