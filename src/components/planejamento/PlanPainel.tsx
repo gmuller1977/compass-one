@@ -188,6 +188,10 @@ export default function PlanPainel({
       ) : (
         <div style={{
           overflow: 'auto', maxHeight: '68vh',
+          // fit-content encolhe a caixa ate onde o conteudo termina; sem isso
+          // ela ocupava a largura toda e sobrava azul depois de dezembro. O
+          // maxWidth devolve a rolagem horizontal quando os meses nao cabem.
+          width: 'fit-content', maxWidth: '100%',
           border: `1px solid ${COR.borda}`, borderRadius: 10, background: '#0f2878',
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: colunas, width: 'max-content' }}>
@@ -419,7 +423,7 @@ function Detalhe({
               <div style={{
                 position: 'sticky', left: 0, zIndex: Z.rotulo, background: CINZA,
                 height: H_GRP, display: 'flex', alignItems: 'center',
-                padding: '0 14px 0 30px', fontSize: 9, fontWeight: 800,
+                padding: '0 14px 0 30px', fontSize: 10, fontWeight: 800,
                 letterSpacing: '.5px', textTransform: 'uppercase',
                 color: CINZA_TEXTO,
                 borderRight: `1px solid ${COR.borda}`,
@@ -430,7 +434,7 @@ function Detalhe({
               {meses.map(mi => (
                 <div key={`${tipo}-g-${li}-${mi}`} style={{
                   height: H_GRP, background: CINZA, display: 'flex', alignItems: 'center',
-                  justifyContent: 'flex-end', padding: '0 10px', fontSize: 10, fontWeight: 700,
+                  justifyContent: 'flex-end', padding: '0 10px', fontSize: 12, fontWeight: 700,
                   color: CINZA_TEXTO, fontVariantNumeric: 'tabular-nums',
                 }}>
                   {fmt(soma(mi), true)}
@@ -461,6 +465,10 @@ function Detalhe({
               <div key={`${tipo}-c-${l.ri}-${mi}`} style={{
                 height: H_CAT, background: COR.branco, display: 'flex', alignItems: 'center',
                 justifyContent: 'flex-end', borderBottom: `1px solid ${COR.bordaSuave}`,
+                // PlanCelulaEditavel nao define corpo no estado de leitura: ele
+                // herda daqui. Sem isto o numero caia no tamanho padrao da
+                // pagina e destoava de tudo em volta.
+                fontSize: 12, fontWeight: 600,
               }}>
                 <PlanCelulaEditavel
                   valor={l.cat.v[mi] ?? 0}
