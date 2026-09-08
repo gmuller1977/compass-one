@@ -468,7 +468,10 @@ function Detalhe({
                 // PlanCelulaEditavel nao define corpo no estado de leitura: ele
                 // herda daqui. Sem isto o numero caia no tamanho padrao da
                 // pagina e destoava de tudo em volta.
-                fontSize: 12, fontWeight: 600,
+                //
+                // Peso normal de proposito: o negrito fica so no subtotal do
+                // grupo, que e o numero que resume a lista abaixo dele.
+                fontSize: 12, fontWeight: 400,
               }}>
                 <PlanCelulaEditavel
                   valor={l.cat.v[mi] ?? 0}
