@@ -282,7 +282,20 @@ export function faltaVariavelDoMes(
     if (falta <= 0) continue
 
     if (cat.tipoMovimento === 'cartao') {
-      if (refAberta && contaDoCartao === alvo) cartao += falta
+      // Com fatura em aberto, a sobra cai nela — quem paga o cartão paga.
+      if (refAberta) {
+        if (contaDoCartao === alvo) cartao += falta
+        continue
+      }
+      // Sem fatura em aberto que possa receber — fechada, já confirmada, ou
+      // nenhum cartão cadastrado — a sobra NÃO some. O plano é do mês, e o
+      // fechamento é um fato sobre o cartão, não sobre o plano: se aquele
+      // dinheiro ainda vai sair em setembro, sai por outro meio. Vira sobra de
+      // banco, no último dia, igual à de qualquer categoria de débito.
+      //
+      // Sobra não sobrevive ao mês. Mês que vem tem plano e limite próprios —
+      // gastar menos que o planejado é economia, não saldo acumulado.
+      if ((cat.contaDebitoId ?? padrao) === alvo) banco += falta
       continue
     }
     if (contaDaCategoria(cat, padrao) === alvo) banco += falta

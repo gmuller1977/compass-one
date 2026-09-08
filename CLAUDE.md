@@ -246,8 +246,25 @@ O rateio não muda o total, só o endereço:
 
 - categoria de banco/dinheiro → a conta de débito dela;
 - categoria de cartão → a conta que paga o cartão em aberto de vencimento mais
-  cedo, e **só enquanto aquela fatura não fechou**. Fechada, o que faltou já não
-  cabe nela: cai na próxima, paga no mês seguinte.
+  cedo, enquanto aquela fatura não fechou. **Fechada, já confirmada, ou sem
+  cartão nenhum, a sobra vira sobra de banco** — conta de débito da categoria
+  (ou a preferida), no último dia do mês.
+
+**Sobra do plano não atravessa o mês.** O plano é do mês e o mês é o limite:
+gastar menos que o planejado é economia, não saldo acumulado — mês que vem tem
+plano e limite próprios. Decidido pelo Guilherme em 08/09/2026, o que descartou
+o modelo de transbordo (sobra de setembro entrando na fatura de outubro).
+
+Foi esse mesmo princípio que resolveu o fechamento do cartão. Antes, a sobra de
+categoria de cartão **sumia** da previsão no dia do fechamento: medido, 1.500
+viravam 0 no dia 21 sem terem sido gastos. O fechamento é um fato sobre o
+**cartão**, não sobre o plano — se aquele dinheiro ainda vai sair no mês, sai
+por outro meio. Categoria de banco já era projetada até o último dia; agora as
+duas se comportam igual.
+
+Preço assumido: gasto que de fato vai para a fatura seguinte deixa os últimos
+dias do mês subestimados. Antes ficavam superestimados. Errar para menos é o
+lado certo de errar num app de finanças.
 
 O realizado é do **MÊS**, não da conta — um gasto pago por outro banco também
 consumiu o plano da categoria. Só a **sobra** se atribui a uma conta, e é isso
