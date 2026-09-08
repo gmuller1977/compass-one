@@ -50,11 +50,16 @@ const AZUL = 'linear-gradient(135deg,#0f2878,#1e40af)'
  * conserta a legibilidade: PlanCelulaEditavel pinta o número em #0f172a, que
  * sobre o azul escuro sumia.
  *
- * O cinza do grupo usa #475569 e não o #64748b de sempre — sobre #f1f5f9 aquele
- * dá 4,34:1 e reprova para texto de 9px. Este dá 6,9:1.
+ * O grupo é uma FAIXA, não um realce. Ele era #f1f5f9 com texto #475569: o
+ * texto passava com folga (6,9:1), mas a faixa separava só 1,10:1 das linhas
+ * brancas em volta — dava para não notar que ali começava um grupo. Invertido,
+ * separa 7,58:1, e o texto ganha os mesmos 7,58:1.
+ *
+ * O resultado é uma hierarquia de três degraus: azul escuro no resumo, slate
+ * no grupo, branco na categoria.
  */
-const CINZA = '#f1f5f9'
-const CINZA_TEXTO = '#475569'
+const CINZA = '#475569'
+const CINZA_TEXTO = '#fff'
 
 type LinhaCat =
   | { k: 'grupo'; tipo: 'e' | 's'; grupo: string; ris: number[] }
@@ -426,7 +431,7 @@ function Detalhe({
                 padding: '0 14px 0 30px', fontSize: 10, fontWeight: 800,
                 letterSpacing: '.5px', textTransform: 'uppercase',
                 color: CINZA_TEXTO,
-                borderRight: `1px solid ${COR.borda}`,
+                borderRight: '1px solid rgba(255,255,255,0.15)',
                 overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
               }}>
                 {l.grupo === SEM_GRUPO ? 'Outros' : l.grupo}
