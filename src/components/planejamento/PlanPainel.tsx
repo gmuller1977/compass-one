@@ -104,8 +104,10 @@ export default function PlanPainel({
   anoAtual, mesAtual, dadosAtivos, previsto, categorias,
   onSave, onBulkSave, objetivos, sobraPrevista, onMetaSave, dadosAnoAnterior,
 }: Props) {
-  const [abertoE, setAbertoE] = useState(false)
-  const [abertoS, setAbertoS] = useState(true)
+  // Uma por vez, de proposito. As duas linhas ficam presas no topo, e com as
+  // duas abertas o detalhe de Receitas rolaria POR BAIXO do rotulo de Despesas
+  // — a tela diria que aluguel e receita.
+  const [aberto, setAberto] = useState<'e' | 's' | null>('s')
   const [mostrarPassado, setMostrarPassado] = useState(false)
 
   const anoCorrente = new Date().getFullYear()
@@ -235,18 +237,27 @@ export default function PlanPainel({
             ))}
 
             {/* ── Receitas e Despesas, cada uma abrindo o próprio detalhe ─ */}
-            <Secao
-              tipo="e" titulo="Receitas" aberto={abertoE} onToggle={() => setAbertoE(v => !v)}
-              linhas={linhasE} cats={dadosAtivos.entradas} totais={previsto.totalEntradas}
-              meses={meses} categorias={categorias} onSave={onSave}
-              realizadoAte={previsto.realizadoAte} cor="#86efac"
+            <LinhaSecao
+              tipo="e" titulo="Receitas" aberto={aberto === 'e'}
+              onToggle={() => setAberto(a => (a === 'e' ? null : 'e'))}
+              topo={H_CAB + H_RES} totais={previsto.totalEntradas}
+              meses={meses} realizadoAte={previsto.realizadoAte} cor="#86efac"
             />
-            <Secao
-              tipo="s" titulo="Despesas" aberto={abertoS} onToggle={() => setAbertoS(v => !v)}
-              linhas={linhasS} cats={dadosAtivos.saidas} totais={previsto.totalSaidas}
-              meses={meses} categorias={categorias} onSave={onSave}
-              realizadoAte={previsto.realizadoAte} cor="#fde047"
+            <LinhaSecao
+              tipo="s" titulo="Despesas" aberto={aberto === 's'}
+              onToggle={() => setAberto(a => (a === 's' ? null : 's'))}
+              topo={H_CAB + H_RES * 2} totais={previsto.totalSaidas}
+              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fde047"
             />
+
+            {aberto && (
+              <Detalhe
+                tipo={aberto}
+                linhas={aberto === 'e' ? linhasE : linhasS}
+                cats={aberto === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas}
+                meses={meses} categorias={categorias} onSave={onSave}
+              />
+            )}
 
             {/* ── Rodapé preso ─────────────────────────────────────────── */}
             {rotulo('Saldo final', {
@@ -333,40 +344,38 @@ export default function PlanPainel({
       )}
 
       <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
-        Clique em <b>Receitas</b> ou <b>Despesas</b> para abrir as categorias.
+        Clique em <b>Receitas</b> ou <b>Despesas</b> para trocar de detalhe — uma
+        de cada vez, para as duas continuarem visíveis ao rolar.
         Número em <span style={PREVISTO}>itálico</span> é previsto.
       </div>
     </div>
   )
 }
 
-// ── Uma seção do resumo, com o detalhe que nasce dela ────────────────────
+// ── A linha presa, e o detalhe que ela abre ──────────────────────────────
 
-function Secao({
-  tipo, titulo, aberto, onToggle, linhas, cats, totais, meses, categorias,
-  onSave, realizadoAte, cor,
+/** Linha do resumo que também é o botão do acordeão. Fica presa no topo. */
+function LinhaSecao({
+  tipo, titulo, aberto, onToggle, topo, totais, meses, realizadoAte, cor,
 }: {
   tipo: 'e' | 's'
   titulo: string
   aberto: boolean
   onToggle: () => void
-  linhas: LinhaCat[]
-  cats: Cat[]
+  /** Onde ela para ao rolar, contando as faixas que ficam acima dela. */
+  topo: number
   totais: number[]
   meses: number[]
-  categorias: Categoria[]
-  onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   realizadoAte: number
   cor: string
 }) {
   return (
     <>
-      {/* A linha do resumo é o próprio botão do acordeão */}
       <div onClick={onToggle} style={{
-        position: 'sticky', left: 0, zIndex: Z.rotulo, background: AZUL, cursor: 'pointer',
-        height: H_RES, display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px',
-        fontSize: 11, fontWeight: 700, color: '#fff', userSelect: 'none',
-        borderRight: '1px solid rgba(255,255,255,0.12)',
+        position: 'sticky', left: 0, top: topo, zIndex: Z.canto, background: AZUL,
+        cursor: 'pointer', height: H_RES, display: 'flex', alignItems: 'center',
+        gap: 6, padding: '0 14px', fontSize: 11, fontWeight: 700, color: '#fff',
+        userSelect: 'none', borderRight: '1px solid rgba(255,255,255,0.12)',
       }}>
         <span style={{
           fontSize: 9, display: 'inline-block', transition: 'transform .2s',
@@ -376,6 +385,7 @@ function Secao({
       </div>
       {meses.map(mi => (
         <div key={`${tipo}-tot-${mi}`} onClick={onToggle} style={{
+          position: 'sticky', top: topo, zIndex: Z.faixa, background: AZUL,
           height: H_RES, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
           padding: '0 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
           fontVariantNumeric: 'tabular-nums', color: cor,
@@ -384,8 +394,24 @@ function Secao({
           {fmt(totais[mi], true)}
         </div>
       ))}
+    </>
+  )
+}
 
-      {aberto && linhas.map((l, li) => {
+/** Grupos e categorias da seção aberta. É a única parte que rola. */
+function Detalhe({
+  tipo, linhas, cats, meses, categorias, onSave,
+}: {
+  tipo: 'e' | 's'
+  linhas: LinhaCat[]
+  cats: Cat[]
+  meses: number[]
+  categorias: Categoria[]
+  onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
+}) {
+  return (
+    <>
+      {linhas.map((l, li) => {
         if (l.k === 'grupo') {
           const soma = (mi: number) => l.ris.reduce((s, ri) => s + (cats[ri]?.v[mi] ?? 0), 0)
           return (
