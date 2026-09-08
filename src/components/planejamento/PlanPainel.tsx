@@ -165,9 +165,14 @@ export default function PlanPainel({
 
   // Os meses estão lado a lado, em ordem: a fronteira entre realizado e
   // previsto é uma LINHA, não uma propriedade de cada célula. O itálico fica
-  // para o que a coluna não sabe dizer — no primeiro mês aberto o saldo inicial
-  // é real enquanto o resto da coluna é previsto.
-  const ehPrevisto = (mi: number) => mi > previsto.realizadoAte
+  // para o que a coluna não sabe dizer — o mês corrente abre com saldo real e
+  // fecha com previsto, e só ele marca essa diferença.
+  //
+  // A fronteira é o primeiro mês que ABRE sem saber de quanto parte, e não o
+  // primeiro mês ainda não fechado. Com agosto fechado, setembro parte de um
+  // número real: ele pertence ao bloco da esquerda, e a linha cai entre
+  // setembro e outubro. Ancorar em realizadoAte punha a linha um mês cedo.
+  const ehPrevisto = (mi: number) => !previsto.inicialReal[mi]
   const primeiroPrevisto = meses.find(ehPrevisto)
   const fundoMes = (mi: number) => (ehPrevisto(mi) ? AZUL : AZUL_REAL)
   const divisor = (mi: number, claro = false): React.CSSProperties =>
