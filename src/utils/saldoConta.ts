@@ -2,6 +2,8 @@ import type { Conta, Categoria, DadosMes, PlanoAnoData } from '../context/AppCon
 import { parseBRL } from './moeda'
 import { valorFixaNoMes } from './valorFixa'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
+import { construirRealizadoMes } from './realizadoMes'
+import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
 
 export type Deps = {
   extratoData: Record<string, DadosMes>
@@ -214,6 +216,52 @@ function contaDaCategoria(cat: Categoria, padrao: string | undefined) {
   return cat.contaDebitoId ?? padrao
 }
 
+/**
+ * O que ainda FALTA gastar do planejado variável fora do cartão, numa conta.
+ *
+ * `max(0, planejado − realizado)` por categoria — a mesma fórmula que a fatura
+ * em aberto já usava. Antes o mês corrente não projetava variável nenhuma:
+ * somar o planejado por cima dos lançamentos reais contaria o mesmo gasto duas
+ * vezes, então a escolha tinha sido não somar nada. O preço era um saldo final
+ * otimista, que escondia dinheiro que já se sabe que vai sair.
+ *
+ * Mês inteiramente futuro cai na mesma conta: sem lançamento, o realizado é 0
+ * e sobra o planejado inteiro. Estourado o plano, a sobra é 0 e vale o
+ * realizado, que já está no extrato.
+ *
+ * O realizado é do MÊS, não da conta: um gasto pago por outro banco também
+ * consumiu o planejado da categoria. Só a SOBRA se atribui a uma conta — a
+ * mesma de `contaDaCategoria` —, e é isso que mantém `projecaoDoMes` igual à
+ * soma de `projecaoDaConta`.
+ *
+ * Compra no cartão fica de fora (`totalCart`): ela consome o planejado do
+ * cartão, que tem o complemento próprio.
+ */
+export function faltaVariavelBanco(
+  alvo: string, ano: number, mes: number, deps: Deps,
+): number {
+  const { categorias, planos, contas } = deps
+  const padrao = contaPadrao(contas)
+  const daConta = categorias.filter(c =>
+    c.tipo === 'saida' && c.ativa && !c.fixa && contaDaCategoria(c, padrao) === alvo)
+  if (!daConta.length) return 0
+
+  const { saidasMap } = construirRealizadoMes({
+    ano, mes, extratoData: deps.extratoData, faturaData: deps.faturaData,
+    contas, categorias, planoAno: planos[ano],
+  })
+
+  let falta = 0
+  for (const cat of daConta) {
+    const plan = valorFixaNoMes(cat, planos[ano], mes, categorias)
+    if (plan <= 0) continue
+    const k = resolverRealKey(saidasMap, cat.nome, cat.descricao)
+    const feito = k ? saidasMap[k].totalBanc + saidasMap[k].totalDinheiro : 0
+    if (plan > feito) falta += plan - feito
+  }
+  return falta
+}
+
 function contaPadrao(contas: Conta[]) {
   return (contas.find(c => c.tipo !== 'cartao' && c.preferida)
     ?? contas.find(c => c.tipo !== 'cartao'))?.id
@@ -256,7 +304,6 @@ function projecaoDaConta(
     k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
   )
   const padrao = contaPadrao(contas)
-  const futuroInteiro = ym(ano, mes) > ym(hoje.getFullYear(), hoje.getMonth())
 
   let entradas = 0
   let saidas = 0
@@ -274,12 +321,13 @@ function projecaoDaConta(
       continue
     }
 
-    // Entrada variável fica de fora: Lançamentos também não projeta, e incluir
-    // só aqui faria as duas telas discordarem de novo.
-    if (!futuroInteiro || cat.tipo !== 'saida') continue
-    const v = valorFixaNoMes(cat, planos[ano], mes, categorias)
-    if (v > 0) saidas += v
+    // Variável de saída não entra no laço: `faltaVariavelBanco` resolve todas
+    // de uma vez, abaixo, e é a MESMA função que a cascata de Lançamentos
+    // chama. Entrada variável fica de fora de propósito — Lançamentos também
+    // não projeta, e incluir só aqui faria as duas telas discordarem.
   }
+
+  saidas += faltaVariavelBanco(alvo, ano, mes, deps)
 
   const abertas = contas
     .filter(c => c.tipo === 'cartao' && c.diaVencimento)

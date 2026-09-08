@@ -213,6 +213,33 @@ desconta o que falta acontecer até o dia 31. É o `comoAbertura`. Sem a
 distinção, ou o saldo do dia mente, ou o mês seguinte abre ignorando as contas
 a pagar.
 
+**Variável no mês corrente vale `max(0, planejado − realizado)`, por
+categoria.** Plano de 1.000 em mercado com 200 gastos projeta os 800 que
+faltam; com 1.200 gastos projeta 0, e vale o realizado que já está no extrato.
+Decidido em 08/09/2026.
+
+Antes o mês corrente não projetava variável nenhuma. O motivo era legítimo —
+somar o planejado por cima dos lançamentos reais contaria o mesmo gasto duas
+vezes —, mas a saída escolhida (não somar nada) deixava o saldo final previsto
+otimista: escondia dinheiro que já se sabe que vai sair. A fórmula do
+`max` sempre existiu no complemento da fatura; agora vale nos dois.
+
+Quem calcula é `faltaVariavelBanco` em [`saldoConta.ts`](src/utils/saldoConta.ts),
+e tanto a cascata de Lançamentos quanto a projeção do Radar chamam **essa**
+função — não duas que tentam chegar no mesmo lugar. Mês futuro cai nela também:
+sem lançamento, o realizado é 0 e sobra o planejado inteiro.
+
+Duas assimetrias de propósito:
+
+- o realizado é do **MÊS**, não da conta — um gasto pago por outro banco também
+  consumiu o planejado da categoria. Só a **sobra** se atribui a uma conta, a
+  de `contaDaCategoria`, e é isso que mantém a soma por conta igual ao total.
+- compra no **cartão** não abate (`totalCart` fica de fora): ela consome o
+  planejado do cartão, que tem o complemento próprio.
+
+**Entrada variável continua fora da projeção**, nas duas telas. Projetar receita
+que não é fixa é chute; e incluir só num lado faria as duas discordarem.
+
 **Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
 `projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da
 categoria, conta de pagamento do cartão, preferida quando não há nenhuma — e

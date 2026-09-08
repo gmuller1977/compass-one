@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import { valorFixaNoMes } from '../utils/valorFixa'
+import { faltaVariavelBanco, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
@@ -96,6 +97,14 @@ export default function NovoLancamentoExtrato() {
 
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   const dados = extratoData as Record<string, DadosMes>
+  // Os mesmos Deps que o Radar monta: a cascata e a projecao do saldo tem de
+  // olhar exatamente os mesmos dados.
+  // O DadosMes daqui vem do NleShared, com FormaPag mais largo que o do
+  // AppContext; o cast atravessa essa diferenca, que nao muda nenhum valor.
+  const depsSaldo = useMemo(() => ({
+    extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro,
+  }) as unknown as DepsSaldo,
+  [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
   const fixasCategoria = categorias
     .filter(c => {
       if (!c.fixa || !c.ativa) return false
@@ -679,11 +688,15 @@ export default function NovoLancamentoExtrato() {
     // pagamento: PIX e debito no proprio mes, cartao no mes em que a fatura e
     // paga. Sem isso o saldo de um mes futuro subia indefinidamente.
     //
-    // So vale para mes INTEIRAMENTE futuro. No mes corrente os lancamentos
-    // reais ja estao na cascata, e somar o planejado por cima contaria duas
-    // vezes o mesmo gasto.
-    const mesFuturoInteiro = a > anoHoje || (a === anoHoje && m > mesHoje)
-
+    // No mes corrente vale o que FALTA gastar: max(0, planejado - realizado),
+    // por categoria. Somar o planejado inteiro por cima dos lancamentos reais
+    // contaria duas vezes o mesmo gasto, e nao somar nada deixava o saldo
+    // otimista — mostrava um dinheiro que ja se sabe que vai sair. E a mesma
+    // formula que a fatura em aberto sempre usou.
+    //
+    // Quem calcula e faltaVariavelBanco, no saldoConta: uma funcao so, a mesma
+    // que a projecao do Radar usa. Mes futuro cai nela tambem — sem lancamento,
+    // o realizado e 0 e sobra o planejado inteiro.
     const planejadoDoMes = (aa: number, mm: number, doCartao: boolean) =>
       categorias
         .filter(c => c.tipo === 'saida' && c.ativa && !c.fixa
@@ -691,11 +704,12 @@ export default function NovoLancamentoExtrato() {
           && (doCartao || !c.contaDebitoId || c.contaDebitoId === contaIdEfetivo))
         .reduce((t, c) => t + valorFixaNoMes(c, planos[aa], mm, categorias), 0)
 
-    const variaveisBanco: CatFixa[] = !mesFuturoInteiro ? [] : (() => {
-      const v = planejadoDoMes(a, m, false)
+    const variaveisBanco: CatFixa[] = mesPast ? [] : (() => {
+      const v = faltaVariavelBanco(contaIdEfetivo, a, m, depsSaldo)
       if (v <= 0) return []
       return [{
-        id: '__variaveis_banco__', nome: 'Gastos variáveis', categoria: 'Gastos variáveis',
+        id: '__variaveis_banco__', nome: 'Gastos variáveis a realizar',
+        categoria: 'Gastos variáveis a realizar',
         valor: v, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
         diaVencimento: totalD,
       }]
@@ -761,7 +775,7 @@ export default function NovoLancamentoExtrato() {
       res[d] = saldo
     }
     return { porDia: res, fechamento: saldo, entradas, saidas }
-  }, [dados, contaIdEfetivo, contasExtrato, contaPadraoFixas, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
+  }, [dados, depsSaldo, contaIdEfetivo, contasExtrato, contaPadraoFixas, contas, faturaData, isDinheiro, categorias, planos, anoHoje, mesHoje, diaHoje])
 
   // O saldo inicial de um mes futuro e o FECHAMENTO do anterior, calculado pela
   // mesma cascata — nao por uma segunda conta que tenta chegar no mesmo lugar.
