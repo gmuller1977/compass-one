@@ -1,8 +1,9 @@
 import type { Conta, Categoria, PlanoAnoData } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
-import { catKey, norm, acharPlanCat, resolverPlanCats } from '../components/acompanhamento/evolucaoCalcs'
+import { catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
+import { valorFixaNoMes } from './valorFixa'
 
 /**
  * Realizado do mês por categoria — a única fonte para "quanto entrou e quanto
@@ -85,22 +86,21 @@ export function construirRealizadoMes(params: {
       sufixo,
       key => contas.some(c => c.tipo === 'cartao' && key.startsWith(c.id)),
     )
-    const planResolvidas = {
-      saida:   resolverPlanCats('saida',   dadosAno?.saidas   ?? [], categorias),
-      entrada: resolverPlanCats('entrada', dadosAno?.entradas ?? [], categorias),
-    }
-    for (const fixaCat of categorias.filter((c: Categoria) => c.fixa && c.ativa)) {
+    // SEM filtro de "ativa": se a fixa esta marcada como paga, o dinheiro saiu
+    // da conta. Desativar a categoria depois nao desfaz o pagamento — com o
+    // filtro, essa saida existia no extrato e nao virava linha nenhuma aqui, e
+    // o total de despesas ficava abaixo da saida da conta. Sem cadastro ativo
+    // a linha cai em "Outras", que e onde ela tem de aparecer.
+    //
+    // O valor sai de valorFixaNoMes, a MESMA funcao que saldoConta usa para
+    // debitar a conta. Antes havia duas contas: aqui so por nome/variante, la
+    // por id primeiro. Com plano antigo as duas achavam linhas diferentes e
+    // discordavam em silencio. valorFixaNoMes ja casa contra o plano resolvido,
+    // entao "Financiamento · Casa" continua achando a linha certa.
+    for (const fixaCat of categorias.filter((c: Categoria) => c.fixa)) {
       const { consolidada, override } = resolverFixaDoMes(fixaCat.id, dmsBanco)
       if (!consolidada) continue
-      // O plano tem de ser o RESOLVIDO, nao o cru. Plano antigo guarda a linha
-      // so com o nome; e o resolverPlanCats que atribui a variante por posicao
-      // — e por isso que a tela mostra "Financiamento · Casa" e
-      // "Financiamento · Civic". Procurando no cru, as duas linhas se chamam
-      // "Financiamento", acharPlanCat se recusa a escolher (certo) e o valor
-      // some. Aqui olhamos a mesma lista que a tela olha.
-      const planList = fixaCat.tipo === 'saida' ? planResolvidas.saida : planResolvidas.entrada
-      const planVal = acharPlanCat(planList, fixaCat.nome, fixaCat.descricao)?.v[mes] ?? 0
-      const val = override ?? (planVal > 0 ? planVal : 0)
+      const val = valorFixaNoMes(fixaCat, dadosAno, mes, categorias, override)
       if (val <= 0) continue
       const fixaSub = resolverSub(fixaCat.nome, fixaCat.tipo as 'saida' | 'entrada', fixaCat.descricao)
       const alvo = fixaCat.tipo === 'saida' ? getSaida(rKey(fixaCat.nome, fixaSub)) : getEntrada(rKey(fixaCat.nome, fixaSub))

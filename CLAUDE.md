@@ -173,6 +173,23 @@ outra conta —, e agora está visível numa linha com nome, em vez de sumir.
 A fatura continua fora: ela entra pelo lançamento do cartão, não pela categoria
 homônima.
 
+**Fixa confirmada conta mesmo com a categoria desativada, e o valor sai de
+`valorFixaNoMes`.** Eram duas divergências no mesmo laço de
+[`realizadoMes.ts`](src/utils/realizadoMes.ts):
+
+1. ele filtrava `c.fixa && c.ativa`, enquanto `movimentoDoMes` acha a fixa pelo
+   id e não olha `ativa`. Desativar a categoria depois **não desfaz o
+   pagamento** — a saída seguia no extrato e não virava linha nenhuma no Radar.
+   Hoje ela conta e cai em "Outras", já que não há cadastro ativo para agrupá-la.
+2. o valor vinha de `acharPlanCat` (nome + variante), e o da conta vinha de
+   `valorFixaNoMes` (**id primeiro**, depois nome). Com plano antigo as duas
+   achavam linhas diferentes. Agora só existe `valorFixaNoMes` — ela já casa
+   contra o plano resolvido, então `Financiamento · Casa` continua certo.
+
+Segue aberto, e é legítimo: `movimentoDoMes` debita a fatura pelo **override**
+quando ele existe, e o Radar soma as **compras** do período. Confirmar a fatura
+com valor diferente da soma das compras separa os dois de propósito.
+
 **O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
 **Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o
 realizado, bate com o extrato do banco; "com quanto abre o mês que vem" já
