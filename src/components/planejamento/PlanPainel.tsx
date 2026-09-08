@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
@@ -163,6 +163,44 @@ export default function PlanPainel({
 
   const colunas = `${W_CATS}px repeat(${meses.length}, ${W_MES}px)`
 
+  const grade = useRef<HTMLDivElement>(null)
+
+  /**
+   * Setas, Home e End sobre as células editáveis.
+   *
+   * A posição sai do DOM, não de um índice guardado em estado: basta listar os
+   * elementos com `data-celula` na ordem em que estão na página. Isso resolve
+   * de graça as duas coisas que complicariam a conta — os meses são filtrados,
+   * e só uma seção está aberta —, porque só existe no DOM o que está visível.
+   *
+   * Cada linha de categoria rende exatamente um elemento por mês, então subir e
+   * descer é somar ou subtrair a quantidade de meses.
+   */
+  function navegar(e: React.KeyboardEvent) {
+    const chaves = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End']
+    if (!chaves.includes(e.key)) return
+    const celulas = Array.from(
+      grade.current?.querySelectorAll<HTMLElement>('[data-celula]') ?? [])
+    const i = celulas.indexOf(document.activeElement as HTMLElement)
+    if (i < 0) return
+
+    const n = meses.length
+    const inicioDaLinha = i - (i % n)
+    const alvo =
+      e.key === 'ArrowRight' ? i + 1
+      : e.key === 'ArrowLeft' ? i - 1
+      : e.key === 'ArrowDown' ? i + n
+      : e.key === 'ArrowUp' ? i - n
+      : e.key === 'Home' ? inicioDaLinha
+      : inicioDaLinha + n - 1
+
+    const destino = celulas[alvo]
+    if (!destino) return
+    e.preventDefault()
+    destino.focus()
+    destino.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }
+
   // Os meses estão lado a lado, em ordem: a fronteira entre realizado e
   // previsto é uma LINHA, não uma propriedade de cada célula. O itálico fica
   // para o que a coluna não sabe dizer — o mês corrente abre com saldo real e
@@ -238,7 +276,8 @@ export default function PlanPainel({
           width: 'fit-content', maxWidth: '100%',
           border: `1px solid ${COR.borda}`, borderRadius: 10, background: '#0f2878',
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: colunas, width: 'max-content' }}>
+          <div ref={grade} onKeyDown={navegar}
+            style={{ display: 'grid', gridTemplateColumns: colunas, width: 'max-content' }}>
 
             {/* ── Cabeçalho: meses ─────────────────────────────────────── */}
             {rotulo('RESUMO', {
@@ -405,6 +444,10 @@ export default function PlanPainel({
         À esquerda da linha, o que já aconteceu; à direita, o previsto. Um número
         em <span style={PREVISTO}>itálico</span> dentro do bloco escuro ainda não
         aconteceu — é o caso do saldo final do mês corrente.
+        <br />
+        Sem mouse: <b>Tab</b> chega às células, <b>setas</b> andam pela grade,
+        <b>Home</b> e <b>End</b> vão ao primeiro e ao último mês, <b>Enter</b> ou
+        um número abre a edição, <b>Esc</b> cancela.
       </div>
     </div>
   )
