@@ -354,11 +354,18 @@ Resultado deixaram de carregar a marca de real nas quatro telas. Fica uma regra
 só, sem exceção: **itálico = previsto, em pé = real, e só o saldo inicial chega
 a ser real.**
 
-Segue aberta a faixa anual da Grade: os quatro números dela (Saldo inicial Jan,
-Receitas, Despesas, Saldo final Dez) **não fecham** quando existe âncora, porque
-a cadeia é reancorada no meio. Medido: 17.000 contra 1.000 num cenário de teste.
-Não decidido — as opções levantadas foram nomear a faixa, restringi-la aos meses
-abertos, ou mostrar o ajuste ao real numa quinta caixa.
+**A regra vale também na faixa anual da Grade.** Ela cobre a **janela que se
+sustenta**, não o ano inteiro: somar de janeiro por cima de meses ancorados dava
+quatro números que não batiam — 17.000 contra 1.000 num cenário medido.
+
+A janela começa no **último mês que abre com saldo real**. Dali para a frente
+nada é reancorado, então si[i+1] === sf[i] e a soma telescopa. Sem âncora
+nenhuma, ela é o ano inteiro e os rótulos ficam como sempre foram; com âncora,
+eles dizem de onde a faixa parte ("Saldo inicial Set/2026", "Receitas Set–Dez").
+
+Quem calcula é `janelaQueFecha` em
+[`types.ts`](src/components/planejamento/types.ts). Uma janela de um mês só — ano
+inteiro fechado — não vira "Dez–Dez".
 
 **Tentativa descartada, para não repetir:** marcar "Receitas real" / "Despesas
 previsto" no card da Grade, mantendo a troca pelo realizado. Rejeitada no mesmo

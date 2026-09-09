@@ -175,6 +175,32 @@ export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraRea
   }
 }
 
+/**
+ * O trecho do ano em que a cadeia do saldo se sustenta.
+ *
+ * A regra do Planejamento — saldo inicial + receitas − despesas = saldo final —
+ * vale mes a mes sempre, mas NAO se acumula por cima de uma ancora: um mes que
+ * abre com saldo real descarta a deriva entre o que se planejou fechar e o que
+ * fechou de verdade. Somar janeiro a dezembro por cima disso dava uma faixa
+ * anual que nao fechava — 17.000 contra 1.000 num cenario medido.
+ *
+ * A janela comeca no ULTIMO mes que abre com saldo real: dali para a frente
+ * nada e reancorado, entao si[i+1] === sf[i] e a soma telescopa. Sem ancora
+ * nenhuma, ela e o ano inteiro.
+ */
+export function janelaQueFecha(s: Saldos) {
+  let inicio = 0
+  for (let i = 0; i < 12; i++) if (s.inicialReal[i]) inicio = i
+  const soma = (v: number[]) => v.slice(inicio).reduce((a, b) => a + b, 0)
+  return {
+    inicio,
+    saldoInicial: s.saldoInicial[inicio],
+    receitas: soma(s.totalEntradas),
+    despesas: soma(s.totalSaidas),
+    saldoFinal: s.saldoFinal[11],
+  }
+}
+
 export function fmt(v: number, sempre = false) {
   if (v === 0 && !sempre) return '—'
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

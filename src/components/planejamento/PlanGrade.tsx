@@ -4,7 +4,7 @@ import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
-import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos } from './types'
+import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, janelaQueFecha } from './types'
 import type { Categoria } from '../../context/AppContext'
 
 interface Props {
@@ -34,10 +34,9 @@ export default function PlanGrade(props: Props) {
 
   const planTotais = previsto
 
-  const receitasAnuais = planTotais.totalEntradas.reduce((a, b) => a + b, 0)
-  const despesasAnuais = planTotais.totalSaidas.reduce((a, b) => a + b, 0)
-  const resultadoDez = planTotais.saldoFinal[11]
-  const saldoIni = planTotais.saldoInicial[0]
+  // A faixa cobre a janela que fecha, nao o ano inteiro: somar de janeiro por
+  // cima de meses ancorados dava quatro numeros que nao batiam entre si.
+  const janela = janelaQueFecha(planTotais)
 
   const anoCorrente = new Date().getFullYear()
 
@@ -47,11 +46,12 @@ export default function PlanGrade(props: Props) {
   return (
     <div style={{ padding: '16px 20px' }}>
       <PlanResumoAnual
-        saldoInicial={saldoIni}
-        totalReceitas={receitasAnuais}
-        totalDespesas={despesasAnuais}
-        resultado={resultadoDez}
+        saldoInicial={janela.saldoInicial}
+        totalReceitas={janela.receitas}
+        totalDespesas={janela.despesas}
+        resultado={janela.saldoFinal}
         anoAtual={anoAtual}
+        mesInicio={janela.inicio}
       />
 
       <PlanBarraFerramentas
