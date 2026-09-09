@@ -106,9 +106,9 @@ export default function PlanPainel({
   anoAtual, mesAtual, dadosAtivos, previsto, categorias,
   onSave, onBulkSave, objetivos, sobraPrevista, onMetaSave, dadosAnoAnterior,
 }: Props) {
-  // Uma por vez, de proposito. As duas linhas ficam presas no topo, e com as
-  // duas abertas o detalhe de Receitas rolaria POR BAIXO do rotulo de Despesas
-  // — a tela diria que aluguel e receita.
+  // Uma por vez, de proposito: com as duas abertas, o detalhe de Receitas
+  // rolaria por baixo do rotulo de Despesas, e a tela diria que aluguel e
+  // receita. Cada detalhe e desenhado logo abaixo da propria linha.
   const [aberto, setAberto] = useState<'e' | 's' | null>('s')
   const [mostrarPassado, setMostrarPassado] = useState(false)
 
@@ -327,7 +327,15 @@ export default function PlanPainel({
               </div>
             ))}
 
-            {/* ── Receitas e Despesas, cada uma abrindo o próprio detalhe ─ */}
+            {/* ── Receitas e Despesas, cada uma abrindo o próprio detalhe ─
+                 O detalhe vem logo DEPOIS da linha que o abriu. Estava sempre
+                 no fim das duas, entao abrir Receitas desenhava as categorias
+                 embaixo de "Despesas" — a tela dizia que salario era despesa.
+
+                 E por isso que "Despesas" so gruda no topo quando o aberto e
+                 ela. Grudada com Receitas aberta, ela viraria uma segunda faixa
+                 fixa com o detalhe de receita rolando por baixo, que e a mesma
+                 confusao pelo outro lado. */}
             <LinhaSecao
               tipo="e" titulo="Receitas" aberto={aberto === 'e'}
               onToggle={() => setAberto(a => (a === 'e' ? null : 'e'))}
@@ -335,19 +343,27 @@ export default function PlanPainel({
               meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
               fundoMes={fundoMes} divisor={divisor}
             />
+
+            {aberto === 'e' && (
+              <Detalhe
+                tipo="e" linhas={linhasE} cats={dadosAtivos.entradas}
+                meses={meses} categorias={categorias} onSave={onSave}
+                divisor={divisor}
+              />
+            )}
+
             <LinhaSecao
               tipo="s" titulo="Despesas" aberto={aberto === 's'}
               onToggle={() => setAberto(a => (a === 's' ? null : 's'))}
-              topo={H_CAB + H_RES * 2} totais={previsto.totalSaidas}
+              topo={aberto === 'e' ? null : H_CAB + H_RES * 2}
+              totais={previsto.totalSaidas}
               meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
               fundoMes={fundoMes} divisor={divisor}
             />
 
-            {aberto && (
+            {aberto === 's' && (
               <Detalhe
-                tipo={aberto}
-                linhas={aberto === 'e' ? linhasE : linhasS}
-                cats={aberto === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas}
+                tipo="s" linhas={linhasS} cats={dadosAtivos.saidas}
                 meses={meses} categorias={categorias} onSave={onSave}
                 divisor={divisor}
               />
@@ -466,8 +482,12 @@ function LinhaSecao({
   titulo: string
   aberto: boolean
   onToggle: () => void
-  /** Onde ela para ao rolar, contando as faixas que ficam acima dela. */
-  topo: number
+  /**
+   * Onde ela para ao rolar, contando as faixas que ficam acima dela.
+   * `null` desgruda: a linha rola junto, para nao virar faixa fixa por cima
+   * do detalhe de OUTRA secao.
+   */
+  topo: number | null
   totais: number[]
   meses: number[]
   realizadoAte: number
@@ -483,7 +503,8 @@ function LinhaSecao({
   return (
     <>
       <div onClick={onToggle} style={{
-        position: 'sticky', left: 0, top: topo, zIndex: Z.canto, background: AZUL,
+        position: 'sticky', left: 0, ...(topo === null ? {} : { top: topo }),
+        zIndex: Z.canto, background: AZUL,
         cursor: 'pointer', height: H_RES, display: 'flex', alignItems: 'center',
         gap: 6, padding: '0 14px', fontSize: 11, fontWeight: 700, color: '#fff',
         userSelect: 'none', borderRight: '1px solid rgba(255,255,255,0.12)',
@@ -497,7 +518,8 @@ function LinhaSecao({
       {meses.map(mi => (
         <div key={`${tipo}-tot-${mi}`} onClick={onToggle} style={{
           ...divisor(mi),
-          position: 'sticky', top: topo, zIndex: Z.faixa, background: fundoMes(mi),
+          ...(topo === null ? {} : { position: 'sticky' as const, top: topo }),
+          zIndex: Z.faixa, background: fundoMes(mi),
           height: H_RES, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
           padding: '0 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
           fontVariantNumeric: 'tabular-nums', color: cor,
