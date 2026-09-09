@@ -262,6 +262,47 @@ export default function PlanPainel({
         </label>
       )}
 
+      {/* Legenda. Os dois blocos ja se distinguem pelo tom e pelo italico, mas
+          nada na tela DIZ o que cada um e — quem chega nela precisava deduzir.
+          Aqui os dois cues aparecem com nome ao lado, uma vez so.
+
+          O "ate <mes>" sai da FRONTEIRA, nao do calendario: ela e o primeiro
+          mes que abre sem saber de quanto parte. Com agosto fechado, setembro
+          abre com saldo real e ainda pertence ao bloco da esquerda. */}
+      {meses.length > 0 && (() => {
+        const iPrev = primeiroPrevisto === undefined ? -1 : meses.indexOf(primeiroPrevisto)
+        const temReal = iPrev !== 0
+        const temPrev = iPrev !== -1
+        const ultimoReal = iPrev > 0 ? meses[iPrev - 1] : meses[meses.length - 1]
+        const chip = (fundo: string, marca: boolean) => (
+          <span aria-hidden style={{
+            width: 22, height: 13, borderRadius: 3, background: fundo,
+            border: '1px solid rgba(15,23,42,0.2)',
+            ...(marca ? { borderLeftWidth: 2, borderLeftColor: DIVISOR_CLARO } : {}),
+          }} />
+        )
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+            marginBottom: 8, fontSize: 11, color: COR.textoSuave,
+          }}>
+            {temReal && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {chip(AZUL_REAL, false)}
+                <b style={{ color: COR.texto, fontWeight: 700 }}>Realizado</b>
+                até {MESES[ultimoReal]}
+              </span>
+            )}
+            {temPrev && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {chip(AZUL, temReal)}
+                <b style={{ ...PREVISTO, color: COR.texto, fontWeight: 700 }}>Previsto</b>
+                {temReal ? `de ${MESES[primeiroPrevisto!]} em diante` : 'o que o plano projeta'}
+              </span>
+            )}
+          </div>
+        )
+      })()}
       {meses.length === 0 ? (
         <div style={{
           background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 10,
