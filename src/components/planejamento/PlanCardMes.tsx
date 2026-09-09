@@ -17,6 +17,15 @@ interface Props {
    */
   saldoInicialReal?: boolean
   saldoFinalReal?: boolean
+  /**
+   * Receitas e Despesas do mes sao REALIZADAS, nao planejadas.
+   *
+   * Mes fechado mostra o que aconteceu — calcSaldos troca o plano pela ancora.
+   * O card dizia "real" no saldo inicial e final e nada nestas duas, entao quem
+   * somava as categorias do plano nao chegava no numero do card e concluia, com
+   * razao, que a soma nao fechava.
+   */
+  totaisReal?: boolean
   onClick: () => void
 }
 
@@ -65,7 +74,8 @@ const TH = {
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, meta = 0, saldoInicialReal = false, saldoFinalReal = false, onClick,
+  isAtual, meta = 0, saldoInicialReal = false, saldoFinalReal = false,
+  totaisReal = false, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
@@ -184,12 +194,18 @@ export default function PlanCardMes({
             {/* Receitas / Despesas */}
             <div style={{ display: 'flex', gap: 6, marginBottom: 7 }}>
               <div style={{ flex: 1, background: th.recBg, borderRadius: 8, padding: '6px 8px' }}>
-                <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Receitas</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: th.recText, fontVariantNumeric: 'tabular-nums' }}>{fmt(receitas, true)}</div>
+                <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
+                  Receitas <span style={{ fontWeight: 400, textTransform: 'none' }}>{totaisReal ? 'real' : 'previsto'}</span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: th.recText, fontVariantNumeric: 'tabular-nums',
+                  ...(totaisReal ? {} : PREVISTO) }}>{fmt(receitas, true)}</div>
               </div>
               <div style={{ flex: 1, background: th.despBg, borderRadius: 8, padding: '6px 8px' }}>
-                <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>Despesas</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: th.despText, fontVariantNumeric: 'tabular-nums' }}>{fmt(despesas, true)}</div>
+                <div style={{ fontSize: 8, color: th.label, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: 3 }}>
+                  Despesas <span style={{ fontWeight: 400, textTransform: 'none' }}>{totaisReal ? 'real' : 'previsto'}</span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: th.despText, fontVariantNumeric: 'tabular-nums',
+                  ...(totaisReal ? {} : PREVISTO) }}>{fmt(despesas, true)}</div>
               </div>
             </div>
 

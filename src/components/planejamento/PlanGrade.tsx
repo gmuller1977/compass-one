@@ -89,6 +89,7 @@ export default function PlanGrade(props: Props) {
               meta={objetivos[mi]}
               saldoInicialReal={planTotais.inicialReal[mi]}
               saldoFinalReal={planTotais.finalReal[mi]}
+              totaisReal={mi <= planTotais.realizadoAte}
               onClick={() => setModalMes(mi)}
             />
           )
