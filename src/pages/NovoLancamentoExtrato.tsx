@@ -698,16 +698,30 @@ export default function NovoLancamentoExtrato() {
     // o Radar mostra na linha da categoria. Mes futuro cai nela tambem — sem
     // lancamento, o realizado e 0 e sobra o plano inteiro.
     const falta = mesPast
-      ? { banco: 0, cartao: 0, diaCartao: undefined as number | undefined }
+      ? { saidaBanco: 0, saidaCartao: 0, entrada: 0, diaCartao: undefined as number | undefined }
       : faltaVariavelDoMes(contaIdEfetivo, a, m, depsSaldo)
 
     const variaveisBanco: CatFixa[] = (() => {
-      const v = falta.banco
+      const v = falta.saidaBanco
       if (v <= 0) return []
       return [{
         id: '__variaveis_banco__', nome: 'Gastos variáveis a realizar',
         categoria: 'Gastos variáveis a realizar',
         valor: v, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+        diaVencimento: totalD,
+      }]
+    })()
+
+    // Receita variavel que o plano espera e ainda nao chegou. Mesma formula da
+    // despesa: reservar o que falta gastar e ignorar o que falta receber torcia
+    // o saldo para baixo — na planilha do Guilherme eram 663,08 de diferenca.
+    const receitasAReceber: CatFixa[] = (() => {
+      const v = falta.entrada
+      if (v <= 0) return []
+      return [{
+        id: '__receitas_a_receber__', nome: 'Receitas a receber',
+        categoria: 'Receitas a receber',
+        valor: v, tipo: 'entrada' as TipoLanc, formaPagamento: 'pix' as FormaPag,
         diaVencimento: totalD,
       }]
     })()
@@ -728,15 +742,15 @@ export default function NovoLancamentoExtrato() {
         .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))[0]
     })()
     const complementoFatura: CatFixa[] = (() => {
-      if (isDinheiro || falta.cartao <= 0) return []
+      if (isDinheiro || falta.saidaCartao <= 0) return []
       return [{
         id: '__fatura_estimada__', nome: 'Fatura estimada', categoria: 'Fatura estimada',
-        valor: falta.cartao, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
+        valor: falta.saidaCartao, tipo: 'saida' as TipoLanc, formaPagamento: 'debito' as FormaPag,
         diaVencimento: falta.diaCartao ?? cartaoRef?.diaVencimento ?? totalD,
       }]
     })()
 
-    const todasFixas = [...fcMes, ...fatMes, ...variaveisBanco, ...complementoFatura]
+    const todasFixas = [...fcMes, ...fatMes, ...variaveisBanco, ...complementoFatura, ...receitasAReceber]
     let saldo = abertura
     let entradas = 0, saidas = 0
     // Memoria de calculo: a MESMA passagem que forma o saldo vai classificando
@@ -744,7 +758,7 @@ export default function NovoLancamentoExtrato() {
     // fecham no fechamento por construcao.
     const mem: Memoria = {
       abertura, entradasReais: 0, saidasReais: 0,
-      entradasPrevistas: 0, fixasPrevistas: 0,
+      entradasPrevistas: 0, receitasAReceber: 0, fixasPrevistas: 0,
       faturaEmAberto: 0, faturaEstimada: 0, variaveisARealizar: 0,
       fechamento: 0,
     }
@@ -759,7 +773,9 @@ export default function NovoLancamentoExtrato() {
           const v = (dPast || dHoje) ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
           if (f.tipo === 'entrada') {
             saldo += v; entradas += v
-            if (confirmada) mem.entradasReais += v; else mem.entradasPrevistas += v
+            if (confirmada) mem.entradasReais += v
+            else if (f.id === '__receitas_a_receber__') mem.receitasAReceber += v
+            else mem.entradasPrevistas += v
           } else {
             saldo -= v; saidas += v
             if (confirmada) mem.saidasReais += v

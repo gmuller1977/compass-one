@@ -217,10 +217,11 @@ function contaDaCategoria(cat: Categoria, padrao: string | undefined) {
 }
 
 /**
- * O que ainda FALTA gastar do planejado variável, por categoria, numa conta.
+ * O que ainda falta ACONTECER do planejado variável, por categoria, numa conta
+ * — gastar e receber.
  *
- * `max(0, plano − realizado)`, e o **realizado soma tudo**: extrato, dinheiro e
- * fatura. `tipoMovimento` é a intenção de onde pagar, não uma trava — mercado
+ * `max(0, plano − realizado)` dos dois lados, e o **realizado soma tudo**:
+ * extrato, dinheiro e fatura. `tipoMovimento` é a intenção de onde pagar, não uma trava — mercado
  * planejado no banco e pago no cartão consumiu o mesmo plano.
  *
  * É exatamente o "Disponível" que o Radar mostra na linha da categoria, mesmo
@@ -241,11 +242,11 @@ function contaDaCategoria(cat: Categoria, padrao: string | undefined) {
  */
 export function faltaVariavelDoMes(
   alvo: string, ano: number, mes: number, deps: Deps, hoje: Date = new Date(),
-): { banco: number; cartao: number; diaCartao?: number } {
+): { saidaBanco: number; saidaCartao: number; entrada: number; diaCartao?: number } {
   const { categorias, planos, contas, extratoData } = deps
   const padrao = contaPadrao(contas)
-  const variaveis = categorias.filter(c => c.tipo === 'saida' && c.ativa && !c.fixa)
-  if (!variaveis.length) return { banco: 0, cartao: 0 }
+  const variaveis = categorias.filter(c => c.ativa && !c.fixa)
+  if (!variaveis.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0 }
 
   // O cartão em aberto de vencimento mais cedo decide quem paga a sobra do
   // cartão — a mesma regra que já valia para o complemento da fatura.
@@ -266,25 +267,38 @@ export function faltaVariavelDoMes(
   })()
   const contaDoCartao = ref ? (ref.contaPagamentoId ?? padrao) : undefined
 
-  const { saidasMap } = construirRealizadoMes({
+  const { saidasMap, entradasMap } = construirRealizadoMes({
     ano, mes, extratoData, faturaData: deps.faturaData,
     contas, categorias, planoAno: planos[ano],
   })
 
-  let banco = 0
-  let cartao = 0
+  let saidaBanco = 0
+  let saidaCartao = 0
+  let entrada = 0
   for (const cat of variaveis) {
     const plano = valorFixaNoMes(cat, planos[ano], mes, categorias)
     if (plano <= 0) continue
-    const k = resolverRealKey(saidasMap, cat.nome, cat.descricao)
-    const feito = k ? saidasMap[k].total : 0
+    const mapa = cat.tipo === 'entrada' ? entradasMap : saidasMap
+    const k = resolverRealKey(mapa, cat.nome, cat.descricao)
+    const feito = k ? mapa[k].total : 0
     const falta = plano - feito
     if (falta <= 0) continue
+
+    // Receita variável entra pela MESMA fórmula. Ficava de fora por medo de
+    // chutar entrada, e o resultado era um saldo torto para baixo: o mês
+    // reservava o que ainda falta gastar e ignorava o que ainda falta receber.
+    // Quem escreveu o plano ja disse que espera receber — nao e chute do app.
+    // Cartao nao recebe: entrada cai na conta de deposito da categoria.
+    if (cat.tipo === 'entrada') {
+      const onde = cat.tipoMovimento === 'dinheiro' ? 'dinheiro' : (cat.contaDebitoId ?? padrao)
+      if (onde === alvo) entrada += falta
+      continue
+    }
 
     if (cat.tipoMovimento === 'cartao') {
       // Com fatura em aberto, a sobra cai nela — quem paga o cartão paga.
       if (refAberta) {
-        if (contaDoCartao === alvo) cartao += falta
+        if (contaDoCartao === alvo) saidaCartao += falta
         continue
       }
       // Sem fatura em aberto que possa receber — fechada, já confirmada, ou
@@ -295,13 +309,13 @@ export function faltaVariavelDoMes(
       //
       // Sobra não sobrevive ao mês. Mês que vem tem plano e limite próprios —
       // gastar menos que o planejado é economia, não saldo acumulado.
-      if ((cat.contaDebitoId ?? padrao) === alvo) banco += falta
+      if ((cat.contaDebitoId ?? padrao) === alvo) saidaBanco += falta
       continue
     }
-    if (contaDaCategoria(cat, padrao) === alvo) banco += falta
+    if (contaDaCategoria(cat, padrao) === alvo) saidaBanco += falta
   }
 
-  return { banco, cartao, diaCartao: ref?.diaVencimento }
+  return { saidaBanco, saidaCartao, entrada, diaCartao: ref?.diaVencimento }
 }
 
 function contaPadrao(contas: Conta[]) {
@@ -370,7 +384,8 @@ function projecaoDaConta(
   }
 
   const falta = faltaVariavelDoMes(alvo, ano, mes, deps, hoje)
-  saidas += falta.banco + falta.cartao
+  saidas += falta.saidaBanco + falta.saidaCartao
+  entradas += falta.entrada
 
   const abertas = contas
     .filter(c => c.tipo === 'cartao' && c.diaVencimento)

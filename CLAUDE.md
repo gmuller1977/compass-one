@@ -289,8 +289,25 @@ limite de `#1e40af`, e sobre ele o verde e o vermelho claro reprovariam.
 Medido: branco 10,4:1 e 9,9:1; `#86efac` 4,8:1 e 7,1:1; `#fecaca` 4,6:1 e
 6,8:1; label a 75% 5,1:1 e 6,1:1.
 
-**Entrada variável continua fora da projeção**, nas duas telas. Projetar receita
-que não é fixa é chute; e incluir só num lado faria as duas discordarem.
+**Receita variável entra pela MESMA fórmula.** Ficava de fora por medo de chutar
+entrada, e o resultado era um saldo torto para baixo: o mês reservava o que
+ainda falta gastar e ignorava o que ainda falta receber. Quem escreveu o plano
+já disse que espera receber — não é chute do app. Decidido em 08/09/2026, ao
+comparar com a planilha do Guilherme, onde a diferença dava 663,08 de "Clientes
+a Receber" previstos e não recebidos.
+
+Vale para as duas telas, pela mesma função. A receita cai na conta de depósito
+da categoria (`contaDebitoId`, ou dinheiro), nunca num cartão.
+
+**Como reconciliar com uma planilha externa.** A memória de Lançamentos é de UMA
+conta; uma planilha costuma ser o consolidado. Comparar as duas direto acusa uma
+diferença que é só o saldo das outras contas — foi o que aconteceu com os
+1.269,72 de Caixa e dinheiro. O número comparável é o **Saldo final previsto do
+Radar**, que soma bancos e dinheiro.
+
+A outra diferença legítima é o clamp: a planilha faz `previsto − realizado` no
+total, então categoria que estourou abate a que sobrou. O app calcula por
+categoria e para no zero, por decisão registrada acima.
 
 **Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
 `projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da

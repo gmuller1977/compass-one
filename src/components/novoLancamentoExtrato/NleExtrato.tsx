@@ -180,7 +180,8 @@ function MemoriaSaldo({ m, positivo }: { m: Memoria; positivo: boolean }) {
   // #fecaca 4,6:1 e 6,8:1; label a 75% 5,1:1 e 6,1:1.
   const fundo = positivo ? '#0f2878' : '#7f1d1d'
   const previstas: [string, number, string][] = [
-    ['Receitas ainda previstas',      m.entradasPrevistas,   'Fixas de entrada que ainda nao foram confirmadas'],
+    ['Receitas fixas a receber',      m.entradasPrevistas,   'Fixas de entrada que ainda nao foram confirmadas'],
+    ['Receitas a receber',            m.receitasAReceber,    'O que o plano espera receber e ainda nao chegou'],
     ['Despesas fixas a pagar',        -m.fixasPrevistas,     'Fixas ainda nao confirmadas'],
     ['Fatura do cartao',              -m.faturaEmAberto,     'Ja lancada, ainda nao paga'],
     ['Compras que faltam no cartao',  -m.faturaEstimada,     'O que o plano espera que ainda entre na fatura'],

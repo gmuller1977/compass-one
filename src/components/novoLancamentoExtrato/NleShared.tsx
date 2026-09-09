@@ -32,6 +32,8 @@ export type Memoria = {
   entradasReais: number
   saidasReais: number
   entradasPrevistas: number
+  /** Receita variavel que o plano espera e ainda nao chegou. */
+  receitasAReceber: number
   /** Fixas de saida ainda nao confirmadas, fora fatura. */
   fixasPrevistas: number
   /** Fatura do cartao ja lancada e ainda nao paga. */
