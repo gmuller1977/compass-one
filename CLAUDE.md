@@ -191,20 +191,26 @@ homônima.
    achavam linhas diferentes. Agora só existe `valorFixaNoMes` — ela já casa
    contra o plano resolvido, então `Financiamento · Casa` continua certo.
 
-**A fatura confirmada com valor ajustado ganha uma linha de reconciliação.**
-As duas telas medem coisas diferentes de propósito: a despesa acontece na
-**compra** (é assim que ela se compara ao plano), mas o que sai da conta é o
-**pagamento**. Enquanto os dois batem, ninguém percebe. Quando a fatura é
-confirmada com outro valor — juros, IOF, compra não lançada, arredondamento —,
-`movimentoDoMes` debita o valor digitado e o Radar soma as compras, e a
-diferença saía do banco sem aparecer em lugar nenhum. Foram 3 centavos num mês
-real; no mês do juro seria a fatura inteira.
+**A fatura confirmada com valor ajustado NÃO gera linha de reconciliação.**
+A despesa acontece na **compra** — é assim que ela se compara ao plano — e o
+que sai da conta é o **pagamento**. Confirmar a fatura com outro valor (juros,
+IOF, compra não lançada, arredondamento) separa os dois, e essa diferença fica
+no **saldo**, não numa categoria.
 
-Hoje o `realizadoMes` acrescenta `Ajuste de fatura · <cartão>` com
-`override − compras`, e a identidade fecha: compras + ajuste = o que foi pago =
-o que `saldoConta` debita. A linha pode ser **negativa** (pagou menos que as
-compras) — por isso `EvolucaoLinha` mostra realizado `!== 0` e não `> 0`, senão
-o número sumia num travessão.
+**Tentativa descartada, para não repetir:** houve uma linha `Ajuste de fatura ·
+<cartão>` valendo `override − compras`, criada em 08/09/2026 para fazer o total
+de Despesas igualar a saída da conta. Ela nasceu de um objetivo que foi
+abandonado no mesmo dia — o que tem de bater é o saldo inicial e o final, não o
+movimento — e sobrou como ruído: 3 centavos listados como se fossem uma
+despesa. Removida em 09/09/2026 a pedido do Guilherme.
+
+Se um dia o juro do cartão precisar aparecer no Radar, o caminho é uma
+**categoria de verdade**, lançada como qualquer outra, e não um valor sintético
+derivado da diferença entre duas contas.
+
+Do mesmo commit sobreviveu, por valer sozinho: `EvolucaoLinha` mostra realizado
+`!== 0` e não `> 0`, senão um valor negativo — estorno maior que a compra —
+sumia num travessão.
 
 **O mês corrente tem dois saldos, e os dois estão certos** — isso vale em
 **Lançamentos**, onde a cascata projeta dia a dia. "Quanto tenho hoje" é o
