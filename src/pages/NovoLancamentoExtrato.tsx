@@ -525,7 +525,13 @@ export default function NovoLancamentoExtrato() {
 
   function consolidarFixa(fixaId: string) {
     const cat = categorias.find(c => c.id === fixaId)
-    const precisaEscolher = !fixaId.startsWith('cartao-')
+    // Dinheiro nao tem banco para escolher: fixa de carteira e confirmada na
+    // propria carteira. Sem isto a tela de dinheiro abria "Pagar de qual
+    // conta?" com Sicredi e Caixa — e a escolha gravava fixasConsolidadas no
+    // DadosMes do BANCO, fazendo aquele dinheiro entrar no saldo dele.
+    const ehDinheiro = isDinheiro || cat?.tipoMovimento === 'dinheiro'
+    const precisaEscolher = !ehDinheiro
+      && !fixaId.startsWith('cartao-')
       && !cat?.contaDebitoId
       && contasExtrato.length > 1
     if (precisaEscolher) { setEscolherContaFixa(fixaId); return }
@@ -1383,7 +1389,7 @@ export default function NovoLancamentoExtrato() {
               style={{ background:'#fff', borderRadius:14, padding:20, minWidth:300, maxWidth:380,
                 boxShadow:'0 8px 32px rgba(0,0,0,.22)' }}>
               <div style={{ fontSize:15, fontWeight:700, color:COR.texto, marginBottom:4 }}>
-                Pagar de qual conta?
+                {cat?.tipo === 'entrada' ? 'Receber em qual conta?' : 'Pagar de qual conta?'}
               </div>
               <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:14 }}>{nome}</div>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
