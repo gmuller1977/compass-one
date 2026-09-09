@@ -125,12 +125,21 @@ export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraRea
 
   const fechado = (i: number) => !!ancora && i <= ancora.ateMes
 
-  // Mes fechado mostra o que ACONTECEU; mes aberto, o que esta planejado
-  const totalE = planE.map((v, i) => fechado(i) ? (ancora!.te[i] ?? 0) : v)
-  const totalS = planS.map((v, i) => fechado(i) ? (ancora!.ts[i] ?? 0) : v)
+  // Receitas e Despesas sao SEMPRE a soma das categorias do plano, inclusive
+  // em mes fechado. Esta e uma tela de PLANEJAMENTO, e misturar realizado com
+  // projetado quebrava a unica coisa que ela precisa garantir: a soma bate com
+  // as categorias listadas embaixo dela. Decidido pelo Guilherme em 09/09/2026.
+  //
+  // Antes, mes fechado trocava o plano pela ancora nos dois totais. Quem somava
+  // as categorias nao chegava no total do mes e concluia, com razao, que a
+  // conta nao fechava. O realizado por categoria tem lugar proprio — o Radar e
+  // a Revisao Mensal.
+  const totalE = planE
+  const totalS = planS
 
-  // Mes fechado usa o saldo REAL nas duas pontas; o primeiro mes aberto herda
-  // o real do anterior e so entao passa a encadear o planejado.
+  // A realidade entra num ponto so: o SALDO INICIAL, ancorado no fechamento
+  // real do mes anterior quando ele e conhecido. Dali em diante e aritmetica do
+  // plano.
   const si: number[] = [], sf: number[] = []
   const siReal: boolean[] = [], sfReal: boolean[] = []
   for (let i = 0; i < 12; i++) {
@@ -141,9 +150,13 @@ export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraRea
       : sf[i - 1]
     si.push(abertura)
     siReal.push(aberturaReal)
-    const fechamentoReal = temReal && fechado(i)
-    sf.push(fechamentoReal ? ancora!.fim!(i) : abertura + totalE[i] - totalS[i])
-    sfReal.push(fechamentoReal)
+    // O fechamento e SEMPRE calculado: abertura + receitas - despesas. O
+    // fechamento real de agosto nao se perde — ele aparece como o saldo inicial
+    // de setembro, que e onde ele pertence. Comparar "planejei fechar em X" com
+    // "abri setembro em Y" e a leitura util; sobrescrever o X pelo Y apagava a
+    // pergunta.
+    sf.push(abertura + totalE[i] - totalS[i])
+    sfReal.push(false)
   }
   return {
     totalEntradas: totalE, totalSaidas: totalS, saldoInicial: si, saldoFinal: sf,
@@ -153,7 +166,11 @@ export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraRea
      * FECHA com o previsto. Sao os quatro numeros que a tela precisa nomear.
      */
     inicialReal: siReal, finalReal: sfReal,
-    /** Ate que mes os numeros acima sao realizados (-1 = nenhum). */
+    /**
+     * Ate que mes existe fechamento real conhecido (-1 = nenhum). Nao marca
+     * mais Receitas e Despesas — elas sao sempre plano —, e sim ate onde o
+     * saldo inicial pode ser ancorado.
+     */
     realizadoAte: ancora?.ateMes ?? -1,
   }
 }

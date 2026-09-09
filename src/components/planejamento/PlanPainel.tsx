@@ -262,9 +262,13 @@ export default function PlanPainel({
         </label>
       )}
 
-      {/* Legenda. Os dois blocos ja se distinguem pelo tom e pelo italico, mas
-          nada na tela DIZ o que cada um e — quem chega nela precisava deduzir.
-          Aqui os dois cues aparecem com nome ao lado, uma vez so.
+      {/* Legenda. O tom do azul e o divisor ja separavam os dois blocos, mas
+          nada na tela DIZIA o que cada um e — quem chega nela precisava deduzir.
+
+          O que muda entre eles e SO o saldo inicial: Receitas e Despesas sao a
+          soma das categorias do plano em todo mes, fechado ou nao. Por isso a
+          terceira frase, que e a que evita a pergunta "por que a soma nao
+          fecha?".
 
           O "ate <mes>" sai da FRONTEIRA, nao do calendario: ela e o primeiro
           mes que abre sem saber de quanto parte. Com agosto fechado, setembro
@@ -289,17 +293,20 @@ export default function PlanPainel({
             {temReal && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 {chip(AZUL_REAL, false)}
-                <b style={{ color: COR.texto, fontWeight: 700 }}>Realizado</b>
+                <b style={{ color: COR.texto, fontWeight: 700 }}>Abre com saldo real</b>
                 até {MESES[ultimoReal]}
               </span>
             )}
             {temPrev && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 {chip(AZUL, temReal)}
-                <b style={{ ...PREVISTO, color: COR.texto, fontWeight: 700 }}>Previsto</b>
-                {temReal ? `de ${MESES[primeiroPrevisto!]} em diante` : 'o que o plano projeta'}
+                <b style={{ ...PREVISTO, color: COR.texto, fontWeight: 700 }}>Saldo projetado</b>
+                {temReal ? `de ${MESES[primeiroPrevisto!]} em diante` : 'o plano encadeia a partir de janeiro'}
               </span>
             )}
+            <span style={{ opacity: .85 }}>
+              Receitas e despesas são sempre o <i>planejado</i>, em todos os meses.
+            </span>
           </div>
         )
       })()}
@@ -381,7 +388,7 @@ export default function PlanPainel({
               tipo="e" titulo="Receitas" aberto={aberto === 'e'}
               onToggle={() => setAberto(a => (a === 'e' ? null : 'e'))}
               topo={H_CAB + H_RES} totais={previsto.totalEntradas}
-              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
+              meses={meses} cor="#fff"
               fundoMes={fundoMes} divisor={divisor}
             />
 
@@ -398,7 +405,7 @@ export default function PlanPainel({
               onToggle={() => setAberto(a => (a === 's' ? null : 's'))}
               topo={aberto === 'e' ? null : H_CAB + H_RES * 2}
               totais={previsto.totalSaidas}
-              meses={meses} realizadoAte={previsto.realizadoAte} cor="#fff"
+              meses={meses} cor="#fff"
               fundoMes={fundoMes} divisor={divisor}
             />
 
@@ -445,7 +452,7 @@ export default function PlanPainel({
                   padding: '0 10px', fontSize: 12, fontWeight: 800,
                   fontVariantNumeric: 'tabular-nums',
                   color: res >= 0 ? '#86efac' : '#fde047',
-                  ...(mi <= previsto.realizadoAte ? {} : PREVISTO),
+                  ...PREVISTO,
                 }}>
                   {res === 0 ? '—' : `${res > 0 ? '+' : ''}${fmt(res, true)}`}
                 </div>
@@ -516,7 +523,7 @@ export default function PlanPainel({
 
 /** Linha do resumo que também é o botão do acordeão. Fica presa no topo. */
 function LinhaSecao({
-  tipo, titulo, aberto, onToggle, topo, totais, meses, realizadoAte, cor,
+  tipo, titulo, aberto, onToggle, topo, totais, meses, cor,
   fundoMes, divisor,
 }: {
   tipo: 'e' | 's'
@@ -531,7 +538,6 @@ function LinhaSecao({
   topo: number | null
   totais: number[]
   meses: number[]
-  realizadoAte: number
   /**
    * Hoje branco nas duas seções. A cor saiu daqui porque era redundante: o
    * rótulo da linha já diz se é receita ou despesa. Ela fica onde carrega algo
@@ -564,7 +570,9 @@ function LinhaSecao({
           height: H_RES, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
           padding: '0 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
           fontVariantNumeric: 'tabular-nums', color: cor,
-          ...(mi <= realizadoAte ? {} : PREVISTO),
+          // Sempre previsto: Receitas e Despesas sao a soma das categorias do
+          // plano em todo mes. So o saldo inicial pode ser real.
+          ...PREVISTO,
         }}>
           {fmt(totais[mi], true)}
         </div>

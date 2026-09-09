@@ -329,6 +329,42 @@ A outra diferença legítima é o clamp: a planilha faz `previsto − realizado`
 total, então categoria que estourou abate a que sobrou. O app calcula por
 categoria e para no zero, por decisão registrada acima.
 
+**O Planejamento não mistura realizado com projetado nas categorias.** Receitas
+e Despesas de um mês são **sempre** a soma das categorias do plano, inclusive em
+mês fechado. A realidade entra num ponto só: o **saldo inicial**, ancorado no
+fechamento real do mês anterior quando ele é conhecido. Decidido pelo Guilherme
+em 09/09/2026.
+
+A identidade que a tela garante, mês a mês:
+
+> saldo inicial + receitas planejadas − despesas planejadas = saldo final
+
+Antes, `calcSaldos` trocava o plano pela âncora (`ancora.te` / `ancora.ts`) nos
+meses fechados, e o saldo final desses meses era pinado no real. O resultado era
+uma tela onde o total de Despesas discordava das categorias listadas logo abaixo
+dele — no Painel os dois números ficavam um em cima do outro. Quem somava as
+categorias concluía, com razão, que a conta não fechava.
+
+**O fechamento real não se perde.** O de agosto aparece como o **saldo inicial de
+setembro**, que é onde ele pertence: comparar "planejei fechar em X" com "abri
+setembro em Y" é a leitura útil; sobrescrever o X pelo Y apagava a pergunta.
+
+Consequências na marcação: `finalReal` é sempre falso, e Receitas, Despesas e
+Resultado deixaram de carregar a marca de real nas quatro telas. Fica uma regra
+só, sem exceção: **itálico = previsto, em pé = real, e só o saldo inicial chega
+a ser real.**
+
+Segue aberta a faixa anual da Grade: os quatro números dela (Saldo inicial Jan,
+Receitas, Despesas, Saldo final Dez) **não fecham** quando existe âncora, porque
+a cadeia é reancorada no meio. Medido: 17.000 contra 1.000 num cenário de teste.
+Não decidido — as opções levantadas foram nomear a faixa, restringi-la aos meses
+abertos, ou mostrar o ajuste ao real numa quinta caixa.
+
+**Tentativa descartada, para não repetir:** marcar "Receitas real" / "Despesas
+previsto" no card da Grade, mantendo a troca pelo realizado. Rejeitada no mesmo
+dia — o problema não era a falta de rótulo, era a tela de planejamento mostrar
+realizado onde deveria mostrar plano.
+
 **Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
 `projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da
 categoria, conta de pagamento do cartão, preferida quando não há nenhuma — e

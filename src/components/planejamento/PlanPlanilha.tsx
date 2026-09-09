@@ -343,7 +343,6 @@ export default function PlanPlanilha({
               // Receitas, despesas e resultado sao do mes inteiro: reais quando
               // o mes fechou. Ja as duas pontas do saldo podem discordar entre
               // si, e por isso cada uma tem sua marca.
-              const mesReal = mi <= previsto.realizadoAte
               return (
                 <div key={mi} style={{ minWidth: W_MES, maxWidth: W_MES, flexShrink: 0, borderRadius: 8, overflow: 'hidden', boxShadow: isAtual ? '0 0 0 2px rgba(255,255,255,0.4), 0 4px 16px rgba(26,86,219,0.5)' : undefined }}>
                   {/* Month header */}
@@ -362,10 +361,12 @@ export default function PlanPlanilha({
                   <div style={{ background: tc.header, overflow: 'hidden' }}>
                     {[
                       { v: si,  color: tc.text,                         bold: false, real: previsto.inicialReal[mi], fmt: (v: number) => fmt(v, true) },
-                      { v: te,  color: tc.rec,                          bold: false, real: mesReal,                  fmt: (v: number) => fmt(v, true) },
-                      { v: ts,  color: tc.desp,                         bold: false, real: mesReal,                  fmt: (v: number) => fmt(v, true) },
+                      // Receitas, Despesas e Resultado sao sempre plano: nunca
+                      // "real". So o saldo inicial pode ser ancorado.
+                      { v: te,  color: tc.rec,                          bold: false, real: false,                    fmt: (v: number) => fmt(v, true) },
+                      { v: ts,  color: tc.desp,                         bold: false, real: false,                    fmt: (v: number) => fmt(v, true) },
                       { v: sf,  color: sf < 0 ? tc.desp : tc.text,      bold: false, real: previsto.finalReal[mi],   fmt: (v: number) => fmt(v, true) },
-                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  real: mesReal,                  fmt: fmtRes },
+                      { v: res, color: res >= 0 ? tc.rec : tc.desp,     bold: true,  real: false,                    fmt: fmtRes },
                     ].map(({ v, color, bold, real, fmt: fv }, idx, arr) => (
                       <div key={idx} title={tituloValor(real)} style={{
                         height: SR, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
