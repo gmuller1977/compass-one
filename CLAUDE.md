@@ -270,6 +270,26 @@ O realizado é do **MÊS**, não da conta — um gasto pago por outro banco tamb
 consumiu o plano da categoria. Só a **sobra** se atribui a uma conta, e é isso
 que mantém a soma por conta igual ao total.
 
+**Fixa vencida e não confirmada é ATRASADA, não inexistente.** No mês corrente
+ela conta na projeção, lançada em **hoje** em vez do dia vencido. Decidido em
+09/09/2026.
+
+A regra "fixa só conta quando confirmada" foi decidida em 31/08 para o
+**realizado** — para o saldo do dia não mentir sobre o extrato. A cascata de
+Lançamentos aplicava ela também à **projeção**, e aí uma conta vencida e não
+paga sumia do fim do mês. `projecaoDaConta` nunca olhou dia nenhum, então o
+Radar sempre a contou: as duas telas discordavam sobre o mesmo mês, medido em
+645,00 num caso real. O mesmo valia para a fatura em aberto com vencimento já
+passado, que era descartada da cascata.
+
+Lançar em **hoje**, e não no dia vencido, é o que preserva o saldo dos dias
+passados: `NleExtrato` desenha o saldo de dia passado com
+`saldoIni + entradasConf − saidasConf`, só o que foi confirmado, então nada
+ali se move.
+
+**Mês fechado continua sem projetar nada.** Lá não se presume: a fixa de agosto
+que ninguém confirmou não vira despesa em setembro nem em agosto.
+
 **O saldo final previsto abre a memória de cálculo ao ser clicado.** Ela sai da
 própria cascata: a mesma passagem que soma o saldo classifica cada parcela num
 balde (`Memoria`, em [`NleShared.tsx`](src/components/novoLancamentoExtrato/NleShared.tsx)).

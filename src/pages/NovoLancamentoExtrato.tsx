@@ -768,15 +768,37 @@ export default function NovoLancamentoExtrato() {
       faturaEmAberto: 0, faturaEstimada: 0, variaveisARealizar: 0,
       fechamento: 0,
     }
+    // Onde cada fixa cai na cascata, e se ela conta.
+    //
+    //   confirmada           -> no dia dela, como realizado.
+    //   mes fechado, sem confirmar -> nao conta. Nao se presume debito
+    //                          automatico de mes passado (regra de 31/08).
+    //   dia ja passou ou e hoje, sem confirmar -> esta ATRASADA. Conta em
+    //                          HOJE, como previsto.
+    //   dia futuro           -> no dia dela, como previsto.
+    //
+    // A linha da atrasada existia como "pular", e ai a conta vencida e nao
+    // paga sumia do fim do mes. O Radar sempre a contou — projecaoDaConta nao
+    // olha dia nenhum —, entao as duas telas discordavam sobre o mesmo mes.
+    // Medido: 645,00 de diferenca num mes real.
+    //
+    // Lancar em HOJE, e nao no dia vencido, e o que preserva o saldo dos dias
+    // passados: eles sao desenhados so com o que foi confirmado, por outro
+    // caminho, e o "saldo atual" continua batendo com o extrato.
+    const agendadas = todasFixas.flatMap(f => {
+      const diaReal = diaEfetivoFixa(f, ovr, ehAutomatico(f), m, a, totalD)
+      const confirmada = dmMes?.fixasConsolidadas?.[f.id] === true
+      const jaPassou = mesPast || (ehCorrente && diaReal <= diaHoje)
+      if (!confirmada && mesPast) return []
+      const valor = jaPassou ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
+      const dia = (!confirmada && jaPassou) ? diaHoje : diaReal
+      return [{ f, dia, confirmada, valor }]
+    })
+
     const res: Record<number,number> = {}
     for (let d = 1; d <= totalD; d++) {
-      const dPast = mesPast || (ehCorrente && d < diaHoje)
-      const dHoje = ehCorrente && d === diaHoje
-      todasFixas.filter(f => diaEfetivoFixa(f, ovr, ehAutomatico(f), m, a, totalD) === d)
-        .forEach(f => {
-          const confirmada = dmMes?.fixasConsolidadas?.[f.id] === true
-          if ((dPast || dHoje) && !confirmada) return
-          const v = (dPast || dHoje) ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
+      agendadas.filter(x => x.dia === d)
+        .forEach(({ f, confirmada, valor: v }) => {
           if (f.tipo === 'entrada') {
             saldo += v; entradas += v
             if (confirmada) mem.entradasReais += v
