@@ -423,6 +423,44 @@ Menor, também aberta: Lançamentos decide a conta da fixa por
 `contaDaFixaNoMes` (respeita a troca do mês) e a projeção por
 `contaDaCategoria` (só o cadastro). Muda o endereço, não o total.
 
+**O cenário da previsão é escolha do usuário: pessimista, moderado ou
+otimista.** A pergunta é uma só — quando uma categoria estoura o planejado, o
+app assume que você compensa em outra? Decidido pelo Guilherme em 10/09/2026.
+
+O que muda é o **nível em que a sobra é cortada no zero**:
+
+| Cenário | Corta em | Assume que |
+|---|---|---|
+| Pessimista | categoria | você gasta todo o resto do planejado |
+| Moderado | grupo | você compensa dentro do grupo |
+| Otimista | total | você compensa em qualquer categoria |
+
+Medido num mês de quatro categorias: reserva de 750, 450 e 270 — saldo final
+de 1.770, 2.070 e 2.250 sobre a mesma conta. E vale a identidade:
+**pessimista − otimista = o estouro total do mês**, porque somar só as sobras
+positivas é o mesmo que descartar os negativos.
+
+**O nível NÃO é o mesmo nos dois lados**, e isso não é descuido. Reduzir a
+saída e reduzir a entrada empurram o saldo para lados opostos, então
+"pessimista" maximiza a saída (corta por categoria) e minimiza a entrada (corta
+no total); "otimista" faz o contrário. Sem isso o nome mentiria em metade do
+cálculo. Quem decide é `nivelDoCenario` em
+[`saldoConta.ts`](src/utils/saldoConta.ts).
+
+**Pessimista é o padrão** — é o comportamento que já estava no ar, e errar para
+menos é o lado certo de errar num app de finanças. `Deps.cenarioPrevisao` é
+opcional justamente para que a ausência signifique isso.
+
+Vive em `user_preferences.cenario_previsao` (text, default `'pessimista'`).
+Aparece em quatro lugares: card próprio em Preferências **com o exemplo que o
+explica**, nome do cenário na barra do saldo final previsto, os três botões
+dentro da memória de cálculo — onde o efeito é visível na hora —, e o nome no
+cartão do Radar.
+
+O exemplo em Preferências é escolhido a dedo: o Vestuário estoura 180 e **não
+há sobra no grupo dele**, que é o único formato em que moderado e otimista dão
+números diferentes. Um exemplo sem esse caso ensina errado.
+
 **Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
 `projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da
 categoria, conta de pagamento do cartão, preferida quando não há nenhuma — e
