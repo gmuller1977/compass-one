@@ -15,13 +15,13 @@ import type { CenarioPrevisao } from '../../utils/saldoConta'
 
 export const CENARIOS: { id: CenarioPrevisao; nome: string; resumo: string; reserva: number }[] = [
   { id: 'pessimista', nome: 'Pessimista',
-    resumo: 'Assume que você gasta todo o resto do planejado, mesmo tendo estourado em outra categoria.',
+    resumo: 'Cada categoria vai usar todo o valor planejado. Quem estourou não devolve, e quem ainda não gastou vai gastar.',
     reserva: 750 },
   { id: 'moderado', nome: 'Moderado',
-    resumo: 'Assume que você compensa dentro do grupo — estourou no mercado, come menos fora.',
+    resumo: 'Cada grupo vai usar todo o valor planejado. O que estourou no mercado sai do que sobrou no restaurante — mas não sai da farmácia.',
     reserva: 450 },
   { id: 'otimista', nome: 'Otimista',
-    resumo: 'Assume que você compensa em qualquer categoria, como uma planilha faz na soma.',
+    resumo: 'O mês inteiro vai usar todo o valor planejado. Qualquer categoria cobre qualquer outra, como sua planilha faz na soma.',
     reserva: 270 },
 ]
 
@@ -48,7 +48,9 @@ export default function CfgCenarioPrevisao({
         Cenário das previsões
       </h3>
       <p style={{ fontSize: 12, color: COR.textoSuave, margin: '0 0 16px', lineHeight: 1.5 }}>
-        Quando uma categoria estoura o planejado, o app assume que você compensa em outra?
+        O saldo previsto reserva o que você ainda vai gastar do plano. A pergunta é
+        <strong> até onde o valor planejado é um bolo só</strong>: se você estourou o mercado,
+        isso tira do restaurante, de qualquer outra categoria, ou de nenhuma?
         A resposta muda o <strong>saldo final previsto</strong> em Lançamentos, no Radar e no Simulador.
       </p>
 
@@ -155,9 +157,12 @@ export default function CfgCenarioPrevisao({
 
         <div style={{ padding: '10px 13px', borderTop: `1px solid ${COR.borda}`,
           fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
-          O Vestuário estourou 180 e não há sobra no grupo dele para cobrir — só o cenário
-          otimista deixa o Lazer pagar essa conta. A diferença entre o pessimista e o otimista
-          é sempre igual ao total estourado no mês.
+          O Vestuário estourou 180 e não há sobra no grupo dele para cobrir — só o otimista
+          deixa o Lazer pagar essa conta. A diferença entre o pessimista e o otimista é sempre
+          igual ao total estourado no mês.
+          <br /><br />
+          Na <strong>receita</strong> a regra se inverte, para o nome não mentir: o pessimista
+          conta com receber menos, o otimista com receber tudo que foi planejado.
         </div>
       </div>
     </div>
