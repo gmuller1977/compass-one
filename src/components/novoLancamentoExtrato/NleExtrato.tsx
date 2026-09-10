@@ -180,6 +180,42 @@ const NOME_CENARIO: Record<CenarioPrevisao, string> = {
 }
 
 /**
+ * O tom do chip do cenario: um violeta so, em tres intensidades.
+ *
+ * NAO e semaforo, de proposito. Verde, vermelho e ambar ja significam "como
+ * voce esta" nesta mesma barra — o proprio numero do saldo e #86efac ou
+ * #fca5a5 —, e um chip amarelo ao lado de um saldo verde faria o olho procurar
+ * uma relacao que nao existe. Pior: ninguem concorda sobre qual cenario e o
+ * verde. Pessimista e a escolha mais SEGURA e o numero mais FEIO ao mesmo
+ * tempo, entao metade das pessoas leria a cor ao contrario.
+ *
+ * Uma cor so, variando de intensidade, comunica a ORDEM entre os tres sem
+ * afirmar juizo nenhum. Mais intenso = mais folga o cenario assume.
+ *
+ * A pilula e clara com texto escuro porque e o unico arranjo que resolve os
+ * dois lados: escurecer a pilula para ganhar contraste de texto a faz sumir no
+ * azul da barra. Medido — texto #2e1065 da 12,8:1 / 11,0:1 / 8,3:1, e a pilula
+ * separa 7,4:1 / 6,3:1 / 4,7:1 do azul e 8,4:1 / 7,2:1 / 5,4:1 do vermelho.
+ */
+const TOM_CENARIO: Record<CenarioPrevisao, string> = {
+  pessimista: '#ede9fe', moderado: '#ddd6fe', otimista: '#c4b5fd',
+}
+
+function ChipCenario({ cenario }: { cenario: CenarioPrevisao }) {
+  return (
+    <span title={`Cenário ${NOME_CENARIO[cenario].toLowerCase()} — altere em Preferências`}
+      style={{
+        display:'inline-block', padding:'1px 8px', borderRadius:999,
+        background: TOM_CENARIO[cenario], color:'#2e1065',
+        fontSize:9.5, fontWeight:700, letterSpacing:.3, whiteSpace:'nowrap',
+        textTransform:'uppercase', verticalAlign:'middle',
+      }}>
+      {NOME_CENARIO[cenario]}
+    </span>
+  )
+}
+
+/**
  * A escolha do cenario, dentro da memoria.
  *
  * Ela mora aqui porque e aqui que o efeito dela aparece: trocar de cenario move
@@ -680,10 +716,11 @@ export default function NleExtrato({
                 onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMemoriaAberta(v=>!v)}}}
                 style={{padding:'14px 16px',display:'flex',alignItems:'center',
                   justifyContent:'space-between',cursor:'pointer'}}>
-                <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)'}}>
-                  Saldo final — {NOMES_MESES[mes]} {ano}
-                  <span style={{marginLeft:5,opacity:.8}}>· {NOME_CENARIO[cenarioPrevisao].toLowerCase()}</span>
-                  <span style={{marginLeft:6,fontSize:9}}>{memoriaAberta?'▲':'▼'}</span>
+                <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)',
+                  display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                  <span>Saldo final — {NOMES_MESES[mes]} {ano}</span>
+                  <ChipCenario cenario={cenarioPrevisao}/>
+                  <span style={{fontSize:9}}>{memoriaAberta?'▲':'▼'}</span>
                 </span>
                 <span style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.5px'}}>
                   {fmt(saldosDia[totalDias]??saldoMes)}
@@ -718,8 +755,10 @@ export default function NleExtrato({
                         {memoriaAberta?'ocultar cálculo':'ver cálculo'}
                       </span>
                     </div>
-                    <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>
-                      {NOMES_MESES[mes]} {ano} · cenário {NOME_CENARIO[cenarioPrevisao].toLowerCase()}
+                    <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:3,
+                      display:'flex',alignItems:'center',gap:7}}>
+                      <span>{NOMES_MESES[mes]} {ano}</span>
+                      <ChipCenario cenario={cenarioPrevisao}/>
                     </div>
                   </div>
                   <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
