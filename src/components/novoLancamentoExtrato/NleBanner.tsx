@@ -20,7 +20,6 @@ type Props = {
   // Modal handlers
   setModalSaldo: (v: ModalSaldoInfo | null) => void
   setModalSaldoValor: (v: string) => void
-  saldoSugerido: Record<string, string>
   // Bancos
   contasExtrato: Conta[]
   contaIdEfetivo: string
@@ -32,7 +31,7 @@ export default function NleBanner({
   saldoBase, saldoBasePrevisto, totalEntradas, totalSaidas, saldoMes,
   mes, ano,
   saldoBancoSalvo,
-  setModalSaldo, setModalSaldoValor, saldoSugerido,
+  setModalSaldo, setModalSaldoValor,
   contasExtrato, contaIdEfetivo, onContaSelect,
 }: Props) {
   if (isMobile || (tabPrincipal !== 'extrato' && tabPrincipal !== 'dinheiro')) return null
@@ -46,12 +45,22 @@ export default function NleBanner({
   const diferenca     = saldoBancoNum > 0 ? saldoBancoNum - saldoMes : null
   const conciliado    = diferenca !== null && Math.abs(diferenca) < 0.01
 
+  /**
+   * O modal sugere o SALDO ATUAL — o mesmo numero da caixa logo acima dele.
+   *
+   * Vinha de `saldoSugerido`, uma terceira conta que faz
+   * `saldoInicial do cadastro + lancamentos DO MES`: ela ignora os meses
+   * anteriores, as fixas confirmadas e a fatura. Numa conta com historico o
+   * numero sugerido nao era o de tela nenhuma.
+   *
+   * A pergunta da conciliacao e "achamos que voce tem X, quanto o banco diz?".
+   * O X tem de ser o X que a tela mostra.
+   */
   function abrirModal() {
+    setModalSaldoValor(fmt(saldoMes))
     if (isDinheiro) {
-      setModalSaldoValor('')
       setModalSaldo({ contaId: 'dinheiro', banco: 'Dinheiro', icone: '💵', cor: '#16a34a', key: chaveAtual })
     } else if (contaInfo) {
-      setModalSaldoValor(saldoSugerido[contaIdEfetivo] ?? '')
       setModalSaldo({ contaId: contaIdEfetivo, banco: contaInfo.banco, icone: contaInfo.icone, cor: contaInfo.cor, key: chaveAtual })
     }
   }

@@ -1289,7 +1289,6 @@ export default function NovoLancamentoExtrato() {
             saldoBancoSalvo={mesDados.saldoBanco ?? ''}
             setModalSaldo={setModalSaldo}
             setModalSaldoValor={setModalSaldoValor}
-            saldoSugerido={saldoSugerido}
             contasExtrato={contasExtrato}
             contaIdEfetivo={contaIdEfetivo}
             onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}
