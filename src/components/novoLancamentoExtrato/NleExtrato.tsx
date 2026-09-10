@@ -31,6 +31,7 @@ type Props = {
   /** De onde veio o saldo final previsto, parcela por parcela. */
   memoria: Memoria
   cenarioPrevisao: CenarioPrevisao
+  setCenarioPrevisao: (v: CenarioPrevisao) => void
   totalEntradas: number
   totalSaidas: number
   contas: Conta[]
@@ -179,26 +180,43 @@ const NOME_CENARIO: Record<CenarioPrevisao, string> = {
 }
 
 /**
- * Qual cenario formou este numero — so a legenda, sem botao.
+ * A escolha do cenario, dentro da memoria.
  *
- * Chegou a ter os tres botoes aqui, e foi tirado: o cenario muda o saldo
- * previsto de TODAS as telas, e um controle desses no rodape de uma caixa de
- * saldo se troca sem querer. A escolha vive em Preferencias, junto do exemplo
- * que a explica; aqui fica so o nome, para o numero nao ser anonimo.
+ * Ela mora aqui porque e aqui que o efeito dela aparece: trocar de cenario move
+ * a linha "Gastos variaveis a realizar" e o total, na mesma tela. Em
+ * Preferencias fica a explicacao com exemplo; aqui fica o botao.
  */
-function LegendaCenario({ atual }: { atual: CenarioPrevisao }) {
+function EscolhaCenario({ atual, onEscolher, fundo }: {
+  atual: CenarioPrevisao
+  onEscolher: (v: CenarioPrevisao) => void
+  fundo: string
+}) {
   return (
-    <div style={{ paddingTop:9, marginTop:8, borderTop:'1px solid rgba(255,255,255,.18)',
-      fontSize:10, color:'rgba(255,255,255,.75)' }}>
-      Cenário <strong style={{ color:'#fff', fontWeight:700 }}>{NOME_CENARIO[atual].toLowerCase()}</strong>
-      {' '}— altere em Preferências
+    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap',
+      paddingTop:10, marginTop:8, borderTop:'1px solid rgba(255,255,255,.18)' }}>
+      <span style={{ fontSize:10, color:'rgba(255,255,255,.75)', letterSpacing:.3 }}>Cenário</span>
+      <div style={{ display:'flex', gap:4 }}>
+        {(['pessimista','moderado','otimista'] as CenarioPrevisao[]).map(c => {
+          const on = c === atual
+          return (
+            <button key={c} onClick={() => onEscolher(c)} aria-pressed={on}
+              style={{ padding:'3px 9px', borderRadius:999, border:'none', cursor:'pointer',
+                fontFamily:'inherit', fontSize:10.5, fontWeight:on?700:500,
+                background: on ? '#fff' : 'rgba(255,255,255,.14)',
+                color: on ? fundo : '#fff' }}>
+              {NOME_CENARIO[c]}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-function MemoriaSaldo({ m, positivo, cenario }: {
+function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
   m: Memoria; positivo: boolean
   cenario: CenarioPrevisao
+  onCenario: (v: CenarioPrevisao) => void
 }) {
   // Fundo PROPRIO, e nao o do cartao. A caixa do mobile usa COR.azulMedio
   // (#2563eb), mais claro que o limite de #1e40af do CLAUDE.md — sobre ele o
@@ -239,7 +257,7 @@ function MemoriaSaldo({ m, positivo, cenario }: {
       borderRadius:'0 0 12px 12px',borderTop:'1px solid rgba(255,255,255,.18)'}}>
       {linhas.map(([r,v,a]) => linha(r,v,a))}
       {linha('Saldo final previsto', m.fechamento, '', true)}
-      <LegendaCenario atual={cenario} />
+      <EscolhaCenario atual={cenario} onEscolher={onCenario} fundo={fundo} />
     </div>
   )
 }
@@ -257,7 +275,7 @@ export default function NleExtrato({
   isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
   fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes, memoria,
-  cenarioPrevisao,
+  cenarioPrevisao, setCenarioPrevisao,
   totalEntradas, totalSaidas,
   contas,
   diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
@@ -672,7 +690,7 @@ export default function NleExtrato({
                 </span>
               </div>
               {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}
-                cenario={cenarioPrevisao}/>}
+                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>}
             </div>
           )}
         </div>
@@ -710,7 +728,7 @@ export default function NleExtrato({
                   </span>
                 </div>
                 {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={positivo}
-                  cenario={cenarioPrevisao}/>}
+                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>}
               </div>
             </div>
           )

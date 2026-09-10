@@ -67,7 +67,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -1282,6 +1282,7 @@ export default function NovoLancamentoExtrato() {
               saldosDia={saldosDia}
               memoria={cascata.memoria}
               cenarioPrevisao={cenarioPrevisao}
+              setCenarioPrevisao={setCenarioPrevisao}
               saldoBase={saldoBaseExibido}
               saldoMes={saldoMes}
               totalEntradas={totalEntradas}
