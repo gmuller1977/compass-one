@@ -81,6 +81,31 @@ depois não entra.
 
 ---
 
+## Congelado
+
+**Lançamentos (banco e dinheiro) e Radar Financeiro estão fechados desde
+10/09/2026.** Só entra correção de bug comprovado; funcionalidade nova e
+mudança de design, não.
+
+O motivo não é burocrático. As três telas passaram por uma rodada longa de
+acerto de cálculo — conciliação na abertura do mês, fixa vencida, variável por
+categoria, cenário de previsão — e hoje concordam entre si **por construção**,
+porque compartilham as funções de [`saldoConta.ts`](src/utils/saldoConta.ts) e
+[`realizadoMes.ts`](src/utils/realizadoMes.ts). Cada regra abaixo tem o número
+medido que a motivou; mexer ali sem reler arrisca reabrir divergência que
+custou um dia inteiro para fechar.
+
+Antes de tocar em cálculo dessas telas: rodar as provas com
+`npx jiti` e conferir que Lançamentos e Radar continuam dando o mesmo número
+para o mesmo mês.
+
+**Fora do congelamento**, por decisão do mesmo dia: Planejamento, Simulador (a
+ser revisado em detalhe), a aba "Resumo mensal" — que vai virar um painel
+dinâmico e por isso não teve o saldo por conta corrigido — e o mobile, que só
+será atacado depois do web.
+
+---
+
 ## Decisões de produto registradas
 
 **Conciliação** (saldo informado × saldo calculado) existe apenas no **extrato
