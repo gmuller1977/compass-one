@@ -443,11 +443,20 @@ function movimentoRealDoMes(
 }
 
 /**
- * Saldo REALIZADO de uma conta ao fim de um mês: o que o extrato explica.
- * Mês futuro devolve o saldo de hoje, porque saldoFinalConta acumula até o mês
- * pedido e para.
+ * Saldo REALIZADO de um alvo — conta de banco ou dinheiro — ao fim de um mês.
+ *
+ * É com este número que o mês seguinte ABRE, nas duas telas: o Radar chama por
+ * `detalharMes` e `saldoBancosEDinheiro`, e Lançamentos chama direto. Ter as
+ * duas na mesma função é o que impede a abertura de um mês de discordar do
+ * fechamento do anterior.
+ *
+ * Para banco, o saldo informado na conciliação vence — ver `saldoFinalConta`.
+ * O dinheiro não tem esse caminho: `saldoFinalDinheiro` só acumula lançamentos.
+ *
+ * Mês futuro devolve o saldo de hoje, porque `saldoFinalConta` acumula até o
+ * mês pedido e para.
  */
-function saldoRealizadoConta(alvo: string, ano: number, mes: number, deps: Deps): number {
+export function saldoRealizadoConta(alvo: string, ano: number, mes: number, deps: Deps): number {
   if (alvo === 'dinheiro') return saldoFinalDinheiro(ano, mes, deps)
   const conta = deps.contas.find(c => c.id === alvo)
   return conta ? saldoFinalConta(conta, ano, mes, deps) : 0

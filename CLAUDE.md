@@ -397,12 +397,27 @@ tela cujo trabalho é avisar que o dinheiro vai faltar.
 | Planejamento | se o plano se cumprir | `calcSaldos` |
 | Simulador | e se eu comprar em 6× | `serieBase` + parcelas |
 
-**Divergência conhecida e ainda aberta:** Lançamentos parte do saldo de
-CADASTRO da conta (`acumuladoAte`) e nunca lê o saldo informado na conciliação;
-`saldoFinalConta`, que o Radar usa, parte do último informado. As duas telas
-mostram a mesma conta com números diferentes sempre que existe conciliação com
-diferença — 4.300 num cenário medido. A correção é `acumuladoAte` sair de cena
-em favor de `saldoFinalConta`.
+**Um mês ABRE com o fechamento do anterior, e é uma função só.**
+`saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
+chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
+`aberturaDe`. Resolvido em 10/09/2026.
+
+Antes Lançamentos tinha o `acumuladoAte`, que partia do saldo de **cadastro** da
+conta e reacumulava tudo desde então, sem nunca ler o saldo informado na
+conciliação. Com uma conciliação de diferença as duas telas mostravam a mesma
+conta com números diferentes — 4.300 num cenário medido — e o saldo final
+previsto saía torto pelo mesmo tanto, para mais ou para menos conforme o que
+tinha faltado lançar.
+
+**A conciliação do mês EXIBIDO fica de fora, de propósito.** A caixa mostra
+"informado − calculado"; se o calculado virasse o informado, a diferença daria
+zero para sempre e a caixa viraria enfeite. Mês passado já foi conferido com o
+banco, então lá o informado vence e não há o que investigar. É a distinção que
+`saldoFinalConta` já fazia.
+
+O **dinheiro** não tem esse caminho: `saldoFinalDinheiro` só acumula lançamentos,
+e o saldo informado da carteira não entra na base em tela nenhuma. As duas
+concordam, então não é divergência — é uma lacuna, e das duas pontas.
 
 Menor, também aberta: Lançamentos decide a conta da fixa por
 `contaDaFixaNoMes` (respeita a troca do mês) e a projeção por

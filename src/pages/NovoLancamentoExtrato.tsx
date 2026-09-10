@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import { valorFixaNoMes } from '../utils/valorFixa'
-import { faltaVariavelDoMes, type Deps as DepsSaldo } from '../utils/saldoConta'
+import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
 import TutorialCard from '../components/TutorialCard'
@@ -333,7 +333,6 @@ export default function NovoLancamentoExtrato() {
         .map(c => c.descricao!.trim())
     : []
   const contaInfo     = contas.find(c => c.id === contaIdEfetivo)
-  const SALDO_INICIAL = isDinheiro ? saldoInicialDinheiro : (contaInfo?.saldoInicial ?? 0)
   const totalDias = diasNoMes(mes, ano)
   const eMesAtual = mes===mesHoje && ano===anoHoje
   const key       = mesKey(contaIdEfetivo, ano, mes)
@@ -549,60 +548,30 @@ export default function NovoLancamentoExtrato() {
     setEscolherContaFixa(null)
   }
 
-  // Acumulado realizado dos meses ANTERIORES a (aLim, mLim). O corpo e o de
-  // sempre; so o limite virou parametro, para a cadeia poder partir do mes
-  // corrente em vez do mes exibido.
-  const acumuladoAte = useCallback((aLim: number, mLim: number) => {
-    let acc = SALDO_INICIAL
-    for (const [k, dadosK] of Object.entries(dados)) {
-      if (!k.startsWith(`${contaIdEfetivo}-`)) continue
-      const sufixo = k.slice(-7)
-      const ky = parseInt(sufixo.slice(0, 4))
-      const km = parseInt(sufixo.slice(5, 7)) - 1
-      if (isNaN(ky) || isNaN(km)) continue
-      if (ky > aLim || (ky === aLim && km >= mLim)) continue
-      for (const itens of Object.values(dadosK.lancamentos ?? {}))
-        for (const item of itens)
-          acc += item.tipo === 'entrada' ? item.valor : -item.valor
-      const planoAno = planos[ky]
-      for (const [catId, confirmed] of Object.entries(dadosK.fixasConsolidadas ?? {})) {
-        if (!confirmed) continue
-        const fixasOvr = dadosK.fixasValorOverride ?? {}
-        if (catId.startsWith('cartao-')) {
-          const cardId = catId.slice(7)
-          const override = fixasOvr[catId]
-          if (override !== undefined && override > 0) { acc -= override; continue }
-          const cartaoConta = contas.find(c => c.id === cardId)
-          const bOffset = cartaoConta && (cartaoConta.diaVencimento ?? 1) < (cartaoConta.diaFechamento ?? 1) ? 1 : 0
-          let bMes = km - bOffset, bAno = ky
-          if (bMes < 0) { bMes += 12; bAno-- }
-          const dm = (faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>)[mesKey(cardId, bAno, bMes)]
-          if (dm?.lancamentos) {
-            const tdm = new Date(bAno, bMes + 1, 0).getDate()
-            let total = 0
-            for (let d = 1; d <= tdm; d++) {
-              ;(dm.lancamentos[d] ?? []).forEach((l: { tipo: string; valor: number }) => {
-                l.tipo === 'entrada' ? total += l.valor : total -= l.valor  // entrada=Compra, saida=Estorno
-              })
-            }
-            if (total > 0) acc -= total
-          }
-        } else {
-          const cat = categorias.find(c => c.id === catId)
-          if (!cat) continue
-          // Valoracao compartilhada com o mes corrente. Ver utils/valorFixa: as
-          // duas versoes casavam a linha do plano de formas diferentes, e o saldo
-          // final de um mes nao batia com o saldo inicial do seguinte.
-          const valor = valorFixaNoMes(cat, planoAno, km, categorias, fixasOvr[catId])
-          if (valor <= 0) continue
-          acc += cat.tipo === 'entrada' ? valor : -valor
-        }
-      }
-    }
-    return acc
-  }, [SALDO_INICIAL, dados, contaIdEfetivo, categorias, planos, faturaData, saldoInicialDinheiro])
-
-  const saldoBase = useMemo(() => acumuladoAte(ano, mes), [acumuladoAte, ano, mes])
+  /**
+   * O saldo com que um mes ABRE: o fechamento realizado do mes anterior.
+   *
+   * Mes aberto abre com o fechamento previsto do anterior; mes fechado, com o
+   * realizado. E encadeamento, e por isso sai da MESMA funcao que o Radar usa.
+   *
+   * Antes era o acumuladoAte, que partia do saldo de CADASTRO da conta e
+   * reacumulava tudo desde entao — nunca lia o saldo informado na conciliacao.
+   * Com uma conciliacao de diferenca, as duas telas mostravam a mesma conta
+   * com numeros diferentes: 4.300 num caso medido, e o saldo final previsto
+   * saia torto pelo mesmo tanto.
+   *
+   * A conciliacao do mes EXIBIDO continua de fora, de proposito: a caixa de
+   * conciliacao mostra o informado menos o calculado. Se o calculado virasse
+   * o informado, a diferenca daria zero para sempre e a caixa viraria
+   * enfeite. Mes passado ja foi conferido com o banco; nao ha o que
+   * investigar nele.
+   */
+  const aberturaDe = useCallback((a: number, m: number) => {
+    const mAnt = m === 0 ? 11 : m - 1
+    const aAnt = m === 0 ? a - 1 : a
+    return saldoRealizadoConta(contaIdEfetivo, aAnt, mAnt, depsSaldo)
+  }, [contaIdEfetivo, depsSaldo])
+  const saldoBase = useMemo(() => aberturaDe(ano, mes), [aberturaDe, ano, mes])
 
   // Mes futuro abre com o PREVISTO do mes anterior, nao com o realizado: as
   // fixas que ainda vao cair entre hoje e la ja contam. Encadeia, entao
@@ -831,14 +800,14 @@ export default function NovoLancamentoExtrato() {
     if (!mesFuturo) return saldoBase
     // Parte do acumulado ate ANTES do mes corrente. Usar saldoBase aqui somaria
     // o mes corrente duas vezes: ele ja esta no acumulado do mes exibido.
-    let acc = acumuladoAte(anoHoje, mesHoje)
+    let acc = aberturaDe(anoHoje, mesHoje)
     let a = anoHoje, m = mesHoje
     while (a * 100 + m < ano * 100 + mes) {
       acc = cascataDoMes(a, m, acc).fechamento
       m++; if (m > 11) { m = 0; a++ }
     }
     return acc
-  }, [saldoBase, mesFuturo, acumuladoAte, cascataDoMes, ano, mes, anoHoje, mesHoje])
+  }, [saldoBase, mesFuturo, aberturaDe, cascataDoMes, ano, mes, anoHoje, mesHoje])
 
   const cascata = useMemo(
     () => cascataDoMes(ano, mes, saldoBaseExibido),
