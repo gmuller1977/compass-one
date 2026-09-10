@@ -45,6 +45,17 @@ const CENARIOS: {
     comoSoma: 'junta o mês inteiro numa conta só: todo o planejado menos todo o gasto.' },
 ]
 
+/**
+ * Cinza secundário, medido.
+ *
+ * Estava #94a3b8, que dá 2,56:1 sobre branco e 2,46:1 sobre #f8faff — reprova
+ * até o limite de 3:1 de elemento gráfico, e aqui é texto. #64748b é o token
+ * `textoSuave` e dá 4,76:1 e 4,56:1.
+ */
+const CINZA = COR.textoSuave
+/** Para o rodapé, que é o texto mais longo e o menor: 7,58:1 e 7,26:1. */
+const CINZA_FORTE = '#475569'
+
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const num = (v: number) => v.toLocaleString('pt-BR')
 const sinal = (v: number) => `${v >= 0 ? '+' : '−'}${num(Math.abs(v))}`
@@ -77,7 +88,7 @@ const reservaDe = (c: CenarioPrevisao) => parcelasDo(c).reduce((s, p) => s + p.v
 const CEL: React.CSSProperties = { padding: '6px 12px', whiteSpace: 'nowrap' }
 const CEL_N: React.CSSProperties = { ...CEL, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
 const CAB: React.CSSProperties = {
-  ...CEL, fontSize: 9.5, fontWeight: 700, color: '#94a3b8',
+  ...CEL, fontSize: 9.5, fontWeight: 700, color: CINZA,
   textTransform: 'uppercase', letterSpacing: .4, borderBottom: `1px solid ${COR.borda}`,
 }
 const FAIXA: React.CSSProperties = {
@@ -173,7 +184,7 @@ export default function CfgCenarioPrevisao({
                 return (
                   <tr key={l.cat}>
                     <td style={{ ...CEL, color: COR.texto }}>{l.cat}</td>
-                    <td style={{ ...CEL, color: '#94a3b8' }}>{l.grupo}</td>
+                    <td style={{ ...CEL, color: CINZA }}>{l.grupo}</td>
                     <td style={{ ...CEL_N, color: COR.textoSuave }}>{num(l.plano)} − {num(l.gasto)} =</td>
                     <td style={{ ...CEL_N, fontWeight: 700, color: d >= 0 ? '#15803d' : '#b91c1c' }}>
                       {sinal(d)}
@@ -205,7 +216,7 @@ export default function CfgCenarioPrevisao({
                 <tr key={p.rotulo}>
                   <td colSpan={2} style={{ ...CEL, color: COR.texto }}>{p.rotulo}</td>
                   <td style={{ ...CEL_N, color: COR.textoSuave }}>{p.conta} =</td>
-                  <td style={{ ...CEL_N, fontWeight: 700, color: p.valor > 0 ? '#15803d' : '#94a3b8' }}>
+                  <td style={{ ...CEL_N, fontWeight: 700, color: p.valor > 0 ? '#15803d' : CINZA }}>
                     {p.valor > 0 ? `+${num(p.valor)}` : '0'}
                   </td>
                 </tr>
@@ -253,21 +264,21 @@ export default function CfgCenarioPrevisao({
         </div>
 
         {/* os outros dois, para comparar sem precisar trocar */}
-        <div style={{ borderTop: `1px solid ${COR.borda}`, background: '#f8faff', padding: '9px 12px',
-          fontSize: 11, color: '#94a3b8', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-          <span>Nos outros cenários esse saldo seria:</span>
+        <div style={{ borderTop: `1px solid ${COR.borda}`, background: '#f8faff', padding: '10px 12px',
+          fontSize: 11.5, color: CINZA }}>
+          <div style={{ marginBottom: 5 }}>Nos outros cenários esse saldo seria:</div>
           {CENARIOS.filter(c => c.id !== cenarioPrevisao).map(c => (
-            <span key={c.id}>
-              {c.nome}{' '}
-              <strong style={{ color: COR.textoSuave, fontVariantNumeric: 'tabular-nums' }}>
+            <div key={c.id} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '2px 0' }}>
+              <span style={{ flex: 1, minWidth: 0 }}>{c.nome}</span>
+              <span style={{ fontWeight: 700, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
                 {brl(SALDO_HOJE - reservaDe(c.id))}
-              </strong>
-            </span>
+              </span>
+            </div>
           ))}
         </div>
 
         <div style={{ padding: '10px 12px', borderTop: `1px solid ${COR.borda}`,
-          fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+          fontSize: 11.5, color: CINZA_FORTE, lineHeight: 1.55 }}>
           O Vestuário estourou 180 e não há sobra no grupo dele para cobrir — só o otimista
           deixa o Lazer pagar essa conta. A diferença entre o pessimista e o otimista é sempre
           igual ao total estourado no mês.
