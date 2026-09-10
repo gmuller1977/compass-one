@@ -216,11 +216,15 @@ function ChipCenario({ cenario }: { cenario: CenarioPrevisao }) {
 }
 
 /**
- * A escolha do cenario, dentro da memoria.
+ * A escolha do cenario, no TOPO da memoria.
  *
  * Ela mora aqui porque e aqui que o efeito dela aparece: trocar de cenario move
  * a linha "Gastos variaveis a realizar" e o total, na mesma tela. Em
  * Preferencias fica a explicacao com exemplo; aqui fica o botao.
+ *
+ * Estava no rodape e ninguem achava: a barra do saldo vive no PE da tela e o
+ * painel abre para baixo, entao a ultima linha caia fora da vista. No topo ela
+ * tambem se le melhor — e a premissa do calculo que vem logo abaixo.
  */
 function EscolhaCenario({ atual, onEscolher, fundo }: {
   atual: CenarioPrevisao
@@ -229,7 +233,7 @@ function EscolhaCenario({ atual, onEscolher, fundo }: {
 }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap',
-      paddingTop:10, marginTop:8, borderTop:'1px solid rgba(255,255,255,.18)' }}>
+      paddingBottom:9, marginBottom:6, borderBottom:'1px solid rgba(255,255,255,.18)' }}>
       <span style={{ fontSize:10, color:'rgba(255,255,255,.75)', letterSpacing:.3 }}>Cenário</span>
       <div style={{ display:'flex', gap:4 }}>
         {(['pessimista','moderado','otimista'] as CenarioPrevisao[]).map(c => {
@@ -291,9 +295,9 @@ function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
   return (
     <div style={{padding:'10px 20px 12px',background:fundo,
       borderRadius:'0 0 12px 12px',borderTop:'1px solid rgba(255,255,255,.18)'}}>
+      <EscolhaCenario atual={cenario} onEscolher={onCenario} fundo={fundo} />
       {linhas.map(([r,v,a]) => linha(r,v,a))}
       {linha('Saldo final previsto', m.fechamento, '', true)}
-      <EscolhaCenario atual={cenario} onEscolher={onCenario} fundo={fundo} />
     </div>
   )
 }
