@@ -8,9 +8,11 @@ import type { CenarioPrevisao } from '../../utils/saldoConta'
  * resposta não significa nada — os três nomes soam como intensidade, e não
  * como uma regra de cálculo.
  *
- * O exemplo MOSTRA A CONTA. O estouro e a sobra saem de `plano − gasto` à
- * vista, e a reserva do cenário escolhido é somada parcela por parcela até
- * chegar no saldo. Dizer "sobra 350" sem a subtração não ensina ninguém.
+ * O exemplo MOSTRA A CONTA, e numa TABELA SÓ: as categorias, a soma do cenário
+ * escolhido e o saldo dividem as mesmas colunas, então os números caem todos na
+ * mesma vertical. Em tabelas separadas cada uma dimensionava suas colunas
+ * sozinha e nada alinhava. Dizer "sobra 350" sem a subtração ao lado, ou pôr a
+ * subtração sem cabeçalho, também não ensina.
  *
  * A agregação aqui espelha `nivelDoCenario` do saldoConta. É um segundo
  * caminho, e é exatamente o tipo de coisa que costuma divergir neste app — por
@@ -71,6 +73,19 @@ function parcelasDo(cenario: CenarioPrevisao): { rotulo: string; conta: string; 
 
 const reservaDe = (c: CenarioPrevisao) => parcelasDo(c).reduce((s, p) => s + p.valor, 0)
 
+// ── estilos de célula, para as três seções não divergirem ───────────────
+const CEL: React.CSSProperties = { padding: '6px 12px', whiteSpace: 'nowrap' }
+const CEL_N: React.CSSProperties = { ...CEL, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
+const CAB: React.CSSProperties = {
+  ...CEL, fontSize: 9.5, fontWeight: 700, color: '#94a3b8',
+  textTransform: 'uppercase', letterSpacing: .4, borderBottom: `1px solid ${COR.borda}`,
+}
+const FAIXA: React.CSSProperties = {
+  padding: '9px 12px', background: '#f8faff', fontSize: 11.5,
+  color: COR.textoSuave, lineHeight: 1.5, borderTop: `1px solid ${COR.borda}`,
+  whiteSpace: 'normal',
+}
+
 export default function CfgCenarioPrevisao({
   cenarioPrevisao, setCenarioPrevisao,
 }: {
@@ -125,28 +140,31 @@ export default function CfgCenarioPrevisao({
         })}
       </div>
 
-      {/* ── o exemplo ─────────────────────────────────────────────────── */}
+      {/* ── o exemplo: uma tabela só, das categorias até o saldo ──────── */}
       <div style={{ border: `1px solid ${COR.borda}`, borderRadius: 10, overflow: 'hidden' }}>
-        <div style={{ padding: '7px 13px', background: '#f8faff', borderBottom: `1px solid ${COR.borda}`,
+        <div style={{ padding: '7px 12px', background: '#f8faff', borderBottom: `1px solid ${COR.borda}`,
           fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: .6 }}>
           Um mês de exemplo
         </div>
 
-        {/* a conta de cada categoria, à vista */}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            {/* Uma coluna elástica e três justas: os números ficam presos à
+                direita e alinham entre as três seções. */}
+            <colgroup>
+              <col />
+              <col style={{ width: '1%' }} />
+              <col style={{ width: '1%' }} />
+              <col style={{ width: '1%' }} />
+            </colgroup>
+
+            {/* 1 ── o mês, categoria por categoria ─────────────────────── */}
             <thead>
               <tr>
-                {[
-                  { t: 'Categoria', a: 'left' as const },
-                  { t: 'Grupo', a: 'left' as const },
-                  { t: 'Planejado − gasto', a: 'right' as const },
-                  { t: '', a: 'right' as const },
-                ].map(h => (
-                  <th key={h.t} style={{ padding: '6px 10px', textAlign: h.a,
-                    fontSize: 9.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase',
-                    letterSpacing: .4, borderBottom: `1px solid ${COR.borda}`, whiteSpace: 'nowrap' }}>{h.t}</th>
-                ))}
+                <th style={{ ...CAB, textAlign: 'left' }}>Categoria</th>
+                <th style={{ ...CAB, textAlign: 'left' }}>Grupo</th>
+                <th style={{ ...CAB, textAlign: 'right' }}>Planejado − gasto</th>
+                <th style={{ ...CAB, textAlign: 'right' }}>Sobra</th>
               </tr>
             </thead>
             <tbody>
@@ -154,106 +172,88 @@ export default function CfgCenarioPrevisao({
                 const d = l.plano - l.gasto
                 return (
                   <tr key={l.cat}>
-                    <td style={{ padding: '6px 10px', color: COR.texto, whiteSpace: 'nowrap' }}>{l.cat}</td>
-                    <td style={{ padding: '6px 10px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{l.grupo}</td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right', whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums', color: COR.textoSuave }}>
-                      {num(l.plano)} − {num(l.gasto)} =
-                    </td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right', whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums', fontWeight: 700,
-                      color: d >= 0 ? '#15803d' : '#b91c1c' }}>
+                    <td style={{ ...CEL, color: COR.texto }}>{l.cat}</td>
+                    <td style={{ ...CEL, color: '#94a3b8' }}>{l.grupo}</td>
+                    <td style={{ ...CEL_N, color: COR.textoSuave }}>{num(l.plano)} − {num(l.gasto)} =</td>
+                    <td style={{ ...CEL_N, fontWeight: 700, color: d >= 0 ? '#15803d' : '#b91c1c' }}>
                       {sinal(d)}
                     </td>
                   </tr>
                 )
               })}
             </tbody>
+
+            {/* 2 ── a soma do cenário escolhido ────────────────────────── */}
+            <tbody>
+              <tr>
+                <td colSpan={4} style={FAIXA}>
+                  O <strong style={{ color: '#1e40af' }}>{escolhido.nome.toLowerCase()}</strong> {escolhido.comoSoma}
+                </td>
+              </tr>
+              <tr>
+                <th colSpan={2} style={{ ...CAB, textAlign: 'left', borderTop: `1px solid ${COR.borda}` }}>
+                  {escolhido.unidade}
+                </th>
+                <th style={{ ...CAB, textAlign: 'right', borderTop: `1px solid ${COR.borda}` }}>
+                  Planejado − gasto
+                </th>
+                <th style={{ ...CAB, textAlign: 'right', borderTop: `1px solid ${COR.borda}` }}>
+                  Sobra
+                </th>
+              </tr>
+              {parcelas.map(p => (
+                <tr key={p.rotulo}>
+                  <td colSpan={2} style={{ ...CEL, color: COR.texto }}>{p.rotulo}</td>
+                  <td style={{ ...CEL_N, color: COR.textoSuave }}>{p.conta} =</td>
+                  <td style={{ ...CEL_N, fontWeight: 700, color: p.valor > 0 ? '#15803d' : '#94a3b8' }}>
+                    {p.valor > 0 ? `+${num(p.valor)}` : '0'}
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <td colSpan={3} style={{ ...CEL, fontWeight: 700, color: COR.texto,
+                  borderTop: `1px solid ${COR.borda}` }}>
+                  Ainda vai gastar
+                </td>
+                <td style={{ ...CEL_N, fontWeight: 700, color: COR.texto,
+                  borderTop: `1px solid ${COR.borda}` }}>
+                  {num(reserva)}
+                </td>
+              </tr>
+            </tbody>
+
+            {/* 3 ── e o saldo ──────────────────────────────────────────── */}
+            <tbody>
+              <tr>
+                <td colSpan={3} style={{ ...CEL, color: COR.textoSuave,
+                  borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }}>
+                  Saldo na conta hoje
+                </td>
+                <td style={{ ...CEL_N, color: COR.texto,
+                  borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }}>
+                  {num(SALDO_HOJE)}
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={3} style={{ ...CEL, color: COR.textoSuave }}>Menos o que ainda vai gastar</td>
+                <td style={{ ...CEL_N, color: '#b91c1c' }}>− {num(reserva)}</td>
+              </tr>
+              <tr>
+                <td colSpan={3} style={{ ...CEL, fontSize: 12.5, fontWeight: 700, color: COR.texto,
+                  borderTop: `2px solid ${COR.borda}`, paddingTop: 9, paddingBottom: 10 }}>
+                  Saldo final previsto
+                </td>
+                <td style={{ ...CEL_N, fontSize: 15, fontWeight: 800, color: '#1e40af',
+                  borderTop: `2px solid ${COR.borda}`, paddingTop: 9, paddingBottom: 10 }}>
+                  {num(SALDO_HOJE - reserva)}
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
 
-        {/* a soma do cenário escolhido, parcela por parcela */}
-        <div style={{ borderTop: `1px solid ${COR.borda}`, background: '#f8faff', padding: '11px 13px' }}>
-          <div style={{ fontSize: 11.5, color: COR.textoSuave, lineHeight: 1.5, marginBottom: 9 }}>
-            O <strong style={{ color: '#1e40af' }}>{escolhido.nome.toLowerCase()}</strong> {escolhido.comoSoma}
-          </div>
-
-          {/* As mesmas três colunas do quadro de cima, e com cabeçalho: sem
-              ele o "2.100 − 2.050" virava adivinhação. */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr>
-                  {[
-                    { t: escolhido.unidade, a: 'left' as const },
-                    { t: 'Planejado − gasto', a: 'right' as const },
-                    { t: 'Sobra', a: 'right' as const },
-                  ].map(h => (
-                    <th key={h.t} style={{ padding: '0 0 5px', textAlign: h.a,
-                      fontSize: 9.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase',
-                      letterSpacing: .4, borderBottom: `1px solid ${COR.borda}`, whiteSpace: 'nowrap' }}>
-                      {h.t}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {parcelas.map(p => (
-                  <tr key={p.rotulo}>
-                    <td style={{ padding: '5px 10px 5px 0', color: COR.texto,
-                      maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.rotulo}
-                    </td>
-                    <td style={{ padding: '5px 10px', textAlign: 'right', whiteSpace: 'nowrap',
-                      color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>
-                      {p.conta} =
-                    </td>
-                    <td style={{ padding: '5px 0 5px 10px', textAlign: 'right', whiteSpace: 'nowrap',
-                      fontWeight: 600, fontVariantNumeric: 'tabular-nums',
-                      color: p.valor > 0 ? '#15803d' : '#94a3b8' }}>
-                      {p.valor > 0 ? `+${num(p.valor)}` : '0'}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan={2} style={{ padding: '7px 10px 0 0', fontWeight: 700, color: COR.texto,
-                    borderTop: `1px solid ${COR.borda}` }}>
-                    Ainda vai gastar
-                  </td>
-                  <td style={{ padding: '7px 0 0 10px', textAlign: 'right', fontWeight: 700,
-                    color: COR.texto, fontVariantNumeric: 'tabular-nums',
-                    borderTop: `1px solid ${COR.borda}` }}>
-                    {num(reserva)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* e o saldo */}
-        <div style={{ borderTop: `1px solid ${COR.borda}`, padding: '11px 13px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 12, marginBottom: 3 }}>
-            <span style={{ flex: 1, color: COR.textoSuave }}>Saldo na conta hoje</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums', color: COR.texto }}>{brl(SALDO_HOJE)}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 12 }}>
-            <span style={{ flex: 1, color: COR.textoSuave }}>Menos o que ainda vai gastar</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums', color: '#b91c1c' }}>− {brl(reserva)}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 7, paddingTop: 8,
-            borderTop: `2px solid ${COR.borda}` }}>
-            <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, color: COR.texto }}>
-              Saldo final previsto
-            </span>
-            <span style={{ fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: '#1e40af' }}>
-              {brl(SALDO_HOJE - reserva)}
-            </span>
-          </div>
-        </div>
-
         {/* os outros dois, para comparar sem precisar trocar */}
-        <div style={{ borderTop: `1px solid ${COR.borda}`, background: '#f8faff', padding: '9px 13px',
+        <div style={{ borderTop: `1px solid ${COR.borda}`, background: '#f8faff', padding: '9px 12px',
           fontSize: 11, color: '#94a3b8', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <span>Nos outros cenários esse saldo seria:</span>
           {CENARIOS.filter(c => c.id !== cenarioPrevisao).map(c => (
@@ -266,7 +266,7 @@ export default function CfgCenarioPrevisao({
           ))}
         </div>
 
-        <div style={{ padding: '10px 13px', borderTop: `1px solid ${COR.borda}`,
+        <div style={{ padding: '10px 12px', borderTop: `1px solid ${COR.borda}`,
           fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
           O Vestuário estourou 180 e não há sobra no grupo dele para cobrir — só o otimista
           deixa o Lazer pagar essa conta. A diferença entre o pessimista e o otimista é sempre
