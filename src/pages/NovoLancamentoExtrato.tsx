@@ -891,7 +891,10 @@ export default function NovoLancamentoExtrato() {
       gravarContaDaFixa(editandoFixaId)
       setEditandoFixaId(null)
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
-      if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
+      // Sem pular para a categoria: editar uma fixa nao e comecar um lancamento
+      // novo. Esse foco existe para o "lancei, quero lancar outro", e aqui ele
+      // jogava o cursor na lista de categorias logo depois do Enter.
+      if (isMobile) setMobileDiaForm(null)
       return
     }
     if (fPag === 'transferencia' && !editandoId) {

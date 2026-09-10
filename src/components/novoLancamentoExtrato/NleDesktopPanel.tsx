@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { ehCartaoCategoria } from '../../utils/categoriaIcone'
 import {
@@ -77,6 +77,17 @@ export default function NleDesktopPanel({
   setFTipo, setFPag, setFCat, setFSubDesc, setFContaFixa, setFContaDestino, setFDesc, setFValor,
   lancar, excluirAtual,
 }: Props) {
+  // Foco inicial na categoria, uma vez por painel — e nao por MONTAGEM DO
+  // ELEMENTO, que era o que o autoFocus fazia.
+  //
+  // Editando uma fixa, o campo de categoria vira um texto fixo (nao se troca a
+  // categoria de uma fixa). Ao salvar, ele volta a ser <select>, e o autoFocus
+  // disparava nessa troca: o Enter que salvou ainda estava em voo e caia no
+  // select recem-focado, abrindo a lista de categorias.
+  //
+  // O array vazio e proposital: so na montagem do painel.
+  useEffect(() => { categoriaSelectRef.current?.focus() }, [])
+
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.
@@ -281,7 +292,7 @@ export default function NleDesktopPanel({
                       return a.localeCompare(b,'pt-BR')
                     })
                   return (
-                    <select ref={categoriaSelectRef} autoFocus
+                    <select ref={categoriaSelectRef}
                       value={fCat}
                       onChange={e => {
                         const nome = e.target.value
