@@ -378,6 +378,36 @@ previsto" no card da Grade, mantendo a troca pelo realizado. Rejeitada no mesmo
 dia — o problema não era a falta de rótulo, era a tela de planejamento mostrar
 realizado onde deveria mostrar plano.
 
+**O Simulador parte do saldo PREVISTO do mês corrente, não do saldo de hoje.**
+A série de `serieBase` chamava `saldoTotalNoFim` sem `comoAbertura`, e para o mês
+corrente isso devolve o realizado. O primeiro ponto ignorava tudo que ainda
+falta pagar no mês — e é ali que cai a primeira parcela. Medido: 4.800 contra
+4.000, com uma conta de 800 em aberto. Corrigido em 10/09/2026.
+
+Do segundo mês em diante a opção não muda nada: mês futuro projeta dos dois
+jeitos. O defeito valia num mês e não nos outros, que é o pior formato para uma
+tela cujo trabalho é avisar que o dinheiro vai faltar.
+
+**Quatro telas respondem "com quanto termino o mês", e é de propósito:**
+
+| Tela | Pergunta | Fonte |
+|---|---|---|
+| Lançamentos | com quanto ESTA conta termina | `cascataDoMes` |
+| Radar | com quanto TUDO termina | `saldoTotalNoFim({comoAbertura:true})` |
+| Planejamento | se o plano se cumprir | `calcSaldos` |
+| Simulador | e se eu comprar em 6× | `serieBase` + parcelas |
+
+**Divergência conhecida e ainda aberta:** Lançamentos parte do saldo de
+CADASTRO da conta (`acumuladoAte`) e nunca lê o saldo informado na conciliação;
+`saldoFinalConta`, que o Radar usa, parte do último informado. As duas telas
+mostram a mesma conta com números diferentes sempre que existe conciliação com
+diferença — 4.300 num cenário medido. A correção é `acumuladoAte` sair de cena
+em favor de `saldoFinalConta`.
+
+Menor, também aberta: Lançamentos decide a conta da fixa por
+`contaDaFixaNoMes` (respeita a troca do mês) e a projeção por
+`contaDaCategoria` (só o cadastro). Muda o endereço, não o total.
+
 **Projeção é do MÊS e da CONTA ao mesmo tempo, e a soma tem de fechar.**
 `projecaoDaConta` atribui cada coisa a uma conta só — conta de débito da
 categoria, conta de pagamento do cartão, preferida quando não há nenhuma — e

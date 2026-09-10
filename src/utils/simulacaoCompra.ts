@@ -123,12 +123,23 @@ export function parcelasQueOPlanoCobre(
   return mesesAte(primeira, fim)
 }
 
-/** A projeção sem a compra, mês a mês, do mês corrente até o fim do plano. */
+/**
+ * A projeção sem a compra, mês a mês, do mês corrente até o fim do plano.
+ *
+ * `comoAbertura` é o que faz o PRIMEIRO ponto valer. Sem ele, o mês corrente
+ * devolve o saldo de HOJE em vez do saldo do dia 30: a série ignorava tudo que
+ * ainda falta pagar no mês, e era otimista justamente onde cai a primeira
+ * parcela. Medido: 4.800 contra 4.000, com uma conta de 800 ainda em aberto.
+ *
+ * Do segundo mês em diante a opção não muda nada — mês futuro já projeta dos
+ * dois jeitos. Ou seja, o defeito valia num mês e não nos outros, que é o pior
+ * formato para uma tela cujo trabalho é avisar que o dinheiro vai faltar.
+ */
 function serieBase(deps: Deps, hoje: Date, fim: Mes): PontoFluxo[] {
   const inicio = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
   return Array.from({ length: mesesAte(inicio, fim) }, (_, i) => {
     const { ano, mes } = somaMes(inicio.ano, inicio.mes, i)
-    const valor = saldoTotalNoFim(ano, mes, deps, { hoje }).valor
+    const valor = saldoTotalNoFim(ano, mes, deps, { comoAbertura: true, hoje }).valor
     return { ano, mes, semCompra: valor, comCompra: valor, parcela: 0 }
   })
 }
