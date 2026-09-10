@@ -41,7 +41,7 @@ export default function RadarFinanceiro() {
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { contas, categorias, planos, extratoData, faturaData, user, saldoInicialDinheiro } = useApp()
+  const { contas, categorias, planos, extratoData, faturaData, user, saldoInicialDinheiro, cenarioPrevisao } = useApp()
 
   useEffect(() => {
     if (!user) return
@@ -113,8 +113,8 @@ export default function RadarFinanceiro() {
   const depsSaldo = useMemo(() => ({
     extratoData: extratoData as Record<string, DadosMes>,
     faturaData: faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>,
-    contas, categorias, planos, saldoInicialDinheiro,
-  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+    contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
 
   // So realizado, em qualquer mes. O Radar e acompanhamento em tempo real: o
   // saldo atual e o que esta no banco hoje, e o mes seguinte abre com ele.
@@ -240,7 +240,7 @@ export default function RadarFinanceiro() {
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
           sublabel={percSaldo === null
             ? (saldoAtual >= 0 ? '↑ positivo' : '↓ negativo')
-            : `Saldo final previsto ${fmt(saldoPrevisto)}${comPlano(percSaldo)}`}
+            : `Saldo final previsto ${fmt(saldoPrevisto)}${comPlano(percSaldo)} · ${cenarioPrevisao}`}
           style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas}>
           {percSaldo !== null && <KpiBarra perc={percSaldo} cor={barCorSobreAzul(percSaldo, true)} />}

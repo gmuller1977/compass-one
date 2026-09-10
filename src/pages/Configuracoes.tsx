@@ -46,7 +46,8 @@ export default function Configuracoes() {
           metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
           setOnboardingCompleto,
-          saldoInicialDinheiro, salvarSaldoInicialDinheiro } = useApp()
+          saldoInicialDinheiro, salvarSaldoInicialDinheiro,
+          cenarioPrevisao, setCenarioPrevisao } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [modalExcluirConta, setModalExcluirConta] = useState(false)
   const [confirmInput,      setConfirmInput]      = useState('')
@@ -720,6 +721,8 @@ export default function Configuracoes() {
               setPercentualAlerta={setPercentualAlerta}
               metodoSugestao={metodoSugestao}
               setMetodoSugestao={setMetodoSugestao}
+              cenarioPrevisao={cenarioPrevisao}
+              setCenarioPrevisao={setCenarioPrevisao}
               setOnboardingCompleto={setOnboardingCompleto}
               navigate={navigate}
               toast={toast}

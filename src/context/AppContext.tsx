@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
@@ -91,6 +92,8 @@ type AppCtx = {
   desvioMinPerc: number
   percentualAlerta: number
   metodoSugestao: string
+  /** Como o saldo previsto agrega a sobra do plano. Ver utils/saldoConta. */
+  cenarioPrevisao: CenarioPrevisao
   saldoInicialDinheiro: number
   perfil: Perfil
   setContas:      Dispatch<SetStateAction<Conta[]>>
@@ -102,6 +105,7 @@ type AppCtx = {
   setDesvioMinPerc: (v: number) => void
   setPercentualAlerta: (v: number) => void
   setMetodoSugestao: (v: string) => void
+  setCenarioPrevisao: (v: CenarioPrevisao) => void
   setSaldoInicialDinheiro: (v: number) => void
   salvarSaldoInicialDinheiro: (v: number) => Promise<void>
   setPerfil: (v: Perfil) => void
@@ -199,6 +203,7 @@ type PrefRow = {
   desvio_min_perc?: number | string | null
   percentual_alerta?: number | string | null
   metodo_sugestao?: string | null
+  cenario_previsao?: string | null
   objetivo_usuario?: string | null
   streak_atual?: number | string | null
   maior_streak?: number | string | null
@@ -314,6 +319,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
   const [percentualAlerta,    setPercentualAlertaState]    = useState(5)
   const [metodoSugestao,      setMetodoSugestaoState]      = useState('media_3_meses')
+  // Pessimista e o padrao porque e o comportamento que ja estava no ar, e
+  // porque errar para menos e o lado certo de errar num app de financas.
+  const [cenarioPrevisao,     setCenarioPrevisaoState]     = useState<CenarioPrevisao>('pessimista')
   const [perfil,              setPerfilState]              = useState<Perfil>({ nome: '', apelido: '' })
   const [onboardingCompleto,  setOnboardingCompletoState]  = useState(false)
   const [objetivoUsuario,     setObjetivoUsuarioState]     = useState('')
@@ -430,6 +438,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDesvioMinPercState(Number(pref?.desvio_min_perc ?? 10))
     setPercentualAlertaState(Number(pref?.percentual_alerta ?? 5))
     setMetodoSugestaoState(pref?.metodo_sugestao ?? 'media_3_meses')
+    setCenarioPrevisaoState(
+      pref?.cenario_previsao === 'moderado' || pref?.cenario_previsao === 'otimista'
+        ? pref.cenario_previsao
+        : 'pessimista')
     setObjetivoUsuarioState(pref?.objetivo_usuario ?? '')
     setMetaSimState(pref?.meta_simulacao ?? null)
     setSaldoInicialDinheiroState(Number(pref?.saldo_inicial_dinheiro ?? 0))
@@ -623,7 +635,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function saveUserPrefs(
     p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null,
-    pa = 5, metodo = 'media_3_meses', sid = 0
+    pa = 5, metodo = 'media_3_meses', sid = 0, cen: CenarioPrevisao = 'pessimista'
   ) {
     if (!canSave()) return
     const uid = userIdRef.current!
@@ -636,6 +648,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       desvio_min_perc: dmp,
       percentual_alerta: pa,
       metodo_sugestao: metodo,
+      cenario_previsao: cen,
       objetivo_usuario: ou || null,
       meta_simulacao: ms ?? null,
       saldo_inicial_dinheiro: sid,
@@ -689,8 +702,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [planosReal])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) return
-    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro)
-  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro])
+    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao)
+  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao])
 
   // ── Funções de update ────────────────────────────────────────────────
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
@@ -711,6 +724,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
   function setPercentualAlerta(v: number) { setPercentualAlertaState(v) }
   function setMetodoSugestao(v: string) { setMetodoSugestaoState(v) }
+  function setCenarioPrevisao(v: CenarioPrevisao) { setCenarioPrevisaoState(v) }
   function setPerfil(v: Perfil) { setPerfilState(v) }
   function setOnboardingCompleto(v: boolean) { setOnboardingCompletoState(v) }
   function setObjetivoUsuario(v: string) { setObjetivoUsuarioState(v) }
@@ -740,7 +754,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveFaturaData(faturaData),
         savePlanosData(planos, 'previsto'),
         savePlanosData(planosReal, 'real'),
-        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro),
+        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao),
       ])
     }
     await supabase.auth.signOut()
@@ -757,13 +771,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{
       user, carregando,
       contas, categorias, extratoData, faturaData, planos,
-      desvioMinPerc, percentualAlerta, metodoSugestao, perfil,
+      desvioMinPerc, percentualAlerta, metodoSugestao, cenarioPrevisao, perfil,
       saldoInicialDinheiro, setSaldoInicialDinheiro: setSaldoInicialDinheiroState, salvarSaldoInicialDinheiro,
       setContas: setContasState, setCategorias: setCategoriasState,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos: setPlanosState,
-      setDesvioMinPerc, setPercentualAlerta, setMetodoSugestao, setPerfil,
+      setDesvioMinPerc, setPercentualAlerta, setMetodoSugestao, setCenarioPrevisao, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
       objetivoUsuario, setObjetivoUsuario,
       metaSim, setMetaSim,

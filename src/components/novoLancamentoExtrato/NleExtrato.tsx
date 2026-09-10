@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
+import type { CenarioPrevisao } from '../../utils/saldoConta'
 import { iconeCategoria, ehCartaoCategoria } from '../../utils/categoriaIcone'
 import {
   COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
@@ -29,6 +30,8 @@ type Props = {
   saldoMes: number
   /** De onde veio o saldo final previsto, parcela por parcela. */
   memoria: Memoria
+  cenarioPrevisao: CenarioPrevisao
+  setCenarioPrevisao: (v: CenarioPrevisao) => void
   totalEntradas: number
   totalSaidas: number
   contas: Conta[]
@@ -172,7 +175,49 @@ const TEMA = {
  * Nada aqui recalcula nada: os numeros vem da mesma passagem que formou o
  * saldo, entao as parcelas fecham no total por construcao.
  */
-function MemoriaSaldo({ m, positivo }: { m: Memoria; positivo: boolean }) {
+const NOME_CENARIO: Record<CenarioPrevisao, string> = {
+  pessimista: 'Pessimista', moderado: 'Moderado', otimista: 'Otimista',
+}
+
+/**
+ * A escolha do cenario, dentro da memoria.
+ *
+ * Ela mora aqui porque e aqui que o efeito dela aparece: trocar de cenario move
+ * a linha "Gastos variaveis a realizar" e o total, na mesma tela. Em
+ * Preferencias fica a explicacao com exemplo; aqui fica o botao.
+ */
+function EscolhaCenario({ atual, onEscolher, fundo }: {
+  atual: CenarioPrevisao
+  onEscolher: (v: CenarioPrevisao) => void
+  fundo: string
+}) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap',
+      paddingTop:10, marginTop:8, borderTop:'1px solid rgba(255,255,255,.18)' }}>
+      <span style={{ fontSize:10, color:'rgba(255,255,255,.75)', letterSpacing:.3 }}>Cenário</span>
+      <div style={{ display:'flex', gap:4 }}>
+        {(['pessimista','moderado','otimista'] as CenarioPrevisao[]).map(c => {
+          const on = c === atual
+          return (
+            <button key={c} onClick={() => onEscolher(c)} aria-pressed={on}
+              style={{ padding:'3px 9px', borderRadius:999, border:'none', cursor:'pointer',
+                fontFamily:'inherit', fontSize:10.5, fontWeight:on?700:500,
+                background: on ? '#fff' : 'rgba(255,255,255,.14)',
+                color: on ? fundo : '#fff' }}>
+              {NOME_CENARIO[c]}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
+  m: Memoria; positivo: boolean
+  cenario: CenarioPrevisao
+  onCenario: (v: CenarioPrevisao) => void
+}) {
   // Fundo PROPRIO, e nao o do cartao. A caixa do mobile usa COR.azulMedio
   // (#2563eb), mais claro que o limite de #1e40af do CLAUDE.md — sobre ele o
   // verde e o vermelho claro reprovariam. Sobre #0f2878 e #7f1d1d a paleta
@@ -212,6 +257,7 @@ function MemoriaSaldo({ m, positivo }: { m: Memoria; positivo: boolean }) {
       borderRadius:'0 0 12px 12px',borderTop:'1px solid rgba(255,255,255,.18)'}}>
       {linhas.map(([r,v,a]) => linha(r,v,a))}
       {linha('Saldo final previsto', m.fechamento, '', true)}
+      <EscolhaCenario atual={cenario} onEscolher={onCenario} fundo={fundo} />
     </div>
   )
 }
@@ -229,6 +275,7 @@ export default function NleExtrato({
   isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
   fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes, memoria,
+  cenarioPrevisao, setCenarioPrevisao,
   totalEntradas, totalSaidas,
   contas,
   diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
@@ -635,13 +682,15 @@ export default function NleExtrato({
                   justifyContent:'space-between',cursor:'pointer'}}>
                 <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)'}}>
                   Saldo final — {NOMES_MESES[mes]} {ano}
+                  <span style={{marginLeft:5,opacity:.8}}>· {NOME_CENARIO[cenarioPrevisao].toLowerCase()}</span>
                   <span style={{marginLeft:6,fontSize:9}}>{memoriaAberta?'▲':'▼'}</span>
                 </span>
                 <span style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.5px'}}>
                   {fmt(saldosDia[totalDias]??saldoMes)}
                 </span>
               </div>
-              {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}/>}
+              {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}
+                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>}
             </div>
           )}
         </div>
@@ -669,14 +718,17 @@ export default function NleExtrato({
                         {memoriaAberta?'ocultar cálculo':'ver cálculo'}
                       </span>
                     </div>
-                    <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>{NOMES_MESES[mes]} {ano}</div>
+                    <div style={{fontSize:10,color:'rgba(255,255,255,.75)',marginTop:2}}>
+                      {NOMES_MESES[mes]} {ano} · cenário {NOME_CENARIO[cenarioPrevisao].toLowerCase()}
+                    </div>
                   </div>
                   <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
                     color:positivo?'#86efac':'#fca5a5'}}>
                     {fmt(sf)}
                   </span>
                 </div>
-                {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={positivo}/>}
+                {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={positivo}
+                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>}
               </div>
             </div>
           )

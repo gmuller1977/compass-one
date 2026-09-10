@@ -46,7 +46,7 @@ const card: React.CSSProperties = {
  * veredito, gráfico e tabela de quatro colunas — tudo correto e ilegível.
  */
 export default function SimCompra({ isMobile }: { isMobile: boolean }) {
-  const { contas, categorias, planos, extratoData, faturaData, saldoInicialDinheiro } = useApp()
+  const { contas, categorias, planos, extratoData, faturaData, saldoInicialDinheiro, cenarioPrevisao } = useApp()
   const navigate = useNavigate()
   const hoje = new Date()
 
@@ -88,8 +88,8 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     faturaData: faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>,
     contas, categorias,
     planos: planos as Record<number, PlanoAnoData | undefined>,
-    saldoInicialDinheiro,
-  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+    saldoInicialDinheiro, cenarioPrevisao,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
 
   const resultado = useMemo(
     () => (pedido ? simularCompra(pedido, deps, { piso: pedido.piso, hoje }) : null),

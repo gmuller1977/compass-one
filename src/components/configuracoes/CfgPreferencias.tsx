@@ -1,6 +1,8 @@
 import { reativarTutoriais } from '../TutorialCard'
 import PageHeader from '../PageHeader'
 import { COR, EmBreve, inputSt } from './CfgShared'
+import CfgCenarioPrevisao from './CfgCenarioPrevisao'
+import type { CenarioPrevisao } from '../../utils/saldoConta'
 
 interface Props {
   desvioMinPerc: number
@@ -9,6 +11,8 @@ interface Props {
   setPercentualAlerta: (v: number) => void
   metodoSugestao: string
   setMetodoSugestao: (v: string) => void
+  cenarioPrevisao: CenarioPrevisao
+  setCenarioPrevisao: (v: CenarioPrevisao) => void
   setOnboardingCompleto: (v: boolean) => void
   navigate: (path: string, options?: { state?: unknown }) => void
   toast: (msg: string, type?: 'success' | 'error' | 'info') => void
@@ -18,6 +22,7 @@ export default function CfgPreferencias({
   desvioMinPerc, setDesvioMinPerc,
   percentualAlerta, setPercentualAlerta,
   metodoSugestao, setMetodoSugestao,
+  cenarioPrevisao, setCenarioPrevisao,
   setOnboardingCompleto,
   navigate, toast,
 }: Props) {
@@ -31,6 +36,11 @@ export default function CfgPreferencias({
           breadcrumb="CONTA"
           title="Preferências"
           subtitle="Personalize o app"
+        />
+
+        <CfgCenarioPrevisao
+          cenarioPrevisao={cenarioPrevisao}
+          setCenarioPrevisao={setCenarioPrevisao}
         />
 
         {/* Card: Exibição */}

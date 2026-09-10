@@ -67,7 +67,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -103,8 +103,9 @@ export default function NovoLancamentoExtrato() {
   // AppContext; o cast atravessa essa diferenca, que nao muda nenhum valor.
   const depsSaldo = useMemo(() => ({
     extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro,
+    cenarioPrevisao,
   }) as unknown as DepsSaldo,
-  [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+  [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
   const fixasCategoria = categorias
     .filter(c => {
       if (!c.fixa || !c.ativa) return false
@@ -1280,6 +1281,8 @@ export default function NovoLancamentoExtrato() {
               mesDados={mesDados}
               saldosDia={saldosDia}
               memoria={cascata.memoria}
+              cenarioPrevisao={cenarioPrevisao}
+              setCenarioPrevisao={setCenarioPrevisao}
               saldoBase={saldoBaseExibido}
               saldoMes={saldoMes}
               totalEntradas={totalEntradas}

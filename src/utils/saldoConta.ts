@@ -5,8 +5,48 @@ import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { construirRealizadoMes } from './realizadoMes'
 import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
 
+/**
+ * Como agregar o que ainda falta gastar e receber do plano.
+ *
+ * O que muda e o NIVEL em que a sobra de uma categoria e cortada no zero.
+ * Cortar por categoria descarta os estouros, e a reserva fica maior; somar
+ * antes de cortar deixa a categoria que estourou ser paga pela que sobrou.
+ *
+ * A diferenca entre os dois extremos e, por identidade, o estouro total do
+ * mes: somar so as sobras positivas descarta os negativos.
+ *
+ *   pessimista  gasta tudo que sobrou e nao recebe o que ja veio adiantado
+ *   moderado    compensa dentro do grupo — comeu fora demais, cozinha mais
+ *   otimista    compensa no total, como uma planilha faz
+ *
+ * O nivel NAO e o mesmo nos dois lados: reduzir a saida e reduzir a entrada
+ * empurram o saldo para lados opostos. "Pessimista" quer o pior saldo, entao
+ * maximiza a saida (corta por categoria) e minimiza a entrada (corta no
+ * total). "Otimista" faz o contrario. "Moderado" usa o grupo nos dois.
+ */
+export type CenarioPrevisao = 'pessimista' | 'moderado' | 'otimista'
+
+type Balde = 'banco' | 'cartao' | 'entrada'
+
+/**
+ * Em que nivel a sobra e cortada no zero, por cenario e por balde.
+ *
+ * Cortar por CATEGORIA descarta os estouros e maximiza o balde; somar no
+ * TOTAL antes de cortar minimiza. Como saida e entrada empurram o saldo para
+ * lados opostos, o cenario aplica niveis opostos aos dois — senao
+ * pessimista seria pessimista na despesa e otimista na receita.
+ */
+function nivelDoCenario(cenario: CenarioPrevisao | undefined, balde: Balde): 'categoria' | 'grupo' | 'total' {
+  if (cenario === 'moderado') return 'grupo'
+  const ehSaida = balde !== 'entrada'
+  const maximiza = cenario === 'otimista' ? !ehSaida : ehSaida
+  return maximiza ? 'categoria' : 'total'
+}
+
 export type Deps = {
   extratoData: Record<string, DadosMes>
+  /** Ausente vale `pessimista`, que e o comportamento historico da saida. */
+  cenarioPrevisao?: CenarioPrevisao
   faturaData: Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
   contas: Conta[]
   categorias: Categoria[]
@@ -272,17 +312,25 @@ export function faltaVariavelDoMes(
     contas, categorias, planoAno: planos[ano],
   })
 
-  let saidaBanco = 0
-  let saidaCartao = 0
-  let entrada = 0
+  /**
+   * Uma linha por categoria, com a sobra AINDA COM SINAL: negativa quer dizer
+   * estouro. O corte no zero acontece depois, no nivel que o cenario pedir —
+   * cortar aqui jogaria fora justamente a informacao que distingue os tres.
+   */
+  type Parcela = { balde: Balde; grupo: string; falta: number }
+  const parcelas: Parcela[] = []
+
   for (const cat of variaveis) {
     const plano = valorFixaNoMes(cat, planos[ano], mes, categorias)
-    if (plano <= 0) continue
-    const mapa = cat.tipo === 'entrada' ? entradasMap : saidasMap
+    const mapa = cat.tipo === "entrada" ? entradasMap : saidasMap
     const k = resolverRealKey(mapa, cat.nome, cat.descricao)
     const feito = k ? mapa[k].total : 0
+    // Sem plano e sem gasto nao ha o que dizer. Sem plano MAS com gasto entra:
+    // e gasto fora do orcamento, e no cenario que compensa ele come a sobra
+    // das outras, que e o que uma planilha faz.
+    if (plano <= 0 && feito <= 0) continue
     const falta = plano - feito
-    if (falta <= 0) continue
+    const grupo = cat.grupo ?? "__sem_grupo__"
 
     // Receita variável entra pela MESMA fórmula. Ficava de fora por medo de
     // chutar entrada, e o resultado era um saldo torto para baixo: o mês
@@ -291,14 +339,14 @@ export function faltaVariavelDoMes(
     // Cartao nao recebe: entrada cai na conta de deposito da categoria.
     if (cat.tipo === 'entrada') {
       const onde = cat.tipoMovimento === 'dinheiro' ? 'dinheiro' : (cat.contaDebitoId ?? padrao)
-      if (onde === alvo) entrada += falta
+      if (onde === alvo) parcelas.push({ balde: 'entrada', grupo, falta })
       continue
     }
 
     if (cat.tipoMovimento === 'cartao') {
       // Com fatura em aberto, a sobra cai nela — quem paga o cartão paga.
       if (refAberta) {
-        if (contaDoCartao === alvo) saidaCartao += falta
+        if (contaDoCartao === alvo) parcelas.push({ balde: 'cartao', grupo, falta })
         continue
       }
       // Sem fatura em aberto que possa receber — fechada, já confirmada, ou
@@ -309,13 +357,33 @@ export function faltaVariavelDoMes(
       //
       // Sobra não sobrevive ao mês. Mês que vem tem plano e limite próprios —
       // gastar menos que o planejado é economia, não saldo acumulado.
-      if ((cat.contaDebitoId ?? padrao) === alvo) saidaBanco += falta
+      if ((cat.contaDebitoId ?? padrao) === alvo) parcelas.push({ balde: 'banco', grupo, falta })
       continue
     }
-    if (contaDaCategoria(cat, padrao) === alvo) saidaBanco += falta
+    if (contaDaCategoria(cat, padrao) === alvo) parcelas.push({ balde: 'banco', grupo, falta })
   }
 
-  return { saidaBanco, saidaCartao, entrada, diaCartao: ref?.diaVencimento }
+  const somar = (balde: Balde) => {
+    const doBalde = parcelas.filter(p => p.balde === balde)
+    switch (nivelDoCenario(deps.cenarioPrevisao, balde)) {
+      case "categoria":
+        return doBalde.reduce((s, p) => s + Math.max(0, p.falta), 0)
+      case "total":
+        return Math.max(0, doBalde.reduce((s, p) => s + p.falta, 0))
+      default: {
+        const porGrupo = new Map<string, number>()
+        for (const p of doBalde) porGrupo.set(p.grupo, (porGrupo.get(p.grupo) ?? 0) + p.falta)
+        return [...porGrupo.values()].reduce((s, v) => s + Math.max(0, v), 0)
+      }
+    }
+  }
+
+  return {
+    saidaBanco: somar('banco'),
+    saidaCartao: somar('cartao'),
+    entrada: somar('entrada'),
+    diaCartao: ref?.diaVencimento,
+  }
 }
 
 function contaPadrao(contas: Conta[]) {
