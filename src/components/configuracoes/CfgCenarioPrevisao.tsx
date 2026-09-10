@@ -27,14 +27,18 @@ const EXEMPLO = [
 
 const SALDO_HOJE = 2520
 
-const CENARIOS: { id: CenarioPrevisao; nome: string; resumo: string; comoSoma: string }[] = [
-  { id: 'pessimista', nome: 'Pessimista',
+const CENARIOS: {
+  id: CenarioPrevisao; nome: string; resumo: string; comoSoma: string
+  /** O que cada linha da soma representa — vira o cabeçalho da coluna. */
+  unidade: string
+}[] = [
+  { id: 'pessimista', nome: 'Pessimista', unidade: 'Categoria',
     resumo: 'Cada categoria vai usar todo o valor planejado. Quem estourou não devolve, e quem ainda não gastou vai gastar.',
     comoSoma: 'soma a sobra de cada categoria, uma por uma. Quem estourou entra como zero — o estouro não vira crédito para as outras.' },
-  { id: 'moderado', nome: 'Moderado',
+  { id: 'moderado', nome: 'Moderado', unidade: 'Grupo',
     resumo: 'Cada grupo vai usar todo o valor planejado. O que estourou no mercado sai do que sobrou no restaurante — mas não sai da farmácia.',
     comoSoma: 'junta as categorias de cada grupo primeiro, e só então soma o que sobrou de cada grupo.' },
-  { id: 'otimista', nome: 'Otimista',
+  { id: 'otimista', nome: 'Otimista', unidade: 'Mês',
     resumo: 'O mês inteiro vai usar todo o valor planejado. Qualquer categoria cobre qualquer outra, como sua planilha faz na soma.',
     comoSoma: 'junta o mês inteiro numa conta só: todo o planejado menos todo o gasto.' },
 ]
@@ -174,29 +178,56 @@ export default function CfgCenarioPrevisao({
             O <strong style={{ color: '#1e40af' }}>{escolhido.nome.toLowerCase()}</strong> {escolhido.comoSoma}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 12 }}>
-            {parcelas.map(p => (
-              <div key={p.rotulo} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ flex: 1, minWidth: 0, color: COR.texto,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.rotulo}</span>
-                <span style={{ color: '#94a3b8', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                  {p.conta} =
-                </span>
-                <span style={{ minWidth: 54, textAlign: 'right', fontWeight: 600,
-                  fontVariantNumeric: 'tabular-nums',
-                  color: p.valor > 0 ? '#15803d' : '#94a3b8' }}>
-                  {p.valor > 0 ? `+${num(p.valor)}` : '0'}
-                </span>
-              </div>
-            ))}
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 5, paddingTop: 6,
-              borderTop: `1px solid ${COR.borda}`, fontWeight: 700, color: COR.texto }}>
-              <span style={{ flex: 1 }}>Ainda vai gastar</span>
-              <span style={{ minWidth: 54, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                {num(reserva)}
-              </span>
-            </div>
+          {/* As mesmas três colunas do quadro de cima, e com cabeçalho: sem
+              ele o "2.100 − 2.050" virava adivinhação. */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr>
+                  {[
+                    { t: escolhido.unidade, a: 'left' as const },
+                    { t: 'Planejado − gasto', a: 'right' as const },
+                    { t: 'Sobra', a: 'right' as const },
+                  ].map(h => (
+                    <th key={h.t} style={{ padding: '0 0 5px', textAlign: h.a,
+                      fontSize: 9.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase',
+                      letterSpacing: .4, borderBottom: `1px solid ${COR.borda}`, whiteSpace: 'nowrap' }}>
+                      {h.t}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {parcelas.map(p => (
+                  <tr key={p.rotulo}>
+                    <td style={{ padding: '5px 10px 5px 0', color: COR.texto,
+                      maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.rotulo}
+                    </td>
+                    <td style={{ padding: '5px 10px', textAlign: 'right', whiteSpace: 'nowrap',
+                      color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>
+                      {p.conta} =
+                    </td>
+                    <td style={{ padding: '5px 0 5px 10px', textAlign: 'right', whiteSpace: 'nowrap',
+                      fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+                      color: p.valor > 0 ? '#15803d' : '#94a3b8' }}>
+                      {p.valor > 0 ? `+${num(p.valor)}` : '0'}
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td colSpan={2} style={{ padding: '7px 10px 0 0', fontWeight: 700, color: COR.texto,
+                    borderTop: `1px solid ${COR.borda}` }}>
+                    Ainda vai gastar
+                  </td>
+                  <td style={{ padding: '7px 0 0 10px', textAlign: 'right', fontWeight: 700,
+                    color: COR.texto, fontVariantNumeric: 'tabular-nums',
+                    borderTop: `1px solid ${COR.borda}` }}>
+                    {num(reserva)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
