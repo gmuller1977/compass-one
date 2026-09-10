@@ -17,7 +17,7 @@ export const seta = (ativa = true) => ({
   fontFamily: 'inherit',
 } as const)
 
-/** Botão central. `largura` fixa para as setas não mudarem de lugar. */
+/** Botão central. `largura` é só um piso — quem manda é o `Reservado`. */
 export const botaoCentral = (largura: number) => ({
   fontSize: 20, fontWeight: 800, color: '#fff',
   border: 'none', background: 'rgba(255,255,255,0.12)',
@@ -37,6 +37,31 @@ export function SeletorAno({ ano, onChange }: { ano: number; onChange: (a: numbe
       <span style={{ ...botaoCentral(96), cursor: 'default', display: 'inline-block' }}>{ano}</span>
       <button onClick={() => onChange(ano + 1)} aria-label="Próximo ano" style={seta()}>›</button>
     </div>
+  )
+}
+
+/**
+ * Reserva a largura do MAIOR rótulo, seja ele qual for.
+ *
+ * Havia um minWidth de 178px, escolhido a olho por "Fevereiro". Ele é um piso,
+ * não um teto: o rótulo que não cabe empurra a borda, e a seta anda. Fevereiro
+ * e Setembro passavam de 178, Maio ficava bem abaixo — e a seta pulava de lugar
+ * a cada mês.
+ *
+ * Os doze nomes ficam empilhados na MESMA célula do grid, invisíveis. A coluna
+ * nasce do maior deles, medido pelo próprio navegador na fonte real. Nenhum
+ * número mágico, e continua certo se a fonte ou os rótulos mudarem.
+ */
+function Reservado({ nomes, ano, atual }: { nomes: string[]; ano: number; atual: string }) {
+  return (
+    <span style={{ display: 'inline-grid', justifyItems: 'center' }}>
+      {nomes.map(n => (
+        <span key={n} aria-hidden style={{ gridArea: '1 / 1', visibility: 'hidden', whiteSpace: 'nowrap' }}>
+          {n} {ano}
+        </span>
+      ))}
+      <span style={{ gridArea: '1 / 1', whiteSpace: 'nowrap' }}>{atual} {ano}</span>
+    </span>
   )
 }
 
@@ -102,10 +127,12 @@ export default function SeletorMesAno({ mes, ano, onSelect, habilitado, compacto
         <button
           onClick={e => { e.stopPropagation(); setAnoCal(ano); setAberto(v => !v) }}
           aria-label="Escolher mês"
-          // Largura fixa pelo maior rótulo ("Fevereiro"). Sem isso as setas
-          // mudam de lugar a cada mês, porque "Maio" é bem mais estreito.
           style={{ ...botaoCentral(compacto ? 110 : 178), fontSize: compacto ? 15 : 20 }}>
-          {compacto ? ABREV[mes] : NOMES_MESES[mes]} {ano}
+          <Reservado
+            nomes={compacto ? ABREV : NOMES_MESES}
+            ano={ano}
+            atual={compacto ? ABREV[mes] : NOMES_MESES[mes]}
+          />
         </button>
 
         <button onClick={() => passo(1)} disabled={!podeAvancar}
