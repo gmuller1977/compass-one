@@ -33,12 +33,26 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
   const spanRef = useRef<HTMLSpanElement>(null)
   /** Ao fechar a edição, o input some. Sem isto o foco voltaria ao body. */
   const devolverFocoRef = useRef(false)
+  /** A edição começou digitando um número, e não por clique ou Enter. */
+  const abriuDigitandoRef = useRef(false)
 
   // Seleciona UMA vez ao abrir. Antes isso vinha de onFocus, que podia
   // disparar de novo e reselecionar o que ja havia sido digitado.
+  //
+  // Aberta DIGITANDO, o cursor vai para o fim: o digito que abriu ja esta no
+  // campo, e selecionar tudo fazia o segundo digito substituir o primeiro —
+  // digitar "50" gravava 0. Aberta por clique ou Enter, seleciona tudo, que e
+  // o comportamento de planilha: redigitar por cima.
   useEffect(() => {
     if (!editando) return
-    requestAnimationFrame(() => inputRef.current?.select())
+    const digitando = abriuDigitandoRef.current
+    abriuDigitandoRef.current = false
+    requestAnimationFrame(() => {
+      const inp = inputRef.current
+      if (!inp) return
+      if (digitando) inp.setSelectionRange(inp.value.length, inp.value.length)
+      else inp.select()
+    })
   }, [editando])
 
   useEffect(() => {
@@ -52,7 +66,12 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       if (motivoBloqueio) toast(motivoBloqueio, 'info')
       return
     }
-    setTemp(inicial ?? (valor > 0 ? valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''))
+    abriuDigitandoRef.current = inicial !== undefined
+    // maximumFractionDigits junto: so o minimum deixa o padrao em 3 casas, e
+    // um valor com mais de dois decimais voltava arredondado diferente.
+    setTemp(inicial ?? (valor > 0
+      ? valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : ''))
     setEditando(true)
   }
 
