@@ -7,7 +7,6 @@ import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
 import PlanGrade from '../components/planejamento/PlanGrade'
-import PlanPlanilha from '../components/planejamento/PlanPlanilha'
 import PlanPainel from '../components/planejamento/PlanPainel'
 import PlanLista from '../components/planejamento/PlanLista'
 
@@ -38,8 +37,7 @@ export default function Planejamento() {
 
   const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: ViewMode =
-    modoParam === 'planilha' ? 'planilha'
-    : modoParam === 'painel' ? 'painel'
+    modoParam === 'painel' ? 'painel'
     : modoParam === 'lista' ? 'lista'
     : 'grade'
 
@@ -66,7 +64,7 @@ export default function Planejamento() {
   }
 
   const viewModeLabels: Record<ViewMode, string> = {
-    grade: 'Grade', planilha: 'Planilha', painel: 'Painel', lista: 'Lista',
+    grade: 'Grade', painel: 'Painel', lista: 'Lista',
   }
 
   return (
@@ -98,7 +96,7 @@ export default function Planejamento() {
           display: 'flex', alignItems: 'center', gap: 4,
           padding: '8px 12px', background: COR.branco, borderBottom: `1px solid ${COR.borda}`,
         }}>
-          {(['grade', 'planilha', 'painel', 'lista'] as ViewMode[]).map(v => (
+          {(['grade', 'painel', 'lista'] as ViewMode[]).map(v => (
             <button
               key={v}
               onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
@@ -139,20 +137,6 @@ export default function Planejamento() {
           />
         ) : viewMode === 'painel' ? (
           <PlanPainel
-            anoAtual={anoAtual}
-            mesAtual={plan.mesAtual}
-            dadosAtivos={dadosAtivos}
-            previsto={totaisAtivos}
-            categorias={plan.categorias}
-            onSave={handleSave}
-            onBulkSave={handleBulkSave}
-            objetivos={plan.objetivos}
-            sobraPrevista={sobraPrevista}
-            onMetaSave={plan.editarMetas}
-            dadosAnoAnterior={plan.planoAnoAnterior}
-          />
-        ) : viewMode === 'planilha' ? (
-          <PlanPlanilha
             anoAtual={anoAtual}
             mesAtual={plan.mesAtual}
             dadosAtivos={dadosAtivos}

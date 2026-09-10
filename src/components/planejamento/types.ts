@@ -5,7 +5,12 @@ export function nomeExibicao(cat: Cat) {
 }
 export type AnoData = { saldoInicialJan: number; entradas: Cat[]; saidas: Cat[] }
 export type Editando = { tipo: 'e' | 's'; row: number; mes: number } | null
-export type ViewMode = 'grade' | 'planilha' | 'painel' | 'lista'
+/**
+ * A Planilha saiu em 10/09/2026, substituida pelo Painel: as duas mostravam a
+ * mesma coisa, e a Planilha carregava copias proprias do agrupamento e da soma
+ * de grupo. Link antigo com ?modo=planilha cai na Grade, que e o padrao.
+ */
+export type ViewMode = 'grade' | 'painel' | 'lista'
 export type Aba = 'meu-plano' | 'realizado' | 'revisao'
 
 // Motivos de bloqueio de edicao — mostrados ao clicar na celula, para o clique

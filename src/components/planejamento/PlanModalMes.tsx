@@ -1,11 +1,13 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat } from './types'
+import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat, type Saldos } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import type { Categoria } from '../../context/AppContext'
 
 interface Props {
   mes: number
   dadosPrevisto: AnoData
+  /** Os mesmos totais das outras telas — ver o comentario em teTotal. */
+  previsto: Saldos
   hasFaturaCat: boolean
   planoRef?: AnoData
   categorias: Categoria[]
@@ -37,7 +39,7 @@ function groupCats(items: CatIdx[]): [string, CatIdx[]][] {
 }
 
 export default function PlanModalMes({
-  mes, dadosPrevisto, hasFaturaCat,
+  mes, dadosPrevisto, previsto, hasFaturaCat,
   categorias, onSave, onClose,
 }: Props) {
   const dadosAtivos = dadosPrevisto
@@ -47,8 +49,14 @@ export default function PlanModalMes({
     ? comIndice(dadosAtivos.saidas).filter(x => x.cat.t !== 'cartao')
     : comIndice(dadosAtivos.saidas)
 
-  const teTotal = dadosAtivos.entradas.reduce((s, c) => s + c.v[mes], 0)
-  const tsTotal = saidasVisiveis.reduce((s, x) => s + x.cat.v[mes], 0)
+  // Os totais saem do MESMO objeto que a Grade, o Painel e a Lista leem.
+  //
+  // Antes eram somados aqui, com um filtro proprio de hasFaturaCat. Davam o
+  // mesmo numero, mas por duas contas que concordavam — o modal nem recebia o
+  // previsto, entao nao tinha como estar certo por construcao. As categorias
+  // continuam vindo de dadosAtivos, que e o que se edita.
+  const teTotal = previsto.totalEntradas[mes]
+  const tsTotal = previsto.totalSaidas[mes]
   const resultado = teTotal - tsTotal
 
   const gruposEntradas = groupCats(entradasIdx)

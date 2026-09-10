@@ -104,6 +104,7 @@ export default function PlanGrade(props: Props) {
         <PlanModalMes
           mes={modalMes}
           dadosPrevisto={dadosPrevisto}
+          previsto={planTotais}
           hasFaturaCat={props.hasFaturaCat}
           planoRef={props.planoRef}
           categorias={props.categorias}
