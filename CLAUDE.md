@@ -139,7 +139,7 @@ que a ação sobrescreve o ano. Não unificar.
 Vale lembrar a divisão: o **Onboarding não cria plano** — ele cadastra contas,
 cartões e categorias, e no fim manda para o wizard. O **wizard** preenche os
 valores, mas replica o mesmo valor em todos os meses. Ajuste mês a mês só na
-Grade, Planilha ou Lista.
+Grade, Painel ou Lista.
 
 **O Radar é acompanhamento em tempo real: só realizado.** O saldo inicial é o
 saldo real com que o mês abriu, entradas e saídas são as que aconteceram, o
@@ -359,6 +359,21 @@ Radar**, que soma bancos e dinheiro.
 A outra diferença legítima é o clamp: a planilha faz `previsto − realizado` no
 total, então categoria que estourou abate a que sobrou. O app calcula por
 categoria e para no zero, por decisão registrada acima.
+
+**O Planejamento tem UMA fonte para cada número, e três telas que a leem.**
+Grade, Painel e Lista — mais o modal que abre ao clicar num card da Grade —
+leem saldo inicial, saldo final e os totais do mês do mesmo objeto,
+`plan.previsto`. Grupo se soma com `agrupar` e `somaDoGrupo` de
+[`types.ts`](src/components/planejamento/types.ts), e não há segunda cópia.
+
+**A Planilha foi removida em 10/09/2026**, substituída pelo Painel: mostravam
+a mesma coisa, e ela carregava cópias próprias do agrupamento e da soma de
+grupo. Link antigo com `?modo=planilha` cai na Grade, que é o padrão — não
+quebra favorito nem histórico.
+
+O modal do card também somava os totais do mês por conta própria, com um
+filtro próprio de `hasFaturaCat`. Dava o mesmo número, mas por duas contas que
+concordavam: ele nem recebia o `previsto`. Hoje recebe.
 
 **O Planejamento não mistura realizado com projetado nas categorias.** Receitas
 e Despesas de um mês são **sempre** a soma das categorias do plano, inclusive em
