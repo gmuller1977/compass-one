@@ -216,6 +216,15 @@ function MemoriaSaldo({ m, positivo }: { m: Memoria; positivo: boolean }) {
   )
 }
 
+/**
+ * Como a fixa se chama na lista — o mesmo texto que a linha desenha.
+ *
+ * A fatura nao usa o nome do cartao: ela aparece como "Cartão de Crédito".
+ * Ordenar pelo nome cru colocaria "Nubank" no meio das categorias com N.
+ */
+const rotuloFixa = (f: CatFixa) =>
+  f.id.startsWith('cartao-') ? 'Cartão de Crédito' : f.nome
+
 export default function NleExtrato({
   isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
@@ -269,7 +278,10 @@ export default function NleExtrato({
             const ehHoje  = eMesAtual&&dia===diaHoje
             const passado = eMesAtual?dia<diaHoje:ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
             const semana  = diaSemana(dia,mes,ano)
+            // Em ordem alfabetica: num dia com varias agendadas, a ordem do
+            // cadastro nao ajuda ninguem a achar a que procura.
             const fs      = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
+              .slice().sort((a,b)=>rotuloFixa(a).localeCompare(rotuloFixa(b),'pt-BR'))
             const lsRaw   = mesDados.lancamentos[dia]??[]
             const ls      = lsRaw
             const temItens= fs.length>0||ls.length>0
