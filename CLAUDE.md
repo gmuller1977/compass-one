@@ -487,6 +487,30 @@ no total); "otimista" faz o contrário. Sem isso o nome mentiria em metade do
 cálculo. Quem decide é `nivelDoCenario` em
 [`saldoConta.ts`](src/utils/saldoConta.ts).
 
+**A unidade do corte é do MÊS, não da conta.** "Otimista compensa no total"
+precisa valer entre contas também — e não valia. `faltaVariavelDoMes` recebe uma
+conta e montava as parcelas só dela, então o corte no zero acontecia dentro de
+cada conta e dentro de cada balde. Um estouro no Sicredi não pagava a sobra da
+Caixa, e uma sobra de categoria de cartão não era paga por estouro nenhum de
+banco. Consequência medida numa fixture de duas contas: **otimista devolvia
+exatamente o mesmo número que pessimista** — 400 reservados onde o líquido do
+mês era 0. Corrigido em 11/09/2026.
+
+Banco e cartão entram na mesma unidade porque o balde diz por onde o dinheiro
+sai, não em que nível a sobra é cortada. Entrada continua separada: é o outro
+lado do razão e leva o nível oposto.
+
+O corte agora é feito no mês e o que sobrou volta para as parcelas em
+**proporção à sobra positiva de cada uma**. É a única atribuição que preserva o
+invariante da função — `projecaoDoMes` é a soma de `projecaoDaConta` —, e é a
+mesma ideia de sempre: o rateio não muda o total, só o endereço. No nível
+`categoria` a unidade tem uma parcela só e o fator é 1, então **pessimista não
+mudou em nada**.
+
+Este é o primeiro lugar do app que **divide** dinheiro. A deriva é de ponto
+flutuante e a prova confere a soma: Radar igual à soma das contas nos três
+cenários, com tolerância de 1e-6.
+
 **Pessimista é o padrão** — é o comportamento que já estava no ar, e errar para
 menos é o lado certo de errar num app de finanças. `Deps.cenarioPrevisao` é
 opcional justamente para que a ausência signifique isso.
