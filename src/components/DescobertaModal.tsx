@@ -124,22 +124,26 @@ export default function DescobertaModal({
             ref={btnRef}
             onClick={onFechar}
             style={{
-              flex: '1 1 190px', padding: '12px 20px', border: 'none', borderRadius: 10,
+              flex: '1 1 170px', padding: '12px 20px', border: 'none', borderRadius: 10,
               background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
               color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
               fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(26,86,219,.3)',
+              whiteSpace: 'nowrap',
             }}
           >
-            {fechaHoje ? 'Entendi' : `Esperar ${mes.toLowerCase()} fechar`}
+            {/* "Esperar setembro fechar" quebrava em duas linhas e
+                desequilibrava o par. O bloco acima já diz de qual fechamento
+                se trata — o botão só precisa dizer a escolha. */}
+            {fechaHoje ? 'Entendi' : 'Vou esperar'}
           </button>
 
           <button
             onClick={onMontarPlano}
             style={{
-              flex: '1 1 190px', padding: '12px 20px', borderRadius: 10,
+              flex: '1 1 170px', padding: '12px 20px', borderRadius: 10,
               border: `1.5px solid ${COR.borda}`, background: COR.branco,
               color: COR.texto, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-              fontFamily: 'inherit',
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}
           >
             Montar meu plano agora
