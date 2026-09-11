@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
@@ -6,6 +6,9 @@ import PageHeader from '../components/PageHeader'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
+import { useApp } from '../context/AppContext'
+import DescobertaBanner from '../components/DescobertaBanner'
+import { medirDescoberta } from '../utils/descoberta'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPainel from '../components/planejamento/PlanPainel'
 import PlanLista from '../components/planejamento/PlanLista'
@@ -34,6 +37,7 @@ export default function Planejamento() {
   )
 
   const plan = usePlanejamento(anoAtual)
+  const { planos, extratoData, contas, onboardingCompleto } = useApp()
 
   const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: ViewMode =
@@ -62,6 +66,12 @@ export default function Planejamento() {
   function handleBulkSave(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
     plan.editarMultiplosValores(ops)
   }
+
+  // A fase e DERIVADA: onboarding feito e nenhum plano em lugar nenhum. Ver
+  // utils/descoberta — nao existe campo guardado que possa discordar disso.
+  const descoberta = useMemo(() => medirDescoberta({
+    onboardingCompleto, planos, extratoData, contas,
+  }), [onboardingCompleto, planos, extratoData, contas])
 
   const viewModeLabels: Record<ViewMode, string> = {
     grade: 'Grade', painel: 'Painel', lista: 'Lista',
@@ -118,6 +128,14 @@ export default function Planejamento() {
       )}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* A faixa da fase, acima de qualquer visao: e ela que troca doze
+            cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
+        {descoberta.ativa && (
+          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
+            <DescobertaBanner d={descoberta} />
+          </div>
+        )}
+
         {viewMode === 'grade' ? (
           <PlanGrade
             anoAtual={anoAtual}
