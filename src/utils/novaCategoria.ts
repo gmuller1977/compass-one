@@ -1,5 +1,5 @@
 import type { Categoria, TipoCategoria } from '../context/AppContext'
-import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
+import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
 import { buscarCategoria } from './categoriaIcone'
 
 /**
@@ -31,6 +31,23 @@ export type Contexto = {
   /** A conta em que ele está lançando. Ignorada no dinheiro. */
   contaId?: string
   categorias: Categoria[]
+  /**
+   * Grupo escolhido na caixa. Vence a sugestão — o campo nasce preenchido
+   * com ela, então quando os dois diferem é porque o usuário trocou de
+   * propósito. Vazio ou ausente, vale a sugestão.
+   */
+  grupo?: string
+}
+
+/**
+ * Os grupos que a caixa oferece: os padrão mais os que o usuário já criou.
+ * Sem isso, quem inventou "Filhos" em Configurações não o encontraria aqui e
+ * criaria um segundo grupo com o mesmo propósito.
+ */
+export function gruposDisponiveis(categorias: Categoria[]): string[] {
+  const todos = new Set<string>(GRUPOS_PADRAO)
+  for (const c of categorias) if (c.grupo?.trim()) todos.add(c.grupo.trim())
+  return [...todos].sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }
 
 const normalizar = (s: string) =>
@@ -77,7 +94,7 @@ export function montarCategoria(nomeCru: string, ctx: Contexto): Categoria | Rec
     contaDebitoId: ctx.isDinheiro ? undefined : ctx.contaId,
     icone: sug?.icone ?? '📁',
     cor: sug?.cor ?? '#6b7280',
-    grupo: sug?.grupo ?? 'Outros',
+    grupo: ctx.grupo?.trim() || sug?.grupo || 'Outros',
   }
 }
 

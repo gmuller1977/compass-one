@@ -475,7 +475,10 @@ export default function NleConsolidado({
         {/* Categoria + Valor + Descrição */}
         <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:10}}>
           <div>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:4}}>
+              <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>Categoria</span>
+              <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
+            </div>
             <select ref={categoriaSelectRef} value={fCat}
               onChange={e=>{
                 const nome = e.target.value
@@ -492,7 +495,8 @@ export default function NleConsolidado({
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}>
               <option value="">Selecione...</option>
-              <option value="__nova__">+ Nova categoria…</option>
+              <option value="__nova__" style={{color:'#1a56db',fontWeight:700}}>+ Nova categoria…</option>
+              <option disabled>──────────────</option>
               {categoriasSelect.map(c=>(
                 <option key={c.id} value={c.nome}>{c.nome}</option>
               ))}

@@ -634,7 +634,10 @@ export default function NleExtrato({
                       </div>
                       <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap' as never}}>
                         <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
-                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</div>
+                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
+                            <span style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</span>
+                            <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
+                          </div>
                           <select ref={categoriaSelectRef}
                             value={fCat}
                             onChange={e=>{
@@ -647,7 +650,8 @@ export default function NleExtrato({
                             }}
                             style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                             <option value="">Selecione...</option>
-                            <option value="__nova__">+ Nova categoria…</option>
+                            <option value="__nova__" style={{color:'#1a56db',fontWeight:700}}>+ Nova categoria…</option>
+                            <option disabled>──────────────</option>
                             {(()=>{
                               const grps=new Map<string,Categoria[]>()
                               for(const c of categoriasSelect){const g=c.grupo??'';if(!grps.has(g))grps.set(g,[]);grps.get(g)!.push(c)}

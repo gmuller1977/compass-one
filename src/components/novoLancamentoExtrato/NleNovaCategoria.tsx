@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
-import { montarCategoria, previaDe } from '../../utils/novaCategoria'
+import { montarCategoria, previaDe, gruposDisponiveis } from '../../utils/novaCategoria'
 import type { Categoria, TipoCategoria } from '../../context/AppContext'
 
 /**
@@ -29,12 +29,15 @@ export default function NleNovaCategoria({
   onFechar: () => void
 }) {
   const [nome, setNome] = useState('')
+  // Vazio quer dizer "aceito a sugestao". O select mostra a sugestao
+  // selecionada mesmo assim — o usuario ve o grupo, nao um campo em branco.
+  const [grupo, setGrupo] = useState('')
   const [erro, setErro] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!aberto) return
-    setNome(''); setErro('')
+    setNome(''); setGrupo(''); setErro('')
     inputRef.current?.focus()
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onFechar() }
     document.addEventListener('keydown', onKey)
@@ -45,9 +48,11 @@ export default function NleNovaCategoria({
 
   const previa = previaDe(nome, tipo)
   const ehEntrada = tipo === 'entrada'
+  const grupos = gruposDisponiveis(categorias)
+  const grupoEfetivo = grupo || previa.grupo
 
   function confirmar() {
-    const r = montarCategoria(nome, { tipo, isDinheiro, contaId, categorias })
+    const r = montarCategoria(nome, { tipo, isDinheiro, contaId, categorias, grupo: grupoEfetivo })
     if ('erro' in r) { setErro(r.erro); return }
     onCriar(r)
   }
@@ -95,19 +100,39 @@ export default function NleNovaCategoria({
           }}
         />
 
-        {/* A prévia só aparece quando há o que prever. Mostrar "📁 Outros"
-            para um campo vazio ensinaria que tudo cai em Outros. */}
+        {/* O grupo só aparece depois que há um nome: antes dele não há
+            sugestão nenhuma, e um select em branco no topo pediria uma
+            decisão que o app ainda não sabe se precisa tomar.
+
+            Quando o nome é reconhecido, o campo INFORMA — vem preenchido e
+            ele segue em frente. Quando não é, ele é a única forma de o gasto
+            não virar mais um "Outros", e o texto diz isso. */}
         {nome.trim() && (
-          <div style={{
-            marginTop: 10, display: 'flex', alignItems: 'center', gap: 8,
-            fontSize: 12.5, color: '#475569',
-          }}>
-            <span style={{ fontSize: 17 }}>{previa.icone}</span>
-            <span>
-              {previa.reconhecida
-                ? <>vai para o grupo <b style={{ color: COR.texto }}>{previa.grupo}</b></>
-                : <>não reconheci esse nome — vai para <b style={{ color: COR.texto }}>Outros</b></>}
-            </span>
+          <div style={{ marginTop: 12 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5,
+              fontSize: 12, color: '#475569',
+            }}>
+              <span style={{ fontSize: 16 }}>{previa.icone}</span>
+              <span>
+                {previa.reconhecida
+                  ? <>Grupo sugerido — troque se não for isso</>
+                  : <>Não reconheci esse nome. <b style={{ color: COR.texto }}>Em qual grupo ele entra?</b></>}
+              </span>
+            </div>
+            <select
+              value={grupoEfetivo}
+              onChange={e => setGrupo(e.target.value)}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                border: `1.5px solid ${previa.reconhecida ? COR.borda : '#bfdbfe'}`,
+                borderRadius: 10, padding: '9px 12px', fontSize: 13.5,
+                color: COR.texto, background: previa.reconhecida ? COR.branco : '#eff6ff',
+                outline: 'none', fontFamily: 'inherit',
+              }}
+            >
+              {grupos.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
           </div>
         )}
 

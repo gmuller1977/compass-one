@@ -260,9 +260,17 @@ export default function NleDesktopPanel({
 
           {/* Categoria */}
           <div style={{marginBottom:14}}>
-            <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-              letterSpacing:.5,marginBottom:5}}>
-              🏷 {fPag==='transferencia'?(fTipo==='saida'?'Transferir para':'Receber de'):'Categoria'}
+            {/* O gatilho tambem vive FORA do dropdown. Dentro dele so
+                aparece para quem ja abriu a lista — e quem nao encontra a
+                categoria costuma fechar antes disso. */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:5}}>
+              <span style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+                letterSpacing:.5}}>
+                🏷 {fPag==='transferencia'?(fTipo==='saida'?'Transferir para':'Receber de'):'Categoria'}
+              </span>
+              {fPag !== 'transferencia' && !editandoFixaId && (
+                <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
+              )}
             </div>
             {editandoFixaId ? (
               <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
@@ -311,7 +319,8 @@ export default function NleDesktopPanel({
                       style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                         fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
                       <option value="">Selecione...</option>
-                      <option value="__nova__">+ Nova categoria…</option>
+                      <option value="__nova__" style={{color:'#1a56db',fontWeight:700}}>+ Nova categoria…</option>
+                      <option disabled>──────────────</option>
                       {gruposOrdenados.map(([grupo, cats]) =>
                         grupo ? (
                           <optgroup key={grupo} label={grupo}>
