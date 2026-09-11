@@ -138,6 +138,7 @@ export default function Planejamento() {
 
         {viewMode === 'grade' ? (
           <PlanGrade
+            descoberta={descoberta}
             anoAtual={anoAtual}
             mesAtual={plan.mesAtual}
             dadosPrevisto={plan.dadosPrevistoFinal}

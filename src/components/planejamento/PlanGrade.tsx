@@ -4,8 +4,9 @@ import PlanCardMes from './PlanCardMes'
 import PlanModalMes from './PlanModalMes'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
-import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, janelaQueFecha } from './types'
+import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, janelaQueFecha, MESES_FULL } from './types'
 import type { Categoria } from '../../context/AppContext'
+import type { Descoberta } from '../../utils/descoberta'
 
 interface Props {
   anoAtual: number
@@ -22,6 +23,8 @@ interface Props {
   objetivos: number[]
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
+  /** A fase de observação, quando ela está valendo. Ver utils/descoberta. */
+  descoberta?: Descoberta
 }
 
 export default function PlanGrade(props: Props) {
@@ -39,6 +42,26 @@ export default function PlanGrade(props: Props) {
   const janela = janelaQueFecha(planTotais)
 
   const anoCorrente = new Date().getFullYear()
+
+  /**
+   * O que o cartão cinza diz. Só o mês OBSERVADO muda de texto: ele é o que
+   * está sendo medido e o que vira o primeiro plano ao fechar. Os outros onze
+   * seguem sem plano de verdade, e dizer isso neles continua sendo o certo —
+   * trocar os doze de uma vez só daria a impressão de que o ano inteiro está
+   * em observação.
+   */
+  const { descoberta: desc } = props
+  const textoSemPlano = (mi: number) => {
+    if (!desc?.ativa) return undefined
+    if (anoAtual !== desc.mesObservado.ano || mi !== desc.mesObservado.mes) return undefined
+    const faltam = desc.diasAteFechar
+    return {
+      titulo: 'Descobrindo',
+      sub: faltam <= 0
+        ? `${MESES_FULL[mi]} fecha hoje`
+        : `faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}`,
+    }
+  }
 
   const dadosAtivos = dadosPrevisto
   const bloqueado = false
@@ -78,6 +101,7 @@ export default function PlanGrade(props: Props) {
           const isFuturo = anoAtual > anoCorrente || (anoAtual === anoCorrente && mi > mesAtual)
           return (
             <PlanCardMes
+              semPlanoTexto={textoSemPlano(mi)}
               key={mi}
               mes={mi}
               receitas={planTotais.totalEntradas[mi]}
