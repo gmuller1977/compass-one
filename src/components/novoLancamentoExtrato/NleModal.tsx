@@ -17,6 +17,8 @@ export default function NleModal({
 }: Props) {
   if (!modalSaldo) return null
 
+  const ehDinheiro = modalSaldo.contaId === 'dinheiro'
+
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
       display:'flex',alignItems:'center',justifyContent:'center'}}
@@ -32,11 +34,15 @@ export default function NleModal({
             <span style={{color:modalSaldo.cor,fontWeight:700}}>{modalSaldo.banco}</span>
           </span>
         </div>
+        {/* O dinheiro nao tem banco nem conta: perguntar "saldo no banco" para
+            quem esta conferindo a carteira e pedir a coisa errada. */}
         <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 6px'}}>
-          Qual é o saldo atual no banco?
+          {ehDinheiro ? 'Quanto você tem em espécie agora?' : 'Qual é o saldo atual no banco?'}
         </p>
-        <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 16px'}}>
-          Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.
+        <p style={{fontSize:12,color:'#64748b',margin:'0 0 16px'}}>
+          {ehDinheiro
+            ? 'Conte o que está na carteira para conferir se seus lançamentos estão batendo.'
+            : 'Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.'}
         </p>
         <input autoFocus
           value={modalSaldoValor}

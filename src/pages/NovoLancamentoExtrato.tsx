@@ -393,7 +393,10 @@ export default function NovoLancamentoExtrato() {
     if (tabPrincipal === 'dinheiro') {
       const k = mesKey('dinheiro', ano, mes)
       if (dados[k]?.saldoBancoData === hojeStr) return
-      setModalSaldoValor('')
+      // Sugere o saldo calculado, como no banco. Vinha vazio: a pergunta e
+      // "achamos que voce tem X, quanto tem de verdade?", e sem o X ela vira
+      // so "digite um numero".
+      setModalSaldoValor(fmt(saldoMes))
       setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
       return
     }
