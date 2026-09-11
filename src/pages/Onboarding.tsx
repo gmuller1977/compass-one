@@ -7,6 +7,7 @@ import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 import { COR } from '../utils/cores'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
+import { NOMES_MESES } from '../components/novoLancamentoExtrato/NleShared'
 
 const BANCOS = [
   'Banco do Brasil', 'Bradesco', 'C6 Bank', 'Caixa', 'Inter',
@@ -325,7 +326,7 @@ export default function Onboarding() {
     cartao: 'Etapa 2 de 5 — Seus cartões',
     categorias: 'Etapa 3 de 5 — Tipos de gasto',
     catconfig: 'Etapa 4 de 5 — Configurar categorias',
-    planejamento: 'Etapa 5 de 5 — Seu plano',
+    planejamento: 'Etapa 5 de 5 — Como começar',
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -546,7 +547,7 @@ export default function Onboarding() {
               display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap',
               marginBottom: 28, fontSize: 12, color: 'rgba(255,255,255,.5)',
             }}>
-              {['① Contas', '② Cartões', '③ Categorias', '④ Configurar', '⑤ Plano'].map((s, i) => (
+              {['① Contas', '② Cartões', '③ Categorias', '④ Configurar', '⑤ Começar'].map((s, i) => (
                 <span key={i} style={{
                   background: 'rgba(255,255,255,0.1)', borderRadius: 8,
                   padding: '3px 9px',
@@ -699,14 +700,31 @@ export default function Onboarding() {
           ✨ +20 Aurix de boas-vindas creditados!
         </div>
 
+        {/* Só se chega aqui pela porta "ainda não faço ideia", e por isso o
+            destino é Lançamentos e não o Dashboard: o combinado que a porta
+            fez é registrar um mês. Mandar para um painel vazio seria
+            prometer uma coisa e entregar outra.
+
+            Branco a 0,85 sobre #1a56db (o extremo mais claro do gradiente)
+            dá 4,92:1. A 0,75 daria 4,18:1 e reprovaria. */}
+        <div style={{
+          maxWidth: 360, width: '100%', fontSize: 13, lineHeight: 1.6,
+          color: 'rgba(255,255,255,0.85)', marginBottom: 18,
+        }}>
+          A partir de agora é só registrar o que entra e o que sai. Quando{' '}
+          <b style={{ color: '#fff' }}>{NOMES_MESES[new Date().getMonth()].toLowerCase()}</b>{' '}
+          fechar, o Planejamento propõe o seu primeiro plano a partir do que
+          você registrou.
+        </div>
+
         <div style={{ maxWidth: 360, width: '100%' }}>
-          <button onClick={() => navigate('/')} style={{
+          <button onClick={() => navigate('/novo-lancamento')} style={{
             width: '100%', padding: '14px 20px', border: 'none', borderRadius: 12,
             background: '#fff', color: COR.azulEscuro,
             fontSize: 16, fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(0,0,0,.2)',
           }}>
-            Abrir meu Dashboard →
+            Começar a registrar →
           </button>
         </div>
       </div>
@@ -1104,34 +1122,75 @@ export default function Onboarding() {
       )
     }
 
-    // ── PLANEJAMENTO ───────────────────────────────────────────────────
+    // ── COMO COMEÇAR: a bifurcação ─────────────────────────────────────
+    //
+    // Aqui a tela pedia o plano e oferecia, como escape, "fazer depois —
+    // quero explorar o app primeiro". Para quem não sabe quanto ganha nem
+    // quanto gasta, isso é uma pergunta com uma resposta certa e uma
+    // desistência: ou ele inventa números para preencher o wizard, ou sai
+    // pela porta que o próprio texto chama de adiamento.
+    //
+    // São dois usuários diferentes e os dois estão certos. A pergunta que
+    // realmente separa não é "quando", é "você já sabe os seus números?".
+    // Por isso as duas portas têm o mesmo peso visual: nenhuma é o plano B.
     if (phase === 'planejamento') return (
       <>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 48, marginBottom: 14 }}>🎯</div>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ fontSize: 44, marginBottom: 12 }}>🧭</div>
           <div style={{ fontSize: 19, fontWeight: 800, color: COR.texto, marginBottom: 8 }}>
-            Monte seu plano financeiro
-          </div>
-          <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.6, marginBottom: 12 }}>
-            O planejamento é o coração do Compass One. É ele que permite a bússola te guiar.
+            Como você quer começar?
           </div>
           <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.6 }}>
-            Leva apenas 5 minutos e você terá uma visão completa do seu ano financeiro.
+            Nenhuma das duas é errada. A diferença é só se você já sabe
+            quanto entra e quanto sai por mês.
           </div>
         </div>
 
-        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#0284c7', marginBottom: 4 }}>
-            💡 O que é o planejamento?
-          </div>
-          <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-            Você define quanto pretende gastar em cada categoria por mês. A bússola vai comparar com seus gastos reais para te dizer se está no rumo.
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <BtnPrimary onClick={() => navigate('/wizard-planejamento', { replace: true })}>Começar meu plano →</BtnPrimary>
-          <BtnGhost onClick={() => setPhase('final')}>Fazer depois — quero explorar o app primeiro</BtnGhost>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            {
+              icone: '🎯',
+              titulo: 'Já sei meus números',
+              corpo: 'Você tem ideia de quanto recebe e quanto gasta. Monte o plano agora, em cerca de 5 minutos — dá para ajustar mês a mês depois.',
+              acao: () => navigate('/wizard-planejamento', { replace: true }),
+              cta: 'Montar meu plano',
+            },
+            {
+              icone: '🔍',
+              titulo: 'Ainda não faço ideia',
+              corpo: 'Quase ninguém sabe de cabeça. Registre o que entra e o que sai por um mês; quando ele fechar, o app propõe o seu primeiro plano a partir do que aconteceu de verdade.',
+              acao: () => setPhase('final'),
+              cta: 'Começar registrando',
+            },
+          ].map(p => (
+            <button
+              key={p.titulo}
+              onClick={p.acao}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
+                background: COR.branco, border: `1.5px solid ${COR.borda}`,
+                borderRadius: 14, padding: '16px 18px', fontFamily: 'inherit',
+                transition: 'border-color .15s, box-shadow .15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = COR.azul
+                e.currentTarget.style.boxShadow = '0 4px 14px rgba(26,86,219,.15)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = COR.borda
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
+                <span style={{ fontSize: 20 }}>{p.icone}</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: COR.texto }}>{p.titulo}</span>
+              </div>
+              <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.55, marginBottom: 10 }}>
+                {p.corpo}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: COR.azul }}>{p.cta} →</div>
+            </button>
+          ))}
         </div>
       </>
     )
