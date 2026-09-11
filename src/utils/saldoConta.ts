@@ -317,7 +317,7 @@ export function faltaVariavelDoMes(
    * estouro. O corte no zero acontece depois, no nivel que o cenario pedir —
    * cortar aqui jogaria fora justamente a informacao que distingue os tres.
    */
-  type Parcela = { balde: Balde; grupo: string; falta: number }
+  type Parcela = { conta: string; balde: Balde; grupo: string; falta: number }
   const parcelas: Parcela[] = []
 
   for (const cat of variaveis) {
@@ -339,14 +339,14 @@ export function faltaVariavelDoMes(
     // Cartao nao recebe: entrada cai na conta de deposito da categoria.
     if (cat.tipo === 'entrada') {
       const onde = cat.tipoMovimento === 'dinheiro' ? 'dinheiro' : (cat.contaDebitoId ?? padrao)
-      if (onde === alvo) parcelas.push({ balde: 'entrada', grupo, falta })
+      if (onde) parcelas.push({ conta: onde, balde: 'entrada', grupo, falta })
       continue
     }
 
     if (cat.tipoMovimento === 'cartao') {
       // Com fatura em aberto, a sobra cai nela — quem paga o cartão paga.
       if (refAberta) {
-        if (contaDoCartao === alvo) parcelas.push({ balde: 'cartao', grupo, falta })
+        if (contaDoCartao) parcelas.push({ conta: contaDoCartao, balde: 'cartao', grupo, falta })
         continue
       }
       // Sem fatura em aberto que possa receber — fechada, já confirmada, ou
@@ -357,26 +357,60 @@ export function faltaVariavelDoMes(
       //
       // Sobra não sobrevive ao mês. Mês que vem tem plano e limite próprios —
       // gastar menos que o planejado é economia, não saldo acumulado.
-      if ((cat.contaDebitoId ?? padrao) === alvo) parcelas.push({ balde: 'banco', grupo, falta })
+      const ondeCartao = cat.contaDebitoId ?? padrao
+      if (ondeCartao) parcelas.push({ conta: ondeCartao, balde: 'banco', grupo, falta })
       continue
     }
-    if (contaDaCategoria(cat, padrao) === alvo) parcelas.push({ balde: 'banco', grupo, falta })
+    const onde = contaDaCategoria(cat, padrao)
+    if (onde) parcelas.push({ conta: onde, balde: 'banco', grupo, falta })
   }
 
-  const somar = (balde: Balde) => {
-    const doBalde = parcelas.filter(p => p.balde === balde)
-    switch (nivelDoCenario(deps.cenarioPrevisao, balde)) {
-      case "categoria":
-        return doBalde.reduce((s, p) => s + Math.max(0, p.falta), 0)
-      case "total":
-        return Math.max(0, doBalde.reduce((s, p) => s + p.falta, 0))
-      default: {
-        const porGrupo = new Map<string, number>()
-        for (const p of doBalde) porGrupo.set(p.grupo, (porGrupo.get(p.grupo) ?? 0) + p.falta)
-        return [...porGrupo.values()].reduce((s, v) => s + Math.max(0, v), 0)
-      }
+  /**
+   * Quanto de cada parcela sobrevive ao corte no zero.
+   *
+   * A unidade do corte é do MÊS, nunca da conta. "Otimista compensa no total"
+   * tem de valer entre contas também — enquanto o corte acontecia dentro de
+   * cada conta, um estouro no Sicredi não pagava a sobra da Caixa e otimista
+   * devolvia exatamente o mesmo número que pessimista. Medido numa fixture de
+   * duas contas: 400 reservados onde o líquido do mês era 0.
+   *
+   * Banco e cartão entram na MESMA unidade pelo mesmo motivo: o balde diz por
+   * onde o dinheiro sai, não em que nível a sobra é cortada. Entrada fica
+   * separada de propósito — é o outro lado do razão e leva o nível oposto.
+   *
+   * O que sobrou da unidade volta para as parcelas em PROPORÇÃO à sobra
+   * positiva de cada uma. É o que mantém `projecaoDoMes` igual à soma das
+   * contas, que é o invariante desta função: o rateio não muda o total, só o
+   * endereço. No nível "categoria" a unidade tem uma parcela só e o fator é 1
+   * — o pessimista continua exatamente o que era.
+   */
+  const alocado: number[] = parcelas.map(() => 0)
+  for (const ehEntrada of [false, true]) {
+    const doLado = parcelas
+      .map((p, i) => [p, i] as const)
+      .filter(([p]) => (p.balde === 'entrada') === ehEntrada)
+    if (!doLado.length) continue
+
+    const nivel = nivelDoCenario(deps.cenarioPrevisao, ehEntrada ? 'entrada' : 'banco')
+    const unidades = new Map<string, number[]>()
+    for (const [p, i] of doLado) {
+      const k = nivel === 'categoria' ? `#${i}` : nivel === 'grupo' ? p.grupo : ''
+      const u = unidades.get(k)
+      if (u) u.push(i)
+      else unidades.set(k, [i])
+    }
+
+    for (const u of unidades.values()) {
+      const positivo = u.reduce((s, i) => s + Math.max(0, parcelas[i].falta), 0)
+      if (positivo <= 0) continue
+      const liquido = Math.max(0, u.reduce((s, i) => s + parcelas[i].falta, 0))
+      const fator = liquido / positivo
+      for (const i of u) alocado[i] = Math.max(0, parcelas[i].falta) * fator
     }
   }
+
+  const somar = (balde: Balde) =>
+    parcelas.reduce((s, p, i) => (p.balde === balde && p.conta === alvo ? s + alocado[i] : s), 0)
 
   return {
     saidaBanco: somar('banco'),
