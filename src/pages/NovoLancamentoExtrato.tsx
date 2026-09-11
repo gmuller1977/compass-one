@@ -22,6 +22,7 @@ import NleBanner          from '../components/novoLancamentoExtrato/NleBanner'
 import NleExtrato         from '../components/novoLancamentoExtrato/NleExtrato'
 import NleDesktopPanel   from '../components/novoLancamentoExtrato/NleDesktopPanel'
 import NleModal           from '../components/novoLancamentoExtrato/NleModal'
+import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -55,6 +56,9 @@ export default function NovoLancamentoExtrato() {
   const [fContaDestino,     setFContaDestino]      = useState('')
   const [fBancoConsolidado, setFBancoConsolidado]  = useState('')
   const [diasAbertos, setDiasAbertos] = useState<Set<number>>(() => new Set([diaHoje]))
+  // Criar categoria sem sair do lancamento. A regra e a prova vivem em
+  // utils/novaCategoria; aqui so mora o "esta aberta" e a gravacao.
+  const [novaCatAberta, setNovaCatAberta] = useState(false)
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
   const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number; valorAtual:number; descricao:string}|null>(null)
@@ -67,7 +71,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -1240,6 +1244,7 @@ export default function NovoLancamentoExtrato() {
           fValor={fValor}
           setFValor={setFValor}
           categoriasSelect={categoriasSelect}
+          onNovaCategoria={() => setNovaCatAberta(true)}
           subDescsDisponiveis={subDescsDisponiveis}
           categorias={categorias}
           valorInputRef={valorInputRef}
@@ -1304,6 +1309,7 @@ export default function NovoLancamentoExtrato() {
               fValor={fValor}
               fPag={fPag}
               categoriasSelect={categoriasSelect}
+              onNovaCategoria={() => setNovaCatAberta(true)}
               subDescsDisponiveis={subDescsDisponiveis}
               valorInputRef={valorInputRef}
               categoriaSelectRef={categoriaSelectRef}
@@ -1350,6 +1356,7 @@ export default function NovoLancamentoExtrato() {
               isDinheiro={isDinheiro}
               contaInfo={contaInfo}
               categoriasSelect={categoriasSelect}
+              onNovaCategoria={() => setNovaCatAberta(true)}
               subDescsDisponiveis={subDescsDisponiveis}
               contasExtrato={contasExtrato}
               contaIdEfetivo={contaIdEfetivo}
@@ -1420,6 +1427,23 @@ export default function NovoLancamentoExtrato() {
           </div>
         )
       })()}
+
+      <NleNovaCategoria
+        aberto={novaCatAberta}
+        tipo={fTipo === 'entrada' ? 'entrada' : 'saida'}
+        isDinheiro={isDinheiro}
+        contaId={isDinheiro ? undefined : contaIdEfetivo}
+        categorias={categorias}
+        onFechar={() => setNovaCatAberta(false)}
+        onCriar={c => {
+          // setCategorias grava sozinho: o AppContext tem um efeito que
+          // persiste a lista inteira. Nao ha segunda chamada de save aqui.
+          setCategorias(prev => [...prev, c])
+          setFCat(c.nome)
+          setFSubDesc('')
+          setNovaCatAberta(false)
+        }}
+      />
 
       <NleModal
         modalSaldo={modalSaldo}

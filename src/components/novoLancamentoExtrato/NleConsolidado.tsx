@@ -52,6 +52,8 @@ type Props = {
   fValor: string
   setFValor: (v: string) => void
   categoriasSelect: Categoria[]
+  /** Abre a caixa de criar categoria sem sair do lançamento. */
+  onNovaCategoria: () => void
   subDescsDisponiveis: string[]
   categorias: Categoria[]
   valorInputRef: React.RefObject<HTMLInputElement | null>
@@ -86,7 +88,7 @@ export default function NleConsolidado({
   contas, contasExtrato,
   fCat, setFCat, fSubDesc, setFSubDesc,
   fDesc, setFDesc, fValor, setFValor,
-  categoriasSelect, subDescsDisponiveis, categorias,
+  categoriasSelect, onNovaCategoria, subDescsDisponiveis, categorias,
   valorInputRef, categoriaSelectRef,
   lancarConsolidado, resetarParaNovo,
 }: Props) {
@@ -476,7 +478,9 @@ export default function NleConsolidado({
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Categoria</div>
             <select ref={categoriaSelectRef} value={fCat}
               onChange={e=>{
-                const nome = e.target.value; setFCat(nome); setFSubDesc('')
+                const nome = e.target.value
+                if (nome === '__nova__') { onNovaCategoria(); return }
+                setFCat(nome); setFSubDesc('')
                 const cat  = categorias.find(c=>c.nome===nome)
                 if (cat) setFPag(fTipo==='entrada'
                   ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
@@ -488,6 +492,7 @@ export default function NleConsolidado({
                 fontSize:12,outline:'none',background:'#fff',
                 fontFamily:'inherit',color:COR.texto,width:'100%'}}>
               <option value="">Selecione...</option>
+              <option value="__nova__">+ Nova categoria…</option>
               {categoriasSelect.map(c=>(
                 <option key={c.id} value={c.nome}>{c.nome}</option>
               ))}

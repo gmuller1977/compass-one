@@ -48,6 +48,8 @@ type Props = {
   fValor: string
   fPag: FormaPag
   categoriasSelect: Categoria[]
+  /** Abre a caixa de criar categoria sem sair do lançamento. */
+  onNovaCategoria: () => void
   subDescsDisponiveis: string[]
   valorInputRef: React.RefObject<HTMLInputElement | null>
   categoriaSelectRef: React.RefObject<HTMLSelectElement | null>
@@ -320,7 +322,7 @@ export default function NleExtrato({
   contas,
   diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
   fTipo, fCat, fSubDesc, fDesc, fValor, fPag,
-  categoriasSelect, subDescsDisponiveis,
+  categoriasSelect, onNovaCategoria, subDescsDisponiveis,
   valorInputRef, categoriaSelectRef, hojeRef,
   toggleDia, resetarParaNovo, setDiaSel,
   editarFixa, editarLancamento, excluir, lancar,
@@ -637,6 +639,7 @@ export default function NleExtrato({
                             value={fCat}
                             onChange={e=>{
                               const nome=e.target.value
+                              if(nome==='__nova__'){onNovaCategoria();return}
                               setFCat(nome);setFSubDesc('')
                               const c=categorias.find((x:Categoria)=>x.nome===nome)
                               if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))
@@ -644,6 +647,7 @@ export default function NleExtrato({
                             }}
                             style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
                             <option value="">Selecione...</option>
+                            <option value="__nova__">+ Nova categoria…</option>
                             {(()=>{
                               const grps=new Map<string,Categoria[]>()
                               for(const c of categoriasSelect){const g=c.grupo??'';if(!grps.has(g))grps.set(g,[]);grps.get(g)!.push(c)}
