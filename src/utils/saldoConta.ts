@@ -174,16 +174,33 @@ function totalFatura(
   return total > 0 ? total : 0
 }
 
-/** Saldo do dinheiro em carteira ao fim de um mês. */
+/**
+ * Saldo do dinheiro em carteira ao fim de um mês.
+ *
+ * Passa pelo MESMO `movimentoDoMes` que o banco. Antes somava só
+ * `dm.lancamentos`, e por isso **fixa confirmada em espécie sumia**: uma
+ * receita fixa de 663,00 marcada como recebida entrava na cascata de
+ * Lançamentos e não entrava aqui. O Radar mostrava a carteira 663,00 menor
+ * que a própria tela de Lançamentos, e o saldo final previsto herdava o erro
+ * inteiro. Medido em 11/09/2026 num mês real.
+ *
+ * O comentário que sobrevivia dizia que "o dinheiro não tem fixa nem fatura".
+ * Tem: `cascataDoMes` monta a lista de fixas da carteira com
+ * `tipoMovimento === 'dinheiro'`, e elas podem ser confirmadas como qualquer
+ * outra. O que o dinheiro não tem é **conciliação que vença** — o saldo
+ * informado da carteira continua fora da base, de propósito.
+ */
 export function saldoFinalDinheiro(ano: number, mes: number, deps: Deps): number {
   const alvo = ym(ano, mes)
   let acc = deps.saldoInicialDinheiro ?? 0
   for (const [k, dm] of Object.entries(deps.extratoData)) {
     if (!k.startsWith('dinheiro-')) continue
-    const kym = parseInt(k.slice(-7, -3)) * 100 + parseInt(k.slice(-2))
-    if (kym > alvo) continue
-    for (const itens of Object.values(dm.lancamentos ?? {}))
-      for (const l of itens) acc += l.tipo === 'entrada' ? l.valor : -l.valor
+    const kAno = parseInt(k.slice(-7, -3))
+    const kMes = parseInt(k.slice(-2)) - 1
+    if (!Number.isFinite(kAno) || !Number.isFinite(kMes)) continue
+    if (ym(kAno, kMes) > alvo) continue
+    const mov = movimentoDoMes(dm, kAno, kMes, deps)
+    acc += mov.entradas - mov.saidas
   }
   return acc
 }
@@ -530,17 +547,9 @@ function movimentoRealDoMes(
 ): { entradas: number; saidas: number } {
   const dm = deps.extratoData[`${alvo}-${ano}-${String(mes + 1).padStart(2, '0')}`]
   if (!dm) return { entradas: 0, saidas: 0 }
-  // O dinheiro não tem fixa nem fatura: só o que foi lançado, igual ao que
-  // saldoFinalDinheiro soma.
-  if (alvo === 'dinheiro') {
-    let entradas = 0, saidas = 0
-    for (const itens of Object.values(dm.lancamentos ?? {}))
-      for (const l of itens) {
-        if (l.tipo === 'entrada') entradas += l.valor
-        else saidas += l.valor
-      }
-    return { entradas, saidas }
-  }
+  // O dinheiro passa pelo mesmo caminho do banco. O atalho que existia aqui
+  // — "a carteira só tem lançamento" — deixava a fixa confirmada em espécie
+  // fora da linha, e a linha então não fechava com o próprio final dela.
   return movimentoDoMes(dm, ano, mes, deps)
 }
 
