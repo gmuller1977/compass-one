@@ -455,9 +455,28 @@ zero para sempre e a caixa viraria enfeite. Mês passado já foi conferido com o
 banco, então lá o informado vence e não há o que investigar. É a distinção que
 `saldoFinalConta` já fazia.
 
-O **dinheiro** não tem esse caminho: `saldoFinalDinheiro` só acumula lançamentos,
-e o saldo informado da carteira não entra na base em tela nenhuma. As duas
-concordam, então não é divergência — é uma lacuna, e das duas pontas.
+O **dinheiro** não tem esse caminho: o saldo informado da carteira não entra na
+base em tela nenhuma. As duas concordam, então não é divergência — é uma
+lacuna, e das duas pontas.
+
+**Mas a carteira TEM fixa, e ignorar isso custou 663,00.** `saldoFinalDinheiro`
+somava apenas `dm.lancamentos`, enquanto o banco passa por `movimentoDoMes`, que
+tem o laço de `fixasConsolidadas`. Uma receita fixa marcada como recebida em
+espécie entrava na cascata de Lançamentos e **não** entrava no Radar: a mesma
+carteira valia 1.938,00 numa tela e 1.275,00 na outra, e o saldo final previsto
+do Radar herdava o erro inteiro. Corrigido em 11/09/2026 — as duas funções
+passam pelo mesmo `movimentoDoMes`.
+
+O comentário que sustentava o atalho dizia que "o dinheiro não tem fixa nem
+fatura". Nunca foi verdade: `cascataDoMes` monta a lista de fixas da carteira
+com `tipoMovimento === 'dinheiro'`, e elas se confirmam como qualquer outra.
+`movimentoRealDoMes` tinha a mesma suposição, então a linha do dinheiro em
+`detalharMes` também mostrava só parte das entradas.
+
+A assinatura para reconhecer isso de novo: **o saldo inicial do Radar bate com a
+soma das contas e o saldo atual não**. O inicial usa a mesma função, então
+quando ele bate e o outro não, a diferença nasceu DENTRO do mês — e o suspeito é
+sempre uma parcela que uma das duas telas conta e a outra não.
 
 Menor, também aberta: Lançamentos decide a conta da fixa por
 `contaDaFixaNoMes` (respeita a troca do mês) e a projeção por
