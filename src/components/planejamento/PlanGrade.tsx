@@ -68,14 +68,22 @@ export default function PlanGrade(props: Props) {
 
   return (
     <div style={{ padding: '16px 20px' }}>
-      <PlanResumoAnual
-        saldoInicial={janela.saldoInicial}
-        totalReceitas={janela.receitas}
-        totalDespesas={janela.despesas}
-        resultado={janela.saldoFinal}
-        anoAtual={anoAtual}
-        mesInicio={janela.inicio}
-      />
+      {/* Na descoberta a faixa anual sai. Ela é a SAÍDA de um plano — sem
+          plano são quatro R$ 0,00 em destaque logo abaixo de um texto que
+          acabou de explicar que ainda estamos medindo. Para quem não entende
+          de finanças, quatro zeros grandes não leem como "ainda não tem", leem
+          como "está quebrado". A barra de ferramentas abaixo fica: ela é
+          ENTRADA, e é a porta de quem já sabe os próprios números. */}
+      {!desc?.ativa && (
+        <PlanResumoAnual
+          saldoInicial={janela.saldoInicial}
+          totalReceitas={janela.receitas}
+          totalDespesas={janela.despesas}
+          resultado={janela.saldoFinal}
+          anoAtual={anoAtual}
+          mesInicio={janela.inicio}
+        />
+      )}
 
       <PlanBarraFerramentas
         mesAtual={mesAtual}

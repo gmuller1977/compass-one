@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
@@ -8,6 +8,7 @@ import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
 import { useApp } from '../context/AppContext'
 import DescobertaBanner from '../components/DescobertaBanner'
+import DescobertaModal from '../components/DescobertaModal'
 import { medirDescoberta } from '../utils/descoberta'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPainel from '../components/planejamento/PlanPainel'
@@ -37,7 +38,7 @@ export default function Planejamento() {
   )
 
   const plan = usePlanejamento(anoAtual)
-  const { planos, extratoData, contas, onboardingCompleto } = useApp()
+  const { planos, extratoData, contas, onboardingCompleto, user } = useApp()
 
   const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: ViewMode =
@@ -72,6 +73,31 @@ export default function Planejamento() {
   const descoberta = useMemo(() => medirDescoberta({
     onboardingCompleto, planos, extratoData, contas,
   }), [onboardingCompleto, planos, extratoData, contas])
+
+  // A explicação da fase aparece UMA vez, na primeira entrada sem plano.
+  // Depois só pelo "Como funciona" da faixa: um modal que volta a cada visita
+  // vira obstáculo, e a tela por trás dele se explica sozinha.
+  //
+  // O "visto" é por usuário e vive no localStorage — conveniência de leitura
+  // de um navegador só, não estado do app. Em aba anônima ou noutro aparelho
+  // ele volta, e reaparecer custa um clique; uma coluna no banco custaria
+  // migração e mais um estado capaz de discordar dos outros.
+  const chaveIntro = `compass:descoberta-intro:${user?.id ?? 'anon'}`
+  const [verIntro, setVerIntro] = useState(false)
+  const introAvaliada = useRef(false)
+
+  useEffect(() => {
+    if (introAvaliada.current || !descoberta.ativa) return
+    introAvaliada.current = true
+    let visto = false
+    try { visto = localStorage.getItem(chaveIntro) === '1' } catch { /* aba anônima */ }
+    if (!visto) setVerIntro(true)
+  }, [descoberta.ativa, chaveIntro])
+
+  const fecharIntro = useCallback(() => {
+    setVerIntro(false)
+    try { localStorage.setItem(chaveIntro, '1') } catch { /* aba anônima */ }
+  }, [chaveIntro])
 
   const viewModeLabels: Record<ViewMode, string> = {
     grade: 'Grade', painel: 'Painel', lista: 'Lista',
@@ -132,8 +158,16 @@ export default function Planejamento() {
             cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
         {descoberta.ativa && (
           <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
-            <DescobertaBanner d={descoberta} />
+            <DescobertaBanner d={descoberta} onComoFunciona={() => setVerIntro(true)} />
           </div>
+        )}
+
+        {verIntro && descoberta.ativa && (
+          <DescobertaModal
+            d={descoberta}
+            onFechar={fecharIntro}
+            onMontarPlano={() => { fecharIntro(); navigate('/wizard-planejamento') }}
+          />
         )}
 
         {viewMode === 'grade' ? (

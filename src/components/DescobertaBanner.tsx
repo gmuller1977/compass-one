@@ -17,7 +17,11 @@ import type { Descoberta } from '../utils/descoberta'
  * Nada aqui é decorativo: os três números são o que ele fez, e a data é quando
  * o material fica suficiente.
  */
-export default function DescobertaBanner({ d }: { d: Descoberta }) {
+export default function DescobertaBanner({ d, onComoFunciona }: {
+  d: Descoberta
+  /** Reabre a explicação da fase. Ausente, o botão não aparece. */
+  onComoFunciona?: () => void
+}) {
   const mes = NOMES_MESES[d.mesObservado.mes]
   const fechaHoje = d.diasAteFechar <= 0
   const nada = d.lancamentos === 0
@@ -46,6 +50,16 @@ export default function DescobertaBanner({ d }: { d: Descoberta }) {
               : <>Seu plano nasce quando <b style={{ color: '#fff' }}>{mes.toLowerCase()}</b> fechar — faltam{' '}
                   <b style={{ color: '#fff' }}>{d.diasAteFechar}</b> {d.diasAteFechar === 1 ? 'dia' : 'dias'}.</>}
         </div>
+
+        {/* A faixa diz o estado; o modal diz o combinado. Depois da primeira
+            vez ele só volta por aqui. */}
+        {onComoFunciona && (
+          <button onClick={onComoFunciona} style={{
+            marginTop: 7, padding: 0, border: 'none', background: 'none',
+            color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            fontFamily: 'inherit', textDecoration: 'underline', textUnderlineOffset: 3,
+          }}>Como funciona</button>
+        )}
       </div>
 
       {!nada && (
