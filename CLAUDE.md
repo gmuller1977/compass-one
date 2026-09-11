@@ -281,6 +281,20 @@ O rateio não muda o total, só o endereço:
   cartão nenhum, a sobra vira sobra de banco** — conta de débito da categoria
   (ou a preferida), no último dia do mês.
 
+**A sobra de categoria de cartão nunca vai para a CARTEIRA, e isso é aceito.**
+Revisto em 11/09/2026 num caso real: Reparo/Manutenção é categoria de cartão
+com 1.500 planejados, e o prestador só aceita espécie. Sem fatura em aberto, o
+fallback jogou os 1.500 na conta preferida — o Sicredi parecia 1.377,53 mais
+apertado do que é, e a carteira, folgada. O **total do mês não muda**, e o
+pagamento em si funciona: `tipoMovimento` é intenção, não trava, e o realizado
+soma extrato, dinheiro e fatura.
+
+Decidido deixar como está. O conserto de verdade não é mudar o fallback — é
+poder dizer "este mês esta categoria sai em espécie" sem reescrever o cadastro,
+e hoje esse conceito não existe: `contaDebitoId` só aponta para banco, e a
+carteira só é alcançada por `tipoMovimento`. Quem precisa disso agora troca o
+`tipoMovimento` da categoria para dinheiro.
+
 **Sobra do plano não atravessa o mês.** O plano é do mês e o mês é o limite:
 gastar menos que o planejado é economia, não saldo acumulado — mês que vem tem
 plano e limite próprios. Decidido pelo Guilherme em 08/09/2026, o que descartou
