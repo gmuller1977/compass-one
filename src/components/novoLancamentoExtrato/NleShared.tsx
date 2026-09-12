@@ -17,6 +17,13 @@ export type CatFixa = {
   formaPagamento: FormaPag
   diaVencimento: number
   ehFaturaCartao?: boolean
+  /**
+   * A categoria foi inativada, mas esta fixa já estava confirmada — o
+   * pagamento aconteceu e continua valendo. A linha precisa dizer isso,
+   * senão aparece um lançamento de uma categoria que o usuário acredita ter
+   * removido, sem nada que explique por quê.
+   */
+  inativa?: boolean
 }
 
 /**
