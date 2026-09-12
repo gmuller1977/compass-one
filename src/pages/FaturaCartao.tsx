@@ -119,8 +119,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     faturaPaga ? 'paga' :
     new Date(purchaseAno, purchaseMes, diaFechamento) <= hoje ? 'fechada' : 'aberta'
 
+  // Inativa fica fora da lista — nao se escolhe uma categoria morta para uma
+  // compra nova. A excecao e a que esta sendo EDITADA: editarLancamento
+  // carrega fCat a partir do lancamento gravado, e uma parcela antiga pode
+  // apontar para categoria ja inativada. Sem esta linha o <select> ficava com
+  // um value sem <option> correspondente — em branco na tela — e salvar
+  // trocava a categoria da parcela sem que ninguem tivesse pedido.
   const categoriasCartao = categorias
-    .filter(c => c.tipo === 'saida' && c.ativa)
+    .filter(c => c.tipo === 'saida'
+      && (c.ativa || c.nome.trim().toLowerCase() === fCat.trim().toLowerCase()))
     .sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
 
   // Sincroniza totais das faturas como lançamentos previstos no extrato bancário

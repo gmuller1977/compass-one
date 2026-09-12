@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Categoria } from '../../context/AppContext'
-import { iconeCategoria } from '../../utils/categoriaIcone'
+import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, diaSemana, lancLabel, ordemLancamento,
   type Lancamento, type DadosMes,
@@ -122,6 +122,20 @@ export default function FcDesktopLeft({
                     <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, fontWeight: 700,
                       flexShrink: 0, background: '#ede9fe', color: '#7c3aed' }}>
                       {l.parcelaAtual}&nbsp;de&nbsp;{l.parcelas}
+                    </span>
+                  )}
+
+                  {/* A parcela sobrevive a categoria ser inativada — a compra
+                      ja aconteceu e a divida continua. Mas sem esta marca ela
+                      reaparece todo mes numa categoria que o usuario acredita
+                      ter removido. Cinza, nao ambar: nao ha nada de errado
+                      aqui, so algo a explicar. Medido: #475569 sobre #f1f5f9
+                      da 6,92:1; COR.textoSuave daria 4,34:1 e reprovaria. */}
+                  {buscarCategoria(categorias, l.categoria)?.ativa === false && (
+                    <span title="A categoria foi inativada. Esta parcela continua valendo."
+                      style={{ fontSize: 10, padding: '3px 7px', borderRadius: 6, fontWeight: 700,
+                        flexShrink: 0, background: '#f1f5f9', color: '#475569' }}>
+                      categoria inativa
                     </span>
                   )}
 

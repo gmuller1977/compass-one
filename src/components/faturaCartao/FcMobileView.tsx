@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
-import { iconeCategoria } from '../../utils/categoriaIcone'
+import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
   lancLabel, ordemLancamento,
@@ -632,6 +632,12 @@ export default function FcMobileView({
                             <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,
                               background:'#f5f3ff',color:'#7c3aed'}}>
                               {l.parcelaAtual}/{l.parcelas}x
+                            </span>
+                          )}
+                          {buscarCategoria(categorias, l.categoria)?.ativa === false && (
+                            <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,
+                              background:'#f1f5f9',color:'#475569'}}>
+                              inativa
                             </span>
                           )}
                         </div>
