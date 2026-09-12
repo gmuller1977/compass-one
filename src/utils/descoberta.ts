@@ -32,6 +32,17 @@ export type Descoberta = {
   diasAteFechar: number
   /** O mês que vira o primeiro plano quando fechar. */
   mesObservado: { ano: number; mes: number }
+  /**
+   * O mês JÁ FECHADO que tem material para virar plano, se houver um.
+   *
+   * Não é sempre o mês anterior: quem registrou em setembro, não abriu o app
+   * em outubro e voltou em novembro continua tendo setembro como base. Olhar
+   * só para o mês anterior deixaria essa pessoa observando para sempre.
+   *
+   * Enquanto for `null`, a fase é de observação. Quando existe, o convite
+   * substitui o contador — é o momento que o modal da descoberta promete.
+   */
+  mesBase: { ano: number; mes: number } | null
 }
 
 type Entrada = {
@@ -72,8 +83,19 @@ export function medirDescoberta({
     }
   }
 
+  // O mês fechado mais recente COM registro, olhando até um ano para trás.
+  let mesBase: { ano: number; mes: number } | null = null
+  for (let atras = 1; atras <= 12 && !mesBase; atras++) {
+    let m = mes - atras, a = ano
+    while (m < 0) { m += 12; a-- }
+    const temRegistro = chavesDoMes(extratoData, contas, a, m)
+      .some(dm => Object.values(dm.lancamentos ?? {}).some(itens => itens.length > 0))
+    if (temRegistro) mesBase = { ano: a, mes: m }
+  }
+
   return {
     ativa: onboardingCompleto && fimDoPlanejamento(planos) === null,
+    mesBase,
     lancamentos,
     diasComRegistro: dias.size,
     categoriasVistas: cats.size,

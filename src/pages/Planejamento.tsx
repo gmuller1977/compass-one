@@ -9,7 +9,9 @@ import { type ViewMode, COR } from '../components/planejamento/types'
 import { useApp } from '../context/AppContext'
 import DescobertaBanner from '../components/DescobertaBanner'
 import DescobertaModal from '../components/DescobertaModal'
+import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
 import { medirDescoberta } from '../utils/descoberta'
+import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPainel from '../components/planejamento/PlanPainel'
 import PlanLista from '../components/planejamento/PlanLista'
@@ -38,7 +40,8 @@ export default function Planejamento() {
   )
 
   const plan = usePlanejamento(anoAtual)
-  const { planos, extratoData, contas, onboardingCompleto, user } = useApp()
+  const { planos, extratoData, contas, onboardingCompleto, user,
+    setPlanos, faturaData, categorias } = useApp()
 
   const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: ViewMode =
@@ -99,6 +102,41 @@ export default function Planejamento() {
     try { localStorage.setItem(chaveIntro, '1') } catch { /* aba anônima */ }
   }, [chaveIntro])
 
+  // ── A proposta do primeiro plano ────────────────────────────────────
+  //
+  // Só existe quando há um mês fechado com registro. O valor de cada linha é
+  // o realizado daquele mês, pela MESMA função que alimenta o Radar — ver
+  // utils/primeiroPlano.
+  const proposta = useMemo(() => {
+    if (!descoberta.ativa || !descoberta.mesBase) return null
+    return propostaDoMes({
+      ano: descoberta.mesBase.ano, mes: descoberta.mesBase.mes,
+      extratoData, faturaData, contas, categorias,
+    })
+  }, [descoberta.ativa, descoberta.mesBase, extratoData, faturaData, contas, categorias])
+
+  const [verProposta, setVerProposta] = useState(false)
+  const propostaAvaliada = useRef(false)
+  const chaveProposta = descoberta.mesBase
+    ? `compass:proposta:${user?.id ?? 'anon'}:${descoberta.mesBase.ano}-${descoberta.mesBase.mes}`
+    : ''
+
+  // Abre sozinha UMA vez por mês-base. É o momento que a fase inteira
+  // prometeu; deixá-lo atrás de um clique seria esconder a entrega. Depois
+  // disso, só pelo botão da faixa.
+  useEffect(() => {
+    if (propostaAvaliada.current || !chaveProposta || !proposta) return
+    propostaAvaliada.current = true
+    let visto = false
+    try { visto = localStorage.getItem(chaveProposta) === '1' } catch { /* aba anônima */ }
+    if (!visto) setVerProposta(true)
+  }, [chaveProposta, proposta])
+
+  const fecharProposta = useCallback(() => {
+    setVerProposta(false)
+    try { if (chaveProposta) localStorage.setItem(chaveProposta, '1') } catch { /* aba anônima */ }
+  }, [chaveProposta])
+
   const viewModeLabels: Record<ViewMode, string> = {
     grade: 'Grade', painel: 'Painel', lista: 'Lista',
   }
@@ -158,15 +196,36 @@ export default function Planejamento() {
             cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
         {descoberta.ativa && (
           <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
-            <DescobertaBanner d={descoberta} onComoFunciona={() => setVerIntro(true)} />
+            <DescobertaBanner
+              d={descoberta}
+              onComoFunciona={() => setVerIntro(true)}
+              onVerProposta={() => setVerProposta(true)}
+            />
           </div>
         )}
 
-        {verIntro && descoberta.ativa && (
+        {/* A explicação da fase só faz sentido enquanto ainda se observa. Com
+            o mês fechado, quem manda é a proposta. */}
+        {verIntro && descoberta.ativa && !descoberta.mesBase && (
           <DescobertaModal
             d={descoberta}
             onFechar={fecharIntro}
             onMontarPlano={() => { fecharIntro(); navigate('/wizard-planejamento') }}
+          />
+        )}
+
+        {verProposta && proposta && (
+          <PrimeiroPlanoModal
+            proposta={proposta}
+            mesInicio={new Date().getMonth()}
+            onFechar={fecharProposta}
+            onCriar={p => {
+              // O plano nasce no ano CORRENTE, não no ano do mês-base: um
+              // plano é do ano que ele cobre, e a cobertura começa hoje.
+              setPlanos(prev => ({ ...prev, [anoCorrente]: p }))
+              fecharProposta()
+              setAnoAtual(anoCorrente)
+            }}
           />
         )}
 

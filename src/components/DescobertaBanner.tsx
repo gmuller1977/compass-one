@@ -17,14 +17,49 @@ import type { Descoberta } from '../utils/descoberta'
  * Nada aqui é decorativo: os três números são o que ele fez, e a data é quando
  * o material fica suficiente.
  */
-export default function DescobertaBanner({ d, onComoFunciona }: {
+export default function DescobertaBanner({ d, onComoFunciona, onVerProposta }: {
   d: Descoberta
   /** Reabre a explicação da fase. Ausente, o botão não aparece. */
   onComoFunciona?: () => void
+  /** Abre a proposta do primeiro plano. Só usado quando há mês-base. */
+  onVerProposta?: () => void
 }) {
   const mes = NOMES_MESES[d.mesObservado.mes]
   const fechaHoje = d.diasAteFechar <= 0
   const nada = d.lancamentos === 0
+
+  // ── O mês fechou: a faixa deixa de contar e passa a convidar ─────────
+  //
+  // Os três contadores somem aqui de propósito. Eles medem o mês CORRENTE, e
+  // o mês que interessa agora é o que fechou — mostrar "0 lançamentos" em
+  // cima de "outubro já dá para virar plano" seria contar a coisa errada.
+  if (d.mesBase) {
+    const base = NOMES_MESES[d.mesBase.mes]
+    return (
+      <div style={{
+        background: `linear-gradient(135deg, ${COR.azulEscuro}, #1e40af)`,
+        borderRadius: 12, padding: '14px 18px', marginBottom: 12,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 24px',
+      }}>
+        <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 3 }}>
+            {base} fechou — seu plano está pronto para nascer
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 1.5 }}>
+            Montei uma proposta a partir do que você registrou. Confira os valores
+            e ajuste o que foi fora do normal.
+          </div>
+        </div>
+        {onVerProposta && (
+          <button onClick={onVerProposta} style={{
+            flexShrink: 0, padding: '10px 18px', border: 'none', borderRadius: 10,
+            background: '#fff', color: COR.azulEscuro, fontSize: 13, fontWeight: 800,
+            cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+          }}>Ver minha proposta</button>
+        )}
+      </div>
+    )
+  }
 
   const numeros: [number, string][] = [
     [d.lancamentos,     d.lancamentos === 1 ? 'lançamento' : 'lançamentos'],
