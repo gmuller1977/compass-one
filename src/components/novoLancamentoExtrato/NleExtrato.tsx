@@ -539,6 +539,15 @@ export default function NleExtrato({
                               color:consolidada?tc.rec:tc.label}}>
                               {consolidada?(automatico?'automática ✓':'paga ✓'):'previsto'}
                             </span>
+                            {/* Cor e fundo iguais aos do irmao: os tokens do
+                                TEMA ja estao medidos nos tres fundos, e um
+                                tom proprio teria de ser medido em cada um. */}
+                            {f.inativa&&(
+                              <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
+                                background:'rgba(255,255,255,0.07)',color:tc.label}}>
+                                categoria inativa
+                              </span>
+                            )}
                           </div>
                           <div style={{fontSize:10,color:tc.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>
                             {ehFaturaFixa

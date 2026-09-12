@@ -136,6 +136,7 @@ export default function NovoLancamentoExtrato() {
       id: c.id, nome: c.nome, categoria: c.nome,
       subtitulo: c.grupo,
       descricao: c.descricao,
+      inativa: !c.ativa,
       valor: valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc),
       tipo: c.tipo as TipoLanc,
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
@@ -632,6 +633,7 @@ export default function NovoLancamentoExtrato() {
       .map(c => ({
         id: c.id, nome: c.nome, categoria: c.nome,
         subtitulo: c.grupo, descricao: c.descricao,
+        inativa: !c.ativa,
         valor: valorFixaNoMes(c, planos[a], m, categorias),
         tipo: c.tipo as TipoLanc,
         formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
