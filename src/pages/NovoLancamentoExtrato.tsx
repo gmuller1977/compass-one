@@ -108,7 +108,13 @@ export default function NovoLancamentoExtrato() {
   [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
   const fixasCategoria = categorias
     .filter(c => {
-      if (!c.fixa || !c.ativa) return false
+      if (!c.fixa) return false
+      // Fixa CONFIRMADA sobrevive a categoria ser inativada: o pagamento
+      // aconteceu e o dinheiro saiu da conta. Inativar diz "nao me cobre
+      // mais", nunca "isso nunca aconteceu" — a mesma regra que o
+      // realizadoMes ja seguia, e que aqui era aplicada tarde demais.
+      const confirmadaAqui = dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[c.id] === true
+      if (!c.ativa && !confirmadaAqui) return false
       if (isDinheiro) return c.tipoMovimento === 'dinheiro'
       if (c.tipoMovimento === 'cartao') return false
       if (c.tipoMovimento === 'dinheiro') return false
@@ -603,7 +609,10 @@ export default function NovoLancamentoExtrato() {
     // O filtro abaixo e o mesmo do fixasCategoria, so que parametrizado.
     const fcMes: CatFixa[] = categorias
       .filter(c => {
-        if (!c.fixa || !c.ativa) return false
+        if (!c.fixa) return false
+        // Mesma regra do fixasCategoria: confirmada vence inativa.
+        const confirmadaNoMes = dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true
+        if (!c.ativa && !confirmadaNoMes) return false
         if (isDinheiro) return c.tipoMovimento === 'dinheiro'
         if (c.tipoMovimento === 'cartao') return false
         if (c.tipoMovimento === 'dinheiro') return false

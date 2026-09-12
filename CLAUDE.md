@@ -492,6 +492,26 @@ soma das contas e o saldo atual não**. O inicial usa a mesma função, então
 quando ele bate e o outro não, a diferença nasceu DENTRO do mês — e o suspeito é
 sempre uma parcela que uma das duas telas conta e a outra não.
 
+**A terceira cópia da regra "inativar não desfaz o pagamento" estava no
+Lançamentos, e custou os mesmos 663,00.** A regra foi escrita em 31/08 e
+aplicada ao `realizadoMes`; `movimentoDoMes` já achava a fixa pelo id e nunca
+olhou `ativa`. Mas as duas listas de fixa de `NovoLancamentoExtrato`
+— `fixasCategoria`, do mês exibido, e `fcMes`, dentro da cascata — abriam com
+`if (!c.fixa || !c.ativa) return false`, e **descartavam a fixa inativa antes de
+chegar na linha que pergunta se ela foi confirmada**, três linhas abaixo.
+
+O efeito, relatado pelo Guilherme em 12/09/2026: inativar a Fitway em
+Configurações fez o recebimento de 663,00 — já confirmado — sumir do
+Lançamentos e mudar o saldo final, enquanto o Radar seguia contando. As duas
+telas voltaram a divergir pelo mesmo valor da véspera, pela mesma categoria.
+
+Hoje o teste de confirmação vem **antes** do de `ativa` nas duas listas:
+inativar diz "não me cobre mais", nunca "isso nunca aconteceu".
+
+O que continua certo é `projecaoDaConta` pular categoria inativa (`if
+(!cat.ativa) continue`): ali a pergunta é o que ainda VAI acontecer, e é
+exatamente isso que inativar cancela.
+
 Menor, também aberta: Lançamentos decide a conta da fixa por
 `contaDaFixaNoMes` (respeita a troca do mês) e a projeção por
 `contaDaCategoria` (só o cadastro). Muda o endereço, não o total.
