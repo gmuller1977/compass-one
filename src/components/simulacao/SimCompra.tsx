@@ -12,6 +12,8 @@ import {
   type PontoFluxo, type ResultadoCompra,
 } from '../../utils/simulacaoCompra'
 import type { Deps } from '../../utils/saldoConta'
+import { medirDescoberta } from '../../utils/descoberta'
+import { NOMES_MESES } from '../novoLancamentoExtrato/NleShared'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
   'Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -46,7 +48,8 @@ const card: React.CSSProperties = {
  * veredito, gráfico e tabela de quatro colunas — tudo correto e ilegível.
  */
 export default function SimCompra({ isMobile }: { isMobile: boolean }) {
-  const { contas, categorias, planos, extratoData, faturaData, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+  const { contas, categorias, planos, extratoData, faturaData, saldoInicialDinheiro,
+    cenarioPrevisao, onboardingCompleto } = useApp()
   const navigate = useNavigate()
   const hoje = new Date()
 
@@ -69,6 +72,11 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   // O planejamento e o horizonte: nada aqui extrapola. Comprar mais tarde ou
   // no cartao que vence antes de fechar come meses desse teto.
   const inicioCompra = new Date(hoje.getFullYear(), hoje.getMonth() + inicio, 1)
+  // A mesma medida que o Planejamento usa. Derivada, nunca guardada.
+  const descoberta = useMemo(() => medirDescoberta({
+    onboardingCompleto, planos, extratoData, contas,
+  }), [onboardingCompleto, planos, extratoData, contas])
+
   const fimDoPlano = useMemo(
     () => fimDoPlanejamento(planos as Record<number, PlanoAnoData | undefined>),
     [planos],
@@ -124,25 +132,42 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   // Sem nada planejado nao ha o que simular, e inventar seria pior do que nao
   // responder. O convite e a unica coisa util aqui.
+  //
+  // Mas o convite depende de ONDE ele esta. Quem acabou de comecar nao tem
+  // plano porque ainda nao sabe os proprios numeros — mandar "monte o seu
+  // planejamento" e pedir de novo a conclusao antes da observacao, e a tela
+  // vira uma porta trancada sem dizer quando abre. Na fase de descoberta a
+  // resposta e a DATA: o mes que esta sendo medido, e quantos dias faltam.
   if (!fimDoPlano) {
+    const emDescoberta = descoberta.ativa
+    const faltam = descoberta.diasAteFechar
+    const mesObs = NOMES_MESES[descoberta.mesObservado.mes]
     return (
       <div style={{ ...card, textAlign: 'center', padding: '36px 24px' }}>
         <div style={{ fontSize: 34 }}>🗓</div>
         <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto, marginTop: 10 }}>
-          Antes, monte o seu planejamento
+          {emDescoberta
+            ? (faltam <= 0
+                ? `${mesObs} fecha hoje — seu plano vem a seguir`
+                : `Disponível quando ${mesObs.toLowerCase()} fechar`)
+            : 'Antes, monte o seu planejamento'}
         </div>
         <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 8,
           lineHeight: 1.6, maxWidth: 420, margin: '8px auto 0' }}>
-          Para dizer se uma compra cabe, a conta precisa saber o que entra e o
-          que sai nos seus próximos meses. Sem isso, qualquer resposta seria
-          chute.
+          {emDescoberta
+            ? <>Para dizer se uma compra cabe, a conta precisa saber o que entra e o
+                que sai nos seus próximos meses — e é o mês que você está registrando
+                agora que vai dizer isso.{faltam > 0 && <> Faltam <b style={{ color: COR.texto }}>{faltam} {faltam === 1 ? 'dia' : 'dias'}</b>.</>}</>
+            : <>Para dizer se uma compra cabe, a conta precisa saber o que entra e o
+                que sai nos seus próximos meses. Sem isso, qualquer resposta seria
+                chute.</>}
         </div>
-        <button onClick={() => navigate('/planejamento')} style={{
+        <button onClick={() => navigate(emDescoberta ? '/novo-lancamento' : '/planejamento')} style={{
           marginTop: 20, padding: '12px 22px', border: 'none', borderRadius: 10,
           background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
           color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
           fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(26,86,219,.3)',
-        }}>Montar meu planejamento</button>
+        }}>{emDescoberta ? 'Registrar meus lançamentos' : 'Montar meu planejamento'}</button>
       </div>
     )
   }

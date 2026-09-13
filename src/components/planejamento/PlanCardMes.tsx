@@ -17,6 +17,15 @@ interface Props {
    */
   saldoInicialReal?: boolean
   saldoFinalReal?: boolean
+  /**
+   * O que o cartão cinza diz quando não há plano. Na fase de DESCOBERTA o
+   * cinza deixa de significar "você não fez" e passa a significar "estamos
+   * medindo" — ver [`utils/descoberta`](../../utils/descoberta.ts).
+   *
+   * Ausente vale "Sem Planejamento", que é o certo para um mês que
+   * simplesmente não tem plano e não está sendo observado.
+   */
+  semPlanoTexto?: { titulo: string; sub?: string }
   onClick: () => void
 }
 
@@ -65,7 +74,8 @@ const TH = {
 
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
-  isAtual, meta = 0, saldoInicialReal = false, saldoFinalReal = false, onClick,
+  isAtual, meta = 0, saldoInicialReal = false, saldoFinalReal = false,
+  semPlanoTexto, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
@@ -158,10 +168,18 @@ export default function PlanCardMes({
 
         {semPlano ? (
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', flexDirection: 'column', gap: 3,
+            alignItems: 'center', justifyContent: 'center', textAlign: 'center',
             height: 60, color: '#fff', fontSize: 11, fontWeight: 600,
           }}>
-            Sem Planejamento
+            <span>{semPlanoTexto?.titulo ?? 'Sem Planejamento'}</span>
+            {/* 0,75 sobre #475569 — o extremo MAIS CLARO do gradiente — dá
+                5,12:1. Medido antes de entrar, como manda o CLAUDE.md. */}
+            {semPlanoTexto?.sub && (
+              <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.75)' }}>
+                {semPlanoTexto.sub}
+              </span>
+            )}
           </div>
         ) : (
           <>

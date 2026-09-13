@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
@@ -6,6 +6,12 @@ import PageHeader from '../components/PageHeader'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { type ViewMode, COR } from '../components/planejamento/types'
+import { useApp } from '../context/AppContext'
+import DescobertaBanner from '../components/DescobertaBanner'
+import DescobertaModal from '../components/DescobertaModal'
+import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
+import { medirDescoberta } from '../utils/descoberta'
+import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPainel from '../components/planejamento/PlanPainel'
 import PlanLista from '../components/planejamento/PlanLista'
@@ -34,6 +40,8 @@ export default function Planejamento() {
   )
 
   const plan = usePlanejamento(anoAtual)
+  const { planos, extratoData, contas, onboardingCompleto, user,
+    setPlanos, faturaData, categorias } = useApp()
 
   const modoParam = new URLSearchParams(location.search).get('modo')
   const viewMode: ViewMode =
@@ -62,6 +70,72 @@ export default function Planejamento() {
   function handleBulkSave(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
     plan.editarMultiplosValores(ops)
   }
+
+  // A fase e DERIVADA: onboarding feito e nenhum plano em lugar nenhum. Ver
+  // utils/descoberta — nao existe campo guardado que possa discordar disso.
+  const descoberta = useMemo(() => medirDescoberta({
+    onboardingCompleto, planos, extratoData, contas,
+  }), [onboardingCompleto, planos, extratoData, contas])
+
+  // A explicação da fase aparece UMA vez, na primeira entrada sem plano.
+  // Depois só pelo "Como funciona" da faixa: um modal que volta a cada visita
+  // vira obstáculo, e a tela por trás dele se explica sozinha.
+  //
+  // O "visto" é por usuário e vive no localStorage — conveniência de leitura
+  // de um navegador só, não estado do app. Em aba anônima ou noutro aparelho
+  // ele volta, e reaparecer custa um clique; uma coluna no banco custaria
+  // migração e mais um estado capaz de discordar dos outros.
+  const chaveIntro = `compass:descoberta-intro:${user?.id ?? 'anon'}`
+  const [verIntro, setVerIntro] = useState(false)
+  const introAvaliada = useRef(false)
+
+  useEffect(() => {
+    if (introAvaliada.current || !descoberta.ativa) return
+    introAvaliada.current = true
+    let visto = false
+    try { visto = localStorage.getItem(chaveIntro) === '1' } catch { /* aba anônima */ }
+    if (!visto) setVerIntro(true)
+  }, [descoberta.ativa, chaveIntro])
+
+  const fecharIntro = useCallback(() => {
+    setVerIntro(false)
+    try { localStorage.setItem(chaveIntro, '1') } catch { /* aba anônima */ }
+  }, [chaveIntro])
+
+  // ── A proposta do primeiro plano ────────────────────────────────────
+  //
+  // Só existe quando há um mês fechado com registro. O valor de cada linha é
+  // o realizado daquele mês, pela MESMA função que alimenta o Radar — ver
+  // utils/primeiroPlano.
+  const proposta = useMemo(() => {
+    if (!descoberta.ativa || !descoberta.mesBase) return null
+    return propostaDoMes({
+      ano: descoberta.mesBase.ano, mes: descoberta.mesBase.mes,
+      extratoData, faturaData, contas, categorias,
+    })
+  }, [descoberta.ativa, descoberta.mesBase, extratoData, faturaData, contas, categorias])
+
+  const [verProposta, setVerProposta] = useState(false)
+  const propostaAvaliada = useRef(false)
+  const chaveProposta = descoberta.mesBase
+    ? `compass:proposta:${user?.id ?? 'anon'}:${descoberta.mesBase.ano}-${descoberta.mesBase.mes}`
+    : ''
+
+  // Abre sozinha UMA vez por mês-base. É o momento que a fase inteira
+  // prometeu; deixá-lo atrás de um clique seria esconder a entrega. Depois
+  // disso, só pelo botão da faixa.
+  useEffect(() => {
+    if (propostaAvaliada.current || !chaveProposta || !proposta) return
+    propostaAvaliada.current = true
+    let visto = false
+    try { visto = localStorage.getItem(chaveProposta) === '1' } catch { /* aba anônima */ }
+    if (!visto) setVerProposta(true)
+  }, [chaveProposta, proposta])
+
+  const fecharProposta = useCallback(() => {
+    setVerProposta(false)
+    try { if (chaveProposta) localStorage.setItem(chaveProposta, '1') } catch { /* aba anônima */ }
+  }, [chaveProposta])
 
   const viewModeLabels: Record<ViewMode, string> = {
     grade: 'Grade', painel: 'Painel', lista: 'Lista',
@@ -118,8 +192,46 @@ export default function Planejamento() {
       )}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* A faixa da fase, acima de qualquer visao: e ela que troca doze
+            cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
+        {descoberta.ativa && (
+          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
+            <DescobertaBanner
+              d={descoberta}
+              onComoFunciona={() => setVerIntro(true)}
+              onVerProposta={() => setVerProposta(true)}
+            />
+          </div>
+        )}
+
+        {/* A explicação da fase só faz sentido enquanto ainda se observa. Com
+            o mês fechado, quem manda é a proposta. */}
+        {verIntro && descoberta.ativa && !descoberta.mesBase && (
+          <DescobertaModal
+            d={descoberta}
+            onFechar={fecharIntro}
+            onMontarPlano={() => { fecharIntro(); navigate('/wizard-planejamento') }}
+          />
+        )}
+
+        {verProposta && proposta && (
+          <PrimeiroPlanoModal
+            proposta={proposta}
+            mesInicio={new Date().getMonth()}
+            onFechar={fecharProposta}
+            onCriar={p => {
+              // O plano nasce no ano CORRENTE, não no ano do mês-base: um
+              // plano é do ano que ele cobre, e a cobertura começa hoje.
+              setPlanos(prev => ({ ...prev, [anoCorrente]: p }))
+              fecharProposta()
+              setAnoAtual(anoCorrente)
+            }}
+          />
+        )}
+
         {viewMode === 'grade' ? (
           <PlanGrade
+            descoberta={descoberta}
             anoAtual={anoAtual}
             mesAtual={plan.mesAtual}
             dadosPrevisto={plan.dadosPrevistoFinal}
