@@ -394,16 +394,23 @@ function situacao(saldo: number, piso: number, parcela: number): Situacao {
 }
 
 /** O tom do cartao de resposta. Fundo e texto medidos em par, ver CLAUDE.md. */
+/**
+ * O veredito e AZUL como os outros cards, e o sinal semantico vive na cor do
+ * TEXTO — verde, amarelo e vermelho da paleta de fundo escuro, medidos sobre
+ * #1e40af: 6,21:1, 6,62:1 e 6,03:1. Os tons claros de antes (sucessoFundo e
+ * companhia) so existem para fundo claro.
+ */
 const TOM = {
-  ok:      { fundo: COR.sucessoFundo, texto: COR.sucessoTexto },
-  atencao: { fundo: COR.avisoFundo,   texto: COR.avisoTexto },
-  nao:     { fundo: COR.erroFundo,    texto: COR.erroTexto },
+  ok:      { texto: '#86efac' },
+  atencao: { texto: '#fde047' },
+  nao:     { texto: '#fecaca' },
 } as const
 
+// O ponto e elemento grafico (limite 3:1); o texto vai na paleta escura.
 const CORES: Record<Situacao, { ponto: string; texto: string }> = {
-  ok:       { ponto: '#16a34a', texto: COR.sucessoTexto },
-  apertado: { ponto: '#f59e0b', texto: COR.avisoTexto },
-  falta:    { ponto: '#dc2626', texto: COR.erroTexto },
+  ok:       { ponto: '#4ade80', texto: '#86efac' },
+  apertado: { ponto: '#fbbf24', texto: '#fde047' },
+  falta:    { ponto: '#f87171', texto: '#fecaca' },
 }
 
 function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
@@ -472,15 +479,14 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   return (
     <>
       <div style={{
-        ...card,
-        background: TOM[d.gravidade].fundo,
-        border: `1px solid ${TOM[d.gravidade].texto}33`,
+        ...cardAzul,
+        borderLeft: `4px solid ${TOM[d.gravidade].texto}`,
       }}>
         <div style={{ fontSize: 17, fontWeight: 800, color: TOM[d.gravidade].texto }}>
           {titulo}
         </div>
 
-        <div style={{ fontSize: 14, color: COR.texto, marginTop: 10, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 14, color: '#fff', marginTop: 10, lineHeight: 1.6 }}>
           {destaque.rotulo}
         </div>
         <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-1px', marginTop: 2,
@@ -488,14 +494,14 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
           {fmt(destaque.valor)}
         </div>
 
-        <div style={{ fontSize: 13, color: COR.texto, marginTop: 8, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: '#fff', marginTop: 8, lineHeight: 1.6 }}>
           {explicacao}
         </div>
 
         {/* O mes ja seria ruim sem a compra. Muda a conversa: o problema nao e
             o que se quer comprar, e o mes. */}
         {d.apertoPreexistente && (
-          <div style={{ fontSize: 13, color: COR.texto, marginTop: 8, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: '#fff', marginTop: 8, lineHeight: 1.6 }}>
             Vale notar: <b>{MESES[d.abaixo[0].mes].toLowerCase()}</b> já ficaria
             apertado mesmo sem essa compra.
           </div>
@@ -503,7 +509,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
 
         {d.gravidade !== 'ok' && (r.adiarPara || r.parcelasQueCabem) && (
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
               O que dá para fazer:
             </div>
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
@@ -526,7 +532,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
         )}
 
         {d.gravidade === 'nao' && !r.adiarPara && !r.parcelasQueCabem && (
-          <div style={{ fontSize: 14, color: COR.texto, marginTop: 16, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, color: '#fff', marginTop: 16, lineHeight: 1.6 }}>
             {r.limitadoPeloPlano
               ? 'Dentro do que você já planejou não há saída — nem esperando, nem dividindo em mais vezes.'
               : 'Nem esperando um ano, nem dividindo em mais vezes. Para esta compra caber, o caminho é sobrar mais dinheiro por mês.'}
@@ -555,11 +561,11 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
         </div>
       )}
 
-      <div style={card}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 3 }}>
+      <div style={cardAzul}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>
           Mês a mês, antes e depois
         </div>
-        <div style={{ fontSize: 12, color: COR.textoSuave, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 16 }}>
           Em cima, o que sobraria sem a compra. Embaixo, já pagando as parcelas.
         </div>
 
@@ -569,13 +575,13 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
             return (
               <div key={`${p.ano}-${p.mes}`} style={{
                 flex: '0 0 auto', minWidth: 88, textAlign: 'center',
-                border: `1px solid ${COR.borda}`, borderRadius: 10, padding: '10px 8px',
+                border: '1px solid rgba(255,255,255,.18)', borderRadius: 10, padding: '10px 8px',
                 background: COR.branco,
               }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: COR.textoSuave }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.85)' }}>
                   {MESES_CURTOS[p.mes]}
                 </div>
-                <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 6,
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.85)', marginTop: 6,
                   fontVariantNumeric: 'tabular-nums' }}>
                   {fmt(p.semCompra)}
                 </div>
@@ -595,7 +601,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
         <Fechamento meses={meses} isMobile={isMobile} />
 
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 14,
-          fontSize: 12, color: COR.textoSuave }}>
+          fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
           {([['ok','tranquilo'],['apertado','apertado'],['falta','falta dinheiro']] as const).map(([s, txt]) => (
             <span key={s} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: CORES[s].ponto }} />
@@ -607,7 +613,7 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
 
         <button onClick={() => setDetalhes(v => !v)} style={{
           marginTop: 16, background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontFamily: 'inherit', fontSize: 13, color: COR.azul, fontWeight: 600,
+          fontFamily: 'inherit', fontSize: 13, color: '#fff', fontWeight: 600,
         }}>
           {detalhes ? '▾ Esconder os números' : '▸ Ver os números em detalhe'}
         </button>
@@ -634,7 +640,7 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
     flex: 1, textAlign: 'center', padding: '10px 8px',
   }
   const rotulo: React.CSSProperties = {
-    fontSize: 11, color: COR.textoSuave, marginBottom: 4,
+    fontSize: 11, color: 'rgba(255,255,255,.85)', marginBottom: 4,
   }
   const valor: React.CSSProperties = {
     fontSize: isMobile ? 15 : 17, fontWeight: 800,
@@ -642,12 +648,12 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
   }
 
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${COR.borda}`, borderRadius: 10,
+    <div style={{ marginTop: 16, border: '1px solid rgba(255,255,255,.18)', borderRadius: 10,
       background: COR.fundo, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={celula}>
           <div style={rotulo}>Sem a compra</div>
-          <div style={{ ...valor, color: COR.textoSuave }}>{fmt(fim.semCompra)}</div>
+          <div style={{ ...valor, color: 'rgba(255,255,255,.85)' }}>{fmt(fim.semCompra)}</div>
         </div>
         <div style={{ width: 1, background: COR.borda }} />
         <div style={celula}>
@@ -662,7 +668,7 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
           <div style={{ ...valor, color: COR.erroTexto }}>− {fmt(diferenca)}</div>
         </div>
       </div>
-      <div style={{ fontSize: 11, color: COR.textoSuave, textAlign: 'center',
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.85)', textAlign: 'center',
         padding: '0 8px 10px' }}>
         onde você chega em {MESES[fim.mes].toLowerCase()} de {fim.ano}
       </div>
@@ -673,14 +679,14 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
 function Saida({ icone, titulo, detalhe }: { icone: string; titulo: string; detalhe: string }) {
   return (
     <div style={{
-      flex: 1, background: COR.branco, border: `1px solid ${COR.borda}`,
+      flex: 1, background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)',
       borderRadius: 10, padding: '12px 14px',
     }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
         {icone} {titulo}
       </div>
       {detalhe && (
-        <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 4, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 4, lineHeight: 1.5 }}>
           {detalhe}
         </div>
       )}
@@ -710,7 +716,7 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
       </div>
 
       <div style={{ display: 'flex', gap: 16, marginTop: 6, marginBottom: 16,
-        fontSize: 12, color: COR.textoSuave }}>
+        fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <span style={{ width: 10, height: 10, borderRadius: 2, background: COR.azul, opacity: .6 }} />
           comprando
@@ -725,16 +731,16 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
         gridTemplateColumns: 'minmax(60px,1fr) repeat(3,minmax(78px,1fr))',
         gap: '6px 10px', alignItems: 'center' }}>
         {['Mês', 'Sem comprar', 'Parcela', 'Sobra'].map((h, i) => (
-          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: COR.textoSuave,
+          <div key={h} style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.85)',
             textTransform: 'uppercase', letterSpacing: '.3px',
             textAlign: i === 0 ? 'left' : 'right' }}>{h}</div>
         ))}
         {meses.map(p => (
           <div key={`${p.ano}-${p.mes}`} style={{ display: 'contents' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: COR.texto }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>
               {MESES_CURTOS[p.mes]}/{String(p.ano).slice(2)}
             </div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: COR.textoSuave,
+            <div style={{ fontSize: 12, textAlign: 'right', color: 'rgba(255,255,255,.85)',
               fontVariantNumeric: 'tabular-nums' }}>{fmt(p.semCompra)}</div>
             <div style={{ fontSize: 12, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
               color: p.parcela > 0 ? COR.erroTexto : COR.textoSuave }}>
