@@ -452,22 +452,22 @@ export default function Simulacao() {
 
   // ── Render ───────────────────────────────────────────────────────────
   const isDivida = aba === 'divida'
-  // A cor da aba ativa vem da paleta de fundo ESCURO, não da paleta do app:
-  // COR.azul sumiria no azul e os tons padrão de verde e vermelho reprovam.
-  const corAba   = aba === 'compra' ? '#fff' : isDivida ? '#fecaca' : '#86efac'
+  /**
+   * As abas viraram pílulas, como o seletor de visão do Planejamento.
+   *
+   * A pílula carrega o próprio fundo claro, então o texto dela não é medido
+   * contra o azul do quadro — o que resolve o contraste e devolve a cor por
+   * aba, que no texto direto sobre azul teria de virar tom pastel.
+   *
+   * Uma diferença do Planejamento, de propósito: lá a pílula inativa usa
+   * `COR.textoSuave` sobre `#f1f5f9`, que dá **4,34:1 e reprova**. Aqui é
+   * `#475569`, 6,92:1. Os ativos: azul 5,68:1, vermelho 5,91:1, verde 4,79:1.
+   */
+  const corAba   = aba === 'compra' ? COR.azul : isDivida ? '#b91c1c' : '#15803d'
+  const fundoAba = aba === 'compra' ? '#eff6ff' : isDivida ? '#fef2f2' : '#f0fdf4'
 
   return (
-    // O gradiente termina em #1e40af, e NAO em #1a56db, por causa da regra do
-    // CLAUDE.md: nenhum fundo azul que carregue valor colorido pode ser mais
-    // claro que #1e40af. Medido sobre #1a56db, o verde da aba Meta dá 4,40:1 e
-    // o vermelho da Dívida 4,27:1 — os dois reprovam. Sobre #1e40af dão 6,21:1
-    // e 6,03:1. As caixas seguem brancas com texto escuro.
-    <div style={{
-      minHeight: '100vh',
-      background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
-      backgroundAttachment: 'fixed',
-      fontFamily: "-apple-system,'Inter',sans-serif",
-    }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath="/simulacao" />
 
       {/* Header em largura cheia, como na tela de Lancamentos */}
@@ -485,28 +485,43 @@ export default function Simulacao() {
           />
       </div>
 
-      {/* A aba Compra usa a tela toda: ela tem uma TABELA de seis colunas mais
-          o fluxo mês a mês, e os dois lado a lado é que fazem a comparação
-          valer — editar uma parcela e ver o mês reagir. Dívida e Meta seguem
-          em 720: são formulário de uma coluna, e esticar só afastaria o rótulo
-          do campo. */}
+      {/* O azul é o QUADRO que segura as caixas, não a página: a página segue
+          clara, e é este contêiner que ganha o fundo. Dentro dele tudo é caixa
+          branca com texto escuro.
+
+          O gradiente termina em #1e40af, e não em #1a56db, por causa da regra
+          do CLAUDE.md: nenhum fundo azul que carregue valor colorido pode ser
+          mais claro que #1e40af. Medido sobre #1a56db, o verde da aba Meta dá
+          4,40:1 e o vermelho da Dívida 4,27:1 — os dois reprovam. Sobre
+          #1e40af dão 6,21:1 e 6,03:1.
+
+          A aba Compra usa a tela toda porque tem uma TABELA de seis colunas
+          mais o fluxo mês a mês, e os dois lado a lado é que fazem a
+          comparação valer. Dívida e Meta seguem em 720: são formulário de uma
+          coluna, e esticar só afastaria o rótulo do campo. */}
       <div style={{
         maxWidth: aba === 'compra' && !isMobile ? 1180 : 720,
-        margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px',
+        margin: isMobile ? '12px 12px 80px' : '16px auto 48px',
+        padding: isMobile ? '16px 14px 20px' : '24px 26px 30px',
+        background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
+        borderRadius: 16,
         transition: 'max-width .2s',
       }}>
 
         {/* Abas */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,.18)', marginBottom: 24 }}>
-          {([['compra', '🛒 Posso comprar?'], ['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => (
-            <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
-              padding: '10px 20px', border: 'none', fontFamily: 'inherit',
-              borderBottom: `2px solid ${aba === v ? corAba : 'transparent'}`,
-              background: 'transparent', cursor: 'pointer', fontSize: 13,
-              fontWeight: aba === v ? 700 : 500,
-              color: aba === v ? corAba : 'rgba(255,255,255,.85)', transition: 'all .15s',
-            }}>{l}</button>
-          ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 22 }}>
+          {([['compra', '🛒 Posso comprar?'], ['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => {
+            const ativo = aba === v
+            return (
+              <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
+                border: 'none', borderRadius: 8, padding: '6px 14px',
+                fontSize: 13, fontWeight: ativo ? 700 : 500, cursor: 'pointer',
+                fontFamily: 'inherit', transition: 'all .15s',
+                background: ativo ? fundoAba : '#f1f5f9',
+                color: ativo ? corAba : '#475569',
+              }}>{l}</button>
+            )
+          })}
         </div>
 
         {/* ── Minhas simulações salvas ── */}

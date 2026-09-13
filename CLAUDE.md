@@ -506,9 +506,24 @@ Fora do escopo desta rodada, e independentes: valor MENSAL como entrada (o
 caso da assinatura de academia, que faz a mesma pergunta da compra com o dado
 invertido), persistir a tabela na simulação salva, e custo de oportunidade.
 
-**O Simulador é a única tela de fundo AZUL com caixas brancas**, e a aba
-Compra é a única que usa a largura toda (1180px, contra 720 das outras duas).
-Decidido pelo Guilherme em 13/09/2026.
+**No Simulador o azul é o QUADRO que segura as caixas, não a página.** A
+página segue clara; o contêiner que envolve abas e conteúdo é que ganha o
+gradiente, com cantos arredondados. Dentro dele tudo é caixa branca com texto
+escuro. A aba Compra é a única que usa a largura toda — 1180px, contra 720 das
+outras duas. Decidido pelo Guilherme em 13/09/2026.
+
+**As abas são pílulas, como o seletor de visão do Planejamento** — e a pílula
+resolve o contraste sozinha: ela carrega o próprio fundo claro, então o texto
+não é medido contra o azul do quadro. Foi isso que devolveu a cor por aba, que
+em texto direto sobre azul teria de virar tom pastel.
+
+Uma diferença do Planejamento, de propósito: lá a pílula inativa usa
+`COR.textoSuave` sobre `#f1f5f9`, que dá **4,34:1 e reprova**. No Simulador é
+`#475569`, 6,92:1. Ativas: azul sobre `#eff6ff` 5,68:1, vermelho `#b91c1c`
+sobre `#fef2f2` 5,91:1, verde `#15803d` sobre `#f0fdf4` 4,79:1.
+
+Fica anotado que o Planejamento tem o mesmo par reprovando, e não foi tocado
+nesta rodada.
 
 A largura tem motivo: a Compra tem uma tabela de seis colunas **mais** o fluxo
 mês a mês, e os dois lado a lado é o que faz a comparação valer — editar uma
