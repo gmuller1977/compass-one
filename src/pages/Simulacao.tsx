@@ -452,10 +452,22 @@ export default function Simulacao() {
 
   // ── Render ───────────────────────────────────────────────────────────
   const isDivida = aba === 'divida'
-  const corAba   = aba === 'compra' ? COR.azul : isDivida ? COR.vermelho : COR.verde
+  // A cor da aba ativa vem da paleta de fundo ESCURO, não da paleta do app:
+  // COR.azul sumiria no azul e os tons padrão de verde e vermelho reprovam.
+  const corAba   = aba === 'compra' ? '#fff' : isDivida ? '#fecaca' : '#86efac'
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    // O gradiente termina em #1e40af, e NAO em #1a56db, por causa da regra do
+    // CLAUDE.md: nenhum fundo azul que carregue valor colorido pode ser mais
+    // claro que #1e40af. Medido sobre #1a56db, o verde da aba Meta dá 4,40:1 e
+    // o vermelho da Dívida 4,27:1 — os dois reprovam. Sobre #1e40af dão 6,21:1
+    // e 6,03:1. As caixas seguem brancas com texto escuro.
+    <div style={{
+      minHeight: '100vh',
+      background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
+      backgroundAttachment: 'fixed',
+      fontFamily: "-apple-system,'Inter',sans-serif",
+    }}>
       <AppHeader currentPath="/simulacao" />
 
       {/* Header em largura cheia, como na tela de Lancamentos */}
@@ -473,17 +485,26 @@ export default function Simulacao() {
           />
       </div>
 
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px' }}>
+      {/* A aba Compra usa a tela toda: ela tem uma TABELA de seis colunas mais
+          o fluxo mês a mês, e os dois lado a lado é que fazem a comparação
+          valer — editar uma parcela e ver o mês reagir. Dívida e Meta seguem
+          em 720: são formulário de uma coluna, e esticar só afastaria o rótulo
+          do campo. */}
+      <div style={{
+        maxWidth: aba === 'compra' && !isMobile ? 1180 : 720,
+        margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 48px',
+        transition: 'max-width .2s',
+      }}>
 
         {/* Abas */}
-        <div style={{ display: 'flex', borderBottom: `1px solid ${COR.borda}`, marginBottom: 24 }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,.18)', marginBottom: 24 }}>
           {([['compra', '🛒 Posso comprar?'], ['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => (
             <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
               padding: '10px 20px', border: 'none', fontFamily: 'inherit',
               borderBottom: `2px solid ${aba === v ? corAba : 'transparent'}`,
               background: 'transparent', cursor: 'pointer', fontSize: 13,
               fontWeight: aba === v ? 700 : 500,
-              color: aba === v ? corAba : COR.textoSuave, transition: 'all .15s',
+              color: aba === v ? corAba : 'rgba(255,255,255,.85)', transition: 'all .15s',
             }}>{l}</button>
           ))}
         </div>
@@ -491,7 +512,7 @@ export default function Simulacao() {
         {/* ── Minhas simulações salvas ── */}
         {!listLoading && simListFiltrada.length > 0 && (
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoMuted, letterSpacing: '.8px', textTransform: 'uppercase', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.85)', letterSpacing: '.8px', textTransform: 'uppercase', marginBottom: 10 }}>
               Minhas simulações salvas
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -499,7 +520,7 @@ export default function Simulacao() {
                 <SimCard key={s.id} sim={s} onDelete={excluirSim} />
               ))}
             </div>
-            <div style={{ height: 1, background: COR.borda, margin: '20px 0' }} />
+            <div style={{ height: 1, background: 'rgba(255,255,255,.18)', margin: '20px 0' }} />
           </div>
         )}
 

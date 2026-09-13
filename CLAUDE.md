@@ -506,6 +506,33 @@ Fora do escopo desta rodada, e independentes: valor MENSAL como entrada (o
 caso da assinatura de academia, que faz a mesma pergunta da compra com o dado
 invertido), persistir a tabela na simulação salva, e custo de oportunidade.
 
+**O Simulador é a única tela de fundo AZUL com caixas brancas**, e a aba
+Compra é a única que usa a largura toda (1180px, contra 720 das outras duas).
+Decidido pelo Guilherme em 13/09/2026.
+
+A largura tem motivo: a Compra tem uma tabela de seis colunas **mais** o fluxo
+mês a mês, e os dois lado a lado é o que faz a comparação valer — editar uma
+parcela e ver o mês reagir sem sair do lugar. A resposta fica `sticky` à
+direita. Dívida e Meta seguem em 720 porque são formulário de uma coluna, e
+esticar só afastaria o rótulo do campo.
+
+As duas colunas existem **desde o começo**, com um convite no lugar da
+resposta. Aparecer só depois do primeiro clique faria a tabela encolher e
+refluir no meio do uso.
+
+**O gradiente termina em `#1e40af`, e isso não é escolha estética.** A regra
+diz que nenhum fundo azul que carregue valor colorido pode ser mais claro que
+`#1e40af`, e a aba ativa é colorida por tipo. Medido sobre `#1a56db`: o verde
+da Meta dá **4,40:1** e o vermelho da Dívida **4,27:1** — os dois reprovam.
+Sobre `#1e40af` dão 6,21:1 e 6,03:1.
+
+Por isso a aba ativa usa a paleta de fundo ESCURO — `#fff`, `#fecaca`,
+`#86efac` — e não `COR.azul` / `COR.vermelho` / `COR.verde`, que sumiriam ou
+reprovariam. Inativa em `rgba(255,255,255,.85)`, 4,92:1.
+
+O conteúdo todo vive em caixas brancas com texto escuro, então `card`,
+`inputSt` e `labelSt` não foram tocados: o azul é só o palco.
+
 **O Simulador parte do saldo PREVISTO do mês corrente, não do saldo de hoje.**
 A série de `serieBase` chamava `saldoTotalNoFim` sem `comoAbertura`, e para o mês
 corrente isso devolve o realizado. O primeiro ponto ignorava tudo que ainda

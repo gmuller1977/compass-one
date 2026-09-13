@@ -219,8 +219,18 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     )
   }
 
+  // No desktop a resposta fica ao LADO da tabela, e não embaixo: o ponto da
+  // comparação é mexer numa parcela e ver o mês reagir. As duas colunas
+  // existem desde o começo — aparecer só depois do primeiro clique faria a
+  // tabela encolher e refluir no meio do uso.
+  const duasColunas = !isMobile
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{
+      display: duasColunas ? 'grid' : 'flex',
+      gridTemplateColumns: duasColunas ? 'minmax(0,1.35fr) minmax(0,1fr)' : undefined,
+      flexDirection: duasColunas ? undefined : 'column',
+      alignItems: 'start', gap: 16,
+    }}>
       <div style={card}>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 16 }}>
           <div>
@@ -324,13 +334,24 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         }}>Ver se cabe no meu bolso</button>
       </div>
 
-      {resultado && pedido && (
-        <Resposta
-          nome={nome} r={resultado} isMobile={isMobile}
-          piso={pedido.piso}
-          valorTotal={pedido.valorTotal} parcelas={pedido.parcelas}
-        />
-      )}
+      <div style={duasColunas
+        ? { position: 'sticky', top: 16, display: 'flex', flexDirection: 'column', gap: 16 }
+        : { display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {resultado && pedido ? (
+          <Resposta
+            nome={nome} r={resultado} isMobile={isMobile}
+            piso={pedido.piso}
+            valorTotal={pedido.valorTotal} parcelas={pedido.parcelas}
+          />
+        ) : duasColunas && (
+          <div style={{ ...card, textAlign: 'center', padding: '40px 24px' }}>
+            <div style={{ fontSize: 30 }}>📊</div>
+            <div style={{ fontSize: 13.5, color: COR.textoSuave, marginTop: 10, lineHeight: 1.6 }}>
+              Escolha uma opção na tabela para ver o mês a mês.
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
