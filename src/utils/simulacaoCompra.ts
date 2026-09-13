@@ -112,6 +112,24 @@ export function saidasDoParcelamento(p: Parcelamento, contas: Conta[]) {
  * No cartão que vence antes de fechar a primeira parcela já nasce um mês à
  * frente, e isso come um mês do teto.
  */
+/**
+ * Quantos meses, a partir de um mês, o planejamento ainda cobre.
+ *
+ * É o mesmo teto de `parcelasQueOPlanoCobre`, sem o deslocamento do cartão —
+ * serve a quem simula um compromisso mensal que sai da conta, como a parcela
+ * de uma dívida ou o depósito de uma meta.
+ *
+ * Existe porque "Quitar dívida" e "Meta de poupança" ignoravam o horizonte:
+ * os dois iteravam até 600 meses e o botão de incluir no planejamento
+ * truncava em dezembro **sem avisar**. Cinquenta anos de simulação num app
+ * que decidiu, por escrito, que nada aqui extrapola.
+ */
+export function mesesQueOPlanoCobre(planos: Deps['planos'], de: Mes): number {
+  const fim = fimDoPlanejamento(planos)
+  if (!fim) return 0
+  return mesesAte(de, fim)
+}
+
 export function parcelasQueOPlanoCobre(
   planos: Deps['planos'],
   compra: { ano: number; mes: number; cartaoId?: string },

@@ -9,6 +9,9 @@ import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import { COR } from '../utils/cores'
 import SimCompra from '../components/simulacao/SimCompra'
+import { useNavigate } from 'react-router-dom'
+import { mesesQueOPlanoCobre, fimDoPlanejamento } from '../utils/simulacaoCompra'
+import type { PlanoAnoData } from '../context/AppContext'
 
 function useIsMobile() {
   const [v] = useState(() => window.innerWidth < 640)
@@ -228,9 +231,51 @@ function TabelaImpacto({ parcela, planos, cor }: {
 export default function Simulacao() {
   const isMobile                          = useIsMobile()
   const { user, planos, setPlanos } = useApp()
+  const navigate = useNavigate()
   const hoje                              = new Date()
 
   const [aba, setAba] = useState<'compra' | 'divida' | 'meta'>('compra')
+
+  // ── O horizonte do plano ────────────────────────────────────────────
+  //
+  // A aba "Posso comprar?" sempre respeitou isto — `parcelasQueOPlanoCobre`
+  // desabilita as parcelas que passam do fim do plano. Dívida e Meta nao
+  // respeitavam: iteravam ate 600 meses e o "incluir no planejamento"
+  // truncava em dezembro sem dizer nada. Eram duas filosofias opostas sobre a
+  // mesma pergunta, e a documentada e a da Compra: nada aqui extrapola.
+  const fimDoPlano = useMemo(
+    () => fimDoPlanejamento(planos as Record<number, PlanoAnoData | undefined>),
+    [planos],
+  )
+  const tetoMeses = useMemo(
+    () => mesesQueOPlanoCobre(
+      planos as Record<number, PlanoAnoData | undefined>,
+      { ano: hoje.getFullYear(), mes: hoje.getMonth() },
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [planos],
+  )
+
+  /** O aviso do teto, na mesma linguagem da aba Compra. */
+  function AvisoTeto({ meses }: { meses: number }) {
+    if (!fimDoPlano || meses <= tetoMeses) return null
+    return (
+      <div style={{
+        fontSize: 12, color: COR.avisoTexto, background: COR.avisoFundo,
+        border: `1px solid ${COR.avisoBorda}`, borderRadius: 8,
+        padding: '10px 12px', marginTop: 12, lineHeight: 1.55,
+      }}>
+        Seu planejamento vai até <b>{MESES_FULL[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b>,
+        que cobre <b>{tetoMeses} {tetoMeses === 1 ? 'mês' : 'meses'}</b> — e esta simulação
+        leva <b>{meses}</b>. Incluir no planejamento grava só os {tetoMeses} que cabem.{' '}
+        <button onClick={() => navigate(`/planejamento?ano=${fimDoPlano.ano + 1}`)} style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'inherit', fontSize: 12, color: COR.azul, fontWeight: 700,
+          textDecoration: 'underline',
+        }}>Planejar mais meses</button> para gravar o resto.
+      </div>
+    )
+  }
 
   // ── Saved simulations ────────────────────────────────────────────────
   const [simList,      setSimList]      = useState<SimRow[]>([])
@@ -369,9 +414,19 @@ export default function Simulacao() {
     const anoAtual = hoje.getFullYear()
     const mesAtual = hoje.getMonth()
 
-    // Build monthly value array for current year
+    // O plano so recebe o que ele cobre. Antes o laco parava em dezembro e
+    // calava: uma divida de 24 parcelas comecando em setembro gravava quatro
+    // meses e DESCARTAVA vinte, sem nada na tela. O Simulador existe para
+    // avisar que o dinheiro vai faltar, e escondia 83% da obrigacao.
+    //
+    // Parar no horizonte e a regra ja escrita em simulacaoCompra: nada aqui
+    // extrapola. Quem quiser gravar o resto planeja o ano seguinte — e o
+    // AvisoTeto diz isso, com o link, antes de o botao ser clicado.
+    const cabem = Math.min(mesesTot, tetoMeses)
+    if (cabem <= 0) return
+
     const v = Array(12).fill(0)
-    for (let m = mesAtual; m < 12 && (m - mesAtual) < mesesTot; m++) {
+    for (let m = mesAtual; m < 12 && (m - mesAtual) < cabem; m++) {
       v[m] = parcela
     }
 
@@ -500,6 +555,7 @@ export default function Simulacao() {
                     <span style={{ color: COR.vermelho }}>{resultDiv.meses} meses</span>{' '}
                     ({addMeses(hoje, resultDiv.meses)})
                   </div>
+                  <AvisoTeto meses={resultDiv.meses}/>
                   <div style={{ display: 'flex', gap: 24, marginTop: 14, flexWrap: 'wrap' }}>
                     <div>
                       <div style={{ fontSize: 11, color: COR.textoMuted }}>Total pago</div>
@@ -641,6 +697,7 @@ export default function Simulacao() {
                     <span style={{ color: COR.verde }}>{resultMeta.meses} meses</span>{' '}
                     ({addMeses(hoje, resultMeta.meses)})
                   </div>
+                  <AvisoTeto meses={resultMeta.meses}/>
                   <div style={{ margin: '14px 0 4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: COR.textoMuted, marginBottom: 5 }}>
                       <span>R$ 0</span><span>{fmt(parseBRL(valorMeta))}</span>

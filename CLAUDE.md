@@ -432,6 +432,30 @@ previsto" no card da Grade, mantendo a troca pelo realizado. Rejeitada no mesmo
 dia — o problema não era a falta de rótulo, era a tela de planejamento mostrar
 realizado onde deveria mostrar plano.
 
+**O horizonte do plano vale nas TRÊS abas do Simulador, não só na Compra.**
+"Posso comprar?" sempre respeitou — `parcelasQueOPlanoCobre` desabilita as
+parcelas que passam do fim do plano e explica por quê, com link para planejar o
+ano seguinte. **"Quitar dívida" e "Meta de poupança" não respeitavam**:
+`simularDivida` e `simularMeta` iteram até `meses < 600` — cinquenta anos — sem
+nunca olhar `fimDoPlanejamento`. Corrigido em 13/09/2026.
+
+O dano não era a conta da dívida, que é aritmética honesta sobre saldo, parcela
+e taxa. Era o `incluirNoPlanejamento`: o laço gravava de `mesAtual` até
+dezembro e **calava**. Uma dívida de 24 parcelas começando em setembro gravava
+quatro meses e descartava vinte, sem nada na tela — numa tela cujo trabalho é
+avisar que o dinheiro vai faltar, 83% da obrigação sumia em silêncio.
+
+Hoje `mesesQueOPlanoCobre` em
+[`simulacaoCompra.ts`](src/utils/simulacaoCompra.ts) dá o teto — é o mesmo de
+`parcelasQueOPlanoCobre`, sem o deslocamento do cartão, porque parcela de
+dívida e depósito de meta saem direto da conta. O resultado continua mostrando
+os 24 meses verdadeiros; o que muda é que a tela **diz** quantos cabem, e a
+gravação para ali.
+
+A simulação em si não é cortada de propósito: "com essa parcela leva 24 meses"
+é exatamente o que o usuário precisa saber, e é aritmética da dívida, não
+projeção do plano. Cortar o número esconderia a dívida para proteger o plano.
+
 **O Simulador parte do saldo PREVISTO do mês corrente, não do saldo de hoje.**
 A série de `serieBase` chamava `saldoTotalNoFim` sem `comoAbertura`, e para o mês
 corrente isso devolve o realizado. O primeiro ponto ignorava tudo que ainda
