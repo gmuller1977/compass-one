@@ -61,7 +61,7 @@ export default function NorthPanel({ open, onClose, messages, loading, onEnviar,
     }
   }
 
-  const welcomeText = `Olá${nomeUsuario ? ', ' + nomeUsuario : ''}! Sou o North, seu assistente financeiro. Posso te ajudar com:\n• Consultar saldos e faturas\n• Analisar seus gastos do mês\n• Comparar planejado vs realizado\n• Dar dicas para melhorar suas finanças\n\nComo posso te ajudar?`
+  const welcomeText = `Olá${nomeUsuario ? ', ' + nomeUsuario : ''}! Sou o North, seu copiloto. Acompanho os instrumentos e aviso quando algo sai da rota.\n\nPode perguntar qualquer coisa sobre a sua travessia — para onde está indo o dinheiro, se o mês fecha, o que aconteceria se você mudasse alguma coisa.`
 
   return (
     <>

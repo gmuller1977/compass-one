@@ -7,6 +7,7 @@ import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 import { COR } from '../utils/cores'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
+import '../styles/boas-vindas.css'
 
 const BANCOS = [
   'Banco do Brasil', 'Bradesco', 'C6 Bank', 'Caixa', 'Inter',
@@ -21,6 +22,32 @@ const TOP10 = new Set([
 ])
 
 const SLIDE_COUNT = 6
+
+/**
+ * A rota do primeiro slide: oscilação amortecida, forte na largada e reta no
+ * destino. O traçado é gerado matematicamente e vem pronto do briefing — não
+ * redesenhar à mão. O mesmo `d` alimenta três coisas: a rota pontilhada, o
+ * rastro verde e o `offset-path` do avião, que precisa ser idêntico ou o
+ * avião voa fora do próprio rastro.
+ */
+const BV_ROTA = 'M70.0 46.0 L71.9 53.2 L73.8 59.7 L75.7 65.1 L77.6 69.1 L79.5 71.6 L81.5 72.5 L83.4 72.2 L85.3 71.1 L87.2 69.5 L89.1 67.8 L91.0 66.4 L92.9 65.2 L94.8 64.2 L96.7 63.4 L98.6 62.6 L100.5 61.4 L102.5 60.0 L104.4 58.1 L106.3 56.1 L108.2 54.0 L110.1 52.0 L112.0 50.5 L113.9 49.4 L115.8 48.8 L117.7 48.6 L119.6 48.3 L121.5 47.7 L123.5 46.4 L125.4 44.1 L127.3 40.7 L129.2 36.4 L131.1 31.2 L133.0 25.8 L134.9 20.7 L136.8 16.3 L138.7 13.2 L140.6 11.8 L142.5 12.1 L144.5 14.0 L146.4 17.3 L148.3 21.6 L150.2 26.4 L152.1 31.2 L154.0 35.8 L155.9 39.9 L157.8 43.4 L159.7 46.5 L161.6 49.2 L163.5 51.7 L165.5 54.2 L167.4 56.6 L169.3 59.0 L171.2 61.1 L173.1 62.7 L175.0 63.7 L176.9 63.9 L178.8 63.4 L180.7 62.3 L182.6 60.7 L184.5 59.2 L186.5 57.9 L188.4 57.2 L190.3 57.4 L192.2 58.3 L194.1 59.8 L196.0 61.6 L197.9 63.4 L199.8 64.6 L201.7 64.8 L203.6 63.9 L205.5 61.7 L207.5 58.2 L209.4 53.8 L211.3 48.9 L213.2 43.9 L215.1 39.1 L217.0 34.9 L218.9 31.6 L220.8 29.1 L222.7 27.5 L224.6 26.5 L226.5 26.0 L228.5 25.9 L230.4 26.1 L232.3 26.4 L234.2 27.1 L236.1 28.1 L238.0 29.6 L239.9 31.6 L241.8 34.0 L243.7 36.8 L245.6 39.8 L247.5 42.7 L249.5 45.3 L251.4 47.3 L253.3 48.7 L255.2 49.3 L257.1 49.3 L259.0 48.8 L260.9 48.2 L262.8 47.6 L264.7 47.4 L266.6 47.6 L268.5 48.3 L270.5 49.5 L272.4 51.1 L274.3 52.8 L276.2 54.5 L278.1 55.8 L280.0 56.8 L281.9 57.2 L283.8 57.1 L285.7 56.6 L287.6 55.7 L289.5 54.6 L291.5 53.4 L293.4 52.1 L295.3 50.9 L297.2 49.8 L299.1 48.6 L301.0 47.4 L302.9 46.3 L304.8 45.0 L306.7 43.8 L308.6 42.7 L310.5 41.7 L312.5 41.0 L314.4 40.5 L316.3 40.4 L318.2 40.5 L320.1 41.0 L322.0 41.6 L323.9 42.3 L325.8 43.1 L327.7 43.7 L329.6 44.2 L331.5 44.5 L333.5 44.7 L335.4 44.7 L337.3 44.6 L339.2 44.5 L341.1 44.4 L343.0 44.4 L344.9 44.5 L346.8 44.7 L348.7 45.0 L350.6 45.4 L352.5 45.8 L354.5 46.1 L356.4 46.4 L358.3 46.7 L360.2 46.9 L362.1 47.1 L364.0 47.2 L365.9 47.3 L367.8 47.4 L369.7 47.5 L371.6 47.6 L373.5 47.6 L375.5 47.6 L377.4 47.6 L379.3 47.4 L381.2 47.3 L383.1 47.0 L385.0 46.8 L386.9 46.5 L388.8 46.2 L390.7 46.0 L392.6 45.8 L394.5 45.7 L396.5 45.7 L398.4 45.6 L400.3 45.6 L402.2 45.7 L404.1 45.7 L406.0 45.7 L407.9 45.8 L409.8 45.8 L411.7 45.8 L413.6 45.7 L415.5 45.7 L417.5 45.7 L419.4 45.7 L421.3 45.7 L423.2 45.7 L425.1 45.7 L427.0 45.7 L428.9 45.7 L430.8 45.8 L432.7 45.8 L434.6 45.8 L436.5 45.8 L438.5 45.8 L440.4 45.9 L442.3 45.9 L444.2 45.9 L446.1 46.0 L448.0 46.0 L449.9 46.1 L451.8 46.1 L453.7 46.2 L455.6 46.2 L457.5 46.2 L459.5 46.2 L461.4 46.2 L463.3 46.2 L465.2 46.1 L467.1 46.1 L469.0 46.1 L470.9 46.1 L472.8 46.1 L474.7 46.0 L476.6 46.0 L478.5 46.0 L480.5 46.0 L482.4 46.0 L484.3 46.0 L486.2 46.0 L488.1 46.0 L490.0 46.0'
+
+/** Marcações da bússola a cada 15°. Os quatro cardeais viram letras. */
+const BV_TICKS = (() => {
+  const out: { x1: number; y1: number; x2: number; y2: number; major: boolean }[] = []
+  for (let deg = 0; deg < 360; deg += 15) {
+    if (deg % 90 === 0) continue
+    const major = deg % 45 === 0
+    const rad = (deg - 90) * Math.PI / 180
+    const r2 = 85 - (major ? 11 : 6)
+    out.push({
+      x1: 94 + 85 * Math.cos(rad), y1: 94 + 85 * Math.sin(rad),
+      x2: 94 + r2 * Math.cos(rad), y2: 94 + r2 * Math.sin(rad),
+      major,
+    })
+  }
+  return out
+})()
 
 const FERRAMENTAS = [
   { icon: '🏠', nome: 'Início',       desc: 'Seu painel de comando. A bússola mostra se você está no rumo certo.' },
@@ -343,30 +370,52 @@ export default function Onboarding() {
       switch (slide) {
         // ── Slide 0: Boas-vindas ────────────────────────────────────────
         case 0: return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              fontSize: 80, lineHeight: 1, marginBottom: 20,
-              animation: 'compassSpin 8s linear infinite',
-              display: 'inline-block',
-            }}>🧭</div>
-            <style>{`@keyframes compassSpin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
-            <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
-              Bem-vindo ao Compass One!
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,.7)', marginBottom: 16 }}>
-              Sua bússola financeira pessoal.
-            </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.55)', lineHeight: 1.7, marginBottom: 28 }}>
-              Aqui você vai descobrir para onde vai o seu dinheiro, planejar o futuro e tomar decisões com segurança. Tudo de forma simples e visual.
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? 16 : 28, flexWrap: 'wrap' }}>
-              {[['📊','Controle'],['🎯','Planejamento'],['📈','Radar'],['🧭','Direção']].map(([ico, lbl]) => (
-                <div key={lbl} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, marginBottom: 4 }}>{ico}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>{lbl}</div>
-                </div>
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', width: '100%' }}>
+
+            {/* Os dois SVGs são decorativos: o sentido inteiro está no texto,
+                então leitor de tela não ganha nada lendo agulha e rota. */}
+            <svg className="bv-compass" viewBox="0 0 188 188" aria-hidden="true">
+              <circle className="bv-ring-outer" cx="94" cy="94" r="85"/>
+              <circle className="bv-ring-inner" cx="94" cy="94" r="71"/>
+              {BV_TICKS.map((t, i) => (
+                <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2}
+                  className={t.major ? 'bv-tick' : 'bv-tick-min'}/>
               ))}
-            </div>
+              <text className="bv-letter bv-letter-n" x="94" y="26">N</text>
+              <text className="bv-letter" x="162" y="99">L</text>
+              <text className="bv-letter" x="94" y="172">S</text>
+              <text className="bv-letter" x="26" y="99">O</text>
+              <g className="bv-needle">
+                <path className="bv-needle-n" d="M94 30 L102 94 L94 88 L86 94 Z"/>
+                <path className="bv-needle-s" d="M94 158 L86 94 L94 100 L102 94 Z"/>
+              </g>
+              <circle className="bv-hub" cx="94" cy="94" r="4.5"/>
+            </svg>
+
+            <h1 className="bv-title">
+              Dez minutos agora<br />valem o ano inteiro
+            </h1>
+
+            <p className="bv-lede">
+              Você descobre onde está e define para onde quer chegar.
+              Chega de voar no escuro: a partir de hoje, quando o dinheiro
+              sair da rota, você fica sabendo.
+            </p>
+
+            {/* Turbulenta na largada, reta no destino — a rota conta a mesma
+                coisa que o parágrafo, sem repetir palavra nenhuma. */}
+            <svg className="bv-track" viewBox="0 0 560 108" aria-hidden="true">
+              <path className="bv-route-ahead" pathLength={1000} d={BV_ROTA}/>
+              <path className="bv-trail" pathLength={1000} d={BV_ROTA}/>
+              <circle className="bv-origin" cx="70" cy="46" r="4"/>
+              <circle className="bv-goal" cx="490" cy="46" r="6"/>
+              <g className="bv-plane">
+                <path d="M11 0 L3 -1.5 L-1 -8 L-4 -8 L-2 -1.5 L-8 -1.5 L-10 -4.5 L-12 -4.5 L-11 0 L-12 4.5 L-10 4.5 L-8 1.5 L-2 1.5 L-4 8 L-1 8 L3 1.5 Z"/>
+              </g>
+              <text className="bv-axis-now" x="70" y="100">voando no escuro</text>
+              <text className="bv-axis-goal" x="490" y="100">voo tranquilo</text>
+            </svg>
           </div>
         )
 
@@ -395,7 +444,7 @@ export default function Onboarding() {
                 }}>
                   <div style={{ fontSize: 32, marginBottom: 10 }}>{ico}</div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6 }}>{titulo}</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', lineHeight: 1.6 }}>{desc}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,.9)', lineHeight: 1.6 }}>{desc}</div>
                 </div>
               ))}
             </div>
@@ -421,7 +470,7 @@ export default function Onboarding() {
                   <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1.2 }}>{icon}</span>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{nome}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', lineHeight: 1.5 }}>{desc}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,.9)', lineHeight: 1.5 }}>{desc}</div>
                   </div>
                 </div>
               ))}
@@ -434,10 +483,10 @@ export default function Onboarding() {
           <div style={{ width: '100%' }}>
             <div style={{ textAlign: 'center', marginBottom: 18 }}>
               <div style={{ fontSize: isMobile ? 17 : 20, fontWeight: 800, color: '#fff' }}>
-                Sua rotina financeira
+                Como se voa por aqui
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 3 }}>
-                Simples. Consistente. Eficaz.
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.9)', marginTop: 3 }}>
+                Voar bem não é esforço constante. É a coisa certa no momento certo.
               </div>
             </div>
             <div style={{
@@ -481,7 +530,7 @@ export default function Onboarding() {
             <div style={{
               background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 10, padding: '10px 14px',
-              fontSize: 11, color: 'rgba(255,255,255,.5)', lineHeight: 1.6, textAlign: 'center',
+              fontSize: 11, color: 'rgba(255,255,255,.9)', lineHeight: 1.6, textAlign: 'center',
             }}>
               <span style={{ color: '#93c5fd', fontWeight: 700 }}>5 min/dia + 30 min/mês + 1h/ano</span>
               {' '}= controle total.
@@ -496,7 +545,7 @@ export default function Onboarding() {
             <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: '#fff', marginBottom: 6 }}>
               Ganhe Aurix usando o app
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginBottom: 24 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.9)', marginBottom: 24 }}>
               Cada ação no Compass One te recompensa.
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
@@ -515,14 +564,14 @@ export default function Onboarding() {
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.9)', marginBottom: 16 }}>
               Acumule Aurix, desbloqueie conquistas e suba de nível.
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
               {NIVEIS.map((n, i) => (
                 <span key={i} style={{
                   fontSize: 11, padding: '3px 8px', borderRadius: 8,
-                  background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,.7)',
+                  background: 'rgba(255,255,255,0.1)', color: '#fff',
                 }}>{n}</span>
               ))}
             </div>
@@ -536,15 +585,15 @@ export default function Onboarding() {
             <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
               Tudo pronto para começar!
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,.7)', marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,.9)', marginBottom: 12 }}>
               Vamos configurar o básico em poucos minutos.
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', marginBottom: 28, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,.9)', marginBottom: 28, lineHeight: 1.6 }}>
               Cadastre suas contas, cartões e categorias. Leva menos de 5 minutos.
             </div>
             <div style={{
               display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap',
-              marginBottom: 28, fontSize: 12, color: 'rgba(255,255,255,.5)',
+              marginBottom: 28, fontSize: 12, color: '#fff',
             }}>
               {['① Contas', '② Cartões', '③ Categorias', '④ Configurar', '⑤ Plano'].map((s, i) => (
                 <span key={i} style={{
@@ -559,11 +608,19 @@ export default function Onboarding() {
     }
 
     return (
-      <div style={{
-        minHeight: '100dvh', background: BG,
-        display: 'flex', flexDirection: 'column',
-        fontFamily: "-apple-system,'Inter',sans-serif",
-      }}>
+      // O primeiro slide troca o azul linear compartilhado pelo radial da
+      // referência — é a classe bv-stage que pinta o fundo e a grade de
+      // instrumento. Os outros cinco seguem com o BG de sempre.
+      <div
+        className={slide === 0 ? 'bv-stage' : undefined}
+        style={{
+          minHeight: '100dvh',
+          background: slide === 0 ? undefined : BG,
+          position: slide === 0 ? 'relative' : undefined,
+          display: 'flex', flexDirection: 'column',
+          fontFamily: "-apple-system,'Inter',sans-serif",
+        }}
+      >
         {/* X close */}
         <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 10 }}>
           <button onClick={() => { setOnboardingCompleto(true); navigate('/') }} style={{
@@ -607,19 +664,19 @@ export default function Onboarding() {
                 background: '#fff', color: COR.azulEscuro,
                 fontSize: 15, fontWeight: 700, cursor: 'pointer',
                 fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(0,0,0,.2)',
-              }}>Próximo →</button>
+              }}>{slide === 0 ? 'Traçar minha rota' : 'Próximo →'}</button>
               {slide > 0 ? (
                 <button onClick={() => goSlide(slide - 1)} style={{
                   width: '100%', padding: '10px 20px', border: 'none', borderRadius: 12,
-                  background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.7)',
+                  background: 'rgba(255,255,255,.1)', color: '#fff',
                   fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                 }}>← Voltar</button>
               ) : (
                 <button onClick={pularApresentacao} style={{
                   width: '100%', padding: '10px 20px', border: 'none', borderRadius: 12,
-                  background: 'transparent', color: 'rgba(255,255,255,.5)',
+                  background: 'transparent', color: 'rgba(255,255,255,.9)',
                   fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                }}>Pular apresentação</button>
+                }}>Ver depois</button>
               )}
             </>
           ) : (
@@ -632,12 +689,12 @@ export default function Onboarding() {
               }}>Vamos lá →</button>
               <button onClick={goSlide.bind(null, 4)} style={{
                 width: '100%', padding: '10px 20px', border: 'none', borderRadius: 12,
-                background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.7)',
+                background: 'rgba(255,255,255,.1)', color: '#fff',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
               }}>← Voltar</button>
               <button onClick={() => { setOnboardingCompleto(true); navigate('/') }} style={{
                 width: '100%', padding: '10px 20px', border: 'none', borderRadius: 12,
-                background: 'transparent', color: 'rgba(255,255,255,.45)',
+                background: 'transparent', color: 'rgba(255,255,255,.9)',
                 fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
               }}>Pular por agora</button>
             </>
@@ -665,10 +722,10 @@ export default function Onboarding() {
       }}>
         <div style={{ fontSize: 64, marginBottom: 12 }}>🎉</div>
         <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: '#fff', marginBottom: 6 }}>
-          Tudo pronto!
+          Plano de voo traçado
         </div>
-        <div style={{ fontSize: 14, color: 'rgba(255,255,255,.65)', marginBottom: 28 }}>
-          Seu Compass One está configurado.
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,.9)', marginBottom: 28 }}>
+          A aeronave está preparada e os instrumentos calibrados.
         </div>
 
         <div style={{
@@ -685,7 +742,7 @@ export default function Onboarding() {
             <div key={txt} style={{ fontSize: 13, color: '#fff' }}>{txt}</div>
           ))}
           {nContas === 0 && nCartoes === 0 && (
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>
+            <div style={{ fontSize: 12, color: '#fff' }}>
               ⚠️ Adicione contas em Configurações quando quiser.
             </div>
           )}
@@ -728,10 +785,11 @@ export default function Onboarding() {
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🏦</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>
-            Cadastre suas contas bancárias
+            Onde você está agora
           </div>
           <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.5 }}>
-            Adicione as contas que você usa no dia a dia. Pode ser corrente, poupança ou digital.
+            Todo voo começa com uma checagem. Informe o saldo atual de cada conta — é daqui
+            que a travessia parte. Não precisa ser exato ao centavo; precisa ser honesto.
           </div>
         </div>
 
@@ -906,7 +964,7 @@ export default function Onboarding() {
         <>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto, marginBottom: 6 }}>
-              Quais são seus tipos de gasto?
+              Para onde vai
             </div>
             <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.55 }}>
               Já selecionamos as mais comuns — desative as que não se aplicam a você.
@@ -1159,7 +1217,7 @@ export default function Onboarding() {
             }}>← Voltar</button>
           )}
           <div style={{ flex: 1, textAlign: hasBack ? 'center' : 'left' }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>Compass One</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.9)', fontWeight: 600 }}>Compass One</div>
           </div>
         </div>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.85)', marginBottom: 10 }}>

@@ -74,7 +74,7 @@ function AppMockup() {
             borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
           }}>🟢</div>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:'#16a34a', marginBottom:2 }}>No caminho certo</div>
+            <div style={{ fontSize:12, fontWeight:700, color:'#16a34a', marginBottom:2 }}>Na rota</div>
             <div style={{ fontSize:10, color:'#475569', lineHeight:1.4 }}>Você está dentro do planejado este mês.</div>
           </div>
         </div>
@@ -82,9 +82,9 @@ function AppMockup() {
         {/* KPI cards */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7, marginBottom:11 }}>
           {[
-            { label:'Tenho',  value:'R$ 4.820', color:'#0f172a' },
-            { label:'Entrou', value:'R$ 8.500', color:'#16a34a' },
-            { label:'Gastei', value:'R$ 3.680', color:'#dc2626' },
+            { label:'Saldo',    value:'R$ 4.820', color:'#0f172a' },
+            { label:'Receitas', value:'R$ 8.500', color:'#16a34a' },
+            { label:'Despesas', value:'R$ 3.680', color:'#dc2626' },
           ].map(k => (
             <div key={k.label} style={{
               background:'#fff', borderRadius:10, padding:'9px 9px',
@@ -215,7 +215,7 @@ export default function LandingPage() {
               lineHeight: 1.1,
               letterSpacing: '-1.5px',
             }}>
-              Chega de se perder<br/>nas contas.
+              Todo mundo sabe onde quer chegar.<br/>Quase ninguém tem o plano de voo.
             </h1>
             <p style={{
               color: 'rgba(255,255,255,.82)',
@@ -226,7 +226,8 @@ export default function LandingPage() {
               marginLeft: isMobile ? 'auto' : 0,
               marginRight: isMobile ? 'auto' : 0,
             }}>
-              O Compass One mostra o caminho para uma vida financeira mais tranquila.
+              O Compass One transforma seu ano financeiro em uma travessia com destino,
+              rota e instrumentos. Você decide para onde vai. A gente mostra se está no caminho.
             </p>
 
             {/* CTAs */}
@@ -248,7 +249,7 @@ export default function LandingPage() {
                   boxShadow: '0 8px 28px rgba(0,0,0,.22)',
                 }}
               >
-                Começar grátis →
+                Traçar meu plano de voo →
               </button>
               <button
                 onClick={() => navigate('/login')}
@@ -455,18 +456,18 @@ export default function LandingPage() {
 
             {[
               {
-                n:'1', icon:'🏦', title:'Configure suas contas',
-                desc:'Adicione seus bancos e cartões. Leva menos de dois minutos e não precisa de senha de banco.',
+                n:'1', icon:'🏦', title:'Trace o plano de voo',
+                desc:'Antes de decolar, todo piloto sabe quanto tem, quanto vai gastar e onde vai pousar. Seu ano financeiro merece o mesmo cuidado.',
                 dotBg:`linear-gradient(135deg,#1a56db,#2563eb)`,
               },
               {
-                n:'2', icon:'🎯', title:'Monte seu plano mensal',
-                desc:'Defina quanto pode gastar em cada categoria. O app te guia com perguntas simples.',
+                n:'2', icon:'🎯', title:'Voe com instrumentos',
+                desc:'Registre o que entra e o que sai. O Radar mostra, em tempo real, se você está na rota ou desviando.',
                 dotBg:`linear-gradient(135deg,#16a34a,#22c55e)`,
               },
               {
-                n:'3', icon:'📊', title:'Registre e acompanhe',
-                desc:'Cada gasto que você registra aparece no painel. A bússola mostra se está no caminho certo.',
+                n:'3', icon:'📊', title:'Corrija antes da tempestade',
+                desc:'Todo mês você revisa o voo. O que saiu do plano? Por quê? Vai se repetir? Ajuste a rota e siga.',
                 dotBg:`linear-gradient(135deg,#7c3aed,#a855f7)`,
               },
             ].map((s, i, arr) => (
@@ -541,7 +542,7 @@ export default function LandingPage() {
                   'Lançamentos, planejamento, evolução',
                   'Categorias personalizadas',
                 ],
-                cta: 'Começar grátis →',
+                cta: 'Traçar meu plano de voo →',
                 ctaBg: '#16a34a', ctaColor: '#fff',
                 disabled: false,
                 opacity: 1,
@@ -732,7 +733,7 @@ export default function LandingPage() {
               display: 'inline-block', marginBottom: 14,
             }}
           >
-            Começar grátis →
+            Traçar meu plano de voo →
           </button>
           <div>
             <button onClick={() => navigate('/login')} style={{

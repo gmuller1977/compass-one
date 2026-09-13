@@ -37,7 +37,6 @@ function useIsMobile() {
 }
 
 
-const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -51,11 +50,11 @@ type CompassStatus = 'verde' | 'amarelo' | 'vermelho' | 'sem-plano' | 'sem-dados
 const COMPASS_CFG: Record<CompassStatus, {
   bg: string; border: string; cor: string; icon: string; title: string; msg: (s: number, e: number) => string
 }> = {
-  verde:     { bg: '#f0fdf4', border: '#86efac', cor: '#16a34a', icon: '🧭', title: 'Você está no caminho certo!',          msg: (s) => `No caminho certo. Resultado positivo de +${fmt(s)} este mês.` },
-  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#b45309', icon: '⚠️', title: 'Atenção!',                             msg: () => 'Atenção. Suas despesas estão perto do limite planejado para este mês.' },
-  vermelho:  { bg: '#fff1f2', border: '#fecdd3', cor: '#dc2626', icon: '🔴', title: 'Fora do rumo.',                        msg: (_s, e) => `Acima do planejado. Despesas ultrapassaram o previsto em ${fmt(e)}.` },
-  'sem-plano': { bg: '#f8faff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem planejamento ainda',             msg: () => 'Crie seu planejamento para ativar a bússola e acompanhar seu progresso.' },
-  'sem-dados': { bg: COR.fundo,  border: COR.borda,  cor: COR.textoSuave, icon: '📊', title: 'Sem movimentação',           msg: () => 'Sem movimentação este mês. Registre sua primeira despesa ou receita para ativar a bússola.' },
+  verde:     { bg: '#f0fdf4', border: '#86efac', cor: '#16a34a', icon: '🧭', title: 'Na rota.',                             msg: () => 'Você está gastando abaixo do previsto. Voo tranquilo.' },
+  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#b45309', icon: '⚠️', title: 'Na rota, margem estreita.',            msg: () => 'Dentro do plano, mas sem folga. Evite gasto não previsto até o fim do mês.' },
+  vermelho:  { bg: '#fff1f2', border: '#fecdd3', cor: '#dc2626', icon: '🔴', title: 'Fora de rota.',                        msg: (_s, e) => `O gasto passou o previsto em ${fmt(e)}. Vale abrir o Radar e ver o que pesou.` },
+  'sem-plano': { bg: '#f8faff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem rota traçada.',                  msg: () => 'A bússola só aponta quando existe um plano — leva poucos minutos para traçar o seu.' },
+  'sem-dados': { bg: COR.fundo,  border: COR.borda,  cor: COR.textoSuave, icon: '📊', title: 'Instrumentos sem leitura.',   msg: () => 'Registre seus primeiros lançamentos do mês para a bússola apontar.' },
 }
 
 export default function Dashboard() {
@@ -68,6 +67,14 @@ export default function Dashboard() {
   const [viewAno, setViewAno] = useState(hoje.getFullYear())
 
   const nome = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
+  // Saudacao por horario — secao 4.3 do conceito narrativo. E a unica linha de
+  // logica desta rodada de texto, e ela existe porque a saudacao pedida DEPENDE
+  // da hora: sem isso nao ha como escolher entre as tres frases.
+  const saudacao = hoje.getHours() < 12
+    ? `Bom dia, ${nome}. Aqui está sua posição.`
+    : hoje.getHours() < 18
+      ? `Boa tarde, ${nome}. Tudo sob controle por aqui.`
+      : `Boa noite, ${nome}. Fechando o dia.`
 
 
   // ── Cálculos do mês ──────────────────────────────────────────────────
@@ -209,8 +216,8 @@ export default function Dashboard() {
       <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
           <PageHeader
             icon="ti-layout-dashboard"
-            title={`Olá, ${nome}`}
-            subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
+            title="Painel de bordo"
+            subtitle={saudacao}
             rightContent={
               <>
                 <SeletorMesAno
@@ -269,7 +276,7 @@ export default function Dashboard() {
         <TutorialCard
           tela="inicio"
           icon="🧭"
-          title="Seu painel de comando"
+          title="Seu painel de bordo"
           description="Aqui você vê o resumo da sua vida financeira. A bússola te mostra se está no caminho certo — tudo de forma simples e visual."
           tips={[
             { icon: '💳', text: 'Os cards mostram quanto você tem, ganhou e gastou' },
@@ -453,7 +460,7 @@ export default function Dashboard() {
               padding: '18px 20px', border: `.5px solid ${COR.borda}`,
             }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto, marginBottom: 18 }}>
-                Maiores despesas
+                Onde o dinheiro está indo
               </div>
               {topCategorias.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -511,7 +518,7 @@ export default function Dashboard() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
             }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Últimas movimentações</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Diário de bordo — últimos registros</div>
               <button onClick={() => navigate('/novo-lancamento')} style={{
                 border: 'none', background: 'transparent', color: COR.azul,
                 fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
