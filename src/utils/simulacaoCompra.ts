@@ -228,22 +228,43 @@ function avaliar(
   return { fluxo, janela, pior, primeiroAperto, cabe: !primeiroAperto }
 }
 
-/** `null` quando não há planejamento nenhum: aí não há o que simular. */
-export function simularCompra(
+/** A série e o horizonte: o par que toda simulação precisa antes de julgar. */
+export type SerieDoPlano = { base: PontoFluxo[]; fimDoPlano: Mes }
+
+/**
+ * A projeção sem compra nenhuma. `null` quando não há planejamento.
+ *
+ * Separada de `simularCompra` porque ela é a parte CARA e não depende da
+ * opção que se está julgando. O módulo sempre prometeu isso — "a série sem a
+ * compra é calculada UMA vez e todo o resto é aritmética sobre ela" —, mas a
+ * promessa valia só dentro de uma chamada: comparar seis formas de pagamento
+ * custava seis projeções do plano inteiro.
+ */
+export function serieBaseDoPlano(deps: Deps, hoje: Date = new Date()): SerieDoPlano | null {
+  const fimDoPlano = fimDoPlanejamento(deps.planos)
+  if (!fimDoPlano) return null
+  const base = serieBase(deps, hoje, fimDoPlano)
+  if (!base.length) return null
+  return { base, fimDoPlano }
+}
+
+/**
+ * Julga UM parcelamento sobre uma série já calculada.
+ *
+ * É a mesma conta de `simularCompra` — que hoje é só um atalho que calcula a
+ * série e chama esta. A prova tranca isso: para a mesma entrada, as duas
+ * devolvem exatamente o mesmo resultado.
+ */
+export function simularCompraSobre(
+  serie: SerieDoPlano,
   p: Parcelamento,
-  deps: Deps,
-  opts: { piso?: number; hoje?: Date; maxAdiamento?: number; maxParcelas?: number } = {},
-): ResultadoCompra | null {
-  const hoje = opts.hoje ?? new Date()
+  contas: Conta[],
+  opts: { piso?: number; maxAdiamento?: number; maxParcelas?: number } = {},
+): ResultadoCompra {
   const piso = opts.piso ?? 0
   const maxAdiamento = opts.maxAdiamento ?? 12
   const maxParcelas = opts.maxParcelas ?? 24
-
-  const fimDoPlano = fimDoPlanejamento(deps.planos)
-  if (!fimDoPlano) return null
-
-  const base = serieBase(deps, hoje, fimDoPlano)
-  if (!base.length) return null
+  const { base, fimDoPlano } = serie
 
   let limitadoPeloPlano = false
   /** Uma alternativa só vale se TODAS as parcelas couberem no planejamento. */
@@ -253,7 +274,7 @@ export function simularCompra(
     return dentro
   }
 
-  const saidas = saidasDoParcelamento(p, deps.contas)
+  const saidas = saidasDoParcelamento(p, contas)
   cabeNoPlano(saidas)
   const { fluxo, janela, pior, primeiroAperto, cabe } = avaliar(base, saidas, piso)
 
@@ -263,7 +284,7 @@ export function simularCompra(
   if (!cabe) {
     for (let d = 1; d <= maxAdiamento; d++) {
       const alvo = somaMes(p.ano, p.mes, d)
-      const s = saidasDoParcelamento({ ...p, ...alvo }, deps.contas)
+      const s = saidasDoParcelamento({ ...p, ...alvo }, contas)
       if (!cabeNoPlano(s)) break
       if (avaliar(base, s, piso).cabe) { adiarPara = { ...alvo, meses: d }; break }
     }
@@ -274,7 +295,7 @@ export function simularCompra(
   let parcelasQueCabem: number | null = null
   if (!cabe) {
     for (let n = p.parcelas + 1; n <= maxParcelas; n++) {
-      const s = saidasDoParcelamento({ ...p, parcelas: n }, deps.contas)
+      const s = saidasDoParcelamento({ ...p, parcelas: n }, contas)
       if (!cabeNoPlano(s)) break
       if (avaliar(base, s, piso).cabe) { parcelasQueCabem = n; break }
     }
@@ -284,6 +305,17 @@ export function simularCompra(
     fluxo, janela, pior, primeiroAperto, cabe,
     adiarPara, parcelasQueCabem, limitadoPeloPlano, fimDoPlano,
   }
+}
+
+/** `null` quando não há planejamento nenhum: aí não há o que simular. */
+export function simularCompra(
+  p: Parcelamento,
+  deps: Deps,
+  opts: { piso?: number; hoje?: Date; maxAdiamento?: number; maxParcelas?: number } = {},
+): ResultadoCompra | null {
+  const serie = serieBaseDoPlano(deps, opts.hoje)
+  if (!serie) return null
+  return simularCompraSobre(serie, p, deps.contas, opts)
 }
 
 export type Gravidade = 'ok' | 'atencao' | 'nao'

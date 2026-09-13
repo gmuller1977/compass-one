@@ -9,8 +9,11 @@ import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
 import {
   simularCompra, fimDoPlanejamento, parcelasQueOPlanoCobre, diagnosticar,
+  serieBaseDoPlano,
   type PontoFluxo, type ResultadoCompra,
 } from '../../utils/simulacaoCompra'
+import { compararOpcoes, opcoesPadrao, precoAVista, editarOpcao, type Opcao } from '../../utils/comparativoCompra'
+import SimComparativo from './SimComparativo'
 import type { Deps } from '../../utils/saldoConta'
 import { medirDescoberta } from '../../utils/descoberta'
 import { NOMES_MESES } from '../novoLancamentoExtrato/NleShared'
@@ -21,7 +24,6 @@ const MESES_CURTOS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-const PARCELAS_COMUNS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24]
 
 const inputSt: React.CSSProperties = {
   width: '100%', padding: '11px 14px', border: `1px solid ${COR.borda}`,
@@ -55,7 +57,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   const [nome, setNome]         = useState('')
   const [valorStr, setValorStr] = useState('')
-  const [parcelas, setParcelas] = useState(6)
+
   const [ondeId, setOndeId]     = useState('')          // '' = débito/PIX
   const [inicio, setInicio]     = useState(0)           // meses a partir de hoje
   const [guardarStr, setGuardar] = useState('')
@@ -68,6 +70,25 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   const cartoes = contas.filter(c => c.tipo === 'cartao')
   const valorNum = parseValor(valorStr) ?? 0
+  const guardarNum = parseValor(guardarStr) ?? 0
+
+  // ── A tabela de formas de pagamento ─────────────────────────────────
+  const [opcoes, setOpcoes] = useState<Opcao[]>(() => opcoesPadrao(0))
+  const [selecionada, setSelecionada] = useState<string | null>(null)
+
+  // Trocar o valor da compra re-semeia as linhas AUTOMÁTICAS e preserva as
+  // que o usuário digitou: o que o vendedor disse é dado real e não pode ser
+  // sobrescrito por um palpite de divisão igual.
+  useEffect(() => {
+    setOpcoes(prev => {
+      const padrao = opcoesPadrao(valorNum)
+      return prev.map(o => {
+        if (o.manual) return o
+        const novo = padrao.find(p => p.parcelas === o.parcelas)
+        return novo ? { ...o, valorParcela: novo.valorParcela } : o
+      })
+    })
+  }, [valorNum])
 
   // O planejamento e o horizonte: nada aqui extrapola. Comprar mais tarde ou
   // no cartao que vence antes de fechar come meses desse teto.
@@ -105,29 +126,55 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     [pedido, deps],
   )
 
-  // Trocar de cartao ou adiar a compra pode derrubar o teto abaixo do que ja
-  // estava escolhido. Sem isto o botao ficaria selecionado e desabilitado.
-  useEffect(() => {
-    if (tetoParcelas > 0 && parcelas > tetoParcelas) {
-      setParcelas([...PARCELAS_COMUNS].reverse().find(n => n <= tetoParcelas) ?? 1)
-    }
-  }, [tetoParcelas, parcelas])
+  // A parte CARA, calculada uma vez e compartilhada por todas as linhas.
+  const serie = useMemo(
+    () => serieBaseDoPlano(deps, hoje),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [deps],
+  )
 
-  function simular() {
-    const valor = parseValor(valorStr)
-    if (valor === null) return setErro(`"${valorStr.trim()}" não é um valor`)
-    if (valor <= 0) return setErro('Quanto custa? Preencha o valor.')
-    const guardar = guardarStr.trim() ? parseValor(guardarStr) : 0
-    if (guardar === null) return setErro(`"${guardarStr.trim()}" não é um valor`)
+  const linhas = useMemo(() => {
+    if (!serie) return []
+    return compararOpcoes(opcoes, {
+      serie, contas,
+      alvo: { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(),
+        cartaoId: ondeId || undefined },
+      teto: tetoParcelas,
+      piso: guardarNum,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serie, opcoes, contas, ondeId, inicio, tetoParcelas, guardarNum])
 
-    const alvo = new Date(hoje.getFullYear(), hoje.getMonth() + inicio, 1)
+  /** Clicar numa linha é o gesto de simular: o detalhe abaixo passa a ser dela. */
+  function escolher(id: string) {
+    const l = linhas.find(x => x.opcao.id === id)
+    if (!l || !l.veredito) return
+    setSelecionada(id)
     setErro('')
     setPedido({
-      valorTotal: valor, parcelas,
+      valorTotal: l.total, parcelas: l.opcao.parcelas,
       cartaoId: ondeId || undefined,
-      ano: alvo.getFullYear(), mes: alvo.getMonth(),
-      piso: guardar,
+      ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(),
+      piso: guardarNum,
     })
+  }
+
+  /**
+   * Enter abre o detalhe da opção recomendada.
+   *
+   * O botão "simular" sumiu junto com o seletor de parcelas: agora a tabela
+   * calcula ao vivo e o gesto de escolher É o clique na linha. Enter precisa
+   * de um alvo, e a recomendada é a resposta que a tela já deu.
+   */
+  function simular() {
+    if (parseValor(valorStr) === null) return setErro(`"${valorStr.trim()}" não é um valor`)
+    if (valorNum <= 0) return setErro('Quanto custa? Preencha o valor.')
+    if (guardarStr.trim() && parseValor(guardarStr) === null) {
+      return setErro(`"${guardarStr.trim()}" não é um valor`)
+    }
+    setErro('')
+    const alvo = linhas.find(l => l.recomendada) ?? linhas.find(l => l.veredito)
+    if (alvo) escolher(alvo.opcao.id)
   }
 
   // Sem nada planejado nao ha o que simular, e inventar seria pior do que nao
@@ -189,47 +236,23 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           </div>
         </div>
 
-        <div style={{ marginTop: 18 }}>
-          <label style={labelSt}>Em quantas vezes?</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {PARCELAS_COMUNS.map(n => {
-              const ativo = parcelas === n
-              const fora = n > tetoParcelas
-              return (
-                <button key={n} disabled={fora} onClick={() => setParcelas(n)}
-                  title={fora ? 'Seu planejamento não alcança tantos meses' : undefined}
-                  style={{
-                    padding: '8px 14px', borderRadius: 8, fontFamily: 'inherit',
-                    cursor: fora ? 'not-allowed' : 'pointer',
-                    border: `1.5px solid ${ativo ? COR.azul : COR.borda}`,
-                    background: ativo ? '#eff6ff' : COR.branco,
-                    color: fora ? COR.borda : ativo ? COR.azul : COR.textoSuave,
-                    fontSize: 13, fontWeight: ativo ? 700 : 500, transition: 'all .15s',
-                  }}>{n}x</button>
-              )
-            })}
-          </div>
-          {fimDoPlano && (
-            <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
-              Seu planejamento vai até <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b>,
-              então dá para simular até <b>{tetoParcelas}x</b>.{' '}
-              <button onClick={() => navigate(`/planejamento?ano=${fimDoPlano.ano + 1}`)} style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontFamily: 'inherit', fontSize: 12, color: COR.azul, fontWeight: 600,
-                textDecoration: 'underline',
-              }}>Planejar mais meses</button> para ir além.
-            </div>
-          )}
-          {valorNum > 0 && (
-            <div style={{ fontSize: 20, fontWeight: 800, color: COR.azul, marginTop: 12,
-              letterSpacing: '-.4px' }}>
-              {parcelas}× de {fmt(valorNum / parcelas)}
-              <span style={{ fontSize: 13, fontWeight: 500, color: COR.textoSuave, marginLeft: 8 }}>
-                por mês
-              </span>
-            </div>
-          )}
-        </div>
+        <SimComparativo
+          linhas={linhas}
+          selecionada={selecionada}
+          onSelecionar={escolher}
+          onEditar={(id, campo, valor) => setOpcoes(prev => editarOpcao(prev, id, campo, valor))}
+          onAdicionar={() => setOpcoes(prev => [...prev, {
+            id: `p${Date.now()}`, parcelas: 1, valorParcela: 0, manual: true,
+          }])}
+          onRemover={id => {
+            setOpcoes(prev => prev.filter(o => o.id !== id))
+            if (selecionada === id) { setSelecionada(null); setPedido(null) }
+          }}
+          semAVista={valorNum > 0 && precoAVista(opcoes) === null}
+          fimDoPlano={fimDoPlano}
+          onPlanejarMais={() => fimDoPlano && navigate(`/planejamento?ano=${fimDoPlano.ano + 1}`)}
+          isMobile={isMobile}
+        />
 
         <div style={{ marginTop: 18 }}>
           <label style={labelSt}>Como você vai pagar?</label>

@@ -456,6 +456,56 @@ A simulação em si não é cortada de propósito: "com essa parcela leva 24 mes
 é exatamente o que o usuário precisa saber, e é aritmética da dívida, não
 projeção do plano. Cortar o número esconderia a dívida para proteger o plano.
 
+**"Posso comprar?" compara formas de pagamento, não escolhe uma.** A tela
+perguntava "em quantas vezes?" e o usuário escolhia. Mas ninguém chega na loja
+com a parcela decidida — chega com as opções que o vendedor ofereceu, e a
+dúvida é qual escolher. Implementado em 13/09/2026.
+
+**O juro é SAÍDA, não entrada.** No Brasil ninguém informa a taxa: informa a
+parcela, "12× de R$ 179". Pedir a taxa obrigaria o usuário a fazer de cabeça
+exatamente a conta que ele veio pedir ajuda para fazer. Ele digita parcela e
+quantidade; total e juro embutido saem disso.
+
+**E o juro embutido só existe contra o preço à vista.** Sem linha de
+`parcelas === 1` não há âncora, e a coluna vale `null` — travessão na tela.
+Inventar uma taxa de referência afirmaria um fundamento que não existe. É a
+mesma recusa do "≈" que derrubou a extensão do plano por cópia do último ano.
+
+**A recomendada é a mais barata ENTRE AS QUE CABEM, não a mais barata.** É o
+ponto inteiro da tela: à vista costuma ser a mais barata e a que mais aperta.
+Recomendar por preço sozinho mandaria a pessoa para o mês que a quebra. Empate
+no total desempata pelo maior saldo no pior mês.
+
+Por isso a coluna **Cabe** existe: as outras são custo, e uma tabela só de
+custo responde a pergunta errada.
+
+**Linha que excede o horizonte não some — aparece em cinza**, com "fora do
+plano" e o link para planejar mais meses. Sumir repetiria o truncamento
+silencioso que a Dívida tinha.
+
+**O motor foi partido em dois, e a prova tranca a equivalência.**
+`serieBaseDoPlano` calcula a projeção sem compra — a parte cara — e
+`simularCompraSobre` julga uma opção em cima dela. `simularCompra` virou um
+atalho que chama as duas, com a assinatura pública intacta. O módulo sempre
+prometeu que "a série é calculada UMA vez e o resto é aritmética sobre ela",
+mas a promessa valia só dentro de uma chamada: comparar seis formas custava
+seis projeções do plano inteiro. `prova27` exige que as duas devolvam
+resultado idêntico para a mesma entrada.
+
+**Trocar o valor da compra re-semeia só as linhas automáticas.** O que o
+usuário digitou fica marcado como `manual` e sobrevive — o que o vendedor
+disse é dado real e não pode ser sobrescrito por um palpite de divisão igual.
+Apagar o campo também marca manual: quem apagou quis apagar.
+
+**O botão "simular" e o seletor de parcelas saíram.** A tabela calcula ao vivo
+e o gesto de escolher é o clique na linha, que abre o fluxo mês a mês embaixo.
+Enter abre a recomendada, porque Enter precisa de um alvo e a recomendada é a
+resposta que a tela já deu.
+
+Fora do escopo desta rodada, e independentes: valor MENSAL como entrada (o
+caso da assinatura de academia, que faz a mesma pergunta da compra com o dado
+invertido), persistir a tabela na simulação salva, e custo de oportunidade.
+
 **O Simulador parte do saldo PREVISTO do mês corrente, não do saldo de hoje.**
 A série de `serieBase` chamava `saldoTotalNoFim` sem `comoAbertura`, e para o mês
 corrente isso devolve o realizado. O primeiro ponto ignorava tudo que ainda
