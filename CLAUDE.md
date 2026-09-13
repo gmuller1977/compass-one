@@ -593,6 +593,90 @@ todas: enquanto flutuava, cada banco projetava a fatura de todos os cartões.
 Só existem essas três formas de pagar fatura; transferência foi removida do
 tipo em 06/09/2026.
 
+**O MODO DESCOBERTA existe porque o público-alvo não consegue responder ao
+wizard.** Quem chega sem saber quanto ganha nem quanto gasta não tem como
+preencher "quanto você planeja gastar em mercado?" — e o app inteiro dependia
+dessa resposta. Antes dele o usuário tinha duas saídas: inventar números, ou
+sair pela porta que o próprio texto chamava de adiamento. Implementado em
+11–12/09/2026.
+
+A fase é **DERIVADA, nunca guardada**: "estar descobrindo" é exatamente
+"terminou o onboarding e não tem plano em ano nenhum", e as duas coisas o app
+já sabe. Um campo no banco criaria um terceiro estado capaz de discordar dos
+outros dois — alguém com plano marcado como "descobrindo", ou o contrário.
+Quem mede é `medirDescoberta` em [`utils/descoberta.ts`](src/utils/descoberta.ts),
+e o horizonte do plano sai de `fimDoPlanejamento`, a mesma função que o
+Simulador usa.
+
+O ciclo tem duas metades, e a segunda é o que o torna honesto:
+
+| Enquanto observa | Quando o mês fecha |
+|---|---|
+| faixa com progresso no Planejamento | o convite substitui o contador |
+| cartão do mês diz "Descobrindo" | a proposta abre sozinha, uma vez |
+| Simulador diz a DATA em que vai servir | os valores viram plano ao aceitar |
+
+**`mesBase` não é o mês anterior, é o mês fechado mais recente COM registro**,
+até um ano atrás. Quem registrou em setembro, não abriu o app em outubro e
+voltou em novembro continua tendo setembro como base; olhar só para o mês
+anterior deixaria essa pessoa observando para sempre.
+
+**A proposta é o REALIZADO do mês-base, categoria por categoria, pela mesma
+`construirRealizadoMes` que alimenta o Radar.** Não é média de três meses — não
+há três —, nem mediana, nem projeção: é o que aconteceu. Uma segunda contagem
+"para a proposta" acabaria discordando da tela que mostra o mês, e o usuário
+veria 300 no Radar e 280 na proposta do mesmo mercado. O plano preenche do mês
+CORRENTE até dezembro e deixa zero antes: preencher janeiro a agosto com o
+gasto de setembro inventaria um passado que não houve.
+
+**Categoria se descobre, não se escolhe antes.** Uma categoria tem doze campos
+e o usuário digita UM — o nome. Tipo, movimento e conta saem do formulário em
+que ele já está; ícone, cor e grupo saem do casamento com `CATEGORIAS_PADRAO`.
+`fixa` sai **sempre falso**: não se sabe se algo se repete a partir de um gasto
+só. A regra e a prova vivem em [`utils/novaCategoria.ts`](src/utils/novaCategoria.ts).
+
+O grupo é a única pergunta extra, e só quando o nome não casa com nenhuma
+sugestão — sem ela um mês inteiro de categorias descobertas cairia num balde
+só, e é justo nesse mês que o usuário olha o Radar pela primeira vez.
+
+**O gatilho de criar categoria vive FORA do dropdown**, numa pílula ao lado do
+rótulo. Dentro da lista ele só aparece para quem já a abriu, e quem não encontra
+a categoria costuma fechar antes de chegar ao fim.
+
+**Tentativa descartada, para não repetir:** esconder a opção fora da fase de
+descoberta. Quem percebe uma categoria faltando no meio de um lançamento tem o
+mesmo problema com ou sem plano.
+
+**O modal aparece UMA vez e o "visto" mora no `localStorage`**, por usuário. É
+conveniência de leitura de um navegador, não estado do app: reaparecer noutro
+aparelho custa um clique, uma coluna no banco custaria migração e mais um
+estado para discordar dos outros. Um modal que volta a cada visita vira
+obstáculo, e a tela por trás dele se explica sozinha.
+
+**A faixa anual da Grade some durante a descoberta.** Ela é a SAÍDA de um plano
+— sem plano são quatro R$ 0,00 em destaque logo abaixo de um texto que acabou
+de explicar que ainda estamos medindo, e quatro zeros grandes não leem como
+"ainda não tem", leem como "está quebrado". A barra de ferramentas fica: ela é
+ENTRADA, e é a porta de quem já sabe os próprios números.
+
+**Só o mês OBSERVADO troca de texto na Grade.** Os outros onze seguem sem plano
+de verdade; trocar os doze daria a impressão de que o ano inteiro está em
+observação.
+
+**O Onboarding termina em duas portas de mesmo peso**, e nenhuma é o plano B:
+"Já sei meus números" leva ao wizard, "Ainda não faço ideia" leva a Lançamentos.
+A pergunta que separa não é *quando*, é *você já sabe os seus números?*. A tela
+"Tudo pronto!" só é alcançada pela segunda porta, então ela manda para
+Lançamentos e diz o combinado — mandar para um painel vazio seria prometer uma
+coisa e entregar outra.
+
+**O que não dá para testar na própria conta.** `descoberta.ativa` exige nenhum
+plano em ano nenhum, então quem já tem plano nunca vê nada disso. Validar exige
+conta nova; e para ver o convite é preciso registrar num mês JÁ FECHADO, senão
+não há `mesBase`.
+
+---
+
 **`PageHeader` não vai na `QuickLaunch`**, que é a home do mobile. O componente
 traz ícone, breadcrumb, título e subtítulo — vocabulário de tela interna. Numa
 home ele viraria navegação para lugar nenhum. Decidido em 30/08/2026.
