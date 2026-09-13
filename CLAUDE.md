@@ -506,11 +506,17 @@ Fora do escopo desta rodada, e independentes: valor MENSAL como entrada (o
 caso da assinatura de academia, que faz a mesma pergunta da compra com o dado
 invertido), persistir a tabela na simulação salva, e custo de oportunidade.
 
-**No Simulador o azul é o QUADRO que segura as caixas, não a página.** A
-página segue clara; o contêiner que envolve abas e conteúdo é que ganha o
-gradiente, com cantos arredondados. Dentro dele tudo é caixa branca com texto
-escuro. A aba Compra é a única que usa a largura toda — 1180px, contra 720 das
-outras duas. Decidido pelo Guilherme em 13/09/2026.
+**No Simulador o azul é o CARD do formulário, e os campos dentro dele é que
+são brancos.** A página segue clara. Decidido pelo Guilherme em 13/09/2026,
+depois de eu inverter duas vezes: primeiro pintei a página, depois o contêiner.
+
+O card azul é um estilo À PARTE (`cardAzul`), e não o `card` compartilhado —
+aquele também veste a Resposta, o estado sem plano e a caixa de aviso, três
+blocos escritos para fundo claro. Pintar o compartilhado quebraria os três de
+uma vez, e o `tsc` não acusaria nada.
+
+A aba Compra é a única que usa a largura toda — 1180px, contra 720 das outras
+duas.
 
 **As abas são pílulas, como o seletor de visão do Planejamento** — e a pílula
 resolve o contraste sozinha: ela carrega o próprio fundo claro, então o texto

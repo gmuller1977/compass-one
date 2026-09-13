@@ -31,10 +31,28 @@ const inputSt: React.CSSProperties = {
   boxSizing: 'border-box', background: COR.branco, color: COR.texto,
 }
 const labelSt: React.CSSProperties = {
-  display: 'block', fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 7,
+  display: 'block', fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 7,
 }
 const card: React.CSSProperties = {
   background: COR.branco, border: `.5px solid ${COR.borda}`, borderRadius: 12, padding: '20px 22px',
+}
+
+/**
+ * O card do FORMULÁRIO e da tabela é azul; os campos dentro dele seguem
+ * brancos com texto escuro.
+ *
+ * É um estilo à parte, e não o `card` de cima, porque aquele também veste a
+ * Resposta, o estado sem plano e a caixa de aviso — três blocos cujo conteúdo
+ * foi escrito para fundo claro. Pintar o compartilhado quebraria os três.
+ *
+ * Medido sobre `#1e40af`, o extremo mais claro do gradiente: branco 8,72:1,
+ * `#86efac` 6,21:1, `#fecaca` 6,03:1, `#fde047` 6,62:1. O gradiente não pode
+ * clarear além de `#1e40af` — é a regra do CLAUDE.md, e sobre `#1a56db` o
+ * verde cairia para 4,40:1.
+ */
+const cardAzul: React.CSSProperties = {
+  background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
+  border: '1px solid rgba(255,255,255,.12)', borderRadius: 12, padding: '20px 22px',
 }
 
 /**
@@ -231,7 +249,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
       flexDirection: duasColunas ? undefined : 'column',
       alignItems: 'start', gap: 16,
     }}>
-      <div style={card}>
+      <div style={cardAzul}>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 16 }}>
           <div>
             <label style={labelSt}>O que você quer comprar?</label>
@@ -286,7 +304,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
         <button onClick={() => setMaisOpcoes(v => !v)} style={{
           marginTop: 18, background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontFamily: 'inherit', fontSize: 13, color: COR.azul, fontWeight: 600,
+          fontFamily: 'inherit', fontSize: 13, color: '#fff', fontWeight: 600,
         }}>
           {maisOpcoes ? '▾' : '▸'} Mais opções
         </button>
@@ -313,7 +331,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
               <input value={guardarStr} onChange={e => setGuardar(e.target.value)}
                 placeholder="R$ 0,00" style={inputSt}
                 onKeyDown={e => e.key === 'Enter' && simular()} />
-              <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 6, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 6, lineHeight: 1.5 }}>
                 Um valor que você não quer encostar. Sem isso, a conta só evita
                 ficar no vermelho.
               </div>
@@ -326,11 +344,13 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
             padding: '9px 13px', fontSize: 13, marginTop: 16 }}>⚠ {erro}</div>
         )}
 
+        {/* Botão azul sobre card azul sumiria. Invertido: fundo branco, texto
+            no azul escuro — 14,8:1. */}
         <button onClick={simular} style={{
           marginTop: 18, width: '100%', padding: 14, border: 'none', borderRadius: 10,
-          background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-          color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer',
-          fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(26,86,219,.3)',
+          background: COR.branco, color: COR.azulEscuro,
+          fontSize: 15, fontWeight: 800, cursor: 'pointer',
+          fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(0,0,0,.22)',
         }}>Ver se cabe no meu bolso</button>
       </div>
 
@@ -344,9 +364,9 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
             valorTotal={pedido.valorTotal} parcelas={pedido.parcelas}
           />
         ) : duasColunas && (
-          <div style={{ ...card, textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ ...cardAzul, textAlign: 'center', padding: '40px 24px' }}>
             <div style={{ fontSize: 30 }}>📊</div>
-            <div style={{ fontSize: 13.5, color: COR.textoSuave, marginTop: 10, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,.85)', marginTop: 10, lineHeight: 1.6 }}>
               Escolha uma opção na tabela para ver o mês a mês.
             </div>
           </div>

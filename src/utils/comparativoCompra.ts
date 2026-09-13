@@ -88,9 +88,16 @@ export function compararOpcoes(
     const total = opcao.parcelas * opcao.valorParcela
     const juroEmbutido = base === null ? null : total - base
 
+    // Linha SEM VALOR não é linha fora do plano: não há o que julgar, e dizer
+    // "fora do plano" numa linha vazia acusa um limite que não foi atingido.
+    // Só quem excede o horizonte carrega `tetoDoPlano`.
+    if (total <= 0) {
+      return { opcao, total, juroEmbutido, veredito: null, recomendada: false }
+    }
+
     // Fora do horizonte: não há série para julgar, e estender o plano por
     // conta própria foi descartado no módulo irmão.
-    if (opcao.parcelas > ctx.teto || total <= 0) {
+    if (opcao.parcelas > ctx.teto) {
       return {
         opcao, total, juroEmbutido,
         veredito: null,

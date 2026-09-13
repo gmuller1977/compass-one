@@ -5,6 +5,19 @@ const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 /**
+ * Tudo aqui vive DENTRO do card azul, então vale a paleta de fundo escuro do
+ * CLAUDE.md — não a do app. Medido sobre `#1e40af`, o extremo mais claro do
+ * gradiente: branco 8,72:1, verde 6,21:1, vermelho 6,03:1, amarelo 6,62:1.
+ * Os tons padrão (`#16a34a`, `#dc2626`, `#b45309`) reprovariam aqui.
+ */
+const TEXTO  = '#fff'
+const SUAVE  = 'rgba(255,255,255,.85)'
+const BOM    = '#86efac'
+const RUIM   = '#fecaca'
+const ALERTA = '#fde047'
+const LINHA  = 'rgba(255,255,255,.16)'
+
+/**
  * A tabela de formas de pagamento.
  *
  * A coluna que responde a pergunta original é **Cabe** — as outras são custo.
@@ -12,7 +25,7 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
  * costuma ser justamente a que aperta o mês.
  *
  * Contraste medido sobre o verde da linha recomendada (`#f0fdf4`):
- * `#15803d` 4,79:1, `#475569` 7,24:1. `COR.textoSuave` dá 4,55:1 e passa por
+ * `#15803d` 4,79:1, `#475569` 7,24:1. `SUAVE` dá 4,55:1 e passa por
  * pouco — por isso o corpo da linha usa `#475569`.
  */
 export default function SimComparativo({
@@ -32,7 +45,7 @@ export default function SimComparativo({
   isMobile: boolean
 }) {
   const th: React.CSSProperties = {
-    fontSize: 10, fontWeight: 800, color: COR.textoSuave, textTransform: 'uppercase',
+    fontSize: 10, fontWeight: 800, color: SUAVE, textTransform: 'uppercase',
     letterSpacing: '.4px', textAlign: 'right', padding: '0 0 6px', whiteSpace: 'nowrap',
   }
   const td: React.CSSProperties = {
@@ -41,31 +54,34 @@ export default function SimComparativo({
   }
   const inputSt: React.CSSProperties = {
     width: 78, textAlign: 'right', border: `1px solid ${COR.borda}`, borderRadius: 7,
-    padding: '5px 7px', fontSize: 13, color: COR.texto, background: COR.branco,
+    padding: '5px 7px', fontSize: 13, color: '#0f172a', background: COR.branco,
     outline: 'none', fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums',
   }
 
   function Veredito({ l }: { l: LinhaComparativo }) {
     if (!l.veredito) {
-      return <span style={{ color: COR.textoSuave, fontSize: 12 }}>fora do plano</span>
+      // Sem valor é travessão; "fora do plano" só para quem de fato excede.
+      return l.tetoDoPlano === undefined
+        ? <span style={{ color: SUAVE }}>—</span>
+        : <span style={{ color: SUAVE, fontSize: 12 }}>fora do plano</span>
     }
     const { cabe, gravidade } = l.veredito
-    if (!cabe) return <span style={{ color: '#b91c1c', fontWeight: 700 }}>não cabe</span>
+    if (!cabe) return <span style={{ color: RUIM, fontWeight: 700 }}>não cabe</span>
     if (gravidade === 'atencao' || l.veredito.pior.comCompra <= 0) {
-      return <span style={{ color: COR.amarelo, fontWeight: 700 }}>aperta</span>
+      return <span style={{ color: ALERTA, fontWeight: 700 }}>aperta</span>
     }
-    return <span style={{ color: '#15803d', fontWeight: 700 }}>cabe</span>
+    return <span style={{ color: BOM, fontWeight: 700 }}>cabe</span>
   }
 
   return (
     <div style={{ marginTop: 18 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: COR.texto }}>
+        <label style={{ fontSize: 12, fontWeight: 700, color: TEXTO }}>
           Quais opções o vendedor ofereceu?
         </label>
         <button onClick={onAdicionar} style={{
           border: 'none', background: 'none', padding: 0, cursor: 'pointer',
-          fontFamily: 'inherit', fontSize: 12, color: COR.azul, fontWeight: 700,
+          fontFamily: 'inherit', fontSize: 12, color: TEXTO, fontWeight: 700,
         }}>+ Adicionar opção</button>
       </div>
 
@@ -85,13 +101,13 @@ export default function SimComparativo({
           <tbody>
             {linhas.map(l => {
               const ativa = selecionada === l.opcao.id
-              const fundo = l.recomendada ? '#f0fdf4' : ativa ? '#eff6ff' : 'transparent'
+              const fundo = l.recomendada ? 'rgba(255,255,255,.16)' : ativa ? 'rgba(255,255,255,.09)' : 'transparent'
               return (
                 <tr key={l.opcao.id}
                   onClick={() => l.veredito && onSelecionar(l.opcao.id)}
                   style={{
                     background: fundo,
-                    borderTop: `1px solid ${COR.bordaSuave}`,
+                    borderTop: `1px solid ${LINHA}`,
                     cursor: l.veredito ? 'pointer' : 'default',
                     opacity: l.veredito ? 1 : 0.6,
                   }}>
@@ -104,13 +120,13 @@ export default function SimComparativo({
                       aria-label="Quantidade de parcelas"
                       style={{ ...inputSt, width: 46, textAlign: 'center' }}
                     />
-                    <span style={{ marginLeft: 6, fontSize: 12, color: COR.textoSuave }}>
+                    <span style={{ marginLeft: 6, fontSize: 12, color: SUAVE }}>
                       {l.opcao.parcelas === 1 ? 'à vista' : '×'}
                     </span>
                     {l.recomendada && (
                       <span style={{
-                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: '#15803d',
-                        border: '1px solid #86efac', borderRadius: 5, padding: '1px 5px',
+                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: BOM,
+                        border: `1px solid ${BOM}`, borderRadius: 5, padding: '1px 5px',
                         textTransform: 'uppercase', letterSpacing: '.3px',
                       }}>melhor</span>
                     )}
@@ -125,29 +141,29 @@ export default function SimComparativo({
                       style={inputSt}
                     />
                   </td>
-                  <td style={{ ...td, fontWeight: 700, color: COR.texto }}>{fmt(l.total)}</td>
+                  <td style={{ ...td, fontWeight: 700, color: TEXTO }}>{fmt(l.total)}</td>
                   <td style={td}>
                     {l.juroEmbutido === null
-                      ? <span style={{ color: COR.textoSuave }}>—</span>
+                      ? <span style={{ color: SUAVE }}>—</span>
                       : l.juroEmbutido <= 0
-                        ? <span style={{ color: COR.textoSuave }}>—</span>
-                        : <span style={{ color: COR.amarelo, fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>}
+                        ? <span style={{ color: SUAVE }}>—</span>
+                        : <span style={{ color: ALERTA, fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>}
                   </td>
                   <td style={{ ...td, textAlign: 'center', fontSize: 12 }}><Veredito l={l}/></td>
                   <td style={td}>
                     {l.veredito
                       ? <>{fmt(l.veredito.pior.comCompra)}
-                          <span style={{ color: COR.textoSuave, marginLeft: 5, fontSize: 11 }}>
+                          <span style={{ color: SUAVE, marginLeft: 5, fontSize: 11 }}>
                             {MESES_ABR[l.veredito.pior.mes]}
                           </span></>
-                      : <span style={{ color: COR.textoSuave }}>—</span>}
+                      : <span style={{ color: SUAVE }}>—</span>}
                   </td>
                   <td style={{ ...td, paddingRight: 6 }}>
                     {linhas.length > 1 && (
                       <button onClick={e => { e.stopPropagation(); onRemover(l.opcao.id) }}
                         aria-label="Remover opção"
                         style={{ border: 'none', background: 'none', cursor: 'pointer',
-                          color: COR.textoMuted, fontSize: 13, padding: 2 }}>✕</button>
+                          color: SUAVE, fontSize: 13, padding: 2 }}>✕</button>
                     )}
                   </td>
                 </tr>
@@ -158,19 +174,19 @@ export default function SimComparativo({
       </div>
 
       {semAVista && (
-        <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
-          Coloque o <b style={{ color: COR.texto }}>preço à vista</b> numa linha de 1× para
+        <div style={{ fontSize: 12, color: SUAVE, marginTop: 8, lineHeight: 1.5 }}>
+          Coloque o <b style={{ color: TEXTO }}>preço à vista</b> numa linha de 1× para
           ver quanto cada parcelamento custa a mais.
         </div>
       )}
 
       {linhas.some(l => !l.veredito) && fimDoPlano && (
-        <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12, color: SUAVE, marginTop: 8, lineHeight: 1.5 }}>
           As opções em cinza passam do fim do seu planejamento
           (<b>{MESES_ABR[fimDoPlano.mes]} de {fimDoPlano.ano}</b>).{' '}
           <button onClick={onPlanejarMais} style={{
             background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-            fontFamily: 'inherit', fontSize: 12, color: COR.azul, fontWeight: 700,
+            fontFamily: 'inherit', fontSize: 12, color: TEXTO, fontWeight: 700,
             textDecoration: 'underline',
           }}>Planejar mais meses</button> para simular essas também.
         </div>

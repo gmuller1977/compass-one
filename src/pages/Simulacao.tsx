@@ -485,15 +485,8 @@ export default function Simulacao() {
           />
       </div>
 
-      {/* O azul é o QUADRO que segura as caixas, não a página: a página segue
-          clara, e é este contêiner que ganha o fundo. Dentro dele tudo é caixa
-          branca com texto escuro.
-
-          O gradiente termina em #1e40af, e não em #1a56db, por causa da regra
-          do CLAUDE.md: nenhum fundo azul que carregue valor colorido pode ser
-          mais claro que #1e40af. Medido sobre #1a56db, o verde da aba Meta dá
-          4,40:1 e o vermelho da Dívida 4,27:1 — os dois reprovam. Sobre
-          #1e40af dão 6,21:1 e 6,03:1.
+      {/* A página fica clara; quem é AZUL são os cards. Ver `card` em
+          SimCompra — os campos dentro dele seguem brancos com texto escuro.
 
           A aba Compra usa a tela toda porque tem uma TABELA de seis colunas
           mais o fluxo mês a mês, e os dois lado a lado é que fazem a
@@ -503,8 +496,6 @@ export default function Simulacao() {
         maxWidth: aba === 'compra' && !isMobile ? 1180 : 720,
         margin: isMobile ? '12px 12px 80px' : '16px auto 48px',
         padding: isMobile ? '16px 14px 20px' : '24px 26px 30px',
-        background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
-        borderRadius: 16,
         transition: 'max-width .2s',
       }}>
 
@@ -514,11 +505,12 @@ export default function Simulacao() {
             const ativo = aba === v
             return (
               <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
-                border: 'none', borderRadius: 8, padding: '6px 14px',
+                borderRadius: 8, padding: '6px 14px',
                 fontSize: 13, fontWeight: ativo ? 700 : 500, cursor: 'pointer',
                 fontFamily: 'inherit', transition: 'all .15s',
-                background: ativo ? fundoAba : '#f1f5f9',
+                background: ativo ? fundoAba : COR.branco,
                 color: ativo ? corAba : '#475569',
+                border: `1px solid ${ativo ? 'transparent' : COR.borda}`,
               }}>{l}</button>
             )
           })}
