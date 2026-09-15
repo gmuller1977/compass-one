@@ -82,6 +82,36 @@ export default function NovoLancamentoExtrato() {
     return valorFixaNoMes(cat, planos[ano], mes, categorias)
   }
 
+  /**
+   * Fixa SEM PLANO e que ninguém tocou não aparece como prevista.
+   *
+   * `valorFixaNoMes` devolve 0 quando a categoria não tem linha no plano — e
+   * devolve 0 para TODAS quando o ano inteiro não foi planejado. A tela
+   * desenhava cada uma como uma linha com selo "previsto" e `R$ 0,00`: um
+   * compromisso que o plano não conhece, cobrando ação que não existe.
+   *
+   * São três condições, e as duas últimas são o que impede de apagar linha
+   * viva:
+   *
+   * - **confirmada** fica sempre. Inativar ou despalnejar diz "não me cobre
+   *   mais", nunca "isso nunca aconteceu" — a mesma regra do CLAUDE.md que já
+   *   vale para `ativa`.
+   * - **com valor digitado** (`fixasValorOverride`) fica. Quem clicou na linha
+   *   e digitou o valor real ainda não marcou o checkbox; sumir com ela no meio
+   *   do gesto apagaria o que a pessoa acabou de escrever.
+   *
+   * Não move número: os totais do mês só somam fixa consolidada, e na cascata a
+   * não confirmada entra valendo 0. É exibição, e por isso cabe na tela
+   * congelada.
+   */
+  function semPlanoEIntocada(f: { id: string; valor: number }, a: number, m: number): boolean {
+    if (f.valor !== 0) return false
+    const dm = dados[mesKey(contaIdEfetivo, a, m)]
+    if (dm?.fixasConsolidadas?.[f.id] === true) return false
+    if (dm?.fixasValorOverride?.[f.id] !== undefined) return false
+    return true
+  }
+
   function valorPrevistoPorNome(catNome: string, tipoLanc: TipoLanc): number {
     const cat = categorias.find(c => c.nome === catNome)
     return valorPrevistoCat(cat?.id ?? '', catNome, tipoLanc)
@@ -142,6 +172,7 @@ export default function NovoLancamentoExtrato() {
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
       diaVencimento: c.diaVencimento ?? 1,
     }))
+    .filter(f => semPlanoEIntocada(f, ano, mes) === false)
   const fixasCartao: CatFixa[] = useMemo(() => {
     if (isDinheiro) return []
     const faturasDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
@@ -639,6 +670,11 @@ export default function NovoLancamentoExtrato() {
         formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
         diaVencimento: c.diaVencimento ?? 1,
       }))
+      // Mesmo filtro do fixasCategoria, so que para (a, m). As duas listas tem
+      // de concordar: foi a divergencia entre elas que custou 663,00 duas
+      // vezes, e as duas vezes o sintoma foi uma parcela que uma tela contava
+      // e a outra nao.
+      .filter(f => semPlanoEIntocada(f, a, m) === false)
 
     // A fatura do cartao tambem entra na cascata: o nome do cartao nao e uma
     // categoria, entao ela passa pelo filtro de ehCartaoCategoria. Montada aqui

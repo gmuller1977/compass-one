@@ -680,6 +680,36 @@ Menor, também aberta: Lançamentos decide a conta da fixa por
 `contaDaFixaNoMes` (respeita a troca do mês) e a projeção por
 `contaDaCategoria` (só o cadastro). Muda o endereço, não o total.
 
+**Fixa SEM PLANO e que ninguém tocou não aparece como prevista.** Pedido do
+Guilherme em 15/09/2026. `valorFixaNoMes` devolve 0 quando a categoria não tem
+linha no plano — e devolve 0 para **todas** quando o ano inteiro não foi
+planejado. A tela desenhava cada uma como uma linha com checkbox, selo
+"previsto" e `R$ 0,00`: um compromisso que o plano não conhece, cobrando ação
+que não existe. Num ano ainda não planejado, o mês abria com a lista inteira
+assim.
+
+São três condições, e as duas últimas são o que impede de apagar linha viva:
+
+- **confirmada** fica sempre. É a mesma regra que já vale para `ativa` —
+  despalnejar diz "não me cobre mais", nunca "isso nunca aconteceu".
+- **com valor digitado** (`fixasValorOverride`) fica. Clicar na linha e digitar
+  o valor real é o gesto que precede marcar o checkbox; sumir com ela no meio
+  apagaria o que a pessoa acabou de escrever.
+
+**Não move número, e é isso que a torna admissível na tela congelada.** Os
+totais do mês só somam fixa consolidada, e na cascata a não confirmada entra
+valendo `f.valor`, que é 0. O que muda junto, de propósito: o mês abre menos
+dias sozinho, porque `comPrevisto` deixa de apontar para dias sem nada a fazer.
+
+A regra vive em `semPlanoEIntocada` e é chamada pelas **duas** listas —
+`fixasCategoria`, do mês exibido, e `fcMes`, de dentro da cascata. Uma cópia só:
+foi a divergência entre essas duas que custou 663,00 duas vezes, e as duas vezes
+o sintoma foi uma parcela que uma tela contava e a outra não.
+
+Consequência aceita: fixa sem plano deixa de ter linha para ser marcada como
+paga. Quem precisa pagar uma fixa que o plano não prevê ou põe o valor no plano,
+ou lança como qualquer outro lançamento.
+
 **O cenário da previsão é escolha do usuário: pessimista, moderado ou
 otimista.** A pergunta é uma só — quando uma categoria estoura o planejado, o
 app assume que você compensa em outra? Decidido pelo Guilherme em 10/09/2026.
