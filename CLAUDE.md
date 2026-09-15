@@ -841,6 +841,45 @@ não há `mesBase`.
 
 ---
 
+**O menu recolhe para 64px, e o recolhido NÃO tem flyout de submenu.**
+Implementado em 15/09/2026, a pedido do Guilherme: *"para ter mais espaço em
+tela"*.
+
+Recolhido é só o ícone, com o nome no `title`. Clicar num item que tem filhos
+**abre o menu** e expande os filhos ali dentro — não abre painel flutuante. O
+flyout é a parte frágil de todo menu retrátil: precisa acertar posição, borda
+de tela, saída do mouse e teclado, e resolve um caso que o menu aberto já
+resolve com o mesmo clique. Quem quer o submenu quer o menu.
+
+O que garante isso é uma linha só: `isExpanded` vale
+`!recolhida && expandedItem === item.label`. Sem ela, um submenu de 220px
+renderizaria dentro de uma coluna de 64.
+
+**`recolhida` chega aos filhos por CONTEXTO, não por prop.** `NavItemRow` e
+`SubItemRow` são chamados em dez lugares, alguns dentro do ramo especial de
+três níveis do Lançamentos. Uma prop obrigatória deixaria uma chamada
+esquecida renderizando o rótulo por cima do ícone — e cor e layout não têm
+tipo, então o `tsc` não acusaria nada.
+
+**O estado mora no `localStorage`, por aparelho.** É a mesma razão do "visto"
+do modal da descoberta: quem usa num monitor largo e num notebook quer coisas
+diferentes nos dois, e uma coluna em `user_preferences` imporia a mesma
+escolha aos dois. Leitura em aba anônima lança, então vem embrulhada em
+try/catch com o padrão **aberto**.
+
+**O botão de recolher fica no rodapé do menu, não no cabeçalho** — é onde a
+mão está quando se termina de navegar.
+
+O rótulo do grupo ("Principal", "Planejar"…) não cabe em 64px e vira um filete
+de 1px: a separação entre grupos é o que faz o menu ser lido como organizado, e
+perdê-la junto com o texto transformaria a coluna numa pilha de ícones.
+
+`SIDEBAR_W_MIN` é exportada pela mesma razão que `SIDEBAR_W`: o `marginLeft` do
+`AppShell` acompanha a largura, e nenhuma tela precisa saber que o menu
+recolheu.
+
+---
+
 **`PageHeader` não vai na `QuickLaunch`**, que é a home do mobile. O componente
 traz ícone, breadcrumb, título e subtítulo — vocabulário de tela interna. Numa
 home ele viraria navegação para lugar nenhum. Decidido em 30/08/2026.

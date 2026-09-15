@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
-import Sidebar, { SIDEBAR_W } from './components/Sidebar'
+import Sidebar, { SIDEBAR_W, SIDEBAR_W_MIN, lerRecolhida, gravarRecolhida } from './components/Sidebar'
 import Login          from './pages/Login'
 import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
@@ -40,6 +40,7 @@ function useIsMobile() {
 
 function AppShell({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile()
+  const [menuRecolhido, setMenuRecolhido] = useState(lerRecolhida)
   const { user } = useApp()
 
   useEffect(() => {
@@ -75,8 +76,17 @@ function AppShell({ children }: { children: ReactNode }) {
   if (isMobile) return <>{children}<NorthAgent /><AurixToast /></>
   return (
     <>
-      <Sidebar />
-      <div style={{ marginLeft: SIDEBAR_W }}>
+      <Sidebar
+        recolhida={menuRecolhido}
+        onRecolher={v => { setMenuRecolhido(v); gravarRecolhida(v) }}
+      />
+      {/* O deslocamento acompanha a largura do menu. É a razão de SIDEBAR_W
+          ser uma constante exportada: nenhuma tela precisa saber que o menu
+          recolheu. */}
+      <div style={{
+        marginLeft: menuRecolhido ? SIDEBAR_W_MIN : SIDEBAR_W,
+        transition: 'margin-left .18s ease',
+      }}>
         {children}
       </div>
       <NorthAgent />
