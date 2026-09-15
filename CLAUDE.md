@@ -845,15 +845,24 @@ não há `mesBase`.
 Implementado em 15/09/2026, a pedido do Guilherme: *"para ter mais espaço em
 tela"*.
 
-Recolhido é só o ícone, com o nome no `title`. Clicar num item que tem filhos
-**abre o menu** e expande os filhos ali dentro — não abre painel flutuante. O
-flyout é a parte frágil de todo menu retrátil: precisa acertar posição, borda
-de tela, saída do mouse e teclado, e resolve um caso que o menu aberto já
-resolve com o mesmo clique. Quem quer o submenu quer o menu.
+Recolhido é só o ícone, com o nome no `title`. Aberto, **os filhos ficam
+sempre à vista** — não há sanfona. `expandedItem`, `toggleExpand` e o chevron
+que girava saíram do arquivo.
 
-O que garante isso é uma linha só: `isExpanded` vale
-`!recolhida && expandedItem === item.label`. Sem ela, um submenu de 220px
-renderizaria dentro de uma coluna de 64.
+**Foi o sanfona que resolveu o flyout, e não o contrário.** O flyout é a parte
+frágil de todo menu retrátil — posição, borda de tela, saída do mouse, teclado
+— e existia para responder "como chego nos filhos com o menu estreito?". Sem
+estado de submenu a pergunta some: o menu recolhido mostra os pais, e abri-lo
+mostra tudo. `mostraSub` vale `!recolhida`, e é a linha inteira. O que existia
+antes coordenava dois estados — recolhida e `expandedItem` — que podiam
+discordar, e discordavam: recolhido com um submenu "aberto" renderizaria 220px
+de filho dentro de uma coluna de 64.
+
+**O pai vira link e aponta para o PRIMEIRO FILHO, não para o próprio `path`.**
+`isSubActive` casa `pathname + search` exato, então `/planejamento` puro não
+acenderia filho nenhum — e a Grade, que é exatamente onde aquela rota cai,
+ficaria apagada com o usuário parado nela. Com o sanfona isso não aparecia
+porque o pai nunca navegava; ele só abria e fechava.
 
 **`recolhida` chega aos filhos por CONTEXTO, não por prop.** `NavItemRow` e
 `SubItemRow` são chamados em dez lugares, alguns dentro do ramo especial de

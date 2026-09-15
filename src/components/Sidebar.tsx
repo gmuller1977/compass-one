@@ -113,10 +113,10 @@ function CompassIcon() {
 }
 
 function NavItemRow({
-  icon, label, active, isSair = false, expanded, hasSub, badge, disabled, onClick,
+  icon, label, active, isSair = false, badge, disabled, onClick,
 }: {
   icon: string; label: string; active: boolean
-  isSair?: boolean; expanded?: boolean; hasSub?: boolean
+  isSair?: boolean
   badge?: string; disabled?: boolean; onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
@@ -168,15 +168,6 @@ function NavItemRow({
           border: `1px solid ${active ? 'rgba(26,86,219,.2)' : 'rgba(255,255,255,0.15)'}`,
           flexShrink: 0, textTransform: 'uppercase',
         }}>{badge}</span>
-      )}
-      {!recolhida && !badge && hasSub && (
-        <span style={{
-          fontSize: 10,
-          color: active ? 'rgba(26,86,219,.5)' : 'rgba(255,255,255,0.35)',
-          transition: 'transform .2s, color .12s',
-          transform: expanded ? 'rotate(90deg)' : 'none',
-          display: 'inline-block', flexShrink: 0,
-        }}>›</span>
       )}
     </button>
   )
@@ -285,40 +276,6 @@ export default function Sidebar({ recolhida, onRecolher }: {
     return (pathname + search) === subPath
   }
 
-  const [expandedItem, setExpandedItem] = useState<string|null>(() => {
-    if (pathname.startsWith('/novo-lancamento')) return 'Lançamentos'
-    for (const group of NAV_GROUPS) {
-      for (const item of group.items) {
-        if (!item.disabled && !item.path.includes('?') && item.sub &&
-            pathname.startsWith(item.path) && item.path !== '/dashboard') {
-          if (item.excludeIfSearch && search === item.excludeIfSearch) continue
-          return item.label
-        }
-      }
-    }
-    return null
-  })
-
-  useEffect(() => {
-    if (pathname.startsWith('/novo-lancamento')) {
-      setExpandedItem('Lançamentos')
-    }
-  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /**
-   * Com o menu recolhido, clicar num item com filhos ABRE o menu em vez de
-   * tentar mostrar os filhos.
-   *
-   * É a decisão que evita o flyout — o pedaço frágil de todo menu retrátil.
-   * O usuário chega nos filhos com o mesmo clique, só que o menu se abre para
-   * mostrá-los, em vez de um painel flutuante que precisa acertar posição,
-   * borda de tela e saída do mouse.
-   */
-  function toggleExpand(label: string) {
-    if (recolhida) { onRecolher(false); gravarRecolhida(false); setExpandedItem(label); return }
-    setExpandedItem(prev => prev === label ? null : label)
-  }
-
   function abrirNorth() {
     document.dispatchEvent(new CustomEvent('openNorth'))
   }
@@ -412,7 +369,15 @@ export default function Sidebar({ recolhida, onRecolher }: {
               const sub = item.sub ?? []
               const parentActive = !item.disabled && isParentActive(item.path, item.exact, item.excludeIfSearch)
               const hasSub = sub.length > 0
-              const isExpanded = !recolhida && expandedItem === item.label
+              // Os filhos ficam SEMPRE à vista. Recolhido não há largura para
+              // eles, e só aí eles somem.
+              const mostraSub = !recolhida
+              // O pai vira link, e aponta para o PRIMEIRO FILHO, não para o
+              // próprio `path`. `isSubActive` casa `pathname + search` exato:
+              // `/planejamento` puro não acenderia nenhum filho, e a Grade —
+              // que é exatamente onde a rota cai — ficaria apagada.
+              const primeiroFilho = sub.find((s): s is SubLeaf => !('divider' in s))
+              const destino = primeiroFilho?.path ?? item.path
 
               // Special 3-level Lançamentos
               if (item.label === 'Lançamentos') {
@@ -422,13 +387,9 @@ export default function Sidebar({ recolhida, onRecolher }: {
                       icon="📋"
                       label="Lançamentos"
                       active={lancActive}
-                      hasSub
-                      expanded={isExpanded}
-                      onClick={() => {
-                        toggleExpand('Lançamentos')
-                      }}
+                      onClick={() => navigate('/novo-lancamento?tipo=banco')}
                     />
-                    {isExpanded && (
+                    {mostraSub && (
                       <div style={{ animation: 'subExpand .18s ease' }}>
 
                         <SubItemRow
@@ -462,11 +423,11 @@ export default function Sidebar({ recolhida, onRecolher }: {
                 <div key={item.label}>
                   <NavItemRow
                     icon={item.icon} label={item.label}
-                    active={parentActive} hasSub={hasSub} expanded={isExpanded}
+                    active={parentActive}
                     badge={item.badge} disabled={item.disabled}
-                    onClick={() => hasSub ? toggleExpand(item.label) : navigate(item.path)}
+                    onClick={() => navigate(destino)}
                   />
-                  {hasSub && isExpanded && (
+                  {hasSub && mostraSub && (
                     <div style={{ animation: 'subExpand .18s ease' }}>
                       {sub.map((s, i) => {
                         if ('divider' in s) return <SubDividerRow key={i} label={s.divider} />
