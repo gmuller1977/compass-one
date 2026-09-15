@@ -340,11 +340,20 @@ export default function Sidebar({ recolhida, onRecolher }: {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         flexShrink: 0,
       }}>
-        <div onClick={() => navigate('/dashboard')}
-          title={recolhida ? 'Compass One' : undefined}
+        {/* A logo É o botão de recolher. Ela deixou de levar ao Dashboard, e
+            isso não custa nada: "🏠 Início" é o primeiro item do menu, vai
+            para o mesmo `/dashboard` e diz o nome do destino. A logo era o
+            atalho mudo para o lugar que já tem linha própria. */}
+        <button
+          onClick={() => onRecolher(!recolhida)}
+          title={recolhida ? 'Expandir menu' : 'Recolher menu'}
+          aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'}
+          aria-expanded={!recolhida}
           style={{
             display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer',
             justifyContent: recolhida ? 'center' : 'flex-start',
+            width: '100%', padding: 0, border: 'none', background: 'transparent',
+            fontFamily: 'inherit', textAlign: 'left',
           }}>
           <div style={{
             width: 34, height: 34, borderRadius: 10, flexShrink: 0,
@@ -355,16 +364,23 @@ export default function Sidebar({ recolhida, onRecolher }: {
             <CompassIcon />
           </div>
           {!recolhida && (
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>
-                Compass <span style={{ fontWeight: 300, opacity: .7 }}>One</span>
+            <>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>
+                  Compass <span style={{ fontWeight: 300, opacity: .7 }}>One</span>
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>
+                  Sua bússola financeira
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>
-                Sua bússola financeira
-              </div>
-            </div>
+              {/* Sem isto a logo vira um botão invisível: nada na tela diz que
+                  clicar ali recolhe. O rodapé tinha o rótulo por escrito. */}
+              <span aria-hidden="true" style={{
+                fontSize: 13, color: 'rgba(255,255,255,.4)', flexShrink: 0,
+              }}>«</span>
+            </>
           )}
-        </div>
+        </button>
       </div>
 
       {/* ── Nav ── */}
@@ -571,27 +587,6 @@ export default function Sidebar({ recolhida, onRecolher }: {
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.35)' }}
         >
           {recolhida ? '↩' : '↩ Sair'}
-        </button>
-
-        {/* O botão de recolher fica no RODAPÉ, não no cabeçalho: é onde a mão
-            está quando se termina de navegar. */}
-        <button
-          onClick={() => onRecolher(!recolhida)}
-          title={recolhida ? 'Expandir menu' : 'Recolher menu'}
-          aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'}
-          style={{
-            width: '100%', marginTop: 6, padding: '6px 10px', border: 'none',
-            borderRadius: 8, background: 'transparent', cursor: 'pointer',
-            fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
-            color: 'rgba(255,255,255,.5)',
-            display: 'flex', alignItems: 'center',
-            justifyContent: recolhida ? 'center' : 'flex-start', gap: 7,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'rgba(255,255,255,.8)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.5)' }}
-        >
-          <span style={{ fontSize: 13 }}>{recolhida ? '»' : '«'}</span>
-          {!recolhida && <span>Recolher menu</span>}
         </button>
       </div>
 

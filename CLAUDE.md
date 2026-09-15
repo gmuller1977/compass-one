@@ -867,8 +867,21 @@ diferentes nos dois, e uma coluna em `user_preferences` imporia a mesma
 escolha aos dois. Leitura em aba anônima lança, então vem embrulhada em
 try/catch com o padrão **aberto**.
 
-**O botão de recolher fica no rodapé do menu, não no cabeçalho** — é onde a
-mão está quando se termina de navegar.
+**A LOGO é o botão de recolher.** Ela nasceu no rodapé, com o rótulo
+"Recolher menu" por escrito, e o Guilherme trocou pela logo no mesmo dia. A
+logo é o único elemento que existe nos dois estados, no mesmo lugar, e não
+disputa espaço com nada — o rodapé recolhido tinha três controles empilhados
+numa coluna de 64px.
+
+O preço: a logo deixou de levar ao Dashboard. Não custa nada, porque
+**"🏠 Início"** é o primeiro item do menu, vai para o mesmo `/dashboard` e diz
+o nome do destino. A logo era o atalho mudo para o lugar que já tem linha
+própria.
+
+Aberto, um chevron `«` à direita da logo. Sem ele a logo vira um botão
+invisível: nada na tela diria que clicar ali recolhe, e o rótulo por escrito
+que o rodapé tinha foi embora junto. A logo virou `<button>` de verdade no
+lugar de `<div onClick>` — o que ganha o teclado de graça.
 
 O rótulo do grupo ("Principal", "Planejar"…) não cabe em 64px e vira um filete
 de 1px: a separação entre grupos é o que faz o menu ser lido como organizado, e
