@@ -24,9 +24,10 @@ const LINHA  = 'rgba(255,255,255,.16)'
  * Uma tabela só de custo mandaria a pessoa para a opção mais barata, que
  * costuma ser justamente a que aperta o mês.
  *
- * Contraste medido sobre o verde da linha recomendada (`#f0fdf4`):
- * `#15803d` 4,79:1, `#475569` 7,24:1. `SUAVE` dá 4,55:1 e passa por
- * pouco — por isso o corpo da linha usa `#475569`.
+ * A tabela nasceu sobre card branco e migrou para o azul. O corpo dela ficou
+ * para trás em `#475569`, que sobre o azul do card dá **1,15:1** — invisível.
+ * A troca de fundo não avisa: cor não tem tipo, e o `tsc` não tem como saber
+ * que um literal escuro passou a viver sobre azul.
  */
 export default function SimComparativo({
   linhas, selecionada, onSelecionar, onEditar, onAdicionar, onRemover,
@@ -49,7 +50,7 @@ export default function SimComparativo({
     letterSpacing: '.4px', textAlign: 'right', padding: '0 0 6px', whiteSpace: 'nowrap',
   }
   const td: React.CSSProperties = {
-    padding: '7px 0', fontSize: 13, color: '#475569', textAlign: 'right',
+    padding: '7px 0', fontSize: 13, color: SUAVE, textAlign: 'right',
     fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
   }
   const inputSt: React.CSSProperties = {

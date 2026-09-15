@@ -506,6 +506,48 @@ Fora do escopo desta rodada, e independentes: valor MENSAL como entrada (o
 caso da assinatura de academia, que faz a mesma pergunta da compra com o dado
 invertido), persistir a tabela na simulação salva, e custo de oportunidade.
 
+**PENDENTE — unificar as três abas numa só.** Levantado pelo Guilherme em
+13/09/2026: *"para mim é a mesma coisa"*. E é: as três perguntam **isso cabe no
+meu fluxo até o fim do plano?**. O que muda é só qual dado está na mão.
+
+| Aba | Você sabe | Quer saber |
+|---|---|---|
+| Posso comprar? | o **total** | cabe? |
+| Quitar dívida | saldo + **parcela** | quando acaba, quanto de juro |
+| Meta de poupança | objetivo + **quanto guarda** | quando chego |
+
+As três são um compromisso mensal de N meses contra a projeção. A evidência de
+que a separação é artificial: a aba Compra tem o motor bom — série base,
+veredito, pior mês, adiar, esticar, teto do plano — e as outras duas têm um
+`while (meses < 600)` que precisou de remendo em 13/09. Duas filosofias no
+mesmo menu, e a boa serve um terço dos casos.
+
+Unificar cai bem também no caso da assinatura de academia, que hoje não cabe
+em aba nenhuma. **Mas é reescrita de tela**, não ajuste: são 750 linhas com
+três formulários, três gráficos e três conjuntos de cards. Desenhar antes de
+fazer, como no Modo Descoberta.
+
+**PENDENTE — a integração no planejamento.** O desenho está fechado com o
+Guilherme e não foi implementado: ao aprovar, escolher **grupo** e
+**categoria** existentes, e uma **observação** com o que foi comprado.
+
+Três coisas decididas nessa conversa e que valem quando for feito:
+
+1. A observação **não pode ir em `descricao`** do `PlanoCat` — ali `descricao`
+   é a VARIANTE, e escrever "Bicicleta" criaria `Lazer · Bicicleta` como
+   categoria separada. Confusão de nome: no `Lancamento` é o contrário —
+   `subCategoria` é a variante e `descricao` é o texto livre. O plano precisa
+   de um campo novo, `obs?`, que sai de graça porque o plano é JSON na coluna
+   `dados` de `planejamento_data`.
+2. Ao integrar numa categoria que já tem valor, **somar** e não substituir. A
+   compra é gasto a mais, não troca de orçamento. Hoje o
+   `incluirNoPlanejamento` sobrescreve o array inteiro.
+3. Com categoria, valor e meses guardados na linha de `simulacoes` — que hoje
+   só tem um booleano `integrado_planejamento` —, **desfazer é subtrair**.
+
+Categoria que ainda não existe ficou fora por decisão do Guilherme; quando
+chegar, `montarCategoria` do Modo Descoberta já cria a partir de um campo só.
+
 **No Simulador o azul é o CARD do formulário, e os campos dentro dele é que
 são brancos.** A página segue clara. Decidido pelo Guilherme em 13/09/2026,
 depois de eu inverter duas vezes: primeiro pintei a página, depois o contêiner.
