@@ -1,39 +1,10 @@
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import { saldoAurix } from '../utils/aurix'
 
 export const SIDEBAR_W = 220
-/** Recolhida: só os ícones, com o nome no `title`. */
-export const SIDEBAR_W_MIN = 64
-
-/**
- * O menu recolhido é preferência de APARELHO, não do usuário no banco.
- *
- * Mora no `localStorage` pela mesma razão do modal da descoberta: quem usa
- * num monitor largo e num notebook quer coisas diferentes nos dois, e uma
- * coluna no banco imporia a mesma escolha aos dois. Ler falha em aba anônima,
- * então tudo vem embrulhado em try/catch e o padrão é aberto.
- */
-const CHAVE_RECOLHIDA = 'compass:menu-recolhido'
-
-export function lerRecolhida(): boolean {
-  try { return localStorage.getItem(CHAVE_RECOLHIDA) === '1' } catch { return false }
-}
-export function gravarRecolhida(v: boolean) {
-  try { localStorage.setItem(CHAVE_RECOLHIDA, v ? '1' : '0') } catch { /* aba anônima */ }
-}
-
-/**
- * Recolhida chega aos filhos por contexto, e não por prop.
- *
- * `NavItemRow` e `SubItemRow` são chamados em dez lugares, alguns dentro de
- * ramos especiais como o de Lançamentos. Passar prop obrigaria a tocar os dez
- * e deixaria um esquecido — que renderizaria o rótulo por cima do ícone sem
- * nenhum erro de tipo.
- */
-const RecolhidaCtx = createContext(false)
 
 type SubLeaf    = { label: string; path: string }
 type SubDivider = { divider: string }
@@ -113,28 +84,21 @@ function CompassIcon() {
 }
 
 function NavItemRow({
-  icon, label, active, isSair = false, badge, disabled, onClick,
+  icon, label, active, isSair = false, expanded, hasSub, badge, disabled, onClick,
 }: {
   icon: string; label: string; active: boolean
-  isSair?: boolean
+  isSair?: boolean; expanded?: boolean; hasSub?: boolean
   badge?: string; disabled?: boolean; onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
-  const recolhida = useContext(RecolhidaCtx)
   return (
     <button
       onClick={disabled ? undefined : onClick}
       onMouseEnter={() => !disabled && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      // Recolhido, o nome vira `title`: sem ele o menu fica só de ícones e a
-      // navegação passa a depender de adivinhação.
-      title={recolhida ? label : undefined}
-      aria-label={recolhida ? label : undefined}
       style={{
-        display: 'flex', alignItems: 'center',
-        gap: recolhida ? 0 : 9,
-        justifyContent: recolhida ? 'center' : 'flex-start',
-        width: '100%', padding: recolhida ? '9px 0' : '8px 10px', marginBottom: 1,
+        display: 'flex', alignItems: 'center', gap: 9,
+        width: '100%', padding: '8px 10px', marginBottom: 1,
         border: 'none', borderRadius: 10,
         cursor: disabled ? 'default' : 'pointer',
         fontFamily: 'inherit', textAlign: 'left',
@@ -157,9 +121,9 @@ function NavItemRow({
         opacity: disabled ? 0.7 : 1,
       }}
     >
-      <span style={{ fontSize: recolhida ? 17 : 15, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-      {!recolhida && <span style={{ flex: 1 }}>{label}</span>}
-      {!recolhida && badge && (
+      <span style={{ fontSize: 15, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {badge && (
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: '.4px',
           padding: '2px 5px', borderRadius: 6,
@@ -168,6 +132,15 @@ function NavItemRow({
           border: `1px solid ${active ? 'rgba(26,86,219,.2)' : 'rgba(255,255,255,0.15)'}`,
           flexShrink: 0, textTransform: 'uppercase',
         }}>{badge}</span>
+      )}
+      {!badge && hasSub && (
+        <span style={{
+          fontSize: 10,
+          color: active ? 'rgba(26,86,219,.5)' : 'rgba(255,255,255,0.35)',
+          transition: 'transform .2s, color .12s',
+          transform: expanded ? 'rotate(90deg)' : 'none',
+          display: 'inline-block', flexShrink: 0,
+        }}>›</span>
       )}
     </button>
   )
@@ -235,10 +208,7 @@ function SubDividerRow({ label }: { label: string }) {
   )
 }
 
-export default function Sidebar({ recolhida, onRecolher }: {
-  recolhida: boolean
-  onRecolher: (v: boolean) => void
-}) {
+export default function Sidebar() {
   const navigate              = useNavigate()
   const { pathname, search }  = useLocation()
   const { perfil, user, sairDaConta, contas } = useApp()
@@ -276,42 +246,50 @@ export default function Sidebar({ recolhida, onRecolher }: {
     return (pathname + search) === subPath
   }
 
+  const [expandedItem, setExpandedItem] = useState<string|null>(() => {
+    if (pathname.startsWith('/novo-lancamento')) return 'Lançamentos'
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        if (!item.disabled && !item.path.includes('?') && item.sub &&
+            pathname.startsWith(item.path) && item.path !== '/dashboard') {
+          if (item.excludeIfSearch && search === item.excludeIfSearch) continue
+          return item.label
+        }
+      }
+    }
+    return null
+  })
+
+  useEffect(() => {
+    if (pathname.startsWith('/novo-lancamento')) {
+      setExpandedItem('Lançamentos')
+    }
+  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleExpand(label: string) {
+    setExpandedItem(prev => prev === label ? null : label)
+  }
+
   function abrirNorth() {
     document.dispatchEvent(new CustomEvent('openNorth'))
   }
 
   return (
-    <RecolhidaCtx.Provider value={recolhida}>
     <div style={{
-      position: 'fixed', top: 0, left: 0, bottom: 0,
-      width: recolhida ? SIDEBAR_W_MIN : SIDEBAR_W,
+      position: 'fixed', top: 0, left: 0, bottom: 0, width: SIDEBAR_W,
       background: 'linear-gradient(180deg, #0f2878 0%, #1e3a8a 100%)',
       display: 'flex', flexDirection: 'column', zIndex: 100,
       fontFamily: "-apple-system,'Inter',sans-serif",
-      transition: 'width .18s ease',
     }}>
 
       {/* ── Logo ── */}
       <div style={{
-        padding: recolhida ? '20px 0 16px' : '20px 14px 16px',
+        padding: '20px 14px 16px',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         flexShrink: 0,
       }}>
-        {/* A logo É o botão de recolher. Ela deixou de levar ao Dashboard, e
-            isso não custa nada: "🏠 Início" é o primeiro item do menu, vai
-            para o mesmo `/dashboard` e diz o nome do destino. A logo era o
-            atalho mudo para o lugar que já tem linha própria. */}
-        <button
-          onClick={() => onRecolher(!recolhida)}
-          title={recolhida ? 'Expandir menu' : 'Recolher menu'}
-          aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'}
-          aria-expanded={!recolhida}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer',
-            justifyContent: recolhida ? 'center' : 'flex-start',
-            width: '100%', padding: 0, border: 'none', background: 'transparent',
-            fontFamily: 'inherit', textAlign: 'left',
-          }}>
+        <div onClick={() => navigate('/dashboard')}
+          style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
           <div style={{
             width: 34, height: 34, borderRadius: 10, flexShrink: 0,
             background: 'rgba(255,255,255,0.15)',
@@ -320,24 +298,15 @@ export default function Sidebar({ recolhida, onRecolher }: {
           }}>
             <CompassIcon />
           </div>
-          {!recolhida && (
-            <>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>
-                  Compass <span style={{ fontWeight: 300, opacity: .7 }}>One</span>
-                </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>
-                  Sua bússola financeira
-                </div>
-              </div>
-              {/* Sem isto a logo vira um botão invisível: nada na tela diz que
-                  clicar ali recolhe. O rodapé tinha o rótulo por escrito. */}
-              <span aria-hidden="true" style={{
-                fontSize: 13, color: 'rgba(255,255,255,.4)', flexShrink: 0,
-              }}>«</span>
-            </>
-          )}
-        </button>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>
+              Compass <span style={{ fontWeight: 300, opacity: .7 }}>One</span>
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>
+              Sua bússola financeira
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Nav ── */}
@@ -349,35 +318,20 @@ export default function Sidebar({ recolhida, onRecolher }: {
           }
         `}</style>
         {NAV_GROUPS.map(group => (
-          <div key={group.label} style={{ marginBottom: recolhida ? 10 : 18 }}>
-            {/* Recolhido o rótulo do grupo não cabe, e some com ele a
-                organização do menu. Um filete no lugar preserva a separação
-                sem pedir largura. */}
-            {recolhida ? (
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.10)', margin: '0 12px 8px' }} />
-            ) : (
-              <div style={{
-                fontSize: 9, fontWeight: 800,
-                color: 'rgba(255,255,255,0.3)',
-                letterSpacing: '1px', textTransform: 'uppercase',
-                padding: '0 10px', marginBottom: 4,
-              }}>
-                {group.label}
-              </div>
-            )}
+          <div key={group.label} style={{ marginBottom: 18 }}>
+            <div style={{
+              fontSize: 9, fontWeight: 800,
+              color: 'rgba(255,255,255,0.3)',
+              letterSpacing: '1px', textTransform: 'uppercase',
+              padding: '0 10px', marginBottom: 4,
+            }}>
+              {group.label}
+            </div>
             {group.items.map(item => {
               const sub = item.sub ?? []
               const parentActive = !item.disabled && isParentActive(item.path, item.exact, item.excludeIfSearch)
               const hasSub = sub.length > 0
-              // Os filhos ficam SEMPRE à vista. Recolhido não há largura para
-              // eles, e só aí eles somem.
-              const mostraSub = !recolhida
-              // O pai vira link, e aponta para o PRIMEIRO FILHO, não para o
-              // próprio `path`. `isSubActive` casa `pathname + search` exato:
-              // `/planejamento` puro não acenderia nenhum filho, e a Grade —
-              // que é exatamente onde a rota cai — ficaria apagada.
-              const primeiroFilho = sub.find((s): s is SubLeaf => !('divider' in s))
-              const destino = primeiroFilho?.path ?? item.path
+              const isExpanded = expandedItem === item.label
 
               // Special 3-level Lançamentos
               if (item.label === 'Lançamentos') {
@@ -387,9 +341,13 @@ export default function Sidebar({ recolhida, onRecolher }: {
                       icon="📋"
                       label="Lançamentos"
                       active={lancActive}
-                      onClick={() => navigate('/novo-lancamento?tipo=banco')}
+                      hasSub
+                      expanded={isExpanded}
+                      onClick={() => {
+                        toggleExpand('Lançamentos')
+                      }}
                     />
-                    {mostraSub && (
+                    {isExpanded && (
                       <div style={{ animation: 'subExpand .18s ease' }}>
 
                         <SubItemRow
@@ -423,11 +381,11 @@ export default function Sidebar({ recolhida, onRecolher }: {
                 <div key={item.label}>
                   <NavItemRow
                     icon={item.icon} label={item.label}
-                    active={parentActive}
+                    active={parentActive} hasSub={hasSub} expanded={isExpanded}
                     badge={item.badge} disabled={item.disabled}
-                    onClick={() => navigate(destino)}
+                    onClick={() => hasSub ? toggleExpand(item.label) : navigate(item.path)}
                   />
-                  {hasSub && mostraSub && (
+                  {hasSub && isExpanded && (
                     <div style={{ animation: 'subExpand .18s ease' }}>
                       {sub.map((s, i) => {
                         if ('divider' in s) return <SubDividerRow key={i} label={s.divider} />
@@ -458,12 +416,9 @@ export default function Sidebar({ recolhida, onRecolher }: {
         {/* North card */}
         <div
           onClick={abrirNorth}
-          title={recolhida ? 'North — assistente financeiro' : undefined}
           style={{
-            display: 'flex', alignItems: 'center',
-            gap: recolhida ? 0 : 9,
-            justifyContent: recolhida ? 'center' : 'flex-start',
-            padding: recolhida ? '9px 0' : '9px 10px', borderRadius: 10, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 9,
+            padding: '9px 10px', borderRadius: 10, cursor: 'pointer',
             marginBottom: 8,
             background: 'rgba(255,255,255,.08)',
             border: '1px solid rgba(255,255,255,.12)',
@@ -477,37 +432,28 @@ export default function Sidebar({ recolhida, onRecolher }: {
             background: 'linear-gradient(135deg,#1a56db,#2563eb)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
           }}>🧭</div>
-          {!recolhida && (
-            <>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>North</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Assistente financeiro</div>
-              </div>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: '#16a34a', boxShadow: '0 0 6px rgba(22,163,74,.7)', flexShrink: 0,
-              }}/>
-            </>
-          )}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>North</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Assistente financeiro</div>
+          </div>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: '#16a34a', boxShadow: '0 0 6px rgba(22,163,74,.7)', flexShrink: 0,
+          }}/>
         </div>
 
         {/* User info */}
-        <div
-          title={recolhida ? `${nome} · ${email}` : undefined}
-          style={{
-            display: 'flex', alignItems: 'center',
-            gap: recolhida ? 0 : 8,
-            justifyContent: recolhida ? 'center' : 'flex-start',
-            padding: recolhida ? '7px 0' : '7px 10px', marginBottom: 2, borderRadius: 8,
-            background: 'rgba(255,255,255,0.08)',
-          }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '7px 10px', marginBottom: 2, borderRadius: 8,
+          background: 'rgba(255,255,255,0.08)',
+        }}>
           <div style={{
             width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
             background: 'rgba(255,255,255,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontSize: 11, fontWeight: 700,
           }}>{inicial}</div>
-          {!recolhida && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 11, fontWeight: 700, color: '#ffffff',
@@ -528,17 +474,13 @@ export default function Sidebar({ recolhida, onRecolher }: {
               {streakAtual > 0 && ` · 🔥 ${streakAtual} dias`}
             </div>
           </div>
-          )}
         </div>
 
         <button
           onClick={sairDaConta}
-          title={recolhida ? 'Sair da conta' : undefined}
-          aria-label={recolhida ? 'Sair da conta' : undefined}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            justifyContent: recolhida ? 'center' : 'flex-start',
-            width: '100%', padding: recolhida ? '5px 0' : '5px 10px', border: 'none',
+            width: '100%', padding: '5px 10px', border: 'none',
             borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
             background: 'transparent',
             fontSize: 10, color: 'rgba(255,255,255,.35)',
@@ -547,11 +489,10 @@ export default function Sidebar({ recolhida, onRecolher }: {
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'rgba(255,255,255,.65)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.35)' }}
         >
-          {recolhida ? '↩' : '↩ Sair'}
+          ↩ Sair
         </button>
       </div>
 
     </div>
-    </RecolhidaCtx.Provider>
   )
 }
