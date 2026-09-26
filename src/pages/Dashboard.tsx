@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { saldoBancosEDinheiro } from '../utils/saldoConta'
+import { saldoBancosEDinheiro, memoriaDoRadar, type Deps } from '../utils/saldoConta'
+import { serieBaseDoPlano, piorMesDaSerie } from '../utils/simulacaoCompra'
+import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
+import { RADAR_COR_AZUL } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, totaisDoMes, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { supabase } from '../lib/supabase'
 import AppHeader from '../components/AppHeader'
@@ -65,7 +68,10 @@ const COMPASS_CFG: Record<CompassStatus, {
 export default function Dashboard() {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
-  const { contas, categorias, extratoData, faturaData, planos, perfil, user, objetivoUsuario, saldoInicialDinheiro } = useApp()
+  const {
+    contas, categorias, extratoData, faturaData, planos, perfil, user, objetivoUsuario,
+    saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao,
+  } = useApp()
 
   const hoje = new Date()
   const [viewMes, setViewMes] = useState(hoje.getMonth())
@@ -107,13 +113,41 @@ export default function Dashboard() {
     return { totalEntradas: t.entrada.real, totalSaidas: t.saida.real, totalPrevS: t.saida.prev, topCategorias }
   }, [contas, categorias, extratoData, faturaData, planos, viewMes, viewAno])
 
+  // As dependências do motor de saldo, as MESMAS do Radar — com o cenário.
+  const deps = useMemo<Deps>(() => ({
+    extratoData: extratoData as Record<string, DadosMes>,
+    faturaData: faturaData as Deps['faturaData'],
+    contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
+
   // O saldo das contas de banco e do dinheiro ao fim do mês escolhido — no mês
   // corrente, o de hoje. É o "Saldo atual" do Radar.
-  const saldoDisponivel = useMemo(() => saldoBancosEDinheiro(viewAno, viewMes, {
-    extratoData: extratoData as Record<string, DadosMes>,
-    faturaData: faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>,
-    contas, categorias, planos, saldoInicialDinheiro,
-  }), [viewAno, viewMes, extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+  const saldoDisponivel = useMemo(
+    () => saldoBancosEDinheiro(viewAno, viewMes, deps),
+    [viewAno, viewMes, deps],
+  )
+
+  // Previsão só existe no mês corrente: mês fechado já tem o número final, e
+  // é o próprio "Meu saldo".
+  const ehMesCorrente = viewAno === hoje.getFullYear() && viewMes === hoje.getMonth()
+
+  // Com quanto o mês termina, e de onde isso vem: a memória de cálculo do
+  // Radar, o mesmo objeto. `fechamento` é o saldo final previsto da barra do
+  // rodapé de lá, e "falta receber" são as duas linhas de receita prevista dela.
+  const memoria = useMemo(
+    () => (ehMesCorrente ? memoriaDoRadar(viewAno, viewMes, deps) : null),
+    [ehMesCorrente, viewAno, viewMes, deps],
+  )
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
+  const faltaReceber = memoria ? memoria.entradasPrevistas + memoria.receitasAReceber : 0
+
+  // Pior mês à frente: a série do Simulador, do mês corrente ao fim do plano.
+  // Sem plano, não há série e não há aviso.
+  const alertaFuturo = useMemo(() => {
+    if (!ehMesCorrente) return null
+    const serie = serieBaseDoPlano(deps)
+    return serie ? piorMesDaSerie(serie) : null
+  }, [ehMesCorrente, deps])
 
   // A lista de últimas movimentações não é número: segue lendo o extrato.
   const ultimosLanc = useMemo(() => {
@@ -338,20 +372,63 @@ export default function Dashboard() {
         </div>
 
         {/* ── KPI cards ── */}
+        {/* Saldos em verde positivo e vermelho negativo, como no Radar e em
+            Lançamentos (RADAR_COR_AZUL). O previsto só existe no mês corrente,
+            e abre a mesma memória de cálculo do Radar. */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-          gap: 12, marginBottom: 20,
+          gridTemplateColumns: isMobile ? '1fr' : `repeat(${memoria ? 4 : 3}, 1fr)`,
+          gap: 12, marginBottom: memoriaAberta && memoria ? 12 : 20,
         }}>
-          <KpiCard icon="◎" label="Meu saldo" value={fmt(saldoDisponivel)}
-            valueColor={saldoDisponivel < 0 ? '#f87171' : '#fff'}
-            sublabel="Saldo de todas as contas" />
+          <KpiCard icon="◎" label={ehMesCorrente ? 'Saldo atual' : 'Saldo final'} value={fmt(saldoDisponivel)}
+            valueColor={saldoDisponivel >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+            sublabel={ehMesCorrente ? 'Bancos e dinheiro, hoje' : 'Bancos e dinheiro'} />
           <KpiCard icon="↑" label="Receitas do mês" value={fmt(totalEntradas)}
-            valueColor="#4ade80" sublabel="Salário + extras" />
+            valueColor={RADAR_COR_AZUL.bom}
+            sublabel={faltaReceber > 0.005 ? `falta receber ${fmt(faltaReceber)}` : 'Recebidas no mês'} />
           <KpiCard icon="↓" label="Despesas do mês" value={fmt(totalSaidas)}
-            valueColor="#f87171"
+            valueColor={RADAR_COR_AZUL.ruim}
             sublabel={percGastei !== null ? `${percGastei}% do planejado` : 'Gastos do mês'} />
+          {memoria && (
+            <KpiCard icon="→" label="Saldo final previsto" value={fmt(memoria.fechamento)}
+              valueColor={memoria.fechamento >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+              sublabel={`cenário ${cenarioPrevisao}`}
+              onClick={() => setMemoriaAberta(v => !v)} expandido={memoriaAberta} />
+          )}
         </div>
+        {memoriaAberta && memoria && (
+          <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
+            <MemoriaSaldo m={memoria} positivo={memoria.fechamento >= 0}
+              cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+          </div>
+        )}
+
+        {/* ── Pior mês à frente — só quando o saldo previsto fica negativo ──
+            O primeiro mês negativo é onde agir; o pior é o tamanho do buraco.
+            erroFundo + erroTexto: par medido em cores.ts (5,9:1). */}
+        {alertaFuturo?.primeiroNegativo && (() => {
+          const { pior, primeiroNegativo: neg } = alertaFuturo
+          const nomeMes = (p: { ano: number; mes: number }) => `${MESES_FULL[p.mes].toLowerCase()} de ${p.ano}`
+          const mesmo = pior.ano === neg.ano && pior.mes === neg.mes
+          return (
+            <div role="alert" style={{
+              background: COR.erroFundo, border: '1px solid #fecdd3', borderRadius: 12,
+              padding: '12px 16px', marginBottom: 20,
+              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+            }}>
+              <span aria-hidden style={{ fontSize: 18 }}>⚠️</span>
+              <div style={{ flex: 1, minWidth: 200, fontSize: 13, color: COR.erroTexto, lineHeight: 1.5 }}>
+                <b>Em {nomeMes(neg)} o saldo previsto fica negativo: {fmt(neg.semCompra)}.</b>
+                {!mesmo && <> O pior mês é {nomeMes(pior)}, com {fmt(pior.semCompra)}.</>}
+              </div>
+              <button onClick={() => navigate('/planejamento')} style={{
+                background: COR.erroTexto, color: '#fff', border: 'none', borderRadius: 8,
+                padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'inherit', whiteSpace: 'nowrap',
+              }}>Ver o plano →</button>
+            </div>
+          )
+        })()}
 
         {/* ── Card Aurix ── */}
         {(() => {

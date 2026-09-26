@@ -249,6 +249,22 @@ export function serieBaseDoPlano(deps: Deps, hoje: Date = new Date()): SerieDoPl
 }
 
 /**
+ * O mês mais fundo da série e o PRIMEIRO que fica negativo — o aviso da tela
+ * Início. São dois porque dizem coisas diferentes, como `pior` e
+ * `primeiroAperto` na simulação: com o saldo caindo, o fundo fica lá na
+ * frente, mas é no primeiro mês negativo que a pessoa precisa agir.
+ *
+ * Nenhuma conta nova: é a mesma série do Simulador — o saldo previsto do mês
+ * corrente e dos seguintes até o fim do plano, no cenário escolhido.
+ * Negativo é abaixo de meio centavo, pelo mesmo corte de `ehZero`.
+ */
+export function piorMesDaSerie(serie: SerieDoPlano): { pior: PontoFluxo; primeiroNegativo: PontoFluxo | null } {
+  const pior = serie.base.reduce((a, b) => (b.semCompra < a.semCompra ? b : a))
+  const primeiroNegativo = serie.base.find(pt => pt.semCompra < -0.005) ?? null
+  return { pior, primeiroNegativo }
+}
+
+/**
  * Julga UM parcelamento sobre uma série já calculada.
  *
  * É a mesma conta de `simularCompra` — que hoje é só um atalho que calcula a

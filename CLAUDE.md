@@ -841,6 +841,26 @@ do Radar sem mover um bit — a prova compara com o cálculo inline antigo por
 `===`. "Maiores despesas" sai das `linhas` da mesma passagem, por (nome,
 variante). Indicador novo na Início parte daqui, nunca de uma soma própria.
 
+**Fase 1 dos indicadores: três números que já existiam, e nenhuma conta nova.**
+Só no mês corrente — mês fechado já tem o número final, que é o próprio saldo.
+
+- **Saldo final previsto**: quarto cartão, `memoriaDoRadar().fechamento`, no
+  cenário escolhido. Clicado, abre a MESMA `MemoriaSaldo` do Radar, com os
+  botões de cenário.
+- **Falta receber**: subtítulo do cartão de Receitas, `entradasPrevistas +
+  receitasAReceber` da mesma memória — as duas linhas de receita prevista.
+- **Pior mês à frente**: faixa vermelha que só aparece quando algum mês até o
+  fim do plano fica negativo. Sai de `serieBaseDoPlano`, a série do Simulador,
+  por `piorMesDaSerie` em [`simulacaoCompra.ts`](src/utils/simulacaoCompra.ts).
+  Diz o PRIMEIRO mês negativo — onde agir — e o pior, quando é outro.
+
+A `prova32` exige que o cartão e o primeiro ponto da série sejam o mesmo número
+(`===`, e `=== saldoTotalNoFim`), nos três cenários, e tem controle negativo:
+sem o gasto que afunda novembro, a faixa não aparece.
+
+Os saldos dos cartões passaram a verde/vermelho (`RADAR_COR_AZUL`), como no
+Radar e em Lançamentos.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
