@@ -6,7 +6,7 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { saldoBancosEDinheiro, saldoTotalNoFim, detalharMes } from '../utils/saldoConta'
+import { saldoBancosEDinheiro, detalharPrevisto, detalharMes } from '../utils/saldoConta'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, barCorSobreAzul, type CatReal } from '../components/acompanhamento/AcShared'
@@ -15,6 +15,7 @@ import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
+import RadarPrevistoBloco from '../components/acompanhamento/RadarPrevistoBloco'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -143,10 +144,16 @@ export default function RadarPrevisto() {
   // do cartao segue sendo o saldo de hoje. O previsto entra como REFERENCIA
   // contra a qual ele e medido, do mesmo jeito que Receitas e Despesas se medem
   // contra o planejado.
-  const saldoPrevisto = useMemo(
-    () => saldoTotalNoFim(ano, mes, depsSaldo, { comoAbertura: true }).valor,
+  //
+  // O cartao e o bloco "Como o mes termina" leem da MESMA chamada: o numero do
+  // cartao e `previstoDetalhe.valor`, e as partes do bloco sao as listas que a
+  // mesma passagem coletou. Duas chamadas a mesma funcao ja dariam o mesmo
+  // numero; uma so torna impossivel que deixem de dar.
+  const previstoDetalhe = useMemo(
+    () => detalharPrevisto(ano, mes, depsSaldo, { comoAbertura: true }),
     [ano, mes, depsSaldo],
   )
+  const saldoPrevisto = previstoDetalhe.valor
 
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
   const percE = perc(totalRealE, totalPrevE)
@@ -252,6 +259,9 @@ export default function RadarPrevisto() {
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
         display:'flex',flexDirection:'column',gap:12}}>
+        {/* No topo da area que ROLA, e nao na faixa fixa dos cartoes: aberto,
+            o detalhe pode ser longo, e na faixa fixa ele empurraria a tela. */}
+        <RadarPrevistoBloco detalhe={previstoDetalhe} cenario={cenarioPrevisao} />
         <TutorialCard
           tela="radar"
           icon="📈"

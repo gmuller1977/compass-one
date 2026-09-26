@@ -166,6 +166,38 @@ porque `projecaoDoMes` é a soma de `projecaoDaConta`. O `comoAbertura` é o que
 faz o mês corrente projetar até o dia 31 — sem ele o previsto sairia igual ao
 atual e a barra marcaria 100% sempre.
 
+**EM CONSTRUÇÃO — o `/radar-previsto`, uma cópia do Radar com o bloco "Como o
+mês termina".** Pedido do Guilherme em 26/09/2026: a memória de cálculo de
+Lançamentos, só que consolidada em todas as contas e navegável. Ele decidiu
+fazer numa **cópia** para não tocar no Radar validado, e a regra acima — o
+Radar só mostra realizado — continua valendo para o `/radar`. Quando a cópia
+substituir o original, **esta regra tem de ser reescrita**, senão fica aqui
+contradizendo a tela.
+
+O bloco mostra, embaixo dos cartões: saldo atual, receitas previstas, despesas
+fixas a pagar, despesas variáveis a realizar, fatura do cartão a pagar e o
+saldo final previsto. Cada linha abre grupo → categoria.
+
+Tudo sai de **uma** chamada de `detalharPrevisto`, e o cartão "Saldo atual"
+lê o `valor` dessa mesma chamada. A identidade que o bloco mostra —
+saldo atual + partes = saldo final previsto — é por construção, e a
+`prova28` a tranca.
+
+Mês futuro soma a **janela**: dezembro visto de setembro carrega set, out,
+nov e dez, e o bloco diz isso ("janela Set–Dez"). Cada categoria vira uma
+linha só com "4 meses" ao lado; quatro linhas iguais leriam como quatro
+aluguéis. Mês fechado mostra uma frase dizendo que não há o que prever, em
+vez de sumir — quem abriu agosto procurando o bloco merece saber por quê.
+
+A cópia **não credita Aurix** ao abrir (seriam duas rotas pontuando a mesma
+visita, e isso grava no banco) e não tem versão mobile — o mobile espera o web
+terminar. Rota, item de menu e arquivo são temporários.
+
+Duas coisas ficam para quando substituir: o `EvolucaoGrupo` logo abaixo mostra
+o "Disponível" por categoria, que é o mesmo `faltaVariavelDoMes` do bloco —
+a tela diz a variável duas vezes. E o seletor de cenário ainda não está no
+bloco, só o nome dele.
+
 **O que tem de bater entre as contas e o Radar é o saldo inicial e o final —
 não o movimento.** Dentro do mês a pergunta é outra: quanto foi realizado
 contra o que estava planejado. Decidido em 08/09/2026, depois de uma rodada
