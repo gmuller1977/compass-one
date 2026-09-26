@@ -187,6 +187,35 @@ uma, entra na outra. O líquido é zero e o total fecha, mas as duas linhas
 ficam maiores pelo valor transferido. É o mesmo que Lançamentos faz por conta,
 onde a transferência de saída já conta como despesa paga.
 
+**A memória do Radar explica a variável: sobras, estouro usado para abater, e
+o que ainda falta gastar.** Pedido do Guilherme em 26/09/2026, depois de
+estranhar que no otimista o saldo final previsto batia com o saldo atual. Batia
+porque em setembro os estouros (1.178,82) passaram das sobras (1.153,17): no
+otimista não sobrou nada a reservar, a linha de variável zerou e sumiu, e a
+tela não dizia por quê.
+
+O bloco aparece **mesmo quando a variável zera** — é o caso que confunde. Ele
+não entra na soma da memória: vive numa faixa própria, recuada e menor.
+
+Só **sobras** e **estouros** saem do motor, e são a entrada dele, antes do corte
+do cenário (`faltaVariavelDoMes` devolve os dois). O compensado **não é
+calculado à parte**: é `sobras − o que o cenário reservou`, e por isso a
+explicação fecha no valor das linhas de cima por construção. Uma conta própria
+para "quanto o cenário compensou" seria o segundo caminho para a mesma pergunta.
+
+As sobras são somadas **por conta**, como o valor reservado. O motor monta as
+parcelas de todas as contas a cada chamada; somar o mês inteiro em cada uma e
+depois somar nas contas multiplicaria pelo número delas — o bug das fixas
+triplicadas.
+
+Só o Radar preenche. Em Lançamentos a memória é de uma conta, e o corte do
+cenário é do mês: um estouro de outra conta apareceria abatendo sobra desta.
+
+A `prova28` monta uma fixture com as 28 despesas variáveis de setembro do
+Guilherme, tiradas da tela, e exige que o motor chegue sozinho no que foi
+calculado à mão: 1.153,17 a gastar no pessimista, 791,64 no moderado, 0 no
+otimista.
+
 **Tentativa descartada, para não repetir:** uma cópia da tela, `/radar-previsto`,
 com um bloco "Como o mês termina" em acordeão — receitas previstas, fixas a
 pagar, variável a realizar e fatura, cada uma abrindo grupo → categoria.

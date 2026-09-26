@@ -255,6 +255,54 @@ function EscolhaCenario({ atual, onEscolher, fundo }: {
   )
 }
 
+/**
+ * Como o cenario chega na variavel a realizar. NAO entra na soma da memoria:
+ * explica as linhas de variavel, e por isso vive numa faixa propria, recuada e
+ * menor, para ninguem somar de novo.
+ *
+ * Aparece mesmo quando a variavel zera — e justamente o caso que confunde: no
+ * otimista, quando o estouro do mes cobre todas as sobras, as linhas de
+ * variavel somem e o saldo final bate com o atual.
+ *
+ * Medido sobre a faixa (branco a 7%) nos dois fundos da memoria, pior caso no
+ * vermelho: branco 8,54 · 85% 6,64 · 75% 5,53.
+ */
+const REGRA_CENARIO: Record<CenarioPrevisao, string> = {
+  pessimista: 'o estouro não abate sobra nenhuma',
+  moderado:   'o estouro só abate sobra do mesmo grupo',
+  otimista:   'o estouro abate sobra de qualquer categoria',
+}
+
+function ExplicaVariavel({ e, cenario }: {
+  e: { sobras: number; estouros: number; compensado: number }
+  cenario: CenarioPrevisao
+}) {
+  const reservado = e.sobras - e.compensado
+  const linha = (op: string, rotulo: string, valor: number, extra?: string, forte = false) => (
+    <div style={{display:'flex',alignItems:'baseline',gap:8,padding:'3px 0',
+      borderTop: forte ? '1px solid rgba(255,255,255,.2)' : 'none', marginTop: forte ? 3 : 0}}>
+      <span style={{width:10,fontSize:12,color:'rgba(255,255,255,.85)'}}>{op}</span>
+      <span style={{flex:1,minWidth:0,fontSize:11.5,fontWeight:forte?700:500,color:'#fff'}}>
+        {rotulo}
+        {extra && <span style={{fontSize:10,fontWeight:400,color:'rgba(255,255,255,.75)'}}> · {extra}</span>}
+      </span>
+      <span style={{fontSize:12,fontWeight:forte?800:600,fontVariantNumeric:'tabular-nums',color:'#fff',whiteSpace:'nowrap'}}>
+        {fmt(Math.abs(valor))}
+      </span>
+    </div>
+  )
+  return (
+    <div style={{background:'rgba(255,255,255,.07)',borderRadius:8,padding:'8px 12px',margin:'4px 0 8px'}}>
+      <div style={{fontSize:10,color:'rgba(255,255,255,.85)',marginBottom:4,lineHeight:1.4}}>
+        <b style={{color:'#fff'}}>Variável do mês</b> · no {NOME_CENARIO[cenario].toLowerCase()}, {REGRA_CENARIO[cenario]}
+      </div>
+      {linha('', 'Sobras do plano', e.sobras, 'planejado ainda não gasto')}
+      {linha('−', 'Estouro usado para abater', e.compensado, `de ${fmt(e.estouros)} estourados`)}
+      {linha('=', 'Ainda a gastar', reservado, undefined, true)}
+    </div>
+  )
+}
+
 export function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
   m: Memoria; positivo: boolean
   cenario: CenarioPrevisao
@@ -303,6 +351,7 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
       borderRadius:'0 0 12px 12px',borderTop:'1px solid rgba(255,255,255,.18)'}}>
       <EscolhaCenario atual={cenario} onEscolher={onCenario} fundo={fundo} />
       {linhas.map(([r,v,a]) => linha(r,v,a))}
+      {m.variavelExplicada && <ExplicaVariavel e={m.variavelExplicada} cenario={cenario} />}
       {linha('Saldo final previsto', m.fechamento, '', true)}
     </div>
   )
