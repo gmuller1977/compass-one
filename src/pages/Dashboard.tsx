@@ -1,6 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import type { DadosMes } from '../context/AppContext'
+import { construirRealizadoMes } from '../utils/realizadoMes'
+import { saldoBancosEDinheiro } from '../utils/saldoConta'
+import { nomesDeCartao, totaisDoMes, norm } from '../components/acompanhamento/evolucaoCalcs'
 import { supabase } from '../lib/supabase'
 import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
@@ -61,7 +65,7 @@ const COMPASS_CFG: Record<CompassStatus, {
 export default function Dashboard() {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
-  const { contas, categorias, extratoData, planos, perfil, user, objetivoUsuario } = useApp()
+  const { contas, categorias, extratoData, faturaData, planos, perfil, user, objetivoUsuario, saldoInicialDinheiro } = useApp()
 
   const hoje = new Date()
   const [viewMes, setViewMes] = useState(hoje.getMonth())
@@ -71,30 +75,48 @@ export default function Dashboard() {
 
 
   // ── Cálculos do mês ──────────────────────────────────────────────────
-  const { totalEntradas, totalSaidas, saldoDisponivel, topCategorias, ultimosLanc } = useMemo(() => {
-    let te = 0, ts = 0
-    const gastoPorCat: Record<string, number> = {}
-
-    contas.forEach(conta => {
-      const dados = extratoData[mesKey(conta.id, viewAno, viewMes)]
-      if (!dados) return
-      Object.values(dados.lancamentos).flat().forEach(l => {
-        if (l.tipo === 'entrada') te += l.valor
-        else { ts += l.valor; gastoPorCat[l.categoria] = (gastoPorCat[l.categoria] ?? 0) + l.valor }
-      })
+  // Nenhum número desta tela é calculado aqui: saldo, receitas, despesas e
+  // planejado saem das MESMAS funções do Radar, e os dois concordam sobre o
+  // mesmo mês por construção. Antes a Início somava só o extrato — sem fixa,
+  // sem compra no cartão, sem a carteira, com transferência entre contas
+  // contada como despesa — e o saldo partia do cadastro da conta, ignorando
+  // todo mês anterior e toda conciliação.
+  const { totalEntradas, totalSaidas, totalPrevS, topCategorias } = useMemo(() => {
+    const planoAno = planos[viewAno]
+    const { saidasMap, entradasMap } = construirRealizadoMes({
+      ano: viewAno, mes: viewMes, extratoData: extratoData as Record<string, DadosMes>,
+      faturaData, contas, categorias, planoAno,
     })
+    const t = totaisDoMes({ mes: viewMes, planoAno, categorias, cartaoNomes: nomesDeCartao(contas), entradasMap, saidasMap })
 
-    const saldoIni = contas
-      .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
-      .reduce((s, c) => s + c.saldoInicial, 0)
-
-    const topCategorias = Object.entries(gastoPorCat)
-      .sort((a, b) => b[1] - a[1]).slice(0, 4)
-      .map(([nome, gasto]) => {
-        const cat = categorias.find(c => c.nome === nome)
-        return { nome, gasto, cor: cat?.cor ?? COR.azul, icone: cat?.icone ?? '📌' }
+    // Por (nome, variante), como as linhas do Radar: Seguro · Civic e
+    // Seguro · March são duas despesas, não uma.
+    const topCategorias = t.saida.linhas
+      .filter(l => l.real > 0)
+      .sort((a, b) => b.real - a.real).slice(0, 4)
+      .map(l => {
+        const cat = categorias.find(c => c.tipo === 'saida' && norm(c.nome) === norm(l.nome) && norm(c.descricao) === l.descricao)
+          ?? categorias.find(c => norm(c.nome) === norm(l.nome))
+        return {
+          chave: `${l.nome}||${l.descricao}`,
+          nome: l.descricao ? `${l.nome} · ${l.descricao}` : l.nome,
+          gasto: l.real, cor: cat?.cor ?? COR.azul, icone: cat?.icone ?? '📌',
+        }
       })
 
+    return { totalEntradas: t.entrada.real, totalSaidas: t.saida.real, totalPrevS: t.saida.prev, topCategorias }
+  }, [contas, categorias, extratoData, faturaData, planos, viewMes, viewAno])
+
+  // O saldo das contas de banco e do dinheiro ao fim do mês escolhido — no mês
+  // corrente, o de hoje. É o "Saldo atual" do Radar.
+  const saldoDisponivel = useMemo(() => saldoBancosEDinheiro(viewAno, viewMes, {
+    extratoData: extratoData as Record<string, DadosMes>,
+    faturaData: faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>,
+    contas, categorias, planos, saldoInicialDinheiro,
+  }), [viewAno, viewMes, extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+
+  // A lista de últimas movimentações não é número: segue lendo o extrato.
+  const ultimosLanc = useMemo(() => {
     const todos: Array<{ descricao: string; categoria: string; valor: number; tipo: string; data: number }> = []
     contas.forEach(conta => {
       const dados = extratoData[mesKey(conta.id, viewAno, viewMes)]
@@ -103,21 +125,8 @@ export default function Dashboard() {
         ls.forEach(l => todos.push({ ...l, data: parseInt(dia) }))
       )
     })
-
-    return {
-      totalEntradas: te,
-      totalSaidas:   ts,
-      saldoDisponivel: saldoIni + te - ts,
-      topCategorias,
-      ultimosLanc: todos.sort((a, b) => b.data - a.data).slice(0, 5),
-    }
-  }, [contas, categorias, extratoData, viewMes, viewAno])
-
-  const totalPrevS = useMemo(() => {
-    const p = planos[viewAno]
-    if (!p) return 0
-    return (p.saidas ?? []).reduce((s, c) => s + (c.v[viewMes] ?? 0), 0)
-  }, [planos, viewAno, viewMes])
+    return todos.sort((a, b) => b.data - a.data).slice(0, 5)
+  }, [contas, extratoData, viewMes, viewAno])
 
   const temPlano = useMemo(() => {
     const p = planos[viewAno]
@@ -468,7 +477,7 @@ export default function Dashboard() {
                   }}>Registrar gasto</button>
                 </div>
               ) : topCategorias.map(cat => (
-                <div key={cat.nome} style={{ marginBottom: 16 }}>
+                <div key={cat.chave} style={{ marginBottom: 16 }}>
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7,
                   }}>

@@ -236,3 +236,66 @@ export function calcGrupoReal(allCats: CatComDesc[], realMap: Record<string, Cat
 export function calcGrupoPrev(allCats: CatComDesc[], mes: number): number {
   return allCats.reduce((s, cat) => s + (cat.v[mes] ?? 0), 0)
 }
+
+/** Nomes das contas-cartão, em minúsculas: a categoria homônima é a fatura. */
+export function nomesDeCartao(contas: { tipo: string; nome: string }[]): Set<string> {
+  return new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
+}
+
+/**
+ * Os grupos do Radar, na ordem da tela. "Outras" entra sempre: é onde cai o
+ * realizado sem cadastro vivo — categoria excluída ou desativada. Sem ele na
+ * lista esse dinheiro não seria somado por ninguém. Vazio, não é renderizado.
+ */
+export function gruposDoRadar(tipo: 'saida' | 'entrada', categorias: Categoria[], cartaoNomes: Set<string>): string[] {
+  const cats = categorias.filter(c =>
+    c.tipo === tipo && c.ativa && !cartaoNomes.has(c.nome.toLowerCase())
+  )
+  const gs = Array.from(new Set(cats.map(c => c.grupo ?? SEM_GRUPO)))
+  if (!gs.includes(SEM_GRUPO)) gs.push(SEM_GRUPO)
+  return gs.sort((a, b) => {
+    if (a === SEM_GRUPO) return 1
+    if (b === SEM_GRUPO) return -1
+    return a.localeCompare(b, 'pt-BR')
+  })
+}
+
+export type LinhaDoMes = { nome: string; descricao: string; grupo: string; prev: number; real: number }
+type LadoDoMes = { prev: number; real: number; linhas: LinhaDoMes[] }
+
+/**
+ * Receitas e despesas do mês — previsto e realizado —, somadas grupo a grupo
+ * como o Radar desenha. É a fonte dos cartões do Radar E da tela Início: uma
+ * cópia na Início somava só o extrato (sem fixa, sem cartão, com
+ * transferência) e discordava do Radar sobre o mesmo mês.
+ *
+ * Os totais seguem somados por grupo, na ordem de antes, para não mover nem o
+ * último bit; `linhas` vem ao lado, da mesma passagem, e é o que a Início usa
+ * para "Maiores despesas".
+ */
+export function totaisDoMes(p: {
+  mes: number
+  planoAno: { entradas?: PlanCat[]; saidas?: PlanCat[] } | undefined
+  categorias: Categoria[]
+  cartaoNomes: Set<string>
+  entradasMap: Record<string, CatReal>
+  saidasMap: Record<string, CatReal>
+}): { entrada: LadoDoMes; saida: LadoDoMes } {
+  const { mes, categorias, cartaoNomes } = p
+  const lado = (tipo: 'saida' | 'entrada', planCats: PlanCat[], realMap: Record<string, CatReal>): LadoDoMes => {
+    const linhas: LinhaDoMes[] = []
+    const tot = gruposDoRadar(tipo, categorias, cartaoNomes).reduce((acc, grupo) => {
+      const cats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
+      for (const c of cats) {
+        linhas.push({ nome: c.nome, descricao: c.descricao, grupo, prev: c.v[mes] ?? 0,
+          real: pickReal(realMap, c.nome, c.descricao)?.total ?? 0 })
+      }
+      return { prev: acc.prev + calcGrupoPrev(cats, mes), real: acc.real + calcGrupoReal(cats, realMap) }
+    }, { prev: 0, real: 0 })
+    return { ...tot, linhas }
+  }
+  return {
+    entrada: lado('entrada', p.planoAno?.entradas ?? [], p.entradasMap),
+    saida:   lado('saida',   p.planoAno?.saidas   ?? [], p.saidasMap),
+  }
+}

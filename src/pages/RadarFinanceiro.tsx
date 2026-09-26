@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import type { DadosMes, Categoria } from '../context/AppContext'
+import type { DadosMes } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
@@ -10,9 +10,9 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
-import { COR, fmt, MESES_FULL, diasNoMes, type CatReal } from '../components/acompanhamento/AcShared'
+import { COR, fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
 import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCores'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
+import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
@@ -65,48 +65,16 @@ export default function RadarFinanceiro() {
   )
 
   // ── Grupos ────────────────────────────────────────────────────────────
-  const cartaoNomes = useMemo(
-    () => new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())),
-    [contas],
-  )
+  const cartaoNomes = useMemo(() => nomesDeCartao(contas), [contas])
 
-  function buildGrupos(tipo: 'saida' | 'entrada') {
-    const cats = categorias.filter((c: Categoria) =>
-      c.tipo === tipo && c.ativa && !cartaoNomes.has(c.nome.toLowerCase())
-    )
-    const gs = Array.from(new Set(cats.map((c: Categoria) => c.grupo ?? '__sem_grupo__')))
-    // "Outras" entra sempre: é onde cai o realizado sem cadastro vivo —
-    // categoria excluída ou desativada, ajuste de fatura. Sem ele na lista
-    // esse dinheiro não seria somado por ninguém. Vazio, não é renderizado.
-    if (!gs.includes('__sem_grupo__')) gs.push('__sem_grupo__')
-    return gs.sort((a,b) => {
-      if (a === '__sem_grupo__') return 1
-      if (b === '__sem_grupo__') return -1
-      return a.localeCompare(b, 'pt-BR')
-    })
-  }
+  const gruposSaida   = useMemo(() => gruposDoRadar('saida',   categorias, cartaoNomes), [categorias, cartaoNomes])
+  const gruposEntrada = useMemo(() => gruposDoRadar('entrada', categorias, cartaoNomes), [categorias, cartaoNomes])
 
-  const gruposSaida   = useMemo(() => buildGrupos('saida'),  [categorias, cartaoNomes])
-  const gruposEntrada = useMemo(() => buildGrupos('entrada'), [categorias, cartaoNomes])
-
+  // Os totais saem de totaisDoMes, a mesma função que a tela Início usa.
   const { totalPrevS, totalRealS, totalPrevE, totalRealE } = useMemo(() => {
-    const somarGrupos = (
-      tipo: 'saida' | 'entrada',
-      grupos: string[],
-      planCats: { nome: string; v: number[] }[],
-      realMap: Record<string, CatReal>,
-    ) => grupos.reduce((acc, grupo) => {
-      const cats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
-      return {
-        prev: acc.prev + calcGrupoPrev(cats, mes),
-        real: acc.real + calcGrupoReal(cats, realMap),
-      }
-    }, { prev: 0, real: 0 })
-
-    const e = somarGrupos('entrada', gruposEntrada, dadosAno?.entradas ?? [], entradasMap)
-    const s = somarGrupos('saida',   gruposSaida,   dadosAno?.saidas   ?? [], saidasMap)
-    return { totalPrevE: e.prev, totalRealE: e.real, totalPrevS: s.prev, totalRealS: s.real }
-  }, [dadosAno, mes, entradasMap, saidasMap, gruposEntrada, gruposSaida, categorias, cartaoNomes])
+    const t = totaisDoMes({ mes, planoAno: dadosAno, categorias, cartaoNomes, entradasMap, saidasMap })
+    return { totalPrevE: t.entrada.prev, totalRealE: t.entrada.real, totalPrevS: t.saida.prev, totalRealS: t.saida.real }
+  }, [dadosAno, mes, entradasMap, saidasMap, categorias, cartaoNomes])
 
   // O Radar nao calcula saldo proprio: soma os saldos das contas de banco e
   // do dinheiro, os mesmos que Lancamentos mostra. Assim o saldo inicial de

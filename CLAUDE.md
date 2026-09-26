@@ -826,6 +826,21 @@ tela cujo trabalho é avisar que o dinheiro vai faltar.
 | Planejamento | se o plano se cumprir | `calcSaldos` |
 | Simulador | e se eu comprar em 6× | `serieBase` + parcelas |
 
+**A tela Início não calcula número nenhum: lê as funções do Radar.** Feito em
+26/09/2026 (fase 0 dos indicadores). Ela somava só o extrato — sem fixa, sem
+compra no cartão, sem a carteira, com transferência entre contas contada como
+receita e despesa —, e o saldo partia do saldo de **cadastro** da conta,
+ignorando todo mês anterior e toda conciliação. Na `prova31`, o mesmo
+setembro dava receitas 700 / despesas 1.060 / saldo 1.140 na Início, contra
+5.300 / 2.390 / 5.640 no Radar.
+
+Hoje: saldo = `saldoBancosEDinheiro` (o "Saldo atual" do Radar); receitas,
+despesas e planejado = `totaisDoMes` de
+[`evolucaoCalcs.ts`](src/components/acompanhamento/evolucaoCalcs.ts), extraída
+do Radar sem mover um bit — a prova compara com o cálculo inline antigo por
+`===`. "Maiores despesas" sai das `linhas` da mesma passagem, por (nome,
+variante). Indicador novo na Início parte daqui, nunca de uma soma própria.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
