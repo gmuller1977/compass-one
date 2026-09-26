@@ -265,8 +265,17 @@ não o `AcShared.tsx`, porque constantes num arquivo de componente geram aviso
 de fast refresh no lint.
 
 O "Disponível / Estourou" saiu das colunas e foi para a linha de status embaixo
-do nome, porque é o número que explica os cenários. Fixa paga no valor EXATO é
-verde, não amarela: pela regra do grupo, AABB 120 de 120 apareceria como alerta.
+do nome, porque é o número que explica os cenários.
+
+**Conta FIXA paga até o previsto é verde, com "✓ Pago" e sem "disponível".**
+Decidido pelo Guilherme em 26/09/2026. Pela regra das faixas, 99–100% é amarelo,
+e o Financiamento · Civic (1.149,72 de 1.150) aparecia como alerta depois de
+pago. O "disponível R$ 0,28" também sai: o saldo previsto não conta mais nada
+de fixa confirmada, e o número daria a entender que ainda vão sair 0,28. **Paga
+ACIMA do previsto continua vermelha**, com o estouro — Plano de Saúde, 1.123,46
+de 973, é 15% a mais. "Até o previsto" usa o percentual arredondado, o que está
+escrito: Consórcio 460,94 de 460 aparece "100%" e fica verde. O cadastro é
+achado pelo par (nome, variante); o nome sozinho só vale quando é único.
 Os lançamentos, ao abrir uma categoria, continuam no painel claro de antes.
 
 **"Atenção" é amarelo, não laranja.** Foi laranja por algumas horas, a pedido

@@ -130,11 +130,29 @@ export default function EvolucaoLinha({
   // alerta.
   const noValorExato = prev > 0 && Math.abs(real - prev) < 0.005
   const semDados = prev <= 0 && real === 0
-  const faixa = noValorExato ? 'bom' : faixaRadar(Math.round(perc * 100) / 100, isEntrada)
+  const percArred = Math.round(perc * 100) / 100
+
+  // Conta FIXA de despesa paga até o previsto é verde e "✓ Pago" — decidido
+  // pelo Guilherme em 26/09/2026. Pela regra das faixas, 99–100% é amarelo
+  // ("chegando no limite"), e o financiamento de 1.149,72 de 1.150 aparecia
+  // como alerta depois de pago. Paga ACIMA do previsto continua vermelha: é
+  // estouro de verdade.
+  //
+  // O cadastro é achado pelo par (nome, variante), e o nome sozinho só vale
+  // quando é único — senão Seguro · Civic e Seguro · March se confundem. Ver
+  // CLAUDE.md, "Categorias e variantes".
+  const cadastro = categorias.find(c => c.nome === nome && (c.descricao ?? '') === (descricao ?? ''))
+    ?? (categorias.filter(c => c.nome === nome).length === 1 ? categorias.find(c => c.nome === nome) : undefined)
+  const fixaPaga = !isEntrada && !!cadastro?.fixa && real > 0 && percArred <= 1
+
+  const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
   const cor = semDados ? '#94a3b8' : COR[faixa]
   // "Disponível / Estourou" sai das colunas e vai para a linha de status: é o
   // número que explica os cenários, e não pode sumir junto com a coluna.
-  const detalhe = dif.vazio ? '' : ` · ${dif.label.toLowerCase()} ${fmt(dif.valor)}`
+  // Fixa paga não tem "disponível": o saldo previsto já não conta nada dela, e
+  // "disponível R$ 0,28" daria a entender que ainda vão sair 0,28.
+  const detalhe = dif.vazio || fixaPaga ? '' : ` · ${dif.label.toLowerCase()} ${fmt(dif.valor)}`
+  const statusTexto = fixaPaga ? '✓ Pago' : status.texto
   const alternar = () => temLancamentos && setAberto(v => !v)
 
   return (
@@ -162,7 +180,7 @@ export default function EvolucaoLinha({
           </div>
           <div style={{ fontSize: 10.5, marginTop: 2, color: '#475569',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {status.texto}{detalhe}
+            {statusTexto}{detalhe}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
