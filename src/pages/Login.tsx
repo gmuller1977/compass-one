@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { saiuPorInatividade, esquecerSaidaPorInatividade } from '../utils/inatividade'
+import { COR } from '../utils/cores'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -111,6 +113,11 @@ export default function Login() {
   const [carregando, setCarregando] = useState(false)
   const [erro,      setErro]      = useState('')
   const [sucesso,   setSucesso]   = useState('')
+  // Lido no inicializador e esquecido num efeito, e não os dois juntos: em modo
+  // estrito o React chama o inicializador duas vezes, e consumir ali perderia
+  // o aviso na segunda chamada.
+  const [porInatividade] = useState(saiuPorInatividade)
+  useEffect(() => { esquecerSaidaPorInatividade() }, [])
 
   async function handleSubmit() {
     setErro('')
@@ -205,6 +212,13 @@ export default function Login() {
           {erro}
         </div>
       )}
+      {porInatividade && !erro && !sucesso && (
+        <div role="status" style={{ background: COR.infoFundo, border: `1px solid ${COR.infoBorda}`, borderRadius: 10,
+          padding: '10px 14px', fontSize: 13, color: COR.infoTexto, marginBottom: 16, textAlign: 'center' }}>
+          Você foi desconectado depois de 30 minutos sem uso. Entre de novo para continuar.
+        </div>
+      )}
+
       {sucesso && (
         <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#15803d', marginBottom:16, textAlign:'center' }}>
           {sucesso}

@@ -3,6 +3,7 @@ import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { limparUltimaAtividade } from '../utils/inatividade'
 
 // ── Types compartilhados ─────────────────────────────────────────────
 export type Perfil = { nome: string; apelido: string }
@@ -339,6 +340,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       userIdRef.current = u?.id ?? null
       setUserState(u)
       if (!u) {
+        // Sem sessão, o carimbo de última atividade não vale mais nada. Apagar
+        // aqui — e não só no "Sair" — cobre toda forma de a sessão acabar, e
+        // impede o próximo login de herdar um carimbo velho e sair na hora.
+        limparUltimaAtividade()
         wasLoggedOutRef.current = true
         loadedUserIdRef.current = null
         resetState()

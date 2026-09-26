@@ -1209,6 +1209,26 @@ aleatório. Aconteceu em 31/08/2026 no Radar.
 
 ## Supabase
 
+**A sessão cai depois de 30 minutos sem uso**, com aviso no último minuto
+("Você ainda está aí?" · Continuar conectado / Sair agora). Decidido pelo
+Guilherme em 26/09/2026: o Supabase renova a sessão sozinho, sem prazo, e quem
+abrisse o navegador no mesmo computador dias depois entrava direto. Regra e
+motivo em [`utils/inatividade.ts`](src/utils/inatividade.ts); o aviso é o
+`AvisoInatividade`, montado no `AppShell`. Cobre o computador deixado aberto;
+não protege contra sessão roubada — o limite no próprio Supabase faria isso, e
+parece ser recurso de plano pago.
+
+A última atividade mora no **localStorage**, para valer entre abas (usar uma
+mantém as outras) e ao reabrir o navegador depois do prazo (abre deslogado).
+O carimbo é apagado **sempre que não há sessão**, no `onAuthStateChange` —
+senão um login novo herdaria o carimbo velho e sairia na hora.
+
+A saída é o mesmo `sairDaConta` do menu, que **salva tudo antes** de
+desconectar. O componente chama sempre a versão mais recente dele por uma
+ref: uma versão presa no efeito de montagem salvaria dados velhos por cima
+dos novos. A tela de login diz por que a pessoa saiu. A `prova29` tranca os
+limites: 29:00 avisa com 60 s, 29:59 com 1 s, 30:00 sai.
+
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
 grava em produção**. Há mais de um usuário real na base.
 
