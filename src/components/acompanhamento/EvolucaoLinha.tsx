@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { corRadarClaro, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -146,7 +146,7 @@ export default function EvolucaoLinha({
   const fixaPaga = !isEntrada && !!cadastro?.fixa && real > 0 && percArred <= 1
 
   const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
-  const cor = semDados ? '#94a3b8' : corRadarClaro(faixa, isEntrada)
+  const cor = semDados ? '#94a3b8' : COR[faixa]
   // "Disponível / Estourou" sai das colunas e vai para a linha de status: é o
   // número que explica os cenários, e não pode sumir junto com a coluna.
   // Fixa paga não tem "disponível": o saldo previsto já não conta nada dela, e
@@ -174,7 +174,7 @@ export default function EvolucaoLinha({
           {icone}
         </div>
         <div style={{ flex: 1, minWidth: 140 }}>
-          <div title={displayName} style={{ fontSize: 13, fontWeight: 600,
+          <div title={displayName} style={{ fontSize: 12, fontWeight: 600,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {displayName}
           </div>
@@ -185,9 +185,9 @@ export default function EvolucaoLinha({
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
           whiteSpace: 'nowrap', minWidth: 290, fontVariantNumeric: 'tabular-nums' }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: cor }}>{real !== 0 ? fmt(real) : '—'}</span>
-          <span style={{ fontSize: 11, color: '#475569' }}>de {prev > 0 ? fmt(prev) : '—'}</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: cor, minWidth: 44, textAlign: 'right' }}>{percLabel}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: cor }}>{real !== 0 ? fmt(real) : '—'}</span>
+          <span style={{ fontSize: 10.5, color: '#475569' }}>de {prev > 0 ? fmt(prev) : '—'}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: cor, minWidth: 44, textAlign: 'right' }}>{percLabel}</span>
         </div>
         <div style={{ width: 200, flexShrink: 0, height: 16, borderRadius: 8, background: TRILHO, overflow: 'hidden',
           boxSizing: 'border-box', border: `2px solid ${semDados ? '#cbd5e1' : '#64748b'}` }}>

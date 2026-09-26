@@ -289,23 +289,30 @@ e foi junto. A barrinha dos cartões ganhou o desenho da barra de grupo — tril
 escuro, borda branca, 8px —, porque sobre o trilho claro o vermelho do grupo
 ficava em 2,95. `barCorSobreAzul`, a segunda paleta de barra sobre azul, saiu.
 
-**Os cabeçalhos de grupo são CINZA-CLARO (`#f1f5f9 → #e2e8f0`), com borda
-`#cbd5e1` e texto escuro.** Pedido do Guilherme em 26/09/2026: empilhados, os
-cabeçalhos escuros pesavam demais. Passou no mesmo dia pelo azul médio dos
-dias passados e pelo azul-claro dos dias futuros de Lançamentos. O cinza ficou
-porque é neutro: não puxa o tom do vermelho e do verde, e dá espaço para o tom
-claro de cada um se distinguir do escuro — no azul-claro o vermelho-claro mais
-claro que passava (`#952525`) era quase igual ao escuro (1,23). A borda
-existe porque o cinza se separa pouco do branco das categorias (1,23).
+**A regra de cor do Radar: VERDE = dentro do plano, VERMELHO = problema.**
+Decidida pelo Guilherme em 26/09/2026, ao perguntar que cor deveria ter uma
+despesa em exatos 100%: dentro do plano, então verde. O tom do verde diz se há
+folga. Despesa até 89% verde-escuro, 90–100% verde-claro (no limite, mas
+dentro), acima de 100% vermelho. Receita 100% ou mais verde-escuro, 80–99%
+verde-claro, abaixo de 80% vermelho. O vermelho passou a ter um sentido só —
+antes era também "é despesa"; quem diz o tipo é a seta ↑/↓ do grupo. Os
+cortes não mudaram, só a cor de cada faixa; a regra mora em
+[`radarCores.ts`](src/components/acompanhamento/radarCores.ts).
 
-Grupo e categoria usam **uma paleta só**, `RADAR_COR_CLARO` com
-`corRadarClaro`: verde-escuro `#14532d` dentro do previsto, vermelho-escuro
-`#7f1d1d` estourado, e **"chegando no limite" no TOM CLARO da cor do tipo** —
-vermelho-claro `#b91c1c` na despesa, verde-claro `#18773d` na receita. O
-amarelo saiu do fundo claro: o único que passava era marrom, e não dizia se era
-despesa ou receita. Medido no pior caso, `#e2e8f0`: 7,39 / 4,55 / 5,25 / 8,13;
-nome `#1e3a8a` 8,40; separação claro × escuro 1,55 no vermelho e 1,62 no
-verde. A barra do grupo tem trilho branco e borda marinho `#1e3a8a`.
+No fundo claro (grupo e categoria): `#14532d` / `#18713a` / `#7f1d1d`. Nos
+cartões, azul-escuro: `#4ade80` / `#bbf7d0` / `#f87171` — os cartões acompanham,
+e o amarelo saiu deles também. A separação pelo brilho entre os vizinhos "no
+limite" e "estourou" é 1,65 no claro e 2,28 no escuro. O número dos cartões de
+Receitas e Despesas continua pintado pelo TIPO (verde e vermelho) — só as
+barras seguem a faixa.
+
+**Os cabeçalhos de grupo são CINZA (`#e6ebf1 → #d8dfe8`), com borda `#c3ccd8` e
+texto escuro.** Empilhados, os escuros pesavam demais; passou no mesmo dia pelo
+azul médio e pelo azul-claro de Lançamentos. O cinza é neutro e não puxa o tom
+das cores. Ficou um pouco mais escuro que o primeiro (`#e2e8f0`) para se
+destacar do branco das categorias (1,34 contra 1,23) — mais escuro que isso, os
+dois verdes se confundiriam. Medido no `#d8dfe8`: 6,79 / 4,52 / 7,46; nome
+`#1e3a8a` 7,71. Fontes: grupo 14px, categoria 12px.
 
 **Os cartões do topo e o rodapé continuam no azul-escuro**, com `RADAR_COR_AZUL`:
 `#86efac` / `#fde047` / `#f87171`. O vermelho é o da caixa Saídas de

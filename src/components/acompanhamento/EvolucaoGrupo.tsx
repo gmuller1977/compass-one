@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
-import { RADAR_COR_CLARO as COR, corRadarClaro, faixaRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, faixaRadar } from './radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
@@ -19,14 +19,14 @@ import EvolucaoLinha from './EvolucaoLinha'
  *
  * As cores e os contrastes medidos moram em radarCores (RADAR_COR_CLARO).
  *
- * "Atenção" é amarelo, não laranja: laranja e vermelho tinham quase o mesmo
- * brilho, e o amarelo casa com o aviso do otimista na barra do rodapé.
+ * Verde = dentro do plano, vermelho = problema; o tom do verde diz se há
+ * folga. A regra inteira está em radarCores.
  */
 // CINZA-CLARO, e não azul: neutro, ele não puxa o tom do vermelho e do verde,
 // e deixa espaço para o tom claro de cada um ler diferente do escuro. Cinza
 // se separa pouco do branco das categorias (1,23), e por isso há borda.
-const FUNDO   = 'linear-gradient(135deg, #f1f5f9, #e2e8f0)'
-const BORDA   = '1px solid #cbd5e1'
+const FUNDO   = 'linear-gradient(135deg, #e6ebf1, #d8dfe8)'
+const BORDA   = '1px solid #c3ccd8'
 // Fundo claro pede texto escuro: o nome no azul-marinho de Lançamentos, e os
 // rótulos num cinza-azulado. Barra com trilho BRANCO e borda marinho.
 const TEXTO   = '#1e3a8a'
@@ -72,7 +72,7 @@ export default function EvolucaoGrupo({
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
-  const corFaixa   = corRadarClaro(faixa, isEntrada)
+  const corFaixa   = COR[faixa]
   const corNumero  = semDados ? TEXTO : corFaixa
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
@@ -103,7 +103,7 @@ export default function EvolucaoGrupo({
               do topo ("↑ Receitas", "↓ Despesas"): ↑ verde para receita, ↓
               vermelha para despesa. A barra e os números continuam dizendo o
               STATUS. Tons e contrastes: radarCores. */}
-          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 16, fontWeight: 700,
+          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 14, fontWeight: 700,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {/* Seta DESENHADA, e não o caractere: "↑" é um traço fino em quase
                 toda fonte, e o negrito quase não o engrossa. Traço de 3px em
@@ -118,13 +118,13 @@ export default function EvolucaoGrupo({
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
             whiteSpace: 'nowrap', minWidth: 290, fontVariantNumeric: 'tabular-nums' }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: corNumero }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: corNumero }}>
               {totalReal > 0 ? fmt(totalReal) : '—'}
             </span>
-            <span style={{ fontSize: 12, color: ROTULO }}>
+            <span style={{ fontSize: 11, color: ROTULO }}>
               de {totalPrev > 0 ? fmt(totalPrev) : '—'}
             </span>
-            <span style={{ fontSize: 16, fontWeight: 800, color: corNumero, minWidth: 44, textAlign: 'right' }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: corNumero, minWidth: 44, textAlign: 'right' }}>
               {percLabel}
             </span>
           </div>
