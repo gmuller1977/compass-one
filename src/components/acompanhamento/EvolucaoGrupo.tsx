@@ -107,20 +107,13 @@ export default function EvolucaoGrupo({
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
             {grupoIcone}
           </div>
-          {/* Nome e números em largura FIXA, a barra com o que sobra no meio:
-              assim todas as barras começam e terminam no mesmo ponto, e os grupos
-              empilhados formam um gráfico de barras que se compara de olho. Com a
-              barra depois dos números, "R$ 628,10" e "R$ 18.240,59" faziam cada
-              uma começar num lugar. */}
-          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ width: 210, flexShrink: 0, fontSize: 13, fontWeight: 700,
+          {/* Nome à esquerda, e à direita duas colunas FIXAS: números e barra.
+              A barra vem DEPOIS dos números (pedido do Guilherme, depois de ver
+              ela antes deles) e, com largura fixa, continua alinhada em todos os
+              grupos — os grupos empilhados ainda formam um gráfico de barras. */}
+          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 13, fontWeight: 700,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {tipoLabel} — {grupoLabel}
-          </div>
-          <div style={{ flex: 1, minWidth: 80, height: 10, borderRadius: 5, background: TRILHO, overflow: 'hidden' }}>
-            {!semDados && (
-              <div style={{ height: '100%', borderRadius: 5, width: `${percClamp * 100}%`,
-                background: BARRA[faixa], transition: 'width .3s ease' }} />
-            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
             whiteSpace: 'nowrap', minWidth: 290, fontVariantNumeric: 'tabular-nums' }}>
@@ -133,6 +126,12 @@ export default function EvolucaoGrupo({
             <span style={{ fontSize: 16, fontWeight: 800, color: corNumero, minWidth: 44, textAlign: 'right' }}>
               {percLabel}
             </span>
+          </div>
+          <div style={{ width: 200, flexShrink: 0, height: 20, borderRadius: 10, background: TRILHO, overflow: 'hidden' }}>
+            {!semDados && (
+              <div style={{ height: '100%', borderRadius: 10, width: `${percClamp * 100}%`,
+                background: BARRA[faixa], transition: 'width .3s ease' }} />
+            )}
           </div>
           <span aria-hidden="true" style={{
             fontSize: 12, color: 'rgba(255,255,255,.85)', width: 12, textAlign: 'center',

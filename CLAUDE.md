@@ -217,12 +217,11 @@ melhor que uma conta de três linhas.
 **Os grupos do Radar têm fundo azul FIXO; a cor mora na barra e nos números.**
 Pedido do Guilherme em 26/09/2026. Antes o fundo inteiro do cabeçalho mudava
 com o percentual (azul-claro → azul-escuro → vermelho), e a barra era um traço
-de 60×5px. Agora a barra tem 10px e fica na MESMA linha, entre o nome e os
-números, com o espaço que sobra. Nome (210px) e números (290px) têm largura
-FIXA de propósito: todas as barras começam e terminam no mesmo ponto, e os
-grupos empilhados formam um gráfico de barras. Depois dos números, cada barra
-começaria num lugar, porque "R$ 628,10" e "R$ 18.240,59" têm larguras
-diferentes. Realizado e percentual são maiores e pintados com a cor da barra.
+de 60×5px. Agora a barra tem 20px × 200px e fica na mesma linha, DEPOIS dos
+números. Números (290px) e barra têm largura FIXA à direita: as barras ficam
+alinhadas em todos os grupos, e empilhados eles formam um gráfico de barras.
+A barra passou por três posições no mesmo dia — linha própria, entre o nome e
+os números, e depois dos números — até ficar aqui, escolha do Guilherme. Realizado e percentual são maiores e pintados com a cor da barra.
 Cada grupo é um acordeão, **fechado por padrão**: recolhida, a tela vira um
 painel de barras.
 
