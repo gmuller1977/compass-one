@@ -289,6 +289,23 @@ e foi junto. A barrinha dos cartões ganhou o desenho da barra de grupo — tril
 escuro, borda branca, 8px —, porque sobre o trilho claro o vermelho do grupo
 ficava em 2,95. `barCorSobreAzul`, a segunda paleta de barra sobre azul, saiu.
 
+**Os cabeçalhos de grupo usam o azul MÉDIO dos dias passados de Lançamentos
+(`#1d4ed8 → #1e40af`), e o lado azul do Radar usa a paleta oficial pálida.**
+Pedido do Guilherme em 26/09/2026: empilhados, os cabeçalhos escuros pesavam
+demais. O `#1d4ed8` é mais claro que o limite de `#1e40af` desta regra, e sobre
+ele os tons anteriores reprovavam (`#4ade80` 3,85, `#fca5a5` 3,53). Então
+`RADAR_COR_AZUL` passou a ser `#86efac` / `#fde047` / `#fecaca` — a mesma
+paleta de Lançamentos e da memória —, medida no pior caso `#1d4ed8`: 4,77 /
+5,08 / 4,63; barra contra o trilho 7,41 / 7,90 / 7,20; borda branca 6,70. Vale
+para cartões, grupos e rodapé, para continuar havendo um tom de cada cor no
+azul. **Os números acima que citam `#4ade80` e `#fca5a5` são da versão anterior.**
+
+De brinde, corrigiu o rodapé negativo: `#fca5a5` sobre `#991b1b` dava 4,38;
+`#fecaca` dá 5,74. Preço aceito: nesses tons as três cores têm quase o mesmo
+brilho (1,03 a 1,10), e o vermelho claro é quase rosa — o "estourou" chama
+menos atenção. Os cartões do topo continuam no azul escuro: o `KpiCard` é
+compartilhado com Lançamentos.
+
 **O TIPO do grupo é uma seta; a barra diz o STATUS.** O nome fica em branco,
 16px, do tamanho dos números. Antes dele, a mesma seta dos cartões do topo:
 **↑ verde** para receita, **↓ vermelha** para despesa — quem vê o grupo liga a

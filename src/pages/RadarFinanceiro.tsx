@@ -155,9 +155,8 @@ export default function RadarFinanceiro() {
   // tela (cartão, grupo, categoria) foram o motivo desta troca. Categoria fica
   // com o tom escuro porque o fundo dela é branco — ver radarCores.
   // Saldo: verde positivo, vermelho negativo — os mesmos tons das receitas e
-  // despesas, porque tudo aqui está no mesmo azul (#4ade80 5,01 / #fca5a5
-  // 4,60 no extremo claro). Vale para os dois cartões de saldo e para o
-  // número do rodapé, que usava um terceiro verde, #86efac.
+  // despesas (RADAR_COR_AZUL). Vale para os dois cartões de saldo e para o
+  // número do rodapé; no rodapé negativo, sobre #991b1b, o vermelho dá 5,74.
   const corSaldo = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim)
   const corBarra = (p: number, isEntrada: boolean) => RADAR_COR_AZUL[faixaRadar(Math.round(p * 100) / 100, isEntrada)]
 

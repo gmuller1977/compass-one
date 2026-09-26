@@ -16,21 +16,20 @@ import EvolucaoLinha from './EvolucaoLinha'
  * e a barra inteira tem borda branca: o trilho escuro sozinho sumia no azul, e
  * a borda desenha os 100% para a parte vazia se ler como vazia.
  *
- * O fundo carrega número colorido, então vale a regra do CLAUDE.md: nenhum
- * azul com valor colorido mais claro que #1e40af. Medido nesse extremo:
+ * As cores e os contrastes medidos moram em radarCores — número, barra,
+ * trilho e borda, no pior caso do azul médio deste cabeçalho.
  *
- *   número  #4ade80 5,01 · #fde047 6,62 · #fca5a5 4,60 · branco 85% 6,75
- *   barra   contra o trilho escuro: #4ade80 6,92 · #fde047 9,14 · #fca5a5 6,35
- *   borda   branca contra o azul: 8,72
- *
- * Preço aceito: nestes tons claros, verde e vermelho têm quase o mesmo brilho
- * (1,09). Para daltonismo vermelho-verde as duas barras se parecem; o
+ * Preço aceito: nestes tons pálidos as três cores têm quase o mesmo brilho
+ * (1,03 a 1,10). Para daltonismo vermelho-verde as barras se parecem; o
  * percentual escrito ao lado desempata.
  *
  * "Atenção" é amarelo, não laranja: laranja e vermelho tinham quase o mesmo
  * brilho, e o amarelo casa com o aviso do otimista na barra do rodapé.
  */
-const FUNDO   = 'linear-gradient(135deg, #0f2878, #1e40af)'
+// Azul MÉDIO, o dos dias passados de Lançamentos, e não o escuro dos cartões:
+// empilhados, os cabeçalhos escuros pesavam demais na tela. Mais claro que o
+// limite #1e40af do CLAUDE.md, e por isso a paleta é a pálida — ver radarCores.
+const FUNDO   = 'linear-gradient(135deg, #1d4ed8, #1e40af)'
 
 interface EvolucaoGrupoProps {
   tipo: 'saida' | 'entrada'
@@ -100,12 +99,12 @@ export default function EvolucaoGrupo({
               Guilherme. O TIPO fica numa seta antes do nome, a mesma dos cartões
               do topo ("↑ Receitas", "↓ Despesas"): ↑ verde para receita, ↓
               vermelha para despesa. A barra e os números continuam dizendo o
-              STATUS. Mesmos tons do azul: #4ade80 5,01 e #fca5a5 4,60. */}
+              STATUS. Tons e contrastes: radarCores. */}
           <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 16, fontWeight: 700,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {/* Seta DESENHADA, e não o caractere: "↑" é um traço fino em quase
                 toda fonte, e o negrito quase não o engrossa. Traço de 3px em
-                16×16. Gráfico no azul: #4ade80 5,01 e #fca5a5 4,60. */}
+                16×16. Tons e contrastes: radarCores. */}
             <svg role="img" aria-label={isEntrada ? 'Receita' : 'Despesa'} width={16} height={16} viewBox="0 0 16 16"
               style={{ marginRight: 8, verticalAlign: '-2px', flexShrink: 0,
                 transform: isEntrada ? 'none' : 'rotate(180deg)' }}>

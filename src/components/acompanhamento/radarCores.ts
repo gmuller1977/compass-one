@@ -6,10 +6,18 @@
  * Em cada lugar, a barra tem EXATAMENTE a cor do número — pedido do Guilherme.
  * Mas os dois lugares têm fundos diferentes, e cada fundo pede o seu tom:
  *
- * AZUL, o cabeçalho do grupo (#0f2878 → #1e40af). Medido no extremo claro:
- *   texto #4ade80 5,01 · #fde047 6,62 · #fca5a5 4,60
- *   barra contra o trilho escuro 6,92 / 9,14 / 6,35 · borda branca 8,72
- *   Preço aceito: verde e vermelho com quase o mesmo brilho (1,09).
+ * AZUL: os cartões do topo (#0f2878 → #1e40af), o rodapé, e o cabeçalho de
+ * grupo, que usa o azul MÉDIO dos dias passados de Lançamentos (#1d4ed8 →
+ * #1e40af) — pedido do Guilherme, para a tela pesar menos. A paleta é a
+ * oficial do CLAUDE.md para fundo azul, a mesma de Lançamentos e da memória
+ * de cálculo. Medido no pior caso, o extremo claro #1d4ed8:
+ *   texto #86efac 4,77 · #fde047 5,08 · #fecaca 4,63 · branco 85% 5,28
+ *   barra contra o trilho escuro 7,41 / 7,90 / 7,20 · borda branca 6,70
+ *   Os tons anteriores (#4ade80, #fca5a5) reprovavam no azul médio: 3,85 e
+ *   3,53. No rodapé negativo (#991b1b), #fecaca dá 5,74; o #fca5a5 dava 4,38.
+ *   Preço aceito: as três cores têm quase o mesmo brilho (1,03 a 1,10). Para
+ *   daltonismo vermelho-verde elas se parecem, e o percentual escrito desempata.
+ *   E o vermelho claro é quase rosa: o "estourou" chama menos atenção.
  *
  * BRANCO, as categorias com o acordeão aberto. Os tons claros ali somem — o
  * amarelo dá 1,2:1 —, então vão os escuros da mesma cor:
@@ -19,7 +27,7 @@
  *   mesmo brilho do amarelo-mostarda (1,02), o problema do daltonismo que
  *   tirou o laranja.
  */
-export const RADAR_COR_AZUL = { bom: '#4ade80', atencao: '#fde047', ruim: '#fca5a5' } as const
+export const RADAR_COR_AZUL = { bom: '#86efac', atencao: '#fde047', ruim: '#fecaca' } as const
 export const RADAR_COR_BRANCO = { bom: '#15803d', atencao: '#a16207', ruim: '#b91c1c' } as const
 export const RADAR_TRILHO_AZUL = 'rgba(15,23,42,.4)'
 export const RADAR_TRILHO_BRANCO = '#e2e8f0'
