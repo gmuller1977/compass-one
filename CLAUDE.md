@@ -187,6 +187,33 @@ uma, entra na outra. O líquido é zero e o total fecha, mas as duas linhas
 ficam maiores pelo valor transferido. É o mesmo que Lançamentos faz por conta,
 onde a transferência de saída já conta como despesa paga.
 
+**No otimista, a barra avisa quando a variável do mês passou do planejado.**
+Pedido do Guilherme em 26/09/2026. O otimista trata o plano de variáveis como
+um **envelope único**: quando o total gasto passa do total planejado, ele não
+reserva mais nada, e todo gasto variável novo sai inteiro do saldo final — a
+previsão perdeu a folga. Em setembro isso aconteceu por 25,65 (16.689,65 gastos
+de 16.664,00), e a tela não dizia: o saldo final simplesmente ficou igual ao
+atual. Nos outros cenários o gasto numa categoria que ainda tem sobra não mexe
+no saldo final, porque ele já contava com aquele gasto.
+
+O número vem de `memoriaDoRadar().excessoVariavel`, que é
+`estouros − sobras` do motor — a entrada de `faltaVariavelDoMes`, antes do
+corte do cenário, e não uma soma paralela na tela. Por isso ele fica positivo
+exatamente quando o otimista zera a variável. As sobras são somadas **por
+conta**, como o reservado: o motor monta as parcelas de todas as contas a cada
+chamada, e somar o mês em cada uma multiplicaria pelo número de contas.
+
+Só o **mês corrente**, e só **no otimista**. Mês fechado não tem mais o que
+gastar; mês futuro tem outro envelope, cheio — a sobra não atravessa o mês.
+O excesso é um fato do mês e vale o mesmo nos três cenários, mas só no otimista
+ele zera a reserva.
+
+**Tentativa descartada, para não repetir:** um bloco "Variável do mês" dentro da
+memória, com sobras, estouro usado para abater e o que ainda falta gastar.
+Construído e revertido no mesmo dia a pedido do Guilherme. O que o convenceu foi
+a explicação do envelope único, e um aviso curto na barra carrega essa ideia
+melhor que uma conta de três linhas.
+
 **Tentativa descartada, para não repetir:** uma cópia da tela, `/radar-previsto`,
 com um bloco "Como o mês termina" em acordeão — receitas previstas, fixas a
 pagar, variável a realizar e fatura, cada uma abrindo grupo → categoria.

@@ -324,6 +324,19 @@ export default function RadarFinanceiro() {
                     <span>{MESES_FULL[mes]} {ano} · todas as contas</span>
                     <ChipCenario cenario={cenarioPrevisao} />
                   </div>
+                  {/* No otimista o plano de variaveis e um envelope so. Vazio, ele nao
+                      reserva mais nada, e todo gasto variavel novo sai inteiro do
+                      saldo final — a previsao perdeu a folga, e isso precisa aparecer
+                      sem abrir o calculo. #fde047 no extremo mais claro de cada
+                      gradiente da barra: 6,62 no azul, 6,30 no vermelho. */}
+                  {cenarioPrevisao === 'otimista' && memoria.excessoVariavel > 0.005 && (
+                    <div style={{ fontSize: 10.5, fontWeight: 600, color: '#fde047', marginTop: 5, lineHeight: 1.35 }}>
+                      {/* "Gastos variaveis", e nao so "Realizado": na mesma tela o cartao
+                          Receitas tambem mostra realizado acima do previsto, e ali e boa
+                          noticia, nao motivo para trocar de cenario. */}
+                      ⚠ Gastos variáveis maiores que o previsto — recomendamos usar outro cenário
+                    </div>
+                  )}
                 </div>
                 <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', fontVariantNumeric: 'tabular-nums',
                   color: positivo ? '#86efac' : '#fca5a5' }}>
