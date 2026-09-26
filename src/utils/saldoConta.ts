@@ -246,8 +246,6 @@ export type PrevistoDetalhe = {
   meses: { ano: number; mes: number }[]
   entradas: number
   saidas: number
-  sobrasVariavel: number
-  estourosVariavel: number
   fixasEntrada: ItemPrevistoNoMes[]
   fixasSaida: ItemPrevistoNoMes[]
   variaveisEntrada: ItemPrevistoNoMes[]
@@ -289,7 +287,7 @@ export function detalharPrevisto(
 
   const out: PrevistoDetalhe = {
     valor: realizado, previsto: false, base: realizado, meses: [],
-    entradas: 0, saidas: 0, sobrasVariavel: 0, estourosVariavel: 0,
+    entradas: 0, saidas: 0,
     fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
   }
   if (!projetar) return out
@@ -314,8 +312,6 @@ export function detalharPrevisto(
     out.variaveisEntrada.push(...noMes(p.variaveisEntrada))
     out.variaveisSaida.push(...noMes(p.variaveisSaida))
     out.faturas.push(...noMes(p.faturas))
-    out.sobrasVariavel += p.sobrasVariavel
-    out.estourosVariavel += p.estourosVariavel
     m++
     if (m > 11) { m = 0; a++ }
   }
@@ -382,18 +378,11 @@ export function faltaVariavelDoMes(
   saidaBanco: number; saidaCartao: number; entrada: number; diaCartao?: number
   /** As linhas que formam as somas acima, com o valor DEPOIS do rateio. */
   itens: ItemPrevisto[]
-  /**
-   * As despesas variaveis ANTES do corte do cenario: o que sobrou do plano e o
-   * que estourou, so desta conta. E a entrada do motor, nao uma conta
-   * paralela — o que o cenario compensou e `sobras − reservado`.
-   */
-  sobras: number
-  estouros: number
 } {
   const { categorias, planos, contas, extratoData } = deps
   const padrao = contaPadrao(contas)
   const variaveis = categorias.filter(c => c.ativa && !c.fixa)
-  if (!variaveis.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [], sobras: 0, estouros: 0 }
+  if (!variaveis.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [] }
 
   // O cartão em aberto de vencimento mais cedo decide quem paga a sobra do
   // cartão — a mesma regra que já valia para o complemento da fatura.
@@ -534,13 +523,6 @@ export function faltaVariavelDoMes(
       .map((p, i) => ({ p, v: alocado[i] }))
       .filter(({ p, v }) => p.conta === alvo && v > 0)
       .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
-    // Filtradas POR CONTA, como `somar`. As parcelas cobrem todas as contas a
-    // cada chamada; somar o mes inteiro aqui e depois somar nas contas
-    // multiplicaria pelo numero de contas — o bug das fixas triplicadas.
-    sobras: parcelas.reduce((s, q) =>
-      q.conta === alvo && q.balde !== 'entrada' ? s + Math.max(0, q.falta) : s, 0),
-    estouros: parcelas.reduce((s, q) =>
-      q.conta === alvo && q.balde !== 'entrada' ? s + Math.max(0, -q.falta) : s, 0),
   }
 }
 
@@ -603,9 +585,6 @@ export type ItemPrevisto = {
 export type ProjecaoDetalhe = {
   entradas: number
   saidas: number
-  /** Despesas variaveis antes do corte do cenario. Ver faltaVariavelDoMes. */
-  sobrasVariavel: number
-  estourosVariavel: number
   fixasEntrada: ItemPrevisto[]
   fixasSaida: ItemPrevisto[]
   variaveisEntrada: ItemPrevisto[]
@@ -680,7 +659,6 @@ export function detalharProjecaoDaConta(
 
   return {
     entradas, saidas,
-    sobrasVariavel: falta.sobras, estourosVariavel: falta.estouros,
     fixasEntrada, fixasSaida, faturas,
     variaveisEntrada: falta.itens.filter(i => i.balde === 'entrada'),
     variaveisSaida:   falta.itens.filter(i => i.balde !== 'entrada'),
@@ -727,7 +705,7 @@ function projecaoDoMes(
   ano: number, mes: number, deps: Deps, hoje: Date,
 ): ProjecaoDetalhe & { liquido: number } {
   const d: ProjecaoDetalhe & { liquido: number } = {
-    liquido: 0, entradas: 0, saidas: 0, sobrasVariavel: 0, estourosVariavel: 0,
+    liquido: 0, entradas: 0, saidas: 0,
     fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
   }
   for (const a of alvosDeSaldo(deps.contas)) {
@@ -741,8 +719,6 @@ function projecaoDoMes(
     d.variaveisEntrada.push(...c.variaveisEntrada)
     d.variaveisSaida.push(...c.variaveisSaida)
     d.faturas.push(...c.faturas)
-    d.sobrasVariavel += c.sobrasVariavel
-    d.estourosVariavel += c.estourosVariavel
   }
   return d
 }
@@ -905,15 +881,5 @@ export function memoriaDoRadar(
     faturaEstimada:     somar(noCartao),
     variaveisARealizar: somar(foraDoCartao),
     fechamento:         p.valor,
-    // So existe quando houve variavel no mes. `compensado` nao e calculado a
-    // parte: e o que sobrou do plano menos o que o cenario de fato reservou,
-    // entao a explicacao fecha no valor das linhas de cima por construcao.
-    variavelExplicada: p.sobrasVariavel > 0 || p.estourosVariavel > 0
-      ? {
-          sobras: p.sobrasVariavel,
-          estouros: p.estourosVariavel,
-          compensado: p.sobrasVariavel - somar(noCartao) - somar(foraDoCartao),
-        }
-      : undefined,
   }
 }

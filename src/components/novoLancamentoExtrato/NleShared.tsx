@@ -46,14 +46,6 @@ export type Memoria = {
    * proposito, entao nunca preenche — e a linha nunca aparece la.
    */
   ajusteConciliacao?: number
-  /**
-   * A despesa variavel aberta: quanto sobrou do plano, quanto estourou, e
-   * quanto do estouro o cenario usou para abater a sobra. `sobras −
-   * compensado` e exatamente o que as linhas de variavel somam. So o Radar
-   * preenche, porque la o corte do cenario e do mes inteiro; em Lancamentos,
-   * por conta, um estouro de outra conta apareceria abatendo sobra desta.
-   */
-  variavelExplicada?: { sobras: number; estouros: number; compensado: number }
   entradasPrevistas: number
   /** Receita variavel que o plano espera e ainda nao chegou. */
   receitasAReceber: number
