@@ -219,6 +219,39 @@ export function saldoBancosEDinheiro(ano: number, mes: number, deps: Deps): numb
 }
 
 
+/** Uma linha do previsto, com o mês a que ela pertence. */
+export type ItemPrevistoNoMes = ItemPrevisto & { ano: number; mes: number }
+
+/**
+ * O saldo final previsto, aberto nas partes que o formam.
+ *
+ * A identidade que a tela garante, e que a prova tranca:
+ *
+ *   base + entradas − saidas = valor = saldoTotalNoFim(...).valor
+ *
+ * `base` é o saldo realizado — o "Saldo atual" do Radar. As listas cobrem a
+ * JANELA inteira da projeção, do mês corrente até o pedido, porque é isso que
+ * o saldo final previsto de um mês futuro de fato soma: dezembro visto de
+ * setembro carrega as fixas de setembro, outubro, novembro e dezembro. `meses`
+ * diz qual é a janela, para a tela poder dizê-la ("Set–Dez").
+ *
+ * Mês fechado não projeta: `previsto` é falso, as listas vêm vazias e `valor`
+ * é o próprio realizado.
+ */
+export type PrevistoDetalhe = {
+  valor: number
+  previsto: boolean
+  base: number
+  meses: { ano: number; mes: number }[]
+  entradas: number
+  saidas: number
+  fixasEntrada: ItemPrevistoNoMes[]
+  fixasSaida: ItemPrevistoNoMes[]
+  variaveisEntrada: ItemPrevistoNoMes[]
+  variaveisSaida: ItemPrevistoNoMes[]
+  faturas: ItemPrevistoNoMes[]
+}
+
 /**
  * Saldo do fim de um mês, dizendo se é realizado ou projetado.
  *
@@ -239,28 +272,69 @@ export function saldoBancosEDinheiro(ano: number, mes: number, deps: Deps): numb
  * Fixa sem contaDebitoId aparece em todas as contas até ser confirmada em
  * alguma — projetar por conta e somar contaria a mesma várias vezes.
  */
+export function detalharPrevisto(
+  ano: number,
+  mes: number,
+  deps: Deps,
+  opts: { comoAbertura?: boolean; hoje?: Date } = {},
+): PrevistoDetalhe {
+  const hoje = opts.hoje ?? new Date()
+  const realizado = saldoBancosEDinheiro(ano, mes, deps)
+  const alvo = ym(ano, mes)
+  const corrente = ym(hoje.getFullYear(), hoje.getMonth())
+  const projetar = opts.comoAbertura ? alvo >= corrente : alvo > corrente
+
+  const out: PrevistoDetalhe = {
+    valor: realizado, previsto: false, base: realizado, meses: [],
+    entradas: 0, saidas: 0,
+    fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
+  }
+  if (!projetar) return out
+
+  // A soma segue a ORDEM de sempre — `projecao += liquido do mês`, e o líquido
+  // de cada mês acumulado conta a conta — para `valor` sair idêntico bit a bit
+  // ao que `saldoTotalNoFim` devolvia. Somar entradas e saídas em separado e
+  // subtrair no fim daria o mesmo número a menos do último bit, e a prova
+  // pede igualdade exata, não "perto".
+  let projecao = 0
+  let a = hoje.getFullYear()
+  let m = hoje.getMonth()
+  while (ym(a, m) <= alvo) {
+    const p = projecaoDoMes(a, m, deps, hoje)
+    projecao += p.liquido
+    out.meses.push({ ano: a, mes: m })
+    out.entradas += p.entradas
+    out.saidas += p.saidas
+    const noMes = (xs: ItemPrevisto[]) => xs.map(x => ({ ...x, ano: a, mes: m }))
+    out.fixasEntrada.push(...noMes(p.fixasEntrada))
+    out.fixasSaida.push(...noMes(p.fixasSaida))
+    out.variaveisEntrada.push(...noMes(p.variaveisEntrada))
+    out.variaveisSaida.push(...noMes(p.variaveisSaida))
+    out.faturas.push(...noMes(p.faturas))
+    m++
+    if (m > 11) { m = 0; a++ }
+  }
+  out.valor = realizado + projecao
+  out.previsto = true
+  return out
+}
+
+/**
+ * O saldo com que o mês fecha. É `detalharPrevisto` sem o detalhe.
+ *
+ * Existe um laço só sobre os meses, e é o de lá. Se esta função tivesse o
+ * próprio, o bloco de previsto do Radar e o cartão logo acima dele seriam duas
+ * contas para a mesma pergunta — e a primeira mudança num dos laços os faria
+ * discordar em silêncio.
+ */
 export function saldoTotalNoFim(
   ano: number,
   mes: number,
   deps: Deps,
   opts: { comoAbertura?: boolean; hoje?: Date } = {},
 ): { valor: number; previsto: boolean } {
-  const hoje = opts.hoje ?? new Date()
-  const realizado = saldoBancosEDinheiro(ano, mes, deps)
-  const alvo = ym(ano, mes)
-  const corrente = ym(hoje.getFullYear(), hoje.getMonth())
-  const projetar = opts.comoAbertura ? alvo >= corrente : alvo > corrente
-  if (!projetar) return { valor: realizado, previsto: false }
-
-  let projecao = 0
-  let a = hoje.getFullYear()
-  let m = hoje.getMonth()
-  while (ym(a, m) <= alvo) {
-    projecao += projecaoDoMes(a, m, deps, hoje)
-    m++
-    if (m > 11) { m = 0; a++ }
-  }
-  return { valor: realizado + projecao, previsto: true }
+  const d = detalharPrevisto(ano, mes, deps, opts)
+  return { valor: d.valor, previsto: d.previsto }
 }
 
 /**
@@ -626,11 +700,26 @@ function alvosDeSaldo(contas: Conta[]): { id: string; nome: string; icone: strin
  * deixou de poder discordar do detalhe por conta — não há dois caminhos para
  * discordarem.
  */
-function projecaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date): number {
-  return alvosDeSaldo(deps.contas).reduce((acc, a) => {
-    const { entradas, saidas } = projecaoDaConta(a.id, ano, mes, deps, hoje)
-    return acc + entradas - saidas
-  }, 0)
+function projecaoDoMes(
+  ano: number, mes: number, deps: Deps, hoje: Date,
+): ProjecaoDetalhe & { liquido: number } {
+  const d: ProjecaoDetalhe & { liquido: number } = {
+    liquido: 0, entradas: 0, saidas: 0,
+    fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
+  }
+  for (const a of alvosDeSaldo(deps.contas)) {
+    const c = detalharProjecaoDaConta(a.id, ano, mes, deps, hoje)
+    // Mesma ordem do reduce que existia aqui: (acc + entradas) - saidas.
+    d.liquido = d.liquido + c.entradas - c.saidas
+    d.entradas += c.entradas
+    d.saidas += c.saidas
+    d.fixasEntrada.push(...c.fixasEntrada)
+    d.fixasSaida.push(...c.fixasSaida)
+    d.variaveisEntrada.push(...c.variaveisEntrada)
+    d.variaveisSaida.push(...c.variaveisSaida)
+    d.faturas.push(...c.faturas)
+  }
+  return d
 }
 
 /** Movimento REAL de uma conta num mês, já separado em entradas e saídas. */
