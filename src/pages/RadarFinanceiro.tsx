@@ -154,6 +154,11 @@ export default function RadarFinanceiro() {
   // de grupo: o cartão tem o mesmo fundo azul, e três tons de vermelho na mesma
   // tela (cartão, grupo, categoria) foram o motivo desta troca. Categoria fica
   // com o tom escuro porque o fundo dela é branco — ver radarCores.
+  // Saldo: verde positivo, vermelho negativo — os mesmos tons das receitas e
+  // despesas, porque tudo aqui está no mesmo azul (#4ade80 5,01 / #fca5a5
+  // 4,60 no extremo claro). Vale para os dois cartões de saldo e para o
+  // número do rodapé, que usava um terceiro verde, #86efac.
+  const corSaldo = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim)
   const corBarra = (p: number, isEntrada: boolean) => RADAR_COR_AZUL[faixaRadar(Math.round(p * 100) / 100, isEntrada)]
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
@@ -219,9 +224,12 @@ export default function RadarFinanceiro() {
         />
       </div>
 
-      {/* KPIs CONSOLIDADOS — clicar em qualquer um abre o detalhe por conta */}
+      {/* KPIs CONSOLIDADOS — clicar em qualquer um abre o detalhe por conta.
+          Os saldos seguem o padrão verde/vermelho das receitas e despesas:
+          verde positivo, vermelho negativo. Antes ficavam em branco. */}
       <div style={{ padding: '8px 16px', flexShrink: 0, display: 'flex', gap: 8 }}>
         <KpiCard icon="🔒" label="Saldo inicial" value={fmt(saldoInicial)}
+          valueColor={corSaldo(saldoInicial)}
           sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
@@ -235,7 +243,7 @@ export default function RadarFinanceiro() {
           {percS !== null && <KpiBarra perc={percS} cor={corBarra(percS, false)} />}
         </KpiCard>
         <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
-          valueColor={saldoAtual >= 0 ? '#fff' : RADAR_COR_AZUL.ruim}
+          valueColor={corSaldo(saldoAtual)}
           sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'}
           style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
@@ -345,7 +353,7 @@ export default function RadarFinanceiro() {
                   )}
                 </div>
                 <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', fontVariantNumeric: 'tabular-nums',
-                  color: positivo ? '#86efac' : '#fca5a5' }}>
+                  color: corSaldo(saldoPrevisto) }}>
                   {fmt(saldoPrevisto)}
                 </span>
               </div>
