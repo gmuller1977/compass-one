@@ -126,9 +126,16 @@ com três contas, triplicava. Usar `resolverFixaDoMes` de
 [`utils/fixasDoMes.ts`](src/utils/fixasDoMes.ts), que resolve o mês inteiro de
 uma vez.
 
-**Distinção temporal por cor** (passado / hoje / futuro) vale em **Lançamentos** e
-no **Radar**. No **Planejamento** ela foi removida de propósito: lá o que separa
-os meses é ter ou não planejamento, não a posição no tempo.
+**Em Lançamentos, só HOJE tem cor própria** — azul-escuro. Dias passados e
+futuros usam o mesmo tema CINZA (`#e6ebf1 → #d8dfe8`), com texto escuro, o
+mesmo esquema dos grupos do Radar. Decidido pelo Guilherme em 26/09/2026. Antes
+eram três cores (passado azul médio, hoje escuro, futuro azul-claro); passado e
+futuro agora se distinguem pela posição e pelos rótulos — "Saldo final" ×
+"Saldo previsto". No cinza todos os tons do tema ficaram melhores que no
+azul-claro de antes, e dois que reprovavam foram corrigidos junto: dia da
+semana a 80% (4,85) e botão "+" a 60% (3,07). No **Planejamento** a distinção
+temporal foi removida antes, de propósito: lá o que separa os meses é ter ou não
+planejamento, não a posição no tempo.
 
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do

@@ -77,35 +77,6 @@ type Props = {
 
 // ── Temas temporais ──────────────────────────────────────────────────────────
 const TEMA = {
-  past: {
-    cardBg:        'linear-gradient(135deg, #1d4ed8, #1e40af)',
-    text:          '#fff',
-    label:         'rgba(255,255,255,0.75)',
-    rec:           '#86efac',
-    desp:          '#fecaca',
-    saldo:         '#e2e8f0',
-    zero:          'rgba(255,255,255,0.25)',
-    divider:       'rgba(255,255,255,0.08)',
-    boxBg:         'rgba(255,255,255,0.08)',
-    cardBorder:    '1px solid rgba(255,255,255,0.12)',
-    cardShadow:    'none',
-    selBorder:     '2px solid rgba(255,255,255,0.65)',
-    selShadow:     '0 0 0 3px rgba(255,255,255,0.12)',
-    semanaColor:   'rgba(255,255,255,0.6)',
-    diaNumColor:   '#fff',
-    listHover:     'rgba(255,255,255,0.06)',
-    listEditBg:    'rgba(255,255,255,0.1)',
-    listItemBdr:   'rgba(255,255,255,0.08)',
-    delColor:      'rgba(255,255,255,0.3)',
-    delHover:      '#f87171',
-    addColor:      'rgba(255,255,255,0.35)',
-    addHoverColor: '#fff',
-    addHoverBg:    'rgba(255,255,255,0.12)',
-    mobBoxBg:      'rgba(255,255,255,0.08)',
-    mobBoxBdr:     'rgba(255,255,255,0.12)',
-    fixaBadgeBg:   'rgba(253,230,138,0.2)',
-    fixaBadgeText: '#fde68a',
-  },
   current: {
     cardBg:        'linear-gradient(135deg, #1e3a8a, #0f2878)',
     text:          '#fff',
@@ -135,8 +106,16 @@ const TEMA = {
     fixaBadgeBg:   'rgba(253,230,138,0.25)',
     fixaBadgeText: '#fde68a',
   },
+  // Dias PASSADOS e FUTUROS usam este tema; só HOJE fica no azul-escuro e se
+  // destaca sozinho. Decidido pelo Guilherme em 26/09/2026, trazendo o esquema
+  // do Radar: fundo CINZA, neutro, com texto escuro. Antes eram três cores —
+  // passado azul médio, hoje escuro, futuro azul-claro. Passado e futuro agora
+  // se distinguem pela posição e pelos rótulos ("Saldo final" × "Saldo
+  // previsto"). Medido no pior caso, #d8dfe8: texto 7,71 · receita 6,79 ·
+  // despesa 7,46 · rótulo 5,76 · dia da semana 4,85 · botão "+" 3,07 — todos
+  // melhores que no azul-claro #93c5fd de antes.
   future: {
-    cardBg:        'linear-gradient(135deg, #bfdbfe, #93c5fd)',
+    cardBg:        'linear-gradient(135deg, #e6ebf1, #d8dfe8)',
     text:          '#1e3a8a',
     label:         'rgba(15,23,42,0.7)',
     rec:           '#14532d',
@@ -145,18 +124,18 @@ const TEMA = {
     zero:          'rgba(30,58,138,0.2)',
     divider:       'rgba(30,58,138,0.1)',
     boxBg:         'rgba(30,58,138,0.06)',
-    cardBorder:    '1px solid rgba(30,58,138,0.15)',
+    cardBorder:    '1px solid #c3ccd8',
     cardShadow:    'none',
     selBorder:     '1.5px solid #1e3a8a',
     selShadow:     '0 0 0 3px rgba(30,58,138,0.2)',
-    semanaColor:   'rgba(30,58,138,0.5)',
+    semanaColor:   'rgba(30,58,138,0.8)',
     diaNumColor:   '#1e3a8a',
     listHover:     'rgba(30,58,138,0.05)',
     listEditBg:    'rgba(255,255,255,0.45)',
     listItemBdr:   'rgba(30,58,138,0.08)',
     delColor:      'rgba(30,58,138,0.3)',
     delHover:      COR.vermelho,
-    addColor:      'rgba(30,58,138,0.4)',
+    addColor:      'rgba(30,58,138,0.6)',
     addHoverColor: '#1e3a8a',
     addHoverBg:    'rgba(255,255,255,0.4)',
     mobBoxBg:      'rgba(255,255,255,0.35)',
@@ -405,7 +384,7 @@ export default function NleExtrato({
             const aberto=diasAbertos.has(dia)
 
             // ── Tema temporal ──────────────────────────────────────────────
-            const temaNome = passado?'past':ehHoje?'current':'future'
+            const temaNome = ehHoje?'current':'future'
             const tc = TEMA[temaNome]
 
             const cardBorder = selecionado?tc.selBorder:tc.cardBorder
