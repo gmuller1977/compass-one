@@ -4,7 +4,9 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, memoriaDoRadar, type Deps } from '../utils/saldoConta'
-import { serieBaseDoPlano, piorMesDaSerie } from '../utils/simulacaoCompra'
+import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
+import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
+import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import { RADAR_COR_AZUL } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, totaisDoMes, norm } from '../components/acompanhamento/evolucaoCalcs'
@@ -141,13 +143,19 @@ export default function Dashboard() {
   const [memoriaAberta, setMemoriaAberta] = useState(false)
   const faltaReceber = memoria ? memoria.entradasPrevistas + memoria.receitasAReceber : 0
 
-  // Pior mês à frente: a série do Simulador, do mês corrente ao fim do plano.
-  // Sem plano, não há série e não há aviso.
-  const alertaFuturo = useMemo(() => {
-    if (!ehMesCorrente) return null
-    const serie = serieBaseDoPlano(deps)
-    return serie ? piorMesDaSerie(serie) : null
-  }, [ehMesCorrente, deps])
+  // A série do Simulador, do mês corrente ao fim do plano — a parte cara,
+  // calculada uma vez para o aviso e para o gráfico. Sem plano, não há série.
+  const serie = useMemo(() => (ehMesCorrente ? serieBaseDoPlano(deps) : null), [ehMesCorrente, deps])
+
+  // Pior mês à frente. Sem série, sem aviso.
+  const alertaFuturo = useMemo(() => (serie ? piorMesDaSerie(serie) : null), [serie])
+
+  // Passado real + mês corrente previsto + futuro previsto, numa linha só.
+  const evolucao = useMemo(
+    () => (ehMesCorrente ? evolucaoDoSaldo(deps, serie) : []),
+    [ehMesCorrente, deps, serie],
+  )
+  const fimPlano = useMemo(() => fimDoPlanejamento(planos), [planos])
 
   // A lista de últimas movimentações não é número: segue lendo o extrato.
   const ultimosLanc = useMemo(() => {
@@ -429,6 +437,42 @@ export default function Dashboard() {
             </div>
           )
         })()}
+
+        {/* ── Evolução do saldo: passado real, futuro previsto ── */}
+        {evolucao.length >= 2 && (
+          <div style={{
+            background: COR.branco, borderRadius: 12, padding: isMobile ? '14px 12px 10px' : '18px 20px 12px',
+            border: `.5px solid ${COR.borda}`, marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Evolução do saldo</div>
+                <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
+                  Bancos e dinheiro · fechamento real e previsão
+                  {serie && fimPlano ? ` até ${MESES_FULL[fimPlano.mes].toLowerCase()} de ${fimPlano.ano}` : ''}
+                  {serie ? ` · cenário ${cenarioPrevisao}` : ''}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 14, fontSize: 12, color: COR.textoSuave }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="22" height="8" aria-hidden><line x1="0" y1="4" x2="22" y2="4" stroke={COR.azul} strokeWidth="2.5" /></svg>
+                  Real
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="22" height="8" aria-hidden><line x1="0" y1="4" x2="22" y2="4" stroke={COR.azul} strokeWidth="2.5" strokeDasharray="6 5" /></svg>
+                  Previsto
+                </span>
+              </div>
+            </div>
+            <EvolucaoSaldoGrafico pontos={evolucao} altura={isMobile ? 190 : 230} />
+            {!serie && (
+              <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 6 }}>
+                Com um planejamento, a previsão segue pelos próximos meses.
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Card Aurix ── */}
         {(() => {

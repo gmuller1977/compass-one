@@ -861,6 +861,28 @@ sem o gasto que afunda novembro, a faixa não aparece.
 Os saldos dos cartões passaram a verde/vermelho (`RADAR_COR_AZUL`), como no
 Radar e em Lançamentos.
 
+**O gráfico "Evolução do saldo" emenda três funções, e não faz conta.** Pedido
+do Guilherme em 26/09/2026: comparar os meses passados com a projeção. Linha
+cheia no passado, tracejada do mês corrente em diante, com "hoje" marcado e a
+linha do zero em vermelho.
+
+| trecho | fonte | é o mesmo número que |
+|---|---|---|
+| meses passados | `saldoBancosEDinheiro` — fechamento real | o saldo inicial do mês seguinte no Radar |
+| mês corrente | `saldoTotalNoFim({comoAbertura})` | o cartão "Saldo final previsto" |
+| meses futuros | `serieBaseDoPlano` | o aviso de pior mês e o Simulador |
+
+Quem monta é `evolucaoDoSaldo` em [`evolucaoSaldo.ts`](src/utils/evolucaoSaldo.ts).
+O passado começa no **primeiro mês com registro**, até seis meses atrás: antes
+dele o saldo é só o de cadastro repetido, e uma linha reta ali leria como
+"nada mudou" quando a verdade é "não havia app". Sem plano, o gráfico mostra o
+passado e o previsto do mês corrente, e diz que a previsão segue com um plano.
+A `prova33` confere as três emendas por `===` nos três cenários.
+
+O `ResponsiveContainer` do recharts não desenha fora do navegador — a
+renderização estática sai vazia. Para ver o gráfico sem login, empacotar o
+componente com `rolldown` numa pasta ignorada e servir com `vite preview`.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
