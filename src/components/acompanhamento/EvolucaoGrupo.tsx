@@ -14,24 +14,31 @@ import EvolucaoLinha from './EvolucaoLinha'
  * O fundo carrega número colorido, então vale a regra do CLAUDE.md: nenhum
  * azul com valor colorido mais claro que #1e40af. Medido nesse extremo:
  *
- *   número  #4ade80 5,01 · #fdba74 5,17 · #fca5a5 4,60 · branco 85% 6,75
- *   barra   contra o trilho escuro: #4ade80 6,92 · #fb923c 5,32 · #f87171 4,36
+ *   número  #4ade80 5,01 · #fde047 6,62 · #fca5a5 4,60 · branco 85% 6,75
+ *   barra   contra o trilho escuro: #4ade80 6,92 · #facc15 7,87 · #f87171 4,36
  *
- * O verde do número é o MESMO da barra. Laranja e vermelho saturados reprovam
- * como texto (3,85 e 3,15), então o número usa o tom claro da mesma cor. O
- * trilho é escuro de propósito: sobre um trilho claro o laranja e o vermelho
- * caíam para 2,47 e 2,02 e a barra sumia.
+ * O verde do número é o MESMO da barra. O vermelho saturado reprova como texto
+ * (3,15), então o número usa o tom claro da mesma cor. O trilho é escuro de
+ * propósito: sobre trilho claro o vermelho caía para 2,02 e a barra sumia.
+ *
+ * "Atenção" é AMARELO, não laranja — foi laranja por algumas horas. Laranja e
+ * vermelho têm quase o mesmo brilho (1,22:1 entre as barras): para quem tem
+ * daltonismo vermelho-verde, "chegando no limite" e "estourou" viravam a mesma
+ * barra. O amarelo se separa do vermelho pelo brilho (1,81). Fica mais perto do
+ * verde (1,14), e esse é o erro barato: os dois dizem "ainda não estourou", e o
+ * percentual escrito desempata. Também casa com o aviso do otimista na barra
+ * do rodapé, que já é #fde047.
  */
 const FUNDO   = 'linear-gradient(135deg, #0f2878, #1e40af)'
 const TRILHO  = 'rgba(15,23,42,.4)'
-const BARRA   = { bom: '#4ade80', atencao: '#fb923c', ruim: '#f87171' } as const
-const NUMERO  = { bom: '#4ade80', atencao: '#fdba74', ruim: '#fca5a5' } as const
+const BARRA   = { bom: '#4ade80', atencao: '#facc15', ruim: '#f87171' } as const
+const NUMERO  = { bom: '#4ade80', atencao: '#fde047', ruim: '#fca5a5' } as const
 type Faixa = keyof typeof BARRA
 
 /**
  * Receita: chegar ao planejado é bom. Despesa: passar dele é ruim. Os cortes
  * são os mesmos que o app já usava nas barras sobre azul (barCorSobreAzul) —
- * só o "atenção" passou de amarelo para laranja.
+ * só o tom do amarelo mudou.
  */
 function faixaDoGrupo(perc: number, isEntrada: boolean): Faixa {
   if (isEntrada) return perc >= 1 ? 'bom' : perc >= 0.8 ? 'atencao' : 'ruim'

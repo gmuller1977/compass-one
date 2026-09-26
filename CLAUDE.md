@@ -222,19 +222,24 @@ primeiro; realizado e percentual são maiores e pintados com a cor da barra.
 Cada grupo é um acordeão, **fechado por padrão**: recolhida, a tela vira um
 painel de barras.
 
-Verde, laranja e vermelho, com os cortes que o app já usava: receita ≥ 100% é
-verde, ≥ 80% laranja, abaixo disso vermelho; despesa acima de 100% é vermelho,
-≥ 90% laranja, abaixo verde. **A cor segue o percentual arredondado** — o que
+Verde, amarelo e vermelho, com os cortes que o app já usava: receita ≥ 100% é
+verde, ≥ 80% amarelo, abaixo disso vermelho; despesa acima de 100% é vermelho,
+≥ 90% amarelo, abaixo verde. **A cor segue o percentual arredondado** — o que
 está escrito. Com o exato, 89,53% aparecia como "90%" em verde, e 90% de
-verdade é laranja.
+verdade é amarelo.
 
 Medido no extremo mais claro do fundo, `#1e40af`: o número verde é o MESMO da
-barra (`#4ade80`, 5,01:1); laranja e vermelho saturados reprovam como texto
-(3,85 e 3,15), então o número usa o tom claro da mesma cor — `#fdba74` 5,17 e
-`#fca5a5` 4,60. O trilho da barra é **escuro** (`#0f172a` a 40%): sobre trilho
-claro o laranja e o vermelho caíam para 2,47 e 2,02 e sumiam. A legenda do
-tutorial passou de 🟡 Amarelo para 🟠 Laranja. Os cartões do topo continuam
-com o âmbar `#fbbf24` na barra — não foram tocados.
+barra (`#4ade80`, 5,01:1), o amarelo é `#fde047` (6,62) sobre barra `#facc15`,
+e o vermelho saturado reprova como texto (3,15), então o número usa o tom claro
+`#fca5a5` (4,60). O trilho da barra é **escuro** (`#0f172a` a 40%): sobre trilho
+claro o vermelho caía para 2,02 e sumia.
+
+**"Atenção" é amarelo, não laranja.** Foi laranja por algumas horas, a pedido
+— o âmbar antigo parecia laranja no azul, porque o azul realça o lado quente do
+amarelo. Trocado no mesmo dia: laranja e vermelho têm quase o mesmo brilho
+(1,22:1 entre as barras), e para quem tem daltonismo vermelho-verde "chegando
+no limite" e "estourou" viravam a mesma barra. O amarelo se separa do vermelho
+pelo brilho (1,81) e casa com o aviso do otimista na barra do rodapé.
 
 **Tentativa descartada, para não repetir:** uma cópia da tela, `/radar-previsto`,
 com um bloco "Como o mês termina" em acordeão — receitas previstas, fixas a

@@ -251,7 +251,7 @@ export default function RadarFinanceiro() {
           description="Aqui o app compara o que você planejou com o que realmente gastou. É assim que você descobre onde pode melhorar."
           tips={[
             { icon: '🟢', text: 'Verde = dentro do plano' },
-            { icon: '🟠', text: 'Laranja = chegando no limite' },
+            { icon: '🟡', text: 'Amarelo = chegando no limite' },
             { icon: '🔴', text: 'Vermelho = passou do planejado' },
           ]}
           buttonLabel="Ver meu radar →"
