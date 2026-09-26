@@ -96,8 +96,22 @@ export default function EvolucaoGrupo({
               A barra vem DEPOIS dos números (pedido do Guilherme, depois de ver
               ela antes deles) e, com largura fixa, continua alinhada em todos os
               grupos — os grupos empilhados ainda formam um gráfico de barras. */}
-          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 13, fontWeight: 700,
+          {/* Nome em branco e 16px, do tamanho dos números — pedido do
+              Guilherme. O TIPO fica numa seta antes do nome, a mesma dos cartões
+              do topo ("↑ Receitas", "↓ Despesas"): ↑ verde para receita, ↓
+              vermelha para despesa. A barra e os números continuam dizendo o
+              STATUS. Mesmos tons do azul: #4ade80 5,01 e #fca5a5 4,60. */}
+          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 16, fontWeight: 700,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {/* Seta DESENHADA, e não o caractere: "↑" é um traço fino em quase
+                toda fonte, e o negrito quase não o engrossa. Traço de 3px em
+                16×16. Gráfico no azul: #4ade80 5,01 e #fca5a5 4,60. */}
+            <svg role="img" aria-label={isEntrada ? 'Receita' : 'Despesa'} width={16} height={16} viewBox="0 0 16 16"
+              style={{ marginRight: 8, verticalAlign: '-2px', flexShrink: 0,
+                transform: isEntrada ? 'none' : 'rotate(180deg)' }}>
+              <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={isEntrada ? COR.bom : COR.ruim}
+                strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
             {tipoLabel} — {grupoLabel}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,

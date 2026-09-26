@@ -288,6 +288,15 @@ reprovava; o amarelo das barrinhas (`#fbbf24`) também era um segundo amarelo,
 e foi junto. A barrinha dos cartões ganhou o desenho da barra de grupo — trilho
 escuro, borda branca, 8px —, porque sobre o trilho claro o vermelho do grupo
 ficava em 2,95. `barCorSobreAzul`, a segunda paleta de barra sobre azul, saiu.
+
+**O TIPO do grupo é uma seta; a barra diz o STATUS.** O nome fica em branco,
+16px, do tamanho dos números. Antes dele, a mesma seta dos cartões do topo:
+**↑ verde** para receita, **↓ vermelha** para despesa — quem vê o grupo liga a
+seta ao cartão "↑ Receitas" / "↓ Despesas". Pedido do Guilherme, depois de
+ver o nome inteiro colorido em 20px: grande demais, e o vermelho do nome
+competia com o vermelho da barra, que quer dizer "estourou". A seta é **desenhada**
+(SVG 16×16, traço de 3px), e não o caractere "↑": o caractere é um traço fino
+em quase toda fonte, e o negrito quase não o engrossa.
 Os lançamentos, ao abrir uma categoria, continuam no painel claro de antes.
 
 **"Atenção" é amarelo, não laranja.** Foi laranja por algumas horas, a pedido
