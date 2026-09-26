@@ -77,13 +77,20 @@ type Props = {
 
 // ── Temas temporais ──────────────────────────────────────────────────────────
 const TEMA = {
+  // HOJE: azul MÉDIO (antes o escuro) — pedido do Guilherme em 26/09/2026. É
+  // o único dia com cor própria. Mais claro que o limite #1e40af do CLAUDE.md,
+  // e por isso quatro tons subiram, medidos no pior caso #1d4ed8: rótulo 75% →
+  // 80% (4,49 → 4,89), saldo #93c5fd → #e2e8f0 (3,72 → 5,44), dia da semana
+  // 50% → 85% (2,84 → 5,28), botão "+" 40% → 60% (2,31 → 3,42). Branco 6,70,
+  // #86efac 4,77, #fecaca 4,63. O selo HOJE e o de FIXA ganharam fundo marinho:
+  // em branco/amarelo translúcido davam 3,98 e 3,59; agora 9,82 e 7,89.
   current: {
-    cardBg:        'linear-gradient(135deg, #1e3a8a, #0f2878)',
+    cardBg:        'linear-gradient(135deg, #1d4ed8, #1e40af)',
     text:          '#fff',
-    label:         'rgba(255,255,255,0.75)',
+    label:         'rgba(255,255,255,0.8)',
     rec:           '#86efac',
     desp:          '#fecaca',
-    saldo:         '#93c5fd',
+    saldo:         '#e2e8f0',
     zero:          'rgba(255,255,255,0.3)',
     divider:       'rgba(255,255,255,0.08)',
     boxBg:         'rgba(255,255,255,0.08)',
@@ -91,19 +98,19 @@ const TEMA = {
     cardShadow:    '0 4px 16px rgba(15,40,120,0.4)',
     selBorder:     '2px solid rgba(255,255,255,0.7)',
     selShadow:     '0 0 0 3px rgba(255,255,255,0.12)',
-    semanaColor:   'rgba(255,255,255,0.5)',
+    semanaColor:   'rgba(255,255,255,0.85)',
     diaNumColor:   '#fff',
     listHover:     'rgba(255,255,255,0.05)',
     listEditBg:    'rgba(255,255,255,0.1)',
     listItemBdr:   'rgba(255,255,255,0.08)',
     delColor:      'rgba(255,255,255,0.3)',
     delHover:      '#f87171',
-    addColor:      'rgba(255,255,255,0.4)',
+    addColor:      'rgba(255,255,255,0.6)',
     addHoverColor: '#fff',
     addHoverBg:    'rgba(255,255,255,0.08)',
     mobBoxBg:      'rgba(255,255,255,0.08)',
     mobBoxBdr:     'rgba(255,255,255,0.15)',
-    fixaBadgeBg:   'rgba(253,230,138,0.25)',
+    fixaBadgeBg:   'rgba(15,23,42,0.35)',
     fixaBadgeText: '#fde68a',
   },
   // Dias PASSADOS e FUTUROS usam este tema; só HOJE fica no azul-escuro e se
@@ -131,7 +138,7 @@ const TEMA = {
     semanaColor:   'rgba(30,58,138,0.8)',
     diaNumColor:   '#1e3a8a',
     listHover:     'rgba(30,58,138,0.05)',
-    listEditBg:    'rgba(255,255,255,0.45)',
+    listEditBg:    '#f1f5f9',
     listItemBdr:   'rgba(30,58,138,0.08)',
     delColor:      'rgba(30,58,138,0.3)',
     delHover:      COR.vermelho,
@@ -397,7 +404,10 @@ export default function NleExtrato({
                 style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
                   position:'relative',zIndex:selecionado?7:6,
                   border:cardBorder,
-                  background:tc.cardBg,
+                  // Fora de hoje, o cartão é BRANCO e só o cabeçalho pinta o cinza:
+                  // fechado, aparece só o cabeçalho; aberto, as linhas ficam no
+                  // branco — o mesmo desenho do acordeão do Radar.
+                  background:ehHoje?tc.cardBg:'#fff',
                   boxShadow:cardShadow,
                   animation:highlightDia===dia?'rowSaved 1.2s ease-out':undefined,
                 }}>
@@ -419,7 +429,7 @@ export default function NleExtrato({
                     {ehHoje&&(
                       <div style={{fontSize:7,fontWeight:800,padding:'1px 5px',borderRadius:3,
                         display:'inline-block',marginTop:3,letterSpacing:.3,
-                        background:'rgba(255,255,255,0.25)',color:'#fff'}}>HOJE</div>
+                        background:'rgba(15,23,42,0.35)',color:'#fff'}}>HOJE</div>
                     )}
                     {temFixaPend&&(
                       <div style={{fontSize:7,fontWeight:800,padding:'1px 5px',borderRadius:3,
