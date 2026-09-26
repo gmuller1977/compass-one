@@ -28,6 +28,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
       { icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
       { icon: '📈', label: 'Radar financeiro', path: '/radar',         exact: false },
+      // Temporario: sai quando o Radar previsto substituir o original.
+      { icon: '🧪', label: 'Radar previsto', path: '/radar-previsto', exact: false },
     ],
   },
   {
