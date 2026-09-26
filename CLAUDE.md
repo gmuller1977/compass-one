@@ -249,6 +249,26 @@ mesmas. Preço aceito da versão final: nos tons claros, verde e vermelho têm
 quase o mesmo brilho (1,09); para daltonismo vermelho-verde as duas barras se
 parecem, e o percentual escrito ao lado desempata.
 
+**As categorias, abertas no acordeão, seguem o MESMO modelo, um degrau
+menor, e com fundo BRANCO** (pedido do Guilherme): números em 14px (os do
+grupo são 16), barra de 16px de espessura com os mesmos 200px e o mesmo recuo
+à direita — as barras das categorias ficam exatamente embaixo da do grupo.
+
+No branco os tons claros somem (o amarelo dá 1,2:1), então a categoria usa os
+**tons escuros da mesma cor**: `#15803d` / `#a16207` / `#b91c1c`, trilho
+`#e2e8f0` e borda `#64748b`, que desenha os 100% como a borda branca faz no
+azul. Dentro de cada lugar, barra e número são a mesma cor. O vermelho é
+`#b91c1c` e não `#dc2626`: o `#dc2626` tem o mesmo brilho do amarelo-mostarda
+(1,02). Paleta e regra das faixas moram em
+[`radarCores.ts`](src/components/acompanhamento/radarCores.ts) — um `.ts`, e
+não o `AcShared.tsx`, porque constantes num arquivo de componente geram aviso
+de fast refresh no lint.
+
+O "Disponível / Estourou" saiu das colunas e foi para a linha de status embaixo
+do nome, porque é o número que explica os cenários. Fixa paga no valor EXATO é
+verde, não amarela: pela regra do grupo, AABB 120 de 120 apareceria como alerta.
+Os lançamentos, ao abrir uma categoria, continuam no painel claro de antes.
+
 **"Atenção" é amarelo, não laranja.** Foi laranja por algumas horas, a pedido
 — o âmbar antigo parecia laranja no azul, porque o azul realça o lado quente do
 amarelo. Trocado no mesmo dia: laranja e vermelho têm quase o mesmo brilho

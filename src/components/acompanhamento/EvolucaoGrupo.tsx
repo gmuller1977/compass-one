@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
+import { RADAR_COR_AZUL as COR, RADAR_TRILHO_AZUL as TRILHO, faixaRadar } from './radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
@@ -30,21 +31,6 @@ import EvolucaoLinha from './EvolucaoLinha'
  * brilho, e o amarelo casa com o aviso do otimista na barra do rodapé.
  */
 const FUNDO   = 'linear-gradient(135deg, #0f2878, #1e40af)'
-const TRILHO  = 'rgba(15,23,42,.4)'
-const COR     = { bom: '#4ade80', atencao: '#fde047', ruim: '#fca5a5' } as const
-type Faixa = keyof typeof COR
-
-/**
- * Receita: chegar ao planejado é bom. Despesa: passar dele é ruim. Os cortes
- * são os mesmos que o app já usava nas barras sobre azul (barCorSobreAzul) —
- * só o tom do amarelo mudou.
- */
-function faixaDoGrupo(perc: number, isEntrada: boolean): Faixa {
-  if (isEntrada) return perc >= 1 ? 'bom' : perc >= 0.8 ? 'atencao' : 'ruim'
-  if (perc > 1) return 'ruim'
-  if (perc >= 0.9) return 'atencao'
-  return 'bom'
-}
 
 interface EvolucaoGrupoProps {
   tipo: 'saida' | 'entrada'
@@ -84,7 +70,7 @@ export default function EvolucaoGrupo({
   // A cor segue o percentual ARREDONDADO, o que está escrito na tela. Com o
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
-  const faixa      = faixaDoGrupo(Math.round(perc * 100) / 100, isEntrada)
+  const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
   const corNumero  = semDados ? '#fff' : COR[faixa]
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
@@ -143,6 +129,8 @@ export default function EvolucaoGrupo({
 
       </div>
 
+      {/* O conteúdo aberto é BRANCO, pedido do Guilherme. As categorias usam
+          os tons escuros da mesma paleta — ver radarCores. */}
       {aberto && (
         <div style={{
           background: '#fff', border: '1px solid #e2e8f0',

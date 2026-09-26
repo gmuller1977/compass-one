@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
+import { RADAR_COR_BRANCO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -57,13 +58,11 @@ export default function EvolucaoLinha({
   const dif    = calcDif(isEntrada, prev, real)
 
   const barraFundo = status.barra
-  const iconeFundo = status.barra === '#4ade80' ? '#f0fdf4' : status.barra === '#f87171' ? '#fef2f2' : '#fffbeb'
   const perc       = prev > 0 ? real / prev : (real > 0 ? 1 : 0)
   const percClamp  = Math.min(perc, 1)
   const percLabel  = prev > 0 || real > 0 ? `${Math.round(perc * 100)}%` : '—'
   const percCor    = perc === 0 ? '#cbd5e1' : perc > 1 ? '#dc2626' : '#16a34a'
   const barCor     = perc > 1 ? '#f87171' : barraFundo
-  const realCor    = real === 0 ? '#cbd5e1' : isEntrada ? '#0f172a' : (real > prev && prev > 0 ? '#dc2626' : '#0f172a')
 
   // ── Subtotal (sem acordeão) ───────────────────────────────────────────
   if (isSubtotal) {
@@ -117,54 +116,75 @@ export default function EvolucaoLinha({
     { label: '💵 Dinheiro', total: totalDinheiro, itens: dinheiro },
   ].filter(c => c.itens.length > 0)
 
+  // O MESMO modelo do cabeçalho do grupo, um degrau menor: números em 14px
+  // (os do grupo são 16), barra de 16px de espessura (a do grupo é 20) e os
+  // mesmos 200px de comprimento. Com o mesmo recuo à direita — o espaço do
+  // chevron, o mesmo gap e 15px de padding, que com a borda de 1px do
+  // contêiner dá os 16px do cabeçalho —, as barras das categorias ficam
+  // exatamente embaixo da barra do grupo.
+  //
+  // O fundo é BRANCO, então vale a paleta escura: ver radarCores.
+  //
+  // Fixa paga no valor EXATO é "feito", não "chegando no limite": pela regra
+  // do grupo, 100% numa despesa é amarelo, e AABB 120 de 120 apareceria como
+  // alerta.
+  const noValorExato = prev > 0 && Math.abs(real - prev) < 0.005
+  const semDados = prev <= 0 && real === 0
+  const faixa = noValorExato ? 'bom' : faixaRadar(Math.round(perc * 100) / 100, isEntrada)
+  const cor = semDados ? '#94a3b8' : COR[faixa]
+  // "Disponível / Estourou" sai das colunas e vai para a linha de status: é o
+  // número que explica os cenários, e não pode sumir junto com a coluna.
+  const detalhe = dif.vazio ? '' : ` · ${dif.label.toLowerCase()} ${fmt(dif.valor)}`
+  const alternar = () => temLancamentos && setAberto(v => !v)
+
   return (
     <div style={{ borderBottom: '1px solid #f1f5f9' }}>
-      {/* Linha principal — clicável se houver lançamentos */}
       <div
-        onClick={() => temLancamentos && setAberto(v => !v)}
+        role={temLancamentos ? 'button' : undefined}
+        tabIndex={temLancamentos ? 0 : undefined}
+        aria-expanded={temLancamentos ? aberto : undefined}
+        onClick={alternar}
+        onKeyDown={e => { if (temLancamentos && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); alternar() } }}
         style={{
-          padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
-          cursor: temLancamentos ? 'pointer' : 'default',
+          padding: '10px 15px 10px 16px', display: 'flex', alignItems: 'center', gap: 10,
+          cursor: temLancamentos ? 'pointer' : 'default', color: '#0f172a',
           background: aberto ? '#f8fafc' : '#fff',
         }}
       >
-        <div style={{ width: 3, height: 32, borderRadius: 2, background: barraFundo, flexShrink: 0 }} />
-        <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          background: iconeFundo, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: '#f1f5f9',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
           {icone}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 500, color: '#0f172a',
+        <div style={{ flex: 1, minWidth: 140 }}>
+          <div title={displayName} style={{ fontSize: 13, fontWeight: 600,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {displayName}
           </div>
-          <div style={{ fontSize: 9, marginTop: 2, color: status.cor }}>{status.texto}</div>
-        </div>
-        <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
-          <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>Previsto</div>
-          <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: '#94a3b8' }}>{prev > 0 ? fmt(prev) : '—'}</div>
-        </div>
-        <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
-          <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>Realizado</div>
-          <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: realCor }}>{real !== 0 ? fmt(real) : '—'}</div>
-        </div>
-        <div style={{ textAlign: 'right', width: 90, padding: '0 4px', flexShrink: 0 }}>
-          <div style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: .3 }}>{dif.label}</div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: dif.vazio ? '#cbd5e1' : dif.cor }}>
-            {dif.vazio ? '—' : fmt(dif.valor)}
+          <div style={{ fontSize: 10.5, marginTop: 2, color: '#475569',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {status.texto}{detalhe}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, width: 90, justifyContent: 'flex-end', flexShrink: 0 }}>
-          <div style={{ width: 50, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 2, width: `${percClamp * 100}%`, background: barCor }} />
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 700, minWidth: 32, textAlign: 'right', color: percCor }}>{percLabel}</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
+          whiteSpace: 'nowrap', minWidth: 290, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: cor }}>{real !== 0 ? fmt(real) : '—'}</span>
+          <span style={{ fontSize: 11, color: '#475569' }}>de {prev > 0 ? fmt(prev) : '—'}</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: cor, minWidth: 44, textAlign: 'right' }}>{percLabel}</span>
         </div>
-        {/* Chevron */}
-        {temLancamentos && (
-          <div style={{ fontSize: 11, color: '#94a3b8', width: 14, textAlign: 'center', flexShrink: 0,
-            transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>⌄</div>
-        )}
+        <div style={{ width: 200, flexShrink: 0, height: 16, borderRadius: 8, background: TRILHO, overflow: 'hidden',
+          boxSizing: 'border-box', border: `2px solid ${semDados ? '#cbd5e1' : '#64748b'}` }}>
+          {!semDados && (
+            <div style={{ height: '100%', borderRadius: 8, width: `${Math.max(0, percClamp) * 100}%`,
+              background: cor, transition: 'width .3s ease' }} />
+          )}
+        </div>
+        {/* O espaço do chevron existe sempre, com ou sem lançamentos: é ele
+            que mantém a barra alinhada com a do grupo. */}
+        <span aria-hidden="true" style={{ width: 12, textAlign: 'center', fontSize: 12, flexShrink: 0,
+          color: '#64748b', transition: 'transform .15s',
+          transform: aberto ? 'rotate(180deg)' : 'none' }}>
+          {temLancamentos ? '▾' : ''}
+        </span>
       </div>
 
       {/* Acordeão — lançamentos */}
