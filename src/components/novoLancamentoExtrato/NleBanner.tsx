@@ -1,6 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, parseBRL, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
+import { RADAR_COR_AZUL } from '../acompanhamento/radarCores'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -71,14 +72,18 @@ export default function NleBanner({
       {/* Left: 4 stat boxes + bank selectors */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
+          {/* Os quatro valores leem a MESMA paleta do Radar: entradas verde,
+              saídas vermelho, e os saldos verde se positivos e vermelho se
+              negativos — pedido do Guilherme, para as duas telas falarem igual. */}
           <KpiCard icon="💰" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
+            valueColor={saldoBase >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
             sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
           <KpiCard icon="↑" label="Entradas" value={fmt(totalEntradas)}
-            valueColor="#4ade80" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+            valueColor={RADAR_COR_AZUL.bom} sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="↓" label="Saídas" value={fmt(totalSaidas)}
-            valueColor="#f87171" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+            valueColor={RADAR_COR_AZUL.ruim} sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="=" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
-            valueColor={saldoMes >= 0 ? '#fff' : '#f87171'}
+            valueColor={saldoMes >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
         </div>
 
