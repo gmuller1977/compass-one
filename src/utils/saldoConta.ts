@@ -1,4 +1,5 @@
 import type { Conta, Categoria, DadosMes, PlanoAnoData } from '../context/AppContext'
+import type { Memoria } from '../components/novoLancamentoExtrato/NleShared'
 import { parseBRL } from './moeda'
 import { valorFixaNoMes } from './valorFixa'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
@@ -834,4 +835,51 @@ export function detalharMes(ano: number, mes: number, deps: Deps): LinhaMes[] {
       final,
     }
   })
+}
+
+/**
+ * A memoria de calculo do saldo final previsto, CONSOLIDADA: a mesma de
+ * Lancamentos, somada em todas as contas com saldo — bancos e dinheiro.
+ *
+ * Sai de duas funcoes que ja fecham por construcao, e nao faz conta propria:
+ *
+ *   realizado -> detalharMes      inicial + entradas − saidas + ajuste = final
+ *   previsto  -> detalharPrevisto  base + partes = saldo final previsto
+ *
+ * e `final` somado nas contas e `base` sao o mesmo saldoBancosEDinheiro.
+ * Por isso as linhas fecham no total, e o total e o mesmo numero que o Radar
+ * mostrava no cartao do saldo atual.
+ *
+ * O `ajusteConciliacao` so existe aqui. No Radar o saldo informado vence em
+ * qualquer mes, inclusive no corrente; sem a linha, quem digitou o saldo do
+ * banco veria a memoria fechar num numero diferente do total.
+ *
+ * A divisao da variavel entre "compras que faltam no cartao" e "gastos
+ * variaveis a realizar" e a mesma de Lancamentos: o balde de cada linha.
+ */
+export function memoriaDoRadar(
+  ano: number,
+  mes: number,
+  deps: Deps,
+  opts: { hoje?: Date } = {},
+): Memoria {
+  const contas = detalharMes(ano, mes, deps)
+  const p = detalharPrevisto(ano, mes, deps, { comoAbertura: true, hoje: opts.hoje })
+  const somar = (xs: { valor: number }[]) => xs.reduce((s, x) => s + x.valor, 0)
+  const noCartao = p.variaveisSaida.filter(i => i.balde === 'cartao')
+  const foraDoCartao = p.variaveisSaida.filter(i => i.balde !== 'cartao')
+
+  return {
+    abertura:           contas.reduce((s, c) => s + c.inicial, 0),
+    entradasReais:      contas.reduce((s, c) => s + c.entradas, 0),
+    saidasReais:        contas.reduce((s, c) => s + c.saidas, 0),
+    ajusteConciliacao:  contas.reduce((s, c) => s + c.ajuste, 0),
+    entradasPrevistas:  somar(p.fixasEntrada),
+    receitasAReceber:   somar(p.variaveisEntrada),
+    fixasPrevistas:     somar(p.fixasSaida),
+    faturaEmAberto:     somar(p.faturas),
+    faturaEstimada:     somar(noCartao),
+    variaveisARealizar: somar(foraDoCartao),
+    fechamento:         p.valor,
+  }
 }

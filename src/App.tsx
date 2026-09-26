@@ -11,7 +11,6 @@ import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import RadarFinanceiro from './pages/RadarFinanceiro'
-import RadarPrevisto  from './pages/RadarPrevisto'
 import ResumoMensal    from './pages/ResumoMensal'
 import Configuracoes       from './pages/Configuracoes'
 import Onboarding          from './pages/Onboarding'
@@ -140,9 +139,6 @@ export default function App() {
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/radar"           element={<Protegido><RadarFinanceiro /></Protegido>} />
-          {/* Copia em construcao. O /radar validado segue intocado; esta rota
-              existe para o bloco de previsto ser montado sem tocar nele. */}
-          <Route path="/radar-previsto"  element={<Protegido><RadarPrevisto /></Protegido>} />
           <Route path="/painel"          element={<Navigate to="/radar" replace />} />
           <Route path="/evolucao"       element={<Navigate to="/radar" replace />} />
           <Route path="/acompanhamento" element={<Navigate to="/radar" replace />} />

@@ -38,6 +38,14 @@ export type Memoria = {
   abertura: number
   entradasReais: number
   saidasReais: number
+  /**
+   * Saldo informado na conciliacao menos o que a movimentacao explica. So o
+   * Radar preenche: la o informado vence em qualquer mes, inclusive no
+   * corrente, e sem esta linha a memoria consolidada nao fecharia com o saldo
+   * atual. Lancamentos deixa a conciliacao do mes exibido de fora de
+   * proposito, entao nunca preenche — e a linha nunca aparece la.
+   */
+  ajusteConciliacao?: number
   entradasPrevistas: number
   /** Receita variavel que o plano espera e ainda nao chegou. */
   receitasAReceber: number

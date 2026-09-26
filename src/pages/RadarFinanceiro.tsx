@@ -6,7 +6,8 @@ import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { saldoBancosEDinheiro, saldoTotalNoFim, detalharMes } from '../utils/saldoConta'
+import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/saldoConta'
+import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes, barCorSobreAzul, type CatReal } from '../components/acompanhamento/AcShared'
@@ -38,10 +39,11 @@ export default function RadarFinanceiro() {
   const [ano, setAno]               = useState(anoHoje)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
   const [detalheContas, setDetalheContas] = useState(false)
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { contas, categorias, planos, extratoData, faturaData, user, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+  const { contas, categorias, planos, extratoData, faturaData, user, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao } = useApp()
 
   useEffect(() => {
     if (!user) return
@@ -130,32 +132,22 @@ export default function RadarFinanceiro() {
     [ano, mes, depsSaldo],
   )
 
-  // Onde o mes deveria fechar se o plano se cumprisse: o saldo REAL de abertura
-  // mais o planejado do mes. Nao e projecao — nao olha o que ja caiu nem o que
-  // falta cair, so compara o realizado com o plano, a mesma lente das
-  // categorias logo abaixo.
-  // Com quanto o mes FECHA. Sai de saldoTotalNoFim, que e a soma de
-  // saldoContaNoFim por conta — bancos e dinheiro —, entao o numero do cartao e
-  // a soma dos saldos finais previstos das contas por construcao, e nao por
-  // duas contas que precisam concordar.
+  // Com quanto o mes FECHA, e de onde isso vem: a memoria de calculo de
+  // Lancamentos, consolidada em todas as contas. `fechamento` e o mesmo numero
+  // que saldoTotalNoFim devolve, e as linhas fecham nele por construcao.
   //
-  // comoAbertura vale por causa do mes corrente: sem ele saldoTotalNoFim
-  // devolveria o realizado, o previsto seria igual ao atual e a barra marcaria
-  // 100% sempre. Com ele, o mes corrente projeta ate o dia 31.
-  //
-  // Isto nao reabre a regra de que o Radar so mostra realizado: o numero grande
-  // do cartao segue sendo o saldo de hoje. O previsto entra como REFERENCIA
-  // contra a qual ele e medido, do mesmo jeito que Receitas e Despesas se medem
-  // contra o planejado.
-  const saldoPrevisto = useMemo(
-    () => saldoTotalNoFim(ano, mes, depsSaldo, { comoAbertura: true }).valor,
+  // Isto nao reabre a regra de que o Radar so mostra realizado: os cartoes do
+  // topo seguem sendo o que aconteceu. O previsto mora na barra do pe, como em
+  // Lancamentos, e so se abre quando pedido.
+  const memoria = useMemo(
+    () => memoriaDoRadar(ano, mes, depsSaldo),
     [ano, mes, depsSaldo],
   )
+  const saldoPrevisto = memoria.fechamento
 
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
   const percE = perc(totalRealE, totalPrevE)
   const percS = perc(totalRealS, totalPrevS)
-  const percSaldo = perc(saldoAtual, saldoPrevisto)
   const comPlano = (p: number | null) => (p === null ? '' : ` · ${Math.round(p * 100)}%`)
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
@@ -238,13 +230,9 @@ export default function RadarFinanceiro() {
         </KpiCard>
         <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
           valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
-          sublabel={percSaldo === null
-            ? (saldoAtual >= 0 ? '↑ positivo' : '↓ negativo')
-            : `Saldo final previsto ${fmt(saldoPrevisto)}${comPlano(percSaldo)} · ${cenarioPrevisao}`}
+          sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'}
           style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas}>
-          {percSaldo !== null && <KpiBarra perc={percSaldo} cor={barCorSobreAzul(percSaldo, true)} />}
-        </KpiCard>
+          onClick={alternarDetalhe} expandido={detalheContas} />
       </div>
 
       {detalheContas && (
@@ -308,6 +296,46 @@ export default function RadarFinanceiro() {
           </>
         )}
       </div>
+
+      {/* Saldo final previsto — a mesma barra de Lancamentos, no pe da tela.
+          Saiu do cartao do saldo atual: la ele era um numero sem explicacao;
+          aqui ele abre a memoria de calculo. */}
+      {(() => {
+        const positivo = saldoPrevisto >= 0
+        return (
+          <div style={{ padding: '8px 16px', flexShrink: 0, borderTop: '1px solid #e2e8f0', background: '#f8faff' }}>
+            <div style={{ borderRadius: 12,
+              background: positivo ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
+              <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
+                onClick={() => setMemoriaAberta(v => !v)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMemoriaAberta(v => !v) } }}
+                style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', cursor: 'pointer' }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    Saldo final previsto
+                    <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 4,
+                      background: 'rgba(255,255,255,.15)', color: 'rgba(255,255,255,.9)' }}>
+                      {memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,.75)', marginTop: 3,
+                    display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span>{MESES_FULL[mes]} {ano} · todas as contas</span>
+                    <ChipCenario cenario={cenarioPrevisao} />
+                  </div>
+                </div>
+                <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', fontVariantNumeric: 'tabular-nums',
+                  color: positivo ? '#86efac' : '#fca5a5' }}>
+                  {fmt(saldoPrevisto)}
+                </span>
+              </div>
+              {memoriaAberta && <MemoriaSaldo m={memoria} positivo={positivo}
+                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

@@ -203,7 +203,7 @@ const TOM_CENARIO: Record<CenarioPrevisao, string> = {
   pessimista: '#ede9fe', moderado: '#ddd6fe', otimista: '#c4b5fd',
 }
 
-function ChipCenario({ cenario }: { cenario: CenarioPrevisao }) {
+export function ChipCenario({ cenario }: { cenario: CenarioPrevisao }) {
   return (
     <span title={`Cenário ${NOME_CENARIO[cenario].toLowerCase()} — altere em Preferências`}
       style={{
@@ -255,7 +255,7 @@ function EscolhaCenario({ atual, onEscolher, fundo }: {
   )
 }
 
-function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
+export function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
   m: Memoria; positivo: boolean
   cenario: CenarioPrevisao
   onCenario: (v: CenarioPrevisao) => void
@@ -278,6 +278,10 @@ function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
     ['Saldo inicial do mes', m.abertura,      'Com quanto a conta abriu'],
     ['Receitas recebidas',   m.entradasReais, 'Lancamentos e fixas ja confirmadas'],
     ['Despesas pagas',       -m.saidasReais,  'Lancamentos e fixas ja confirmadas'],
+    // So o Radar preenche; ver Memoria.ajusteConciliacao.
+    ...(m.ajusteConciliacao !== undefined && Math.abs(m.ajusteConciliacao) > 0.005
+      ? [['Ajuste da conciliacao', m.ajusteConciliacao, 'Saldo informado menos o que os lancamentos explicam'] as [string, number, string]]
+      : []),
     ...previstas.filter(([, v]) => Math.abs(v) > 0.005),
   ]
   const linha = (rotulo: string, valor: number, ajuda: string, forte = false) => (

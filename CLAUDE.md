@@ -155,48 +155,55 @@ previsão é assunto do Planejamento.**
 O maquinário de projeção vive em [`saldoConta.ts`](src/utils/saldoConta.ts):
 `saldoContaNoFim`, `projecaoDaConta`, `projecaoDoMes`.
 
-**O cartão "Saldo atual" do Radar usa esse maquinário como REFERÊNCIA, e isso
-não reabre a regra acima.** O número grande continua sendo o saldo de hoje; o
-previsto entra embaixo, como "Saldo final previsto", para a barra ter contra o
-que medir — do mesmo jeito que Receitas e Despesas se medem contra o planejado.
+**O saldo final previsto do Radar mora numa barra no pé da tela, e abre a
+memória de cálculo — a mesma de Lançamentos, consolidada.** Decidido pelo
+Guilherme em 26/09/2026. Isso não reabre a regra acima: os cartões do topo
+continuam sendo só o que aconteceu, e o previsto só aparece quando pedido.
 
-Ele sai de `saldoTotalNoFim(ano, mes, deps, { comoAbertura: true })`, e é por
-construção a soma dos saldos finais previstos das contas de banco e do dinheiro,
-porque `projecaoDoMes` é a soma de `projecaoDaConta`. O `comoAbertura` é o que
-faz o mês corrente projetar até o dia 31 — sem ele o previsto sairia igual ao
-atual e a barra marcaria 100% sempre.
+Antes o previsto ficava no cartão "Saldo atual", como subtítulo e com uma barra
+de percentual contra ele — um número sem explicação. Saiu de lá, e a barra de
+percentual saiu junto: ela media o saldo de hoje contra o previsto, e sem o
+previsto no cartão não havia o que medir.
 
-**EM CONSTRUÇÃO — o `/radar-previsto`, uma cópia do Radar com o bloco "Como o
-mês termina".** Pedido do Guilherme em 26/09/2026: a memória de cálculo de
-Lançamentos, só que consolidada em todas as contas e navegável. Ele decidiu
-fazer numa **cópia** para não tocar no Radar validado, e a regra acima — o
-Radar só mostra realizado — continua valendo para o `/radar`. Quando a cópia
-substituir o original, **esta regra tem de ser reescrita**, senão fica aqui
-contradizendo a tela.
+A memória é **o mesmo componente** de Lançamentos (`MemoriaSaldo`, exportado de
+`NleExtrato.tsx`), alimentado por `memoriaDoRadar` em
+[`saldoConta.ts`](src/utils/saldoConta.ts). Ajuste feito numa tela vale na
+outra. A função não faz conta própria: o realizado sai de `detalharMes` e o
+previsto de `detalharPrevisto`, e as duas já fecham por construção. O
+`fechamento` é o mesmo número que `saldoTotalNoFim` devolve — a `prova28` exige
+igualdade exata, e que as linhas somem nele.
 
-O bloco mostra, embaixo dos cartões: saldo atual, receitas previstas, despesas
-fixas a pagar, despesas variáveis a realizar, fatura do cartão a pagar e o
-saldo final previsto. Cada linha abre grupo → categoria.
+**A linha "Ajuste da conciliação" só existe no Radar.** Aqui o saldo informado
+na conciliação vence em qualquer mês, inclusive no corrente
+(`saldoFinalConta`). Quem digitou 5.150 do banco onde os lançamentos explicam
+5.100 tem saldo atual de 5.150, e sem a linha a memória fecharia 50 abaixo do
+total logo acima dela. Em Lançamentos a conciliação do mês exibido fica de fora
+de propósito — ela aparece na caixa de conciliação —, então lá o campo nunca é
+preenchido e a linha nunca aparece.
 
-Tudo sai de **uma** chamada de `detalharPrevisto`, e o cartão "Saldo atual"
-lê o `valor` dessa mesma chamada. A identidade que o bloco mostra —
-saldo atual + partes = saldo final previsto — é por construção, e a
-`prova28` a tranca.
+"Receitas recebidas" e "Despesas pagas" são **movimento de dinheiro** somado
+nas contas, e uma transferência entre contas próprias entra nas duas — sai de
+uma, entra na outra. O líquido é zero e o total fecha, mas as duas linhas
+ficam maiores pelo valor transferido. É o mesmo que Lançamentos faz por conta,
+onde a transferência de saída já conta como despesa paga.
 
-Mês futuro soma a **janela**: dezembro visto de setembro carrega set, out,
-nov e dez, e o bloco diz isso ("janela Set–Dez"). Cada categoria vira uma
-linha só com "4 meses" ao lado; quatro linhas iguais leriam como quatro
-aluguéis. Mês fechado mostra uma frase dizendo que não há o que prever, em
-vez de sumir — quem abriu agosto procurando o bloco merece saber por quê.
+**Tentativa descartada, para não repetir:** uma cópia da tela, `/radar-previsto`,
+com um bloco "Como o mês termina" em acordeão — receitas previstas, fixas a
+pagar, variável a realizar e fatura, cada uma abrindo grupo → categoria.
+Construída e publicada em 26/09/2026, e abandonada no mesmo dia pelo
+Guilherme: não chegou no modelo que ele queria. Na análise ficou um aprendizado
+que vale para qualquer acordeão futuro: **o saldo atual não se abre por
+categoria**. O realizado por categoria conta a compra no cartão quando ela
+acontece; o saldo do banco só quando a fatura é paga. Abertas por categoria, as
+linhas não somariam o saldo atual — ele só fecha aberto por conta.
 
-A cópia **não credita Aurix** ao abrir (seriam duas rotas pontuando a mesma
-visita, e isso grava no banco) e não tem versão mobile — o mobile espera o web
-terminar. Rota, item de menu e arquivo são temporários.
+Da cópia sobreviveram as funções: `detalharProjecaoDaConta` e `detalharPrevisto`
+são o que alimenta a memória consolidada.
 
-Duas coisas ficam para quando substituir: o `EvolucaoGrupo` logo abaixo mostra
-o "Disponível" por categoria, que é o mesmo `faltaVariavelDoMes` do bloco —
-a tela diz a variável duas vezes. E o seletor de cenário ainda não está no
-bloco, só o nome dele.
+O número sai de `detalharPrevisto(ano, mes, deps, { comoAbertura: true })` — o
+mesmo laço de `saldoTotalNoFim`, que virou o embrulho dela. O `comoAbertura` é o
+que faz o mês corrente projetar até o dia 31: sem ele o previsto sairia igual ao
+saldo atual.
 
 **O que tem de bater entre as contas e o Radar é o saldo inicial e o final —
 não o movimento.** Dentro do mês a pergunta é outra: quanto foi realizado
