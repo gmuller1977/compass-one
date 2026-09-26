@@ -234,8 +234,20 @@ verdade é amarelo.
 Medido no extremo mais claro do fundo, `#1e40af`: o número verde é o MESMO da
 barra (`#4ade80`, 5,01:1), o amarelo é `#fde047` (6,62) sobre barra `#facc15`,
 e o vermelho saturado reprova como texto (3,15), então o número usa o tom claro
-`#fca5a5` (4,60). O trilho da barra é **escuro** (`#0f172a` a 40%): sobre trilho
-claro o vermelho caía para 2,02 e sumia.
+`#fca5a5` (4,60).
+
+**Barra e número têm EXATAMENTE a mesma cor**, decisão do Guilherme. A barra
+fica sobre trilho escuro (`#0f172a` a 40%) e tem **borda branca de 2px**
+contornando a barra inteira: o trilho escuro sozinho sumia no azul, e a borda
+desenha os 100% para a parte vazia se ler como vazia. Medido: preenchimento
+contra o trilho 6,92 / 9,14 / 6,35; borda contra o azul 8,72.
+
+**Tentativa descartada:** trilho branco com preenchimento escuro
+(`#16a34a` / `#c28a00` / `#dc2626`), que passava no contraste mas fazia número
+e barra terem tons diferentes da mesma cor. Recusado — as cores têm de ser as
+mesmas. Preço aceito da versão final: nos tons claros, verde e vermelho têm
+quase o mesmo brilho (1,09); para daltonismo vermelho-verde as duas barras se
+parecem, e o percentual escrito ao lado desempata.
 
 **"Atenção" é amarelo, não laranja.** Foi laranja por algumas horas, a pedido
 — o âmbar antigo parecia laranja no azul, porque o azul realça o lado quente do

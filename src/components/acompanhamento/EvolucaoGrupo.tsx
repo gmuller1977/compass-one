@@ -11,29 +11,28 @@ import EvolucaoLinha from './EvolucaoLinha'
  * percentual — azul-claro, azul-escuro, vermelho acima de 100% —, e a barra
  * era um traço de 60×5px que ninguém lia.
  *
+ * Barra e número usam EXATAMENTE a mesma cor, a pedido dele. O trilho é escuro
+ * e a barra inteira tem borda branca: o trilho escuro sozinho sumia no azul, e
+ * a borda desenha os 100% para a parte vazia se ler como vazia.
+ *
  * O fundo carrega número colorido, então vale a regra do CLAUDE.md: nenhum
  * azul com valor colorido mais claro que #1e40af. Medido nesse extremo:
  *
  *   número  #4ade80 5,01 · #fde047 6,62 · #fca5a5 4,60 · branco 85% 6,75
- *   barra   contra o trilho escuro: #4ade80 6,92 · #facc15 7,87 · #f87171 4,36
+ *   barra   contra o trilho escuro: #4ade80 6,92 · #fde047 9,14 · #fca5a5 6,35
+ *   borda   branca contra o azul: 8,72
  *
- * O verde do número é o MESMO da barra. O vermelho saturado reprova como texto
- * (3,15), então o número usa o tom claro da mesma cor. O trilho é escuro de
- * propósito: sobre trilho claro o vermelho caía para 2,02 e a barra sumia.
+ * Preço aceito: nestes tons claros, verde e vermelho têm quase o mesmo brilho
+ * (1,09). Para daltonismo vermelho-verde as duas barras se parecem; o
+ * percentual escrito ao lado desempata.
  *
- * "Atenção" é AMARELO, não laranja — foi laranja por algumas horas. Laranja e
- * vermelho têm quase o mesmo brilho (1,22:1 entre as barras): para quem tem
- * daltonismo vermelho-verde, "chegando no limite" e "estourou" viravam a mesma
- * barra. O amarelo se separa do vermelho pelo brilho (1,81). Fica mais perto do
- * verde (1,14), e esse é o erro barato: os dois dizem "ainda não estourou", e o
- * percentual escrito desempata. Também casa com o aviso do otimista na barra
- * do rodapé, que já é #fde047.
+ * "Atenção" é amarelo, não laranja: laranja e vermelho tinham quase o mesmo
+ * brilho, e o amarelo casa com o aviso do otimista na barra do rodapé.
  */
 const FUNDO   = 'linear-gradient(135deg, #0f2878, #1e40af)'
 const TRILHO  = 'rgba(15,23,42,.4)'
-const BARRA   = { bom: '#4ade80', atencao: '#facc15', ruim: '#f87171' } as const
-const NUMERO  = { bom: '#4ade80', atencao: '#fde047', ruim: '#fca5a5' } as const
-type Faixa = keyof typeof BARRA
+const COR     = { bom: '#4ade80', atencao: '#fde047', ruim: '#fca5a5' } as const
+type Faixa = keyof typeof COR
 
 /**
  * Receita: chegar ao planejado é bom. Despesa: passar dele é ruim. Os cortes
@@ -86,7 +85,7 @@ export default function EvolucaoGrupo({
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
   const faixa      = faixaDoGrupo(Math.round(perc * 100) / 100, isEntrada)
-  const corNumero  = semDados ? '#fff' : NUMERO[faixa]
+  const corNumero  = semDados ? '#fff' : COR[faixa]
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
 
@@ -127,10 +126,13 @@ export default function EvolucaoGrupo({
               {percLabel}
             </span>
           </div>
-          <div style={{ width: 200, flexShrink: 0, height: 20, borderRadius: 10, background: TRILHO, overflow: 'hidden' }}>
+          {/* Borda branca contornando a barra INTEIRA: desenha os 100% e deixa
+              a parte vazia legível como vazia sobre o trilho escuro. */}
+          <div style={{ width: 200, flexShrink: 0, height: 20, borderRadius: 10, background: TRILHO, overflow: 'hidden',
+            boxSizing: 'border-box', border: `2px solid ${semDados ? 'rgba(255,255,255,.5)' : '#fff'}` }}>
             {!semDados && (
               <div style={{ height: '100%', borderRadius: 10, width: `${percClamp * 100}%`,
-                background: BARRA[faixa], transition: 'width .3s ease' }} />
+                background: COR[faixa], transition: 'width .3s ease' }} />
             )}
           </div>
           <span aria-hidden="true" style={{
