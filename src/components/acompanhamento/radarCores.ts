@@ -20,24 +20,37 @@
  *   Ganho: o #f87171 se separa do verde e do amarelo pelo brilho (1,97 e 2,10),
  *   o que os tons pálidos não faziam (1,03).
  *
- * CLARO: o cabeçalho de grupo, no AZUL-CLARO dos dias futuros de Lançamentos
- * (#bfdbfe → #93c5fd), e as categorias abertas, no BRANCO. Uma paleta só para
- * os dois — a de Lançamentos para o azul-claro, com texto escuro. Pedido do
- * Guilherme: empilhados, os cabeçalhos escuros pesavam demais na tela.
- * No azul-claro o pior caso é o extremo ESCURO, #93c5fd:
- *   texto #14532d 5,05 · #713f12 4,81 · #7f1d1d 5,56 · nome #1e3a8a 5,74 ·
- *   rótulo rgba(15,23,42,.75) 5,56 — barra contra trilho branco 9,11 / 8,67 /
- *   10,02 · borda #1e3a8a 5,74
- * No branco (categorias), sobre #f8fafc no hover: 8,71 / 8,29 / 9,58; barra
- * contra #e2e8f0 7,39 / 7,03 / 8,13; borda #64748b 4,76.
- * As cores que as categorias usavam (#15803d, #a16207, #b91c1c) reprovavam no
- * azul-claro (2,78 / 2,73 / 3,59) — por isso a troca, e é ela que deixa grupo
- * e categoria com as mesmas cores. O amarelo é #713f12, marrom-dourado: é o
- * único que passa no #93c5fd (#854d0e dá 3,80). Preço aceito: as três têm
- * quase o mesmo brilho (1,05 a 1,16); o percentual escrito desempata.
+ * CLARO: o cabeçalho de grupo, em CINZA-CLARO (#f1f5f9 → #e2e8f0), e as
+ * categorias abertas, no BRANCO. Uma paleta só para os dois, com texto
+ * escuro. Pedido do Guilherme: empilhados, os cabeçalhos escuros pesavam
+ * demais. Passou pelo azul médio e pelo azul-claro no mesmo dia; o cinza
+ * ficou porque é neutro — não puxa o tom do vermelho e do verde, e deixa
+ * espaço para o tom claro de cada um se distinguir do escuro.
+ * No cinza o pior caso é #e2e8f0:
+ *   texto #14532d 7,39 · #18773d 4,55 · #b91c1c 5,25 · #7f1d1d 8,13 ·
+ *   nome #1e3a8a 8,40 · rótulo rgba(15,23,42,.75) 7,08
+ *   barra contra trilho branco 9,11 / 5,61 / 6,47 / 10,02 · borda #1e3a8a 8,40
+ * No branco (categorias), sobre #f8fafc no hover: 8,71 / 5,36 / 6,18 / 9,58;
+ * barra contra #e2e8f0 7,39 / 4,55 / 5,25 / 8,13; borda #64748b 4,76.
+ * O cinza se separa pouco do branco das categorias (1,23), por isso o
+ * cabeçalho tem borda #cbd5e1.
  */
 export const RADAR_COR_AZUL = { bom: '#86efac', atencao: '#fde047', ruim: '#f87171' } as const
-export const RADAR_COR_CLARO = { bom: '#14532d', atencao: '#713f12', ruim: '#7f1d1d' } as const
+export const RADAR_COR_CLARO = { bom: '#14532d', atencao: '#b91c1c', ruim: '#7f1d1d' } as const
+/**
+ * No fundo claro, "atenção" não é amarelo: é o TOM CLARO da cor do tipo —
+ * vermelho-claro para despesa chegando no limite, verde-claro para receita
+ * chegando perto. Pedido do Guilherme: o amarelo-escuro que passava no fundo
+ * claro era marrom, e não dizia se era despesa ou receita. Medido no cinza
+ * #e2e8f0 do cabeçalho: #b91c1c 5,25 e #18773d 4,55; separados do tom escuro
+ * por 1,55 e 1,62. Ver corRadarClaro.
+ */
+export const RADAR_ATENCAO_RECEITA_CLARO = '#18773d'
+
+/** A cor de uma faixa no fundo claro, considerando o tipo. */
+export function corRadarClaro(faixa: FaixaRadar, isEntrada: boolean): string {
+  return faixa === 'atencao' && isEntrada ? RADAR_ATENCAO_RECEITA_CLARO : RADAR_COR_CLARO[faixa]
+}
 export const RADAR_TRILHO_AZUL = 'rgba(15,23,42,.4)'
 export const RADAR_TRILHO_BRANCO = '#e2e8f0'
 export type FaixaRadar = keyof typeof RADAR_COR_AZUL

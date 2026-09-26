@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
+import { corRadarClaro, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -146,7 +146,7 @@ export default function EvolucaoLinha({
   const fixaPaga = !isEntrada && !!cadastro?.fixa && real > 0 && percArred <= 1
 
   const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
-  const cor = semDados ? '#94a3b8' : COR[faixa]
+  const cor = semDados ? '#94a3b8' : corRadarClaro(faixa, isEntrada)
   // "Disponível / Estourou" sai das colunas e vai para a linha de status: é o
   // número que explica os cenários, e não pode sumir junto com a coluna.
   // Fixa paga não tem "disponível": o saldo previsto já não conta nada dela, e

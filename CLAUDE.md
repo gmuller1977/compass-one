@@ -289,16 +289,23 @@ e foi junto. A barrinha dos cartões ganhou o desenho da barra de grupo — tril
 escuro, borda branca, 8px —, porque sobre o trilho claro o vermelho do grupo
 ficava em 2,95. `barCorSobreAzul`, a segunda paleta de barra sobre azul, saiu.
 
-**Os cabeçalhos de grupo usam o AZUL-CLARO dos dias futuros de Lançamentos
-(`#bfdbfe → #93c5fd`), com texto escuro.** Pedido do Guilherme em 26/09/2026:
-empilhados, os cabeçalhos escuros pesavam demais. Passou pelo azul médio dos
-dias passados antes, no mesmo dia. No azul-claro a paleta se inverte, e o pior
-caso é o extremo ESCURO, `#93c5fd`. Grupo e categoria usam **uma paleta só**,
-`RADAR_COR_CLARO` — `#14532d` / `#713f12` / `#7f1d1d`, a de Lançamentos para o
-azul-claro: 5,05 / 4,81 / 5,56 no `#93c5fd`, e acima de 8 no branco. As cores
-que as categorias usavam (`#15803d`, `#a16207`, `#b91c1c`) reprovavam no
-azul-claro (2,78 / 2,73 / 3,59). O amarelo virou marrom-dourado: é o único que
-passa. A barra do grupo tem trilho branco e borda marinho `#1e3a8a` (5,74).
+**Os cabeçalhos de grupo são CINZA-CLARO (`#f1f5f9 → #e2e8f0`), com borda
+`#cbd5e1` e texto escuro.** Pedido do Guilherme em 26/09/2026: empilhados, os
+cabeçalhos escuros pesavam demais. Passou no mesmo dia pelo azul médio dos
+dias passados e pelo azul-claro dos dias futuros de Lançamentos. O cinza ficou
+porque é neutro: não puxa o tom do vermelho e do verde, e dá espaço para o tom
+claro de cada um se distinguir do escuro — no azul-claro o vermelho-claro mais
+claro que passava (`#952525`) era quase igual ao escuro (1,23). A borda
+existe porque o cinza se separa pouco do branco das categorias (1,23).
+
+Grupo e categoria usam **uma paleta só**, `RADAR_COR_CLARO` com
+`corRadarClaro`: verde-escuro `#14532d` dentro do previsto, vermelho-escuro
+`#7f1d1d` estourado, e **"chegando no limite" no TOM CLARO da cor do tipo** —
+vermelho-claro `#b91c1c` na despesa, verde-claro `#18773d` na receita. O
+amarelo saiu do fundo claro: o único que passava era marrom, e não dizia se era
+despesa ou receita. Medido no pior caso, `#e2e8f0`: 7,39 / 4,55 / 5,25 / 8,13;
+nome `#1e3a8a` 8,40; separação claro × escuro 1,55 no vermelho e 1,62 no
+verde. A barra do grupo tem trilho branco e borda marinho `#1e3a8a`.
 
 **Os cartões do topo e o rodapé continuam no azul-escuro**, com `RADAR_COR_AZUL`:
 `#86efac` / `#fde047` / `#f87171`. O vermelho é o da caixa Saídas de

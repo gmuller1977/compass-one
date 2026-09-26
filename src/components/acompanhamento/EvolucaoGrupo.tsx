@@ -2,13 +2,13 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
-import { RADAR_COR_CLARO as COR, faixaRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, corRadarClaro, faixaRadar } from './radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
 /**
- * O cabeçalho do grupo é SEMPRE azul-claro, e a cor fica só na barra e nos
- * números.
+ * O cabeçalho do grupo tem fundo FIXO — cinza-claro —, e a cor fica só na
+ * barra e nos números.
  * Decidido pelo Guilherme em 26/09/2026. Antes o fundo inteiro mudava com o
  * percentual — azul-claro, azul-escuro, vermelho acima de 100% —, e a barra
  * era um traço de 60×5px que ninguém lia.
@@ -22,11 +22,12 @@ import EvolucaoLinha from './EvolucaoLinha'
  * "Atenção" é amarelo, não laranja: laranja e vermelho tinham quase o mesmo
  * brilho, e o amarelo casa com o aviso do otimista na barra do rodapé.
  */
-// O AZUL-CLARO dos dias futuros de Lançamentos, e não o escuro dos cartões:
-// empilhados, os cabeçalhos escuros pesavam demais na tela. Passou pelo azul
-// médio dos dias passados antes de chegar aqui, no mesmo dia.
-const FUNDO   = 'linear-gradient(135deg, #bfdbfe, #93c5fd)'
-// Azul-claro pede texto escuro: o nome no azul-marinho de Lançamentos, e os
+// CINZA-CLARO, e não azul: neutro, ele não puxa o tom do vermelho e do verde,
+// e deixa espaço para o tom claro de cada um ler diferente do escuro. Cinza
+// se separa pouco do branco das categorias (1,23), e por isso há borda.
+const FUNDO   = 'linear-gradient(135deg, #f1f5f9, #e2e8f0)'
+const BORDA   = '1px solid #cbd5e1'
+// Fundo claro pede texto escuro: o nome no azul-marinho de Lançamentos, e os
 // rótulos num cinza-azulado. Barra com trilho BRANCO e borda marinho.
 const TEXTO   = '#1e3a8a'
 const ROTULO  = 'rgba(15,23,42,.75)'
@@ -71,7 +72,8 @@ export default function EvolucaoGrupo({
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
-  const corNumero  = semDados ? TEXTO : COR[faixa]
+  const corFaixa   = corRadarClaro(faixa, isEntrada)
+  const corNumero  = semDados ? TEXTO : corFaixa
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
 
@@ -82,7 +84,7 @@ export default function EvolucaoGrupo({
         onClick={alternar}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
         style={{
-          background: FUNDO, color: TEXTO, cursor: 'pointer',
+          background: FUNDO, color: TEXTO, cursor: 'pointer', border: BORDA,
           borderRadius: aberto ? '12px 12px 0 0' : 12,
           padding: '12px 16px',
         }}>
@@ -132,7 +134,7 @@ export default function EvolucaoGrupo({
             boxSizing: 'border-box', border: `2px solid ${semDados ? 'rgba(30,58,138,.35)' : TEXTO}` }}>
             {!semDados && (
               <div style={{ height: '100%', borderRadius: 10, width: `${percClamp * 100}%`,
-                background: COR[faixa], transition: 'width .3s ease' }} />
+                background: corFaixa, transition: 'width .3s ease' }} />
             )}
           </div>
           <span aria-hidden="true" style={{
