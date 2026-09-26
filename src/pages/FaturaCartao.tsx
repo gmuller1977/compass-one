@@ -106,14 +106,20 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   //
   // O pagamento entra no extrato bancario como a fixa "cartao-<id>", no mes de
   // VENCIMENTO, em qualquer conta de banco.
+  //
+  // Lê o EXTRATO (extratoData), e não `dados`: nesta tela `dados` é a FATURA,
+  // que só tem chaves de cartão — justamente as que o filtro abaixo descarta.
+  // Lendo `dados`, a busca voltava sempre vazia e "Paga" nunca aparecia, para
+  // cartão nenhum; e o aviso diário do valor da fatura abria até em fatura já
+  // paga. Corrigido em 26/09/2026, relatado pelo Guilherme (prova30).
   const faturaPaga = useMemo(() => {
     const dms = dadosBancariosDoMes(
-      dados as Record<string, { fixasConsolidadas?: Record<string, boolean> }>,
+      extratoData as Record<string, { fixasConsolidadas?: Record<string, boolean> }>,
       `-${anoVenc}-${String(mesVenc + 1).padStart(2, '0')}`,
       k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
     )
     return resolverFixaDoMes(`cartao-${contaId}`, dms).consolidada
-  }, [dados, contas, contaId, anoVenc, mesVenc])
+  }, [extratoData, contas, contaId, anoVenc, mesVenc])
 
   const faturaStatus =
     faturaPaga ? 'paga' :
