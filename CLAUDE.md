@@ -214,6 +214,28 @@ Construído e revertido no mesmo dia a pedido do Guilherme. O que o convenceu fo
 a explicação do envelope único, e um aviso curto na barra carrega essa ideia
 melhor que uma conta de três linhas.
 
+**Os grupos do Radar têm fundo azul FIXO; a cor mora na barra e nos números.**
+Pedido do Guilherme em 26/09/2026. Antes o fundo inteiro do cabeçalho mudava
+com o percentual (azul-claro → azul-escuro → vermelho), e a barra era um traço
+de 60×5px. Agora a barra ocupa a largura toda, com 10px, e é o que se lê
+primeiro; realizado e percentual são maiores e pintados com a cor da barra.
+Cada grupo é um acordeão, **fechado por padrão**: recolhida, a tela vira um
+painel de barras.
+
+Verde, laranja e vermelho, com os cortes que o app já usava: receita ≥ 100% é
+verde, ≥ 80% laranja, abaixo disso vermelho; despesa acima de 100% é vermelho,
+≥ 90% laranja, abaixo verde. **A cor segue o percentual arredondado** — o que
+está escrito. Com o exato, 89,53% aparecia como "90%" em verde, e 90% de
+verdade é laranja.
+
+Medido no extremo mais claro do fundo, `#1e40af`: o número verde é o MESMO da
+barra (`#4ade80`, 5,01:1); laranja e vermelho saturados reprovam como texto
+(3,85 e 3,15), então o número usa o tom claro da mesma cor — `#fdba74` 5,17 e
+`#fca5a5` 4,60. O trilho da barra é **escuro** (`#0f172a` a 40%): sobre trilho
+claro o laranja e o vermelho caíam para 2,47 e 2,02 e sumiam. A legenda do
+tutorial passou de 🟡 Amarelo para 🟠 Laranja. Os cartões do topo continuam
+com o âmbar `#fbbf24` na barra — não foram tocados.
+
 **Tentativa descartada, para não repetir:** uma cópia da tela, `/radar-previsto`,
 com um bloco "Como o mês termina" em acordeão — receitas previstas, fixas a
 pagar, variável a realizar e fatura, cada uma abrindo grupo → categoria.

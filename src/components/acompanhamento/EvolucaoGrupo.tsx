@@ -1,33 +1,43 @@
+import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
-// A rampa PULA a faixa #60a5fa..#3b82f6 de proposito: ali nenhum texto
-// funciona. Escuro (#1e3a8a) da 2,8:1 e branco da 3,7:1 — os dois reprovam.
-// O salto do 25% para o 50% e o preco de ter contraste em todos os degraus,
-// e acaba ajudando: marca visualmente a virada da metade do orcamento.
-const GRADIENT_STEPS = [
-  { pct: 0,   from: '#dbeafe', to: '#bfdbfe', text: '#1e3a8a' },  //  6,9:1
-  { pct: 25,  from: '#bfdbfe', to: '#93c5fd', text: '#1e3a8a' },  //  5,7:1
-  { pct: 50,  from: '#2563eb', to: '#1d4ed8', text: '#fff'    },  //  5,2:1
-  { pct: 75,  from: '#1d4ed8', to: '#1e40af', text: '#fff'    },  //  6,7:1
-  { pct: 90,  from: '#1e40af', to: '#1e3a8a', text: '#fff'    },  //  8,7:1
-  { pct: 100, from: '#1e3a8a', to: '#0f2878', text: '#fff'    },  // 10,4:1
-]
+/**
+ * O cabeçalho do grupo é SEMPRE azul, e a cor fica só na barra e nos números.
+ * Decidido pelo Guilherme em 26/09/2026. Antes o fundo inteiro mudava com o
+ * percentual — azul-claro, azul-escuro, vermelho acima de 100% —, e a barra
+ * era um traço de 60×5px que ninguém lia.
+ *
+ * O fundo carrega número colorido, então vale a regra do CLAUDE.md: nenhum
+ * azul com valor colorido mais claro que #1e40af. Medido nesse extremo:
+ *
+ *   número  #4ade80 5,01 · #fdba74 5,17 · #fca5a5 4,60 · branco 85% 6,75
+ *   barra   contra o trilho escuro: #4ade80 6,92 · #fb923c 5,32 · #f87171 4,36
+ *
+ * O verde do número é o MESMO da barra. Laranja e vermelho saturados reprovam
+ * como texto (3,85 e 3,15), então o número usa o tom claro da mesma cor. O
+ * trilho é escuro de propósito: sobre um trilho claro o laranja e o vermelho
+ * caíam para 2,47 e 2,02 e a barra sumia.
+ */
+const FUNDO   = 'linear-gradient(135deg, #0f2878, #1e40af)'
+const TRILHO  = 'rgba(15,23,42,.4)'
+const BARRA   = { bom: '#4ade80', atencao: '#fb923c', ruim: '#f87171' } as const
+const NUMERO  = { bom: '#4ade80', atencao: '#fdba74', ruim: '#fca5a5' } as const
+type Faixa = keyof typeof BARRA
 
-function corHeaderGrupo(percentual: number) {
-  if (percentual > 100) {
-    return { bg: 'linear-gradient(135deg, #991b1b, #dc2626)', text: '#fff', dark: false }
-  }
-  let faixa = GRADIENT_STEPS[0]
-  for (const c of GRADIENT_STEPS) { if (percentual >= c.pct) faixa = c }
-  return {
-    bg: `linear-gradient(135deg, ${faixa.from}, ${faixa.to})`,
-    text: faixa.text,
-    dark: faixa.text !== '#fff',
-  }
+/**
+ * Receita: chegar ao planejado é bom. Despesa: passar dele é ruim. Os cortes
+ * são os mesmos que o app já usava nas barras sobre azul (barCorSobreAzul) —
+ * só o "atenção" passou de amarelo para laranja.
+ */
+function faixaDoGrupo(perc: number, isEntrada: boolean): Faixa {
+  if (isEntrada) return perc >= 1 ? 'bom' : perc >= 0.8 ? 'atencao' : 'ruim'
+  if (perc > 1) return 'ruim'
+  if (perc >= 0.9) return 'atencao'
+  return 'bom'
 }
 
 interface EvolucaoGrupoProps {
@@ -43,6 +53,9 @@ interface EvolucaoGrupoProps {
 export default function EvolucaoGrupo({
   tipo, grupo, planCats, realMap, categorias, cartaoNomes, mes,
 }: EvolucaoGrupoProps) {
+  // Fechado por padrão: com os grupos recolhidos a tela vira um painel de
+  // barras que se lê de cima a baixo. Quem quer as categorias abre o grupo.
+  const [aberto, setAberto] = useState(false)
   const isEntrada = tipo === 'entrada'
   const grupoLabel = grupo === '__sem_grupo__' ? 'Outras' : grupo
 
@@ -58,70 +71,91 @@ export default function EvolucaoGrupo({
     return iconeCategoria(categorias, primNome).icone
   })()
 
+  const semDados   = totalPrev <= 0 && totalReal <= 0
   const perc       = totalPrev > 0 ? totalReal / totalPrev : (totalReal > 0 ? 1 : 0)
   const percClamp  = Math.min(perc, 1)
-  const percentual = Math.round(perc * 100)
-  const percLabel  = totalPrev > 0 || totalReal > 0 ? `${percentual}%` : '—'
-
-  const cor      = corHeaderGrupo(percentual)
-  const barFill  = cor.dark ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.7)'
-  const barTrack = cor.dark ? 'rgba(0,0,0,0.1)'  : 'rgba(255,255,255,0.2)'
-  const tipoLabel = isEntrada ? 'Recebimento' : 'Pagamento'
+  const percLabel  = semDados ? '—' : `${Math.round(perc * 100)}%`
+  // A cor segue o percentual ARREDONDADO, o que está escrito na tela. Com o
+  // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
+  // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
+  const faixa      = faixaDoGrupo(Math.round(perc * 100) / 100, isEntrada)
+  const corNumero  = semDados ? '#fff' : NUMERO[faixa]
+  const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
+  const alternar   = () => setAberto(v => !v)
 
   return (
     <div style={{ flexShrink: 0 }}>
-      {/* Header com gradiente dinâmico */}
-      <div style={{
-        background: cor.bg, borderRadius: '12px 12px 0 0',
-        padding: '10px 14px', color: cor.text,
-        display: 'flex', alignItems: 'center', gap: 10,
-      }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          background: cor.dark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
-          {grupoIcone}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700 }}>{tipoLabel} — {grupoLabel}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <div style={{ fontSize: 11, opacity: cor.dark ? 0.75 : 0.9, whiteSpace: 'nowrap' }}>
-            <strong style={{ fontWeight: 700 }}>{totalReal > 0 ? fmt(totalReal) : '—'}</strong>
-            <span style={{ opacity: 0.65 }}> de </span>
-            {totalPrev > 0 ? fmt(totalPrev) : '—'}
+      <div
+        role="button" tabIndex={0} aria-expanded={aberto}
+        onClick={alternar}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
+        style={{
+          background: FUNDO, color: '#fff', cursor: 'pointer',
+          borderRadius: aberto ? '12px 12px 0 0' : 12,
+          padding: '12px 16px 14px',
+        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+            background: 'rgba(255,255,255,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+            {grupoIcone}
           </div>
-          <div style={{ width: 60, height: 5, background: barTrack, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
-            <div style={{ height: '100%', borderRadius: 2, width: `${percClamp * 100}%`, background: barFill }} />
+          <div style={{ flex: 1, minWidth: 140, fontSize: 13, fontWeight: 700 }}>
+            {tipoLabel} — {grupoLabel}
           </div>
-          <div style={{ fontSize: 12, fontWeight: 800, minWidth: 30, textAlign: 'right' }}>{percLabel}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap',
+            fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: corNumero }}>
+              {totalReal > 0 ? fmt(totalReal) : '—'}
+            </span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
+              de {totalPrev > 0 ? fmt(totalPrev) : '—'}
+            </span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: corNumero, minWidth: 44, textAlign: 'right' }}>
+              {percLabel}
+            </span>
+          </div>
+          <span aria-hidden="true" style={{
+            fontSize: 12, color: 'rgba(255,255,255,.85)', width: 12, textAlign: 'center',
+            transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none',
+          }}>▾</span>
+        </div>
+
+        {/* A barra ocupa a largura toda e tem 10px: é ela que se lê primeiro. */}
+        <div style={{ height: 10, marginTop: 10, borderRadius: 5, background: TRILHO, overflow: 'hidden' }}>
+          {!semDados && (
+            <div style={{ height: '100%', borderRadius: 5, width: `${percClamp * 100}%`,
+              background: BARRA[faixa], transition: 'width .3s ease' }} />
+          )}
         </div>
       </div>
 
-      {/* Container branco com bordas */}
-      <div style={{
-        background: '#fff', border: '1px solid #e2e8f0',
-        borderTop: 0, borderRadius: '0 0 12px 12px', overflow: 'hidden',
-      }}>
-        {allCats.map((cat, idx) => {
-          const cd = pickReal(realMap, cat.nome, cat.descricao)
-          return (
-            <EvolucaoLinha
-              key={`${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`}
-              nome={cat.nome}
-              descricao={cat.descricao || undefined}
-              prev={cat.v[mes] ?? 0}
-              real={cd?.total ?? 0}
-              isEntrada={isEntrada}
-              categorias={categorias}
-              lancamentos={cd?.lancamentos ?? []}
-              totalBanc={cd?.totalBanc ?? 0}
-              totalCart={cd?.totalCart ?? 0}
-              totalDinheiro={cd?.totalDinheiro ?? 0}
-              mes={mes}
-            />
-          )
-        })}
-      </div>
+      {aberto && (
+        <div style={{
+          background: '#fff', border: '1px solid #e2e8f0',
+          borderTop: 0, borderRadius: '0 0 12px 12px', overflow: 'hidden',
+        }}>
+          {allCats.map((cat, idx) => {
+            const cd = pickReal(realMap, cat.nome, cat.descricao)
+            return (
+              <EvolucaoLinha
+                key={`${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`}
+                nome={cat.nome}
+                descricao={cat.descricao || undefined}
+                prev={cat.v[mes] ?? 0}
+                real={cd?.total ?? 0}
+                isEntrada={isEntrada}
+                categorias={categorias}
+                lancamentos={cd?.lancamentos ?? []}
+                totalBanc={cd?.totalBanc ?? 0}
+                totalCart={cd?.totalCart ?? 0}
+                totalDinheiro={cd?.totalDinheiro ?? 0}
+                mes={mes}
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
