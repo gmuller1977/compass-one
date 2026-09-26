@@ -27,9 +27,12 @@ export type FaixaRadar = keyof typeof RADAR_COR_AZUL
 
 /**
  * Receita: chegar ao planejado é bom. Despesa: passar dele é ruim. Os cortes
- * são os que o app já usava (barCorSobreAzul). Recebe o percentual JÁ
- * ARREDONDADO, o que está escrito na tela — com o exato, 89,53% aparecia "90%"
- * em verde, e 90% é amarelo.
+ * são os que o app já usava nas barras sobre azul. Vale para o cabeçalho de
+ * grupo, a linha de categoria e as barrinhas dos cartões do topo — os três
+ * tons de vermelho numa tela só foram o motivo de juntar tudo aqui.
+ *
+ * Recebe o percentual JÁ ARREDONDADO, o que está escrito na tela — com o
+ * exato, 89,53% aparecia "90%" em verde, e 90% é amarelo.
  */
 export function faixaRadar(percArredondado: number, isEntrada: boolean): FaixaRadar {
   if (isEntrada) return percArredondado >= 1 ? 'bom' : percArredondado >= 0.8 ? 'atencao' : 'ruim'

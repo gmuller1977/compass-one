@@ -276,6 +276,18 @@ ACIMA do previsto continua vermelha**, com o estouro — Plano de Saúde, 1.123,
 de 973, é 15% a mais. "Até o previsto" usa o percentual arredondado, o que está
 escrito: Consórcio 460,94 de 460 aparece "100%" e fica verde. O cadastro é
 achado pelo par (nome, variante); o nome sozinho só vale quando é único.
+
+**No Radar, um tom de cada cor por fundo: um para o azul, outro para o
+branco.** O Guilherme contou três vermelhos na mesma tela — cartão Despesas
+(`#f87171`), barra de grupo (`#fca5a5`), barra de categoria (`#b91c1c`). Um só
+é impossível: para passar 4,5:1 como texto no azul o vermelho precisa de
+brilho acima de 0,44, e no branco abaixo de 0,18. Então tudo que está no azul
+— cartões, grupos, barra do rodapé — usa `RADAR_COR_AZUL`, e o que está no
+branco usa `RADAR_COR_BRANCO`. O cartão Despesas com `#f87171` dava 3,15 e
+reprovava; o amarelo das barrinhas (`#fbbf24`) também era um segundo amarelo,
+e foi junto. A barrinha dos cartões ganhou o desenho da barra de grupo — trilho
+escuro, borda branca, 8px —, porque sobre o trilho claro o vermelho do grupo
+ficava em 2,95. `barCorSobreAzul`, a segunda paleta de barra sobre azul, saiu.
 Os lançamentos, ao abrir uma categoria, continuam no painel claro de antes.
 
 **"Atenção" é amarelo, não laranja.** Foi laranja por algumas horas, a pedido

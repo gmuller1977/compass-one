@@ -10,7 +10,8 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import TutorialCard from '../components/TutorialCard'
-import { COR, fmt, MESES_FULL, diasNoMes, barCorSobreAzul, type CatReal } from '../components/acompanhamento/AcShared'
+import { COR, fmt, MESES_FULL, diasNoMes, type CatReal } from '../components/acompanhamento/AcShared'
+import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev } from '../components/acompanhamento/evolucaoCalcs'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
@@ -149,6 +150,11 @@ export default function RadarFinanceiro() {
   const percE = perc(totalRealE, totalPrevE)
   const percS = perc(totalRealS, totalPrevS)
   const comPlano = (p: number | null) => (p === null ? '' : ` · ${Math.round(p * 100)}%`)
+  // As barrinhas dos cartões seguem a MESMA regra e as MESMAS cores das barras
+  // de grupo: o cartão tem o mesmo fundo azul, e três tons de vermelho na mesma
+  // tela (cartão, grupo, categoria) foram o motivo desta troca. Categoria fica
+  // com o tom escuro porque o fundo dela é branco — ver radarCores.
+  const corBarra = (p: number, isEntrada: boolean) => RADAR_COR_AZUL[faixaRadar(Math.round(p * 100) / 100, isEntrada)]
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
@@ -219,17 +225,17 @@ export default function RadarFinanceiro() {
           sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />
         <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
-          valueColor="#4ade80" sublabel={`de ${fmt(totalPrevE)}${comPlano(percE)}`} style={{ flex: 1 }}
+          valueColor={RADAR_COR_AZUL.bom} sublabel={`de ${fmt(totalPrevE)}${comPlano(percE)}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas}>
-          {percE !== null && <KpiBarra perc={percE} cor={barCorSobreAzul(percE, true)} />}
+          {percE !== null && <KpiBarra perc={percE} cor={corBarra(percE, true)} />}
         </KpiCard>
         <KpiCard icon="↓" label="Despesas" value={fmt(totalRealS)}
-          valueColor="#f87171" sublabel={`de ${fmt(totalPrevS)}${comPlano(percS)}`} style={{ flex: 1 }}
+          valueColor={RADAR_COR_AZUL.ruim} sublabel={`de ${fmt(totalPrevS)}${comPlano(percS)}`} style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas}>
-          {percS !== null && <KpiBarra perc={percS} cor={barCorSobreAzul(percS)} />}
+          {percS !== null && <KpiBarra perc={percS} cor={corBarra(percS, false)} />}
         </KpiCard>
         <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
-          valueColor={saldoAtual >= 0 ? '#fff' : '#f87171'}
+          valueColor={saldoAtual >= 0 ? '#fff' : RADAR_COR_AZUL.ruim}
           sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'}
           style={{ flex: 1 }}
           onClick={alternarDetalhe} expandido={detalheContas} />

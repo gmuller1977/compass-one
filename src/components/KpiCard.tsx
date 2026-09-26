@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { RADAR_TRILHO_AZUL } from './acompanhamento/radarCores'
 
 export interface KpiCardProps {
   icon?: string
@@ -30,19 +31,20 @@ const SUBLABEL_STYLE: React.CSSProperties = {
 /**
  * Barra de progresso dentro de um KpiCard: realizado sobre o planejado.
  *
- * Vive sobre o azul do cartão, então é elemento gráfico e vale o limite de
- * 3:1, não o de texto — ver CLAUDE.md. As cores são as que AcMobileView já usa
- * sobre o mesmo fundo.
+ * O MESMO desenho da barra do grupo no Radar — trilho escuro e borda branca —,
+ * numa escala menor. O trilho claro de antes deixava o vermelho em 2,02 (e o
+ * vermelho do grupo em 2,95) contra ele; o escuro dá 6,35 a 9,14, e a borda
+ * branca (8,72 no azul) desenha os 100%. Elemento gráfico: vale 3:1.
  */
 export function KpiBarra({ perc, cor }: { perc: number; cor: string }) {
   return (
     <div style={{
-      marginTop: 6, height: 5, borderRadius: 3, overflow: 'hidden',
-      background: 'rgba(255,255,255,.18)',
+      marginTop: 6, height: 8, borderRadius: 4, overflow: 'hidden',
+      background: RADAR_TRILHO_AZUL, border: '1px solid #fff', boxSizing: 'border-box',
     }}>
       <div style={{
         width: `${Math.max(0, Math.min(perc, 1)) * 100}%`, height: '100%',
-        borderRadius: 3, background: cor, transition: 'width .3s',
+        borderRadius: 4, background: cor, transition: 'width .3s',
       }} />
     </div>
   )
