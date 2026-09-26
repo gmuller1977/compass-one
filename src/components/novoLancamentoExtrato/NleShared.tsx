@@ -120,24 +120,9 @@ export const FORMAS_ENT: { id: FormaPag; label: string }[] = [
 ]
 
 // ── Funções auxiliares ────────────────────────────────────────────────
-export function ehFimDeSemana(dia: number, mes: number, ano: number) {
-  const dow = new Date(ano, mes, dia).getDay()
-  return dow === 0 || dow === 6
-}
-export function diaUtilOuProximo(dia: number, mes: number, ano: number, totalDias: number) {
-  let d = dia
-  while (d <= totalDias && ehFimDeSemana(d, mes, ano)) d++
-  return Math.min(d, totalDias)
-}
-export function diaEfetivoFixa(
-  f: CatFixa, overrides: Record<string, number> | undefined,
-  automatico: boolean, mes: number, ano: number, totalDias: number,
-) {
-  const override = overrides?.[f.id]
-  if (override !== undefined) return override
-  if (automatico) return diaUtilOuProximo(f.diaVencimento, mes, ano, totalDias)
-  return f.diaVencimento
-}
+// A regra do dia da fixa mora em utils/diaDaFixa: o motor de previsão e a tela
+// Início usam a mesma. Reexportada aqui para Lançamentos não mudar de import.
+export { ehFimDeSemana, diaUtilOuProximo, diaEfetivoFixa } from '../../utils/diaDaFixa'
 
 export function realcarFoco(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.border = `1.5px solid ${COR.azul}`

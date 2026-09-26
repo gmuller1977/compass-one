@@ -883,6 +883,28 @@ O `ResponsiveContainer` do recharts não desenha fora do navegador — a
 renderização estática sai vazia. Para ver o gráfico sem login, empacotar o
 componente com `rolldown` numa pasta ignorada e servir com `vite preview`.
 
+**"Contas dos próximos 7 dias" são as linhas da memória de cálculo, filtradas
+pelo vencimento.** Feito em 26/09/2026. Não há contagem própria: a lista sai de
+`detalharPrevisto` — "Despesas fixas a pagar" e "Fatura do cartão", as mesmas
+que o saldo final previsto desconta —, por `contasAVencer` em
+[`contasAVencer.ts`](src/utils/contasAVencer.ts). Herda todas as regras de lá
+sem repetir nenhuma: confirmada não entra, sem plano não entra, inativa não
+entra, fatura só com valor lançado e sem pagamento confirmado.
+
+Para isso as linhas de fixa e fatura do motor ganharam `id` e `dia` —
+informativos, nenhum total os lê; a `prova28` segue com 534 invariantes contra
+a versão anterior. O dia é a regra de Lançamentos (dia movido no mês → dia útil
+se automático → cadastro), que saiu de `NleShared` para
+[`diaDaFixa.ts`](src/utils/diaDaFixa.ts); `NleShared` reexporta, e Lançamentos
+não mudou de import.
+
+A janela pode atravessar o mês (28/09 a 04/10), então o detalhe é pedido até o
+mês do último dia. **Vencida no mês corrente e não paga aparece primeiro, como
+atrasada** — é a regra "fixa vencida é atrasada, não inexistente". A `prova34`
+cobre atrasada, dia útil caindo fora da janela, dia movido, confirmada, inativa,
+sem plano, fatura paga e fatura em aberto, e tem controle negativo: tudo pago,
+lista vazia.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por

@@ -6,6 +6,8 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, memoriaDoRadar, type Deps } from '../utils/saldoConta'
 import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
+import { contasAVencer } from '../utils/contasAVencer'
+import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import { RADAR_COR_AZUL } from '../components/acompanhamento/radarCores'
@@ -156,6 +158,10 @@ export default function Dashboard() {
     [ehMesCorrente, deps, serie],
   )
   const fimPlano = useMemo(() => fimDoPlanejamento(planos), [planos])
+
+  // Contas dos próximos 7 dias: as linhas de fixa e fatura da memória de
+  // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
+  const aVencer = useMemo(() => (ehMesCorrente ? contasAVencer(deps) : []), [ehMesCorrente, deps])
 
   // A lista de últimas movimentações não é número: segue lendo o extrato.
   const ultimosLanc = useMemo(() => {
@@ -437,6 +443,13 @@ export default function Dashboard() {
             </div>
           )
         })()}
+
+        {/* ── Contas dos próximos 7 dias ──
+            Só quando há alguma. Atrasada em COR.erroTexto (6,5:1 no branco). */}
+        {aVencer.length > 0 && (
+          <ContasAVencerCard contas={aVencer} categorias={categorias} isMobile={isMobile}
+            onAbrir={() => navigate('/novo-lancamento')} />
+        )}
 
         {/* ── Evolução do saldo: passado real, futuro previsto ── */}
         {evolucao.length >= 2 && (

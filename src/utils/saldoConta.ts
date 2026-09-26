@@ -3,6 +3,8 @@ import type { Memoria } from '../components/novoLancamentoExtrato/NleShared'
 import { parseBRL } from './moeda'
 import { valorFixaNoMes } from './valorFixa'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
+import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
+import { ehAutomaticoCategoria } from './categoriaIcone'
 import { construirRealizadoMes } from './realizadoMes'
 import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
 
@@ -586,6 +588,14 @@ export type ItemPrevisto = {
   nome: string
   descricao?: string
   valor: number
+  /**
+   * Só nas FIXAS e FATURAS: o id da fixa (`cartao-<id>` na fatura) e o dia em
+   * que ela vence no mês, pela mesma regra que a desenha em Lançamentos
+   * (utils/diaDaFixa). Informativos — nenhum total lê estes campos. É deles
+   * que sai a lista "Contas dos próximos 7 dias" da tela Início.
+   */
+  id?: string
+  dia?: number
 }
 
 /**
@@ -628,6 +638,10 @@ export function detalharProjecaoDaConta(
     k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
   )
   const padrao = contaPadrao(contas)
+  const totalDias = new Date(ano, mes + 1, 0).getDate()
+  // O dia movido mora no DadosMes da conta de origem; procurar em todas acha
+  // o mesmo registro sem precisar saber qual é a origem.
+  const movidas = (id: string) => dms.find(dm => dm.fixasMovidas?.[id] !== undefined)?.fixasMovidas
 
   let entradas = 0
   let saidas = 0
@@ -647,6 +661,9 @@ export function detalharProjecaoDaConta(
         balde: cat.tipo === 'entrada' ? 'entrada' : 'banco',
         grupo: cat.grupo ?? '__sem_grupo__',
         nome: cat.nome, descricao: cat.descricao, valor: v,
+        id: cat.id,
+        dia: diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, movidas(cat.id),
+          ehAutomaticoCategoria(categorias, cat.nome), mes, ano, totalDias),
       }
       if (cat.tipo === 'entrada') { entradas += v; fixasEntrada.push(item) }
       else { saidas += v; fixasSaida.push(item) }
@@ -675,6 +692,9 @@ export function detalharProjecaoDaConta(
       if (v > 0) faturas.push({
         balde: 'cartao', grupo: '__fatura__',
         nome: c.banco || c.nome, valor: v,
+        id: `cartao-${c.id}`,
+        dia: diaEfetivoFixa({ id: `cartao-${c.id}`, diaVencimento: c.diaVencimento ?? 1 },
+          movidas(`cartao-${c.id}`), faturaEhAutomatica(c), mes, ano, totalDias),
       })
     }
 
