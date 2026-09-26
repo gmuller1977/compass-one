@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_COR_BRANCO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
 
 interface EvolucaoLinhaProps {
   nome: string

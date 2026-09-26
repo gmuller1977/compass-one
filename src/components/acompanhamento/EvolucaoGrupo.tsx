@@ -2,34 +2,35 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type CatReal } from './AcShared'
-import { RADAR_COR_AZUL as COR, RADAR_TRILHO_AZUL as TRILHO, faixaRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, faixaRadar } from './radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
 /**
- * O cabeçalho do grupo é SEMPRE azul, e a cor fica só na barra e nos números.
+ * O cabeçalho do grupo é SEMPRE azul-claro, e a cor fica só na barra e nos
+ * números.
  * Decidido pelo Guilherme em 26/09/2026. Antes o fundo inteiro mudava com o
  * percentual — azul-claro, azul-escuro, vermelho acima de 100% —, e a barra
  * era um traço de 60×5px que ninguém lia.
  *
- * Barra e número usam EXATAMENTE a mesma cor, a pedido dele. O trilho é escuro
- * e a barra inteira tem borda branca: o trilho escuro sozinho sumia no azul, e
- * a borda desenha os 100% para a parte vazia se ler como vazia.
+ * Barra e número usam EXATAMENTE a mesma cor, a pedido dele — as mesmas das
+ * categorias abertas embaixo. A barra tem trilho branco e borda marinho, que
+ * desenha os 100% para a parte vazia se ler como vazia.
  *
- * As cores e os contrastes medidos moram em radarCores — número, barra,
- * trilho e borda, no pior caso do azul médio deste cabeçalho.
- *
- * Preço aceito: nestes tons pálidos as três cores têm quase o mesmo brilho
- * (1,03 a 1,10). Para daltonismo vermelho-verde as barras se parecem; o
- * percentual escrito ao lado desempata.
+ * As cores e os contrastes medidos moram em radarCores (RADAR_COR_CLARO).
  *
  * "Atenção" é amarelo, não laranja: laranja e vermelho tinham quase o mesmo
  * brilho, e o amarelo casa com o aviso do otimista na barra do rodapé.
  */
-// Azul MÉDIO, o dos dias passados de Lançamentos, e não o escuro dos cartões:
-// empilhados, os cabeçalhos escuros pesavam demais na tela. Mais claro que o
-// limite #1e40af do CLAUDE.md, e por isso a paleta é a pálida — ver radarCores.
-const FUNDO   = 'linear-gradient(135deg, #1d4ed8, #1e40af)'
+// O AZUL-CLARO dos dias futuros de Lançamentos, e não o escuro dos cartões:
+// empilhados, os cabeçalhos escuros pesavam demais na tela. Passou pelo azul
+// médio dos dias passados antes de chegar aqui, no mesmo dia.
+const FUNDO   = 'linear-gradient(135deg, #bfdbfe, #93c5fd)'
+// Azul-claro pede texto escuro: o nome no azul-marinho de Lançamentos, e os
+// rótulos num cinza-azulado. Barra com trilho BRANCO e borda marinho.
+const TEXTO   = '#1e3a8a'
+const ROTULO  = 'rgba(15,23,42,.75)'
+const TRILHO  = '#ffffff'
 
 interface EvolucaoGrupoProps {
   tipo: 'saida' | 'entrada'
@@ -70,7 +71,7 @@ export default function EvolucaoGrupo({
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
-  const corNumero  = semDados ? '#fff' : COR[faixa]
+  const corNumero  = semDados ? TEXTO : COR[faixa]
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
 
@@ -81,13 +82,13 @@ export default function EvolucaoGrupo({
         onClick={alternar}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
         style={{
-          background: FUNDO, color: '#fff', cursor: 'pointer',
+          background: FUNDO, color: TEXTO, cursor: 'pointer',
           borderRadius: aberto ? '12px 12px 0 0' : 12,
           padding: '12px 16px',
         }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
             {grupoIcone}
           </div>
@@ -118,7 +119,7 @@ export default function EvolucaoGrupo({
             <span style={{ fontSize: 16, fontWeight: 800, color: corNumero }}>
               {totalReal > 0 ? fmt(totalReal) : '—'}
             </span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
+            <span style={{ fontSize: 12, color: ROTULO }}>
               de {totalPrev > 0 ? fmt(totalPrev) : '—'}
             </span>
             <span style={{ fontSize: 16, fontWeight: 800, color: corNumero, minWidth: 44, textAlign: 'right' }}>
@@ -128,14 +129,14 @@ export default function EvolucaoGrupo({
           {/* Borda branca contornando a barra INTEIRA: desenha os 100% e deixa
               a parte vazia legível como vazia sobre o trilho escuro. */}
           <div style={{ width: 200, flexShrink: 0, height: 20, borderRadius: 10, background: TRILHO, overflow: 'hidden',
-            boxSizing: 'border-box', border: `2px solid ${semDados ? 'rgba(255,255,255,.5)' : '#fff'}` }}>
+            boxSizing: 'border-box', border: `2px solid ${semDados ? 'rgba(30,58,138,.35)' : TEXTO}` }}>
             {!semDados && (
               <div style={{ height: '100%', borderRadius: 10, width: `${percClamp * 100}%`,
                 background: COR[faixa], transition: 'width .3s ease' }} />
             )}
           </div>
           <span aria-hidden="true" style={{
-            fontSize: 12, color: 'rgba(255,255,255,.85)', width: 12, textAlign: 'center',
+            fontSize: 12, color: ROTULO, width: 12, textAlign: 'center',
             transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none',
           }}>▾</span>
         </div>

@@ -289,22 +289,26 @@ e foi junto. A barrinha dos cartões ganhou o desenho da barra de grupo — tril
 escuro, borda branca, 8px —, porque sobre o trilho claro o vermelho do grupo
 ficava em 2,95. `barCorSobreAzul`, a segunda paleta de barra sobre azul, saiu.
 
-**Os cabeçalhos de grupo usam o azul MÉDIO dos dias passados de Lançamentos
-(`#1d4ed8 → #1e40af`), e o lado azul do Radar usa a paleta oficial pálida.**
-Pedido do Guilherme em 26/09/2026: empilhados, os cabeçalhos escuros pesavam
-demais. O `#1d4ed8` é mais claro que o limite de `#1e40af` desta regra, e sobre
-ele os tons anteriores reprovavam (`#4ade80` 3,85, `#fca5a5` 3,53). Então
-`RADAR_COR_AZUL` passou a ser `#86efac` / `#fde047` / `#fecaca` — a mesma
-paleta de Lançamentos e da memória —, medida no pior caso `#1d4ed8`: 4,77 /
-5,08 / 4,63; barra contra o trilho 7,41 / 7,90 / 7,20; borda branca 6,70. Vale
-para cartões, grupos e rodapé, para continuar havendo um tom de cada cor no
-azul. **Os números acima que citam `#4ade80` e `#fca5a5` são da versão anterior.**
+**Os cabeçalhos de grupo usam o AZUL-CLARO dos dias futuros de Lançamentos
+(`#bfdbfe → #93c5fd`), com texto escuro.** Pedido do Guilherme em 26/09/2026:
+empilhados, os cabeçalhos escuros pesavam demais. Passou pelo azul médio dos
+dias passados antes, no mesmo dia. No azul-claro a paleta se inverte, e o pior
+caso é o extremo ESCURO, `#93c5fd`. Grupo e categoria usam **uma paleta só**,
+`RADAR_COR_CLARO` — `#14532d` / `#713f12` / `#7f1d1d`, a de Lançamentos para o
+azul-claro: 5,05 / 4,81 / 5,56 no `#93c5fd`, e acima de 8 no branco. As cores
+que as categorias usavam (`#15803d`, `#a16207`, `#b91c1c`) reprovavam no
+azul-claro (2,78 / 2,73 / 3,59). O amarelo virou marrom-dourado: é o único que
+passa. A barra do grupo tem trilho branco e borda marinho `#1e3a8a` (5,74).
 
-De brinde, corrigiu o rodapé negativo: `#fca5a5` sobre `#991b1b` dava 4,38;
-`#fecaca` dá 5,74. Preço aceito: nesses tons as três cores têm quase o mesmo
-brilho (1,03 a 1,10), e o vermelho claro é quase rosa — o "estourou" chama
-menos atenção. Os cartões do topo continuam no azul escuro: o `KpiCard` é
-compartilhado com Lançamentos.
+**Os cartões do topo e o rodapé continuam no azul-escuro**, com `RADAR_COR_AZUL`:
+`#86efac` / `#fde047` / `#f87171`. O vermelho é o da caixa Saídas de
+Lançamentos, e é **EXCEÇÃO À REGRA DE CONTRASTE, decidida pelo Guilherme**: dá
+3,15 como texto no cartão (18px, abaixo dos 18,7px de texto grande). Ele
+escolheu sabendo — o `#fecaca`, que passa, lia como rosa. Não "consertar" sem
+falar com ele. No rodapé negativo o fundo é vermelho e o número fica `#fecaca`
+(5,74): `#f87171` ali daria 3,00. Resultado: dois vermelhos na tela, o mínimo
+possível — um para o azul-escuro, outro para o claro. **Os números acima que
+citam `#4ade80`, `#fca5a5` e o azul médio são de versões anteriores.**
 
 **O TIPO do grupo é uma seta; a barra diz o STATUS.** O nome fica em branco,
 16px, do tamanho dos números. Antes dele, a mesma seta dos cartões do topo:
