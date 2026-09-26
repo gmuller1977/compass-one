@@ -126,11 +126,15 @@ com três contas, triplicava. Usar `resolverFixaDoMes` de
 [`utils/fixasDoMes.ts`](src/utils/fixasDoMes.ts), que resolve o mês inteiro de
 uma vez.
 
-**Em Lançamentos, só HOJE tem cor própria** — azul MÉDIO (`#1d4ed8 → #1e40af`;
-era o escuro até 26/09/2026). No azul médio quatro tons de hoje subiram para
-passar: rótulo 80% (4,89), saldo `#e2e8f0` (5,44), dia da semana 85% (5,28),
-botão "+" 60% (3,42); os selos HOJE e FIXA ganharam fundo marinho (9,82 e
-7,89). **Aberto, o dia passado ou futuro tem conteúdo BRANCO** — o cartão é
+**Em Lançamentos, só HOJE tem cor própria**: o cabeçalho usa o azul-ESCURO dos
+cartões do topo e da barra do rodapé (`#0f2878 → #1e40af`), e as **linhas de
+hoje, abertas, ficam em azul-CLARO** (`#bfdbfe → #93c5fd`, `TEMA_LINHAS_HOJE`),
+para se diferenciarem da barra. As linhas usam as cores escuras do tema dos
+outros dias: texto 5,74, receita 5,05, despesa 5,56, rótulo 4,91 no `#93c5fd`.
+No mesmo dia o cabeçalho passou pelo azul médio; os tons reforçados para ele
+ficaram — rótulo 80%, saldo `#e2e8f0`, dia da semana 85%, botão "+" 60%, selos
+HOJE e FIXA com fundo marinho —, e no escuro passam com mais folga (6,19 /
+7,08 / 6,75 / 4,20). **Aberto, o dia passado ou futuro tem conteúdo BRANCO** — o cartão é
 branco e só o cabeçalho pinta o cinza, como o acordeão do Radar. Os saldos
 inicial e atual dos cartões do topo seguem a paleta do Radar: verde positivo,
 vermelho negativo. Dias passados e

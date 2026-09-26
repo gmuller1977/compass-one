@@ -77,15 +77,16 @@ type Props = {
 
 // ── Temas temporais ──────────────────────────────────────────────────────────
 const TEMA = {
-  // HOJE: azul MÉDIO (antes o escuro) — pedido do Guilherme em 26/09/2026. É
-  // o único dia com cor própria. Mais claro que o limite #1e40af do CLAUDE.md,
-  // e por isso quatro tons subiram, medidos no pior caso #1d4ed8: rótulo 75% →
-  // 80% (4,49 → 4,89), saldo #93c5fd → #e2e8f0 (3,72 → 5,44), dia da semana
-  // 50% → 85% (2,84 → 5,28), botão "+" 40% → 60% (2,31 → 3,42). Branco 6,70,
-  // #86efac 4,77, #fecaca 4,63. O selo HOJE e o de FIXA ganharam fundo marinho:
-  // em branco/amarelo translúcido davam 3,98 e 3,59; agora 9,82 e 7,89.
+  // HOJE: o azul-ESCURO dos cartões do topo e da barra do rodapé
+  // (#0f2878 → #1e40af) — pedido do Guilherme em 26/09/2026, depois de passar
+  // um dia pelo azul médio. É o único dia com cor própria, e as LINHAS dele,
+  // abertas, ficam em azul-claro (TEMA_LINHAS_HOJE) para se diferenciarem da
+  // barra. Os tons reforçados no azul médio ficaram: rótulo 80%, saldo #e2e8f0,
+  // dia da semana 85%, botão "+" 60%, selos HOJE e FIXA com fundo marinho.
+  // Medido no extremo claro #1e40af: branco 8,72 · rótulo 6,19 · #86efac
+  // 6,21 · #fecaca 6,03 · saldo 7,08 · dia da semana 6,75 · "+" 4,20.
   current: {
-    cardBg:        'linear-gradient(135deg, #1d4ed8, #1e40af)',
+    cardBg:        'linear-gradient(135deg, #0f2878, #1e40af)',
     text:          '#fff',
     label:         'rgba(255,255,255,0.8)',
     rec:           '#86efac',
@@ -150,6 +151,19 @@ const TEMA = {
     fixaBadgeBg:   '#fde68a',
     fixaBadgeText: '#92400e',
   },
+}
+
+/**
+ * As LINHAS do dia de hoje, abertas: azul-CLARO, para se diferenciarem da barra
+ * do dia, que é azul médio — pedido do Guilherme em 26/09/2026. As cores são as
+ * escuras do tema dos outros dias; só o fundo e o destaque de edição mudam.
+ * Medido no pior caso, #93c5fd: texto 5,74 · receita 5,05 · despesa 5,56 ·
+ * rótulo 4,91. O cabeçalho de hoje continua no tema 'current'.
+ */
+const TEMA_LINHAS_HOJE = {
+  ...TEMA.future,
+  cardBg:     'linear-gradient(135deg, #bfdbfe, #93c5fd)',
+  listEditBg: 'rgba(255,255,255,0.45)',
 }
 
 
@@ -393,6 +407,8 @@ export default function NleExtrato({
             // ── Tema temporal ──────────────────────────────────────────────
             const temaNome = ehHoje?'current':'future'
             const tc = TEMA[temaNome]
+            // As linhas abertas têm tema próprio só hoje; nos outros dias é o mesmo.
+            const tl = ehHoje ? TEMA_LINHAS_HOJE : tc
 
             const cardBorder = selecionado?tc.selBorder:tc.cardBorder
             const cardShadow = selecionado?tc.selShadow:tc.cardShadow
@@ -407,7 +423,7 @@ export default function NleExtrato({
                   // Fora de hoje, o cartão é BRANCO e só o cabeçalho pinta o cinza:
                   // fechado, aparece só o cabeçalho; aberto, as linhas ficam no
                   // branco — o mesmo desenho do acordeão do Radar.
-                  background:ehHoje?tc.cardBg:'#fff',
+                  background:ehHoje?TEMA_LINHAS_HOJE.cardBg:'#fff',
                   boxShadow:cardShadow,
                   animation:highlightDia===dia?'rowSaved 1.2s ease-out':undefined,
                 }}>
@@ -504,15 +520,15 @@ export default function NleExtrato({
                   const catVisual=iconeCategoria(categorias,f.categoria)
                   const automatico=ehAutomatico(f)
                   const consolidada=mesDados.fixasConsolidadas?.[f.id]===true
-                  const corValor=consolidada?(f.tipo==='entrada'?tc.rec:tc.desp):tc.label
+                  const corValor=consolidada?(f.tipo==='entrada'?tl.rec:tl.desp):tl.label
                   const emEdicaoFixa=editandoFixaId===f.id
                   const valorMostrado=mesDados.fixasValorOverride?.[f.id]??f.valor
                   return(
                     <div key={f.id} onClick={e=>e.stopPropagation()}
-                      style={{background:emEdicaoFixa?tc.listEditBg:'transparent'}}>
+                      style={{background:emEdicaoFixa?tl.listEditBg:'transparent'}}>
                       <div onClick={()=>editarFixa(dia,f)}
                         style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
-                          padding:'10px 16px',borderBottom:`1px solid ${tc.listItemBdr}`}}>
+                          padding:'10px 16px',borderBottom:`1px solid ${tl.listItemBdr}`}}>
                         <input type="checkbox" checked={consolidada}
                           onClick={e=>e.stopPropagation()}
                           onChange={()=>{if(consolidada)desconsolidarFixa(f.id);else consolidarFixa(f.id)}}
@@ -524,12 +540,12 @@ export default function NleExtrato({
                           {catVisual.icone}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,fontWeight:500,color:consolidada?tc.text:tc.label,
+                          <div style={{fontSize:12,fontWeight:500,color:consolidada?tl.text:tl.label,
                             display:'flex',alignItems:'center',gap:5}}>
                             {ehFaturaFixa?'Cartão de Crédito':f.nome}
                             <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                               background:consolidada?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.07)',
-                              color:consolidada?tc.rec:tc.label}}>
+                              color:consolidada?tl.rec:tl.label}}>
                               {consolidada?(automatico?'automática ✓':'paga ✓'):'previsto'}
                             </span>
                             {/* Cor e fundo iguais aos do irmao: os tokens do
@@ -537,12 +553,12 @@ export default function NleExtrato({
                                 tom proprio teria de ser medido em cada um. */}
                             {f.inativa&&(
                               <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                                background:'rgba(255,255,255,0.07)',color:tc.label}}>
+                                background:'rgba(255,255,255,0.07)',color:tl.label}}>
                                 categoria inativa
                               </span>
                             )}
                           </div>
-                          <div style={{fontSize:10,color:tc.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>
+                          <div style={{fontSize:10,color:tl.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>
                             {ehFaturaFixa
                               ?`${f.categoria}${f.nome!==f.categoria?' · '+f.nome:''}`
                               :(f.descricao??f.subtitulo??f.categoria)
@@ -560,7 +576,7 @@ export default function NleExtrato({
                 {/* Lançamentos variáveis */}
                 {aberto&&ls.map(l=>{
                   const catVisual=iconeCategoria(categorias,l.categoria)
-                  const corValor=l.tipo==='entrada'?tc.rec:tc.desp
+                  const corValor=l.tipo==='entrada'?tl.rec:tl.desp
                   const emEdicao=editandoId===l.id
                   const catLower=l.categoria.toLowerCase()
                   const ehFaturaLanc=cartaoNomesExtrato.has(catLower)||
@@ -570,9 +586,9 @@ export default function NleExtrato({
                       onClick={e=>{e.stopPropagation();if(!l.id.startsWith('fatura-'))editarLancamento(dia,l)}}
                       style={{display:'flex',alignItems:'center',gap:10,
                         cursor:l.id.startsWith('fatura-')?'default':'pointer',
-                        padding:'10px 16px',borderBottom:`1px solid ${tc.listItemBdr}`,
-                        background:emEdicao?tc.listEditBg:'transparent'}}
-                      onMouseEnter={e=>{if(!emEdicao)e.currentTarget.style.background=tc.listHover}}
+                        padding:'10px 16px',borderBottom:`1px solid ${tl.listItemBdr}`,
+                        background:emEdicao?tl.listEditBg:'transparent'}}
+                      onMouseEnter={e=>{if(!emEdicao)e.currentTarget.style.background=tl.listHover}}
                       onMouseLeave={e=>{if(!emEdicao)e.currentTarget.style.background='transparent'}}>
                       <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
                         display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
@@ -580,11 +596,11 @@ export default function NleExtrato({
                         {catVisual.icone}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:600,color:tc.text,display:'flex',alignItems:'center',gap:5}}>
+                        <div style={{fontSize:12,fontWeight:600,color:tl.text,display:'flex',alignItems:'center',gap:5}}>
                           {ehFaturaLanc?'Cartão de Crédito':l.categoria}
                           <BadgePag fp={l.formaPagamento}/>
                         </div>
-                        <div style={{fontSize:11,color:tc.label,marginTop:1}}>
+                        <div style={{fontSize:11,color:tl.label,marginTop:1}}>
                           {ehFaturaLanc?l.categoria:(l.subCategoria||l.descricao)}
                         </div>
                       </div>
@@ -594,9 +610,9 @@ export default function NleExtrato({
                       {!l.id.startsWith('fatura-')&&(
                         <button onClick={e=>{e.stopPropagation();excluir(dia,l.id)}}
                           style={{border:'none',background:'transparent',cursor:'pointer',
-                            color:tc.delColor,fontSize:14,padding:'2px 5px',borderRadius:6}}
-                          onMouseEnter={e=>(e.currentTarget.style.color=tc.delHover)}
-                          onMouseLeave={e=>(e.currentTarget.style.color=tc.delColor)}>✕</button>
+                            color:tl.delColor,fontSize:14,padding:'2px 5px',borderRadius:6}}
+                          onMouseEnter={e=>(e.currentTarget.style.color=tl.delHover)}
+                          onMouseLeave={e=>(e.currentTarget.style.color=tl.delColor)}>✕</button>
                       )}
                     </div>
                   )
@@ -614,9 +630,9 @@ export default function NleExtrato({
                       }
                     }}
                     style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                      padding:9,fontSize:11,fontWeight:600,color:tc.addHoverColor,
-                      cursor:'pointer',border:'none',background:tc.addHoverBg,width:'100%',
-                      borderTop:`1px dashed ${tc.divider}`}}>
+                      padding:9,fontSize:11,fontWeight:600,color:tl.addHoverColor,
+                      cursor:'pointer',border:'none',background:tl.addHoverBg,width:'100%',
+                      borderTop:`1px dashed ${tl.divider}`}}>
                     + Adicionar neste dia
                   </button>
                   {mobileDiaForm===dia&&(
