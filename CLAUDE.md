@@ -780,6 +780,42 @@ calculados em separado, discordavam. O complemento da fatura é a única exceç�
 porque o plano não diz em qual cartão o gasto cai; ele entra uma vez, na conta
 que paga o cartão de vencimento mais cedo.
 
+**O previsto se abre em partes, e as partes saem da MESMA passagem que soma o
+total.** `detalharProjecaoDaConta` devolve o total e, ao lado, as linhas que o
+formam; `projecaoDaConta` virou só a soma dela, com a assinatura intacta.
+Feito em 26/09/2026 para o bloco de previsto do Radar — é o mesmo desenho da
+memória de cálculo de Lançamentos, que só convence porque não há uma segunda
+função para discordar do número.
+
+São **quatro** partes, não duas: fixa a pagar, variável a realizar, fatura do
+cartão e entradas previstas. A fatura não é fixa nem variável — é o que já foi
+comprado e ainda não foi pago.
+
+**A linha da variável carrega o valor DEPOIS do rateio (`alocado`), nunca o
+`falta` cru.** É a armadilha desta parte. O corte no zero acontece no nível do
+mês e redistribui a sobra em proporção, então a mesma categoria contribui
+valores diferentes em cada cenário. Medido na `prova28`: variável de saída de
+1.100 no pessimista e 900 no otimista — Mercado 800 → 654,55, Lazer 300 →
+245,45, atravessando Sicredi e Caixa. Mostrar o cru poria 1.100 de linhas
+embaixo de um total de 900, e o erro mudaria de tamanho conforme o cenário.
+
+Os totais continuam calculados pelo mesmo código de antes, e as listas são
+coletadas ao lado — `somar()` de `faltaVariavelDoMes` não foi tocado. Assim a
+extração não pode mover número. A `prova28` roda a mesma fixture na versão
+anterior e na nova e exige API pública idêntica, e depois que a soma do
+detalhe feche com o total por conta, mês e cenário.
+
+Ela tem um **controle negativo**, e ele não é enfeite: exige que pessimista e
+otimista DIVIRJAM na fixture. Na primeira rodada eles deram 2.100 os dois, e a
+parte B passava sem ter testado o rateio — a fixture não tinha estouro
+compensável. Sem o controle, a prova teria sido reportada como ok.
+
+**Na FATURA, o sinal é invertido.** Compra no cartão é gravada como
+`tipo: 'entrada'` — entra na fatura como dívida — e `tipo: 'saida'` é
+**estorno**, que abate da categoria (`realizadoMes`, laço da fatura). Foi o que
+derrubou a primeira fixture da `prova28`: a compra de 600 gravada como
+`'saida'` virou um estorno, e o estouro de 200 virou uma sobra de 1.000.
+
 **A fatura do cartão tem dono, como a categoria tem conta de débito.** Ela
 aparece na conta de pagamento do cartão — débito automático, boleto ou PIX,
 tanto faz —, e na preferida quando o cartão não tem conta definida. Nunca em

@@ -26,7 +26,7 @@ import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
  */
 export type CenarioPrevisao = 'pessimista' | 'moderado' | 'otimista'
 
-type Balde = 'banco' | 'cartao' | 'entrada'
+export type Balde = 'banco' | 'cartao' | 'entrada'
 
 /**
  * Em que nivel a sobra e cortada no zero, por cenario e por balde.
@@ -299,11 +299,15 @@ function contaDaCategoria(cat: Categoria, padrao: string | undefined) {
  */
 export function faltaVariavelDoMes(
   alvo: string, ano: number, mes: number, deps: Deps, hoje: Date = new Date(),
-): { saidaBanco: number; saidaCartao: number; entrada: number; diaCartao?: number } {
+): {
+  saidaBanco: number; saidaCartao: number; entrada: number; diaCartao?: number
+  /** As linhas que formam as somas acima, com o valor DEPOIS do rateio. */
+  itens: ItemPrevisto[]
+} {
   const { categorias, planos, contas, extratoData } = deps
   const padrao = contaPadrao(contas)
   const variaveis = categorias.filter(c => c.ativa && !c.fixa)
-  if (!variaveis.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0 }
+  if (!variaveis.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [] }
 
   // O cartão em aberto de vencimento mais cedo decide quem paga a sobra do
   // cartão — a mesma regra que já valia para o complemento da fatura.
@@ -334,7 +338,11 @@ export function faltaVariavelDoMes(
    * estouro. O corte no zero acontece depois, no nivel que o cenario pedir —
    * cortar aqui jogaria fora justamente a informacao que distingue os tres.
    */
-  type Parcela = { conta: string; balde: Balde; grupo: string; falta: number }
+  type Parcela = {
+    conta: string; balde: Balde; grupo: string; falta: number
+    /** De qual categoria veio, para o detalhe poder nomeá-la. */
+    nome: string; descricao?: string
+  }
   const parcelas: Parcela[] = []
 
   for (const cat of variaveis) {
@@ -356,14 +364,14 @@ export function faltaVariavelDoMes(
     // Cartao nao recebe: entrada cai na conta de deposito da categoria.
     if (cat.tipo === 'entrada') {
       const onde = cat.tipoMovimento === 'dinheiro' ? 'dinheiro' : (cat.contaDebitoId ?? padrao)
-      if (onde) parcelas.push({ conta: onde, balde: 'entrada', grupo, falta })
+      if (onde) parcelas.push({ conta: onde, balde: 'entrada', grupo, falta, nome: cat.nome, descricao: cat.descricao })
       continue
     }
 
     if (cat.tipoMovimento === 'cartao') {
       // Com fatura em aberto, a sobra cai nela — quem paga o cartão paga.
       if (refAberta) {
-        if (contaDoCartao) parcelas.push({ conta: contaDoCartao, balde: 'cartao', grupo, falta })
+        if (contaDoCartao) parcelas.push({ conta: contaDoCartao, balde: 'cartao', grupo, falta, nome: cat.nome, descricao: cat.descricao })
         continue
       }
       // Sem fatura em aberto que possa receber — fechada, já confirmada, ou
@@ -375,11 +383,11 @@ export function faltaVariavelDoMes(
       // Sobra não sobrevive ao mês. Mês que vem tem plano e limite próprios —
       // gastar menos que o planejado é economia, não saldo acumulado.
       const ondeCartao = cat.contaDebitoId ?? padrao
-      if (ondeCartao) parcelas.push({ conta: ondeCartao, balde: 'banco', grupo, falta })
+      if (ondeCartao) parcelas.push({ conta: ondeCartao, balde: 'banco', grupo, falta, nome: cat.nome, descricao: cat.descricao })
       continue
     }
     const onde = contaDaCategoria(cat, padrao)
-    if (onde) parcelas.push({ conta: onde, balde: 'banco', grupo, falta })
+    if (onde) parcelas.push({ conta: onde, balde: 'banco', grupo, falta, nome: cat.nome, descricao: cat.descricao })
   }
 
   /**
@@ -434,6 +442,12 @@ export function faltaVariavelDoMes(
     saidaCartao: somar('cartao'),
     entrada: somar('entrada'),
     diaCartao: ref?.diaVencimento,
+    // O MESMO filtro de `somar` (esta conta) e o MESMO `alocado`. Linha
+    // zerada fica de fora: nao soma nada e, na tela, so faria ruido.
+    itens: parcelas
+      .map((p, i) => ({ p, v: alocado[i] }))
+      .filter(({ p, v }) => p.conta === alvo && v > 0)
+      .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
   }
 }
 
@@ -464,13 +478,52 @@ function contaPadrao(contas: Conta[]) {
  * lançado em TODAS as faturas em aberto. Rateá-lo por conta o contaria de
  * novo a cada conta que paga cartão.
  */
-function projecaoDaConta(
+/**
+ * Uma linha do previsto, já com o valor que ENTROU no total.
+ *
+ * `valor` é sempre o que foi somado — para a variável, o `alocado` de depois
+ * do rateio, nunca o `falta` cru. A distinção não é sutil: uma categoria com
+ * 800 de sobra contribui 800 no pessimista e pode contribuir 512 no otimista,
+ * e mostrar o cru faria a soma das linhas discordar do total que elas
+ * explicam, de um jeito que muda conforme o cenário escolhido.
+ */
+export type ItemPrevisto = {
+  balde: Balde
+  grupo: string
+  nome: string
+  descricao?: string
+  valor: number
+}
+
+/**
+ * O previsto de uma conta, aberto nas partes que o formam.
+ *
+ * São QUATRO, não duas: fixa a pagar, variável a realizar, fatura do cartão e
+ * as entradas previstas. A fatura não é fixa nem variável — é o que já foi
+ * comprado e ainda não foi pago.
+ *
+ * `entradas` e `saidas` são calculados do mesmo jeito que sempre foram; as
+ * listas são coletadas ao lado. É de propósito: assim a extração não pode
+ * mover número nenhum, e o que a prova verifica é que a soma das listas bate
+ * com eles.
+ */
+export type ProjecaoDetalhe = {
+  entradas: number
+  saidas: number
+  fixasEntrada: ItemPrevisto[]
+  fixasSaida: ItemPrevisto[]
+  variaveisEntrada: ItemPrevisto[]
+  variaveisSaida: ItemPrevisto[]
+  faturas: ItemPrevisto[]
+}
+
+export function detalharProjecaoDaConta(
   alvo: string,
   ano: number,
   mes: number,
   deps: Deps,
-  hoje: Date,
-): { entradas: number; saidas: number } {
+  hoje: Date = new Date(),
+): ProjecaoDetalhe {
   const { extratoData, contas, categorias, planos, faturaData } = deps
   const sufixo = `-${ano}-${String(mes + 1).padStart(2, '0')}`
   const dms = dadosBancariosDoMes(
@@ -482,6 +535,9 @@ function projecaoDaConta(
 
   let entradas = 0
   let saidas = 0
+  const fixasEntrada: ItemPrevisto[] = []
+  const fixasSaida: ItemPrevisto[] = []
+  const faturas: ItemPrevisto[] = []
 
   for (const cat of categorias) {
     if (!cat.ativa) continue
@@ -491,8 +547,13 @@ function projecaoDaConta(
       if (resolverFixaDoMes(cat.id, dms).consolidada) continue
       const v = valorFixaNoMes(cat, planos[ano], mes, categorias)
       if (v <= 0) continue
-      if (cat.tipo === 'entrada') entradas += v
-      else saidas += v
+      const item: ItemPrevisto = {
+        balde: cat.tipo === 'entrada' ? 'entrada' : 'banco',
+        grupo: cat.grupo ?? '__sem_grupo__',
+        nome: cat.nome, descricao: cat.descricao, valor: v,
+      }
+      if (cat.tipo === 'entrada') { entradas += v; fixasEntrada.push(item) }
+      else { saidas += v; fixasSaida.push(item) }
       continue
     }
 
@@ -512,10 +573,41 @@ function projecaoDaConta(
     .sort((x, y) => (x.diaVencimento ?? 1) - (y.diaVencimento ?? 1))
 
   for (const c of abertas)
-    if ((c.contaPagamentoId ?? padrao) === alvo)
-      saidas += totalFatura(c.id, ano, mes, contas, faturaData)
+    if ((c.contaPagamentoId ?? padrao) === alvo) {
+      const v = totalFatura(c.id, ano, mes, contas, faturaData)
+      saidas += v
+      if (v > 0) faturas.push({
+        balde: 'cartao', grupo: '__fatura__',
+        nome: c.banco || c.nome, valor: v,
+      })
+    }
 
-  return { entradas, saidas }
+  return {
+    entradas, saidas,
+    fixasEntrada, fixasSaida, faturas,
+    variaveisEntrada: falta.itens.filter(i => i.balde === 'entrada'),
+    variaveisSaida:   falta.itens.filter(i => i.balde !== 'entrada'),
+  }
+}
+
+/**
+ * O total do previsto de uma conta. É a soma do detalhe, e nada mais.
+ *
+ * A assinatura pública não mudou: quem só quer o número continua chamando
+ * isto. A separação existe para que a tela que EXPLICA o número saia da mesma
+ * passagem que o calcula — foi assim que a memória de cálculo de Lançamentos
+ * deu certo, e é o contrário do que este app fez em toda tela onde dois
+ * caminhos respondiam a mesma pergunta e divergiam.
+ */
+function projecaoDaConta(
+  alvo: string,
+  ano: number,
+  mes: number,
+  deps: Deps,
+  hoje: Date,
+): { entradas: number; saidas: number } {
+  const d = detalharProjecaoDaConta(alvo, ano, mes, deps, hoje)
+  return { entradas: d.entradas, saidas: d.saidas }
 }
 
 /** As contas que têm saldo: bancos e o dinheiro. Cartão não tem saldo. */
