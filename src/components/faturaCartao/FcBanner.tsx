@@ -26,7 +26,12 @@ export default function FcBanner({
 }: Props) {
   const disponivel = totalPrevisto - grandTotalFaturas
 
-  const statusCor = faturaStatus === 'paga' ? '#16a34a' : faturaStatus === 'fechada' ? '#0369a1' : '#b45309'
+  // O status vive dentro de um KpiCard AZUL-ESCURO (#0f2878 -> #1e40af). As cores
+  // antigas eram de fundo claro e sumiam: #16a34a 2,65, #0369a1 1,47 (azul sobre
+  // azul), #b45309 1,74. Estas mantêm o sentido de cada uma e passam no extremo
+  // claro #1e40af: verde 5,01 (o mesmo de Lançamentos e do Radar), azul-claro
+  // 6,14, âmbar-claro 6,05.
+  const statusCor = faturaStatus === 'paga' ? '#4ade80' : faturaStatus === 'fechada' ? '#bfdbfe' : '#fcd34d'
   const statusLbl = faturaStatus === 'paga' ? 'Paga' : faturaStatus === 'fechada' ? 'Fechada' : 'Aberta'
   const statusSimb = faturaStatus === 'paga' ? '✓' : faturaStatus === 'fechada' ? '■' : '●'
 
