@@ -255,10 +255,13 @@ function EscolhaCenario({ atual, onEscolher, fundo }: {
   )
 }
 
-export function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
+export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }: {
   m: Memoria; positivo: boolean
   cenario: CenarioPrevisao
   onCenario: (v: CenarioPrevisao) => void
+  /** Rótulo e ajuda da primeira linha. A tela Início, num mês futuro, diz
+   *  que o saldo inicial também é previsto. Ausente, fica como sempre foi. */
+  rotuloAbertura?: [string, string]
 }) {
   // Fundo PROPRIO, e nao o do cartao. A caixa do mobile usa COR.azulMedio
   // (#2563eb), mais claro que o limite de #1e40af do CLAUDE.md — sobre ele o
@@ -275,7 +278,7 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario }: {
     ['Gastos variaveis a realizar',   -m.variaveisARealizar, 'O que falta gastar do plano, fora do cartao'],
   ]
   const linhas: [string, number, string][] = [
-    ['Saldo inicial do mes', m.abertura,      'Com quanto a conta abriu'],
+    [rotuloAbertura?.[0] ?? 'Saldo inicial do mes', m.abertura, rotuloAbertura?.[1] ?? 'Com quanto a conta abriu'],
     ['Receitas recebidas',   m.entradasReais, 'Lancamentos e fixas ja confirmadas'],
     ['Despesas pagas',       -m.saidasReais,  'Lancamentos e fixas ja confirmadas'],
     // So o Radar preenche; ver Memoria.ajusteConciliacao.

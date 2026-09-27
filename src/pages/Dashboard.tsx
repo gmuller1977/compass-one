@@ -6,7 +6,8 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, memoriaDoRadar, type Deps } from '../utils/saldoConta'
 import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
-import { contasAVencer } from '../utils/contasAVencer'
+import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
+import { previsaoDoMes } from '../utils/previsaoDoMes'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
@@ -91,7 +92,7 @@ export default function Dashboard() {
   // sem compra no cartão, sem a carteira, com transferência entre contas
   // contada como despesa — e o saldo partia do cadastro da conta, ignorando
   // todo mês anterior e toda conciliação.
-  const { totalEntradas, totalSaidas, totalPrevS, topCategorias } = useMemo(() => {
+  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, topCategorias } = useMemo(() => {
     const planoAno = planos[viewAno]
     const { saidasMap, entradasMap } = construirRealizadoMes({
       ano: viewAno, mes: viewMes, extratoData: extratoData as Record<string, DadosMes>,
@@ -114,7 +115,7 @@ export default function Dashboard() {
         }
       })
 
-    return { totalEntradas: t.entrada.real, totalSaidas: t.saida.real, totalPrevS: t.saida.prev, topCategorias }
+    return { totalEntradas: t.entrada.real, totalSaidas: t.saida.real, totalPrevS: t.saida.prev, totalPrevE: t.entrada.prev, topCategorias }
   }, [contas, categorias, extratoData, faturaData, planos, viewMes, viewAno])
 
   // As dependências do motor de saldo, as MESMAS do Radar — com o cenário.
@@ -131,9 +132,26 @@ export default function Dashboard() {
     [viewAno, viewMes, deps],
   )
 
-  // Previsão só existe no mês corrente: mês fechado já tem o número final, e
-  // é o próprio "Meu saldo".
+  // Três modos. Mês fechado: só o que aconteceu, e o saldo final é o real.
+  // Mês corrente: o que aconteceu e o previsto até o dia 31. Mês FUTURO: só
+  // previsão — pedido do Guilherme em 27/09/2026, para se preparar para o
+  // mês que vem. O seletor vai até o fim do plano; sem plano, até hoje.
   const ehMesCorrente = viewAno === hoje.getFullYear() && viewMes === hoje.getMonth()
+  const ymHoje = hoje.getFullYear() * 12 + hoje.getMonth()
+  const ehFuturo = viewAno * 12 + viewMes > ymHoje
+  const olhaAFrente = ehMesCorrente || ehFuturo
+  const fimPlano = useMemo(() => fimDoPlanejamento(planos), [planos])
+
+  // Mês futuro: inicial, entradas, saídas e final previstos, e a memória só
+  // daquele mês. Ver utils/previsaoDoMes.
+  const previsao = useMemo(
+    () => (ehFuturo ? previsaoDoMes(viewAno, viewMes, deps) : null),
+    [ehFuturo, viewAno, viewMes, deps],
+  )
+  const contasFuturo = useMemo(
+    () => (ehFuturo ? contasDoMes(viewAno, viewMes, deps) : []),
+    [ehFuturo, viewAno, viewMes, deps],
+  )
 
   // Com quanto o mês termina, e de onde isso vem: a memória de cálculo do
   // Radar, o mesmo objeto. `fechamento` é o saldo final previsto da barra do
@@ -147,17 +165,16 @@ export default function Dashboard() {
 
   // A série do Simulador, do mês corrente ao fim do plano — a parte cara,
   // calculada uma vez para o aviso e para o gráfico. Sem plano, não há série.
-  const serie = useMemo(() => (ehMesCorrente ? serieBaseDoPlano(deps) : null), [ehMesCorrente, deps])
+  const serie = useMemo(() => (olhaAFrente ? serieBaseDoPlano(deps) : null), [olhaAFrente, deps])
 
   // Pior mês à frente. Sem série, sem aviso.
   const alertaFuturo = useMemo(() => (serie ? piorMesDaSerie(serie) : null), [serie])
 
   // Passado real + mês corrente previsto + futuro previsto, numa linha só.
   const evolucao = useMemo(
-    () => (ehMesCorrente ? evolucaoDoSaldo(deps, serie) : []),
-    [ehMesCorrente, deps, serie],
+    () => (olhaAFrente ? evolucaoDoSaldo(deps, serie) : []),
+    [olhaAFrente, deps, serie],
   )
-  const fimPlano = useMemo(() => fimDoPlanejamento(planos), [planos])
 
   // Contas dos próximos 7 dias: as linhas de fixa e fatura da memória de
   // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
@@ -273,7 +290,8 @@ export default function Dashboard() {
                 <SeletorMesAno
                   mes={viewMes} ano={viewAno}
                   onSelect={(m, a) => { setViewMes(m); setViewAno(a) }}
-                  habilitado={(m, a) => a < hoje.getFullYear() || (a === hoje.getFullYear() && m <= hoje.getMonth())}
+                  habilitado={(m, a) => a * 12 + m <= ymHoje
+                    || (!!fimPlano && a * 12 + m <= fimPlano.ano * 12 + fimPlano.mes)}
                   compacto={isMobile}
                 />
                 <button onClick={() => navigate('/novo-lancamento')} style={PH_BTN_SOLID}>
@@ -336,7 +354,30 @@ export default function Dashboard() {
           buttonLabel="Ver meu painel →"
         />
 
-        {/* ── Bússola hero ── */}
+        {/* ── Mês futuro: nada aqui aconteceu ainda ──
+            infoFundo + infoTexto: par medido em cores.ts (5,5:1). */}
+        {ehFuturo && (
+          <div style={{
+            background: COR.infoFundo, border: `1px solid ${COR.infoBorda}`, borderRadius: 12,
+            padding: '12px 16px', marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          }}>
+            <span aria-hidden style={{ fontSize: 18 }}>🔭</span>
+            <div style={{ flex: 1, minWidth: 220, fontSize: 13, color: COR.infoTexto, lineHeight: 1.5 }}>
+              <b>Previsão de {MESES_FULL[viewMes].toLowerCase()} de {viewAno}.</b> Nada aqui aconteceu ainda:
+              são as contas do plano, as faturas já lançadas e o que o plano espera
+              gastar e receber, no cenário {cenarioPrevisao}.
+            </div>
+            <button onClick={() => { setViewMes(hoje.getMonth()); setViewAno(hoje.getFullYear()) }} style={{
+              background: COR.infoTexto, color: '#fff', border: 'none', borderRadius: 8,
+              padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>Voltar para hoje</button>
+          </div>
+        )}
+
+        {/* ── Bússola hero ── (não em mês futuro: ela julga o que aconteceu) */}
+        {!ehFuturo && (
         <div style={{
           background: cc.bg, border: `1.5px solid ${cc.border}`, borderRadius: 14,
           padding: isMobile ? '14px 16px' : '18px 22px',
@@ -384,11 +425,36 @@ export default function Dashboard() {
             >Começar →</button>
           )}
         </div>
+        )}
 
         {/* ── KPI cards ── */}
         {/* Saldos em verde positivo e vermelho negativo, como no Radar e em
             Lançamentos (RADAR_COR_AZUL). O previsto só existe no mês corrente,
             e abre a mesma memória de cálculo do Radar. */}
+        {/* Mês futuro: os quatro números da previsão. Receitas e despesas são o
+            dinheiro previsto NAS CONTAS — a fatura cai no mês em que vence —,
+            e por isso o total do plano vai ao lado, para a diferença se ver. */}
+        {ehFuturo && previsao ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+          gap: 12, marginBottom: memoriaAberta ? 12 : 20,
+        }}>
+          <KpiCard icon="◎" label="Saldo inicial previsto" value={fmt(previsao.inicial)}
+            valueColor={previsao.inicial >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+            sublabel="Final previsto do mês anterior" />
+          <KpiCard icon="↑" label="Receitas previstas" value={fmt(previsao.entradas)}
+            valueColor={RADAR_COR_AZUL.bom}
+            sublabel={`nas contas · plano ${fmt(totalPrevE)}`} />
+          <KpiCard icon="↓" label="Despesas previstas" value={fmt(previsao.saidas)}
+            valueColor={RADAR_COR_AZUL.ruim}
+            sublabel={`nas contas · plano ${fmt(totalPrevS)}`} />
+          <KpiCard icon="→" label="Saldo final previsto" value={fmt(previsao.final)}
+            valueColor={previsao.final >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+            sublabel={`cenário ${cenarioPrevisao}`}
+            onClick={() => setMemoriaAberta(v => !v)} expandido={memoriaAberta} />
+        </div>
+        ) : (
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : `repeat(${memoria ? 4 : 3}, 1fr)`,
@@ -410,7 +476,15 @@ export default function Dashboard() {
               onClick={() => setMemoriaAberta(v => !v)} expandido={memoriaAberta} />
           )}
         </div>
-        {memoriaAberta && memoria && (
+        )}
+        {memoriaAberta && ehFuturo && previsao && (
+          <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
+            <MemoriaSaldo m={previsao.memoria} positivo={previsao.final >= 0}
+              cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}
+              rotuloAbertura={['Saldo inicial previsto', 'Com quanto o mês deve abrir']} />
+          </div>
+        )}
+        {memoriaAberta && !ehFuturo && memoria && (
           <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
             <MemoriaSaldo m={memoria} positivo={memoria.fechamento >= 0}
               cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
@@ -450,6 +524,13 @@ export default function Dashboard() {
           <ContasAVencerCard contas={aVencer} categorias={categorias} isMobile={isMobile}
             onAbrir={() => navigate('/novo-lancamento')} />
         )}
+        {/* Mês futuro: o calendário inteiro de contas — onde elas se concentram. */}
+        {contasFuturo.length > 0 && (
+          <ContasAVencerCard contas={contasFuturo} categorias={categorias} isMobile={isMobile}
+            titulo={`Contas de ${MESES_FULL[viewMes].toLowerCase()}`}
+            acao="Ver o mês em Lançamentos →"
+            onAbrir={() => navigate('/novo-lancamento')} />
+        )}
 
         {/* ── Evolução do saldo: passado real, futuro previsto ── */}
         {evolucao.length >= 2 && (
@@ -478,7 +559,8 @@ export default function Dashboard() {
                 </span>
               </div>
             </div>
-            <EvolucaoSaldoGrafico pontos={evolucao} altura={isMobile ? 190 : 230} />
+            <EvolucaoSaldoGrafico pontos={evolucao} altura={isMobile ? 190 : 230}
+              destaque={ehFuturo ? { ano: viewAno, mes: viewMes } : undefined} />
             {!serie && (
               <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 6 }}>
                 Com um planejamento, a previsão segue pelos próximos meses.
@@ -582,7 +664,8 @@ export default function Dashboard() {
           )
         })()}
 
-        {/* ── 2-col grid ── */}
+        {/* ── 2-col grid ── (não em mês futuro: nada aconteceu ainda) */}
+        {!ehFuturo && (
         <div style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
@@ -713,6 +796,7 @@ export default function Dashboard() {
           </div>
 
         </div>
+        )}
       </div>
 
       {/* FAB mobile */}

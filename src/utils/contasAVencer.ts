@@ -38,8 +38,20 @@ export type ContaAVencer = {
 export function contasAVencer(deps: Deps, hoje: Date = new Date(), dias = 7): ContaAVencer[] {
   const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
   const fim = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + dias - 1)
-  const p = detalharPrevisto(fim.getFullYear(), fim.getMonth(), deps, { comoAbertura: true, hoje })
+  return listar(deps, hoje, inicio, fim, true)
+}
 
+/**
+ * Todas as contas de um mês FUTURO, dia a dia — o calendário da tela Início
+ * quando um mês à frente é escolhido. Mesma passagem, janela do mês inteiro.
+ * Não traz atrasadas: o que vence antes do mês é assunto do mês corrente.
+ */
+export function contasDoMes(ano: number, mes: number, deps: Deps, hoje: Date = new Date()): ContaAVencer[] {
+  return listar(deps, hoje, new Date(ano, mes, 1), new Date(ano, mes + 1, 0), false)
+}
+
+function listar(deps: Deps, hoje: Date, inicio: Date, fim: Date, comAtrasadas: boolean): ContaAVencer[] {
+  const p = detalharPrevisto(fim.getFullYear(), fim.getMonth(), deps, { comoAbertura: true, hoje })
   const itens = [
     ...p.fixasSaida.map(i => ({ ...i, fatura: false })),
     ...p.faturas.map(i => ({ ...i, fatura: true })),
@@ -49,10 +61,11 @@ export function contasAVencer(deps: Deps, hoje: Date = new Date(), dias = 7): Co
     if (i.dia === undefined || !i.id) continue
     const data = new Date(i.ano, i.mes, i.dia)
     if (data > fim) continue
+    const atrasada = data < inicio
+    if (atrasada && !comAtrasadas) continue
     out.push({
       id: i.id, nome: i.nome, descricao: i.descricao, valor: i.valor,
-      ano: i.ano, mes: i.mes, dia: i.dia, fatura: i.fatura,
-      atrasada: data < inicio,
+      ano: i.ano, mes: i.mes, dia: i.dia, fatura: i.fatura, atrasada,
     })
   }
   const quando = (c: ContaAVencer) => c.ano * 10000 + c.mes * 100 + c.dia

@@ -11,12 +11,17 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
  * utils/contasAVencer — aqui é só desenho. Atrasada em COR.erroTexto
  * (6,5:1 no branco); data e rótulos em COR.textoSuave (4,76:1).
  */
-export default function ContasAVencerCard({ contas, categorias, isMobile, onAbrir, hoje = new Date() }: {
+export default function ContasAVencerCard({
+  contas, categorias, isMobile, onAbrir, hoje = new Date(),
+  titulo = 'Contas dos próximos 7 dias', acao = 'Marcar como paga em Lançamentos →',
+}: {
   contas: ContaAVencer[]
   categorias: Categoria[]
   isMobile: boolean
   onAbrir: () => void
   hoje?: Date
+  titulo?: string
+  acao?: string
 }) {
   const hoje0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
   const quando = (c: ContaAVencer) => {
@@ -38,7 +43,7 @@ export default function ContasAVencerCard({ contas, categorias, isMobile, onAbri
     }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Contas dos próximos 7 dias</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{titulo}</div>
           {atrasadas > 0 && (
             <div style={{ fontSize: 12, color: COR.erroTexto, fontWeight: 600, marginTop: 2 }}>
               {atrasadas === 1 ? '1 conta vencida e não marcada como paga' : `${atrasadas} contas vencidas e não marcadas como pagas`}
@@ -73,7 +78,7 @@ export default function ContasAVencerCard({ contas, categorias, isMobile, onAbri
       <button onClick={onAbrir} style={{
         marginTop: 8, border: 'none', background: 'transparent', color: COR.azul, padding: 0,
         fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-      }}>Marcar como paga em Lançamentos →</button>
+      }}>{acao}</button>
     </div>
   )
 }

@@ -905,6 +905,45 @@ cobre atrasada, dia útil caindo fora da janela, dia movido, confirmada, inativa
 sem plano, fatura paga e fatura em aberto, e tem controle negativo: tudo pago,
 lista vazia.
 
+**A Início mostra meses FUTUROS, até o fim do plano.** Pedido do Guilherme em
+27/09/2026: "e se eu quiser olhar o próximo mês? já me preparar para o
+futuro?". Sem plano, o seletor para no mês corrente, como antes.
+
+Num mês futuro a tela é só previsão: um aviso diz isso e oferece "Voltar para
+hoje"; a bússola, "Maiores despesas" e "Últimas movimentações" somem, porque
+julgam o que aconteceu. Ficam quatro cartões, a memória de cálculo do mês, a
+lista de contas do mês inteiro, o aviso de pior mês e o gráfico, com o mês
+escolhido marcado por um anel.
+
+Os quatro números saem de `previsaoDoMes` em
+[`previsaoDoMes.ts`](src/utils/previsaoDoMes.ts), sem conta nova:
+
+| cartão | fonte |
+|---|---|
+| Saldo inicial previsto | `saldoTotalNoFim(mês anterior, comoAbertura)` — o final previsto do anterior |
+| Receitas / Despesas previstas | o já lançado no mês + as linhas previstas **daquele mês** de `detalharPrevisto` |
+| Saldo final previsto | `detalharPrevisto(mês).valor` — o ponto do gráfico |
+
+E fecha: **inicial + receitas − despesas = final**. A memória é a mesma
+`MemoriaSaldo`, com as linhas só do mês; a do Radar, num mês futuro,
+acumularia tudo desde hoje. Ela ganhou `rotuloAbertura`, opcional: na Início
+futura a primeira linha diz "Saldo inicial previsto"; sem ele, Lançamentos e
+Radar ficam como estavam.
+
+**Receitas e despesas previstas NÃO são os totais do Planejamento**, e o
+cartão diz isso ("nas contas · plano R$ X"). São o dinheiro previsto entrando
+e saindo das contas: a compra no cartão sai no mês em que a fatura vence, e o
+que já foi gasto conta — a compra de setembro que vence em outubro abate a
+variável de outubro, pela regra do realizado.
+
+A lista do mês é `contasDoMes`, a mesma passagem de `contasAVencer` com a
+janela do mês inteiro e sem atrasadas. A `prova35` (97 invariantes) exige,
+por mês e cenário: a identidade dos quatro números, que as linhas da memória
+fechem no final, final `===` `saldoTotalNoFim` e `===` o ponto do gráfico,
+inicial `===` final do mês anterior, a lista somando as fixas a pagar e a
+fatura da memória, e — no mês corrente — `previsaoDoMes` igual à
+`memoriaDoRadar` campo a campo.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por

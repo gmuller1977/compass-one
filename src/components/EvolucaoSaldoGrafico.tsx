@@ -1,5 +1,5 @@
 import {
-  LineChart, Line, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, ReferenceLine, ReferenceDot, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { COR } from '../utils/cores'
 import type { PontoEvolucao } from '../utils/evolucaoSaldo'
@@ -22,9 +22,14 @@ const fmtEixo = (v: number) => Math.abs(v) >= 1000
  * Cores sobre o branco: linha COR.azul (#1a56db, 5,5:1), zero e pontos
  * negativos em COR.erroTexto (#b91c1c, 6,5:1), eixos COR.textoSuave (4,76:1).
  */
-export default function EvolucaoSaldoGrafico({ pontos, altura }: { pontos: PontoEvolucao[]; altura: number }) {
+export default function EvolucaoSaldoGrafico({ pontos, altura, destaque }: {
+  pontos: PontoEvolucao[]; altura: number
+  /** O mês escolhido na Início, quando é futuro: ganha um anel em volta. */
+  destaque?: { ano: number; mes: number }
+}) {
   const ultimoReal = pontos.map(p => p.real).lastIndexOf(true)
   const idxHoje = pontos.findIndex(p => !p.real)
+  const idxDestaque = destaque ? pontos.findIndex(p => p.ano === destaque.ano && p.mes === destaque.mes) : -1
   const dados = pontos.map((p, i) => ({
     rotulo: rotulo(p),
     valor: p.valor,
@@ -59,6 +64,10 @@ export default function EvolucaoSaldoGrafico({ pontos, altura }: { pontos: Ponto
           {idxHoje >= 0 && (
             <ReferenceLine x={dados[idxHoje].rotulo} stroke={COR.textoSuave} strokeDasharray="2 3"
               label={{ value: 'hoje', position: 'insideTopRight', fontSize: 11, fill: COR.textoSuave }} />
+          )}
+          {idxDestaque >= 0 && (
+            <ReferenceDot x={dados[idxDestaque].rotulo} y={dados[idxDestaque].valor} r={9}
+              fill="none" stroke={dados[idxDestaque].valor < 0 ? COR.erroTexto : COR.azul} strokeWidth={2} />
           )}
           <Line type="monotone" dataKey="real" stroke={COR.azul} strokeWidth={2.5}
             dot={ponto(COR.azul, true)} activeDot={{ r: 5 }} connectNulls={false} isAnimationActive={false} />
