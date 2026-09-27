@@ -8,6 +8,8 @@ import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/si
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
 import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
 import { previsaoDoMes } from '../utils/previsaoDoMes'
+import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
+import EstouradasCard from '../components/EstouradasCard'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
@@ -92,7 +94,7 @@ export default function Dashboard() {
   // sem compra no cartão, sem a carteira, com transferência entre contas
   // contada como despesa — e o saldo partia do cadastro da conta, ignorando
   // todo mês anterior e toda conciliação.
-  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, topCategorias } = useMemo(() => {
+  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, topCategorias, linhasSaida } = useMemo(() => {
     const planoAno = planos[viewAno]
     const { saidasMap, entradasMap } = construirRealizadoMes({
       ano: viewAno, mes: viewMes, extratoData: extratoData as Record<string, DadosMes>,
@@ -115,7 +117,10 @@ export default function Dashboard() {
         }
       })
 
-    return { totalEntradas: t.entrada.real, totalSaidas: t.saida.real, totalPrevS: t.saida.prev, totalPrevE: t.entrada.prev, topCategorias }
+    return {
+      totalEntradas: t.entrada.real, totalSaidas: t.saida.real,
+      totalPrevS: t.saida.prev, totalPrevE: t.entrada.prev, topCategorias, linhasSaida: t.saida.linhas,
+    }
   }, [contas, categorias, extratoData, faturaData, planos, viewMes, viewAno])
 
   // As dependências do motor de saldo, as MESMAS do Radar — com o cenário.
@@ -199,6 +204,13 @@ export default function Dashboard() {
     return (p.saidas ?? []).some(c => c.v.some(v => v > 0)) ||
            (p.entradas ?? []).some(c => c.v.some(v => v > 0))
   }, [planos, viewAno])
+
+  // Com plano no mês, "Maiores despesas" dá lugar às estouradas: as MESMAS
+  // linhas do Radar, e o excesso é o "Estourou" de lá. Ver
+  // utils/categoriasEstouradas.
+  const usaPlanoNoMes = temPlano && totalPrevS > 0
+  const estouradas = useMemo(() => categoriasEstouradas(linhasSaida), [linhasSaida])
+  const pertoDoLimite = useMemo(() => maisPertoDoLimite(linhasSaida, categorias), [linhasSaida, categorias])
 
   const temBanco      = contas.some(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const temCategorias = categorias.some(c => c.ativa)
@@ -674,6 +686,10 @@ export default function Dashboard() {
 
           {/* Esquerda: Onde mais gastei + Dica */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {usaPlanoNoMes ? (
+              <EstouradasCard estouradas={estouradas} perto={pertoDoLimite} categorias={categorias}
+                onVerRadar={() => navigate('/radar')} />
+            ) : (
             <div style={{
               background: COR.branco, borderRadius: 12,
               padding: '18px 20px', border: `.5px solid ${COR.borda}`,
@@ -717,6 +733,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+            )}
 
             {/* Dica contextual */}
             <div style={{

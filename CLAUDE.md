@@ -944,6 +944,31 @@ inicial `===` final do mês anterior, a lista somando as fixas a pagar e a
 fatura da memória, e — no mês corrente — `previsaoDoMes` igual à
 `memoriaDoRadar` campo a campo.
 
+**Com plano no mês, "Maiores despesas" vira "Categorias estouradas".** Feito
+em 27/09/2026. As três categorias de despesa que mais passaram do plano, em
+reais. As linhas são as de `totaisDoMes` — as mesmas do Radar, por (nome,
+variante) — e o excesso é o **"Estourou" da linha de categoria do Radar**:
+realizado − previsto, sempre que passa. Por isso a compra no cartão conta, e
+100,40 de 100 entra (estourou 0,40), mesmo o percentual arredondado dizendo
+100%. Quem calcula é `categoriasEstouradas` em
+[`categoriasEstouradas.ts`](src/utils/categoriasEstouradas.ts).
+
+**Gasto sem plano entra, marcado "fora do plano"** — o Radar também diz
+"Estourou" nele, e categoria inativa com gasto cai em "Outras" como lá.
+
+A barra mostra o TAMANHO do estouro — plano em cinza, excesso em vermelho, na
+escala do realizado. Uma barra de percentual ficaria cheia em todas.
+
+Quando nada estourou, o quadro diz isso e mostra as **mais perto do limite**
+(`maisPertoDoLimite`), nas cores claras do Radar. **Conta fixa fica fora** dessa
+lista: paga em 100% ela é "✓ Pago" no Radar, não "no limite". Sem plano no mês,
+volta "Maiores despesas", que já soma por (nome, variante) desde a fase 0.
+
+A `prova36` confere, contra a linha como o Radar a monta (`buildAllCats` +
+`pickReal`), que o excesso é o mesmo número; que a compra no cartão conta;
+que variantes não se somam; que fixa paga no valor não estoura; e tem controle
+negativo: sem estouro, lista vazia.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
