@@ -7,7 +7,8 @@ import { saldoBancosEDinheiro, memoriaDoRadar, type Deps } from '../utils/saldoC
 import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
 import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
-import { previsaoDoMes } from '../utils/previsaoDoMes'
+import { previsaoDoMes, entradasPrevistasDaMemoria, saidasPrevistasDaMemoria } from '../utils/previsaoDoMes'
+import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
 import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
 import EstouradasCard from '../components/EstouradasCard'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
@@ -64,21 +65,25 @@ function mesKey(conta: string, ano: number, mes: number) {
 
 type CompassStatus = 'verde' | 'amarelo' | 'vermelho' | 'sem-plano' | 'sem-dados'
 
-const COMPASS_CFG: Record<CompassStatus, {
-  bg: string; border: string; cor: string; icon: string; title: string; msg: (s: number, e: number) => string
-}> = {
-  verde:     { bg: '#f0fdf4', border: '#86efac', cor: '#16a34a', icon: '🧭', title: 'Você está no caminho certo!',          msg: (s) => `No caminho certo. Resultado positivo de +${fmt(s)} este mês.` },
-  amarelo:   { bg: '#fffbeb', border: '#fde68a', cor: '#b45309', icon: '⚠️', title: 'Atenção!',                             msg: () => 'Atenção. Suas despesas estão perto do limite planejado para este mês.' },
-  vermelho:  { bg: '#fff1f2', border: '#fecdd3', cor: '#dc2626', icon: '🔴', title: 'Fora do rumo.',                        msg: (_s, e) => `Acima do planejado. Despesas ultrapassaram o previsto em ${fmt(e)}.` },
-  'sem-plano': { bg: '#f8faff', border: '#c7d7fd', cor: '#1a56db', icon: '🧭', title: 'Sem planejamento ainda',             msg: () => 'Crie seu planejamento para ativar a bússola e acompanhar seu progresso.' },
-  'sem-dados': { bg: COR.fundo,  border: COR.borda,  cor: COR.textoSuave, icon: '📊', title: 'Sem movimentação',           msg: () => 'Sem movimentação este mês. Registre sua primeira despesa ou receita para ativar a bússola.' },
+/**
+ * A linha de status do hero. É a bússola de antes com outro desenho: o MESMO
+ * compassStatus, com as mesmas faixas — só a cor do ponto e a frase mudam.
+ * Pontos sobre o azul do hero (elemento gráfico, 3:1): #86efac, #fde047 e
+ * #f87171 passam no extremo mais claro, #1e40af.
+ */
+const STATUS_HERO: Record<CompassStatus, { cor: string; frase: (mes: string, fechou: boolean) => string }> = {
+  verde:       { cor: '#86efac', frase: (m, f) => `${m} ${f ? 'fechou' : 'fecha'} no azul` },
+  amarelo:     { cor: '#fde047', frase: (m, f) => `${m} ${f ? 'fechou' : 'fecha'} apertado` },
+  vermelho:    { cor: '#f87171', frase: (m, f) => `${m} ${f ? 'fechou' : 'fecha'} no vermelho` },
+  'sem-plano': { cor: 'rgba(255,255,255,.5)', frase: m => `Sem plano para ${m.toLowerCase()}` },
+  'sem-dados': { cor: 'rgba(255,255,255,.5)', frase: m => `Sem movimentação em ${m.toLowerCase()}` },
 }
 
 export default function Dashboard() {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
   const {
-    contas, categorias, extratoData, faturaData, planos, perfil, user, objetivoUsuario,
+    contas, categorias, extratoData, faturaData, planos, perfil, user,
     saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao,
   } = useApp()
 
@@ -162,13 +167,17 @@ export default function Dashboard() {
 
   // Com quanto o mês termina, e de onde isso vem: a memória de cálculo do
   // Radar, o mesmo objeto. `fechamento` é o saldo final previsto da barra do
-  // rodapé de lá, e "falta receber" são as duas linhas de receita prevista dela.
+  // rodapé de lá. Em mês FECHADO ela também existe: não projeta nada, e o
+  // fechamento é o saldo real — é o que o hero mostra ali.
   const memoria = useMemo(
-    () => (ehMesCorrente ? memoriaDoRadar(viewAno, viewMes, deps) : null),
-    [ehMesCorrente, viewAno, viewMes, deps],
+    () => (!ehFuturo ? memoriaDoRadar(viewAno, viewMes, deps) : null),
+    [ehFuturo, viewAno, viewMes, deps],
   )
   const [memoriaAberta, setMemoriaAberta] = useState(false)
-  const faltaReceber = memoria ? memoria.entradasPrevistas + memoria.receitasAReceber : 0
+  // "ainda entram" / "ainda saem": as linhas previstas da própria memória, pelas
+  // duas funções de previsaoDoMes. hoje + entram − saem = fechamento.
+  const faltaReceber = memoria ? entradasPrevistasDaMemoria(memoria) : 0
+  const aindaSaem = memoria ? saidasPrevistasDaMemoria(memoria) : 0
 
   // A série do Simulador, do mês corrente ao fim do plano — a parte cara,
   // calculada uma vez para o aviso e para o gráfico. Sem plano, não há série.
@@ -225,33 +234,17 @@ export default function Dashboard() {
   const temCategorias = categorias.some(c => c.ativa)
 
   // ── Bússola ──────────────────────────────────────────────────────────
-  const { compassStatus, sobrou, excedeu } = useMemo<{
-    compassStatus: CompassStatus; sobrou: number; excedeu: number
-  }>(() => {
-    if (totalEntradas === 0 && totalSaidas === 0)
-      return { compassStatus: 'sem-dados', sobrou: 0, excedeu: 0 }
-    if (!temPlano || totalPrevS === 0)
-      return { compassStatus: 'sem-plano', sobrou: 0, excedeu: 0 }
+  const compassStatus = useMemo<CompassStatus>(() => {
+    if (totalEntradas === 0 && totalSaidas === 0) return 'sem-dados'
+    if (!temPlano || totalPrevS === 0) return 'sem-plano'
     const perc = totalSaidas / totalPrevS
-    if (totalSaidas > totalPrevS)
-      return { compassStatus: 'vermelho', sobrou: 0, excedeu: totalSaidas - totalPrevS }
-    if (perc >= 0.9)
-      return { compassStatus: 'amarelo', sobrou: 0, excedeu: 0 }
-    return { compassStatus: 'verde', sobrou: totalEntradas - totalSaidas, excedeu: 0 }
+    if (totalSaidas > totalPrevS) return 'vermelho'
+    if (perc >= 0.9) return 'amarelo'
+    return 'verde'
   }, [totalEntradas, totalSaidas, temPlano, totalPrevS])
 
   const percGastei = totalPrevS > 0 ? Math.round((totalSaidas / totalPrevS) * 100) : null
 
-  const dica = useMemo(() => {
-    if (topCategorias.length === 0)
-      return 'Registre seus primeiros gastos para ver insights personalizados.'
-    const top = topCategorias[0]
-    if (percGastei !== null)
-      return `Você usou ${percGastei}% do orçamento este mês. Maior despesa: ${top.nome} (${fmt(top.gasto)}).`
-    return `Maior gasto deste mês: ${top.nome} — ${fmt(top.gasto)}.`
-  }, [topCategorias, percGastei])
-
-  const cc = COMPASS_CFG[compassStatus]
   const maxGasto = topCategorias[0]?.gasto || 1
 
   // ── Simulações ativas ─────────────────────────────────────────────────
@@ -397,120 +390,98 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Bússola hero ── (não em mês futuro: ela julga o que aconteceu) */}
-        {!ehFuturo && (
-        <div style={{
-          background: cc.bg, border: `1.5px solid ${cc.border}`, borderRadius: 14,
-          padding: isMobile ? '14px 16px' : '18px 22px',
-          display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20,
-        }}>
-          <div style={{
-            width: isMobile ? 44 : 52, height: isMobile ? 44 : 52, borderRadius: 14, flexShrink: 0,
-            background: cc.bg, border: `2px solid ${cc.border}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: isMobile ? 22 : 26,
-          }}>{cc.icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: isMobile ? 14 : 15, fontWeight: 700, color: cc.cor, marginBottom: 4,
-            }}>{cc.title}</div>
-            <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
-              {cc.msg(sobrou, excedeu)}
+        {/* ══ 1 · A resposta ══ O hero absorve a bússola e o cartão "Saldo final
+            previsto". Mês corrente: com quanto fecha. Mês fechado: com quanto
+            fechou. Mês futuro: com quanto deve fechar — sem a linha de status,
+            que julga o que aconteceu. Ver components/inicio/HeroSaldo. */}
+        {(() => {
+          const mesNome = MESES_FULL[viewMes]
+          const ultimoDia = new Date(viewAno, viewMes + 1, 0).getDate()
+          const dataFim = `${ultimoDia} de ${mesNome.toLowerCase()}`
+          const hero = ehFuturo && previsao ? {
+            status: null as StatusHero | null,
+            rotulo: `Saldo previsto em ${dataFim}`,
+            valor: previsao.final,
+            apoio: [
+              { rotulo: 'abre com', valor: previsao.inicial },
+              { rotulo: 'saem', valor: previsao.saidas },
+              { rotulo: 'entram', valor: previsao.entradas },
+            ],
+          } : memoria ? {
+            status: { cor: STATUS_HERO[compassStatus].cor, frase: STATUS_HERO[compassStatus].frase(mesNome, !ehMesCorrente) },
+            rotulo: ehMesCorrente ? `Saldo previsto em ${dataFim}` : `Saldo em ${dataFim}`,
+            valor: memoria.fechamento,
+            apoio: ehMesCorrente ? [
+              { rotulo: 'hoje', valor: saldoDisponivel },
+              { rotulo: 'ainda saem', valor: aindaSaem },
+              { rotulo: 'ainda entram', valor: faltaReceber },
+            ] : [
+              { rotulo: 'abriu com', valor: memoria.abertura },
+            ],
+          } : null
+          if (!hero) return null
+          return (
+            <div style={{ marginBottom: 20 }}>
+              <HeroSaldo {...hero} sparkline={evolucao} isMobile={isMobile}
+                aberto={memoriaAberta} onComoCheguei={() => setMemoriaAberta(v => !v)} />
+              {memoriaAberta && ehFuturo && previsao && (
+                <MemoriaSaldo m={previsao.memoria} positivo={previsao.final >= 0}
+                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}
+                  rotuloAbertura={['Saldo inicial previsto', 'Com quanto o mês deve abrir']} />
+              )}
+              {memoriaAberta && !ehFuturo && memoria && (
+                <MemoriaSaldo m={memoria} positivo={memoria.fechamento >= 0}
+                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+              )}
             </div>
-            {objetivoUsuario && (
-              <div style={{ marginTop: 8, fontSize: 12, color: cc.cor, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span>🎯 Seu objetivo: {
-                  objetivoUsuario === 'controlar' ? 'Controlar meus gastos' :
-                  objetivoUsuario === 'economizar' ? 'Economizar e poupar' :
-                  objetivoUsuario === 'sonho' ? 'Realizar um sonho' :
-                  objetivoUsuario === 'dividas' ? 'Sair das dívidas' : objetivoUsuario
-                }</span>
-                {objetivoUsuario === 'dividas' && (
-                  <button onClick={() => navigate('/simulacao')} style={{
-                    background: 'transparent', border: `1px solid ${cc.cor}`, color: cc.cor,
-                    borderRadius: 6, padding: '2px 8px', fontSize: 11, cursor: 'pointer',
-                    fontFamily: 'inherit', fontWeight: 600,
-                  }}>Usar simulador →</button>
-                )}
-              </div>
-            )}
-          </div>
-          {compassStatus === 'sem-plano' && (
-            <button
-              onClick={() => navigate('/planejamento', { state: { openQuiz: true } })}
-              style={{
-                background: COR.azul, color: '#fff', border: 'none', borderRadius: 10,
-                padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-            >Começar →</button>
-          )}
-        </div>
-        )}
+          )
+        })()}
 
-        {/* ── KPI cards ── */}
-        {/* Saldos em verde positivo e vermelho negativo, como no Radar e em
-            Lançamentos (RADAR_COR_AZUL). O previsto só existe no mês corrente,
-            e abre a mesma memória de cálculo do Radar. */}
-        {/* Mês futuro: os quatro números da previsão. Receitas e despesas são o
-            dinheiro previsto NAS CONTAS — a fatura cai no mês em que vence —,
-            e por isso o total do plano vai ao lado, para a diferença se ver. */}
-        {ehFuturo && previsao ? (
+        {/* ══ 2 · Os três números ══ Sempre três colunas — o previsto está no hero.
+            Saldos em verde positivo e vermelho negativo (RADAR_COR_AZUL). Mês
+            futuro: receitas e despesas são o dinheiro previsto NAS CONTAS, e o
+            total do plano vai ao lado para a diferença se ver. */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-          gap: 12, marginBottom: memoriaAberta ? 12 : 20,
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: 12, marginBottom: 20,
         }}>
-          <KpiCard icon="◎" label="Saldo inicial previsto" value={fmt(previsao.inicial)}
-            valueColor={previsao.inicial >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
-            sublabel="Final previsto do mês anterior" />
-          <KpiCard icon="↑" label="Receitas previstas" value={fmt(previsao.entradas)}
-            valueColor={RADAR_COR_AZUL.bom}
-            sublabel={`nas contas · plano ${fmt(totalPrevE)}`} />
-          <KpiCard icon="↓" label="Despesas previstas" value={fmt(previsao.saidas)}
-            valueColor={RADAR_COR_AZUL.ruim}
-            sublabel={`nas contas · plano ${fmt(totalPrevS)}`} />
-          <KpiCard icon="→" label="Saldo final previsto" value={fmt(previsao.final)}
-            valueColor={previsao.final >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
-            sublabel={`cenário ${cenarioPrevisao}`}
-            onClick={() => setMemoriaAberta(v => !v)} expandido={memoriaAberta} />
-        </div>
-        ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : `repeat(${memoria ? 4 : 3}, 1fr)`,
-          gap: 12, marginBottom: memoriaAberta && memoria ? 12 : 20,
-        }}>
-          <KpiCard icon="◎" label={ehMesCorrente ? 'Saldo atual' : 'Saldo final'} value={fmt(saldoDisponivel)}
-            valueColor={saldoDisponivel >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
-            sublabel={ehMesCorrente ? 'Bancos e dinheiro, hoje' : 'Bancos e dinheiro'} />
-          <KpiCard icon="↑" label="Receitas do mês" value={fmt(totalEntradas)}
-            valueColor={RADAR_COR_AZUL.bom}
-            sublabel={faltaReceber > 0.005 ? `falta receber ${fmt(faltaReceber)}` : 'Recebidas no mês'} />
-          <KpiCard icon="↓" label="Despesas do mês" value={fmt(totalSaidas)}
-            valueColor={RADAR_COR_AZUL.ruim}
-            sublabel={percGastei !== null ? `${percGastei}% do planejado` : 'Gastos do mês'} />
-          {memoria && (
-            <KpiCard icon="→" label="Saldo final previsto" value={fmt(memoria.fechamento)}
-              valueColor={memoria.fechamento >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
-              sublabel={`cenário ${cenarioPrevisao}`}
-              onClick={() => setMemoriaAberta(v => !v)} expandido={memoriaAberta} />
+          {ehFuturo && previsao ? (
+            <>
+              <KpiCard icon="◎" label="Saldo inicial previsto" value={fmt(previsao.inicial)}
+                valueColor={previsao.inicial >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+                sublabel="Final previsto do mês anterior" />
+              <KpiCard icon="↑" label="Receitas previstas" value={fmt(previsao.entradas)}
+                valueColor={RADAR_COR_AZUL.bom}
+                sublabel={`nas contas · plano ${fmt(totalPrevE)}`} />
+              <KpiCard icon="↓" label="Despesas previstas" value={fmt(previsao.saidas)}
+                valueColor={RADAR_COR_AZUL.ruim}
+                sublabel={`nas contas · plano ${fmt(totalPrevS)}`} />
+            </>
+          ) : (
+            <>
+              {ehMesCorrente ? (
+                <KpiCard icon="◎" label="Saldo atual" value={fmt(saldoDisponivel)}
+                  valueColor={saldoDisponivel >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+                  sublabel="Bancos e dinheiro, hoje" />
+              ) : (
+                // Mês fechado: o saldo final já é o hero; aqui fica com quanto ele abriu.
+                <KpiCard icon="◎" label="Saldo inicial" value={fmt(memoria?.abertura ?? 0)}
+                  valueColor={(memoria?.abertura ?? 0) >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+                  sublabel="Bancos e dinheiro" />
+              )}
+              <KpiCard icon="↑" label="Receitas do mês" value={fmt(totalEntradas)}
+                valueColor={RADAR_COR_AZUL.bom}
+                sublabel={faltaReceber > 0.005 ? `falta receber ${fmt(faltaReceber)}` : 'Recebidas no mês'} />
+              <KpiCard icon="↓" label="Despesas do mês" value={fmt(totalSaidas)}
+                valueColor={RADAR_COR_AZUL.ruim}
+                sublabel={percGastei !== null ? `${percGastei}% do planejado` : 'Gastos do mês'} />
+            </>
           )}
         </div>
-        )}
-        {memoriaAberta && ehFuturo && previsao && (
-          <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
-            <MemoriaSaldo m={previsao.memoria} positivo={previsao.final >= 0}
-              cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}
-              rotuloAbertura={['Saldo inicial previsto', 'Com quanto o mês deve abrir']} />
-          </div>
-        )}
-        {memoriaAberta && !ehFuturo && memoria && (
-          <div style={{ marginBottom: 20, borderRadius: 12, overflow: 'hidden' }}>
-            <MemoriaSaldo m={memoria} positivo={memoria.fechamento >= 0}
-              cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
-          </div>
-        )}
+
+        {/* ══ 3 · Ritmo do mês ══ Largura total: as duas barras alinhadas são o
+            desenho do indicador, e em meia largura a comparação perde. */}
+        {ritmo && <div style={{ marginBottom: 20 }}><RitmoCard r={ritmo} /></div>}
 
         {/* ── Pior mês à frente — só quando o saldo previsto fica negativo ──
             O primeiro mês negativo é onde agir; o pior é o tamanho do buraco.
@@ -539,21 +510,86 @@ export default function Dashboard() {
           )
         })()}
 
-        {/* ── Contas dos próximos 7 dias ──
-            Só quando há alguma. Atrasada em COR.erroTexto (6,5:1 no branco). */}
-        {aVencer.length > 0 && (
-          <ContasAVencerCard contas={aVencer} categorias={categorias} isMobile={isMobile}
-            onAbrir={() => navigate('/novo-lancamento')} />
-        )}
-        {/* Mês futuro: o calendário inteiro de contas — onde elas se concentram. */}
-        {contasFuturo.length > 0 && (
-          <ContasAVencerCard contas={contasFuturo} categorias={categorias} isMobile={isMobile}
-            titulo={`Contas de ${MESES_FULL[viewMes].toLowerCase()}`}
-            acao="Ver o mês em Lançamentos →"
-            onAbrir={() => navigate('/novo-lancamento')} />
-        )}
+        {/* ══ 4 · O que pede ação ══ Contas a vencer | Passou do plano, lado a
+            lado. Quando só um dos dois existe, ele ocupa a largura toda. */}
+        {(() => {
+          const contasCard = aVencer.length > 0 ? (
+            <ContasAVencerCard contas={aVencer} categorias={categorias} isMobile={isMobile}
+              onAbrir={() => navigate('/novo-lancamento')} />
+          ) : contasFuturo.length > 0 ? (
+            // Mês futuro: o calendário inteiro de contas — onde elas se concentram.
+            <ContasAVencerCard contas={contasFuturo} categorias={categorias} isMobile={isMobile}
+              titulo={`Contas de ${MESES_FULL[viewMes].toLowerCase()}`}
+              acao="Ver o mês em Lançamentos →"
+              onAbrir={() => navigate('/novo-lancamento')} />
+          ) : null
+          // Mês futuro não tem esta coluna: nada aconteceu ainda.
+          const planoCol = ehFuturo ? null : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {usaPlanoNoMes ? (
+                <EstouradasCard estouradas={estouradas} perto={pertoDoLimite} categorias={categorias}
+                  onVerRadar={() => navigate('/radar')} />
+              ) : (
+              <div style={{
+                background: COR.branco, borderRadius: 12,
+                padding: '18px 20px', border: `.5px solid ${COR.borda}`,
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto, marginBottom: 18 }}>
+                  Maiores despesas
+                </div>
+                {topCategorias.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
+                    <div style={{ color: COR.textoMuted, fontSize: 13, marginBottom: 12 }}>
+                      Nenhum gasto registrado
+                    </div>
+                    <button onClick={() => navigate('/novo-lancamento')} style={{
+                      padding: '7px 14px', border: 'none', borderRadius: 8,
+                      background: COR.azul, color: '#fff', fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}>Registrar gasto</button>
+                  </div>
+                ) : topCategorias.map(cat => (
+                  <div key={cat.chave} style={{ marginBottom: 16 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>{cat.icone}</span>
+                        <span style={{ fontSize: 13, color: COR.texto, fontWeight: 500 }}>{cat.nome}</span>
+                      </div>
+                      <span style={{
+                        fontSize: 13, color: COR.vermelho, fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>{fmt(cat.gasto)}</span>
+                    </div>
+                    <div style={{ height: 4, background: '#f1f5f9', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{
+                        height: 4, borderRadius: 2, background: cat.cor,
+                        width: `${Math.min((cat.gasto / maxGasto) * 100, 100)}%`,
+                        transition: 'width .4s ease',
+                      }}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              )}
+            </div>
+          )
+          if (!contasCard && !planoCol) return null
+          const duo = !!contasCard && !!planoCol
+          return (
+            <div style={{
+              display: 'grid', gridTemplateColumns: duo && !isMobile ? '1fr 1fr' : '1fr',
+              gap: 12, alignItems: 'start', marginBottom: 20,
+            }}>
+              {contasCard}
+              {planoCol}
+            </div>
+          )
+        })()}
 
-        {/* ── Evolução do saldo: passado real, futuro previsto ── */}
+        {/* ══ 6 · Para onde o saldo vai ══ */}
         {evolucao.length >= 2 && (
           <div style={{
             background: COR.branco, borderRadius: 12, padding: isMobile ? '14px 12px 10px' : '18px 20px 12px',
@@ -590,7 +626,134 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Card Aurix ── */}
+        {/* ══ 7 · Contexto ══ Metas e dívidas | Últimas movimentações. Quando só
+            um existe, ocupa a largura toda. Mês futuro não tem movimentações. */}
+        {(() => {
+          const metasCard = simAtivas.length > 0 ? (
+            <div style={{ background: COR.branco, borderRadius: 12, padding: '18px 20px', border: `.5px solid ${COR.borda}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Minhas metas e dívidas</div>
+                <button onClick={() => navigate('/simulacao')} style={{
+                  border: 'none', background: 'transparent', color: COR.azul,
+                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                }}>Ver todas →</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {simAtivas.slice(0, 4).map(sim => {
+                  const isDivida = sim.tipo === 'divida'
+                  const inicio = new Date(sim.created_at)
+                  const mesesPassados = (hoje.getFullYear() - inicio.getFullYear()) * 12 + (hoje.getMonth() - inicio.getMonth())
+                  const progresso = Math.max(0, Math.min(100, Math.round((mesesPassados / sim.resultado_meses) * 100)))
+                  return (
+                    <div key={sim.id} style={{ border: '1px solid #eef2f7', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 9 }}>
+                        <span style={{ fontSize: 19 }}>{isDivida ? '💳' : '🐷'}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {sim.nome}
+                          </div>
+                          <div style={{ fontSize: 11, color: COR.textoMuted }}>
+                            {fmt(sim.valor_total)} · {fmt(sim.parcela)}/mês
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
+                        <div style={{ height: 5, borderRadius: 3, background: isDivida ? COR.vermelho : COR.verde, width: `${progresso}%`, transition: 'width .4s' }}/>
+                      </div>
+                      <div style={{ fontSize: 11, color: COR.textoMuted, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{progresso}% {isDivida ? 'quitado' : 'poupado'}</span>
+                        <span>{isDivida ? 'Quitada' : 'Alcançada'} em {sim.data_conclusao}</span>
+                      </div>
+                      {sim.integrado_planejamento && (
+                        <div style={{ fontSize: 10, fontWeight: 600, color: COR.azul, marginTop: 5 }}>✓ No planejamento</div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null
+          const ultimasCard = ehFuturo ? null : (
+            <div style={{
+              background: COR.branco, borderRadius: 12,
+              padding: '18px 20px', border: `.5px solid ${COR.borda}`,
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Últimas movimentações</div>
+                <button onClick={() => navigate('/novo-lancamento')} style={{
+                  border: 'none', background: 'transparent', color: COR.azul,
+                  fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
+                }}>Ver tudo</button>
+              </div>
+              {ultimosLanc.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0 16px' }}>
+                  <div style={{ fontSize: 30, marginBottom: 10 }}>📋</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 5 }}>
+                    Nenhum lançamento este mês
+                  </div>
+                  <div style={{ fontSize: 12, color: COR.textoMuted, lineHeight: 1.55, marginBottom: 14 }}>
+                    Registre seus gastos e receitas para ver<br/>o histórico aqui.
+                  </div>
+                  <button onClick={() => navigate('/novo-lancamento')} style={{
+                    padding: '7px 18px', border: 'none', borderRadius: 8,
+                    background: COR.azul, color: '#fff',
+                    fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}>Registrar →</button>
+                </div>
+              ) : ultimosLanc.map((l, i) => {
+                const cat = categorias.find(c => c.nome === l.categoria)
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    paddingBottom: i < ultimosLanc.length - 1 ? 13 : 0,
+                    marginBottom: i < ultimosLanc.length - 1 ? 13 : 0,
+                    borderBottom: i < ultimosLanc.length - 1 ? `1px solid #f1f5f9` : 'none',
+                  }}>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                      background: l.tipo === 'entrada' ? COR.verde : COR.vermelho,
+                    }}/>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 13, fontWeight: 500, color: COR.texto,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {(l.descricao && l.descricao.trim()) ? l.descricao : l.categoria}
+                      </div>
+                      <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 1 }}>
+                        {cat?.icone ?? ''} {l.categoria} · dia {l.data}
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: 13, fontWeight: 600, flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                      color: l.tipo === 'entrada' ? COR.verde : COR.vermelho,
+                    }}>
+                      {l.tipo === 'entrada' ? '+' : '−'}{fmt(l.valor)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+          if (!metasCard && !ultimasCard) return null
+          const duo = !!metasCard && !!ultimasCard
+          return (
+            <div style={{
+              display: 'grid', gridTemplateColumns: duo && !isMobile ? '1fr 1fr' : '1fr',
+              gap: 12, alignItems: 'start', marginBottom: 20,
+            }}>
+              {metasCard}
+              {ultimasCard}
+            </div>
+          )
+        })()}
+
+        {/* ══ 8 · Aurix ══ Uma faixa, no fim: gamificação não pode ter o mesmo
+            peso visual que "o aluguel venceu há três dias". */}
         {(() => {
           const feitas = aurixAcoes.filter(r => ACOES_DIARIAS_REFS.includes(r)).length
           const aurixHoje = [
@@ -602,230 +765,32 @@ export default function Dashboard() {
           ].reduce((a, b) => a + b, 0)
           return (
             <div style={{
-              background: COR.branco, borderRadius: 12, padding: '16px 20px',
-              marginBottom: 20, border: `.5px solid ${COR.borda}`,
-              display: 'flex', alignItems: 'center', gap: 14,
+              background: COR.branco, borderRadius: 12, padding: '12px 18px',
+              border: `.5px solid ${COR.borda}`,
+              display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
             }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: COR.textoMuted, marginBottom: 8 }}>
-                  ✨ Aurix hoje
-                </div>
-                <div style={{ fontSize: 13, color: COR.texto, marginBottom: 4 }}>
-                  {aurixStreak > 0 && <span style={{ marginRight: 12 }}>🔥 Streak: {aurixStreak} dias</span>}
-                  <span style={{ color: COR.textoSuave }}>✨ {aurixSaldo.toLocaleString('pt-BR')} Aurix</span>
-                </div>
-                <div style={{ fontSize: 12, color: COR.textoSuave }}>
-                  Ações do dia: {feitas} de {ACOES_DIARIAS_TOTAL} completadas
-                  {aurixHoje > 0 && ` (+${aurixHoje} Aurix)`}
-                </div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>
+                ✨ <b style={{ color: COR.texto }}>{aurixSaldo.toLocaleString('pt-BR')}</b> Aurix
+              </span>
+              {aurixStreak > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>
+                  🔥 <b style={{ color: COR.texto }}>{aurixStreak}</b> dias seguidos
+                </span>
+              )}
+              <div role="img" aria-label={`${feitas} de ${ACOES_DIARIAS_TOTAL} ações de hoje`}
+                style={{ flex: 1, minWidth: 120, height: 6, background: '#eef2f7', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ width: `${(feitas / ACOES_DIARIAS_TOTAL) * 100}%`, height: '100%', background: COR.azul, borderRadius: 3 }} />
               </div>
-              <button
-                onClick={() => navigate('/aurix')}
-                style={{
-                  border: 'none', background: COR.fundo, borderRadius: 8,
-                  padding: '8px 14px', color: COR.azul, fontSize: 13,
-                  fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  flexShrink: 0,
-                }}
-              >
-                Ver →
-              </button>
+              <span style={{ fontSize: 12, color: COR.textoSuave, whiteSpace: 'nowrap' }}>
+                {feitas} de {ACOES_DIARIAS_TOTAL} ações de hoje{aurixHoje > 0 && ` (+${aurixHoje} Aurix)`}
+              </span>
+              <button onClick={() => navigate('/aurix')} style={{
+                border: 'none', background: 'transparent', color: COR.azul, padding: 0,
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Ver →</button>
             </div>
           )
         })()}
-
-        {/* ── Minhas metas e dívidas ── */}
-        {simAtivas.length > 0 && (() => {
-          return (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>Minhas metas e dívidas</div>
-              <button onClick={() => navigate('/simulacao')} style={{
-                border: 'none', background: 'transparent', color: COR.azul,
-                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
-              }}>Ver todas →</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-              {simAtivas.slice(0, 4).map(sim => {
-                const isDivida = sim.tipo === 'divida'
-                const inicio = new Date(sim.created_at)
-                const mesesPassados = (hoje.getFullYear() - inicio.getFullYear()) * 12 + (hoje.getMonth() - inicio.getMonth())
-                const progresso = Math.max(0, Math.min(100, Math.round((mesesPassados / sim.resultado_meses) * 100)))
-                return (
-                  <div key={sim.id} style={{
-                    background: COR.branco, border: `.5px solid ${COR.borda}`,
-                    borderRadius: 12, padding: '14px 16px',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                      <span style={{ fontSize: 20 }}>{isDivida ? '💳' : '🐷'}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {sim.nome}
-                        </div>
-                        <div style={{ fontSize: 11, color: COR.textoMuted }}>
-                          {fmt(sim.valor_total)} · {fmt(sim.parcela)}/mês
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-                      <div style={{ height: 5, borderRadius: 3, background: isDivida ? COR.vermelho : COR.verde, width: `${progresso}%`, transition: 'width .4s' }}/>
-                    </div>
-                    <div style={{ fontSize: 11, color: COR.textoMuted, display: 'flex', justifyContent: 'space-between' }}>
-                      <span>{progresso}% {isDivida ? 'quitado' : 'poupado'}</span>
-                      <span>{isDivida ? 'Quitada' : 'Alcançada'} em {sim.data_conclusao}</span>
-                    </div>
-                    {sim.integrado_planejamento && (
-                      <div style={{ fontSize: 10, fontWeight: 600, color: COR.azul, marginTop: 5 }}>✓ No planejamento</div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-          )
-        })()}
-
-        {/* ── 2-col grid ── (não em mês futuro: nada aconteceu ainda) */}
-        {!ehFuturo && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-          gap: 14, alignItems: 'start',
-        }}>
-
-          {/* Esquerda: Onde mais gastei + Dica */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {usaPlanoNoMes ? (
-              <EstouradasCard estouradas={estouradas} perto={pertoDoLimite} categorias={categorias}
-                onVerRadar={() => navigate('/radar')} />
-            ) : (
-            <div style={{
-              background: COR.branco, borderRadius: 12,
-              padding: '18px 20px', border: `.5px solid ${COR.borda}`,
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto, marginBottom: 18 }}>
-                Maiores despesas
-              </div>
-              {topCategorias.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
-                  <div style={{ color: COR.textoMuted, fontSize: 13, marginBottom: 12 }}>
-                    Nenhum gasto registrado
-                  </div>
-                  <button onClick={() => navigate('/novo-lancamento')} style={{
-                    padding: '7px 14px', border: 'none', borderRadius: 8,
-                    background: COR.azul, color: '#fff', fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'inherit',
-                  }}>Registrar gasto</button>
-                </div>
-              ) : topCategorias.map(cat => (
-                <div key={cat.chave} style={{ marginBottom: 16 }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>{cat.icone}</span>
-                      <span style={{ fontSize: 13, color: COR.texto, fontWeight: 500 }}>{cat.nome}</span>
-                    </div>
-                    <span style={{
-                      fontSize: 13, color: COR.vermelho, fontWeight: 600,
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>{fmt(cat.gasto)}</span>
-                  </div>
-                  <div style={{ height: 4, background: '#f1f5f9', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{
-                      height: 4, borderRadius: 2, background: cat.cor,
-                      width: `${Math.min((cat.gasto / maxGasto) * 100, 100)}%`,
-                      transition: 'width .4s ease',
-                    }}/>
-                  </div>
-                </div>
-              ))}
-            </div>
-            )}
-
-            {/* Dica contextual */}
-            <div style={{
-              background: '#fffbeb', borderRadius: 12,
-              padding: '14px 16px', border: '.5px solid #fde68a',
-              display: 'flex', gap: 10, alignItems: 'flex-start',
-            }}>
-              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
-              <p style={{ fontSize: 12, color: '#92400e', lineHeight: 1.7, margin: 0 }}>{dica}</p>
-            </div>
-          </div>
-
-          {/* Direita: ritmo do mês (mês corrente, com plano) e últimos lançamentos */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {ritmo && <RitmoCard r={ritmo} />}
-          <div style={{
-            background: COR.branco, borderRadius: 12,
-            padding: '18px 20px', border: `.5px solid ${COR.borda}`,
-          }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18,
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Últimas movimentações</div>
-              <button onClick={() => navigate('/novo-lancamento')} style={{
-                border: 'none', background: 'transparent', color: COR.azul,
-                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
-              }}>Ver tudo</button>
-            </div>
-            {ultimosLanc.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '24px 0 16px' }}>
-                <div style={{ fontSize: 30, marginBottom: 10 }}>📋</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, marginBottom: 5 }}>
-                  Nenhum lançamento este mês
-                </div>
-                <div style={{ fontSize: 12, color: COR.textoMuted, lineHeight: 1.55, marginBottom: 14 }}>
-                  Registre seus gastos e receitas para ver<br/>o histórico aqui.
-                </div>
-                <button onClick={() => navigate('/novo-lancamento')} style={{
-                  padding: '7px 18px', border: 'none', borderRadius: 8,
-                  background: COR.azul, color: '#fff',
-                  fontSize: 12, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}>Registrar →</button>
-              </div>
-            ) : ultimosLanc.map((l, i) => {
-              const cat = categorias.find(c => c.nome === l.categoria)
-              return (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  paddingBottom: i < ultimosLanc.length - 1 ? 13 : 0,
-                  marginBottom: i < ultimosLanc.length - 1 ? 13 : 0,
-                  borderBottom: i < ultimosLanc.length - 1 ? `1px solid #f1f5f9` : 'none',
-                }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                    background: l.tipo === 'entrada' ? COR.verde : COR.vermelho,
-                  }}/>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 13, fontWeight: 500, color: COR.texto,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {(l.descricao && l.descricao.trim()) ? l.descricao : l.categoria}
-                    </div>
-                    <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 1 }}>
-                      {cat?.icone ?? ''} {l.categoria} · dia {l.data}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: 13, fontWeight: 600, flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: l.tipo === 'entrada' ? COR.verde : COR.vermelho,
-                  }}>
-                    {l.tipo === 'entrada' ? '+' : '−'}{fmt(l.valor)}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          </div>
-
-        </div>
-        )}
       </div>
 
       {/* FAB mobile */}

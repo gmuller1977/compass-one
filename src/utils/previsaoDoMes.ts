@@ -41,6 +41,23 @@ export type PrevisaoDoMes = {
   faturas: ItemPrevistoNoMes[]
 }
 
+/**
+ * O que ainda vai ENTRAR e SAIR, somado das linhas previstas da memória — as
+ * mesmas que MemoriaSaldo desenha. Uma definição só: a previsão do mês futuro
+ * e o hero da tela Início ("ainda entram" / "ainda saem") usam estas duas, e
+ * por isso abrir "como cheguei nesse número" mostra linhas que somam o valor
+ * de cima. Com o realizado, fecham o saldo:
+ *
+ *   abertura + entradasReais − saidasReais + ajuste
+ *     + entradasPrevistasDaMemoria − saidasPrevistasDaMemoria = fechamento
+ */
+export function entradasPrevistasDaMemoria(m: Memoria): number {
+  return m.entradasPrevistas + m.receitasAReceber
+}
+export function saidasPrevistasDaMemoria(m: Memoria): number {
+  return m.fixasPrevistas + m.faturaEmAberto + m.faturaEstimada + m.variaveisARealizar
+}
+
 export function previsaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date = new Date()): PrevisaoDoMes {
   const mAnt = mes === 0 ? 11 : mes - 1
   const aAnt = mes === 0 ? ano - 1 : ano
@@ -75,9 +92,8 @@ export function previsaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date =
 
   return {
     inicial,
-    entradas: entradasReais + memoria.entradasPrevistas + memoria.receitasAReceber,
-    saidas: saidasReais + memoria.fixasPrevistas + memoria.faturaEmAberto
-      + memoria.faturaEstimada + memoria.variaveisARealizar,
+    entradas: entradasReais + entradasPrevistasDaMemoria(memoria),
+    saidas: saidasReais + saidasPrevistasDaMemoria(memoria),
     final: p.valor,
     memoria, fixasSaida, faturas,
   }

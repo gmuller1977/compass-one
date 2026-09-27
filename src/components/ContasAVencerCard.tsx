@@ -39,7 +39,7 @@ export default function ContasAVencerCard({
   return (
     <div style={{
       background: COR.branco, borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 20px',
-      border: `.5px solid ${COR.borda}`, marginBottom: 20,
+      border: `.5px solid ${COR.borda}`,
     }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
         <div>

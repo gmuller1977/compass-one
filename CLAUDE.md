@@ -993,6 +993,40 @@ gasto contra as linhas do Radar sem as fixas, a fronteira dos 10 pontos, o
 último dia, o estouro compensado no total e o controle negativo (sem variável
 planejada, sem quadro).
 
+**A Início tem uma ordem, e o topo é a resposta.** Briefing "Hierarquia e
+comparativo na tela Início", onda 1, validada pelo Guilherme em 27/09/2026:
+
+1. **Hero** (`components/inicio/HeroSaldo`) — absorve a bússola e o cartão
+   "Saldo final previsto". Linha de status (ponto + frase, o MESMO
+   `compassStatus` de antes), o saldo previsto em 54px, e o apoio
+   "hoje · ainda saem · ainda entram · como cheguei nesse número". O link abre
+   a `MemoriaSaldo` colada embaixo. Sparkline de fundo = a série do gráfico.
+2. **Três cartões, sempre três** — a tela não muda de largura entre meses.
+3. **Ritmo do mês**, largura total: as duas barras alinhadas são o desenho.
+4. **Contas a vencer | Passou do plano**, lado a lado.
+5. (onda 3: comparativo previsto × realizado)
+6. **Evolução do saldo.**
+7. **Metas e dívidas | Últimas movimentações.**
+8. **Aurix**, faixa de uma linha no fim: gamificação não pode pesar o mesmo
+   que uma conta vencida.
+
+**"Ainda saem" é a soma das linhas de saída da memória**, por
+`saidasPrevistasDaMemoria` em [`previsaoDoMes.ts`](src/utils/previsaoDoMes.ts)
+— e "ainda entram" por `entradasPrevistasDaMemoria`. A previsão do mês futuro
+usa as mesmas duas. Por isso: **hoje + ainda entram − ainda saem = previsto**,
+e abrir o cálculo mostra linhas que somam o valor de cima.
+
+Fora do briefing, decidido na validação: mês FECHADO mostra "Saldo em 31 de
+agosto" com o verbo no passado ("fechou no azul") e "abriu com"; o primeiro
+cartão vira "Saldo inicial", para não repetir o hero. Mês FUTURO não tem linha
+de status — ela julga o que aconteceu — e o apoio é "abre com · saem · entram".
+Saldo negativo no hero em `#fecaca` (4,6).
+
+**Saíram, a pedido:** a "Dica contextual" (💡) — a mensagem do Ritmo já
+orienta, e duas orientações competiam —, e, junto com a bússola, a linha
+"🎯 Seu objetivo" com o botão "Usar simulador". O objetivo volta no passo
+"destaque por objetivo" dos indicadores.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
