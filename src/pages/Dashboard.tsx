@@ -10,6 +10,8 @@ import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
 import { previsaoDoMes } from '../utils/previsaoDoMes'
 import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
 import EstouradasCard from '../components/EstouradasCard'
+import { ritmoDoMes } from '../utils/ritmoDoMes'
+import RitmoCard from '../components/RitmoCard'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
@@ -211,6 +213,13 @@ export default function Dashboard() {
   const usaPlanoNoMes = temPlano && totalPrevS > 0
   const estouradas = useMemo(() => categoriasEstouradas(linhasSaida), [linhasSaida])
   const pertoDoLimite = useMemo(() => maisPertoDoLimite(linhasSaida, categorias), [linhasSaida, categorias])
+
+  // Ritmo do mês: só no mês corrente — mês fechado já tem o resultado, e o
+  // futuro ainda não começou. Ver utils/ritmoDoMes.
+  const ritmo = useMemo(
+    () => (ehMesCorrente && usaPlanoNoMes ? ritmoDoMes(linhasSaida, categorias) : null),
+    [ehMesCorrente, usaPlanoNoMes, linhasSaida, categorias],
+  )
 
   const temBanco      = contas.some(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const temCategorias = categorias.some(c => c.ativa)
@@ -746,7 +755,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Direita: Últimos lançamentos */}
+          {/* Direita: ritmo do mês (mês corrente, com plano) e últimos lançamentos */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {ritmo && <RitmoCard r={ritmo} />}
           <div style={{
             background: COR.branco, borderRadius: 12,
             padding: '18px 20px', border: `.5px solid ${COR.borda}`,
@@ -810,6 +821,7 @@ export default function Dashboard() {
                 </div>
               )
             })}
+          </div>
           </div>
 
         </div>

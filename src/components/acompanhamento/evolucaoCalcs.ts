@@ -261,6 +261,16 @@ export function gruposDoRadar(tipo: 'saida' | 'entrada', categorias: Categoria[]
 }
 
 export type LinhaDoMes = { nome: string; descricao: string; grupo: string; prev: number; real: number }
+
+/**
+ * O cadastro de uma linha do mês, como o Radar o acha (EvolucaoLinha): pelo par
+ * (nome, variante), e pelo nome sozinho só quando ele é único — senão Seguro ·
+ * Civic e Seguro · March se confundem.
+ */
+export function cadastroDaLinha(l: { nome: string; descricao?: string }, categorias: Categoria[]): Categoria | undefined {
+  return categorias.find(c => c.nome === l.nome && (c.descricao ?? '') === (l.descricao ?? ''))
+    ?? (categorias.filter(c => c.nome === l.nome).length === 1 ? categorias.find(c => c.nome === l.nome) : undefined)
+}
 type LadoDoMes = { prev: number; real: number; linhas: LinhaDoMes[] }
 
 /**

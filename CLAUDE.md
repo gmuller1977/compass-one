@@ -969,6 +969,30 @@ A `prova36` confere, contra a linha como o Radar a monta (`buildAllCats` +
 que variantes não se somam; que fixa paga no valor não estoura; e tem controle
 negativo: sem estouro, lista vazia.
 
+**"Ritmo do mês": quanto da variável foi gasto contra quanto do mês passou.**
+Feito em 27/09/2026, só no mês corrente e com plano. Avisa ANTES de estourar;
+"Categorias estouradas" mostra o que já passou. Quem calcula é `ritmoDoMes` em
+[`ritmoDoMes.ts`](src/utils/ritmoDoMes.ts), sobre as linhas de `totaisDoMes`.
+
+- **Só a variável.** Conta fixa cai inteira no dia dela; contá-la faria o mês
+  parecer adiantado no dia do aluguel e atrasado no resto. Fixa é o que o
+  cadastro diz (`cadastroDaLinha`, a busca do Radar, agora em `evolucaoCalcs`).
+  Gasto sem plano entra no gasto.
+- **O que sobra é no TOTAL** — planejado − gasto da variável inteira, dividido
+  pelos dias que faltam contando hoje. É o envelope único, não a soma dos
+  "Disponível" por categoria, que ignora quem estourou.
+- **Estados:** passou (gasto acima do planejado no total), acelerado (dentro,
+  mas mais de 10 pontos à frente do mês) e no ritmo. Os 10 pontos são folga
+  para a vida real: um mês não se gasta em linha reta. Cores da paleta clara
+  do Radar: verde, verde-claro e vermelho — dentro do plano é verde.
+
+Duas barras na mesma escala, mês e gasto, uma embaixo da outra: a comparação é
+o desenho. Passou por pouco (100,15%) mostra uma casa decimal, para não
+aparecer "100%" ao lado de "Passou do plano". A `prova37` confere planejado e
+gasto contra as linhas do Radar sem as fixas, a fronteira dos 10 pontos, o
+último dia, o estouro compensado no total e o controle negativo (sem variável
+planejada, sem quadro).
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por

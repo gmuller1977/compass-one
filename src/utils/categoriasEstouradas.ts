@@ -1,5 +1,5 @@
 import type { Categoria } from '../context/AppContext'
-import type { LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
+import { cadastroDaLinha, type LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
 
 /**
  * As categorias de despesa que passaram do plano no mês — o quadro da tela
@@ -36,15 +36,10 @@ export function categoriasEstouradas(linhas: LinhaDoMes[], n = 3): Estouro[] {
  *
  * Conta FIXA fica de fora: paga até o previsto ela é "✓ Pago" no Radar, não
  * "no limite" — o aluguel pago em 100% encabeçaria a lista sem nada a vigiar.
- * O cadastro é achado como o Radar acha (EvolucaoLinha): pelo par (nome,
- * variante), e pelo nome sozinho só quando ele é único.
+ * O cadastro é achado como o Radar acha: cadastroDaLinha.
  */
 export function maisPertoDoLimite(linhas: LinhaDoMes[], categorias: Categoria[], n = 3): LinhaDoMes[] {
-  const ehFixa = (l: LinhaDoMes) => {
-    const cad = categorias.find(c => c.nome === l.nome && (c.descricao ?? '') === (l.descricao ?? ''))
-      ?? (categorias.filter(c => c.nome === l.nome).length === 1 ? categorias.find(c => c.nome === l.nome) : undefined)
-    return !!cad?.fixa
-  }
+  const ehFixa = (l: LinhaDoMes) => !!cadastroDaLinha(l, categorias)?.fixa
   return linhas
     .filter(l => l.prev > MEIO_CENTAVO && l.real > MEIO_CENTAVO && l.real - l.prev <= MEIO_CENTAVO && !ehFixa(l))
     .sort((a, b) => b.real / b.prev - a.real / a.prev || b.real - a.real)
