@@ -1045,6 +1045,30 @@ gráfico diz mês e valor — a informação não fica só na cor.
   direita. Valor sem centavos, como no mockup; o exato está no tooltip.
 - Saiu junto o botão "Ver o plano →" da faixa.
 
+**Comparativo previsto × realizado, mês a mês** (onda 3, 29/09/2026). Barras
+agrupadas — receita e despesa por mês, ancoradas no zero —, com o previsto
+num traço, e o "Sobrou / Faltou" de cada mês embaixo. Barra e não linha: a
+pergunta é DENTRO do mês (ganhei mais do que gastei?); tendência é o gráfico
+de saldo. Fica entre "O que pede ação" e "Evolução do saldo".
+
+- `comparativoMensal` em [`comparativoMensal.ts`](src/utils/comparativoMensal.ts)
+  não soma nada: por mês, as MESMAS `construirRealizadoMes` + `totaisDoMes` do
+  bloco do mês da Início. O plano é resolvido **por mês** (a janela atravessa
+  o ano), e a janela começa no primeiro registro (`primeiroMesComRegistro`,
+  agora exportada de `evolucaoSaldo.ts`, a mesma do gráfico de saldo).
+- Cores no branco: `#15803d` (5,02) e `#b91c1c` (6,47). **Nunca**
+  `COR.barraVerde` / `barraVermelha` no branco: 1,74 e 2,77 — são tons do
+  azul-escuro, e o aviso agora está em `cores.ts`.
+- O traço do previsto é `#0f172a` com anel branco: nenhum tom escuro passa 3:1
+  sobre o vermelho (2,76); o anel resolve e as pontas caem no branco (17,85).
+- Aparece com **dois meses ou mais** de histórico e **não em mês futuro**; a
+  janela é sempre "até hoje", qualquer que seja o mês exibido. No celular o
+  resultado sai sem "R$" (a coluna tem ~45px); tooltip e `aria-label` da
+  coluna trazem o valor completo.
+- A `prova38` exige o mês corrente `===` ao cálculo da Início, cada mês com o
+  plano do seu ano (controle: mudar só 2025 muda só os meses de 2025), a
+  janela nunca antes do primeiro registro, e lista vazia sem registro.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por

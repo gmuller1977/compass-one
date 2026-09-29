@@ -92,6 +92,10 @@ export const COR = {
   // ── Barras, ícones e outros gráficos ─────────────────────────────────
   // Elemento gráfico vale 3:1, texto vale 4,5:1. Estes três passam como
   // barra e reprovam como texto — o nome existe para deixar isso explícito.
+  // ATENÇÃO: passam como barra sobre o AZUL-ESCURO, que é onde nasceram.
+  // Sobre BRANCO reprovam até no limite de gráfico — medido: verde 1,74,
+  // vermelho 2,77, amarelo 1,67. Barra no branco usa #15803d (5,02) e
+  // #b91c1c (6,47), como o comparativo da tela Início.
   barraVerde:    '#4ade80',
   barraVermelha: '#f87171',
   barraAmarela:  '#fbbf24',

@@ -9,6 +9,8 @@ import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
 import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
 import { previsaoDoMes, entradasPrevistasDaMemoria, saidasPrevistasDaMemoria } from '../utils/previsaoDoMes'
 import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
+import ComparativoMensal from '../components/inicio/ComparativoMensal'
+import { comparativoMensal } from '../utils/comparativoMensal'
 import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
 import EstouradasCard from '../components/EstouradasCard'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
@@ -204,6 +206,12 @@ export default function Dashboard() {
   // Contas dos próximos 7 dias: as linhas de fixa e fatura da memória de
   // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
   const aVencer = useMemo(() => (ehMesCorrente ? contasAVencer(deps) : []), [ehMesCorrente, deps])
+
+  // Receitas e despesas contra o plano, nos últimos seis meses até hoje — as
+  // mesmas duas chamadas do bloco do mês, num laço (utils/comparativoMensal).
+  // São seis construirRealizadoMes: por isso o useMemo, sobre as mesmas
+  // dependências. A janela é ancorada em HOJE, então não depende do mês exibido.
+  const comparativo = useMemo(() => comparativoMensal(deps, planos), [deps, planos])
 
   // A lista de últimas movimentações não é número: segue lendo o extrato.
   const ultimosLanc = useMemo(() => {
@@ -570,6 +578,15 @@ export default function Dashboard() {
             </div>
           )
         })()}
+
+        {/* ══ 5 · Previsto × realizado, mês a mês ══ Só a partir de dois meses
+            de história — um mês sozinho não compara nada — e não em mês futuro,
+            que é só previsão. */}
+        {!ehFuturo && comparativo.length >= 2 && (
+          <div style={{ marginBottom: 20 }}>
+            <ComparativoMensal meses={comparativo} isMobile={isMobile} />
+          </div>
+        )}
 
         {/* ══ 6 · Para onde o saldo vai ══ */}
         {evolucao.length >= 2 && (

@@ -22,9 +22,16 @@ import type { SerieDoPlano } from './simulacaoCompra'
  */
 export type PontoEvolucao = { ano: number; mes: number; valor: number; real: boolean }
 
-const ym = (ano: number, mes: number) => ano * 100 + mes
+export const ymRegistro = (ano: number, mes: number) => ano * 100 + mes
+const ym = ymRegistro
 
-function primeiroMesComRegistro(extratoData: Deps['extratoData']): number | null {
+/**
+ * O primeiro mês com algum registro no extrato ou na carteira — lançamento,
+ * fixa confirmada ou saldo informado —, como ano * 100 + mês (0–11). É onde
+ * começa a história que vale a pena desenhar: o gráfico de saldo e o
+ * comparativo mês a mês da Início partem daqui. null: nenhum registro.
+ */
+export function primeiroMesComRegistro(extratoData: Deps['extratoData']): number | null {
   let menor: number | null = null
   for (const [chave, dm] of Object.entries(extratoData)) {
     const m = /-(\d{4})-(\d{2})$/.exec(chave)
