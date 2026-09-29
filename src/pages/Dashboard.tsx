@@ -183,12 +183,21 @@ export default function Dashboard() {
   // calculada uma vez para o aviso e para o gráfico. Sem plano, não há série.
   const serie = useMemo(() => (olhaAFrente ? serieBaseDoPlano(deps) : null), [olhaAFrente, deps])
 
-  // Pior mês à frente. Sem série, sem aviso.
-  const alertaFuturo = useMemo(() => (serie ? piorMesDaSerie(serie) : null), [serie])
+  // Pior mês à frente: o primeiro mês negativo e o pior, marcados como pontos
+  // vermelhos no gráfico de evolução (onda 2 do briefing da Início — antes era
+  // uma faixa vermelha). Só quando algum mês fica negativo.
+  const alertaFuturo = useMemo(() => {
+    const a = serie ? piorMesDaSerie(serie) : null
+    if (!a?.primeiroNegativo) return null
+    const marco = (p: { ano: number; mes: number; semCompra: number }) => ({ ano: p.ano, mes: p.mes, valor: p.semCompra })
+    return { primeiroNegativo: marco(a.primeiroNegativo), pior: marco(a.pior) }
+  }, [serie])
 
-  // Passado real + mês corrente previsto + futuro previsto, numa linha só.
+  // Passado real + mês corrente previsto + futuro previsto, numa linha só. Vai
+  // até o fim do plano — não para em 12 meses —, senão um mês negativo além
+  // disso não teria onde ser marcado.
   const evolucao = useMemo(
-    () => (olhaAFrente ? evolucaoDoSaldo(deps, serie) : []),
+    () => (olhaAFrente ? evolucaoDoSaldo(deps, serie, undefined, { futuros: serie?.base.length ?? 0 }) : []),
     [olhaAFrente, deps, serie],
   )
 
@@ -483,33 +492,6 @@ export default function Dashboard() {
             desenho do indicador, e em meia largura a comparação perde. */}
         {ritmo && <div style={{ marginBottom: 20 }}><RitmoCard r={ritmo} /></div>}
 
-        {/* ── Pior mês à frente — só quando o saldo previsto fica negativo ──
-            O primeiro mês negativo é onde agir; o pior é o tamanho do buraco.
-            erroFundo + erroTexto: par medido em cores.ts (5,9:1). */}
-        {alertaFuturo?.primeiroNegativo && (() => {
-          const { pior, primeiroNegativo: neg } = alertaFuturo
-          const nomeMes = (p: { ano: number; mes: number }) => `${MESES_FULL[p.mes].toLowerCase()} de ${p.ano}`
-          const mesmo = pior.ano === neg.ano && pior.mes === neg.mes
-          return (
-            <div role="alert" style={{
-              background: COR.erroFundo, border: '1px solid #fecdd3', borderRadius: 12,
-              padding: '12px 16px', marginBottom: 20,
-              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-            }}>
-              <span aria-hidden style={{ fontSize: 18 }}>⚠️</span>
-              <div style={{ flex: 1, minWidth: 200, fontSize: 13, color: COR.erroTexto, lineHeight: 1.5 }}>
-                <b>Em {nomeMes(neg)} o saldo previsto fica negativo: {fmt(neg.semCompra)}.</b>
-                {!mesmo && <> O pior mês é {nomeMes(pior)}, com {fmt(pior.semCompra)}.</>}
-              </div>
-              <button onClick={() => navigate('/planejamento')} style={{
-                background: COR.erroTexto, color: '#fff', border: 'none', borderRadius: 8,
-                padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                fontFamily: 'inherit', whiteSpace: 'nowrap',
-              }}>Ver o plano →</button>
-            </div>
-          )
-        })()}
-
         {/* ══ 4 · O que pede ação ══ Contas a vencer | Passou do plano, lado a
             lado. Quando só um dos dois existe, ele ocupa a largura toda. */}
         {(() => {
@@ -617,7 +599,8 @@ export default function Dashboard() {
               </div>
             </div>
             <EvolucaoSaldoGrafico pontos={evolucao} altura={isMobile ? 190 : 230}
-              destaque={ehFuturo ? { ano: viewAno, mes: viewMes } : undefined} />
+              destaque={ehFuturo ? { ano: viewAno, mes: viewMes } : undefined}
+              alerta={alertaFuturo} />
             {!serie && (
               <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 6 }}>
                 Com um planejamento, a previsão segue pelos próximos meses.

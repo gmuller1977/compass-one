@@ -1027,6 +1027,24 @@ orienta, e duas orientações competiam —, e, junto com a bússola, a linha
 "🎯 Seu objetivo" com o botão "Usar simulador". O objetivo volta no passo
 "destaque por objetivo" dos indicadores.
 
+**O pior mês à frente virou ponto no gráfico** (onda 2, 29/09/2026). A faixa
+vermelha saiu; o PRIMEIRO mês negativo e o PIOR, quando é outro, viram pontos
+vermelhos rotulados com o valor em "Evolução do saldo", e o mês fica vermelho
+no eixo. Os dois vêm de `piorMesDaSerie`, sem conta nova. O `aria-label` do
+gráfico diz mês e valor — a informação não fica só na cor.
+
+- O gráfico vai até o **fim do plano**, não 12 meses: senão um mês negativo
+  além disso não teria onde ser marcado.
+- A linha do zero ficou como era (tracejado `#b91c1c`): o `#fca5a5` do mockup
+  dá 1,9 no branco, abaixo do 3:1 de gráfico.
+- **No recharts 3 os pontos da linha ficam numa camada ACIMA dos
+  `ReferenceDot`**, qualquer que seja a ordem no JSX. O ponto vazado cobria o
+  marco; a linha não desenha ponto comum nos meses marcados.
+- Marcos em meses vizinhos: o valor do primeiro vai à esquerda do ponto, para
+  os rótulos não se atropelarem no celular. Marco no último mês abre margem à
+  direita. Valor sem centavos, como no mockup; o exato está no tooltip.
+- Saiu junto o botão "Ver o plano →" da faixa.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por
