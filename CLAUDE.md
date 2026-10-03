@@ -1069,6 +1069,35 @@ de saldo. Fica entre "O que pede ação" e "Evolução do saldo".
   plano do seu ano (controle: mudar só 2025 muda só os meses de 2025), a
   janela nunca antes do primeiro registro, e lista vazia sem registro.
 
+**Precisão do plano: dá para confiar no próprio plano?** (onda 4, 03/10/2026).
+Cartão na Início, depois do comparativo: em média quanto as despesas (e as
+receitas) fecharam acima ou abaixo do plano nos meses FECHADOS, a tendência,
+e as três categorias que mais erram em reais.
+
+- `precisaoDoPlano` em [`precisaoDoPlano.ts`](src/utils/precisaoDoPlano.ts) só
+  agrega o comparativo: `MesComparado` ganhou `linhasSaida` / `linhasEntrada`,
+  da MESMA passagem que soma os totais. Nenhum realizado é recalculado.
+- Só meses fechados; mínimo de 3, senão `null` e o cartão some. Titular =
+  `(Σ real − Σ prev) / Σ prev`; categoria = média(real) − média(prev),
+  **ordenada em reais** (como as Estouradas). Sistemático = contagem ("estourou
+  em 5 de 6"), não desvio-padrão. Categoria conta só nos meses em que tem
+  plano; sem plano fica fora.
+- Tendência (4 meses ou mais): metade antiga contra a recente, pelo TAMANHO do
+  erro — de −12% para +5% é melhorar; limiar de 1 ponto; ímpar deixa o mês do
+  meio de fora. `receitasPerc` é `null` sem receita planejada.
+- Barra divergente com centro em "plano certo": `#b91c1c` gastou mais, `#1a56db`
+  gastou menos. **Sem verde para gastou menos** — abaixo do plano também é erro
+  de planejamento. Erro < 3% vira elogio e a lista some. O rodapé "mexeria R$ X"
+  é a soma COM SINAL dos desvios listados.
+- Janela: a mesma do comparativo (6 meses com o corrente, até 5 fechados).
+- `prova39` (20 invariantes): parcial nunca entra (controle), 2 meses = null,
+  titular à mão, ordenação em reais, categoria que falta em meses, sem plano
+  fora, tendência nos limites, e plano perfeito → 0% e lista vazia.
+
+Próximo passo registrado no briefing, não feito: levar o mesmo cartão para a
+**Revisão Mensal**, onde ver que uma categoria erra todo mês muda a decisão de
+"justificar o desvio" para "corrigir o plano". Casar pela `cadastroDaLinha`.
+
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas
 chamam ela: o Radar por `detalharMes` / `saldoBancosEDinheiro`, Lançamentos por

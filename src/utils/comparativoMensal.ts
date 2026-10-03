@@ -1,7 +1,7 @@
 import type { DadosMes } from '../context/AppContext'
 import type { Deps } from './saldoConta'
 import { construirRealizadoMes } from './realizadoMes'
-import { nomesDeCartao, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
+import { nomesDeCartao, totaisDoMes, type LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import { primeiroMesComRegistro, ymRegistro } from './evolucaoSaldo'
 
 /**
@@ -28,6 +28,14 @@ export type MesComparado = {
   prevReceitas: number; prevDespesas: number
   /** É o mês corrente, ainda em curso. */
   parcial: boolean
+  /**
+   * As linhas por categoria, da MESMA passagem que somou os totais — é delas
+   * que a Precisão do plano (utils/precisaoDoPlano) agrega o erro por
+   * categoria, sem refazer o laço. O detalhe sai de onde sai o total, como em
+   * detalharProjecaoDaConta: não há segunda função para discordar.
+   */
+  linhasSaida: LinhaDoMes[]
+  linhasEntrada: LinhaDoMes[]
 }
 
 export function comparativoMensal(
@@ -57,6 +65,7 @@ export function comparativoMensal(
       receitas: tt.entrada.real, despesas: tt.saida.real,
       prevReceitas: tt.entrada.prev, prevDespesas: tt.saida.prev,
       parcial: i === 0,
+      linhasSaida: tt.saida.linhas, linhasEntrada: tt.entrada.linhas,
     })
   }
   return out

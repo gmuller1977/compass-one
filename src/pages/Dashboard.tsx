@@ -11,6 +11,8 @@ import { previsaoDoMes, entradasPrevistasDaMemoria, saidasPrevistasDaMemoria } f
 import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
 import ComparativoMensal from '../components/inicio/ComparativoMensal'
 import { comparativoMensal } from '../utils/comparativoMensal'
+import { precisaoDoPlano } from '../utils/precisaoDoPlano'
+import PrecisaoCard from '../components/inicio/PrecisaoCard'
 import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
 import EstouradasCard from '../components/EstouradasCard'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
@@ -212,6 +214,9 @@ export default function Dashboard() {
   // São seis construirRealizadoMes: por isso o useMemo, sobre as mesmas
   // dependências. A janela é ancorada em HOJE, então não depende do mês exibido.
   const comparativo = useMemo(() => comparativoMensal(deps, planos), [deps, planos])
+  // Precisão do plano: só agrega o comparativo acima (meses fechados, linhas
+  // por categoria da mesma passagem). null com menos de 3 meses fechados.
+  const precisao = useMemo(() => precisaoDoPlano(comparativo), [comparativo])
 
   // A lista de últimas movimentações não é número: segue lendo o extrato.
   const ultimosLanc = useMemo(() => {
@@ -585,6 +590,14 @@ export default function Dashboard() {
         {!ehFuturo && comparativo.length >= 2 && (
           <div style={{ marginBottom: 20 }}>
             <ComparativoMensal meses={comparativo} isMobile={isMobile} />
+          </div>
+        )}
+
+        {/* ══ 5b · Precisão do plano ══ Dá para confiar no próprio plano? Some
+            com menos de 3 meses fechados ou sem plano de despesa. */}
+        {!ehFuturo && precisao && (
+          <div style={{ marginBottom: 20 }}>
+            <PrecisaoCard p={precisao} categorias={categorias} isMobile={isMobile} />
           </div>
         )}
 
