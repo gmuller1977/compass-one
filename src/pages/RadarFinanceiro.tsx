@@ -327,8 +327,15 @@ export default function RadarFinanceiro() {
                   {fmt(saldoPrevisto)}
                 </span>
               </div>
-              {memoriaAberta && <MemoriaSaldo m={memoria} positivo={positivo}
-                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />}
+              {/* A barra é fixa no pé da tela (flexShrink 0). Aberta, a memória passava da
+                  altura livre: espremia o conteúdo até zero e o fim dela sumia abaixo da
+                  borda. Limitada a 35% da tela, rola por dentro. Corrigido em 05/10/2026. */}
+              {memoriaAberta && (
+                <div style={{ maxHeight: '35vh', overflowY: 'auto', borderRadius: '0 0 12px 12px' }}>
+                  <MemoriaSaldo m={memoria} positivo={positivo}
+                    cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+                </div>
+              )}
             </div>
           </div>
         )

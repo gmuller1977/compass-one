@@ -759,8 +759,14 @@ export default function NleExtrato({
                   {fmt(saldosDia[totalDias]??saldoMes)}
                 </span>
               </div>
-              {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}
-                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>}
+              {/* Barra fixa: a memória aberta fica limitada a 35% da tela e rola por
+                  dentro — senão espremia o extrato e o fim dela sumia. 05/10/2026. */}
+              {memoriaAberta&&(
+                <div style={{maxHeight:'35vh',overflowY:'auto'}}>
+                  <MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}
+                    cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -799,8 +805,14 @@ export default function NleExtrato({
                     {fmt(sf)}
                   </span>
                 </div>
-                {memoriaAberta&&<MemoriaSaldo m={memoria} positivo={positivo}
-                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>}
+                {/* Barra fixa: a memória aberta fica limitada a 35% da tela e rola
+                    por dentro — senão espremia os dias e o fim dela sumia. 05/10/2026. */}
+                {memoriaAberta&&(
+                  <div style={{maxHeight:'35vh',overflowY:'auto',borderRadius:'0 0 12px 12px'}}>
+                    <MemoriaSaldo m={memoria} positivo={positivo}
+                      cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>
+                  </div>
+                )}
               </div>
             </div>
           )
