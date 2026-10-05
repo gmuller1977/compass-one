@@ -6,7 +6,7 @@ import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
 import { ehAutomaticoCategoria } from './categoriaIcone'
 import { construirRealizadoMes } from './realizadoMes'
-import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
+import { resolverRealKey, splitCatKey, cadastroDaLinha, norm } from '../components/acompanhamento/evolucaoCalcs'
 
 /**
  * Como agregar o que ainda falta gastar e receber do plano.
@@ -476,6 +476,43 @@ export function faltaVariavelDoMes(
     }
     const onde = contaDaCategoria(cat, padrao)
     if (onde) parcelas.push({ conta: onde, balde: 'banco', grupo, falta, nome: cat.nome, descricao: cat.descricao })
+  }
+
+  /**
+   * Gasto variável SEM categoria ativa — desativada ou excluída — também é
+   * estouro do envelope. Corrigido em 05/10/2026, na revisão do otimista.
+   *
+   * O laço acima só olha categorias ativas, e esse dinheiro ficava fora: 250
+   * gastos numa categoria desativada não comiam sobra nenhuma, e o otimista
+   * seguia reservando 200 enquanto o Ritmo do mês da Início dizia "Passou do
+   * plano" — duas telas respondendo diferente se a variável estourou. O Radar
+   * mostra esse gasto em "Outras" (extraCats) e o Ritmo o conta; agora o motor
+   * também.
+   *
+   * O que fica de fora é o que já fica de fora no Radar e no Ritmo: a
+   * transferência (o realizado nem a tem), a fatura do cartão (categoria
+   * homônima) e conta FIXA, ativa ou não — fixa não entra no envelope da
+   * variável. Entra só como estouro (falta negativa, sem plano): no pessimista
+   * a unidade é a parcela e estouro isolado reserva zero, então ele não muda;
+   * o grupo é o do cadastro quando ativo, senão "Outras", como no Radar. A conta
+   * é a padrão — com falta negativa ela não recebe reserva, só pesa na unidade
+   * e nos estouros do aviso do otimista.
+   */
+  const cobertas = new Set<string>()
+  for (const cat of categorias) {
+    if (cat.tipo !== 'saida' || (!cat.fixa && !cat.ativa)) continue
+    const k = resolverRealKey(saidasMap, cat.nome, cat.descricao)
+    if (k) cobertas.add(k)
+  }
+  const nomesCartao = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
+  for (const [k, cr] of Object.entries(saidasMap)) {
+    if (cobertas.has(k) || cr.total <= 0 || !padrao) continue
+    const { nome, descricao } = splitCatKey(k)
+    if (nomesCartao.has(norm(nome).toLowerCase())) continue
+    const reg = cadastroDaLinha({ nome, descricao }, categorias)
+    if (reg?.fixa) continue
+    const grupo = reg?.ativa ? (reg.grupo ?? '__sem_grupo__') : '__sem_grupo__'
+    parcelas.push({ conta: padrao, balde: 'banco', grupo, falta: -cr.total, nome, descricao: descricao || undefined })
   }
 
   /**

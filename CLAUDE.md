@@ -1293,6 +1293,35 @@ otimista DIVIRJAM na fixture. Na primeira rodada eles deram 2.100 os dois, e a
 parte B passava sem ter testado o rateio — a fixture não tinha estouro
 compensável. Sem o controle, a prova teria sido reportada como ok.
 
+**Gasto variável sem categoria ativa também é estouro do envelope.**
+Corrigido em 05/10/2026, numa revisão do otimista pedida pelo Guilherme.
+`faltaVariavelDoMes` só olhava categorias ATIVAS, e o gasto do mês numa
+categoria desativada ou excluída — o que o Radar mostra em "Outras" e o Ritmo
+do mês conta — não comia sobra nenhuma. Medido: 250 gastos numa categoria
+desativada, e o otimista seguia reservando 200 enquanto o Ritmo dizia "Passou
+do plano". Duas telas respondendo diferente se a variável estourou.
+
+Acontece de verdade: desativar só é bloqueado com plano nos meses SEGUINTES
+(`bloqueadoPorPlanejamento`), não no corrente — quem cancela a academia no meio
+do mês zera o resto do ano e desativa, com o gasto do mês já lançado.
+
+Hoje esse gasto entra como parcela de estouro (falta negativa, sem plano), com
+as mesmas exclusões do Radar e do Ritmo: transferência, categoria homônima do
+cartão e conta FIXA, ativa ou não. Grupo do cadastro se ativo, senão "Outras".
+O pessimista não muda (estouro isolado reserva zero); o moderado só muda se o
+grupo tiver sobra. O aviso de excesso do otimista passa a contar esse gasto.
+
+A `prova40` exige, no mês corrente, **reserva do otimista === sobra do Ritmo**
+e aviso === gasto − planejado do Ritmo, nos casos de categoria desativada,
+excluída e variante desativada; e, contra a versão anterior, pessimista igual
+em tudo e os três cenários iguais quando não há gasto fora de categoria ativa.
+A `prova28` segue com 534.
+
+**Em aberto, decisão do Guilherme:** conta FIXA paga acima do previsto (Plano
+de Saúde 1.123 de 973) não entra no envelope e não reduz a reserva da variável
+no otimista. "Compensa em qualquer categoria" sugeriria incluir; hoje o
+envelope é só da variável.
+
 **Na FATURA, o sinal é invertido.** Compra no cartão é gravada como
 `tipo: 'entrada'` — entra na fatura como dívida — e `tipo: 'saida'` é
 **estorno**, que abate da categoria (`realizadoMes`, laço da fatura). Foi o que
