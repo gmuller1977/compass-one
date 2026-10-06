@@ -80,3 +80,20 @@ export function escalarItens(itens: ItemPlano[], fator: number): ItemPlano[] {
 
 let seq = 0
 export const novoIdItem = () => `it-${Date.now().toString(36)}-${(seq++).toString(36)}`
+
+/**
+ * O que "copiar este mês para outros" leva: os itens próprios, SEM os do
+ * Simulador — a parcela 2 de 6 de uma compra não é um gasto que se repete.
+ * O valor copiado é a soma do que sobrou; sem itens, o valor do mês.
+ */
+export function paraCopiar(cat: ComItens, mes: number): { valor: number; itens: ItemPlano[] | null } {
+  const itens = itensDoMes(cat, mes)
+  if (!itens) return { valor: cat.v[mes] ?? 0, itens: null }
+  const proprios = itens.filter(i => !i.simulacaoId)
+  return { valor: somaItens(proprios), itens: proprios.length ? proprios : null }
+}
+
+/** Reajuste em %, sem tocar nos itens do Simulador: o preço da compra já está fechado. */
+export function reajustarItens(itens: ItemPlano[], fator: number): ItemPlano[] {
+  return itens.map(i => (i.simulacaoId ? i : { ...i, valor: Math.round(i.valor * fator * 100) / 100 }))
+}

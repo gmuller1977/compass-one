@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import MesesSelector from './MesesSelector'
 import { MESES_FULL, type AnoData, fmt, parseValor } from './types'
 import type { Categoria } from '../../context/AppContext'
-import { itensDoMes, escalarItens, somaItens, type ItemPlano } from '../../utils/itensPlano'
+import { itensDoMes, reajustarItens, somaItens, paraCopiar, type ItemPlano } from '../../utils/itensPlano'
 
 /**
  * Com `itens`, o mês recebe o detalhe e o valor vira a soma dele; sem, grava
@@ -95,11 +95,12 @@ export default function PlanFerramentas({
     const ops: BulkOp[] = []
     if (copiarReceitas)
       dadosAtivos.entradas.forEach((cat, ri) =>
-        dest.forEach(mi => ops.push({ tipo: 'e', ri, mi, valor: cat.v[origemMes], itens: itensDoMes(cat, origemMes) })))
-    // Copiar um mês detalhado leva o detalhe junto.
+        dest.forEach(mi => ops.push({ tipo: 'e', ri, mi, ...paraCopiar(cat, origemMes) })))
+    // Copiar um mês detalhado leva o detalhe junto — sem as parcelas do
+    // Simulador, que não se repetem (paraCopiar).
     if (copiarDespesas)
       dadosAtivos.saidas.forEach((cat, ri) =>
-        dest.forEach(mi => ops.push({ tipo: 's', ri, mi, valor: cat.v[origemMes], itens: itensDoMes(cat, origemMes) })))
+        dest.forEach(mi => ops.push({ tipo: 's', ri, mi, ...paraCopiar(cat, origemMes) })))
     onBulkSave(ops)
     showToast(`Valores copiados para ${dest.length} ${dest.length === 1 ? 'mês' : 'meses'} ✓`)
   }
@@ -125,11 +126,12 @@ export default function PlanFerramentas({
     const ops: BulkOp[] = []
 
     const round2 = (n: number) => Math.round(n * 100) / 100
-    // Mês com itens: o % vai em cada item, e o total segue a soma deles.
+    // Mês com itens: o % vai em cada item (menos os do Simulador, de preço
+    // fechado), e o total segue a soma deles.
     const reajustar = (tipo: 'e' | 's', ri: number, cat: { v: number[]; itens?: Record<number, ItemPlano[]> }, mi: number): BulkOp => {
       const itens = itensDoMes(cat, mi)
       if (!itens) return { tipo, ri, mi, valor: round2(cat.v[mi] * fator) }
-      const novos = escalarItens(itens, fator)
+      const novos = reajustarItens(itens, fator)
       return { tipo, ri, mi, valor: somaItens(novos), itens: novos }
     }
 
@@ -157,12 +159,12 @@ export default function PlanFerramentas({
     dadosAnoAnterior.entradas.forEach(cat => {
       const ri = dadosAtivos.entradas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
       if (ri < 0) return
-      cat.v.forEach((valor, mi) => ops.push({ tipo: 'e', ri, mi, valor, itens: itensDoMes(cat, mi) }))
+      cat.v.forEach((_, mi) => ops.push({ tipo: 'e', ri, mi, ...paraCopiar(cat, mi) }))
     })
     dadosAnoAnterior.saidas.forEach(cat => {
       const ri = dadosAtivos.saidas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
       if (ri < 0) return
-      cat.v.forEach((valor, mi) => ops.push({ tipo: 's', ri, mi, valor, itens: itensDoMes(cat, mi) }))
+      cat.v.forEach((_, mi) => ops.push({ tipo: 's', ri, mi, ...paraCopiar(cat, mi) }))
     })
     onBulkSave(ops)
     showToast(`Planejamento de ${anoAtual - 1} copiado ✓`)

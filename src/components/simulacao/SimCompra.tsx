@@ -14,6 +14,9 @@ import {
 } from '../../utils/simulacaoCompra'
 import { compararOpcoes, opcoesPadrao, precoAVista, editarOpcao, type Opcao } from '../../utils/comparativoCompra'
 import SimComparativo from './SimComparativo'
+import IncluirNoPlano from './IncluirNoPlano'
+import { incluirNoPlano, parcelasDesde, dividirEmParcelas, novoIdSimulacao, resumoDasParcelas } from '../../utils/simuladorNoPlano'
+import type { Categoria } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
 import { medirDescoberta } from '../../utils/descoberta'
 import { NOMES_MESES } from '../novoLancamentoExtrato/NleShared'
@@ -68,7 +71,7 @@ const cardAzul: React.CSSProperties = {
  * veredito, gráfico e tabela de quatro colunas — tudo correto e ilegível.
  */
 export default function SimCompra({ isMobile }: { isMobile: boolean }) {
-  const { contas, categorias, planos, extratoData, faturaData, saldoInicialDinheiro,
+  const { contas, categorias, planos, setPlanos, extratoData, faturaData, saldoInicialDinheiro,
     cenarioPrevisao, onboardingCompleto } = useApp()
   const navigate = useNavigate()
   const hoje = new Date()
@@ -162,6 +165,25 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serie, opcoes, contas, ondeId, inicio, tetoParcelas, guardarNum])
+
+  // Aprovar a compra: ela entra no plano como item de uma categoria, somando
+  // ao que já estava planejado (utils/simuladorNoPlano). As parcelas caem no
+  // mês da COMPRA em diante — é quando o plano da categoria é consumido, pela
+  // mesma regra do realizado; quando a fatura vence é a previsão que resolve.
+  const [incluindo, setIncluindo] = useState(false)
+  const [incluidoEm, setIncluidoEm] = useState('')
+  const parcelasDaCompra = useMemo(
+    () => (pedido ? parcelasDesde(pedido.ano, pedido.mes, dividirEmParcelas(pedido.valorTotal, pedido.parcelas)) : []),
+    [pedido],
+  )
+  useEffect(() => { setIncluidoEm('') }, [pedido])
+  function confirmarInclusao(cat: Categoria, descricao: string) {
+    const r = incluirNoPlano(planos, cat, parcelasDaCompra, descricao, novoIdSimulacao())
+    setPlanos(r.planos as typeof planos)
+    setIncluindo(false)
+    const nomeCat = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
+    setIncluidoEm(`Entrou em ${nomeCat}: ${resumoDasParcelas(r.gravadas)}`)
+  }
 
   /** Clicar numa linha é o gesto de simular: o detalhe abaixo passa a ser dela. */
   function escolher(id: string) {
@@ -370,6 +392,27 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
               Escolha uma opção na tabela para ver o mês a mês.
             </div>
           </div>
+        )}
+        {resultado && pedido && (
+          // Página clara: cartão branco com texto escuro; o verde do "incluído"
+          // é sucessoTexto (#15803d), 5,02 no branco.
+          <div style={{ background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 12, padding: '14px 16px' }}>
+            {incluidoEm ? (
+              <div role="status" style={{ fontSize: 13, color: COR.sucessoTexto, fontWeight: 600, lineHeight: 1.5 }}>
+                ✓ {incluidoEm}. Para tirar, use “Desfazer” no topo do Simulador.
+              </div>
+            ) : (
+              <button type="button" onClick={() => setIncluindo(true)} style={{
+                width: '100%', padding: '11px 16px', borderRadius: 10, border: `1px solid ${COR.borda}`,
+                background: COR.branco, color: COR.texto, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>📅 Vou comprar — incluir no planejamento</button>
+            )}
+          </div>
+        )}
+        {incluindo && (
+          <IncluirNoPlano descricaoInicial={nome.trim() || 'Compra'} parcelas={parcelasDaCompra}
+            planos={planos as Record<number, PlanoAnoData | undefined>} categorias={categorias} contas={contas}
+            onConfirmar={confirmarInclusao} onFechar={() => setIncluindo(false)} />
         )}
       </div>
     </div>

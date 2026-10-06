@@ -9,6 +9,11 @@ import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import { COR } from '../utils/cores'
 import SimCompra from '../components/simulacao/SimCompra'
+import IncluirNoPlano, { NoSeuPlano } from '../components/simulacao/IncluirNoPlano'
+import {
+  incluirNoPlano, desfazerNoPlano, integracoesNoPlano, parcelasDesde, novoIdSimulacao, resumoDasParcelas,
+} from '../utils/simuladorNoPlano'
+import type { Categoria } from '../context/AppContext'
 import { useNavigate } from 'react-router-dom'
 import { mesesQueOPlanoCobre, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import type { PlanoAnoData } from '../context/AppContext'
@@ -230,7 +235,7 @@ function TabelaImpacto({ parcela, planos, cor }: {
 
 export default function Simulacao() {
   const isMobile                          = useIsMobile()
-  const { user, planos, setPlanos } = useApp()
+  const { user, planos, setPlanos, categorias, contas } = useApp()
   const navigate = useNavigate()
   const hoje                              = new Date()
 
@@ -404,50 +409,57 @@ export default function Simulacao() {
   }
 
   // ── Incluir no planejamento ──────────────────────────────────────────
-  async function incluirNoPlanejamento() {
-    if (!user) return
-    const parcela  = aba === 'divida' ? resultDiv?.parcela       : resultMeta?.guardaPorMes
-    const nome     = aba === 'divida' ? (nomeDivida || 'Dívida') : (nomeMeta || 'Meta')
-    const mesesTot = aba === 'divida' ? resultDiv?.meses         : resultMeta?.meses
-    if (!parcela || !mesesTot) return
-
-    const anoAtual = hoje.getFullYear()
-    const mesAtual = hoje.getMonth()
-
-    // O plano so recebe o que ele cobre. Antes o laco parava em dezembro e
-    // calava: uma divida de 24 parcelas comecando em setembro gravava quatro
-    // meses e DESCARTAVA vinte, sem nada na tela. O Simulador existe para
-    // avisar que o dinheiro vai faltar, e escondia 83% da obrigacao.
-    //
-    // Parar no horizonte e a regra ja escrita em simulacaoCompra: nada aqui
-    // extrapola. Quem quiser gravar o resto planeja o ano seguinte — e o
-    // AvisoTeto diz isso, com o link, antes de o botao ser clicado.
+  //
+  // A parcela entra como ITEM de uma categoria escolhida, somando ao que já
+  // estava planejado — utils/simuladorNoPlano. Antes criava uma linha com o
+  // nome da dívida, sem categoria (o Radar não mostra linha sem categoria
+  // ativa), sobrescrevia o array e só gravava o ano corrente.
+  //
+  // O plano só recebe o que ele cobre: uma dívida de 24 parcelas começando em
+  // setembro, com plano até dezembro, grava quatro meses — e o AvisoTeto diz
+  // isso, com o link, antes de o botão ser clicado.
+  const [incluindo, setIncluindo] = useState(false)
+  const [incluidoEm, setIncluidoEm] = useState('')
+  const parcelasDoCompromisso = useMemo(() => {
+    const parcela  = aba === 'divida' ? resultDiv?.parcela : resultMeta?.guardaPorMes
+    const mesesTot = aba === 'divida' ? resultDiv?.meses   : resultMeta?.meses
+    if (!parcela || !mesesTot) return []
     const cabem = Math.min(mesesTot, tetoMeses)
-    if (cabem <= 0) return
+    return cabem > 0 ? parcelasDesde(hoje.getFullYear(), hoje.getMonth(), Array(cabem).fill(parcela)) : []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aba, resultDiv, resultMeta, tetoMeses])
 
-    const v = Array(12).fill(0)
-    for (let m = mesAtual; m < 12 && (m - mesAtual) < cabem; m++) {
-      v[m] = parcela
-    }
+  function incluirNoPlanejamento() {
+    if (!user || parcelasDoCompromisso.length === 0) return
+    setIncluindo(true)
+  }
 
-    const planoBase = planos[anoAtual] ?? { saldoInicialJan: 0, entradas: [], saidas: [] }
-    const jaExiste  = planoBase.saidas.find(c => c.nome === nome)
-    const novasSaidas = jaExiste
-      ? planoBase.saidas.map(c => c.nome === nome ? { ...c, v } : c)
-      : [...planoBase.saidas, { nome, t: 'Outros', v }]
-
-    // Grava no plano unico. Antes chamava finalizarPlanejamento, que
-    // sobrescrevia o plano "real" e travava o planejamento a partir daqui.
-    setPlanos(prev => ({ ...prev, [anoAtual]: { ...planoBase, saidas: novasSaidas } }))
-
-    // Mark simulation as integrated in DB if it was saved
+  async function confirmarInclusao(cat: Categoria, descricao: string) {
+    // Simulação já salva e ainda fora do plano: o id dela vira o do item, e
+    // o Desfazer consegue desmarcá-la também.
     const simSalvada = simList.find(s => s.tipo === aba && !s.integrado_planejamento)
+    const id = simSalvada?.id ?? novoIdSimulacao()
+    const r = incluirNoPlano(planos, cat, parcelasDoCompromisso, descricao, id)
+    setPlanos(r.planos as typeof planos)
+    setIncluindo(false)
+    setIntegrado(true)
+    const nomeCat = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
+    setIncluidoEm(`Entrou em ${nomeCat}: ${resumoDasParcelas(r.gravadas)}`)
     if (simSalvada) {
       await supabase.from('simulacoes').update({ integrado_planejamento: true }).eq('id', simSalvada.id)
       setSimList(prev => prev.map(s => s.id === simSalvada.id ? { ...s, integrado_planejamento: true } : s))
     }
+  }
 
-    setIntegrado(true)
+  // O que está no plano é lido dos próprios itens — não há registro à parte.
+  const noPlano = useMemo(() => integracoesNoPlano(planos), [planos])
+  async function desfazer(id: string) {
+    setPlanos(prev => desfazerNoPlano(prev, id) as typeof prev)
+    setIntegrado(false)
+    if (simList.some(s => s.id === id)) {
+      await supabase.from('simulacoes').update({ integrado_planejamento: false }).eq('id', id)
+      setSimList(prev => prev.map(s => s.id === id ? { ...s, integrado_planejamento: false } : s))
+    }
   }
 
   // ── Render ───────────────────────────────────────────────────────────
@@ -516,10 +528,22 @@ export default function Simulacao() {
           })}
         </div>
 
+        {/* O que o Simulador já pôs no plano, com Desfazer — nas três abas. */}
+        <NoSeuPlano itens={noPlano} onDesfazer={desfazer} />
+
+        {incluindo && (
+          <IncluirNoPlano
+            descricaoInicial={aba === 'divida' ? (nomeDivida || 'Dívida') : (nomeMeta || 'Meta')}
+            parcelas={parcelasDoCompromisso} planos={planos}
+            categorias={categorias} contas={contas}
+            onConfirmar={confirmarInclusao} onFechar={() => setIncluindo(false)}
+          />
+        )}
+
         {/* ── Minhas simulações salvas ── */}
         {!listLoading && simListFiltrada.length > 0 && (
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.85)', letterSpacing: '.8px', textTransform: 'uppercase', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, letterSpacing: '.8px', textTransform: 'uppercase', marginBottom: 10 }}>
               Minhas simulações salvas
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -527,7 +551,7 @@ export default function Simulacao() {
                 <SimCard key={s.id} sim={s} onDelete={excluirSim} />
               ))}
             </div>
-            <div style={{ height: 1, background: 'rgba(255,255,255,.18)', margin: '20px 0' }} />
+            <div style={{ height: 1, background: COR.borda, margin: '20px 0' }} />
           </div>
         )}
 
@@ -673,7 +697,7 @@ export default function Simulacao() {
                   </div>
                   {integrado && (
                     <div style={{ fontSize: 12, color: COR.verde, marginTop: 10 }}>
-                      Parcela de {fmt(resultDiv.parcela)}/mês adicionada ao planejamento de {hoje.getFullYear()}
+                      {incluidoEm}
                     </div>
                   )}
                 </div>
@@ -684,7 +708,9 @@ export default function Simulacao() {
         )}
 
         {/* ═══ ABA META ═══ */}
-        {!isDivida && (
+        {/* Era `!isDivida`, que também vale na aba Compra: o formulário da
+            meta aparecia embaixo do "Posso comprar?". */}
+        {aba === 'meta' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={card}>
@@ -813,7 +839,7 @@ export default function Simulacao() {
                   </div>
                   {integrado && (
                     <div style={{ fontSize: 12, color: COR.verde, marginTop: 10 }}>
-                      {fmt(resultMeta.guardaPorMes)}/mês de poupança adicionado ao planejamento de {hoje.getFullYear()}
+                      {incluidoEm}
                     </div>
                   )}
                 </div>

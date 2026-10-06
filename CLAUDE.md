@@ -797,23 +797,40 @@ em aba nenhuma. **Mas é reescrita de tela**, não ajuste: são 750 linhas com
 três formulários, três gráficos e três conjuntos de cards. Desenhar antes de
 fazer, como no Modo Descoberta.
 
-**PENDENTE — a integração no planejamento.** O desenho está fechado com o
-Guilherme e não foi implementado: ao aprovar, escolher **grupo** e
-**categoria** existentes, e uma **observação** com o que foi comprado.
+**A integração no planejamento: o Simulador entra como ITEM de uma categoria.**
+Feito em 06/10/2026, sobre os itens do plano — nas três abas. "Posso comprar?"
+ganhou "Vou comprar — incluir no planejamento"; Dívida e Meta trocaram o
+"Incluir" antigo pelo mesmo caminho. Regras em
+[`simuladorNoPlano.ts`](src/utils/simuladorNoPlano.ts), janela em
+`IncluirNoPlano.tsx`:
 
-Três coisas decididas nessa conversa e que valem quando for feito:
+1. Escolher uma categoria de despesa EXISTENTE e ativa (sem as do cartão e sem
+   a transferência). O que foi comprado vai na **descrição do item**, nunca na
+   `descricao` do `PlanoCat`, que é a VARIANTE — "Bicicleta" ali criaria
+   `Lazer · Bicicleta` como categoria separada.
+2. **Somar, nunca substituir**: o que já estava planejado no mês vira o primeiro
+   item (id `base-…`) e a parcela entra ao lado, "Bicicleta · 1 de 6".
+3. **Desfazer é subtrair** (`desfazerNoPlano`): o mês perde exatamente o que a
+   simulação somou; se só sobrar o item `base-`, o detalhe some e fica o total.
+   Funciona mesmo se alguém mexeu no valor depois — subtrai e tira o detalhe.
 
-1. A observação **não pode ir em `descricao`** do `PlanoCat` — ali `descricao`
-   é a VARIANTE, e escrever "Bicicleta" criaria `Lazer · Bicicleta` como
-   categoria separada. Confusão de nome: no `Lancamento` é o contrário —
-   `subCategoria` é a variante e `descricao` é o texto livre. O plano precisa
-   de um campo novo, `obs?`, que sai de graça porque o plano é JSON na coluna
-   `dados` de `planejamento_data`.
-2. Ao integrar numa categoria que já tem valor, **somar** e não substituir. A
-   compra é gasto a mais, não troca de orçamento. Hoje o
-   `incluirNoPlanejamento` sobrescreve o array inteiro.
-3. Com categoria, valor e meses guardados na linha de `simulacoes` — que hoje
-   só tem um booleano `integrado_planejamento` —, **desfazer é subtrair**.
+**Não há registro à parte.** "No seu planejamento", no topo do Simulador, é lido
+dos itens com `simulacaoId` (`integracoesNoPlano`); a coluna `simulacoes` não
+mudou. Dívida/meta já salva empresta o id da linha, e o Desfazer desmarca o
+`integrado_planejamento` dela.
+
+Parcelas da compra caem no mês da COMPRA em diante, sem o deslocamento do
+cartão: o plano da categoria é consumido na compra, pela regra do realizado; o
+mês em que a fatura vence é assunto da previsão. Atravessa a virada do ano; mês
+de ano sem plano fica de fora e a janela avisa antes.
+
+Ferramentas do plano não espalham a compra: "copiar mês/ano" leva só os itens
+próprios (`paraCopiar`) e o reajuste % não toca item do Simulador
+(`reajustarItens`). `prova46` (22 invariantes).
+
+Fica sem tratamento: linhas criadas pelo "Incluir" ANTIGO (nome da dívida, sem
+categoria, `t: 'Outros'`) continuam no plano de quem usou — somam no total do
+Planejamento e não aparecem no Radar nem em "No seu planejamento".
 
 Categoria que ainda não existe ficou fora por decisão do Guilherme; quando
 chegar, `montarCategoria` do Modo Descoberta já cria a partir de um campo só.
