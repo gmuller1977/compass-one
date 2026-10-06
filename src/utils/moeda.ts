@@ -75,5 +75,33 @@ export function parseValor(s: string): number | null {
   return isNaN(v) ? null : (neg ? -v : v)
 }
 
+/**
+ * Uma conta de somar e subtrair -> número. `null` quando qualquer parcela não é
+ * um valor. Pedido do Guilherme em 06/10/2026: ele somava por fora antes de
+ * lançar o valor numa categoria do plano. Agora digita "800+300" na célula.
+ *
+ * Cada parcela passa por parseValor, então vale tudo que ela aceita:
+ * "1.234,56+R$ 100" dá 1334,56. Só soma e subtração — é a conta que se faz
+ * para montar um orçamento; multiplicar e dividir abririam a pergunta de
+ * precedência sem ninguém ter pedido. Sem operador, é parseValor puro.
+ *
+ * O resultado é arredondado ao centavo: 0,1 + 0,2 não pode gravar
+ * 0,30000000000000004 no plano.
+ */
+export function parseConta(s: string): number | null {
+  const limpo = s.replace(/R\$/gi, '').replace(/\s/g, '').replace(/^=/, '')
+  // Sem "+" e sem "-" depois do primeiro caractere, não é conta: "-50" é só negativo.
+  if (!limpo.includes('+') && !/.-/.test(limpo)) return parseValor(limpo)
+  const termos = limpo.match(/[+-]?[^+-]+/g)
+  if (!termos || termos.join('') !== limpo) return null
+  let total = 0
+  for (const t of termos) {
+    const v = parseValor(t.replace(/^[+-]/, ''))
+    if (v === null) return null
+    total += t.startsWith('-') ? -v : v
+  }
+  return Math.round(total * 100) / 100
+}
+
 /** Leitura tolerante: vazio ou inválido viram 0. Assinatura das 7 cópias antigas. */
 export const parseBRL = (s: string): number => parseValor(s) ?? 0

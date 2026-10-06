@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useToast } from '../Toast'
-import { fmt, parseValor, COR } from './types'
+import { fmt, parseConta, COR } from './types'
 
 interface Props {
   valor: number
@@ -81,7 +81,9 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
   }
 
   function confirmar() {
-    const v = parseValor(temp)
+    // Aceita conta: "800+300" grava 1.100 (parseConta). Sem operador é o
+    // mesmo parseValor de sempre.
+    const v = parseConta(temp)
     // Ver PlanCelulaNav: valor invalido nao vira zero, senao apaga a celula.
     if (v === null) {
       toast(`"${temp.trim()}" não é um valor. A célula ficou como estava.`, 'error')
@@ -93,7 +95,12 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
   }
 
   if (editando) {
+    // Enquanto há uma conta no campo, o resultado aparece embaixo — quem
+    // digita "800+300" vê o 1.100 antes de confirmar.
+    const ehConta = /[0-9.,]\s*[+-]/.test(temp)
+    const resultado = ehConta ? parseConta(temp) : null
     return (
+      <span style={{ position: 'relative', display: 'block' }}>
       <input
         ref={inputRef}
         autoFocus
@@ -112,6 +119,17 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
           boxSizing: 'border-box',
         }}
       />
+      {ehConta && (
+        <span role="status" style={{
+          position: 'absolute', top: 'calc(100% + 3px)', right: align === 'right' ? 0 : undefined,
+          left: align === 'left' ? 0 : undefined, zIndex: 20, whiteSpace: 'nowrap',
+          background: '#0f172a', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 6,
+          padding: '3px 8px', pointerEvents: 'none', fontVariantNumeric: 'tabular-nums',
+        }}>
+          {resultado === null ? 'conta incompleta' : `= ${fmt(resultado)}`}
+        </span>
+      )}
+      </span>
     )
   }
 

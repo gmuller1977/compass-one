@@ -1549,6 +1549,12 @@ própria e 112 cores só dela. Não migrar, agora nem depois.
 - `parseValor(s)` → `number | null`. Campo vazio vale `0`; só texto inválido vale `null`.
 - `parseBRL(s)` → `number`. Tolerante, para leitura de valor já salvo.
 
+- `parseConta(s)` → `number | null`. Soma e subtração de valores ("800+300",
+  "1.234,56 + R$ 100"), cada parcela por `parseValor`; arredonda ao centavo.
+  Sem operador é `parseValor` puro. Usado na célula do plano
+  (`PlanCelulaEditavel`), que mostra "= R$ X" enquanto se digita — pedido do
+  Guilherme em 06/10/2026, para parar de somar por fora. `prova44`.
+
 Nunca escrever `parseFloat(...) || 0` de novo. Havia 16 cópias disso, com três
 comportamentos diferentes, e cada uma errava de um jeito: `1234.56` virava
 `123456`, `12o0` virava `12`, `R$ 1.234,56` virava `0` e apagava a célula.
