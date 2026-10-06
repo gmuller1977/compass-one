@@ -97,3 +97,38 @@ export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   if (prev - real > 0.005) return { principal: `resta ${fmt(prev - real)}`, contexto }
   return { principal: 'usou tudo', contexto }
 }
+
+/**
+ * Conta FIXA de despesa paga até o previsto — "✓ pago", decidido pelo
+ * Guilherme em 26/09/2026. "Até o previsto" é o percentual ARREDONDADO, o que
+ * está escrito: 460,94 de 460 aparece "100%" e conta como paga. Uma regra só,
+ * para a linha da categoria e para o cabeçalho do grupo.
+ */
+export function ehFixaPaga(prev: number, real: number, isEntrada: boolean, fixa: boolean): boolean {
+  if (isEntrada || !fixa || real <= 0) return false
+  const perc = prev > 0 ? real / prev : 1
+  return Math.round(perc * 100) / 100 <= 1
+}
+
+/**
+ * O número principal do cabeçalho do grupo. Pedido do Guilherme em 06/10/2026:
+ * o grupo dizia "usou tudo" ou "resta R$ 0,28" em cima de categorias que
+ * diziam "✓ pago".
+ *
+ * Fixa paga entra pelo valor PAGO, não pelo previsto: a sobra de centavos
+ * dela não vira "resta" (o saldo previsto já não conta nada dela), nem abate
+ * o estouro de outra linha. Grupo só de fixas pagas é "✓ pago". O "gastou X
+ * de Y" segue com os totais de verdade, os mesmos da barra.
+ */
+export function destaqueDoGrupo(
+  linhas: { prev: number; real: number; fixa: boolean }[], isEntrada: boolean,
+): { principal: string; contexto: string } {
+  const prev = linhas.reduce((s, l) => s + l.prev, 0)
+  const real = linhas.reduce((s, l) => s + l.real, 0)
+  const { contexto } = destaqueRadar(prev, real, isEntrada)
+  const comValor = linhas.filter(l => l.prev > 0.005 || Math.abs(l.real) > 0.005)
+  const pagas = comValor.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa))
+  if (comValor.length > 0 && pagas.every(Boolean)) return { principal: '✓ pago', contexto }
+  const prevEfetivo = comValor.reduce((s, l, i) => s + (pagas[i] ? l.real : l.prev), 0)
+  return { principal: destaqueRadar(prevEfetivo, real, isEntrada).principal, contexto }
+}

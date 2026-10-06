@@ -347,6 +347,14 @@ A `prova41` (21 invariantes) exige a sobra da frase igual à do Ritmo, fixa paga
 no valor fora dos grupos que passaram, "já" só no mês corrente e nada em mês
 futuro. O mobile (`AcMobileView`) não foi tocado.
 
+**O cabeçalho do grupo não contradiz as categorias.** Mesmo dia: o grupo dizia
+"usou tudo" ou "resta R$ 0,28" em cima de categorias "✓ pago". Hoje
+`destaqueDoGrupo` conta a fixa paga pelo valor PAGO — a sobra de centavos dela
+não vira "resta" nem abate o estouro de outra linha —, e grupo só de fixas
+pagas é "✓ pago". "Usou tudo" fica para variável exatamente no plano. Uma regra
+de "fixa paga" só, `ehFixaPaga`, para a linha e para o grupo. Barras, cores e
+o "gastou X de Y" seguem com os totais de verdade.
+
 **Os cabeçalhos de grupo são CINZA (`#e6ebf1 → #d8dfe8`), com borda `#c3ccd8` e
 texto escuro.** Empilhados, os escuros pesavam demais; passou no mesmo dia pelo
 azul médio e pelo azul-claro de Lançamentos. O cinza é neutro e não puxa o tom
@@ -1120,6 +1128,27 @@ e as três categorias que mais erram em reais.
 Próximo passo registrado no briefing, não feito: levar o mesmo cartão para a
 **Revisão Mensal**, onde ver que uma categoria erra todo mês muda a decisão de
 "justificar o desvio" para "corrigir o plano". Casar pela `cadastroDaLinha`.
+
+**"Por categoria": planejado × realizado de cada categoria, mês a mês.**
+Pedido do Guilherme em 06/10/2026 — o que faltava era ver a MESMA categoria ao
+longo dos meses. É uma aba do quadro "Receitas e despesas contra o plano"
+(Total | Por categoria), e não uma tela nova: a janela é a mesma.
+
+- `categoriasMesAMes` em [`categoriasMesAMes.ts`](src/utils/categoriasMesAMes.ts)
+  não soma nada: as células são as `linhasSaida` / `linhasEntrada` de cada
+  `MesComparado`, as linhas do Radar daquele mês. Grupo = soma das categorias.
+- Ordem do Radar: grupos alfabéticos, "Outras" no fim; a categoria fica no
+  grupo do mês mais recente. Linha sem plano e sem gasto na janela inteira some.
+- Célula: realizado em destaque, "de X" embaixo, cor da faixa do Radar no
+  claro; estouro com fundo `#fef2f2`. Fixa paga com ✓ (`ehFixaPaga`); grupo só
+  com ✓ quando todas as linhas com valor são fixas pagas. Mês em curso neutro,
+  salvo despesa que já passou.
+- Média: as regras da Precisão do plano — só fechados, só meses com plano,
+  mínimo 3. A `prova42` (33 invariantes) exige o mesmo desvio e a mesma
+  contagem que `precisaoDoPlano`, grupo === soma das categorias e total do mês
+  === despesas do comparativo.
+- Celular: rola para o lado com o nome preso. O título "Despesas/Receitas" é
+  sticky no TEXTO, não na célula — célula com colSpan rola inteira.
 
 **Um mês ABRE com o fechamento do anterior, e é uma função só.**
 `saldoRealizadoConta` responde isso para banco e para dinheiro, e as duas telas

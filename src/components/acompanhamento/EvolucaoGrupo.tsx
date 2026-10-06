@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { type CatReal } from './AcShared'
-import { RADAR_COR_CLARO as COR, faixaRadar, destaqueRadar } from './radarCores'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
+import { RADAR_COR_CLARO as COR, faixaRadar, destaqueDoGrupo } from './radarCores'
+import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
 /**
@@ -74,7 +74,13 @@ export default function EvolucaoGrupo({
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
   const corFaixa   = COR[faixa]
   const corNumero  = semDados ? TEXTO : corFaixa
-  const destaque   = destaqueRadar(totalPrev, totalReal, isEntrada)
+  // Fixa paga entra pelo valor pago, e grupo só de fixas pagas é "✓ pago" —
+  // senão o grupo dizia "resta R$ 0,28" em cima de categorias "✓ pago".
+  const destaque   = destaqueDoGrupo(allCats.map(cat => ({
+    prev: cat.v[mes] ?? 0,
+    real: pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0,
+    fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa,
+  })), isEntrada)
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga } from './radarCores'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -143,7 +143,7 @@ export default function EvolucaoLinha({
   // CLAUDE.md, "Categorias e variantes".
   const cadastro = categorias.find(c => c.nome === nome && (c.descricao ?? '') === (descricao ?? ''))
     ?? (categorias.filter(c => c.nome === nome).length === 1 ? categorias.find(c => c.nome === nome) : undefined)
-  const fixaPaga = !isEntrada && !!cadastro?.fixa && real > 0 && percArred <= 1
+  const fixaPaga = ehFixaPaga(prev, real, isEntrada, !!cadastro?.fixa)
 
   const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
   const cor = semDados ? '#94a3b8' : COR[faixa]
