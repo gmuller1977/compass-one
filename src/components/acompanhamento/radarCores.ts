@@ -64,3 +64,36 @@ export function faixaRadar(percArredondado: number, isEntrada: boolean): FaixaRa
   if (percArredondado >= 0.9) return 'atencao'
   return 'bom'
 }
+
+/**
+ * O que cada linha do Radar mostra em destaque — pedido do Guilherme em
+ * 06/10/2026: "parece um monte de número, não me traz algo prático". O número
+ * grande deixou de ser o realizado e passou a ser o que importa agora: quanto
+ * RESTA do plano, ou quanto PASSOU. O "gastou X de Y" desce para contexto e o
+ * percentual saiu — a barra já mostra a proporção.
+ *
+ * São os mesmos dois números que a linha de status já mostrava ("disponível" /
+ * "estourou"), promovidos; nenhuma conta nova. Abaixo de meio centavo é zero.
+ * Fixa paga até o previsto continua "✓ pago" (decisão de 26/09/2026); fixa
+ * ainda não paga é "a pagar" (ou "a receber"), e não "resta": ela não sobra,
+ * vence.
+ */
+export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
+  opts: { fixa?: boolean; fixaPaga?: boolean } = {}):
+  { principal: string; contexto: string } {
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  if (prev <= 0.005 && Math.abs(real) <= 0.005) return { principal: '—', contexto: 'sem plano neste mês' }
+  if (isEntrada) {
+    const contexto = prev > 0.005 ? `recebeu ${fmt(real)} de ${fmt(prev)}` : `recebeu ${fmt(real)} sem plano`
+    if (opts.fixa && Math.abs(real) <= 0.005 && prev > 0.005) return { principal: `a receber ${fmt(prev)}`, contexto }
+    if (real - prev > 0.005) return { principal: `${fmt(real - prev)} a mais`, contexto }
+    if (prev - real > 0.005) return { principal: `falta ${fmt(prev - real)}`, contexto }
+    return { principal: 'recebido', contexto }
+  }
+  const contexto = prev > 0.005 ? `gastou ${fmt(real)} de ${fmt(prev)}` : `gastou ${fmt(real)} sem plano`
+  if (opts.fixaPaga) return { principal: '✓ pago', contexto }
+  if (opts.fixa && Math.abs(real) <= 0.005 && prev > 0.005) return { principal: `a pagar ${fmt(prev)}`, contexto }
+  if (real - prev > 0.005) return { principal: `passou ${fmt(real - prev)}`, contexto }
+  if (prev - real > 0.005) return { principal: `resta ${fmt(prev - real)}`, contexto }
+  return { principal: 'usou tudo', contexto }
+}

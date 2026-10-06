@@ -324,6 +324,29 @@ limite" e "estourou" é 1,65 no claro e 2,28 no escuro. O número dos cartões d
 Receitas e Despesas continua pintado pelo TIPO (verde e vermelho) — só as
 barras seguem a faixa.
 
+**O Radar abre com a RESPOSTA do mês, e cada linha diz quanto resta.**
+Pedido do Guilherme em 06/10/2026: "parece um monte de número, se não me traz
+algo prático". Duas mudanças, validadas na prévia:
+
+1. **Frase no topo** (`ResumoRadarFaixa`, texto em
+   [`resumoRadar.ts`](src/utils/resumoRadar.ts)): "Ainda dá para gastar R$ X
+   nas despesas variáveis até o dia 31 · R$ Y por dia · grupos que já passaram
+   do plano". O X é o `sobra` de `ritmoDoMes` — o MESMO número do "Ritmo do
+   mês" da Início, envelope único da variável. Passou: fundo de erro e "Cada
+   gasto variável daqui até o fim do mês sai do saldo". Mês fechado diz como
+   fechou; mês futuro não tem frase. Os grupos citados somam TODAS as linhas,
+   fixa inclusive — concordam com o vermelho dos cabeçalhos logo abaixo.
+2. **O número grande vira o que importa agora** (`destaqueRadar` em
+   [`radarCores.ts`](src/components/acompanhamento/radarCores.ts)): despesa
+   "resta R$ X" / "passou R$ X", fixa "✓ pago" / "a pagar R$ X", receita
+   "falta R$ X" / "R$ X a mais". O "gastou X de Y" vai pequeno ao lado, e o
+   **percentual saiu** — a barra já mostra a proporção; ele fica no `title`.
+   Barras, cores e faixas não mudaram.
+
+A `prova41` (21 invariantes) exige a sobra da frase igual à do Ritmo, fixa paga
+no valor fora dos grupos que passaram, "já" só no mês corrente e nada em mês
+futuro. O mobile (`AcMobileView`) não foi tocado.
+
 **Os cabeçalhos de grupo são CINZA (`#e6ebf1 → #d8dfe8`), com borda `#c3ccd8` e
 texto escuro.** Empilhados, os escuros pesavam demais; passou no mesmo dia pelo
 azul médio e pelo azul-claro de Lançamentos. O cinza é neutro e não puxa o tom

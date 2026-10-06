@@ -19,6 +19,8 @@ import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
+import ResumoRadarFaixa from '../components/acompanhamento/ResumoRadarFaixa'
+import { resumoDoMes } from '../utils/resumoRadar'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -71,10 +73,19 @@ export default function RadarFinanceiro() {
   const gruposEntrada = useMemo(() => gruposDoRadar('entrada', categorias, cartaoNomes), [categorias, cartaoNomes])
 
   // Os totais saem de totaisDoMes, a mesma função que a tela Início usa.
-  const { totalPrevS, totalRealS, totalPrevE, totalRealE } = useMemo(() => {
+  const { totalPrevS, totalRealS, totalPrevE, totalRealE, linhasSaida } = useMemo(() => {
     const t = totaisDoMes({ mes, planoAno: dadosAno, categorias, cartaoNomes, entradasMap, saidasMap })
-    return { totalPrevE: t.entrada.prev, totalRealE: t.entrada.real, totalPrevS: t.saida.prev, totalRealS: t.saida.real }
+    return { totalPrevE: t.entrada.prev, totalRealE: t.entrada.real, totalPrevS: t.saida.prev, totalRealS: t.saida.real,
+      linhasSaida: t.saida.linhas }
   }, [dadosAno, mes, entradasMap, saidasMap, categorias, cartaoNomes])
+
+  // A resposta prática do mês, antes dos números: quanto ainda dá para gastar
+  // na variável, por dia, e quais grupos passaram. Mesmo número do "Ritmo do
+  // mês" da Início — ver resumoRadar.
+  const resumo = useMemo(
+    () => (dadosAno ? resumoDoMes(linhasSaida, categorias, ano, mes) : null),
+    [dadosAno, linhasSaida, categorias, ano, mes],
+  )
 
   // O Radar nao calcula saldo proprio: soma os saldos das contas de banco e
   // do dinheiro, os mesmos que Lancamentos mostra. Assim o saldo inicial de
@@ -247,6 +258,7 @@ export default function RadarFinanceiro() {
           />
         ) : (
           <>
+            {resumo && <ResumoRadarFaixa resumo={resumo} />}
             {/* ENTRADAS — um card por grupo */}
             {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
               <EvolucaoGrupo

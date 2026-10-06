@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar } from './radarCores'
+import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar } from './radarCores'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -147,12 +147,12 @@ export default function EvolucaoLinha({
 
   const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
   const cor = semDados ? '#94a3b8' : COR[faixa]
-  // "Disponível / Estourou" sai das colunas e vai para a linha de status: é o
-  // número que explica os cenários, e não pode sumir junto com a coluna.
-  // Fixa paga não tem "disponível": o saldo previsto já não conta nada dela, e
-  // "disponível R$ 0,28" daria a entender que ainda vão sair 0,28.
-  const detalhe = dif.vazio || fixaPaga ? '' : ` · ${dif.label.toLowerCase()} ${fmt(dif.valor)}`
-  const statusTexto = fixaPaga ? '✓ Pago' : status.texto
+  // O número grande é o que importa agora — resta, passou, a pagar, ✓ pago —,
+  // e o "gastou X de Y" desce para a linha de baixo. O percentual saiu: a
+  // barra já mostra a proporção. Mesma regra do grupo (destaqueRadar), pedido
+  // do Guilherme em 06/10/2026. Fixa paga continua sem "disponível": o saldo
+  // previsto já não conta nada dela.
+  const destaque = destaqueRadar(prev, real, isEntrada, { fixa: !!cadastro?.fixa, fixaPaga })
   const alternar = () => temLancamentos && setAberto(v => !v)
 
   return (
@@ -180,14 +180,12 @@ export default function EvolucaoLinha({
           </div>
           <div style={{ fontSize: 10.5, marginTop: 2, color: '#475569',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {statusTexto}{detalhe}
+            {destaque.contexto}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
-          whiteSpace: 'nowrap', minWidth: 290, fontVariantNumeric: 'tabular-nums' }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: cor }}>{real !== 0 ? fmt(real) : '—'}</span>
-          <span style={{ fontSize: 10.5, color: '#475569' }}>de {prev > 0 ? fmt(prev) : '—'}</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: cor, minWidth: 44, textAlign: 'right' }}>{percLabel}</span>
+        <div title={percLabel} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end',
+          whiteSpace: 'nowrap', minWidth: 150, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: cor }}>{destaque.principal}</span>
         </div>
         <div style={{ width: 200, flexShrink: 0, height: 16, borderRadius: 8, background: TRILHO, overflow: 'hidden',
           boxSizing: 'border-box', border: `2px solid ${semDados ? '#cbd5e1' : '#64748b'}` }}>

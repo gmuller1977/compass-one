@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { fmt, type CatReal } from './AcShared'
-import { RADAR_COR_CLARO as COR, faixaRadar } from './radarCores'
+import { type CatReal } from './AcShared'
+import { RADAR_COR_CLARO as COR, faixaRadar, destaqueRadar } from './radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
@@ -74,6 +74,7 @@ export default function EvolucaoGrupo({
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
   const corFaixa   = COR[faixa]
   const corNumero  = semDados ? TEXTO : corFaixa
+  const destaque   = destaqueRadar(totalPrev, totalReal, isEntrada)
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
 
@@ -116,17 +117,14 @@ export default function EvolucaoGrupo({
             </svg>
             {tipoLabel} — {grupoLabel}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 6,
-            whiteSpace: 'nowrap', minWidth: 290, fontVariantNumeric: 'tabular-nums' }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: corNumero }}>
-              {totalReal > 0 ? fmt(totalReal) : '—'}
-            </span>
-            <span style={{ fontSize: 11, color: ROTULO }}>
-              de {totalPrev > 0 ? fmt(totalPrev) : '—'}
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: corNumero, minWidth: 44, textAlign: 'right' }}>
-              {percLabel}
-            </span>
+          {/* O número grande é o que importa agora: quanto RESTA do plano ou
+              quanto PASSOU (destaqueRadar). O "gastou X de Y" vai pequeno, ao
+              lado, e o percentual saiu — a barra já mostra a proporção.
+              Pedido do Guilherme em 06/10/2026. */}
+          <div title={percLabel} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 8,
+            whiteSpace: 'nowrap', minWidth: 330, fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 11, color: ROTULO }}>{destaque.contexto}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: corNumero }}>{destaque.principal}</span>
           </div>
           {/* Borda branca contornando a barra INTEIRA: desenha os 100% e deixa
               a parte vazia legível como vazia sobre o trilho escuro. */}
