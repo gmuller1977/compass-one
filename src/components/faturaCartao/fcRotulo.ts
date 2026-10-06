@@ -1,15 +1,14 @@
 import type { Categoria } from '../../context/AppContext'
-import { cadastroDaLinha } from '../acompanhamento/evolucaoCalcs'
+import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import { lancLabel } from './FcShared'
 
 /**
  * O grupo da categoria do lançamento, para a lista da fatura dizer "Casa ·
  * Mercado" ou "Carro · Seguro · Civic" — pedido do Guilherme em 06/10/2026.
- * O cadastro é achado pelo par (nome, variante), como o Radar acha
- * (cadastroDaLinha); sem cadastro ou sem grupo, não há prefixo.
+ * A busca é a mesma do banco e do dinheiro: utils/rotuloCategoria.
  */
 export const grupoDoLanc = (l: { categoria: string; subCategoria?: string }, categorias: Categoria[]) =>
-  cadastroDaLinha({ nome: l.categoria, descricao: l.subCategoria?.trim() }, categorias)?.grupo?.trim() || undefined
+  grupoDaCategoria(l.categoria, l.subCategoria, categorias)
 
 /** "Grupo · Nome · Variante", em texto corrido. */
 export const lancLabelComGrupo = (l: { categoria: string; subCategoria?: string }, categorias: Categoria[]) => {

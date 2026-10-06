@@ -2,6 +2,7 @@ import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
 import { iconeCategoria, ehCartaoCategoria } from '../../utils/categoriaIcone'
+import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import {
   COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
   diaSemana, diaEfetivoFixa, BadgePag,
@@ -545,7 +546,15 @@ export default function NleExtrato({
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:12,fontWeight:500,color:consolidada?tl.text:tl.label,
                             display:'flex',alignItems:'center',gap:5}}>
-                            {ehFaturaFixa?'Cartão de Crédito':f.nome}
+                            {/* "Grupo · Nome · Variante", com o grupo no tom do
+                                rótulo — o mesmo do cartão. O grupo vem do cadastro
+                                (subtitulo = c.grupo). Pedido do Guilherme, 06/10/2026. */}
+                            {ehFaturaFixa?'Cartão de Crédito':(
+                              <span style={{minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                {f.subtitulo&&<span style={{color:tl.label}}>{f.subtitulo} · </span>}
+                                {f.nome}{f.descricao?` · ${f.descricao}`:''}
+                              </span>
+                            )}
                             <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
                               background:consolidada?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.07)',
                               color:consolidada?tl.rec:tl.label}}>
@@ -562,9 +571,11 @@ export default function NleExtrato({
                             )}
                           </div>
                           <div style={{fontSize:10,color:tl.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>
+                            {/* Grupo e variante subiram para o título; aqui fica
+                                só a forma de pagamento. */}
                             {ehFaturaFixa
                               ?`${f.categoria}${f.nome!==f.categoria?' · '+f.nome:''}`
-                              :(f.descricao??f.subtitulo??f.categoria)
+                              :null
                             }<BadgePag fp={f.formaPagamento}/>
                           </div>
                         </div>
@@ -600,11 +611,23 @@ export default function NleExtrato({
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,fontWeight:600,color:tl.text,display:'flex',alignItems:'center',gap:5}}>
-                          {ehFaturaLanc?'Cartão de Crédito':l.categoria}
+                          {/* "Grupo · Nome · Variante", como no cartão; o grupo no
+                              tom do rótulo. Pedido do Guilherme, 06/10/2026. */}
+                          {ehFaturaLanc?'Cartão de Crédito':(()=>{
+                            const grupo=grupoDaCategoria(l.categoria,l.subCategoria,categorias)
+                            return(
+                              <span style={{minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                {grupo&&<span style={{fontWeight:500,color:tl.label}}>{grupo} · </span>}
+                                {l.categoria}{l.subCategoria?` · ${l.subCategoria}`:''}
+                              </span>
+                            )
+                          })()}
                           <BadgePag fp={l.formaPagamento}/>
                         </div>
+                        {/* Embaixo, a descrição livre. Antes a variante tomava este
+                            lugar e a descrição sumia quando havia variante. */}
                         <div style={{fontSize:11,color:tl.label,marginTop:1}}>
-                          {ehFaturaLanc?l.categoria:(l.subCategoria||l.descricao)}
+                          {ehFaturaLanc?l.categoria:(l.descricao&&l.descricao!==l.categoria?l.descricao:'')}
                         </div>
                       </div>
                       <div style={{fontSize:13,fontWeight:600,color:corValor}}>
