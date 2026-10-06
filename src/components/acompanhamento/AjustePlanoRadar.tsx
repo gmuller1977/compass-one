@@ -1,13 +1,13 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react'
 import type { Categoria, PlanoAnoData } from '../../context/AppContext'
-import AjustePlanoDialog, { type SugestaoAjuste } from './AjustePlanoDialog'
+import AjustePlanoDialog, { type SugestaoAjuste, type MesDoAjuste } from './AjustePlanoDialog'
 import type { PedidoAjuste } from './ajustePlanoContexto'
 import PlanItensEditor from '../planejamento/PlanItensEditor'
 import { cadastroDaLinha } from './evolucaoCalcs'
 import { acharLinhaDoPlano, mudarLinhaDoPlano } from '../../utils/linhaDoPlano'
-import { comItens, comValor, itensDoMes, type ItemPlano } from '../../utils/itensPlano'
-import { mesAlvoDoAjuste, mediaDaCategoria } from '../../utils/ajustePlano'
-import { comparativoMensal } from '../../utils/comparativoMensal'
+import { comItens, comValor, itensDoMes, novoIdItem, type ItemPlano } from '../../utils/itensPlano'
+import { mesAlvoDoAjuste } from '../../utils/ajustePlano'
+import { mediaSemParcelas, jaLancadoNosMeses } from '../../utils/historicoDaCategoria'
 import type { Deps } from '../../utils/saldoConta'
 
 export type AjusteAberto = PedidoAjuste & { modo?: 'valor' | 'itens'; partes?: number[] }
@@ -16,13 +16,15 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 
 /**
  * O ajuste do plano aberto a partir do Radar. Muda os PRÓXIMOS meses, nunca o
- * corrente (utils/ajustePlano.mesAlvoDoAjuste); o mês que está na tela é só
- * a referência. Acha a linha CRU do plano do ano-alvo por utils/linhaDoPlano
- * e grava por comValor / comItens, as funções do Planejamento. Categoria com
- * itens no mês-alvo abre direto o editor de itens.
+ * corrente (utils/ajustePlano.mesAlvoDoAjuste); o mês na tela é a referência.
+ * Acha a linha CRU do plano do ano-alvo por utils/linhaDoPlano e grava por
+ * comValor / comItens, as funções do Planejamento.
  *
- * A média vem de comparativoMensal — as mesmas linhas da Início —, calculada
- * só quando a janela abre.
+ * As sugestões vêm de utils/historicoDaCategoria — a média SEM parcelas e o
+ * que já está lançado em cada mês —, calculadas uma vez, ao abrir. "Média + já
+ * lançado, mês a mês" grava cada mês com o seu valor, e nos meses com algo
+ * lançado o plano fica em itens: "Gasto normal" e cada parcela, para o
+ * Planejamento mostrar de onde veio o número.
  */
 export default function AjustePlanoRadar({
   ajuste, setAjuste, planos, setPlanos, ano, mes, categorias, deps,
@@ -49,19 +51,28 @@ export default function AjustePlanoRadar({
   const itens = linha ? itensDoMes(linha, alvo.mes) : null
   const nomeExib = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
 
-  const sugestoes = useMemo<SugestaoAjuste[]>(() => {
-    const out: SugestaoAjuste[] = []
-    const m = mediaDaCategoria(comparativoMensal(deps, planos), ajuste.tipo, ajuste.nome, ajuste.descricao)
-    if (m && m.media > 0.005) out.push({ rotulo: m.meses === 1 ? 'Último mês fechado' : `Média dos últimos ${m.meses} meses`, valor: m.media })
-    if (ajuste.real > 0.005) {
-      const hoje = new Date()
-      const corrente = ano === hoje.getFullYear() && mes === hoje.getMonth()
-      out.push({ rotulo: corrente ? `${MESES[mes]} até agora` : `Em ${MESES[mes].toLowerCase()}`, valor: ajuste.real })
-    }
-    return out
-    // Uma vez, ao abrir: a média são seis meses de realizado.
+  // Uma vez, ao abrir: são alguns meses de realizado, para trás e para a frente.
+  const { base, lancado } = useMemo(() => {
+    const m = mediaSemParcelas(deps, ajuste.tipo, ajuste.nome, ajuste.descricao)
+    const base: SugestaoAjuste | null = m && m.media > 0.005 ? {
+      rotulo: m.tinhaParcelas ? 'Média sem parcelas' : m.meses === 1 ? 'Último mês fechado' : `Média dos últimos ${m.meses} meses`,
+      valor: m.media,
+    } : null
+    const meses = Array.from({ length: 12 - alvo.mes }, (_, i) => ({ ano: alvo.ano, mes: alvo.mes + i }))
+    return { base, lancado: jaLancadoNosMeses(deps, ajuste.tipo, ajuste.nome, ajuste.descricao, meses) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const mesesDoAjuste: MesDoAjuste[] = lancado.map(l => ({
+    mes: l.mes, planoAtual: linha?.v[l.mes] ?? 0, jaLancado: l.total, itens: l.itens,
+  }))
+  const sugestoes: SugestaoAjuste[] = []
+  if (base) sugestoes.push(base)
+  if (ajuste.real > 0.005) {
+    const hoje = new Date()
+    const corrente = ano === hoje.getFullYear() && mes === hoje.getMonth()
+    sugestoes.push({ rotulo: corrente ? `${MESES[mes]} até agora` : `Em ${MESES[mes].toLowerCase()}`, valor: ajuste.real })
+  }
 
   const fechar = () => setAjuste(null)
   const gravar = (fn: Parameters<typeof mudarLinhaDoPlano>[3]) => {
@@ -70,6 +81,20 @@ export default function AjustePlanoRadar({
       return novo ? { ...prev, [alvo.ano]: novo } : prev
     })
     fechar()
+  }
+
+  /** Base + já lançado de cada mês; com algo lançado, em itens. */
+  function porMes(baseValor: number, meses: number[]) {
+    gravar(l => meses.reduce((acc, m) => {
+      const jl = lancado.find(x => x.mes === m)
+      if (!jl || jl.itens.length === 0) return comValor(acc, m, baseValor)
+      const doMes: ItemPlano[] = jl.itens.map(i => ({
+        id: novoIdItem(), valor: i.valor,
+        descricao: i.parcela ? `${i.descricao} · ${i.parcela.atual} de ${i.parcela.total}` : i.descricao,
+      }))
+      const todos = baseValor > 0.005 ? [{ id: novoIdItem(), descricao: 'Gasto normal', valor: baseValor }, ...doMes] : doMes
+      return comItens(acc, [m], todos)
+    }, l))
   }
 
   if (plano && (ajuste.modo === 'itens' || (itens && ajuste.modo !== 'valor'))) {
@@ -89,9 +114,9 @@ export default function AjustePlanoRadar({
   return (
     <AjustePlanoDialog nome={nomeExib} isEntrada={ajuste.tipo === 'entrada'}
       mesVisto={mes} prevVisto={ajuste.prev} realVisto={ajuste.real}
-      mesAlvo={alvo.mes} anoAlvo={alvo.ano} prevAlvo={linha?.v[alvo.mes] ?? 0}
-      sugestoes={sugestoes} aviso={aviso}
+      anoAlvo={alvo.ano} meses={mesesDoAjuste} base={base} sugestoes={sugestoes} aviso={aviso}
       onSalvar={(valor, meses) => gravar(l => meses.reduce((acc, m) => comValor(acc, m, valor), l))}
+      onSalvarPorMes={porMes}
       onDetalhar={partes => setAjuste({ ...ajuste, modo: 'itens', partes })}
       onFechar={fechar} />
   )

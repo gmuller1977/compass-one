@@ -370,11 +370,24 @@ gastou X de Y") e o ajuste vale do mês seguinte a hoje — ou do próprio mês,
 ele for futuro (`mesAlvoDoAjuste` em [`ajustePlano.ts`](src/utils/ajustePlano.ts)).
 Dezembro aponta para janeiro do ano seguinte; sem plano lá, a janela avisa.
 
-As sugestões são os números na mão: **a média dos meses fechados** da categoria
-(`mediaDaCategoria`, sobre as linhas de `comparativoMensal`, sem o mês
-parcial e sem os meses em que ela não existia) e **o gasto do mês até agora**,
-rotulado como parcial. Saiu o "Usar o que já gastei", que puxava para cobrir o
-estouro do mês. `prova48` (11 invariantes).
+**As parcelas já lançadas entram na conta** — pedido do Guilherme no mesmo
+dia. A fatura grava as parcelas de uma compra parcelada nos meses seguintes,
+então novembro já TEM a parcela 4 de 6 antes de começar: é dinheiro
+comprometido. Por [`historicoDaCategoria.ts`](src/utils/historicoDaCategoria.ts),
+as duas sobre `construirRealizadoMes`, sem soma própria:
+
+- `mediaSemParcelas`: o gasto NORMAL — média dos meses fechados (janela do
+  comparativo) sem os lançamentos com parcela. Com elas, a sugestão contaria a
+  mesma compra duas vezes.
+- `jaLancadoNosMeses`: o que já está lançado em cada mês do ajuste.
+
+A janela lista "Já lançado nos próximos meses", aponta em vermelho o mês em que
+o valor digitado fica **abaixo do já lançado**, e oferece "Média sem parcelas +
+já lançado, mês a mês": cada mês com o seu valor (novembro com a parcela,
+fevereiro sem), e nos meses com algo lançado o plano fica em ITENS — "Gasto
+normal" e cada parcela —, para o Planejamento mostrar de onde veio o número.
+Saiu o "Usar o que já gastei", que puxava para cobrir o estouro do mês.
+`prova48` (12 invariantes).
 
 Isto só GRAVA no plano — `comValor` / `comItens`, as funções do Planejamento —,
 e o Radar relê. A linha CRU é achada por [`linhaDoPlano.ts`](src/utils/linhaDoPlano.ts):
