@@ -3,6 +3,7 @@ import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
 import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga } from './radarCores'
+import { useAbrirAjuste } from './ajustePlanoContexto'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -53,6 +54,7 @@ export default function EvolucaoLinha({
   mes, isSubtotal, grupoLabel,
 }: EvolucaoLinhaProps) {
   const [aberto, setAberto] = useState(false)
+  const abrirAjuste = useAbrirAjuste()
   const { icone } = iconeCategoria(categorias, nome)
   const status = calcStatus(isEntrada, prev, real)
   const dif    = calcDif(isEntrada, prev, real)
@@ -183,6 +185,18 @@ export default function EvolucaoLinha({
             {destaque.contexto}
           </div>
         </div>
+        {/* Ajustar o plano daqui mesmo (ajustePlanoContexto). stopPropagation:
+            a linha inteira abre os lançamentos. #475569 no branco: 7,6. */}
+        {abrirAjuste && (
+          <button type="button" title="Ajustar o plano" aria-label={`Ajustar o plano de ${displayName}`}
+            onClick={e => { e.stopPropagation(); abrirAjuste({ tipo: isEntrada ? 'entrada' : 'saida', nome, descricao, prev, real }) }}
+            onKeyDown={e => e.stopPropagation()}
+            style={{ border: '1px solid #e2e8f0', background: '#fff', color: '#475569', borderRadius: 999,
+              padding: '3px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              flexShrink: 0, whiteSpace: 'nowrap' }}>
+            ✎ ajustar plano
+          </button>
+        )}
         <div title={percLabel} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end',
           whiteSpace: 'nowrap', minWidth: 150, fontVariantNumeric: 'tabular-nums' }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: cor }}>{destaque.principal}</span>

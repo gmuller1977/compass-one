@@ -355,6 +355,22 @@ pagas é "✓ pago". "Usou tudo" fica para variável exatamente no plano. Uma re
 de "fixa paga" só, `ehFixaPaga`, para a linha e para o grupo. Barras, cores e
 o "gastou X de Y" seguem com os totais de verdade.
 
+**O plano se ajusta pelo Radar, e o Radar não fez conta nova por isso.**
+Pedido do Guilherme em 06/10/2026: "se eu fiz um planejamento errado para uma
+categoria, eu poderia estar ajustando o plano direto pelo radar". Cada
+categoria aberta tem "✎ ajustar plano" (`AjustePlanoDialog`): novo valor
+(aceita conta), "Usar o que já gastei", "só este mês" ou "até dezembro", e
+"detalhar em itens". Categoria com itens abre direto o `PlanItensEditor`.
+
+Isto só GRAVA no plano — `comValor` / `comItens`, as funções do Planejamento —,
+e o Radar relê. A linha CRU é achada por [`linhaDoPlano.ts`](src/utils/linhaDoPlano.ts):
+id do cadastro, depois o par (nome, variante), e o nome só se for único. Plano
+antigo com duas linhas do mesmo nome sem variante é **'ambigua'**: a janela
+explica e manda para o Planejamento, em vez de chutar uma das duas. O
+Simulador usa a mesma busca. O botão vem por contexto
+(`ajustePlanoContexto.ts`); o mobile (`AcMobileView`) não tem provedor e não
+mostra. `prova47` (14 invariantes).
+
 **Os cabeçalhos de grupo são CINZA (`#e6ebf1 → #d8dfe8`), com borda `#c3ccd8` e
 texto escuro.** Empilhados, os escuros pesavam demais; passou no mesmo dia pelo
 azul médio e pelo azul-claro de Lançamentos. O cinza é neutro e não puxa o tom

@@ -21,6 +21,8 @@ import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 import ResumoRadarFaixa from '../components/acompanhamento/ResumoRadarFaixa'
 import { resumoDoMes } from '../utils/resumoRadar'
+import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
+import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -46,7 +48,12 @@ export default function RadarFinanceiro() {
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { contas, categorias, planos, extratoData, faturaData, user, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao } = useApp()
+  const { contas, categorias, planos, setPlanos, extratoData, faturaData, user, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao } = useApp()
+
+  // Ajustar o plano de uma categoria sem sair do Radar (pedido do Guilherme,
+  // 06/10/2026). Só GRAVA no plano, pelas funções do Planejamento; o Radar
+  // relê o plano e a linha se redesenha. Ver AjustePlanoDialog.
+  const [ajuste, setAjuste] = useState<AjusteAberto | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -257,7 +264,7 @@ export default function RadarFinanceiro() {
             onAction={() => navigate('/planejamento?modo=wizard')}
           />
         ) : (
-          <>
+          <AjustePlanoContexto.Provider value={setAjuste}>
             {resumo && <ResumoRadarFaixa resumo={resumo} />}
             {/* ENTRADAS — um card por grupo */}
             {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
@@ -286,9 +293,14 @@ export default function RadarFinanceiro() {
                 mes={mes}
               />
             ))}
-          </>
+          </AjustePlanoContexto.Provider>
         )}
       </div>
+
+      {ajuste && (
+        <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
+          ano={ano} mes={mes} categorias={categorias} />
+      )}
 
       {/* Saldo final previsto — a mesma barra de Lancamentos, no pe da tela.
           Saiu do cartao do saldo atual: la ele era um numero sem explicacao;

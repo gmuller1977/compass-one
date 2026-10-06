@@ -1,5 +1,6 @@
 import type { Categoria, PlanoAnoData, PlanoCat } from '../context/AppContext'
 import { comItens, comValor, itensDoMes, novoIdItem, somaItens, type ItemPlano } from './itensPlano'
+import { acharLinhaDoPlano } from './linhaDoPlano'
 
 /**
  * O Simulador grava no plano como ITEM de uma categoria que já existe — a
@@ -44,10 +45,10 @@ export function parcelasDesde(ano: number, mes: number, valores: number[]): Parc
 
 const rotulo = (c: { nome: string; descricao?: string }) => (c.descricao ? `${c.nome} · ${c.descricao}` : c.nome)
 
-/** A linha do plano daquela categoria, pela mesma regra do mergeCats: id, depois nome sem id. */
+/** A linha do plano daquela categoria (linhaDoPlano, a mesma do ajuste pelo Radar). -2 = ambígua. */
 function acharLinha(saidas: PlanoCat[], cat: Categoria): number {
-  const porId = saidas.findIndex(c => c.id === cat.id)
-  return porId >= 0 ? porId : saidas.findIndex(c => !c.id && c.nome === cat.nome)
+  const r = acharLinhaDoPlano(saidas, cat)
+  return r === null ? -1 : r === 'ambigua' ? -2 : r
 }
 
 /**
@@ -64,6 +65,8 @@ export function incluirNoPlano(
     if (!plano) { fora.push(p); return }
     const saidas = [...(plano.saidas ?? [])]
     let i = acharLinha(saidas, cat)
+    // Plano antigo com duas linhas do mesmo nome e sem variante: não chutar.
+    if (i === -2) { fora.push(p); return }
     if (i < 0) {
       saidas.push({ id: cat.id, nome: cat.nome, descricao: cat.descricao, grupo: cat.grupo, t: cat.tipoMovimento, v: Array(12).fill(0) })
       i = saidas.length - 1
