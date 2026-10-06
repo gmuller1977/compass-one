@@ -406,8 +406,16 @@ mostraria. Nenhuma conta nova; o corrente fica com o Radar e o Ritmo.
 - Âmbar, não vermelho: é aviso sobre o que vem, não fato do mês.
 
 Ao aceitar "mês a mês" o plano passa a cobrir o já lançado e o alerta some.
-Fica para depois, porque Lançamentos está congelado: avisar NO MOMENTO de
-lançar a compra parcelada. `prova50` (11 invariantes).
+`prova50` (11 invariantes).
+
+**Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
+06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
+ajuste não mexer no mês corrente. Um aviso na hora do lançamento convida a
+"corrigir" o plano ali, e o mês que mais aparece nessa hora é o atual: subir o
+plano de outubro para caber a compra apagaria do Radar que outubro passou. E
+ele não faz falta: a parcela 1 é realizado e já aparece no Radar e no Ritmo, e
+as seguintes são pegas pelo alerta acima, que é recalculado assim que a compra
+é salva. Não reabrir sem pedido explícito.
 
 Isto só GRAVA no plano — `comValor` / `comItens`, as funções do Planejamento —,
 e o Radar relê. A linha CRU é achada por [`linhaDoPlano.ts`](src/utils/linhaDoPlano.ts):
