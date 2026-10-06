@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import type { Categoria } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import type { MesComparado } from '../../utils/comparativoMensal'
+import { categoriasMesAMes } from '../../utils/categoriasMesAMes'
+import CategoriasMesAMes from './CategoriasMesAMes'
 
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
 const CURTOS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
@@ -27,8 +30,14 @@ const PLOT = 196
  * sobre o vermelho (#0f172a dá 2,76); com o anel ele lê sobre a barra, e as
  * pontas que sobram caem no branco do cartão (17,85).
  */
-export default function ComparativoMensal({ meses, isMobile }: { meses: MesComparado[]; isMobile: boolean }) {
+export default function ComparativoMensal({ meses, categorias, isMobile }: {
+  meses: MesComparado[]; categorias: Categoria[]; isMobile: boolean
+}) {
   const [ativo, setAtivo] = useState<number | null>(null)
+  // "Por categoria": a mesma janela, aberta por categoria — pedido do
+  // Guilherme em 06/10/2026. Os números saem das linhas que cada mês já traz.
+  const [visao, setVisao] = useState<'total' | 'categoria'>('total')
+  const porCategoria = useMemo(() => categoriasMesAMes(meses, categorias), [meses, categorias])
   if (meses.length === 0) return null
 
   // Escala: um passo "redondo" (1, 2, 2,5 ou 5 × 10ⁿ) que cubra o maior valor em 4 linhas.
@@ -55,9 +64,30 @@ export default function ComparativoMensal({ meses, isMobile }: { meses: MesCompa
         <div>
           <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>Receitas e despesas contra o plano</div>
           <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
-            {meses.length === 1 ? 'Este mês' : `Últimos ${meses.length} meses`} · a barra é o realizado, o traço é o previsto
+            {meses.length === 1 ? 'Este mês' : `Últimos ${meses.length} meses`} · {visao === 'total'
+              ? 'a barra é o realizado, o traço é o previsto'
+              : 'em cima o realizado, embaixo o previsto · clique no grupo para abrir'}
           </div>
         </div>
+        {/* Pílulas como as abas do Simulador: inativa #475569 sobre #f1f5f9
+            (6,92), ativa infoTexto sobre branco. */}
+        <div role="group" aria-label="Visão" style={{ display: 'flex', gap: 2, background: '#f1f5f9', borderRadius: 999, padding: 3 }}>
+          {([['total', 'Total'], ['categoria', 'Por categoria']] as const).map(([v, rotulo]) => (
+            <button key={v} type="button" aria-pressed={visao === v} onClick={() => setVisao(v)}
+              style={{ border: 'none', cursor: 'pointer', borderRadius: 999, padding: '5px 12px', fontSize: 12,
+                fontWeight: visao === v ? 700 : 500, background: visao === v ? COR.branco : 'transparent',
+                color: visao === v ? COR.infoTexto : '#475569',
+                boxShadow: visao === v ? '0 1px 2px rgba(15,23,42,.12)' : 'none' }}>
+              {rotulo}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {visao === 'categoria' ? (
+        <CategoriasMesAMes meses={meses} dados={porCategoria} isMobile={isMobile} />
+      ) : (<>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -6, marginBottom: 12 }}>
         <div style={{ display: 'flex', gap: 13, fontSize: 12, color: '#475569', alignItems: 'center', flexWrap: 'wrap' }}>
           <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, verticalAlign: -1, background: RECEITA }} />Receitas</span>
           <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, verticalAlign: -1, background: DESPESA }} />Despesas</span>
@@ -166,6 +196,7 @@ export default function ComparativoMensal({ meses, isMobile }: { meses: MesCompa
           {diasFaltam > 0 ? ` — ${diasFaltam === 1 ? 'falta 1 dia' : `faltam ${diasFaltam} dias`}` : ' — hoje é o último dia'}.
         </div>
       )}
+      </>)}
     </div>
   )
 }

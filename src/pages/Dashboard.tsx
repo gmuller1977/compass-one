@@ -589,7 +589,7 @@ export default function Dashboard() {
             que é só previsão. */}
         {!ehFuturo && comparativo.length >= 2 && (
           <div style={{ marginBottom: 20 }}>
-            <ComparativoMensal meses={comparativo} isMobile={isMobile} />
+            <ComparativoMensal meses={comparativo} categorias={categorias} isMobile={isMobile} />
           </div>
         )}
 
