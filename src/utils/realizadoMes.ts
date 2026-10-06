@@ -114,7 +114,7 @@ export function construirRealizadoMes(params: {
       alvo.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
     }
 
-    const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number }[]> }>
+    const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number }[]> }>
     for (const card of contas.filter(c => c.tipo === 'cartao')) {
       const billingOff = (card.diaVencimento ?? 1) < (card.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - billingOff, pAno = ano
@@ -126,17 +126,19 @@ export function construirRealizadoMes(params: {
       const pTotalDias = new Date(pAno, pMes + 1, 0).getDate()
       for (let d = 1; d <= pTotalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
+          // A parcela só vai para o histórico ("2 de 6"); nenhum total a lê.
+          const parcela = (l.parcelas ?? 1) > 1 && l.parcelaAtual ? { atual: l.parcelaAtual, total: l.parcelas! } : undefined
           const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
           const k   = rKey(l.categoria, sub)
           if (l.tipo === 'entrada') {
             const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
+            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela })
           } else if (l.tipo === 'saida') {
             // Estorno: abate da categoria de saída
             const c = getSaida(k)
             c.total -= l.valor; c.totalCart -= l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao' })
+            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela })
           }
         }
       }
