@@ -176,9 +176,23 @@ export default function EvolucaoLinha({
           {icone}
         </div>
         <div style={{ flex: 1, minWidth: 140 }}>
-          <div title={displayName} style={{ fontSize: 12, fontWeight: 600,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {displayName}
+          {/* Fixa ou variável, como no cadastro — é a divisão que a memória do
+              saldo final usa (fixas pagas e a pagar × variável a realizar).
+              Pedido do Guilherme em 06/10/2026. Sem cadastro ("Outras",
+              categoria excluída), sem marcador. Fixa #3730a3 sobre #e0e7ff:
+              8,0; variável #475569 sobre #f1f5f9: 6,9. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <span title={displayName} style={{ fontSize: 12, fontWeight: 600, minWidth: 0,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {displayName}
+            </span>
+            {cadastro && (
+              <span style={{ flexShrink: 0, fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase',
+                borderRadius: 999, padding: '1px 6px',
+                background: cadastro.fixa ? '#e0e7ff' : '#f1f5f9', color: cadastro.fixa ? '#3730a3' : '#475569' }}>
+                {cadastro.fixa ? 'fixa' : 'variável'}
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 10.5, marginTop: 2, color: '#475569',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
