@@ -1024,6 +1024,36 @@ gasto contra as linhas do Radar sem as fixas, a fronteira dos 10 pontos, o
 último dia, o estouro compensado no total e o controle negativo (sem variável
 planejada, sem quadro).
 
+**A Início enxuta: a resposta, o que pede atenção, um gráfico e a porta para
+Análises.** Decidido pelo Guilherme em 06/10/2026, sobre um modelo em HTML:
+"o início está uma tela cheia de número, e falando de forma comercial isso
+não vende". **Substitui a ordem em oito blocos descrita logo abaixo**, que fica
+como histórico.
+
+1. **Hero** — "Outubro termina com R$ X" (fechado: "terminou"; futuro: "deve
+   terminar") e a folga da variável: "Ainda dá para gastar R$ Y · até o dia 31
+   · R$ Z por dia" — o `sobra` de `ritmoDoMes`, o mesmo da frase do Radar.
+   Passou: quanto passou, em `#fecaca`. Apoio: só "Hoje no banco"; "ainda
+   saem / entram" moram no "como cheguei nesse número". Status no mês
+   corrente fala com a pessoa — "Você está dentro do plano", e NÃO "no azul":
+   ele mede despesa contra plano, não saldo, e "no azul" contradiria um saldo
+   previsto negativo logo abaixo.
+2. **Pede sua atenção** — no máximo 3 avisos, uma frase e um botão, por
+   `avisosDoMes` em [`avisosDoMes.ts`](src/utils/avisosDoMes.ts): contas a
+   vencer → grupo que passou do plano (`gruposQuePassaram`, o total do
+   cabeçalho do Radar) → primeiro mês negativo À FRENTE → ritmo acelerado. O
+   "passou" do ritmo não vira aviso: o hero já diz. Sem nenhum, "Tudo em dia ✓".
+   "Ver contas" abre a lista ali mesmo. `prova43` (10 invariantes).
+3. **Um gráfico só** — "Para onde o seu saldo está indo".
+4. **"Quer ver em detalhe?"** — quatro botões para `/analises#âncora`.
+
+Saíram para **Análises** (`/analises`, menu "Todo mês"), sem reescrever
+nada: o mês até agora (Ritmo, Estouradas ou Maiores despesas), Mês a mês com
+"Por categoria", Precisão do plano, Últimas movimentações, Metas e dívidas, e
+o Aurix. Sempre o mês de HOJE. Os três cartões (saldo, receitas, despesas)
+saíram de vez: o Radar já os mostra. As duas telas leem o mês pela mesma
+passagem, `useMesDaInicio`.
+
 **A Início tem uma ordem, e o topo é a resposta.** Briefing "Hierarquia e
 comparativo na tela Início", onda 1, validada pelo Guilherme em 27/09/2026:
 

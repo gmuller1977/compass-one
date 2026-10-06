@@ -21,13 +21,19 @@ export type ResumoRadar = { tom: 'ok' | 'passou'; titulo: string; detalhe: strin
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
 const reais = (v: number) => `R$ ${Math.round(Math.abs(v)).toLocaleString('pt-BR')}`
 
-function gruposQuePassaram(linhas: LinhaDoMes[]): string[] {
+/**
+ * Os grupos cujo realizado passou do previsto, do maior excesso para o menor —
+ * o mesmo total que o cabeçalho do grupo no Radar desenha. Também é a fonte
+ * do aviso "passou do plano" da Início (utils/avisosDoMes). `grupo` é a chave
+ * do Radar; `nome` já troca "__sem_grupo__" por "Outras".
+ */
+export function gruposQuePassaram(linhas: LinhaDoMes[]): { grupo: string; nome: string; excesso: number }[] {
   const porGrupo = new Map<string, number>()
   for (const l of linhas) porGrupo.set(l.grupo, (porGrupo.get(l.grupo) ?? 0) + l.real - l.prev)
   return [...porGrupo.entries()]
     .filter(([, excesso]) => excesso > 0.005)
     .sort((a, b) => b[1] - a[1])
-    .map(([g]) => (g === '__sem_grupo__' ? 'Outras' : g))
+    .map(([grupo, excesso]) => ({ grupo, nome: grupo === '__sem_grupo__' ? 'Outras' : grupo, excesso }))
 }
 
 function fraseGrupos(nomes: string[], ja: boolean): string {
@@ -46,7 +52,7 @@ export function resumoDoMes(
   const corrente = ymAlvo === ymHoje
   const r = ritmoDoMes(linhasSaida, categorias, corrente ? hoje : new Date(ano, mes + 1, 0))
   if (!r) return null
-  const grupos = fraseGrupos(gruposQuePassaram(linhasSaida), corrente)
+  const grupos = fraseGrupos(gruposQuePassaram(linhasSaida).map(g => g.nome), corrente)
   const juntar = (...partes: string[]) => partes.filter(Boolean).join(' · ')
   const excesso = r.gasto - r.planejado
 

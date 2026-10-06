@@ -15,14 +15,22 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
  * CLAUDE.md): branco 8,72; rótulos a 75% 5,1; número negativo em #fecaca 4,6.
  * O número não usa tabular-nums: dígitos de largura igual deixam o número
  * grande frouxo.
+ *
+ * Na Início enxuta (06/10/2026) o rótulo virou FRASE — "Outubro termina com" —,
+ * e a folga da variável entrou como a segunda resposta: "Ainda dá para gastar
+ * R$ 465". Valor da folga em #86efac (7,4 no #0f2878; 4,8 no #1e40af); passou,
+ * #fecaca (4,6). Sobre o fundo translúcido da caixa o azul fica mais claro em
+ * no máximo 10% de branco, e os dois seguem acima de 4,5 no pior ponto.
  */
+export type FolgaHero = { rotulo: string; valor: number; detalhe?: string; passou: boolean }
 export type StatusHero = { cor: string; frase: string }
 
 export default function HeroSaldo({
-  status, rotulo, valor, apoio, onComoCheguei, aberto, sparkline, isMobile,
+  status, rotulo, valor, folga, apoio, onComoCheguei, aberto, sparkline, isMobile,
 }: {
   status: StatusHero | null
   rotulo: string
+  folga?: FolgaHero | null
   valor: number
   apoio: { rotulo: string; valor: number }[]
   onComoCheguei?: () => void
@@ -47,10 +55,18 @@ export default function HeroSaldo({
           {status.frase}
         </div>
       )}
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', textTransform: 'uppercase',
-        color: 'rgba(255,255,255,.75)', marginBottom: 6, position: 'relative' }}>{rotulo}</div>
+      <div style={{ fontSize: isMobile ? 15 : 17, color: 'rgba(255,255,255,.85)', marginBottom: 6, position: 'relative' }}>{rotulo}</div>
       <div style={{ fontSize: isMobile ? 40 : 54, fontWeight: 700, lineHeight: 1, letterSpacing: '-.025em',
         position: 'relative', marginBottom: 16, color: valor < 0 ? '#fecaca' : '#fff' }}>{fmt(valor)}</div>
+      {folga && (
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap',
+          background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.18)', borderRadius: 12,
+          padding: '9px 14px', marginBottom: 14, fontSize: isMobile ? 14 : 15 }}>
+          <span>{folga.rotulo}</span>
+          <b style={{ fontSize: isMobile ? 16 : 18, color: folga.passou ? '#fecaca' : '#86efac' }}>{fmt(folga.valor)}</b>
+          {folga.detalhe && <span style={{ fontSize: 13, color: 'rgba(255,255,255,.8)' }}>{folga.detalhe}</span>}
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16, flexWrap: 'wrap', fontSize: 13,
         color: 'rgba(255,255,255,.75)', position: 'relative' }}>
         {apoio.map((a, i) => (

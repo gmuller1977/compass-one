@@ -30,13 +30,15 @@ const PLOT = 196
  * sobre o vermelho (#0f172a dá 2,76); com o anel ele lê sobre a barra, e as
  * pontas que sobram caem no branco do cartão (17,85).
  */
-export default function ComparativoMensal({ meses, categorias, isMobile }: {
+export default function ComparativoMensal({ meses, categorias, isMobile, visaoInicial = 'total' }: {
   meses: MesComparado[]; categorias: Categoria[]; isMobile: boolean
+  /** Análises abre direto em "Por categoria" quando a Início manda para lá. */
+  visaoInicial?: 'total' | 'categoria'
 }) {
   const [ativo, setAtivo] = useState<number | null>(null)
   // "Por categoria": a mesma janela, aberta por categoria — pedido do
   // Guilherme em 06/10/2026. Os números saem das linhas que cada mês já traz.
-  const [visao, setVisao] = useState<'total' | 'categoria'>('total')
+  const [visao, setVisao] = useState<'total' | 'categoria'>(visaoInicial)
   const porCategoria = useMemo(() => categoriasMesAMes(meses, categorias), [meses, categorias])
   if (meses.length === 0) return null
 

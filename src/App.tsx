@@ -7,6 +7,7 @@ import Sidebar, { SIDEBAR_W } from './components/Sidebar'
 import Login          from './pages/Login'
 import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
+import Analises       from './pages/Analises'
 import QuickLaunch    from './pages/QuickLaunch'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
@@ -139,6 +140,7 @@ export default function App() {
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
+          <Route path="/analises"        element={<Protegido><Analises /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/radar"           element={<Protegido><RadarFinanceiro /></Protegido>} />
           <Route path="/painel"          element={<Navigate to="/radar" replace />} />
