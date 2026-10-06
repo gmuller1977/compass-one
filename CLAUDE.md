@@ -616,6 +616,34 @@ A outra diferença legítima é o clamp: a planilha faz `previsto − realizado`
 total, então categoria que estourou abate a que sobrou. O app calcula por
 categoria e para no zero, por decisão registrada acima.
 
+**Itens dentro do valor do plano: Mercado = Supermercado 800 + Feira 300.**
+Pedido do Guilherme em 06/10/2026, sobre modelo validado: ele somava por fora
+e não queria criar categoria. **Variante não serve para isso** — cada
+variante é uma categoria (cadastro, linha própria no Radar, escolha a cada
+lançamento).
+
+A regra: **`v[mes]` continua sendo a verdade; `itens` é o detalhe dele.**
+Nenhum leitor do plano sabe que os itens existem, e por isso nenhum número do
+app se move. Tudo em [`itensPlano.ts`](src/utils/itensPlano.ts):
+
+- `comItens` grava itens e `v` = soma; `null` tira o detalhe e mantém o total.
+- `comValor` grava só o valor e tira os itens daquele mês.
+- `itensDoMes` só devolve itens que ainda somam `v`. É a rede de segurança
+  para quem grava `v` sem saber dos itens — o ajuste do alerta de desvio em
+  Lançamentos, a fatura em Configurações, o Simulador. Não mexer neles por
+  isso (Lançamentos está congelado): a célula mostra o valor novo, sem detalhe.
+- `mergeCats` leva os itens junto; copiar mês e copiar ano levam o detalhe;
+  reajuste % escala cada item.
+- Célula com itens (`PlanCelulaEditavel`) abre o editor em vez de deixar
+  digitar por cima. "detalhar em itens" / Ctrl+Enter abre o editor começando
+  pela conta digitada (`partesDaConta`). O editor é `PlanItensEditor`, aberto
+  por contexto (`itensContexto.ts`) e desenhado uma vez em `Planejamento.tsx`.
+- `ItemPlano.simulacaoId` já existe e o editor mostra o item travado — é a
+  próxima etapa: o Simulador integrar como item, somando, e desfazer tirando
+  só os itens dele.
+
+`prova45` (17 invariantes).
+
 **O Planejamento tem UMA fonte para cada número, e três telas que a leem.**
 Grade, Painel e Lista — mais o modal que abre ao clicar num card da Grade —
 leem saldo inicial, saldo final e os totais do mês do mesmo objeto,

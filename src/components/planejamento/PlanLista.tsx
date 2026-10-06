@@ -7,6 +7,8 @@ import {
 } from './types'
 import { COR } from '../../utils/cores'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import { useAbrirItens } from './itensContexto'
+import { itensDoMes } from '../../utils/itensPlano'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
 import type { Categoria } from '../../context/AppContext'
@@ -50,6 +52,7 @@ export default function PlanLista({
   categorias, onSave, onBulkSave, dadosAnoAnterior,
   objetivos, sobraPrevista, onMetaSave,
 }: Props) {
+  const abrirItens = useAbrirItens()
   const temAlgumaMeta = objetivos.some(v => v > 0)
   const [aberto, setAberto] = useState<number>(-1)
   const [mostrarPassado, setMostrarPassado] = useState(false)
@@ -253,7 +256,8 @@ export default function PlanLista({
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
                         <span style={{ flex: 1, fontSize: 12, color: '#475569', paddingLeft: 8 }}>{nomeExibicao(l.cat)}</span>
-                        <PlanCelulaEditavel valor={catValor(l.cat, mi)} onSave={nv => onSave('e', l.ri, mi, nv)} />
+                        <PlanCelulaEditavel valor={catValor(l.cat, mi)} onSave={nv => onSave('e', l.ri, mi, nv)}
+                          itens={itensDoMes(l.cat, mi)} onItens={abrirItens ? p => abrirItens('e', l.ri, mi, p) : undefined} />
                       </div>
                     )
                   })}
@@ -287,7 +291,8 @@ export default function PlanLista({
                       >
                         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 8, flexShrink: 0 }}>{icone}</div>
                         <span style={{ flex: 1, fontSize: 12, color: '#475569', paddingLeft: 8 }}>{nomeExibicao(l.cat)}</span>
-                        <PlanCelulaEditavel valor={catValor(l.cat, mi)} onSave={nv => onSave('s', l.ri, mi, nv)} />
+                        <PlanCelulaEditavel valor={catValor(l.cat, mi)} onSave={nv => onSave('s', l.ri, mi, nv)}
+                          itens={itensDoMes(l.cat, mi)} onItens={abrirItens ? p => abrirItens('s', l.ri, mi, p) : undefined} />
                       </div>
                     )
                   })}

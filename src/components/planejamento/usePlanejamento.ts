@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { comItens, comValor, type ItemPlano } from '../../utils/itensPlano'
 import { useApp } from '../../context/AppContext'
 import type { PlanoAnoData } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
@@ -258,7 +259,9 @@ export function usePlanejamento(anoAtual: number) {
       const lista = tipo === 'e' ? [...d.entradas] : [...d.saidas]
       const alvo = lista[ri]
       if (!alvo) return d
-      lista[ri] = { ...alvo, v: alvo.v.map((v, i) => i === mi ? novoValor : v) }
+      // Gravar só o valor tira os itens do mês (comValor): senão o detalhe
+      // somaria outra coisa. A célula com itens abre o editor, não chega aqui.
+      lista[ri] = comValor(alvo, mi, novoValor)
       return tipo === 'e' ? { ...d, entradas: lista } : { ...d, saidas: lista }
     })
   }
@@ -284,15 +287,37 @@ export function usePlanejamento(anoAtual: number) {
     }))
   }
 
-  function editarMultiplosValores(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
+  /**
+   * Ferramentas em lote. Uma op com `itens` grava os itens e o valor vira a
+   * soma deles (copiar um mês detalhado leva o detalhe; reajuste escala cada
+   * item). Sem `itens`, grava só o valor e o detalhe do mês sai.
+   */
+  function editarMultiplosValores(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number; itens?: ItemPlano[] | null }[]) {
     updateAno(d => {
-      const entradas = d.entradas.map(c => ({ ...c, v: [...c.v] }))
-      const saidas = d.saidas.map(c => ({ ...c, v: [...c.v] }))
+      const entradas = [...d.entradas]
+      const saidas = [...d.saidas]
       for (const op of ops) {
         const lista = op.tipo === 'e' ? entradas : saidas
-        if (lista[op.ri]) lista[op.ri].v[op.mi] = op.valor
+        const alvo = lista[op.ri]
+        if (!alvo) continue
+        lista[op.ri] = op.itens && op.itens.length
+          ? comItens(alvo, [op.mi], op.itens)
+          : comValor(alvo, op.mi, op.valor)
       }
       return { ...d, entradas, saidas }
+    })
+  }
+
+  /**
+   * Itens de uma categoria em um ou mais meses (o editor de itens). `null`
+   * tira o detalhe e mantém o total. Ver utils/itensPlano.
+   */
+  function editarItens(tipo: 'e' | 's', ri: number, meses: number[], itens: ItemPlano[] | null) {
+    updateAno(d => {
+      const lista = tipo === 'e' ? [...d.entradas] : [...d.saidas]
+      if (!lista[ri]) return d
+      lista[ri] = comItens(lista[ri], meses, itens)
+      return tipo === 'e' ? { ...d, entradas: lista } : { ...d, saidas: lista }
     })
   }
 
@@ -322,6 +347,7 @@ export function usePlanejamento(anoAtual: number) {
     // Ações
     editarValor,
     editarMultiplosValores,
+    editarItens,
     objetivos,
     editarMetas,
     planoAnoAnterior,

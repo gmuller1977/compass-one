@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import { useAbrirItens } from './itensContexto'
+import { itensDoMes } from '../../utils/itensPlano'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
 import {
@@ -593,6 +595,7 @@ function Detalhe({
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   divisor: (mi: number, claro?: boolean) => React.CSSProperties
 }) {
+  const abrirItens = useAbrirItens()
   return (
     <>
       {linhas.map((l, li) => {
@@ -658,6 +661,8 @@ function Detalhe({
                 <PlanCelulaEditavel
                   valor={l.cat.v[mi] ?? 0}
                   onSave={nv => onSave(tipo, l.ri, mi, nv)}
+                  itens={itensDoMes(l.cat, mi)}
+                  onItens={abrirItens ? p => abrirItens(tipo, l.ri, mi, p) : undefined}
                 />
               </div>
             ))}

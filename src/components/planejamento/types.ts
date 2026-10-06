@@ -1,4 +1,5 @@
-export type Cat = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[] }
+import type { ItensPorMes } from '../../utils/itensPlano'
+export type Cat = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[]; itens?: ItensPorMes }
 
 export function nomeExibicao(cat: Cat) {
   return cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
@@ -35,7 +36,8 @@ export function mergeCats(base: Cat[], saved: Cat[]): Cat[] {
       ? (saved.find(c => c.id === cat.id) ?? saved.find(c => !c.id && c.nome === cat.nome))
       : saved.find(c => c.nome === cat.nome)
     // Preserva descricao do base (fonte de verdade é o cadastro da categoria)
-    return found ? { ...cat, v: found.v } : cat
+    // Os itens vão junto com o valor: são o detalhe dele (utils/itensPlano).
+    return found ? { ...cat, v: found.v, ...(found.itens ? { itens: found.itens } : {}) } : cat
   }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 

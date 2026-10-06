@@ -15,6 +15,10 @@ import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanPainel from '../components/planejamento/PlanPainel'
 import PlanLista from '../components/planejamento/PlanLista'
+import PlanItensEditor from '../components/planejamento/PlanItensEditor'
+import { ItensPlanoContexto, type AbrirItens } from '../components/planejamento/itensContexto'
+import { itensDoMes } from '../utils/itensPlano'
+import { nomeExibicao } from '../components/planejamento/types'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -67,9 +71,14 @@ export default function Planejamento() {
   }
 
 
-  function handleBulkSave(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number }[]) {
+  function handleBulkSave(ops: Parameters<typeof plan.editarMultiplosValores>[0]) {
     plan.editarMultiplosValores(ops)
   }
+
+  // O editor de itens de uma célula (Mercado = Supermercado + Feira). Lista,
+  // Painel e o modal da Grade abrem por contexto; aqui ele é desenhado uma vez.
+  const [itensAbertos, setItensAbertos] = useState<{ tipo: 'e' | 's'; ri: number; mi: number; partes?: number[] } | null>(null)
+  const abrirItens = useCallback<AbrirItens>((tipo, ri, mi, partes) => setItensAbertos({ tipo, ri, mi, partes }), [])
 
   // A fase e DERIVADA: onboarding feito e nenhum plano em lugar nenhum. Ver
   // utils/descoberta — nao existe campo guardado que possa discordar disso.
@@ -229,6 +238,7 @@ export default function Planejamento() {
           />
         )}
 
+        <ItensPlanoContexto.Provider value={abrirItens}>
         {viewMode === 'grade' ? (
           <PlanGrade
             descoberta={descoberta}
@@ -277,7 +287,26 @@ export default function Planejamento() {
             totaisReais={plan.totaisReais}
           />
         )}
+        </ItensPlanoContexto.Provider>
       </div>
+
+      {itensAbertos && (() => {
+        const { tipo, ri, mi, partes } = itensAbertos
+        const cat = (tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]
+        if (!cat) return null
+        const itens = itensDoMes(cat, mi)
+        const fechar = () => setItensAbertos(null)
+        return (
+          <PlanItensEditor
+            key={`${tipo}-${ri}-${mi}`}
+            nome={nomeExibicao(cat)} grupo={cat.grupo} mes={mi}
+            valorAtual={cat.v[mi] ?? 0} itens={itens} partes={partes}
+            onSalvar={(novos, meses) => { plan.editarItens(tipo, ri, meses, novos); fechar() }}
+            onTirar={itens ? () => { plan.editarItens(tipo, ri, [mi], null); fechar() } : undefined}
+            onFechar={fechar}
+          />
+        )
+      })()}
 
       {isMobile && <BottomNav />}
     </div>

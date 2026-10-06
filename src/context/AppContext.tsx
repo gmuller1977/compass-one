@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import type { ItensPorMes } from '../utils/itensPlano'
 import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -43,7 +44,9 @@ export type Categoria = {
 
 // descricao = variante (ex.: Seguro · Civic) e grupo sao gravados no plano
 // desde usePlanejamento; declarar aqui evita casar categoria so pelo nome.
-export type PlanoCat     = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[] }
+// `itens`: o detalhe do valor de cada mês (utils/itensPlano). `v` continua
+// sendo a verdade; quem lê o plano não precisa saber que os itens existem.
+export type PlanoCat     = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[]; itens?: ItensPorMes }
 export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number; mesInicio?: number }
 
 export type MetaSim = {

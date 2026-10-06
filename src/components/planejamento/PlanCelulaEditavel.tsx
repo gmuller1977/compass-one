@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useToast } from '../Toast'
 import { fmt, parseConta, COR } from './types'
+import { partesDaConta } from '../../utils/moeda'
+import type { ItemPlano } from '../../utils/itensPlano'
 
 interface Props {
   valor: number
@@ -10,6 +12,11 @@ interface Props {
   motivoBloqueio?: string
   onSave: (novoValor: number) => void
   align?: 'right' | 'left'
+  /** O detalhe do valor (utils/itensPlano). Com itens, a célula abre o editor
+   *  em vez de deixar digitar por cima — senão total e itens discordariam. */
+  itens?: ItemPlano[] | null
+  /** Abre o editor de itens; `partes` são as parcelas da conta digitada. */
+  onItens?: (partes?: number[]) => void
 }
 
 /**
@@ -24,7 +31,7 @@ interface Props {
  * listar os elementos marcados na ordem do DOM, sem que este componente
  * precise saber onde está na grade.
  */
-export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right' }: Props) {
+export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens }: Props) {
   const { toast } = useToast()
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
@@ -61,11 +68,14 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
     spanRef.current?.focus()
   }, [editando])
 
+  const temItens = !!itens && itens.length > 0
+
   function iniciar(inicial?: string) {
     if (readOnly) {
       if (motivoBloqueio) toast(motivoBloqueio, 'info')
       return
     }
+    if (temItens && onItens) { onItens(); return }
     abriuDigitandoRef.current = inicial !== undefined
     // maximumFractionDigits junto: so o minimum deixa o padrao em 3 casas, e
     // um valor com mais de dois decimais voltava arredondado diferente.
@@ -73,6 +83,15 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       ? valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       : ''))
     setEditando(true)
+  }
+
+  /** Sai da edição e abre o editor de itens, começando pela conta digitada. */
+  function detalhar() {
+    if (!onItens) return
+    skipBlurRef.current = true
+    const partes = partesDaConta(temp)
+    fechar()
+    onItens(partes && partes.length > 1 ? partes : undefined)
   }
 
   function fechar() {
@@ -98,6 +117,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
     // Enquanto há uma conta no campo, o resultado aparece embaixo — quem
     // digita "800+300" vê o 1.100 antes de confirmar.
     const ehConta = /[0-9.,]\s*[+-]/.test(temp)
+    const mostrarBarra = ehConta || !!onItens
     const resultado = ehConta ? parseConta(temp) : null
     return (
       <span style={{ position: 'relative', display: 'block' }}>
@@ -108,6 +128,8 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
         onChange={e => setTemp(e.target.value)}
         onBlur={() => { if (skipBlurRef.current) { skipBlurRef.current = false } else confirmar() }}
         onKeyDown={e => {
+          // Ctrl+Enter: em vez de gravar o total, abre o detalhe em itens.
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onItens) { e.preventDefault(); detalhar(); return }
           if (e.key === 'Enter') { skipBlurRef.current = true; confirmar() }
           if (e.key === 'Escape') { skipBlurRef.current = true; fechar() }
         }}
@@ -119,14 +141,23 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
           boxSizing: 'border-box',
         }}
       />
-      {ehConta && (
-        <span role="status" style={{
+      {mostrarBarra && (
+        <span style={{
           position: 'absolute', top: 'calc(100% + 3px)', right: align === 'right' ? 0 : undefined,
           left: align === 'left' ? 0 : undefined, zIndex: 20, whiteSpace: 'nowrap',
           background: '#0f172a', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 6,
-          padding: '3px 8px', pointerEvents: 'none', fontVariantNumeric: 'tabular-nums',
+          padding: '3px 8px', fontVariantNumeric: 'tabular-nums', display: 'inline-flex', gap: 8, alignItems: 'center',
         }}>
-          {resultado === null ? 'conta incompleta' : `= ${fmt(resultado)}`}
+          {ehConta && <span role="status">{resultado === null ? 'conta incompleta' : `= ${fmt(resultado)}`}</span>}
+          {/* onMouseDown + preventDefault: o clique não pode tirar o foco do
+              campo antes, senão o blur grava o total e fecha a edição. */}
+          {onItens && (
+            <button type="button" tabIndex={-1} title="Ctrl+Enter"
+              onMouseDown={e => { e.preventDefault(); detalhar() }}
+              style={{ all: 'unset', cursor: 'pointer', color: '#bfdbfe', textDecoration: 'underline' }}>
+              detalhar em itens
+            </button>
+          )}
         </span>
       )}
       </span>
@@ -143,14 +174,15 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       data-celula=""
       tabIndex={0}
       role="button"
-      aria-label={`Valor ${fmt(valor)}${readOnly ? ', somente leitura' : ', Enter para editar'}`}
+      aria-label={`Valor ${fmt(valor)}${temItens ? `, ${itens!.length} itens` : ''}${readOnly ? ', somente leitura' : temItens ? ', Enter para ver os itens' : ', Enter para editar'}`}
       onClick={() => iniciar()}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); iniciar() }
         // Digitar um numero ja comeca a edicao com ele, como numa planilha.
         else if (/^\d$/.test(e.key)) { e.preventDefault(); iniciar(e.key) }
       }}
-      title={readOnly ? motivoBloqueio : undefined}
+      title={readOnly ? motivoBloqueio
+        : temItens ? itens!.map(i => `${i.descricao || 'Sem nome'}: ${fmt(i.valor)}`).join('\n') : undefined}
       style={{
         padding: '3px 7px', borderRadius: 6,
         cursor: readOnly ? (motivoBloqueio ? 'not-allowed' : 'default') : 'pointer',
@@ -176,6 +208,13 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       }}
     >
       {fmt(valor)}
+      {/* infoTexto #0369a1 sobre #dbeafe: 5,0. */}
+      {temItens && (
+        <span aria-hidden style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: COR.infoTexto,
+          background: '#dbeafe', borderRadius: 999, padding: '1px 6px', verticalAlign: 1 }}>
+          {itens!.length === 1 ? '1 item' : `${itens!.length} itens`}
+        </span>
+      )}
     </span>
   )
 }

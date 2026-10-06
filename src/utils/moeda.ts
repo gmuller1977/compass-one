@@ -103,5 +103,24 @@ export function parseConta(s: string): number | null {
   return Math.round(total * 100) / 100
 }
 
+/**
+ * As parcelas de uma conta, com sinal: "800+300-50" → [800, 300, -50]. É o
+ * que o editor de itens do plano usa para começar uma lista a partir da
+ * conta digitada na célula. `null` quando a conta é inválida.
+ */
+export function partesDaConta(s: string): number[] | null {
+  const limpo = s.replace(/R\$/gi, '').replace(/\s/g, '').replace(/^=/, '')
+  if (limpo === '') return null
+  const termos = limpo.match(/[+-]?[^+-]+/g)
+  if (!termos || termos.join('') !== limpo) return null
+  const out: number[] = []
+  for (const t of termos) {
+    const v = parseValor(t.replace(/^[+-]/, ''))
+    if (v === null) return null
+    out.push(t.startsWith('-') ? -v : v)
+  }
+  return out
+}
+
 /** Leitura tolerante: vazio ou inválido viram 0. Assinatura das 7 cópias antigas. */
 export const parseBRL = (s: string): number => parseValor(s) ?? 0

@@ -1,6 +1,8 @@
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat, type Saldos } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import { useAbrirItens } from './itensContexto'
+import { itensDoMes } from '../../utils/itensPlano'
 import type { Categoria } from '../../context/AppContext'
 
 interface Props {
@@ -43,6 +45,7 @@ export default function PlanModalMes({
   categorias, onSave, onClose,
 }: Props) {
   const dadosAtivos = dadosPrevisto
+  const abrirItens = useAbrirItens()
 
   const entradasIdx = comIndice(dadosAtivos.entradas)
   const saidasVisiveis = hasFaturaCat
@@ -74,6 +77,8 @@ export default function PlanModalMes({
         <PlanCelulaEditavel
           valor={cat.v[mes]}
           onSave={v => onSave(tipo, ri, v)}
+          itens={itensDoMes(cat, mes)}
+          onItens={abrirItens ? p => abrirItens(tipo, ri, mes, p) : undefined}
         />
       </div>
     )
