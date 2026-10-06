@@ -12,8 +12,8 @@ export type Editando = { tipo: 'e' | 's'; row: number; mes: number } | null
  * de grupo. Link antigo com ?modo=planilha cai na Grade, que e o padrao.
  *
  * Em 06/10/2026 o Planejamento virou UMA tela, a Grade: a Lista saiu (editava
- * o mesmo que o Painel e o modal ja editam) e o Painel deixou de ser uma visao
- * a parte — ele e a planilha do modal de 3 meses (PlanModalMeses). Links com
+ * o mesmo que o modal edita) e o Painel tambem: o modal da Grade mostra as
+ * categorias em 3 meses, com "Ano inteiro" (PlanModalMeses). Links com
  * ?modo=painel, ?modo=lista ou ?modo=planilha caem na Grade.
  */
 export type Aba = 'meu-plano' | 'realizado' | 'revisao'

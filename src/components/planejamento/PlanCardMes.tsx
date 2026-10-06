@@ -26,6 +26,14 @@ interface Props {
    * simplesmente não tem plano e não está sendo observado.
    */
   semPlanoTexto?: { titulo: string; sub?: string }
+  /**
+   * Mês FECHADO: com quanto ele fechou de verdade — o fechamento real de
+   * bancos e dinheiro, o mesmo número que abre o mês seguinte como saldo
+   * inicial real e que o Radar mostra como saldo atual daquele mês. Entra AO
+   * LADO do previsto, nunca no lugar dele (ver CLAUDE.md, "O Planejamento não
+   * mistura realizado com projetado"). Ausente: mês aberto ou futuro.
+   */
+  fechouEm?: number
   onClick: () => void
 }
 
@@ -75,7 +83,7 @@ const TH = {
 export default function PlanCardMes({
   mes, receitas, despesas, saldoInicial, saldoFinal,
   isAtual, meta = 0, saldoInicialReal = false, saldoFinalReal = false,
-  semPlanoTexto, onClick,
+  semPlanoTexto, fechouEm, onClick,
 }: Props) {
   const resultado = receitas - despesas
   const percDespesas = receitas > 0 ? Math.min(100, (despesas / receitas) * 100) : 0
@@ -260,6 +268,29 @@ export default function PlanCardMes({
                 {fmt(saldoFinal, true)}
               </span>
             </div>
+
+            {/* Mês fechado: o real ao lado do previsto. Como o mês já parte do
+                saldo real, a diferença é só o que aconteceu dentro dele —
+                receitas e despesas reais contra as planejadas. Sobre o azul do
+                cartão (extremo mais claro #1e3a8a): #86efac 4,8, #fecaca 4,6,
+                rótulo a 75% 5,1 — a paleta de fundo escuro do CLAUDE.md. */}
+            {fechouEm !== undefined && (() => {
+              const dif = fechouEm - saldoFinal
+              const igual = Math.abs(dif) < 0.5
+              const cor = igual ? '#fff' : dif > 0 ? '#86efac' : '#fecaca'
+              return (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6,
+                  marginTop: 6, padding: '0 10px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: th.label }}>
+                    Fechou em <b style={{ color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{fmt(fechouEm, true)}</b>
+                  </span>
+                  <span title={igual ? 'Fechou no previsto' : `${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'} do saldo final previsto`}
+                    style={{ fontSize: 11, fontWeight: 700, color: cor, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    {igual ? '= no previsto' : `${dif > 0 ? '▲' : '▼'} ${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'}`}
+                  </span>
+                </div>
+              )
+            })()}
           </>
         )}
 

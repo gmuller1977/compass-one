@@ -26,6 +26,8 @@ interface Props {
   onMetaSave: (objetivos: number[]) => void
   /** A fase de observação, quando ela está valendo. Ver utils/descoberta. */
   descoberta?: Descoberta
+  /** Fechamento real de cada mês (bancos e dinheiro) — o "Fechou em" dos cartões fechados. */
+  fechamentoReal?: number[]
 }
 
 export default function PlanGrade(props: Props) {
@@ -123,13 +125,16 @@ export default function PlanGrade(props: Props) {
               meta={objetivos[mi]}
               saldoInicialReal={planTotais.inicialReal[mi]}
               saldoFinalReal={planTotais.finalReal[mi]}
+              // Só mês FECHADO: o corrente e os futuros ainda não têm fechamento.
+              fechouEm={props.fechamentoReal && (anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual))
+                ? props.fechamentoReal[mi] : undefined}
               onClick={() => setModalMes(mi)}
             />
           )
         })}
       />
 
-      {/* O mês clicado abre a planilha de 3 meses a partir dele, com "Ano
+      {/* O mês clicado abre as categorias em 3 meses a partir dele, com "Ano
           inteiro" — ver PlanModalMeses. */}
       {modalMes !== null && (
         <PlanModalMeses
@@ -138,13 +143,9 @@ export default function PlanGrade(props: Props) {
           mesAtual={mesAtual}
           dadosAtivos={dadosPrevisto}
           previsto={planTotais}
+          hasFaturaCat={props.hasFaturaCat}
           categorias={props.categorias}
           onSave={props.onSave}
-          onBulkSave={props.onBulkSave}
-          objetivos={objetivos}
-          sobraPrevista={sobraPrevista}
-          onMetaSave={onMetaSave}
-          dadosAnoAnterior={dadosAnoAnterior}
           onClose={() => setModalMes(null)}
         />
       )}

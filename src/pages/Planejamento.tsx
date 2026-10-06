@@ -261,6 +261,7 @@ export default function Planejamento() {
             objetivos={plan.objetivos}
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}
+            fechamentoReal={plan.saldoFinalReal}
           />
         </AjustePlanoContexto.Provider>
         </ItensPlanoContexto.Provider>
