@@ -3,6 +3,7 @@ import type { ContaAVencer } from './contasAVencer'
 import type { RitmoDoMes } from './ritmoDoMes'
 import { categoriasEstouradas } from './categoriasEstouradas'
 import { gruposQuePassaram } from './resumoRadar'
+import type { LancadoAcima } from './lancadoAcimaDoPlano'
 
 /**
  * "Pede sua atenção" da Início: no máximo três avisos, cada um uma frase e um
@@ -13,14 +14,17 @@ import { gruposQuePassaram } from './resumoRadar'
  * Nenhum número novo. Cada aviso é um quadro que já existia, resumido:
  *   contas    → contasAVencer (as linhas da memória de cálculo, 7 dias)
  *   passou    → gruposQuePassaram, o total do cabeçalho de grupo do Radar
+ *   parcelas  → lancadoAcimaDoPlano: o já lançado (parcelas, quase sempre)
+ *               passa do plano de um mês que ainda não começou
  *   negativo  → piorMesDaSerie, o mesmo ponto vermelho do gráfico
  *   ritmo     → ritmoDoMes, só no estado "acelerado" (o "passou" o hero já diz)
  *
- * A ordem é a da urgência: pagar → corrigir → planejar → frear. Com mais de
+ * A ordem é a da urgência: pagar → corrigir → corrigir o plano adiante →
+ * planejar → frear. Com mais de
  * três, os últimos ficam de fora; tudo continua em Análises.
  */
 export type Aviso = {
-  id: 'contas' | 'passou' | 'negativo' | 'ritmo'
+  id: 'contas' | 'passou' | 'parcelas' | 'negativo' | 'ritmo'
   tom: 'vermelho' | 'ambar'
   tag: string
   titulo: string
@@ -52,6 +56,8 @@ export function avisosDoMes(p: {
   linhasSaida: LinhaDoMes[]
   negativo: { ano: number; mes: number; valor: number } | null
   ritmo: RitmoDoMes | null
+  /** Categorias com o já lançado acima do plano de um mês futuro. */
+  lancadoAcima?: LancadoAcima[]
   hoje?: Date
 }): Aviso[] {
   const hoje = p.hoje ?? new Date()
@@ -104,7 +110,34 @@ export function avisosDoMes(p: {
     }
   }
 
-  // 3. Mês negativo À FRENTE. O mês corrente negativo o hero já mostra.
+  // 3. Já lançado acima do plano de um mês que ainda não começou — a parcela
+  //    4 de 6 que não cabe em novembro. O botão abre o ajuste do plano.
+  const acima = p.lancadoAcima ?? []
+  if (acima.length === 1) {
+    const a = acima[0]
+    const nomeCat = a.descricao ? `${a.nome} · ${a.descricao}` : a.nome
+    const m0 = a.meses[0], mN = a.meses[a.meses.length - 1]
+    const quando = a.meses.length === 1 ? `de ${MESES[m0.mes]}` : `de ${MESES[m0.mes]} a ${MESES[mN.mes]}`
+    const parcela = m0.itens.find(i => i.parcela)
+    out.push({
+      id: 'parcelas', tom: 'ambar', tag: 'Já lançado acima do plano',
+      titulo: `${nomeCat} já passa do plano ${quando} em ${reais(a.excessoTotal)}`,
+      detalhe: parcela?.parcela
+        ? `${parcela.descricao} ${parcela.parcela.atual} de ${parcela.parcela.total} já está na fatura de ${MESES[m0.mes]}.`
+        : `${reais(m0.jaLancado)} já lançado em ${MESES[m0.mes]}, com plano de ${reais(m0.plano)}.`,
+    })
+  } else if (acima.length > 1) {
+    const nomes = acima.map(a => (a.descricao ? `${a.nome} · ${a.descricao}` : a.nome))
+    out.push({
+      id: 'parcelas', tom: 'ambar', tag: 'Já lançado acima do plano',
+      titulo: `${acima.length} categorias já passam do plano dos próximos meses`,
+      detalhe: nomes.length <= 3
+        ? `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}.`
+        : `${nomes.slice(0, 2).join(', ')} e mais ${nomes.length - 2}.`,
+    })
+  }
+
+  // 4. Mês negativo À FRENTE. O mês corrente negativo o hero já mostra.
   const ymHoje = hoje.getFullYear() * 12 + hoje.getMonth()
   if (p.negativo && p.negativo.ano * 12 + p.negativo.mes > ymHoje) {
     const nome = MESES[p.negativo.mes].replace(/^./, ch => ch.toUpperCase())
@@ -115,7 +148,7 @@ export function avisosDoMes(p: {
     })
   }
 
-  // 4. Ritmo acelerado — avisa ANTES de passar.
+  // 5. Ritmo acelerado — avisa ANTES de passar.
   if (p.ritmo?.estado === 'acelerado') {
     out.push({
       id: 'ritmo', tom: 'ambar', tag: 'Ritmo do mês',

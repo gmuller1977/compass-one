@@ -389,6 +389,26 @@ normal" e cada parcela —, para o Planejamento mostrar de onde veio o número.
 Saiu o "Usar o que já gastei", que puxava para cobrir o estouro do mês.
 `prova48` (12 invariantes).
 
+**Alerta: o já lançado passa do plano de um mês que ainda não começou.**
+Pedido do Guilherme no mesmo dia: "se tenho compras futuras que ficam acima do
+planejamento, deveria existir um mecanismo de alerta". `lancadoAcimaDoPlano`
+em [`lancadoAcimaDoPlano.ts`](src/utils/lancadoAcimaDoPlano.ts): do mês
+SEGUINTE a hoje até o fim do plano, as linhas de despesa de `totaisDoMes` com
+realizado acima do previsto — o mesmo "passou" que o Radar daquele mês
+mostraria. Nenhuma conta nova; o corrente fica com o Radar e o Ritmo.
+
+- **Início**: aviso "Já lançado acima do plano" em "Pede sua atenção", entre
+  "passou" e "mês negativo". Uma categoria: "Lazer já passa do plano de
+  novembro a dezembro em R$ 100 · Bicicleta 4 de 6 já está na fatura" e o botão
+  abre o MESMO `AjustePlanoRadar` ali. Várias: "Ver no Radar".
+- **Radar**, mês corrente: `LancadoAcimaFaixa` abaixo da frase, uma pílula por
+  categoria que abre o ajuste.
+- Âmbar, não vermelho: é aviso sobre o que vem, não fato do mês.
+
+Ao aceitar "mês a mês" o plano passa a cobrir o já lançado e o alerta some.
+Fica para depois, porque Lançamentos está congelado: avisar NO MOMENTO de
+lançar a compra parcelada. `prova50` (11 invariantes).
+
 Isto só GRAVA no plano — `comValor` / `comItens`, as funções do Planejamento —,
 e o Radar relê. A linha CRU é achada por [`linhaDoPlano.ts`](src/utils/linhaDoPlano.ts):
 id do cadastro, depois o par (nome, variante), e o nome só se for único. Plano
@@ -397,6 +417,11 @@ explica e manda para o Planejamento, em vez de chutar uma das duas. O
 Simulador usa a mesma busca. O botão vem por contexto
 (`ajustePlanoContexto.ts`); o mobile (`AcMobileView`) não tem provedor e não
 mostra. `prova47` (14 invariantes).
+
+**Cada categoria do Radar diz se é FIXA ou VARIÁVEL**, num marcador ao
+lado do nome — pedido do Guilherme em 06/10/2026, porque a memória do saldo
+final divide por isso (fixas pagas e a pagar × variável a realizar). Vem do
+cadastro; sem cadastro ("Outras", categoria excluída), sem marcador.
 
 **Os cabeçalhos de grupo são CINZA (`#e6ebf1 → #d8dfe8`), com borda `#c3ccd8` e
 texto escuro.** Empilhados, os escuros pesavam demais; passou no mesmo dia pelo
@@ -686,6 +711,15 @@ app se move. Tudo em [`itensPlano.ts`](src/utils/itensPlano.ts):
   só os itens dele.
 
 `prova45` (17 invariantes).
+
+**A Grade mostra os doze meses numa linha, com setas.** Pedido do Guilherme
+em 06/10/2026: na grade de 4 × 3 "alguns meses ficam escondidos" — os de baixo
+caíam fora da tela. `PlanFaixaMeses`: 4 cartões por vez (3 no tablet, 2 no
+celular), seta anda UM mês, scroll nativo com snap (arrastar no celular, ← →
+no teclado com o foco na faixa). Abre com o mês corrente visível — nos quatro
+últimos do ano, a faixa encosta em dezembro e ele não é o primeiro. A fileira
+Jan–Dez em cima pula direto e marca os meses na tela; o corrente vai
+sublinhado. Os cartões (`PlanCardMes`) não mudaram.
 
 **O Planejamento tem UMA fonte para cada número, e três telas que a leem.**
 Grade, Painel e Lista — mais o modal que abre ao clicar num card da Grade —

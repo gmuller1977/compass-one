@@ -20,6 +20,9 @@ import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 import ResumoRadarFaixa from '../components/acompanhamento/ResumoRadarFaixa'
+import LancadoAcimaFaixa from '../components/acompanhamento/LancadoAcimaFaixa'
+import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
+import { catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { resumoDoMes } from '../utils/resumoRadar'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
@@ -126,6 +129,14 @@ export default function RadarFinanceiro() {
   // Isto nao reabre a regra de que o Radar so mostra realizado: os cartoes do
   // topo seguem sendo o que aconteceu. O previsto mora na barra do pe, como em
   // Lancamentos, e so se abre quando pedido.
+  // Já lançado acima do plano dos próximos meses — só olhando o mês corrente,
+  // como o aviso da Início. Ver utils/lancadoAcimaDoPlano.
+  const ehMesCorrente = ano === anoHoje && mes === mesHoje
+  const lancadoAcima = useMemo(
+    () => (ehMesCorrente && dadosAno ? lancadoAcimaDoPlano(depsSaldo) : []),
+    [ehMesCorrente, dadosAno, depsSaldo],
+  )
+
   const memoria = useMemo(
     () => memoriaDoRadar(ano, mes, depsSaldo),
     [ano, mes, depsSaldo],
@@ -266,6 +277,10 @@ export default function RadarFinanceiro() {
         ) : (
           <AjustePlanoContexto.Provider value={setAjuste}>
             {resumo && <ResumoRadarFaixa resumo={resumo} />}
+            <LancadoAcimaFaixa itens={lancadoAcima} onAjustar={(nome, descricao) => {
+              const l = linhasSaida.find(x => catKey(x.nome, x.descricao) === catKey(nome, descricao))
+              setAjuste({ tipo: 'saida', nome, descricao: descricao || undefined, prev: l?.prev ?? 0, real: l?.real ?? 0 })
+            }} />
             {/* ENTRADAS — um card por grupo */}
             {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
               <EvolucaoGrupo
