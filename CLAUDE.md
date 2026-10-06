@@ -359,8 +359,22 @@ o "gastou X de Y" seguem com os totais de verdade.
 Pedido do Guilherme em 06/10/2026: "se eu fiz um planejamento errado para uma
 categoria, eu poderia estar ajustando o plano direto pelo radar". Cada
 categoria aberta tem "✎ ajustar plano" (`AjustePlanoDialog`): novo valor
-(aceita conta), "Usar o que já gastei", "só este mês" ou "até dezembro", e
+(aceita conta), "do próximo mês até dezembro" (marcado) ou "só o próximo", e
 "detalhar em itens". Categoria com itens abre direto o `PlanItensEditor`.
+
+**O mês corrente NÃO se mexe**, decidido no mesmo dia. O Radar existe para
+mostrar que o mês saiu do plano; trazer o plano até o gasto apagaria o
+"passou" e, virando hábito, o "Previsto × realizado" e a "Precisão do plano"
+deixariam de mostrar onde o plano erra. O mês na tela é a REFERÊNCIA ("Outubro:
+gastou X de Y") e o ajuste vale do mês seguinte a hoje — ou do próprio mês, se
+ele for futuro (`mesAlvoDoAjuste` em [`ajustePlano.ts`](src/utils/ajustePlano.ts)).
+Dezembro aponta para janeiro do ano seguinte; sem plano lá, a janela avisa.
+
+As sugestões são os números na mão: **a média dos meses fechados** da categoria
+(`mediaDaCategoria`, sobre as linhas de `comparativoMensal`, sem o mês
+parcial e sem os meses em que ela não existia) e **o gasto do mês até agora**,
+rotulado como parcial. Saiu o "Usar o que já gastei", que puxava para cobrir o
+estouro do mês. `prova48` (11 invariantes).
 
 Isto só GRAVA no plano — `comValor` / `comItens`, as funções do Planejamento —,
 e o Radar relê. A linha CRU é achada por [`linhaDoPlano.ts`](src/utils/linhaDoPlano.ts):

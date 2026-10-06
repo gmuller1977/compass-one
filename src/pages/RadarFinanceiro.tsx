@@ -299,7 +299,7 @@ export default function RadarFinanceiro() {
 
       {ajuste && (
         <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
-          ano={ano} mes={mes} categorias={categorias} />
+          ano={ano} mes={mes} categorias={categorias} deps={depsSaldo} />
       )}
 
       {/* Saldo final previsto — a mesma barra de Lancamentos, no pe da tela.
