@@ -5,6 +5,7 @@ import {
   COR, NOMES_MESES, fmt, diaSemana, lancLabel, ordemLancamento,
   type Lancamento, type DadosMes,
 } from './FcShared'
+import { grupoDoLanc } from './fcRotulo'
 
 type Props = {
   mesDados: DadosMes
@@ -103,7 +104,13 @@ export default function FcDesktopLeft({
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: COR.texto, whiteSpace: 'nowrap',
-                      overflow: 'hidden', textOverflow: 'ellipsis' }}>{lancLabel(l)}</div>
+                      overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {/* Grupo antes do nome, em cinza: "Casa · Mercado". */}
+                      {grupoDoLanc(l, categorias) && (
+                        <span style={{ fontWeight: 500, color: COR.textoSuave }}>{grupoDoLanc(l, categorias)} · </span>
+                      )}
+                      {lancLabel(l)}
+                    </div>
                     {l.descricao && l.descricao !== l.categoria && (
                       <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1, whiteSpace: 'nowrap',
                         overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.descricao}</div>

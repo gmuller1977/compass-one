@@ -3,11 +3,12 @@ import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
-  lancLabel, ordemLancamento,
+  ordemLancamento,
   type TipoLanc, type Lancamento, type DadosMes,
   parseValor,
   REALCE_ERRO,
 } from './FcShared'
+import { lancLabelComGrupo } from './fcRotulo'
 
 type Props = {
   // Card list
@@ -595,7 +596,7 @@ export default function FcMobileView({
                 {allItems.map(({dia, dc, mc, ac, l}, idx) => {
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
-                  const nomePrimario = hasDesc ? l.descricao : lancLabel(l)
+                  const nomePrimario = hasDesc ? l.descricao : lancLabelComGrupo(l, categorias)
                   return (
                     <div key={l.id}
                       onClick={() => { editarLancamento(dia, l); setMobileView('form') }}
@@ -626,7 +627,7 @@ export default function FcMobileView({
                         <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
                           display:'flex',alignItems:'center',gap:5}}>
                           <span>
-                            {hasDesc ? lancLabel(l) : ''}
+                            {hasDesc ? lancLabelComGrupo(l, categorias) : ''}
                           </span>
                           {l.parcelas && l.parcelas > 1 && (
                             <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,
