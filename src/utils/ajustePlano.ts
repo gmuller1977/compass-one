@@ -19,3 +19,15 @@ export function mesAlvoDoAjuste(ano: number, mes: number, hoje: Date = new Date(
   return { ano: Math.floor(alvo / 12), mes: alvo % 12 }
 }
 
+
+/**
+ * O valor de um mês na sugestão "mês a mês" do ajuste. Com média (o gasto
+ * normal), é média + o já lançado no mês. SEM média — categoria sem histórico
+ * fechado —, é "cobrir o já lançado": sobe o plano só onde ele não cobre o
+ * que já está na fatura, e deixa o resto como está. Sem esta regra, os meses
+ * sem nada lançado iam a zero.
+ */
+export function valorMesAMes(base: number | null, planoAtual: number, jaLancado: number): number {
+  const v = base !== null ? base + jaLancado : Math.max(planoAtual, jaLancado)
+  return Math.round(v * 100) / 100
+}

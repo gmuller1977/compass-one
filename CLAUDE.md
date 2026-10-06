@@ -388,7 +388,19 @@ já lançado, mês a mês": cada mês com o seu valor (novembro com a parcela,
 fevereiro sem), e nos meses com algo lançado o plano fica em ITENS — "Gasto
 normal" e cada parcela —, para o Planejamento mostrar de onde veio o número.
 Saiu o "Usar o que já gastei", que puxava para cobrir o estouro do mês.
-`prova48` (12 invariantes).
+
+**O ajuste vai até o FIM DO PLANO, atravessando o ano** — antes parava em
+dezembro, e a parcela 6 de 6 de janeiro sumia; o alerta já ia até o fim do
+plano, e as duas telas discordavam. Cada mês é gravado no plano do ano dele.
+Parcela que cai depois do fim do plano, ou em ano ainda sem plano, aparece na
+lista como aviso ("ainda não há plano para 2027") e não é gravada: o app não
+cria plano de ano sozinho.
+
+**"Mês a mês" sem média não zera nada** (`valorMesAMes`): com média, o mês vale
+média + já lançado; SEM média (categoria sem mês fechado), é "cobrir o já
+lançado" — sobe o plano só onde ele não cobre o que está na fatura e deixa o
+resto. A primeira versão gravava a média ausente como zero nos meses sem nada
+lançado. `prova48` (17 invariantes).
 
 **Alerta: o já lançado passa do plano de um mês que ainda não começou.**
 Pedido do Guilherme no mesmo dia: "se tenho compras futuras que ficam acima do
