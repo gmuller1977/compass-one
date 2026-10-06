@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
+import PlanFaixaMeses from './PlanFaixaMeses'
 import PlanModalMes from './PlanModalMes'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
@@ -99,12 +100,13 @@ export default function PlanGrade(props: Props) {
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />
 
-      {/* Grade de meses */}
-      <div
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}
-        className="plan-grade-grid"
-      >
-        {Array.from({ length: 12 }, (_, mi) => {
+      {/* Os doze meses numa linha só, com setas — na grade de 4 × 3 os de
+          baixo ficavam fora da tela. Ver PlanFaixaMeses. Abre no mês
+          corrente; noutro ano, em janeiro. */}
+      <PlanFaixaMeses
+        inicial={anoAtual === anoCorrente ? mesAtual : 0}
+        destaque={anoAtual === anoCorrente ? mesAtual : null}
+        itens={Array.from({ length: 12 }, (_, mi) => {
           const isAtual = mi === mesAtual && anoAtual === anoCorrente
           const isFuturo = anoAtual > anoCorrente || (anoAtual === anoCorrente && mi > mesAtual)
           return (
@@ -125,12 +127,7 @@ export default function PlanGrade(props: Props) {
             />
           )
         })}
-      </div>
-
-      <style>{`
-        @media (max-width: 1023px) { .plan-grade-grid { grid-template-columns: repeat(3, 1fr) !important; } }
-        @media (max-width: 639px)  { .plan-grade-grid { grid-template-columns: repeat(2, 1fr) !important; } }
-      `}</style>
+      />
 
       {modalMes !== null && (
         <PlanModalMes
