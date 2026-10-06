@@ -157,7 +157,8 @@ que a ação sobrescreve o ano. Não unificar.
 Vale lembrar a divisão: o **Onboarding não cria plano** — ele cadastra contas,
 cartões e categorias, e no fim manda para o wizard. O **wizard** preenche os
 valores, mas replica o mesmo valor em todos os meses. Ajuste mês a mês só na
-Grade, Painel ou Lista.
+Grade — na planilha do modal de cada mês — e, para os próximos meses, pelo
+Radar.
 
 **O Radar é acompanhamento em tempo real: só realizado.** O saldo inicial é o
 saldo real com que o mês abriu, entradas e saídas são as que aconteceram, o
@@ -729,11 +730,31 @@ no teclado com o foco na faixa). Abre com o mês corrente visível — nos quatr
 Jan–Dez em cima pula direto e marca os meses na tela; o corrente vai
 sublinhado. Os cartões (`PlanCardMes`) não mudaram.
 
-**O Planejamento tem UMA fonte para cada número, e três telas que a leem.**
-Grade, Painel e Lista — mais o modal que abre ao clicar num card da Grade —
+**O Planejamento é UMA tela, e tem UMA fonte para cada número.** Os cartões da
+Grade e a planilha do modal que abre ao clicar num mês —
 leem saldo inicial, saldo final e os totais do mês do mesmo objeto,
 `plan.previsto`. Grupo se soma com `agrupar` e `somaDoGrupo` de
 [`types.ts`](src/components/planejamento/types.ts), e não há segunda cópia.
+
+**Em 06/10/2026 o Planejamento virou uma tela só**, pedido do Guilherme, depois
+que a Grade passou a mostrar os doze meses numa linha:
+
+- **A Lista saiu.** Editava as mesmas categorias, mês a mês, que a planilha já
+  edita, com a mesma célula.
+- **O Painel deixou de ser uma visão à parte.** Ele é a planilha do modal que
+  abre ao clicar num mês (`PlanModalMeses`): 3 meses a partir do clicado (2 no
+  tablet, 1 no celular), setas de um mês, e **"Ano inteiro"** troca a janela
+  pelos doze dentro do próprio modal — para não perder a visão do ano em
+  tabela, que era a força do Painel. É o mesmo `PlanPainel`, com `janela` e
+  `compacto`; não há cópia. O modal de um mês (`PlanModalMes`) saiu.
+- **O nome da categoria na planilha abre o ajuste do Radar**
+  (`AjustePlanoRadar`, pelo `AjustePlanoContexto`): já lançado nos próximos
+  meses, média sem parcelas, "mês a mês". Referência: o primeiro mês do modal;
+  vale do mês seguinte a hoje em diante, como no Radar. A célula continua
+  editando qualquer mês — é ali que se planeja; o nome é o atalho para corrigir
+  daqui para frente.
+- O menu lateral perdeu os subitens Grade/Painel/Lista. `?modo=painel`,
+  `?modo=lista` e `?modo=planilha` caem na Grade.
 
 **A Planilha foi removida em 10/09/2026**, substituída pelo Painel: mostravam
 a mesma coisa, e ela carregava cópias próprias do agrupamento e da soma de

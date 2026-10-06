@@ -44,11 +44,10 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       {
         icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
+        // Uma tela só: Meses e Planilha são um seletor DENTRO dela
+        // (06/10/2026), e não mais subitens do menu.
         sub: [
-          { label: 'Grade',      path: '/planejamento?modo=grade'    },
-          { label: 'Painel',     path: '/planejamento?modo=painel'   },
-          { label: 'Lista',      path: '/planejamento?modo=lista'    },
-          // Por ultimo de proposito: sobrescreve o plano do ano inteiro.
+          // Sobrescreve o plano do ano inteiro: separado pelo divisor.
           { divider: 'Recomeçar' },
           { label: 'Planejamento do Zero', path: '/wizard-planejamento'    },
         ],

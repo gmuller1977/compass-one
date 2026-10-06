@@ -3,6 +3,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import { useAbrirItens } from './itensContexto'
 import { itensDoMes } from '../../utils/itensPlano'
+import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
 import {
@@ -25,6 +26,10 @@ interface Props {
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
   dadosAnoAnterior: AnoData | null
+  /** Só estes meses, em ordem — o modal de 3 meses da Grade. Sem isto, o ano. */
+  janela?: number[]
+  /** Sem barra de ferramentas, legenda e ajuda: o modal já tem as dele. */
+  compacto?: boolean
 }
 
 const W_CATS = 210
@@ -106,7 +111,7 @@ const GRUPO_BORDA = 'rgba(15,23,42,0.15)'
  */
 export default function PlanPainel({
   anoAtual, mesAtual, dadosAtivos, previsto, categorias,
-  onSave, onBulkSave, objetivos, sobraPrevista, onMetaSave, dadosAnoAnterior,
+  onSave, onBulkSave, objetivos, sobraPrevista, onMetaSave, dadosAnoAnterior, janela, compacto,
 }: Props) {
   // Uma por vez, de proposito: com as duas abertas, o detalhe de Receitas
   // rolaria por baixo do rotulo de Despesas, e a tela diria que aluguel e
@@ -124,6 +129,7 @@ export default function PlanPainel({
   // PLANO, não os totais: um mês fechado mostra realizado, e um gasto que
   // aconteceu sem ter sido planejado não é planejamento.
   const { meses, escondidos } = useMemo(() => {
+    if (janela) return { meses: janela, escondidos: 0 }
     const temPlano = (mi: number) =>
       dadosAtivos.entradas.some(c => (c.v[mi] ?? 0) > 0) ||
       dadosAtivos.saidas.some(c => (c.v[mi] ?? 0) > 0)
@@ -136,7 +142,7 @@ export default function PlanPainel({
       meses: mostrarPassado ? todos : todos.filter(mi => !ocultos.includes(mi)),
       escondidos: ocultos.length,
     }
-  }, [dadosAtivos, anoAtual, anoCorrente, mesAtual, mostrarPassado])
+  }, [dadosAtivos, anoAtual, anoCorrente, mesAtual, mostrarPassado, janela])
 
   const colunas = `${W_CATS}px repeat(${meses.length}, ${W_MES}px)`
 
@@ -238,8 +244,8 @@ export default function PlanPainel({
   )
 
   return (
-    <div style={{ padding: '8px 16px' }}>
-      <PlanBarraFerramentas
+    <div style={{ padding: compacto ? 0 : '8px 16px' }}>
+      {!compacto && <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}
         dadosAtivos={dadosAtivos}
@@ -251,7 +257,7 @@ export default function PlanPainel({
         onMetaSave={onMetaSave}
         bloqueado={false}
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
-      />
+      />}
 
       {escondidos > 0 && (
         <label style={{
@@ -275,7 +281,7 @@ export default function PlanPainel({
           O "ate <mes>" sai da FRONTEIRA, nao do calendario: ela e o primeiro
           mes que abre sem saber de quanto parte. Com agosto fechado, setembro
           abre com saldo real e ainda pertence ao bloco da esquerda. */}
-      {meses.length > 0 && (() => {
+      {!compacto && meses.length > 0 && (() => {
         const iPrev = primeiroPrevisto === undefined ? -1 : meses.indexOf(primeiroPrevisto)
         const temReal = iPrev !== 0
         const temPrev = iPrev !== -1
@@ -321,7 +327,7 @@ export default function PlanPainel({
         </div>
       ) : (
         <div style={{
-          overflow: 'auto', maxHeight: '68vh',
+          overflow: 'auto', maxHeight: compacto ? '62vh' : '68vh',
           // fit-content encolhe a caixa ate onde o conteudo termina; sem isso
           // ela ocupava a largura toda e sobrava azul depois de dezembro. O
           // maxWidth devolve a rolagem horizontal quando os meses nao cabem.
@@ -506,7 +512,7 @@ export default function PlanPainel({
         </div>
       )}
 
-      <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
+      {!compacto && <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 8, lineHeight: 1.5 }}>
         Clique em <b>Receitas</b> ou <b>Despesas</b> para trocar de detalhe — uma
         de cada vez, para as duas continuarem visíveis ao rolar.
         À esquerda da linha, o que já aconteceu; à direita, o previsto. Um número
@@ -516,7 +522,7 @@ export default function PlanPainel({
         Sem mouse: <b>Tab</b> e <b>setas</b> andam pela grade mantendo a célula no
         centro, <b>Home</b> e <b>End</b> vão ao primeiro e ao último mês,
         <b>Enter</b> ou um número abre a edição, <b>Esc</b> cancela.
-      </div>
+      </div>}
     </div>
   )
 }
@@ -596,6 +602,7 @@ function Detalhe({
   divisor: (mi: number, claro?: boolean) => React.CSSProperties
 }) {
   const abrirItens = useAbrirItens()
+  const abrirAjuste = useAbrirAjuste()
   return (
     <>
       {linhas.map((l, li) => {
@@ -641,9 +648,23 @@ function Detalhe({
               overflow: 'hidden', whiteSpace: 'nowrap',
             }}>
               <span style={{ flexShrink: 0 }}>{icone}</span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {nomeExibicao(l.cat)}
-              </span>
+              {/* Com o ajuste disponível (o modal da Grade), o nome abre a
+                  mesma janela do Radar: já lançado nos próximos meses, média
+                  sem parcelas e "mês a mês". O mês de referência é o
+                  primeiro da janela. */}
+              {abrirAjuste ? (
+                <button type="button" title="Ver o já lançado e ajustar o plano"
+                  onClick={() => abrirAjuste({ tipo: tipo === 'e' ? 'entrada' : 'saida', nome: l.cat.nome,
+                    descricao: l.cat.descricao, prev: l.cat.v[meses[0]] ?? 0, real: 0, mes: meses[0] })}
+                  style={{ all: 'unset', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis',
+                    textDecoration: 'underline', textDecorationColor: '#cbd5e1', textUnderlineOffset: 3 }}>
+                  {nomeExibicao(l.cat)}
+                </button>
+              ) : (
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {nomeExibicao(l.cat)}
+                </span>
+              )}
             </div>
             {meses.map(mi => (
               <div key={`${tipo}-c-${l.ri}-${mi}`} style={{

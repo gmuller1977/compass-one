@@ -2,7 +2,7 @@ import { useState } from 'react'
 import PlanResumoAnual from './PlanResumoAnual'
 import PlanCardMes from './PlanCardMes'
 import PlanFaixaMeses from './PlanFaixaMeses'
-import PlanModalMes from './PlanModalMes'
+import PlanModalMeses from './PlanModalMeses'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
 import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, janelaQueFecha, MESES_FULL } from './types'
@@ -129,17 +129,23 @@ export default function PlanGrade(props: Props) {
         })}
       />
 
+      {/* O mês clicado abre a planilha de 3 meses a partir dele, com "Ano
+          inteiro" — ver PlanModalMeses. */}
       {modalMes !== null && (
-        <PlanModalMes
-          mes={modalMes}
-          dadosPrevisto={dadosPrevisto}
+        <PlanModalMeses
+          mesInicial={modalMes}
+          anoAtual={anoAtual}
+          mesAtual={mesAtual}
+          dadosAtivos={dadosPrevisto}
           previsto={planTotais}
-          hasFaturaCat={props.hasFaturaCat}
-          planoRef={props.planoRef}
           categorias={props.categorias}
-          onSave={(tipo, ri, valor) => props.onSave(tipo, ri, modalMes, valor)}
+          onSave={props.onSave}
+          onBulkSave={props.onBulkSave}
+          objetivos={objetivos}
+          sobraPrevista={sobraPrevista}
+          onMetaSave={onMetaSave}
+          dadosAnoAnterior={dadosAnoAnterior}
           onClose={() => setModalMes(null)}
-          somaCartaoMes={props.somaCartaoMes}
         />
       )}
     </div>

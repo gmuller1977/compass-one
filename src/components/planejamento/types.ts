@@ -10,8 +10,12 @@ export type Editando = { tipo: 'e' | 's'; row: number; mes: number } | null
  * A Planilha saiu em 10/09/2026, substituida pelo Painel: as duas mostravam a
  * mesma coisa, e a Planilha carregava copias proprias do agrupamento e da soma
  * de grupo. Link antigo com ?modo=planilha cai na Grade, que e o padrao.
+ *
+ * Em 06/10/2026 o Planejamento virou UMA tela, a Grade: a Lista saiu (editava
+ * o mesmo que o Painel e o modal ja editam) e o Painel deixou de ser uma visao
+ * a parte — ele e a planilha do modal de 3 meses (PlanModalMeses). Links com
+ * ?modo=painel, ?modo=lista ou ?modo=planilha caem na Grade.
  */
-export type ViewMode = 'grade' | 'painel' | 'lista'
 export type Aba = 'meu-plano' | 'realizado' | 'revisao'
 
 // Motivos de bloqueio de edicao — mostrados ao clicar na celula, para o clique

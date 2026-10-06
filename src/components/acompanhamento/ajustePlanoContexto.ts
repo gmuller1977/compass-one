@@ -5,7 +5,9 @@ import { createContext, useContext } from 'react'
  * fornece (ele sabe o ano e o mês); a linha só chama. Sem provedor — o mobile,
  * por exemplo —, a linha não mostra o botão.
  */
-export type PedidoAjuste = { tipo: 'entrada' | 'saida'; nome: string; descricao?: string; prev: number; real: number }
+// `mes`: o mês de referência quando quem pede não é o Radar (o modal do
+// Planejamento passa o primeiro mês que está mostrando).
+export type PedidoAjuste = { tipo: 'entrada' | 'saida'; nome: string; descricao?: string; prev: number; real: number; mes?: number }
 export type AbrirAjuste = (p: PedidoAjuste) => void
 
 export const AjustePlanoContexto = createContext<AbrirAjuste | null>(null)

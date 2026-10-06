@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
-import { type ViewMode, COR } from '../components/planejamento/types'
+import { COR } from '../components/planejamento/types'
 import { useApp } from '../context/AppContext'
 import DescobertaBanner from '../components/DescobertaBanner'
 import DescobertaModal from '../components/DescobertaModal'
@@ -13,12 +13,16 @@ import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
 import { medirDescoberta } from '../utils/descoberta'
 import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
-import PlanPainel from '../components/planejamento/PlanPainel'
-import PlanLista from '../components/planejamento/PlanLista'
 import PlanItensEditor from '../components/planejamento/PlanItensEditor'
 import { ItensPlanoContexto, type AbrirItens } from '../components/planejamento/itensContexto'
 import { itensDoMes } from '../utils/itensPlano'
 import { nomeExibicao } from '../components/planejamento/types'
+import { AjustePlanoContexto, type AbrirAjuste } from '../components/acompanhamento/ajustePlanoContexto'
+import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
+import { construirRealizadoMes } from '../utils/realizadoMes'
+import { pickReal } from '../components/acompanhamento/evolucaoCalcs'
+import type { Deps } from '../utils/saldoConta'
+import type { DadosMes } from '../context/AppContext'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -45,17 +49,14 @@ export default function Planejamento() {
 
   const plan = usePlanejamento(anoAtual)
   const { planos, extratoData, contas, onboardingCompleto, user,
-    setPlanos, faturaData, categorias } = useApp()
+    setPlanos, faturaData, categorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
 
-  const modoParam = new URLSearchParams(location.search).get('modo')
-  const viewMode: ViewMode =
-    modoParam === 'painel' ? 'painel'
-    : modoParam === 'lista' ? 'lista'
-    : 'grade'
+  // Uma tela só (06/10/2026): a Grade. A planilha mora no modal que abre ao
+  // clicar num mês (PlanModalMeses), e a Lista saiu. Link antigo com
+  // ?modo=painel, ?modo=lista ou ?modo=planilha cai aqui, sem quebrar.
 
   // Plano unico: nao ha mais aba nem escolha de qual plano editar
   const dadosAtivos = plan.dadosPrevistoFinal
-  const totaisAtivos = plan.previsto
 
   // A meta e comparada com o resultado do mes: entradas menos saidas.
   const sobraPrevista = plan.previsto.totalEntradas.map(
@@ -79,6 +80,25 @@ export default function Planejamento() {
   // Painel e o modal da Grade abrem por contexto; aqui ele é desenhado uma vez.
   const [itensAbertos, setItensAbertos] = useState<{ tipo: 'e' | 's'; ri: number; mi: number; partes?: number[] } | null>(null)
   const abrirItens = useCallback<AbrirItens>((tipo, ri, mi, partes) => setItensAbertos({ tipo, ri, mi, partes }), [])
+
+  // O nome da categoria na planilha do modal abre o MESMO ajuste do Radar:
+  // já lançado nos próximos meses, média sem parcelas, "mês a mês". O mês de
+  // referência é o primeiro que o modal mostra; o realizado dele sai de
+  // construirRealizadoMes, como no Radar.
+  const depsAjuste = useMemo<Deps>(() => ({
+    extratoData: extratoData as Record<string, DadosMes>, faturaData: faturaData as Deps['faturaData'],
+    contas, categorias, planos: planos as Deps['planos'], saldoInicialDinheiro, cenarioPrevisao,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
+  const [ajuste, setAjuste] = useState<AjusteAberto | null>(null)
+  const abrirAjuste = useCallback<AbrirAjuste>(p => {
+    const mes = p.mes ?? plan.mesAtual
+    const { saidasMap, entradasMap } = construirRealizadoMes({
+      ano: anoAtual, mes, extratoData: extratoData as Record<string, DadosMes>,
+      faturaData, contas, categorias, planoAno: planos[anoAtual],
+    })
+    const real = pickReal(p.tipo === 'entrada' ? entradasMap : saidasMap, p.nome, p.descricao)?.total ?? 0
+    setAjuste({ ...p, mes, real })
+  }, [anoAtual, plan.mesAtual, extratoData, faturaData, contas, categorias, planos])
 
   // A fase e DERIVADA: onboarding feito e nenhum plano em lugar nenhum. Ver
   // utils/descoberta — nao existe campo guardado que possa discordar disso.
@@ -146,10 +166,6 @@ export default function Planejamento() {
     try { if (chaveProposta) localStorage.setItem(chaveProposta, '1') } catch { /* aba anônima */ }
   }, [chaveProposta])
 
-  const viewModeLabels: Record<ViewMode, string> = {
-    grade: 'Grade', painel: 'Painel', lista: 'Lista',
-  }
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -173,24 +189,13 @@ export default function Planejamento() {
         </div>
       )}
 
-      {/* Mobile: seletor de visão */}
+      {/* Mobile: o ano */}
       {isMobile && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 4,
           padding: '8px 12px', background: COR.branco, borderBottom: `1px solid ${COR.borda}`,
         }}>
-          {(['grade', 'painel', 'lista'] as ViewMode[]).map(v => (
-            <button
-              key={v}
-              onClick={() => navigate(`?modo=${v === 'grade' ? '' : v}`, { replace: true })}
-              style={{
-                border: 'none', borderRadius: 8, padding: '6px 14px',
-                fontSize: 13, fontWeight: viewMode === v ? 700 : 500, cursor: 'pointer',
-                background: viewMode === v ? '#eff6ff' : '#f1f5f9',
-                color: viewMode === v ? COR.azul : COR.textoSuave,
-              }}
-            >{viewModeLabels[v]}</button>
-          ))}
+          <span style={{ fontSize: 14, fontWeight: 800, color: COR.texto }}>Planejamento</span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
             <button onClick={() => setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={BTN_ANO_MOB}>◄</button>
             <span style={{ fontSize: 13, fontWeight: 800, color: COR.texto, minWidth: 38,
@@ -239,7 +244,7 @@ export default function Planejamento() {
         )}
 
         <ItensPlanoContexto.Provider value={abrirItens}>
-        {viewMode === 'grade' ? (
+        <AjustePlanoContexto.Provider value={abrirAjuste}>
           <PlanGrade
             descoberta={descoberta}
             anoAtual={anoAtual}
@@ -257,38 +262,14 @@ export default function Planejamento() {
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}
           />
-        ) : viewMode === 'painel' ? (
-          <PlanPainel
-            anoAtual={anoAtual}
-            mesAtual={plan.mesAtual}
-            dadosAtivos={dadosAtivos}
-            previsto={totaisAtivos}
-            categorias={plan.categorias}
-            onSave={handleSave}
-            onBulkSave={handleBulkSave}
-            objetivos={plan.objetivos}
-            sobraPrevista={sobraPrevista}
-            onMetaSave={plan.editarMetas}
-            dadosAnoAnterior={plan.planoAnoAnterior}
-          />
-        ) : (
-          <PlanLista
-            anoAtual={anoAtual}
-            mesAtual={plan.mesAtual}
-            dadosAtivos={dadosAtivos}
-            previsto={totaisAtivos}
-            categorias={plan.categorias}
-            onSave={handleSave}
-            onBulkSave={handleBulkSave}
-            objetivos={plan.objetivos}
-            sobraPrevista={sobraPrevista}
-            onMetaSave={plan.editarMetas}
-            dadosAnoAnterior={plan.planoAnoAnterior}
-            totaisReais={plan.totaisReais}
-          />
-        )}
+        </AjustePlanoContexto.Provider>
         </ItensPlanoContexto.Provider>
       </div>
+
+      {ajuste && (
+        <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
+          ano={anoAtual} mes={ajuste.mes ?? plan.mesAtual} categorias={categorias} deps={depsAjuste} />
+      )}
 
       {itensAbertos && (() => {
         const { tipo, ri, mi, partes } = itensAbertos
