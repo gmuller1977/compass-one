@@ -19,6 +19,10 @@ type NavItem = {
   badge?: string
   disabled?: boolean
   excludeIfSearch?: string
+  /** Com subitens, o clique ABRE a tela e mostra os subitens — em vez de só
+   *  expandir. O Planejamento perdeu Grade/Painel/Lista (06/10/2026) e ficou
+   *  só com "Planejamento do Zero": sem isto, o clique não levava à tela. */
+  abreTela?: boolean
 }
 
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
@@ -43,7 +47,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: '🗓️ Todo ano',
     items: [
       {
-        icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false,
+        icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false, abreTela: true,
         // Uma tela só: Meses e Planilha são um seletor DENTRO dela
         // (06/10/2026), e não mais subitens do menu.
         sub: [
@@ -383,7 +387,12 @@ export default function Sidebar() {
                     icon={item.icon} label={item.label}
                     active={parentActive} hasSub={hasSub} expanded={isExpanded}
                     badge={item.badge} disabled={item.disabled}
-                    onClick={() => hasSub ? toggleExpand(item.label) : navigate(item.path)}
+                    onClick={() => {
+                      if (!hasSub) return navigate(item.path)
+                      if (!item.abreTela) return toggleExpand(item.label)
+                      navigate(item.path)
+                      setExpandedItem(item.label)
+                    }}
                   />
                   {hasSub && isExpanded && (
                     <div style={{ animation: 'subExpand .18s ease' }}>
