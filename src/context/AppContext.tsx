@@ -40,6 +40,13 @@ export type Categoria = {
   numeroParcelas?: number
   contaDebitoId?: string
   pinQuick?: boolean
+  /**
+   * Só para FIXA (utils/recorrencia). 'anual' (padrão): repete todo mês, até
+   * `recorrenciaFim` (AAAA-MM) se houver — o financiamento. 'temporaria': um
+   * período curto (IPVA, IPTU, seguro), perguntado ao planejar.
+   */
+  recorrencia?: 'anual' | 'temporaria'
+  recorrenciaFim?: string
 }
 
 // descricao = variante (ex.: Seguro · Civic) e grupo sao gravados no plano
@@ -197,6 +204,8 @@ type CategoriaRow = {
   numero_parcelas?: number | string | null
   conta_debito_id?: string | null
   pin_quick?: boolean | null
+  recorrencia?: string | null
+  recorrencia_fim?: string | null
 }
 
 type PrefRow = {
@@ -255,6 +264,9 @@ function categoriaToRow(c: Categoria, userId: string) {
     numero_parcelas: c.numeroParcelas ?? 1,
     conta_debito_id: c.contaDebitoId ?? null,
     pin_quick: c.pinQuick ?? false,
+    // Colunas da migração 013 — precisam existir no banco antes deste código.
+    recorrencia: c.recorrencia ?? 'anual',
+    recorrencia_fim: c.recorrencia === 'temporaria' ? null : (c.recorrenciaFim ?? null),
   }
 }
 
@@ -275,6 +287,8 @@ function rowToCategoria(row: CategoriaRow): Categoria {
     numeroParcelas: row.numero_parcelas != null ? Number(row.numero_parcelas) : undefined,
     contaDebitoId: row.conta_debito_id ?? undefined,
     pinQuick: row.pin_quick ?? false,
+    recorrencia: row.recorrencia === 'temporaria' ? 'temporaria' : 'anual',
+    recorrenciaFim: row.recorrencia_fim ?? undefined,
   }
 }
 

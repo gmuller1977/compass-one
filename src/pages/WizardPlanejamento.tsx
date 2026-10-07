@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 import { catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { parseBRL } from '../utils/moeda'
+import { cortarNoFim, rotuloParcela } from '../utils/recorrencia'
+import { comItens, novoIdItem } from '../utils/itensPlano'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData, Categoria } from '../context/AppContext'
@@ -129,6 +131,29 @@ export default function WizardPlanejamento() {
     return Array(12).fill(0).map((_,i) => aplicar === 'todos' || i >= MES_ATU ? val : 0)
   }
 
+  // Fixa temporária (IPVA, IPTU, seguro): o último mês das parcelas, por
+  // categoria. Começa no primeiro mês aplicado. Ver utils/recorrencia.
+  const inicioAplicar = aplicar === 'todos' ? 0 : MES_ATU
+  const [ateTemp, setAteTemp] = useState<Record<string, number>>({})
+  const ehTemporaria = (c: { fixa: boolean; recorrencia?: string }) => c.fixa && c.recorrencia === 'temporaria'
+  const ateDe = (k: string) => Math.max(inicioAplicar, ateTemp[k] ?? inicioAplicar)
+
+  /**
+   * A linha do plano de uma categoria. Fixa anual com fim para no mês final
+   * (cortarNoFim); temporária vai do primeiro mês aplicado até o escolhido, com
+   * cada parcela marcada em item ("IPVA · 1 de 3"). O resto, como sempre.
+   */
+  function linhaDaCategoria<T extends { nome: string; fixa: boolean; recorrencia?: string; recorrenciaFim?: string; descricao?: string }>(c: T, val: number) {
+    if (ehTemporaria(c)) {
+      const ate = ateDe(catKey(c.nome, c.descricao))
+      const meses = Array.from({ length: ate - inicioAplicar + 1 }, (_, i) => inicioAplicar + i)
+      let l: { v: number[]; itens?: Record<number, { id: string; descricao: string; valor: number }[]> } = { v: Array(12).fill(0) }
+      meses.forEach((m, k) => { l = comItens(l, [m], [{ id: novoIdItem(), descricao: rotuloParcela(c.nome, k + 1, meses.length), valor: val }]) })
+      return l
+    }
+    return { v: c.fixa && c.recorrencia !== 'temporaria' ? cortarNoFim(buildV(val), ANO, c.recorrenciaFim) : buildV(val) }
+  }
+
   // O assistente SOBRESCREVE o plano do ano — nao mescla. Enquanto o link do
   // menu estava quebrado ninguem chegava aqui por acidente; agora que ele
   // funciona, um plano ja montado precisa de confirmacao antes de virar pó.
@@ -156,13 +181,13 @@ export default function WizardPlanejamento() {
     const novoPlano: PlanoAnoData = {
       saldoInicialJan,
       entradas: catsEntrada.filter(c => parseBRL(entradas[catKey(c.nome, c.descricao)] ?? '') > 0).map(c => ({
-        nome: c.nome, id: c.id, descricao: c.descricao, grupo: c.grupo, v: buildV(parseBRL(entradas[catKey(c.nome, c.descricao)] ?? '')),
+        nome: c.nome, id: c.id, descricao: c.descricao, grupo: c.grupo, ...linhaDaCategoria(c, parseBRL(entradas[catKey(c.nome, c.descricao)] ?? '')),
       })),
       saidas: [
         ...catsSaida.filter(c => parseBRL(saidas[catKey(c.nome, c.descricao)] ?? '') > 0).map(c => ({
           nome: c.nome, id: c.id, descricao: c.descricao, grupo: c.grupo,
           t: c.tipoMovimento === 'cartao' ? 'cartao' : undefined,
-          v: buildV(parseBRL(saidas[catKey(c.nome, c.descricao)] ?? '')),
+          ...linhaDaCategoria(c, parseBRL(saidas[catKey(c.nome, c.descricao)] ?? '')),
         })),
         ...faturaCats,
       ],
@@ -455,6 +480,19 @@ export default function WizardPlanejamento() {
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:'#0f172a' }}>{c.nome}</div>
                   {c.descricao && <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>{c.descricao}</div>}
+                  {/* Temporária: até qual mês vão as parcelas. #475569 no branco: 7,6. */}
+                  {ehTemporaria(c) && parseBRL(values[catKey(c.nome, c.descricao)] ?? '') > 0 && (
+                    <label style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, fontSize:11, color:'#475569' }}>
+                      Parcelas até
+                      <select value={ateDe(catKey(c.nome, c.descricao))}
+                        onChange={e => setAteTemp(p => ({ ...p, [catKey(c.nome, c.descricao)]: Number(e.target.value) }))}
+                        style={{ fontSize:11, padding:'2px 4px', borderRadius:6, border:'1px solid #cbd5e1', fontFamily:'inherit' }}>
+                        {Array.from({ length: 12 - inicioAplicar }, (_, i) => inicioAplicar + i).map(m => (
+                          <option key={m} value={m}>{MESES_FULL[m]} · {m - inicioAplicar + 1} {m === inicioAplicar ? 'parcela' : 'parcelas'}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </div>
                 <input
                   value={values[catKey(c.nome, c.descricao)] ?? ''}

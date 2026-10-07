@@ -705,6 +705,35 @@ A outra diferença legítima é o clamp: a planilha faz `previsto − realizado`
 total, então categoria que estourou abate a que sobrou. O app calcula por
 categoria e para no zero, por decisão registrada acima.
 
+**Conta fixa tem repetição: anual (com fim opcional) ou temporária.**
+Desenhado com o Guilherme em 06–07/10/2026: "IPVA, IPTU, seguro são despesas
+fixas mas acabam em x parcelas". Regras em [`recorrencia.ts`](src/utils/recorrencia.ts);
+colunas `recorrencia` e `recorrencia_fim` em `categorias` (migração 013,
+rodada por ele ANTES do código — o app grava categoria com todas as colunas).
+
+- **Cadastro:** fixa ganha "Repetição: Anual | Temporária". Anual tem "Até
+  quando?" (mês/ano) opcional: vazio = sem fim, como era; preenchido = acaba
+  ali (financiamento até mar/2029). Temporária não guarda período.
+- **Planejamento, ao digitar o valor de uma fixa** (`RepetirFixaDialog`, só
+  quando o valor mudou):
+  - anual → "Usar R$ X também de [seguinte] até dezembro?" — ou até o fim,
+    atravessando os anos que JÁ têm plano. Mês com valor diferente do que o
+    digitado tinha (o reajuste de julho) aparece à parte, desmarcado: "Em
+    julho o valor planejado é R$ 520, diferente dos outros meses. Alterar
+    também?". Mês vazio não conta como diferente.
+  - temporária → "Parcelas fixas até qual mês?", e cada mês vira item "IPVA ·
+    1 de 3". "Só [mês]" deixa só o digitado.
+- **Copiar ano:** fixa anual com fim zera os meses depois do fim.
+- **Assistente:** anual com fim para no mês final; temporária ganha "Parcelas
+  até [mês]" na linha da categoria, com os itens "1 de N".
+- O resto não muda: Lançamentos, contas a vencer, previsão e Radar seguem o
+  valor de cada mês do plano.
+
+Numerar a parcela do financiamento ("15 de 48") exigiria o mês da 1ª parcela no
+cadastro — oferecido e não pedido. IPVA pelo final da placa: segunda etapa, se
+fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
+`prova51` (15 invariantes).
+
 **Itens dentro do valor do plano: Mercado = Supermercado 800 + Feira 300.**
 Pedido do Guilherme em 06/10/2026, sobre modelo validado: ele somava por fora
 e não queria criar categoria. **Variante não serve para isso** — cada

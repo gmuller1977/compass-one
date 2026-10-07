@@ -354,6 +354,44 @@ export default function CfgCategorias({
                 </div>
               </div>
 
+              {/* Fixa nem sempre é o ano inteiro (06/10/2026, ver utils/recorrencia):
+                  anual repete todo mês, até um fim opcional (financiamento);
+                  temporária vale por um período curto, perguntado ao planejar. */}
+              {formCat.fixa && (
+                <div>
+                  <label style={labelSt}>Repetição</label>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {([['anual','Anual'],['temporaria','Temporária']] as const).map(([v,l]) => {
+                      const ativo = (formCat.recorrencia ?? 'anual') === v
+                      return (
+                        <button key={v} type="button" aria-pressed={ativo}
+                          onClick={() => setFormCat(p=>({...p, recorrencia: v, recorrenciaFim: v === 'temporaria' ? undefined : p.recorrenciaFim }))}
+                          style={{ flex:1, padding:'7px 0', fontFamily:'inherit', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:500,
+                            border:`1.5px solid ${ativo ? COR.azul : COR.borda}`,
+                            background: ativo ? '#eff6ff' : COR.branco, color: ativo ? COR.azul : '#475569' }}>
+                          {l}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {(formCat.recorrencia ?? 'anual') === 'anual' ? (
+                    <div style={{ marginTop:8 }}>
+                      <label style={{ ...labelSt, fontWeight:500 }}>Até quando? <span style={{ fontWeight:400 }}>(opcional)</span></label>
+                      <input type="month" value={formCat.recorrenciaFim ?? ''}
+                        onChange={e => setFormCat(p=>({...p, recorrenciaFim: e.target.value || undefined}))}
+                        className="campo-cfg" style={inputSt} />
+                      <div style={{ fontSize:11, color:'#64748b', marginTop:4, lineHeight:1.4 }}>
+                        Vazio: todo mês, sem fim. Preenchido: a conta acaba nesse mês — um financiamento, por exemplo.
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:11, color:'#64748b', marginTop:6, lineHeight:1.4 }}>
+                      Vale por alguns meses (IPVA, IPTU, seguro). Ao planejar, o app pergunta até qual mês vão as parcelas.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {((formCat.fixa && formCat.tipoMovimento !== 'cartao') || (formCat.tipoMovimento === 'banco' && formCat.formaPagamento === 'automatico')) && (
                 <div>
                   <label style={labelSt}>Dia de vencimento</label>

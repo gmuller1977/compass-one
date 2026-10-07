@@ -20,7 +20,12 @@ import { nomeExibicao } from '../components/planejamento/types'
 import { AjustePlanoContexto, type AbrirAjuste } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 import { construirRealizadoMes } from '../utils/realizadoMes'
-import { pickReal } from '../components/acompanhamento/evolucaoCalcs'
+import { pickReal, cadastroDaLinha } from '../components/acompanhamento/evolucaoCalcs'
+import RepetirFixaDialog from '../components/planejamento/RepetirFixaDialog'
+import { mesesParaRepetir, divergentes, rotuloParcela, type MesRef } from '../utils/recorrencia'
+import { acharLinhaDoPlano, mudarLinhaDoPlano } from '../utils/linhaDoPlano'
+import { comItens, comValor, novoIdItem } from '../utils/itensPlano'
+import type { Categoria, PlanoCat } from '../context/AppContext'
 import type { Deps } from '../utils/saldoConta'
 import type { DadosMes } from '../context/AppContext'
 
@@ -62,8 +67,40 @@ export default function Planejamento() {
   const sobraPrevista = plan.previsto.totalEntradas.map(
     (e: number, i: number) => e - plan.previsto.totalSaidas[i])
 
+  // Digitou o valor de uma conta FIXA: a pergunta de repetir (utils/recorrencia).
+  // Anual repete até dezembro ou até o fim dela; temporária pergunta até qual
+  // mês vão as parcelas. Só quando o valor mudou de fato.
+  const [repetir, setRepetir] = useState<{
+    tipo: 'e' | 's'; mi: number; valor: number; anterior: number
+    cat: { id?: string; nome: string; descricao?: string; grupo?: string; tipoMovimento?: string }
+    cad: Categoria
+  } | null>(null)
+
   function handleSave(tipo: 'e' | 's', ri: number, mi: number, valor: number) {
+    const linha = (tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]
+    const anterior = linha?.v[mi] ?? 0
     plan.editarValor(tipo, ri, mi, valor)
+    if (!linha || Math.abs(anterior - valor) < 0.005) return
+    const cad = (linha.id ? categorias.find(c => c.id === linha.id) : undefined)
+      ?? cadastroDaLinha({ nome: linha.nome, descricao: linha.descricao ?? '' }, categorias)
+    if (!cad?.fixa) return
+    // Anual sem mês para onde repetir (dezembro, ou o fim já chegou): nada a perguntar.
+    if (cad.recorrencia !== 'temporaria' && mesesParaRepetir(anoAtual, mi, cad.recorrenciaFim, Object.keys(planos).map(Number)).length === 0) return
+    setRepetir({ tipo, mi, valor, anterior, cad,
+      cat: { id: linha.id ?? cad.id, nome: linha.nome, descricao: linha.descricao, grupo: linha.grupo, tipoMovimento: cad.tipoMovimento } })
+  }
+
+  /** Grava meses de um ou mais anos, cada um no plano dele. */
+  function gravarMeses(tipo: 'e' | 's', cat: NonNullable<typeof repetir>['cat'], meses: MesRef[], fn: (l: PlanoCat, m: MesRef) => PlanoCat) {
+    setPlanos(prev => {
+      const novo = { ...prev }
+      for (const a of [...new Set(meses.map(m => m.ano))]) {
+        const doAno = meses.filter(m => m.ano === a)
+        const r = mudarLinhaDoPlano(novo[a], tipo === 'e' ? 'entrada' : 'saida', cat, l => doAno.reduce((acc, m) => fn(acc, m), l))
+        if (r) novo[a] = r
+      }
+      return novo
+    })
   }
 
   const BTN_ANO_MOB: React.CSSProperties = {
@@ -266,6 +303,48 @@ export default function Planejamento() {
         </AjustePlanoContexto.Provider>
         </ItensPlanoContexto.Provider>
       </div>
+
+      {repetir && (() => {
+        const { tipo, mi, valor, anterior, cat, cad } = repetir
+        const anosComPlano = Object.keys(planos).map(Number)
+        const valorEm = (m: MesRef) => {
+          const lista = (tipo === 'e' ? planos[m.ano]?.entradas : planos[m.ano]?.saidas) ?? []
+          const i = acharLinhaDoPlano(lista, cat)
+          return typeof i === 'number' ? (lista[i].v[m.mes] ?? 0) : 0
+        }
+        const nome = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
+        const temporaria = cad.recorrencia === 'temporaria'
+        // Anual: até dezembro ou até o fim dela. Temporária: o último mês pode
+        // ser qualquer um adiante, nos anos que têm plano (até 23 parcelas).
+        const destinosM = temporaria ? [] : mesesParaRepetir(anoAtual, mi, cad.recorrenciaFim, anosComPlano)
+        const valores = destinosM.map(m => ({ m, v: valorEm(m) }))
+        const div = new Set(divergentes(valores, anterior, valor).map(d => `${d.m.ano}-${d.m.mes}`))
+        const destinos = valores.map(({ m, v }) => ({ m, atual: v, diverge: div.has(`${m.ano}-${m.mes}`) }))
+        const candidatos: MesRef[] = []
+        if (temporaria) for (let n = anoAtual * 12 + mi + 1; candidatos.length < 23; n++) {
+          const m = { ano: Math.floor(n / 12), mes: n % 12 }
+          if (!planos[m.ano] && m.ano !== anoAtual) break
+          candidatos.push(m)
+        }
+        const fechar = () => setRepetir(null)
+        return (
+          <RepetirFixaDialog nome={nome} tipo={temporaria ? 'temporaria' : 'anual'} ano={anoAtual} mes={mi} valor={valor}
+            destinos={destinos} candidatos={candidatos}
+            onRepetir={meses => { gravarMeses(tipo, cat, meses, (l, m) => comValor(l, m.mes, valor)); fechar() }}
+            onParcelas={ultimo => {
+              // Do mês digitado até o escolhido, cada um com a sua parcela.
+              const meses: MesRef[] = []
+              for (let n = anoAtual * 12 + mi; n <= ultimo.ano * 12 + ultimo.mes; n++) meses.push({ ano: Math.floor(n / 12), mes: n % 12 })
+              const total = meses.length
+              gravarMeses(tipo, cat, meses, (l, m) => {
+                const k = meses.findIndex(x => x.ano === m.ano && x.mes === m.mes) + 1
+                return comItens(l, [m.mes], [{ id: novoIdItem(), descricao: rotuloParcela(cat.nome, k, total), valor }])
+              })
+              fechar()
+            }}
+            onFechar={fechar} />
+        )
+      })()}
 
       {ajuste && (
         <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
