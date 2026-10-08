@@ -21,13 +21,25 @@ export function mesAlvoDoAjuste(ano: number, mes: number, hoje: Date = new Date(
 
 
 /**
- * O valor de um mês na sugestão "mês a mês" do ajuste. Com média (o gasto
- * normal), é média + o já lançado no mês. SEM média — categoria sem histórico
- * fechado —, é "cobrir o já lançado": sobe o plano só onde ele não cobre o
- * que já está na fatura, e deixa o resto como está. Sem esta regra, os meses
- * sem nada lançado iam a zero.
+ * O valor de um mês na sugestão "mês a mês" do ajuste — e na tabela de
+ * revisão do plano (utils/revisaoDoPlano), que usa a mesma regra.
+ *
+ * Com média (o gasto normal, sem parcelas): as PARCELAS já lançadas somam por
+ * cima dela, e o resto do já lançado é gasto normal — vale o maior entre a
+ * média e ele. Corrigido em 08/10/2026: antes era média + TUDO o que estava
+ * lançado, e a mensalidade da academia lançada para novembro contava duas
+ * vezes (150 de média + 150 lançados = 300). A parcela é dinheiro A MAIS no
+ * mês; o lançamento avulso é o próprio gasto normal, só que adiantado.
+ *
+ * SEM média — categoria sem histórico fechado —, é "cobrir o já lançado":
+ * sobe o plano só onde ele não cobre o que já está lançado, e deixa o resto
+ * como está. Sem esta regra, os meses sem nada lançado iam a zero.
  */
-export function valorMesAMes(base: number | null, planoAtual: number, jaLancado: number): number {
-  const v = base !== null ? base + jaLancado : Math.max(planoAtual, jaLancado)
+export function valorMesAMes(base: number | null, planoAtual: number, jaLancado: number, deParcelas: number): number {
+  const v = base !== null ? deParcelas + Math.max(base, jaLancado - deParcelas) : Math.max(planoAtual, jaLancado)
   return Math.round(v * 100) / 100
 }
+
+/** Quanto do já lançado é parcela (compra parcelada na fatura). */
+export const somaDeParcelas = (itens: { valor: number; parcela?: unknown }[]) =>
+  itens.filter(i => i.parcela).reduce((s, i) => s + i.valor, 0)

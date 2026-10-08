@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
-import type { MesRef } from '../../utils/recorrencia'
+import { nomeDoMes, type MesRef } from '../../utils/recorrencia'
 
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-/** "novembro", ou "janeiro de 2027" quando o mês é de outro ano. */
-export const nomeDoMes = (m: MesRef, ano: number) => (m.ano !== ano ? `${MESES[m.mes]} de ${m.ano}` : MESES[m.mes])
 
 /**
  * A janela que aparece ao digitar um valor no Planejamento — utils/recorrencia.
@@ -92,7 +89,7 @@ export default function RepetirValorDialog({
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
               <button type="button" onClick={onFechar} style={btn(false)}>Manter</button>
-              <button type="button" autoFocus style={btn(true)} disabled={marcados.size === 0}
+              <button type="button" autoFocus style={{ ...btn(true), opacity: marcados.size === 0 ? 0.5 : 1, cursor: marcados.size === 0 ? 'default' : 'pointer' }} disabled={marcados.size === 0}
                 onClick={() => onAlterar(diferentes.filter(d => marcados.has(chave(d.m))).map(d => d.m))}>
                 Alterar marcados
               </button>

@@ -4,6 +4,7 @@ import type { RitmoDoMes } from './ritmoDoMes'
 import { categoriasEstouradas } from './categoriasEstouradas'
 import { gruposQuePassaram } from './resumoRadar'
 import type { LancadoAcima } from './lancadoAcimaDoPlano'
+import { textoDaRevisao } from './revisaoDoPlano'
 
 /**
  * "Pede sua atenção" da Início: no máximo três avisos, cada um uma frase e um
@@ -112,30 +113,9 @@ export function avisosDoMes(p: {
 
   // 3. Já lançado acima do plano de um mês que ainda não começou — a parcela
   //    4 de 6 que não cabe em novembro. O botão abre o ajuste do plano.
-  const acima = p.lancadoAcima ?? []
-  if (acima.length === 1) {
-    const a = acima[0]
-    const nomeCat = a.descricao ? `${a.nome} · ${a.descricao}` : a.nome
-    const m0 = a.meses[0], mN = a.meses[a.meses.length - 1]
-    const quando = a.meses.length === 1 ? `de ${MESES[m0.mes]}` : `de ${MESES[m0.mes]} a ${MESES[mN.mes]}`
-    const parcela = m0.itens.find(i => i.parcela)
-    out.push({
-      id: 'parcelas', tom: 'ambar', tag: 'Já lançado acima do plano',
-      titulo: `${nomeCat} já passa do plano ${quando} em ${reais(a.excessoTotal)}`,
-      detalhe: parcela?.parcela
-        ? `${parcela.descricao} ${parcela.parcela.atual} de ${parcela.parcela.total} já está na fatura de ${MESES[m0.mes]}.`
-        : `${reais(m0.jaLancado)} já lançado em ${MESES[m0.mes]}, com plano de ${reais(m0.plano)}.`,
-    })
-  } else if (acima.length > 1) {
-    const nomes = acima.map(a => (a.descricao ? `${a.nome} · ${a.descricao}` : a.nome))
-    out.push({
-      id: 'parcelas', tom: 'ambar', tag: 'Já lançado acima do plano',
-      titulo: `${acima.length} categorias já passam do plano dos próximos meses`,
-      detalhe: nomes.length <= 3
-        ? `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}.`
-        : `${nomes.slice(0, 2).join(', ')} e mais ${nomes.length - 2}.`,
-    })
-  }
+  // A frase é a mesma da faixa do Radar e do Planejamento (textoDaRevisao).
+  const revisao = textoDaRevisao(p.lancadoAcima ?? [])
+  if (revisao) out.push({ id: 'parcelas', tom: 'ambar', tag: 'Revisão do plano', ...revisao })
 
   // 4. Mês negativo À FRENTE. O mês corrente negativo o hero já mostra.
   const ymHoje = hoje.getFullYear() * 12 + hoje.getMonth()

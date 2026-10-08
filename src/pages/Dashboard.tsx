@@ -9,8 +9,7 @@ import { previsaoDoMes } from '../utils/previsaoDoMes'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { avisosDoMes } from '../utils/avisosDoMes'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
-import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
-import { catKey } from '../components/acompanhamento/evolucaoCalcs'
+import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
 import AvisosCard from '../components/inicio/AvisosCard'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
@@ -162,12 +161,9 @@ export default function Dashboard() {
   // Já lançado acima do plano dos próximos meses (parcelas, quase sempre).
   // Só olhando o mês corrente: é um aviso sobre o que vem pela frente.
   const lancadoAcima = useMemo(() => (ehMesCorrente ? lancadoAcimaDoPlano(deps) : []), [ehMesCorrente, deps])
-  // O ajuste do plano abre aqui mesmo — a mesma janela do Radar.
-  const [ajuste, setAjuste] = useState<AjusteAberto | null>(null)
-  function abrirAjusteDe(nome: string, descricao: string) {
-    const l = linhasSaida.find(x => catKey(x.nome, x.descricao) === catKey(nome, descricao))
-    setAjuste({ tipo: 'saida', nome, descricao: descricao || undefined, prev: l?.prev ?? 0, real: l?.real ?? 0 })
-  }
+  // "Revisar agora" abre aqui mesmo a tabela da revisão do plano — a mesma
+  // janela do Radar e do Planejamento.
+  const [revisando, setRevisando] = useState(false)
 
   // No máximo três avisos — ver utils/avisosDoMes. Sem plano no mês não há
   // "passou do plano" a dizer.
@@ -372,16 +368,13 @@ export default function Dashboard() {
                 contas:   { rotulo: contasAbertas ? 'Fechar a lista' : 'Ver contas', aberto: contasAbertas,
                             onClick: () => setContasAbertas(v => !v) },
                 passou:   { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
-                // Uma categoria: o ajuste abre aqui. Várias: o Radar lista todas.
-                parcelas: lancadoAcima.length === 1
-                  ? { rotulo: 'Ajustar o plano', onClick: () => abrirAjusteDe(lancadoAcima[0].nome, lancadoAcima[0].descricao) }
-                  : { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
+                parcelas: { rotulo: 'Revisar agora', onClick: () => setRevisando(true) },
                 negativo: { rotulo: 'Ver o plano', onClick: () => navigate('/planejamento') },
                 ritmo:    { rotulo: 'Ver o ritmo', onClick: () => navigate('/analises#este-mes') },
               }} />
-            {ajuste && (
-              <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
-                ano={hoje.getFullYear()} mes={hoje.getMonth()} categorias={categorias} deps={deps} />
+            {revisando && (
+              <RevisaoPlanoDialog acima={lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
+                categorias={categorias} onFechar={() => setRevisando(false)} />
             )}
             {contasAbertas && aVencer.length > 0 && (
               <ContasAVencerCard contas={aVencer} categorias={categorias} isMobile={isMobile}

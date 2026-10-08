@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
 import { parseConta, partesDaConta } from '../../utils/moeda'
 import type { JaLancado } from '../../utils/historicoDaCategoria'
-import { valorMesAMes } from '../../utils/ajustePlano'
+import { valorMesAMes, somaDeParcelas } from '../../utils/ajustePlano'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -48,7 +48,7 @@ export default function AjustePlanoDialog({
   sugestoes: SugestaoAjuste[]
   aviso?: string
   onSalvar: (valor: number, meses: MesRef[]) => void
-  /** Mês a mês (valorMesAMes): média + já lançado, ou cobrir o já lançado. */
+  /** Mês a mês (valorMesAMes): média + parcelas já lançadas, ou cobrir o já lançado. */
   onSalvarPorMes: (meses: MesRef[]) => void
   onDetalhar: (partes?: number[]) => void
   onFechar: () => void
@@ -82,7 +82,7 @@ export default function AjustePlanoDialog({
   const escolhidos = alvo ? (ateOFim ? editaveis : [alvo]) : []
   const temLancado = meses.some(m => m.jaLancado > 0.005)
   const baseValor = base?.valor ?? 0
-  const doMes = (m: MesDoAjuste) => valorMesAMes(base ? base.valor : null, m.planoAtual, m.jaLancado)
+  const doMes = (m: MesDoAjuste) => valorMesAMes(base ? base.valor : null, m.planoAtual, m.jaLancado, somaDeParcelas(m.itens))
   const ultimo = editaveis[editaveis.length - 1]
 
   function salvar() {

@@ -41,12 +41,15 @@ export type Categoria = {
   contaDebitoId?: string
   pinQuick?: boolean
   /**
-   * Só para FIXA (utils/recorrencia). 'anual' (padrão): repete todo mês, até
-   * `recorrenciaFim` (AAAA-MM) se houver — o financiamento. 'temporaria': um
-   * período curto (IPVA, IPTU, seguro), perguntado ao planejar.
+   * Qualquer categoria, fixa ou variável (utils/recorrencia). 'anual' (padrão):
+   * repete todo mês, até dezembro. 'temporaria': um período curto (IPVA, IPTU,
+   * seguro), perguntado ao planejar.
+   *
+   * A coluna `recorrencia_fim` (o "Até quando?") saiu do app em 08/10/2026, a
+   * pedido do Guilherme: não é lida nem gravada, e o que está nela fica como
+   * estava no banco.
    */
   recorrencia?: 'anual' | 'temporaria'
-  recorrenciaFim?: string
 }
 
 // descricao = variante (ex.: Seguro · Civic) e grupo sao gravados no plano
@@ -205,7 +208,6 @@ type CategoriaRow = {
   conta_debito_id?: string | null
   pin_quick?: boolean | null
   recorrencia?: string | null
-  recorrencia_fim?: string | null
 }
 
 type PrefRow = {
@@ -266,7 +268,6 @@ function categoriaToRow(c: Categoria, userId: string) {
     pin_quick: c.pinQuick ?? false,
     // Colunas da migração 013 — precisam existir no banco antes deste código.
     recorrencia: c.recorrencia ?? 'anual',
-    recorrencia_fim: c.recorrencia === 'temporaria' ? null : (c.recorrenciaFim ?? null),
   }
 }
 
@@ -288,7 +289,6 @@ function rowToCategoria(row: CategoriaRow): Categoria {
     contaDebitoId: row.conta_debito_id ?? undefined,
     pinQuick: row.pin_quick ?? false,
     recorrencia: row.recorrencia === 'temporaria' ? 'temporaria' : 'anual',
-    recorrenciaFim: row.recorrencia_fim ?? undefined,
   }
 }
 

@@ -396,11 +396,17 @@ Parcela que cai depois do fim do plano, ou em ano ainda sem plano, aparece na
 lista como aviso ("ainda não há plano para 2027") e não é gravada: o app não
 cria plano de ano sozinho.
 
-**"Mês a mês" sem média não zera nada** (`valorMesAMes`): com média, o mês vale
-média + já lançado; SEM média (categoria sem mês fechado), é "cobrir o já
-lançado" — sobe o plano só onde ele não cobre o que está na fatura e deixa o
-resto. A primeira versão gravava a média ausente como zero nos meses sem nada
-lançado. `prova48` (17 invariantes).
+**"Mês a mês" sem média não zera nada** (`valorMesAMes`): SEM média (categoria
+sem mês fechado), é "cobrir o já lançado" — sobe o plano só onde ele não cobre
+o que está na fatura e deixa o resto. A primeira versão gravava a média
+ausente como zero nos meses sem nada lançado. `prova48` (17 invariantes).
+
+**Com média, só a PARCELA soma por cima dela.** O resto do já lançado é o
+próprio gasto normal, só que adiantado: vale o maior entre a média e ele.
+Corrigido em 08/10/2026 — antes era média + TUDO o que estava lançado, e a
+mensalidade da academia lançada para novembro contava duas vezes (150 de média
++ 150 lançados = 300). O ajuste do Radar e a revisão do plano (abaixo) usam a
+mesma função.
 
 **Alerta: o já lançado passa do plano de um mês que ainda não começou.**
 Pedido do Guilherme no mesmo dia: "se tenho compras futuras que ficam acima do
@@ -410,16 +416,35 @@ SEGUINTE a hoje até o fim do plano, as linhas de despesa de `totaisDoMes` com
 realizado acima do previsto — o mesmo "passou" que o Radar daquele mês
 mostraria. Nenhuma conta nova; o corrente fica com o Radar e o Ritmo.
 
-- **Início**: aviso "Já lançado acima do plano" em "Pede sua atenção", entre
-  "passou" e "mês negativo". Uma categoria: "Lazer já passa do plano de
-  novembro a dezembro em R$ 100 · Bicicleta 4 de 6 já está na fatura" e o botão
-  abre o MESMO `AjustePlanoRadar` ali. Várias: "Ver no Radar".
-- **Radar**, mês corrente: `LancadoAcimaFaixa` abaixo da frase, uma pílula por
-  categoria que abre o ajuste.
-- Âmbar, não vermelho: é aviso sobre o que vem, não fato do mês.
+**O alerta diz "precisa de revisão de planejamento", e "Revisar agora" abre
+UMA tabela.** Pedido do Guilherme em 08/10/2026, no lugar de "já lançado acima
+do plano dos próximos meses" e do ajuste uma categoria por vez:
 
-Ao aceitar "mês a mês" o plano passa a cobrir o já lançado e o alerta some.
-`prova50` (11 invariantes).
+- **Onde:** Início ("Pede sua atenção", entre "passou" e "mês negativo"),
+  Radar no mês corrente (`RevisaoPlanoFaixa`, abaixo da frase) e
+  Planejamento (a mesma faixa, no topo da Grade). A frase é uma só,
+  `textoDaRevisao`: "Algumas categorias precisam de revisão de planejamento"
+  ou, com uma, "Academia · Smart Fit precisa de revisão de planejamento", e o
+  porquê embaixo.
+- **A tabela** (`RevisaoPlanoDialog`): uma linha por categoria e mês —
+  já lançado, plano atual e sugerido, editável (aceita conta), tudo marcado.
+  Embaixo do sugerido, de onde ele veio ("média R$ 200 + parcela"). "Confirmar
+  N meses" grava cada mês no plano do ano dele.
+- **A sugestão** é a do "mês a mês" (`valorMesAMes`, acima) e nunca fica
+  abaixo do já lançado: confirmar tudo faz o aviso sumir. Com parcela, o mês
+  vai em itens ("Gasto normal" + "Bicicleta · 4 de 6"); valor digitado vai só
+  como valor. Linha ambígua do plano antigo não é gravada e avisa.
+- O mês corrente nunca entra — a regra do ajuste. Âmbar, não vermelho: é
+  aviso sobre o que vem, não fato do mês.
+
+Regras em [`revisaoDoPlano.ts`](src/utils/revisaoDoPlano.ts), sobre
+`lancadoAcimaDoPlano` e `mediaSemParcelas` — nenhuma conta nova. A
+`prova50` (11 invariantes) segue no alerta; a `prova54` (31) cobre a
+revisão: a academia, a bicicleta atravessando para 2027, itens, valor
+digitado, linha ambígua e o mesmo texto nas três telas.
+
+O Planejamento continua sem mostrar realizado nas categorias: o que entra lá é
+o AVISO, não o número gasto.
 
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
@@ -705,34 +730,41 @@ A outra diferença legítima é o clamp: a planilha faz `previsto − realizado`
 total, então categoria que estourou abate a que sobrou. O app calcula por
 categoria e para no zero, por decisão registrada acima.
 
-**Conta fixa tem repetição: anual (com fim opcional) ou temporária.**
-Desenhado com o Guilherme em 06–07/10/2026: "IPVA, IPTU, seguro são despesas
-fixas mas acabam em x parcelas". Regras em [`recorrencia.ts`](src/utils/recorrencia.ts);
-colunas `recorrencia` e `recorrencia_fim` em `categorias` (migração 013,
-rodada por ele ANTES do código — o app grava categoria com todas as colunas).
+**Toda categoria tem repetição: anual ou temporária.** Desenhado com o
+Guilherme em 06–07/10/2026 para a fixa ("IPVA, IPTU, seguro são despesas
+fixas mas acabam em x parcelas") e estendido a QUALQUER categoria, fixa ou
+variável, em 08/10/2026. Regras em [`recorrencia.ts`](src/utils/recorrencia.ts);
+coluna `recorrencia` em `categorias` (migração 013, rodada por ele ANTES do
+código — o app grava categoria com todas as colunas).
 
-- **Cadastro:** fixa ganha "Repetição: Anual | Temporária". Anual tem "Até
-  quando?" (mês/ano) opcional: vazio = sem fim, como era; preenchido = acaba
-  ali (financiamento até mar/2029). Temporária não guarda período.
-- **Planejamento, ao digitar o valor de uma fixa** (`RepetirFixaDialog`, só
-  quando o valor mudou):
-  - anual → "Usar R$ X também de [seguinte] até dezembro?" — ou até o fim,
-    atravessando os anos que JÁ têm plano. Mês com valor diferente do que o
-    digitado tinha (o reajuste de julho) aparece à parte, desmarcado: "Em
-    julho o valor planejado é R$ 520, diferente dos outros meses. Alterar
-    também?". Mês vazio não conta como diferente.
-  - temporária → "Parcelas fixas até qual mês?", e cada mês vira item "IPVA ·
-    1 de 3". "Só [mês]" deixa só o digitado.
-- **Copiar ano:** fixa anual com fim zera os meses depois do fim.
-- **Assistente:** anual com fim para no mês final; temporária ganha "Parcelas
-  até [mês]" na linha da categoria, com os itens "1 de N".
+- **Cadastro:** "Repetição: Anual | Temporária", em toda categoria.
+- **Planejamento, ao digitar um valor** (só quando o valor mudou):
+  - anual → o valor se repete SOZINHO do mês seguinte até dezembro, com o
+    aviso "Repetido até dezembro". Fica de fora só o mês com OUTRO valor (o
+    reajuste de julho) ou detalhado em itens (a parcela do Simulador) —
+    gravar só o valor apagaria o detalhe sem ninguém ver. Para esses abre
+    `RepetirValorDialog`, desmarcados: "Em julho o valor planejado é R$ 520.
+    Trocar por R$ 350?". Mês vazio não é diferente. `separarDestinos`.
+  - temporária → "Quantas parcelas?" ("3 parcelas · até maio"), e cada mês
+    vira item "IPVA · 1 de 3". "Só [mês]" deixa só o digitado.
+- **Assistente:** temporária ganha "Parcelas até [mês]" na linha da
+  categoria, com os itens "1 de N".
 - O resto não muda: Lançamentos, contas a vencer, previsão e Radar seguem o
   valor de cada mês do plano.
+
+Consequência aceita: toda variável já cadastrada é anual (o padrão da coluna)
+e passa a se repetir sozinha ao digitar. Quem não quer, marca temporária.
+
+**O "Até quando?" saiu** a pedido do Guilherme em 08/10/2026 — era o fim da
+anual (financiamento até mar/2029), que atravessava os anos com plano e zerava
+os meses depois do fim no copiar ano e no assistente. A coluna
+`recorrencia_fim` continua no banco, mas o app não lê nem grava: o que está
+nela fica como estava.
 
 Numerar a parcela do financiamento ("15 de 48") exigiria o mês da 1ª parcela no
 cadastro — oferecido e não pedido. IPVA pelo final da placa: segunda etapa, se
 fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
-`prova51` (15 invariantes).
+`prova51` (5 invariantes) e `prova53` (8).
 
 **Itens dentro do valor do plano: Mercado = Supermercado 800 + Feira 300.**
 Pedido do Guilherme em 06/10/2026, sobre modelo validado: ele somava por fora

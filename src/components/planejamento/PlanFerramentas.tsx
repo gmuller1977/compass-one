@@ -3,7 +3,6 @@ import MesesSelector from './MesesSelector'
 import { MESES_FULL, type AnoData, fmt, parseValor } from './types'
 import type { Categoria } from '../../context/AppContext'
 import { itensDoMes, reajustarItens, somaItens, paraCopiar, type ItemPlano } from '../../utils/itensPlano'
-import { depoisDoFim } from '../../utils/recorrencia'
 
 /**
  * Com `itens`, o mês recebe o detalhe e o valor vira a soma dele; sem, grava
@@ -165,12 +164,7 @@ export default function PlanFerramentas({
     dadosAnoAnterior.saidas.forEach(cat => {
       const ri = dadosAtivos.saidas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
       if (ri < 0) return
-      // Fixa anual com fim (o financiamento): depois do mês final, zero.
-      const cad = categorias.find(c => (cat.id && c.id === cat.id) || (c.nome === cat.nome && (c.descricao ?? '') === (cat.descricao ?? '')))
-      const fim = cad?.fixa && cad.recorrencia !== 'temporaria' ? cad.recorrenciaFim : undefined
-      cat.v.forEach((_, mi) => ops.push(depoisDoFim(anoAtual, mi, fim)
-        ? { tipo: 's', ri, mi, valor: 0, itens: null }
-        : { tipo: 's', ri, mi, ...paraCopiar(cat, mi) }))
+      cat.v.forEach((_, mi) => ops.push({ tipo: 's', ri, mi, ...paraCopiar(cat, mi) }))
     })
     onBulkSave(ops)
     showToast(`Planejamento de ${anoAtual - 1} copiado ✓`)

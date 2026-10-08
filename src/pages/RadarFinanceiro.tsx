@@ -20,9 +20,9 @@ import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 import ResumoRadarFaixa from '../components/acompanhamento/ResumoRadarFaixa'
-import LancadoAcimaFaixa from '../components/acompanhamento/LancadoAcimaFaixa'
+import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
+import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
-import { catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { resumoDoMes } from '../utils/resumoRadar'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
@@ -132,6 +132,8 @@ export default function RadarFinanceiro() {
   // Já lançado acima do plano dos próximos meses — só olhando o mês corrente,
   // como o aviso da Início. Ver utils/lancadoAcimaDoPlano.
   const ehMesCorrente = ano === anoHoje && mes === mesHoje
+  // "Revisar agora": a tabela da revisão do plano (RevisaoPlanoDialog).
+  const [revisando, setRevisando] = useState(false)
   const lancadoAcima = useMemo(
     () => (ehMesCorrente && dadosAno ? lancadoAcimaDoPlano(depsSaldo) : []),
     [ehMesCorrente, dadosAno, depsSaldo],
@@ -277,10 +279,7 @@ export default function RadarFinanceiro() {
         ) : (
           <AjustePlanoContexto.Provider value={setAjuste}>
             {resumo && <ResumoRadarFaixa resumo={resumo} />}
-            <LancadoAcimaFaixa itens={lancadoAcima} onAjustar={(nome, descricao) => {
-              const l = linhasSaida.find(x => catKey(x.nome, x.descricao) === catKey(nome, descricao))
-              setAjuste({ tipo: 'saida', nome, descricao: descricao || undefined, prev: l?.prev ?? 0, real: l?.real ?? 0 })
-            }} />
+            <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
             {/* ENTRADAS — um card por grupo */}
             {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
               <EvolucaoGrupo
@@ -312,6 +311,10 @@ export default function RadarFinanceiro() {
         )}
       </div>
 
+      {revisando && (
+        <RevisaoPlanoDialog acima={lancadoAcima} deps={depsSaldo} planos={planos} setPlanos={setPlanos}
+          categorias={categorias} onFechar={() => setRevisando(false)} />
+      )}
       {ajuste && (
         <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
           ano={ano} mes={mes} categorias={categorias} deps={depsSaldo} />

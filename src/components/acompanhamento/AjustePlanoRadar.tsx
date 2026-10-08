@@ -5,8 +5,9 @@ import type { PedidoAjuste } from './ajustePlanoContexto'
 import PlanItensEditor from '../planejamento/PlanItensEditor'
 import { cadastroDaLinha } from './evolucaoCalcs'
 import { acharLinhaDoPlano, mudarLinhaDoPlano } from '../../utils/linhaDoPlano'
-import { comItens, comValor, itensDoMes, novoIdItem, type ItemPlano } from '../../utils/itensPlano'
-import { mesAlvoDoAjuste, valorMesAMes } from '../../utils/ajustePlano'
+import { comItens, comValor, itensDoMes, type ItemPlano } from '../../utils/itensPlano'
+import { mesAlvoDoAjuste } from '../../utils/ajustePlano'
+import { itensDaSugestao, sugestaoDoMes } from '../../utils/revisaoDoPlano'
 import { mediaSemParcelas, jaLancadoNosMeses } from '../../utils/historicoDaCategoria'
 import type { Deps } from '../../utils/saldoConta'
 import { fimDoPlanejamento } from '../../utils/simulacaoCompra'
@@ -118,24 +119,19 @@ export default function AjustePlanoRadar({
   }
 
   /**
-   * Mês a mês (valorMesAMes). Com algo lançado e o plano subindo, em itens:
-   * "Gasto normal" (a média, quando há) e cada parcela. Sem nada a mudar, o
-   * mês fica como está.
+   * Mês a mês (valorMesAMes, por sugestaoDoMes — a mesma da tabela de revisão
+   * do plano). Com parcela lançada e o plano subindo, em itens: "Gasto normal"
+   * e cada parcela. Sem nada a mudar, o mês fica como está.
    */
   function porMes(meses: MesRef[]) {
     const baseValor = base ? base.valor : null
     gravarMeses(meses, (acc, { ano: a, mes: m }) => {
       const jl = lancado.find(x => x.ano === a && x.mes === m)
       const atual = acc.v[m] ?? 0
-      const novo = valorMesAMes(baseValor, atual, jl?.total ?? 0)
+      const novo = sugestaoDoMes(baseValor, atual, jl?.itens ?? [], jl?.total ?? 0)
       if (Math.abs(novo - atual) < 0.005) return acc
-      if (!jl || jl.itens.length === 0 || (baseValor === null && novo > jl.total + 0.005)) return comValor(acc, m, novo)
-      const doMes: ItemPlano[] = jl.itens.map(i => ({
-        id: novoIdItem(), valor: i.valor,
-        descricao: i.parcela ? `${i.descricao} · ${i.parcela.atual} de ${i.parcela.total}` : i.descricao,
-      }))
-      const todos = baseValor !== null && baseValor > 0.005 ? [{ id: novoIdItem(), descricao: 'Gasto normal', valor: baseValor }, ...doMes] : doMes
-      return comItens(acc, [m], todos)
+      const itens = itensDaSugestao(baseValor, novo, jl?.itens ?? [], jl?.total ?? 0)
+      return itens ? comItens(acc, [m], itens) : comValor(acc, m, novo)
     })
   }
 

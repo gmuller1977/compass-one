@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 import { catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { parseBRL } from '../utils/moeda'
-import { cortarNoFim, rotuloParcela } from '../utils/recorrencia'
+import { rotuloParcela } from '../utils/recorrencia'
 import { comItens, novoIdItem } from '../utils/itensPlano'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -135,15 +135,15 @@ export default function WizardPlanejamento() {
   // categoria. Começa no primeiro mês aplicado. Ver utils/recorrencia.
   const inicioAplicar = aplicar === 'todos' ? 0 : MES_ATU
   const [ateTemp, setAteTemp] = useState<Record<string, number>>({})
-  const ehTemporaria = (c: { fixa: boolean; recorrencia?: string }) => c.fixa && c.recorrencia === 'temporaria'
+  const ehTemporaria = (c: { recorrencia?: string }) => c.recorrencia === 'temporaria'
   const ateDe = (k: string) => Math.max(inicioAplicar, ateTemp[k] ?? inicioAplicar)
 
   /**
-   * A linha do plano de uma categoria. Fixa anual com fim para no mês final
-   * (cortarNoFim); temporária vai do primeiro mês aplicado até o escolhido, com
-   * cada parcela marcada em item ("IPVA · 1 de 3"). O resto, como sempre.
+   * A linha do plano de uma categoria. Temporária vai do primeiro mês aplicado
+   * até o escolhido, com cada parcela marcada em item ("IPVA · 1 de 3"). O
+   * resto, como sempre.
    */
-  function linhaDaCategoria<T extends { nome: string; fixa: boolean; recorrencia?: string; recorrenciaFim?: string; descricao?: string }>(c: T, val: number) {
+  function linhaDaCategoria<T extends { nome: string; fixa: boolean; recorrencia?: string; descricao?: string }>(c: T, val: number) {
     if (ehTemporaria(c)) {
       const ate = ateDe(catKey(c.nome, c.descricao))
       const meses = Array.from({ length: ate - inicioAplicar + 1 }, (_, i) => inicioAplicar + i)
@@ -151,7 +151,7 @@ export default function WizardPlanejamento() {
       meses.forEach((m, k) => { l = comItens(l, [m], [{ id: novoIdItem(), descricao: rotuloParcela(c.nome, k + 1, meses.length), valor: val }]) })
       return l
     }
-    return { v: c.fixa && c.recorrencia !== 'temporaria' ? cortarNoFim(buildV(val), ANO, c.recorrenciaFim) : buildV(val) }
+    return { v: buildV(val) }
   }
 
   // O assistente SOBRESCREVE o plano do ano — nao mescla. Enquanto o link do
