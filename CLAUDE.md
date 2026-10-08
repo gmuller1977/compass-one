@@ -837,6 +837,21 @@ categorias concluía, com razão, que a conta não fechava.
 setembro**, que é onde ele pertence: comparar "planejei fechar em X" com "abri
 setembro em Y" é a leitura útil; sobrescrever o X pelo Y apagava a pergunta.
 
+**Ano FUTURO abre com o saldo final PREVISTO de dezembro do ano anterior**,
+nunca com o real. Relatado pelo Guilherme em 08/10/2026: planejou 2027 e
+janeiro abria com o saldo de hoje no banco. O ano futuro tinha `ancoraMes =
+-1`, e no `calcSaldos` o `fechado(-1)` dava verdadeiro — janeiro ancorava
+num dezembro que ainda não fechou. Hoje ano futuro é `-2` (nada fechado) e o
+`saldoInicialJan` é o `saldoFinal[11]` do ano anterior, em cadeia (2028 abre
+com o dezembro previsto de 2027). Ano corrente e passados não mudaram.
+
+A passagem do ano saiu do hook para
+[`previstoDoAno.ts`](src/components/planejamento/previstoDoAno.ts): o
+`usePlanejamento` monta a tela com essas funções, e o dezembro que abre o ano
+seguinte sai delas também — uma passagem só. `prova52` (12 invariantes, com
+controles: mais despesa em dez/2026 ou mais gasto real em junho movem janeiro
+de 2027 pelo mesmo valor).
+
 Consequências na marcação: `finalReal` é sempre falso, e Receitas, Despesas e
 Resultado deixaram de carregar a marca de real nas quatro telas. Fica uma regra
 só, sem exceção: **itálico = previsto, em pé = real, e só o saldo inicial chega

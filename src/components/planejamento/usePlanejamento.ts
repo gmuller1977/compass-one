@@ -3,13 +3,14 @@ import { comItens, comValor, type ItemPlano } from '../../utils/itensPlano'
 import { useApp } from '../../context/AppContext'
 import type { PlanoAnoData } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
+import { calcSaldos, MESES, type AnoData, type AncoraReal } from './types'
 import {
-  mergeCats, calcSaldos, nomeFaturaCartao, MESES,
-  type Cat, type AnoData, type AncoraReal,
-} from './types'
+  dadosBaseDoPlano, dadosPrevistoDoAno, somaCartaoDoAno, comFaturaCalculada, temFaturaCat,
+  mesDaAncora, fimRealDoAno, saldoInicialJanDoAno,
+} from './previstoDoAno'
 import { acharPlanCat } from '../acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../../utils/fixasDoMes'
-import { saldoBancosEDinheiro, type Deps } from '../../utils/saldoConta'
+import type { Deps } from '../../utils/saldoConta'
 
 // iconeCategoria imported above; suppress unused warning
 void iconeCategoria
@@ -31,61 +32,38 @@ export function usePlanejamento(anoAtual: number) {
   const cartaoNomes = useMemo(() =>
     new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase())), [contas])
 
+  // A passagem do ano mora em previstoDoAno.ts, para servir também ao ano
+  // anterior: ano FUTURO abre com o dezembro previsto do ano de antes.
+  const depsSaldo: Deps = useMemo(() => ({
+    extratoData,
+    faturaData: faturaData as Deps['faturaData'],
+    contas, categorias,
+    planos: planos as Deps['planos'],
+    saldoInicialDinheiro,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
+
+  const saldoInicialJan = useMemo(() => saldoInicialJanDoAno(anoAtual, {
+    anoCorrente, mesAtual, categorias, contas, faturaData, planos,
+    saldoInicialFixo: SALDO_INICIAL_FIXO, depsSaldo,
+  }), [anoAtual, anoCorrente, mesAtual, categorias, contas, faturaData, planos, SALDO_INICIAL_FIXO, depsSaldo])
+
   // ── Dados base (categorias ativas com v=0) ──
-  const dadosBase: AnoData = useMemo(() => ({
-    saldoInicialJan: SALDO_INICIAL_FIXO,
-    entradas: categorias
-      .filter(c => c.tipo === 'entrada' && c.ativa)
-      .map(c => ({ id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, t: c.tipoMovimento, v: new Array(12).fill(0) }))
-      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
-    saidas: categorias
-      .filter(c => c.tipo === 'saida' && c.ativa)
-      .map(c => ({ id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, t: c.tipoMovimento, v: new Array(12).fill(0) }))
-      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
-  }), [SALDO_INICIAL_FIXO, categorias])
+  const dadosBase: AnoData = useMemo(() => dadosBaseDoPlano(categorias, saldoInicialJan), [saldoInicialJan, categorias])
 
   // Plano unico do ano. planosReal deixou de ser escrito na migracao para
   // plano unico — as linhas antigas ficam no banco so como historico.
-  const dadosPrevisto: AnoData = useMemo(() => {
-    const salvo = planos[anoAtual] as AnoData | undefined
-    if (!salvo) return dadosBase
-    return {
-      ...salvo,
-      saldoInicialJan: SALDO_INICIAL_FIXO,
-      entradas: mergeCats(dadosBase.entradas, salvo.entradas),
-      saidas: mergeCats(dadosBase.saidas, salvo.saidas),
-    }
-  }, [anoAtual, dadosBase, planos, SALDO_INICIAL_FIXO])
+  const dadosPrevisto: AnoData = useMemo(
+    () => dadosPrevistoDoAno(planos[anoAtual] as AnoData | undefined, dadosBase, saldoInicialJan),
+    [anoAtual, dadosBase, planos, saldoInicialJan])
 
   const planoRef = useMemo(() =>
     (planos[anoAtual] as PlanoAnoData | undefined),
   [planos, anoAtual])
 
   // Cálculo de fatura de cartão por mês: informado → lançamentos reais mês anterior → R$0
-  const somaCartaoMes = useMemo(() => {
-    const faturaCatsPlan = dadosPrevisto.saidas.filter(c => c.t === 'fatura_cartao')
-    const cartoesContas = contas.filter(c => c.tipo === 'cartao')
-    const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
-    return MESES.map((_, i) => {
-      const informado = faturaCatsPlan.reduce((s, c) => s + (c.v[i] ?? 0), 0)
-      if (informado > 0) return informado
-      const prevMes = i === 0 ? 11 : i - 1
-      const prevAno = i === 0 ? anoAtual - 1 : anoAtual
-      const prevMesStr = String(prevMes + 1).padStart(2, '0')
-      let calculado = 0
-      for (const cartao of cartoesContas) {
-        const dm = fat[`${cartao.id}-${prevAno}-${prevMesStr}`]
-        if (!dm?.lancamentos) continue
-        const totalDiasM = new Date(prevAno, prevMes + 1, 0).getDate()
-        for (let d = 1; d <= totalDiasM; d++) {
-          ;(dm.lancamentos[d] ?? []).forEach(l => {
-            l.tipo === 'saida' ? calculado += l.valor : calculado -= l.valor
-          })
-        }
-      }
-      return Math.max(0, calculado)
-    })
-  }, [dadosPrevisto, anoAtual, contas, faturaData])
+  const somaCartaoMes = useMemo(
+    () => somaCartaoDoAno(dadosPrevisto, anoAtual, contas, faturaData),
+    [dadosPrevisto, anoAtual, contas, faturaData])
 
   const somaCartaoBadges = useMemo(() => {
     const faturaCatsPlan = dadosPrevisto.saidas.filter(c => c.t === 'fatura_cartao')
@@ -106,20 +84,13 @@ export function usePlanejamento(anoAtual: number) {
   }, [dadosPrevisto, contas, faturaData, anoAtual])
 
   // dadosPrevisto com fatura de cartão substituída pelo valor calculado
-  const dadosPrevistoFinal: AnoData = useMemo(() => {
-    const isFatura = (cat: Cat) => nomeFaturaCartao(cat.nome, cartaoNomes) || cat.t === 'fatura_cartao'
-    const saidas = dadosPrevisto.saidas.map(cat =>
-      isFatura(cat) ? { ...cat, t: undefined, v: somaCartaoMes } : cat
-    )
-    return { ...dadosPrevisto, saidas }
-  }, [dadosPrevisto, somaCartaoMes, cartaoNomes])
+  const dadosPrevistoFinal: AnoData = useMemo(
+    () => comFaturaCalculada(dadosPrevisto, somaCartaoMes, cartaoNomes),
+    [dadosPrevisto, somaCartaoMes, cartaoNomes])
 
   // Excluir t='cartao' dos totais só se existir fatura_cartao (evita dupla contagem)
   // Sem fatura_cartao, as categorias cartao são o único planejamento do cartão
-  const hasFaturaCat = useMemo(() =>
-    dadosPrevisto.saidas.some(c => c.t === 'fatura_cartao' || nomeFaturaCartao(c.nome, cartaoNomes)),
-    [dadosPrevisto.saidas, cartaoNomes]
-  )
+  const hasFaturaCat = useMemo(() => temFaturaCat(dadosPrevisto, cartaoNomes), [dadosPrevisto, cartaoNomes])
 
 
   // Totais reais (lançamentos do extrato) por mês
@@ -190,29 +161,12 @@ export function usePlanejamento(anoAtual: number) {
     return { te, ts }
   }, [contas, categorias, extratoData, faturaData, anoAtual, planoRef])
 
-  /**
-   * Ultimo mes fechado. Regra: mes anterior ao corrente (opcao "por data").
-   * Ano passado -> tudo fechado. Ano futuro -> nada fechado.
-   */
-  const ancoraMes = anoAtual < anoCorrente ? 11
-    : anoAtual > anoCorrente ? -1
-    : mesAtual - 1
+  /** Ultimo mes fechado — ver mesDaAncora (ano futuro: -2, nada fechado). */
+  const ancoraMes = mesDaAncora(anoAtual, anoCorrente, mesAtual)
 
   // O realizado sai de saldoConta, a mesma fonte dos cartoes do Radar. O
   // Planejamento nao recalcula o passado: so encadeia o futuro a partir dele.
-  const depsSaldo: Deps = useMemo(() => ({
-    extratoData,
-    faturaData: faturaData as Deps['faturaData'],
-    contas, categorias,
-    planos: planos as Deps['planos'],
-    saldoInicialDinheiro,
-  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro])
-
-  const fimReal = useMemo(() => (mes: number) => (
-    mes < 0
-      ? saldoBancosEDinheiro(anoAtual - 1, 11, depsSaldo)
-      : saldoBancosEDinheiro(anoAtual, mes, depsSaldo)
-  ), [anoAtual, depsSaldo])
+  const fimReal = useMemo(() => fimRealDoAno(anoAtual, depsSaldo), [anoAtual, depsSaldo])
 
   const ancora = useMemo<AncoraReal>(
     () => ({ ateMes: ancoraMes, te: totaisReais.te, ts: totaisReais.ts, fim: fimReal }),
