@@ -387,10 +387,20 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         const novaDesc = fDesc.trim() || fCat
         // So a parcela 1 (mae) propaga para as demais. Editar uma filha altera
         // apenas ela — parcelas podem ter valores diferentes entre si.
+        //
+        // Categoria e variante sao da COMPRA: salvar a mae sempre alinha as
+        // filhas. Antes so propagava quando categoria, descricao ou valor
+        // mudavam — trocar so a VARIANTE deixava as parcelas 2..N sem ela, e
+        // esse dinheiro nao casava com nenhuma linha do plano (Academia com
+        // Martin e Gui: dezembro em diante caia em "Academia" pura). Bug
+        // relatado em 08/10/2026. Salvar a mae de novo conserta as que ja
+        // ficaram para tras. Descricao e valor so vao quando mudaram: uma
+        // filha pode ter valor proprio.
         const currentParcela = entrada.parcelaAtual ?? 1
         const ehMae = currentParcela === 1
-        const mudouAlgo = fCat !== entrada.categoria || novaDesc !== entrada.descricao || valorParcela !== entrada.valor
-        if (ehMae && entrada.parcelas && entrada.parcelas > 1 && mudouAlgo) {
+        const mudouDesc = novaDesc !== entrada.descricao
+        const mudouValor = valorParcela !== entrada.valor
+        if (ehMae && entrada.parcelas && entrada.parcelas > 1) {
           const baseId = entrada.id.replace(/-\d+$/, '')
           const totalParcelas = entrada.parcelas
           let baseMes = purchaseMes - (currentParcela - 1)
@@ -410,8 +420,16 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             for (const [dStr, list] of Object.entries(sibDm.lancamentos)) {
               const d = parseInt(dStr)
               const newList = (list as Lancamento[]).map(l => {
-                if (l.id === targetId) { dmChanged = true; return { ...l, categoria: fCat, descricao: novaDesc, subCategoria: subCatToSave, valor: valorParcela } }
-                return l
+                if (l.id !== targetId) return l
+                const nova = {
+                  ...l, categoria: fCat, subCategoria: subCatToSave,
+                  ...(mudouDesc ? { descricao: novaDesc } : {}),
+                  ...(mudouValor ? { valor: valorParcela } : {}),
+                }
+                if (nova.categoria === l.categoria && nova.subCategoria === l.subCategoria
+                  && nova.descricao === l.descricao && nova.valor === l.valor) return l
+                dmChanged = true
+                return nova
               })
               newLancs[d] = newList
             }

@@ -39,7 +39,8 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
   // Uma vez, ao abrir: a média de cada categoria lê meses de realizado.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const linhas = useMemo(() => linhasDaRevisao(acima, deps), [])
-  const [marcadas, setMarcadas] = useState<Set<string>>(() => new Set(linhas.map(chave)))
+  // Só o que o plano resolve vem marcado; o resto aparece com o motivo.
+  const [marcadas, setMarcadas] = useState<Set<string>>(() => new Set(linhas.filter(l => !l.motivo).map(chave)))
   const [textos, setTextos] = useState<Record<string, string>>(
     () => Object.fromEntries(linhas.map(l => [chave(l), paraCampo(l.sugerido)])))
   const fecharRef = useRef(onFechar)
@@ -51,7 +52,8 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
   }, [])
 
   const valorDe = (l: LinhaRevisao) => parseConta(textos[chave(l)] ?? '')
-  const escolhidas = linhas.filter(l => marcadas.has(chave(l)))
+  const escolhidas = linhas.filter(l => !l.motivo && marcadas.has(chave(l)))
+  const planejaveis = linhas.filter(l => !l.motivo)
   const invalida = escolhidas.some(l => valorDe(l) === null)
   const anoHoje = new Date().getFullYear()
   const nomeMes = (l: LinhaRevisao) => (l.ano !== anoHoje ? `${MESES[l.mes]}/${String(l.ano).slice(2)}` : MESES[l.mes])
@@ -110,6 +112,28 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
                   const parcelas = l.itens.filter(i => i.parcela)
                   const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
                   return (
+                    l.motivo ? (
+                      // O plano não resolve: sem caixa, sem valor — o motivo e o que fazer.
+                      <tr key={k}>
+                        <td style={{ ...td, textAlign: 'center', color: COR.avisoTexto, fontWeight: 700 }} aria-hidden="true">!</td>
+                        <td style={{ ...td, textAlign: 'left' }}>
+                          <div style={{ fontWeight: 700 }}>{nome}</div>
+                          {parcelas.length > 0 && (
+                            <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 2 }}>
+                              {parcelas.map(i => `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`).join(' · ')}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ ...td, textAlign: 'left' }}>{nomeMes(l)}</td>
+                        <td style={td}>{fmt(l.jaLancado)}</td>
+                        <td colSpan={2} style={{ ...td, textAlign: 'left' }}>
+                          <div style={{ fontSize: 12, lineHeight: 1.4, color: COR.avisoTexto, background: COR.avisoFundo,
+                            border: `1px solid ${COR.avisoBorda}`, borderRadius: 8, padding: '6px 8px' }}>
+                            {l.motivo}
+                          </div>
+                        </td>
+                      </tr>
+                    ) :
                     <tr key={k} style={{ opacity: marcada ? 1 : 0.55 }}>
                       <td style={{ ...td, textAlign: 'center' }}>
                         <input type="checkbox" checked={marcada} aria-label={`Revisar ${nome} em ${MESES[l.mes]}`}
@@ -150,8 +174,8 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
           <button type="button" onClick={onFechar} style={{
             border: 'none', borderRadius: 999, padding: '8px 16px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
             cursor: 'pointer', background: '#f1f5f9', color: '#1e3a8a',
-          }}>Cancelar</button>
-          {linhas.length > 0 && (
+          }}>{planejaveis.length ? 'Cancelar' : 'Fechar'}</button>
+          {planejaveis.length > 0 && (
             <button type="button" onClick={confirmar} disabled={invalida || escolhidas.length === 0} style={{
               border: 'none', borderRadius: 999, padding: '8px 16px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
               cursor: invalida || escolhidas.length === 0 ? 'default' : 'pointer', background: COR.azul, color: '#fff',

@@ -446,6 +446,24 @@ digitado, linha ambígua e o mesmo texto nas três telas.
 O Planejamento continua sem mostrar realizado nas categorias: o que entra lá é
 o AVISO, não o número gasto.
 
+**A revisão só grava em categoria com cadastro EXATO e ativo** (nome +
+variante, `cadastroPlanejavel`). Linha sem isso aparece na tabela com "!" e o
+motivo — variante desativada, categoria que não existe, ou lançamento sem a
+variante numa categoria que tem várias — e não é gravada. A primeira versão
+caía para o nome sozinho (`cadastroDaLinha`) e, no primeiro uso, 08/10/2026,
+gravou "Academia · Martin" e "· Gui" na Academia pura (um por cima do outro) e
+"Alimentação · Gui" trocou o plano de novembro de Alimentação por 41,00. O
+Radar não lê plano para essas linhas (`buildAllCats` exige cadastro ativo
+exato), então gravar nunca faria o aviso sumir. `prova55` (14 invariantes).
+
+**Na fatura, salvar a parcela 1 alinha categoria e variante de TODAS as
+parcelas.** Antes só propagava quando categoria, descrição ou valor mudavam:
+trocar só a variante deixava as parcelas 2..N sem ela, e esse dinheiro caía na
+categoria sem variante (Academia de dezembro em diante). Descrição e valor
+seguem indo só quando mudam — uma filha pode ter valor próprio. Correção de bug
+em tela congelada, feita em 08/10/2026; salvar a mãe de novo conserta as
+compras antigas.
+
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
 ajuste não mexer no mês corrente. Um aviso na hora do lançamento convida a
