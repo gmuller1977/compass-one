@@ -21,6 +21,7 @@ import type { Aba, ConfirmState } from '../components/configuracoes/CfgShared'
 import CfgBancosCartoes from '../components/configuracoes/CfgBancosCartoes'
 import CfgCategorias from '../components/configuracoes/CfgCategorias'
 import CfgPerfil from '../components/configuracoes/CfgPerfil'
+import { nomeCanonico, mesmoNome } from '../utils/nomeCategoria'
 import CfgPreferencias from '../components/configuracoes/CfgPreferencias'
 
 // ── Componente principal ─────────────────────────────────────────────
@@ -363,9 +364,11 @@ export default function Configuracoes() {
     // A validacao ja usava trim, mas o que ia para o banco era o texto cru.
     // Um "Financiamento " com espaco no fim nao casava com a linha do plano
     // em nenhuma comparacao por nome, e a categoria sumia do Radar.
+    // Nome de categoria que já existe vai com a grafia DELA ("academia" →
+    // "Academia"): o app casa por nome exato. Ver utils/nomeCategoria.
     const limpo = {
       ...formCat,
-      nome: formCat.nome.trim(),
+      nome: nomeCanonico(formCat.nome, formCat.tipo, categorias, editCatId),
       descricao: formCat.descricao?.trim() || undefined,
       grupo: formCat.grupo?.trim() || undefined,
     }
@@ -374,10 +377,9 @@ export default function Configuracoes() {
       toast('Categoria atualizada')
       setMobileView('list')
     } else {
-      const nomeNorm = limpo.nome.toLowerCase()
       const descNorm = (limpo.descricao ?? '').toLowerCase()
       const duplicata = categorias.find(c =>
-        c.nome.trim().toLowerCase() === nomeNorm &&
+        mesmoNome(c.nome, limpo.nome) &&
         c.tipo === formCat.tipo &&
         (c.descricao ?? '').trim().toLowerCase() === descNorm
       )

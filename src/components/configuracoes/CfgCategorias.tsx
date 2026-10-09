@@ -9,6 +9,7 @@ import {
   inputSt, labelSt,
 } from './CfgShared'
 import type { ConfirmState } from './CfgShared'
+import NomeCategoriaCampo from './NomeCategoriaCampo'
 
 interface Props {
   isMobile: boolean
@@ -311,9 +312,8 @@ export default function CfgCategorias({
 
               <div>
                 <label style={labelSt}>Nome da categoria</label>
-                <input ref={nomeCatRef} value={formCat.nome}
-                  onChange={e => setFormCat(p=>({...p, nome:e.target.value}))}
-                  placeholder="Ex: Supermercado, Lazer..." className="campo-cfg" style={inputSt} />
+                <NomeCategoriaCampo inputRef={nomeCatRef} formCat={formCat} setFormCat={setFormCat}
+                  categorias={categorias} editCatId={editCatId} />
               </div>
 
               <div>

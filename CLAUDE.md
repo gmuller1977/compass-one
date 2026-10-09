@@ -1850,6 +1850,16 @@ código. `Seguro·Civic` e `Seguro·March` são categorias distintas.
 Chavear por `nome` puro soma as duas. Usar `catKey(nome, descricao)` de
 [`evolucaoCalcs.ts`](src/components/acompanhamento/evolucaoCalcs.ts).
 
+**O nome no cadastro tem autocomplete, e é gravado com a grafia da
+existente.** Pedido do Guilherme em 08/10/2026: o campo era aberto. Ao digitar,
+as categorias do tipo com uma palavra que começa com o digitado (sem acento e
+sem caixa), as do grupo escolhido primeiro; escolher uma usa o nome EXATO e
+avisa que será uma nova variante. Nome que não casa diz "✦ Nova categoria". Ao
+salvar, "academia" vira "Academia" (`nomeCanonico`): o casamento por nome é
+exato, e a grafia diferente virava outra categoria no plano e no Radar. Regras
+em [`nomeCategoria.ts`](src/utils/nomeCategoria.ts), campo em
+`NomeCategoriaCampo`. `prova56` (16 invariantes).
+
 Ao casar uma categoria com a linha do plano: tentar o par exato primeiro; só cair
 para o nome puro quando existir **uma única** linha com aquele nome (plano antigo,
 de antes das variantes). Com duas, não há fallback — escolher uma somaria no
