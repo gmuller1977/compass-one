@@ -248,7 +248,7 @@ export default function AcMobileView({
           </div>
         ] : []),
         ...allCats.map((cat, idx) => {
-          const cd      = pickReal(realMap, cat.nome, cat.descricao)
+          const cd      = pickReal(realMap, cat.nome, cat.descricao, categorias)
           const prev    = cat.v[mes] ?? 0
           const lancAbs = (cd?.totalBanc ?? 0) + (cd?.totalCart ?? 0)
           const uid     = `m-${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`

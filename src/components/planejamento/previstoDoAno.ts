@@ -1,5 +1,6 @@
 import type { Categoria, Conta } from '../../context/AppContext'
 import { saldoBancosEDinheiro, type Deps } from '../../utils/saldoConta'
+import { juntarNaMae, somaNaMae } from '../../utils/categoriaMae'
 import {
   mergeCats, calcSaldos, nomeFaturaCartao, MESES,
   type Cat, type AnoData, type AncoraReal,
@@ -27,23 +28,27 @@ export type CtxPlano = {
   depsSaldo: Deps
 }
 
-/** Categorias ativas, todas com zero: a base em que o plano salvo é mesclado. */
+/**
+ * Categorias ativas, todas com zero: a base em que o plano salvo é mesclado.
+ * Variante que soma na categoria mãe não tem linha própria — o plano dela é o
+ * da mãe, com o detalhe em itens (utils/categoriaMae).
+ */
 export function dadosBaseDoPlano(categorias: Categoria[], saldoInicialJan: number): AnoData {
   const linha = (c: Categoria): Cat => ({ id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, t: c.tipoMovimento, v: new Array(12).fill(0) })
   const por = (tipo: 'entrada' | 'saida') => categorias
-    .filter(c => c.tipo === tipo && c.ativa).map(linha)
+    .filter(c => c.tipo === tipo && c.ativa && !somaNaMae(c.nome, c.descricao, c.tipo, categorias)).map(linha)
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
   return { saldoInicialJan, entradas: por('entrada'), saidas: por('saida') }
 }
 
-/** O plano salvo do ano, mesclado na base. Sem plano, a base. */
-export function dadosPrevistoDoAno(salvo: AnoData | undefined, base: AnoData, saldoInicialJan: number): AnoData {
+/** O plano salvo do ano, mesclado na base. Sem plano, a base. As variantes que somam na mãe entram nela. */
+export function dadosPrevistoDoAno(salvo: AnoData | undefined, base: AnoData, saldoInicialJan: number, categorias: Categoria[]): AnoData {
   if (!salvo) return { ...base, saldoInicialJan }
   return {
     ...salvo,
     saldoInicialJan,
-    entradas: mergeCats(base.entradas, salvo.entradas),
-    saidas: mergeCats(base.saidas, salvo.saidas),
+    entradas: mergeCats(base.entradas, juntarNaMae(salvo.entradas, 'entrada', categorias) as Cat[]),
+    saidas: mergeCats(base.saidas, juntarNaMae(salvo.saidas, 'saida', categorias) as Cat[]),
   }
 }
 
@@ -114,7 +119,7 @@ export function saldoInicialJanDoAno(ano: number, ctx: CtxPlano): number {
 export function previstoDoAno(ano: number, ctx: CtxPlano) {
   const cartaoNomes = new Set(ctx.contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
   const jan = saldoInicialJanDoAno(ano, ctx)
-  const prev = dadosPrevistoDoAno(ctx.planos[ano] as AnoData | undefined, dadosBaseDoPlano(ctx.categorias, jan), jan)
+  const prev = dadosPrevistoDoAno(ctx.planos[ano] as AnoData | undefined, dadosBaseDoPlano(ctx.categorias, jan), jan, ctx.categorias)
   const final = comFaturaCalculada(prev, somaCartaoDoAno(prev, ano, ctx.contas, ctx.faturaData), cartaoNomes)
   // te/ts não entram no saldo (Receitas e Despesas são sempre o plano).
   const ancora: AncoraReal = { ateMes: mesDaAncora(ano, ctx.anoCorrente, ctx.mesAtual), te: [], ts: [], fim: fimRealDoAno(ano, ctx.depsSaldo) }

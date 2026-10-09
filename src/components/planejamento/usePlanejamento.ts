@@ -53,8 +53,8 @@ export function usePlanejamento(anoAtual: number) {
   // Plano unico do ano. planosReal deixou de ser escrito na migracao para
   // plano unico — as linhas antigas ficam no banco so como historico.
   const dadosPrevisto: AnoData = useMemo(
-    () => dadosPrevistoDoAno(planos[anoAtual] as AnoData | undefined, dadosBase, saldoInicialJan),
-    [anoAtual, dadosBase, planos, saldoInicialJan])
+    () => dadosPrevistoDoAno(planos[anoAtual] as AnoData | undefined, dadosBase, saldoInicialJan, categorias),
+    [anoAtual, dadosBase, planos, saldoInicialJan, categorias])
 
   const planoRef = useMemo(() =>
     (planos[anoAtual] as PlanoAnoData | undefined),

@@ -1,4 +1,5 @@
-import type { PlanoAnoData, PlanoCat } from '../context/AppContext'
+import type { Categoria, PlanoAnoData, PlanoCat } from '../context/AppContext'
+import { juntarNaMae, maeDe, somaNaMae } from './categoriaMae'
 import { catKey, norm } from '../components/acompanhamento/evolucaoCalcs'
 
 /**
@@ -30,12 +31,21 @@ export function acharLinhaDoPlano(lista: PlanoCat[], cat: CategoriaDoPlano): num
 /**
  * Muda a linha de uma categoria no plano de um ano, criando-a se o ano ainda
  * não a tem. Devolve null quando não há plano no ano ou a linha é ambígua.
+ *
+ * Grava no formato da categoria mãe (utils/categoriaMae): as linhas das
+ * variantes que somam numa mãe são juntadas nela antes, e gravar numa dessas
+ * variantes grava na mãe.
  */
 export function mudarLinhaDoPlano(
   plano: PlanoAnoData | undefined, tipo: 'entrada' | 'saida', cat: CategoriaDoPlano, fn: (l: PlanoCat) => PlanoCat,
+  categorias: Categoria[],
 ): PlanoAnoData | null {
   if (!plano) return null
-  const lista = [...((tipo === 'entrada' ? plano.entradas : plano.saidas) ?? [])]
+  if (somaNaMae(cat.nome, cat.descricao, tipo, categorias)) {
+    const mae = maeDe(cat.nome, tipo, categorias)!
+    cat = { id: mae.id, nome: mae.nome, grupo: mae.grupo, tipoMovimento: mae.tipoMovimento }
+  }
+  const lista = juntarNaMae([...((tipo === 'entrada' ? plano.entradas : plano.saidas) ?? [])], tipo, categorias)
   const i = acharLinhaDoPlano(lista, cat)
   if (i === 'ambigua') return null
   if (i === null) {

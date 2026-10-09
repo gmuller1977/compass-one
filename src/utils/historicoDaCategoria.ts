@@ -34,7 +34,7 @@ function realDaCategoria(deps: Deps, ano: number, mes: number, tipo: Tipo, nome:
     ano, mes, extratoData: deps.extratoData as Record<string, DadosMes>,
     faturaData: deps.faturaData, contas: deps.contas, categorias: deps.categorias, planoAno: deps.planos[ano],
   })
-  return { mapa: { saidasMap, entradasMap }, cr: pickReal(tipo === 'entrada' ? entradasMap : saidasMap, nome, descricao) }
+  return { mapa: { saidasMap, entradasMap }, cr: pickReal(tipo === 'entrada' ? entradasMap : saidasMap, nome, descricao, deps.categorias) }
 }
 
 /**

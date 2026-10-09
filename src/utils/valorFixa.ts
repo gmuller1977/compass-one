@@ -1,5 +1,6 @@
 import type { Categoria, PlanoAnoData } from '../context/AppContext'
 import { acharPlanCat, resolverPlanCats } from '../components/acompanhamento/evolucaoCalcs'
+import { juntarNaMae } from './categoriaMae'
 
 /**
  * Quanto vale uma categoria fixa num mês.
@@ -31,8 +32,9 @@ export function valorFixaNoMes(
   if (override !== undefined) return override
   if (!planoAno) return 0
 
-  const cru = cat.tipo === 'entrada' ? planoAno.entradas : planoAno.saidas
-  if (!cru?.length) return 0
+  // A mãe vale o plano dela mais o das variantes que somam nela (utils/categoriaMae).
+  const cru = juntarNaMae((cat.tipo === 'entrada' ? planoAno.entradas : planoAno.saidas) ?? [], cat.tipo, categorias)
+  if (!cru.length) return 0
 
   // Por id é o casamento mais forte: não depende de nome nem de variante.
   const porId = cat.id ? cru.find(c => c.id === cat.id) : undefined

@@ -4,6 +4,7 @@ import { mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
 import { catKey, norm, ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { valorFixaNoMes } from './valorFixa'
+import { maeDe, somaNaMae } from './categoriaMae'
 
 /**
  * Realizado do mês por categoria — a única fonte para "quanto entrou e quanto
@@ -42,10 +43,24 @@ export function construirRealizadoMes(params: {
 
     function resolverSub(nome: string, tipo: 'saida' | 'entrada', sub?: string): string | undefined {
       if (norm(sub)) return norm(sub)
+      // Com a categoria mãe cadastrada, lançamento sem variante é DELA — não
+      // se infere a variante única (utils/categoriaMae).
+      if (maeDe(nome, tipo, categorias)) return undefined
       const variantes = categorias.filter(
         (c: Categoria) => norm(c.nome) === norm(nome) && c.tipo === tipo && c.ativa && norm(c.descricao)
       )
       return variantes.length === 1 ? norm(variantes[0].descricao) : undefined
+    }
+
+    /**
+     * A chave do lançamento, e a variante que ele leva para o detalhe quando
+     * soma na mãe. Variante variável de uma categoria mãe vai para a chave da
+     * mãe ("Academia"), guardando "Martin"; fixa e categoria sem mãe ficam na
+     * chave própria, como sempre. Pedido do Guilherme em 09/10/2026.
+     */
+    function chaveDe(nome: string, tipo: 'saida' | 'entrada', sub: string | undefined): { k: string; variante?: string } {
+      if (sub && somaNaMae(nome, sub, tipo, categorias)) return { k: rKey(nome), variante: sub }
+      return { k: rKey(nome, sub) }
     }
 
     const getSaida   = (k: string) => { if (!saidas[k])   saidas[k]  = mkCatReal(); return saidas[k] }
@@ -69,16 +84,18 @@ export function construirRealizadoMes(params: {
           const fonte = isDinheiroKey ? 'dinheiro' : (l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco')
           const sub   = resolverSub(l.categoria, l.tipo === 'saida' ? 'saida' : 'entrada',
             (l as { subCategoria?: string }).subCategoria)
+          const tipoL = l.tipo === 'saida' ? 'saida' : 'entrada'
+          const { k, variante } = chaveDe(l.categoria, tipoL, sub)
           if (l.tipo === 'saida') {
-            const c = getSaida(rKey(l.categoria, sub))
+            const c = getSaida(k)
             c.total += l.valor
             if (fonte === 'dinheiro') c.totalDinheiro += l.valor; else c.totalBanc += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
+            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte, ...(variante ? { variante } : {}) })
           } else {
-            const c = getEntrada(rKey(l.categoria, sub))
+            const c = getEntrada(k)
             c.total += l.valor
             if (fonte === 'dinheiro') c.totalDinheiro += l.valor; else c.totalBanc += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte })
+            c.lancamentos.push({ dia:d, descricao:l.descricao, valor:l.valor, sub:l.formaPagamento, fonte, ...(variante ? { variante } : {}) })
           }
         }
       }
@@ -129,16 +146,17 @@ export function construirRealizadoMes(params: {
           // A parcela só vai para o histórico ("2 de 6"); nenhum total a lê.
           const parcela = (l.parcelas ?? 1) > 1 && l.parcelaAtual ? { atual: l.parcelaAtual, total: l.parcelas! } : undefined
           const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
-          const k   = rKey(l.categoria, sub)
+          const { k, variante } = chaveDe(l.categoria, 'saida', sub)
+          const daVariante = variante ? { variante } : {}
           if (l.tipo === 'entrada') {
             const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela })
+            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela, ...daVariante })
           } else if (l.tipo === 'saida') {
             // Estorno: abate da categoria de saída
             const c = getSaida(k)
             c.total -= l.valor; c.totalCart -= l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela })
+            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela, ...daVariante })
           }
         }
       }

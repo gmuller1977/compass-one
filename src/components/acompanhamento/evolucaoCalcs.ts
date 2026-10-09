@@ -1,4 +1,5 @@
-import type { Categoria } from '../../context/AppContext'
+import type { Categoria, PlanoCat } from '../../context/AppContext'
+import { juntarNaMae, maeDe } from '../../utils/categoriaMae'
 import type { CatReal } from './AcShared'
 
 /** Linha do plano. O plano já carrega descricao (variante) e grupo vindos do cadastro. */
@@ -48,17 +49,27 @@ export function splitCatKey(key: string): { nome: string; descricao: string } {
  *   senão somaria o realizado de outra variante.
  * - Sem variante, aceita a chave única do nome: espelha a inferência de
  *   variante única feita ao montar o realMap (resolverSub).
+ * - MAS não quando existe a categoria SEM variante, ativa: aí a linha sem
+ *   variante é dela, e o gasto da variante é da variante. Corrigido em
+ *   09/10/2026: com "Academia", "Academia · Martin" e "· Gui" cadastradas, o
+ *   gasto do Martin caía no plano da Academia nos meses em que só ele gastou
+ *   — a mesma compra mudava de linha conforme o Gui gastava ou não —, e com
+ *   plano nas duas linhas os mesmos 100 apareciam nas duas e o grupo somava
+ *   200.
  */
 export function resolverRealKey(
   realMap: Record<string, unknown>,
   nome: string,
-  descricao?: string,
+  descricao: string | undefined,
+  categorias: Categoria[],
 ): string | undefined {
   const exata = catKey(nome, descricao)
   if (exata in realMap) return exata
   if (norm(descricao)) return undefined
   const doNome = Object.keys(realMap).filter(k => norm(splitCatKey(k).nome) === norm(nome))
-  return doNome.length === 1 ? doNome[0] : undefined
+  if (doNome.length !== 1) return undefined
+  const temCategoriaSemVariante = categorias.some(c => c.ativa && norm(c.nome) === norm(nome) && !norm(c.descricao))
+  return temCategoriaSemVariante ? undefined : doNome[0]
 }
 
 /**
@@ -109,9 +120,10 @@ export function acharPlanCat<T extends { nome: string; descricao?: string }>(
 export function pickReal(
   realMap: Record<string, CatReal>,
   nome: string,
-  descricao?: string,
+  descricao: string | undefined,
+  categorias: Categoria[],
 ): CatReal | undefined {
-  const k = resolverRealKey(realMap, nome, descricao)
+  const k = resolverRealKey(realMap, nome, descricao, categorias)
   return k ? realMap[k] : undefined
 }
 
@@ -125,6 +137,8 @@ export function resolverPlanCats(
   planCats: PlanCat[],
   categorias: Categoria[],
 ): (CatComDesc & { grupo: string })[] {
+  // Variantes que somam na categoria mãe entram na linha dela (utils/categoriaMae).
+  planCats = juntarNaMae(planCats as PlanoCat[], tipo, categorias)
   const doTipo = categorias.filter(c => c.tipo === tipo)
   const ativas = doTipo.filter(c => c.ativa)
   const mesmoNome = (c: Categoria, nome: string) => norm(c.nome) === norm(nome)
@@ -150,6 +164,11 @@ export function resolverPlanCats(
   return planCats.map((cat, i) => {
     const exata = exatas[i]
     if (exata) return exata
+    // Linha sem variante de um nome com mãe é da mãe — não se atribui variante.
+    if (maeDe(cat.nome, tipo, categorias)) {
+      claimed.add(catKey(cat.nome))
+      return { nome: cat.nome, v: cat.v, descricao: '', grupo: cat.grupo ?? maeDe(cat.nome, tipo, categorias)?.grupo ?? SEM_GRUPO }
+    }
     // claimed cresce a cada atribuição, então a próxima livre é sempre a [0]
     const reg = ativas.find(c => mesmoNome(c, cat.nome) && !claimed.has(catKey(c.nome, c.descricao)))
     if (reg) claimed.add(catKey(reg.nome, reg.descricao))
@@ -200,7 +219,7 @@ export function buildAllCats(
   // Chaves do realMap já consumidas por alguma linha do plano (de qualquer grupo)
   const cobertas = new Set<string>()
   for (const c of vivas) {
-    const k = resolverRealKey(realMap, c.nome, c.descricao)
+    const k = resolverRealKey(realMap, c.nome, c.descricao, categorias)
     if (k) cobertas.add(k)
   }
 
@@ -229,8 +248,8 @@ export function buildAllCats(
   return [...doGrupo, ...extraCats]
 }
 
-export function calcGrupoReal(allCats: CatComDesc[], realMap: Record<string, CatReal>): number {
-  return allCats.reduce((s, cat) => s + (pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0), 0)
+export function calcGrupoReal(allCats: CatComDesc[], realMap: Record<string, CatReal>, categorias: Categoria[]): number {
+  return allCats.reduce((s, cat) => s + (pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0), 0)
 }
 
 export function calcGrupoPrev(allCats: CatComDesc[], mes: number): number {
@@ -298,9 +317,9 @@ export function totaisDoMes(p: {
       const cats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
       for (const c of cats) {
         linhas.push({ nome: c.nome, descricao: c.descricao, grupo, prev: c.v[mes] ?? 0,
-          real: pickReal(realMap, c.nome, c.descricao)?.total ?? 0 })
+          real: pickReal(realMap, c.nome, c.descricao, categorias)?.total ?? 0 })
       }
-      return { prev: acc.prev + calcGrupoPrev(cats, mes), real: acc.real + calcGrupoReal(cats, realMap) }
+      return { prev: acc.prev + calcGrupoPrev(cats, mes), real: acc.real + calcGrupoReal(cats, realMap, categorias) }
     }, { prev: 0, real: 0 })
     return { ...tot, linhas }
   }

@@ -6,6 +6,7 @@ import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
 import { ehAutomaticoCategoria } from './categoriaIcone'
 import { construirRealizadoMes } from './realizadoMes'
+import { somaNaMae } from './categoriaMae'
 import { resolverRealKey, splitCatKey, cadastroDaLinha, norm } from '../components/acompanhamento/evolucaoCalcs'
 
 /**
@@ -434,9 +435,11 @@ export function faltaVariavelDoMes(
   const parcelas: Parcela[] = []
 
   for (const cat of variaveis) {
+    // Variante que soma na mãe entra pela mãe — plano e gasto (utils/categoriaMae).
+    if (somaNaMae(cat.nome, cat.descricao, cat.tipo, categorias)) continue
     const plano = valorFixaNoMes(cat, planos[ano], mes, categorias)
     const mapa = cat.tipo === "entrada" ? entradasMap : saidasMap
-    const k = resolverRealKey(mapa, cat.nome, cat.descricao)
+    const k = resolverRealKey(mapa, cat.nome, cat.descricao, categorias)
     const feito = k ? mapa[k].total : 0
     // Sem plano e sem gasto nao ha o que dizer. Sem plano MAS com gasto entra:
     // e gasto fora do orcamento, e no cenario que compensa ele come a sobra
@@ -501,7 +504,7 @@ export function faltaVariavelDoMes(
   const cobertas = new Set<string>()
   for (const cat of categorias) {
     if (cat.tipo !== 'saida' || (!cat.fixa && !cat.ativa)) continue
-    const k = resolverRealKey(saidasMap, cat.nome, cat.descricao)
+    const k = resolverRealKey(saidasMap, cat.nome, cat.descricao, categorias)
     if (k) cobertas.add(k)
   }
   const nomesCartao = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))

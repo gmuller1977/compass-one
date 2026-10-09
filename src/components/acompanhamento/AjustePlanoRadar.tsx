@@ -98,7 +98,7 @@ export default function AjustePlanoRadar({
   const fechar = () => setAjuste(null)
   const gravar = (fn: Parameters<typeof mudarLinhaDoPlano>[3]) => {
     setPlanos(prev => {
-      const novo = mudarLinhaDoPlano(prev[alvo.ano], ajuste.tipo, cat, fn)
+      const novo = mudarLinhaDoPlano(prev[alvo.ano], ajuste.tipo, cat, fn, categorias)
       return novo ? { ...prev, [alvo.ano]: novo } : prev
     })
     fechar()
@@ -110,7 +110,7 @@ export default function AjustePlanoRadar({
       const novo = { ...prev }
       for (const a of [...new Set(meses.map(m => m.ano))]) {
         const doAno = meses.filter(m => m.ano === a)
-        const r = mudarLinhaDoPlano(novo[a], ajuste.tipo, cat, l => doAno.reduce((acc, m) => fn(acc, m), l))
+        const r = mudarLinhaDoPlano(novo[a], ajuste.tipo, cat, l => doAno.reduce((acc, m) => fn(acc, m), l), categorias)
         if (r) novo[a] = r
       }
       return novo

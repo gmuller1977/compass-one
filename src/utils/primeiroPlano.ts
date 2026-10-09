@@ -68,7 +68,7 @@ export function propostaDoMes({
       .map(c => {
         // resolverRealKey é o mesmo casamento (nome, variante) que o Radar
         // usa; escrever outro aqui reabriria a divergência de sempre.
-        const k = resolverRealKey(mapa, c.nome, c.descricao)
+        const k = resolverRealKey(mapa, c.nome, c.descricao, categorias)
         return {
           id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, tipo,
           valor: k ? mapa[k].total : 0,

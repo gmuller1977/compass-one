@@ -48,7 +48,7 @@ export function lancadoAcimaDoPlano(deps: Deps, hoje: Date = new Date()): Lancad
     for (const l of tt.saida.linhas) {
       const excesso = l.real - l.prev
       if (excesso <= MEIO_CENTAVO) continue
-      const cr = pickReal(saidasMap, l.nome, l.descricao)
+      const cr = pickReal(saidasMap, l.nome, l.descricao, deps.categorias)
       const itens: JaLancado[] = (cr?.lancamentos ?? [])
         .filter(x => Math.abs(x.valor) > MEIO_CENTAVO)
         .map(x => ({ descricao: x.descricao, valor: x.valor, ...(x.parcela ? { parcela: x.parcela } : {}) }))

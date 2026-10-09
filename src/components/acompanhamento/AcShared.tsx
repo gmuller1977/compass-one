@@ -8,7 +8,9 @@ export const MESES_FULL   = ['Janeiro','Fevereiro','Março','Abril','Maio','Junh
 // ── Tipos ─────────────────────────────────────────────────────────────
 // `parcela`: compra parcelada no cartão — só para mostrar "2 de 6" no
 // histórico do Radar; nenhuma conta lê.
-export type Lanc = { dia: number; descricao: string; valor: number; sub: string; fonte: 'banco'|'cartao'|'dinheiro'; parcela?: { atual: number; total: number } }
+export type Lanc = { dia: number; descricao: string; valor: number; sub: string; fonte: 'banco'|'cartao'|'dinheiro'; parcela?: { atual: number; total: number }
+  /** A variante, quando o lançamento soma na categoria mãe (utils/categoriaMae) — para o detalhe. */
+  variante?: string }
 export type CatReal = { total: number; totalBanc: number; totalCart: number; totalDinheiro: number; lancamentos: Lanc[] }
 export type CatSel = {
   uid: string

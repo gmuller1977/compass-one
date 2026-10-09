@@ -56,7 +56,7 @@ export default function EvolucaoGrupo({
   if (allCats.length === 0) return null
 
   const totalPrev = calcGrupoPrev(allCats, mes)
-  const totalReal = calcGrupoReal(allCats, realMap)
+  const totalReal = calcGrupoReal(allCats, realMap, categorias)
 
   const grupoIcone = (() => {
     const primNome = allCats[0]?.nome
@@ -78,7 +78,7 @@ export default function EvolucaoGrupo({
   // senão o grupo dizia "resta R$ 0,28" em cima de categorias "✓ pago".
   const destaque   = destaqueDoGrupo(allCats.map(cat => ({
     prev: cat.v[mes] ?? 0,
-    real: pickReal(realMap, cat.nome, cat.descricao)?.total ?? 0,
+    real: pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0,
     fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa,
   })), isEntrada)
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
@@ -157,7 +157,7 @@ export default function EvolucaoGrupo({
           borderTop: 0, borderRadius: '0 0 12px 12px', overflow: 'hidden',
         }}>
           {allCats.map((cat, idx) => {
-            const cd = pickReal(realMap, cat.nome, cat.descricao)
+            const cd = pickReal(realMap, cat.nome, cat.descricao, categorias)
             return (
               <EvolucaoLinha
                 key={`${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`}

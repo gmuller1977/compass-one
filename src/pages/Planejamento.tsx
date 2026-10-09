@@ -123,7 +123,7 @@ export default function Planejamento() {
       const novo = { ...prev }
       for (const a of [...new Set(meses.map(m => m.ano))]) {
         const doAno = meses.filter(m => m.ano === a)
-        const r = mudarLinhaDoPlano(novo[a], tipo === 'e' ? 'entrada' : 'saida', cat, l => doAno.reduce((acc, m) => fn(acc, m), l))
+        const r = mudarLinhaDoPlano(novo[a], tipo === 'e' ? 'entrada' : 'saida', cat, l => doAno.reduce((acc, m) => fn(acc, m), l), categorias)
         if (r) novo[a] = r
       }
       return novo
@@ -166,7 +166,7 @@ export default function Planejamento() {
       ano: anoAtual, mes, extratoData: extratoData as Record<string, DadosMes>,
       faturaData, contas, categorias, planoAno: planos[anoAtual],
     })
-    const real = pickReal(p.tipo === 'entrada' ? entradasMap : saidasMap, p.nome, p.descricao)?.total ?? 0
+    const real = pickReal(p.tipo === 'entrada' ? entradasMap : saidasMap, p.nome, p.descricao, categorias)?.total ?? 0
     setAjuste({ ...p, mes, real })
   }, [anoAtual, plan.mesAtual, extratoData, faturaData, contas, categorias, planos])
 

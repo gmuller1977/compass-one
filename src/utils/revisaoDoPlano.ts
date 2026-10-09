@@ -136,7 +136,7 @@ export function gravarRevisao(
       ? itensDaSugestao(linha.base, valor, linha.itens, linha.jaLancado)
       : null
     const r = mudarLinhaDoPlano(novo[linha.ano], 'saida', cat,
-      l => (itens ? comItens(l, [linha.mes], itens) : comValor(l, linha.mes, valor)))
+      l => (itens ? comItens(l, [linha.mes], itens) : comValor(l, linha.mes, valor)), categorias)
     if (r) novo[linha.ano] = r
     else naoGravadas.push(linha)
   }

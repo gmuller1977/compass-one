@@ -17,8 +17,8 @@ import type { Categoria } from '../../context/AppContext'
  * entao Seguro·Civic e Seguro·March nao se somam. Ler so por cat.nome, como
  * antes, juntava as duas — e a revisao sugeria ajustar uma delas com o total.
  */
-function lancadoDaCat(map: Record<string, CatReal>, cat: { nome: string; descricao?: string }) {
-  const k = resolverRealKey(map, cat.nome, cat.descricao)
+function lancadoDaCat(map: Record<string, CatReal>, cat: { nome: string; descricao?: string }, categorias: Categoria[]) {
+  const k = resolverRealKey(map, cat.nome, cat.descricao, categorias)
   return k ? (map[k]?.total ?? 0) : 0
 }
 
@@ -136,13 +136,13 @@ export default function PlanRevisao({
   const lancado = { entrada: entradasMap, saida: saidasMap }
 
   const totalRecPrev = dadosPrevisto.entradas.reduce((s, c) => s + (c.v[mesSel] ?? 0), 0)
-  const totalRecReal = dadosPrevisto.entradas.reduce((s, c) => s + lancadoDaCat(lancado.entrada, c), 0)
+  const totalRecReal = dadosPrevisto.entradas.reduce((s, c) => s + lancadoDaCat(lancado.entrada, c, categorias), 0)
   const totalDesPrev = dadosPrevisto.saidas.reduce((s, c) => s + (c.v[mesSel] ?? 0), 0)
-  const totalDesReal = dadosPrevisto.saidas.reduce((s, c) => s + lancadoDaCat(lancado.saida, c), 0)
+  const totalDesReal = dadosPrevisto.saidas.reduce((s, c) => s + lancadoDaCat(lancado.saida, c, categorias), 0)
 
   const allEntradas: CatRow[] = dadosPrevisto.entradas.map((cat, ri) => {
     const planejado = cat.v[mesSel] ?? 0
-    const real      = lancadoDaCat(lancado.entrada, cat)
+    const real      = lancadoDaCat(lancado.entrada, cat, categorias)
     if (ehZero(planejado) && ehZero(real)) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
     // So o sentido desfavoravel pede justificativa. Numa receita, isso e
@@ -154,7 +154,7 @@ export default function PlanRevisao({
 
   const allSaidas: CatRow[] = dadosPrevisto.saidas.map((cat, ri) => {
     const planejado = cat.v[mesSel] ?? 0
-    const real      = lancadoDaCat(lancado.saida, cat)
+    const real      = lancadoDaCat(lancado.saida, cat, categorias)
     if (ehZero(planejado) && ehZero(real)) return null
     const desvioPercent = planejado === 0 ? (real > 0 ? Infinity : 0) : Math.abs((real - planejado) / planejado * 100)
     // Numa despesa, o sentido desfavoravel e gastar MAIS do que o planejado.

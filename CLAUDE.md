@@ -788,7 +788,9 @@ fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
 Pedido do Guilherme em 06/10/2026, sobre modelo validado: ele somava por fora
 e não queria criar categoria. **Variante não serve para isso** — cada
 variante é uma categoria (cadastro, linha própria no Radar, escolha a cada
-lançamento).
+lançamento). (Desde 09/10/2026 há a categoria MÃE: variantes variáveis de uma
+categoria cadastrada também sem variante somam nela — ver "Categorias e
+variantes".)
 
 A regra: **`v[mes]` continua sendo a verdade; `itens` é o detalhe dele.**
 Nenhum leitor do plano sabe que os itens existem, e por isso nenhum número do
@@ -1849,6 +1851,47 @@ código. `Seguro·Civic` e `Seguro·March` são categorias distintas.
 
 Chavear por `nome` puro soma as duas. Usar `catKey(nome, descricao)` de
 [`evolucaoCalcs.ts`](src/components/acompanhamento/evolucaoCalcs.ts).
+
+**Categoria MÃE: as variantes variáveis somam nela.** Pedido do Guilherme em
+09/10/2026: "posso fazer um planejamento por categoria jogando um valor total
+que soma as variantes [...] o valor da variante será da categoria, mas posso
+verificar o detalhamento". Regras em [`categoriaMae.ts`](src/utils/categoriaMae.ts).
+
+- **Mãe** é a categoria cadastrada SEM variante e ativa ("Academia"). A regra é
+  de cadastro, não de mês — senão a mesma compra mudaria de linha conforme o
+  que mais foi gasto.
+- Variante **variável** de uma mãe (inclusive desativada ou que nem existe
+  mais) soma nela: o gasto vai para a chave da mãe e cada lançamento guarda a
+  `variante`; o plano da variante, se houver, entra no da mãe, com o detalhe
+  em itens ("Academia 100 · Martin 103").
+- Variante **fixa** fica fora: tem valor, dia e conta próprios, e é o valor
+  dela no plano que gera o lançamento previsto e a conta a vencer. Somada na
+  mãe, ela ficaria sem valor individual — foi o ponto do Guilherme.
+- **Sem mãe, nada muda**: Financiamento · Casa e · Civic seguem independentes.
+
+Onde a regra vive, e por que só ali: a montagem do realizado
+(`construirRealizadoMes`, `chaveDe`), a leitura do plano (`resolverPlanCats`
+e `valorFixaNoMes` passam por `juntarNaMae`), o laço da variável em
+`faltaVariavelDoMes` (filha não é parcela própria) e o gravador
+(`mudarLinhaDoPlano` junta antes de gravar, e gravar numa filha grava na mãe).
+Radar, previsão, Início, alertas e revisão leem desses quatro. O Planejamento
+não lista as filhas variáveis (`dadosBaseDoPlano`) e lê a mãe somada. O Radar,
+aberto numa mãe, mostra "Por variante" e a etiqueta em cada lançamento.
+
+Junto, uma correção em `resolverRealKey`: linha sem variante não "pega" a
+chave única de uma variante quando a categoria sem variante existe. Com a fixa
+"Academia · Plano anual" paga sozinha no mês, a Academia mostrava os mesmos 80
+e o grupo somava 160.
+
+`prova57` (35 invariantes): plano antigo (com valor na linha da variante) e
+plano juntado na mãe dão o MESMO saldo previsto nos três cenários. A `prova28`
+segue com 534 contra a versão anterior.
+
+Ainda não acompanham a regra (só a lista de escolha; os números ficam certos,
+porque o valor soma na mãe ao ser lido): o assistente de planejamento e o
+"Incluir no planejamento" do Simulador ainda oferecem as filhas; o Radar do
+celular não tem a faixa "Por variante"; a Revisão Mensal lista a linha da filha
+com zero até o plano ser regravado.
 
 **O nome no cadastro tem autocomplete, e é gravado com a grafia da
 existente.** Pedido do Guilherme em 08/10/2026: o campo era aberto. Ao digitar,

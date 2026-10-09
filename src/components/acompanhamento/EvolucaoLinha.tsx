@@ -118,6 +118,15 @@ export default function EvolucaoLinha({
     { label: '💵 Dinheiro', total: totalDinheiro, itens: dinheiro },
   ].filter(c => c.itens.length > 0)
 
+  // Categoria MÃE: os lançamentos das variantes somam nela e cada um guarda a
+  // variante (utils/categoriaMae). Aberta, ela mostra quanto foi de cada uma.
+  const porVariante = (() => {
+    if (!lancamentos.some(l => l.variante)) return []
+    const m = new Map<string, number>()
+    for (const l of lancamentos) m.set(l.variante ?? '', (m.get(l.variante ?? '') ?? 0) + l.valor)
+    return [...m.entries()].sort((a, b) => (a[0] ? 0 : 1) - (b[0] ? 0 : 1) || b[1] - a[1])
+  })()
+
   // O MESMO modelo do cabeçalho do grupo, um degrau menor: números em 14px
   // (os do grupo são 16), barra de 16px de espessura (a do grupo é 20) e os
   // mesmos 200px de comprimento. Com o mesmo recuo à direita — o espaço do
@@ -234,6 +243,20 @@ export default function EvolucaoLinha({
       {/* Acordeão — lançamentos */}
       {aberto && (
         <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '10px 14px 14px' }}>
+          {porVariante.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: .5, marginRight: 2 }}>
+                Por variante
+              </span>
+              {/* #1e3a8a sobre #e0e7ff: 9,1 */}
+              {porVariante.map(([v, total]) => (
+                <span key={v || '-'} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 999,
+                  background: v ? '#e0e7ff' : '#f1f5f9', color: v ? '#1e3a8a' : '#475569', fontVariantNumeric: 'tabular-nums' }}>
+                  {v || 'sem variante'} <b>{fmt(total)}</b>
+                </span>
+              ))}
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${colunas.length}, 1fr)`, gap: 12 }}>
             {colunas.map(col => (
               <div key={col.label}>
@@ -263,6 +286,10 @@ export default function EvolucaoLinha({
                       </div>
                       <div style={{ fontSize: 11, color: '#334155', marginTop: 2,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {l.variante && (
+                          <b style={{ fontSize: 10, color: '#1e3a8a', background: '#e0e7ff', borderRadius: 4,
+                            padding: '0 5px', marginRight: 5 }}>{l.variante}</b>
+                        )}
                         {l.descricao || nome}
                       </div>
                       {l.sub && (
