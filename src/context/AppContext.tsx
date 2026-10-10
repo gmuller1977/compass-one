@@ -9,6 +9,7 @@ import { guardarCopia, lerCopia, apagarCopias, type LinhasDoBanco } from '../uti
 import { supabase } from '../lib/supabase'
 import { limparUltimaAtividade } from '../utils/inatividade'
 import { mesclar3 } from '../utils/mesclarMes'
+import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
 
 // ── Types compartilhados ─────────────────────────────────────────────
 export type Compartilhamento = { papel: 'proprio' | 'membro'; donoNome: string; donoEmail: string; /** Membros aceitos, para o dono. */ membros: number }
@@ -849,7 +850,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // (ou outra pessoa da conta) gravou depois da nossa leitura — ver
     // utils/mesclarMes. Só os meses que mudaram lá são substituídos aqui.
     const aGravar: Record<string, unknown> = {}
-    for (const k of alterados) aGravar[k] = data[k]
+    // Autoria (conta compartilhada): lançamento novo leva o autor; quem não é
+    // o administrador não altera nem apaga o lançamento de outra pessoa — volta
+    // como estava, e a tela avisa. Ver utils/autorDoLancamento.
+    const eu = authIdRef.current ?? uid
+    const admin = eu === uid
+    let devolvidos = 0
+    for (const k of alterados) {
+      let mes = carimbarAutor(noBanco.current[k], data[k], eu)
+      if (!admin) { const r = respeitarAutoria(noBanco.current[k], mes, eu); mes = r.mes; devolvidos += r.devolvidos }
+      aGravar[k] = mes
+    }
+    if (devolvidos > 0) window.dispatchEvent(new CustomEvent('compass-permissao', { detail: devolvidos }))
     try {
       const contasDosMeses = [...new Set(alterados.map(k => parseExtratoKey(k).contaId))]
       const { data: noBancoAgora, error: errLer } = await supabase.from(tabela)
@@ -860,7 +872,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!(k in aGravar)) continue
         const base = noBanco.current[k]
         if (base !== undefined && JSON.stringify(row.dados) === JSON.stringify(base)) continue
-        aGravar[k] = mesclar3(base, data[k], row.dados)
+        aGravar[k] = mesclar3(base, aGravar[k], row.dados)
       }
       const rows = alterados.map(key => {
         const { contaId, ano, mes } = parseExtratoKey(key)

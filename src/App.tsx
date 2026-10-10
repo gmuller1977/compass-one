@@ -35,6 +35,7 @@ import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
 import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
+import AvisoPermissao from './components/compartilhar/AvisoPermissao'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -80,7 +81,7 @@ function AppShell({ children }: { children: ReactNode }) {
     iniciarSessao()
   }, [user?.id])
 
-  if (isMobile) return <>{children}<AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><AvisoNovaVersao /><ConviteCompartilhamento /></>
+  if (isMobile) return <>{children}<AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
   return (
     <>
       <Sidebar />
@@ -93,6 +94,7 @@ function AppShell({ children }: { children: ReactNode }) {
       <SincronizarLembrete />
       <AvisoNovaVersao />
       <ConviteCompartilhamento />
+      <AvisoPermissao />
     </>
   )
 }

@@ -2089,10 +2089,23 @@ que falta ativar.
   categorias só apagam ids que ESTE aparelho viu no banco
   (`contasNoBancoRef`) — antes apagavam tudo o que não estava na lista local.
   Isso também resolve o conflito entre aparelhos da mesma pessoa.
+- **Quem mexe em qual lançamento** (regra do Guilherme, mesmo dia): todos
+  veem tudo; o ADMINISTRADOR (o dono) edita e exclui qualquer lançamento; os
+  outros, só os próprios. Cada lançamento guarda `autor` (id do login),
+  carimbado na gravação (`carimbarAutor`, em
+  [`autorDoLancamento.ts`](src/utils/autorDoLancamento.ts)) — nenhuma tela
+  precisa saber. Sem autor = de antes do compartilhamento = do dono. Membro
+  que altera, apaga ou muda de dia o lançamento de outro: a gravação devolve
+  o original (`respeitarAutoria`) e `AvisoPermissao` explica. O banco confere
+  de novo pelo gatilho da migração `016_autoria_lancamentos.sql` (rodar
+  depois da 015). Conta paga (`fixasConsolidadas`) não é lançamento: membro
+  pode marcar. As telas de edição ainda não mostram cadeado: o membro tenta,
+  e a mudança volta com o aviso.
 - Conta compartilhada relê do banco a cada minuto com a tela visível.
 - Plano (`planejamento_data`) ainda grava o ano inteiro: duas pessoas
   editando o plano ao mesmo tempo, vale a última.
-- `prova66a` (11, a mescla) e `prova66b` (15, no navegador com o AppContext
+- `prova66a` (11, a mescla), `prova67a` (10, autoria), `prova67-banco.sql`
+  (18, RLS e gatilho num Postgres 16 de verdade) e `prova66b` (20, no navegador com o AppContext
   de verdade: dois logins, mesmo mês, categoria do outro, nome, sair).
 
 ---
