@@ -36,7 +36,7 @@ export default function IndicadorGravacao() {
 
   let texto = '', fundo = '', cor = '', borda = ''
   if (gravacao === 'semConexao') {
-    texto = 'Sem internet · o lançamento será salvo quando a conexão voltar. Não feche o app.'
+    texto = 'Sem internet · o lançamento ficou guardado neste aparelho e vai para o banco quando a conexão voltar.'
     fundo = COR.avisoFundo; cor = COR.avisoTexto; borda = COR.avisoBorda
   } else if (gravacao === 'erro') {
     texto = 'Não foi possível salvar · tentando de novo'

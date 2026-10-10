@@ -10,7 +10,10 @@ import { COR } from '../utils/cores'
 import { saldoRealizadoConta, type Deps } from '../utils/saldoConta'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
-import { tipoNaFatura, totalComprasFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
+import { totalComprasFatura, mesDaFaturaDaCompra, lancarNaFatura, dataDoLancamento } from '../utils/lancamentoRapido'
+import { interpretarLancamento } from '../utils/interpretarLancamento'
+import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
+import EntradaPorTexto from '../components/quickLaunch/EntradaPorTexto'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -41,6 +44,13 @@ function fmt(n: number) {
 function NOMES_MESES_SHORT() {
   return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 }
+function chip(ativo: boolean): React.CSSProperties {
+  return {
+    border: `1.5px solid ${ativo ? COR.azul : COR.borda}`, background: ativo ? '#eff6ff' : '#fff',
+    color: ativo ? COR.azul : COR.textoSuave, borderRadius: 20, padding: '5px 11px',
+    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+  }
+}
 const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb']
 
 export default function QuickLaunch() {
@@ -59,7 +69,11 @@ export default function QuickLaunch() {
 
   const [contaSelId, setContaSelId] = useState<string | null>(null)
   const [escolherConta, setEscolherConta] = useState(false)
+  // Id da categoria — o nome não basta: variantes (Seguro · Civic, Seguro ·
+  // March) têm o mesmo nome e são categorias diferentes.
   const [catSel, setCatSel] = useState<string | null>(null)
+  const [quando, setQuando] = useState<'hoje' | 'ontem' | string>('hoje')
+  const [parcelas, setParcelas] = useState(1)
   const [tipoSel, setTipoSel] = useState<'saida' | 'entrada'>('saida')
   const [valor, setValor]   = useState('')
   const [desc,  setDesc]    = useState('')
@@ -174,71 +188,82 @@ export default function QuickLaunch() {
     setGerenciar(false)
   }
 
+  /** O valor do lançamento mais recente da categoria, no extrato ou na fatura. */
   function ultimoValorCat(catNome: string): number | null {
-    const keys = Object.keys(extratoData as Record<string, DadosMes>)
-    let max = 0
-    for (const k of keys) {
-      Object.values((extratoData as Record<string, DadosMes>)[k]?.lancamentos ?? {}).forEach(lcs => {
-        lcs.forEach(l => { if (l.categoria === catNome && l.valor > max) max = l.valor })
-      })
+    let melhor = -1, valorMelhor: number | null = null
+    const olhar = (fonte: Record<string, unknown>, ehFatura: boolean) => {
+      for (const [k, dm] of Object.entries(fonte)) {
+        const ym = parseInt(k.slice(-7, -3)) * 100 + parseInt(k.slice(-2))
+        for (const [d, lcs] of Object.entries((dm as { lancamentos?: Record<string, { categoria: string; valor: number; tipo: string }[]> }).lancamentos ?? {})) {
+          for (const l of lcs) {
+            if (l.categoria !== catNome || (ehFatura && l.tipo !== 'entrada')) continue
+            const quando = ym * 100 + Number(d)
+            if (quando >= melhor) { melhor = quando; valorMelhor = l.valor }
+          }
+        }
+      }
     }
-    return max > 0 ? max : null
+    olhar(extratoData as Record<string, unknown>, false)
+    olhar(faturaData as Record<string, unknown>, true)
+    return valorMelhor
   }
+  const catObj = catSel ? categorias.find(c => c.id === catSel) ?? null : null
+  const sugerido = catObj ? ultimoValorCat(catObj.nome) : null
 
   function linhaDaCategoria(c: { nome: string; descricao?: string }) {
     return linhasSaidaDoMes.get(catKey(c.nome, c.descricao)) ?? { prev: 0, real: 0 }
   }
 
   function abrirCat(c: typeof catsGrid[0]) {
-    setCatSel(c.nome); setTipoSel(c.tipo); setValor(''); setDesc('')
+    setCatSel(c.id); setTipoSel(c.tipo); setValor(''); setDesc(''); setParcelas(1); setQuando('hoje')
     setTimeout(() => valorRef.current?.focus(), 80)
   }
-  function fecharInput() { setCatSel(null); setValor(''); setDesc('') }
+  function fecharInput() { setCatSel(null); setValor(''); setDesc(''); setParcelas(1); setQuando('hoje') }
+
+  /** "47 mercado nubank" → abre o lançamento já preenchido, para confirmar. */
+  function aplicarTexto(texto: string): string | null {
+    const r = interpretarLancamento(texto, categorias, contas)
+    const cat = r.categoriaId ? categorias.find(c => c.id === r.categoriaId) : undefined
+    if (!cat && r.valor === undefined) return 'Não entendi. Tente algo como "47 mercado nubank".'
+    if (r.contaId) setContaSelId(r.contaId)
+    if (cat) { setCatSel(cat.id); setTipoSel(cat.tipo) }
+    setValor(r.valor !== undefined ? r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '')
+    setDesc(r.descricao ? r.descricao.charAt(0).toUpperCase() + r.descricao.slice(1) : '')
+    setParcelas(r.parcelas ?? 1)
+    setQuando(r.diasAtras === 1 ? 'ontem' : 'hoje')
+    if (!cat) return 'Valor entendido. Agora toque na categoria.'
+    setTimeout(() => valorRef.current?.focus(), 80)
+    return null
+  }
 
   function registrar() {
     const v = parseBRL(valor)
-    if (!catSel || v <= 0 || !contaSel) return
+    if (!catObj || v <= 0 || !contaSel) return
+    const data = dataDoLancamento(quando)
+    const [aL, mL, dL] = [data.getFullYear(), data.getMonth(), data.getDate()]
+    const descricao = desc.trim() || catObj.nome
+    const baseId = `v-${Date.now()}`
 
     if (isCartao) {
-      // Compra depois do fechamento vai para a fatura seguinte, e na fatura
-      // compra é `entrada` — as duas regras da tela da fatura.
-      const fm = mesDaFaturaDaCompra(contaSel, ano, mes, dia)
-      const fatKey = mesKey(contaSel.id, fm.ano, fm.mes)
-      setFaturaData(prev => {
-        const prevMes = (prev[fatKey] as FaturaMes) ?? { lancamentos: {}, faturaAtual: '' }
-        return {
-          ...prev,
-          [fatKey]: {
-            ...prevMes,
-            lancamentos: {
-              ...prevMes.lancamentos,
-              [dia]: [...(prevMes.lancamentos[dia] ?? []), {
-                id: `v-${Date.now()}`,
-                tipo: tipoNaFatura(tipoSel),
-                descricao: desc.trim() || catSel,
-                categoria: catSel,
-                valor: v,
-                formaPagamento: 'credito' as const,
-                tipoLanc: 'variavel' as const,
-                consolidado: true,
-                diaCompra: dia, mesCompra: mes, anoCompra: ano,
-              }],
-            },
-          },
-        }
-      })
+      // Mesmo formato da tela da fatura: fechamento, parcelas e compra como
+      // `entrada` — ver lancarNaFatura.
+      setFaturaData(prev => lancarNaFatura(prev, {
+        cartao: contaSel, ano: aL, mes: mL, dia: dL,
+        tipoDaCategoria: tipoSel, categoria: catObj.nome, subCategoria: catObj.descricao,
+        descricao, valorParcela: v, parcelas, baseId,
+      }))
     } else {
-      const cat = categorias.find(c => c.nome === catSel)
-      const fp  = cat?.formaPagamento ?? (tipoSel === 'saida' ? 'debito' : 'dinheiro')
-      updateExtratoMes(key, prev => ({
+      const fp  = catObj.formaPagamento ?? (tipoSel === 'saida' ? 'debito' : 'dinheiro')
+      updateExtratoMes(mesKey(contaSel.id, aL, mL), prev => ({
         ...prev,
         lancamentos: {
           ...prev.lancamentos,
-          [dia]: [...(prev.lancamentos[dia] ?? []), {
-            id: `v-${Date.now()}`,
+          [dL]: [...(prev.lancamentos[dL] ?? []), {
+            id: baseId,
             tipo: tipoSel,
-            descricao: desc.trim() || catSel,
-            categoria: catSel,
+            descricao,
+            categoria: catObj.nome,
+            ...(catObj.descricao ? { subCategoria: catObj.descricao } : {}),
             valor: v,
             formaPagamento: (fp as 'debito' | 'pix' | 'transferencia' | 'dinheiro'),
             tipoLanc: 'variavel' as const,
@@ -357,6 +382,8 @@ export default function QuickLaunch() {
 
       {/* Grid */}
       <div style={{ flex: 1, padding: '4px 16px 6px', overflowY: 'auto' }}>
+        <ContasAPagarRapido deps={depsSaldo} />
+        <EntradaPorTexto onTexto={aplicarTexto} />
         <div style={{
           fontSize: 11, fontWeight: 700, color: COR.textoSuave,
           textTransform: 'uppercase', letterSpacing: '.5px',
@@ -397,7 +424,7 @@ export default function QuickLaunch() {
                 </button>
               )
             }
-            const active     = catSel === c.nome
+            const active     = catSel === c.id
             const linha      = c.tipo === 'saida' ? linhaDaCategoria(c) : { prev: 0, real: 0 }
             const previsto   = linha.prev
             const realizado  = linha.real
@@ -408,7 +435,7 @@ export default function QuickLaunch() {
             return (
               <button
                 key={c.id}
-                onClick={() => catSel === c.nome ? fecharInput() : abrirCat(c)}
+                onClick={() => catSel === c.id ? fecharInput() : abrirCat(c)}
                 style={{
                   background: active ? '#eff6ff' : '#fff',
                   border: `2px solid ${active ? COR.azul : COR.borda}`,
@@ -450,10 +477,12 @@ export default function QuickLaunch() {
               background: isCartao ? '#f5f3ff' : '#eff6ff',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>
-              {categorias.find(c => c.nome === catSel)?.icone ?? '💰'}
+              {catObj?.icone ?? '💰'}
             </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{catSel}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>
+                {catObj ? (catObj.descricao ? `${catObj.nome} · ${catObj.descricao}` : catObj.nome) : ''}
+              </div>
               <div style={{ fontSize: 10, color: '#94a3b8' }}>
                 {tipoSel === 'saida' ? 'Despesa' : 'Receita'} · {contaSel?.nome}
                 {isCartao ? ' · Crédito 💳' : ''}
@@ -465,13 +494,54 @@ export default function QuickLaunch() {
             >✕</button>
           </div>
 
+          {/* Quando, parcelas e o último valor da categoria: o que faltava
+              para não precisar ir à tela completa de Lançamentos. */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {(['hoje', 'ontem'] as const).map(q => (
+              <button key={q} onClick={() => setQuando(q)} style={chip(quando === q)}>
+                {q === 'hoje' ? 'Hoje' : 'Ontem'}
+              </button>
+            ))}
+            <label style={{ ...chip(quando !== 'hoje' && quando !== 'ontem'), position: 'relative' }}>
+              {quando !== 'hoje' && quando !== 'ontem'
+                ? dataDoLancamento(quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                : '📅 Outro dia'}
+              <input
+                type="date"
+                max={`${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`}
+                onChange={e => e.target.value && setQuando(e.target.value)}
+                aria-label="Data do lançamento"
+                style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+              />
+            </label>
+            {isCartao && (
+              <select
+                value={parcelas}
+                onChange={e => setParcelas(Number(e.target.value))}
+                aria-label="Parcelas"
+                style={{ ...chip(parcelas > 1), appearance: 'none' }}
+              >
+                {Array.from({ length: 24 }, (_, i) => i + 1).map(n => (
+                  <option key={n} value={n}>{n === 1 ? 'À vista' : `${n}×`}</option>
+                ))}
+              </select>
+            )}
+            {sugerido !== null && !valor && (
+              <button
+                onClick={() => setValor(sugerido.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))}
+                style={{ ...chip(false), marginLeft: 'auto' }}
+              >Último: {fmt(sugerido)}</button>
+            )}
+          </div>
+
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <input
               ref={valorRef}
               value={valor}
               onChange={e => setValor(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && registrar()}
-              placeholder="R$ 0,00"
+              placeholder={parcelas > 1 ? 'Valor da parcela' : 'R$ 0,00'}
+              aria-label={parcelas > 1 ? 'Valor de cada parcela' : 'Valor'}
               inputMode="decimal"
               style={{
                 flex: '1.2', border: `2px solid ${isCartao ? '#7c3aed' : COR.azul}`, borderRadius: 12,
@@ -492,6 +562,12 @@ export default function QuickLaunch() {
               }}
             />
           </div>
+
+          {parcelas > 1 && parseBRL(valor) > 0 && (
+            <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: -4, marginBottom: 8, textAlign: 'center' }}>
+              {parcelas}× de {fmt(parseBRL(valor))} · total {fmt(parseBRL(valor) * parcelas)}
+            </div>
+          )}
 
           <button
             onClick={registrar}

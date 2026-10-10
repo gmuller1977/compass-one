@@ -1839,6 +1839,38 @@ meio segundo), erro e sem internet. Antes o erro ia só para o console.
 cálculo antigo, compra soma e o tipo antigo abate (controle), fechamento do
 cartão e a virada do ano, e um lançamento grava um mês só.
 
+**Fase 2: lançar em 5 segundos** (10/10/2026). Tudo pelo Quick Launch, sem
+precisar da tela completa de Lançamentos:
+
+- **Data**: Hoje / Ontem / outro dia (nunca futuro), por `dataDoLancamento`.
+- **Parcelas no cartão**: `lancarNaFatura` grava como a FaturaCartao (id
+  `<base>-<p>`, `parcelas`, `parcelaAtual`, só a 1ª consolidada, a partir do
+  mês de fatura da compra). O valor digitado é o da PARCELA ("3× de R$ 179").
+- **Variante**: o lançamento guarda `subCategoria` — a categoria é escolhida
+  por id, não pelo nome.
+- **"Último: R$ X"**: o lançamento mais recente da categoria, banco ou fatura.
+- **Contas a pagar** (`ContasAPagarRapido`): a lista da Início
+  (`contasAVencer`) com "Pagar" — grava `fixasConsolidadas` e, se o valor
+  mudou, `fixasValorOverride`, na conta onde a fixa aparece
+  (`contaDoPagamento`, em [`pagarConta.ts`](src/utils/pagarConta.ts)). A conta
+  pode ser trocada, como o "Pagar de qual conta?" de Lançamentos.
+- **Texto e voz** (`EntradaPorTexto`): "47 mercado nubank", "32,90 farmácia
+  ontem", "350 em 3x no roxinho". `interpretarLancamento` roda no aparelho,
+  sem IA nem custo, e só PREENCHE — a pessoa confirma. Variante só casa se
+  for dita ou se for a única com o nome. Voz pelo reconhecimento do navegador.
+- **Instalável**: `manifest.webmanifest`, ícones `icone-*.png` e `sw.js`, que
+  guarda só o esqueleto do app (HTML, JS, CSS) — nada do Supabase.
+- **Sem internet**: mês não gravado fica no `localStorage` do aparelho
+  (`pendentesLocais.ts`) e volta na próxima abertura; o carregamento que
+  falhou sem sinal tenta de novo quando a conexão volta. Se o mesmo mês mudar
+  em outro aparelho antes, a cópia local vence — aceito. Abrir o app sem
+  sinal ainda não mostra os dados (eles não ficam em cache).
+
+`prova59` (26 invariantes).
+
+**Lembrete diário fica para depois**: notificação com o app fechado exige
+push (chaves VAPID + um envio agendado no servidor).
+
 ---
 
 ## Paleta

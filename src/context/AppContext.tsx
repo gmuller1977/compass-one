@@ -4,6 +4,7 @@ import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { mesesAlterados } from '../utils/gravacaoPorMes'
+import { lerPendentes, guardarPendentes } from '../utils/pendentesLocais'
 import { supabase } from '../lib/supabase'
 import { limparUltimaAtividade } from '../utils/inatividade'
 
@@ -354,6 +355,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const novaTentativaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tentativasRef = useRef(0)
   const [gravacao, setGravacao] = useState<EstadoGravacao>('salvo')
+  // Se a cópia dos meses não gravados está guardada no aparelho — ver
+  // utils/pendentesLocais. Sem ela, fechar a aba pede confirmação.
+  const pendentesGuardadosRef = useRef(true)
 
   // State (não ref) para que effects de save re-executem quando o load terminar
   const [dataLoaded, setDataLoadedState] = useState(false)
@@ -505,7 +509,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (row.conta_id !== 'dinheiro' && !contaIdSet.has(row.conta_id)) continue
       extratoLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados as DadosMes
     }
+    // Meses lançados aqui sem sinal e nunca gravados voltam por cima do banco,
+    // e a gravação por mês os envia — ver utils/pendentesLocais.
+    const pendentes = lerPendentes(userId)
     extratoNoBancoRef.current = { ...extratoLoaded }
+    for (const [k, dm] of Object.entries(pendentes.extrato)) {
+      const { contaId } = parseExtratoKey(k)
+      if (contaId === 'dinheiro' || contaIdSet.has(contaId)) extratoLoaded[k] = dm as DadosMes
+    }
     extratoAGravarRef.current = extratoLoaded
     setExtratoState(extratoLoaded)
 
@@ -516,6 +527,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       faturaLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados
     }
     faturaNoBancoRef.current = { ...faturaLoaded }
+    for (const [k, dm] of Object.entries(pendentes.fatura)) {
+      if (contaIdSet.has(parseExtratoKey(k).contaId)) faturaLoaded[k] = dm
+    }
     faturaAGravarRef.current = faturaLoaded
     setFaturaState(faturaLoaded)
 
@@ -657,6 +671,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
     gravandoRef.current++
     atualizarEstadoGravacao()
+    sincronizarPendentes()
     let error: unknown = null
     try {
       ;({ error } = await supabase.from(tabela).upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' }))
@@ -672,8 +687,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       for (const k of alterados) noBanco.current[k] = data[k]
       savedCountRef.current[countKey] = Object.keys(data).length
       if (!temMesNaoGravado()) { falhouRef.current = false; tentativasRef.current = 0 }
+      sincronizarPendentes()
     }
     atualizarEstadoGravacao()
+  }
+
+  /** Guarda no aparelho exatamente os meses que o banco ainda não tem. */
+  function sincronizarPendentes() {
+    const uid = userIdRef.current
+    if (!uid) return
+    const pegar = (data: Record<string, unknown>, noBanco: Record<string, unknown>) =>
+      Object.fromEntries(mesesAlterados(data, noBanco).map(k => [k, data[k]]))
+    pendentesGuardadosRef.current = guardarPendentes(uid, {
+      extrato: pegar(extratoAGravarRef.current, extratoNoBancoRef.current),
+      fatura:  pegar(faturaAGravarRef.current, faturaNoBancoRef.current),
+    })
   }
 
   function temMesNaoGravado(): boolean {
@@ -711,7 +739,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const voltou = () => tentarGravarDeNovo()
+    const voltou = () => {
+      // Abriu sem sinal: o carregamento desistiu. Com a conexão de volta, tenta de novo.
+      const uid = userIdRef.current
+      if (uid && !dataLoadedRef.current && !loadingForUserRef.current) { loadRetryCountRef.current = 0; loadData(uid) }
+      tentarGravarDeNovo()
+    }
     const caiu = () => atualizarEstadoGravacao()
     window.addEventListener('online', voltou)
     window.addEventListener('offline', caiu)
@@ -798,11 +831,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('visibilitychange', mudou)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fechar ou recarregar a aba com mês não gravado perderia o lançamento: o
-  // navegador pergunta antes.
+  // Fechar ou recarregar a aba com mês não gravado e sem cópia no aparelho
+  // perderia o lançamento: o navegador pergunta antes.
   useEffect(() => {
     const antesDeSair = (e: BeforeUnloadEvent) => {
-      if (gravandoRef.current > 0 || temMesNaoGravado()) { e.preventDefault(); e.returnValue = '' }
+      if ((gravandoRef.current > 0 || temMesNaoGravado()) && !pendentesGuardadosRef.current) { e.preventDefault(); e.returnValue = '' }
     }
     window.addEventListener('beforeunload', antesDeSair)
     return () => window.removeEventListener('beforeunload', antesDeSair)
