@@ -33,6 +33,7 @@ import { dispararToastAurix } from './components/aurix/AurixToast'
 import AvisoInatividade from './components/AvisoInatividade'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
+import AvisoNovaVersao from './components/AvisoNovaVersao'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -78,7 +79,7 @@ function AppShell({ children }: { children: ReactNode }) {
     iniciarSessao()
   }, [user?.id])
 
-  if (isMobile) return <>{children}<AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /></>
+  if (isMobile) return <>{children}<AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><AvisoNovaVersao /></>
   return (
     <>
       <Sidebar />
@@ -89,6 +90,7 @@ function AppShell({ children }: { children: ReactNode }) {
       <AurixToast />
       <IndicadorGravacao />
       <SincronizarLembrete />
+      <AvisoNovaVersao />
     </>
   )
 }

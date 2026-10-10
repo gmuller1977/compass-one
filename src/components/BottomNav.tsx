@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { COR } from '../utils/cores'
+import { useSeloNorte } from './norte/useSeloNorte'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -41,6 +42,9 @@ export default function BottomNav() {
   const navigate  = useNavigate()
   const { pathname } = useLocation()
   const [mais, setMais] = useState(false)
+  // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
+  // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
+  const selo = useSeloNorte(isMobile && !pathname.startsWith('/norte'))
 
   if (!isMobile) return null
 
@@ -48,12 +52,21 @@ export default function BottomNav() {
     path === '/' ? pathname === '/' : pathname.startsWith(path)
   const maisAtivo = MAIS.some(m => isActive(m.path))
 
-  const item = (key: string, icon: string, label: string, active: boolean, onClick: () => void) => (
-    <button key={key} onClick={onClick} aria-current={active ? 'page' : undefined} style={{
+  const item = (key: string, icon: string, label: string, active: boolean, onClick: () => void, badge = 0) => (
+    <button key={key} onClick={onClick} aria-current={active ? 'page' : undefined}
+      aria-label={badge ? `${label}, ${badge} ${badge === 1 ? 'aviso novo' : 'avisos novos'}` : undefined} style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
       gap: 2, padding: '4px 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
     }}>
-      <span aria-hidden style={{ fontSize: 22 }}>{icon}</span>
+      <span aria-hidden style={{ fontSize: 22, position: 'relative' }}>
+        {icon}
+        {badge > 0 && (
+          // Branco sobre #b91c1c: 6,47:1.
+          <span style={{ position: 'absolute', top: -4, right: -10, minWidth: 18, height: 18, padding: '0 5px', boxSizing: 'border-box',
+            borderRadius: 9, background: '#b91c1c', color: '#fff', fontSize: 12, fontWeight: 800, lineHeight: '18px',
+            textAlign: 'center', border: '2px solid #fff' }}>{badge}</span>
+        )}
+      </span>
       {/* Inativo em textoSuave (4,76:1 no branco): o #94a3b8 de antes dava 2,6.
           12 px, não 10: "letras pequenas" foi a queixa do redesenho do celular. */}
       <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? COR.azul : COR.textoSuave, whiteSpace: 'nowrap' }}>
@@ -113,7 +126,7 @@ export default function BottomNav() {
               </div>
             )
           }
-          return item(n.path, n.icon, n.label, isActive(n.path), () => navigate(n.path))
+          return item(n.path, n.icon, n.label, isActive(n.path), () => navigate(n.path), n.path === '/norte' ? selo : 0)
         })}
         {item('mais', '☰', 'Mais', maisAtivo, () => setMais(true))}
       </div>

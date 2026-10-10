@@ -2044,8 +2044,25 @@ grava**. Regras em [`acoesNorte.ts`](src/utils/acoesNorte.ts):
 - `prova64` (23 invariantes): leitura e recusas, e que o lançado aparece no
   Radar e na folga e a conta paga sai das contas a pagar.
 
-Próxima fase combinada: **C** — puxa conversa. Plano em
-`/mnt/project-files/analises/norte-agente.md`.
+**Fase C: o Norte puxa conversa** (10/10/2026). Ao abrir, sem pergunta e sem
+IA, ele diz o que importa hoje ([`norteProativo.ts`](src/utils/norteProativo.ts),
+`conversaDoDia`, tudo da `bussolaDoMes`): conta atrasada, que vence hoje ou
+amanhã (com "Marcar como paga", o mesmo cartão de confirmação da Fase B),
+o resto da semana, saldo que não cobre as contas, variável que passou ou está
+acelerada, a categoria mais estourada, mês negativo à frente e, a partir das
+18h, "ainda não vi gastos de hoje" (`lancouHoje`, a regra do lembrete das
+21h, com a data da COMPRA na fatura).
+
+- **Selo** no ícone do Norte na barra de baixo: quantos itens IMPORTANTES de
+  hoje ainda não foram vistos (`useSeloNorte`). Abrir a tela marca como visto
+  (localStorage por usuário e por dia); item importante novo acende de novo.
+  A Bússola da barra é guardada por identidade dos dados (`bussolaDeHoje`),
+  para não refazer a série a cada troca de tela.
+- **Aviso de versão nova** (`AvisoNovaVersao`, no `AppShell`): o app aberto
+  não recarregava depois de uma publicação, e o Norte seguiu dizendo "não
+  consigo lançar" horas depois da Fase B. Ao voltar para o app e a cada 5 min
+  ele compara o script do `index.html` publicado com o que está rodando.
+- `prova65` (28 invariantes).
 ---
 
 ## Paleta

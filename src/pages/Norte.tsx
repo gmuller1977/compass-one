@@ -11,6 +11,7 @@ import { useApp, type DadosMes } from '../context/AppContext'
 import type { Deps } from '../utils/saldoConta'
 import { reconhecimentoDeVoz, type Reconhecimento } from '../utils/voz'
 import { COR } from '../utils/cores'
+import { conversaDoDia, lancouHoje, marcarVisto, type ItemDoDia } from '../utils/norteProativo'
 import { SIDEBAR_W } from '../components/Sidebar'
 
 /**
@@ -18,8 +19,10 @@ import { SIDEBAR_W } from '../components/Sidebar'
  * o agente, talvez uma tela única só para ele". Antes era um painel por cima
  * da tela, aberto por um botão flutuante.
  *
- *   - Abre com o resumo do dia, sem precisar perguntar — os números da
- *     Bússola, calculados no aparelho, sem IA.
+ *   - Abre puxando conversa (Fase C): o que importa hoje — conta vencendo,
+ *     saldo que não cobre, plano estourado, gastos do dia não lançados —,
+ *     calculado no aparelho, sem IA (utils/norteProativo). Conta a pagar já
+ *     vem com "Marcar como paga".
  *   - Perguntas prontas conforme a situação (`sugestoesDoNorte`).
  *   - Resposta curta, com botões para a tela certa: o Norte escreve [[radar]]
  *     e aqui vira "Ver no Radar" (`separarAcoes`).
@@ -30,7 +33,7 @@ import { SIDEBAR_W } from '../components/Sidebar'
 export default function Norte() {
   const navigate = useNavigate()
   const { dados, deps, messages, loading, enviar, limpar, nome, marcarPedido, lancar, pagar } = useNorte()
-  const { extratoData } = useApp()
+  const { extratoData, faturaData, user } = useApp()
   const [texto, setTexto] = useState('')
   const [ouvindo, setOuvindo] = useState(false)
   const rec = useRef<Reconhecimento | null>(null)
@@ -39,8 +42,16 @@ export default function Norte() {
   // No computador não há barra de baixo: a caixa encosta no pé da tela.
   const celular = typeof window !== 'undefined' && window.innerWidth < 640
   const sugestoes = useMemo(() => sugestoesDoNorte(dados), [dados])
-  const b = dados.bussola
-  const r = b.ritmo
+  const conversa = useMemo(() => {
+    const agora = new Date()
+    return conversaDoDia({ bussola: dados.bussola, nome, hoje: agora, lancouHoje: lancouHoje(extratoData as Record<string, DadosMes>, faturaData, agora) })
+  }, [dados, nome, extratoData, faturaData])
+  // Abriu a tela: o que está aqui foi visto, e o selo da barra de baixo apaga.
+  const idsDoDia = conversa.itens.map(i => i.id).join(',')
+  useEffect(() => {
+    if (user?.id) marcarVisto(user.id, conversa.itens, new Date())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, idsDoDia])
 
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [messages, loading])
 
@@ -73,9 +84,6 @@ export default function Norte() {
     } else navigate(rota)
   }
 
-  const hora = new Date().getHours()
-  const saudacao = hora >= 5 && hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'
-
   return (
     <div style={{ minHeight: '100dvh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <header style={{
@@ -103,23 +111,20 @@ export default function Norte() {
       </header>
 
       <main style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 210px' }}>
-        {/* O resumo do dia: sem IA, os números da Bússola. */}
+        {/* Fase C: o Norte puxa conversa — o que importa hoje, sem IA (norteProativo). */}
         <Bolha>
-          <div style={{ fontSize: 16, fontWeight: 700, color: COR.texto }}>{saudacao}{nome ? `, ${nome}` : ''}! 👋</div>
-          {r ? (
-            <div style={{ marginTop: 6, fontSize: 15, color: COR.texto, lineHeight: 1.5 }}>
-              {r.estado === 'passou'
-                ? <>O gasto variável passou do plano em <b style={{ color: COR.erroTexto }}>{fmt(r.gasto - r.planejado)}</b>.</>
-                : <>Ainda dá para gastar <b>{fmt(r.sobra)}</b>, uns <b>{fmt(r.porDia)}</b> por dia.</>}
-              {' '}O mês termina com <b style={{ color: b.fechamento < 0 ? COR.erroTexto : undefined }}>{fmt(b.fechamento)}</b>.
-              {b.contas.length > 0 && <> {b.contas.length === 1 ? 'Uma conta vence' : `${b.contas.length} contas vencem`} nos próximos dias.</>}
-            </div>
-          ) : (
-            <div style={{ marginTop: 6, fontSize: 15, color: COR.texto, lineHeight: 1.5 }}>
-              Hoje você tem <b>{fmt(b.saldoHoje)}</b> no banco e em dinheiro, e o mês termina com <b>{fmt(b.fechamento)}</b>.
+          <div style={{ fontSize: 16, fontWeight: 700, color: COR.texto }}>{conversa.saudacao} 👋</div>
+          <div style={{ marginTop: 6 }}><Texto texto={conversa.abertura} /></div>
+          {conversa.itens.length > 0 && (
+            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {conversa.itens.map(it => (
+                <ItemDoDiaLinha key={it.id} it={it} onAcao={irPara}
+                  cad={{ categorias: deps.categorias, contas: deps.contas, aVencer: dados.bussola.contas, extratoData: extratoData as Record<string, DadosMes> }}
+                  onPagar={p => pagar(p)} />
+              ))}
             </div>
           )}
-          <div style={{ marginTop: 8, fontSize: 14, color: COR.textoSuave }}>Pergunte o que quiser sobre o seu dinheiro.</div>
+          <div style={{ marginTop: 10, fontSize: 14, color: COR.textoSuave }}>Pergunte o que quiser, ou me diga um gasto que eu lanço.</div>
         </Bolha>
 
         {messages.map(m => (
@@ -211,6 +216,44 @@ function Bolha({ children }: { children: ReactNode }) {
     </div>
   )
 }
+
+/** Uma linha da conversa do dia: o aviso e, quando há, o botão que resolve. */
+function ItemDoDiaLinha({ it, onAcao, cad, onPagar }: {
+  it: ItemDoDia; onAcao: (a: AcaoNorte) => void; cad: Cad; onPagar: (p: PedidoPagar) => boolean
+}) {
+  const [aberto, setAberto] = useState(false)
+  const c = it.pagar
+  const pedido: PedidoPagar | null = c ? {
+    tipo: 'pagar', id: c.id, ano: c.ano, mes: c.mes, valor: c.valor, previsto: c.valor,
+    nome: c.fatura ? `Fatura ${c.nome}` : c.descricao ? `${c.nome} · ${c.descricao}` : c.nome,
+  } : null
+  return (
+    <div style={{ background: it.importante ? '#fff7ed' : '#f8faff', borderRadius: 14, padding: '10px 12px' }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <span aria-hidden style={{ fontSize: 18, lineHeight: '22px' }}>{it.icone}</span>
+        <div style={{ flex: 1, minWidth: 0 }}><Texto texto={it.texto} /></div>
+      </div>
+      {(pedido || it.acao) && !aberto && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingLeft: 28 }}>
+          {pedido && (
+            <button onClick={() => setAberto(true)} style={botaoItem}>Marcar como paga ›</button>
+          )}
+          {it.acao && <button onClick={() => onAcao(it.acao!)} style={botaoItem}>{ACOES_NORTE[it.acao].rotulo} ›</button>}
+        </div>
+      )}
+      {pedido && aberto && (
+        <CartaoPedido pedido={pedido} cad={cad}
+          onFeito={p => (p.tipo === 'pagar' ? onPagar(p) : false)}
+          onCancelar={() => setAberto(false)} />
+      )}
+    </div>
+  )
+}
+
+const botaoItem = {
+  border: 'none', background: '#e0eaff', color: COR.azul, borderRadius: 999, padding: '8px 14px',
+  minHeight: 40, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+} as const
 
 type Cad = { categorias: Deps['categorias']; contas: Deps['contas']; aVencer: ReturnType<typeof useNorte>['dados']['bussola']['contas']; extratoData: Record<string, DadosMes> }
 
