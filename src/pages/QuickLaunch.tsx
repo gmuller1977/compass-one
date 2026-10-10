@@ -399,9 +399,12 @@ export default function QuickLaunch() {
               <button
                 key={c.id}
                 onClick={() => catSel === c.id ? fecharInput() : abrirCat(c)}
+                // Quadro azul como o topo (pedido do Guilherme, 10/10/2026), com
+                // o círculo do ícone em cinza claro. No azul, a paleta escura:
+                // #86efac 4,8 e #fecaca 4,6 no extremo #1e40af; rótulo a 75%.
                 style={{
-                  background: active ? '#eff6ff' : '#fff',
-                  border: `2px solid ${active ? COR.azul : 'transparent'}`, boxShadow: M.sombra,
+                  background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)',
+                  border: `2px solid ${active ? '#fff' : 'transparent'}`, boxShadow: '0 4px 14px rgba(15,40,120,.18)',
                   borderRadius: 18, padding: '14px 6px', minHeight: 112, minWidth: 0,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   cursor: 'pointer', transform: active ? 'scale(.95)' : undefined,
@@ -410,19 +413,19 @@ export default function QuickLaunch() {
               >
                 <span aria-hidden style={{
                   width: 46, height: 46, borderRadius: '50%', fontSize: 24,
-                  background: `${/^#[0-9a-f]{6}$/i.test(c.cor ?? '') ? c.cor : COR.azul}1f`,
+                  background: '#e6ebf1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>{c.icone}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2,
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', textAlign: 'center', lineHeight: 1.2,
                   maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
                 </span>
                 {temPrevisto ? (
-                  <span style={{ fontSize: 13, color: corDoDisponivel(disponivel), fontWeight: 700, textAlign: 'center' }}>
+                  <span style={{ fontSize: 13, color: disponivel < 0 ? '#fecaca' : '#86efac', fontWeight: 700, textAlign: 'center' }}>
                     {fmt(disponivel)}
                   </span>
                 ) : (
-                  <span style={{ fontSize: 13, color: COR.textoSuave }}>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,.75)' }}>
                     {ult ? fmt(ult) : c.tipo === 'entrada' ? 'receita' : ''}
                   </span>
                 )}
