@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { tipoNaFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -1033,7 +1034,10 @@ export default function NovoLancamentoExtrato() {
     const diaFuturoAlvo = ehDiaFuturo(diaSel)
     const contaSel = contas.find(c => c.id === fBancoConsolidado)
     if (contaSel?.tipo === 'cartao') {
-      const fatKey = mesKey(fBancoConsolidado, ano, mes)
+      // Mesmas regras da tela da fatura: depois do fechamento a compra vai
+      // para a fatura seguinte, e na fatura compra é `entrada` (lancamentoRapido).
+      const fm = mesDaFaturaDaCompra(contaSel, ano, mes, diaSel)
+      const fatKey = mesKey(fBancoConsolidado, fm.ano, fm.mes)
       ;(setFaturaData as React.Dispatch<React.SetStateAction<Record<string, unknown>>>)(prev => {
         const dm = (prev[fatKey] ?? { lancamentos: {} }) as { lancamentos: Record<number, unknown[]> }
         return {
@@ -1043,7 +1047,7 @@ export default function NovoLancamentoExtrato() {
             lancamentos: {
               ...dm.lancamentos,
               [diaSel]: [...((dm.lancamentos[diaSel]) ?? []), {
-                id: `v-${Date.now()}`, tipo: fTipo,
+                id: `v-${Date.now()}`, tipo: tipoNaFatura(fTipo),
                 descricao: fDesc.trim() || fCat, categoria: fCat,
                 valor, consolidado: !diaFuturoAlvo,
               }],

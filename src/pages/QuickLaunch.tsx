@@ -7,6 +7,10 @@ import BottomNav from '../components/BottomNav'
 import CompassCard from '../components/CompassCard'
 import type { DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
+import { saldoRealizadoConta, type Deps } from '../utils/saldoConta'
+import { construirRealizadoMes } from '../utils/realizadoMes'
+import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
+import { tipoNaFatura, totalComprasFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -20,7 +24,7 @@ function useIsMobile() {
 
 
 type FaturaLanc = {
-  id: string; tipo: 'saida' | 'entrada'
+  id: string; tipo: 'saida' | 'entrada'; consolidado?: boolean
   descricao: string; categoria: string
   valor: number; formaPagamento: 'credito'
   tipoLanc: 'variavel'
@@ -37,40 +41,10 @@ function fmt(n: number) {
 function NOMES_MESES_SHORT() {
   return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 }
-function calcSaldoBanco(
-  contaId: string, saldoInicial: number,
-  extratoData: Record<string, import('../context/AppContext').DadosMes>,
-  ano: number, mes: number, dia: number,
-): number {
-  const prefix = contaId + '-'
-  const curYM  = ano * 100 + (mes + 1)
-  const curKey = mesKey(contaId, ano, mes)
-  const curDados = extratoData[curKey]
-  if (curDados?.saldoBanco && curDados.saldoBanco !== '0') return parseBRL(curDados.saldoBanco)
-  let baseYM = 0, base = saldoInicial
-  for (const [k, v] of Object.entries(extratoData)) {
-    if (!k.startsWith(prefix) || !v.saldoBanco || v.saldoBanco === '0') continue
-    const [sy, sm] = k.slice(prefix.length).split('-')
-    const ym = parseInt(sy) * 100 + parseInt(sm)
-    if (ym < curYM && ym > baseYM) { baseYM = ym; base = parseBRL(v.saldoBanco) }
-  }
-  for (const [k, v] of Object.entries(extratoData)) {
-    if (!k.startsWith(prefix)) continue
-    const [sy, sm] = k.slice(prefix.length).split('-')
-    const ym = parseInt(sy) * 100 + parseInt(sm)
-    if (ym <= baseYM || ym > curYM) continue
-    const isCur = ym === curYM
-    Object.entries(v.lancamentos).forEach(([d, lcs]) => {
-      if (isCur && Number(d) > dia) return
-      lcs.forEach(l => { base += l.tipo === 'entrada' ? l.valor : -l.valor })
-    })
-  }
-  return base
-}
 const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb']
 
 export default function QuickLaunch() {
-  const { user, contas, categorias, extratoData, faturaData, planos, updateExtratoMes, setFaturaData, setCategorias, perfil } = useApp()
+  const { user, contas, categorias, extratoData, faturaData, planos, updateExtratoMes, setFaturaData, setCategorias, perfil, saldoInicialDinheiro, cenarioPrevisao } = useApp()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
@@ -116,10 +90,6 @@ export default function QuickLaunch() {
   const mesDadosBanco: DadosMes = (extratoData as Record<string, DadosMes>)[key] ?? {
     lancamentos: {}, saldoBanco: '0',
   }
-  const mesDadosCartao: FaturaMes = (faturaData as Record<string, FaturaMes>)[key] ?? {
-    lancamentos: {}, faturaAtual: '',
-  }
-
   // Limite planejado e total das faturas: os dois sao AGREGADOS, do conjunto
   // dos cartoes. O planejamento e por total, nao por cartao — nao ha no dado a
   // que cartao cada categoria pertence. Ver utils/limiteCartao.
@@ -127,37 +97,58 @@ export default function QuickLaunch() {
     () => limiteCartaoPlanejado(planos[ano], categorias, mes),
     [planos, ano, categorias, mes],
   )
+  // Compras menos estornos: na fatura `entrada` é compra (ver lancamentoRapido).
   const totalFaturasMes = useMemo(() => {
     const fat = faturaData as Record<string, FaturaMes>
-    return contas.filter(c => c.tipo === 'cartao').reduce((soma, c) => {
-      const dm = fat[mesKey(c.id, ano, mes)]
-      return soma + Object.values(dm?.lancamentos ?? {}).flat()
-        .filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
-    }, 0)
+    return contas.filter(c => c.tipo === 'cartao').reduce(
+      (soma, c) => soma + totalComprasFatura(fat[mesKey(c.id, ano, mes)]), 0)
   }, [contas, faturaData, ano, mes])
+
+  // O saldo das contas é o MESMO do Radar e de Lançamentos: conciliação,
+  // fixas confirmadas e pagamento de fatura entram (saldoConta). Antes o
+  // Quick Launch somava só os lançamentos, com uma função própria.
+  const depsSaldo: Deps = useMemo(() => ({
+    extratoData: extratoData as Record<string, DadosMes>,
+    faturaData: faturaData as Deps['faturaData'],
+    contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao,
+  }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
 
   const saldoAtual = useMemo(() => {
     if (!contaSel) return 0
     if (isCartao) return limitePlanejadoCartoes - totalFaturasMes
-    return calcSaldoBanco(contaSel.id, contaSel.saldoInicial, extratoData as Record<string, DadosMes>, ano, mes, dia)
-  }, [contaSel, isCartao, extratoData, ano, mes, dia, limitePlanejadoCartoes, totalFaturasMes])
+    return saldoRealizadoConta(contaSel.id, ano, mes, depsSaldo)
+  }, [contaSel, isCartao, ano, mes, depsSaldo, limitePlanejadoCartoes, totalFaturasMes])
 
   const saldosBanco = useMemo(() => {
     const map: Record<string, number> = {}
-    for (const c of contasBanco) {
-      map[c.id] = calcSaldoBanco(c.id, c.saldoInicial, extratoData as Record<string, DadosMes>, ano, mes, dia)
-    }
+    for (const c of contasBanco) map[c.id] = saldoRealizadoConta(c.id, ano, mes, depsSaldo)
     return map
-  }, [contasBanco, extratoData, ano, mes, dia])
+  }, [contasBanco, ano, mes, depsSaldo])
+
+  // Previsto e realizado de cada categoria saem das linhas do Radar
+  // (totaisDoMes), por (nome, variante) — cartão e dinheiro incluídos.
+  const linhasSaidaDoMes = useMemo(() => {
+    const planoAno = planos[ano]
+    const { saidasMap, entradasMap } = construirRealizadoMes({
+      ano, mes, extratoData: extratoData as Record<string, DadosMes>,
+      faturaData, contas, categorias, planoAno,
+    })
+    const t = totaisDoMes({ mes, planoAno, categorias, cartaoNomes: nomesDeCartao(contas), entradasMap, saidasMap })
+    const porChave = new Map<string, { prev: number; real: number }>()
+    for (const l of t.saida.linhas) porChave.set(catKey(l.nome, l.descricao), { prev: l.prev, real: l.real })
+    return porChave
+  }, [planos, ano, mes, extratoData, faturaData, contas, categorias])
 
   const gastosHoje = useMemo(() => {
-    if (isCartao) {
-      return (mesDadosCartao.lancamentos[dia] ?? [])
-        .filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
+    if (isCartao && contaSel) {
+      // A compra de hoje pode ter ido para a fatura seguinte (fechamento).
+      const fm = mesDaFaturaDaCompra(contaSel, ano, mes, dia)
+      const dm = (faturaData as Record<string, FaturaMes>)[mesKey(contaSel.id, fm.ano, fm.mes)]
+      return totalComprasFatura({ lancamentos: { [dia]: dm?.lancamentos[dia] ?? [] } })
     }
     return (mesDadosBanco.lancamentos[dia] ?? [])
       .filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
-  }, [isCartao, mesDadosBanco, mesDadosCartao, dia])
+  }, [isCartao, contaSel, faturaData, ano, mes, mesDadosBanco, dia])
 
   // Categorias variáveis
   const catsVariaveis = useMemo(() => categorias.filter(c => !c.fixa), [categorias])
@@ -194,25 +185,8 @@ export default function QuickLaunch() {
     return max > 0 ? max : null
   }
 
-  // Previsto do mês (do planejamento)
-  function previstoMes(catNome: string): number {
-    const planoAno = planos[ano]
-    if (!planoAno) return 0
-    const cat = planoAno.saidas?.find(c => c.nome === catNome)
-    return cat?.v?.[mes] ?? 0
-  }
-
-  // Realizado do mês (soma de todos os extratos de contas bancárias)
-  function realizadoMes(catNome: string): number {
-    let total = 0
-    for (const c of contasBanco) {
-      const d = (extratoData as Record<string, DadosMes>)[mesKey(c.id, ano, mes)]
-      if (!d) continue
-      Object.values(d.lancamentos).flat().forEach(l => {
-        if (l.categoria === catNome && l.tipo === 'saida') total += l.valor
-      })
-    }
-    return total
+  function linhaDaCategoria(c: { nome: string; descricao?: string }) {
+    return linhasSaidaDoMes.get(catKey(c.nome, c.descricao)) ?? { prev: 0, real: 0 }
   }
 
   function abrirCat(c: typeof catsGrid[0]) {
@@ -226,22 +200,27 @@ export default function QuickLaunch() {
     if (!catSel || v <= 0 || !contaSel) return
 
     if (isCartao) {
+      // Compra depois do fechamento vai para a fatura seguinte, e na fatura
+      // compra é `entrada` — as duas regras da tela da fatura.
+      const fm = mesDaFaturaDaCompra(contaSel, ano, mes, dia)
+      const fatKey = mesKey(contaSel.id, fm.ano, fm.mes)
       setFaturaData(prev => {
-        const prevMes = (prev[key] as FaturaMes) ?? { lancamentos: {}, faturaAtual: '' }
+        const prevMes = (prev[fatKey] as FaturaMes) ?? { lancamentos: {}, faturaAtual: '' }
         return {
           ...prev,
-          [key]: {
+          [fatKey]: {
             ...prevMes,
             lancamentos: {
               ...prevMes.lancamentos,
               [dia]: [...(prevMes.lancamentos[dia] ?? []), {
                 id: `v-${Date.now()}`,
-                tipo: tipoSel,
+                tipo: tipoNaFatura(tipoSel),
                 descricao: desc.trim() || catSel,
                 categoria: catSel,
                 valor: v,
                 formaPagamento: 'credito' as const,
                 tipoLanc: 'variavel' as const,
+                consolidado: true,
                 diaCompra: dia, mesCompra: mes, anoCompra: ano,
               }],
             },
@@ -419,8 +398,9 @@ export default function QuickLaunch() {
               )
             }
             const active     = catSel === c.nome
-            const previsto   = c.tipo === 'saida' ? previstoMes(c.nome) : 0
-            const realizado  = c.tipo === 'saida' ? realizadoMes(c.nome) : 0
+            const linha      = c.tipo === 'saida' ? linhaDaCategoria(c) : { prev: 0, real: 0 }
+            const previsto   = linha.prev
+            const realizado  = linha.real
             const disponivel = previsto - realizado
             const temPrevisto = previsto > 0
             const corDisp = disponivel < 0 ? COR.vermelho : disponivel < previsto * .2 ? '#b45309' : COR.verde
@@ -626,8 +606,7 @@ export default function QuickLaunch() {
                   {contasCartao.map(c => {
                     const sel = c.id === contaSel?.id
                     const fatMes = (faturaData as Record<string, FaturaMes>)[mesKey(c.id, ano, mes)] ?? { lancamentos: {}, faturaAtual: '' }
-                    const totalFat = Object.values(fatMes.lancamentos ?? {}).flat()
-                      .filter(l => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0)
+                    const totalFat = totalComprasFatura(fatMes)
 
                     return (
                       <div
