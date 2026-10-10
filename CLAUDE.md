@@ -2003,6 +2003,16 @@ mudou (`prova58`–`60` seguem verdes).
 - **Barra de baixo**: rótulos 12 px, "Posso comprar?" virou "Comprar?" para
   caber, "+" de 58 px.
 
+**O topo da Bússola é o resumo do mês** (pedido do Guilherme em 10/10/2026:
+"'passou do plano em' fica muito estranho"). Na ordem: **saldo atual**
+de bancos e dinheiro (`b.saldoHoje`, o "Saldo atual" do Radar); **saldo
+final previsto** (`b.fechamento`) com os três cenários ali mesmo e "como
+cheguei nesse número"; e o cartão **"Outubro até agora"**, previsto ×
+realizado de receitas, despesas e resultado (os totais de
+`useMesDaInicio`, os mesmos do Radar). A folga da variável (`ritmoDoMes`)
+virou uma linha no pé desse cartão. Sem plano no mês, a coluna Previsto
+fica vazia.
+
 **O Lançar começa pela CATEGORIA, depois o MÊS, depois a forma de pagar**
 (pedido do Guilherme em 10/10/2026: "ficou meio confuso devido a seleção de
 contas"). Saiu o cartão "Trocar conta" do topo. Tocar na categoria abre dois

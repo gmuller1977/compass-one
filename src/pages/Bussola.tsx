@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
@@ -24,9 +24,10 @@ const ROTULO = 'rgba(255,255,255,.75)'
  * A Início do celular, no desenho dos apps de banco (redesenho de 10/10/2026,
  * pedido do Guilherme: "frio, letras pequenas, muito texto").
  *
- *   - Topo azul com UM número: quanto ainda dá para gastar (a folga do
- *     `ritmoDoMes`). Embaixo, menor: com quanto o mês termina e o que tem hoje
- *     no banco. O olho esconde os valores, como no app do banco.
+ *   - Topo azul com o resumo do mês (pedido do Guilherme, 10/10/2026): o
+ *     saldo atual de bancos e dinheiro, e o saldo final previsto com os três
+ *     cenários ali mesmo. Logo abaixo, previsto × realizado com o resultado
+ *     e a folga da variável (`ritmoDoMes`). O olho esconde os valores.
  *   - Uma fileira de atalhos redondos: Lançar, Pagar, Posso comprar?, Radar.
  *   - Cartões curtos: uma lista com ícone colorido da categoria e o valor à
  *     direita. Explicação só quando tocada ("como cheguei").
@@ -42,7 +43,7 @@ export default function Bussola() {
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const mesNome = MESES[mes]
 
-  const { totalEntradas, totalSaidas, totalPrevS, linhasSaida, deps, temPlano, usaPlanoNoMes } = useMesDaInicio(ano, mes)
+  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, linhasSaida, deps, temPlano, usaPlanoNoMes } = useMesDaInicio(ano, mes)
   const b = useMemo(
     () => bussolaDoMes({ deps, linhasSaida, categorias, usaPlanoNoMes }),
     [deps, linhasSaida, categorias, usaPlanoNoMes],
@@ -98,53 +99,77 @@ export default function Bussola() {
             </button>
           </div>
 
-          {r ? (
-            <div style={{ marginTop: 26 }}>
-              <div style={{ fontSize: 15, color: ROTULO }}>{passou ? 'Passou do plano em' : 'Ainda dá para gastar'}</div>
-              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.02em', marginTop: 2, lineHeight: 1.1,
-                color: passou ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
-                {v(passou ? r.gasto - r.planejado : r.sobra)}
-              </div>
-              <div style={{ fontSize: 15, color: ROTULO, marginTop: 6 }}>
-                {passou ? 'cada gasto variável agora sai do saldo'
-                  : r.diasRestantes === 1 ? 'hoje é o último dia do mês'
-                    : <><b style={{ color: '#fff' }}>{v(r.porDia)}</b> por dia até o dia {r.totalDias}</>}
-              </div>
-            </div>
-          ) : (
-            <div style={{ marginTop: 26 }}>
-              <div style={{ fontSize: 15, color: ROTULO }}>{mesNome} termina com</div>
-              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.02em', marginTop: 2, lineHeight: 1.1,
-                color: b.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(b.fechamento)}</div>
-            </div>
-          )}
+          {/* ── O resumo do mês (pedido do Guilherme em 10/10/2026): primeiro
+              o que tenho hoje, depois com quanto o mês termina, com o
+              cenário ali mesmo. O "passou do plano em" do topo saiu. ── */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 15, color: ROTULO }}>Saldo atual · bancos e dinheiro</div>
+            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-.02em', marginTop: 2, lineHeight: 1.1,
+              color: b.saldoHoje < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(b.saldoHoje)}</div>
+          </div>
 
-          {/* Os dois números de apoio, em pílulas translúcidas. */}
-          <div style={{ display: 'grid', gridTemplateColumns: r ? '1fr 1fr' : '1fr', gap: 10, marginTop: 20 }}>
-            {r && (
-              <button onClick={() => setMemoriaAberta(a => !a)} aria-expanded={memoriaAberta} style={pilulaTopo}>
-                <span style={{ fontSize: 13, color: ROTULO }}>Mês termina com</span>
-                <span style={{ fontSize: 17, fontWeight: 700, color: b.fechamento < 0 ? '#fecaca' : '#fff' }}>{v(b.fechamento)}</span>
-                <span style={{ fontSize: 13, color: '#fff', textDecoration: 'underline', textUnderlineOffset: 3 }}>
-                  {memoriaAberta ? 'fechar' : 'como cheguei'}
-                </span>
-              </button>
-            )}
-            <div style={pilulaTopo}>
-              <span style={{ fontSize: 13, color: ROTULO }}>Hoje no banco</span>
-              <span style={{ fontSize: 17, fontWeight: 700, color: b.saldoHoje < 0 ? '#fecaca' : '#fff' }}>{v(b.saldoHoje)}</span>
-              {!r && (
-                <button onClick={() => setMemoriaAberta(a => !a)} aria-expanded={memoriaAberta} style={{
-                  background: 'none', border: 'none', padding: 0, color: '#fff', fontSize: 13, fontFamily: 'inherit',
-                  textAlign: 'left', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
-                }}>{memoriaAberta ? 'fechar' : 'como cheguei'}</button>
-              )}
+          <div style={{ ...pilulaTopo, alignItems: 'stretch', cursor: 'default', marginTop: 18, gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontSize: 14, color: ROTULO }}>Saldo final previsto</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: b.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                {v(b.fechamento)}
+              </span>
             </div>
+            <div role="radiogroup" aria-label="Cenário da previsão" style={{ display: 'flex', gap: 6 }}>
+              {(['pessimista', 'moderado', 'otimista'] as const).map(c => {
+                const ativo = cenarioPrevisao === c
+                return (
+                  <button key={c} role="radio" aria-checked={ativo} onClick={() => setCenarioPrevisao(c)} style={{
+                    flex: 1, minHeight: 36, borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 14, fontWeight: 700, background: ativo ? '#fff' : 'rgba(255,255,255,.14)',
+                    color: ativo ? '#1e3a8a' : '#fff',
+                  }}>{c.charAt(0).toUpperCase() + c.slice(1)}</button>
+                )
+              })}
+            </div>
+            <button onClick={() => setMemoriaAberta(a => !a)} aria-expanded={memoriaAberta} style={{
+              background: 'none', border: 'none', padding: 0, color: '#fff', fontSize: 14, fontFamily: 'inherit',
+              textAlign: 'left', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
+            }}>{memoriaAberta ? 'fechar o cálculo' : 'como cheguei nesse número'}</button>
           </div>
         </div>
       </header>
 
       <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-44px auto 0', display: 'grid', gap: 16 }}>
+        {/* ── Previsto × realizado do mês, com o resultado ────────────── */}
+        <Cartao>
+          <TituloCartao>{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} até agora</TituloCartao>
+          <div role="table" aria-label={`Previsto e realizado de ${mesNome}`} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 14, rowGap: 10, alignItems: 'baseline' }}>
+            <span role="columnheader" />
+            <span role="columnheader" style={cabecalhoTabela}>{usaPlanoNoMes ? 'Previsto' : ''}</span>
+            <span role="columnheader" style={cabecalhoTabela}>Realizado</span>
+            {([
+              ['Receitas', totalPrevE, totalEntradas, COR.sucessoTexto],
+              ['Despesas', totalPrevS, totalSaidas, COR.erroTexto],
+            ] as const).map(([rot, prev, real, cor]) => (
+              <Fragment key={rot}>
+                <span style={{ fontSize: M.corpo, color: COR.texto }}>{rot}</span>
+                <span style={{ ...celulaTabela, color: COR.textoSuave }}>{usaPlanoNoMes ? v(prev) : ''}</span>
+                <span style={{ ...celulaTabela, color: cor }}>{v(real)}</span>
+              </Fragment>
+            ))}
+            <span style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto, borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }}>Resultado</span>
+            <span style={{ ...celulaTabela, color: COR.textoSuave, borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }}>
+              {usaPlanoNoMes ? v(totalPrevE - totalPrevS) : ''}
+            </span>
+            <span style={{ ...celulaTabela, fontWeight: 800, borderTop: `1px solid ${COR.borda}`, paddingTop: 10,
+              color: totalEntradas - totalSaidas < 0 ? COR.erroTexto : COR.sucessoTexto }}>{v(totalEntradas - totalSaidas)}</span>
+          </div>
+          {r && (
+            <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 14, lineHeight: 1.45 }}>
+              {passou
+                ? <>Gastos variáveis: <b style={{ color: COR.erroTexto }}>{v(r.gasto - r.planejado)}</b> acima do planejado.</>
+                : <>Gastos variáveis: ainda dá <b style={{ color: COR.texto }}>{v(r.sobra)}</b>
+                    {r.diasRestantes > 1 ? <>, {v(r.porDia)} por dia até o dia {r.totalDias}.</> : ' até hoje, último dia do mês.'}</>}
+            </div>
+          )}
+        </Cartao>
+
         {/* ── Atalhos: o que se faz todo dia ─────────────────────────── */}
         <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
           <Atalho icone={<span style={{ fontSize: 32, fontWeight: 300, lineHeight: 1 }}>+</span>} rotulo="Lançar" destaque onClick={() => navigate('/lancar')} />
@@ -236,6 +261,9 @@ const pilulaTopo: CSSProperties = {
   background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
   padding: '12px 14px', color: '#fff', fontFamily: 'inherit', cursor: 'pointer', minWidth: 0,
 }
+
+const cabecalhoTabela: CSSProperties = { fontSize: 13, fontWeight: 600, color: COR.textoSuave, textAlign: 'right' }
+const celulaTabela: CSSProperties = { fontSize: M.corpo, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
 
 const linkRodape: CSSProperties = {
   display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',
