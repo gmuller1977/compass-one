@@ -20,7 +20,13 @@ const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${St
  * na conta onde a fixa aparece (`contaDoPagamento`). A conta vem escolhida e
  * pode ser trocada, como no "Pagar de qual conta?" de Lançamentos.
  */
-export default function ContasAPagarRapido({ deps }: { deps: Deps }) {
+export default function ContasAPagarRapido({ deps, saldoHoje, vazio }: {
+  deps: Deps
+  /** Bancos + dinheiro hoje. Com ele, o quadro diz se dá para pagar tudo. */
+  saldoHoje?: number
+  /** Texto quando não há conta a pagar; sem ele, o quadro some. */
+  vazio?: string
+}) {
   const { contas, categorias, extratoData, updateExtratoMes } = useApp()
   const lista = useMemo(() => contasAVencer(deps), [deps])
   const [pagando, setPagando] = useState<ContaAVencer | null>(null)
@@ -32,7 +38,24 @@ export default function ContasAPagarRapido({ deps }: { deps: Deps }) {
     { id: 'dinheiro', nome: 'Dinheiro' },
   ], [contas])
 
-  if (lista.length === 0) return null
+  const titulo = (
+    <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>
+      Contas a pagar
+    </div>
+  )
+  if (lista.length === 0) {
+    if (!vazio) return null
+    return (
+      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${COR.borda}`, padding: '10px 12px', marginBottom: 10 }}>
+        {titulo}
+        <div style={{ fontSize: 13, color: COR.sucessoTexto, fontWeight: 600 }}>✓ {vazio}</div>
+      </div>
+    )
+  }
+  // "Tenho saldo para pagar?" — o total da lista contra bancos + dinheiro de
+  // hoje. Fatura entra: ela também sai da conta.
+  const total = lista.reduce((t, c) => t + c.valor, 0)
+  const falta = saldoHoje === undefined ? 0 : total - saldoHoje
 
   const hoje = new Date()
   const hoje0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
@@ -61,9 +84,14 @@ export default function ContasAPagarRapido({ deps }: { deps: Deps }) {
 
   return (
     <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${COR.borda}`, padding: '10px 12px', marginBottom: 10 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>
-        Contas a pagar
-      </div>
+      {titulo}
+      {saldoHoje !== undefined && (
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: falta > 0.005 ? COR.erroTexto : COR.sucessoTexto }}>
+          {falta > 0.005
+            ? `${fmt(total)} a pagar e ${fmt(saldoHoje)} hoje no banco: faltam ${fmt(falta)}`
+            : `${fmt(total)} a pagar · o saldo de hoje cobre tudo`}
+        </div>
+      )}
       {lista.slice(0, 5).map((c, i) => (
         <div key={`${c.id}-${c.ano}-${c.mes}`} style={{
           display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0',

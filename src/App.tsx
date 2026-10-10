@@ -9,6 +9,8 @@ import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
 import Analises       from './pages/Analises'
 import QuickLaunch    from './pages/QuickLaunch'
+import Bussola        from './pages/Bussola'
+import PossoComprar   from './pages/PossoComprar'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import RadarFinanceiro from './pages/RadarFinanceiro'
@@ -114,7 +116,17 @@ function HomeRoute() {
   if (!user) return <LandingPage />
   if (!onboardingCompleto) return <Navigate to="/onboarding" replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
-  return <AppShell><QuickLaunch /></AppShell>
+  return <AppShell><Bussola /></AppShell>
+}
+
+/**
+ * Telas só do celular. No computador cada uma tem a sua equivalente completa:
+ * o lançamento rápido é Lançamentos, e o "Posso comprar?" é o Simulador.
+ */
+function SoNoCelular({ children, senao }: { children: ReactNode; senao: string }) {
+  const isMobile = useIsMobile()
+  if (!isMobile) return <Navigate to={senao} replace />
+  return <Protegido>{children}</Protegido>
 }
 
 function Protegido({ children }: { children: ReactNode }) {
@@ -141,6 +153,8 @@ export default function App() {
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
           <Route path="/"                element={<HomeRoute />} />
+          <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
+          <Route path="/posso-comprar"   element={<SoNoCelular senao="/simulacao"><PossoComprar /></SoNoCelular>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/analises"        element={<Protegido><Analises /></Protegido>} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />

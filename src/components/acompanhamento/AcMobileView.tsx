@@ -1,12 +1,18 @@
-import React from 'react'
+import React, { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import EmptyState from '../EmptyState'
 import BottomNav from '../BottomNav'
 import { COR, MESES_FULL, fmt, type Lanc, type CatReal } from './AcShared'
-import { buildAllCats, pickReal, type PlanCat } from './evolucaoCalcs'
+import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import ResumoRadarFaixa from './ResumoRadarFaixa'
+import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
+import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
+import { RADAR_COR_CLARO, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga } from './radarCores'
+import { useAbrirAjuste } from './ajustePlanoContexto'
+import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
+import type { CenarioPrevisao } from '../../utils/saldoConta'
 
 interface AcMobileViewProps {
   mes: number
@@ -33,6 +39,13 @@ interface AcMobileViewProps {
   saldoAtual: number
   saldoPrevisto: number
   resumo: ResumoRadar | null
+  /** A memória de cálculo do saldo final previsto — a mesma do rodapé do Radar. */
+  memoria: React.ComponentProps<typeof MemoriaSaldo>['m']
+  cenario: CenarioPrevisao
+  onCenario: (c: CenarioPrevisao) => void
+  /** Já lançado acima do plano dos próximos meses, e o botão da revisão. */
+  lancadoAcima: LancadoAcima[]
+  onRevisar: () => void
 }
 
 export default function AcMobileView({
@@ -44,7 +57,10 @@ export default function AcMobileView({
   categorias, cartaoNomes,
   user, abertos, toggleAberto, navigate,
   saldoAtual, saldoPrevisto, resumo,
+  memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
+  const abrirAjuste = useAbrirAjuste()
+  const [memoriaAberta, setMemoriaAberta] = useState(false)
   const diaHoje   = new Date().getDate()
   // "Quanto tenho" é o saldo das contas (bancos + dinheiro) e o previsto é o
   // fechamento da memória de cálculo — os números do Radar no computador.
@@ -77,18 +93,15 @@ export default function AcMobileView({
     const aberto    = abertos.has(uid)
     const disponivel = prev - lancAbs
 
-    // Value shown on collapsed row
-    let dispLabel: string, dispValue: string, dispColor: string
-    if (prev === 0 && lancAbs === 0) {
-      dispLabel = isEntrada ? 'A receber' : 'Disponível'; dispValue = '—'; dispColor = '#94a3b8'
-    } else if (isEntrada) {
-      if (lancAbs >= prev && prev > 0) { dispLabel = 'Recebido';  dispValue = fmt(lancAbs);               dispColor = '#16a34a' }
-      else                             { dispLabel = 'A receber'; dispValue = fmt(Math.max(disponivel,0)); dispColor = '#b45309' }
-    } else {
-      if (lancAbs === 0 && catInfo?.fixa) { dispLabel = 'A pagar';    dispValue = fmt(prev);         dispColor = '#b45309' }
-      else if (disponivel >= 0)            { dispLabel = 'Disponível'; dispValue = fmt(disponivel);   dispColor = '#16a34a' }
-      else                                 { dispLabel = 'Excedido';   dispValue = fmt(-disponivel);  dispColor = '#dc2626' }
-    }
+    // O mesmo destaque das linhas do Radar no computador (destaqueRadar):
+    // quanto RESTA ou quanto PASSOU, e o "gastou X de Y" embaixo, pequeno. As
+    // cores são as da paleta clara do Radar, medidas no branco (radarCores).
+    const fixa      = !!cadastroDaLinha({ nome, descricao }, categorias)?.fixa
+    const fixaPaga  = ehFixaPaga(prev, lancAbs, isEntrada, fixa)
+    const destaque  = destaqueRadar(prev, lancAbs, isEntrada, { fixa, fixaPaga })
+    const dispColor = (prev === 0 && lancAbs === 0) ? COR.textoSuave
+      : fixaPaga ? RADAR_COR_CLARO.bom
+      : RADAR_COR_CLARO[faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
 
     const progressColor = isEntrada
       ? (perc >= 1 ? COR.verde : perc >= 0.5 ? '#4ade80' : '#94a3b8')
@@ -140,21 +153,20 @@ export default function AcMobileView({
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:13, fontWeight:700, color:'#0f172a',
               overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
-            <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:2 }}>
-              <span style={{ fontSize:8, padding:'1px 6px', borderRadius:6, fontWeight:700,
+            <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:2, minWidth:0 }}>
+              <span style={{ fontSize:8, padding:'1px 6px', borderRadius:6, fontWeight:700, flexShrink:0,
                 background:catInfo?.fixa?'#e0f2fe':'#f1f5f9',
                 color:catInfo?.fixa?'#0369a1':'#64748b' }}>
                 {catInfo?.fixa ? 'Fixa' : 'Variável'}
               </span>
-              {descricao && <span style={{ fontSize:10, color:'#94a3b8' }}>· {descricao}</span>}
+              {descricao && <span style={{ fontSize:10, color:COR.textoSuave, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>· {descricao}</span>}
             </div>
+            <div style={{ fontSize:10, color:COR.textoSuave, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+              fontVariantNumeric:'tabular-nums' }}>{destaque.contexto}</div>
           </div>
-          <div style={{ flexShrink:0, textAlign:'right' as const }}>
-            <div style={{ fontSize:8, fontWeight:700, textTransform:'uppercase' as const, letterSpacing:.3,
-              color:'#94a3b8', marginBottom:2 }}>{dispLabel}</div>
-            <div style={{ fontSize:14, fontWeight:800, color:dispColor, fontVariantNumeric:'tabular-nums' }}>
-              {dispValue}
-            </div>
+          <div style={{ flexShrink:0, textAlign:'right' as const, fontSize:13, fontWeight:800, color:dispColor,
+            fontVariantNumeric:'tabular-nums', maxWidth:130 }}>
+            {destaque.principal}
           </div>
           <div style={{ flexShrink:0, fontSize:11, color:'#94a3b8', width:14, textAlign:'center' as const,
             transform: aberto ? 'rotate(180deg)' : 'none', transition:'transform .15s' }}>⌄</div>
@@ -170,9 +182,17 @@ export default function AcMobileView({
         {/* EXPANDED DETAIL */}
         {aberto && (
           <div style={{ background:'#f8faff', borderTop:'1px solid #e2e8f0', padding:'10px 16px 14px' }}>
-            <div style={{ display:'flex', alignItems:'center', marginBottom:8 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, marginBottom:8 }}>
               <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', borderRadius:8,
                 background:statusBg, color:statusColor }}>{statusLabel}</span>
+              {/* Ajustar o plano daqui, como no Radar do computador: muda os
+                  PRÓXIMOS meses (AjustePlanoRadar), nunca o corrente. */}
+              {abrirAjuste && (
+                <button onClick={() => abrirAjuste({ tipo, nome, descricao: descricao || undefined, prev, real: lancAbs })} style={{
+                  border:`1px solid ${COR.borda}`, background:'#fff', color:COR.azul, borderRadius:999,
+                  padding:'5px 12px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                }}>Ajustar plano</button>
+              )}
             </div>
             <div style={{ display:'flex', gap:6, marginBottom: colunas.length > 0 ? 10 : 0 }}>
               <div style={{ flex:1, background:'#f8faff', border:'1px solid #e2e8f0', borderRadius:10, padding:'8px 6px', textAlign:'center' as const }}>
@@ -249,19 +269,37 @@ export default function AcMobileView({
         if (!primNome) return isEntrada ? '💰' : '📂'
         return iconeCategoria(categorias, primNome).icone
       })()
+      // O número do cabeçalho do grupo, como no computador (destaqueDoGrupo):
+      // fixa paga entra pelo valor pago, e grupo só de fixas pagas é "✓ pago".
+      const linhasGrupo = allCats.map(cat => {
+        const prev = cat.v[mes] ?? 0
+        const real = pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0
+        return { prev, real, fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa }
+      })
+      const dg = destaqueDoGrupo(linhasGrupo, isEntrada)
+      const gPrev = linhasGrupo.reduce((t, l) => t + l.prev, 0)
+      const gReal = linhasGrupo.reduce((t, l) => t + l.real, 0)
+      const gPerc = gPrev > 0 ? gReal / gPrev : (gReal > 0 ? 1 : 0)
+      const gCor  = dg.principal === '—' ? COR.textoSuave
+        : RADAR_COR_CLARO[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
       return [
         ...(grupo !== '__sem_grupo__' ? [
           <div key={`sub-${grupo}`} style={{ padding:'7px 16px', fontSize:9, fontWeight:800, letterSpacing:.7,
             display:'flex', alignItems:'center', gap:5, textTransform:'uppercase',
-            borderBottom:'1px solid #f1f5f9', background:'#f8faff', color:'#64748b' }}>
+            borderBottom:'1px solid #f1f5f9', background:'#f8faff', color:COR.textoSuave }}>
             <span>{grupoIcone}</span>
-            <span>{grupoLabel}</span>
+            <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
+            <span style={{ fontSize:11, letterSpacing:0, textTransform:'none', color:gCor, fontVariantNumeric:'tabular-nums' }}>
+              {dg.principal}
+            </span>
           </div>
         ] : []),
         ...allCats.map((cat, idx) => {
           const cd      = pickReal(realMap, cat.nome, cat.descricao, categorias)
           const prev    = cat.v[mes] ?? 0
-          const lancAbs = (cd?.totalBanc ?? 0) + (cd?.totalCart ?? 0)
+          // O total da linha, dinheiro incluído, como no Radar do computador.
+          // Antes era banco + cartão: gasto em espécie não aparecia aqui.
+          const lancAbs = cd?.total ?? 0
           const uid     = `m-${tipo}-${grupo}-${cat.nome}-${cat.descricao}-${idx}`
           const catInfo =
             (cat.descricao
@@ -372,6 +410,7 @@ export default function AcMobileView({
           />
         ) : (<>
           {resumo && <ResumoRadarFaixa resumo={resumo} />}
+          <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={onRevisar} />
           {(dadosAno.entradas ?? []).length > 0 && (
             <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
@@ -439,21 +478,32 @@ export default function AcMobileView({
             </div>
           )}
 
-          <div style={{ borderRadius:20, background:'linear-gradient(135deg,#0f2878,#1e40af)',
-            padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between',
-            boxShadow:'0 4px 16px rgba(26,86,219,.25)' }}>
-            <div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,.75)', fontWeight:600, marginBottom:3 }}>
-                Saldo previsto fim do mês
+          {/* Saldo final previsto: toca e abre a memória de cálculo, a mesma
+              do rodapé do Radar no computador. Negativo, a caixa fica
+              vermelha e o número em #fecaca (5,74 no #991b1b). */}
+          <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 4px 16px rgba(26,86,219,.25)',
+            background: saldoPrev >= 0 ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
+            <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
+              width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between',
+              background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+            }}>
+              <div>
+                <div style={{ fontSize:12, color:'#fff', fontWeight:700, marginBottom:3 }}>
+                  Saldo previsto fim do mês
+                </div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,.8)', display:'flex', alignItems:'center', gap:6 }}>
+                  <span>{memoriaAberta ? 'ocultar cálculo' : 'ver cálculo'}</span>
+                  <ChipCenario cenario={cenario} />
+                </div>
               </div>
-              <div style={{ fontSize:9, color:'rgba(255,255,255,.4)' }}>
-                {MESES_FULL[mes]} {ano} · bancos e dinheiro
+              <div style={{ fontSize:20, fontWeight:800, letterSpacing:-.5, fontVariantNumeric:'tabular-nums',
+                color:saldoPrev>=0?'#4ade80':'#fecaca' }}>
+                {fmt(saldoPrev)}
               </div>
-            </div>
-            <div style={{ fontSize:20, fontWeight:800, letterSpacing:-.5, fontVariantNumeric:'tabular-nums',
-              color:saldoPrev>=0?'#4ade80':'#f87171' }}>
-              {fmt(saldoPrev)}
-            </div>
+            </button>
+            {memoriaAberta && (
+              <MemoriaSaldo m={memoria} positivo={saldoPrev >= 0} cenario={cenario} onCenario={onCenario} />
+            )}
           </div>
         </>)}
       </div>

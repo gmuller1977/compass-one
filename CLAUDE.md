@@ -1800,7 +1800,7 @@ próprias, e as três discordavam do Radar:
   1.920 contra 920 do Radar com um aluguel de 1.000 confirmado. Hoje é
   `saldoRealizadoConta`. O "disponível" de cada categoria são as linhas de
   `totaisDoMes`, por (nome, variante), cartão incluído.
-- **CompassCard** (a bússola da home): somava entradas − saídas do extrato,
+- **CompassCard** (a bússola da home, removida na Fase 3): somava entradas − saídas do extrato,
   com transferência como gasto e sem cartão. Hoje a frase é a do topo do Radar
   (`resumoDoMes`) e o status é o estado do `ritmoDoMes`.
 - **Radar do celular** (`AcMobileView`): "Quanto tenho" era receitas − despesas
@@ -1870,6 +1870,51 @@ precisar da tela completa de Lançamentos:
 
 **Lembrete diário fica para depois**: notificação com o app fechado exige
 push (chaves VAPID + um envio agendado no servidor).
+
+**Fase 3: a Bússola** (10/10/2026). A "/" do celular deixou de ser o Quick
+Launch e virou a tela que responde as quatro perguntas do dia
+([`Bussola.tsx`](src/pages/Bussola.tsx)):
+
+1. Quanto ainda posso gastar? — a folga do `HeroSaldo` (`ritmoDoMes`).
+2. Vou fechar no azul? — o número grande, `memoriaDoRadar().fechamento`,
+   com "como cheguei nesse número" abrindo a `MemoriaSaldo`.
+3. O que vence e tenho saldo? — `ContasAPagarRapido` com "Pagar", e a linha
+   "R$ X a pagar e R$ Y hoje no banco: faltam R$ Z".
+4. Onde estou saindo do plano? — o `EstouradasCard` da Início.
+
+Tudo por [`bussolaDoMes`](src/utils/bussolaDoMes.ts), que só chama as
+funções da Início do computador. Avisos ali são só os que nenhum quadro
+responde (mês negativo à frente, parcela acima do plano): contas, "passou" e
+ritmo têm quadro próprio. A frase do status (`STATUS_HERO`, `statusDoMes`)
+saiu da Dashboard para [`statusHero.ts`](src/components/inicio/statusHero.ts),
+e as duas telas a usam.
+
+- **Rotas só do celular**: `/lancar` (o Quick Launch, sem o CompassCard e sem
+  a lista de contas, que foram para a Bússola) e `/posso-comprar`. No
+  computador elas redirecionam para Lançamentos e para o Simulador.
+- **Barra de baixo**: Início · Radar · **+** (`/lancar`) · Posso comprar? ·
+  Mais. "Mais" abre Planejamento, Lançamentos completos, Análises, Simulador e
+  Configurações. Decisão do plano mobile: Plano e Config são de sentar e
+  pensar, mais do computador.
+- **Posso comprar?** ([`PossoComprar.tsx`](src/pages/PossoComprar.tsx)): valor,
+  parcelas e como paga; a conta é `simularCompra` e a resposta é o MESMO
+  `Resposta` da aba Compra do Simulador (agora exportado). Comparar formas de
+  pagamento e incluir no plano continuam no Simulador.
+- **Radar do celular**: cada linha mostra o `destaqueRadar` ("resta R$ X",
+  "passou R$ Y", "✓ pago", "a pagar") e o grupo o `destaqueDoGrupo`, como no
+  computador; "Ajustar plano" na linha aberta (o mesmo `AjustePlanoRadar`);
+  a faixa de revisão do plano; e o saldo previsto abre a memória de cálculo.
+  **O realizado da linha agora inclui dinheiro** (`cd.total`): antes era banco
+  + cartão, e gasto em espécie sumia no celular.
+- **Simulador, resposta no card azul**: os quadradinhos do mês a mês tinham
+  fundo branco com texto branco, e o placar "Sem a compra · Comprando ·
+  Diferença" usava tons de fundo claro. Agora tudo na paleta de fundo escuro
+  (`#fecaca` para negativo), e no celular o placar cabe em 375 px.
+- Atalhos do PWA: Lançar (`/lancar`), Posso comprar?, Radar.
+
+`prova60` (18 invariantes): cada resposta da Bússola = a função da Início,
+avisos sem repetição (com controle da lista completa), `statusDoMes` = a
+regra antiga da Dashboard em 64 combinações, e o dinheiro no realizado.
 
 ---
 

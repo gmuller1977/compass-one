@@ -175,7 +175,10 @@ export default function RadarFinanceiro() {
 
   // ── Mobile: early return ───────────────────────────────────────────────
   if (isMobile) {
+    // O mesmo ajuste do plano e a mesma revisão do computador: a linha da
+    // categoria pede o ajuste pelo contexto, como em EvolucaoLinha.
     return (
+      <AjustePlanoContexto.Provider value={dadosAno ? setAjuste : null}>
       <AcMobileView
         mes={mes}
         ano={ano}
@@ -200,7 +203,21 @@ export default function RadarFinanceiro() {
         saldoAtual={saldoAtual}
         saldoPrevisto={saldoPrevisto}
         resumo={resumo}
+        memoria={memoria}
+        cenario={cenarioPrevisao}
+        onCenario={setCenarioPrevisao}
+        lancadoAcima={lancadoAcima}
+        onRevisar={() => setRevisando(true)}
       />
+      {revisando && (
+        <RevisaoPlanoDialog acima={lancadoAcima} deps={depsSaldo} planos={planos} setPlanos={setPlanos}
+          categorias={categorias} onFechar={() => setRevisando(false)} />
+      )}
+      {ajuste && (
+        <AjustePlanoRadar ajuste={ajuste} setAjuste={setAjuste} planos={planos} setPlanos={setPlanos}
+          ano={ano} mes={mes} categorias={categorias} deps={depsSaldo} />
+      )}
+      </AjustePlanoContexto.Provider>
     )
   }
 

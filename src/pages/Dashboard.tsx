@@ -12,6 +12,7 @@ import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
 import AvisosCard from '../components/inicio/AvisosCard'
+import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
@@ -39,27 +40,6 @@ const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho
 
 function fmt(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-type CompassStatus = 'verde' | 'amarelo' | 'vermelho' | 'sem-plano' | 'sem-dados'
-
-/**
- * A linha de status do hero. É a bússola de antes com outro desenho: o MESMO
- * compassStatus, com as mesmas faixas — só a cor do ponto e a frase mudam.
- * Pontos sobre o azul do hero (elemento gráfico, 3:1): #86efac, #fde047 e
- * #f87171 passam no extremo mais claro, #1e40af.
- *
- * No mês corrente a frase fala com a pessoa ("Você está dentro do plano"),
- * porque o número logo abaixo já diz o mês. Não é "no azul": o status mede as
- * despesas contra o plano, não o saldo — com o saldo previsto negativo, "no
- * azul" contradiria o número vermelho embaixo.
- */
-const STATUS_HERO: Record<CompassStatus, { cor: string; frase: (mes: string, fechou: boolean) => string }> = {
-  verde:       { cor: '#86efac', frase: (m, f) => (f ? `${m} fechou dentro do plano` : 'Você está dentro do plano') },
-  amarelo:     { cor: '#fde047', frase: (m, f) => (f ? `${m} fechou no limite do plano` : 'Você está chegando no limite do plano') },
-  vermelho:    { cor: '#f87171', frase: (m, f) => (f ? `${m} fechou acima do plano` : 'Você passou do plano este mês') },
-  'sem-plano': { cor: 'rgba(255,255,255,.5)', frase: m => `Sem plano para ${m.toLowerCase()}` },
-  'sem-dados': { cor: 'rgba(255,255,255,.5)', frase: m => `Sem movimentação em ${m.toLowerCase()}` },
 }
 
 /**
@@ -179,14 +159,10 @@ export default function Dashboard() {
   const temCategorias = categorias.some(c => c.ativa)
 
   // ── Bússola ──────────────────────────────────────────────────────────
-  const compassStatus = useMemo<CompassStatus>(() => {
-    if (totalEntradas === 0 && totalSaidas === 0) return 'sem-dados'
-    if (!temPlano || totalPrevS === 0) return 'sem-plano'
-    const perc = totalSaidas / totalPrevS
-    if (totalSaidas > totalPrevS) return 'vermelho'
-    if (perc >= 0.9) return 'amarelo'
-    return 'verde'
-  }, [totalEntradas, totalSaidas, temPlano, totalPrevS])
+  const compassStatus = useMemo<CompassStatus>(
+    () => statusDoMes({ totalEntradas, totalSaidas, totalPrevS, temPlano }),
+    [totalEntradas, totalSaidas, temPlano, totalPrevS],
+  )
 
   useEffect(() => {
     if (!user) return

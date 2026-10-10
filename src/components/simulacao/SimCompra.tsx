@@ -450,13 +450,20 @@ const TOM = {
 } as const
 
 // O ponto e elemento grafico (limite 3:1); o texto vai na paleta escura.
+// Placar e detalhe moram dentro do card AZUL: negativo no vermelho-claro de
+// fundo escuro (#fecaca, 6,03:1 no #1e40af) e a área "comprando" num azul
+// claro — COR.azul sumia no próprio fundo. Antes eram os tons de fundo claro:
+// rótulos brancos no #f8faff e números marinho no azul, ilegíveis.
+const NEG = '#fecaca'
+const COM_COMPRA = '#93c5fd'
+
 const CORES: Record<Situacao, { ponto: string; texto: string }> = {
   ok:       { ponto: '#4ade80', texto: '#86efac' },
   apertado: { ponto: '#fbbf24', texto: '#fde047' },
   falta:    { ponto: '#f87171', texto: '#fecaca' },
 }
 
-function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
+export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   nome: string
   r: ResultadoCompra
   isMobile: boolean
@@ -619,7 +626,10 @@ function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
               <div key={`${p.ano}-${p.mes}`} style={{
                 flex: '0 0 auto', minWidth: 88, textAlign: 'center',
                 border: '1px solid rgba(255,255,255,.18)', borderRadius: 10, padding: '10px 8px',
-                background: COR.branco,
+                // Translúcido sobre o azul: o texto do mês é branco e os tons do
+                // semáforo são os de fundo escuro. Era COR.branco — branco no
+                // branco, e só o ponto aparecia.
+                background: 'rgba(255,255,255,.06)',
               }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.85)' }}>
                   {MESES_CURTOS[p.mes]}
@@ -679,36 +689,38 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
   if (!fim) return null
   const diferenca = fim.semCompra - fim.comCompra
 
+  // minWidth 0 e fonte menor no celular: com R$ 15.400,00 nas três células a
+  // "Diferença" passava da borda do card numa tela de 375 px.
   const celula: React.CSSProperties = {
-    flex: 1, textAlign: 'center', padding: '10px 8px',
+    flex: 1, minWidth: 0, textAlign: 'center', padding: isMobile ? '10px 4px' : '10px 8px',
   }
   const rotulo: React.CSSProperties = {
     fontSize: 11, color: 'rgba(255,255,255,.85)', marginBottom: 4,
   }
   const valor: React.CSSProperties = {
-    fontSize: isMobile ? 15 : 17, fontWeight: 800,
-    fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px',
+    fontSize: isMobile ? 13 : 17, fontWeight: 800,
+    fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px', overflowWrap: 'anywhere',
   }
 
   return (
     <div style={{ marginTop: 16, border: '1px solid rgba(255,255,255,.18)', borderRadius: 10,
-      background: COR.fundo, overflow: 'hidden' }}>
+      background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={celula}>
           <div style={rotulo}>Sem a compra</div>
-          <div style={{ ...valor, color: 'rgba(255,255,255,.85)' }}>{fmt(fim.semCompra)}</div>
+          <div style={{ ...valor, color: '#fff' }}>{fmt(fim.semCompra)}</div>
         </div>
-        <div style={{ width: 1, background: COR.borda }} />
+        <div style={{ width: 1, background: 'rgba(255,255,255,.18)' }} />
         <div style={celula}>
           <div style={rotulo}>Comprando</div>
-          <div style={{ ...valor, color: fim.comCompra < 0 ? COR.erroTexto : COR.texto }}>
+          <div style={{ ...valor, color: fim.comCompra < 0 ? NEG : '#fff' }}>
             {fmt(fim.comCompra)}
           </div>
         </div>
-        <div style={{ width: 1, background: COR.borda }} />
+        <div style={{ width: 1, background: 'rgba(255,255,255,.18)' }} />
         <div style={celula}>
           <div style={rotulo}>Diferença</div>
-          <div style={{ ...valor, color: COR.erroTexto }}>− {fmt(diferenca)}</div>
+          <div style={{ ...valor, color: NEG }}>− {fmt(diferenca)}</div>
         </div>
       </div>
       <div style={{ fontSize: 11, color: 'rgba(255,255,255,.85)', textAlign: 'center',
@@ -745,15 +757,15 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
           <AreaChart data={meses.map(p => ({
             mes: MESES_CURTOS[p.mes], com: Math.round(p.comCompra), sem: Math.round(p.semCompra),
           }))} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={COR.borda} />
-            <XAxis dataKey="mes" tick={{ fontSize: 11, fill: COR.textoSuave }} />
-            <YAxis tick={{ fontSize: 11, fill: COR.textoSuave }} width={60} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.18)" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} />
+            <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} width={60} />
             <Tooltip
               formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Comprando' : 'Sem comprar']}
               contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
-            <ReferenceLine y={0} stroke={COR.erroTexto} strokeDasharray="4 4" />
-            <Area type="monotone" dataKey="sem" stroke="#94a3b8" fill="#94a3b8" fillOpacity={.18} />
-            <Area type="monotone" dataKey="com" stroke={COR.azul} fill={COR.azul} fillOpacity={.28} />
+            <ReferenceLine y={0} stroke={NEG} strokeDasharray="4 4" />
+            <Area type="monotone" dataKey="sem" stroke="#cbd5e1" fill="#cbd5e1" fillOpacity={.18} />
+            <Area type="monotone" dataKey="com" stroke={COM_COMPRA} fill={COM_COMPRA} fillOpacity={.28} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -761,11 +773,11 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
       <div style={{ display: 'flex', gap: 16, marginTop: 6, marginBottom: 16,
         fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: COR.azul, opacity: .6 }} />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: COM_COMPRA, opacity: .8 }} />
           comprando
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#94a3b8', opacity: .5 }} />
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#cbd5e1', opacity: .7 }} />
           sem comprar
         </span>
       </div>
@@ -786,12 +798,12 @@ function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean 
             <div style={{ fontSize: 12, textAlign: 'right', color: 'rgba(255,255,255,.85)',
               fontVariantNumeric: 'tabular-nums' }}>{fmt(p.semCompra)}</div>
             <div style={{ fontSize: 12, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
-              color: p.parcela > 0 ? COR.erroTexto : COR.textoSuave }}>
+              color: p.parcela > 0 ? NEG : 'rgba(255,255,255,.85)' }}>
               {p.parcela > 0 ? `− ${fmt(p.parcela)}` : '—'}
             </div>
             <div style={{ fontSize: 12, fontWeight: 700, textAlign: 'right',
               fontVariantNumeric: 'tabular-nums',
-              color: p.comCompra < 0 ? COR.erroTexto : COR.texto }}>{fmt(p.comCompra)}</div>
+              color: p.comCompra < 0 ? NEG : '#fff' }}>{fmt(p.comCompra)}</div>
           </div>
         ))}
       </div>

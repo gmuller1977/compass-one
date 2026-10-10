@@ -4,7 +4,6 @@ import { limiteCartaoPlanejado } from '../utils/limiteCartao'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
-import CompassCard from '../components/CompassCard'
 import type { DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import { saldoRealizadoConta, type Deps } from '../utils/saldoConta'
@@ -12,7 +11,6 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { totalComprasFatura, mesDaFaturaDaCompra, lancarNaFatura, dataDoLancamento } from '../utils/lancamentoRapido'
 import { interpretarLancamento } from '../utils/interpretarLancamento'
-import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import EntradaPorTexto from '../components/quickLaunch/EntradaPorTexto'
 
 function useIsMobile() {
@@ -355,11 +353,6 @@ export default function QuickLaunch() {
         </div>
       )}
 
-      {/* Compass card */}
-      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
-        <CompassCard />
-      </div>
-
       {/* Hoje strip */}
       <div style={{ display: 'flex', gap: 8, padding: '8px 16px 6px', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
@@ -382,7 +375,6 @@ export default function QuickLaunch() {
 
       {/* Grid */}
       <div style={{ flex: 1, padding: '4px 16px 6px', overflowY: 'auto' }}>
-        <ContasAPagarRapido deps={depsSaldo} />
         <EntradaPorTexto onTexto={aplicarTexto} />
         <div style={{
           fontSize: 11, fontWeight: 700, color: COR.textoSuave,
