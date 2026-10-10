@@ -3,6 +3,7 @@ import type { ItensPorMes } from '../utils/itensPlano'
 import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
+import { mesesAlterados } from '../utils/gravacaoPorMes'
 import { supabase } from '../lib/supabase'
 import { limparUltimaAtividade } from '../utils/inatividade'
 
@@ -95,6 +96,13 @@ export type DadosMes = {
 }
 
 // ── Context type ─────────────────────────────────────────────────────
+/**
+ * `salvando`: há mês a caminho do banco. `erro`: a última tentativa falhou e o
+ * que foi lançado está só neste aparelho — o app tenta de novo sozinho.
+ * `semConexao`: o mesmo, com o navegador dizendo que está offline.
+ */
+export type EstadoGravacao = 'salvo' | 'salvando' | 'erro' | 'semConexao'
+
 type AppCtx = {
   user:       User | null
   carregando: boolean
@@ -129,6 +137,8 @@ type AppCtx = {
   setObjetivoUsuario: (v: string) => void
   metaSim: MetaSim | null
   setMetaSim: (v: MetaSim | null) => void
+  /** Se o que foi lançado já está no banco — ver "Gravação por mês". */
+  gravacao: EstadoGravacao
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
   excluirConta: () => Promise<{ error?: string }>
@@ -324,6 +334,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Usado para bloquear saves vazios acidentais sobre dados existentes.
   const savedCountRef = useRef({ contas: -1, categorias: -1, extrato: -1, fatura: -1, planos: -1, planosReal: -1 })
 
+  // ── Gravação por mês ──────────────────────────────────────────────────
+  // O que está no banco, mês a mês: o objeto como foi carregado ou gravado.
+  // Toda tela atualiza um mês por spread, então o mês alterado é o que tem
+  // identidade diferente daqui — e só ele vai para o banco. Antes cada
+  // lançamento regravava o histórico inteiro de extratos e faturas: lento no
+  // celular e, com o computador aberto ao mesmo tempo, a aba antiga devolvia
+  // meses velhos por cima dos novos.
+  const extratoNoBancoRef = useRef<Record<string, unknown>>({})
+  const faturaNoBancoRef  = useRef<Record<string, unknown>>({})
+  // O estado mais recente a gravar, e uma fila por tabela: gravações do mesmo
+  // mês nunca correm juntas, e a mais nova sempre chega por último.
+  const extratoAGravarRef = useRef<Record<string, unknown>>({})
+  const faturaAGravarRef  = useRef<Record<string, unknown>>({})
+  const filaExtratoRef = useRef<Promise<void>>(Promise.resolve())
+  const filaFaturaRef  = useRef<Promise<void>>(Promise.resolve())
+  const gravandoRef = useRef(0)
+  const falhouRef = useRef(false)
+  const novaTentativaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tentativasRef = useRef(0)
+  const [gravacao, setGravacao] = useState<EstadoGravacao>('salvo')
+
   // State (não ref) para que effects de save re-executem quando o load terminar
   const [dataLoaded, setDataLoadedState] = useState(false)
 
@@ -474,6 +505,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (row.conta_id !== 'dinheiro' && !contaIdSet.has(row.conta_id)) continue
       extratoLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados as DadosMes
     }
+    extratoNoBancoRef.current = { ...extratoLoaded }
+    extratoAGravarRef.current = extratoLoaded
     setExtratoState(extratoLoaded)
 
     // Fatura — filtra contas excluídas
@@ -482,6 +515,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!contaIdSet.has(row.conta_id)) continue
       faturaLoaded[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados
     }
+    faturaNoBancoRef.current = { ...faturaLoaded }
+    faturaAGravarRef.current = faturaLoaded
     setFaturaState(faturaLoaded)
 
     // Planos
@@ -516,6 +551,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDataLoadedState(false)
     loadedUserIdRef.current = null
     savedCountRef.current = { contas: -1, categorias: -1, extrato: -1, fatura: -1, planos: -1, planosReal: -1 }
+    extratoNoBancoRef.current = {}; faturaNoBancoRef.current = {}
+    extratoAGravarRef.current = {}; faturaAGravarRef.current = {}
+    falhouRef.current = false; tentativasRef.current = 0
+    if (novaTentativaRef.current) { clearTimeout(novaTentativaRef.current); novaTentativaRef.current = null }
+    setGravacao('salvo')
     if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
     loadRetryCountRef.current = 0
     setContasState([])
@@ -583,45 +623,190 @@ export function AppProvider({ children }: { children: ReactNode }) {
     savedCountRef.current.categorias = list.length
   }
 
-  async function saveExtratoData(data: Record<string, DadosMes>) {
-    if (!canSave()) return
-    const uid = userIdRef.current!
-    if (Object.keys(data).length === 0) {
-      if (!safeSaveCheck('extrato', 0)) return
-      await supabase.from('extrato_data').delete().eq('user_id', uid)
-      savedCountRef.current.extrato = 0
-      return
-    }
-    const rows = Object.entries(data).map(([key, dados]) => {
-      const { contaId, ano, mes } = parseExtratoKey(key)
-      return { user_id: uid, conta_id: contaId, ano, mes, dados }
-    })
-    const { error } = await supabase
-      .from('extrato_data')
-      .upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' })
-    if (error) { console.error('save extrato_data:', error); return }
-    savedCountRef.current.extrato = rows.length
+  function atualizarEstadoGravacao() {
+    if (gravandoRef.current > 0) setGravacao('salvando')
+    else if (falhouRef.current) setGravacao(navigator.onLine === false ? 'semConexao' : 'erro')
+    else setGravacao('salvo')
   }
 
-  async function saveFaturaData(data: Record<string, unknown>) {
+  /**
+   * Grava os meses que mudaram desde o último carregamento ou gravação. Falha
+   * não marca nada como gravado: o mês continua diferente do banco e vai na
+   * próxima tentativa, que é agendada aqui mesmo.
+   */
+  async function gravarMesesAlterados(
+    tabela: 'extrato_data' | 'fatura_data',
+    data: Record<string, unknown>,
+    noBanco: { current: Record<string, unknown> },
+    countKey: 'extrato' | 'fatura',
+  ) {
     if (!canSave()) return
     const uid = userIdRef.current!
     if (Object.keys(data).length === 0) {
-      if (!safeSaveCheck('fatura', 0)) return
-      await supabase.from('fatura_data').delete().eq('user_id', uid)
-      savedCountRef.current.fatura = 0
+      if (!safeSaveCheck(countKey, 0)) return
+      await supabase.from(tabela).delete().eq('user_id', uid)
+      noBanco.current = {}
+      savedCountRef.current[countKey] = 0
       return
     }
-    const rows = Object.entries(data).map(([key, dados]) => {
+    const alterados = mesesAlterados(data, noBanco.current)
+    if (alterados.length === 0) return
+    const rows = alterados.map(key => {
       const { contaId, ano, mes } = parseExtratoKey(key)
-      return { user_id: uid, conta_id: contaId, ano, mes, dados }
+      return { user_id: uid, conta_id: contaId, ano, mes, dados: data[key] }
     })
-    const { error } = await supabase
-      .from('fatura_data')
-      .upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' })
-    if (error) { console.error('save fatura_data:', error); return }
-    savedCountRef.current.fatura = rows.length
+    gravandoRef.current++
+    atualizarEstadoGravacao()
+    let error: unknown = null
+    try {
+      ;({ error } = await supabase.from(tabela).upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' }))
+    } catch (e) {
+      error = e
+    }
+    gravandoRef.current--
+    if (error) {
+      console.error(`save ${tabela}:`, error)
+      falhouRef.current = true
+      agendarNovaTentativa()
+    } else {
+      for (const k of alterados) noBanco.current[k] = data[k]
+      savedCountRef.current[countKey] = Object.keys(data).length
+      if (!temMesNaoGravado()) { falhouRef.current = false; tentativasRef.current = 0 }
+    }
+    atualizarEstadoGravacao()
   }
+
+  function temMesNaoGravado(): boolean {
+    return mesesAlterados(extratoAGravarRef.current, extratoNoBancoRef.current).length > 0
+      || mesesAlterados(faturaAGravarRef.current, faturaNoBancoRef.current).length > 0
+  }
+
+  function saveExtratoData(data: Record<string, DadosMes>): Promise<void> {
+    extratoAGravarRef.current = data
+    filaExtratoRef.current = filaExtratoRef.current.then(() =>
+      gravarMesesAlterados('extrato_data', extratoAGravarRef.current, extratoNoBancoRef, 'extrato'))
+    return filaExtratoRef.current
+  }
+
+  function saveFaturaData(data: Record<string, unknown>): Promise<void> {
+    faturaAGravarRef.current = data
+    filaFaturaRef.current = filaFaturaRef.current.then(() =>
+      gravarMesesAlterados('fatura_data', faturaAGravarRef.current, faturaNoBancoRef, 'fatura'))
+    return filaFaturaRef.current
+  }
+
+  /** 5 s, 10 s, 20 s... até 1 min, e na hora em que a conexão volta. */
+  function agendarNovaTentativa() {
+    if (novaTentativaRef.current) return
+    const espera = Math.min(5000 * 2 ** tentativasRef.current, 60000)
+    tentativasRef.current++
+    novaTentativaRef.current = setTimeout(tentarGravarDeNovo, espera)
+  }
+
+  function tentarGravarDeNovo() {
+    if (novaTentativaRef.current) { clearTimeout(novaTentativaRef.current); novaTentativaRef.current = null }
+    if (!falhouRef.current) return
+    saveExtratoData(extratoAGravarRef.current as Record<string, DadosMes>)
+    saveFaturaData(faturaAGravarRef.current)
+  }
+
+  useEffect(() => {
+    const voltou = () => tentarGravarDeNovo()
+    const caiu = () => atualizarEstadoGravacao()
+    window.addEventListener('online', voltou)
+    window.addEventListener('offline', caiu)
+    return () => { window.removeEventListener('online', voltou); window.removeEventListener('offline', caiu) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Ao voltar para o app depois de um tempo em outra aba ou em outro app,
+   * relê do banco o que pode ter sido mudado em OUTRO aparelho: lançamentos,
+   * faturas, plano, contas e categorias. Sem isso a aba que ficou aberta no
+   * computador seguia com a cópia antiga e, na próxima edição, gravava por
+   * cima do que foi lançado no celular.
+   *
+   * Não relê com gravação pendente: o que só existe aqui iria embora. Nesse
+   * caso grava primeiro, e a releitura fica para a próxima volta.
+   */
+  async function recarregarDoBanco() {
+    const uid = userIdRef.current
+    if (!uid || !dataLoadedRef.current) return
+    if (gravandoRef.current > 0 || falhouRef.current || temMesNaoGravado()) return
+
+    const [
+      { data: contasRows, error: e1 },
+      { data: categoriasRows, error: e2 },
+      { data: extratoRows, error: e3 },
+      { data: faturaRows, error: e4 },
+      { data: planoRows, error: e5 },
+    ] = await Promise.all([
+      supabase.from('contas').select('*').eq('user_id', uid),
+      supabase.from('categorias').select('*').eq('user_id', uid),
+      supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', uid),
+      supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', uid),
+      supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', uid).eq('tipo_plano', 'previsto'),
+    ])
+    if (e1 || e2 || e3 || e4 || e5) { console.warn('recarregarDoBanco: mantendo a cópia local', { e1, e2, e3, e4, e5 }); return }
+    // Algo foi gravado enquanto a leitura estava no ar: a cópia local é mais nova.
+    if (userIdRef.current !== uid || gravandoRef.current > 0 || temMesNaoGravado()) return
+    // Banco vazio com dados aqui é falha de leitura, não exclusão (ver safeSaveCheck).
+    if ((contasRows ?? []).length === 0 && contasRef.current.length > 0) return
+
+    const contasLidas = (contasRows ?? []).map(rowToConta)
+    const contaIds = new Set(contasLidas.map(c => c.id))
+    const extrato: Record<string, DadosMes> = {}
+    for (const row of extratoRows ?? []) {
+      if (row.conta_id !== 'dinheiro' && !contaIds.has(row.conta_id)) continue
+      extrato[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados as DadosMes
+    }
+    const fatura: Record<string, unknown> = {}
+    for (const row of faturaRows ?? []) {
+      if (!contaIds.has(row.conta_id)) continue
+      fatura[extratoKeyFromRow(row.conta_id, row.ano, row.mes)] = row.dados
+    }
+    const planosLidos: Record<number, PlanoAnoData> = {}
+    for (const row of planoRows ?? []) planosLidos[row.ano] = row.dados as PlanoAnoData
+
+    extratoNoBancoRef.current = { ...extrato }; extratoAGravarRef.current = extrato
+    faturaNoBancoRef.current  = { ...fatura };  faturaAGravarRef.current  = fatura
+    savedCountRef.current.contas     = contasLidas.length
+    savedCountRef.current.categorias = (categoriasRows ?? []).length
+    savedCountRef.current.extrato    = Object.keys(extrato).length
+    savedCountRef.current.fatura     = Object.keys(fatura).length
+    savedCountRef.current.planos     = Object.keys(planosLidos).length
+    setContasState(contasLidas)
+    const vistas = new Set<string>()
+    setCategoriasState((categoriasRows ?? []).map(rowToCategoria).filter(c => {
+      const k = `${c.nome}|${c.tipo}|${c.descricao ?? ''}`
+      if (vistas.has(k)) return false
+      vistas.add(k)
+      return true
+    }))
+    setExtratoState(extrato)
+    setFaturaState(fatura)
+    setPlanosState(planosLidos)
+  }
+
+  useEffect(() => {
+    let saiuEm = 0
+    const mudou = () => {
+      if (document.visibilityState === 'hidden') { saiuEm = Date.now(); return }
+      if (saiuEm && Date.now() - saiuEm >= 30_000) recarregarDoBanco()
+      saiuEm = 0
+    }
+    document.addEventListener('visibilitychange', mudou)
+    return () => document.removeEventListener('visibilitychange', mudou)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fechar ou recarregar a aba com mês não gravado perderia o lançamento: o
+  // navegador pergunta antes.
+  useEffect(() => {
+    const antesDeSair = (e: BeforeUnloadEvent) => {
+      if (gravandoRef.current > 0 || temMesNaoGravado()) { e.preventDefault(); e.returnValue = '' }
+    }
+    window.addEventListener('beforeunload', antesDeSair)
+    return () => window.removeEventListener('beforeunload', antesDeSair)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function savePlanosData(dict: Record<number, PlanoAnoData>, tipo: 'previsto' | 'real') {
     if (!canSave()) return
@@ -803,6 +988,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       onboardingCompleto, setOnboardingCompleto,
       objetivoUsuario, setObjetivoUsuario,
       metaSim, setMetaSim,
+      gravacao,
       limparDados, sairDaConta, excluirConta,
     }}>
       {children}

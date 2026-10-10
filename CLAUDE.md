@@ -1788,6 +1788,59 @@ descuido.
 
 ---
 
+## Mobile
+
+**O celular não calcula número nenhum: lê as funções do web.** Fase 1 do
+plano "celular como Bússola Financeira", liberada pelo Guilherme em
+10/10/2026 (antes o mobile só seria atacado depois do web). Havia três contas
+próprias, e as três discordavam do Radar:
+
+- **Quick Launch**, saldo da conta: `calcSaldoBanco` somava só os lançamentos
+  até hoje — sem fixa confirmada, sem pagamento de fatura. Medido na `prova58`:
+  1.920 contra 920 do Radar com um aluguel de 1.000 confirmado. Hoje é
+  `saldoRealizadoConta`. O "disponível" de cada categoria são as linhas de
+  `totaisDoMes`, por (nome, variante), cartão incluído.
+- **CompassCard** (a bússola da home): somava entradas − saídas do extrato,
+  com transferência como gasto e sem cartão. Hoje a frase é a do topo do Radar
+  (`resumoDoMes`) e o status é o estado do `ritmoDoMes`.
+- **Radar do celular** (`AcMobileView`): "Quanto tenho" era receitas − despesas
+  do mês e o "Saldo previsto fim do mês" era receitas − despesas planejadas,
+  sem o saldo com que o mês abriu. Hoje recebe `saldoAtual` e
+  `memoria.fechamento` do `RadarFinanceiro`, e mostra a `ResumoRadarFaixa`.
+
+**Compra no cartão pelo Quick Launch entrava como ESTORNO.** Gravava o tipo
+da categoria (`saida`), e na fatura `saida` é estorno: cada compra abatia a
+fatura e o gasto. O mesmo na aba "Resumo mensal" de Lançamentos
+(`lancarConsolidado`). Corrigido com `tipoNaFatura` em
+[`lancamentoRapido.ts`](src/utils/lancamentoRapido.ts), que também manda a
+compra depois do fechamento para a fatura seguinte, como a FaturaCartao.
+**Compras antigas gravadas assim continuam no banco como estorno**:
+identificáveis por `id` `v-<número>` sem sufixo e `tipo: 'saida'` na
+`fatura_data`. Corrigir exige SQL revisado pelo Guilherme.
+
+**A gravação é por mês.** O `AppContext` guarda o objeto de cada mês como está
+no banco e grava só os meses com identidade diferente (`mesesAlterados`, em
+[`gravacaoPorMes.ts`](src/utils/gravacaoPorMes.ts)) — antes cada lançamento
+regravava o histórico inteiro. Por tabela, uma fila: duas gravações do mesmo
+mês nunca correm juntas. Falha não marca nada como gravado; tenta de novo em
+5 s, 10 s... até 1 min, e na hora em que a conexão volta. Fechar a aba com
+mês não gravado pede confirmação.
+
+**Ao voltar para o app depois de 30 s fora, ele relê do banco** contas,
+categorias, extratos, faturas e plano (`recarregarDoBanco`) — é o que impede a
+aba velha do computador de gravar por cima do lançamento do celular. Não relê
+com gravação pendente. Limite conhecido: duas janelas VISÍVEIS lado a lado não
+disparam a releitura.
+
+**O `IndicadorGravacao` diz se salvou**: "✓ Salvo", "Salvando…" (só depois de
+meio segundo), erro e sem internet. Antes o erro ia só para o console.
+
+`prova58` (15 invariantes): Quick Launch = Radar com controle negativo do
+cálculo antigo, compra soma e o tipo antigo abate (controle), fechamento do
+cartão e a virada do ano, e um lançamento grava um mês só.
+
+---
+
 ## Paleta
 
 `cores.ts` nomeia **86%** das cores usadas no app. Antes de escrever um hex

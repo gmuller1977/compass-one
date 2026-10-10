@@ -197,6 +197,9 @@ export default function RadarFinanceiro() {
         abertos={abertos}
         toggleAberto={toggleAberto}
         navigate={navigate}
+        saldoAtual={saldoAtual}
+        saldoPrevisto={saldoPrevisto}
+        resumo={resumo}
       />
     )
   }

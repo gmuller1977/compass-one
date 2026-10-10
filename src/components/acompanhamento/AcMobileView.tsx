@@ -5,6 +5,8 @@ import EmptyState from '../EmptyState'
 import BottomNav from '../BottomNav'
 import { COR, MESES_FULL, fmt, type Lanc, type CatReal } from './AcShared'
 import { buildAllCats, pickReal, type PlanCat } from './evolucaoCalcs'
+import ResumoRadarFaixa from './ResumoRadarFaixa'
+import type { ResumoRadar } from '../../utils/resumoRadar'
 
 interface AcMobileViewProps {
   mes: number
@@ -27,6 +29,10 @@ interface AcMobileViewProps {
   abertos: Set<string>
   toggleAberto: (uid: string) => void
   navigate: (to: string) => void
+  /** Os mesmos números do Radar no computador — ver RadarFinanceiro. */
+  saldoAtual: number
+  saldoPrevisto: number
+  resumo: ResumoRadar | null
 }
 
 export default function AcMobileView({
@@ -37,14 +43,19 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS,
   categorias, cartaoNomes,
   user, abertos, toggleAberto, navigate,
+  saldoAtual, saldoPrevisto, resumo,
 }: AcMobileViewProps) {
   const diaHoje   = new Date().getDate()
-  const saldoReal = totalRealE - totalRealS
-  const saldoPrev = totalPrevE - totalPrevS
+  // "Quanto tenho" é o saldo das contas (bancos + dinheiro) e o previsto é o
+  // fechamento da memória de cálculo — os números do Radar no computador.
+  // Antes eram receitas − despesas do mês, realizadas e planejadas, que não
+  // levavam em conta o saldo com que o mês abriu.
+  const saldoReal = saldoAtual
+  const saldoPrev = saldoPrevisto
   const percE     = totalPrevE > 0 ? Math.min(totalRealE / totalPrevE, 1) : (totalRealE > 0 ? 1 : 0)
   const percS     = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
-  const corSaldoR = (totalRealE===0&&totalRealS===0) ? '#94a3b8' : saldoReal>=0 ? COR.verde : COR.vermelho
-  const corSaldoP = (totalPrevE===0&&totalPrevS===0) ? '#94a3b8' : saldoPrev>=0 ? COR.verde : COR.vermelho
+  const corSaldoR = saldoReal>=0 ? COR.verde : COR.vermelho
+  const corSaldoP = saldoPrev>=0 ? COR.verde : COR.vermelho
   const userInitial = (() => { const u = user as { displayName?: string; email?: string } | null; return u?.displayName?.[0] ?? u?.email?.[0]?.toUpperCase() ?? '?' })()
   const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
@@ -336,12 +347,10 @@ export default function AcMobileView({
             </div>
             <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
               <span style={{ fontSize:17, fontWeight:800, color:corSaldoR, letterSpacing:-.4, fontVariantNumeric:'tabular-nums' }}>
-                {(totalRealE===0&&totalRealS===0) ? '—' : fmt(saldoReal)}
+                {fmt(saldoReal)}
               </span>
-              {!(totalRealE===0&&totalRealS===0) && <>
-                <span style={{ fontSize:11, color:'#94a3b8' }}>→ prev.</span>
-                <span style={{ fontSize:13, fontWeight:700, color:corSaldoP, fontVariantNumeric:'tabular-nums' }}>{fmt(saldoPrev)}</span>
-              </>}
+              <span style={{ fontSize:11, color:'#94a3b8' }}>→ prev.</span>
+              <span style={{ fontSize:13, fontWeight:700, color:corSaldoP, fontVariantNumeric:'tabular-nums' }}>{fmt(saldoPrev)}</span>
             </div>
           </div>
           <div style={{ textAlign:'right' }}>
@@ -362,6 +371,7 @@ export default function AcMobileView({
             onAction={() => navigate('/planejamento?modo=wizard')}
           />
         ) : (<>
+          {resumo && <ResumoRadarFaixa resumo={resumo} />}
           {(dadosAno.entradas ?? []).length > 0 && (
             <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,.08)' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
@@ -437,7 +447,7 @@ export default function AcMobileView({
                 Saldo previsto fim do mês
               </div>
               <div style={{ fontSize:9, color:'rgba(255,255,255,.4)' }}>
-                {MESES_FULL[mes]} {ano} · com todas as fixas
+                {MESES_FULL[mes]} {ano} · bancos e dinheiro
               </div>
             </div>
             <div style={{ fontSize:20, fontWeight:800, letterSpacing:-.5, fontVariantNumeric:'tabular-nums',

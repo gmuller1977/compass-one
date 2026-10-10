@@ -1,80 +1,72 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-
-function fmt(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-function mesKey(conta: string, ano: number, mes: number) {
-  return `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
-}
+import type { DadosMes } from '../context/AppContext'
+import { construirRealizadoMes } from '../utils/realizadoMes'
+import { nomesDeCartao, totaisDoMes } from './acompanhamento/evolucaoCalcs'
+import { ritmoDoMes } from '../utils/ritmoDoMes'
+import { resumoDoMes } from '../utils/resumoRadar'
 
 type Status = 'verde' | 'amarelo' | 'vermelho' | 'sem-plano' | 'sem-dados'
 
+/**
+ * A bússola da home do celular. Não faz conta própria: a frase é a do topo do
+ * Radar (`resumoDoMes`) e o status é o estado do Ritmo do mês (`ritmoDoMes`),
+ * as duas sobre as linhas de `totaisDoMes` — os mesmos números da Início e do
+ * Radar no computador.
+ *
+ * Antes somava entradas e saídas do extrato de todas as contas: contava
+ * transferência entre contas como gasto, ignorava compra no cartão e julgava
+ * fixa e variável juntas, e por isso discordava do Radar sobre o mesmo mês.
+ */
 export default function CompassCard({ style }: { style?: React.CSSProperties }) {
   const navigate = useNavigate()
-  const { contas, extratoData, planos } = useApp()
+  const { contas, categorias, extratoData, faturaData, planos } = useApp()
   const hoje = new Date()
   const ano  = hoje.getFullYear()
   const mes  = hoje.getMonth()
 
-  const { status, sobrou, excedeu } = useMemo<{
-    status: Status; sobrou: number; excedeu: number
+  const { status, titulo, detalhe } = useMemo<{
+    status: Status; titulo: string; detalhe: string
   }>(() => {
-    let realE = 0, realS = 0
-    contas.forEach(conta => {
-      const dados = extratoData[mesKey(conta.id, ano, mes)]
-      if (!dados) return
-      Object.values(dados.lancamentos).flat().forEach(l => {
-        if (l.tipo === 'entrada') realE += l.valor
-        else realS += l.valor
-      })
-    })
-
-    if (realE === 0 && realS === 0) {
-      return { status: 'sem-dados', sobrou: 0, excedeu: 0 }
-    }
-
     const planoAno = planos[ano]
-    const planS = planoAno
-      ? (planoAno.saidas ?? []).reduce((s, cat) => s + (cat.v[mes] ?? 0), 0)
-      : 0
+    const { saidasMap, entradasMap } = construirRealizadoMes({
+      ano, mes, extratoData: extratoData as Record<string, DadosMes>,
+      faturaData, contas, categorias, planoAno,
+    })
+    const t = totaisDoMes({ mes, planoAno, categorias, cartaoNomes: nomesDeCartao(contas), entradasMap, saidasMap })
 
-    if (!planoAno || planS === 0) {
-      return { status: 'sem-plano', sobrou: 0, excedeu: 0 }
-    }
+    if (!planoAno || t.saida.prev === 0) return { status: 'sem-plano', titulo: '', detalhe: '' }
+    if (t.saida.real === 0 && t.entrada.real === 0) return { status: 'sem-dados', titulo: '', detalhe: '' }
 
-    const perc = realS / planS
-    if (realS > planS) {
-      return { status: 'vermelho', sobrou: 0, excedeu: realS - planS }
-    } else if (perc >= 0.9) {
-      return { status: 'amarelo', sobrou: 0, excedeu: 0 }
-    } else {
-      return { status: 'verde', sobrou: realE - realS, excedeu: 0 }
-    }
-  }, [contas, extratoData, planos, ano, mes])
+    const ritmo  = ritmoDoMes(t.saida.linhas, categorias, hoje)
+    const resumo = resumoDoMes(t.saida.linhas, categorias, ano, mes, hoje)
+    if (!ritmo || !resumo) return { status: 'sem-plano', titulo: '', detalhe: '' }
+    const st: Status = ritmo.estado === 'passou' ? 'vermelho' : ritmo.estado === 'acelerado' ? 'amarelo' : 'verde'
+    return { status: st, titulo: resumo.titulo, detalhe: resumo.detalhe }
+  }, [contas, categorias, extratoData, faturaData, planos, ano, mes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   type Config = { bg: string; border: string; icon: string; iconBg: string; iconBorder: string; title: string; msg: string; cor: string }
   const configs: Record<Status, Config> = {
     verde: {
       bg: '#f0fdf4', border: '#86efac', icon: '🧭',
       iconBg: '#dcfce7', iconBorder: '#bbf7d0',
-      title: 'Você está no caminho certo!',
-      msg: `Sobrou ${fmt(sobrou)} este mês.`,
+      title: 'Você está dentro do plano',
+      msg: titulo,
       cor: '#16a34a',
     },
     amarelo: {
       bg: '#fffbeb', border: '#fde68a', icon: '⚠️',
       iconBg: '#fef3c7', iconBorder: '#fde68a',
-      title: 'Atenção!',
-      msg: 'Seus gastos estão perto do limite planejado.',
+      title: 'Gastando mais rápido que o mês',
+      msg: titulo,
       cor: '#b45309',
     },
     vermelho: {
       bg: '#fff1f2', border: '#fecdd3', icon: '🔴',
       iconBg: '#fee2e2', iconBorder: '#fecdd3',
-      title: 'Fora do rumo.',
-      msg: `Você gastou ${fmt(excedeu)} a mais do que o planejado.`,
+      title: 'Passou do plano',
+      msg: titulo,
       cor: '#dc2626',
     },
     'sem-plano': {
@@ -115,6 +107,9 @@ export default function CompassCard({ style }: { style?: React.CSSProperties }) 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: c.cor, marginBottom: 1 }}>{c.title}</div>
         <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.4 }}>{c.msg}</div>
+        {detalhe && (status === 'verde' || status === 'amarelo' || status === 'vermelho') && (
+          <div style={{ fontSize: 11, color: '#475569', lineHeight: 1.4, marginTop: 2 }}>{detalhe}</div>
+        )}
       </div>
       {status === 'sem-plano' && (
         <button

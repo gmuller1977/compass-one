@@ -29,6 +29,7 @@ import { supabase } from './lib/supabase'
 import { creditarAurix, atualizarStreak } from './utils/aurix'
 import { dispararToastAurix } from './components/aurix/AurixToast'
 import AvisoInatividade from './components/AvisoInatividade'
+import IndicadorGravacao from './components/IndicadorGravacao'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -74,7 +75,7 @@ function AppShell({ children }: { children: ReactNode }) {
     iniciarSessao()
   }, [user?.id])
 
-  if (isMobile) return <>{children}<NorthAgent /><AurixToast /><AvisoInatividade /></>
+  if (isMobile) return <>{children}<NorthAgent /><AurixToast /><AvisoInatividade /><IndicadorGravacao /></>
   return (
     <>
       <Sidebar />
@@ -84,6 +85,7 @@ function AppShell({ children }: { children: ReactNode }) {
       </div>
       <NorthAgent />
       <AurixToast />
+      <IndicadorGravacao />
     </>
   )
 }
