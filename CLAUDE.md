@@ -2063,6 +2063,38 @@ acelerada, a categoria mais estourada, mês negativo à frente e, a partir das
   consigo lançar" horas depois da Fase B. Ao voltar para o app e a cada 5 min
   ele compara o script do `index.html` publicado com o que está rodando.
 - `prova65` (28 invariantes).
+**Conta compartilhada** (10/10/2026, pedido do Guilherme: "duas ou mais
+pessoas acessarem a mesma conta"). Cada pessoa tem o próprio login; as
+finanças continuam gravadas com o `user_id` do DONO, e quem aceita o convite
+lê e grava essas linhas. Migração `015_compartilhamento.sql` (só cria; as
+políticas novas SOMAM às antigas). Sem ela o app segue igual e o Perfil diz
+que falta ativar.
+
+- **No contexto**: `userIdRef` é o dono das finanças (o `user_id` das
+  consultas); `authIdRef` é quem fez login. `resolverDono` decide na entrada
+  (último dono lembrado no aparelho quando não há rede). Nome (`perfil`) é de
+  cada pessoa — o do membro vai na linha dele de `user_preferences`; o resto
+  das preferências é do dono. Aurix, Norte e simulações salvas seguem por
+  pessoa. Membro não usa "limpar dados".
+- **Convite**: Perfil → "Compartilhar finanças" (`CfgCompartilhar`), por
+  e-mail. Ao entrar com o e-mail convidado aparece `ConviteCompartilhamento`
+  (inclusive por cima do Onboarding). Aceitar é a função `aceitar_convite`,
+  que exige e-mail CONFIRMADO; o dono não pode pôr ninguém sem aceite (não há
+  UPDATE para ele). Uma conta compartilhada por pessoa.
+- **Gravar sem apagar o que o outro lançou**: o mês (extrato e fatura) é
+  mesclado em três vias na gravação (`mesclarMes.ts`: base = o que este
+  aparelho leu, meu, deles = o banco agora). Lançamento por id: o que eu
+  apaguei sai, o que eles incluíram fica; mesmo campo nos dois, vale quem
+  grava. O mesclado volta para a tela (`trazerMesclados`). Contas e
+  categorias só apagam ids que ESTE aparelho viu no banco
+  (`contasNoBancoRef`) — antes apagavam tudo o que não estava na lista local.
+  Isso também resolve o conflito entre aparelhos da mesma pessoa.
+- Conta compartilhada relê do banco a cada minuto com a tela visível.
+- Plano (`planejamento_data`) ainda grava o ano inteiro: duas pessoas
+  editando o plano ao mesmo tempo, vale a última.
+- `prova66a` (11, a mescla) e `prova66b` (15, no navegador com o AppContext
+  de verdade: dois logins, mesmo mês, categoria do outro, nome, sair).
+
 ---
 
 ## Paleta

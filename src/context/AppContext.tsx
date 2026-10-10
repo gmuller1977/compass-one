@@ -8,8 +8,10 @@ import { lerPendentes, guardarPendentes } from '../utils/pendentesLocais'
 import { guardarCopia, lerCopia, apagarCopias, type LinhasDoBanco } from '../utils/copiaLocal'
 import { supabase } from '../lib/supabase'
 import { limparUltimaAtividade } from '../utils/inatividade'
+import { mesclar3 } from '../utils/mesclarMes'
 
 // ── Types compartilhados ─────────────────────────────────────────────
+export type Compartilhamento = { papel: 'proprio' | 'membro'; donoNome: string; donoEmail: string; /** Membros aceitos, para o dono. */ membros: number }
 export type Perfil = { nome: string; apelido: string }
 export type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
 export type TipoCategoria = 'entrada' | 'saida'
@@ -146,6 +148,13 @@ type AppCtx = {
    * aparelho: quando ela foi guardada (ms). `null` = dados do banco.
    */
   dadosDoAparelho: number | null
+  /**
+   * Conta compartilhada (migração 015): 'membro' lê e grava as finanças de
+   * outra pessoa (o dono), com o próprio login. Ver resolverDono.
+   */
+  compartilhamento: Compartilhamento
+  /** Relê de quem são as finanças — depois de aceitar um convite ou sair. */
+  recarregarCompartilhamento: () => Promise<void>
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
   excluirConta: () => Promise<{ error?: string }>
@@ -326,7 +335,19 @@ function extratoKeyFromRow(contaId: string, ano: number, mes: number): string {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user,       setUserState]  = useState<User | null>(null)
   const [carregando, setCarregando] = useState(true)
+  // Conta compartilhada: userIdRef é o DONO das finanças — o user_id das
+  // linhas lidas e gravadas. authIdRef é quem fez login. São o mesmo, exceto
+  // para quem aceitou um convite (migração 015).
   const userIdRef       = useRef<string | null>(null)
+  const authIdRef       = useRef<string | null>(null)
+  const authCarregadoRef = useRef<string | null>(null)
+  const perfilProprioRef = useRef<Perfil | null>(null)
+  const [compartilhamento, setCompartilhamento] = useState<Compartilhamento>({ papel: 'proprio', donoNome: '', donoEmail: '', membros: 0 })
+  // Ids que este aparelho sabe que estão no banco: só esses podem ser apagados
+  // ao gravar a lista. Antes apagava tudo o que não estava na lista daqui, e
+  // a conta criada no celular da outra pessoa sumia na próxima gravação.
+  const contasNoBancoRef     = useRef<Set<string>>(new Set())
+  const categoriasNoBancoRef = useRef<Set<string>>(new Set())
   const dataLoadedRef   = useRef(false)
   const everLoadedRef   = useRef(false)
   const wasLoggedOutRef = useRef(false)
@@ -406,7 +427,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
       const u = session?.user ?? null
-      userIdRef.current = u?.id ?? null
       setUserState(u)
       if (!u) {
         // Sem sessão, o carimbo de última atividade não vale mais nada. Apagar
@@ -418,16 +438,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
         apagarCopias()
         wasLoggedOutRef.current = true
         loadedUserIdRef.current = null
+        userIdRef.current = null; authIdRef.current = null; authCarregadoRef.current = null
+        perfilProprioRef.current = null
+        setCompartilhamento({ papel: 'proprio', donoNome: '', donoEmail: '', membros: 0 })
         resetState()
         setCarregando(false)
-      } else if (wasLoggedOutRef.current || !everLoadedRef.current || loadedUserIdRef.current !== u.id) {
+      } else if (wasLoggedOutRef.current || !everLoadedRef.current || authCarregadoRef.current !== u.id) {
         wasLoggedOutRef.current = false
         everLoadedRef.current = true
-        loadData(u.id)
+        authCarregadoRef.current = u.id
+        authIdRef.current = u.id
+        resolverDono(u.id).then(dono => {
+          if (authIdRef.current !== u.id) return
+          userIdRef.current = dono
+          loadData(dono)
+        })
       }
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  // ── Conta compartilhada ──────────────────────────────────────────────
+  /**
+   * De quem são as finanças que este login vê: do dono que o convidou, se
+   * aceitou um convite; senão, as próprias. Sem a tabela (migração 015 não
+   * rodada) ou sem internet, vale o último dono conhecido neste aparelho.
+   */
+  async function resolverDono(authId: string): Promise<string> {
+    const chave = `compass-dono-${authId}`
+    try {
+      const { data, error } = await supabase.from('compartilhamentos')
+        .select('dono_id, dono_nome, dono_email').eq('membro_id', authId).eq('status', 'aceito').maybeSingle()
+      if (error) throw error
+      if (data?.dono_id) {
+        const { data: meu } = await supabase.from('user_preferences').select('perfil_nome, perfil_apelido').eq('user_id', authId).maybeSingle()
+        perfilProprioRef.current = { nome: meu?.perfil_nome ?? '', apelido: meu?.perfil_apelido ?? '' }
+        setCompartilhamento({ papel: 'membro', donoNome: data.dono_nome ?? '', donoEmail: data.dono_email ?? '', membros: 0 })
+        try { localStorage.setItem(chave, JSON.stringify(data)) } catch { /* só não lembra offline */ }
+        return data.dono_id as string
+      }
+      perfilProprioRef.current = null
+      const { count } = await supabase.from('compartilhamentos')
+        .select('id', { count: 'exact', head: true }).eq('dono_id', authId).eq('status', 'aceito')
+      setCompartilhamento({ papel: 'proprio', donoNome: '', donoEmail: '', membros: count ?? 0 })
+      try { localStorage.removeItem(chave) } catch { /* idem */ }
+      return authId
+    } catch {
+      try {
+        const v = JSON.parse(localStorage.getItem(chave) ?? 'null') as { dono_id: string; dono_nome?: string; dono_email?: string } | null
+        if (v?.dono_id) {
+          setCompartilhamento({ papel: 'membro', donoNome: v.dono_nome ?? '', donoEmail: v.dono_email ?? '', membros: 0 })
+          return v.dono_id
+        }
+      } catch { /* sem cópia */ }
+      return authId
+    }
+  }
+
+  async function recarregarCompartilhamento() {
+    const authId = authIdRef.current
+    if (!authId) return
+    const dono = await resolverDono(authId)
+    if (dono === userIdRef.current) return
+    // Trocou de finanças: zera tudo e carrega as do novo dono.
+    resetState()
+    userIdRef.current = dono
+    loadingForUserRef.current = null
+    setCarregando(true)
+    await loadData(dono)
+  }
 
   // ── Load data ────────────────────────────────────────────────────────
   /** As seis consultas do carregamento; `null` se qualquer tabela crítica falhar. */
@@ -576,7 +655,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Preferences
     const pref = prefRow as PrefRow | null
-    setPerfilState({ nome: pref?.perfil_nome ?? '', apelido: pref?.perfil_apelido ?? '' })
+    // Membro de conta compartilhada: o nome é o DELE, não o do dono.
+    setPerfilState(perfilProprioRef.current ?? { nome: pref?.perfil_nome ?? '', apelido: pref?.perfil_apelido ?? '' })
     const hasData = contasLoaded.length > 0 || (categoriasRows ?? []).length > 0
     setOnboardingCompletoState(pref?.onboarding_completo ?? hasData)
     setPlanejamentoLockadoState(pref?.planejamento_lockado ?? false)
@@ -631,6 +711,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosState(planosLoaded)
     setPlanosRealState(planosRealLoaded)
 
+    contasNoBancoRef.current = new Set(contasLoaded.map(c => c.id))
+    categoriasNoBancoRef.current = new Set(rawCats.map(c => c.id))
     // Registra contagens após load bem-sucedido para proteção de save seguro
     savedCountRef.current = {
       contas:     mergedContas.length,
@@ -696,36 +778,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
     if (import.meta.env.DEV) console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
-    if (list.length === 0) {
-      if (!safeSaveCheck('contas', 0)) return
-      console.error('⚠️ [saveContas] DELETE ALL contas!')
-      await supabase.from('contas').delete().eq('user_id', uid)
-      savedCountRef.current.contas = 0
-      return
+    if (list.length === 0 && !safeSaveCheck('contas', 0)) return
+    if (list.length > 0) {
+      const { error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid)))
+      if (error) { console.error('❌ [saveContas] upsert error:', error.message, error.code); return }
     }
-    const { data: upserted, error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid))).select('id')
-    if (error) { console.error('❌ [saveContas] upsert error:', error.message, error.code); return }
-    if (import.meta.env.DEV) console.log('✅ [saveContas] upsert OK:', upserted?.length, 'rows. IDs:', list.map(c => c.id))
-    const ids = list.map(c => c.id).join(',')
-    const { error: delErr, count } = await supabase.from('contas').delete({ count: 'exact' }).eq('user_id', uid).not('id', 'in', `(${ids})`)
-    if (delErr) console.error('❌ [saveContas] delete-stale error:', delErr.message)
-    else if (count && count > 0) console.warn('🗑️ [saveContas] delete-stale apagou', count, 'contas antigas')
+    // Só apaga o que este aparelho viu no banco e tirou da lista: conta criada
+    // em outro aparelho (ou por outra pessoa da conta) não é apagada aqui.
+    const atuais = new Set(list.map(c => c.id))
+    const apagar = [...contasNoBancoRef.current].filter(id => !atuais.has(id))
+    if (apagar.length) {
+      const { error: delErr } = await supabase.from('contas').delete().eq('user_id', uid).in('id', apagar)
+      if (delErr) { console.error('❌ [saveContas] delete error:', delErr.message); return }
+    }
+    contasNoBancoRef.current = atuais
     savedCountRef.current.contas = list.length
   }
 
   async function saveCategorias(list: Categoria[]) {
     if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
-    if (list.length === 0) {
-      if (!safeSaveCheck('categorias', 0)) return
-      await supabase.from('categorias').delete().eq('user_id', uid)
-      savedCountRef.current.categorias = 0
-      return
+    if (list.length === 0 && !safeSaveCheck('categorias', 0)) return
+    if (list.length > 0) {
+      const { error } = await supabase.from('categorias').upsert(list.map(c => categoriaToRow(c, uid)))
+      if (error) { console.error('save categorias:', error); return }
     }
-    const { error } = await supabase.from('categorias').upsert(list.map(c => categoriaToRow(c, uid)))
-    if (error) { console.error('save categorias:', error); return }
-    const ids = list.map(c => c.id).join(',')
-    await supabase.from('categorias').delete().eq('user_id', uid).not('id', 'in', `(${ids})`)
+    const atuais = new Set(list.map(c => c.id))
+    const apagar = [...categoriasNoBancoRef.current].filter(id => !atuais.has(id))
+    if (apagar.length) {
+      const { error } = await supabase.from('categorias').delete().eq('user_id', uid).in('id', apagar)
+      if (error) { console.error('delete categorias:', error); return }
+    }
+    categoriasNoBancoRef.current = atuais
     savedCountRef.current.categorias = list.length
   }
 
@@ -757,15 +841,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const alterados = mesesAlterados(data, noBanco.current)
     if (alterados.length === 0) return
-    const rows = alterados.map(key => {
-      const { contaId, ano, mes } = parseExtratoKey(key)
-      return { user_id: uid, conta_id: contaId, ano, mes, dados: data[key] }
-    })
     gravandoRef.current++
     atualizarEstadoGravacao()
     sincronizarPendentes()
     let error: unknown = null
+    // O que vai para o banco: o mês daqui, mesclado com o que outro aparelho
+    // (ou outra pessoa da conta) gravou depois da nossa leitura — ver
+    // utils/mesclarMes. Só os meses que mudaram lá são substituídos aqui.
+    const aGravar: Record<string, unknown> = {}
+    for (const k of alterados) aGravar[k] = data[k]
     try {
+      const contasDosMeses = [...new Set(alterados.map(k => parseExtratoKey(k).contaId))]
+      const { data: noBancoAgora, error: errLer } = await supabase.from(tabela)
+        .select('conta_id, ano, mes, dados').eq('user_id', uid).in('conta_id', contasDosMeses)
+      if (errLer) throw errLer
+      for (const row of noBancoAgora ?? []) {
+        const k = extratoKeyFromRow(row.conta_id, row.ano, row.mes)
+        if (!(k in aGravar)) continue
+        const base = noBanco.current[k]
+        if (base !== undefined && JSON.stringify(row.dados) === JSON.stringify(base)) continue
+        aGravar[k] = mesclar3(base, data[k], row.dados)
+      }
+      const rows = alterados.map(key => {
+        const { contaId, ano, mes } = parseExtratoKey(key)
+        return { user_id: uid, conta_id: contaId, ano, mes, dados: aGravar[key] }
+      })
       ;({ error } = await supabase.from(tabela).upsert(rows, { onConflict: 'user_id,conta_id,ano,mes' }))
     } catch (e) {
       error = e
@@ -776,14 +876,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       falhouRef.current = true
       agendarNovaTentativa()
     } else {
-      registrarUso(uid, lancamentosNovos(alterados, data, noBanco.current))
-      for (const k of alterados) noBanco.current[k] = data[k]
+      registrarUso(authIdRef.current ?? uid, lancamentosNovos(alterados, data, noBanco.current))
+      const mesclados = alterados.filter(k => aGravar[k] !== data[k])
+      for (const k of alterados) noBanco.current[k] = aGravar[k]
+      if (mesclados.length) trazerMesclados(tabela, mesclados, data, aGravar)
       savedCountRef.current[countKey] = Object.keys(data).length
       agendarCopia()
       if (!temMesNaoGravado()) { falhouRef.current = false; tentativasRef.current = 0 }
       sincronizarPendentes()
     }
     atualizarEstadoGravacao()
+  }
+
+  /**
+   * Põe na tela o que a mescla trouxe do banco (o lançamento da outra pessoa).
+   * Se o mês mudou aqui durante a gravação, a mudança nova é reaplicada por
+   * cima do mesclado — senão a próxima gravação apagaria o que veio de lá.
+   */
+  function trazerMesclados(tabela: 'extrato_data' | 'fatura_data', chaves: string[], enviado: Record<string, unknown>, gravado: Record<string, unknown>) {
+    const ajustar = <T,>(prev: Record<string, T>): Record<string, T> => {
+      const out = { ...prev }
+      for (const k of chaves) {
+        out[k] = (prev[k] === enviado[k] ? gravado[k] : mesclar3(enviado[k], prev[k], gravado[k])) as T
+      }
+      return out
+    }
+    if (tabela === 'extrato_data') {
+      extratoAGravarRef.current = ajustar(extratoAGravarRef.current)
+      setExtratoState(prev => ajustar(prev))
+    } else {
+      faturaAGravarRef.current = ajustar(faturaAGravarRef.current)
+      setFaturaState(prev => ajustar(prev))
+    }
   }
 
   /**
@@ -919,6 +1043,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     savedCountRef.current.extrato    = Object.keys(extrato).length
     savedCountRef.current.fatura     = Object.keys(fatura).length
     savedCountRef.current.planos     = Object.keys(planosLidos).length
+    contasNoBancoRef.current = new Set(contasLidas.map(c => c.id))
+    categoriasNoBancoRef.current = new Set((categoriasRows ?? []).map(r => (r as { id: string }).id))
     setContasState(contasLidas)
     const vistas = new Set<string>()
     setCategoriasState((categoriasRows ?? []).map(rowToCategoria).filter(c => {
@@ -942,6 +1068,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.addEventListener('visibilitychange', mudou)
     return () => document.removeEventListener('visibilitychange', mudou)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Conta compartilhada: a outra pessoa lança enquanto esta tela está aberta.
+  // Relê a cada minuto, só com a tela visível (a releitura não roda com
+  // gravação pendente, e a gravação já mescla o que veio de lá).
+  const compartilhada = compartilhamento.papel === 'membro' || compartilhamento.membros > 0
+  useEffect(() => {
+    if (!compartilhada) return
+    const t = setInterval(() => { if (document.visibilityState === 'visible') recarregarDoBanco() }, 60_000)
+    return () => clearInterval(t)
+  }, [compartilhada]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fechar ou recarregar a aba com mês não gravado e sem cópia no aparelho
   // perderia o lançamento: o navegador pergunta antes.
@@ -991,10 +1127,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ) {
     if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
+    const membro = authIdRef.current && authIdRef.current !== uid
+    if (membro) {
+      // O nome é de cada pessoa: vai na linha dela, nunca na do dono.
+      perfilProprioRef.current = p
+      const { error: e } = await supabase.from('user_preferences').upsert({
+        user_id: authIdRef.current, perfil_nome: p.nome, perfil_apelido: p.apelido, atualizado_em: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      if (e) console.error('save perfil (membro):', e)
+    }
     const { error } = await supabase.from('user_preferences').upsert({
       user_id: uid,
-      perfil_nome: p.nome,
-      perfil_apelido: p.apelido,
+      ...(membro ? {} : { perfil_nome: p.nome, perfil_apelido: p.apelido }),
       onboarding_completo: oc,
       planejamento_lockado: pl,
       desvio_min_perc: dmp,
@@ -1140,6 +1284,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function limparDados() {
     const uid = userIdRef.current
     if (!uid) return
+    // Quem entrou por convite não apaga as finanças do dono.
+    if (authIdRef.current !== uid) return
     await Promise.all([
       supabase.from('contas').delete().eq('user_id', uid),
       supabase.from('categorias').delete().eq('user_id', uid),
@@ -1190,6 +1336,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       metaSim, setMetaSim,
       gravacao,
       dadosDoAparelho,
+      compartilhamento, recarregarCompartilhamento,
       limparDados, sairDaConta, excluirConta,
     }}>
       {children}

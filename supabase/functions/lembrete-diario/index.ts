@@ -44,10 +44,15 @@ Deno.serve(async (req) => {
   const proxMes = hoje.mes === 11 ? { ano: hoje.ano + 1, mes: 1 } : { ano: hoje.ano, mes: hoje.mes + 2 }
   const usuarios = [...new Set((inscricoes ?? []).map(i => i.user_id as string))]
   const lancou = new Map<string, boolean>()
+  // Conta compartilhada (migração 015): as finanças de um membro estão no
+  // user_id do dono. Sem a tabela, cada um é dono de si.
+  const { data: comp } = await db.from('compartilhamentos').select('membro_id, dono_id').eq('status', 'aceito')
+  const donoDe = new Map<string, string>((comp ?? []).map(c => [c.membro_id as string, c.dono_id as string]))
   for (const uid of usuarios) {
+    const dono = donoDe.get(uid) ?? uid
     const [{ data: ext }, { data: fat }] = await Promise.all([
-      db.from('extrato_data').select('ano, mes, dados').eq('user_id', uid).eq('ano', hoje.ano).eq('mes', hoje.mes + 1),
-      db.from('fatura_data').select('ano, mes, dados').eq('user_id', uid)
+      db.from('extrato_data').select('ano, mes, dados').eq('user_id', dono).eq('ano', hoje.ano).eq('mes', hoje.mes + 1),
+      db.from('fatura_data').select('ano, mes, dados').eq('user_id', dono)
         .or(`and(ano.eq.${hoje.ano},mes.eq.${hoje.mes + 1}),and(ano.eq.${proxMes.ano},mes.eq.${proxMes.mes})`),
     ])
     lancou.set(uid, lancouNoDia(ext ?? [], fat ?? [], hoje))
