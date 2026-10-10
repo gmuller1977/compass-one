@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
+import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { COR } from '../components/planejamento/types'
@@ -259,6 +260,8 @@ export default function Planejamento() {
         </div>
       )}
 
+      <AvisoSoAdministrador style={{ margin: '8px 16px 0', flexShrink: 0 }} />
+
       {/* Mobile: o ano */}
       {isMobile && (
         <div style={{
@@ -377,7 +380,8 @@ export default function Planejamento() {
 
       {revisando && (
         <RevisaoPlanoDialog acima={lancadoAcima} deps={depsAjuste} planos={planos} setPlanos={setPlanos}
-          categorias={categorias} onFechar={() => setRevisando(false)} />
+          categorias={categorias} onFechar={() => setRevisando(false)}
+ />
       )}
 
       {ajuste && (

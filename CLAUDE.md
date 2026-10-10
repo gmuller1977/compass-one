@@ -2101,12 +2101,27 @@ que falta ativar.
   depois da 015). Conta paga (`fixasConsolidadas`) não é lançamento: membro
   pode marcar. As telas de edição ainda não mostram cadeado: o membro tenta,
   e a mudança volta com o aviso.
+- **Cadastro é só do administrador** (escolha do Guilherme, mesmo dia):
+  contas, categorias, plano e as preferências da conta (cenário, alertas,
+  saldo inicial do dinheiro). No `AppContext`, `setContas`, `setCategorias`,
+  `setPlanos` e o saldo do dinheiro do membro não mudam nada e disparam
+  `compass-permissao` com `detail: 'cadastro'` (o `AvisoPermissao` explica);
+  os `save*` desses dados nem rodam para membro. Preferência como o cenário
+  muda só na tela do membro, sem gravar na linha do dono. Configurações e
+  Planejamento mostram `AvisoSoAdministrador`. O banco confere pela migração
+  `017_cadastro_so_administrador.sql`: as quatro políticas `_compartilhado`
+  de cadastro viram só leitura (rodar depois da 016). Consequência aceita:
+  o membro não cria categoria no meio de um lançamento nem escolhe os
+  atalhos do Lançar (`pinQuick` é da categoria).
 - Conta compartilhada relê do banco a cada minuto com a tela visível.
-- Plano (`planejamento_data`) ainda grava o ano inteiro: duas pessoas
-  editando o plano ao mesmo tempo, vale a última.
+- Plano (`planejamento_data`): só o administrador grava, então não há mais
+  duas pessoas editando o plano ao mesmo tempo; dois aparelhos do próprio
+  administrador ainda gravam o ano inteiro, e vale o último.
 - `prova66a` (11, a mescla), `prova67a` (10, autoria), `prova67-banco.sql`
-  (18, RLS e gatilho num Postgres 16 de verdade) e `prova66b` (20, no navegador com o AppContext
-  de verdade: dois logins, mesmo mês, categoria do outro, nome, sair).
+  (18, RLS e gatilho num Postgres 16 de verdade), `prova68-banco.sql` (17,
+  cadastro só leitura para o membro, com controle sem a 017: 11 falham) e
+  `prova66b` (26, no navegador com o AppContext de verdade: dois logins,
+  mesmo mês, cadastro bloqueado ao membro, nome, sair).
 
 ---
 

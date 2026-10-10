@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import type { ItensPorMes } from '../utils/itensPlano'
 import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
@@ -761,6 +761,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Save helpers ─────────────────────────────────────────────────────
   function canSave() { return !!(userIdRef.current && dataLoadedRef.current) }
+  /** Entrou por convite na conta de outra pessoa: não é o administrador. */
+  function ehMembro() { return !!authIdRef.current && !!userIdRef.current && authIdRef.current !== userIdRef.current }
+  function avisarSoAdmin() { window.dispatchEvent(new CustomEvent('compass-permissao', { detail: 'cadastro' })) }
 
   function safeSaveCheck(key: keyof typeof savedCountRef.current, newCount: number): boolean {
     const known = savedCountRef.current[key]
@@ -776,7 +779,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveContas(list: Conta[]) {
-    if (!canSave() || modoAparelhoRef.current) return
+    if (!canSave() || modoAparelhoRef.current || ehMembro()) return
     const uid = userIdRef.current!
     if (import.meta.env.DEV) console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
     if (list.length === 0 && !safeSaveCheck('contas', 0)) return
@@ -797,7 +800,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveCategorias(list: Categoria[]) {
-    if (!canSave() || modoAparelhoRef.current) return
+    if (!canSave() || modoAparelhoRef.current || ehMembro()) return
     const uid = userIdRef.current!
     if (list.length === 0 && !safeSaveCheck('categorias', 0)) return
     if (list.length > 0) {
@@ -1102,7 +1105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function savePlanosData(dict: Record<number, PlanoAnoData>, tipo: 'previsto' | 'real') {
-    if (!canSave() || modoAparelhoRef.current) return
+    if (!canSave() || modoAparelhoRef.current || ehMembro()) return
     const uid = userIdRef.current!
     const entries = Object.entries(dict)
     const countKey = tipo === 'previsto' ? 'planos' : 'planosReal'
@@ -1147,6 +1150,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         user_id: authIdRef.current, perfil_nome: p.nome, perfil_apelido: p.apelido, atualizado_em: new Date().toISOString(),
       }, { onConflict: 'user_id' })
       if (e) console.error('save perfil (membro):', e)
+      // As preferências da conta (cenário, alertas, saldo do dinheiro) são do
+      // administrador: o membro muda na tela dele, e não grava na linha do dono.
+      return
     }
     const { error } = await supabase.from('user_preferences').upsert({
       user_id: uid,
@@ -1166,6 +1172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function salvarSaldoInicialDinheiro(v: number) {
+    if (ehMembro()) { avisarSoAdmin(); return }
     setSaldoInicialDinheiroState(v)
     if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
@@ -1269,6 +1276,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao])
 
   // ── Funções de update ────────────────────────────────────────────────
+  // Conta compartilhada (10/10/2026, escolha do Guilherme): contas,
+  // categorias e plano são do ADMINISTRADOR. O membro vê tudo e lança; mexer
+  // no cadastro não muda nada e avisa. O banco confere de novo (migração 017).
+  const setContas = useCallback<Dispatch<SetStateAction<Conta[]>>>(v => {
+    if (ehMembro()) { avisarSoAdmin(); return }
+    setContasState(v)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const setCategorias = useCallback<Dispatch<SetStateAction<Categoria[]>>>(v => {
+    if (ehMembro()) { avisarSoAdmin(); return }
+    setCategoriasState(v)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const setPlanos = useCallback<Dispatch<SetStateAction<Record<number, PlanoAnoData>>>>(v => {
+    if (ehMembro()) { avisarSoAdmin(); return }
+    setPlanosState(v)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const setSaldoInicialDinheiro = useCallback<Dispatch<SetStateAction<number>>>(v => {
+    if (ehMembro()) { avisarSoAdmin(); return }
+    setSaldoInicialDinheiroState(v)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
 
   function updateExtratoMes(key: string, fn: (prev: DadosMes) => DadosMes) {
@@ -1337,11 +1364,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user, carregando,
       contas, categorias, extratoData, faturaData, planos,
       desvioMinPerc, percentualAlerta, metodoSugestao, cenarioPrevisao, perfil,
-      saldoInicialDinheiro, setSaldoInicialDinheiro: setSaldoInicialDinheiroState, salvarSaldoInicialDinheiro,
-      setContas: setContasState, setCategorias: setCategoriasState,
+      saldoInicialDinheiro, setSaldoInicialDinheiro, salvarSaldoInicialDinheiro,
+      setContas, setCategorias,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
-      setPlanos: setPlanosState,
+      setPlanos,
       setDesvioMinPerc, setPercentualAlerta, setMetodoSugestao, setCenarioPrevisao, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
       objetivoUsuario, setObjetivoUsuario,

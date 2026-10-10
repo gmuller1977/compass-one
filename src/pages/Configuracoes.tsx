@@ -21,6 +21,7 @@ import type { Aba, ConfirmState } from '../components/configuracoes/CfgShared'
 import CfgBancosCartoes from '../components/configuracoes/CfgBancosCartoes'
 import CfgCategorias from '../components/configuracoes/CfgCategorias'
 import CfgPerfil from '../components/configuracoes/CfgPerfil'
+import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { nomeCanonico, mesmoNome } from '../utils/nomeCategoria'
 import CfgPreferencias from '../components/configuracoes/CfgPreferencias'
 
@@ -573,6 +574,8 @@ export default function Configuracoes() {
           </span>
         </div>
       )}
+
+      {(aba === 'bancos' || aba === 'cartoes' || aba === 'categorias' || aba === 'preferencias') && <AvisoSoAdministrador style={{ margin: '0 0 12px' }} />}
 
       {/* Tutoriais por seção */}
       {aba === 'bancos' && <TutorialCard tela="config_bancos" icon="🏦" title="Seus bancos"
