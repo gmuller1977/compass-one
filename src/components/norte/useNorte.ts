@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useApp } from '../../context/AppContext'
+import { useApp, type DadosMes } from '../../context/AppContext'
 import { supabase } from '../../lib/supabase'
 import { useMesDaInicio } from '../inicio/useMesDaInicio'
 import { dadosDoNorte, contextoNorte, SYSTEM_NORTE, type DadosNorte } from '../../utils/contextoNorte'
+import { cadastroParaNorte, type PedidoLancar, type PedidoPagar } from '../../utils/acoesNorte'
+import { contaDoPagamento, confirmarPagamento } from '../../utils/pagarConta'
+import { dataDoLancamento, lancarNaFatura, lancarNoExtrato } from '../../utils/lancamentoRapido'
 import { creditarAurix } from '../../utils/aurix'
 import { dispararToastAurix } from '../aurix/AurixToast'
 
-export type Mensagem = { role: 'user' | 'assistant'; content: string; ts: number }
+export type Mensagem = {
+  role: 'user' | 'assistant'; content: string; ts: number
+  /** O pedido [[fazer:...]] desta resposta já foi confirmado ou cancelado — não aparece de novo para confirmar. */
+  pedido?: 'feito' | 'cancelado'
+}
 
 // A conversa fica no aparelho, por usuário: fechar a tela não apaga mais.
 // Só as últimas 40 — o Gemini recebe as últimas 20 de qualquer jeito.
@@ -27,7 +34,7 @@ function lerConversa(uid: string | undefined): Mensagem[] {
  * e pelo painel do computador.
  */
 export function useNorte() {
-  const { user, perfil } = useApp()
+  const { user, perfil, contas, categorias, extratoData, updateExtratoMes, setFaturaData } = useApp()
   const uid = user?.id
   const hoje = new Date()
   const { deps } = useMesDaInicio(hoje.getFullYear(), hoje.getMonth())
@@ -63,7 +70,8 @@ export function useNorte() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('sem sessao')
-      const systemPrompt = SYSTEM_NORTE.replace('{CONTEXTO}', contextoNorte(dados, deps.categorias))
+      const systemPrompt = SYSTEM_NORTE.replace('{CONTEXTO}',
+        contextoNorte(dados, deps.categorias) + '\n' + cadastroParaNorte(deps.categorias, deps.contas, dados.bussola.contas))
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/north-chat`, {
         method: 'POST',
         headers: {
@@ -73,7 +81,11 @@ export function useNorte() {
         },
         body: JSON.stringify({
           systemPrompt,
-          history: historico.slice(-20).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+          history: historico.slice(-20).map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            // O Gemini precisa saber o que a pessoa fez com o pedido anterior.
+            parts: [{ text: m.pedido ? `${m.content}\n(${m.pedido === 'feito' ? 'a pessoa CONFIRMOU e foi gravado' : 'a pessoa CANCELOU, nada foi gravado'})` : m.content }],
+          })),
         }),
         signal: controller.signal,
       })
@@ -95,7 +107,47 @@ export function useNorte() {
       loadingRef.current = false
       setLoading(false)
     }
-  }, [dados, deps.categorias, uid])
+  }, [dados, deps.categorias, deps.contas, uid])
 
-  return { dados, messages, loading, enviar, limpar, nome }
+  const marcarPedido = useCallback((ts: number, estado: 'feito' | 'cancelado') => {
+    setMessages(prev => prev.map(m => (m.ts === ts && m.role === 'assistant' ? { ...m, pedido: estado } : m)))
+  }, [])
+
+  /**
+   * Grava um pedido confirmado, pelos MESMOS caminhos das telas: o lançamento
+   * como o Lançar (lancarNoExtrato / lancarNaFatura), o pagamento como o
+   * "Pagar" da Bússola (contaDoPagamento + confirmarPagamento).
+   */
+  const lancar = useCallback((p: PedidoLancar) => {
+    const cat = categorias.find(c => c.id === p.categoriaId)
+    if (!cat) return false
+    const data = dataDoLancamento(p.data)
+    const [a, m, d] = [data.getFullYear(), data.getMonth(), data.getDate()]
+    const descricao = p.descricao || cat.nome
+    const baseId = `v-${Date.now()}`
+    const conta = contas.find(c => c.id === p.contaId)
+    if (conta?.tipo === 'cartao') {
+      setFaturaData(prev => lancarNaFatura(prev, {
+        cartao: conta, ano: a, mes: m, dia: d, tipoDaCategoria: cat.tipo,
+        categoria: cat.nome, subCategoria: cat.descricao, descricao, valorParcela: p.valor, parcelas: p.parcelas, baseId,
+      }))
+      return true
+    }
+    if (!conta && p.contaId !== 'dinheiro') return false
+    const fp = p.contaId === 'dinheiro' ? 'dinheiro' : (cat.formaPagamento ?? (cat.tipo === 'saida' ? 'debito' : 'dinheiro'))
+    updateExtratoMes(`${p.contaId}-${a}-${String(m + 1).padStart(2, '0')}`, prev => lancarNoExtrato(prev, {
+      dia: d, tipo: cat.tipo, categoria: cat.nome, subCategoria: cat.descricao, descricao,
+      valor: p.valor, formaPagamento: fp as 'debito' | 'pix' | 'transferencia' | 'dinheiro', id: baseId,
+    }))
+    return true
+  }, [categorias, contas, setFaturaData, updateExtratoMes])
+
+  const pagar = useCallback((p: PedidoPagar) => {
+    const de = contaDoPagamento(p.id, p.ano, p.mes, contas, categorias, extratoData as Record<string, DadosMes>)
+    if (!de) return false
+    updateExtratoMes(`${de}-${p.ano}-${String(p.mes + 1).padStart(2, '0')}`, dm => confirmarPagamento(dm, p.id, p.valor, p.previsto))
+    return true
+  }, [contas, categorias, extratoData, updateExtratoMes])
+
+  return { dados, deps, messages, loading, enviar, limpar, nome, marcarPedido, lancar, pagar }
 }

@@ -4,6 +4,11 @@ import BottomNav from '../components/BottomNav'
 import { useNorte, type Mensagem } from '../components/norte/useNorte'
 import { M, fmt } from '../components/mobile/estilo'
 import { ACOES_NORTE, separarAcoes, sugestoesDoNorte, type AcaoNorte } from '../utils/contextoNorte'
+import { lerPedido, detalhesDoPedido, type PedidoNorte, type PedidoLancar, type PedidoPagar } from '../utils/acoesNorte'
+import { simularCompra } from '../utils/simulacaoCompra'
+import { Resposta } from '../components/simulacao/SimCompra'
+import { useApp, type DadosMes } from '../context/AppContext'
+import type { Deps } from '../utils/saldoConta'
 import { reconhecimentoDeVoz, type Reconhecimento } from '../utils/voz'
 import { COR } from '../utils/cores'
 import { SIDEBAR_W } from '../components/Sidebar'
@@ -24,7 +29,8 @@ import { SIDEBAR_W } from '../components/Sidebar'
  */
 export default function Norte() {
   const navigate = useNavigate()
-  const { dados, messages, loading, enviar, limpar, nome } = useNorte()
+  const { dados, deps, messages, loading, enviar, limpar, nome, marcarPedido, lancar, pagar } = useNorte()
+  const { extratoData } = useApp()
   const [texto, setTexto] = useState('')
   const [ouvindo, setOuvindo] = useState(false)
   const rec = useRef<Reconhecimento | null>(null)
@@ -116,7 +122,17 @@ export default function Norte() {
           <div style={{ marginTop: 8, fontSize: 14, color: COR.textoSuave }}>Pergunte o que quiser sobre o seu dinheiro.</div>
         </Bolha>
 
-        {messages.map(m => <MensagemNorte key={m.ts + m.role} m={m} onAcao={irPara} />)}
+        {messages.map(m => (
+          <MensagemNorte key={m.ts + m.role} m={m} onAcao={irPara}
+            cad={{ categorias: deps.categorias, contas: deps.contas, aVencer: dados.bussola.contas, extratoData: extratoData as Record<string, DadosMes> }}
+            deps={deps}
+            onFeito={(p) => {
+              const ok = p.tipo === 'lancar' ? lancar(p) : p.tipo === 'pagar' ? pagar(p) : false
+              if (ok) marcarPedido(m.ts, 'feito')
+              return ok
+            }}
+            onCancelar={() => marcarPedido(m.ts, 'cancelado')} />
+        ))}
 
         {loading && (
           <Bolha>
@@ -196,7 +212,12 @@ function Bolha({ children }: { children: ReactNode }) {
   )
 }
 
-function MensagemNorte({ m, onAcao }: { m: Mensagem; onAcao: (a: AcaoNorte) => void }) {
+type Cad = { categorias: Deps['categorias']; contas: Deps['contas']; aVencer: ReturnType<typeof useNorte>['dados']['bussola']['contas']; extratoData: Record<string, DadosMes> }
+
+function MensagemNorte({ m, onAcao, cad, deps, onFeito, onCancelar }: {
+  m: Mensagem; onAcao: (a: AcaoNorte) => void; cad: Cad; deps: Deps
+  onFeito: (p: PedidoLancar | PedidoPagar) => boolean; onCancelar: () => void
+}) {
   if (m.role === 'user') {
     return (
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
@@ -205,21 +226,118 @@ function MensagemNorte({ m, onAcao }: { m: Mensagem; onAcao: (a: AcaoNorte) => v
       </div>
     )
   }
-  const { texto, acoes } = separarAcoes(m.content)
+  const { texto: semPedido, leitura } = lerPedido(m.content, cad)
+  const { texto, acoes } = separarAcoes(semPedido)
   return (
-    <Bolha>
-      <Texto texto={texto} />
-      {acoes.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-          {acoes.map(a => (
-            <button key={a} onClick={() => onAcao(a)} style={{
-              border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 999, padding: '9px 14px',
-              minHeight: 40, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
-            }}>{ACOES_NORTE[a].rotulo} ›</button>
-          ))}
+    <>
+      <Bolha>
+        {texto && <Texto texto={texto} />}
+        {leitura && !leitura.ok && !m.pedido && (
+          <div role="alert" style={{ marginTop: 10, fontSize: 14, color: COR.erroTexto, background: COR.erroFundo, borderRadius: 12, padding: '8px 12px' }}>
+            Não consegui preparar isso: {leitura.erro}
+          </div>
+        )}
+        {leitura?.ok && leitura.pedido.tipo !== 'simular' && (
+          <CartaoPedido pedido={leitura.pedido} estado={m.pedido} cad={cad} onFeito={onFeito} onCancelar={onCancelar} />
+        )}
+        {acoes.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+            {acoes.map(a => (
+              <button key={a} onClick={() => onAcao(a)} style={{
+                border: 'none', background: '#eff6ff', color: COR.azul, borderRadius: 999, padding: '9px 14px',
+                minHeight: 40, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+              }}>{ACOES_NORTE[a].rotulo} ›</button>
+            ))}
+          </div>
+        )}
+      </Bolha>
+      {leitura?.ok && leitura.pedido.tipo === 'simular' && <Simulacao pedido={leitura.pedido} deps={deps} />}
+    </>
+  )
+}
+
+/**
+ * O cartão do pedido: o que vai ser gravado, e os dois botões. Só o toque em
+ * "Confirmar" grava; depois disso o cartão fica como registro ("✓ Lançado"),
+ * guardado na conversa — recarregar a tela não oferece o mesmo pedido de novo.
+ */
+function CartaoPedido({ pedido, estado, cad, onFeito, onCancelar }: {
+  pedido: PedidoLancar | PedidoPagar; estado?: 'feito' | 'cancelado'; cad: Cad
+  onFeito: (p: PedidoLancar | PedidoPagar) => boolean; onCancelar: () => void
+}) {
+  const [falhou, setFalhou] = useState(false)
+  // Dois toques rápidos não gravam duas vezes.
+  const [gravando, setGravando] = useState(false)
+  const det = detalhesDoPedido(pedido, cad)
+  const linha = (rot: string, val: ReactNode) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 15, padding: '4px 0' }}>
+      <span style={{ color: COR.textoSuave }}>{rot}</span><span style={{ color: COR.texto, fontWeight: 600, textAlign: 'right' }}>{val}</span>
+    </div>
+  )
+  let titulo: string, corpo: ReactNode, rotFeito: string
+  if (pedido.tipo === 'lancar') {
+    const d = det as { categoria: string; icone: string; entrada: boolean; conta: string; quando: string }
+    titulo = d.entrada ? 'Lançar receita' : 'Lançar gasto'
+    rotFeito = '✓ Lançado'
+    corpo = <>
+      <div style={{ fontSize: 26, fontWeight: 800, color: d.entrada ? COR.azul : COR.texto, margin: '2px 0 6px' }}>
+        {d.entrada ? '+' : '−'}{fmt(pedido.valor)}{pedido.parcelas > 1 && <span style={{ fontSize: 15, fontWeight: 600, color: COR.textoSuave }}> por parcela</span>}
+      </div>
+      {linha('Categoria', <>{d.icone} {d.categoria}</>)}
+      {linha(d.entrada ? 'Entra em' : 'Pago com', d.conta)}
+      {linha('Quando', d.quando)}
+      {pedido.parcelas > 1 && linha('Parcelas', `${pedido.parcelas}× · total ${fmt(pedido.valor * pedido.parcelas)}`)}
+      {pedido.descricao && linha('Descrição', pedido.descricao)}
+    </>
+  } else {
+    const d = det as { de?: string; deNome: string }
+    titulo = 'Marcar como paga'
+    rotFeito = '✓ Pago'
+    corpo = <>
+      <div style={{ fontSize: 17, fontWeight: 700, color: COR.texto, margin: '2px 0 6px' }}>{pedido.nome}</div>
+      {linha('Valor', fmt(pedido.valor))}
+      {Math.abs(pedido.valor - pedido.previsto) > 0.004 && linha('Previsto', fmt(pedido.previsto))}
+      {linha('Pago de', d.deNome || 'sem conta definida')}
+    </>
+  }
+  return (
+    <div style={{ marginTop: 12, border: `1.5px solid ${estado === 'feito' ? '#bbf7d0' : '#c7d7fe'}`, borderRadius: 16, padding: '12px 14px',
+      background: estado === 'feito' ? COR.sucessoFundo : '#f8faff' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>{titulo}</div>
+      {corpo}
+      {estado ? (
+        <div style={{ marginTop: 8, fontSize: 15, fontWeight: 700, color: estado === 'feito' ? COR.sucessoTexto : COR.textoSuave }}>
+          {estado === 'feito' ? rotFeito : 'Cancelado'}
         </div>
+      ) : (
+        <>
+          {falhou && <div role="alert" style={{ marginTop: 8, fontSize: 14, color: COR.erroTexto }}>Não deu para gravar. Confira o cadastro e tente pela tela.</div>}
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button onClick={onCancelar} style={{ flex: 1, minHeight: 46, borderRadius: 14, border: `1.5px solid ${COR.borda}`, background: '#fff',
+              color: COR.texto, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>Cancelar</button>
+            <button disabled={gravando} onClick={() => { setGravando(true); const ok = onFeito(pedido); setFalhou(!ok); if (!ok) setGravando(false) }} style={{ flex: 1.4, minHeight: 46, borderRadius: 14, border: 'none',
+              background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`, color: '#fff', fontSize: 15, fontWeight: 700,
+              fontFamily: 'inherit', cursor: 'pointer' }}>Confirmar</button>
+          </div>
+        </>
       )}
-    </Bolha>
+    </div>
+  )
+}
+
+/** "Posso comprar?" pelo Norte: a MESMA conta e a MESMA resposta da tela Posso comprar. */
+function Simulacao({ pedido, deps }: { pedido: Extract<PedidoNorte, { tipo: 'simular' }>; deps: Deps }) {
+  const r = useMemo(() => {
+    const h = new Date()
+    return simularCompra({ valorTotal: pedido.valor, parcelas: pedido.parcelas, cartaoId: pedido.cartaoId, ano: h.getFullYear(), mes: h.getMonth() }, deps, { piso: 0 })
+  }, [pedido, deps])
+  if (!r) return (
+    <Bolha><div style={{ fontSize: 15, color: COR.texto }}>Para simular, preciso de um plano para os próximos meses.</div></Bolha>
+  )
+  return (
+    <div style={{ margin: '0 0 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Resposta nome={pedido.nome} r={r} isMobile piso={0} valorTotal={pedido.valor} parcelas={pedido.parcelas} />
+    </div>
   )
 }
 

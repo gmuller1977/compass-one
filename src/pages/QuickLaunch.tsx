@@ -10,7 +10,7 @@ import { M } from '../components/mobile/estilo'
 import { saldoRealizadoConta, type Deps } from '../utils/saldoConta'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
-import { totalComprasFatura, mesDaFaturaDaCompra, lancarNaFatura, dataDoLancamento } from '../utils/lancamentoRapido'
+import { totalComprasFatura, mesDaFaturaDaCompra, lancarNaFatura, lancarNoExtrato, dataDoLancamento } from '../utils/lancamentoRapido'
 import { interpretarLancamento } from '../utils/interpretarLancamento'
 import EntradaPorTexto from '../components/quickLaunch/EntradaPorTexto'
 
@@ -249,22 +249,9 @@ export default function QuickLaunch() {
       }))
     } else {
       const fp  = catObj.formaPagamento ?? (tipoSel === 'saida' ? 'debito' : 'dinheiro')
-      updateExtratoMes(mesKey(contaSel.id, aL, mL), prev => ({
-        ...prev,
-        lancamentos: {
-          ...prev.lancamentos,
-          [dL]: [...(prev.lancamentos[dL] ?? []), {
-            id: baseId,
-            tipo: tipoSel,
-            descricao,
-            categoria: catObj.nome,
-            ...(catObj.descricao ? { subCategoria: catObj.descricao } : {}),
-            valor: v,
-            formaPagamento: (fp as 'debito' | 'pix' | 'transferencia' | 'dinheiro'),
-            tipoLanc: 'variavel' as const,
-            consolidado: true,
-          }],
-        },
+      updateExtratoMes(mesKey(contaSel.id, aL, mL), prev => lancarNoExtrato(prev, {
+        dia: dL, tipo: tipoSel, categoria: catObj.nome, subCategoria: catObj.descricao, descricao,
+        valor: v, formaPagamento: fp as 'debito' | 'pix' | 'transferencia' | 'dinheiro', id: baseId,
       }))
     }
 

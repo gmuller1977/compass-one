@@ -100,3 +100,32 @@ export function dataDoLancamento(escolha: 'hoje' | 'ontem' | string, hoje: Date 
   const dt = new Date(a, (m ?? 1) - 1, d ?? 1)
   return Number.isNaN(dt.getTime()) || dt > h ? h : dt
 }
+
+type MesExtrato = { lancamentos: Record<number, unknown[] | undefined> }
+
+/**
+ * Um lançamento no extrato de um banco ou da carteira — o mesmo objeto que o
+ * Quick Launch grava (e agora o Norte, ao confirmar). Devolve o mês novo.
+ */
+export function lancarNoExtrato<T extends MesExtrato>(
+  dm: T,
+  p: {
+    dia: number; tipo: 'saida' | 'entrada'
+    categoria: string; subCategoria?: string; descricao: string
+    valor: number; formaPagamento: 'debito' | 'pix' | 'transferencia' | 'dinheiro'
+    id: string
+  },
+): T {
+  return {
+    ...dm,
+    lancamentos: {
+      ...dm.lancamentos,
+      [p.dia]: [...(dm.lancamentos[p.dia] ?? []), {
+        id: p.id, tipo: p.tipo, descricao: p.descricao, categoria: p.categoria,
+        ...(p.subCategoria ? { subCategoria: p.subCategoria } : {}),
+        valor: p.valor, formaPagamento: p.formaPagamento,
+        tipoLanc: 'variavel' as const, consolidado: true,
+      }],
+    },
+  }
+}

@@ -2022,9 +2022,30 @@ realizado.
   painel (`NorthAgent`, `NorthPanel`, `NorthMessage`) saíram.
 - `prova63` (23 invariantes), com controle negativo da conta antiga.
 
-Próximas fases, combinadas: **B** — o Norte lança, paga e simula por
-ferramentas (function calling), sempre com cartão "Confirmar"; **C** — puxa
-conversa. Plano em `/mnt/project-files/analises/norte-agente.md`.
+**Fase B: o Norte faz, a pessoa confirma** (10/10/2026). Lançar, marcar
+conta como paga e simular compra. O Norte escreve um pedido no fim da
+resposta (`[[fazer:lancar valor=… categoria=<id> conta=<id> …]]`), a tela
+mostra um cartão com o que vai acontecer, e **só o toque em "Confirmar"
+grava**. Regras em [`acoesNorte.ts`](src/utils/acoesNorte.ts):
+
+- **Pedido no texto, não function calling**, de propósito: a função
+  `north-chat` não mudou (nada a publicar no Supabase) e a validação fica no
+  aparelho, contra o cadastro. Id inexistente, categoria desativada, valor
+  inválido, data no futuro, parcelado fora do cartão ou conta fora da lista
+  de contas a pagar: recusa, e o cartão diz por quê. Nunca chuta.
+- **Grava pelos caminhos das telas**: lançamento por `lancarNoExtrato`
+  (extraído do Quick Launch, que passou a usá-lo) e `lancarNaFatura`;
+  pagamento por `contaDoPagamento` + `confirmarPagamento`, o "Pagar" da
+  Bússola. Simular é a MESMA `simularCompra` e a mesma `Resposta` da tela
+  Posso comprar — o Gemini não diz se cabe.
+- O estado do pedido ("✓ Lançado", "Cancelado") fica na conversa guardada:
+  recarregar não oferece o mesmo pedido de novo, e o Gemini recebe no
+  histórico se a pessoa confirmou ou cancelou.
+- `prova64` (23 invariantes): leitura e recusas, e que o lançado aparece no
+  Radar e na folga e a conta paga sai das contas a pagar.
+
+Próxima fase combinada: **C** — puxa conversa. Plano em
+`/mnt/project-files/analises/norte-agente.md`.
 ---
 
 ## Paleta
