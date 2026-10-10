@@ -127,7 +127,11 @@ export default function Bussola() {
                 )
               })}
             </div>
-            <button onClick={() => setMemoriaAberta(a => !a)} aria-expanded={memoriaAberta} style={{
+            <button onClick={() => {
+              const abrir = !memoriaAberta
+              setMemoriaAberta(abrir)
+              if (abrir) setTimeout(() => document.getElementById('memoria-do-saldo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+            }} aria-expanded={memoriaAberta} style={{
               background: 'none', border: 'none', padding: 0, color: '#fff', fontSize: 14, fontFamily: 'inherit',
               textAlign: 'left', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
             }}>{memoriaAberta ? 'fechar o cálculo' : 'como cheguei nesse número'}</button>
@@ -136,6 +140,16 @@ export default function Bussola() {
       </header>
 
       <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-44px auto 0', display: 'grid', gap: 16 }}>
+        {/* O cálculo abre logo abaixo do número, e a tela rola até ele: lá
+            embaixo dos atalhos ele abria fora da vista e parecia que o link
+            não fazia nada (relatado pelo Guilherme em 10/10/2026). */}
+        {memoriaAberta && (
+          <div id="memoria-do-saldo" style={{ scrollMarginTop: 12 }}>
+            <MemoriaSaldo m={b.memoria} positivo={b.fechamento >= 0}
+              cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+          </div>
+        )}
+
         {/* ── Previsto × realizado do mês, com o resultado ────────────── */}
         <Cartao>
           <TituloCartao>{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} até agora</TituloCartao>
@@ -177,11 +191,6 @@ export default function Bussola() {
           <Atalho icone="🛒" rotulo="Posso comprar?" onClick={() => navigate('/posso-comprar')} />
           <Atalho icone="📈" rotulo="Radar" onClick={() => navigate('/radar')} />
         </Cartao>
-
-        {memoriaAberta && (
-          <MemoriaSaldo m={b.memoria} positivo={b.fechamento >= 0}
-            cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
-        )}
 
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}
         {b.avisos.length > 0 && (
