@@ -278,18 +278,36 @@ export default function AcMobileView({
       const gPerc = gPrev > 0 ? gReal / gPrev : (gReal > 0 ? 1 : 0)
       const gCor  = dg.principal === '—' ? COR.textoSuave
         : RADAR_COR_CLARO[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
+      // Cada grupo é um acordeão, FECHADO por padrão, como no computador:
+      // recolhida, a tela vira um painel de barras (pedido do Guilherme em
+      // 10/10/2026). "Outras" também fecha.
+      const gid = `g-${tipo}-${grupo}`
+      const aberto = abertos.has(gid)
+      const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : (gReal > 0 ? 100 : 0)
       return [
-        ...(grupo !== '__sem_grupo__' ? [
-          <div key={`sub-${grupo}`} style={{ padding:'18px 16px 8px', fontSize:16, fontWeight:700,
-            display:'flex', alignItems:'center', gap:8, color:COR.texto, background:'#fff' }}>
-            <span>{grupoIcone}</span>
+        <button key={`sub-${grupo}`} onClick={() => toggleAberto(gid)} aria-expanded={aberto}
+          aria-label={`${grupoLabel}: ${dg.principal}`}
+          style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px', background:'#fff',
+            border:'none', borderTop:'1px solid #eef2f8', cursor:'pointer', fontFamily:'inherit' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:COR.texto }}>
+            <span aria-hidden>{grupoIcone}</span>
             <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
-            <span style={{ fontSize:14, fontWeight:700, color:gCor, fontVariantNumeric:'tabular-nums' }}>
+            <span style={{ fontSize:14, fontWeight:700, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
               {dg.principal}
             </span>
+            <span aria-hidden style={{ color:COR.textoSuave, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
+              transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
           </div>
-        ] : []),
-        ...allCats.map((cat, idx) => {
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
+            <div style={{ flex:1, height:8, borderRadius:4, background:'#e2e8f0', overflow:'hidden' }}>
+              <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gCor }} />
+            </div>
+            <span style={{ fontSize:13, color:COR.textoSuave, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
+              {fmtK(gReal)}{gPrev > 0 ? ` de ${fmtK(gPrev)}` : ''}
+            </span>
+          </div>
+        </button>,
+        ...(!aberto ? [] : allCats.map((cat, idx) => {
           const cd      = pickReal(realMap, cat.nome, cat.descricao, categorias)
           const prev    = cat.v[mes] ?? 0
           // O total da linha, dinheiro incluído, como no Radar do computador.
@@ -302,7 +320,7 @@ export default function AcMobileView({
               : undefined)
             ?? categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)
           return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, catInfo, uid, cd?.lancamentos ?? [])
-        }),
+        })),
       ]
     })
   }

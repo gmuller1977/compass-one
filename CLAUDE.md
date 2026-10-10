@@ -2000,6 +2000,11 @@ mudou (`prova58`–`60` seguem verdes).
   travou a rolagem (sem `minHeight:0` o filho cresce do tamanho do
   conteúdo e a caixa corta). Corrigido no mesmo dia: a PÁGINA rola, como na
   Bússola.
+- **Radar: grupos em acordeão, fechados por padrão**, como no computador
+  (pedido do Guilherme, mesmo dia). O cabeçalho do grupo leva o
+  `destaqueDoGrupo`, uma barra na cor da faixa (`RADAR_COR_CLARO`) e
+  "R$ X de R$ Y"; recolhido, o Radar vira um painel de barras. "Outras"
+  também tem cabeçalho e fecha.
 - **Barra de baixo**: rótulos 12 px, "Posso comprar?" virou "Comprar?" para
   caber, "+" de 58 px.
 
