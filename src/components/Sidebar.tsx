@@ -274,8 +274,9 @@ export default function Sidebar() {
     setExpandedItem(prev => prev === label ? null : label)
   }
 
+  // O Norte virou tela própria (/norte) em 10/10/2026; antes abria um painel.
   function abrirNorth() {
-    document.dispatchEvent(new CustomEvent('openNorth'))
+    navigate('/norte')
   }
 
   return (
@@ -442,7 +443,7 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
           }}>🧭</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>North</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Norte</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Assistente financeiro</div>
           </div>
           <div style={{

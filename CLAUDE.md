@@ -1996,6 +1996,35 @@ mudou (`prova58`–`60` seguem verdes).
   agora é grade.
 - **Barra de baixo**: rótulos 12 px, "Posso comprar?" virou "Comprar?" para
   caber, "+" de 58 px.
+
+**O Norte virou tela própria (`/norte`) e passou a saber os números do app**
+(10/10/2026, pedido do Guilherme: "temos que melhorar muito o agente"; o
+WhatsApp foi descartado por ele). Antes o contexto que ia para o Gemini era
+montado no `NorthAgent` com contas próprias, e todas discordavam do app: o
+saldo era o de CADASTRO da conta, as despesas eram só o extrato (sem cartão,
+sem dinheiro, sem fixa, com transferência como gasto) e o plano vinha sem
+realizado.
+
+- **Contexto**: [`contextoNorte.ts`](src/utils/contextoNorte.ts).
+  `dadosDoNorte` chama `bussolaDoMes`, `construirRealizadoMes` +
+  `totaisDoMes`, `saldoRealizadoConta` e `comparativoMensal`;
+  `contextoNorte` só escreve em texto, sem soma nova. O prompt
+  (`SYSTEM_NORTE`) proíbe o Gemini de calcular: ele cita os números prontos.
+- **Botões**: o Norte termina a resposta com `[[radar]]`, `[[lancar]]`… e a
+  tela desenha "Ver no Radar" (`separarAcoes`, lista fechada `ACOES_NORTE`).
+- **Tela** ([`Norte.tsx`](src/pages/Norte.tsx)): abre com o resumo do dia
+  calculado no aparelho (sem IA), perguntas prontas conforme a situação
+  (`sugestoesDoNorte`), voz, e a conversa guardada no localStorage por
+  usuário (últimas 40). Lógica em `components/norte/useNorte.ts`.
+- **Onde**: na barra de baixo no lugar de "Comprar?" (escolha do Guilherme);
+  "Posso comprar?" ficou no atalho da Início e no "Mais". No computador, o
+  cartão do Norte na Sidebar abre a mesma tela. O botão flutuante 🧭 e o
+  painel (`NorthAgent`, `NorthPanel`, `NorthMessage`) saíram.
+- `prova63` (23 invariantes), com controle negativo da conta antiga.
+
+Próximas fases, combinadas: **B** — o Norte lança, paga e simula por
+ferramentas (function calling), sempre com cartão "Confirmar"; **C** — puxa
+conversa. Plano em `/mnt/project-files/analises/norte-agente.md`.
 ---
 
 ## Paleta

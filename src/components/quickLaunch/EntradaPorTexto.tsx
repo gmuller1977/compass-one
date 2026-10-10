@@ -1,19 +1,6 @@
 import { useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
-
-type Reconhecimento = {
-  lang: string; interimResults: boolean; maxAlternatives: number
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
-  onerror: (() => void) | null
-  onend: (() => void) | null
-  start: () => void; stop: () => void
-}
-type ConstrutorReconhecimento = new () => Reconhecimento
-
-function reconhecimentoDeVoz(): ConstrutorReconhecimento | null {
-  const w = window as unknown as { SpeechRecognition?: ConstrutorReconhecimento; webkitSpeechRecognition?: ConstrutorReconhecimento }
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
-}
+import { reconhecimentoDeVoz, type Reconhecimento } from '../../utils/voz'
 
 /**
  * Lançar escrevendo ou falando: "47 mercado nubank". Quem entende o texto é

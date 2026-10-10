@@ -17,17 +17,20 @@ function useIsMobile() {
  * frente, e o "+" no meio, que abre o lançamento rápido (/lancar). Plano e
  * Config — tarefas de sentar e pensar, mais do computador — foram para "Mais",
  * junto com Análises, o Simulador e a tela completa de Lançamentos.
+ * Em 10/10/2026 o Norte (/norte) tomou o lugar de "Posso comprar?", escolha do
+ * Guilherme; "Posso comprar?" segue como atalho na Início e no "Mais".
  */
 const NAV = [
-  { icon: '🧭', label: 'Início',   path: '/' },
+  { icon: '🏠', label: 'Início',   path: '/' },
   { icon: '📈', label: 'Radar',    path: '/radar' },
   null, // botão + flutuante
-  { icon: '🛒', label: 'Comprar?', path: '/posso-comprar' },
+  { icon: '🧭', label: 'Norte',    path: '/norte' },
 ] as const
 
 const MAIS = [
   { icon: '📊', label: 'Planejamento',          path: '/planejamento' },
   { icon: '📋', label: 'Lançamentos completos', path: '/novo-lancamento' },
+  { icon: '🛒', label: 'Posso comprar?',        path: '/posso-comprar' },
   { icon: '🔍', label: 'Análises',              path: '/analises' },
   { icon: '🧮', label: 'Simulador',             path: '/simulacao' },
   { icon: '⚙️', label: 'Configurações',         path: '/configuracoes' },

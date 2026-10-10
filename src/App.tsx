@@ -11,6 +11,7 @@ import Analises       from './pages/Analises'
 import QuickLaunch    from './pages/QuickLaunch'
 import Bussola        from './pages/Bussola'
 import PossoComprar   from './pages/PossoComprar'
+import Norte from './pages/Norte'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import RadarFinanceiro from './pages/RadarFinanceiro'
@@ -25,7 +26,6 @@ import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
 import AurixPage          from './pages/Aurix'
-import NorthAgent          from './components/NorthAgent'
 import AurixToast          from './components/aurix/AurixToast'
 import { supabase } from './lib/supabase'
 import { creditarAurix, atualizarStreak } from './utils/aurix'
@@ -78,7 +78,7 @@ function AppShell({ children }: { children: ReactNode }) {
     iniciarSessao()
   }, [user?.id])
 
-  if (isMobile) return <>{children}<NorthAgent /><AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /></>
+  if (isMobile) return <>{children}<AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /></>
   return (
     <>
       <Sidebar />
@@ -86,7 +86,6 @@ function AppShell({ children }: { children: ReactNode }) {
       <div style={{ marginLeft: SIDEBAR_W }}>
         {children}
       </div>
-      <NorthAgent />
       <AurixToast />
       <IndicadorGravacao />
       <SincronizarLembrete />
@@ -156,6 +155,7 @@ export default function App() {
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
+          <Route path="/norte"           element={<Protegido><Norte /></Protegido>} />
           <Route path="/posso-comprar"   element={<SoNoCelular senao="/simulacao"><PossoComprar /></SoNoCelular>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/analises"        element={<Protegido><Analises /></Protegido>} />
