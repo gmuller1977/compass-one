@@ -308,8 +308,11 @@ export default function AcMobileView({
   }
 
   return (
-    <div style={{ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden',
-      background:'#f2f5fc', fontFamily:"-apple-system,'Inter',sans-serif" }}>
+    // A PÁGINA rola, como na Bússola. Antes era uma caixa de 100vh com o
+    // conteúdo num filho flex:1 rolável — sem minHeight:0 o filho crescia do
+    // tamanho do conteúdo, a caixa cortava e nada rolava (relatado pelo
+    // Guilherme em 10/10/2026).
+    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily:"-apple-system,'Inter',sans-serif" }}>
 
       {/* Topo azul, no desenho da Bússola (redesenho de 10/10/2026): o mês
           com setas, o saldo de hoje grande, e as duas barras do mês com
@@ -354,7 +357,7 @@ export default function AcMobileView({
       {/* CONTENT */}
       {/* Grade, não flex em coluna: na coluna os cartões (overflow hidden)
           encolhiam até caber na altura da tela e cortavam as linhas. */}
-      <div style={{ flex:1, overflowY:'auto', padding:'16px 16px 110px', display:'grid', alignContent:'start', gap:16 }}>
+      <div style={{ padding:'16px 16px 110px', display:'grid', alignContent:'start', gap:16 }}>
         {!dadosAno ? (
           <EmptyState
             icon="📈"

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import { STATUS_HERO, statusDoMes } from '../components/inicio/statusHero'
-import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
@@ -59,12 +58,14 @@ export default function Bussola() {
   const r = b.ritmo
   const passou = r?.estado === 'passou'
 
-  const irParaContas = () => document.getElementById('contas-da-semana')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  // As contas da semana moram no Lançar, embaixo das categorias (pedido do
+  // Guilherme em 10/10/2026): pagar e lançar são o mesmo gesto do dia.
+  const irParaContas = () => navigate('/lancar#contas')
 
   const acaoDoAviso: Record<Aviso['id'], { rotulo: string; onClick: () => void }> = {
     parcelas: { rotulo: 'Revisar', onClick: () => setRevisando(true) },
     negativo: { rotulo: 'Ver plano', onClick: () => navigate('/planejamento') },
-    contas:   { rotulo: 'Ver', onClick: irParaContas },
+    contas:   { rotulo: 'Pagar', onClick: irParaContas },
     passou:   { rotulo: 'Radar', onClick: () => navigate('/radar') },
     ritmo:    { rotulo: 'Radar', onClick: () => navigate('/radar') },
   }
@@ -168,12 +169,6 @@ export default function Bussola() {
             ))}
           </Cartao>
         )}
-
-        {/* ── Contas da semana, com "Pagar" ──────────────────────────── */}
-        <div id="contas-da-semana" style={{ scrollMarginTop: 16 }}>
-          <ContasAPagarRapido deps={deps} saldoHoje={b.saldoHoje} oculto={oculto}
-            vazio="Nada vence nesta semana" />
-        </div>
 
         {/* ── Onde o gasto passou do plano ───────────────────────────── */}
         {usaPlanoNoMes ? (

@@ -1879,7 +1879,9 @@ Launch e virou a tela que responde as quatro perguntas do dia
 2. Vou fechar no azul? — o número grande, `memoriaDoRadar().fechamento`,
    com "como cheguei nesse número" abrindo a `MemoriaSaldo`.
 3. O que vence e tenho saldo? — `ContasAPagarRapido` com "Pagar", e a linha
-   "R$ X a pagar e R$ Y hoje no banco: faltam R$ Z".
+   "R$ X a pagar e R$ Y hoje no banco: faltam R$ Z". **Mudou para o Lançar**
+   (ver "O Lançar começa pela categoria"); na Bússola fica o aviso "N contas
+   a pagar" com "Pagar", que abre `/lancar#contas`.
 4. Onde estou saindo do plano? — o `EstouradasCard` da Início.
 
 Tudo por [`bussolaDoMes`](src/utils/bussolaDoMes.ts), que só chama as
@@ -1994,8 +1996,37 @@ mudou (`prova58`–`60` seguem verdes).
   embaixo, inteiro. **Bug corrigido junto**: o conteúdo era flex em coluna e os
   cartões (overflow hidden) encolhiam até caber na tela, cortando as linhas;
   agora é grade.
+  A grade num filho `flex:1` de uma caixa de `100vh` com `overflow:hidden`
+  travou a rolagem (sem `minHeight:0` o filho cresce do tamanho do
+  conteúdo e a caixa corta). Corrigido no mesmo dia: a PÁGINA rola, como na
+  Bússola.
 - **Barra de baixo**: rótulos 12 px, "Posso comprar?" virou "Comprar?" para
   caber, "+" de 58 px.
+
+**O Lançar começa pela CATEGORIA, depois o MÊS, depois a forma de pagar**
+(pedido do Guilherme em 10/10/2026: "ficou meio confuso devido a seleção de
+contas"). Saiu o cartão "Trocar conta" do topo. Tocar na categoria abre dois
+quadros, este mês e o próximo, com o disponível (`totaisDoMes`, as linhas do
+Radar; o próximo já tem as parcelas lançadas). Tocar no mês lista Banco,
+Cartão e Dinheiro — só o que faz a compra de HOJE contar naquele mês
+(`formasDoMes` em [`lancarPorMes.ts`](src/utils/lancarPorMes.ts)):
+
+- banco e dinheiro: só este mês (o gasto é de hoje);
+- cartão: no mês em que a fatura que recebe a compra VENCE
+  (`mesDoGastoNoCartao`, a mesma regra de `construirRealizadoMes`). Cartão
+  que já fechou só aparece no próximo mês — decisão do Guilherme no card:
+  "Só cartões fechados" no próximo mês, sem banco nem dinheiro com data
+  futura. Sem cartão fechado, o quadro do próximo mês é só consulta.
+- receita não vai para cartão e só tem o quadro deste mês.
+
+Uma forma só pula direto para o valor. Agora há **dinheiro** no Lançar
+(`dinheiro-AAAA-MM`, `formaPagamento: 'dinheiro'`), que antes não existia.
+O gasto de hoje no topo soma bancos, dinheiro e cartões (`gastoDeHoje`). A
+grade mostra as categorias e UM "adicionar". Embaixo dela, as **Contas da
+semana** (`ContasAPagarRapido`), que saíram da Bússola. `prova69` (22
+invariantes): para três cartões (aberto, fechado, vence no mês seguinte) a
+compra cai no `construirRealizadoMes` exatamente no mês prometido, e o
+controle do dia do fechamento.
 
 **O Norte virou tela própria (`/norte`) e passou a saber os números do app**
 (10/10/2026, pedido do Guilherme: "temos que melhorar muito o agente"; o

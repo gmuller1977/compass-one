@@ -20,9 +20,10 @@ import { avisosDoMes, type Aviso } from './avisosDoMes'
  * Nenhuma conta nova: cada número sai da MESMA função que a Início do
  * computador usa, com as mesmas dependências. A prova60 tranca isso.
  *
- * Avisos: só os que nenhum quadro da Bússola já responde — mês negativo à
- * frente e parcela acima do plano. Contas, "passou" e ritmo têm quadro próprio
- * aqui; repetir em aviso seria dizer a mesma coisa duas vezes na tela pequena.
+ * Avisos: só os que nenhum quadro da Bússola já responde — contas a vencer
+ * (o quadro delas foi para o Lançar em 10/10/2026), mês negativo à frente e
+ * parcela acima do plano. "Passou" e ritmo têm quadro próprio aqui; repetir
+ * em aviso seria dizer a mesma coisa duas vezes na tela pequena.
  */
 export type Bussola = {
   /** A memória de cálculo do Radar; `fechamento` é com quanto o mês termina. */
@@ -55,8 +56,12 @@ export function bussolaDoMes(p: {
   const serie = serieBaseDoPlano(p.deps, hoje)
   const negativo = serie ? piorMesDaSerie(serie).primeiroNegativo : null
   const lancadoAcima = lancadoAcimaDoPlano(p.deps, hoje)
+  const contas = contasAVencer(p.deps, hoje)
+  // As contas da semana viraram aviso aqui (com "Pagar", que abre o Lançar):
+  // o quadro delas foi para o Lançar em 10/10/2026. "Passou" e ritmo têm
+  // quadro próprio na Bússola e não repetem.
   const avisos = avisosDoMes({
-    contas: [], linhasSaida: [], ritmo: null, hoje, lancadoAcima,
+    contas, linhasSaida: [], ritmo: null, hoje, lancadoAcima,
     negativo: negativo ? { ano: negativo.ano, mes: negativo.mes, valor: negativo.semCompra } : null,
   })
 
@@ -65,7 +70,7 @@ export function bussolaDoMes(p: {
     fechamento: memoria.fechamento,
     saldoHoje: saldoBancosEDinheiro(ano, mes, p.deps),
     ritmo,
-    contas: contasAVencer(p.deps, hoje),
+    contas,
     estouradas, perto, lancadoAcima, avisos,
   }
 }
