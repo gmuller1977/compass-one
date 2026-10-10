@@ -1969,6 +1969,33 @@ from uso_lancamentos group by 1, 2 order by 2, 1;
 virada do ano), "lançou hoje" com a compra no cartão na fatura seguinte, as
 quatro mensagens, e a contagem de lançamentos novos.
 
+
+**Redesenho do celular no padrão dos apps de banco** (10/10/2026). Pedido do
+Guilherme: "frio, letras pequenas, muito texto". Só desenho; nenhum número
+mudou (`prova58`–`60` seguem verdes).
+
+- **Kit** em [`components/mobile/ui.tsx`](src/components/mobile/ui.tsx)
+  (`Cartao`, `TituloCartao`, `Linha`, `Atalho`, `Pilula`) e
+  [`estilo.ts`](src/components/mobile/estilo.ts) (medidas `M` e o olho
+  `useValoresOcultos`). Letra: corpo 15, título 17, legenda 13; **nada abaixo
+  de 12 no celular**. Toque de 44 px. Fundo `#f2f5fc`, cartões brancos com
+  sombra azulada e cantos de 20, ícone da categoria num círculo com a cor dela.
+- **Topo azul** `#0f2878 → #1e40af` (a regra do `#1e40af`), com um número só:
+  na Bússola "Ainda dá para gastar"; no Radar "Quanto tenho hoje".
+- **Bússola**: olho que esconde os valores (preferência do aparelho, em
+  localStorage), atalhos redondos (Lançar · Pagar contas · Posso comprar? ·
+  Radar), avisos em uma linha com botão, "Contas da semana" com a etiqueta
+  "✓ saldo cobre" / "faltam R$ X" no lugar da frase, e "Passou do plano" em
+  lista. O cartão grande "Posso comprar?" virou atalho.
+- **Lançar**: saiu a faixa "Despesas hoje · Mês · Dia" (9 px); o gasto do dia
+  virou uma linha no topo. Grade com ícone em círculo e nome em 14.
+- **Radar**: saíram marca, seletor de ano (as setas do mês viram o ano) e a
+  faixa "Quanto tenho"; a linha põe nome e destaque juntos e o "gastou X de Y"
+  embaixo, inteiro. **Bug corrigido junto**: o conteúdo era flex em coluna e os
+  cartões (overflow hidden) encolhiam até caber na tela, cortando as linhas;
+  agora é grade.
+- **Barra de baixo**: rótulos 12 px, "Posso comprar?" virou "Comprar?" para
+  caber, "+" de 58 px.
 ---
 
 ## Paleta

@@ -7,6 +7,8 @@ import { contaDoPagamento, confirmarPagamento } from '../../utils/pagarConta'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { parseBRL } from '../../utils/moeda'
 import { COR } from '../../utils/cores'
+import { Cartao, Linha, Pilula, TituloCartao } from '../mobile/ui'
+import { M } from '../mobile/estilo'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -20,12 +22,14 @@ const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${St
  * na conta onde a fixa aparece (`contaDoPagamento`). A conta vem escolhida e
  * pode ser trocada, como no "Pagar de qual conta?" de Lançamentos.
  */
-export default function ContasAPagarRapido({ deps, saldoHoje, vazio }: {
+export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = false }: {
   deps: Deps
   /** Bancos + dinheiro hoje. Com ele, o quadro diz se dá para pagar tudo. */
   saldoHoje?: number
   /** Texto quando não há conta a pagar; sem ele, o quadro some. */
   vazio?: string
+  /** O olho da Bússola: esconde os valores. */
+  oculto?: boolean
 }) {
   const { contas, categorias, extratoData, updateExtratoMes } = useApp()
   const lista = useMemo(() => contasAVencer(deps), [deps])
@@ -38,18 +42,14 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio }: {
     { id: 'dinheiro', nome: 'Dinheiro' },
   ], [contas])
 
-  const titulo = (
-    <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>
-      Contas a pagar
-    </div>
-  )
+  const v = (n: number) => (oculto ? 'R$ ••••' : fmt(n))
   if (lista.length === 0) {
     if (!vazio) return null
     return (
-      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${COR.borda}`, padding: '10px 12px', marginBottom: 10 }}>
-        {titulo}
-        <div style={{ fontSize: 13, color: COR.sucessoTexto, fontWeight: 600 }}>✓ {vazio}</div>
-      </div>
+      <Cartao>
+        <TituloCartao>Contas da semana</TituloCartao>
+        <Linha primeira icone="✓" cor={COR.sucessoTexto} titulo={vazio} />
+      </Cartao>
     )
   }
   // "Tenho saldo para pagar?" — o total da lista contra bancos + dinheiro de
@@ -82,36 +82,29 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio }: {
     setPagando(null)
   }
 
+  // Uma etiqueta no título no lugar da frase: "✓ saldo cobre" ou "faltam R$ X".
+  const etiqueta = saldoHoje === undefined ? null : falta > 0.005
+    ? { texto: `faltam ${v(falta)}`, cor: COR.erroTexto, fundo: COR.erroFundo }
+    : { texto: '✓ saldo cobre', cor: COR.sucessoTexto, fundo: COR.sucessoFundo }
+
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${COR.borda}`, padding: '10px 12px', marginBottom: 10 }}>
-      {titulo}
-      {saldoHoje !== undefined && (
-        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: falta > 0.005 ? COR.erroTexto : COR.sucessoTexto }}>
-          {falta > 0.005
-            ? `${fmt(total)} a pagar e ${fmt(saldoHoje)} hoje no banco: faltam ${fmt(falta)}`
-            : `${fmt(total)} a pagar · o saldo de hoje cobre tudo`}
-        </div>
-      )}
-      {lista.slice(0, 5).map((c, i) => (
-        <div key={`${c.id}-${c.ano}-${c.mes}`} style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0',
-          borderTop: i === 0 ? 'none' : '1px solid #f1f5f9',
-        }}>
-          <span aria-hidden style={{ fontSize: 16 }}>{c.fatura ? '💳' : iconeCategoria(categorias, c.nome).icone}</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nome(c)}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: c.atrasada ? COR.erroTexto : COR.textoSuave }}>
-              {quando(c)} · {fmt(c.valor)}
-            </div>
-          </div>
-          <button onClick={() => abrir(c)} style={{
-            border: `1.5px solid ${COR.azul}`, background: '#eff6ff', color: COR.azul, borderRadius: 20,
-            padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-          }}>Pagar</button>
-        </div>
-      ))}
+    <Cartao>
+      <TituloCartao direita={etiqueta && (
+        <span title={saldoHoje !== undefined ? `${fmt(total)} a pagar e ${fmt(saldoHoje)} hoje no banco` : undefined}
+          style={{ fontSize: 13, fontWeight: 700, color: etiqueta.cor, background: etiqueta.fundo, borderRadius: 999,
+            padding: '4px 10px', whiteSpace: 'nowrap' }}>{etiqueta.texto}</span>
+      )}>Contas da semana</TituloCartao>
+      {lista.slice(0, 5).map((c, i) => {
+        const ic = c.fatura ? { icone: '💳', cor: COR.roxo } : iconeCategoria(categorias, c.nome)
+        return (
+          <Linha key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
+            titulo={nome(c)}
+            legenda={<><span style={{ color: c.atrasada ? COR.erroTexto : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span> · {v(c.valor)}</>}
+            direita={<Pilula onClick={() => abrir(c)}>Pagar</Pilula>} />
+        )
+      })}
       {lista.length > 5 && (
-        <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 4 }}>e mais {lista.length - 5} em Lançamentos</div>
+        <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 6 }}>e mais {lista.length - 5} em Lançamentos</div>
       )}
 
       {pagando && (
@@ -122,16 +115,16 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio }: {
             background: '#fff', width: '100%', borderRadius: '20px 20px 0 0', padding: '18px 16px 28px',
             fontFamily: "-apple-system,'Inter',sans-serif", animation: 'slideUp .2s ease',
           }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: COR.texto }}>{nome(pagando)}</div>
-            <div style={{ fontSize: 12, color: COR.textoSuave, marginBottom: 12 }}>Previsto {fmt(pagando.valor)} · {quando(pagando)}</div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: COR.textoSuave }}>Valor pago
+            <div style={{ fontSize: 19, fontWeight: 700, color: COR.texto }}>{nome(pagando)}</div>
+            <div style={{ fontSize: 14, color: COR.textoSuave, marginBottom: 14 }}>Previsto {fmt(pagando.valor)} · {quando(pagando)}</div>
+            <label style={{ fontSize: 14, fontWeight: 600, color: COR.textoSuave }}>Valor pago
               <input value={valor} onChange={e => setValor(e.target.value)} inputMode="decimal" style={{
                 display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 4, marginBottom: 10,
                 border: `2px solid ${COR.azul}`, borderRadius: 12, padding: '10px 12px', fontSize: 18, fontWeight: 700,
                 color: COR.azul, background: '#eff6ff', fontFamily: 'inherit', outline: 'none',
               }} />
             </label>
-            <label style={{ fontSize: 12, fontWeight: 600, color: COR.textoSuave }}>Pago de
+            <label style={{ fontSize: 14, fontWeight: 600, color: COR.textoSuave }}>Pago de
               <select value={conta} onChange={e => setConta(e.target.value)} style={{
                 display: 'block', width: '100%', marginTop: 4, marginBottom: 14, border: `1.5px solid ${COR.borda}`,
                 borderRadius: 12, padding: '10px 12px', fontSize: 14, color: COR.texto, background: '#fff', fontFamily: 'inherit',
@@ -140,13 +133,13 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio }: {
               </select>
             </label>
             <button onClick={confirmar} style={{
-              width: '100%', padding: 13, border: 'none', borderRadius: 14, cursor: 'pointer',
+              width: '100%', padding: 16, border: 'none', borderRadius: 16, cursor: 'pointer',
               background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`, color: '#fff',
-              fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+              fontSize: 16, fontWeight: 700, fontFamily: 'inherit',
             }}>✓ Marcar como paga</button>
           </div>
         </div>
       )}
-    </div>
+    </Cartao>
   )
 }

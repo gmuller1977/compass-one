@@ -8,6 +8,7 @@ import { parseValor } from '../utils/moeda'
 import { Resposta } from '../components/simulacao/SimCompra'
 import BottomNav from '../components/BottomNav'
 import { COR } from '../utils/cores'
+import { M } from '../components/mobile/estilo'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const PARCELAS = [1, 2, 3, 4, 5, 6, 10, 12]
@@ -58,50 +59,53 @@ export default function PossoComprar() {
   const mudou = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPedido(null) }
 
   const chip = (ativo: boolean): React.CSSProperties => ({
-    padding: '8px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+    padding: '10px 16px', minHeight: 44, borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15,
     border: `1.5px solid ${ativo ? COR.azul : COR.borda}`, background: ativo ? '#eff6ff' : COR.branco,
     color: ativo ? COR.azul : COR.textoSuave, fontWeight: ativo ? 700 : 500,
   })
-  const rotulo: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: COR.texto, margin: '14px 0 6px' }
+  const rotulo: React.CSSProperties = { display: 'block', fontSize: 15, fontWeight: 700, color: COR.texto, margin: '18px 0 8px' }
   const campo: React.CSSProperties = {
-    width: '100%', boxSizing: 'border-box', padding: '11px 14px', border: `1px solid ${COR.borda}`, borderRadius: 12,
-    fontSize: 16, fontFamily: 'inherit', outline: 'none', background: COR.branco, color: COR.texto,
+    width: '100%', boxSizing: 'border-box', padding: '13px 16px', border: `1.5px solid ${COR.borda}`, borderRadius: 14,
+    fontSize: 17, fontFamily: 'inherit', outline: 'none', background: COR.branco, color: COR.texto,
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
-      <div style={{ padding: '18px 16px 96px', maxWidth: 560, margin: '0 auto' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: COR.texto }}>Posso comprar?</div>
-        <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 2 }}>
-          A conta olha o seu plano até o fim e diz se algum mês fica no vermelho.
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+      <header style={{ background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', borderRadius: '0 0 28px 28px',
+        padding: 'calc(20px + env(safe-area-inset-top)) 20px 52px', color: '#fff' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>Posso comprar? <span aria-hidden>🛒</span></div>
+          <div style={{ fontSize: 15, color: 'rgba(255,255,255,.75)', marginTop: 4 }}>Veja se cabe no plano antes de pagar.</div>
         </div>
+      </header>
+      <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-36px auto 0' }}>
 
         {!fimDoPlano ? (
-          <div style={{ background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14, padding: 16, marginTop: 16 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto }}>Antes, monte o seu planejamento</div>
-            <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 6, lineHeight: 1.5 }}>
+          <div style={{ background: COR.branco, borderRadius: M.raio, boxShadow: M.sombra, padding: 18 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: COR.texto }}>Antes, monte o seu planejamento</div>
+            <div style={{ fontSize: 15, color: COR.textoSuave, marginTop: 6, lineHeight: 1.5 }}>
               Para dizer se uma compra cabe, a conta precisa saber o que entra e o que sai nos próximos meses.
             </div>
             <button onClick={() => navigate('/planejamento')} style={{
               marginTop: 12, border: 'none', background: 'transparent', color: COR.azul, padding: 0,
-              fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
             }}>Ir para o Planejamento →</button>
           </div>
         ) : (
           <>
-            <div style={{ background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14, padding: '2px 14px 16px', marginTop: 14 }}>
+            <div style={{ background: COR.branco, borderRadius: M.raio, boxShadow: M.sombra, padding: '2px 18px 18px' }}>
               <label style={rotulo}>Quanto custa?
                 <input value={valorStr} onChange={e => mudou(setValorStr)(e.target.value)} inputMode="decimal"
-                  placeholder="R$ 0,00" style={{ ...campo, marginTop: 6, fontSize: 20, fontWeight: 700 }}
+                  placeholder="R$ 0,00" style={{ ...campo, marginTop: 8, fontSize: 30, fontWeight: 800, color: COR.azul, background: '#eff6ff', borderColor: COR.azul, textAlign: 'center' }}
                   onKeyDown={e => e.key === 'Enter' && verSeCabe()} />
               </label>
               <label style={rotulo}>O que é? <span style={{ fontWeight: 400, color: COR.textoSuave }}>(opcional)</span>
                 <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Uma bicicleta"
-                  style={{ ...campo, marginTop: 6 }} />
+                  style={{ ...campo, marginTop: 8, fontWeight: 400 }} />
               </label>
 
               <span style={rotulo}>Em quantas vezes?</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {PARCELAS.map(n => (
                   <button key={n} onClick={() => mudou(setParcelas)(n)} style={chip(parcelas === n)}>
                     {n === 1 ? 'À vista' : `${n}×`}
@@ -109,13 +113,13 @@ export default function PossoComprar() {
                 ))}
               </div>
               {parcelas > 1 && valor > 0 && (
-                <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 6 }}>
+                <div style={{ fontSize: 15, color: COR.textoSuave, marginTop: 8 }}>
                   {parcelas}× de {fmt(valor / parcelas)}
                 </div>
               )}
 
               <span style={rotulo}>Como vai pagar?</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {[{ id: '', nome: '💰 Débito ou Pix' },
                   ...cartoes.map(c => ({ id: c.id, nome: `${c.icone || '💳'} ${c.apelido || c.banco}` }))].map(o => (
                   <button key={o.id || 'debito'} onClick={() => mudou(setOndeId)(o.id)} style={chip(ondeId === o.id)}>{o.nome}</button>
@@ -123,27 +127,27 @@ export default function PossoComprar() {
               </div>
 
               {erro && (
-                <div role="alert" style={{ background: COR.erroFundo, color: COR.erroTexto, borderRadius: 10,
-                  padding: '9px 12px', fontSize: 13, marginTop: 12 }}>{erro}</div>
+                <div role="alert" style={{ background: COR.erroFundo, color: COR.erroTexto, borderRadius: 12,
+                  padding: '10px 14px', fontSize: 15, marginTop: 14 }}>{erro}</div>
               )}
               <button onClick={verSeCabe} style={{
-                width: '100%', marginTop: 16, padding: 14, border: 'none', borderRadius: 14, cursor: 'pointer',
+                width: '100%', marginTop: 20, padding: 17, border: 'none', borderRadius: 16, cursor: 'pointer',
                 background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`, color: '#fff',
-                fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+                fontSize: 17, fontWeight: 700, fontFamily: 'inherit', boxShadow: '0 6px 18px rgba(26,86,219,.3)',
               }}>Ver se cabe no meu bolso</button>
             </div>
 
             {resultado && pedido && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
                 <Resposta nome={nome} r={resultado} isMobile piso={0}
                   valorTotal={pedido.valorTotal} parcelas={pedido.parcelas} />
               </div>
             )}
 
             <button onClick={() => navigate('/simulacao')} style={{
-              marginTop: 14, border: 'none', background: 'transparent', color: COR.azul, padding: 0,
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-            }}>Comparar formas de pagamento ou incluir no plano →</button>
+              display: 'block', margin: '18px auto 0', border: 'none', background: 'transparent', color: COR.azul, padding: 8,
+              fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+            }}>Comparar formas de pagar ›</button>
           </>
         )}
       </div>

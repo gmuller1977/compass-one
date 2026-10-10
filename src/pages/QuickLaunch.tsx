@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext'
 import BottomNav from '../components/BottomNav'
 import type { DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
+import { M } from '../components/mobile/estilo'
 import { saldoRealizadoConta, type Deps } from '../utils/saldoConta'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
@@ -39,17 +40,13 @@ function mesKey(conta: string, ano: number, mes: number) {
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
-function NOMES_MESES_SHORT() {
-  return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-}
 function chip(ativo: boolean): React.CSSProperties {
   return {
     border: `1.5px solid ${ativo ? COR.azul : COR.borda}`, background: ativo ? '#eff6ff' : '#fff',
-    color: ativo ? COR.azul : COR.textoSuave, borderRadius: 20, padding: '5px 11px',
-    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+    color: ativo ? COR.azul : COR.textoSuave, borderRadius: 20, padding: '8px 14px', minHeight: 40,
+    fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
   }
 }
-const NOMES_DIA = ['dom','seg','ter','qua','qui','sex','sáb']
 
 export default function QuickLaunch() {
   const { user, contas, categorias, extratoData, faturaData, planos, updateExtratoMes, setFaturaData, setCategorias, perfil, saldoInicialDinheiro, cenarioPrevisao } = useApp()
@@ -280,37 +277,27 @@ export default function QuickLaunch() {
   const hora = hoje.getHours()
   const saudacao = hora >= 5 && hora < 12 ? 'Bom dia' : hora >= 12 && hora < 18 ? 'Boa tarde' : 'Boa noite'
   const nomeUser = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
-  const inicial  = nomeUser.charAt(0).toUpperCase()
-  const mesStr   = `${NOMES_MESES_SHORT()[mes]}/${ano}`
 
   return (
     <div style={{
-      minHeight: '100vh', background: COR.fundo,
+      minHeight: '100vh', background: M.fundo,
       display: 'flex', flexDirection: 'column',
       fontFamily: "-apple-system,'Inter',sans-serif",
       paddingBottom: 80,
     }}>
       <style>{`@keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}`}</style>
 
-      {/* Header */}
+      {/* Header: título e o gasto de hoje. A faixa "Despesas hoje · Mês ·
+          Dia" (letras de 9 px) saiu no redesenho do celular: virou esta linha. */}
       <div style={{
-        background: `linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-        padding: '16px 20px 32px', flexShrink: 0,
+        background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', borderRadius: '0 0 28px 28px',
+        padding: 'calc(18px + env(safe-area-inset-top)) 20px 40px', flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 12, marginBottom: 2 }}>{saudacao},</div>
-            <div style={{ color: '#fff', fontSize: 20, fontWeight: 700 }}>{nomeUser} 👋</div>
-            <div style={{ color: 'rgba(255,255,255,.55)', fontSize: 11, marginTop: 3 }}>
-              {dataHoje.charAt(0).toUpperCase() + dataHoje.slice(1)} · {mesStr}
-            </div>
-          </div>
-          <div style={{
-            width: 38, height: 38, borderRadius: '50%',
-            background: 'rgba(255,255,255,.2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 15, fontWeight: 700,
-          }}>{inicial}</div>
+        <div style={{ color: '#fff', fontSize: 22, fontWeight: 700 }}>{saudacao}, {nomeUser} 👋</div>
+        <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 15, marginTop: 4 }}>
+          {gastosHoje > 0
+            ? <>Hoje você já gastou <b style={{ color: '#fff' }}>{fmt(gastosHoje)}</b></>
+            : <>{dataHoje.charAt(0).toUpperCase() + dataHoje.slice(1)}</>}
         </div>
       </div>
 
@@ -319,82 +306,61 @@ export default function QuickLaunch() {
         <div
           onClick={() => setEscolherConta(true)}
           style={{
-            margin: '0 16px', marginTop: -18,
-            background: '#fff', borderRadius: 20, padding: '14px 16px',
-            boxShadow: '0 6px 24px rgba(0,0,0,.12)',
+            margin: '0 16px', marginTop: -24,
+            background: '#fff', borderRadius: M.raio, padding: '16px 18px',
+            boxShadow: '0 6px 24px rgba(15,40,120,.12)',
             display: 'flex', alignItems: 'center', gap: 12,
             cursor: 'pointer', flexShrink: 0,
           }}
         >
           <div style={{
-            width: 40, height: 40, borderRadius: 10, background: contaSel.cor || COR.azul,
+            width: 48, height: 48, borderRadius: '50%', background: contaSel.cor || COR.azul,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, flexShrink: 0,
           }}>{contaSel.icone || (isCartao ? '💳' : '🏦')}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: COR.textoSuave, fontWeight: 500, marginBottom: 1 }}>
+            <div style={{ fontSize: 14, color: COR.textoSuave, fontWeight: 500, marginBottom: 1 }}>
               {isCartao ? (contaSel.apelido || contaSel.banco) : contaSel.banco}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: COR.texto, letterSpacing: '-.5px' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: COR.texto, letterSpacing: '-.5px' }}>
               {isCartao
                 ? <span style={{ color: saldoAtual < 0 ? COR.vermelho : COR.texto }}>{fmt(saldoAtual)}</span>
                 : fmt(saldoAtual)
               }
             </div>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>
-              {isCartao ? `Disponível de todos os cartões · Planejado ${fmt(limitePlanejadoCartoes)}` : contaSel.nome}
+            <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>
+              {isCartao ? `disponível nos cartões · plano ${fmt(limitePlanejadoCartoes)}` : contaSel.nome}
             </div>
           </div>
           <div style={{
-            fontSize: 11, color: COR.azul, background: '#eff6ff',
-            padding: '5px 10px', borderRadius: 20, fontWeight: 600,
+            fontSize: 14, color: COR.azul, background: '#eff6ff',
+            padding: '8px 12px', borderRadius: 20, fontWeight: 700,
             whiteSpace: 'nowrap', flexShrink: 0,
-          }}>trocar ↕</div>
+          }}>Trocar</div>
         </div>
       )}
 
-      {/* Hoje strip */}
-      <div style={{ display: 'flex', gap: 8, padding: '8px 16px 6px', flexShrink: 0 }}>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
-          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Despesas hoje</div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: gastosHoje > 0 ? COR.vermelho : COR.textoSuave }}>
-            {fmt(gastosHoje)}
-          </div>
-        </div>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
-          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Mês atual</div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: COR.azul }}>{mesStr}</div>
-        </div>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 10, padding: '8px 10px', border: `1px solid ${COR.borda}` }}>
-          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.3px' }}>Dia</div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: COR.texto }}>
-            {NOMES_DIA[hoje.getDay()]} {dia}
-          </div>
-        </div>
-      </div>
-
       {/* Grid */}
-      <div style={{ flex: 1, padding: '4px 16px 6px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '16px 16px 6px', overflowY: 'auto' }}>
         <EntradaPorTexto onTexto={aplicarTexto} />
         <div style={{
-          fontSize: 11, fontWeight: 700, color: COR.textoSuave,
-          textTransform: 'uppercase', letterSpacing: '.5px',
-          marginBottom: 10, marginTop: 6,
+          fontSize: M.titulo, fontWeight: 700, color: COR.texto,
+          marginBottom: 12, marginTop: 10,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <span>⚡ Lançamento rápido{isCartao ? ' · 💳 Fatura' : ''}</span>
+          <span>{isCartao ? 'O que você comprou?' : 'O que você gastou?'}</span>
           <button
             onClick={abrirGerenciar}
             style={{
               border: `1px solid ${COR.borda}`, background: '#fff', color: COR.azul,
-              fontSize: 11, fontWeight: 700, cursor: 'pointer',
-              borderRadius: 20, padding: '4px 10px',
+              fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              borderRadius: 20, padding: '7px 14px',
               fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
             }}
-          >✏️ Editar</button>
+          >Editar</button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 8 }}>
           {Array.from({ length: 9 }, (_, i) => {
             const c = catsGrid[i]
             if (!c) {
@@ -405,14 +371,14 @@ export default function QuickLaunch() {
                   style={{
                     background: 'transparent',
                     border: '2px dashed #cbd5e1',
-                    borderRadius: 14, padding: '13px 8px', minHeight: 88,
+                    borderRadius: 18, padding: '14px 8px', minHeight: 112,
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     justifyContent: 'center', gap: 5,
                     cursor: 'pointer', transition: 'all .15s',
                   }}
                 >
-                  <span style={{ fontSize: 20, color: '#cbd5e1', fontWeight: 300, lineHeight: 1 }}>+</span>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: '#cbd5e1' }}>adicionar</span>
+                  <span style={{ fontSize: 26, color: COR.textoSuave, fontWeight: 300, lineHeight: 1 }}>+</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: COR.textoSuave }}>adicionar</span>
                 </button>
               )
             }
@@ -430,24 +396,29 @@ export default function QuickLaunch() {
                 onClick={() => catSel === c.id ? fecharInput() : abrirCat(c)}
                 style={{
                   background: active ? '#eff6ff' : '#fff',
-                  border: `2px solid ${active ? COR.azul : COR.borda}`,
-                  borderRadius: 14, padding: '13px 8px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                  border: `2px solid ${active ? COR.azul : 'transparent'}`, boxShadow: M.sombra,
+                  borderRadius: 18, padding: '14px 6px', minHeight: 112, minWidth: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   cursor: 'pointer', transform: active ? 'scale(.95)' : undefined,
                   transition: 'all .15s',
                 }}
               >
-                <span style={{ fontSize: 26 }}>{c.icone}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2 }}>
+                <span aria-hidden style={{
+                  width: 46, height: 46, borderRadius: '50%', fontSize: 24,
+                  background: `${/^#[0-9a-f]{6}$/i.test(c.cor ?? '') ? c.cor : COR.azul}1f`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{c.icone}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2,
+                  maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.nome}
                 </span>
                 {temPrevisto ? (
-                  <span style={{ fontSize: 11, color: corDisp, fontWeight: 700, textAlign: 'center' }}>
+                  <span style={{ fontSize: 13, color: corDisp, fontWeight: 700, textAlign: 'center' }}>
                     {fmt(disponivel)}
                   </span>
                 ) : (
-                  <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                    {ult ? fmt(ult) : c.tipo}
+                  <span style={{ fontSize: 13, color: COR.textoSuave }}>
+                    {ult ? fmt(ult) : c.tipo === 'entrada' ? 'receita' : ''}
                   </span>
                 )}
               </button>
@@ -465,17 +436,17 @@ export default function QuickLaunch() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{
-              width: 34, height: 34, borderRadius: 10,
+              width: 44, height: 44, borderRadius: '50%',
               background: isCartao ? '#f5f3ff' : '#eff6ff',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>
               {catObj?.icone ?? '💰'}
             </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: COR.texto }}>
                 {catObj ? (catObj.descricao ? `${catObj.nome} · ${catObj.descricao}` : catObj.nome) : ''}
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8' }}>
+              <div style={{ fontSize: 13, color: COR.textoSuave }}>
                 {tipoSel === 'saida' ? 'Despesa' : 'Receita'} · {contaSel?.nome}
                 {isCartao ? ' · Crédito 💳' : ''}
               </div>
@@ -537,7 +508,7 @@ export default function QuickLaunch() {
               inputMode="decimal"
               style={{
                 flex: '1.2', border: `2px solid ${isCartao ? '#7c3aed' : COR.azul}`, borderRadius: 12,
-                padding: '10px 12px', fontSize: 20, fontWeight: 700,
+                padding: '12px 12px', fontSize: 24, fontWeight: 800, minWidth: 0,
                 color: isCartao ? '#7c3aed' : COR.azul, background: isCartao ? '#f5f3ff' : '#eff6ff',
                 outline: 'none', fontFamily: 'inherit', textAlign: 'center',
               }}
@@ -549,14 +520,14 @@ export default function QuickLaunch() {
               placeholder="Descrição (opcional)"
               style={{
                 flex: 1, border: `1.5px solid ${COR.borda}`, borderRadius: 12,
-                padding: '10px 12px', fontSize: 13, color: COR.texto,
+                padding: '12px 12px', fontSize: 15, color: COR.texto, minWidth: 0,
                 background: '#f8fafc', outline: 'none', fontFamily: 'inherit',
               }}
             />
           </div>
 
           {parcelas > 1 && parseBRL(valor) > 0 && (
-            <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: -4, marginBottom: 8, textAlign: 'center' }}>
+            <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: -4, marginBottom: 8, textAlign: 'center' }}>
               {parcelas}× de {fmt(parseBRL(valor))} · total {fmt(parseBRL(valor) * parcelas)}
             </div>
           )}
@@ -623,7 +594,7 @@ export default function QuickLaunch() {
               {contasBanco.length > 0 && (
                 <>
                   <div style={{
-                    fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
+                    fontSize: 12, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
                     letterSpacing: '.5px', padding: '12px 20px 6px', background: '#f8fafc',
                   }}>🏦 Contas</div>
                   {contasBanco.map(c => {
@@ -646,7 +617,7 @@ export default function QuickLaunch() {
                         }}>{c.icone || '🏦'}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{c.banco}</div>
-                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1 }}>{c.nome}</div>
+                          <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>{c.nome}</div>
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: saldosBanco[c.id] >= 0 ? COR.verde : COR.vermelho, flexShrink: 0 }}>
                           {fmt(saldosBanco[c.id] ?? 0)}
@@ -668,7 +639,7 @@ export default function QuickLaunch() {
               {contasCartao.length > 0 && (
                 <>
                   <div style={{
-                    fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
+                    fontSize: 12, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
                     letterSpacing: '.5px', padding: '12px 20px 6px', background: '#f8fafc',
                   }}>💳 Cartões de crédito</div>
                   {contasCartao.map(c => {
@@ -694,7 +665,7 @@ export default function QuickLaunch() {
                         }}>{c.icone || '💳'}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{c.nome}</div>
-                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 1 }}>
+                          <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>
                             Fatura: {fmt(totalFat)}
                           </div>
                         </div>
@@ -765,7 +736,7 @@ export default function QuickLaunch() {
                   return (
                     <div key={tipo}>
                       <div style={{
-                        fontSize: 10, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
+                        fontSize: 12, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
                         letterSpacing: '.5px', padding: '12px 20px 6px', background: '#f8fafc',
                       }}>
                         {tipo === 'saida' ? '📤 Saídas' : '📥 Entradas'}
@@ -789,7 +760,7 @@ export default function QuickLaunch() {
                               <div style={{ fontSize: 14, fontWeight: 600, color: c.ativa ? COR.texto : '#94a3b8' }}>
                                 {c.nome}
                               </div>
-                              {!c.ativa && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>inativa</div>}
+                              {!c.ativa && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 1 }}>inativa</div>}
                             </div>
                             <div style={{
                               width: 44, height: 24, borderRadius: 12, flexShrink: 0,
@@ -812,7 +783,7 @@ export default function QuickLaunch() {
             </div>
 
             <div style={{ padding: '12px 20px 20px', borderTop: `1px solid ${COR.borda}` }}>
-              <div style={{ fontSize: 11, color: COR.textoSuave, textAlign: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, color: COR.textoSuave, textAlign: 'center', marginBottom: 10 }}>
                 {pinLocal.size} categoria{pinLocal.size !== 1 ? 's' : ''} selecionada{pinLocal.size !== 1 ? 's' : ''}
               </div>
               <button
