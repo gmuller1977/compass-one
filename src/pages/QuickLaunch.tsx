@@ -11,8 +11,6 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { lancarNaFatura, lancarNoExtrato, dataDoLancamento } from '../utils/lancamentoRapido'
 import { formasDoMes, gastoDeHoje, mesDoGastoNoCartao, type MesRef, type QualMes } from '../utils/lancarPorMes'
-import { interpretarLancamento } from '../utils/interpretarLancamento'
-import EntradaPorTexto from '../components/quickLaunch/EntradaPorTexto'
 import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 
 function useIsMobile() {
@@ -213,31 +211,6 @@ export default function QuickLaunch() {
     else setEtapa('mes')
   }
 
-  /** "47 mercado nubank" → abre o lançamento já preenchido, para confirmar. */
-  function aplicarTexto(texto: string): string | null {
-    const r = interpretarLancamento(texto, categorias, contas)
-    const cat = r.categoriaId ? categorias.find(c => c.id === r.categoriaId) : undefined
-    if (!cat && r.valor === undefined) return 'Não entendi. Tente algo como "47 mercado nubank".'
-    setValor(r.valor !== undefined ? r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '')
-    setDesc(r.descricao ? r.descricao.charAt(0).toUpperCase() + r.descricao.slice(1) : '')
-    setParcelas(r.parcelas ?? 1)
-    setQuando(r.diasAtras === 1 ? 'ontem' : 'hoje')
-    if (!cat) return 'Valor entendido. Agora toque na categoria.'
-    setCatSel(cat.id); setTipoSel(cat.tipo)
-    const conta = r.contaId ? contas.find(c => c.id === r.contaId) : undefined
-    if (conta) {
-      const ehCartao = conta.tipo === 'cartao'
-      const m = ehCartao ? mesDoGastoNoCartao(conta, ano, mes, dia) : mesAtual
-      setQualMes(m.ano === ano && m.mes === mes ? 'atual' : 'proximo')
-      setForma({ tipo: ehCartao ? 'cartao' : 'banco', conta })
-      setEtapa('valor')
-      setTimeout(() => valorRef.current?.focus(), 80)
-    } else {
-      setForma(null); setQualMes('atual'); setEtapa('mes')
-    }
-    return null
-  }
-
   function registrar() {
     const v = parseBRL(valor)
     if (!catObj || v <= 0 || !forma) return
@@ -376,7 +349,6 @@ export default function QuickLaunch() {
 
       {/* Grid */}
       <div style={{ flex: 1, padding: '16px 16px 6px', overflowY: 'auto' }}>
-        <EntradaPorTexto onTexto={aplicarTexto} />
         <div style={{
           fontSize: M.titulo, fontWeight: 700, color: COR.texto,
           marginBottom: 12, marginTop: 10,

@@ -1854,7 +1854,7 @@ precisar da tela completa de Lançamentos:
   mudou, `fixasValorOverride`, na conta onde a fixa aparece
   (`contaDoPagamento`, em [`pagarConta.ts`](src/utils/pagarConta.ts)). A conta
   pode ser trocada, como o "Pagar de qual conta?" de Lançamentos.
-- **Texto e voz** (`EntradaPorTexto`): "47 mercado nubank", "32,90 farmácia
+- **Texto e voz** (`EntradaPorTexto`, **removido do Lançar em 10/10/2026** a pedido do Guilherme: repetia o Norte, que lança por conversa e voz; `interpretarLancamento` ficou sem uso na tela): "47 mercado nubank", "32,90 farmácia
   ontem", "350 em 3x no roxinho". `interpretarLancamento` roda no aparelho,
   sem IA nem custo, e só PREENCHE — a pessoa confirma. Variante só casa se
   for dita ou se for a única com o nome. Voz pelo reconhecimento do navegador.
