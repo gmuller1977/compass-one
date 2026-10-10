@@ -14,7 +14,7 @@ import { COR } from '../utils/cores'
  * Cores de estado de cores.ts, com o par fundo + texto já medido.
  */
 export default function IndicadorGravacao() {
-  const { gravacao } = useApp()
+  const { gravacao, dadosDoAparelho } = useApp()
   const [mostrarSalvando, setMostrarSalvando] = useState(false)
   const [mostrarSalvo, setMostrarSalvo] = useState(false)
   const anterior = useRef(gravacao)
@@ -35,7 +35,14 @@ export default function IndicadorGravacao() {
   }, [gravacao])
 
   let texto = '', fundo = '', cor = '', borda = ''
-  if (gravacao === 'semConexao') {
+  if (dadosDoAparelho !== null && gravacao !== 'salvando') {
+    // Abriu sem conseguir ler o banco: os números são da cópia do aparelho.
+    // Fica na tela até o banco responder (o contexto tenta a cada 30 s).
+    const d = new Date(dadosDoAparelho)
+    const quando = `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    texto = `Sem internet · dados de ${quando}. Lançar funciona; contas, categorias e plano só mudam com internet.`
+    fundo = COR.avisoFundo; cor = COR.avisoTexto; borda = COR.avisoBorda
+  } else if (gravacao === 'semConexao') {
     texto = 'Sem internet · o lançamento ficou guardado neste aparelho e vai para o banco quando a conexão voltar.'
     fundo = COR.avisoFundo; cor = COR.avisoTexto; borda = COR.avisoBorda
   } else if (gravacao === 'erro') {

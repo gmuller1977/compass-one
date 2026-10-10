@@ -1916,6 +1916,59 @@ e as duas telas a usam.
 avisos sem repetição (com controle da lista completa), `statusDoMes` = a
 regra antiga da Dashboard em 64 combinações, e o dinheiro no realizado.
 
+**Abrir sem internet** (10/10/2026). A cada carregamento, e a cada gravação
+confirmada, o `AppContext` guarda no IndexedDB as linhas do banco, no mesmo
+formato da consulta ([`copiaLocal.ts`](src/utils/copiaLocal.ts)); extrato e
+fatura pelos meses que o BANCO confirmou (`noBanco`), nunca os pendentes.
+Sem internet (ou depois da 4ª tentativa) o `loadData` abre com essa cópia na
+hora, somando os pendentes do `localStorage`, e o `IndicadorGravacao` diz
+"Sem internet · dados de 10/10 às 14:32".
+
+- **Na cópia só se gravam lançamentos** (extrato e fatura, por mês).
+  Contas, categorias, plano e preferências NÃO: `saveContas` e companhia
+  regravam a lista inteira e apagam o que não está nela — a partir de uma
+  cópia velha, apagariam no banco a conta criada em outro aparelho.
+- **Volta ao banco sem tirar a tela** (`sairDoModoAparelho`): no evento
+  "online", ao voltar para o app e a cada 30 s. Lê em segundo plano, espera
+  as gravações em curso e troca; sem mesclar as contas da memória (são as da
+  cópia).
+- Sair da conta apaga as cópias.
+
+`prova61` (14 invariantes, no Chromium, com o AppContext de verdade e um
+Supabase de mentira): abre sem internet em menos de 5 s com a cópia, lança
+offline, e ao voltar a conta criada em outro aparelho continua no banco, o
+lançamento chega e a preferência mudada na cópia não foi gravada.
+
+**Lembrete das 21h** (pronto, desligado até a configuração). Função
+[`lembrete-diario`](supabase/functions/lembrete-diario/index.ts), regras em
+`regras.ts`: conta vencendo amanhã ("Amanhã vence: Aluguel · R$ 2.200,00")
+vem primeiro; sem lançamento hoje, "Lançou seus gastos de hoje?" (abre
+`/lancar`); tudo em dia, nada. Uma notificação por aparelho por dia. O
+servidor não refaz a conta do saldo: o app grava em `push_inscricoes` a lista
+`contasAVencer` a cada mudança, em qualquer aparelho (`SincronizarLembrete`,
+no `AppShell`). O convite fica na Bússola (`LembreteDiarioCard`), só com
+`VITE_VAPID_PUBLIC_KEY` configurada; no iPhone fora do app instalado, explica
+que precisa instalar. Passos de configuração no cabeçalho do `index.ts` e na
+migração `014_lembretes_e_uso.sql`.
+
+**Medição de uso** (`uso_lancamentos`, migração 014): a cada gravação, quantos
+lançamentos NOVOS (ids que o banco não tinha, `lancamentosNovos`) e de qual
+aparelho. Falha nunca atrapalha a gravação. Consultas:
+
+```sql
+-- % de lançamentos pelo celular, por semana
+select date_trunc('week', dia) semana,
+  round(100.0 * sum(quantidade) filter (where dispositivo = 'celular') / sum(quantidade), 1) pct_celular
+from uso_lancamentos group by 1 order by 1;
+-- dias com lançamento por semana, por usuário
+select user_id, date_trunc('week', dia) semana, count(distinct dia) dias
+from uso_lancamentos group by 1, 2 order by 2, 1;
+```
+
+`prova62` (18 invariantes): dia em São Paulo com o servidor em UTC (e a
+virada do ano), "lançou hoje" com a compra no cartão na fatura seguinte, as
+quatro mensagens, e a contagem de lançamentos novos.
+
 ---
 
 ## Paleta

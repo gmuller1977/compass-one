@@ -3,8 +3,9 @@ import type { ItensPorMes } from '../utils/itensPlano'
 import type { CenarioPrevisao } from '../utils/saldoConta'
 import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { mesesAlterados } from '../utils/gravacaoPorMes'
+import { mesesAlterados, lancamentosNovos } from '../utils/gravacaoPorMes'
 import { lerPendentes, guardarPendentes } from '../utils/pendentesLocais'
+import { guardarCopia, lerCopia, apagarCopias, type LinhasDoBanco } from '../utils/copiaLocal'
 import { supabase } from '../lib/supabase'
 import { limparUltimaAtividade } from '../utils/inatividade'
 
@@ -140,6 +141,11 @@ type AppCtx = {
   setMetaSim: (v: MetaSim | null) => void
   /** Se o que foi lançado já está no banco — ver "Gravação por mês". */
   gravacao: EstadoGravacao
+  /**
+   * Abriu sem conseguir ler o banco e está mostrando a cópia guardada no
+   * aparelho: quando ela foi guardada (ms). `null` = dados do banco.
+   */
+  dadosDoAparelho: number | null
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
   excluirConta: () => Promise<{ error?: string }>
@@ -359,6 +365,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // utils/pendentesLocais. Sem ela, fechar a aba pede confirmação.
   const pendentesGuardadosRef = useRef(true)
 
+  // ── Cópia no aparelho (ver utils/copiaLocal) ─────────────────────────
+  // Abrindo sem internet, o app mostra a última cópia guardada em vez da tela
+  // vazia. Nesse modo só lançamentos (extrato e fatura, que vão por mês e
+  // ficam em pendentesLocais) são gravados; contas, categorias, plano e
+  // preferências NÃO: a cópia pode ser velha, e gravar a lista inteira dela
+  // apagaria no banco o que foi criado em outro aparelho depois.
+  const modoAparelhoRef = useRef(false)
+  const [dadosDoAparelho, setDadosDoAparelho] = useState<number | null>(null)
+  const copiaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const montarCopiaRef = useRef<() => LinhasDoBanco | null>(() => null)
+
   // State (não ref) para que effects de save re-executem quando o load terminar
   const [dataLoaded, setDataLoadedState] = useState(false)
 
@@ -396,6 +413,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // aqui — e não só no "Sair" — cobre toda forma de a sessão acabar, e
         // impede o próximo login de herdar um carimbo velho e sair na hora.
         limparUltimaAtividade()
+        // A cópia dos dados no aparelho também: o próximo a entrar neste
+        // navegador não pode abrir, sem internet, os números de outra pessoa.
+        apagarCopias()
         wasLoggedOutRef.current = true
         loadedUserIdRef.current = null
         resetState()
@@ -410,6 +430,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ── Load data ────────────────────────────────────────────────────────
+  /** As seis consultas do carregamento; `null` se qualquer tabela crítica falhar. */
+  async function buscarLinhas(userId: string): Promise<LinhasDoBanco | null> {
+    try {
+      const [
+        { data: contasRows,  error: contasErr },
+        { data: categoriasRows, error: catsErr },
+        { data: prefRow },
+        { data: extratoRows, error: extratoErr },
+        { data: faturaRows,  error: faturaErr },
+        { data: planoRows,   error: planosErr },
+      ] = await Promise.all([
+        supabase.from('contas').select('*').eq('user_id', userId),
+        supabase.from('categorias').select('*').eq('user_id', userId),
+        supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
+        supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
+        supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
+        supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
+      ])
+      if (import.meta.env.DEV) console.log('📊 [loadData] resultado do banco:', {
+        contas: contasRows?.length ?? 'ERRO',
+        categorias: categoriasRows?.length ?? 'ERRO',
+        erros: { contasErr: !!contasErr, catsErr: !!catsErr, extratoErr: !!extratoErr, faturaErr: !!faturaErr, planosErr: !!planosErr }
+      })
+      if (contasErr || catsErr || extratoErr || faturaErr || planosErr) {
+        console.error('loadData erro:', { contasErr, catsErr, extratoErr, faturaErr, planosErr })
+        return null
+      }
+      return {
+        contas: contasRows ?? [], categorias: categoriasRows ?? [], pref: prefRow ?? null,
+        extrato: extratoRows ?? [], fatura: faturaRows ?? [], planos: planoRows ?? [],
+      }
+    } catch (e) {
+      console.error('loadData erro:', e)
+      return null
+    }
+  }
+
   async function loadData(userId: string) {
     if (loadingForUserRef.current === userId) return
     if (import.meta.env.DEV) console.log('🔄 [loadData] iniciando para userId:', userId.slice(0, 8))
@@ -418,34 +475,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dataLoadedRef.current = false
     loadedUserIdRef.current = null
 
-    const [
-      { data: contasRows,  error: contasErr },
-      { data: categoriasRows, error: catsErr },
-      { data: prefRow },
-      { data: extratoRows, error: extratoErr },
-      { data: faturaRows,  error: faturaErr },
-      { data: planoRows,   error: planosErr },
-    ] = await Promise.all([
-      supabase.from('contas').select('*').eq('user_id', userId),
-      supabase.from('categorias').select('*').eq('user_id', userId),
-      supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
-      supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
-      supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
-      supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
-    ])
-
-    if (import.meta.env.DEV) console.log('📊 [loadData] resultado do banco:', {
-      contas: contasRows?.length ?? 'ERRO',
-      categorias: categoriasRows?.length ?? 'ERRO',
-      erros: { contasErr: !!contasErr, catsErr: !!catsErr, extratoErr: !!extratoErr, faturaErr: !!faturaErr, planosErr: !!planosErr }
-    })
+    const linhas = await buscarLinhas(userId)
 
     // Se qualquer tabela crítica retornar erro, abortar sem salvar estado vazio e agendar retry
-    if (contasErr || catsErr || extratoErr || faturaErr || planosErr) {
-      console.error('loadData erro:', { contasErr, catsErr, extratoErr, faturaErr, planosErr })
+    if (!linhas) {
       loadingForUserRef.current = null
       loadRetryCountRef.current += 1
       const tentativa = loadRetryCountRef.current
+      // Sem internet, ou depois da última tentativa: abre com a cópia do
+      // aparelho, se houver — em vez de esperar e mostrar a tela vazia.
+      if (navigator.onLine === false || tentativa > 4) {
+        const copia = await lerCopia(userId)
+        if (copia && userIdRef.current === userId) {
+          if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
+          aplicarLinhas(userId, copia.linhas, copia.salvaEm)
+          return
+        }
+      }
       if (tentativa <= 4) {
         const delay = Math.min(1000 * tentativa, 8000) // 1s, 2s, 3s, 4s... max 8s
         console.warn(`loadData: tentativa ${tentativa}/4, retry em ${delay}ms`)
@@ -456,12 +502,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return
     }
+    aplicarLinhas(userId, linhas, null)
+    guardarCopia(userId, linhas)
+  }
+
+  /**
+   * Volta da cópia do aparelho para o banco, sem tirar a tela do lugar: lê
+   * em segundo plano e, só se der certo, troca. Espera as gravações em curso
+   * — o que foi lançado na cópia está no banco ou em pendentesLocais, e os
+   * pendentes voltam por cima do que o banco devolver.
+   */
+  const saindoDoAparelhoRef = useRef(false)
+  async function sairDoModoAparelho() {
+    const uid = userIdRef.current
+    if (!uid || !modoAparelhoRef.current || saindoDoAparelhoRef.current) return
+    saindoDoAparelhoRef.current = true
+    try {
+      const linhas = await buscarLinhas(uid)
+      if (!linhas || userIdRef.current !== uid || !modoAparelhoRef.current) return
+      await Promise.all([filaExtratoRef.current, filaFaturaRef.current])
+      aplicarLinhas(uid, linhas, null)
+      guardarCopia(uid, linhas)
+    } finally {
+      saindoDoAparelhoRef.current = false
+    }
+  }
+
+  /**
+   * Monta o estado a partir das linhas do banco — lidas agora, ou a cópia do
+   * aparelho (`copiaDe` = quando ela foi guardada).
+   */
+  function aplicarLinhas(userId: string, linhas: LinhasDoBanco, copiaDe: number | null) {
+    const contasRows = linhas.contas as ContaRow[]
+    const categoriasRows = linhas.categorias as Parameters<typeof rowToCategoria>[0][]
+    const prefRow = linhas.pref
+    const extratoRows = linhas.extrato
+    const faturaRows = linhas.fatura
+    const planoRows = linhas.planos
+    // Mesclar o que foi criado durante o load só vale no primeiro carregamento.
+    // Saindo da cópia do aparelho, o que está na memória É a cópia velha:
+    // mesclar devolveria ao banco uma conta apagada em outro aparelho.
+    const mesclar = !modoAparelhoRef.current
     loadRetryCountRef.current = 0 // reset no sucesso
+    if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
 
     // Contas — mescla com qualquer item que o usuário adicionou durante o load
     const contasLoaded: Conta[] = (contasRows ?? []).map(rowToConta)
     const contasDbIds = new Set(contasLoaded.map(c => c.id))
-    const userOnlyContas = contasRef.current.filter(c => !contasDbIds.has(c.id))
+    const userOnlyContas = mesclar ? contasRef.current.filter(c => !contasDbIds.has(c.id)) : []
     const mergedContas = userOnlyContas.length > 0 ? [...contasLoaded, ...userOnlyContas] : contasLoaded
     if (import.meta.env.DEV && userOnlyContas.length > 0) console.log('🔀 [loadData] mesclando', userOnlyContas.length, 'contas adicionadas durante o load')
     setContasState(mergedContas)
@@ -482,7 +570,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // PADRAO é criado somente no fluxo de Onboarding.
     // Mescla com categorias que o usuário adicionou durante o load
     const catsDbIds = new Set(catsLoaded.map(c => c.id))
-    const userOnlyCats = categoriasRef.current.filter(c => !catsDbIds.has(c.id))
+    const userOnlyCats = mesclar ? categoriasRef.current.filter(c => !catsDbIds.has(c.id)) : []
     const mergedCats = userOnlyCats.length > 0 ? [...catsLoaded, ...userOnlyCats] : catsLoaded
     setCategoriasState(mergedCats)
 
@@ -553,6 +641,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       planosReal: Object.keys(planosRealLoaded).length,
     }
 
+    modoAparelhoRef.current = copiaDe !== null
+    setDadosDoAparelho(copiaDe)
     loadedUserIdRef.current = userId
     setCarregando(false)
     dataLoadedRef.current = true
@@ -561,6 +651,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function resetState() {
+    modoAparelhoRef.current = false
+    setDadosDoAparelho(null)
     dataLoadedRef.current = false
     setDataLoadedState(false)
     loadedUserIdRef.current = null
@@ -601,7 +693,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveContas(list: Conta[]) {
-    if (!canSave()) return
+    if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
     if (import.meta.env.DEV) console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
     if (list.length === 0) {
@@ -622,7 +714,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveCategorias(list: Categoria[]) {
-    if (!canSave()) return
+    if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
     if (list.length === 0) {
       if (!safeSaveCheck('categorias', 0)) return
@@ -684,12 +776,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
       falhouRef.current = true
       agendarNovaTentativa()
     } else {
+      registrarUso(uid, lancamentosNovos(alterados, data, noBanco.current))
       for (const k of alterados) noBanco.current[k] = data[k]
       savedCountRef.current[countKey] = Object.keys(data).length
+      agendarCopia()
       if (!temMesNaoGravado()) { falhouRef.current = false; tentativasRef.current = 0 }
       sincronizarPendentes()
     }
     atualizarEstadoGravacao()
+  }
+
+  /**
+   * Medição do plano mobile: quantos lançamentos novos chegaram ao banco, e
+   * de que aparelho. "Celular" é tela estreita ou toque como entrada
+   * principal. Sem a tabela (migração 014 não aplicada) o erro é ignorado.
+   */
+  function registrarUso(uid: string, quantidade: number) {
+    if (quantidade <= 0) return
+    const celular = window.innerWidth < 640 || !!window.matchMedia?.('(pointer: coarse)').matches
+    // Medir nunca pode atrapalhar a gravação: qualquer falha aqui é engolida.
+    try {
+      supabase.from('uso_lancamentos').insert({ user_id: uid, dispositivo: celular ? 'celular' : 'computador', quantidade })
+        .then(({ error }) => { if (error && import.meta.env.DEV) console.log('uso_lancamentos:', error.message) }, () => {})
+    } catch { /* idem */ }
   }
 
   /** Guarda no aparelho exatamente os meses que o banco ainda não tem. */
@@ -743,6 +852,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Abriu sem sinal: o carregamento desistiu. Com a conexão de volta, tenta de novo.
       const uid = userIdRef.current
       if (uid && !dataLoadedRef.current && !loadingForUserRef.current) { loadRetryCountRef.current = 0; loadData(uid) }
+      // Abriu com a cópia do aparelho: troca pelos dados do banco.
+      if (modoAparelhoRef.current) { sairDoModoAparelho(); return }
       tentarGravarDeNovo()
     }
     const caiu = () => atualizarEstadoGravacao()
@@ -764,6 +875,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function recarregarDoBanco() {
     const uid = userIdRef.current
     if (!uid || !dataLoadedRef.current) return
+    if (modoAparelhoRef.current) { sairDoModoAparelho(); return }
     if (gravandoRef.current > 0 || falhouRef.current || temMesNaoGravado()) return
 
     const [
@@ -842,7 +954,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function savePlanosData(dict: Record<number, PlanoAnoData>, tipo: 'previsto' | 'real') {
-    if (!canSave()) return
+    if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
     const entries = Object.entries(dict)
     const countKey = tipo === 'previsto' ? 'planos' : 'planosReal'
@@ -877,7 +989,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null,
     pa = 5, metodo = 'media_3_meses', sid = 0, cen: CenarioPrevisao = 'pessimista'
   ) {
-    if (!canSave()) return
+    if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
     const { error } = await supabase.from('user_preferences').upsert({
       user_id: uid,
@@ -899,7 +1011,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function salvarSaldoInicialDinheiro(v: number) {
     setSaldoInicialDinheiroState(v)
-    if (!canSave()) return
+    if (!canSave() || modoAparelhoRef.current) return
     const uid = userIdRef.current!
     const { error } = await supabase.from('user_preferences').upsert({
       user_id: uid,
@@ -908,6 +1020,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, { onConflict: 'user_id' })
     if (error) console.error('save saldo_inicial_dinheiro:', error)
   }
+
+  // ── Cópia no aparelho ────────────────────────────────────────────────
+  // As linhas no formato da consulta, montadas do que o BANCO tem: extrato e
+  // fatura pelos meses confirmados (noBanco), o resto pelo estado — que é
+  // gravado a cada mudança. Reatribuída a cada render: lê o estado atual.
+  montarCopiaRef.current = () => {
+    const uid = userIdRef.current
+    if (!uid) return null
+    const meses = (m: Record<string, unknown>) => Object.entries(m).map(([k, dados]) => {
+      const { contaId, ano, mes } = parseExtratoKey(k)
+      return { conta_id: contaId, ano, mes, dados }
+    })
+    return {
+      contas: contasRef.current.map(c => contaToRow(c, uid)),
+      categorias: categoriasRef.current.map(c => categoriaToRow(c, uid)),
+      pref: {
+        perfil_nome: perfil.nome, perfil_apelido: perfil.apelido, onboarding_completo: onboardingCompleto,
+        planejamento_lockado: planejamentoLockado, desvio_min_perc: desvioMinPerc, percentual_alerta: percentualAlerta,
+        metodo_sugestao: metodoSugestao, cenario_previsao: cenarioPrevisao, objetivo_usuario: objetivoUsuario || null,
+        meta_simulacao: metaSim, saldo_inicial_dinheiro: saldoInicialDinheiro,
+      } satisfies PrefRow,
+      extrato: meses(extratoNoBancoRef.current),
+      fatura: meses(faturaNoBancoRef.current),
+      planos: [
+        ...Object.entries(planos).map(([a, dados]) => ({ ano: Number(a), tipo_plano: 'previsto', dados })),
+        ...Object.entries(planosReal).map(([a, dados]) => ({ ano: Number(a), tipo_plano: 'real', dados })),
+      ],
+    }
+  }
+
+  /** Guarda a cópia dois segundos depois da última mudança — nunca a partir da própria cópia. */
+  function agendarCopia() {
+    if (copiaTimerRef.current) clearTimeout(copiaTimerRef.current)
+    copiaTimerRef.current = setTimeout(() => {
+      copiaTimerRef.current = null
+      const uid = userIdRef.current
+      if (!uid || !dataLoadedRef.current || modoAparelhoRef.current) return
+      const linhas = montarCopiaRef.current()
+      if (linhas) guardarCopia(uid, linhas)
+    }, 2000)
+  }
+
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (dataLoaded) agendarCopia()
+  }, [dataLoaded, contas, categorias, planos, planosReal, perfil, onboardingCompleto, planejamentoLockado,
+    desvioMinPerc, percentualAlerta, metodoSugestao, cenarioPrevisao, objetivoUsuario, metaSim, saldoInicialDinheiro])
+
+  // Mostrando a cópia do aparelho: tenta o banco a cada 30 s. O evento
+  // "online" nem sempre vem (o sinal volta sem o navegador perceber, ou o
+  // banco é que estava fora).
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    if (dadosDoAparelho === null) return
+    const t = setInterval(() => { if (navigator.onLine !== false) sairDoModoAparelho() }, 30_000)
+    return () => clearInterval(t)
+  }, [dadosDoAparelho])
 
   // ── Auto-save effects ────────────────────────────────────────────────
   // dataLoaded é state (não ref) para que o effect re-execute quando o load terminar,
@@ -1022,6 +1189,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       objetivoUsuario, setObjetivoUsuario,
       metaSim, setMetaSim,
       gravacao,
+      dadosDoAparelho,
       limparDados, sairDaConta, excluirConta,
     }}>
       {children}

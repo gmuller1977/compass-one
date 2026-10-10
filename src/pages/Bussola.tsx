@@ -10,6 +10,7 @@ import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
+import LembreteDiarioCard from '../components/LembreteDiario'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
 import { COR } from '../utils/cores'
 
@@ -144,6 +145,8 @@ export default function Bussola() {
           </span>
           <span aria-hidden style={{ color: COR.azul, fontWeight: 700 }}>→</span>
         </button>
+
+        <LembreteDiarioCard />
       </div>
 
       {revisando && (

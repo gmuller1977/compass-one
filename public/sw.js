@@ -5,6 +5,8 @@
 //
 //   - navegação: rede primeiro; sem rede, a última página guardada
 //   - /assets/*: cache primeiro (o nome do arquivo muda a cada build)
+//   - push: o lembrete das 21h (supabase/functions/lembrete-diario); tocar
+//     na notificação abre o app na tela que ela indica
 const CACHE = 'compass-shell-v1'
 
 self.addEventListener('install', () => self.skipWaiting())
@@ -45,4 +47,23 @@ self.addEventListener('fetch', e => {
       return resp
     })())
   }
+})
+
+self.addEventListener('push', e => {
+  let msg = { titulo: 'Compass One', corpo: '', url: '/' }
+  try { msg = { ...msg, ...e.data.json() } } catch { /* corpo vazio */ }
+  e.waitUntil(self.registration.showNotification(msg.titulo, {
+    body: msg.corpo, icon: '/icone-192.png', badge: '/icone-192.png', lang: 'pt-BR',
+    tag: 'lembrete-diario', data: { url: msg.url },
+  }))
+})
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  const url = e.notification.data?.url ?? '/'
+  e.waitUntil((async () => {
+    const abertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    for (const c of abertas) if ('focus' in c) { await c.navigate(url).catch(() => {}); return c.focus() }
+    return self.clients.openWindow(url)
+  })())
 })
