@@ -8,9 +8,9 @@ import { lerRotuloParcela, rotuloParcela, type CompraRef } from '../../utils/ren
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const paraCampo = (v: number) => (v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 
-/** `parcela`: o item é a parcela de uma compra lançada — o campo mostra só o nome, e trocá-lo renomeia a compra. */
+/** `parcela`: o item é uma parcela ("nome · k de N") — o campo mostra só o nome, e o "k de N" fica ao lado do valor, sem edição. Com `ref` (a compra lançada), trocar o nome renomeia a compra. */
 type Linha = { id: string; descricao: string; valor: string; simulacaoId?: string
-  parcela?: { nome: string; atual: number; total: number; ref: CompraRef } }
+  parcela?: { nome: string; atual: number; total: number; ref?: CompraRef } }
 
 /**
  * O editor de itens de uma célula do plano: Mercado · outubro = Supermercado
@@ -44,10 +44,10 @@ export default function PlanItensEditor({
 }) {
   const [linhas, setLinhas] = useState<Linha[]>(() => {
     if (itens?.length) return itens.map(i => {
-      const ref = compras?.[i.id]
-      const r = ref && onRenomear ? lerRotuloParcela(i.descricao) : null
+      const ref = onRenomear ? compras?.[i.id] : undefined
+      const r = i.simulacaoId ? null : lerRotuloParcela(i.descricao)
       return r
-        ? { id: i.id, descricao: r.nome, valor: paraCampo(i.valor), parcela: { ...r, ref: ref! } }
+        ? { id: i.id, descricao: r.nome, valor: paraCampo(i.valor), parcela: { ...r, ref } }
         : { id: i.id, descricao: i.descricao, valor: paraCampo(i.valor), simulacaoId: i.simulacaoId }
     })
     if (partes?.length) return partes.map(p => ({ id: novoIdItem(), descricao: '', valor: paraCampo(p) }))
@@ -101,7 +101,7 @@ export default function PlanItensEditor({
     // Parcela com nome novo: a compra inteira muda de nome (fatura e plano).
     for (const l of linhas) {
       const novo = l.descricao.trim()
-      if (l.parcela && onRenomear && novo && novo !== l.parcela.nome) onRenomear(l.parcela.ref, l.parcela.nome, novo)
+      if (l.parcela?.ref && onRenomear && novo && novo !== l.parcela.nome) onRenomear(l.parcela.ref, l.parcela.nome, novo)
     }
   }
 
@@ -136,26 +136,36 @@ export default function PlanItensEditor({
               <span style={{ ...campo, background: '#f5f3ff', color: '#6d28d9', border: 'none', textAlign: 'right', fontWeight: 600 }}>{l.valor}</span>
               <span />
             </div>
+          ) : l.parcela ? (
+            // Parcela: o nome em cima, na linha inteira; embaixo o valor, com
+            // "4 de 12" ao lado, sem edição (pedido do Guilherme, 11/10/2026).
+            <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto 28px', gap: 6, alignItems: 'center',
+              ...(i > 0 ? { borderTop: `1px solid ${COR.borda}`, paddingTop: 8 } : {}) }}>
+              <input data-item aria-label={`Nome da compra (parcela ${l.parcela.atual} de ${l.parcela.total})`} placeholder="Nome da compra"
+                value={l.descricao} onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, gridColumn: '1 / -1' }} />
+              {/* O valor da parcela é o da compra lançada: não se edita aqui. */}
+              <span aria-label={`Valor da parcela ${l.parcela.atual} de ${l.parcela.total}`}
+                style={{ ...campo, textAlign: 'right', fontVariantNumeric: 'tabular-nums', background: '#f1f5f9',
+                  border: `1px solid ${COR.borda}`, fontWeight: 600 }}>{l.valor}</span>
+              <span style={{ fontSize: estreito ? 15 : 13, fontWeight: 600, color: COR.textoSuave, whiteSpace: 'nowrap', padding: '0 4px' }}>
+                {l.parcela.atual} de {l.parcela.total}
+              </span>
+              <button type="button" aria-label={`Remover o item ${i + 1}`}
+                onClick={() => setLinhas(ls => ls.filter(x => x.id !== l.id))}
+                style={{ border: 'none', background: 'none', color: COR.textoSuave, cursor: 'pointer', fontSize: 17, height: 28, borderRadius: 6 }}>×</button>
+              {l.parcela.ref && (
+                <span style={{ gridColumn: '1 / -1', fontSize: 12, color: COR.textoSuave }}>
+                  {l.descricao.trim() && l.descricao.trim() !== l.parcela.nome
+                    ? `Ao salvar, as ${l.parcela.total} parcelas da compra passam a se chamar "${l.descricao.trim()}".`
+                    : 'Compra no cartão: o nome vale para todas as parcelas.'}
+                </span>
+              )}
+            </div>
           ) : (
             <div key={l.id} style={{ display: 'grid', gridTemplateColumns: estreito ? '1fr 28px' : '1fr 110px 28px', gap: 6, alignItems: 'center',
               ...(estreito && i > 0 ? { borderTop: `1px solid ${COR.borda}`, paddingTop: 8 } : {}) }}>
-              {l.parcela ? (
-                <span style={{ ...(estreito ? { gridColumn: '1 / -1' } : {}), display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input data-item aria-label={`Nome da compra (parcela ${l.parcela.atual} de ${l.parcela.total})`} placeholder="Nome da compra"
-                      value={l.descricao} onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, flex: 1, minWidth: 0 }} />
-                    <span style={{ fontSize: 13, color: COR.textoSuave, whiteSpace: 'nowrap' }}>{l.parcela.atual} de {l.parcela.total}</span>
-                  </span>
-                  <span style={{ fontSize: 12, color: COR.textoSuave }}>
-                    {l.descricao.trim() && l.descricao.trim() !== l.parcela.nome
-                      ? `Ao salvar, as ${l.parcela.total} parcelas da compra passam a se chamar "${l.descricao.trim()}".`
-                      : 'Parcela de compra no cartão: o nome vale para todas as parcelas.'}
-                  </span>
-                </span>
-              ) : (
-                <input data-item aria-label={`Descrição do item ${i + 1}`} placeholder="Descrição" value={l.descricao}
-                  onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, ...(estreito ? { gridColumn: '1 / -1' } : {}) }} />
-              )}
+              <input data-item aria-label={`Descrição do item ${i + 1}`} placeholder="Descrição" value={l.descricao}
+                onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, ...(estreito ? { gridColumn: '1 / -1' } : {}) }} />
               <input data-item aria-label={`Valor do item ${i + 1}`} placeholder="0,00" inputMode="decimal" value={l.valor}
                 onChange={e => { setErro(null); mudar(l.id, 'valor', e.target.value) }}
                 style={{ ...campo, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
