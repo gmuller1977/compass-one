@@ -2128,7 +2128,13 @@ janeiro. Agora: topo azul com a sobra planejada do mês escolhido, os meses em
 pílulas, "Saldo de [mês]" (começa com / termina com / fechou em / meta), as
 categorias do mês na própria página com a célula de sempre
 (`PlanCelulaEditavel grande`: campo de 16 px, senão o iPhone dá zoom), "[ano]
-mês a mês" e as ferramentas num cartão fechado. Sem modal no celular. Nenhum
+mês a mês" e as ferramentas num cartão fechado. Sem modal no celular.
+No mesmo dia, dois pedidos dele: **cada grupo é um cartão próprio, fechado,
+com o total do mês**, e dentro dele **a categoria mãe abre as variantes**
+("o planejamento inicial é na categoria"). A mãe tem o valor editável; as
+variáveis aparecem com a parte delas nos itens da mãe (ou "—"), e as fixas
+com o valor próprio, editável. Sem mãe (Financiamento · Casa e · Civic), a
+família só agrupa e mostra a soma. Nenhum
 número novo: `previsto` e `dadosPrevistoFinal`, os mesmos da Grade, e o
 mesmo `handleSave`. O computador não mudou.
 

@@ -168,8 +168,8 @@ export default function PlanMobile(p: Props) {
           visiveis={saidas ? new Set(saidas.map(x => x.ri)) : undefined} mes={mes} categorias={p.categorias} onSave={p.onSave} />
 
         <p style={{ margin: '0 4px', fontSize: 13, color: COR.textoSuave, lineHeight: 1.5 }}>
-          Toque num valor para mudar (aceita conta, como <b>800+300</b>). Toque no nome para ver o que já está
-          lançado nos próximos meses e ajustar o plano daqui para frente.
+          Toque no grupo para abrir as categorias, e numa categoria com variantes para vê-las. O valor se
+          planeja na categoria: toque nele para mudar (aceita conta, como <b>800+300</b>).
         </p>
 
         {/* ── O ano, mês a mês: a visão que a faixa e o "Ano inteiro" davam ── */}
@@ -251,7 +251,52 @@ function LinhaValor({ rotulo, legenda, valor, forte }: { rotulo: string; legenda
   )
 }
 
-/** Receitas ou Despesas do mês: grupos, e cada categoria com o valor editável. */
+type Linha = { cat: Cat; ri: number }
+
+/**
+ * Uma família: a categoria MÃE e as variantes dela (utils/categoriaMae),
+ * pedido do Guilherme em 11/10/2026: "precisa mostrar as categorias mãe, e ao
+ * clicar as subcategorias. O planejamento inicial é na categoria".
+ *
+ *   - `mae`: a linha do plano sem variante (é nela que se planeja). Sem mãe
+ *     cadastrada (Financiamento · Casa e · Civic), a família só agrupa.
+ *   - `proprias`: variantes com linha própria no plano — as FIXAS de uma mãe,
+ *     ou todas, quando não há mãe. Cada uma tem o seu valor.
+ *   - `naMae`: variantes VARIÁVEIS que somam na mãe. Não têm linha: a parte
+ *     delas é o item da mãe com o nome da variante, quando houver.
+ */
+type Familia = { nome: string; mae?: Linha; proprias: Linha[]; naMae: string[] }
+
+const sem = (s?: string) => (s ?? '').trim()
+
+function familias(linhas: Linha[], tipo: 'entrada' | 'saida', categorias: Categoria[]): Familia[] {
+  const out: Familia[] = []
+  for (const l of linhas) {
+    const nome = sem(l.cat.nome)
+    let f = out.find(x => x.nome === nome)
+    if (!f) { f = { nome, proprias: [], naMae: [] }; out.push(f) }
+    if (sem(l.cat.descricao)) f.proprias.push(l)
+    else f.mae = l
+  }
+  for (const f of out) {
+    if (!f.mae) continue
+    f.naMae = categorias
+      .filter(c => c.ativa && c.tipo === tipo && sem(c.nome) === f.nome && sem(c.descricao) && !c.fixa)
+      .map(c => sem(c.descricao))
+      .sort((x, y) => x.localeCompare(y, 'pt-BR'))
+  }
+  return out
+}
+
+/** A parte da variante no valor da mãe: os itens com o nome dela ("Martin", "Martin · ..."). */
+function parteNaMae(mae: Cat, variante: string, mes: number): number | null {
+  const itens = itensDoMes(mae, mes)
+  if (!itens) return null
+  const dela = itens.filter(i => sem(i.descricao) === variante || sem(i.descricao).startsWith(`${variante} · `))
+  return dela.length ? dela.reduce((s, i) => s + i.valor, 0) : null
+}
+
+/** Receitas ou Despesas do mês: grupos, e em cada grupo as categorias mãe, que abrem as variantes. */
 function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSave }: {
   titulo: string; cor: string; total: number; tipo: 'e' | 's'; cats: Cat[]
   /** Com a fatura planejada como linha própria, as categorias de cartão não entram (o filtro dos totais). */
@@ -261,53 +306,184 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
 }) {
   const abrirItens = useAbrirItens()
   const abrirAjuste = useAbrirAjuste()
-  const linhas = agrupar(cats, tipo).filter(l => l.k === 'grupo'
-    ? !visiveis || l.ris.some(ri => visiveis.has(ri))
-    : !visiveis || visiveis.has(l.ri))
-  if (linhas.length === 0) return null
+  const [abertas, setAbertas] = useState<Set<string>>(() => new Set())
+  const tipoCad = tipo === 'e' ? 'entrada' : 'saida'
 
-  return (
-    <Cartao>
-      <TituloCartao direita={
-        <span style={{ fontSize: M.corpo, fontWeight: 800, color: cor, fontVariantNumeric: 'tabular-nums' }}>{fmt(total, true)}</span>
-      }>{titulo}</TituloCartao>
-      {linhas.map((l, i) => {
-        if (l.k === 'grupo') return (
-          <div key={`g-${l.grupo}`} style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase',
-            color: COR.textoSuave, padding: i === 0 ? '0 0 4px' : '14px 0 4px' }}>
-            {l.grupo === '__sem_grupo__' ? 'Outros' : l.grupo}
-          </div>
-        )
-        const { cat, ri } = l
-        const { icone, cor: corCat } = iconeCategoria(categorias, cat.nome)
-        const nome = nomeExibicao(cat)
-        return (
-          <div key={`${tipo}-${ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 52,
-            borderTop: '1px solid #eef2f8' }}>
-            <IconeRedondo icone={icone} cor={corCat} tamanho={36} />
-            {abrirAjuste ? (
-              <button type="button" onClick={() => abrirAjuste({ tipo: tipo === 'e' ? 'entrada' : 'saida', nome: cat.nome,
-                descricao: cat.descricao, prev: cat.v[mes] ?? 0, real: 0, mes })}
-                style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, display: 'flex', alignItems: 'center',
-                  cursor: 'pointer', fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nome}</span>
-              </button>
-            ) : (
-              <span style={{ flex: 1, minWidth: 0, fontSize: M.corpo, fontWeight: 600, color: COR.texto,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nome}</span>
+  // Os grupos, cada um com as suas linhas, na ordem do agrupar().
+  const grupos: { grupo: string | null; linhas: Linha[] }[] = []
+  for (const l of agrupar(cats, tipo)) {
+    if (l.k === 'grupo') { grupos.push({ grupo: l.grupo, linhas: [] }); continue }
+    if (visiveis && !visiveis.has(l.ri)) continue
+    if (grupos.length === 0) grupos.push({ grupo: null, linhas: [] })
+    grupos[grupos.length - 1].linhas.push({ cat: l.cat, ri: l.ri })
+  }
+  const comLinhas = grupos.filter(g => g.linhas.length > 0)
+  if (comLinhas.length === 0) return null
+
+  const celula = ({ cat, ri }: Linha) => (
+    <div style={{ flexShrink: 0, maxWidth: '52%', fontSize: M.corpo, fontWeight: 600, textAlign: 'right' }}>
+      <PlanCelulaEditavel grande
+        valor={cat.v[mes] ?? 0}
+        onSave={v => onSave(tipo, ri, mes, v)}
+        itens={itensDoMes(cat, mes)}
+        onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
+      />
+    </div>
+  )
+  const ajustar = (cat: Cat) => abrirAjuste?.({ tipo: tipoCad, nome: cat.nome,
+    descricao: cat.descricao, prev: cat.v[mes] ?? 0, real: 0, mes })
+
+  const linhaSimples = (l: Linha, primeira: boolean) => {
+    const { icone, cor: corCat } = iconeCategoria(categorias, l.cat.nome)
+    return (
+      <div key={`${tipo}-${l.ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 52,
+        borderTop: primeira ? 'none' : '1px solid #eef2f8' }}>
+        <IconeRedondo icone={icone} cor={corCat} tamanho={36} />
+        <button type="button" onClick={() => ajustar(l.cat)} disabled={!abrirAjuste}
+          style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, display: 'flex', alignItems: 'center',
+            cursor: abrirAjuste ? 'pointer' : 'default', fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeExibicao(l.cat)}</span>
+        </button>
+        {celula(l)}
+      </div>
+    )
+  }
+
+  const linhaFamilia = (f: Familia, primeira: boolean) => {
+    const chave = `${tipo}-${f.nome}`
+    const aberta = abertas.has(chave)
+    const alternar = () => setAbertas(prev => {
+      const novo = new Set(prev)
+      if (novo.has(chave)) novo.delete(chave)
+      else novo.add(chave)
+      return novo
+    })
+    const { icone, cor: corCat } = iconeCategoria(categorias, f.nome)
+    const nVariantes = f.naMae.length + f.proprias.length
+    const somaProprias = f.proprias.reduce((s, l) => s + (l.cat.v[mes] ?? 0), 0)
+    const legenda = `${nVariantes} ${nVariantes === 1 ? 'variante' : 'variantes'}`
+    return (
+      <div key={chave} style={{ borderTop: primeira ? 'none' : '1px solid #eef2f8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 56 }}>
+          <IconeRedondo icone={icone} cor={corCat} tamanho={36} />
+          <button type="button" onClick={alternar} aria-expanded={aberta}
+            style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 700, color: COR.texto,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nome}</span>
+              <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>{legenda}</span>
+            </span>
+            <span aria-hidden style={{ fontSize: 16, color: COR.textoSuave, flexShrink: 0,
+              transform: aberta ? 'rotate(90deg)' : undefined, transition: 'transform .15s' }}>›</span>
+          </button>
+          {f.mae ? celula(f.mae) : (
+            <span style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto, fontVariantNumeric: 'tabular-nums', padding: '0 8px' }}>
+              {fmt(somaProprias)}
+            </span>
+          )}
+        </div>
+        {aberta && (
+          <div style={{ margin: '0 0 10px 46px', paddingLeft: 12, borderLeft: '2px solid #dbeafe' }}>
+            {f.mae && f.naMae.map(v => {
+              const parte = parteNaMae(f.mae!.cat, v, mes)
+              return (
+                <div key={`na-${v}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 48 }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>{v}</span>
+                    <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>variável · dentro de {f.nome}</span>
+                  </span>
+                  <span style={{ fontSize: M.corpo, color: parte === null ? COR.textoSuave : COR.texto,
+                    fontVariantNumeric: 'tabular-nums', padding: '0 8px' }}>{parte === null ? '—' : fmt(parte, true)}</span>
+                </div>
+              )
+            })}
+            {f.proprias.map(l => (
+              <div key={`pr-${l.ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 48 }}>
+                <button type="button" onClick={() => ajustar(l.cat)} disabled={!abrirAjuste}
+                  style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, cursor: abrirAjuste ? 'pointer' : 'default' }}>
+                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 600, color: COR.texto,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sem(l.cat.descricao)}</span>
+                  <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>
+                    {f.mae ? 'fixa · valor próprio' : 'valor próprio'}
+                  </span>
+                </button>
+                {celula(l)}
+              </div>
+            ))}
+            {f.mae && f.naMae.length > 0 && (
+              <div style={{ fontSize: 12, color: COR.textoSuave, lineHeight: 1.5, padding: '4px 0 2px' }}>
+                O plano é na categoria. Para ver a parte de cada variante, detalhe o valor de {f.nome} em itens com o nome dela.
+              </div>
             )}
-            <div style={{ flexShrink: 0, maxWidth: '52%', fontSize: M.corpo, fontWeight: 600, textAlign: 'right' }}>
-              <PlanCelulaEditavel grande
-                valor={cat.v[mes] ?? 0}
-                onSave={v => onSave(tipo, ri, mes, v)}
-                itens={itensDoMes(cat, mes)}
-                onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
-              />
-            </div>
+            {f.mae && abrirAjuste && (
+              <button type="button" onClick={() => ajustar(f.mae!.cat)} style={{
+                all: 'unset', cursor: 'pointer', fontSize: 14, fontWeight: 700, color: COR.azul, minHeight: 40,
+                display: 'inline-flex', alignItems: 'center',
+              }}>✎ Ver o já lançado e ajustar {f.nome}</button>
+            )}
           </div>
+        )}
+      </div>
+    )
+  }
+
+  const alternarGrupo = (g: string) => setAbertas(prev => {
+    const novo = new Set(prev)
+    if (novo.has(g)) novo.delete(g)
+    else novo.add(g)
+    return novo
+  })
+
+  // Cada grupo é um cartão próprio, FECHADO por padrão, com o total do mês —
+  // pedido do Guilherme no mesmo dia: "cada grupo deveria ter um cartão
+  // separado para não ficar esta lista". Recolhido, a seção vira um resumo
+  // por grupo, como o Radar do celular.
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 4px -4px' }}>
+        <h2 style={{ margin: 0, fontSize: M.titulo, fontWeight: 800, color: COR.texto }}>{titulo}</h2>
+        <span style={{ fontSize: M.titulo, fontWeight: 800, color: cor, fontVariantNumeric: 'tabular-nums' }}>{fmt(total, true)}</span>
+      </div>
+      {comLinhas.map(g => {
+        const nomeGrupo = g.grupo === null || g.grupo === '__sem_grupo__' ? 'Outros' : g.grupo
+        const chave = `grupo:${tipo}:${nomeGrupo}`
+        const aberto = abertas.has(chave)
+        const soma = g.linhas.reduce((t, l) => t + (l.cat.v[mes] ?? 0), 0)
+        const fams = familias(g.linhas, tipoCad, categorias)
+        const { icone, cor: corG } = iconeCategoria(categorias, fams[0]?.nome ?? '')
+        return (
+          <Cartao key={chave} style={{ padding: aberto ? '14px 18px 8px' : '14px 18px' }}>
+            <button type="button" onClick={() => alternarGrupo(chave)} aria-expanded={aberto} style={{
+              all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              minHeight: 48, cursor: 'pointer',
+            }}>
+              <IconeRedondo icone={icone} cor={corG} tamanho={40} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeGrupo}</span>
+                <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>
+                  {fams.length} {fams.length === 1 ? 'categoria' : 'categorias'}
+                </span>
+              </span>
+              <span style={{ fontSize: M.corpo, fontWeight: 800, color: soma > 0.005 ? COR.texto : COR.textoSuave,
+                fontVariantNumeric: 'tabular-nums' }}>{fmt(soma, true)}</span>
+              <span aria-hidden style={{ fontSize: 18, color: COR.textoSuave, transform: aberto ? 'rotate(90deg)' : undefined,
+                transition: 'transform .15s' }}>›</span>
+            </button>
+            {aberto && (
+              <div style={{ marginTop: 6, borderTop: '1px solid #eef2f8' }}>
+                {fams.map((f, i) => {
+                  const simples = f.proprias.length === 0 && f.naMae.length === 0
+                  if (simples && f.mae) return linhaSimples(f.mae, i === 0)
+                  if (!f.mae && f.proprias.length === 1 && f.naMae.length === 0) return linhaSimples(f.proprias[0], i === 0)
+                  return linhaFamilia(f, i === 0)
+                })}
+              </div>
+            )}
+          </Cartao>
         )
       })}
-    </Cartao>
+    </>
   )
 }
 
