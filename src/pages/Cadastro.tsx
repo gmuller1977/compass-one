@@ -18,7 +18,8 @@ function traduzirErro(msg: string) {
   if (msg.includes('already been registered'))  return 'Este e-mail já está cadastrado'
   if (msg.includes('Password should be'))       return 'A senha deve ter pelo menos 8 caracteres'
   if (msg.includes('Unable to validate'))       return 'Erro de validação — tente novamente'
-  if (msg.includes('rate limit'))               return 'Muitas tentativas. Aguarde alguns minutos.'
+  if (msg.includes('rate limit'))               return 'Limite de e-mails atingido. Aguarde uma hora e tente de novo.'
+  if (msg.includes('Error sending'))            return 'O servidor não conseguiu enviar o e-mail. Tente de novo mais tarde.'
   return msg
 }
 
@@ -125,6 +126,7 @@ export default function Cadastro() {
   const [carregando,  setCarregando]  = useState(false)
   const [erro,        setErro]        = useState('')
   const [confirmacaoEnviada, setConfirmacaoEnviada] = useState(false)
+  const [reenvio, setReenvio] = useState<{ ok: boolean; texto: string } | null>(null)
 
   // Validação em tempo real
   const erroEmail    = email.length > 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'E-mail inválido' : ''
@@ -184,7 +186,9 @@ export default function Cadastro() {
 
   async function handleReenviar() {
     setCarregando(true)
-    await supabase.auth.resend({ type: 'signup', email })
+    setReenvio(null)
+    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: window.location.origin + '/' } })
+    setReenvio(error ? { ok: false, texto: traduzirErro(error.message) } : { ok: true, texto: 'E-mail reenviado.' })
     setCarregando(false)
   }
 
@@ -246,6 +250,9 @@ export default function Cadastro() {
         }}>
           {carregando ? 'Reenviando...' : 'Reenviar e-mail'}
         </button>
+        {reenvio && (
+          <div role="status" style={{ fontSize:13, marginBottom:12, color: reenvio.ok ? '#15803d' : '#b91c1c' }}>{reenvio.texto}</div>
+        )}
         <button onClick={() => navigate('/login')} style={{
           width:'100%', padding:'13px', border:'none', borderRadius:14,
           background:'linear-gradient(135deg,#1a56db,#2563eb)',

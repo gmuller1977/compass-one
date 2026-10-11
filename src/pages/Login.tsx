@@ -24,6 +24,8 @@ function traduzirErro(msg: string) {
   if (msg.includes('User already registered'))    return 'Este e-mail já está cadastrado'
   if (msg.includes('Password should be'))         return 'A senha deve ter pelo menos 6 caracteres'
   if (msg.includes('Unable to validate'))         return 'Erro de validação — tente novamente'
+  if (msg.includes('rate limit'))                 return 'Limite de e-mails atingido. Aguarde uma hora e tente de novo.'
+  if (msg.includes('Error sending'))              return 'O servidor não conseguiu enviar o e-mail. Tente de novo mais tarde.'
   return msg
 }
 
