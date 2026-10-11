@@ -7,7 +7,6 @@ import Sidebar, { SIDEBAR_W } from './components/Sidebar'
 import Login          from './pages/Login'
 import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
-import Analises       from './pages/Analises'
 import QuickLaunch    from './pages/QuickLaunch'
 import Bussola        from './pages/Bussola'
 import PossoComprar   from './pages/PossoComprar'
@@ -142,7 +141,7 @@ export default function App() {
           <Route path="/norte"           element={<Protegido><Norte /></Protegido>} />
           <Route path="/posso-comprar"   element={<SoNoCelular senao="/simulacao"><PossoComprar /></SoNoCelular>} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
-          <Route path="/analises"        element={<Protegido><Analises /></Protegido>} />
+          <Route path="/analises"        element={<Navigate to="/revisaomensal" replace />} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/radar"           element={<Protegido><RadarFinanceiro /></Protegido>} />
           <Route path="/painel"          element={<Navigate to="/radar" replace />} />
@@ -153,7 +152,7 @@ export default function App() {
           <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
-          <Route path="/resumo-mensal"      element={<Navigate to="/analises" replace />} />
+          <Route path="/resumo-mensal"      element={<Navigate to="/revisaomensal" replace />} />
           <Route path="/revisaomensal"      element={<Protegido><RevisaoMensal /></Protegido>} />
           <Route path="/indicar"           element={<Protegido><Indicar /></Protegido>} />
           <Route path="/aurix"             element={<Navigate to="/indicar" replace />} />

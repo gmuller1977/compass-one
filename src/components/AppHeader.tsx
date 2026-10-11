@@ -74,7 +74,7 @@ const NAV_ITEMS = [
   { label: 'Planejamento',  path: '/planejamento'    },
   { label: 'Lançamentos',   path: '/novo-lancamento' },
   { label: 'Radar financeiro', path: '/radar'         },
-  { label: 'Análises',      path: '/analises'        },
+  { label: 'Revisão mensal', path: '/revisaomensal'  },
 ]
 
 type TabDef =

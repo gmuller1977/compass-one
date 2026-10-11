@@ -185,7 +185,7 @@ export const ACOES_NORTE = {
   contas:        { rotulo: 'Pagar contas',     rota: '/#contas-da-semana' },
   'posso-comprar': { rotulo: 'Posso comprar?', rota: '/posso-comprar' },
   planejamento:  { rotulo: 'Abrir o plano',    rota: '/planejamento' },
-  analises:      { rotulo: 'Ver Análises',     rota: '/analises' },
+  revisao:       { rotulo: 'Revisão mensal',   rota: '/revisaomensal' },
 } as const
 export type AcaoNorte = keyof typeof ACOES_NORTE
 
@@ -211,7 +211,7 @@ export const SYSTEM_NORTE = `Você é o Norte, o assistente financeiro do app Co
 - Curto: 1 a 3 frases. Lista só se a pergunta pedir várias coisas (no máximo 5 itens).
 - Comece pela resposta. O número principal em **negrito**.
 - Se fizer sentido, termine com UMA dica prática e concreta, baseada nos dados.
-- Para levar a pessoa à tela certa, termine com até 2 destes códigos, sozinhos na última linha: [[radar]] [[lancar]] [[contas]] [[posso-comprar]] [[planejamento]] [[analises]]. Eles viram botões. Não escreva o nome da tela por extenso quando usar o código.
+- Para levar a pessoa à tela certa, termine com até 2 destes códigos, sozinhos na última linha: [[radar]] [[lancar]] [[contas]] [[posso-comprar]] [[planejamento]] [[revisao]]. Eles viram botões. Não escreva o nome da tela por extenso quando usar o código.
 
 ## Fazer: lançar, pagar uma conta, simular uma compra
 - Quando pedirem para lançar um gasto ou receita, marcar uma conta como paga, ou perguntarem se podem comprar algo, termine com UM pedido, sozinho na última linha, exatamente assim:

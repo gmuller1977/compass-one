@@ -13,6 +13,7 @@ import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
 import AvisosCard from '../components/inicio/AvisosCard'
+import PatrimonioCard from '../components/inicio/PatrimonioCard'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
@@ -42,9 +43,9 @@ function fmt(v: number) {
 
 /**
  * A Início enxuta (06/10/2026): a resposta, o que pede atenção, um gráfico e
- * a porta para Análises. "O início está uma tela cheia de número, e falando
- * de forma comercial isso não vende" — o detalhe foi para /analises, com os
- * mesmos quadros e os mesmos números. Ver CLAUDE.md, "A Início enxuta".
+ * o patrimônio de hoje. "O início está uma tela cheia de número, e falando
+ * de forma comercial isso não vende". O histórico (mês a mês, precisão do
+ * plano) mora na Revisão mensal. Ver CLAUDE.md, "A Início enxuta".
  */
 export default function Dashboard() {
   const navigate  = useNavigate()
@@ -381,29 +382,15 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ══ 4 · A porta para o detalhe ══ Tudo que saiu da Início está em
-            Análises, com os mesmos números. Um cartão, não dez quadros. */}
-        <div style={{ background: COR.branco, borderRadius: 14, padding: isMobile ? '14px' : '18px 20px',
-          border: `1px solid ${COR.borda}` }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto, marginBottom: 12 }}>Quer ver em detalhe?</div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
-            {([
-              ['mes-a-mes', 'Mês a mês', 'Receitas e despesas contra o plano'],
-              ['por-categoria', 'Por categoria', 'Cada categoria ao longo dos meses'],
-              ['precisao', 'Precisão do plano', 'Onde o plano costuma errar'],
-              ['patrimonio', 'Patrimônio', 'Contas, faturas, metas e dívidas'],
-            ] as const).map(([ancora, nomeBotao, sub]) => (
-              <button key={ancora} type="button" onClick={() => navigate(`/analises#${ancora}`)} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, textAlign: 'left',
-                padding: '12px 14px', borderRadius: 12, border: `1px solid ${COR.borda}`, background: '#f8fafc',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}>
-                <b style={{ fontSize: 14, color: '#1e3a8a' }}>{nomeBotao} →</b>
-                <span style={{ fontSize: 12, color: COR.textoSuave, lineHeight: 1.35 }}>{sub}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* ══ 4 · Patrimônio hoje ══ Veio do Resumo mensal e de Análises, as
+            duas removidas em 11/10/2026. O mês a mês e a precisão do plano
+            moram na Revisão mensal. */}
+        <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 10px' }}>Patrimônio hoje</div>
+        <PatrimonioCard ano={hoje.getFullYear()} mes={hoje.getMonth()} deps={deps} />
+        <button type="button" onClick={() => navigate('/revisaomensal')} style={{
+          marginTop: 12, border: 'none', background: 'transparent', color: COR.azul, padding: 0,
+          fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+        }}>Mês a mês e precisão do plano estão na Revisão mensal →</button>
       </div>
 
       {/* FAB mobile */}

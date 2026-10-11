@@ -32,7 +32,7 @@ const MAIS = [
   { icon: '📊', label: 'Planejamento',          path: '/planejamento' },
   { icon: '📋', label: 'Lançamentos completos', path: '/novo-lancamento' },
   { icon: '🛒', label: 'Posso comprar?',        path: '/posso-comprar' },
-  { icon: '🔍', label: 'Análises',              path: '/analises' },
+  { icon: '🔄', label: 'Revisão mensal',        path: '/revisaomensal' },
   { icon: '🧮', label: 'Simulador',             path: '/simulacao' },
   { icon: '⚙️', label: 'Configurações',         path: '/configuracoes' },
   { icon: '🎁', label: 'Indicar amigos',        path: '/indicar' },

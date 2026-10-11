@@ -15,7 +15,7 @@
 
 export type TelaAjuda =
   | 'inicio' | 'lancamentos' | 'planejamento' | 'radar'
-  | 'configuracoes' | 'simulador' | 'analises'
+  | 'configuracoes' | 'simulador' | 'revisao'
 
 export type Ajuda = {
   titulo: string
@@ -93,11 +93,12 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
     ],
     perguntas: ['Como uso o "Posso comprar?"', 'Como incluo uma compra no planejamento?'],
   },
-  analises: {
-    titulo: 'Análises',
-    resumo: 'O histórico: previsto × realizado mês a mês, a precisão do plano e o patrimônio de hoje.',
+  revisao: {
+    titulo: 'Revisão mensal',
+    resumo: 'Fecha o mês que passou: o porquê de cada categoria que passou do plano, e como os meses se comportaram contra ele.',
     dicas: [
-      '"Por categoria" mostra a mesma categoria ao longo dos meses.',
+      'Os motivos anotados durante o mês já vêm preenchidos.',
+      '"Mês a mês" e "Por categoria" mostram previsto × realizado ao longo dos meses.',
       'A precisão do plano diz em média quanto o plano erra, e onde.',
     ],
     perguntas: ['Como leio a precisão do plano?'],

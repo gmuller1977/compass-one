@@ -522,9 +522,9 @@ export default function PlanRevisao({
       {/* Header */}
       <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
         {mesesPassados.length === 0 ? (
-          <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal" subtitle="Nenhum mês passado disponível" />
+          <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal" subtitle="Nenhum mês passado disponível" ajuda="revisao" />
         ) : (
-          <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal" rightContent={calNav} />
+          <PageHeader icon="ti-calendar-stats" breadcrumb="PLANEJAMENTO" title="Revisão Mensal" rightContent={calNav} ajuda="revisao" />
         )}
       </div>
 

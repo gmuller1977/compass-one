@@ -35,7 +35,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: '📆 Todo mês',
     items: [
-      { icon: '🔍', label: 'Análises',       path: '/analises',      exact: false },
       { icon: '🔄', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
       { icon: '🔮', label: 'Simulador',      path: '/simulacao',     exact: false },
     ],
