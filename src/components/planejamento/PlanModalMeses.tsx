@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat, type Saldos } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
-import { useAbrirItens } from './itensContexto'
+import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import { itensDoMes } from '../../utils/itensPlano'
 import type { Categoria } from '../../context/AppContext'
@@ -68,6 +68,7 @@ export default function PlanModalMeses({
   onClose: () => void
 }) {
   const abrirItens = useAbrirItens()
+  const lancadoNoMes = useLancadoNoMes()
   const abrirAjuste = useAbrirAjuste()
   const [n, setN] = useState(porTela)
   const [anoInteiro, setAnoInteiro] = useState(false)
@@ -134,6 +135,7 @@ export default function PlanModalMeses({
               onSave={v => onSave(tipo, ri, mi, v)}
               itens={itensDoMes(cat, mi)}
               onItens={abrirItens ? p => abrirItens(tipo, ri, mi, p) : undefined}
+              sempreItens={(lancadoNoMes?.(tipo, ri, mi) ?? 0) > 0.005}
             />
           </div>
         ))}

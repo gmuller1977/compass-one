@@ -15,7 +15,7 @@ import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanMobile from '../components/planejamento/PlanMobile'
 import PlanItensEditor from '../components/planejamento/PlanItensEditor'
-import { ItensPlanoContexto, type AbrirItens } from '../components/planejamento/itensContexto'
+import { ItensPlanoContexto, LancadoNoMesContexto, type AbrirItens, type LancadoNoMes } from '../components/planejamento/itensContexto'
 import { itensDoMes } from '../utils/itensPlano'
 import { nomeExibicao } from '../components/planejamento/types'
 import { AjustePlanoContexto, type AbrirAjuste } from '../components/acompanhamento/ajustePlanoContexto'
@@ -168,6 +168,26 @@ export default function Planejamento() {
     setAjuste({ ...p, mes, real })
   }, [anoAtual, plan.mesAtual, extratoData, faturaData, contas, categorias, planos])
 
+  // Mês FUTURO com algo já lançado (parcelas da fatura): a célula abre o
+  // editor com o lançado e pede só o que ainda vai ser gasto. Um
+  // construirRealizadoMes por mês futuro do ano, uma vez por mudança de dado.
+  const hojeIdx = new Date().getFullYear() * 12 + new Date().getMonth()
+  const lancadoNoMes = useMemo<LancadoNoMes>(() => {
+    const mapas = new Map<number, ReturnType<typeof construirRealizadoMes>>()
+    return (tipo, ri, mi) => {
+      if (anoAtual * 12 + mi <= hojeIdx) return 0
+      const cat = (tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]
+      if (!cat) return 0
+      let m = mapas.get(mi)
+      if (!m) {
+        m = construirRealizadoMes({ ano: anoAtual, mes: mi, extratoData: extratoData as Record<string, DadosMes>,
+          faturaData, contas, categorias, planoAno: planos[anoAtual] })
+        mapas.set(mi, m)
+      }
+      return pickReal(tipo === 'e' ? m.entradasMap : m.saidasMap, cat.nome, cat.descricao, categorias)?.total ?? 0
+    }
+  }, [anoAtual, hojeIdx, dadosAtivos, extratoData, faturaData, contas, categorias, planos])
+
   // A fase e DERIVADA: onboarding feito e nenhum plano em lugar nenhum. Ver
   // utils/descoberta — nao existe campo guardado que possa discordar disso.
   const descoberta = useMemo(() => medirDescoberta({
@@ -296,11 +316,10 @@ export default function Planejamento() {
         const fechar = () => setItensAbertos(null)
         // Parcelas de compra lançada: o nome pode ser trocado para a compra
         // inteira (utils/renomearCompra). Só parcelado.
+        // O já lançado no mês: em mês futuro, o piso do plano (lançado + a gastar).
+        const ja = jaLancadoNosMeses(depsAjuste, tipo === 'e' ? 'entrada' : 'saida', cat.nome, cat.descricao, [{ ano: anoAtual, mes: mi }])[0]?.itens ?? []
         const compras: Record<string, CompraRef> = {}
-        if (itens?.some(i => / · \d+ de \d+$/.test(i.descricao))) {
-          const ja = jaLancadoNosMeses(depsAjuste, tipo === 'e' ? 'entrada' : 'saida', cat.nome, cat.descricao, [{ ano: anoAtual, mes: mi }])[0]?.itens ?? []
-          for (const i of itens) { const r = compraDoItem(i, ja); if (r) compras[i.id] = r }
-        }
+        for (const i of itens ?? []) { const r = compraDoItem(i, ja); if (r) compras[i.id] = r }
         return (
           <PlanItensEditor
             key={`${tipo}-${ri}-${mi}`}
@@ -310,6 +329,7 @@ export default function Planejamento() {
             onTirar={itens ? () => { plan.editarItens(tipo, ri, [mi], null); fechar() } : undefined}
             onFechar={fechar}
             compras={compras}
+            jaLancado={ja} futuro={anoAtual * 12 + mi > hojeIdx}
             onRenomear={(ref, antigo, novo) => {
               setFaturaData(f => renomearNaFatura(f, ref, novo))
               setPlanos(p => renomearNosPlanos(p, cat.nome, antigo, ref.total, novo))
@@ -326,7 +346,7 @@ export default function Planejamento() {
   // mesmas fontes de número e a mesma gravação da Grade.
   if (isMobile) return (
     <>
-      <ItensPlanoContexto.Provider value={abrirItens}>
+      <ItensPlanoContexto.Provider value={abrirItens}><LancadoNoMesContexto.Provider value={lancadoNoMes}>
       <AjustePlanoContexto.Provider value={abrirAjuste}>
         <PlanMobile
           anoAtual={anoAtual}
@@ -354,7 +374,7 @@ export default function Planejamento() {
           </>}
         />
       </AjustePlanoContexto.Provider>
-      </ItensPlanoContexto.Provider>
+      </LancadoNoMesContexto.Provider></ItensPlanoContexto.Provider>
       {dialogos}
     </>
   )
@@ -402,7 +422,7 @@ export default function Planejamento() {
           </div>
         )}
 
-        <ItensPlanoContexto.Provider value={abrirItens}>
+        <ItensPlanoContexto.Provider value={abrirItens}><LancadoNoMesContexto.Provider value={lancadoNoMes}>
         <AjustePlanoContexto.Provider value={abrirAjuste}>
           <PlanGrade
             descoberta={descoberta}
@@ -423,7 +443,7 @@ export default function Planejamento() {
             fechamentoReal={plan.saldoFinalReal}
           />
         </AjustePlanoContexto.Provider>
-        </ItensPlanoContexto.Provider>
+        </LancadoNoMesContexto.Provider></ItensPlanoContexto.Provider>
       </div>
 
       {dialogos}

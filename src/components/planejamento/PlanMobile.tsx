@@ -5,7 +5,7 @@ import { M } from '../mobile/estilo'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
-import { useAbrirItens } from './itensContexto'
+import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import { itensDoMes } from '../../utils/itensPlano'
 import { iconeCategoria } from '../../utils/categoriaIcone'
@@ -306,6 +306,7 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
 }) {
   const abrirItens = useAbrirItens()
   const abrirAjuste = useAbrirAjuste()
+  const lancadoNoMes = useLancadoNoMes()
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set())
   const tipoCad = tipo === 'e' ? 'entrada' : 'saida'
 
@@ -327,22 +328,32 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
         onSave={v => onSave(tipo, ri, mes, v)}
         itens={itensDoMes(cat, mes)}
         onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
+        sempreItens={(lancadoNoMes?.(tipo, ri, mes) ?? 0) > 0.005}
       />
     </div>
   )
   const ajustar = (cat: Cat) => abrirAjuste?.({ tipo: tipoCad, nome: cat.nome,
     descricao: cat.descricao, prev: cat.v[mes] ?? 0, real: 0, mes })
 
+  // Mês futuro com algo já lançado: o valor mínimo do plano, embaixo do nome.
+  const lancado = (ri: number) => lancadoNoMes?.(tipo, ri, mes) ?? 0
+  const legendaLancado = (ri: number) => {
+    const v = lancado(ri)
+    return v > 0.005 ? `já lançado ${fmt(v, true)}` : null
+  }
+
   const linhaSimples = (l: Linha, primeira: boolean) => {
     const { icone, cor: corCat } = iconeCategoria(categorias, l.cat.nome)
+    const jaLanc = legendaLancado(l.ri)
     return (
       <div key={`${tipo}-${l.ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 52,
         borderTop: primeira ? 'none' : '1px solid #eef2f8' }}>
         <IconeRedondo icone={icone} cor={corCat} tamanho={36} />
         <button type="button" onClick={() => ajustar(l.cat)} disabled={!abrirAjuste}
-          style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, display: 'flex', alignItems: 'center',
+          style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center',
             cursor: abrirAjuste ? 'pointer' : 'default', fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeExibicao(l.cat)}</span>
+          {jaLanc && <span style={{ fontSize: 12, fontWeight: 500, color: COR.textoSuave, marginTop: 1 }}>{jaLanc}</span>}
         </button>
         {celula(l)}
       </div>
@@ -361,7 +372,8 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
     const { icone, cor: corCat } = iconeCategoria(categorias, f.nome)
     const nVariantes = f.naMae.length + f.proprias.length
     const somaProprias = f.proprias.reduce((s, l) => s + (l.cat.v[mes] ?? 0), 0)
-    const legenda = `${nVariantes} ${nVariantes === 1 ? 'variante' : 'variantes'}`
+    const jaLanc = f.mae ? legendaLancado(f.mae.ri) : null
+    const legenda = `${nVariantes} ${nVariantes === 1 ? 'variante' : 'variantes'}${jaLanc ? ` · ${jaLanc}` : ''}`
     return (
       <div key={chave} style={{ borderTop: primeira ? 'none' : '1px solid #eef2f8' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 56 }}>

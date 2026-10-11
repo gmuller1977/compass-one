@@ -4,6 +4,7 @@ import { parseConta } from '../../utils/moeda'
 import { novoIdItem, somaItens, type ItemPlano } from '../../utils/itensPlano'
 import { MESES_FULL } from './types'
 import { lerRotuloParcela, rotuloParcela, type CompraRef } from '../../utils/renomearCompra'
+import type { JaLancado } from '../../utils/historicoDaCategoria'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const paraCampo = (v: number) => (v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
@@ -11,6 +12,31 @@ const paraCampo = (v: number) => (v === 0 ? '' : v.toLocaleString('pt-BR', { min
 /** `parcela`: o item é uma parcela ("nome · k de N") — o campo mostra só o nome, e o "k de N" fica ao lado do valor, sem edição. Com `ref` (a compra lançada), trocar o nome renomeia a compra. */
 type Linha = { id: string; descricao: string; valor: string; simulacaoId?: string
   parcela?: { nome: string; atual: number; total: number; ref?: CompraRef } }
+
+/** O texto que o item de um lançamento leva no plano: "Bicicleta · 4 de 6" ou a descrição da compra à vista. */
+const rotuloDoLancado = (j: JaLancado, nome = j.descricao) =>
+  j.parcela ? rotuloParcela(nome, j.parcela.atual, j.parcela.total) : nome.trim()
+
+const r2 = (v: number) => Math.round(v * 100) / 100
+
+/**
+ * Mês futuro com lançamentos: separa os itens salvos em "é um lançamento"
+ * (some, porque o lançado vem ao vivo da fatura) e "a gastar" (fica). Cada
+ * lançamento consome um item de mesmo texto — o de mesmo valor, havendo
+ * mais de um. Os ids consumidos voltam para o lançamento manter o seu.
+ */
+function separarSalvos(itens: ItemPlano[], ja: JaLancado[]) {
+  const livres = [...itens]
+  const idDoLancado = ja.map(j => {
+    const rot = rotuloDoLancado(j)
+    const mesmos = livres.filter(i => !i.simulacaoId && i.descricao.trim() === rot)
+    const achado = mesmos.find(i => Math.abs(i.valor - j.valor) < 0.005) ?? mesmos[0]
+    if (!achado) return null
+    livres.splice(livres.indexOf(achado), 1)
+    return achado.id
+  })
+  return { aGastar: livres, idDoLancado }
+}
 
 /**
  * O editor de itens de uma célula do plano: Mercado · outubro = Supermercado
@@ -25,7 +51,7 @@ type Linha = { id: string; descricao: string; valor: string; simulacaoId?: strin
  * categoria — para quem detalha um valor que já existia não perder o número.
  */
 export default function PlanItensEditor({
-  nome, grupo, mes, valorAtual, itens, partes, onSalvar, onTirar, onFechar, compras, onRenomear,
+  nome, grupo, mes, valorAtual, itens, partes, onSalvar, onTirar, onFechar, compras, onRenomear, jaLancado = [], futuro = false,
 }: {
   nome: string
   grupo?: string
@@ -41,8 +67,30 @@ export default function PlanItensEditor({
   compras?: Record<string, CompraRef>
   /** Renomeia a compra em todas as parcelas: na fatura e nos itens do plano. */
   onRenomear?: (ref: CompraRef, antigo: string, novo: string) => void
+  /** O que já está lançado nesta categoria no mês (fatura, extrato, dinheiro). */
+  jaLancado?: JaLancado[]
+  /** Mês que ainda não começou: o plano é o lançado + o que ainda vai ser gasto. */
+  futuro?: boolean
 }) {
+  // Mês futuro com lançamentos (Guilherme, 11/10/2026, "Lançado + a gastar"):
+  // o lançado não se edita, só se consulta; digita-se só o que ainda vai ser
+  // gasto, e o plano do mês é a soma — nunca abaixo do lançado.
+  const somaLancado = r2(jaLancado.reduce((s, j) => s + j.valor, 0))
+  const piso = futuro && jaLancado.length > 0
+  const [separados] = useState(() => (piso ? separarSalvos(itens ?? [], jaLancado) : null))
+  /** Nome novo de cada parcela lançada (índice em jaLancado), quando trocado aqui. */
+  const [nomes, setNomes] = useState<Record<number, string>>({})
+
   const [linhas, setLinhas] = useState<Linha[]>(() => {
+    if (separados) {
+      if (itens?.length) {
+        const resto = separados.aGastar.map(i => ({ id: i.id, descricao: i.descricao, valor: paraCampo(i.valor), simulacaoId: i.simulacaoId }))
+        return resto.length ? resto : [{ id: novoIdItem(), descricao: '', valor: '' }]
+      }
+      // Sem detalhe: o que o plano tinha acima do lançado vira "Gasto normal".
+      const sobra = r2(valorAtual - somaLancado)
+      return [{ id: novoIdItem(), descricao: sobra > 0 ? 'Gasto normal' : '', valor: sobra > 0 ? paraCampo(sobra) : '' }]
+    }
     if (itens?.length) return itens.map(i => {
       const ref = onRenomear ? compras?.[i.id] : undefined
       const r = i.simulacaoId ? null : lerRotuloParcela(i.descricao)
@@ -74,7 +122,8 @@ export default function PlanItensEditor({
   }, [])
 
   const valores = linhas.map(l => parseConta(l.valor))
-  const total = Math.round(valores.reduce<number>((s, v) => s + (v ?? 0), 0) * 100) / 100
+  const somaLinhas = r2(valores.reduce<number>((s, v) => s + (v ?? 0), 0))
+  const total = piso ? r2(somaLancado + somaLinhas) : somaLinhas
   const nomeMes = MESES_FULL[mes]
 
   const mudar = (id: string, campo: 'descricao' | 'valor', texto: string) =>
@@ -94,6 +143,21 @@ export default function PlanItensEditor({
           : l.descricao.trim() || `Item ${i + 1}`,
         ...(l.simulacaoId ? { simulacaoId: l.simulacaoId } : {}),
       }))
+    if (piso && separados) {
+      // Um item por lançamento, com o nome novo se trocado, e depois o a gastar.
+      const lancados: ItemPlano[] = jaLancado.map((j, k) => ({
+        id: separados.idDoLancado[k] ?? novoIdItem(), valor: j.valor,
+        descricao: rotuloDoLancado(j, nomes[k]?.trim() || j.descricao) || nome,
+      }))
+      if (itensOk.some(i => i.valor < 0)) { setErro('O que ainda vai gastar não pode ser negativo.'); return }
+      onSalvar([...lancados, ...itensOk.filter(i => i.valor !== 0)], [mes])
+      jaLancado.forEach((j, k) => {
+        const novo = nomes[k]?.trim()
+        const c = j.parcela?.compra
+        if (c && onRenomear && novo && novo !== j.descricao.trim()) onRenomear({ ...c, total: j.parcela!.total }, j.descricao.trim(), novo)
+      })
+      return
+    }
     if (itensOk.length === 0) { setErro('Adicione pelo menos um item com valor.'); return }
     if (somaItens(itensOk) < 0) { setErro('O total não pode ficar negativo.'); return }
     const meses = ateDezembro ? Array.from({ length: 12 - mes }, (_, i) => mes + i) : [mes]
@@ -124,11 +188,56 @@ export default function PlanItensEditor({
           {grupo && <span style={{ fontSize: 12, color: COR.textoSuave }}>{grupo}</span>}
         </div>
         <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 3 }}>
-          O plano guarda o total; os itens são o detalhe dele.
+          {piso
+            ? 'O que já está lançado entra sozinho. Digite só o que ainda vai gastar.'
+            : 'O plano guarda o total; os itens são o detalhe dele.'}
         </div>
 
+        {jaLancado.length > 0 && (
+          <section aria-label={`Já lançado em ${nomeMes.toLowerCase()}`} style={{ marginTop: 14, background: '#f8fafc',
+            border: `1px solid ${COR.borda}`, borderRadius: 12, padding: '10px 12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>Já lançado em {nomeMes.toLowerCase()}</span>
+              <b style={{ fontSize: 14, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>{fmt(somaLancado)}</b>
+            </div>
+            <div style={{ maxHeight: 220, overflowY: 'auto', marginTop: 4 }}>
+              {jaLancado.map((j, k) => {
+                const renomeavel = piso && !!j.parcela?.compra && !!onRenomear
+                const nomeNovo = nomes[k] ?? j.descricao
+                return (
+                  <div key={k} style={{ padding: '7px 0', borderTop: k > 0 ? `1px solid ${COR.borda}` : 'none' }}>
+                    {renomeavel ? (
+                      <input aria-label={`Nome da compra (parcela ${j.parcela!.atual} de ${j.parcela!.total})`} placeholder="Nome da compra"
+                        value={nomeNovo} onChange={e => setNomes(n => ({ ...n, [k]: e.target.value }))}
+                        style={{ ...campo, background: COR.branco }} />
+                    ) : (
+                      <div style={{ fontSize: estreito ? 15 : 13, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {j.descricao || nome}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 3, gap: 8 }}>
+                      <span style={{ fontSize: 12, color: COR.textoSuave }}>
+                        {j.parcela ? `parcela ${j.parcela.atual} de ${j.parcela.total}` : 'à vista'}
+                      </span>
+                      <span style={{ fontSize: estreito ? 15 : 13, fontWeight: 600, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>{fmt(j.valor)}</span>
+                    </div>
+                    {renomeavel && nomeNovo.trim() && nomeNovo.trim() !== j.descricao.trim() && (
+                      <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 3 }}>
+                        Ao salvar, as {j.parcela!.total} parcelas da compra passam a se chamar "{nomeNovo.trim()}".
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+        {piso && (
+          <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginTop: 14 }}>Ainda vou gastar</div>
+        )}
+
         <form onSubmit={e => { e.preventDefault(); salvar() }}
-          style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: '14px 0 10px' }}>
+          style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: piso ? '6px 0 10px' : '14px 0 10px' }}>
           {linhas.map((l, i) => l.simulacaoId ? (
             // Item do Simulador: só muda ou sai por lá (próxima etapa).
             <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 28px', gap: 6, alignItems: 'center' }}>
@@ -189,9 +298,19 @@ export default function PlanItensEditor({
           <span>Total que vai para o plano</span>
           <b style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums' }}>{fmt(total)}</b>
         </div>
+        {piso && (
+          <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 3 }}>
+            {fmt(somaLancado)} já lançado + {fmt(somaLinhas)} a gastar
+          </div>
+        )}
+        {!piso && jaLancado.length > 0 && total < somaLancado - 0.005 && (
+          <div style={{ fontSize: 12, color: COR.avisoTexto, marginTop: 6 }}>
+            Abaixo do já lançado ({fmt(somaLancado)}): o Radar vai mostrar que {nomeMes.toLowerCase()} passou do plano.
+          </div>
+        )}
         {erro && <div role="alert" style={{ fontSize: 12, color: COR.erroTexto, marginTop: 6 }}>{erro}</div>}
 
-        <fieldset style={{ border: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
+        {!piso && <fieldset style={{ border: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
           <legend style={{ fontSize: 12, color: COR.textoSuave, marginBottom: 4, padding: 0 }}>Aplicar a</legend>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}>
             <input type="radio" name="itens-meses" checked={!ateDezembro} onChange={() => setAteDezembro(false)} /> Só {nomeMes.toLowerCase()}
@@ -202,7 +321,7 @@ export default function PlanItensEditor({
               De {nomeMes.toLowerCase()} até dezembro
             </label>
           )}
-        </fieldset>
+        </fieldset>}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
           {onTirar ? (

@@ -13,3 +13,16 @@ export type AbrirItens = (tipo: 'e' | 's', ri: number, mi: number, partes?: numb
 export const ItensPlanoContexto = createContext<AbrirItens | null>(null)
 
 export const useAbrirItens = () => useContext(ItensPlanoContexto)
+
+/**
+ * Quanto já está lançado numa célula de mês FUTURO (parcelas da fatura, conta
+ * agendada). Com algo lançado a célula não se digita: abre o editor, que
+ * mostra o lançado e pede só o que ainda vai ser gasto — o plano do mês é a
+ * soma e nunca fica abaixo do lançado (Guilherme, 11/10/2026). Mês corrente e
+ * passado devolvem 0: lá o plano não sobe para cobrir o gasto.
+ */
+export type LancadoNoMes = (tipo: 'e' | 's', ri: number, mi: number) => number
+
+export const LancadoNoMesContexto = createContext<LancadoNoMes | null>(null)
+
+export const useLancadoNoMes = () => useContext(LancadoNoMesContexto)

@@ -17,6 +17,8 @@ interface Props {
   itens?: ItemPlano[] | null
   /** Abre o editor de itens; `partes` são as parcelas da conta digitada. */
   onItens?: (partes?: number[]) => void
+  /** Abre o editor de itens em vez de deixar digitar (mês futuro com algo já lançado). */
+  sempreItens?: boolean
   /** Celular: campo com letra de 16 px (abaixo disso o iPhone dá zoom ao
    *  focar) e toque maior. O valor em repouso herda a letra de quem envolve. */
   grande?: boolean
@@ -34,7 +36,7 @@ interface Props {
  * listar os elementos marcados na ordem do DOM, sem que este componente
  * precise saber onde está na grade.
  */
-export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false }: Props) {
+export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false, sempreItens = false }: Props) {
   const { toast } = useToast()
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
@@ -78,7 +80,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       if (motivoBloqueio) toast(motivoBloqueio, 'info')
       return
     }
-    if (temItens && onItens) { onItens(); return }
+    if ((temItens || sempreItens) && onItens) { onItens(); return }
     abriuDigitandoRef.current = inicial !== undefined
     // maximumFractionDigits junto: so o minimum deixa o padrao em 3 casas, e
     // um valor com mais de dois decimais voltava arredondado diferente.
