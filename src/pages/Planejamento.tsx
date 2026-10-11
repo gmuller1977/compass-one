@@ -330,6 +330,7 @@ export default function Planejamento() {
             onFechar={fechar}
             compras={compras}
             jaLancado={ja} futuro={anoAtual * 12 + mi > hojeIdx}
+            onSalvarValor={v => { plan.editarValor(tipo, ri, mi, v); fechar() }}
             onRenomear={(ref, antigo, novo) => {
               setFaturaData(f => renomearNaFatura(f, ref, novo))
               setPlanos(p => renomearNosPlanos(p, cat.nome, antigo, ref.total, novo))

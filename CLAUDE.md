@@ -478,20 +478,20 @@ com o mesmo nome, número e total (`compraDoItem`) — por isso funciona também
 para itens gravados antes. `realizadoMes` passou a levar `compra` (cartão +
 id base) junto da parcela, informativo. Item que não é parcela não muda.
 
-**Mês FUTURO com lançamento: o plano é "já lançado + a gastar".** Pedido do
-Guilherme em 11/10/2026 ("não deixar um valor abaixo do que já tenho
-lançado"), escolha "Lançado + a gastar" no card. Num mês que ainda não
-começou, a célula de uma categoria com algo já lançado (parcela da fatura,
-compra à vista na fatura seguinte) não se digita: abre o `PlanItensEditor`
-com "Já lançado em {mês}" — só consulta, nome da parcela renomeável — e
-"Ainda vou gastar", o único campo editável. O plano grava um item por
-lançamento mais os itens a gastar, então nunca fica abaixo do lançado. Sem
-detalhe salvo, o que o plano tinha acima do lançado vira "Gasto normal".
-Quem diz se há lançado é `LancadoNoMesContexto` (Planejamento, um
-`construirRealizadoMes` por mês futuro); o celular mostra "já lançado R$ X"
-embaixo do nome. Mês corrente e passado: o editor mostra a lista, mas o
-valor segue livre e só avisa quando fica abaixo — a regra do ajuste (o plano
-não sobe para cobrir o gasto do mês).
+**Categoria com lançamento no mês: o editor é UM campo, o valor planejado.**
+Pedido do Guilherme em 11/10/2026: "um campo com valor planejado da
+categoria que precisa ser igual ou superior da soma do que já tem lançado";
+a primeira versão (itens "ainda vou gastar") foi recusada no mesmo dia —
+"estranho adicionar item se não sei o que irei gastar". Com algo lançado, o
+`PlanItensEditor` vira `EditorLancado`: "Valor planejado de {mês}" e, embaixo,
+a lista do já lançado (à vista e parcelas, só leitura; o nome da parcela se
+troca para a compra inteira). Mês FUTURO: abaixo do lançado não salva, e o
+campo abre no maior entre o plano e o lançado. Mês corrente e passado: só
+avisa — a regra do ajuste (o plano não sobe para cobrir o gasto do mês) — e,
+abaixo, grava só o valor (`editarValor`). Acima, grava em itens: cada
+lançamento + "Outros gastos". Em mês futuro a célula com lançado sempre abre
+o editor (`LancadoNoMesContexto`, um `construirRealizadoMes` por mês); o
+celular mostra "já lançado R$ X" embaixo do nome.
 
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
