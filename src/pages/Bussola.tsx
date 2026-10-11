@@ -191,7 +191,7 @@ export default function Bussola() {
         <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
           <Atalho icone={<span style={{ fontSize: 32, fontWeight: 300, lineHeight: 1 }}>+</span>} rotulo="Lançar" destaque onClick={() => navigate('/lancar')} />
           <Atalho icone="📅" rotulo="Pagar contas" onClick={irParaContas} />
-          <Atalho icone="🛒" rotulo="Posso comprar?" onClick={() => navigate('/posso-comprar')} />
+          <Atalho icone="🛒" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
           <Atalho icone="📈" rotulo="Radar" onClick={() => navigate('/radar')} />
         </Cartao>
 

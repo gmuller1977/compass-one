@@ -9,7 +9,6 @@ import Cadastro       from './pages/Cadastro'
 import Dashboard      from './pages/Dashboard'
 import QuickLaunch    from './pages/QuickLaunch'
 import Bussola        from './pages/Bussola'
-import PossoComprar   from './pages/PossoComprar'
 import Norte from './pages/Norte'
 import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
@@ -139,7 +138,7 @@ export default function App() {
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
           <Route path="/norte"           element={<Protegido><Norte /></Protegido>} />
-          <Route path="/posso-comprar"   element={<SoNoCelular senao="/simulacao"><PossoComprar /></SoNoCelular>} />
+          <Route path="/posso-comprar"   element={<Navigate to="/simulacao" replace />} />
           <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
           <Route path="/analises"        element={<Navigate to="/revisaomensal" replace />} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />

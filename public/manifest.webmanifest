@@ -16,7 +16,7 @@
   ],
   "shortcuts": [
     { "name": "Lançar gasto", "short_name": "Lançar", "url": "/lancar", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
-    { "name": "Posso comprar?", "short_name": "Posso comprar?", "url": "/posso-comprar", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
+    { "name": "Posso comprar?", "short_name": "Posso comprar?", "url": "/simulacao", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
     { "name": "Radar financeiro", "short_name": "Radar", "url": "/radar", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] }
   ]
 }

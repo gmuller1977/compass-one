@@ -1335,6 +1335,13 @@ como receita e despesa. `/resumo-mensal` e `/analises` caem em
 A Revisão mensal FICA, por escolha dele. A aba "Total" de Lançamentos não foi
 tocada (tela congelada). As menções a Análises mais abaixo são histórico.
 
+**"Posso comprar?" virou o Simulador** (mesmo dia, escolha do Guilherme no
+card: "Só o Simulador"). A tela do celular repetia a aba Compra — a mesma
+`simularCompra` e a mesma `Resposta` —, e o "Mais" listava as duas.
+`/posso-comprar` cai em `/simulacao` (aba Compra é a padrão); o atalho da
+Bússola, o botão `[[posso-comprar]]` do Norte e o atalho do PWA mantêm o nome
+"Posso comprar?" e abrem o Simulador. Dívida e meta seguem no celular.
+
 **A Início enxuta: a resposta, o que pede atenção, um gráfico e a porta para
 Análises.** Decidido pelo Guilherme em 06/10/2026, sobre um modelo em HTML:
 "o início está uma tela cheia de número, e falando de forma comercial isso
