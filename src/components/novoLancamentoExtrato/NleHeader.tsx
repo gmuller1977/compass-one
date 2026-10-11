@@ -66,6 +66,7 @@ export default function NleHeader({
         <PageHeader
           icon={icon}
           breadcrumb="LANÇAMENTOS"
+          ajuda="lancamentos"
           title={title}
           subtitle={subtitle}
           mb={0}

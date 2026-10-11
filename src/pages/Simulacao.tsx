@@ -487,6 +487,7 @@ export default function Simulacao() {
           <PageHeader
             icon="ti-calculator"
             breadcrumb="MEU PLANO"
+            ajuda="simulador"
             title="Simulador"
             subtitle={simList.length > 0 ? `${simList.length} simulaç${simList.length === 1 ? 'ão salva' : 'ões salvas'}` : 'Nenhuma simulação salva'}
             rightContent={

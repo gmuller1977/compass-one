@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
-import TutorialCard from '../components/TutorialCard'
 import RmPatrimonio from '../components/resumoMensal/RmPatrimonio'
 import RmReceitas from '../components/resumoMensal/RmReceitas'
 import RmDespesas from '../components/resumoMensal/RmDespesas'
@@ -518,22 +517,10 @@ export default function ResumoMensal() {
       {isMobile && <AppHeader currentPath={pathname} />}
       <div style={{ padding: isMobile ? '12px 12px 80px' : '20px 24px', fontFamily: "-apple-system,'Inter',sans-serif" }}>
 
-        <TutorialCard
-          tela="resumo_mensal"
-          icon="📊"
-          title="Seu fechamento mensal"
-          description="Aqui você vê a foto completa do seu mês — patrimônio, receitas, despesas, faturas e como vai fechar. Use essa tela antes da revisão mensal."
-          tips={[
-            { icon: '📊', text: 'Veja seus gráficos de gastos' },
-            { icon: '🔮', text: 'Confira a projeção de fechamento' },
-            { icon: '📈', text: 'Compare com o mês anterior' },
-          ]}
-          buttonLabel="Ver meu resumo →"
-        />
-
         <PageHeader
           icon="ti-chart-dots"
           breadcrumb="TODO MÊS"
+          ajuda="resumo"
           title="Resumo mensal"
           subtitle={`${mesNome} ${ano}`}
           rightContent={navContent}

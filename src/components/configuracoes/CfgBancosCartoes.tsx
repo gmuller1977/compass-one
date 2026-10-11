@@ -72,6 +72,7 @@ export default function CfgBancosCartoes({
         <PageHeader
           icon={aba==='bancos' ? 'ti-building-bank' : 'ti-credit-card'}
           breadcrumb="CONTA"
+          ajuda="configuracoes"
           title={aba==='bancos' ? 'Minhas contas' : 'Meus cartões'}
           subtitle={(() => {
             const n = contas.filter(c => aba==='bancos' ? c.tipo!=='cartao' : c.tipo==='cartao').length

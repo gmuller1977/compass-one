@@ -1,4 +1,3 @@
-import { reativarTutoriais } from '../TutorialCard'
 import PageHeader from '../PageHeader'
 import { COR, EmBreve, inputSt } from './CfgShared'
 import CfgCenarioPrevisao from './CfgCenarioPrevisao'
@@ -13,9 +12,7 @@ interface Props {
   setMetodoSugestao: (v: string) => void
   cenarioPrevisao: CenarioPrevisao
   setCenarioPrevisao: (v: CenarioPrevisao) => void
-  setOnboardingCompleto: (v: boolean) => void
   navigate: (path: string, options?: { state?: unknown }) => void
-  toast: (msg: string, type?: 'success' | 'error' | 'info') => void
 }
 
 export default function CfgPreferencias({
@@ -23,8 +20,7 @@ export default function CfgPreferencias({
   percentualAlerta, setPercentualAlerta,
   metodoSugestao, setMetodoSugestao,
   cenarioPrevisao, setCenarioPrevisao,
-  setOnboardingCompleto,
-  navigate, toast,
+  navigate,
 }: Props) {
   return (
     <div style={{ flex:1, overflowY:'auto' }}>
@@ -34,6 +30,7 @@ export default function CfgPreferencias({
         <PageHeader
           icon="ti-adjustments"
           breadcrumb="CONTA"
+          ajuda="configuracoes"
           title="Preferências"
           subtitle="Personalize o app"
         />
@@ -223,41 +220,28 @@ export default function CfgPreferencias({
           </div>
         </div>
 
-        {/* Card: Tutoriais */}
+        {/* Card: Ajuda. Os tutoriais que abriam sozinhos saíram em 11/10/2026:
+            a explicação de cada tela fica no "?" do cabeçalho, e o Norte
+            responde dúvidas de uso (utils/ajudaDasTelas). O "Rever
+            boas-vindas" saiu junto — ele reabria o cadastro inicial, e
+            confirmar as categorias de novo desativava as que não estavam
+            entre as sugeridas. */}
         <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
-          <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Tutoriais</h3>
-
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'12px 14px', borderRadius:10, background:'#f0f9ff',
-            border:'1px solid #bae6fd', marginBottom:10 }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>💡 Reativar tutoriais das telas</div>
-              <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
-                Faz os cards de dica aparecerem novamente em cada tela.
-              </div>
-            </div>
-            <button onClick={() => { reativarTutoriais(); toast('Tutoriais reativados!') }} style={{
-              padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
-              fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
-              background:'#0284c7', color:'#fff' }}>
-              Reativar
-            </button>
-          </div>
-
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+          <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Ajuda</h3>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
             padding:'12px 14px', borderRadius:10, background:'#f8faff',
             border:`1px solid ${COR.borda}` }}>
             <div>
-              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🧭 Rever boas-vindas</div>
-              <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
-                Volta à tela de introdução com os slides iniciais.
+              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🧭 Dúvida sobre uma tela?</div>
+              <div style={{ fontSize:12, color:COR.textoSuave, marginTop:2 }}>
+                Toque no "?" do cabeçalho de cada tela, ou pergunte ao Norte como fazer.
               </div>
             </div>
-            <button onClick={() => { setOnboardingCompleto(false); toast('Boas-vindas reativadas!') }} style={{
+            <button onClick={() => navigate('/norte')} style={{
               padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
               background:COR.azul, color:'#fff' }}>
-              Rever
+              Abrir o Norte
             </button>
           </div>
         </div>

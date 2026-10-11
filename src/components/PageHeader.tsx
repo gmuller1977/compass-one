@@ -1,5 +1,7 @@
 import type { ReactNode, CSSProperties } from 'react'
 import { useState, useEffect } from 'react'
+import AjudaTela from './AjudaTela'
+import type { TelaAjuda } from '../utils/ajudaDasTelas'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -64,9 +66,11 @@ type Props = {
   subtitle?: string
   rightContent?: ReactNode
   mb?: number
+  /** Mostra o "?" com a ajuda da tela (utils/ajudaDasTelas). */
+  ajuda?: TelaAjuda
 }
 
-export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20 }: Props) {
+export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda }: Props) {
   const isMobile = useIsMobile()
 
   return (
@@ -128,9 +132,10 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
       </div>
 
       {/* Right content */}
-      {rightContent && (
+      {(rightContent || ajuda) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {rightContent}
+          {ajuda && <AjudaTela tela={ajuda} />}
         </div>
       )}
     </div>

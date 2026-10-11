@@ -9,7 +9,6 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/saldoConta'
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
-import TutorialCard from '../components/TutorialCard'
 import { COR, fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
 import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
@@ -230,6 +229,7 @@ export default function RadarFinanceiro() {
         <PageHeader
           icon="ti-chart-bar"
           breadcrumb="TODO DIA"
+          ajuda="radar"
           title="Radar financeiro"
           subtitle="Previsto × Realizado"
           mb={0}
@@ -276,18 +276,6 @@ export default function RadarFinanceiro() {
       {/* CONTEÚDO */}
       <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
         display:'flex',flexDirection:'column',gap:12}}>
-        <TutorialCard
-          tela="radar"
-          icon="📈"
-          title="Veja como você está indo"
-          description="Aqui o app compara o que você planejou com o que realmente gastou. É assim que você descobre onde pode melhorar."
-          tips={[
-            { icon: '🟢', text: 'Verde = dentro do plano' },
-            { icon: '🟢', text: 'Verde-claro = no limite, mas ainda dentro' },
-            { icon: '🔴', text: 'Vermelho = passou do planejado' },
-          ]}
-          buttonLabel="Ver meu radar →"
-        />
         {!dadosAno ? (
           <EmptyState
             icon="📈"

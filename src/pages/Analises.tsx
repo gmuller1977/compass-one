@@ -76,7 +76,7 @@ export default function Analises() {
     <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath={pathname} />
       <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
-        <PageHeader icon="ti-chart-dots" breadcrumb="TODO MÊS" title="Análises"
+        <PageHeader icon="ti-chart-dots" breadcrumb="TODO MÊS" title="Análises" ajuda="analises"
           subtitle="O detalhe por trás da Início" />
       </div>
 

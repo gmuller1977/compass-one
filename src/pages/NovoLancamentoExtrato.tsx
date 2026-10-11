@@ -8,7 +8,6 @@ import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
-import TutorialCard from '../components/TutorialCard'
 import {
   COR, NOMES_MESES,
   contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey, type Memoria,
@@ -1218,39 +1217,6 @@ export default function NovoLancamentoExtrato() {
         conciliado={conciliado}
         chaveAtual={key}
       />
-
-      {/* Tutoriais */}
-      {tabPrincipal === 'extrato' && <TutorialCard tela="lanc_banco" icon="🏦"
-        title="Movimentação do banco"
-        description="Aqui você registra tudo que entra e sai da sua conta bancária. É como o extrato do banco, só que organizado do seu jeito."
-        tips={[
-          { icon: '📅', text: 'Cada dia do mês aparece no calendário — toque para lançar' },
-          { icon: '🔄', text: 'Gastos previstos do planejamento aparecem em cinza' },
-          { icon: '✅', text: 'Quando pagar uma conta prevista, marque como paga' },
-        ]} buttonLabel="Ver movimentação →" />}
-      {tabPrincipal === 'cartao' && <TutorialCard tela="lanc_cartao" icon="💳"
-        title="Fatura do cartão"
-        description="Acompanhe os gastos do seu cartão de crédito. Veja quanto já gastou da fatura e quanto ainda tem de limite."
-        tips={[
-          { icon: '📋', text: 'Cada compra no cartão aparece aqui automaticamente' },
-          { icon: '📊', text: 'Acompanhe o uso do limite em tempo real' },
-          { icon: '📅', text: 'Veja a fatura aberta e as anteriores' },
-        ]} buttonLabel="Ver fatura →" />}
-      {tabPrincipal === 'dinheiro' && <TutorialCard tela="lanc_dinheiro" icon="💵"
-        title="Gastos em dinheiro"
-        description="Registre aqui os gastos que você fez em dinheiro vivo — aqueles que não aparecem no banco nem no cartão."
-        tips={[
-          { icon: '🧾', text: 'Controle os gastos que normalmente passam despercebidos' },
-          { icon: '📝', text: 'Anote na hora para não esquecer depois' },
-        ]} buttonLabel="Registrar →" />}
-      {tabPrincipal === 'consolidado' && <TutorialCard tela="lanc_visaogeral" icon="📊"
-        title="Tudo junto"
-        description="Aqui você vê todos os seus gastos e recebimentos — banco, cartão e dinheiro — em um único lugar."
-        tips={[
-          { icon: '🔍', text: 'Visão completa de todas as movimentações do mês' },
-          { icon: '📈', text: 'Compare entradas e saídas de todas as fontes' },
-          { icon: '🗓️', text: 'Navegue entre os meses para ver o histórico' },
-        ]} buttonLabel="Ver resumo mensal →" />}
 
       {tabPrincipal === 'cartao' ? (
         <FaturaCartao

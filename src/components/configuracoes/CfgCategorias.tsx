@@ -107,6 +107,7 @@ export default function CfgCategorias({
             <PageHeader
               icon="ti-category"
               breadcrumb="CONTA"
+              ajuda="configuracoes"
               title="Categorias"
               subtitle={`${categorias.filter(c=>c.ativa).length} ativas de ${categorias.length}`}
               rightContent={

@@ -30,6 +30,7 @@ export default function CfgPerfil({
         <PageHeader
           icon="ti-user"
           breadcrumb="CONTA"
+          ajuda="configuracoes"
           title="Perfil"
           subtitle={user?.email ?? ''}
         />

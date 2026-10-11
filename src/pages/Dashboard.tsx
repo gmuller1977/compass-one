@@ -20,7 +20,6 @@ import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
-import TutorialCard from '../components/TutorialCard'
 import { COR } from '../utils/cores'
 import { creditarAurix } from '../utils/aurix'
 import { dispararToastAurix } from '../components/aurix/AurixToast'
@@ -184,6 +183,7 @@ export default function Dashboard() {
       <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
           <PageHeader
             icon="ti-layout-dashboard"
+            ajuda="inicio"
             title={`Olá, ${nome}`}
             subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
             rightContent={
@@ -240,20 +240,6 @@ export default function Dashboard() {
             }}>Começar →</button>
           </div>
         )}
-
-        {/* ── Tutorial primeira visita ── */}
-        <TutorialCard
-          tela="inicio"
-          icon="🧭"
-          title="Seu painel de comando"
-          description="Aqui você vê, de relance, como o mês termina e o que precisa da sua atenção."
-          tips={[
-            { icon: '🧭', text: 'No topo: com quanto o mês termina e quanto ainda dá para gastar' },
-            { icon: '🔔', text: 'Os avisos aparecem só quando há algo a fazer' },
-            { icon: '📊', text: 'O detalhe mês a mês e por categoria fica em Análises' },
-          ]}
-          buttonLabel="Ver meu painel →"
-        />
 
         {/* ── Mês futuro: nada aqui aconteceu ainda ──
             infoFundo + infoTexto: par medido em cores.ts (5,5:1). */}

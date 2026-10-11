@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import { useNorte, type Mensagem } from '../components/norte/useNorte'
 import { M, fmt } from '../components/mobile/estilo'
@@ -54,6 +54,19 @@ export default function Norte() {
   }, [user?.id, idsDoDia])
 
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [messages, loading])
+
+  // Chegou do "?" de uma tela já com a pergunta (`/norte?pergunta=`): manda
+  // uma vez e tira da URL, para voltar à tela não perguntar de novo.
+  const [params, setParams] = useSearchParams()
+  const perguntaDaUrl = params.get('pergunta')
+  const perguntou = useRef(false)
+  useEffect(() => {
+    if (!perguntaDaUrl || perguntou.current || loading) return
+    perguntou.current = true
+    setParams({}, { replace: true })
+    enviar(perguntaDaUrl)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perguntaDaUrl])
 
   function mandar(t: string) {
     const v = t.trim()

@@ -5,6 +5,7 @@ import type { Lanc } from '../components/acompanhamento/AcShared'
 import { saldoRealizadoConta, type Deps } from './saldoConta'
 import { bussolaDoMes, type Bussola } from './bussolaDoMes'
 import { comparativoMensal, type MesComparado } from './comparativoMensal'
+import { guiaDoAppParaNorte } from './ajudaDasTelas'
 
 /**
  * O que o Norte sabe — e só isso (redesenho de 10/10/2026).
@@ -224,6 +225,11 @@ export const SYSTEM_NORTE = `Você é o Norte, o assistente financeiro do app Co
 - Um pedido por resposta, e nada de pedido quando a pessoa só perguntou algo.
 - Mensagem curta com categoria e valor ("Supermercado 100", "uber 32,50", "100 mercado nubank") é um pedido para LANÇAR: monte o pedido.
 - Você CONSEGUE lançar, pagar e simular. Se alguma resposta antiga da conversa disse o contrário, ela está desatualizada: ignore.
+
+## Dúvidas de como usar o app
+- Quando perguntarem como fazer algo no app ou para que serve uma tela, responda pelo guia abaixo, em 1 a 3 frases, e termine com o código da tela, se houver.
+- Se o guia não cobre a dúvida, diga que não sabe ao certo e sugira o "?" no cabeçalho da tela. Não invente botão nem tela.
+${guiaDoAppParaNorte()}
 
 ## Dados do usuário
 {CONTEXTO}`

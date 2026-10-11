@@ -3,7 +3,6 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
-import TutorialCard from '../components/TutorialCard'
 import { useToast } from '../components/Toast'
 import { parseValor } from '../utils/moeda'
 import type { Conta, Categoria, TipoCategoria, FormaPagamentoFatura, PlanoCat } from '../context/AppContext'
@@ -47,7 +46,6 @@ export default function Configuracoes() {
           percentualAlerta, setPercentualAlerta,
           metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
-          setOnboardingCompleto,
           saldoInicialDinheiro, salvarSaldoInicialDinheiro,
           cenarioPrevisao, setCenarioPrevisao } = useApp()
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
@@ -519,18 +517,6 @@ export default function Configuracoes() {
       {isMobile && aba === 'home' && (
         <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '40px 24px',
           display:'flex', flexDirection:'column', alignItems:'center' }}>
-          <TutorialCard
-            tela="configuracoes"
-            icon="⚙️"
-            title="Ajuste tudo do seu jeito"
-            description="Aqui você gerencia seus bancos, cartões e categorias. Tudo que você configurou no início pode ser ajustado quando quiser."
-            tips={[
-              { icon: '🏦', text: 'Adicione novos bancos e cartões' },
-              { icon: '🏷️', text: 'Ative ou desative categorias de gasto' },
-              { icon: '⚙️', text: 'Personalize preferências como desvio de planejamento' },
-            ]}
-            buttonLabel="Explorar configurações →"
-          />
           <h1 style={{ fontSize:22, fontWeight:800, color:COR.texto, marginBottom:28, textAlign:'center' }}>
             Configurações
           </h1>
@@ -576,46 +562,6 @@ export default function Configuracoes() {
       )}
 
       {(aba === 'bancos' || aba === 'cartoes' || aba === 'categorias' || aba === 'preferencias') && <AvisoSoAdministrador style={{ margin: '0 0 12px' }} />}
-
-      {/* Tutoriais por seção */}
-      {aba === 'bancos' && <TutorialCard tela="config_bancos" icon="🏦" title="Seus bancos"
-        description="Cadastre e gerencie suas contas bancárias. Cada conta que você adiciona aparece nos lançamentos."
-        tips={[
-          { icon: '➕', text: 'Adicione contas correntes e poupanças' },
-          { icon: '✏️', text: 'Edite saldo, nome e ícone a qualquer momento' },
-          { icon: '🎨', text: 'Personalize com cores para identificar rápido' },
-        ]} buttonLabel="Gerenciar bancos →" />}
-
-      {aba === 'cartoes' && <TutorialCard tela="config_cartoes" icon="💳" title="Seus cartões"
-        description="Cadastre seus cartões de crédito para acompanhar faturas e controlar o uso do limite."
-        tips={[
-          { icon: '📅', text: 'Informe dia de vencimento para organizar seus pagamentos' },
-          { icon: '💰', text: 'Defina o limite para acompanhar o uso' },
-          { icon: '🏷️', text: 'Dê um apelido para identificar cada cartão' },
-        ]} buttonLabel="Gerenciar cartões →" />}
-
-      {aba === 'categorias' && <TutorialCard tela="config_categorias" icon="📁" title="Tipos de gasto"
-        description="Categorias são os tipos de gasto do seu dia a dia — como Mercado, Conta de Luz, Uber. Organize do seu jeito."
-        tips={[
-          { icon: '✅', text: 'Ative ou desative categorias conforme sua necessidade' },
-          { icon: '➕', text: 'Crie categorias personalizadas' },
-          { icon: '📂', text: 'Organize em grupos para facilitar a visualização' },
-        ]} buttonLabel="Ver categorias →" />}
-
-      {aba === 'perfil' && <TutorialCard tela="config_perfil" icon="👤" title="Seus dados"
-        description="Atualize seu nome, como quer ser chamado e outras informações da sua conta."
-        tips={[
-          { icon: '✏️', text: 'O apelido aparece na saudação do Início' },
-          { icon: '🔒', text: 'Seu email está vinculado ao login' },
-        ]} buttonLabel="Ver perfil →" />}
-
-      {aba === 'preferencias' && <TutorialCard tela="config_preferencias" icon="⚙️" title="Personalize o app"
-        description="Ajuste o Compass One do seu jeito — moeda, formato de números, alertas e tutoriais."
-        tips={[
-          { icon: '💱', text: 'Escolha moeda e formato de exibição' },
-          { icon: '🔔', text: 'Configure alertas de saldo baixo' },
-          { icon: '📚', text: 'Reative tutoriais quando quiser rever' },
-        ]} buttonLabel="Ajustar preferências →" />}
 
       {/* CONTEÚDO */}
       {aba !== 'home' && (
@@ -728,9 +674,7 @@ export default function Configuracoes() {
               setMetodoSugestao={setMetodoSugestao}
               cenarioPrevisao={cenarioPrevisao}
               setCenarioPrevisao={setCenarioPrevisao}
-              setOnboardingCompleto={setOnboardingCompleto}
               navigate={navigate}
-              toast={toast}
             />
           )}
 

@@ -10,6 +10,7 @@ import { COR } from '../components/planejamento/types'
 import { useApp } from '../context/AppContext'
 import DescobertaBanner from '../components/DescobertaBanner'
 import DescobertaModal from '../components/DescobertaModal'
+import { jaViu, marcarVisto } from '../utils/vistoNaConta'
 import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
 import { medirDescoberta } from '../utils/descoberta'
 import { propostaDoMes } from '../utils/primeiroPlano'
@@ -177,30 +178,12 @@ export default function Planejamento() {
     onboardingCompleto, planos, extratoData, contas,
   }), [onboardingCompleto, planos, extratoData, contas])
 
-  // A explicação da fase aparece UMA vez, na primeira entrada sem plano.
-  // Depois só pelo "Como funciona" da faixa: um modal que volta a cada visita
-  // vira obstáculo, e a tela por trás dele se explica sozinha.
-  //
-  // O "visto" é por usuário e vive no localStorage — conveniência de leitura
-  // de um navegador só, não estado do app. Em aba anônima ou noutro aparelho
-  // ele volta, e reaparecer custa um clique; uma coluna no banco custaria
-  // migração e mais um estado capaz de discordar dos outros.
-  const chaveIntro = `compass:descoberta-intro:${user?.id ?? 'anon'}`
+  // A explicação da fase abre só pelo "Como funciona" da faixa. Até
+  // 11/10/2026 ela abria sozinha na primeira entrada, com o "visto" no
+  // navegador — noutro computador abria de novo. A faixa já diz o que está
+  // acontecendo; a explicação fica a um toque.
   const [verIntro, setVerIntro] = useState(false)
-  const introAvaliada = useRef(false)
-
-  useEffect(() => {
-    if (introAvaliada.current || !descoberta.ativa) return
-    introAvaliada.current = true
-    let visto = false
-    try { visto = localStorage.getItem(chaveIntro) === '1' } catch { /* aba anônima */ }
-    if (!visto) setVerIntro(true)
-  }, [descoberta.ativa, chaveIntro])
-
-  const fecharIntro = useCallback(() => {
-    setVerIntro(false)
-    try { localStorage.setItem(chaveIntro, '1') } catch { /* aba anônima */ }
-  }, [chaveIntro])
+  const fecharIntro = useCallback(() => setVerIntro(false), [])
 
   // ── A proposta do primeiro plano ────────────────────────────────────
   //
@@ -218,7 +201,7 @@ export default function Planejamento() {
   const [verProposta, setVerProposta] = useState(false)
   const propostaAvaliada = useRef(false)
   const chaveProposta = descoberta.mesBase
-    ? `compass:proposta:${user?.id ?? 'anon'}:${descoberta.mesBase.ano}-${descoberta.mesBase.mes}`
+    ? `proposta:${descoberta.mesBase.ano}-${descoberta.mesBase.mes}`
     : ''
 
   // Abre sozinha UMA vez por mês-base. É o momento que a fase inteira
@@ -227,15 +210,17 @@ export default function Planejamento() {
   useEffect(() => {
     if (propostaAvaliada.current || !chaveProposta || !proposta) return
     propostaAvaliada.current = true
-    let visto = false
-    try { visto = localStorage.getItem(chaveProposta) === '1' } catch { /* aba anônima */ }
-    if (!visto) setVerProposta(true)
-  }, [chaveProposta, proposta])
+    // O "visto" mora na conta (utils/vistoNaConta); a chave antiga, deste
+    // navegador, vale para quem já tinha visto antes da mudança.
+    let vistoAntigo = false
+    try { vistoAntigo = localStorage.getItem(`compass:proposta:${user?.id}:${chaveProposta.slice(9)}`) === '1' } catch { /* aba anônima */ }
+    if (!vistoAntigo && !jaViu(user, chaveProposta)) setVerProposta(true)
+  }, [chaveProposta, proposta, user])
 
   const fecharProposta = useCallback(() => {
     setVerProposta(false)
-    try { if (chaveProposta) localStorage.setItem(chaveProposta, '1') } catch { /* aba anônima */ }
-  }, [chaveProposta])
+    if (chaveProposta) void marcarVisto(user, chaveProposta)
+  }, [chaveProposta, user])
 
   return (
     <div style={{
@@ -254,6 +239,7 @@ export default function Planejamento() {
             icon="ti-target"
             breadcrumb="TODO ANO"
             title="Planejamento"
+            ajuda="planejamento"
             mb={12}
             rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
           />

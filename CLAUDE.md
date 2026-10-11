@@ -1741,11 +1741,11 @@ a categoria costuma fechar antes de chegar ao fim.
 descoberta. Quem percebe uma categoria faltando no meio de um lançamento tem o
 mesmo problema com ou sem plano.
 
-**O modal aparece UMA vez e o "visto" mora no `localStorage`**, por usuário. É
-conveniência de leitura de um navegador, não estado do app: reaparecer noutro
-aparelho custa um clique, uma coluna no banco custaria migração e mais um
-estado para discordar dos outros. Um modal que volta a cada visita vira
-obstáculo, e a tela por trás dele se explica sozinha.
+**O modal da fase abre só pelo "Como funciona" da faixa.** Até 11/10/2026 ele
+abria sozinho na primeira entrada, com o "visto" no `localStorage` — e noutro
+computador abria de novo. A proposta do primeiro plano continua abrindo
+sozinha UMA vez por mês-base, porque é a entrega da fase; o "visto" dela mora
+na CONTA (ver "Tutoriais saíram" abaixo).
 
 **A faixa anual da Grade some durante a descoberta.** Ela é a SAÍDA de um plano
 — sem plano são quatro R$ 0,00 em destaque logo abaixo de um texto que acabou
@@ -1763,6 +1763,33 @@ A pergunta que separa não é *quando*, é *você já sabe os seus números?*. A
 "Tudo pronto!" só é alcançada pela segunda porta, então ela manda para
 Lançamentos e diz o combinado — mandar para um painel vazio seria prometer uma
 coisa e entregar outra.
+
+**O Onboarding tem 4 telas, e nenhum tutorial abre sozinho.** Pedido do
+Guilherme em 11/10/2026, depois de entrar com uma conta nova: "esta
+explicativo, mas acredito que muitos não irão ler", e de outro computador as
+explicações abriam todas de novo. Eram 13 telas antes de usar o app (6 slides,
+contas, cartões, categorias, 3 subtelas de "configurar categorias", como
+começar) e 12 janelas de tutorial cobrindo a tela na primeira visita, que
+voltavam se ninguém marcasse "não mostrar novamente".
+
+- **Boas-vindas é uma tela só.** Ferramentas, rotina e Aurix saíram dos slides.
+- **As 3 subtelas de "configurar categorias" saíram** — e não gravavam nada:
+  forma de pagamento, fixa/variável com dia e conta padrão eram descartadas.
+  O ajuste fino é em Configurações. O cartão ganhou o dia de FECHAMENTO, que
+  decide a fatura da compra.
+- **Tutoriais saíram; a ajuda é o "?" do cabeçalho** (`PageHeader ajuda=…`,
+  `AjudaTela`), com as dicas da tela e perguntas prontas que abrem o Norte já
+  perguntando (`/norte?pergunta=`). O conteúdo mora em
+  [`ajudaDasTelas.ts`](src/utils/ajudaDasTelas.ts), e o guia que vai no
+  prompt do Norte é montado da MESMA tabela (`guiaDoAppParaNorte`): a dica e a
+  resposta do Norte não discordam.
+- **"Já viu" mora na conta**, no `user_metadata` do login
+  ([`vistoNaConta.ts`](src/utils/vistoNaConta.ts)), com cópia no
+  localStorage. É por login, não pelo dono: na conta compartilhada cada pessoa
+  tem o seu. Sem migração. Explicação nova que abra sozinha usa isso.
+- **"Rever boas-vindas" e "Reativar tutoriais" saíram de Preferências.** O
+  primeiro reabria o cadastro inicial, e confirmar as categorias de novo
+  desativava as que não estavam entre as sugeridas.
 
 **O que não dá para testar na própria conta.** `descoberta.ativa` exige nenhum
 plano em ano nenhum, então quem já tem plano nunca vê nada disso. Validar exige

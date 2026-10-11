@@ -12,15 +12,9 @@ import type { Descoberta } from '../utils/descoberta'
  * que acontece quando o mês fechar, e quais são as duas saídas. Sem ele a
  * faixa pede paciência sem dizer em troca de quê.
  *
- * Aparece **uma vez** e depois só por pedido — pelo botão "Como funciona" da
- * faixa. Um modal que volta a cada visita vira obstáculo, e a tela por trás
- * dele já é legível sozinha.
- *
- * O "visto" mora no `localStorage`, por usuário, e não no banco: é uma
- * conveniência de leitura de um navegador só. Errar para o lado de mostrar de
- * novo — outro aparelho, aba anônima, dados limpos — custa um clique; uma
- * coluna nova no banco custa migração e mais um estado para discordar dos
- * outros.
+ * Abre só por pedido, pelo botão "Como funciona" da faixa. Até 11/10/2026
+ * abria sozinho na primeira entrada, com o "visto" no navegador, e noutro
+ * computador abria de novo — o Guilherme achou chato. A faixa já diz o estado.
  */
 export default function DescobertaModal({
   d, onFechar, onMontarPlano,
