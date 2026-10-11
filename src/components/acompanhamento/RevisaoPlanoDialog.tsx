@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
 import { parseConta } from '../../utils/moeda'
 import type { Categoria, PlanoAnoData } from '../../context/AppContext'
@@ -47,7 +47,7 @@ function ParcelasEditaveis({ itens, nomeCat, onRenomeado }: { itens: JaLancado[]
               fontFamily: 'inherit', fontSize: 16, color: COR.texto }} />
           <span style={{ fontSize: 12, color: COR.textoSuave, whiteSpace: 'nowrap' }}>{i.parcela!.atual} de {i.parcela!.total}</span>
         </span>
-        <span style={{ fontSize: 11, color: COR.textoSuave }}>Vale para as {i.parcela!.total} parcelas da compra.</span>
+        <span style={{ fontSize: 12, color: COR.textoSuave }}>Vale para as {i.parcela!.total} parcelas da compra.</span>
         <span style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={salvar} style={{ border: 'none', borderRadius: 999, padding: '5px 12px', fontFamily: 'inherit',
             fontSize: 12, fontWeight: 700, cursor: 'pointer', background: COR.azul, color: '#fff' }}>Salvar nome</button>
@@ -58,7 +58,7 @@ function ParcelasEditaveis({ itens, nomeCat, onRenomeado }: { itens: JaLancado[]
     )
   }
   return (
-    <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 2, display: 'flex', flexWrap: 'wrap', gap: '2px 8px' }}>
+    <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2, display: 'flex', flexWrap: 'wrap', gap: '2px 8px' }}>
       {parcelas.map((i, n) => {
         const rotulo = `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`
         return i.parcela!.compra ? (
@@ -123,6 +123,7 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
     return () => window.removeEventListener('keydown', esc)
   }, [])
 
+  const estreito = window.innerWidth < 640
   const valorDe = (l: LinhaRevisao) => parseConta(textos[chave(l)] ?? '')
   const escolhidas = linhas.filter(l => !l.motivo && marcadas.has(chave(l)))
   const planejaveis = linhas.filter(l => !l.motivo)
@@ -163,6 +164,65 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
         <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0 }}>
           {linhas.length === 0 ? (
             <div style={{ fontSize: 14, padding: '16px 0' }}>Nada para revisar ✓</div>
+          ) : estreito ? (
+            // Celular: um cartão por linha, e os três números lado a lado —
+            // a tabela de seis colunas cortava "Plano atual" e "Sugerido".
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {linhas.map(l => {
+                const k = chave(l)
+                const marcada = marcadas.has(k)
+                const v = valorDe(l)
+                const abaixo = v !== null && v < l.jaLancado - 0.005
+                const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
+                const numero = (rotulo: string, valor: ReactNode) => (
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: COR.textoSuave }}>{rotulo}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{valor}</div>
+                  </div>
+                )
+                return (
+                  <div key={k} style={{ border: `1px solid ${COR.borda}`, borderRadius: 12, padding: '12px 12px',
+                    opacity: l.motivo || marcada ? 1 : 0.55 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      {l.motivo
+                        ? <span aria-hidden="true" style={{ width: 22, textAlign: 'center', color: COR.avisoTexto, fontWeight: 800, fontSize: 16 }}>!</span>
+                        : <input type="checkbox" checked={marcada} aria-label={`Revisar ${nome} em ${MESES[l.mes]}`}
+                            onChange={e => setMarcadas(s => { const n = new Set(s); if (e.target.checked) n.add(k); else n.delete(k); return n })}
+                            style={{ width: 22, height: 22, margin: 0, flexShrink: 0 }} />}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700 }}>{nome} <span style={{ fontWeight: 500, color: COR.textoSuave }}>· {nomeMes(l)}</span></div>
+                        <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
+                      </div>
+                    </div>
+                    {l.motivo ? (
+                      <div style={{ fontSize: 13, lineHeight: 1.4, color: COR.avisoTexto, background: COR.avisoFundo, marginTop: 10,
+                        border: `1px solid ${COR.avisoBorda}`, borderRadius: 8, padding: '8px 10px' }}>
+                        Já lançado {fmt(l.jaLancado)}. {l.motivo}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 10 }}>
+                        {numero('Já lançado', fmt(l.jaLancado))}
+                        {numero('Plano atual', <span style={{ color: COR.textoSuave }}>{fmt(l.plano)}</span>)}
+                        <div style={{ flex: 1.2, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, color: COR.textoSuave }}>Sugerido</div>
+                          <input type="text" inputMode="decimal" value={textos[k] ?? ''} disabled={!marcada}
+                            aria-label={`Valor sugerido para ${nome} em ${MESES[l.mes]}`}
+                            onChange={e => setTextos(t => ({ ...t, [k]: e.target.value }))}
+                            style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: 8, textAlign: 'right', fontFamily: 'inherit',
+                              fontSize: 16, marginTop: 2, border: `1.5px solid ${v === null ? COR.erroTexto : COR.azul}`, fontWeight: 700,
+                              color: COR.texto, background: COR.branco }} />
+                        </div>
+                      </div>
+                    )}
+                    {!l.motivo && v !== null && !abaixo && Math.abs(v - l.sugerido) < 0.005 && (
+                      <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 4, textAlign: 'right' }}>{origem(l)}</div>
+                    )}
+                    {!l.motivo && v === null && <div style={{ fontSize: 12, color: COR.erroTexto, marginTop: 4, textAlign: 'right' }}>valor inválido</div>}
+                    {!l.motivo && abaixo && <div style={{ fontSize: 12, color: COR.avisoTexto, marginTop: 4, textAlign: 'right' }}>abaixo do já lançado</div>}
+                  </div>
+                )
+              })}
+            </div>
           ) : (
             <table style={{ width: '100%', minWidth: 540, borderCollapse: 'collapse' }}>
               <thead>
