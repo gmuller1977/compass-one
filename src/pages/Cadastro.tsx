@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { codigoRecebido } from '../utils/indicacao'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -144,7 +145,7 @@ export default function Cadastro() {
         email,
         password: senha,
         options: {
-          data: { nome },
+          data: { nome, indicado_por: codigoRecebido() ?? undefined },
           emailRedirectTo: window.location.origin + '/',
         },
       })

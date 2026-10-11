@@ -6,8 +6,6 @@ import { dadosDoNorte, contextoNorte, SYSTEM_NORTE, type DadosNorte } from '../.
 import { cadastroParaNorte, type PedidoLancar, type PedidoPagar } from '../../utils/acoesNorte'
 import { contaDoPagamento, confirmarPagamento } from '../../utils/pagarConta'
 import { dataDoLancamento, lancarNaFatura, lancarNoExtrato } from '../../utils/lancamentoRapido'
-import { creditarAurix } from '../../utils/aurix'
-import { dispararToastAurix } from '../aurix/AurixToast'
 
 export type Mensagem = {
   role: 'user' | 'assistant'; content: string; ts: number
@@ -92,11 +90,6 @@ export function useNorte() {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
       const data = await resp.json() as { text?: string }
       setMessages(prev => [...prev, { role: 'assistant', content: data.text ?? 'Desculpe, não consegui responder agora.', ts: Date.now() }])
-      if (uid) {
-        creditarAurix(uid, 'acao', 'Consultou o Norte', 3, 'acao_north').then(r => {
-          if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Consultou o Norte', pontos: 3 })
-        })
-      }
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant', ts: Date.now(),
@@ -107,7 +100,7 @@ export function useNorte() {
       loadingRef.current = false
       setLoading(false)
     }
-  }, [dados, deps.categorias, deps.contas, uid])
+  }, [dados, deps.categorias, deps.contas])
 
   const marcarPedido = useCallback((ts: number, estado: 'feito' | 'cancelado') => {
     setMessages(prev => prev.map(m => (m.ts === ts && m.role === 'assistant' ? { ...m, pedido: estado } : m)))

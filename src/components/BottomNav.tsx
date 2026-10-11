@@ -35,6 +35,7 @@ const MAIS = [
   { icon: '🔍', label: 'Análises',              path: '/analises' },
   { icon: '🧮', label: 'Simulador',             path: '/simulacao' },
   { icon: '⚙️', label: 'Configurações',         path: '/configuracoes' },
+  { icon: '🎁', label: 'Indicar amigos',        path: '/indicar' },
 ]
 
 export default function BottomNav() {

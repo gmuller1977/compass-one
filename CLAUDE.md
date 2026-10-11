@@ -1329,6 +1329,23 @@ e ficou com Mês a mês, Por categoria, Precisão do plano, Patrimônio e Metas 
 dívidas. A Revisão mensal FICA, por escolha dele. A aba "Total" de Lançamentos
 não foi tocada (tela congelada).
 
+**A gamificação (Aurix) saiu; ficou o link de indicação.** Pedido do
+Guilherme em 11/10/2026. Pontos, níveis, sequência de dias, conquistas e os
+avisos "+N Aurix" foram removidos, e `/aurix` cai em `/indicar`. No lugar,
+"Indicar amigos" (menu Minha conta e "Mais" no celular): cada login tem um
+código, o link é `/i/<código>`, e quem cria a conta por ele fica registrado
+em `indicacoes` com quem indicou — a base do futuro desconto na mensalidade
+por quantidade de indicações, que ainda não existe. Regras em
+[`indicacao.ts`](src/utils/indicacao.ts) e na migração `018_indicacao.sql`:
+**só o banco grava a indicação** (`registrar_indicacao`, chamada pelo
+indicado no 1º acesso), nunca a si mesmo, uma vez por indicado e só com
+conta de até 30 dias; o indicador não insere nem lê a tabela direto, só a
+lista mascarada (`minhas_indicacoes`). O código viaja no localStorage (Google
+volta no mesmo navegador) e no `user_metadata.indicado_por` do cadastro por
+e-mail (a confirmação pode ser em outro aparelho). As tabelas `aurix` e
+`conquistas` ficaram no banco, sem uso. `prova71-banco.sql` (12 invariantes).
+As menções ao Aurix abaixo são históricas.
+
 **A Início enxuta: a resposta, o que pede atenção, um gráfico e a porta para
 Análises.** Decidido pelo Guilherme em 06/10/2026, sobre um modelo em HTML:
 "o início está uma tela cheia de número, e falando de forma comercial isso

@@ -5,8 +5,6 @@ import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 import { COR } from '../utils/cores'
-import { creditarAurix } from '../utils/aurix'
-import { dispararToastAurix } from '../components/aurix/AurixToast'
 import { NOMES_MESES } from '../components/novoLancamentoExtrato/NleShared'
 
 const BANCOS = [
@@ -75,7 +73,7 @@ function BtnGhost({ onClick, children }: { onClick: () => void; children: React.
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const { contas, categorias, setContas, setCategorias, setOnboardingCompleto, user } = useApp()
+  const { contas, categorias, setContas, setCategorias, setOnboardingCompleto } = useApp()
 
   const [phase, setPhase]   = useState<Phase>('welcome')
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
@@ -103,16 +101,6 @@ export default function Onboarding() {
   // ── Categorias ─────────────────────────────────────────────────────────
   const [catSel, setCatSel]     = useState<Set<string>>(() => new Set(TOP10))
   const [verMais, setVerMais]   = useState(false)
-
-  // ── Final ──────────────────────────────────────────────────────────────
-  const [finalCreditado, setFinalCreditado] = useState(false)
-
-  useEffect(() => {
-    if (phase !== 'final' || finalCreditado || !user?.id) return
-    setFinalCreditado(true)
-    creditarAurix(user.id, 'conquista', 'Boas-vindas concluídas', 20, 'conquista_primeiro_passo')
-      .then(r => { if (r) dispararToastAurix({ tipo: 'conquista', titulo: 'Primeiro Passo!', pontos: 20, icone: '🎉' }) })
-  }, [phase, user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Banco helpers ──────────────────────────────────────────────────────
   function addBancoCurrent() {
@@ -314,13 +302,6 @@ export default function Onboarding() {
           )}
         </div>
 
-        <div style={{
-          background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)',
-          borderRadius: 12, padding: '12px 20px', marginBottom: 28,
-          fontSize: 13, color: '#fbbf24', fontWeight: 700,
-        }}>
-          ✨ +20 Aurix de boas-vindas creditados!
-        </div>
 
         {/* Só se chega aqui pela porta "ainda não faço ideia", e por isso o
             destino é Lançamentos e não o Dashboard: o combinado que a porta

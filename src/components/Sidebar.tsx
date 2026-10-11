@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { supabase } from '../lib/supabase'
-import { saldoAurix } from '../utils/aurix'
 
 export const SIDEBAR_W = 220
 
@@ -71,7 +69,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
           { label: 'Preferências', path: '/configuracoes?aba=preferencias' },
         ],
       },
-      { icon: '✨', label: 'Aurix', path: '/aurix', exact: false },
+      { icon: '🎁', label: 'Indicar amigos', path: '/indicar', exact: false },
     ],
   },
 ]
@@ -219,16 +217,6 @@ export default function Sidebar() {
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
   const email   = user?.email ?? ''
   const inicial = nome.charAt(0).toUpperCase()
-
-  const [saldoAurixVal, setSaldoAurixVal] = useState(0)
-  const [streakAtual, setStreakAtual] = useState(0)
-
-  useEffect(() => {
-    if (!user?.id) return
-    saldoAurix(user.id).then(setSaldoAurixVal)
-    supabase.from('user_preferences').select('streak_atual').eq('user_id', user.id).single()
-      .then(({ data }) => { if (data) setStreakAtual(data.streak_atual ?? 0) })
-  }, [user?.id])
 
   const cartoes = contas.filter(c => c.tipo === 'cartao')
 
@@ -472,16 +460,6 @@ export default function Sidebar() {
               fontSize: 9, color: 'rgba(255,255,255,0.35)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{email}</div>
-            <div
-              onClick={() => navigate('/aurix')}
-              style={{
-                fontSize: 9, color: 'rgba(255,255,255,0.55)', marginTop: 2,
-                cursor: 'pointer', display: 'inline-block',
-              }}
-            >
-              ✨ {saldoAurixVal.toLocaleString('pt-BR')} Aurix
-              {streakAtual > 0 && ` · 🔥 ${streakAtual} dias`}
-            </div>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
 import Sidebar, { SIDEBAR_W } from './components/Sidebar'
@@ -24,11 +24,8 @@ import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
-import AurixPage          from './pages/Aurix'
-import AurixToast          from './components/aurix/AurixToast'
-import { supabase } from './lib/supabase'
-import { creditarAurix, atualizarStreak } from './utils/aurix'
-import { dispararToastAurix } from './components/aurix/AurixToast'
+import Indicar             from './pages/Indicar'
+import { guardarCodigoRecebido, registrarIndicacaoPendente } from './utils/indicacao'
 import AvisoInatividade from './components/AvisoInatividade'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
@@ -50,37 +47,13 @@ function AppShell({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile()
   const { user } = useApp()
 
+  // Quem chegou por um link de indicação fica registrado no 1º acesso.
   useEffect(() => {
     if (!user?.id) return
-    const userId = user.id
+    registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    async function iniciarSessao() {
-      const r = await creditarAurix(userId, 'acao', 'Login diário', 3, 'acao_login')
-      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Login diário', pontos: 3 })
-
-      const { data: prefs } = await supabase
-        .from('user_preferences')
-        .select('streak_atual, maior_streak, ultimo_acesso_ativo')
-        .eq('user_id', userId)
-        .single()
-
-      if (prefs) {
-        const { novoStreak, bonusGanho } = await atualizarStreak(
-          userId,
-          prefs.streak_atual ?? 0,
-          prefs.maior_streak ?? 0,
-          prefs.ultimo_acesso_ativo ?? null
-        )
-        if (bonusGanho) {
-          dispararToastAurix({ tipo: 'acao', titulo: `Streak de ${novoStreak} dias!`, pontos: 50 })
-        }
-      }
-    }
-
-    iniciarSessao()
-  }, [user?.id])
-
-  if (isMobile) return <>{children}<AurixToast /><AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
+  if (isMobile) return <>{children}<AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
   return (
     <>
       <Sidebar />
@@ -88,7 +61,6 @@ function AppShell({ children }: { children: ReactNode }) {
       <div style={{ marginLeft: SIDEBAR_W }}>
         {children}
       </div>
-      <AurixToast />
       <IndicadorGravacao />
       <SincronizarLembrete />
       <AvisoNovaVersao />
@@ -113,6 +85,13 @@ function LoadingSpinner() {
       Carregando...
     </div>
   )
+}
+
+/** /i/<código>: guarda quem indicou e segue para a página inicial. */
+function ReceberIndicacao() {
+  const { codigo } = useParams()
+  if (codigo) guardarCodigoRecebido(codigo)
+  return <Navigate to="/" replace />
 }
 
 function HomeRoute() {
@@ -176,7 +155,9 @@ export default function App() {
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
           <Route path="/resumo-mensal"      element={<Navigate to="/analises" replace />} />
           <Route path="/revisaomensal"      element={<Protegido><RevisaoMensal /></Protegido>} />
-          <Route path="/aurix"             element={<Protegido><AurixPage /></Protegido>} />
+          <Route path="/indicar"           element={<Protegido><Indicar /></Protegido>} />
+          <Route path="/aurix"             element={<Navigate to="/indicar" replace />} />
+          <Route path="/i/:codigo"         element={<ReceberIndicacao />} />
           <Route path="*"                   element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

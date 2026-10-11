@@ -22,8 +22,6 @@ import AppHeader from '../components/AppHeader'
 import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
-import { creditarAurix } from '../utils/aurix'
-import { dispararToastAurix } from '../components/aurix/AurixToast'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -166,13 +164,6 @@ export default function Dashboard() {
     () => statusDoMes({ totalEntradas, totalSaidas, totalPrevS, temPlano }),
     [totalEntradas, totalSaidas, temPlano, totalPrevS],
   )
-
-  useEffect(() => {
-    if (!user) return
-    creditarAurix(user.id, 'acao', 'Acessou o Início', 2, 'acao_dashboard').then(r => {
-      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Acessou o Início', pontos: 2 })
-    })
-  }, [user?.id])
 
   // ── Render ────────────────────────────────────────────────────────────
   return (

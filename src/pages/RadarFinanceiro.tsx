@@ -12,8 +12,6 @@ import EmptyState from '../components/EmptyState'
 import { COR, fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
 import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
-import { creditarAurix } from '../utils/aurix'
-import { dispararToastAurix } from '../components/aurix/AurixToast'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import KpiCard, { KpiBarra } from '../components/KpiCard'
@@ -57,13 +55,6 @@ export default function RadarFinanceiro() {
   // 06/10/2026). Só GRAVA no plano, pelas funções do Planejamento; o Radar
   // relê o plano e a linha se redesenha. Ver AjustePlanoDialog.
   const [ajuste, setAjuste] = useState<AjusteAberto | null>(null)
-
-  useEffect(() => {
-    if (!user) return
-    creditarAurix(user.id, 'acao', 'Viu o Radar financeiro', 2, 'acao_evolucao').then(r => {
-      if (r) dispararToastAurix({ tipo: 'acao', titulo: 'Viu o Radar financeiro', pontos: 2 })
-    })
-  }, [user?.id])
 
 
   const totalDias = diasNoMes(mes, ano)
