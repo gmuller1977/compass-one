@@ -30,6 +30,8 @@ import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { acharLinhaDoPlano, mudarLinhaDoPlano } from '../utils/linhaDoPlano'
 import { comItens, comValor, novoIdItem } from '../utils/itensPlano'
+import { jaLancadoNosMeses } from '../utils/historicoDaCategoria'
+import { compraDoItem, renomearNaFatura, renomearNosPlanos, type CompraRef } from '../utils/renomearCompra'
 import type { Categoria, PlanoCat } from '../context/AppContext'
 import type { Deps } from '../utils/saldoConta'
 import type { DadosMes } from '../context/AppContext'
@@ -58,7 +60,7 @@ export default function Planejamento() {
 
   const plan = usePlanejamento(anoAtual)
   const { planos, extratoData, contas, onboardingCompleto, user,
-    setPlanos, faturaData, categorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+    setPlanos, faturaData, setFaturaData, categorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
 
   // Uma tela só (06/10/2026): a Grade. A planilha mora no modal que abre ao
   // clicar num mês (PlanModalMeses), e a Lista saiu. Link antigo com
@@ -292,6 +294,13 @@ export default function Planejamento() {
         if (!cat) return null
         const itens = itensDoMes(cat, mi)
         const fechar = () => setItensAbertos(null)
+        // Parcelas de compra lançada: o nome pode ser trocado para a compra
+        // inteira (utils/renomearCompra). Só parcelado.
+        const compras: Record<string, CompraRef> = {}
+        if (itens?.some(i => / · \d+ de \d+$/.test(i.descricao))) {
+          const ja = jaLancadoNosMeses(depsAjuste, tipo === 'e' ? 'entrada' : 'saida', cat.nome, cat.descricao, [{ ano: anoAtual, mes: mi }])[0]?.itens ?? []
+          for (const i of itens) { const r = compraDoItem(i, ja); if (r) compras[i.id] = r }
+        }
         return (
           <PlanItensEditor
             key={`${tipo}-${ri}-${mi}`}
@@ -300,6 +309,12 @@ export default function Planejamento() {
             onSalvar={(novos, meses) => { plan.editarItens(tipo, ri, meses, novos); fechar() }}
             onTirar={itens ? () => { plan.editarItens(tipo, ri, [mi], null); fechar() } : undefined}
             onFechar={fechar}
+            compras={compras}
+            onRenomear={(ref, antigo, novo) => {
+              setFaturaData(f => renomearNaFatura(f, ref, novo))
+              setPlanos(p => renomearNosPlanos(p, cat.nome, antigo, ref.total, novo))
+              toast(`"${novo}" nas ${ref.total} parcelas da compra.`, 'success')
+            }}
           />
         )
       })()}

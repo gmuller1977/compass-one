@@ -131,7 +131,7 @@ export function construirRealizadoMes(params: {
       alvo.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
     }
 
-    const fat = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number }[]> }>
+    const fat = faturaData as Record<string, { lancamentos: Record<number, { id?: string; tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number }[]> }>
     for (const card of contas.filter(c => c.tipo === 'cartao')) {
       const billingOff = (card.diaVencimento ?? 1) < (card.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - billingOff, pAno = ano
@@ -144,7 +144,11 @@ export function construirRealizadoMes(params: {
       for (let d = 1; d <= pTotalDias; d++) {
         for (const l of dm.lancamentos?.[d] ?? []) {
           // A parcela só vai para o histórico ("2 de 6"); nenhum total a lê.
-          const parcela = (l.parcelas ?? 1) > 1 && l.parcelaAtual ? { atual: l.parcelaAtual, total: l.parcelas! } : undefined
+          // `compra` (cartão + id base) deixa renomear a compra em todas as
+          // parcelas a partir do plano (utils/renomearCompra).
+          const parcela = (l.parcelas ?? 1) > 1 && l.parcelaAtual
+            ? { atual: l.parcelaAtual, total: l.parcelas!, ...(l.id ? { compra: { contaId: card.id, base: l.id.replace(/-\d+$/, '') } } : {}) }
+            : undefined
           const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
           const { k, variante } = chaveDe(l.categoria, 'saida', sub)
           const daVariante = variante ? { variante } : {}

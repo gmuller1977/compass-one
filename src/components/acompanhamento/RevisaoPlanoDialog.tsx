@@ -6,6 +6,72 @@ import type { Deps } from '../../utils/saldoConta'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { linhasDaRevisao, gravarRevisao, type LinhaRevisao } from '../../utils/revisaoDoPlano'
 import { useToast } from '../Toast'
+import { useApp } from '../../context/AppContext'
+import { renomearNaFatura, renomearNosPlanos } from '../../utils/renomearCompra'
+import type { JaLancado } from '../../utils/historicoDaCategoria'
+
+const chaveCompra = (i: JaLancado) => (i.parcela?.compra ? `${i.parcela.compra.contaId}|${i.parcela.compra.base}` : '')
+
+/**
+ * As parcelas da linha, cada uma com o nome tocável: trocar o nome renomeia a
+ * compra em TODAS as parcelas — na fatura e nos itens do plano. Pedido do
+ * Guilherme em 11/10/2026; só compra parcelada (utils/renomearCompra).
+ */
+function ParcelasEditaveis({ itens, nomeCat, onRenomeado }: { itens: JaLancado[]; nomeCat: string; onRenomeado: (compra: string, novo: string) => void }) {
+  const { setFaturaData, setPlanos } = useApp()
+  const { toast } = useToast()
+  const [editando, setEditando] = useState<{ i: JaLancado; texto: string } | null>(null)
+  const parcelas = itens.filter(i => i.parcela)
+  if (parcelas.length === 0) return null
+  if (editando) {
+    const { i, texto } = editando
+    const salvar = () => {
+      const novo = texto.trim()
+      const c = i.parcela!.compra!
+      if (novo && novo !== i.descricao.trim()) {
+        const ref = { contaId: c.contaId, base: c.base, total: i.parcela!.total }
+        setFaturaData(f => renomearNaFatura(f, ref, novo))
+        setPlanos(p => renomearNosPlanos(p, nomeCat, i.descricao, ref.total, novo))
+        toast(`"${novo}" nas ${ref.total} parcelas da compra.`, 'success')
+        onRenomeado(chaveCompra(i), novo)
+      }
+      setEditando(null)
+    }
+    return (
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input autoFocus value={texto} aria-label="Nome da compra"
+            onChange={e => setEditando({ i, texto: e.target.value })}
+            onKeyDown={e => { if (e.key === 'Enter') salvar(); if (e.key === 'Escape') { e.stopPropagation(); setEditando(null) } }}
+            style={{ flex: 1, minWidth: 0, padding: '6px 8px', borderRadius: 8, border: `1.5px solid ${COR.azul}`,
+              fontFamily: 'inherit', fontSize: 16, color: COR.texto }} />
+          <span style={{ fontSize: 12, color: COR.textoSuave, whiteSpace: 'nowrap' }}>{i.parcela!.atual} de {i.parcela!.total}</span>
+        </span>
+        <span style={{ fontSize: 11, color: COR.textoSuave }}>Vale para as {i.parcela!.total} parcelas da compra.</span>
+        <span style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={salvar} style={{ border: 'none', borderRadius: 999, padding: '5px 12px', fontFamily: 'inherit',
+            fontSize: 12, fontWeight: 700, cursor: 'pointer', background: COR.azul, color: '#fff' }}>Salvar nome</button>
+          <button type="button" onClick={() => setEditando(null)} style={{ border: 'none', borderRadius: 999, padding: '5px 12px',
+            fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#f1f5f9', color: '#1e3a8a' }}>Cancelar</button>
+        </span>
+      </div>
+    )
+  }
+  return (
+    <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 2, display: 'flex', flexWrap: 'wrap', gap: '2px 8px' }}>
+      {parcelas.map((i, n) => {
+        const rotulo = `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`
+        return i.parcela!.compra ? (
+          <button key={n} type="button" title="Trocar o nome da compra em todas as parcelas"
+            onClick={() => setEditando({ i, texto: i.descricao })}
+            style={{ all: 'unset', cursor: 'pointer', color: COR.azul, textDecoration: 'underline', textUnderlineOffset: 2 }}>
+            ✎ {rotulo}
+          </button>
+        ) : <span key={n}>{rotulo}</span>
+      })}
+    </div>
+  )
+}
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -38,7 +104,13 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
   const { toast } = useToast()
   // Uma vez, ao abrir: a média de cada categoria lê meses de realizado.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const linhas = useMemo(() => linhasDaRevisao(acima, deps), [])
+  const linhasDeAbertura = useMemo(() => linhasDaRevisao(acima, deps), [])
+  // Compra renomeada aqui: a tabela e a gravação usam o nome novo — senão
+  // "Confirmar" gravaria nos itens do plano o nome antigo de volta.
+  const [renomes, setRenomes] = useState<Record<string, string>>({})
+  const linhas = useMemo(() => linhasDeAbertura.map(l => ({
+    ...l, itens: l.itens.map(i => (renomes[chaveCompra(i)] ? { ...i, descricao: renomes[chaveCompra(i)] } : i)),
+  })), [linhasDeAbertura, renomes])
   // Só o que o plano resolve vem marcado; o resto aparece com o motivo.
   const [marcadas, setMarcadas] = useState<Set<string>>(() => new Set(linhas.filter(l => !l.motivo).map(chave)))
   const [textos, setTextos] = useState<Record<string, string>>(
@@ -109,7 +181,6 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
                   const marcada = marcadas.has(k)
                   const v = valorDe(l)
                   const abaixo = v !== null && v < l.jaLancado - 0.005
-                  const parcelas = l.itens.filter(i => i.parcela)
                   const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
                   return (
                     l.motivo ? (
@@ -118,11 +189,7 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
                         <td style={{ ...td, textAlign: 'center', color: COR.avisoTexto, fontWeight: 700 }} aria-hidden="true">!</td>
                         <td style={{ ...td, textAlign: 'left' }}>
                           <div style={{ fontWeight: 700 }}>{nome}</div>
-                          {parcelas.length > 0 && (
-                            <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 2 }}>
-                              {parcelas.map(i => `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`).join(' · ')}
-                            </div>
-                          )}
+                          <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
                         </td>
                         <td style={{ ...td, textAlign: 'left' }}>{nomeMes(l)}</td>
                         <td style={td}>{fmt(l.jaLancado)}</td>
@@ -141,11 +208,7 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
                       </td>
                       <td style={{ ...td, textAlign: 'left' }}>
                         <div style={{ fontWeight: 700 }}>{nome}</div>
-                        {parcelas.length > 0 && (
-                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 2 }}>
-                            {parcelas.map(i => `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`).join(' · ')}
-                          </div>
-                        )}
+                        <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
                       </td>
                       <td style={{ ...td, textAlign: 'left' }}>{nomeMes(l)}</td>
                       <td style={td}>{fmt(l.jaLancado)}</td>

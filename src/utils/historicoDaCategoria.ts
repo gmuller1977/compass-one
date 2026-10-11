@@ -24,7 +24,7 @@ import { primeiroMesComRegistro, ymRegistro } from './evolucaoSaldo'
  *
  * A sugestão de cada mês é a soma das duas.
  */
-export type JaLancado = { descricao: string; valor: number; parcela?: { atual: number; total: number } }
+export type JaLancado = { descricao: string; valor: number; parcela?: { atual: number; total: number; compra?: { contaId: string; base: string } } }
 export type MesComprometido = { ano: number; mes: number; total: number; itens: JaLancado[] }
 
 type Tipo = 'entrada' | 'saida'

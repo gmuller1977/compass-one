@@ -464,6 +464,20 @@ seguem indo só quando mudam — uma filha pode ter valor próprio. Correção d
 em tela congelada, feita em 08/10/2026; salvar a mãe de novo conserta as
 compras antigas.
 
+**O nome de uma compra PARCELADA se troca pelo plano, e vale para todas as
+parcelas.** Pedido do Guilherme em 11/10/2026: a fatura grava compra sem
+descrição com o nome da categoria (`fDesc.trim() || fCat`), e a revisão copia
+esse texto para os itens ("Cursos / Palestras · 4 de 6"). Na revisão (o nome
+da parcela é tocável) e no editor de itens do Planejamento (a parcela mostra
+só o nome, com "4 de 6" ao lado), trocar o nome grava em
+[`renomearCompra.ts`](src/utils/renomearCompra.ts): a `descricao` de todas as
+parcelas na fatura (id `<base>-<p>` no mesmo cartão) e os itens
+"<antigo> · k de N" das linhas da mesma categoria, em todos os anos. Só
+texto, nenhum valor. O item acha a compra pela parcela lançada no mesmo mês
+com o mesmo nome, número e total (`compraDoItem`) — por isso funciona também
+para itens gravados antes. `realizadoMes` passou a levar `compra` (cartão +
+id base) junto da parcela, informativo. Item que não é parcela não muda.
+
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
 ajuste não mexer no mês corrente. Um aviso na hora do lançamento convida a

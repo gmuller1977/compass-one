@@ -3,11 +3,14 @@ import { COR } from '../../utils/cores'
 import { parseConta } from '../../utils/moeda'
 import { novoIdItem, somaItens, type ItemPlano } from '../../utils/itensPlano'
 import { MESES_FULL } from './types'
+import { lerRotuloParcela, rotuloParcela, type CompraRef } from '../../utils/renomearCompra'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const paraCampo = (v: number) => (v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 
-type Linha = { id: string; descricao: string; valor: string; simulacaoId?: string }
+/** `parcela`: o item é a parcela de uma compra lançada — o campo mostra só o nome, e trocá-lo renomeia a compra. */
+type Linha = { id: string; descricao: string; valor: string; simulacaoId?: string
+  parcela?: { nome: string; atual: number; total: number; ref: CompraRef } }
 
 /**
  * O editor de itens de uma célula do plano: Mercado · outubro = Supermercado
@@ -22,7 +25,7 @@ type Linha = { id: string; descricao: string; valor: string; simulacaoId?: strin
  * categoria — para quem detalha um valor que já existia não perder o número.
  */
 export default function PlanItensEditor({
-  nome, grupo, mes, valorAtual, itens, partes, onSalvar, onTirar, onFechar,
+  nome, grupo, mes, valorAtual, itens, partes, onSalvar, onTirar, onFechar, compras, onRenomear,
 }: {
   nome: string
   grupo?: string
@@ -34,9 +37,19 @@ export default function PlanItensEditor({
   /** Só quando já há itens: volta a ser só o total. */
   onTirar?: () => void
   onFechar: () => void
+  /** Item (por id) que é parcela de uma compra lançada → a compra. Ver utils/renomearCompra. */
+  compras?: Record<string, CompraRef>
+  /** Renomeia a compra em todas as parcelas: na fatura e nos itens do plano. */
+  onRenomear?: (ref: CompraRef, antigo: string, novo: string) => void
 }) {
   const [linhas, setLinhas] = useState<Linha[]>(() => {
-    if (itens?.length) return itens.map(i => ({ id: i.id, descricao: i.descricao, valor: paraCampo(i.valor), simulacaoId: i.simulacaoId }))
+    if (itens?.length) return itens.map(i => {
+      const ref = compras?.[i.id]
+      const r = ref && onRenomear ? lerRotuloParcela(i.descricao) : null
+      return r
+        ? { id: i.id, descricao: r.nome, valor: paraCampo(i.valor), parcela: { ...r, ref: ref! } }
+        : { id: i.id, descricao: i.descricao, valor: paraCampo(i.valor), simulacaoId: i.simulacaoId }
+    })
     if (partes?.length) return partes.map(p => ({ id: novoIdItem(), descricao: '', valor: paraCampo(p) }))
     if (valorAtual > 0) return [{ id: novoIdItem(), descricao: nome, valor: paraCampo(valorAtual) }, { id: novoIdItem(), descricao: '', valor: '' }]
     return [{ id: novoIdItem(), descricao: '', valor: '' }]
@@ -75,13 +88,21 @@ export default function PlanItensEditor({
       .map((l, i) => ({ l, v: valores[i] ?? 0 }))
       .filter(({ l, v }) => l.descricao.trim() !== '' || v !== 0)
       .map(({ l, v }, i) => ({
-        id: l.id, descricao: l.descricao.trim() || `Item ${i + 1}`, valor: v,
+        id: l.id, valor: v,
+        descricao: l.parcela
+          ? rotuloParcela(l.descricao.trim() || l.parcela.nome, l.parcela.atual, l.parcela.total)
+          : l.descricao.trim() || `Item ${i + 1}`,
         ...(l.simulacaoId ? { simulacaoId: l.simulacaoId } : {}),
       }))
     if (itensOk.length === 0) { setErro('Adicione pelo menos um item com valor.'); return }
     if (somaItens(itensOk) < 0) { setErro('O total não pode ficar negativo.'); return }
     const meses = ateDezembro ? Array.from({ length: 12 - mes }, (_, i) => mes + i) : [mes]
     onSalvar(itensOk, meses)
+    // Parcela com nome novo: a compra inteira muda de nome (fatura e plano).
+    for (const l of linhas) {
+      const novo = l.descricao.trim()
+      if (l.parcela && onRenomear && novo && novo !== l.parcela.nome) onRenomear(l.parcela.ref, l.parcela.nome, novo)
+    }
   }
 
   const campo: React.CSSProperties = {
@@ -118,8 +139,23 @@ export default function PlanItensEditor({
           ) : (
             <div key={l.id} style={{ display: 'grid', gridTemplateColumns: estreito ? '1fr 28px' : '1fr 110px 28px', gap: 6, alignItems: 'center',
               ...(estreito && i > 0 ? { borderTop: `1px solid ${COR.borda}`, paddingTop: 8 } : {}) }}>
-              <input data-item aria-label={`Descrição do item ${i + 1}`} placeholder="Descrição" value={l.descricao}
-                onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, ...(estreito ? { gridColumn: '1 / -1' } : {}) }} />
+              {l.parcela ? (
+                <span style={{ ...(estreito ? { gridColumn: '1 / -1' } : {}), display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input data-item aria-label={`Nome da compra (parcela ${l.parcela.atual} de ${l.parcela.total})`} placeholder="Nome da compra"
+                      value={l.descricao} onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, flex: 1, minWidth: 0 }} />
+                    <span style={{ fontSize: 13, color: COR.textoSuave, whiteSpace: 'nowrap' }}>{l.parcela.atual} de {l.parcela.total}</span>
+                  </span>
+                  <span style={{ fontSize: 12, color: COR.textoSuave }}>
+                    {l.descricao.trim() && l.descricao.trim() !== l.parcela.nome
+                      ? `Ao salvar, as ${l.parcela.total} parcelas da compra passam a se chamar "${l.descricao.trim()}".`
+                      : 'Parcela de compra no cartão: o nome vale para todas as parcelas.'}
+                  </span>
+                </span>
+              ) : (
+                <input data-item aria-label={`Descrição do item ${i + 1}`} placeholder="Descrição" value={l.descricao}
+                  onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, ...(estreito ? { gridColumn: '1 / -1' } : {}) }} />
+              )}
               <input data-item aria-label={`Valor do item ${i + 1}`} placeholder="0,00" inputMode="decimal" value={l.valor}
                 onChange={e => { setErro(null); mudar(l.id, 'valor', e.target.value) }}
                 style={{ ...campo, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
