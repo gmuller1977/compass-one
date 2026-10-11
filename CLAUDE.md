@@ -1294,6 +1294,41 @@ gasto contra as linhas do Radar sem as fixas, a fronteira dos 10 pontos, o
 último dia, o estouro compensado no total e o controle negativo (sem variável
 planejada, sem quadro).
 
+**O motivo de passar do plano é anotado NA HORA, e a Revisão mensal abre
+com ele.** Pedido do Guilherme em 11/10/2026: "fui usar [a Revisão mensal] e
+esqueci o motivo de ter passado do plano". No mês corrente, toda categoria de
+despesa que passou do plano com desvio acima de `desvioMinPerc` (o MESMO corte
+da Revisão) pede o motivo: faixa azul "X passou do plano: por quê? · Anotar
+motivo" no Radar (computador e celular), linha no pé de "Passou do plano" na
+Bússola, e o botão do aviso "passou" da Início vira "Anotar o motivo" enquanto
+houver categoria sem motivo. Regras em
+[`motivoDoEstouro.ts`](src/utils/motivoDoEstouro.ts), sobre
+`categoriasEstouradas` — nenhum número novo.
+
+- Grava em `licoes_aprendidas`, a tabela da Revisão, sem migração:
+  `categoria_nome` é o rótulo da linha do Radar ("Academia · Martin") e
+  `acao_tomada` nula quer dizer "anotado, ainda não revisado". Texto apagado
+  apaga a linha não revisada. Por login, como a Revisão sempre gravou.
+- A Revisão mensal preenche "O que aconteceu?" e o tipo do evento com o motivo
+  ("· anotado durante o mês") e, ao salvar, ATUALIZA a linha em vez de criar
+  outra. Ela também passou a gravar o rótulo com a variante.
+- Não é alerta no LANÇAMENTO (decisão de 06/10 continua): é um convite no
+  Radar, na Início e na Bússola, e não mexe no plano.
+- `prova70` (14 invariantes): o corte, meio centavo, sem plano, casar pela
+  variante, motivo em branco não conta, e o controle "tudo anotado, sem aviso".
+
+**Resumo mensal removido; Análises virou o histórico** (11/10/2026, pedido
+do Guilherme: "telas que não fazem mais sentido"). O Resumo mensal repetia o
+Radar com conta própria — o saldo de cada conta partia do saldo de CADASTRO e
+somava só o mês, a transferência contava como receita e despesa. `/resumo-mensal`
+cai em `/analises`. A única parte só dele, o **Patrimônio**, foi para Análises
+(`PatrimonioCard`: `detalharMes` por conta − `memoriaDoRadar().faturaEmAberto`).
+Análises perdeu o que estava em outro lugar — Ritmo e Estouradas (Radar,
+Bússola), Últimas movimentações (Lançamentos), faixa do Aurix (tela própria) —
+e ficou com Mês a mês, Por categoria, Precisão do plano, Patrimônio e Metas e
+dívidas. A Revisão mensal FICA, por escolha dele. A aba "Total" de Lançamentos
+não foi tocada (tela congelada).
+
 **A Início enxuta: a resposta, o que pede atenção, um gráfico e a porta para
 Análises.** Decidido pelo Guilherme em 06/10/2026, sobre um modelo em HTML:
 "o início está uma tela cheia de número, e falando de forma comercial isso

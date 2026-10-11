@@ -14,7 +14,7 @@
  */
 
 export type TelaAjuda =
-  | 'inicio' | 'lancamentos' | 'planejamento' | 'radar' | 'resumo'
+  | 'inicio' | 'lancamentos' | 'planejamento' | 'radar'
   | 'configuracoes' | 'simulador' | 'analises'
 
 export type Ajuda = {
@@ -68,18 +68,10 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       'Verde é dentro do plano (o verde-claro está no limite); vermelho passou do planejado.',
       'Cada grupo abre e mostra as categorias, com quanto resta ou quanto passou.',
       'Errou o plano de uma categoria? Abra ela e use "ajustar plano"; vale do mês seguinte em diante.',
+      'Passou do plano? "Anotar motivo" guarda o porquê na hora; a Revisão mensal abre com ele.',
       'A barra no pé mostra o saldo final previsto e abre a conta dele.',
     ],
     perguntas: ['O que significam as cores do Radar?', 'Como ajusto o plano pelo Radar?'],
-  },
-  resumo: {
-    titulo: 'Resumo mensal',
-    resumo: 'A foto do mês: receitas, despesas, faturas e como ele vai fechar.',
-    dicas: [
-      'Use antes da revisão mensal, para ver o mês inteiro numa tela.',
-      'Compare com o mês anterior pelo seletor de mês.',
-    ],
-    perguntas: ['O que vejo no Resumo mensal?'],
   },
   configuracoes: {
     titulo: 'Configurações',
@@ -103,7 +95,7 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
   },
   analises: {
     titulo: 'Análises',
-    resumo: 'O detalhe dos meses: ritmo do gasto, categorias que estouraram, previsto × realizado e precisão do plano.',
+    resumo: 'O histórico: previsto × realizado mês a mês, a precisão do plano e o patrimônio de hoje.',
     dicas: [
       '"Por categoria" mostra a mesma categoria ao longo dos meses.',
       'A precisão do plano diz em média quanto o plano erra, e onde.',

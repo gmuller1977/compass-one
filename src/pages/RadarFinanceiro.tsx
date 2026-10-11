@@ -20,6 +20,7 @@ import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 import ResumoRadarFaixa from '../components/acompanhamento/ResumoRadarFaixa'
 import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
+import MotivoEstouroFaixa from '../components/motivo/MotivoEstouroFaixa'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { resumoDoMes } from '../utils/resumoRadar'
@@ -207,6 +208,8 @@ export default function RadarFinanceiro() {
         onCenario={setCenarioPrevisao}
         lancadoAcima={lancadoAcima}
         onRevisar={() => setRevisando(true)}
+        faixaMotivo={ehMesCorrente && dadosAno
+          ? <MotivoEstouroFaixa linhasSaida={linhasSaida} ano={ano} mes={mes} /> : null}
       />
       {revisando && (
         <RevisaoPlanoDialog acima={lancadoAcima} deps={depsSaldo} planos={planos} setPlanos={setPlanos}
@@ -288,6 +291,7 @@ export default function RadarFinanceiro() {
           <AjustePlanoContexto.Provider value={setAjuste}>
             {resumo && <ResumoRadarFaixa resumo={resumo} />}
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
+            {ehMesCorrente && <MotivoEstouroFaixa linhasSaida={linhasSaida} ano={ano} mes={mes} />}
             {/* ENTRADAS — um card por grupo */}
             {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
               <EvolucaoGrupo

@@ -77,8 +77,8 @@ export function resolverRealKey(
  * nao tem, e ai so da para inferir quando a categoria tem UMA variante ativa —
  * com duas, chutar somaria no lugar errado.
  *
- * Existem copias locais desta funcao em RadarFinanceiro e ResumoMensal. Ficaram
- * la de proposito: as duas telas funcionam e nao vale mexer agora.
+ * Existe uma copia local desta funcao em RadarFinanceiro. Ficou la de
+ * proposito: a tela funciona e nao vale mexer agora.
  */
 export function resolverSub(
   categorias: Categoria[],

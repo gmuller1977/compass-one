@@ -10,6 +10,7 @@ import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { avisosDoMes } from '../utils/avisosDoMes'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
+import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
 import AvisosCard from '../components/inicio/AvisosCard'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
@@ -78,6 +79,9 @@ export default function Dashboard() {
   // previsão — pedido do Guilherme em 27/09/2026, para se preparar para o
   // mês que vem. O seletor vai até o fim do plano; sem plano, até hoje.
   const ehMesCorrente = viewAno === hoje.getFullYear() && viewMes === hoje.getMonth()
+  // "Passou do plano: por quê?" — o botão do aviso "passou" abre a anotação
+  // do motivo enquanto alguma categoria estourada não tem um.
+  const motivo = useLembreteMotivo(ehMesCorrente && usaPlanoNoMes ? linhasSaida : [], viewAno, viewMes)
   const ymHoje = hoje.getFullYear() * 12 + hoje.getMonth()
   const ehFuturo = viewAno * 12 + viewMes > ymHoje
   const olhaAFrente = ehMesCorrente || ehFuturo
@@ -329,11 +333,14 @@ export default function Dashboard() {
               acoes={{
                 contas:   { rotulo: contasAbertas ? 'Fechar a lista' : 'Ver contas', aberto: contasAbertas,
                             onClick: () => setContasAbertas(v => !v) },
-                passou:   { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
+                passou:   motivo.texto
+                  ? { rotulo: 'Anotar o motivo', onClick: motivo.abrir }
+                  : { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
                 parcelas: { rotulo: 'Revisar agora', onClick: () => setRevisando(true) },
                 negativo: { rotulo: 'Ver o plano', onClick: () => navigate('/planejamento') },
-                ritmo:    { rotulo: 'Ver o ritmo', onClick: () => navigate('/analises#este-mes') },
+                ritmo:    { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
               }} />
+            {motivo.dialog}
             {revisando && (
               <RevisaoPlanoDialog acima={lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
                 categorias={categorias} onFechar={() => setRevisando(false)} />
@@ -393,7 +400,7 @@ export default function Dashboard() {
               ['mes-a-mes', 'Mês a mês', 'Receitas e despesas contra o plano'],
               ['por-categoria', 'Por categoria', 'Cada categoria ao longo dos meses'],
               ['precisao', 'Precisão do plano', 'Onde o plano costuma errar'],
-              ['movimentacoes', 'Movimentações', 'Últimos lançamentos, metas e dívidas'],
+              ['patrimonio', 'Patrimônio', 'Contas, faturas, metas e dívidas'],
             ] as const).map(([ancora, nomeBotao, sub]) => (
               <button key={ancora} type="button" onClick={() => navigate(`/analises#${ancora}`)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, textAlign: 'left',

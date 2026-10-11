@@ -9,6 +9,8 @@ import SeletorMesAno from '../SeletorMesAno'
 import { useApp } from '../../context/AppContext'
 import type { DadosMes } from '../../context/AppContext'
 import { construirRealizadoMes } from '../../utils/realizadoMes'
+import { rotuloDaLinha } from '../../utils/motivoDoEstouro'
+import { useMotivosDoMes, avisarMotivosMudaram } from '../motivo/useMotivosDoMes'
 import type { CatReal } from '../acompanhamento/AcShared'
 import type { Categoria } from '../../context/AppContext'
 
@@ -121,6 +123,12 @@ export default function PlanRevisao({
   const [expandOkE, setExpandOkE]   = useState(false)
   const [expandOkS, setExpandOkS]   = useState(false)
   const isMobile = useIsMobile()
+  // O motivo anotado durante o mês, quando a categoria passou do plano
+  // (MotivoEstouroFaixa). A justificativa abre com ele, e salvar a revisão
+  // ATUALIZA essa linha em vez de criar outra.
+  const { motivos } = useMotivosDoMes(anoAtual, mesSel)
+  const motivoDe = (tipo: 'e' | 's', cat: { nome: string; descricao?: string }) =>
+    tipo === 's' ? motivos.find(m => m.categoria === rotuloDaLinha(cat)) : undefined
 
 
   // Mesma funcao que o Radar usa. Antes a Revisao tinha o proprio calculo e os
@@ -186,11 +194,15 @@ export default function PlanRevisao({
   }
 
   function getJust(key: string): JustState {
-    return justs[key] ?? emptyJust()
+    if (justs[key]) return justs[key]
+    const [tipo, ri] = key.split('-')
+    const cat = tipo === 's' ? dadosPrevisto.saidas[Number(ri)] : undefined
+    const m = cat ? motivoDe('s', cat) : undefined
+    return m ? { ...emptyJust(), justificativa: m.justificativa, tipoEvento: m.tipoEvento ?? '' } : emptyJust()
   }
 
   function setJust(key: string, patch: Partial<JustState>) {
-    setJusts(prev => ({ ...prev, [key]: { ...(prev[key] ?? emptyJust()), ...patch } }))
+    setJusts(prev => ({ ...prev, [key]: { ...(prev[key] ?? getJust(key)), ...patch } }))
   }
 
   function validarEtapa2(): string | null {
@@ -218,6 +230,7 @@ export default function PlanRevisao({
 
       const mesInicio = mesSel + 1
       const rows: Record<string, unknown>[] = []
+      const atualizacoes: { id: string; row: Record<string, unknown> }[] = []
 
       for (const { tipo, cat, ri, planejado, real, desvioPercent } of catsDesvio) {
         const key  = `${tipo}-${ri}`
@@ -225,9 +238,10 @@ export default function PlanRevisao({
         const desvio = real - planejado
         const desvioPercentSigned = planejado > 0 ? Math.round((real - planejado) / planejado * 100) : 0
 
-        rows.push({
+        const anotado = motivoDe(tipo, cat)
+        const row: Record<string, unknown> = {
           user_id: user.id, ano: anoAtual, mes: mesSel,
-          categoria_nome: cat.nome,
+          categoria_nome: rotuloDaLinha(cat),
           tipo: tipo === 'e' ? 'receita' : 'despesa',
           valor_previsto: planejado, valor_realizado: real,
           desvio, desvio_percentual: desvioPercentSigned,
@@ -237,7 +251,9 @@ export default function PlanRevisao({
           tags: j.tags.length > 0 ? j.tags : null,
           acao_tomada: j.acao || 'mantido',
           valor_ajustado: j.acao === 'ajustado' ? (parseFloat(j.valorAjustado) || null) : null,
-        })
+        }
+        if (anotado) atualizacoes.push({ id: anotado.id, row })
+        else rows.push(row)
 
         if (mesInicio <= 11) {
           if (j.acao === 'aceito') {
@@ -253,8 +269,14 @@ export default function PlanRevisao({
         const { error } = await supabase.from('licoes_aprendidas').insert(rows)
         if (error) throw error
       }
+      for (const a of atualizacoes) {
+        const { error } = await supabase.from('licoes_aprendidas').update(a.row).eq('id', a.id)
+        if (error) throw error
+      }
+      if (atualizacoes.length > 0) avisarMotivosMudaram()
 
-      mostrarToast(`Revisão salva ✓ — ${rows.length} lição(ões) registrada(s)`, true)
+      const total = rows.length + atualizacoes.length
+      mostrarToast(`Revisão salva ✓ — ${total} lição(ões) registrada(s)`, true)
       mudarMes(mesSel)
     } catch (err: unknown) {
       mostrarToast(`Erro: ${err instanceof Error ? err.message : String(err)}`, false)
@@ -599,6 +621,9 @@ export default function PlanRevisao({
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave, display: 'block', marginBottom: 6 }}>
                           O que aconteceu?{obrigatorio && <span style={{ color: COR.vermelho }}> *</span>}
+                          {motivoDe(tipo, cat) && (
+                            <span style={{ fontWeight: 600, color: COR.azul, marginLeft: 6 }}>· anotado durante o mês</span>
+                          )}
                         </label>
                         <textarea value={j.justificativa} onChange={e => setJust(key, { justificativa: e.target.value })}
                           placeholder={obrigatorio ? 'Obrigatório para desvios acima de 20%' : 'Opcional — descreva o motivo do desvio'}

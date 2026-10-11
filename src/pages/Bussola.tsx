@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import { STATUS_HERO, statusDoMes } from '../components/inicio/statusHero'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
+import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
@@ -48,6 +49,8 @@ export default function Bussola() {
     () => bussolaDoMes({ deps, linhasSaida, categorias, usaPlanoNoMes }),
     [deps, linhasSaida, categorias, usaPlanoNoMes],
   )
+  // O motivo de ter passado, anotado na hora (Revisão mensal abre com ele).
+  const motivo = useLembreteMotivo(usaPlanoNoMes ? linhasSaida : [], ano, mes)
   const status = STATUS_HERO[statusDoMes({ totalEntradas, totalSaidas, totalPrevS, temPlano })]
 
   const [memoriaAberta, setMemoriaAberta] = useState(false)
@@ -221,6 +224,15 @@ export default function Bussola() {
                       direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
                   )
                 })}
+                {motivo.texto && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12,
+                    borderTop: `1px solid ${COR.borda}` }}>
+                    <span style={{ flex: 1, fontSize: M.legenda, color: COR.textoSuave, lineHeight: 1.4 }}>
+                      Por que passou? Anote agora, enquanto lembra.
+                    </span>
+                    <Pilula onClick={motivo.abrir}>Anotar motivo</Pilula>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -256,6 +268,7 @@ export default function Bussola() {
         <LembreteDiarioCard />
       </div>
 
+      {motivo.dialog}
       {revisando && (
         <RevisaoPlanoDialog acima={b.lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
           categorias={categorias} onFechar={() => setRevisando(false)} />
