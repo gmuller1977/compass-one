@@ -90,11 +90,7 @@ export default function Norte() {
     rr.start()
   }
   function irPara(a: AcaoNorte) {
-    const rota = ACOES_NORTE[a].rota
-    if (rota.startsWith('/#')) {
-      navigate('/')
-      setTimeout(() => document.getElementById(rota.slice(2))?.scrollIntoView({ behavior: 'smooth' }), 400)
-    } else navigate(rota)
+    navigate(ACOES_NORTE[a].rota)
   }
 
   return (

@@ -384,7 +384,7 @@ export default function AcMobileView({
             title="Veja se está no caminho certo"
             description={`Aqui você compara o que planejou com o que gastou em ${ano}. Para começar, monte seu plano.`}
             actionLabel="Criar plano →"
-            onAction={() => navigate('/planejamento?modo=wizard')}
+            onAction={() => navigate(`/planejamento?ano=${ano}`)}
           />
         ) : (<>
           {resumo && <ResumoRadarFaixa resumo={resumo} />}

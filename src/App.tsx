@@ -112,6 +112,16 @@ function SoNoCelular({ children, senao }: { children: ReactNode; senao: string }
   return <Protegido>{children}</Protegido>
 }
 
+/**
+ * Telas só do computador. A Início do computador (Dashboard) no celular é a
+ * Bússola, na "/": link antigo para /dashboard não abre a versão web ali.
+ */
+function SoNoComputador({ children, senao }: { children: ReactNode; senao: string }) {
+  const isMobile = useIsMobile()
+  if (isMobile) return <Navigate to={senao} replace />
+  return <Protegido>{children}</Protegido>
+}
+
 function Protegido({ children }: { children: ReactNode }) {
   const { user, carregando, onboardingCompleto } = useApp()
   const location = useLocation()
@@ -139,7 +149,7 @@ export default function App() {
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
           <Route path="/norte"           element={<Protegido><Norte /></Protegido>} />
           <Route path="/posso-comprar"   element={<Navigate to="/simulacao" replace />} />
-          <Route path="/dashboard"       element={<Protegido><Dashboard /></Protegido>} />
+          <Route path="/dashboard"       element={<SoNoComputador senao="/"><Dashboard /></SoNoComputador>} />
           <Route path="/analises"        element={<Navigate to="/revisaomensal" replace />} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/radar"           element={<Protegido><RadarFinanceiro /></Protegido>} />

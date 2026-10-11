@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
-import BottomNav from '../components/BottomNav'
 import PageHeader from '../components/PageHeader'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { SeletorAno } from '../components/SeletorMesAno'
@@ -393,7 +392,6 @@ export default function Planejamento() {
         )
       })()}
 
-      {isMobile && <BottomNav />}
     </div>
   )
 }

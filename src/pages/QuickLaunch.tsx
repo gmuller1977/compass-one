@@ -52,7 +52,7 @@ export default function QuickLaunch() {
   const isMobile   = useIsMobile()
 
   useEffect(() => {
-    if (!isMobile) navigate('/dashboard', { replace: true })
+    if (!isMobile) navigate('/novo-lancamento', { replace: true })
   }, [isMobile, navigate])
   // "Pagar contas" da Bússola abre aqui, já nas contas da semana.
   const location = useLocation()

@@ -321,7 +321,7 @@ export default function Onboarding() {
         </div>
 
         <div style={{ maxWidth: 360, width: '100%' }}>
-          <button onClick={() => navigate('/novo-lancamento')} style={{
+          <button onClick={() => navigate('/lancar')} style={{
             width: '100%', padding: '14px 20px', border: 'none', borderRadius: 12,
             background: '#fff', color: COR.azulEscuro,
             fontSize: 16, fontWeight: 700, cursor: 'pointer',

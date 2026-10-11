@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
-import BottomNav from '../components/BottomNav'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import PlanRevisao from '../components/planejamento/PlanRevisao'
 import { useApp } from '../context/AppContext'
@@ -86,7 +85,6 @@ export default function RevisaoMensal() {
         )}
       </div>
 
-      {isMobile && <BottomNav />}
     </div>
   )
 }

@@ -35,7 +35,7 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       'No topo, o saldo previsto para o fim do mês e quanto ainda dá para gastar nas despesas variáveis.',
       '"Como cheguei nesse número" abre a conta linha a linha.',
       'Os avisos só aparecem quando há algo a fazer: conta vencendo, grupo que passou do plano, mês negativo à frente.',
-      'O detalhe mês a mês e por categoria fica em Análises.',
+      'O detalhe mês a mês e por categoria fica na Revisão mensal.',
     ],
     perguntas: ['O que significa "ainda dá para gastar"?', 'Como o app calcula o saldo previsto?'],
   },

@@ -249,7 +249,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                 que sai nos seus próximos meses. Sem isso, qualquer resposta seria
                 chute.</>}
         </div>
-        <button onClick={() => navigate(emDescoberta ? '/novo-lancamento' : '/planejamento')} style={{
+        <button onClick={() => navigate(emDescoberta ? '/lancar' : '/planejamento')} style={{
           marginTop: 20, padding: '12px 22px', border: 'none', borderRadius: 10,
           background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
           color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',

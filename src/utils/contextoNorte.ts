@@ -182,7 +182,7 @@ export function contextoNorte(d: DadosNorte, categorias: Categoria[]): string {
 export const ACOES_NORTE = {
   radar:         { rotulo: 'Ver no Radar',     rota: '/radar' },
   lancar:        { rotulo: 'Lançar um gasto',  rota: '/lancar' },
-  contas:        { rotulo: 'Pagar contas',     rota: '/#contas-da-semana' },
+  contas:        { rotulo: 'Pagar contas',     rota: '/lancar#contas' },
   'posso-comprar': { rotulo: 'Posso comprar?', rota: '/simulacao' },
   planejamento:  { rotulo: 'Abrir o plano',    rota: '/planejamento' },
   revisao:       { rotulo: 'Revisão mensal',   rota: '/revisaomensal' },

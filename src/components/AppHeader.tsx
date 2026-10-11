@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import BottomNav from './BottomNav'
 
 // ── Breakpoint ────────────────────────────────────────────────────────────
 function useIsMobile() {
@@ -12,82 +13,6 @@ function useIsMobile() {
   }, [])
   return v
 }
-
-// ── Ícones SVG ────────────────────────────────────────────────────────────
-function IcHome({ active }: { active: boolean }) {
-  const c = active ? '#1a56db' : '#94a3b8'
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  )
-}
-function IcChart({ active }: { active: boolean }) {
-  const c = active ? '#1a56db' : '#94a3b8'
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/>
-      <line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6"  y1="20" x2="6"  y2="14"/>
-    </svg>
-  )
-}
-function IcPlus() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-      stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="12" y1="5" x2="12" y2="19"/>
-      <line x1="5"  y1="12" x2="19" y2="12"/>
-    </svg>
-  )
-}
-function IcCalendar({ active }: { active: boolean }) {
-  const c = active ? '#1a56db' : '#94a3b8'
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8"  y1="2" x2="8"  y2="6"/>
-      <line x1="3"  y1="10" x2="21" y2="10"/>
-    </svg>
-  )
-}
-function IcGear({ active }: { active: boolean }) {
-  const c = active ? '#1a56db' : '#94a3b8'
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-    </svg>
-  )
-}
-
-// ── Itens de navegação ────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { label: 'Início',        path: '/dashboard'       },
-  { label: 'Configurações', path: '/configuracoes'   },
-  { label: 'Planejamento',  path: '/planejamento'    },
-  { label: 'Lançamentos',   path: '/novo-lancamento' },
-  { label: 'Radar financeiro', path: '/radar'         },
-  { label: 'Revisão mensal', path: '/revisaomensal'  },
-]
-
-type TabDef =
-  | { path: string; label: string; type: 'icon'; Icon: React.ComponentType<{ active: boolean }> }
-  | { path: string; label: string; type: 'fab' }
-
-const BOTTOM_TABS: TabDef[] = [
-  { path: '/dashboard',       label: 'Início',  type: 'icon', Icon: IcHome     },
-  { path: '/radar',           label: 'Radar',   type: 'icon', Icon: IcChart    },
-  { path: '/novo-lancamento', label: 'Lançar',  type: 'fab'                    },
-  { path: '/planejamento',    label: 'Plano',   type: 'icon', Icon: IcCalendar },
-  { path: '/configuracoes',   label: 'Config.', type: 'icon', Icon: IcGear     },
-]
 
 // ── Logo SVG ──────────────────────────────────────────────────────────────
 function CompassSvg({ size = 16 }: { size?: number }) {
@@ -103,7 +28,7 @@ function CompassSvg({ size = 16 }: { size?: number }) {
 // ── Componente principal ──────────────────────────────────────────────────
 type Props = { currentPath: string; hideBottomTab?: boolean }
 
-export default function AppHeader({ currentPath, hideBottomTab }: Props) {
+export default function AppHeader({ hideBottomTab }: Props) {
   const navigate       = useNavigate()
   const { sairDaConta } = useApp()
   const [dropdown, setDropdown] = useState(false)
@@ -148,8 +73,7 @@ export default function AppHeader({ currentPath, hideBottomTab }: Props) {
   if (!isMobile) return null
 
   // ── MOBILE ──────────────────────────────────────────────────────────────
-  if (isMobile) {
-    return (
+  return (
       <>
         {/* Top bar compacta */}
         <div style={{
@@ -160,7 +84,7 @@ export default function AppHeader({ currentPath, hideBottomTab }: Props) {
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-            onClick={() => navigate('/dashboard')}>
+            onClick={() => navigate('/')}>
             <div style={{ width: 28, height: 28, borderRadius: 8,
               background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -173,108 +97,11 @@ export default function AppHeader({ currentPath, hideBottomTab }: Props) {
           {avatarEl}
         </div>
 
-        {/* Bottom tab bar */}
-        {!hideBottomTab && <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
-          background: '#fff',
-          borderTop: '1px solid #e2e8f0',
-          boxShadow: '0 -2px 12px rgba(0,0,0,0.07)',
-          display: 'flex',
-          height: 60,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}>
-          {BOTTOM_TABS.map(tab => {
-            const active = currentPath === tab.path
-            if (tab.type === 'fab') {
-              return (
-                <button key={tab.path}
-                  onClick={() => navigate(tab.path)}
-                  style={{
-                    flex: 1, border: 'none', background: 'transparent',
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', padding: 0,
-                  }}>
-                  <div style={{
-                    width: 46, height: 46, borderRadius: '50%',
-                    background: active
-                      ? 'linear-gradient(135deg,#1a40b8,#2563eb)'
-                      : 'linear-gradient(135deg,#1a56db,#3b82f6)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 3px 10px rgba(26,86,219,0.45)',
-                    marginBottom: 2,
-                  }}>
-                    <IcPlus />
-                  </div>
-                </button>
-              )
-            }
-            return (
-              <button key={tab.path}
-                onClick={() => navigate(tab.path)}
-                style={{
-                  flex: 1, border: 'none', background: 'transparent',
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                  gap: 3, padding: '8px 0 4px',
-                  cursor: 'pointer', fontFamily: 'inherit',
-                  position: 'relative',
-                }}>
-                {active && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: '25%', right: '25%',
-                    height: 2, borderRadius: 2, background: '#1a56db',
-                  }} />
-                )}
-                <tab.Icon active={active} />
-                <span style={{
-                  fontSize: 10, lineHeight: 1,
-                  fontWeight: active ? 600 : 400,
-                  color: active ? '#1a56db' : '#94a3b8',
-                }}>{tab.label}</span>
-              </button>
-            )
-          })}
-        </div>}
+        {/* Barra de baixo: a MESMA do resto do celular (Início · Radar · + ·
+            Norte · Mais). A antiga desta tela levava a /dashboard, a Início do
+            computador, e a Lançamentos completos no lugar do lançamento rápido. */}
+        {!hideBottomTab && <BottomNav />}
       </>
-    )
-  }
-
-  // ── DESKTOP ──────────────────────────────────────────────────────────────
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg,#0f2878,#2563eb)',
-      padding: '16px 28px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      flexShrink: 0,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-          onClick={() => navigate('/dashboard')}>
-          <div style={{ width: 32, height: 32, borderRadius: 8,
-            background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CompassSvg size={16} />
-          </div>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 17 }}>
-            Compass <span style={{ fontWeight: 300, opacity: .75 }}>One</span>
-          </span>
-        </div>
-        <nav style={{ display: 'flex', gap: 2 }}>
-          {NAV_ITEMS.map(n => (
-            <button key={n.path} onClick={() => navigate(n.path)} style={{
-              padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-              background: currentPath === n.path ? 'rgba(255,255,255,0.2)' : 'transparent',
-              color:      currentPath === n.path ? '#fff' : 'rgba(255,255,255,0.6)',
-            }}>
-              {n.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-      {avatarEl}
-    </div>
   )
 }
 
