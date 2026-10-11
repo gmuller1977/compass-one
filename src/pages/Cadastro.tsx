@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { urlDoApp } from '../utils/site'
 import { codigoRecebido } from '../utils/indicacao'
 
 function useIsMobile() {
@@ -148,7 +149,7 @@ export default function Cadastro() {
         password: senha,
         options: {
           data: { nome, indicado_por: codigoRecebido() ?? undefined },
-          emailRedirectTo: window.location.origin + '/',
+          emailRedirectTo: urlDoApp('/'),
         },
       })
       if (error) throw error
@@ -178,7 +179,7 @@ export default function Cadastro() {
     setCarregando(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/' },
+      options: { redirectTo: urlDoApp('/') },
     })
     if (error) setErro(traduzirErro(error.message))
     setCarregando(false)
@@ -187,7 +188,7 @@ export default function Cadastro() {
   async function handleReenviar() {
     setCarregando(true)
     setReenvio(null)
-    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: window.location.origin + '/' } })
+    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: urlDoApp('/') } })
     setReenvio(error ? { ok: false, texto: traduzirErro(error.message) } : { ok: true, texto: 'E-mail reenviado.' })
     setCarregando(false)
   }

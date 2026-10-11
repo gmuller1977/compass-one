@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { urlDoApp } from '../utils/site'
 import { saiuPorInatividade, esquecerSaidaPorInatividade } from '../utils/inatividade'
 import { COR } from '../utils/cores'
 import {
@@ -221,7 +222,7 @@ export default function Login() {
     setCarregando(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/' },
+      options: { redirectTo: urlDoApp('/') },
     })
     if (error) setErro(traduzirErro(error.message))
     setCarregando(false)
@@ -233,7 +234,7 @@ export default function Login() {
     if (!email) { setErro('Digite seu e-mail para recuperar a senha'); return }
     setCarregando(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/redefinir-senha',
+      redirectTo: urlDoApp('/redefinir-senha'),
     })
     if (error) setErro(traduzirErro(error.message))
     else setSucesso('Link de recuperação enviado! Verifique sua caixa de entrada.')

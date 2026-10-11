@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { SITE_URL } from './site'
 
 /**
  * Link de indicação (11/10/2026, pedido do Guilherme no lugar da
@@ -44,7 +45,7 @@ export function esquecerCodigoRecebido() {
   try { localStorage.removeItem(CHAVE) } catch { /* sem storage */ }
 }
 
-export function linkDeIndicacao(codigo: string, origem = window.location.origin): string {
+export function linkDeIndicacao(codigo: string, origem = SITE_URL): string {
   return `${origem}/i/${codigo}`
 }
 
