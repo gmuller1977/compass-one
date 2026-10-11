@@ -43,6 +43,8 @@ export default function PlanItensEditor({
   })
   const [ateDezembro, setAteDezembro] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  // Celular: a descrição ganha a linha inteira — "Bicicleta · 4 de 6" não cabia ao lado do valor.
+  const estreito = window.innerWidth < 640
   const caixa = useRef<HTMLDivElement>(null)
 
   // Foco no primeiro campo vazio, UMA vez; Esc fecha. O onFechar vai por ref:
@@ -83,7 +85,7 @@ export default function PlanItensEditor({
   }
 
   const campo: React.CSSProperties = {
-    font: 'inherit', fontSize: 13, border: `1px solid ${COR.borda}`, borderRadius: 8,
+    font: 'inherit', fontSize: estreito ? 16 : 13, border: `1px solid ${COR.borda}`, borderRadius: 8,
     padding: '7px 9px', width: '100%', boxSizing: 'border-box', color: COR.texto,
   }
 
@@ -114,9 +116,10 @@ export default function PlanItensEditor({
               <span />
             </div>
           ) : (
-            <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 28px', gap: 6, alignItems: 'center' }}>
+            <div key={l.id} style={{ display: 'grid', gridTemplateColumns: estreito ? '1fr 28px' : '1fr 110px 28px', gap: 6, alignItems: 'center',
+              ...(estreito && i > 0 ? { borderTop: `1px solid ${COR.borda}`, paddingTop: 8 } : {}) }}>
               <input data-item aria-label={`Descrição do item ${i + 1}`} placeholder="Descrição" value={l.descricao}
-                onChange={e => mudar(l.id, 'descricao', e.target.value)} style={campo} />
+                onChange={e => mudar(l.id, 'descricao', e.target.value)} style={{ ...campo, ...(estreito ? { gridColumn: '1 / -1' } : {}) }} />
               <input data-item aria-label={`Valor do item ${i + 1}`} placeholder="0,00" inputMode="decimal" value={l.valor}
                 onChange={e => { setErro(null); mudar(l.id, 'valor', e.target.value) }}
                 style={{ ...campo, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
