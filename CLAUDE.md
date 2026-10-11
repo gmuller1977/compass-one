@@ -1324,8 +1324,9 @@ conta partia do saldo de CADASTRO e somava só o mês, a transferência contava
 como receita e despesa. `/resumo-mensal` e `/analises` caem em
 `/revisaomensal`. O que só elas tinham foi para onde já é lido:
 
-- **Patrimônio hoje** → Início, no lugar do "Quer ver em detalhe?"
-  (`PatrimonioCard`: `detalharMes` por conta − `memoriaDoRadar().faturaEmAberto`).
+- **Patrimônio**: saiu de vez. Passou umas horas na Início e o Guilherme
+  pediu para tirar: "já tem essa informação no Início e no Radar" (saldo de
+  hoje e saldo por conta). O "Quer ver em detalhe?" da Início saiu junto.
 - **Mês a mês / Por categoria** e **Precisão do plano** → Revisão mensal,
   embaixo da revisão do mês (era o próximo passo registrado na Precisão).
 - O resto já estava em outro lugar e saiu: Ritmo e Estouradas (Radar, Bússola),
