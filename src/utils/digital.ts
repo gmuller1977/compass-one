@@ -45,6 +45,20 @@ export function esquecerDigitalAqui(userId: string) {
   try { localStorage.setItem(CHAVE_CADASTRADA, JSON.stringify(ler(CHAVE_CADASTRADA).filter(id => id !== userId))) } catch { /* idem */ }
 }
 
+// Quem acabou de tocar em "Sair" não quer a digital pedida na cara logo em
+// seguida. Vale só para a próxima tela de login desta aba.
+const CHAVE_SAIU = 'compass-saiu-agora'
+export function marcarSaida() {
+  try { sessionStorage.setItem(CHAVE_SAIU, '1') } catch { /* sem sessionStorage, pede a digital */ }
+}
+/** A tela de login abre a digital sozinha, salvo logo depois de "Sair". */
+export function acabouDeSair(): boolean {
+  try { return sessionStorage.getItem(CHAVE_SAIU) === '1' } catch { return false }
+}
+export function esquecerSaida() {
+  try { sessionStorage.removeItem(CHAVE_SAIU) } catch { /* idem */ }
+}
+
 /** Algum login já cadastrou a digital neste aparelho? Põe o botão em destaque. */
 export const algumaDigitalAqui = () => ler(CHAVE_CADASTRADA).length > 0
 

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { saiuPorInatividade, esquecerSaidaPorInatividade } from '../utils/inatividade'
 import { COR } from '../utils/cores'
 import {
-  aparelhoTemDigital, algumaDigitalAqui, cadastrarDigital, digitalCadastradaAqui,
+  acabouDeSair, esquecerSaida, aparelhoTemDigital, algumaDigitalAqui, cadastrarDigital, digitalCadastradaAqui,
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
 
@@ -143,13 +143,33 @@ export default function Login() {
   const [ofertaDigital, setOfertaDigital] = useState<string | null>(null)
   useEffect(() => { aparelhoTemDigital().then(setTemDigital) }, [])
 
-  async function handleDigital() {
+  // Com a digital já usada neste aparelho, a leitura abre sozinha (pedido do
+  // Guilherme em 11/10/2026), uma vez por abertura da tela. Não abre logo
+  // depois de "Sair": quem saiu de propósito não quer o pedido na cara. Saída
+  // por inatividade abre, porque a pessoa está voltando. Onde o navegador
+  // exige um toque antes (Safari no iPhone), a tentativa falha calada e o
+  // botão em destaque continua lá.
+  // Lido no inicializador e esquecido num efeito, pelo mesmo motivo do aviso
+  // de inatividade acima.
+  const [saiuAgora] = useState(acabouDeSair)
+  useEffect(() => { esquecerSaida() }, [])
+  const tentouSozinho = useRef(false)
+  useEffect(() => {
+    if (!temDigital || !digitalEmDestaque || saiuAgora || tentouSozinho.current) return
+    tentouSozinho.current = true
+    handleDigital(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [temDigital, digitalEmDestaque, saiuAgora])
+
+  // `sozinho`: a tentativa automática ao abrir a tela não mostra erro; quem
+  // tocou no botão vê.
+  async function handleDigital(sozinho = false) {
     setErro(''); setSucesso('')
     setCarregando(true)
     const r = await entrarComDigital()
     setCarregando(false)
     if (r.ok) navigate('/')
-    else if (r.erro) setErro(r.erro)
+    else if (r.erro && !sozinho) setErro(r.erro)
   }
 
   async function ativarDigital() {
@@ -251,7 +271,7 @@ export default function Login() {
   )
 
   const botaoDigital = (destaque: boolean) => (
-    <button onClick={handleDigital} disabled={carregando} style={{
+    <button onClick={() => handleDigital()} disabled={carregando} style={{
       width:'100%', padding: destaque ? '15px' : '13px', borderRadius:14, fontFamily:'inherit',
       border: destaque ? 'none' : '1.5px solid #e2e8f0',
       background: destaque ? 'linear-gradient(135deg,#1a56db,#2563eb)' : '#fff',

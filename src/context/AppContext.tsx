@@ -7,6 +7,7 @@ import { mesesAlterados, lancamentosNovos } from '../utils/gravacaoPorMes'
 import { lerPendentes, guardarPendentes } from '../utils/pendentesLocais'
 import { guardarCopia, lerCopia, apagarCopias, type LinhasDoBanco } from '../utils/copiaLocal'
 import { supabase } from '../lib/supabase'
+import { marcarSaida } from '../utils/digital'
 import { limparUltimaAtividade } from '../utils/inatividade'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
@@ -1349,6 +1350,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao),
       ])
     }
+    marcarSaida()
     await supabase.auth.signOut()
   }
 

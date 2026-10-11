@@ -2414,7 +2414,12 @@ isso o botão aparece e diz que falta ativar. E-mail e senha seguem valendo.
 O botão só aparece onde o aparelho tem leitor; fica em destaque no topo
 depois que alguém já entrou com digital naquele aparelho (localStorage). Após
 entrar com a senha, oferece cadastrar UMA vez por login e aparelho; "Agora
-não" não volta. Cadastro e remoção também no Perfil (`CfgDigital`). A saída
+não" não volta. Cadastro e remoção também no Perfil (`CfgDigital`).
+Com a digital já usada no aparelho, **a leitura abre sozinha** ao chegar no
+login (pedido dele no mesmo dia), uma vez por abertura e sem mostrar erro;
+não abre logo depois de "Sair" (`marcarSaida` no `sairDaConta`), mas abre
+depois da saída por inatividade. Onde o navegador exige um toque (Safari no
+iPhone), falha calada e fica o botão. A saída
 por inatividade continua: depois dela entra-se de novo com a digital.
 
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
