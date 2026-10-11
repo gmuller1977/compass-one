@@ -17,6 +17,9 @@ interface Props {
   itens?: ItemPlano[] | null
   /** Abre o editor de itens; `partes` são as parcelas da conta digitada. */
   onItens?: (partes?: number[]) => void
+  /** Celular: campo com letra de 16 px (abaixo disso o iPhone dá zoom ao
+   *  focar) e toque maior. O valor em repouso herda a letra de quem envolve. */
+  grande?: boolean
 }
 
 /**
@@ -31,7 +34,7 @@ interface Props {
  * listar os elementos marcados na ordem do DOM, sem que este componente
  * precise saber onde está na grade.
  */
-export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens }: Props) {
+export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false }: Props) {
   const { toast } = useToast()
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
@@ -134,9 +137,9 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
           if (e.key === 'Escape') { skipBlurRef.current = true; fechar() }
         }}
         style={{
-          width: '100%', padding: '3px 7px', textAlign: align,
+          width: '100%', padding: grande ? '8px 10px' : '3px 7px', textAlign: align,
           border: `1.5px solid ${COR.azul}`, outline: 'none',
-          background: '#dbeafe', color: COR.azulEscuro, fontSize: 12,
+          background: '#dbeafe', color: COR.azulEscuro, fontSize: grande ? 16 : 12,
           fontFamily: 'inherit', fontWeight: 600, borderRadius: 6,
           boxSizing: 'border-box',
         }}
@@ -145,8 +148,8 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
         <span style={{
           position: 'absolute', top: 'calc(100% + 3px)', right: align === 'right' ? 0 : undefined,
           left: align === 'left' ? 0 : undefined, zIndex: 20, whiteSpace: 'nowrap',
-          background: '#0f172a', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 6,
-          padding: '3px 8px', fontVariantNumeric: 'tabular-nums', display: 'inline-flex', gap: 8, alignItems: 'center',
+          background: '#0f172a', color: '#fff', fontSize: grande ? 14 : 11, fontWeight: 600, borderRadius: 6,
+          padding: grande ? '8px 12px' : '3px 8px', fontVariantNumeric: 'tabular-nums', display: 'inline-flex', gap: 8, alignItems: 'center',
         }}>
           {ehConta && <span role="status">{resultado === null ? 'conta incompleta' : `= ${fmt(resultado)}`}</span>}
           {/* onMouseDown + preventDefault: o clique não pode tirar o foco do
@@ -184,7 +187,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       title={readOnly ? motivoBloqueio
         : temItens ? itens!.map(i => `${i.descricao || 'Sem nome'}: ${fmt(i.valor)}`).join('\n') : undefined}
       style={{
-        padding: '3px 7px', borderRadius: 6,
+        padding: grande ? '10px 8px' : '3px 7px', borderRadius: 6,
         cursor: readOnly ? (motivoBloqueio ? 'not-allowed' : 'default') : 'pointer',
         display: 'inline-block', minWidth: 60,
         textAlign: align, fontVariantNumeric: 'tabular-nums',
@@ -210,7 +213,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       {fmt(valor)}
       {/* infoTexto #0369a1 sobre #dbeafe: 5,0. */}
       {temItens && (
-        <span aria-hidden style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: COR.infoTexto,
+        <span aria-hidden style={{ marginLeft: 6, fontSize: grande ? 12 : 10, fontWeight: 700, color: COR.infoTexto,
           background: '#dbeafe', borderRadius: 999, padding: '1px 6px', verticalAlign: 1 }}>
           {itens!.length === 1 ? '1 item' : `${itens!.length} itens`}
         </span>

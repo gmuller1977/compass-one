@@ -2119,6 +2119,19 @@ invariantes): para três cartões (aberto, fechado, vence no mês seguinte) a
 compra cai no `construirRealizadoMes` exatamente no mês prometido, e o
 controle do dia do fechamento.
 
+**O Planejamento no celular é tela própria** (`PlanMobile`, 11/10/2026,
+pedido do Guilherme: "precisa ser revisada"). Antes era a Grade espremida:
+faixa anual cortada, cinco botões de ferramenta antes de qualquer número,
+cartões de mês com valores cortados ("R$ 5.8") e o modal do mês com uma
+coluna, rodapé azul por cima das categorias e "Ano inteiro" mostrando só
+janeiro. Agora: topo azul com a sobra planejada do mês escolhido, os meses em
+pílulas, "Saldo de [mês]" (começa com / termina com / fechou em / meta), as
+categorias do mês na própria página com a célula de sempre
+(`PlanCelulaEditavel grande`: campo de 16 px, senão o iPhone dá zoom), "[ano]
+mês a mês" e as ferramentas num cartão fechado. Sem modal no celular. Nenhum
+número novo: `previsto` e `dadosPrevistoFinal`, os mesmos da Grade, e o
+mesmo `handleSave`. O computador não mudou.
+
 **O Norte virou tela própria (`/norte`) e passou a saber os números do app**
 (10/10/2026, pedido do Guilherme: "temos que melhorar muito o agente"; o
 WhatsApp foi descartado por ele). Antes o contexto que ia para o Gemini era

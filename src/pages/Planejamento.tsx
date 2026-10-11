@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import AppHeader from '../components/AppHeader'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { SeletorAno } from '../components/SeletorMesAno'
@@ -14,6 +13,7 @@ import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
 import { medirDescoberta } from '../utils/descoberta'
 import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
+import PlanMobile from '../components/planejamento/PlanMobile'
 import PlanItensEditor from '../components/planejamento/PlanItensEditor'
 import { ItensPlanoContexto, type AbrirItens } from '../components/planejamento/itensContexto'
 import { itensDoMes } from '../utils/itensPlano'
@@ -46,7 +46,6 @@ function useIsMobile() {
 
 export default function Planejamento() {
   const navigate = useNavigate()
-  const location = useLocation()
   const isMobile = useIsMobile()
 
   const anoCorrente = new Date().getFullYear()
@@ -131,10 +130,6 @@ export default function Planejamento() {
     })
   }
 
-  const BTN_ANO_MOB: React.CSSProperties = {
-    border: 'none', background: '#f1f5f9', borderRadius: 6, cursor: 'pointer',
-    padding: '5px 8px', color: COR.textoSuave, fontSize: 11, lineHeight: 1,
-  }
 
 
   function handleBulkSave(ops: Parameters<typeof plan.editarMultiplosValores>[0]) {
@@ -221,61 +216,8 @@ export default function Planejamento() {
     if (chaveProposta) void marcarVisto(user, chaveProposta)
   }, [chaveProposta, user])
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: COR.fundo,
-      fontFamily: "-apple-system, 'Inter', sans-serif",
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {isMobile && <AppHeader currentPath={location.pathname} />}
-
-      {/* PageHeader — desktop only */}
-      {!isMobile && (
-        <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
-          <PageHeader
-            icon="ti-target"
-            breadcrumb="TODO ANO"
-            title="Planejamento"
-            ajuda="planejamento"
-            mb={12}
-            rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
-          />
-        </div>
-      )}
-
-      <AvisoSoAdministrador style={{ margin: '8px 16px 0', flexShrink: 0 }} />
-
-      {/* Mobile: o ano */}
-      {isMobile && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          padding: '8px 12px', background: COR.branco, borderBottom: `1px solid ${COR.borda}`,
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: COR.texto }}>Planejamento</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <button onClick={() => setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={BTN_ANO_MOB}>◄</button>
-            <span style={{ fontSize: 13, fontWeight: 800, color: COR.texto, minWidth: 38,
-              textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{anoAtual}</span>
-            <button onClick={() => setAnoAtual(a => a + 1)} aria-label="Próximo ano" style={BTN_ANO_MOB}>►</button>
-          </div>
-        </div>
-      )}
-
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {/* A faixa da fase, acima de qualquer visao: e ela que troca doze
-            cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
-        {descoberta.ativa && (
-          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
-            <DescobertaBanner
-              d={descoberta}
-              onComoFunciona={() => setVerIntro(true)}
-              onVerProposta={() => setVerProposta(true)}
-            />
-          </div>
-        )}
-
+  const dialogos = (
+    <>
         {/* A explicação da fase só faz sentido enquanto ainda se observa. Com
             o mês fechado, quem manda é a proposta. */}
         {verIntro && descoberta.ativa && !descoberta.mesBase && (
@@ -300,36 +242,6 @@ export default function Planejamento() {
             }}
           />
         )}
-
-        {lancadoAcima.length > 0 && (
-          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px 12px' }}>
-            <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
-          </div>
-        )}
-
-        <ItensPlanoContexto.Provider value={abrirItens}>
-        <AjustePlanoContexto.Provider value={abrirAjuste}>
-          <PlanGrade
-            descoberta={descoberta}
-            anoAtual={anoAtual}
-            mesAtual={plan.mesAtual}
-            dadosPrevisto={plan.dadosPrevistoFinal}
-            dadosAnoAnterior={plan.planoAnoAnterior}
-            previsto={plan.previsto}
-            planoRef={plan.planoRef}
-            categorias={plan.categorias}
-            hasFaturaCat={plan.hasFaturaCat}
-            somaCartaoMes={plan.somaCartaoMes}
-            onSave={handleSave}
-            onBulkSave={handleBulkSave}
-            objetivos={plan.objetivos}
-            sobraPrevista={sobraPrevista}
-            onMetaSave={plan.editarMetas}
-            fechamentoReal={plan.saldoFinalReal}
-          />
-        </AjustePlanoContexto.Provider>
-        </ItensPlanoContexto.Provider>
-      </div>
 
       {repetir && (() => {
         const { tipo, mi, valor, cat, cad, repetidoAte, diferentes } = repetir
@@ -392,6 +304,114 @@ export default function Planejamento() {
         )
       })()}
 
+    </>
+  )
+
+  // Celular: uma tela própria no padrão do kit mobile (PlanMobile), com as
+  // mesmas fontes de número e a mesma gravação da Grade.
+  if (isMobile) return (
+    <>
+      <ItensPlanoContexto.Provider value={abrirItens}>
+      <AjustePlanoContexto.Provider value={abrirAjuste}>
+        <PlanMobile
+          anoAtual={anoAtual}
+          setAnoAtual={setAnoAtual}
+          mesAtual={plan.mesAtual}
+          dadosPrevisto={plan.dadosPrevistoFinal}
+          dadosAnoAnterior={plan.planoAnoAnterior}
+          previsto={plan.previsto}
+          hasFaturaCat={plan.hasFaturaCat}
+          categorias={plan.categorias}
+          onSave={handleSave}
+          onBulkSave={handleBulkSave}
+          objetivos={plan.objetivos}
+          sobraPrevista={sobraPrevista}
+          onMetaSave={plan.editarMetas}
+          descoberta={descoberta}
+          fechamentoReal={plan.saldoFinalReal}
+          avisos={<>
+            <AvisoSoAdministrador />
+            {descoberta.ativa && (
+              <DescobertaBanner d={descoberta}
+                onComoFunciona={() => setVerIntro(true)} onVerProposta={() => setVerProposta(true)} />
+            )}
+            {lancadoAcima.length > 0 && <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />}
+          </>}
+        />
+      </AjustePlanoContexto.Provider>
+      </ItensPlanoContexto.Provider>
+      {dialogos}
+    </>
+  )
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: COR.fundo,
+      fontFamily: "-apple-system, 'Inter', sans-serif",
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* PageHeader */}
+      {(
+        <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+          <PageHeader
+            icon="ti-target"
+            breadcrumb="TODO ANO"
+            title="Planejamento"
+            ajuda="planejamento"
+            mb={12}
+            rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
+          />
+        </div>
+      )}
+
+      <AvisoSoAdministrador style={{ margin: '8px 16px 0', flexShrink: 0 }} />
+
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* A faixa da fase, acima de qualquer visao: e ela que troca doze
+            cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
+        {descoberta.ativa && (
+          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
+            <DescobertaBanner
+              d={descoberta}
+              onComoFunciona={() => setVerIntro(true)}
+              onVerProposta={() => setVerProposta(true)}
+            />
+          </div>
+        )}
+
+        {lancadoAcima.length > 0 && (
+          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px 12px' }}>
+            <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
+          </div>
+        )}
+
+        <ItensPlanoContexto.Provider value={abrirItens}>
+        <AjustePlanoContexto.Provider value={abrirAjuste}>
+          <PlanGrade
+            descoberta={descoberta}
+            anoAtual={anoAtual}
+            mesAtual={plan.mesAtual}
+            dadosPrevisto={plan.dadosPrevistoFinal}
+            dadosAnoAnterior={plan.planoAnoAnterior}
+            previsto={plan.previsto}
+            planoRef={plan.planoRef}
+            categorias={plan.categorias}
+            hasFaturaCat={plan.hasFaturaCat}
+            somaCartaoMes={plan.somaCartaoMes}
+            onSave={handleSave}
+            onBulkSave={handleBulkSave}
+            objetivos={plan.objetivos}
+            sobraPrevista={sobraPrevista}
+            onMetaSave={plan.editarMetas}
+            fechamentoReal={plan.saldoFinalReal}
+          />
+        </AjustePlanoContexto.Provider>
+        </ItensPlanoContexto.Provider>
+      </div>
+
+      {dialogos}
     </div>
   )
 }
