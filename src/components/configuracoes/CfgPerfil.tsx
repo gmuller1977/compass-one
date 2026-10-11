@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import type { Conta, Categoria, Perfil } from '../../context/AppContext'
 import PageHeader from '../PageHeader'
 import CfgCompartilhar from '../compartilhar/CfgCompartilhar'
+import CfgDigital from './CfgDigital'
 import { COR, EmBreve, inputSt, labelSt } from './CfgShared'
 
 interface Props {
@@ -103,6 +104,8 @@ export default function CfgPerfil({
         </div>
 
         <CfgCompartilhar />
+
+        <CfgDigital />
 
         {/* Segurança */}
         <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24, opacity:.6 }}>

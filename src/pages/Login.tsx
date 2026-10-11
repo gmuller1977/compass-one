@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { saiuPorInatividade, esquecerSaidaPorInatividade } from '../utils/inatividade'
 import { COR } from '../utils/cores'
+import {
+  aparelhoTemDigital, algumaDigitalAqui, cadastrarDigital, digitalCadastradaAqui,
+  entrarComDigital, recusarDigital, recusouDigital,
+} from '../utils/digital'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -94,6 +98,19 @@ const GoogleSVG = () => (
   </svg>
 )
 
+const DigitalSVG = ({ cor = 'currentColor' }: { cor?: string }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={cor} strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 11c0 3.5-1 6.5-3 9"/>
+    <path d="M8.5 8.5A4.5 4.5 0 0 1 16.5 11c0 1.6-.1 3.2-.4 4.7"/>
+    <path d="M5.5 10a7 7 0 0 1 13-3.5"/>
+    <path d="M19.4 10.5c.1.5.1 1 .1 1.5 0 2.3-.3 4.6-.9 6.8"/>
+    <path d="M12 14.5c-.2 2.2-.8 4.3-1.8 6.2"/>
+    <path d="M4.6 14.5c.3-1 .4-2 .4-3"/>
+    <path d="M14.8 18.5c-.3 1-.6 1.9-1 2.8"/>
+  </svg>
+)
+
 const LogoSVG = ({ size = 36 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
     <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.2"/>
@@ -119,6 +136,37 @@ export default function Login() {
   const [porInatividade] = useState(saiuPorInatividade)
   useEffect(() => { esquecerSaidaPorInatividade() }, [])
 
+  // Entrar com digital (passkey): o botão só aparece onde o aparelho tem leitor.
+  const [temDigital, setTemDigital] = useState(false)
+  const [digitalEmDestaque] = useState(algumaDigitalAqui)
+  // Depois de entrar com a senha, oferece cadastrar a digital uma vez.
+  const [ofertaDigital, setOfertaDigital] = useState<string | null>(null)
+  useEffect(() => { aparelhoTemDigital().then(setTemDigital) }, [])
+
+  async function handleDigital() {
+    setErro(''); setSucesso('')
+    setCarregando(true)
+    const r = await entrarComDigital()
+    setCarregando(false)
+    if (r.ok) navigate('/')
+    else if (r.erro) setErro(r.erro)
+  }
+
+  async function ativarDigital() {
+    if (!ofertaDigital) return
+    setErro('')
+    setCarregando(true)
+    const r = await cadastrarDigital(ofertaDigital)
+    setCarregando(false)
+    if (r.ok || !r.erro) { navigate('/'); return }
+    setErro(r.erro)
+  }
+
+  function agoraNao() {
+    if (ofertaDigital) recusarDigital(ofertaDigital)
+    navigate('/')
+  }
+
   async function handleSubmit() {
     setErro('')
     setSucesso('')
@@ -126,9 +174,11 @@ export default function Login() {
     if (!senha)  { setErro('Digite sua senha');  return }
     setCarregando(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
       if (error) throw error
-      navigate('/')
+      const uid = data.user?.id
+      if (uid && temDigital && !digitalCadastradaAqui(uid) && !recusouDigital(uid)) setOfertaDigital(uid)
+      else navigate('/')
     } catch (e: unknown) {
       let msg = 'Erro desconhecido'
       if (e instanceof Error && e.message && e.message !== '{}') {
@@ -200,7 +250,53 @@ export default function Login() {
     </div>
   )
 
-  const form = (
+  const botaoDigital = (destaque: boolean) => (
+    <button onClick={handleDigital} disabled={carregando} style={{
+      width:'100%', padding: destaque ? '15px' : '13px', borderRadius:14, fontFamily:'inherit',
+      border: destaque ? 'none' : '1.5px solid #e2e8f0',
+      background: destaque ? 'linear-gradient(135deg,#1a56db,#2563eb)' : '#fff',
+      color: destaque ? '#fff' : '#0f172a', fontSize: destaque ? 16 : 14, fontWeight: destaque ? 800 : 600,
+      cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1,
+      boxShadow: destaque ? '0 4px 20px rgba(26,86,219,.35)' : 'none',
+      display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom: destaque ? 16 : 12,
+    }}>
+      <DigitalSVG cor={destaque ? '#fff' : '#1a56db'}/> Entrar com digital
+    </button>
+  )
+
+  const telaOferta = (
+    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif", textAlign:'center' }}>
+      <div style={{ width:64, height:64, borderRadius:'50%', background:'#eff6ff', margin:'0 auto 16px',
+        display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <DigitalSVG cor="#1a56db"/>
+      </div>
+      <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:8 }}>Entrar com a digital da próxima vez?</div>
+      <div style={{ fontSize:14, color:'#475569', lineHeight:1.55, marginBottom:20 }}>
+        Você entra só encostando o dedo (ou olhando para a câmera), sem digitar a senha. A digital
+        não sai do aparelho: o Compass One só recebe a confirmação de que é você.
+      </div>
+      {erro && (
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#b91c1c', marginBottom:16 }}>
+          {erro}
+        </div>
+      )}
+      <button onClick={ativarDigital} disabled={carregando} style={{
+        width:'100%', padding:'15px', border:'none', borderRadius:14,
+        background:'linear-gradient(135deg,#1a56db,#2563eb)', color:'#fff', fontSize:16, fontWeight:800,
+        cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1, fontFamily:'inherit',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:12,
+      }}>
+        <DigitalSVG cor="#fff"/> {carregando ? 'Aguardando a digital…' : 'Ativar digital'}
+      </button>
+      <button onClick={agoraNao} disabled={carregando} style={{
+        width:'100%', padding:'13px', border:'none', background:'transparent', color:'#1a56db',
+        fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+      }}>Agora não</button>
+      <div style={{ fontSize:12, color:'#64748b', marginTop:8 }}>Dá para ativar depois em Configurações → Perfil.</div>
+    </div>
+  )
+
+  const form = ofertaDigital ? telaOferta : (
     <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Bem-vindo de volta!</div>
@@ -223,6 +319,17 @@ export default function Login() {
         <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#15803d', marginBottom:16, textAlign:'center' }}>
           {sucesso}
         </div>
+      )}
+
+      {temDigital && digitalEmDestaque && (
+        <>
+          {botaoDigital(true)}
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+            <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
+            <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou use e-mail e senha</span>
+            <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
+          </div>
+        </>
       )}
 
       <Campo label="✉️ E-mail" tipo="email" placeholder="seu@email.com"
@@ -259,6 +366,8 @@ export default function Login() {
         <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou continue com</span>
         <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
       </div>
+
+      {temDigital && !digitalEmDestaque && botaoDigital(false)}
 
       <button onClick={handleGoogle} disabled={carregando} style={{
         width:'100%', padding:'13px', border:'1.5px solid #e2e8f0', borderRadius:14,

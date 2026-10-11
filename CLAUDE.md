@@ -2388,6 +2388,18 @@ ref: uma versão presa no efeito de montagem salvaria dados velhos por cima
 dos novos. A tela de login diz por que a pessoa saiu. A `prova29` tranca os
 limites: 29:00 avisa com 60 s, 29:59 com 1 s, 30:00 sai.
 
+**Entrar com digital é passkey nativo do Supabase** (11/10/2026, pedido do
+Guilherme). `auth.experimental.passkey` ligado em `lib/supabase.ts`; regras
+em [`utils/digital.ts`](src/utils/digital.ts). Sem tabela nem função nossa:
+o Supabase guarda a chave pública e abre a sessão. Depende de Passkeys ligado
+no painel (Authentication), com o domínio do app como Relying Party; sem
+isso o botão aparece e diz que falta ativar. E-mail e senha seguem valendo.
+O botão só aparece onde o aparelho tem leitor; fica em destaque no topo
+depois que alguém já entrou com digital naquele aparelho (localStorage). Após
+entrar com a senha, oferece cadastrar UMA vez por login e aparelho; "Agora
+não" não volta. Cadastro e remoção também no Perfil (`CfgDigital`). A saída
+por inatividade continua: depois dela entra-se de novo com a digital.
+
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
 grava em produção**. Há mais de um usuário real na base.
 
