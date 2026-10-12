@@ -450,6 +450,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         everLoadedRef.current = true
         authCarregadoRef.current = u.id
         authIdRef.current = u.id
+        // Carregando JÁ, antes de descobrir o dono: o resolverDono vai à rede,
+        // e nesse intervalo havia login sem dados — onboardingCompleto falso
+        // e carregando falso. A "/" mandava para o Onboarding, a URL ficava
+        // lá depois da carga, e confirmar as categorias desativava as da
+        // pessoa (12/10/2026, entrando pela digital).
+        setCarregando(true)
         resolverDono(u.id).then(dono => {
           if (authIdRef.current !== u.id) return
           userIdRef.current = dono

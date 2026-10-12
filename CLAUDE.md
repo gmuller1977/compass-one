@@ -1869,6 +1869,17 @@ voltavam se ninguém marcasse "não mostrar novamente".
   primeiro reabria o cadastro inicial, e confirmar as categorias de novo
   desativava as que não estavam entre as sugeridas.
 
+**O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
+Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as
+categorias estavam inativas. Desde a conta compartilhada (10/10), o login
+passava pelo `resolverDono` (rede) antes de carregar, e nesse intervalo havia
+usuário com `carregando` falso e `onboardingCompleto` falso: a "/" mandava
+para `/onboarding`, a URL ficava lá depois da carga, e confirmar o passo das
+categorias trocava `ativa` pelo "está entre as 10 sugeridas". Hoje o
+`onAuthStateChange` liga `carregando` antes do `resolverDono`; o Onboarding
+redireciona para "/" se montar com o onboarding já feito; e categoria que já
+existe só é ligada ali, nunca desligada.
+
 **O que não dá para testar na própria conta.** `descoberta.ativa` exige nenhum
 plano em ano nenhum, então quem já tem plano nunca vê nada disso. Validar exige
 conta nova; e para ver o convite é preciso registrar num mês JÁ FECHADO, senão

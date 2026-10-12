@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { parseBRL } from '../utils/moeda'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { Conta, Categoria } from '../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
@@ -73,7 +73,11 @@ function BtnGhost({ onClick, children }: { onClick: () => void; children: React.
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const { contas, categorias, setContas, setCategorias, setOnboardingCompleto } = useApp()
+  const { contas, categorias, setContas, setCategorias, setOnboardingCompleto, onboardingCompleto } = useApp()
+  // Quem já fez o Onboarding não volta para ele: a URL /onboarding pode ficar
+  // de um redirecionamento antigo (ou de um favorito). Lido só na montagem —
+  // o próprio Onboarding marca completo no passo das categorias e segue.
+  const [jaFeito] = useState(onboardingCompleto)
 
   const [phase, setPhase]   = useState<Phase>('welcome')
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
@@ -176,7 +180,10 @@ export default function Onboarding() {
 
   function submitCategorias() {
     const atuais: Categoria[] = categorias.length > 0
-      ? categorias.map(c => ({ ...c, ativa: catSel.has(c.nome) }))
+      // Categoria que já existe nunca é desativada aqui: o Onboarding só
+      // liga. Desligar o que a pessoa já usa apagaria o cadastro dela do
+      // Radar e do plano se a tela abrir para quem já tem dados.
+      ? categorias.map(c => ({ ...c, ativa: c.ativa || catSel.has(c.nome) }))
       : CATEGORIAS_PADRAO.map((c, i) => ({ ...c, id: newId() + i, ativa: catSel.has(c.nome) }))
     setCategorias(atuais)
 
@@ -209,6 +216,8 @@ export default function Onboarding() {
     categorias: 'Etapa 3 de 4 — Tipos de gasto',
     planejamento: 'Etapa 4 de 4 — Como começar',
   }
+
+  if (jaFeito) return <Navigate to="/" replace />
 
   // ─────────────────────────────────────────────────────────────────────
   // ── WELCOME PHASE ────────────────────────────────────────────────────
