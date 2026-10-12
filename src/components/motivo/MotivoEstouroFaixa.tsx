@@ -8,10 +8,15 @@ import { useLembreteMotivo } from './useLembreteMotivo'
  * do "passou" já está na linha da categoria; aqui é um convite a anotar.
  * Par medido em cores.ts (infoTexto sobre infoFundo, 5,5:1).
  */
+const linkSt = {
+  border: 'none', background: 'none', color: COR.infoTexto, padding: '8px 4px', fontFamily: 'inherit',
+  fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', whiteSpace: 'nowrap',
+} as const
+
 export default function MotivoEstouroFaixa({ linhasSaida, ano, mes }: {
   linhasSaida: LinhaDoMes[]; ano: number; mes: number
 }) {
-  const { texto, abrir, dialog } = useLembreteMotivo(linhasSaida, ano, mes)
+  const { texto, abrir, lembrarDepois, fechar, dialog } = useLembreteMotivo(linhasSaida, ano, mes)
   if (!texto) return dialog
   return (
     <>
@@ -29,6 +34,8 @@ export default function MotivoEstouroFaixa({ linhasSaida, ano, mes }: {
         }}>
           Anotar motivo
         </button>
+        <button type="button" onClick={lembrarDepois} style={linkSt}>Lembrar depois</button>
+        <button type="button" onClick={fechar} style={linkSt} title="Não pedir o motivo destas categorias neste mês">Fechar</button>
       </div>
       {dialog}
     </>

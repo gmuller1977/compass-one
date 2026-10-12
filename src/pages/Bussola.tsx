@@ -233,6 +233,12 @@ export default function Bussola() {
                     <Pilula onClick={motivo.abrir}>Anotar motivo</Pilula>
                   </div>
                 )}
+                {motivo.texto && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 4 }}>
+                    <button type="button" onClick={motivo.lembrarDepois} style={linkMotivo}>Lembrar depois</button>
+                    <button type="button" onClick={motivo.fechar} style={linkMotivo}>Fechar</button>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -286,6 +292,12 @@ const pilulaTopo: CSSProperties = {
 
 const cabecalhoTabela: CSSProperties = { fontSize: 13, fontWeight: 600, color: COR.textoSuave, textAlign: 'right' }
 const celulaTabela: CSSProperties = { fontSize: M.corpo, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
+
+// Toque de 44 px (o kit do celular); textoSuave no branco dá 4,76.
+const linkMotivo: CSSProperties = {
+  border: 'none', background: 'none', color: COR.textoSuave, minHeight: 44, padding: '0 4px',
+  fontFamily: 'inherit', fontSize: M.legenda, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline',
+}
 
 const linkRodape: CSSProperties = {
   display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',

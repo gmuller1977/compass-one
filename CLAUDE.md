@@ -1352,6 +1352,13 @@ houver categoria sem motivo. Regras em
   outra. Ela também passou a gravar o rótulo com a variante.
 - Não é alerta no LANÇAMENTO (decisão de 06/10 continua): é um convite no
   Radar, na Início e na Bússola, e não mexe no plano.
+- **Dá para dispensar** (pedido do Guilherme em 12/10/2026: "às vezes o
+  usuário não quer usar"). Faixa do Radar e linha da Bússola têm "Lembrar
+  depois" (some até amanhã, neste aparelho, localStorage) e "Fechar" (as
+  categorias pendentes naquele momento não pedem mais motivo NESTE mês;
+  guardado na conta por `vistoNaConta`, chave `motivo-fechado:AAAA-MM:<rótulo>`).
+  Categoria que passar depois pede de novo. O botão "Anotar o motivo" da Início
+  lê o mesmo `texto` e volta a ser o do aviso. Regra em `useLembreteMotivo`.
 - `prova70` (14 invariantes): o corte, meio centavo, sem plano, casar pela
   variante, motivo em branco não conta, e o controle "tudo anotado, sem aviso".
 
