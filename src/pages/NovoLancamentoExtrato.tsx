@@ -478,7 +478,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function editarLancamento(dia: number, l: Lancamento) {
-    setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia); setEditandoFixaId(null); if (isMobile) setMobileView('form')
+    setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia); setEditandoFixaId(null); if (isMobile) setMobileDiaForm(dia)
     setFTipo(l.tipo); setFCat(l.categoria); setFSubDesc(l.subCategoria ?? ''); setFDesc(l.descricao)
     setFValor(String(l.valor).replace('.', ',')); setFPag(l.formaPagamento)
     if (l.formaPagamento === 'transferencia') {
@@ -520,7 +520,7 @@ export default function NovoLancamentoExtrato() {
   }
 
   function editarFixa(dia: number, f: CatFixa) {
-    setDiaSel(dia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(f.id); if (isMobile) setMobileView('form')
+    setDiaSel(dia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(f.id); if (isMobile) setMobileDiaForm(dia)
     setFTipo(f.tipo); setFCat(f.categoria)
     setFDesc(mesDados.fixasDescOverride?.[f.id] ?? f.nome)
     setFValor(String(mesDados.fixasValorOverride?.[f.id] ?? f.valor).replace('.', ','))

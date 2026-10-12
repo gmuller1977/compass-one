@@ -745,14 +745,14 @@ export default function NleExtrato({
                         ))}
                       </div>
                       <div style={{display:'flex',gap:6}}>
-                        <button onClick={()=>setMobileDiaForm(null)}
+                        <button onClick={()=>{setMobileDiaForm(null);setEditandoId(null);setEditandoFixaId(null)}}
                           style={{flex:1,padding:'9px 0',border:`1.5px solid ${COR.borda}`,borderRadius:8,
                             background:'#fff',color:COR.textoSuave,fontSize:12,fontWeight:600,
                             cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
                         <button onClick={lancar}
                           style={{flex:2,padding:'9px 0',border:'none',borderRadius:8,
                             background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                            color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Lançar</button>
+                            color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{editandoId||editandoFixaId?'Salvar':'Lançar'}</button>
                       </div>
                       <div style={{fontSize:9,color:'#0369a1',marginTop:8,opacity:.7}}>↵ Enter no valor para salvar</div>
                     </div>
