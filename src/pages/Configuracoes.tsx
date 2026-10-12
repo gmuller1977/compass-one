@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
+import PageHeader from '../components/PageHeader'
 import BottomNav from '../components/BottomNav'
 import { useToast } from '../components/Toast'
 import { parseValor } from '../utils/moeda'
@@ -566,18 +567,11 @@ export default function Configuracoes() {
             status: '', ok: false },
         ]
         return (
-          <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '32px 24px',
-            display:'flex', flexDirection:'column', alignItems:'center' }}>
-            <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight:800, color:COR.texto, margin:'0 0 6px', textAlign:'center' }}>
-              Configurações
-            </h1>
-            {!isMobile && (
-              <p style={{ fontSize:14, color:COR.textoSuave, margin:'0 0 28px', textAlign:'center' }}>
-                Tudo o que você cadastra no app mora aqui.
-              </p>
-            )}
+          <div style={{ flex:1, overflowY:'auto', padding: isMobile ? 12 : 20 }}>
+            <PageHeader icon="ti-settings" breadcrumb="Minha conta" title="Configurações"
+              subtitle="Tudo o que você cadastra no app mora aqui" ajuda="configuracoes" />
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 14 : 18,
-              width:'100%', maxWidth: isMobile ? 420 : 820, marginTop: isMobile ? 22 : 0 }}>
+              width:'100%' }}>
               {cards.map(card => (
                 // Caixas no azul-escuro dos cartões do app (#0f2878 → #1e40af,
                 // a regra do #1e40af): branco 10,4:1, descrição a 75% 5,1:1,

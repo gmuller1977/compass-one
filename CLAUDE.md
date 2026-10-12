@@ -1907,10 +1907,14 @@ onde ir") e escolheu as duas ideias juntas:
   são do azul-escuro dos cartões (`#0f2878 → #1e40af`), com ícone Tabler
   branco num quadrado translúcido, no lugar dos emojis — pedido dele no mesmo
   dia.
-- A faixa `PrimeirosPassos` mostra os três passos na ordem do menu (Contas ·
-  Cartões opcional · Categorias), marca o atual, tem "Começar →" na tela de
-  ícones e "Pular cartões →" nos cartões. No primeiro acesso, salvar uma
-  conta leva aos cartões e salvar um cartão às categorias.
+- A tela de ícones tem o `PageHeader` azul "Configurações", como as outras.
+- As boas-vindas são uma JANELA (`PrimeirosPassos`), aberta uma vez por login
+  na tela de ícones ("visto" na conta, `boas-vindas-configuracoes`), com os
+  três passos na ordem do menu (Contas · Cartões opcional · Categorias),
+  "Começar →" e "Explorar primeiro". Dentro de cada cadastro fica uma barra
+  fina com os passos e "Pular cartões →". No primeiro acesso, salvar uma
+  conta leva aos cartões e salvar um cartão às categorias; ao ter conta e
+  categoria ativa, a janela "Tudo pronto" oferece lançar ou montar o plano.
 - Sem nenhuma conta, o formulário vira a tela: 520px, título "Cadastre sua
   primeira conta" e a página rola, não a caixa.
 
