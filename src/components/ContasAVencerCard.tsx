@@ -2,24 +2,28 @@ import type { Categoria } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import type { ContaAVencer } from '../utils/contasAVencer'
+import { Cartao, Etiqueta, Linha, TituloCartao, Valor } from './mobile/ui'
+import { M, mostrar } from './mobile/estilo'
 
 const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 /**
- * "Contas dos próximos 7 dias" da tela Início. A lista vem pronta de
- * utils/contasAVencer — aqui é só desenho. Atrasada em COR.erroTexto
- * (6,5:1 no branco); data e rótulos em COR.textoSuave (4,76:1).
+ * As contas a vencer da tela Início (a semana, ou o mês futuro inteiro). A
+ * lista vem pronta de utils/contasAVencer — aqui é só desenho, no kit do
+ * celular: ícone da categoria em círculo, nome e quando, valor à direita.
+ * Com `saldoHoje`, a etiqueta diz se o saldo de hoje cobre o total, como as
+ * "Contas da semana" do celular. Atrasada em COR.erroTexto (6,5:1 no branco).
  */
 export default function ContasAVencerCard({
-  contas, categorias, isMobile, onAbrir, hoje = new Date(),
-  titulo = 'Contas dos próximos 7 dias', acao = 'Marcar como paga em Lançamentos →',
+  contas, categorias, onAbrir, hoje = new Date(), oculto = false, saldoHoje,
+  titulo = 'Contas dos próximos 7 dias', acao = 'Ver em Lançamentos ›',
 }: {
   contas: ContaAVencer[]
   categorias: Categoria[]
-  isMobile: boolean
   onAbrir: () => void
   hoje?: Date
+  oculto?: boolean
+  saldoHoje?: number
   titulo?: string
   acao?: string
 }) {
@@ -29,56 +33,40 @@ export default function ContasAVencerCard({
     const dd = `${String(c.dia).padStart(2, '0')}/${String(c.mes + 1).padStart(2, '0')}`
     if (c.atrasada) return `Venceu ${dd}`
     const diff = Math.round((d.getTime() - hoje0.getTime()) / 86_400_000)
-    if (diff === 0) return 'Hoje'
-    if (diff === 1) return 'Amanhã'
+    if (diff === 0) return 'Vence hoje'
+    if (diff === 1) return 'Vence amanhã'
     return `${DIAS_SEM[d.getDay()]}, ${dd}`
   }
   const total = contas.reduce((t, c) => t + c.valor, 0)
-  const atrasadas = contas.filter(c => c.atrasada).length
+  const falta = saldoHoje != null ? total - saldoHoje : 0
 
   return (
-    <div style={{
-      background: COR.branco, borderRadius: 12, padding: isMobile ? '14px 14px' : '16px 20px',
-      border: `.5px solid ${COR.borda}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto }}>{titulo}</div>
-          {atrasadas > 0 && (
-            <div style={{ fontSize: 12, color: COR.erroTexto, fontWeight: 600, marginTop: 2 }}>
-              {atrasadas === 1 ? '1 conta vencida e não marcada como paga' : `${atrasadas} contas vencidas e não marcadas como pagas`}
-            </div>
-          )}
-        </div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: COR.texto, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-          {fmt(total)}
-        </div>
-      </div>
+    <Cartao>
+      <TituloCartao direita={contas.length === 0 ? null : saldoHoje == null
+        ? <Valor>{mostrar(total, oculto)}</Valor>
+        : falta > 0
+          ? <Etiqueta cor={COR.erroTexto} fundo={COR.erroFundo}>faltam {mostrar(falta, oculto)}</Etiqueta>
+          : <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ saldo cobre</Etiqueta>}>
+        {titulo}
+      </TituloCartao>
+      {contas.length === 0 && (
+        <div style={{ fontSize: M.corpo, color: COR.textoSuave }}>Nenhuma conta vencendo nos próximos 7 dias.</div>
+      )}
       {contas.map((c, i) => {
-        const icone = c.fatura ? '💳' : iconeCategoria(categorias, c.nome).icone
+        const ic = c.fatura ? { icone: '💳', cor: COR.azul } : iconeCategoria(categorias, c.nome)
         return (
-          <div key={`${c.id}-${c.ano}-${c.mes}`} style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0',
-            borderTop: i === 0 ? 'none' : '1px solid #f1f5f9',
-          }}>
-            <span style={{
-              minWidth: 78, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
-              color: c.atrasada ? COR.erroTexto : COR.textoSuave,
-            }}>{quando(c)}</span>
-            <span aria-hidden style={{ fontSize: 15 }}>{icone}</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: COR.texto,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {c.fatura ? `Fatura ${c.nome}` : c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
-            </span>
-            <span style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums',
-              color: c.atrasada ? COR.erroTexto : COR.texto }}>{fmt(c.valor)}</span>
-          </div>
+          <Linha key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
+            titulo={c.fatura ? `Fatura ${c.nome}` : c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
+            legenda={<span style={{ color: c.atrasada ? COR.erroTexto : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span>}
+            direita={<Valor cor={c.atrasada ? COR.erroTexto : COR.texto}>{mostrar(c.valor, oculto)}</Valor>} />
         )
       })}
-      <button onClick={onAbrir} style={{
-        marginTop: 8, border: 'none', background: 'transparent', color: COR.azul, padding: 0,
-        fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-      }}>{acao}</button>
-    </div>
+      {contas.length > 0 && (
+        <button onClick={onAbrir} style={{
+          display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',
+          background: 'none', color: COR.azul, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+        }}>{acao}</button>
+      )}
+    </Cartao>
   )
 }

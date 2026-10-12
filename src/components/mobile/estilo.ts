@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 
 /** Medidas do celular — ver o comentário em ./ui.tsx. */
 export const M = {
@@ -39,3 +39,16 @@ export function useValoresOcultos(): [boolean, () => void] {
 
 /** O valor, ou "R$ ••••" com os valores escondidos. */
 export const mostrar = (v: number, oculto: boolean) => (oculto ? 'R$ ••••' : fmt(v))
+
+/** A caixa translúcida dentro do topo azul (saldo final previsto, cenários). */
+export const pilulaTopo: CSSProperties = {
+  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, textAlign: 'left',
+  background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
+  padding: '12px 14px', color: '#fff', fontFamily: 'inherit', cursor: 'pointer', minWidth: 0,
+}
+
+/** O topo azul dos apps de banco. #1e40af no extremo claro: a regra do CLAUDE.md. */
+export const TOPO_AZUL = 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)'
+
+/** Rótulo sobre o topo azul: 75% de branco dá 5,1 no #1e40af. */
+export const ROTULO_TOPO = 'rgba(255,255,255,.75)'

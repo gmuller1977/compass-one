@@ -1,6 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
-import { M } from './estilo'
+import { M, mostrar } from './estilo'
 
 /**
  * Peças do celular, no padrão dos apps de banco (Nubank, Inter, Itaú): pedido
@@ -93,5 +93,99 @@ export function Pilula({ children, onClick, forte, disabled }: { children: React
       color: forte ? '#fff' : COR.azul, borderRadius: 999, padding: '9px 16px', minHeight: 40,
       fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
     }}>{children}</button>
+  )
+}
+
+export function Etiqueta({ children, cor, fundo }: { children: ReactNode; cor: string; fundo: string }) {
+  return (
+    <span style={{ fontSize: 13, fontWeight: 700, color: cor, background: fundo, borderRadius: 999,
+      padding: '4px 10px', whiteSpace: 'nowrap' }}>{children}</span>
+  )
+}
+
+export function Valor({ children, cor = COR.texto }: { children: ReactNode; cor?: string }) {
+  return (
+    <span style={{ fontSize: M.corpo, fontWeight: 700, color: cor, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+      {children}
+    </span>
+  )
+}
+
+/** Barra curta do quanto da categoria já foi: verde, e verde-escuro perto do fim (as cores do Radar no claro). */
+export function Barrinha({ p }: { p: number }) {
+  const perc = Math.min(1, Math.max(0, p))
+  return (
+    <span role="img" aria-label={`${Math.round(p * 100)}% usado`} style={{
+      display: 'block', width: 56, height: 8, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden', flexShrink: 0,
+    }}>
+      <span style={{ display: 'block', height: '100%', width: `${perc * 100}%`, borderRadius: 4,
+        background: p >= 0.9 ? '#18713a' : '#22c55e' }} />
+    </span>
+  )
+}
+
+export function OlhoIcone({ fechado }: { fechado: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {fechado && <path d="M3 3l18 18" />}
+    </svg>
+  )
+}
+
+/** Os três cenários da previsão, em pílulas sobre o topo azul. */
+export function SeletorCenario({ valor, onEscolher }: {
+  valor: 'pessimista' | 'moderado' | 'otimista'; onEscolher: (c: 'pessimista' | 'moderado' | 'otimista') => void
+}) {
+  return (
+    <div role="radiogroup" aria-label="Cenário da previsão" style={{ display: 'flex', gap: 6, width: '100%' }}>
+      {(['pessimista', 'moderado', 'otimista'] as const).map(c => {
+        const ativo = valor === c
+        return (
+          <button key={c} role="radio" aria-checked={ativo} onClick={() => onEscolher(c)} style={{
+            flex: 1, minHeight: 36, borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 14, fontWeight: 700, background: ativo ? '#fff' : 'rgba(255,255,255,.14)',
+            color: ativo ? '#1e3a8a' : '#fff',
+          }}>{c.charAt(0).toUpperCase() + c.slice(1)}</button>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * Previsto × realizado de receitas e despesas, com o resultado. Sem plano, a
+ * coluna Previsto fica vazia. Os números chegam prontos (useMesDaInicio).
+ */
+export function PrevistoRealizado({ mesNome, linhas, comPlano, oculto, rotuloReal = 'Realizado' }: {
+  mesNome: string
+  /** [rótulo, previsto, realizado]: receitas primeiro, despesas depois. */
+  linhas: [[string, number, number], [string, number, number]]
+  comPlano: boolean
+  oculto: boolean
+  rotuloReal?: string
+}) {
+  const v = (n: number) => mostrar(n, oculto)
+  const [[, prevE, realE], [, prevS, realS]] = linhas
+  const cab: CSSProperties = { fontSize: 13, fontWeight: 600, color: COR.textoSuave, textAlign: 'right' }
+  const cel: CSSProperties = { fontSize: M.corpo, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
+  const linhaTotal: CSSProperties = { borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }
+  return (
+    <div role="table" aria-label={`Previsto e realizado de ${mesNome}`} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 14, rowGap: 10, alignItems: 'baseline' }}>
+      <span role="columnheader" />
+      <span role="columnheader" style={cab}>{comPlano ? 'Previsto' : ''}</span>
+      <span role="columnheader" style={cab}>{rotuloReal}</span>
+      {linhas.map(([rot, prev, real], i) => (
+        <Fragment key={rot}>
+          <span style={{ fontSize: M.corpo, color: COR.texto }}>{rot}</span>
+          <span style={{ ...cel, color: COR.textoSuave }}>{comPlano ? v(prev) : ''}</span>
+          <span style={{ ...cel, color: i === 0 ? COR.sucessoTexto : COR.erroTexto }}>{v(real)}</span>
+        </Fragment>
+      ))}
+      <span style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto, ...linhaTotal }}>Resultado</span>
+      <span style={{ ...cel, color: COR.textoSuave, ...linhaTotal }}>{comPlano ? v(prevE - prevS) : ''}</span>
+      <span style={{ ...cel, fontWeight: 800, ...linhaTotal, color: realE - realS < 0 ? COR.erroTexto : COR.sucessoTexto }}>{v(realE - realS)}</span>
+    </div>
   )
 }

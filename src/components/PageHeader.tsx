@@ -75,9 +75,12 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #0f2878, #1a56db)',
-      borderRadius: 10,
-      padding: isMobile ? '12px 16px' : '16px 20px',
+      // O topo azul do celular (12/10/2026: "a mesma identidade para os
+      // dois"): gradiente até #1e40af, cantos de 20 e sombra azulada.
+      background: 'linear-gradient(160deg, #0f2878 0%, #1e40af 100%)',
+      borderRadius: 20,
+      boxShadow: '0 2px 14px rgba(15,40,120,.12)',
+      padding: isMobile ? '14px 16px' : '18px 22px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -87,22 +90,22 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
       {/* Icon + text */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
         <div style={{
-          width: isMobile ? 34 : 40,
-          height: isMobile ? 34 : 40,
-          borderRadius: 10,
-          background: 'rgba(255,255,255,0.12)',
+          width: isMobile ? 38 : 44,
+          height: isMobile ? 38 : 44,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.14)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <i className={`ti ${icon}`} style={{ color: '#fff', fontSize: isMobile ? 16 : 18 }} />
+          <i className={`ti ${icon}`} style={{ color: '#fff', fontSize: isMobile ? 18 : 20 }} />
         </div>
         <div style={{ minWidth: 0 }}>
           {!isMobile && breadcrumb && (
             <div style={{
-              fontSize: 10,
-              color: 'rgba(255,255,255,0.5)',
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.75)',
               letterSpacing: '0.3px',
               textTransform: 'uppercase',
               marginBottom: 2,
@@ -110,8 +113,8 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
             }}>{breadcrumb}</div>
           )}
           <div style={{
-            fontSize: isMobile ? 14 : 16,
-            fontWeight: 500,
+            fontSize: isMobile ? 17 : 20,
+            fontWeight: 700,
             color: '#ffffff',
             lineHeight: 1.2,
             overflow: 'hidden',
@@ -120,8 +123,8 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
           }}>{title}</div>
           {subtitle && (
             <div style={{
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.6)',
+              fontSize: isMobile ? 13 : 14,
+              color: 'rgba(255,255,255,0.75)',
               marginTop: 2,
               overflow: 'hidden',
               textOverflow: 'ellipsis',

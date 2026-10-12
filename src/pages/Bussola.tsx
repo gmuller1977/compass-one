@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
@@ -8,8 +8,8 @@ import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
-import { Atalho, Cartao, Linha, Pilula, TituloCartao } from '../components/mobile/ui'
-import { M, fmt, mostrar, useValoresOcultos } from '../components/mobile/estilo'
+import { Atalho, Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
+import { M, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import type { Aviso } from '../utils/avisosDoMes'
@@ -118,18 +118,7 @@ export default function Bussola() {
                 {v(b.fechamento)}
               </span>
             </div>
-            <div role="radiogroup" aria-label="Cenário da previsão" style={{ display: 'flex', gap: 6 }}>
-              {(['pessimista', 'moderado', 'otimista'] as const).map(c => {
-                const ativo = cenarioPrevisao === c
-                return (
-                  <button key={c} role="radio" aria-checked={ativo} onClick={() => setCenarioPrevisao(c)} style={{
-                    flex: 1, minHeight: 36, borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    fontSize: 14, fontWeight: 700, background: ativo ? '#fff' : 'rgba(255,255,255,.14)',
-                    color: ativo ? '#1e3a8a' : '#fff',
-                  }}>{c.charAt(0).toUpperCase() + c.slice(1)}</button>
-                )
-              })}
-            </div>
+            <SeletorCenario valor={cenarioPrevisao} onEscolher={setCenarioPrevisao} />
             <button onClick={() => {
               const abrir = !memoriaAberta
               setMemoriaAberta(abrir)
@@ -156,27 +145,8 @@ export default function Bussola() {
         {/* ── Previsto × realizado do mês, com o resultado ────────────── */}
         <Cartao>
           <TituloCartao>{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} até agora</TituloCartao>
-          <div role="table" aria-label={`Previsto e realizado de ${mesNome}`} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 14, rowGap: 10, alignItems: 'baseline' }}>
-            <span role="columnheader" />
-            <span role="columnheader" style={cabecalhoTabela}>{usaPlanoNoMes ? 'Previsto' : ''}</span>
-            <span role="columnheader" style={cabecalhoTabela}>Realizado</span>
-            {([
-              ['Receitas', totalPrevE, totalEntradas, COR.sucessoTexto],
-              ['Despesas', totalPrevS, totalSaidas, COR.erroTexto],
-            ] as const).map(([rot, prev, real, cor]) => (
-              <Fragment key={rot}>
-                <span style={{ fontSize: M.corpo, color: COR.texto }}>{rot}</span>
-                <span style={{ ...celulaTabela, color: COR.textoSuave }}>{usaPlanoNoMes ? v(prev) : ''}</span>
-                <span style={{ ...celulaTabela, color: cor }}>{v(real)}</span>
-              </Fragment>
-            ))}
-            <span style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto, borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }}>Resultado</span>
-            <span style={{ ...celulaTabela, color: COR.textoSuave, borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }}>
-              {usaPlanoNoMes ? v(totalPrevE - totalPrevS) : ''}
-            </span>
-            <span style={{ ...celulaTabela, fontWeight: 800, borderTop: `1px solid ${COR.borda}`, paddingTop: 10,
-              color: totalEntradas - totalSaidas < 0 ? COR.erroTexto : COR.sucessoTexto }}>{v(totalEntradas - totalSaidas)}</span>
-          </div>
+          <PrevistoRealizado mesNome={mesNome} oculto={oculto} comPlano={usaPlanoNoMes}
+            linhas={[['Receitas', totalPrevE, totalEntradas], ['Despesas', totalPrevS, totalSaidas]]} />
           {r && (
             <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 14, lineHeight: 1.45 }}>
               {passou
@@ -284,14 +254,7 @@ export default function Bussola() {
   )
 }
 
-const pilulaTopo: CSSProperties = {
-  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, textAlign: 'left',
-  background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
-  padding: '12px 14px', color: '#fff', fontFamily: 'inherit', cursor: 'pointer', minWidth: 0,
-}
 
-const cabecalhoTabela: CSSProperties = { fontSize: 13, fontWeight: 600, color: COR.textoSuave, textAlign: 'right' }
-const celulaTabela: CSSProperties = { fontSize: M.corpo, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
 
 // Toque de 44 px (o kit do celular); textoSuave no branco dá 4,76.
 const linkMotivo: CSSProperties = {
@@ -305,40 +268,6 @@ const linkRodape: CSSProperties = {
   fontFamily: 'inherit', cursor: 'pointer', textAlign: 'center',
 }
 
-function Etiqueta({ children, cor, fundo }: { children: ReactNode; cor: string; fundo: string }) {
-  return (
-    <span style={{ fontSize: 13, fontWeight: 700, color: cor, background: fundo, borderRadius: 999,
-      padding: '4px 10px', whiteSpace: 'nowrap' }}>{children}</span>
-  )
-}
 
-function Valor({ children, cor = COR.texto }: { children: ReactNode; cor?: string }) {
-  return (
-    <span style={{ fontSize: M.corpo, fontWeight: 700, color: cor, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-      {children}
-    </span>
-  )
-}
 
-/** Barra curta do quanto da categoria já foi: verde, e verde-escuro perto do fim (as cores do Radar no claro). */
-function Barrinha({ p }: { p: number }) {
-  const perc = Math.min(1, Math.max(0, p))
-  return (
-    <span role="img" aria-label={`${Math.round(p * 100)}% usado`} style={{
-      display: 'block', width: 56, height: 8, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden', flexShrink: 0,
-    }}>
-      <span style={{ display: 'block', height: '100%', width: `${perc * 100}%`, borderRadius: 4,
-        background: p >= 0.9 ? '#18713a' : '#22c55e' }} />
-    </span>
-  )
-}
 
-function OlhoIcone({ fechado }: { fechado: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
-      <circle cx="12" cy="12" r="3" />
-      {fechado && <path d="M3 3l18 18" />}
-    </svg>
-  )
-}

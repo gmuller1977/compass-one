@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { saldoBancosEDinheiro, memoriaDoRadar } from '../utils/saldoConta'
@@ -7,19 +7,21 @@ import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
 import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
 import { previsaoDoMes } from '../utils/previsaoDoMes'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
-import { avisosDoMes } from '../utils/avisosDoMes'
+import { avisosDoMes, type Aviso } from '../utils/avisosDoMes'
+import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
+import { iconeCategoria } from '../utils/categoriaIcone'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
-import HeroSaldo, { type StatusHero } from '../components/inicio/HeroSaldo'
-import AvisosCard from '../components/inicio/AvisosCard'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
-import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
+import AjudaTela from '../components/AjudaTela'
+import { Atalho, Barrinha, Cartao, Etiqueta, IconeRedondo, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
+import { M, ROTULO_TOPO, TOPO_AZUL, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
 
@@ -35,10 +37,6 @@ function useIsMobile() {
 
 
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-
-function fmt(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
 
 /**
  * A Início enxuta (06/10/2026): a resposta, o que pede atenção e um gráfico.
@@ -62,7 +60,7 @@ export default function Dashboard() {
   // ── Cálculos do mês ──────────────────────────────────────────────────
   // Nenhum número desta tela é calculado aqui: saem das MESMAS funções do
   // Radar, pela passagem que a Início divide com Análises (useMesDaInicio).
-  const { totalEntradas, totalSaidas, totalPrevS, linhasSaida, deps, temPlano, usaPlanoNoMes } =
+  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, linhasSaida, deps, temPlano, usaPlanoNoMes } =
     useMesDaInicio(viewAno, viewMes)
 
   // O saldo das contas de banco e do dinheiro ao fim do mês escolhido — no mês
@@ -105,7 +103,6 @@ export default function Dashboard() {
     [ehFuturo, viewAno, viewMes, deps],
   )
   const [memoriaAberta, setMemoriaAberta] = useState(false)
-  const [contasAbertas, setContasAbertas] = useState(false)
 
   // A série do Simulador, do mês corrente ao fim do plano — a parte cara,
   // calculada uma vez para o aviso e para o gráfico. Sem plano, não há série.
@@ -165,238 +162,322 @@ export default function Dashboard() {
     [totalEntradas, totalSaidas, temPlano, totalPrevS],
   )
 
+  // Onde o gasto passou do plano: as linhas do Radar, as mesmas da Bússola.
+  const estouradas = useMemo(() => (ehMesCorrente && usaPlanoNoMes ? categoriasEstouradas(linhasSaida) : []),
+    [ehMesCorrente, usaPlanoNoMes, linhasSaida])
+  const perto = useMemo(() => (ehMesCorrente && usaPlanoNoMes && estouradas.length === 0 ? maisPertoDoLimite(linhasSaida, categorias) : []),
+    [ehMesCorrente, usaPlanoNoMes, estouradas, linhasSaida, categorias])
+  // Contas e "passou" têm cartão próprio aqui; o aviso deles não se repete.
+  const outrosAvisos = avisos.filter(a => a.id !== 'contas' && a.id !== 'passou')
+
+  const [oculto, alternarOculto] = useValoresOcultos()
+  const v = (n: number) => mostrar(n, oculto)
+  const mesNome = MESES_FULL[viewMes]
+  const status = !ehFuturo ? STATUS_HERO[compassStatus] : null
+  const r = ritmo
+  const passou = r?.estado === 'passou'
+
+  const acaoDoAviso: Record<Aviso['id'], { rotulo: string; onClick: () => void }> = {
+    parcelas: { rotulo: 'Revisar', onClick: () => setRevisando(true) },
+    negativo: { rotulo: 'Ver plano', onClick: () => navigate('/planejamento') },
+    contas:   { rotulo: 'Lançamentos', onClick: () => navigate('/novo-lancamento') },
+    passou:   { rotulo: 'Radar', onClick: () => navigate('/radar') },
+    ritmo:    { rotulo: 'Radar', onClick: () => navigate('/radar') },
+  }
+
+  // O número grande do topo e a caixa ao lado, nos três modos do mês.
+  const grande = ehFuturo && previsao
+    ? { rotulo: `${mesNome} deve terminar com`, valor: previsao.final }
+    : ehMesCorrente
+      ? { rotulo: 'Saldo atual · bancos e dinheiro', valor: saldoDisponivel }
+      : memoria ? { rotulo: `${mesNome} terminou com`, valor: memoria.fechamento } : null
+
+  const abrirMemoria = () => {
+    const abrir = !memoriaAberta
+    setMemoriaAberta(abrir)
+    if (abrir) setTimeout(() => document.getElementById('memoria-do-saldo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+  }
+
   // ── Render ────────────────────────────────────────────────────────────
+  // A identidade do celular (Bússola) no computador — pedido do Guilherme em
+  // 12/10/2026: topo azul com o número que importa, cartões brancos com
+  // cantos de 20 e sombra azulada sobre o fundo azulado, ícone da categoria
+  // em círculo. Duas colunas onde o celular tem uma.
   return (
-    <div style={{
-      minHeight: '100vh', background: COR.fundo,
-      fontFamily: "-apple-system,'Inter',sans-serif",
-    }}>
-      {/* Mobile top bar */}
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath="/dashboard" />
 
-      {/* Header em largura cheia, como na tela de Lancamentos */}
-      <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
-          <PageHeader
-            icon="ti-layout-dashboard"
-            ajuda="inicio"
-            title={`Olá, ${nome}`}
-            subtitle={`${MESES_FULL[viewMes]} ${viewAno}`}
-            rightContent={
-              <>
-                <SeletorMesAno
-                  mes={viewMes} ano={viewAno}
-                  onSelect={(m, a) => { setViewMes(m); setViewAno(a) }}
-                  habilitado={(m, a) => a * 12 + m <= ymHoje
-                    || (!!fimPlano && a * 12 + m <= fimPlano.ano * 12 + fimPlano.mes)}
-                  compacto={isMobile}
-                />
-                <button onClick={() => navigate('/novo-lancamento')} style={PH_BTN_SOLID}>
-                  + Lançar
-                </button>
-              </>
-            }
-          />
-      </div>
-
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: isMobile ? '16px 14px 80px' : '28px 28px 40px' }}>
-
-        {/* ── Banners de setup ── */}
-        {(!temBanco || !temCategorias) && (
-          <div style={{
-            background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12,
-            padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12,
-            marginBottom: 16,
-          }}>
-            <span style={{ fontSize: 16 }}>🧭</span>
-            <span style={{ flex: 1, fontSize: 13, color: '#1e40af', fontWeight: 500 }}>
-              Configure suas contas e categorias para uma visão completa
-            </span>
-            <button onClick={() => navigate('/configuracoes')} style={{
-              background: COR.azul, color: '#fff', border: 'none', borderRadius: 8,
-              padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              fontFamily: 'inherit', whiteSpace: 'nowrap',
-            }}>Configurar →</button>
+      {/* ── Topo azul: a resposta do mês ─────────────────────────────── */}
+      <header style={{ background: TOPO_AZUL, color: '#fff', padding: isMobile ? '18px 16px 60px' : '28px 32px 76px', borderRadius: '0 0 28px 28px' }}>
+        <div style={{ maxWidth: LARGURA - 64, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Olá, {nome} <span aria-hidden>👋</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: ROTULO_TOPO, marginTop: 4 }}>
+                {status ? (
+                  <>
+                    <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: status.cor, flexShrink: 0 }} />
+                    {status.frase(mesNome, !ehMesCorrente)}
+                  </>
+                ) : `Previsão de ${mesNome.toLowerCase()} de ${viewAno}`}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <SeletorMesAno
+                mes={viewMes} ano={viewAno}
+                onSelect={(m, a) => { setViewMes(m); setViewAno(a); setMemoriaAberta(false) }}
+                habilitado={(m, a) => a * 12 + m <= ymHoje
+                  || (!!fimPlano && a * 12 + m <= fimPlano.ano * 12 + fimPlano.mes)}
+                compacto={isMobile}
+              />
+              <button onClick={() => navigate('/novo-lancamento')} style={{ ...botaoTopo, background: '#fff', color: '#1e3a8a', padding: '0 18px' }}>
+                + Lançar
+              </button>
+              <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}
+                style={{ ...botaoTopo, width: 44, padding: 0 }}>
+                <OlhoIcone fechado={oculto} />
+              </button>
+              <AjudaTela tela="inicio" />
+            </div>
           </div>
+
+          {grande && (
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr minmax(340px, 420px)', gap: 24,
+              alignItems: 'end', marginTop: 28 }}>
+              <div>
+                <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
+                <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
+                  color: grande.valor < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
+              </div>
+
+              <div style={{ ...pilulaTopo, alignItems: 'stretch', cursor: 'default', gap: 10 }}>
+                {ehFuturo && previsao ? (
+                  <>
+                    {([['Abre com', previsao.inicial], ['Entram', previsao.entradas], ['Saem', previsao.saidas]] as const).map(([rot, n]) => (
+                      <div key={rot} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 15 }}>
+                        <span style={{ color: ROTULO_TOPO }}>{rot}</span><b style={{ fontVariantNumeric: 'tabular-nums' }}>{v(n)}</b>
+                      </div>
+                    ))}
+                    <SeletorCenario valor={cenarioPrevisao} onEscolher={setCenarioPrevisao} />
+                  </>
+                ) : ehMesCorrente && memoria ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                      <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Saldo final previsto</span>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: memoria.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                        {v(memoria.fechamento)}
+                      </span>
+                    </div>
+                    <SeletorCenario valor={cenarioPrevisao} onEscolher={setCenarioPrevisao} />
+                  </>
+                ) : memoria ? (
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Abriu com</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: memoria.abertura < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      {v(memoria.abertura)}
+                    </span>
+                  </div>
+                ) : null}
+                <button onClick={abrirMemoria} aria-expanded={memoriaAberta} style={linkTopo}>
+                  {memoriaAberta ? 'fechar o cálculo' : 'como cheguei nesse número'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <div style={{ maxWidth: LARGURA, margin: '-48px auto 0', padding: isMobile ? '0 14px 80px' : '0 32px 48px', display: 'grid', gap: 20 }}>
+        {memoriaAberta && (
+          <div id="memoria-do-saldo" style={{ scrollMarginTop: 12 }}>
+            {ehFuturo && previsao ? (
+              <MemoriaSaldo m={previsao.memoria} positivo={previsao.final >= 0}
+                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}
+                rotuloAbertura={['Saldo inicial previsto', 'Com quanto o mês deve abrir']} />
+            ) : memoria && (
+              <MemoriaSaldo m={memoria} positivo={memoria.fechamento >= 0}
+                cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
+            )}
+          </div>
+        )}
+
+        {/* ── Primeiros passos: sem conta ou categoria, ou sem plano ── */}
+        {(!temBanco || !temCategorias) && (
+          <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <IconeRedondo icone="🧭" />
+            <span style={{ flex: 1, fontSize: M.corpo, color: COR.texto }}>Configure suas contas e categorias para uma visão completa.</span>
+            <Pilula forte onClick={() => navigate('/configuracoes')}>Configurar</Pilula>
+          </Cartao>
         )}
         {temBanco && temCategorias && !temPlano && (
-          <div style={{
-            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12,
-            padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12,
-            marginBottom: 16,
-          }}>
-            <span style={{ fontSize: 16 }}>📋</span>
-            <span style={{ flex: 1, fontSize: 13, color: '#92400e', fontWeight: 500 }}>
-              Complete seu planejamento para ter uma visão completa
-            </span>
-            <button onClick={() => navigate('/planejamento', { state: { openQuiz: true } })} style={{
-              background: '#b45309', color: '#fff', border: 'none', borderRadius: 8,
-              padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              fontFamily: 'inherit', whiteSpace: 'nowrap',
-            }}>Começar →</button>
-          </div>
+          <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <IconeRedondo icone="📋" cor={COR.amarelo} />
+            <span style={{ flex: 1, fontSize: M.corpo, color: COR.texto }}>Com um plano, a Início diz quanto ainda dá para gastar e com quanto o mês termina.</span>
+            <Pilula forte onClick={() => navigate('/planejamento', { state: { openQuiz: true } })}>Montar meu plano</Pilula>
+          </Cartao>
         )}
 
-        {/* ── Mês futuro: nada aqui aconteceu ainda ──
-            infoFundo + infoTexto: par medido em cores.ts (5,5:1). */}
+        {/* Mês futuro: nada aqui aconteceu ainda. */}
         {ehFuturo && (
-          <div style={{
-            background: COR.infoFundo, border: `1px solid ${COR.infoBorda}`, borderRadius: 12,
-            padding: '12px 16px', marginBottom: 20,
-            display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-          }}>
-            <span aria-hidden style={{ fontSize: 18 }}>🔭</span>
-            <div style={{ flex: 1, minWidth: 220, fontSize: 13, color: COR.infoTexto, lineHeight: 1.5 }}>
-              <b>Previsão de {MESES_FULL[viewMes].toLowerCase()} de {viewAno}.</b> Nada aqui aconteceu ainda:
-              são as contas do plano, as faturas já lançadas e o que o plano espera
-              gastar e receber, no cenário {cenarioPrevisao}.
+          <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <IconeRedondo icone="🔭" />
+            <div style={{ flex: 1, minWidth: 240, fontSize: M.corpo, color: COR.texto, lineHeight: 1.5 }}>
+              <b>Nada aqui aconteceu ainda.</b>{' '}
+              <span style={{ color: COR.textoSuave }}>São as contas do plano, as faturas já lançadas e o que o plano espera
+              gastar e receber, no cenário {cenarioPrevisao}.</span>
             </div>
-            <button onClick={() => { setViewMes(hoje.getMonth()); setViewAno(hoje.getFullYear()) }} style={{
-              background: COR.infoTexto, color: '#fff', border: 'none', borderRadius: 8,
-              padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              fontFamily: 'inherit', whiteSpace: 'nowrap',
-            }}>Voltar para hoje</button>
-          </div>
+            <Pilula onClick={() => { setViewMes(hoje.getMonth()); setViewAno(hoje.getFullYear()) }}>Voltar para hoje</Pilula>
+          </Cartao>
         )}
 
-        {/* ══ 1 · A resposta ══ Uma frase e um número: com quanto o mês termina.
-            Mês corrente: com quanto termina, e quanto ainda dá para gastar na
-            variável. Mês fechado: com quanto terminou. Mês futuro: com quanto
-            deve terminar — sem a linha de status, que julga o que aconteceu.
-            Ver components/inicio/HeroSaldo. */}
-        {(() => {
-          const mesNome = MESES_FULL[viewMes]
-          const hero = ehFuturo && previsao ? {
-            status: null as StatusHero | null,
-            rotulo: `${mesNome} deve terminar com`,
-            valor: previsao.final,
-            folga: null,
-            apoio: [
-              { rotulo: 'abre com', valor: previsao.inicial },
-              { rotulo: 'saem', valor: previsao.saidas },
-              { rotulo: 'entram', valor: previsao.entradas },
-            ],
-          } : memoria ? {
-            status: { cor: STATUS_HERO[compassStatus].cor, frase: STATUS_HERO[compassStatus].frase(mesNome, !ehMesCorrente) },
-            rotulo: ehMesCorrente ? `${mesNome} termina com` : `${mesNome} terminou com`,
-            valor: memoria.fechamento,
-            // A folga é o "sobra" do ritmoDoMes — o mesmo número da frase do
-            // topo do Radar. Passou: quanto passou, em vermelho claro.
-            folga: ritmo ? (ritmo.estado === 'passou' ? {
-              rotulo: 'As despesas variáveis passaram do plano em', valor: ritmo.gasto - ritmo.planejado,
-              detalhe: 'cada gasto variável agora sai do saldo', passou: true,
-            } : {
-              rotulo: 'Ainda dá para gastar', valor: ritmo.sobra, passou: false,
-              detalhe: ritmo.diasRestantes === 1 ? 'hoje, o último dia'
-                : `até o dia ${ritmo.totalDias} · ${fmt(ritmo.porDia)} por dia`,
-            }) : null,
-            apoio: ehMesCorrente
-              ? [{ rotulo: 'Hoje no banco', valor: saldoDisponivel }]
-              : [{ rotulo: 'Abriu com', valor: memoria.abertura }],
-          } : null
-          if (!hero) return null
-          return (
-            <div style={{ marginBottom: 20 }}>
-              <HeroSaldo {...hero} sparkline={evolucao} isMobile={isMobile}
-                aberto={memoriaAberta} onComoCheguei={() => setMemoriaAberta(v => !v)} />
-              {memoriaAberta && ehFuturo && previsao && (
-                <MemoriaSaldo m={previsao.memoria} positivo={previsao.final >= 0}
-                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}
-                  rotuloAbertura={['Saldo inicial previsto', 'Com quanto o mês deve abrir']} />
-              )}
-              {memoriaAberta && !ehFuturo && memoria && (
-                <MemoriaSaldo m={memoria} positivo={memoria.fechamento >= 0}
-                  cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
-              )}
-            </div>
-          )
-        })()}
-
-        {/* ══ 2 · O que pede atenção ══ Só no mês corrente: no máximo três
-            avisos, uma frase e um botão cada (utils/avisosDoMes). Sem nenhum,
-            "Tudo em dia". As contas abrem a lista aqui mesmo; o resto leva para
-            onde a ação acontece. */}
-        {ehMesCorrente && (
-          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <AvisosCard avisos={avisos} isMobile={isMobile}
-              emDia={usaPlanoNoMes
-                ? 'Nenhuma conta vencendo nos próximos 7 dias e nenhum grupo passou do plano.'
-                : 'Nenhuma conta vencendo nos próximos 7 dias.'}
-              acoes={{
-                contas:   { rotulo: contasAbertas ? 'Fechar a lista' : 'Ver contas', aberto: contasAbertas,
-                            onClick: () => setContasAbertas(v => !v) },
-                passou:   motivo.texto
-                  ? { rotulo: 'Anotar o motivo', onClick: motivo.abrir }
-                  : { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
-                parcelas: { rotulo: 'Revisar agora', onClick: () => setRevisando(true) },
-                negativo: { rotulo: 'Ver o plano', onClick: () => navigate('/planejamento') },
-                ritmo:    { rotulo: 'Ver no Radar', onClick: () => navigate('/radar') },
-              }} />
-            {motivo.dialog}
-            {revisando && (
-              <RevisaoPlanoDialog acima={lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
-                categorias={categorias} onFechar={() => setRevisando(false)} />
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, alignItems: 'start' }}>
+          {/* ── Coluna 1: o mês em números ── */}
+          <div style={{ display: 'grid', gap: 20 }}>
+            {!ehFuturo ? (
+              <Cartao>
+                <TituloCartao>{ehMesCorrente ? `${mesNome} até agora` : `${mesNome} fechou assim`}</TituloCartao>
+                <PrevistoRealizado mesNome={mesNome} oculto={oculto} comPlano={usaPlanoNoMes}
+                  linhas={[['Receitas', totalPrevE, totalEntradas], ['Despesas', totalPrevS, totalSaidas]]} />
+                {r && (
+                  <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 14, lineHeight: 1.45 }}>
+                    {passou
+                      ? <>Gastos variáveis: <b style={{ color: COR.erroTexto }}>{v(r.gasto - r.planejado)}</b> acima do planejado. Cada gasto variável agora sai do saldo.</>
+                      : <>Gastos variáveis: ainda dá <b style={{ color: COR.texto }}>{v(r.sobra)}</b>
+                          {r.diasRestantes > 1 ? <>, {v(r.porDia)} por dia até o dia {r.totalDias}.</> : ' até hoje, último dia do mês.'}</>}
+                  </div>
+                )}
+              </Cartao>
+            ) : previsao && (
+              <Cartao>
+                <TituloCartao>{mesNome} previsto</TituloCartao>
+                <PrevistoRealizado mesNome={mesNome} oculto={oculto} comPlano={false} rotuloReal="Nas contas"
+                  linhas={[['Receitas', 0, previsao.entradas], ['Despesas', 0, previsao.saidas]]} />
+              </Cartao>
             )}
-            {contasAbertas && aVencer.length > 0 && (
-              <ContasAVencerCard contas={aVencer} categorias={categorias} isMobile={isMobile}
+
+            {ehMesCorrente && (
+              usaPlanoNoMes ? (
+                <Cartao>
+                  {estouradas.length > 0 ? (
+                    <>
+                      <TituloCartao direita={<Etiqueta cor={COR.erroTexto} fundo={COR.erroFundo}>{estouradas.length === 1 ? '1 categoria' : `${estouradas.length} categorias`}</Etiqueta>}>
+                        Passou do plano
+                      </TituloCartao>
+                      {estouradas.map((l, i) => {
+                        const ic = iconeCategoria(categorias, l.nome)
+                        return (
+                          <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
+                            titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
+                            legenda={l.semPlano ? 'fora do plano' : `${v(l.real)} de ${v(l.prev)}`}
+                            direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
+                        )
+                      })}
+                      {motivo.texto && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COR.borda}` }}>
+                          <span style={{ flex: 1, fontSize: M.legenda, color: COR.textoSuave }}>Por que passou? Anote agora, enquanto lembra.</span>
+                          <Pilula onClick={motivo.abrir}>Anotar motivo</Pilula>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <TituloCartao direita={<Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ tudo dentro</Etiqueta>}>
+                        Plano do mês
+                      </TituloCartao>
+                      {perto.length === 0 && <div style={{ fontSize: M.corpo, color: COR.textoSuave }}>Ainda sem gasto nas categorias do plano.</div>}
+                      {perto.map((l, i) => {
+                        const ic = iconeCategoria(categorias, l.nome)
+                        return (
+                          <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
+                            titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
+                            legenda={`resta ${v(Math.max(0, l.prev - l.real))}`}
+                            direita={<Barrinha p={l.prev > 0 ? l.real / l.prev : 0} />} />
+                        )
+                      })}
+                    </>
+                  )}
+                  <button onClick={() => navigate('/radar')} style={linkRodape}>Ver todas no Radar ›</button>
+                </Cartao>
+              ) : null
+            )}
+          </div>
+
+          {/* ── Coluna 2: o que fazer ── */}
+          <div style={{ display: 'grid', gap: 20 }}>
+            <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
+              <Atalho icone={<span style={{ fontSize: 32, fontWeight: 300, lineHeight: 1 }}>+</span>} rotulo="Lançar" destaque onClick={() => navigate('/novo-lancamento')} />
+              <Atalho icone="📅" rotulo="Planejamento" onClick={() => navigate('/planejamento')} />
+              <Atalho icone="🛒" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
+              <Atalho icone="📈" rotulo="Radar" onClick={() => navigate('/radar')} />
+            </Cartao>
+
+            {ehMesCorrente && outrosAvisos.length > 0 && (
+              <Cartao>
+                <TituloCartao>Pede sua atenção</TituloCartao>
+                {outrosAvisos.map((a, i) => (
+                  <Linha key={a.id} primeira={i === 0} icone="⚠️" cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
+                    titulo={<span style={{ whiteSpace: 'normal' }}>{a.titulo}</span>}
+                    legenda={a.detalhe}
+                    direita={<Pilula onClick={acaoDoAviso[a.id].onClick}>{acaoDoAviso[a.id].rotulo}</Pilula>} />
+                ))}
+              </Cartao>
+            )}
+
+            {(ehMesCorrente || (ehFuturo && contasFuturo.length > 0)) && (
+              <ContasAVencerCard contas={ehFuturo ? contasFuturo : aVencer} categorias={categorias} oculto={oculto}
+                titulo={ehFuturo ? `Contas de ${mesNome.toLowerCase()}` : 'Contas da semana'}
+                saldoHoje={ehMesCorrente ? saldoDisponivel : undefined}
                 onAbrir={() => navigate('/novo-lancamento')} />
             )}
           </div>
-        )}
+        </div>
 
-        {/* Mês futuro: o calendário inteiro de contas — onde elas se concentram. */}
-        {ehFuturo && contasFuturo.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <ContasAVencerCard contas={contasFuturo} categorias={categorias} isMobile={isMobile}
-              titulo={`Contas de ${MESES_FULL[viewMes].toLowerCase()}`}
-              acao="Ver o mês em Lançamentos →"
-              onAbrir={() => navigate('/novo-lancamento')} />
-          </div>
-        )}
-
-        {/* ══ 3 · Um gráfico só ══ Para onde o saldo vai: o passado real, a
-            previsão até o fim do plano, e o mês negativo marcado. */}
+        {/* ── Um gráfico só: para onde o saldo vai ── */}
         {evolucao.length >= 2 && (
-          <div style={{
-            background: COR.branco, borderRadius: 14, padding: isMobile ? '14px 12px 10px' : '18px 20px 12px',
-            border: `1px solid ${COR.borda}`, marginBottom: 20,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-              gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: COR.texto }}>Para onde o seu saldo está indo</div>
-                <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
-                  Bancos e dinheiro · linha cheia é o que aconteceu, tracejada é a previsão
-                  {serie && fimPlano ? ` até ${MESES_FULL[fimPlano.mes].toLowerCase()} de ${fimPlano.ano}` : ''}
-                </div>
-              </div>
+          <Cartao style={{ padding: isMobile ? '16px 12px 10px' : '20px 22px 14px' }}>
+            <TituloCartao>Para onde o seu saldo está indo</TituloCartao>
+            <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -6, marginBottom: 10 }}>
+              Bancos e dinheiro · linha cheia é o que aconteceu, tracejada é a previsão
+              {serie && fimPlano ? ` até ${MESES_FULL[fimPlano.mes].toLowerCase()} de ${fimPlano.ano}` : ''}
             </div>
-            <EvolucaoSaldoGrafico pontos={evolucao} altura={isMobile ? 190 : 230}
+            <EvolucaoSaldoGrafico pontos={evolucao} altura={isMobile ? 190 : 240}
               destaque={ehFuturo ? { ano: viewAno, mes: viewMes } : undefined}
               alerta={alertaFuturo} />
             {!serie && (
-              <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 6 }}>
+              <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 6 }}>
                 Com um planejamento, a previsão segue pelos próximos meses.
               </div>
             )}
-          </div>
+          </Cartao>
         )}
-
       </div>
 
-      {/* FAB mobile */}
-      {isMobile && (
-        <button
-          onClick={() => navigate('/novo-lancamento')}
-          style={{
-            position: 'fixed', bottom: 76, right: 20,
-            width: 52, height: 52, borderRadius: '50%', border: 'none',
-            background: 'linear-gradient(135deg,#1a56db,#2563eb)',
-            color: '#fff', fontSize: 26, cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(26,86,219,.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >+</button>
+      {motivo.dialog}
+      {revisando && (
+        <RevisaoPlanoDialog acima={lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
+          categorias={categorias} onFechar={() => setRevisando(false)} />
       )}
     </div>
   )
+}
+
+const LARGURA = 1120
+
+const botaoTopo: CSSProperties = {
+  height: 44, borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+  background: 'rgba(255,255,255,.14)', color: '#fff', fontSize: 15, fontWeight: 700,
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap',
+}
+
+const linkTopo: CSSProperties = {
+  background: 'none', border: 'none', padding: 0, color: '#fff', fontSize: 14, fontFamily: 'inherit',
+  textAlign: 'left', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
+}
+
+const linkRodape: CSSProperties = {
+  display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',
+  background: 'none', color: COR.azul, fontSize: 15, fontWeight: 700,
+  fontFamily: 'inherit', cursor: 'pointer', textAlign: 'center',
 }
