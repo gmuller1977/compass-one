@@ -16,11 +16,15 @@ const TIPOS: { v: NonNullable<Motivo['tipoEvento']>; label: string }[] = [
  * obrigação. Os mesmos campos da etapa de justificativa da Revisão mensal
  * (texto e tipo do evento), para ela abrir com eles preenchidos.
  */
-export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFechar }: {
+export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFechar, onLembrarDepois, onDispensar }: {
   estouros: EstouroComMotivo[]
   nomeMes: string
   salvar: (p: { rotulo: string; prev: number; real: number; justificativa: string; tipoEvento: Motivo['tipoEvento'] }) => Promise<string | null>
   onFechar: () => void
+  /** Some até amanhã (useLembreteMotivo). */
+  onLembrarDepois: () => void
+  /** Não pede mais o motivo destas categorias neste mês. */
+  onDispensar: () => void
 }) {
   const { toast } = useToast()
   const [textos, setTextos] = useState<Record<string, string>>(
@@ -110,11 +114,16 @@ export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFecha
           ))}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-          <button type="button" onClick={onFechar} style={{
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => { onDispensar(); onFechar() }}
+            title="Não pedir o motivo destas categorias neste mês" style={{
+            border: 'none', borderRadius: 999, padding: '8px 12px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', background: 'transparent', color: '#475569', marginRight: 'auto',
+          }}>Fechar</button>
+          <button type="button" onClick={() => { onLembrarDepois(); onFechar() }} style={{
             border: 'none', borderRadius: 999, padding: '8px 16px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
             cursor: 'pointer', background: '#f1f5f9', color: '#1e3a8a',
-          }}>Agora não</button>
+          }}>Lembrar depois</button>
           <button type="button" onClick={confirmar} disabled={salvando} style={{
             border: 'none', borderRadius: 999, padding: '8px 16px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
             cursor: salvando ? 'default' : 'pointer', background: COR.azul, color: '#fff', opacity: salvando ? 0.6 : 1,

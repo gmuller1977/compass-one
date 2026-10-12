@@ -55,7 +55,8 @@ export function useLembreteMotivo(linhasSaida: LinhaDoMes[], ano: number, mes: n
     setVersao(v => v + 1)
   }
   const dialog = aberto && estouros.length > 0
-    ? <MotivoEstouroDialog estouros={estouros} nomeMes={MESES[mes]} salvar={salvar} onFechar={() => setAberto(false)} />
+    ? <MotivoEstouroDialog estouros={estouros} nomeMes={MESES[mes]} salvar={salvar} onFechar={() => setAberto(false)}
+      onLembrarDepois={lembrarDepois} onDispensar={fechar} />
     : null
   return { estouros, texto, abrir: () => setAberto(true), lembrarDepois, fechar, dialog }
 }

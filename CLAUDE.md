@@ -1352,7 +1352,7 @@ houver categoria sem motivo. Regras em
   outra. Ela também passou a gravar o rótulo com a variante.
 - Não é alerta no LANÇAMENTO (decisão de 06/10 continua): é um convite no
   Radar, na Início e na Bússola, e não mexe no plano.
-- **Dá para dispensar** (pedido do Guilherme em 12/10/2026: "às vezes o
+- **Dá para dispensar** (pedido do Guilherme em 12/10/2026, também dentro da janela do motivo, no lugar do "Agora não": "às vezes o
   usuário não quer usar"). Faixa do Radar e linha da Bússola têm "Lembrar
   depois" (some até amanhã, neste aparelho, localStorage) e "Fechar" (as
   categorias pendentes naquele momento não pedem mais motivo NESTE mês;
