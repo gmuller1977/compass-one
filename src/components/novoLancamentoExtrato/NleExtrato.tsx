@@ -724,6 +724,18 @@ export default function NleExtrato({
                             style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
                             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
                         </div>
+                        {/* Editando, o dia se troca aqui: o lancar() grava no diaSel e
+                            move do dia de origem — o mesmo que o calendário do
+                            painel do computador faz. */}
+                        {(editandoId||editandoFixaId)&&(
+                          <div style={{flex:'0 0 70px',display:'flex',flexDirection:'column',gap:3}}>
+                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Dia</div>
+                            <select value={diaSel} onChange={e=>setDiaSel(Number(e.target.value))} aria-label="Dia do lançamento"
+                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 6px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
+                              {Array.from({length:totalDias},(_,i)=>i+1).map(d=><option key={d} value={d}>{String(d).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}</option>)}
+                            </select>
+                          </div>
+                        )}
                         <div style={{flex:'0 0 90px',display:'flex',flexDirection:'column',gap:3}}>
                           <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
                           <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
