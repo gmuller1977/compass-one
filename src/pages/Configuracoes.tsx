@@ -23,6 +23,9 @@ import CfgPerfil from '../components/configuracoes/CfgPerfil'
 import PrimeirosPassos from '../components/configuracoes/PrimeirosPassos'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { nomeCanonico, mesmoNome } from '../utils/nomeCategoria'
+import { mudouIdentidade, renomearNoExtrato, renomearNaFaturaDaCategoria, renomearNosPlanos } from '../utils/renomearCategoria'
+import { rotuloDaLinha } from '../utils/motivoDoEstouro'
+import { supabase } from '../lib/supabase'
 import CfgPreferencias from '../components/configuracoes/CfgPreferencias'
 
 // ── Componente principal ─────────────────────────────────────────────
@@ -41,7 +44,7 @@ export default function Configuracoes() {
     return 'bancos'
   })
   const { user, contas, categorias, setContas, setCategorias,
-          extratoData, faturaData,
+          extratoData, faturaData, setExtratoData, setFaturaData, compartilhamento,
           planos, setPlanos,
           desvioMinPerc, setDesvioMinPerc,
           percentualAlerta, setPercentualAlerta,
@@ -372,18 +375,39 @@ export default function Configuracoes() {
       descricao: formCat.descricao?.trim() || undefined,
       grupo: formCat.grupo?.trim() || undefined,
     }
+    const descNorm = (limpo.descricao ?? '').toLowerCase()
+    const duplicata = categorias.find(c =>
+      c.id !== editCatId &&
+      mesmoNome(c.nome, limpo.nome) &&
+      c.tipo === formCat.tipo &&
+      (c.descricao ?? '').trim().toLowerCase() === descNorm
+    )
+    // Editando também: renomear para um par que já existe juntaria os
+    // lançamentos das duas categorias numa só, sem volta.
+    if (duplicata) return setErroCat(`Já existe uma categoria "${duplicata.nome}${duplicata.descricao ? ` · ${duplicata.descricao}` : ''}" neste tipo`)
     if (editCatId) {
+      const antiga = categorias.find(c => c.id === editCatId)
+      // Nome ou variante mudou: lançamentos, faturas e plano vão junto
+      // (utils/renomearCategoria). Membro não edita cadastro — o
+      // setCategorias dele não muda nada, e o resto não pode mudar sozinho.
+      if (antiga && compartilhamento.papel !== 'membro' && mudouIdentidade(antiga, limpo)) {
+        const antes = { nome: antiga.nome, descricao: antiga.descricao }
+        const depois = { nome: limpo.nome, descricao: limpo.descricao }
+        setExtratoData(renomearNoExtrato(extratoData, antiga, antes, depois, categorias))
+        setFaturaData(f => renomearNaFaturaDaCategoria(f, antiga, antes, depois, categorias))
+        setPlanos(p => renomearNosPlanos(p, antiga, antes, depois, categorias))
+        // Motivos anotados (Radar, Revisão mensal) são do login, pelo rótulo.
+        if (user) {
+          void supabase.from('licoes_aprendidas')
+            .update({ categoria_nome: rotuloDaLinha(depois) })
+            .eq('user_id', user.id).eq('categoria_nome', rotuloDaLinha(antes))
+            .then(({ error }) => { if (error) console.warn('renomear motivos:', error.message) })
+        }
+      }
       setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...limpo, ativa:true} : c))
       toast('Categoria atualizada')
       setMobileView('list')
     } else {
-      const descNorm = (limpo.descricao ?? '').toLowerCase()
-      const duplicata = categorias.find(c =>
-        mesmoNome(c.nome, limpo.nome) &&
-        c.tipo === formCat.tipo &&
-        (c.descricao ?? '').trim().toLowerCase() === descNorm
-      )
-      if (duplicata) return setErroCat(`Já existe uma categoria "${duplicata.nome}${duplicata.descricao ? ` · ${duplicata.descricao}` : ''}" neste tipo`)
       setCategorias(prev => [...prev, {id:gerarId(),...limpo, ativa:true}])
       toast('Categoria criada')
       setMobileView('list')

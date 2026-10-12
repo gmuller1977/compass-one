@@ -2458,6 +2458,19 @@ porque o valor soma na mãe ao ser lido): o assistente de planejamento e o
 celular não tem a faixa "Por variante"; a Revisão Mensal lista a linha da filha
 com zero até o plano ser regravado.
 
+**Renomear a categoria leva junto o que já está gravado.** Pedido do
+Guilherme em 12/10/2026: trocar nome ou variante de uma categoria com
+lançamento não deve pedir para arrumar os lançamentos. O lançamento guarda a
+categoria pelo TEXTO, então trocar só o cadastro jogava o gasto em "Outras" e
+deixava a linha do plano com nome que não existe. Hoje, ao salvar (só o
+administrador), [`renomearCategoria.ts`](src/utils/renomearCategoria.ts) troca
+`categoria`/`subCategoria` no extrato, no dinheiro e na fatura (e a descrição
+que era só o nome da categoria), a linha do plano em todos os anos (id, par ou
+posição do plano antigo) com os itens de parcela, e o rótulo dos motivos
+anotados do login. Só texto, nenhum valor. Renomear para um par que já existe
+é recusado, porque juntaria duas categorias sem volta. Renomear a mãe não leva
+as variantes com cadastro próprio. `prova72` (18 invariantes).
+
 **O nome no cadastro tem autocomplete, e é gravado com a grafia da
 existente.** Pedido do Guilherme em 08/10/2026: o campo era aberto. Ao digitar,
 as categorias do tipo com uma palavra que começa com o digitado (sem acento e
