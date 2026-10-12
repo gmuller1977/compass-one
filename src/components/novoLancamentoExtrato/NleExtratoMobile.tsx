@@ -127,7 +127,10 @@ export default function NleExtratoMobile({
           <section key={dia} ref={ehHoje ? hojeRef : undefined} style={{ scrollMarginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 8px' }}>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: M.corpo, fontWeight: 800, color: COR.texto }}>{dia}</span>
+                {/* dd/mm: com a página rolando, o mês do topo sai da vista. */}
+                <span style={{ fontSize: M.corpo, fontWeight: 800, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
+                  {String(dia).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}
+                </span>
                 <span style={{ fontSize: M.corpo, fontWeight: 500, color: COR.textoSuave }}>{semana}</span>
                 {ehHoje && (
                   <span style={{ fontSize: 12, fontWeight: 800, padding: '2px 9px', borderRadius: 999, background: COR.azul, color: '#fff' }}>Hoje</span>

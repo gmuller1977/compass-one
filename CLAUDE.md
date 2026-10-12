@@ -2266,7 +2266,7 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   está lançado no mês), e embaixo "No Sicredi: R$ X" com "✓ Confere" ou a
   diferença — tocar abre a mesma caixa de saldo. A página inteira rola.
 - **Banco e Dinheiro** (`NleExtratoMobile`): só aparecem os dias com
-  movimento e HOJE. Cada dia é um título ("12 segunda · saldo R$ X", ou
+  movimento e HOJE. Cada dia é um título ("12/10 segunda · saldo R$ X" — dd/mm, pedido dele, porque o mês do topo sai da vista ao rolar —, ou
   "previsto" no futuro) com "+" e um cartão branco com as linhas (ícone em
   círculo, nome, legenda, valor). Fixa tem o círculo de "paga" de 30 px.
   O formulário virou FOLHA que sobe de baixo, com o campo Dia sempre à vista
