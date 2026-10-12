@@ -68,9 +68,11 @@ type Props = {
   mb?: number
   /** Mostra o "?" com a ajuda da tela (utils/ajudaDasTelas). */
   ajuda?: TelaAjuda
+  /** Conteúdo embaixo do título, dentro do mesmo azul (a resposta do Radar). */
+  children?: ReactNode
 }
 
-export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda }: Props) {
+export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda, children }: Props) {
   const isMobile = useIsMobile()
 
   return (
@@ -81,12 +83,9 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
       borderRadius: 20,
       boxShadow: '0 2px 14px rgba(15,40,120,.12)',
       padding: isMobile ? '14px 16px' : '18px 22px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 12,
       marginBottom: mb,
     }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       {/* Icon + text */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
         <div style={{
@@ -141,6 +140,8 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
           {ajuda && <AjudaTela tela={ajuda} />}
         </div>
       )}
+      </div>
+      {children}
     </div>
   )
 }

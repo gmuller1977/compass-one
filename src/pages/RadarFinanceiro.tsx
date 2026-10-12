@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
-import { M } from '../components/mobile/estilo'
+import { M, ROTULO_TOPO } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/saldoConta'
@@ -15,14 +15,14 @@ import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCo
 import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
-import KpiCard, { KpiBarra } from '../components/KpiCard'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
-import ResumoRadarFaixa from '../components/acompanhamento/ResumoRadarFaixa'
 import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
 import MotivoEstouroFaixa from '../components/motivo/MotivoEstouroFaixa'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { resumoDoMes } from '../utils/resumoRadar'
+import { ritmoDoMes } from '../utils/ritmoDoMes'
+import { RADAR_TRILHO_AZUL } from '../components/acompanhamento/radarCores'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 
@@ -89,6 +89,14 @@ export default function RadarFinanceiro() {
     [dadosAno, linhasSaida, categorias, ano, mes],
   )
 
+  // O número grande do topo: a MESMA sobra da frase (resumoDoMes chama
+  // ritmoDoMes com as mesmas linhas). Só no mês corrente e dentro do plano —
+  // quando passou, o resumo é null e o topo mostra o saldo de hoje.
+  const ritmo = useMemo(
+    () => (dadosAno && ano === anoHoje && mes === mesHoje && resumo ? ritmoDoMes(linhasSaida, categorias) : null),
+    [dadosAno, ano, anoHoje, mes, mesHoje, resumo, linhasSaida, categorias],
+  )
+
   // O Radar nao calcula saldo proprio: soma os saldos das contas de banco e
   // do dinheiro, os mesmos que Lancamentos mostra. Assim o saldo inicial de
   // um mes e, por construcao, o saldo final do anterior.
@@ -140,7 +148,7 @@ export default function RadarFinanceiro() {
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
   const percE = perc(totalRealE, totalPrevE)
   const percS = perc(totalRealS, totalPrevS)
-  const comPlano = (p: number | null) => (p === null ? '' : ` · ${Math.round(p * 100)}%`)
+  const deQuanto = (prev: number) => (prev > 0 ? `de ${fmt(prev)}` : 'sem plano')
   // As barrinhas dos cartões seguem a MESMA regra e as MESMAS cores das barras
   // de grupo: o cartão tem o mesmo fundo azul, e três tons de vermelho na mesma
   // tela (cartão, grupo, categoria) foram o motivo desta troca. Categoria fica
@@ -220,7 +228,15 @@ export default function RadarFinanceiro() {
       fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
-      <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+      {/* CONTEÚDO */}
+      {/* A página inteira rola, o topo junto: com a resposta no azul ele
+          ficou alto, e preso em cima deixava pouco espaço para os cartões. */}
+      <div style={{flex:1,overflowY:'auto',padding:'16px 24px 40px',
+        display:'flex',flexDirection:'column',gap:16}}>
+      {/* O topo é o do cardápio (12/10/2026): o mesmo azul do título traz a
+          RESPOSTA do mês em letra grande e, ao lado, os quatro números de
+          antes em miniatura. Clicar em qualquer um abre o detalhe por conta. */}
+      <div style={{ flexShrink: 0 }}>
         <PageHeader
           icon="ti-chart-bar"
           breadcrumb="TODO DIA"
@@ -234,43 +250,58 @@ export default function RadarFinanceiro() {
               onSelect={(m, a) => { setMes(m); setAno(a) }}
             />
           }
-        />
-      </div>
-
-      {/* KPIs CONSOLIDADOS — clicar em qualquer um abre o detalhe por conta.
-          Os saldos seguem o padrão verde/vermelho das receitas e despesas:
-          verde positivo, vermelho negativo. Antes ficavam em branco. */}
-      <div style={{ padding: '14px 24px 4px', flexShrink: 0, display: 'flex', gap: 14 }}>
-        <KpiCard icon="🔒" label="Saldo inicial" value={fmt(saldoInicial)}
-          valueColor={corSaldo(saldoInicial)}
-          sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas} />
-        <KpiCard icon="↑" label="Receitas" value={fmt(totalRealE)}
-          valueColor={RADAR_COR_AZUL.bom} sublabel={`de ${fmt(totalPrevE)}${comPlano(percE)}`} style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas}>
-          {percE !== null && <KpiBarra perc={percE} cor={corBarra(percE, true)} />}
-        </KpiCard>
-        <KpiCard icon="↓" label="Despesas" value={fmt(totalRealS)}
-          valueColor={RADAR_COR_AZUL.ruim} sublabel={`de ${fmt(totalPrevS)}${comPlano(percS)}`} style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas}>
-          {percS !== null && <KpiBarra perc={percS} cor={corBarra(percS, false)} />}
-        </KpiCard>
-        <KpiCard icon="=" label="Saldo atual" value={fmt(saldoAtual)}
-          valueColor={corSaldo(saldoAtual)}
-          sublabel={saldoAtual >= 0 ? '↑ positivo' : '↓ negativo'}
-          style={{ flex: 1 }}
-          onClick={alternarDetalhe} expandido={detalheContas} />
+        >
+          <div style={{ marginTop: 18, display: 'flex', gap: 24, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+              {ritmo && resumo ? (<>
+                <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
+                  Ainda dá para gastar nas despesas variáveis até o dia {ritmo.totalDias}
+                </div>
+                <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
+                  color: RADAR_COR_AZUL.bom, fontVariantNumeric: 'tabular-nums' }}>{fmt(ritmo.sobra)}</div>
+                {resumo.detalhe && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.detalhe}</div>}
+              </>) : (<>
+                <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
+                  {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
+                </div>
+                <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
+                  color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums' }}>{fmt(saldoAtual)}</div>
+                {resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
+              </>)}
+            </div>
+            <div style={{ flex: '1 1 460px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+              {[
+                { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null, ent: false },
+                { rot: '↑ Receitas', v: fmt(totalRealE), cor: RADAR_COR_AZUL.bom, sub: deQuanto(totalPrevE), p: percE, ent: true },
+                { rot: '↓ Despesas', v: fmt(totalRealS), cor: RADAR_COR_AZUL.ruim, sub: deQuanto(totalPrevS), p: percS, ent: false },
+                { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null, ent: false },
+              ].map(k => (
+                <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
+                  style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 14,
+                    padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.v}</div>
+                  <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
+                  {k.p !== null && (
+                    <div style={{ marginTop: 6, height: 6, borderRadius: 3, overflow: 'hidden',
+                      background: RADAR_TRILHO_AZUL, border: '1px solid #fff', boxSizing: 'border-box' }}>
+                      <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: corBarra(k.p, k.ent) }} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </PageHeader>
       </div>
 
       {detalheContas && (
-        <div style={{ padding: '8px 24px', flexShrink: 0 }}>
+        <div style={{ flexShrink: 0 }}>
           <RadarDetalheContas linhas={linhasContas} />
         </div>
       )}
 
-      {/* CONTEÚDO */}
-      <div style={{flex:1,overflowY:'auto',padding:'14px 24px 80px',
-        display:'flex',flexDirection:'column',gap:14}}>
         {!dadosAno ? (
           <EmptyState
             icon="📈"
@@ -281,10 +312,14 @@ export default function RadarFinanceiro() {
           />
         ) : (
           <AjustePlanoContexto.Provider value={setAjuste}>
-            {resumo && <ResumoRadarFaixa resumo={resumo} />}
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
             {ehMesCorrente && <MotivoEstouroFaixa linhasSaida={linhasSaida} ano={ano} mes={mes} />}
-            {/* ENTRADAS — um card por grupo */}
+            {/* O cardápio: um cartão por grupo, receitas e depois despesas, numa
+                grade. O cartão aberto ocupa a linha inteira (EvolucaoGrupo). */}
+            {/* dense: com um cartão aberto ocupando a linha, os seguintes sobem
+                para os buracos que ele deixaria. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16,
+              gridAutoFlow: 'row dense', alignItems: 'start', flexShrink: 0 }}>
             {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
               <EvolucaoGrupo
                 key={`entrada-${grupo}`}
@@ -298,7 +333,6 @@ export default function RadarFinanceiro() {
               />
             ))}
 
-            {/* SAÍDAS — um card por grupo */}
             {(dadosAno.saidas ?? []).length > 0 && gruposSaida.map(grupo => (
               <EvolucaoGrupo
                 key={`saida-${grupo}`}
@@ -311,6 +345,7 @@ export default function RadarFinanceiro() {
                 mes={mes}
               />
             ))}
+            </div>
           </AjustePlanoContexto.Provider>
         )}
       </div>

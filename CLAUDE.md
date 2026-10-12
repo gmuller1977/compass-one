@@ -159,6 +159,22 @@ de pago, "01/10 quinta · saldo", cartão branco; o formulário segue no painel 
 direita. O parágrafo acima sobre os temas de cor dos dias é histórico.
 `COR.fundo` NÃO mudou: `textoSuave` no `#f2f5fc` dá 4,36 e reprova.
 
+**O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
+Guilherme: "está frio, não chama atenção, os números não convencem"; ele
+escolheu o cardápio entre três modelos — cardápio, colunas por situação e
+envelopes). O azul do `PageHeader` (que ganhou `children`) traz a resposta em
+40px — "Ainda dá para gastar R$ X", o `sobra` de `ritmoDoMes`, o mesmo da
+frase — e, ao lado, os quatro números de antes em miniatura, que abrem o
+detalhe por conta. Mês fechado, ou corrente que passou, mostra o saldo no
+lugar da sobra. Cada grupo é um cartão branco (`EvolucaoGrupo`): ícone em
+círculo, `destaqueDoGrupo` em 24px, barra e "gastou X de Y"; aberto, ocupa a
+linha e lista as categorias (`EvolucaoLinha`, sem mudança). Grade com
+`row dense`. Cores pela `RADAR_COR_CLARO`. Saiu a barra de 200px alinhada
+entre os grupos — o "gráfico de barras" empilhado e o cinza dos cabeçalhos
+descritos abaixo são histórico no computador. A página inteira rola; a barra
+do saldo final previsto segue presa no pé. Nenhum número novo; o celular
+(`AcMobileView`) não mudou.
+
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
 Onboarding e **"Planejamento do Zero"** no menu. Na primeira vez não há nada

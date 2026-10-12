@@ -5,33 +5,29 @@ import { type CatReal } from './AcShared'
 import { RADAR_COR_CLARO as COR, faixaRadar, destaqueDoGrupo } from './radarCores'
 import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
+import { IconeRedondo } from '../mobile/ui'
 
 /**
- * O cabeçalho do grupo tem fundo FIXO — cinza-claro —, e a cor fica só na
- * barra e nos números.
- * Decidido pelo Guilherme em 26/09/2026. Antes o fundo inteiro mudava com o
- * percentual — azul-claro, azul-escuro, vermelho acima de 100% —, e a barra
- * era um traço de 60×5px que ninguém lia.
+ * O grupo é um CARTÃO do cardápio (pedido do Guilherme em 12/10/2026: o Radar
+ * estava "frio", e ele escolheu o cardápio entre três modelos). Ícone em
+ * círculo, nome, o número que importa agora em letra grande (destaqueDoGrupo:
+ * "resta R$ X", "passou R$ Y", "✓ pago"), a barra e o "gastou X de Y". Clicar
+ * abre as categorias embaixo, e o cartão aberto ocupa a linha inteira da
+ * grade (gridColumn 1 / -1).
  *
- * Barra e número usam EXATAMENTE a mesma cor, a pedido dele — as mesmas das
- * categorias abertas embaixo. A barra tem trilho branco e borda marinho, que
- * desenha os 100% para a parte vazia se ler como vazia.
+ * Fundo BRANCO, então número e barra usam os tons escuros do Radar
+ * (RADAR_COR_CLARO), a mesma regra das categorias: verde-escuro com folga,
+ * verde no limite, vermelho só quando passou. Barra e número com EXATAMENTE a
+ * mesma cor; trilho #e2e8f0 e borda #64748b desenham os 100%.
  *
- * As cores e os contrastes medidos moram em radarCores (RADAR_COR_CLARO).
- *
- * Verde = dentro do plano, vermelho = problema; o tom do verde diz se há
- * folga. A regra inteira está em radarCores.
+ * Histórico: antes era um cabeçalho cinza em linha, com barra de 200px
+ * alinhada entre os grupos. A troca abre mão do "gráfico de barras"
+ * empilhado — preço aceito na escolha.
  */
-// CINZA-CLARO, e não azul: neutro, ele não puxa o tom do vermelho e do verde,
-// e deixa espaço para o tom claro de cada um ler diferente do escuro. Cinza
-// se separa pouco do branco das categorias (1,23), e por isso há borda.
-const FUNDO   = 'linear-gradient(135deg, #e6ebf1, #d8dfe8)'
-const BORDA   = '1px solid #c3ccd8'
-// Fundo claro pede texto escuro: o nome no azul-marinho de Lançamentos, e os
-// rótulos num cinza-azulado. Barra com trilho BRANCO e borda marinho.
-const TEXTO   = '#1e3a8a'
-const ROTULO  = 'rgba(15,23,42,.75)'
-const TRILHO  = '#ffffff'
+const TEXTO  = '#0f172a'
+const ROTULO = '#475569'
+const TRILHO = '#e2e8f0'
+const BORDA_BARRA = '#64748b'
 
 interface EvolucaoGrupoProps {
   tipo: 'saida' | 'entrada'
@@ -58,11 +54,9 @@ export default function EvolucaoGrupo({
   const totalPrev = calcGrupoPrev(allCats, mes)
   const totalReal = calcGrupoReal(allCats, realMap, categorias)
 
-  const grupoIcone = (() => {
-    const primNome = allCats[0]?.nome
-    if (!primNome) return isEntrada ? '💰' : '📂'
-    return iconeCategoria(categorias, primNome).icone
-  })()
+  const primNome = allCats[0]?.nome
+  const grupoIcone = primNome ? iconeCategoria(categorias, primNome).icone : (isEntrada ? '💰' : '📂')
+  const grupoCor = primNome ? iconeCategoria(categorias, primNome).cor : '#94a3b8'
 
   const semDados   = totalPrev <= 0 && totalReal <= 0
   const perc       = totalPrev > 0 ? totalReal / totalPrev : (totalReal > 0 ? 1 : 0)
@@ -85,77 +79,53 @@ export default function EvolucaoGrupo({
   const alternar   = () => setAberto(v => !v)
 
   return (
-    <div style={{ flexShrink: 0, borderRadius: 16, boxShadow: '0 2px 14px rgba(15,40,120,.07)' }}>
+    <div style={{
+      gridColumn: aberto ? '1 / -1' : undefined,
+      background: '#fff', borderRadius: 20, boxShadow: '0 2px 14px rgba(15,40,120,.07)',
+      border: `2px solid ${aberto ? '#93c5fd' : 'transparent'}`, overflow: 'hidden',
+    }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
+        title={`${tipoLabel} — ${grupoLabel} · ${percLabel}`}
         onClick={alternar}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
-        style={{
-          background: FUNDO, color: TEXTO, cursor: 'pointer', border: BORDA,
-          borderRadius: aberto ? '16px 16px 0 0' : 16,
-          padding: '14px 18px',
-        }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(255,255,255,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
-            {grupoIcone}
+        style={{ cursor: 'pointer', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, color: TEXTO }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <IconeRedondo icone={grupoIcone} cor={grupoCor} tamanho={42} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {grupoLabel}
+            </div>
+            {/* O TIPO é a seta, a mesma dos cartões do topo: ↑ verde receita,
+                ↓ vermelha despesa. Desenhada, porque o caractere é fino. */}
+            <div style={{ fontSize: 12, color: ROTULO, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg role="img" aria-label={isEntrada ? 'Receita' : 'Despesa'} width={12} height={12} viewBox="0 0 16 16"
+                style={{ transform: isEntrada ? 'none' : 'rotate(180deg)' }}>
+                <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={isEntrada ? COR.bom : COR.ruim}
+                  strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {isEntrada ? 'receita' : 'despesa'}
+            </div>
           </div>
-          {/* Nome à esquerda, e à direita duas colunas FIXAS: números e barra.
-              A barra vem DEPOIS dos números (pedido do Guilherme, depois de ver
-              ela antes deles) e, com largura fixa, continua alinhada em todos os
-              grupos — os grupos empilhados ainda formam um gráfico de barras. */}
-          {/* Nome em branco e 16px, do tamanho dos números — pedido do
-              Guilherme. O TIPO fica numa seta antes do nome, a mesma dos cartões
-              do topo ("↑ Receitas", "↓ Despesas"): ↑ verde para receita, ↓
-              vermelha para despesa. A barra e os números continuam dizendo o
-              STATUS. Tons e contrastes: radarCores. */}
-          <div title={`${tipoLabel} — ${grupoLabel}`} style={{ flex: 1, minWidth: 140, fontSize: 14, fontWeight: 700,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {/* Seta DESENHADA, e não o caractere: "↑" é um traço fino em quase
-                toda fonte, e o negrito quase não o engrossa. Traço de 3px em
-                16×16. Tons e contrastes: radarCores. */}
-            <svg role="img" aria-label={isEntrada ? 'Receita' : 'Despesa'} width={16} height={16} viewBox="0 0 16 16"
-              style={{ marginRight: 8, verticalAlign: '-2px', flexShrink: 0,
-                transform: isEntrada ? 'none' : 'rotate(180deg)' }}>
-              <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={isEntrada ? COR.bom : COR.ruim}
-                strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {tipoLabel} — {grupoLabel}
-          </div>
-          {/* O número grande é o que importa agora: quanto RESTA do plano ou
-              quanto PASSOU (destaqueRadar). O "gastou X de Y" vai pequeno, ao
-              lado, e o percentual saiu — a barra já mostra a proporção.
-              Pedido do Guilherme em 06/10/2026. */}
-          <div title={percLabel} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: 8,
-            whiteSpace: 'nowrap', minWidth: 330, fontVariantNumeric: 'tabular-nums' }}>
-            <span style={{ fontSize: 11, color: ROTULO }}>{destaque.contexto}</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: corNumero }}>{destaque.principal}</span>
-          </div>
-          {/* Borda branca contornando a barra INTEIRA: desenha os 100% e deixa
-              a parte vazia legível como vazia sobre o trilho escuro. */}
-          <div style={{ width: 200, flexShrink: 0, height: 20, borderRadius: 10, background: TRILHO, overflow: 'hidden',
-            boxSizing: 'border-box', border: `2px solid ${semDados ? 'rgba(30,58,138,.35)' : TEXTO}` }}>
-            {!semDados && (
-              <div style={{ height: '100%', borderRadius: 10, width: `${percClamp * 100}%`,
-                background: corFaixa, transition: 'width .3s ease' }} />
-            )}
-          </div>
-          <span aria-hidden="true" style={{
-            fontSize: 12, color: ROTULO, width: 12, textAlign: 'center',
-            transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none',
-          }}>▾</span>
+          <span aria-hidden="true" style={{ fontSize: 14, color: ROTULO,
+            transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none' }}>▾</span>
         </div>
-
+        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
+          fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
+          {destaque.principal}
+        </div>
+        <div style={{ height: 12, borderRadius: 6, background: TRILHO, overflow: 'hidden', boxSizing: 'border-box',
+          border: `1.5px solid ${semDados ? '#cbd5e1' : BORDA_BARRA}` }}>
+          {!semDados && (
+            <div style={{ height: '100%', borderRadius: 6, width: `${percClamp * 100}%`,
+              background: corFaixa, transition: 'width .3s ease' }} />
+          )}
+        </div>
+        <div style={{ fontSize: 13, color: ROTULO, fontVariantNumeric: 'tabular-nums' }}>{destaque.contexto}</div>
       </div>
 
-      {/* O conteúdo aberto é BRANCO, pedido do Guilherme. As categorias usam
-          os tons escuros da mesma paleta — ver radarCores. */}
       {aberto && (
-        <div style={{
-          background: '#fff', border: '1px solid #e2e8f0',
-          borderTop: 0, borderRadius: '0 0 16px 16px', overflow: 'hidden',
-        }}>
+        <div style={{ borderTop: '1px solid #e2e8f0' }}>
           {allCats.map((cat, idx) => {
             const cd = pickReal(realMap, cat.nome, cat.descricao, categorias)
             return (
