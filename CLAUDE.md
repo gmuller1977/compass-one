@@ -227,13 +227,14 @@ gastar; mês futuro tem outro envelope, cheio — a sobra não atravessa o mês.
 O excesso é um fato do mês e vale o mesmo nos três cenários, mas só no otimista
 ele zera a reserva.
 
-**O aviso do otimista na barra SAIU em 12/10/2026**, pedido do Guilherme: "não
-ajuda em nenhuma decisão" — ele só recomendava trocar de cenário. Junto, a frase
-do topo no estado "passou" deixou de ser só "as despesas variáveis passaram do
-plano em R$ X": agora diz ONDE (as categorias variáveis que passaram, maior
-excesso primeiro, até três) e, embaixo, o total e quanto ainda está planejado
-em outras categorias ("gastar menos ali compensa"). `memoriaDoRadar().excessoVariavel`
-continua calculado; nenhuma tela o lê.
+**O aviso de variáveis acima do plano SAIU do Radar em 12/10/2026**, pedido do
+Guilherme: "não ajuda em nenhuma decisão" e "o radar já serve para dar o aviso
+pela análise dos grupos e categorias". Saíram o aviso do otimista na barra do
+rodapé e a frase do topo no estado "passou" (mês corrente e fechado): nesses
+casos `resumoDoMes` devolve `null` e não há faixa. A frase "Ainda dá para
+gastar" e "fechou com sobra" continuam. Uma versão que listava as categorias
+que passaram também foi recusada no mesmo dia — não repetir.
+`memoriaDoRadar().excessoVariavel` continua calculado; nenhuma tela o lê.
 
 **Tentativa descartada, para não repetir:** um bloco "Variável do mês" dentro da
 memória, com sobras, estouro usado para abater e o que ainda falta gastar.
