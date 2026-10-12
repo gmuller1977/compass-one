@@ -79,105 +79,98 @@ export default function NleMobileSubheader({
         />
       )}
 
-      {/* SUB-HEADER MOBILE: bank pills + month nav */}
-      {isMobile && tabPrincipal !== 'cartao' && (
-        <div style={{background:COR.branco,borderBottom:`1px solid ${COR.borda}`,flexShrink:0}}>
-          {tabPrincipal === 'extrato' && contasExtrato.length > 0 && (
-            <div style={{display:'flex',gap:6,padding:'10px 14px',overflowX:'auto',scrollbarWidth:'none' as never}}>
-              {contasExtrato.map(c => {
-                const ativo = c.id === contaIdEfetivo
-                return (
-                  <button key={c.id} onClick={() => {
-                    setContaId(c.id)
-                    const k = mesKey(c.id, ano, mes)
-                    if (dados[k]?.saldoBancoData !== hojeStr) {
-                      setModalSaldoValor(saldoSugerido[c.id] ?? '')
-                      setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
-                    }
-                  }} style={{
-                    display:'flex',alignItems:'center',gap:5,
-                    padding:'5px 12px',borderRadius:20,flexShrink:0,
-                    border:`1.5px solid ${ativo?COR.azul:'#e2e8f0'}`,
-                    background:ativo?'#eff6ff':'#f8faff',
-                    cursor:'pointer',whiteSpace:'nowrap',
-                    fontSize:11,fontWeight:500,color:ativo?COR.azul:'#64748b',
-                  }}>
-                    <span style={{width:7,height:7,borderRadius:'50%',background:c.cor,display:'inline-block'}}/>
-                    {c.icone} {c.banco}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-          {tabPrincipal === 'dinheiro' && (
-            <div style={{padding:'10px 14px'}}>
-              <span style={{fontSize:12,color:COR.azul,fontWeight:600}}>💵 Dinheiro em espécie</span>
-            </div>
-          )}
-          {tabPrincipal === 'consolidado' && (
-            <div style={{padding:'10px 14px'}}>
-              <span style={{fontSize:12,color:COR.azul,fontWeight:600}}>📊 Visão consolidada</span>
-            </div>
-          )}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px 10px'}}>
-            <button onClick={onMesAnterior}
-              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f8faff',
-                display:'flex',alignItems:'center',justifyContent:'center',
-                cursor:'pointer',fontSize:16,color:COR.azul,fontWeight:700}}>‹</button>
-            <span style={{fontSize:15,fontWeight:700,color:COR.texto}}>{mesNome} {ano}</span>
-            <button onClick={onMesProximo}
-              style={{width:32,height:32,borderRadius:10,border:'none',background:'#f8faff',
-                display:'flex',alignItems:'center',justifyContent:'center',
-                cursor:'pointer',fontSize:16,color:COR.azul,fontWeight:700}}>›</button>
-          </div>
-        </div>
-      )}
+      {/* SUB-HEADER MOBILE: continua o topo azul do NleHeader — contas em
+          pílulas, o mês, e o saldo em destaque, como nos apps de banco.
+          Sobre #0f2878 → #1e40af, medido no extremo claro: branco 8,72 ·
+          rótulo a 75% 5,1 · #86efac 6,21 · #fecaca 6,03. */}
+      {isMobile && tabPrincipal !== 'cartao' && (() => {
+        const hoje = new Date()
+        const ehMesAtual = mes === hoje.getMonth() && ano === hoje.getFullYear()
+        const futuro = ano > hoje.getFullYear() || (ano === hoje.getFullYear() && mes > hoje.getMonth())
+        const temSaldo = tabPrincipal === 'extrato' || tabPrincipal === 'dinheiro'
+        const seta = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.16)',
+          display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+          fontSize:20, color:'#fff', fontWeight:700, fontFamily:'inherit', flexShrink:0 } as const
+        const abrirSaldo = () => {
+          setModalSaldoValor(isDinheiro ? '' : (saldoSugerido[contaIdEfetivo] ?? ''))
+          if (isDinheiro) setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:COR.verde, key:chaveAtual})
+          else setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
+        }
+        return (
+          <div style={{background:'linear-gradient(180deg,#132f8f,#1e40af)',
+            borderRadius:'0 0 28px 28px',padding:'12px 16px 20px',flexShrink:0,marginBottom:12}}>
+            {tabPrincipal === 'extrato' && contasExtrato.length > 1 && (
+              <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none' as never,marginBottom:12}}>
+                {contasExtrato.map(c => {
+                  const ativo = c.id === contaIdEfetivo
+                  return (
+                    <button key={c.id} onClick={() => {
+                      setContaId(c.id)
+                      const k = mesKey(c.id, ano, mes)
+                      if (dados[k]?.saldoBancoData !== hojeStr) {
+                        setModalSaldoValor(saldoSugerido[c.id] ?? '')
+                        setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
+                      }
+                    }} style={{
+                      display:'flex',alignItems:'center',gap:6,minHeight:38,
+                      padding:'0 14px',borderRadius:999,flexShrink:0,border:'none',
+                      background:ativo?'#fff':'rgba(255,255,255,.14)',
+                      cursor:'pointer',whiteSpace:'nowrap',fontFamily:'inherit',
+                      fontSize:14,fontWeight:700,color:ativo?'#1e3a8a':'#fff',
+                    }}>
+                      <span aria-hidden>{c.icone}</span>{c.apelido ?? c.banco}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
-      {/* SALDO CARD — mobile only (extrato/dinheiro) */}
-      {isMobile && (tabPrincipal==='extrato'||tabPrincipal==='dinheiro') && (
-        <div style={{margin:'0 14px 10px',borderRadius:14,overflow:'hidden',
-          boxShadow:'0 2px 12px rgba(0,0,0,.07)',flexShrink:0}}>
-          {/* Banco (extrato) */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f8faff`}}
-            onClick={e => {
-              e.stopPropagation()
-              setModalSaldoValor(isDinheiro ? '' : (saldoSugerido[contaIdEfetivo] ?? ''))
-              isDinheiro
-                ? setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:COR.verde, key:chaveAtual})
-                : setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
-            }}>
-            <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500,display:'flex',alignItems:'center',gap:5}}>
-              💰 {isDinheiro?'Dinheiro':(contaInfo?.banco??'Banco')} (extrato)
-            </span>
-            <span style={{fontSize:13,fontWeight:700,cursor:'pointer',
-              color:mesDados.saldoBanco?COR.texto:'#94a3b8'}}>
-              {mesDados.saldoBanco || <span style={{fontSize:11,fontStyle:'italic'}}>Informar ✎</span>}
-            </span>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+              <button aria-label="Mês anterior" onClick={onMesAnterior} style={seta}>‹</button>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:18,fontWeight:800,color:'#fff'}}>{mesNome}</div>
+                <div style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>
+                  {ano}{tabPrincipal === 'dinheiro' ? ' · dinheiro em espécie' : tabPrincipal === 'consolidado' ? ' · todas as contas' : contaInfo ? ` · ${contaInfo.apelido ?? contaInfo.banco}` : ''}
+                </div>
+              </div>
+              <button aria-label="Próximo mês" onClick={onMesProximo} style={seta}>›</button>
+            </div>
+
+            {temSaldo && (<>
+              <div style={{marginTop:18}}>
+                <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
+                  {ehMesAtual ? 'Saldo no app' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
+                </div>
+                <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
+                  color:saldoMes>=0?'#fff':'#fecaca'}}>{fmt(saldoMes)}</div>
+              </div>
+              {/* Conciliação: o saldo que o banco mostra × o do app. Tocar
+                  abre a mesma caixa de antes para informar o saldo. */}
+              <button onClick={abrirSaldo} style={{
+                marginTop:14,width:'100%',display:'flex',alignItems:'center',gap:10,
+                padding:'10px 14px',minHeight:48,borderRadius:16,border:'none',cursor:'pointer',
+                background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
+              }}>
+                <span aria-hidden style={{fontSize:18}}>{isDinheiro ? '👛' : '🏦'}</span>
+                <span style={{flex:1,minWidth:0}}>
+                  <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
+                    {isDinheiro ? 'Na carteira' : `No ${contaInfo?.banco ?? 'banco'}`}
+                  </span>
+                  <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
+                    {mesDados.saldoBanco || 'Informar saldo ✎'}
+                  </span>
+                </span>
+                {diferenca !== null && (
+                  <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
+                    background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fecaca'}}>
+                    {conciliado ? '✓ Confere' : `Diferença ${diferenca>0?'+':'−'}${fmt(Math.abs(diferenca))}`}
+                  </span>
+                )}
+              </button>
+            </>)}
           </div>
-          {/* Sistema */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'10px 14px',background:COR.branco,borderBottom:`1px solid #f8faff`}}>
-            <span style={{fontSize:11,color:COR.textoSuave,fontWeight:500,display:'flex',alignItems:'center',gap:5}}>
-              📱 Sistema
-            </span>
-            <span style={{fontSize:13,fontWeight:700,color:COR.azul}}>{fmt(saldoMes)}</span>
-          </div>
-          {/* Diferença */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-            padding:'10px 14px',
-            background:diferenca===null?COR.branco:conciliado?'#f0fdf4':'#fff1f2'}}>
-            <span style={{fontSize:11,fontWeight:500,display:'flex',alignItems:'center',gap:5,
-              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b'}}>
-              {diferenca===null?'⚖':conciliado?'✓':'⚠'} Diferença
-            </span>
-            <span style={{fontSize:13,fontWeight:700,
-              color:diferenca===null?COR.textoSuave:conciliado?'#166534':'#991b1b'}}>
-              {diferenca===null?'—':conciliado?'✓ Conciliado':`${diferenca>0?'+':'-'}${fmt(Math.abs(diferenca))}`}
-            </span>
-          </div>
-        </div>
-      )}
+        )
+      })()}
     </>
   )
 }

@@ -9,6 +9,10 @@ import {
   REALCE_ERRO,
 } from './FcShared'
 import { lancLabelComGrupo } from './fcRotulo'
+import { IconeRedondo } from '../mobile/ui'
+import { M } from '../mobile/estilo'
+
+const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
 type Props = {
   // Card list
@@ -121,104 +125,88 @@ export default function FcMobileView({
 
   const prevMesNav = () => { if (mes === 0) { setMes(11); setAno(y => y-1) } else setMes(m => m-1) }
   const nextMesNav = () => { if (mes === 11) { setMes(0); setAno(y => y+1) } else setMes(m => m+1) }
-  const statusCor = faturaStatus==='paga' ? '#16a34a' : faturaStatus==='fechada' ? '#0369a1' : '#b45309'
   const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
 
+  // Sobre o azul do topo (#0f2878 → #1e40af, medido no extremo claro):
+  // branco 8,72 · rótulo a 75% 5,1 · #86efac 6,21 · #fde047 6,62.
+  const statusNoAzul = faturaStatus==='paga' ? '#86efac' : faturaStatus==='fechada' ? '#fff' : '#fde047'
+  const seta = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.16)',
+    display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+    fontSize:20, color:'#fff', fontWeight:700, fontFamily:'inherit', flexShrink:0 } as const
+  const chipAzul = (ativo: boolean) => ({ display:'flex', alignItems:'center', gap:6, minHeight:38, padding:'0 14px',
+    borderRadius:999, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:700,
+    whiteSpace:'nowrap' as const, flexShrink:0,
+    background: ativo ? '#fff' : 'rgba(255,255,255,.14)', color: ativo ? '#1e3a8a' : '#fff' })
+
   return (
-    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo}}>
+    <div style={{flex:'none',display:'flex',flexDirection:'column',background:M.fundo}}>
 
-      {/* SUB-HEADER */}
-      <div style={{flexShrink:0,background:COR.branco,boxShadow:'0 2px 6px rgba(0,0,0,0.06)'}}>
-        {/* Cartão pills */}
-        <div style={{display:'flex',gap:6,padding:'10px 14px 4px',overflowX:'auto',
-          scrollbarWidth:'none' as const}}>
-          {contasCartao.map(c => {
-            const ativa = c.id === contaId
-            return (
-              <button key={c.id}
-                onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }}
-                style={{display:'flex',alignItems:'center',gap:6,padding:'6px 14px',
-                  borderRadius:20,border:`1.5px solid ${ativa ? COR.azul : COR.borda}`,
-                  background:ativa ? '#eff6ff' : '#f8faff',flexShrink:0,
-                  cursor:'pointer',whiteSpace:'nowrap' as const,
-                  fontFamily:'inherit',fontSize:12,fontWeight:600,
-                  color:ativa ? COR.azul : COR.textoSuave}}>
-                <div style={{width:8,height:8,borderRadius:'50%',background:c.cor,flexShrink:0}}/>
-                <span style={{fontSize:14,lineHeight:1}}>{c.icone}</span>
-                {c.banco}{c.apelido ? ` ${c.apelido}` : ''}
+      {/* TOPO AZUL — continua o cabeçalho de Lançamentos: cartões em
+          pílulas, o mês da fatura e o total dela em destaque. */}
+      <div style={{background:'linear-gradient(180deg,#132f8f,#1e40af)',borderRadius:'0 0 28px 28px',
+        padding:'12px 16px 20px',flexShrink:0}}>
+        {contasCartao.length > 1 && (
+          <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none' as const,marginBottom:12}}>
+            {contasCartao.map(c => (
+              <button key={c.id} onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }}
+                style={chipAzul(c.id === contaId)}>
+                <span aria-hidden>{c.icone}</span>{c.banco}{c.apelido ? ` ${c.apelido}` : ''}
               </button>
-            )
-          })}
-        </div>
-        {/* Mês nav + status badge */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-          padding:'8px 14px 10px'}}>
-          <button onClick={prevMesNav} style={{width:30,height:30,borderRadius:10,border:'none',
-            background:'#f8faff',display:'flex',alignItems:'center',justifyContent:'center',
-            cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>‹</button>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{fontSize:15,fontWeight:700,color:COR.texto}}>
-              {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''}
-            </span>
-            <span style={{fontSize:10,fontWeight:700,padding:'3px 10px',borderRadius:20,
-              background:statusCor+'18',color:statusCor,border:`1px solid ${statusCor}44`}}>
-              {statusLbl}
-            </span>
+            ))}
           </div>
-          <button onClick={nextMesNav} style={{width:30,height:30,borderRadius:10,border:'none',
-            background:'#f8faff',display:'flex',alignItems:'center',justifyContent:'center',
-            cursor:'pointer',fontSize:16,color:COR.azul,fontFamily:'inherit'}}>›</button>
+        )}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+          <button aria-label="Mês anterior" onClick={prevMesNav} style={seta}>‹</button>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:18,fontWeight:800,color:'#fff'}}>
+              Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''}
+            </div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>
+              {contasCartao.find(c => c.id === contaId)?.banco ?? 'Cartão'} · <b style={{color:statusNoAzul}}>{statusLbl}</b>
+            </div>
+          </div>
+          <button aria-label="Próximo mês" onClick={nextMesNav} style={seta}>›</button>
         </div>
-      </div>
 
-      {/* INFO BAR: fecha · vence — chips + painel expandido */}
-      <div style={{flexShrink:0,background:COR.branco,borderBottom:`1px solid ${COR.borda}`}}>
-        {/* Chips row */}
-        <div style={{padding:'7px 12px',display:'flex',alignItems:'center',gap:8}}>
-          {/* Chip fechamento */}
-          <div onClick={() => {
+        <div style={{marginTop:18}}>
+          <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>Total da fatura</div>
+          <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,color:'#fff',
+            fontVariantNumeric:'tabular-nums'}}>{fmt(totalFatura)}</div>
+          <div style={{fontSize:13,color:'rgba(255,255,255,.75)',marginTop:2}}>
+            vence {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
+          </div>
+        </div>
+
+        {/* Fechamento e vencimento do mês — tocar abre o ajuste, como antes. */}
+        <div style={{display:'flex',gap:8,marginTop:14}}>
+          <button onClick={() => {
               if (editandoFechamento) { setEditandoFechamento(false); return }
               setEditFechVal(diaFechamento)
               setEditandoFechamento(true); setEditandoVencimento(false)
-            }}
-            style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
-              background: editandoFechamento ? '#eff6ff' : '#f8faff',
-              border:`1.5px solid ${editandoFechamento ? COR.azul : COR.azul+'44'}`,
-              borderRadius:20,padding:'5px 12px',flexShrink:0}}>
-            <span style={{fontSize:11,fontWeight:600,color:COR.azul}}>
-              ✂ Fecha dia {diaFechamento}
-            </span>
-            {mesDados.fechamentoOverride && <span style={{fontSize:9,color:'#94a3b8'}}>*</span>}
-          </div>
-
-          <span style={{color:'#e2e8f0',fontSize:11,flexShrink:0}}>·</span>
-
-          {/* Chip vencimento */}
-          <div onClick={() => {
+            }} style={chipAzul(editandoFechamento)}>
+            ✂ Fecha dia {diaFechamento}{mesDados.fechamentoOverride ? ' *' : ''}
+          </button>
+          <button onClick={() => {
               if (editandoVencimento) { setEditandoVencimento(false); return }
               setEditVencVal(diaVencimento)
               setEditandoVencimento(true); setEditandoFechamento(false)
-            }}
-            style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
-              background: editandoVencimento ? '#fff5f5' : '#fff8f8',
-              border:`1.5px solid ${editandoVencimento ? COR.vermelho : COR.vermelho+'44'}`,
-              borderRadius:20,padding:'5px 12px',flexShrink:0}}>
-            <span style={{fontSize:11,fontWeight:600,color:COR.vermelho}}>
-              📅 Vence dia {diaVencimento}
-            </span>
-            {mesDados.vencimentoOverride && <span style={{fontSize:9,color:'#94a3b8'}}>*</span>}
-          </div>
+            }} style={chipAzul(editandoVencimento)}>
+            📅 Vence dia {diaVencimento}{mesDados.vencimentoOverride ? ' *' : ''}
+          </button>
         </div>
+      </div>
 
+      {(editandoFechamento || editandoVencimento) && (
+      <div style={{margin:'12px 16px 0',borderRadius:M.raio,overflow:'hidden',boxShadow:M.sombra,background:COR.branco}}>
         {/* Painel expandido — Fechamento */}
         {editandoFechamento && (
           <div style={{padding:'12px 14px 14px',borderTop:`1px solid ${COR.azul}22`,
             background:'#f0f7ff'}}>
-            <div style={{fontSize:11,color:'#64748b',marginBottom:10,
+            <div style={{fontSize:13,color:'#64748b',marginBottom:10,
               display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <span style={{fontWeight:700,color:COR.azul}}>Dia de fechamento — {NOMES_MESES[purchaseMes]}</span>
-              <span style={{fontSize:10,color:'#94a3b8'}}>padrão: dia {diaFechamentoBase}</span>
+              <span style={{fontSize:12,color:COR.textoSuave}}>padrão: dia {diaFechamentoBase}</span>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <button onClick={() => setEditFechVal(v => Math.max(1,v-1))}
@@ -263,10 +251,10 @@ export default function FcMobileView({
         {editandoVencimento && (
           <div style={{padding:'12px 14px 14px',borderTop:`1px solid ${COR.vermelho}22`,
             background:'#fff5f5'}}>
-            <div style={{fontSize:11,color:'#64748b',marginBottom:10,
+            <div style={{fontSize:13,color:'#64748b',marginBottom:10,
               display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <span style={{fontWeight:700,color:COR.vermelho}}>Dia de vencimento — {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}</span>
-              <span style={{fontSize:10,color:'#94a3b8'}}>padrão: dia {diaVencimentoBase}</span>
+              <span style={{fontSize:12,color:COR.textoSuave}}>padrão: dia {diaVencimentoBase}</span>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <button onClick={() => setEditVencVal(v => Math.max(1,v-1))}
@@ -307,74 +295,58 @@ export default function FcMobileView({
           </div>
         )}
       </div>
+      )}
 
-      {/* RESUMO STRIP */}
-      <div style={{flexShrink:0,background:COR.branco,borderBottom:`2px solid ${COR.borda}`,
-        padding:'10px 14px',display:'flex',gap:0}}>
-        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-          paddingRight:6,borderRight:`1px solid ${COR.borda}`}}>
-          <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-            textTransform:'uppercase' as const,letterSpacing:.3,textAlign:'center' as const}}>
-            Limite planejado
-          </span>
-          <span style={{fontSize:13,fontWeight:800,color:COR.azul,letterSpacing:-.3}}>
-            {fmt(totalPrevisto)}
-          </span>
-        </div>
-        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-          padding:'0 6px',borderRight:`1px solid ${COR.borda}`}}>
-          <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-            textTransform:'uppercase' as const,letterSpacing:.3,textAlign:'center' as const}}>
-            Fatura total
-          </span>
-          <span style={{fontSize:13,fontWeight:800,color:COR.vermelho,letterSpacing:-.3}}>
-            {fmt(grandTotalFaturas)}
-          </span>
-        </div>
-        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,paddingLeft:6}}>
-          <span style={{fontSize:9,color:'#94a3b8',fontWeight:600,
-            textTransform:'uppercase' as const,letterSpacing:.3,textAlign:'center' as const}}>
-            Disponível
-          </span>
-          <span style={{fontSize:13,fontWeight:800,
-            color:disponivel>=0?COR.verde:COR.vermelho,letterSpacing:-.3}}>
-            {fmt(disponivel)}
-          </span>
-        </div>
+      {/* RESUMO — o que o plano reservou para o cartão, o que as faturas
+          já somam e o que sobra. Um cartão branco, três números. */}
+      {mobileView === 'extrato' && (
+      <div style={{margin:'12px 16px 0',padding:'14px 8px',background:COR.branco,borderRadius:M.raio,
+        boxShadow:M.sombra,display:'flex'}}>
+        {([
+          ['Planejado', totalPrevisto, COR.texto],
+          ['Faturas', grandTotalFaturas, '#b91c1c'],
+          ['Disponível', disponivel, disponivel >= 0 ? '#15803d' : '#b91c1c'],
+        ] as [string, number, string][]).map(([rot, v, cor], i) => (
+          <div key={rot} style={{flex:1,textAlign:'center',borderLeft:i?`1px solid ${COR.borda}`:'none',padding:'0 4px'}}>
+            <div style={{fontSize:13,color:COR.textoSuave}}>{rot}</div>
+            <div style={{fontSize:15,fontWeight:800,color:cor,fontVariantNumeric:'tabular-nums',marginTop:2,
+              whiteSpace:'nowrap'}}>{fmt(v)}</div>
+          </div>
+        ))}
       </div>
+      )}
 
       {/* FORM VIEW */}
       {mobileView === 'form' && (
-        <div style={{flex:1,overflowY:'auto',scrollbarWidth:'none' as const}}>
+        <div style={{paddingBottom:120}}>
           {/* Back bar */}
-          <div style={{background:COR.branco,padding:'10px 16px',
-            borderBottom:`1px solid ${COR.borda}`,
+          <div style={{background:COR.branco,margin:'12px 16px 0',padding:'8px 12px',borderRadius:M.raio,boxShadow:M.sombra,
             display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
             <button onClick={() => { resetarParaNovo(diaSel); setMobileView('extrato') }}
-              style={{border:'none',background:'transparent',color:COR.azul,
-                fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0}}>
+              style={{border:'none',background:'#eff6ff',color:COR.azul,minHeight:40,borderRadius:999,
+                fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'inherit',padding:'0 14px'}}>
               ‹ Voltar
             </button>
-            <span style={{fontSize:14,fontWeight:700,color:COR.texto}}>
-              {editandoId ? 'Editar lançamento' : 'Novo lançamento'}
+            <span style={{fontSize:17,fontWeight:800,color:COR.texto}}>
+              {editandoId ? 'Editar compra' : 'Nova compra'}
             </span>
           </div>
 
-          <div style={{padding:'14px',display:'flex',flexDirection:'column'}}>
+          <div style={{margin:'12px 16px 0',padding:'18px 16px',background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,display:'flex',flexDirection:'column'}}>
 
             {/* Toggle Compra / Estorno */}
-            <div style={{display:'flex',background:'#f1f5f9',borderRadius:12,
-              padding:3,gap:3,marginBottom:16}}>
+            <div style={{display:'flex',background:'#f1f5f9',borderRadius:999,
+              padding:4,gap:4,marginBottom:16}}>
               {(['entrada','saida'] as const).map(t => {
                 const ativo = fTipo === t
                 const isCompra = t === 'entrada'
                 return (
                   <button key={t} onClick={() => setFTipo(t)} style={{
-                    flex:1,padding:10,border:'none',borderRadius:10,cursor:'pointer',
-                    fontSize:13,fontWeight:700,fontFamily:'inherit',
+                    flex:1,padding:10,minHeight:44,border:'none',borderRadius:999,cursor:'pointer',
+                    fontSize:15,fontWeight:700,fontFamily:'inherit',
                     display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                    background: ativo ? (isCompra ? '#fff1f2' : '#f0fdf4') : 'transparent',
-                    color: ativo ? (isCompra ? '#dc2626' : '#16a34a') : '#94a3b8',
+                    background: ativo ? '#fff' : 'transparent',
+                    color: ativo ? (isCompra ? '#b91c1c' : '#15803d') : '#475569',
                     boxShadow: ativo ? (isCompra ? '0 2px 8px rgba(220,38,38,.12)' : '0 2px 8px rgba(22,163,74,.12)') : 'none',
                   }}>
                     {isCompra ? '↓ Compra' : '↑ Estorno'}
@@ -392,9 +364,7 @@ export default function FcMobileView({
               const label = `📅 ${dispDia} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
               return (
                 <div style={{marginBottom:14}}>
-                  <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                    textTransform:'uppercase' as const,letterSpacing:.5,
-                    marginBottom:5,display:'block'}}>
+                  <label style={rotuloForm}>
                     📅 Data da compra
                   </label>
                   <input ref={dataCompraRef} type="text" value={fDataCompra}
@@ -409,22 +379,20 @@ export default function FcMobileView({
                     }}
                     placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
                     style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                      padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
+                      padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                       fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
                     onKeyDown={e => { if (e.key==='Enter') (e.target as HTMLInputElement).blur() }}/>
-                  <div style={{fontSize:11,color:COR.azul,fontWeight:600,marginTop:4}}>{label}</div>
+                  <div style={{fontSize:13,color:COR.azul,fontWeight:600,marginTop:6}}>{label}</div>
                 </div>
               )
             })()}
 
             {/* Categoria */}
             <div style={{marginBottom:14}}>
-              <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                textTransform:'uppercase' as const,letterSpacing:.5,
-                marginBottom:5,display:'block'}}>🏷 Categoria</label>
+              <label style={rotuloForm}>🏷 Categoria</label>
               <select ref={categoriaSelectRef} value={fCat} onChange={e => { setFCat(e.target.value); setFVariante('') }}
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                  padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
+                  padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,
                   appearance:'none' as const,cursor:'pointer',
                   backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E\")",
@@ -442,12 +410,10 @@ export default function FcMobileView({
               const subDescs = fCat ? categoriasCartao.filter(c => c.nome.trim().toLowerCase() === norm && c.descricao?.trim()).map(c => c.descricao!.trim()) : []
               return subDescs.length > 0 ? (
                 <div style={{marginBottom:14}}>
-                  <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                    textTransform:'uppercase' as const,letterSpacing:.5,
-                    marginBottom:5,display:'block'}}>🔖 Variante</label>
+                  <label style={rotuloForm}>🔖 Variante</label>
                   <select value={fVariante} onChange={e => setFVariante(e.target.value)}
                     style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                      padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
+                      padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                       fontFamily:'inherit',color:COR.texto,
                       appearance:'none' as const,cursor:'pointer',
                       backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E\")",
@@ -461,9 +427,7 @@ export default function FcMobileView({
 
             {/* Valor da parcela */}
             <div style={{marginBottom:14}}>
-              <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                textTransform:'uppercase' as const,letterSpacing:.5,
-                marginBottom:5,display:'block'}}>💰 Valor da parcela</label>
+              <label style={rotuloForm}>💰 Valor da parcela</label>
               <input ref={valorInputRef} value={fValor}
                 onChange={e => setFValor(e.target.value)}
                 placeholder="R$ 0,00"
@@ -477,9 +441,7 @@ export default function FcMobileView({
 
             {/* Parcelas */}
             <div style={{marginBottom:14}}>
-              <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                textTransform:'uppercase' as const,letterSpacing:.5,
-                marginBottom:5,display:'block'}}>🔢 Parcelas</label>
+              <label style={rotuloForm}>🔢 Parcelas</label>
               <div style={{display:'flex',flexWrap:'wrap' as const,gap:7}}>
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
                   const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
@@ -492,10 +454,10 @@ export default function FcMobileView({
                         else if (e.key==='ArrowLeft'||e.key==='ArrowUp') { e.preventDefault(); if (n>1) { setFParcelas(String(n-1)); parcelasBtnRefs.current[i-1]?.focus() } }
                         else if (e.key==='Enter') { e.preventDefault(); lancar() }
                       }}
-                      style={{width:46,height:36,borderRadius:10,
+                      style={{width:52,height:44,borderRadius:12,
                         border:`1.5px solid ${ativo ? COR.azul : COR.borda}`,
                         background: ativo ? '#eff6ff' : '#fff',
-                        fontSize:12,fontWeight:700,
+                        fontSize:14,fontWeight:700,
                         color: ativo ? COR.azul : COR.textoSuave,
                         cursor:'pointer',fontFamily:'inherit',
                         display:'flex',alignItems:'center',justifyContent:'center',
@@ -509,7 +471,7 @@ export default function FcMobileView({
                 <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',
                   borderRadius:10,padding:'10px 14px',marginTop:8,
                   display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontSize:11,color:COR.textoSuave}}>Total da compra</span>
+                  <span style={{fontSize:13,color:COR.textoSuave}}>Total da compra</span>
                   <span style={{fontSize:14,fontWeight:800,color:'#16a34a'}}>
                     {fmt(parseBRL(fValor) * Math.max(1, parseInt(fParcelas)||1))} · {fParcelas||'1'}x
                   </span>
@@ -519,25 +481,22 @@ export default function FcMobileView({
 
             {/* Descrição */}
             <div style={{marginBottom:14}}>
-              <label style={{fontSize:10,fontWeight:700,color:COR.azul,
-                textTransform:'uppercase' as const,letterSpacing:.5,
-                marginBottom:5,display:'block'}}>
+              <label style={rotuloForm}>
                 📝 Descrição{' '}
-                <span style={{fontWeight:400,color:'#94a3b8',
-                  textTransform:'none' as const,fontSize:9,letterSpacing:0}}>
+                <span style={{fontWeight:400}}>
                   (opcional)
                 </span>
               </label>
               <input value={fDesc} onChange={e => setFDesc(e.target.value)}
                 placeholder="Ex: Mercado Extra, Farmácia..."
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
-                  padding:'11px 14px',fontSize:14,outline:'none',background:'#fff',
+                  padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
                 onKeyDown={e => e.key==='Enter' && lancar()}/>
             </div>
 
             {/* Botões */}
-            <div style={{display:'flex',gap:8,marginTop:4,paddingBottom:20}}>
+            <div style={{display:'flex',gap:8,marginTop:4}}>
               {editandoId && (
                 <button onClick={() => {
                   if (!editandoId) return
@@ -545,7 +504,7 @@ export default function FcMobileView({
                   excluir(diaAlvo, editandoId)
                 }} style={{
                   flex:1,padding:'13px 0',border:`1.5px solid ${COR.borda}`,
-                  borderRadius:12,cursor:'pointer',fontSize:14,fontWeight:600,
+                  borderRadius:999,cursor:'pointer',fontSize:15,fontWeight:700,
                   background:COR.branco,color:COR.vermelho,fontFamily:'inherit'}}>
                   Excluir
                 </button>
@@ -555,7 +514,7 @@ export default function FcMobileView({
                 lancar()
                 if (valid) setMobileView('extrato')
               }} style={{
-                flex:2,padding:15,border:'none',borderRadius:14,
+                flex:2,padding:15,border:'none',borderRadius:999,
                 background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
                 color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',
                 boxShadow:'0 4px 16px rgba(26,86,219,.3)'}}>
@@ -566,9 +525,16 @@ export default function FcMobileView({
         </div>
       )}
 
-      {/* EXTRATO VIEW: flat list in one card */}
+      {/* EXTRATO VIEW: lista única, a última compra digitada no topo */}
       {mobileView === 'extrato' && (
-        <div style={{flex:1,overflowY:'auto',padding:'10px 14px 160px'}}>
+        <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
+          <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }} style={{
+            display:'flex',alignItems:'center',justifyContent:'center',gap:8,minHeight:52,
+            border:'none',borderRadius:999,cursor:'pointer',fontFamily:'inherit',
+            background:`linear-gradient(135deg,${COR.azul},#2563eb)`,color:'#fff',
+            fontSize:16,fontWeight:700,boxShadow:'0 6px 18px rgba(26,86,219,.28)'}}>
+            <span aria-hidden style={{fontSize:20,lineHeight:1}}>＋</span> Nova compra
+          </button>
           {(() => {
             const allItems: Array<{dia:number;dc:number;mc:number;ac:number;l:Lancamento}> = []
             for (let d = 1; d <= totalDias; d++) {
@@ -581,8 +547,9 @@ export default function FcMobileView({
             }
             if (allItems.length === 0) {
               return (
-                <div style={{textAlign:'center' as const,color:COR.textoSuave,padding:40,fontSize:13}}>
-                  Nenhum lançamento nesta fatura.
+                <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'22px 18px',
+                  textAlign:'center' as const,color:COR.textoSuave,fontSize:M.corpo}}>
+                  Nenhuma compra nesta fatura.
                 </div>
               )
             }
@@ -590,66 +557,39 @@ export default function FcMobileView({
             // imediato onde parou de lancar a fatura.
             allItems.sort((a, b) => ordemLancamento(b.l.id) - ordemLancamento(a.l.id))
             return (
-              <div style={{background:COR.branco,borderRadius:14,
-                border:`1.5px solid ${COR.borda}`,overflow:'hidden',
-                boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+              <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px'}}>
                 {allItems.map(({dia, dc, mc, ac, l}, idx) => {
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
                   const nomePrimario = hasDesc ? l.descricao : lancLabelComGrupo(l, categorias)
+                  // Data primeiro: é por ela que se confere contra a fatura do banco.
+                  const legenda = [
+                    `${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${ac !== purchaseAno ? `/${ac}` : ''}`,
+                    l.parcelas && l.parcelas > 1 ? `${l.parcelaAtual} de ${l.parcelas}` : undefined,
+                    hasDesc ? lancLabelComGrupo(l, categorias) : undefined,
+                    buscarCategoria(categorias, l.categoria)?.ativa === false ? 'inativa' : undefined,
+                  ].filter(Boolean).join(' · ')
                   return (
                     <div key={l.id}
                       onClick={() => { editarLancamento(dia, l); setMobileView('form') }}
-                      style={{display:'flex',alignItems:'center',gap:10,
-                        padding:'11px 14px',cursor:'pointer',
-                        borderBottom: idx < allItems.length-1 ? `1px solid ${COR.borda}` : 'none',
-                        background:COR.branco}}>
-                      {/* Data primeiro: e por ela que se confere contra a fatura do banco */}
-                      <div style={{minWidth:38,flexShrink:0,textAlign:'center' as const}}>
-                        <div style={{fontSize:13,fontWeight:700,lineHeight:1,color:COR.texto,
-                          fontVariantNumeric:'tabular-nums' as const}}>
-                          {String(dc).padStart(2,'0')}/{String(mc+1).padStart(2,'0')}
-                          </div>
-                          {ac !== purchaseAno && (
-                            <div style={{fontSize:9,color:'#94a3b8',fontWeight:600,marginTop:1}}>{ac}</div>
-                          )}
-                      </div>
-                      <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
-                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,
-                        background:catVisual.cor}}>
-                        {catVisual.icone}
-                      </div>
+                      style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',minHeight:56,cursor:'pointer',
+                        borderTop: idx === 0 ? 'none' : '1px solid #eef2f8'}}>
+                      <IconeRedondo icone={catVisual.icone} cor={catVisual.cor} tamanho={40} />
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:600,color:COR.texto,
+                        <div style={{fontSize:M.corpo,fontWeight:600,color:COR.texto,
                           whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>
                           {nomePrimario}
                         </div>
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:2,
-                          display:'flex',alignItems:'center',gap:5}}>
-                          <span>
-                            {hasDesc ? lancLabelComGrupo(l, categorias) : ''}
-                          </span>
-                          {l.parcelas && l.parcelas > 1 && (
-                            <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,
-                              background:'#f5f3ff',color:'#7c3aed'}}>
-                              {l.parcelaAtual}/{l.parcelas}x
-                            </span>
-                          )}
-                          {buscarCategoria(categorias, l.categoria)?.ativa === false && (
-                            <span style={{fontSize:8,padding:'1px 6px',borderRadius:6,fontWeight:700,
-                              background:'#f1f5f9',color:'#475569'}}>
-                              inativa
-                            </span>
-                          )}
+                        <div style={{fontSize:M.legenda,color:COR.textoSuave,marginTop:2,
+                          whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>
+                          {legenda}
                         </div>
                       </div>
-                      <div style={{fontSize:14,fontWeight:700,whiteSpace:'nowrap' as const,
-                        letterSpacing:-.3,color:l.tipo==='entrada'?COR.azul:COR.vermelho,flexShrink:0}}>
-                        {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
+                      {/* Na fatura, 'entrada' é COMPRA (dívida) e 'saida' é estorno. */}
+                      <div style={{fontSize:M.corpo,fontWeight:700,whiteSpace:'nowrap' as const,flexShrink:0,
+                        fontVariantNumeric:'tabular-nums',color:l.tipo==='entrada'?'#b91c1c':'#15803d'}}>
+                        {l.tipo==='entrada'?'−':'+'}{fmt(l.valor)}
                       </div>
-                      <button onClick={e => { e.stopPropagation(); excluir(dia, l.id) }}
-                        style={{border:'none',background:'transparent',cursor:'pointer',
-                          color:'#e2e8f0',fontSize:14,padding:3,borderRadius:6,flexShrink:0}}>✕</button>
                     </div>
                   )
                 })}
@@ -657,39 +597,6 @@ export default function FcMobileView({
             )
           })()}
         </div>
-      )}
-
-      {/* TOTAL FOOTER */}
-      {mobileView === 'extrato' && (
-        <div style={{position:'fixed',left:0,right:0,bottom:70,zIndex:39,
-          background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-          padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',
-          boxShadow:'0 -2px 8px rgba(0,0,0,0.2)'}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.6)'}}>
-              Total da fatura — {NOMES_MESES[mes]} {ano}
-            </div>
-            <div style={{fontSize:9,color:'rgba(255,255,255,.4)',marginTop:1}}>
-              Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-            </div>
-          </div>
-          <span style={{fontSize:18,fontWeight:800,color:'#fff',fontVariantNumeric:'tabular-nums' as const}}>
-            {fmt(totalFatura)}
-          </span>
-        </div>
-      )}
-
-      {/* ADD BAR */}
-      {mobileView === 'extrato' && (
-        <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }}
-          style={{position:'fixed',left:0,right:0,bottom:114,zIndex:40,
-            border:'none',background:COR.branco,
-            borderTop:`1px solid ${COR.borda}`,borderBottom:`1px solid ${COR.borda}`,
-            padding:'11px 20px',display:'flex',alignItems:'center',justifyContent:'center',
-            gap:6,cursor:'pointer',fontFamily:'inherit'}}>
-          <span style={{fontSize:16,color:COR.azul,fontWeight:700,lineHeight:1}}>+</span>
-          <span style={{fontSize:13,fontWeight:600,color:COR.azul}}>Adicionar lançamento</span>
-        </button>
       )}
 
     </div>

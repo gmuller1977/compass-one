@@ -8,6 +8,7 @@ import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
 import BottomNav from '../components/BottomNav'
+import { M } from '../components/mobile/estilo'
 import {
   COR, NOMES_MESES,
   contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey, type Memoria,
@@ -1134,8 +1135,11 @@ export default function NovoLancamentoExtrato() {
 
   // ── JSX ────────────────────────────────────────────────────────────
   return (
+    // Celular, no Banco, no Cartão e no Dinheiro: a PÁGINA rola, com o topo azul junto,
+    // como na Bússola — antes o topo ficava preso e sobrava meia tela de dias.
     <div style={{height:'100vh',display:'flex',flexDirection:'column',
-      background:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",overflow:'hidden'}}>
+      background:isMobile?M.fundo:COR.fundo,fontFamily:"-apple-system,'Inter',sans-serif",
+      overflow:isMobile&&tabPrincipal!=='consolidado'?'auto':'hidden'}}>
       <style>{`
         @keyframes rowSaved {
           0%   { box-shadow: 0 0 0 3px rgba(26,86,219,0.35), inset 0 0 0 9999px rgba(219,234,254,0.5); }
@@ -1289,7 +1293,7 @@ export default function NovoLancamentoExtrato() {
             onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}
           />
 
-          <div style={{flex:1,display:'flex',flexDirection:isMobile?'column':'row',overflow:isMobile?'auto':'hidden', paddingBottom:isMobile?120:0}}>
+          <div style={{flex:isMobile?'none':1,display:'flex',flexDirection:isMobile?'column':'row',overflow:isMobile?'visible':'hidden', paddingBottom:isMobile?120:0}}>
             <NleExtrato
               isMobile={isMobile}
               mobileView={mobileView}

@@ -11,8 +11,9 @@ import {
   parseValor,
   REALCE_ERRO,
 } from './NleShared'
+import NleExtratoMobile from './NleExtratoMobile'
 
-type Props = {
+export type Props = {
   isMobile: boolean
   mobileView: 'extrato' | 'form'
   isDinheiro: boolean
@@ -321,7 +322,8 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
 const rotuloFixa = (f: CatFixa) =>
   f.id.startsWith('cartao-') ? 'Cartão de Crédito' : f.nome
 
-export default function NleExtrato({
+export default function NleExtrato(props: Props) {
+  const {
   isMobile, mobileView, isDinheiro,
   mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
   fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes, memoria,
@@ -339,9 +341,13 @@ export default function NleExtrato({
   setFTipo, setFCat, setFSubDesc, setFDesc, setFValor, setFPag,
   setEditandoId, setEditandoFixaId,
   ehAutomatico,
-}: Props) {
+  } = props
+
   // Fechada por padrao: a memoria e consulta, nao leitura obrigatoria.
   const [memoriaAberta, setMemoriaAberta] = React.useState(false)
+  // O celular tem desenho próprio, no padrão dos apps de banco; os números
+  // e as ações são os mesmos — ver NleExtratoMobile.
+  if (isMobile) return <NleExtratoMobile {...props} />
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.

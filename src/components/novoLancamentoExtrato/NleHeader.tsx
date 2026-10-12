@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import type { Conta } from '../../context/AppContext'
-import { COR, NOMES_MESES } from './NleShared'
+import { NOMES_MESES } from './NleShared'
 import PageHeader from '../PageHeader'
 import SeletorMesAno from '../SeletorMesAno'
 
@@ -76,42 +76,34 @@ export default function NleHeader({
     )
   }
 
+  // Celular: o topo azul dos apps de banco, como a Bússola e o Radar
+  // (#0f2878 → #1e40af — a regra do #1e40af). Ele continua no subcabeçalho
+  // (ou no topo da fatura, no Cartão), que fecha o bloco com os cantos
+  // arredondados.
   return (
-    <div style={{background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-      padding:'16px 20px 0',flexShrink:0}}>
-      {/* Logo + avatar */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',
-            border:'1px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-              <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-              <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-            </svg>
-          </div>
-          <span style={{color:'#fff',fontWeight:700,fontSize:15}}>
-            Compass <span style={{fontWeight:300,opacity:.75}}>One</span>
-          </span>
-        </div>
-        <button onClick={sairDaConta} title="Sair"
-          style={{width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,.2)',
+    <div style={{background:'linear-gradient(180deg,#0f2878,#132f8f)',
+      padding:'calc(14px + env(safe-area-inset-top)) 16px 4px',flexShrink:0}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+        <h1 style={{margin:0,fontSize:22,fontWeight:800,color:'#fff',letterSpacing:'-.01em'}}>Lançamentos</h1>
+        <button onClick={sairDaConta} title="Sair" aria-label="Sair"
+          style={{width:36,height:36,borderRadius:'50%',background:'rgba(255,255,255,.18)',
             border:'none',cursor:'pointer',display:'flex',alignItems:'center',
-            justifyContent:'center',color:'#fff',fontSize:13,fontWeight:700}}>
+            justifyContent:'center',color:'#fff',fontSize:14,fontWeight:700,fontFamily:'inherit'}}>
           {user?.email?.charAt(0).toUpperCase() ?? 'U'}
         </button>
       </div>
-      {/* Tipo tabs */}
-      <div style={{display:'flex',gap:6,overflowX:'auto',scrollbarWidth:'none' as never}}>
+      {/* Tipo: controle segmentado. Ativo é pílula branca com texto marinho;
+          inativo, branco a 85% sobre o azul (6,7:1 no #1e40af). */}
+      <div role="tablist" style={{display:'flex',gap:4,padding:4,borderRadius:999,background:'rgba(255,255,255,.12)'}}>
         {([
-          {v:'extrato'     as const, icon:'🏦', label:'Extrato'},
+          {v:'extrato'     as const, icon:'🏦', label:'Banco'},
           {v:'cartao'      as const, icon:'💳', label:'Cartão'},
           {v:'dinheiro'    as const, icon:'💵', label:'Dinheiro'},
           {v:'consolidado' as const, icon:'📊', label:'Total'},
         ]).map(({v,icon,label}) => {
           const ativo = tabPrincipal === v
           return (
-            <button key={v} onClick={() => {
+            <button key={v} role="tab" aria-selected={ativo} onClick={() => {
               setTabPrincipal(v)
               setMobileDiaForm(null)
               if (v==='extrato') {
@@ -119,15 +111,13 @@ export default function NleHeader({
                 setContaId((p ?? contasExtrato[0])?.id ?? '')
               }
             }} style={{
-              display:'flex',flexDirection:'column',alignItems:'center',gap:4,
-              padding:'8px 16px',borderRadius:'12px 12px 0 0',
-              cursor:'pointer',whiteSpace:'nowrap',flexShrink:0,
-              border:'none',background:ativo?'rgba(255,255,255,.15)':'transparent',
+              flex:1,minWidth:0,display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+              padding:'0 6px',minHeight:40,borderRadius:999,cursor:'pointer',whiteSpace:'nowrap',
+              border:'none',fontFamily:'inherit',fontSize:14,fontWeight:700,
+              background:ativo?'#fff':'transparent',color:ativo?'#1e3a8a':'rgba(255,255,255,.85)',
+              boxShadow:ativo?'0 2px 8px rgba(15,23,42,.18)':'none',
             }}>
-              <span style={{fontSize:18}}>{icon}</span>
-              <span style={{fontSize:10,fontWeight:600,color:ativo?'#fff':'rgba(255,255,255,.6)'}}>{label}</span>
-              <span style={{width:4,height:4,borderRadius:'50%',background:'#fff',
-                opacity:ativo?1:0,marginTop:2}}/>
+              <span aria-hidden style={{fontSize:15}}>{icon}</span>{label}
             </button>
           )
         })}

@@ -2254,6 +2254,32 @@ acelerada, a categoria mais estourada, mês negativo à frente e, a partir das
   consigo lançar" horas depois da Fase B. Ao voltar para o app e a cada 5 min
   ele compara o script do `index.html` publicado com o que está rodando.
 - `prova65` (28 invariantes).
+**Lançamentos no celular, no padrão dos apps de banco** (12/10/2026, pedido
+do Guilherme: "o mesmo trabalho que fizemos na tela de Início e Quick"). O
+congelamento de Lançamentos foi aberto por ele SÓ para o desenho: nenhuma
+conta e nenhuma gravação mudaram — a lista do dia repete, linha a linha, a
+conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
+
+- **Topo azul** (`#0f2878 → #1e40af`) com "Lançamentos", as abas Banco ·
+  Cartão · Dinheiro · Total em controle segmentado, as contas em pílulas, o
+  mês e o número grande: "Saldo no app" (o antigo "Sistema", com tudo o que
+  está lançado no mês), e embaixo "No Sicredi: R$ X" com "✓ Confere" ou a
+  diferença — tocar abre a mesma caixa de saldo. A página inteira rola.
+- **Banco e Dinheiro** (`NleExtratoMobile`): só aparecem os dias com
+  movimento e HOJE. Cada dia é um título ("12 segunda · saldo R$ X", ou
+  "previsto" no futuro) com "+" e um cartão branco com as linhas (ícone em
+  círculo, nome, legenda, valor). Fixa tem o círculo de "paga" de 30 px.
+  O formulário virou FOLHA que sobe de baixo, com o campo Dia sempre à vista
+  (é como se lança num dia que não aparece) e "Excluir lançamento" dentro
+  da edição — o ✕ da linha saiu. Receita `#15803d`, despesa `#b91c1c`,
+  previsto `COR.textoSuave`.
+- **Cartão** (`FcMobileView`): o topo azul segue com "Fatura de novembro",
+  o total e os chips de fechamento e vencimento; um cartão com Planejado ·
+  Faturas · Disponível; "Nova compra" e a lista no mesmo desenho. A barra
+  fixa do total e a de "Adicionar" saíram (o total está no topo).
+- **Total** ganhou só o topo novo: o conteúdo espera virar painel.
+- Computador não mudou (`if (isMobile)` antes de tudo).
+
 **Conta compartilhada** (10/10/2026, pedido do Guilherme: "duas ou mais
 pessoas acessarem a mesma conta"). Cada pessoa tem o próprio login; as
 finanças continuam gravadas com o `user_id` do DONO, e quem aceita o convite
