@@ -12,6 +12,7 @@ import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento
 import { lancarNaFatura, lancarNoExtrato, dataDoLancamento } from '../utils/lancamentoRapido'
 import { formasDoMes, gastoDeHoje, mesDoGastoNoCartao, type MesRef, type QualMes } from '../utils/lancarPorMes'
 import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
+import { nomeDaConta } from '../utils/nomeDaConta'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -243,7 +244,7 @@ export default function QuickLaunch() {
   }
 
   const nomeDaForma = (f: Forma) => f.tipo === 'dinheiro' ? 'Dinheiro'
-    : f.tipo === 'cartao' ? (f.conta?.apelido || f.conta?.nome || 'Cartão') : (f.conta?.banco || f.conta?.nome || 'Banco')
+    : f.conta ? nomeDaConta(f.conta, contas) : f.tipo === 'cartao' ? 'Cartão' : 'Banco'
 
   const dataHoje = hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
   const hora = hoje.getHours()
@@ -497,7 +498,7 @@ export default function QuickLaunch() {
                 {formasEscolhidas.dinheiro && <LinhaForma f={{ tipo: 'dinheiro' }} />}
                 {qualMes === 'atual' && catObj.tipo === 'saida' && formasProximo && formasProximo.cartoes.length > 0 && (
                   <div style={{ fontSize: 13, color: COR.textoSuave, margin: '12px 4px 0', lineHeight: 1.45 }}>
-                    {formasProximo.cartoes.map(c => c.apelido || c.nome).join(', ')} já {formasProximo.cartoes.length > 1 ? 'fecharam' : 'fechou'} a
+                    {formasProximo.cartoes.map(c => nomeDaConta(c, contas)).join(', ')} já {formasProximo.cartoes.length > 1 ? 'fecharam' : 'fechou'} a
                     fatura: a compra de hoje conta em {nomeMes(mesProximo)}, e {formasProximo.cartoes.length > 1 ? 'eles aparecem' : 'ele aparece'} lá.
                   </div>
                 )}

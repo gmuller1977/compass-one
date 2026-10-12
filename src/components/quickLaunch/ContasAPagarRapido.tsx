@@ -8,6 +8,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { parseBRL } from '../../utils/moeda'
 import { COR } from '../../utils/cores'
 import { M } from '../mobile/estilo'
+import { nomeDaConta } from '../../utils/nomeDaConta'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -37,7 +38,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
   const [conta, setConta] = useState<string>('')
 
   const destinos = useMemo(() => [
-    ...contas.filter(c => c.tipo !== 'cartao').map(c => ({ id: c.id, nome: c.apelido || c.nome })),
+    ...contas.filter(c => c.tipo !== 'cartao').map(c => ({ id: c.id, nome: nomeDaConta(c, contas) })),
     { id: 'dinheiro', nome: 'Dinheiro' },
   ], [contas])
 

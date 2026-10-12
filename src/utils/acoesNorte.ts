@@ -2,6 +2,7 @@ import type { Categoria, Conta, DadosMes } from '../context/AppContext'
 import type { ContaAVencer } from './contasAVencer'
 import { contaDoPagamento } from './pagarConta'
 import { dataDoLancamento } from './lancamentoRapido'
+import { nomeDaConta } from './nomeDaConta'
 
 /**
  * O que o Norte pode FAZER (Fase B, 10/10/2026): lançar, pagar uma conta e
@@ -120,7 +121,7 @@ export function detalhesDoPedido(
   cad: { categorias: Categoria[]; contas: Conta[]; extratoData: Record<string, DadosMes>; hoje?: Date },
 ) {
   const nomeConta = (id: string | undefined) => id === 'dinheiro' ? 'Dinheiro'
-    : (() => { const c = cad.contas.find(x => x.id === id); return c ? (c.apelido || c.banco || c.nome) : '' })()
+    : (() => { const c = cad.contas.find(x => x.id === id); return c ? nomeDaConta(c, cad.contas) : '' })()
   if (p.tipo === 'lancar') {
     const cat = cad.categorias.find(c => c.id === p.categoriaId)!
     const d = dataDoLancamento(p.data, cad.hoje)
