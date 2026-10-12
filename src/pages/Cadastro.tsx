@@ -146,7 +146,7 @@ export default function Cadastro() {
 
     setCarregando(true)
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password: senha,
         options: {
@@ -155,6 +155,10 @@ export default function Cadastro() {
         },
       })
       if (error) throw error
+      // Com "Confirm email" desligado no Supabase a conta já nasce
+      // confirmada e com sessão, e nenhum e-mail é enviado: dizer
+      // "verifique seu e-mail" seria esperar por algo que não vem.
+      if (data.session) { navigate('/'); return }
       setConfirmacaoEnviada(true)
     } catch (e: unknown) {
       let msg = 'Erro desconhecido'
