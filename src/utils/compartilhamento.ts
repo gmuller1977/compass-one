@@ -33,10 +33,23 @@ export async function listarMembros(donoId: string) {
 }
 
 export async function convidar(p: { donoId: string; donoNome: string; donoEmail: string; email: string }) {
-  const { error } = await supabase.from('compartilhamentos').insert({
+  const { data, error } = await supabase.from('compartilhamentos').insert({
     dono_id: p.donoId, dono_nome: p.donoNome, dono_email: p.donoEmail, email: p.email.trim().toLowerCase(),
-  })
-  return error ? motivoDoErro(error) : ''
+  }).select('id').single()
+  if (error) return { erro: motivoDoErro(error), emailEnviado: false }
+  return { erro: '', emailEnviado: await enviarEmailDoConvite(data.id as string) }
+}
+
+/**
+ * Manda o e-mail do convite (função convite-email, pelo Resend). O convite
+ * vale com ou sem ele: a pessoa o vê ao entrar com o e-mail convidado.
+ */
+export async function enviarEmailDoConvite(id: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.functions.invoke('convite-email', { body: { id } })
+    if (error) { console.warn('convite-email', error); return false }
+    return !!(data as { enviado?: boolean } | null)?.enviado
+  } catch (e) { console.warn('convite-email', e); return false }
 }
 
 export async function removerConvite(id: string) {

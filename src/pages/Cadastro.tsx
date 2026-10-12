@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { urlDoApp } from '../utils/site'
 import { codigoRecebido } from '../utils/indicacao'
@@ -121,7 +121,9 @@ export default function Cadastro() {
   const navigate      = useNavigate()
   const isMobile      = useIsMobile()
   const [nome,        setNome]        = useState('')
-  const [email,       setEmail]       = useState('')
+  // O e-mail do convite da conta compartilhada chega pronto (?email=).
+  const [params] = useSearchParams()
+  const [email,       setEmail]       = useState(() => params.get('email') ?? '')
   const [senha,       setSenha]       = useState('')
   const [confirmar,   setConfirmar]   = useState('')
   const [carregando,  setCarregando]  = useState(false)

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import {
-  convidar, emailValido, listarMembros, removerConvite, sairDoCompartilhamento, type Convite,
+  convidar, emailValido, enviarEmailDoConvite, listarMembros, removerConvite, sairDoCompartilhamento, type Convite,
 } from '../../utils/compartilhamento'
 
 /**
@@ -36,12 +36,22 @@ export default function CfgCompartilhar() {
     if (!emailValido(e)) { setMsg({ ok: false, texto: 'Confira o e-mail.' }); return }
     if (e === (user.email ?? '').toLowerCase()) { setMsg({ ok: false, texto: 'Esse é o seu próprio e-mail.' }); return }
     setOcupado(true)
-    const erro = await convidar({ donoId: user.id, donoNome: perfil.apelido || perfil.nome, donoEmail: user.email ?? '', email: e })
+    const { erro, emailEnviado } = await convidar({ donoId: user.id, donoNome: perfil.apelido || perfil.nome, donoEmail: user.email ?? '', email: e })
     setOcupado(false)
     if (erro) { setMsg({ ok: false, texto: erro }); return }
     setEmail('')
-    setMsg({ ok: true, texto: `Convite criado. Peça para ${e} entrar no Compass One com esse e-mail: o convite aparece na hora.` })
+    setMsg({ ok: true, texto: emailEnviado
+      ? `Convite enviado para ${e}. É só a pessoa entrar no Compass One com esse e-mail: o convite aparece na hora.`
+      : `Convite criado, mas o e-mail não saiu agora. Peça para ${e} entrar no Compass One com esse e-mail: o convite aparece na hora.` })
     atualizar()
+  }
+
+  async function reenviar(c: Convite) {
+    if (ocupado) return
+    setOcupado(true)
+    const ok = await enviarEmailDoConvite(c.id)
+    setOcupado(false)
+    setMsg(ok ? { ok: true, texto: `E-mail reenviado para ${c.email}.` } : { ok: false, texto: 'O e-mail não saiu agora. Tente de novo mais tarde.' })
   }
 
   async function remover(c: Convite) {
@@ -106,6 +116,12 @@ export default function CfgCompartilhar() {
                       {c.status === 'aceito' ? '✓ Com acesso' : 'Convite enviado · aguardando'}
                     </div>
                   </div>
+                  {c.status === 'pendente' && (
+                    <button onClick={() => reenviar(c)} disabled={ocupado} aria-label={`Reenviar o convite para ${c.email}`} style={{ border: 'none',
+                      background: 'none', color: COR.azul, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', minHeight: 40 }}>
+                      Reenviar
+                    </button>
+                  )}
                   <button onClick={() => remover(c)} aria-label={`Remover ${c.email}`} style={{ border: 'none', background: 'none',
                     color: COR.erroTexto, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', minHeight: 40 }}>
                     {c.status === 'aceito' ? 'Remover' : 'Cancelar'}

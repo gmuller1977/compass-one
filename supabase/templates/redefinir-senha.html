@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Vamos criar uma nova senha</title>
+</head>
+<body style="margin:0;padding:0;background:#eef2fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">O link para criar uma nova senha vale por 1 hora.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef2fb;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(15,40,120,.10);">
+<tr><td bgcolor="#0f2878" style="background:#0f2878;background-image:linear-gradient(135deg,#0f2878,#1e40af);padding:28px 32px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle;"><img src="https://www.compass-one.com.br/icone-192.png" width="44" height="44" alt="" style="display:block;border-radius:12px;"></td>
+<td style="vertical-align:middle;padding-left:12px;font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-.3px;">Compass One</td>
+</tr></table>
+</td></tr>
+<tr><td style="padding:32px 32px 8px;">
+<h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;font-weight:800;color:#0f172a;">Vamos criar uma nova senha</h1>
+<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#1e293b;">{{ if .Data.nome }}Olá, {{ .Data.nome }}!{{ else }}Olá!{{ end }}</p>
+<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#1e293b;">Recebemos um pedido para trocar a senha da sua conta no Compass One. Toque no botão para escolher a nova:</p>
+</td></tr>
+<tr><td align="center" style="padding:8px 32px 24px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td bgcolor="#1a56db" style="border-radius:14px;">
+<a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:14px;">Criar nova senha</a>
+</td></tr></table>
+</td></tr>
+<tr><td style="padding:0 32px 28px;">
+<p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#475569;">O link vale por 1 hora e funciona uma vez só.</p>
+<p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#475569;">Seus lançamentos, contas e planejamento continuam exatamente como estão.</p>
+<p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#475569;">Se o botão não abrir, copie este endereço no navegador:<br>
+<a href="{{ .ConfirmationURL }}" style="color:#1a56db;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+</td></tr>
+<tr><td style="padding:20px 32px;border-top:1px solid #e2e8f0;font-size:13px;line-height:1.6;color:#475569;">
+Não pediu a troca? Ignore este e-mail: sua senha atual continua valendo e ninguém entra sem ela.<br>
+<a href="https://www.compass-one.com.br" style="color:#1a56db;text-decoration:none;">compass-one.com.br</a> · organize hoje, decida melhor amanhã.
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
