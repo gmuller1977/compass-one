@@ -6,7 +6,7 @@ import { aceitarConvite, convitesParaMim, removerConvite, type Convite } from '.
 
 /**
  * O convite para compartilhar finanças, ao entrar no app com o e-mail
- * convidado. Aparece antes de tudo — inclusive do Onboarding de quem acabou de
+ * convidado. Aparece antes de tudo — inclusive dos primeiros passos de quem acabou de
  * criar a conta só para aceitar. Aceitar troca as finanças da tela pelas do
  * dono; as próprias ficam guardadas como estavam e voltam ao sair.
  */
@@ -35,7 +35,7 @@ export default function ConviteCompartilhamento() {
     if (e) { setErro(e); setOcupado(false); return }
     await recarregarCompartilhamento()
     setOcupado(false); setConvite(null)
-    // Quem criou a conta só para aceitar estava no Onboarding: as finanças do
+    // Quem criou a conta só para aceitar estava nos primeiros passos: as finanças do
     // dono já estão prontas, então vai direto para o início.
     navigate('/', { replace: true })
   }

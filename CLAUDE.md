@@ -1869,6 +1869,16 @@ voltavam se ninguém marcasse "não mostrar novamente".
   primeiro reabria o cadastro inicial, e confirmar as categorias de novo
   desativava as que não estavam entre as sugeridas.
 
+**O guia de boas-vindas (Onboarding) saiu em 12/10/2026.** Escolha do
+Guilherme: "quem quer arrumar suas finanças precisa saber usar as telas de
+configurações". Conta nova cai em Configurações com `PrimeirosPassos` no topo:
+recebe as categorias sugeridas DESATIVADAS (como o "importar sugestões"), e o
+app fica lá até haver uma conta e uma categoria ativa — aí `onboardingCompleto`
+vira verdadeiro (o Modo Descoberta depende dele) e a faixa oferece "Começar a
+lançar" e "Começar meu plano". `/onboarding` cai na "/". Membro de conta
+compartilhada nunca vê a faixa. **As notas sobre o Onboarding abaixo e acima
+(portas, 4 telas, nomes do assistente) são histórico.**
+
 **O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
 Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as
 categorias estavam inativas. Desde a conta compartilhada (10/10), o login

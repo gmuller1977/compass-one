@@ -654,7 +654,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
     // NÃO gera CATEGORIAS_PADRAO aqui: se DB retornou 0 por falha de auth,
     // salvar PADRAO deletaria as categorias reais do usuário.
-    // PADRAO é criado somente no fluxo de Onboarding.
+    // PADRAO é criado somente nos primeiros passos (PrimeirosPassos), com a tela aberta.
     // Mescla com categorias que o usuário adicionou durante o load
     const catsDbIds = new Set(catsLoaded.map(c => c.id))
     const userOnlyCats = mesclar ? categoriasRef.current.filter(c => !catsDbIds.has(c.id)) : []

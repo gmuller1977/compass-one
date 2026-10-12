@@ -20,6 +20,7 @@ import type { Aba, ConfirmState } from '../components/configuracoes/CfgShared'
 import CfgBancosCartoes from '../components/configuracoes/CfgBancosCartoes'
 import CfgCategorias from '../components/configuracoes/CfgCategorias'
 import CfgPerfil from '../components/configuracoes/CfgPerfil'
+import PrimeirosPassos from '../components/configuracoes/PrimeirosPassos'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { nomeCanonico, mesmoNome } from '../utils/nomeCategoria'
 import CfgPreferencias from '../components/configuracoes/CfgPreferencias'
@@ -512,6 +513,7 @@ export default function Configuracoes() {
 
       <AppHeader currentPath="/configuracoes" hideBottomTab />
       <BottomNav />
+      <PrimeirosPassos />
 
       {/* HOME SCREEN — apenas mobile */}
       {isMobile && aba === 'home' && (

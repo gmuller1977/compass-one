@@ -14,7 +14,6 @@ import NovoLancamento from './pages/NovoLancamento'
 import Planejamento    from './pages/Planejamento'
 import RadarFinanceiro from './pages/RadarFinanceiro'
 import Configuracoes       from './pages/Configuracoes'
-import Onboarding          from './pages/Onboarding'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
 import Simulacao           from './pages/Simulacao'
 import RevisaoMensal       from './pages/RevisaoMensal'
@@ -97,7 +96,7 @@ function HomeRoute() {
   const isMobile = useIsMobile()
   if (carregando) return <LoadingSpinner />
   if (!user) return <LandingPage />
-  if (!onboardingCompleto) return <Navigate to="/onboarding" replace />
+  if (!onboardingCompleto) return <Navigate to="/configuracoes" replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
   return <AppShell><Bussola /></AppShell>
 }
@@ -127,9 +126,11 @@ function Protegido({ children }: { children: ReactNode }) {
   const location = useLocation()
   if (carregando) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
-  const bypass = ['/onboarding', '/configuracoes', '/wizard-planejamento']
+  // Conta nova fica em Configurações até cadastrar uma conta e ativar uma
+  // categoria (PrimeirosPassos). O guia de boas-vindas saiu em 12/10/2026.
+  const bypass = ['/configuracoes', '/wizard-planejamento']
   if (!onboardingCompleto && !bypass.some(p => location.pathname.startsWith(p))) {
-    return <Navigate to="/onboarding" replace />
+    return <Navigate to="/configuracoes" replace />
   }
   return <AppShell>{children}</AppShell>
 }
@@ -158,7 +159,7 @@ export default function App() {
           <Route path="/acompanhamento" element={<Navigate to="/radar" replace />} />
           <Route path="/novo-lancamento"    element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
-          <Route path="/onboarding"         element={<Protegido><Onboarding /></Protegido>} />
+          <Route path="/onboarding"         element={<Navigate to="/" replace />} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
           <Route path="/resumo-mensal"      element={<Navigate to="/revisaomensal" replace />} />
