@@ -1903,7 +1903,10 @@ onde ir") e escolheu as duas ideias juntas:
 
 - `/configuracoes` sem `?aba` abre a tela de ícones, no computador também —
   as opções do menu, na mesma ordem, com o que já está cadastrado ("2 contas",
-  "Opcional", "Nenhuma ativa"). "‹ Configurações" volta para ela.
+  "Opcional", "Nenhuma ativa"). "‹ Configurações" volta para ela. As caixas
+  são do azul-escuro dos cartões (`#0f2878 → #1e40af`), com ícone Tabler
+  branco num quadrado translúcido, no lugar dos emojis — pedido dele no mesmo
+  dia.
 - A faixa `PrimeirosPassos` mostra os três passos na ordem do menu (Contas ·
   Cartões opcional · Categorias), marca o atual, tem "Começar →" na tela de
   ícones e "Pular cartões →" nos cartões. No primeiro acesso, salvar uma
