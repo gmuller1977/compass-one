@@ -175,6 +175,22 @@ descritos abaixo são histórico no computador. A página inteira rola; a barra
 do saldo final previsto segue presa no pé. Nenhum número novo; o celular
 (`AcMobileView`) não mudou.
 
+**O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
+do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e
+"gráfico"). O azul do `PageHeader` traz a resposta do ano em 40px — "Se o
+plano se cumprir, 2026 termina com R$ X" — e a faixa anual de antes em
+miniatura ao lado (`PlanResumoAnual`, mesma `janelaQueFecha`; a frase de
+apoio é receitas − despesas dessa janela). Embaixo das ferramentas,
+`PlanAnoVisao`: um gráfico de colunas "Com quanto cada mês termina" e os doze
+meses em cartões brancos, sem setas. Mês FECHADO mostra o fechamento real
+("fechou com", `saldoFinalReal`) e "▲/▼ R$ X acima/abaixo" do saldo final
+previsto; os outros, "termina com" o previsto e a sobra planejada. Clicar
+numa coluna ou num cartão abre o `PlanModalMeses` de sempre. Cores no
+branco, gráfico ≥ 3:1: fechado `#64748b`, previsto `#3b82f6`, atual
+`#1e3a8a`, negativo `#b91c1c`. `PlanCardMes` e `PlanFaixaMeses` saíram — as
+notas abaixo sobre a faixa de quatro meses com setas e o "Fechou em" do
+cartão são histórico. Nenhum número novo; o celular (`PlanMobile`) não mudou.
+
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
 Onboarding e **"Planejamento do Zero"** no menu. Na primeira vez não há nada

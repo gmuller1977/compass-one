@@ -13,6 +13,7 @@ import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
 import { medirDescoberta } from '../utils/descoberta'
 import { propostaDoMes } from '../utils/primeiroPlano'
 import PlanGrade from '../components/planejamento/PlanGrade'
+import PlanResumoAnual from '../components/planejamento/PlanResumoAnual'
 import PlanMobile from '../components/planejamento/PlanMobile'
 import PlanItensEditor from '../components/planejamento/PlanItensEditor'
 import { ItensPlanoContexto, LancadoNoMesContexto, type AbrirItens, type LancadoNoMes } from '../components/planejamento/itensContexto'
@@ -398,7 +399,12 @@ export default function Planejamento() {
             ajuda="planejamento"
             mb={12}
             rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
-          />
+          >
+            {/* Na descoberta a resposta do ano sai: sem plano seriam quatro
+                R$ 0,00 em destaque logo abaixo de um texto que acabou de
+                explicar que ainda estamos medindo. */}
+            {!descoberta.ativa && <PlanResumoAnual previsto={plan.previsto} anoAtual={anoAtual} />}
+          </PageHeader>
         </div>
       )}
 

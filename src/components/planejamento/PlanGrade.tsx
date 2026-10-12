@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import PlanResumoAnual from './PlanResumoAnual'
-import PlanCardMes from './PlanCardMes'
-import PlanFaixaMeses from './PlanFaixaMeses'
+import PlanAnoVisao from './PlanAnoVisao'
 import PlanModalMeses from './PlanModalMeses'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
-import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, janelaQueFecha, MESES_FULL } from './types'
+import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, MESES_FULL } from './types'
 import type { Categoria } from '../../context/AppContext'
 import type { Descoberta } from '../../utils/descoberta'
 
@@ -40,12 +38,6 @@ export default function PlanGrade(props: Props) {
 
   const planTotais = previsto
 
-  // A faixa cobre a janela que fecha, nao o ano inteiro: somar de janeiro por
-  // cima de meses ancorados dava quatro numeros que nao batiam entre si.
-  const janela = janelaQueFecha(planTotais)
-
-  const anoCorrente = new Date().getFullYear()
-
   /**
    * O que o cartão cinza diz. Só o mês OBSERVADO muda de texto: ele é o que
    * está sendo medido e o que vira o primeiro plano ao fechar. Os outros onze
@@ -71,23 +63,8 @@ export default function PlanGrade(props: Props) {
 
   return (
     <div style={{ padding: '16px 20px' }}>
-      {/* Na descoberta a faixa anual sai. Ela é a SAÍDA de um plano — sem
-          plano são quatro R$ 0,00 em destaque logo abaixo de um texto que
-          acabou de explicar que ainda estamos medindo. Para quem não entende
-          de finanças, quatro zeros grandes não leem como "ainda não tem", leem
-          como "está quebrado". A barra de ferramentas abaixo fica: ela é
-          ENTRADA, e é a porta de quem já sabe os próprios números. */}
-      {!desc?.ativa && (
-        <PlanResumoAnual
-          saldoInicial={janela.saldoInicial}
-          totalReceitas={janela.receitas}
-          totalDespesas={janela.despesas}
-          resultado={janela.saldoFinal}
-          anoAtual={anoAtual}
-          mesInicio={janela.inicio}
-        />
-      )}
-
+      {/* A faixa anual virou a resposta do ano no topo azul — ver
+          PlanResumoAnual, montado no PageHeader de Planejamento.tsx. */}
       <PlanBarraFerramentas
         mesAtual={mesAtual}
         anoAtual={anoAtual}
@@ -102,36 +79,16 @@ export default function PlanGrade(props: Props) {
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />
 
-      {/* Os doze meses numa linha só, com setas — na grade de 4 × 3 os de
-          baixo ficavam fora da tela. Ver PlanFaixaMeses. Abre no mês
-          corrente; noutro ano, em janeiro. */}
-      <PlanFaixaMeses
-        inicial={anoAtual === anoCorrente ? mesAtual : 0}
-        destaque={anoAtual === anoCorrente ? mesAtual : null}
-        itens={Array.from({ length: 12 }, (_, mi) => {
-          const isAtual = mi === mesAtual && anoAtual === anoCorrente
-          const isFuturo = anoAtual > anoCorrente || (anoAtual === anoCorrente && mi > mesAtual)
-          return (
-            <PlanCardMes
-              semPlanoTexto={textoSemPlano(mi)}
-              key={mi}
-              mes={mi}
-              receitas={planTotais.totalEntradas[mi]}
-              despesas={planTotais.totalSaidas[mi]}
-              saldoInicial={planTotais.saldoInicial[mi]}
-              saldoFinal={planTotais.saldoFinal[mi]}
-              isAtual={isAtual}
-              isFuturo={isFuturo}
-              meta={objetivos[mi]}
-              saldoInicialReal={planTotais.inicialReal[mi]}
-              saldoFinalReal={planTotais.finalReal[mi]}
-              // Só mês FECHADO: o corrente e os futuros ainda não têm fechamento.
-              fechouEm={props.fechamentoReal && (anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual))
-                ? props.fechamentoReal[mi] : undefined}
-              onClick={() => setModalMes(mi)}
-            />
-          )
-        })}
+      {/* O gráfico do ano e os doze meses em cartões — ver PlanAnoVisao.
+          Substituiu a faixa de quatro meses com setas (12/10/2026). */}
+      <PlanAnoVisao
+        previsto={planTotais}
+        anoAtual={anoAtual}
+        mesAtual={mesAtual}
+        fechamentoReal={props.fechamentoReal}
+        objetivos={objetivos}
+        semPlanoTexto={textoSemPlano}
+        onAbrir={setModalMes}
       />
 
       {/* O mês clicado abre as categorias em 3 meses a partir dele, com "Ano
