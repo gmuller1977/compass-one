@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../../data/categoriasPadrao'
 import { COR } from '../../utils/cores'
+import SeloCompass from '../LogoCompass'
 import { jaViu, marcarVisto } from '../../utils/vistoNaConta'
 
 /**
@@ -73,7 +74,7 @@ export default function PrimeirosPassos() {
     if (!prontoAberto) return null
     return (
       <Janela onFechar={() => setProntoAberto(false)} rotulo="Tudo pronto">
-        <div style={{ fontSize: 34, lineHeight: 1 }}>🎉</div>
+        <SeloCompass />
         <h2 style={tituloSt}>Tudo pronto para começar</h2>
         <p style={textoSt}>
           Lance o que gastar a partir de hoje. Se já sabe quanto ganha e gasta, monte o plano agora.
@@ -90,11 +91,11 @@ export default function PrimeirosPassos() {
     if (!bemVindo) return null
     return (
       <Janela onFechar={fecharBemVindo} rotulo="Bem-vindo ao Compass One">
-        <div style={{ fontSize: 34, lineHeight: 1 }}>🧭</div>
+        <SeloCompass />
         <h2 style={tituloSt}>Bem-vindo ao Compass One!</h2>
         <p style={textoSt}>
-          Antes de lançar, três cadastros rápidos. Tudo isso fica aqui em Configurações,
-          e você volta quando quiser mudar alguma coisa.
+          A sua jornada começa hoje com apenas 3 passos rápidos. Com eles, a sua bússola
+          já sabe onde está o seu dinheiro e para onde ele vai.
         </p>
         <ol style={{ margin: '18px 0 0', padding: '16px 18px', listStyle: 'none', display: 'grid', gap: 12,
           background: '#eff6ff', borderRadius: 12 }}>
@@ -152,7 +153,7 @@ export default function PrimeirosPassos() {
 
 const CHAVE_BEM_VINDO = 'boas-vindas-configuracoes'
 
-const tituloSt: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: COR.texto, margin: '14px 0 8px' }
+const tituloSt: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: COR.texto, margin: '16px 0 8px' }
 const textoSt: React.CSSProperties = { fontSize: 14, color: COR.textoSuave, lineHeight: 1.6, margin: 0 }
 
 function Janela({ onFechar, rotulo, children }: { onFechar: () => void; rotulo: string; children: React.ReactNode }) {

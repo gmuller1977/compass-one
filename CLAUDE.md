@@ -1911,7 +1911,9 @@ onde ir") e escolheu as duas ideias juntas:
 - As boas-vindas são uma JANELA (`PrimeirosPassos`), aberta uma vez por login
   na tela de ícones ("visto" na conta, `boas-vindas-configuracoes`), com os
   três passos na ordem do menu (Contas · Cartões opcional · Categorias),
-  "Começar →" e "Explorar primeiro". Dentro de cada cadastro fica uma barra
+  "Começar →" e "Explorar primeiro". Abre com a bússola da tela de login
+  (`SeloCompass`, em `LogoCompass.tsx`) e "A sua jornada começa hoje com
+  apenas 3 passos rápidos" — a logo é sempre a mesma, pedido dele. Dentro de cada cadastro fica uma barra
   fina com os passos e "Pular cartões →". No primeiro acesso, salvar uma
   conta leva aos cartões e salvar um cartão às categorias; ao ter conta e
   categoria ativa, a janela "Tudo pronto" oferece lançar ou montar o plano.
