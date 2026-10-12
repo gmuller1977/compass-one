@@ -33,7 +33,7 @@ export default function FcDesktopLeft({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Lista plana, por data da compra (e, no mesmo dia, ordem de lançamento). Antes era um acordeão por
+      {/* Lista plana, por data da compra, a mais recente no topo. Antes era um acordeão por
           dia de compra: conferir contra a fatura do banco exigia abrir grupo a
           grupo e a data não aparecia ao lado do lançamento. */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>

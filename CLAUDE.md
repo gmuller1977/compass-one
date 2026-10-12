@@ -2277,8 +2277,8 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   o total e os chips de fechamento e vencimento; um cartão com Planejado ·
   Faturas · Disponível; "Nova compra" e a lista no mesmo desenho. A barra
   fixa do total e a de "Adicionar" saíram (o total está no topo).
-- **A lista da fatura é por DATA DA COMPRA**, e no mesmo dia pela ordem de
-  lançamento (`compararNaFatura`, celular e computador). Pedido dele no mesmo
+- **A lista da fatura é por DATA DA COMPRA, a mais recente no topo**, e no
+  mesmo dia o último lançado no topo (`compararNaFatura`, celular e computador). Pedido dele no mesmo
   dia: lançando a fatura, a ordem de digitação embaralhava as datas.
 - **Total** ganhou só o topo novo: o conteúdo espera virar painel.
 - Computador não mudou (`if (isMobile)` antes de tudo).

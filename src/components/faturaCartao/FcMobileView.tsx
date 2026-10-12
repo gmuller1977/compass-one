@@ -525,7 +525,7 @@ export default function FcMobileView({
         </div>
       )}
 
-      {/* EXTRATO VIEW: lista única, por data da compra e, no mesmo dia, pela ordem de lançamento */}
+      {/* EXTRATO VIEW: lista única, a compra mais recente no topo */}
       {mobileView === 'extrato' && (
         <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
           <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }} style={{
