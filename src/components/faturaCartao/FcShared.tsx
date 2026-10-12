@@ -50,6 +50,20 @@ export function ordemLancamento(id: string): number {
   return Number.isFinite(ts) ? ts : 0
 }
 
+/**
+ * Ordem da lista da fatura: pela DATA DA COMPRA, e no mesmo dia pela ordem
+ * de lançamento. Pedido do Guilherme em 12/10/2026: lançando a fatura, a
+ * ordem de digitação embaralhava as datas, e é pela data que se confere
+ * contra a fatura do banco.
+ */
+export function compararNaFatura(
+  a: { dc: number; mc: number; ac: number; l: { id: string } },
+  b: { dc: number; mc: number; ac: number; l: { id: string } },
+): number {
+  return (a.ac - b.ac) || (a.mc - b.mc) || (a.dc - b.dc)
+    || (ordemLancamento(a.l.id) - ordemLancamento(b.l.id))
+}
+
 export const lancLabel = (l: { categoria: string; subCategoria?: string }) =>
   l.subCategoria?.trim() ? `${l.categoria} · ${l.subCategoria.trim()}` : l.categoria
 

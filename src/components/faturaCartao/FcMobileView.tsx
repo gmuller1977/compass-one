@@ -3,7 +3,7 @@ import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
-  ordemLancamento,
+  compararNaFatura,
   type TipoLanc, type Lancamento, type DadosMes,
   parseValor,
   REALCE_ERRO,
@@ -525,7 +525,7 @@ export default function FcMobileView({
         </div>
       )}
 
-      {/* EXTRATO VIEW: lista única, a última compra digitada no topo */}
+      {/* EXTRATO VIEW: lista única, por data da compra e, no mesmo dia, pela ordem de lançamento */}
       {mobileView === 'extrato' && (
         <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
           <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }} style={{
@@ -553,9 +553,7 @@ export default function FcMobileView({
                 </div>
               )
             }
-            // Mesma ordem do desktop: o ultimo digitado no topo, para ver de
-            // imediato onde parou de lancar a fatura.
-            allItems.sort((a, b) => ordemLancamento(b.l.id) - ordemLancamento(a.l.id))
+            allItems.sort(compararNaFatura)
             return (
               <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px'}}>
                 {allItems.map(({dia, dc, mc, ac, l}, idx) => {

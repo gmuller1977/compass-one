@@ -2,7 +2,7 @@ import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, NOMES_MESES, fmt, diaSemana, lancLabel, ordemLancamento,
+  COR, NOMES_MESES, fmt, diaSemana, lancLabel, compararNaFatura,
   type Lancamento, type DadosMes,
 } from './FcShared'
 import { grupoDoLanc } from './fcRotulo'
@@ -33,7 +33,7 @@ export default function FcDesktopLeft({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Lista plana, na ordem em que foi digitada. Antes era um acordeão por
+      {/* Lista plana, por data da compra (e, no mesmo dia, ordem de lançamento). Antes era um acordeão por
           dia de compra: conferir contra a fatura do banco exigia abrir grupo a
           grupo e a data não aparecia ao lado do lançamento. */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
@@ -59,7 +59,7 @@ export default function FcDesktopLeft({
             )
           }
 
-          itens.sort((a, b) => ordemLancamento(b.l.id) - ordemLancamento(a.l.id))
+          itens.sort(compararNaFatura)
 
           return (
             <div style={{ background: COR.branco, borderRadius: 12,
@@ -69,7 +69,7 @@ export default function FcDesktopLeft({
               const emEdicao  = editandoId === l.id
               const outroMes  = mc !== purchaseMes || ac !== purchaseAno
               // O acordeao antigo separava as compras posteriores ao fechamento com um
-              // divisor. Numa lista por ordem de digitacao isso nao cabe, entao a
+              // divisor. Numa lista unica por data isso nao cabe, entao a
               // informacao vira marcador na propria linha — ela nao podia se perder.
               const posFechamento = ac > purchaseAno
                 || (ac === purchaseAno && mc > purchaseMes)
