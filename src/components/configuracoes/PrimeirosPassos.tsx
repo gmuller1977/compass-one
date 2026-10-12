@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../../data/categoriasPadrao'
 import { COR } from '../../utils/cores'
@@ -13,10 +13,14 @@ import { COR } from '../../utils/cores'
  *   "importar sugestões" — a pessoa liga as que usa.
  * - O app fica em Configurações até haver uma conta e uma categoria ativa;
  *   aí o onboarding conta como feito (o Modo Descoberta depende disso).
+ * - Os passos seguem a ordem do menu (Contas, Cartões, Categorias); salvar
+ *   uma conta leva aos cartões, e um cartão às categorias. Pedido do
+ *   Guilherme em 12/10/2026, ao testar o primeiro acesso.
  * - Membro de conta compartilhada nunca vê: o cadastro é do administrador.
  */
 export default function PrimeirosPassos() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { contas, categorias, setCategorias, onboardingCompleto, setOnboardingCompleto, compartilhamento } = useApp()
   const membro = compartilhamento.papel === 'membro'
   // Lido na montagem: quem terminou agora vê o "tudo pronto"; quem já tinha
@@ -43,21 +47,19 @@ export default function PrimeirosPassos() {
 
   if (!eraNova) return null
 
-  const passo = (feito: boolean, texto: string, aba: string) => (
-    <button onClick={() => navigate(`/configuracoes?aba=${aba}`)} style={{
-      display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', border: 'none',
-      background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14,
-      color: COR.texto, textAlign: 'left',
-    }}>
-      <span aria-hidden style={{ width: 20, textAlign: 'center', color: feito ? COR.sucessoTexto : COR.textoSuave }}>
-        {feito ? '✓' : '○'}
-      </span>
-      <span style={{ textDecoration: feito ? 'line-through' : 'none' }}>{texto}</span>
-    </button>
-  )
+  // Os passos seguem a ordem do menu. Salvar uma conta leva aos cartões, e
+  // salvar um cartão às categorias (Configuracoes.salvarConta).
+  const abaAtual = searchParams.get('aba') ?? 'home'
+  const temCartao = contas.some(c => c.tipo === 'cartao')
+  const passos = [
+    { aba: 'bancos',     rotulo: 'Contas',     feito: temConta },
+    { aba: 'cartoes',    rotulo: 'Cartões',    feito: temCartao, opcional: true },
+    { aba: 'categorias', rotulo: 'Categorias', feito: temCategoria },
+  ]
+  const proximo = passos.find(p => !p.feito && !p.opcional) ?? passos[2]
 
   return (
-    <div style={{ margin: '12px 16px 0', padding: '14px 16px', borderRadius: 12, flexShrink: 0,
+    <div style={{ margin: '12px 16px 0', padding: '14px 18px', borderRadius: 12, flexShrink: 0,
       background: pronto ? COR.sucessoFundo : COR.infoFundo,
       border: `1px solid ${pronto ? COR.sucessoBorda : COR.infoBorda}` }}>
       {pronto ? (
@@ -72,14 +74,43 @@ export default function PrimeirosPassos() {
           </div>
         </>
       ) : (
-        <>
-          <div style={{ fontSize: 15, fontWeight: 700, color: COR.infoTexto }}>Primeiros passos</div>
-          <div style={{ fontSize: 13, color: COR.texto, margin: '4px 0 4px' }}>
-            Cadastre onde está o seu dinheiro e escolha os tipos de gasto que você usa.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 260px' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: COR.infoTexto }}>Bem-vindo! Três passos para começar</div>
+            <div style={{ fontSize: 13, color: COR.texto, marginTop: 2 }}>
+              {abaAtual === 'categorias'
+                ? 'Ligue as categorias que você usa. Dá para criar outras a qualquer momento.'
+                : 'Onde está o seu dinheiro, seus cartões e os tipos de gasto que você usa.'}
+            </div>
           </div>
-          {passo(temConta, 'Cadastrar uma conta (cartões são opcionais)', 'bancos')}
-          {passo(temCategoria, 'Ativar as categorias que você usa', 'categorias')}
-        </>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {passos.map((p, i) => {
+              const atual = abaAtual === p.aba
+              return (
+                <button key={p.aba} onClick={() => navigate(`/configuracoes?aba=${p.aba}`)}
+                  aria-current={atual ? 'step' : undefined} style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 999,
+                  cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
+                  border: `1.5px solid ${atual ? COR.azul : COR.infoBorda}`,
+                  background: atual ? COR.azul : '#fff',
+                  color: atual ? '#fff' : p.feito ? COR.sucessoTexto : COR.texto,
+                }}>
+                  <span aria-hidden>{p.feito ? '✓' : `${i + 1}`}</span>
+                  {p.rotulo}{p.opcional && !p.feito ? ' (opcional)' : ''}
+                </button>
+              )
+            })}
+            {abaAtual === 'cartoes' && !temCartao ? (
+              <button onClick={() => navigate('/configuracoes?aba=categorias')} style={botao(false)}>
+                Pular cartões →
+              </button>
+            ) : abaAtual === 'home' ? (
+              <button onClick={() => navigate(`/configuracoes?aba=${proximo.aba}`)} style={botao(true)}>
+                Começar →
+              </button>
+            ) : null}
+          </div>
+        </div>
       )}
     </div>
   )

@@ -36,12 +36,14 @@ export default function Configuracoes() {
   const { toast } = useToast()
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'list'|'form'>('list')
+  // Sem ?aba, Configurações abre na tela de ícones (computador e celular),
+  // na ordem do menu. Pedido do Guilherme em 12/10/2026, ao testar uma conta
+  // nova: o formulário de conta sozinho no meio da página "ficou muito ruim".
   const [aba,    setAba]    = useState<Aba>(() => {
-    if (window.innerWidth < 640) return 'home'
     const p = new URLSearchParams(window.location.search).get('aba')
     if (p === 'grupos') return 'categorias'
     if (p && ['bancos','cartoes','categorias','perfil','preferencias'].includes(p)) return p as Aba
-    return 'bancos'
+    return 'home'
   })
   const { user, contas, categorias, setContas, setCategorias,
           extratoData, faturaData, setExtratoData, setFaturaData, compartilhamento,
@@ -51,7 +53,9 @@ export default function Configuracoes() {
           metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
           saldoInicialDinheiro, salvarSaldoInicialDinheiro,
-          cenarioPrevisao, setCenarioPrevisao } = useApp()
+          cenarioPrevisao, setCenarioPrevisao, onboardingCompleto } = useApp()
+  // Primeiro acesso: salvar um cadastro leva ao próximo, na ordem do menu.
+  const primeiroAcesso = !onboardingCompleto && compartilhamento.papel !== 'membro'
   const [formPerfil, setFormPerfil] = useState({ nome: perfil.nome, apelido: perfil.apelido })
   const [modalExcluirConta, setModalExcluirConta] = useState(false)
   const [confirmInput,      setConfirmInput]      = useState('')
@@ -100,7 +104,7 @@ export default function Configuracoes() {
   useEffect(() => {
     const abaParam = searchParams.get('aba')
     const acaoParam = searchParams.get('acao')
-    if (!abaParam) return
+    if (!abaParam) { setAba('home'); setMobileView('list'); return }
     if (abaParam === 'bancos') {
       setAba('bancos')
       setMobileView(acaoParam === 'novo' ? 'form' : 'list')
@@ -246,7 +250,8 @@ export default function Configuracoes() {
         ),
         { id: contaId, ...contaFinal },
       ])
-      toast('Conta cadastrada')
+      toast(ehCartao ? 'Cartão cadastrado' : 'Conta cadastrada')
+      if (primeiroAcesso) navigate(`/configuracoes?aba=${ehCartao ? 'categorias' : 'cartoes'}`)
     }
     if (ehCartao && faturaStr.trim()) {
       const faturaVal = parseValor(faturaStr)
@@ -539,44 +544,74 @@ export default function Configuracoes() {
       <BottomNav />
       <PrimeirosPassos />
 
-      {/* HOME SCREEN — apenas mobile */}
-      {isMobile && aba === 'home' && (
-        <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '40px 24px',
-          display:'flex', flexDirection:'column', alignItems:'center' }}>
-          <h1 style={{ fontSize:22, fontWeight:800, color:COR.texto, marginBottom:28, textAlign:'center' }}>
-            Configurações
-          </h1>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, width:'100%', maxWidth:420 }}>
-            {[
-              { icon:'🏦', label:'Minhas contas', fn: () => { setAba('bancos');     setMobileView('list'); novaConta('bancos') } },
-              { icon:'💳', label:'Cartões',      fn: () => { setAba('cartoes');    setMobileView('list'); novaConta('cartoes') } },
-              { icon:'🏷', label:'Categorias',   fn: () => { setAba('categorias'); setSubAbaCat('categorias'); setMobileView('list') } },
-              { icon:'📁', label:'Grupos',       fn: () => { setAba('categorias'); setSubAbaCat('grupos');     setMobileView('list') } },
-              { icon:'👤', label:'Perfil',       fn: () => setAba('perfil') },
-              { icon:'⚙️', label:'Preferências', fn: () => setAba('preferencias') },
-            ].map(card => (
-              <button key={card.label} onClick={card.fn} style={{
-                background:COR.branco, borderRadius:20, padding:'20px 10px 16px',
-                display:'flex', flexDirection:'column', alignItems:'center', gap:10,
-                border:`1px solid ${COR.borda}`, boxShadow:'0 2px 10px rgba(0,0,0,.06)',
-                cursor:'pointer', fontFamily:'inherit', transition:'box-shadow .15s',
-              }}>
-                <span style={{ fontSize:30 }}>{card.icon}</span>
-                <span style={{ fontSize:12, fontWeight:700, color:COR.texto }}>{card.label}</span>
-              </button>
-            ))}
+      {/* TELA DE ÍCONES — as opções do menu, na mesma ordem */}
+      {aba === 'home' && (() => {
+        const nBancos = contas.filter(c => c.tipo !== 'cartao').length
+        const nCartoes = contas.filter(c => c.tipo === 'cartao').length
+        const nAtivas = categorias.filter(c => c.ativa).length
+        const nGrupos = new Set(categorias.filter(c => c.ativa).map(c => c.grupo).filter(Boolean)).size
+        const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+        const cards = [
+          { icon:'🏦', label:'Minhas contas', aba:'bancos', desc:'Bancos e poupanças onde está o seu dinheiro',
+            status: nBancos ? plural(nBancos, 'conta', 'contas') : 'Nenhuma ainda', ok: nBancos > 0 },
+          { icon:'💳', label:'Cartões', aba:'cartoes', desc:'Cartões de crédito, fechamento e vencimento da fatura',
+            status: nCartoes ? plural(nCartoes, 'cartão', 'cartões') : 'Opcional', ok: nCartoes > 0 },
+          { icon:'🏷', label:'Categorias', aba:'categorias', desc:'Os tipos de receita e de gasto que você usa',
+            status: nAtivas ? plural(nAtivas, 'ativa', 'ativas') : 'Nenhuma ativa', ok: nAtivas > 0 },
+          { icon:'📁', label:'Grupos', aba:'grupos', desc:'Como as categorias se juntam no Radar e no plano',
+            status: nGrupos ? plural(nGrupos, 'grupo', 'grupos') : '', ok: false },
+          { icon:'👤', label:'Perfil', aba:'perfil', desc:'Seu nome, digital, senha e compartilhamento',
+            status: '', ok: false },
+          { icon:'⚙️', label:'Preferências', aba:'preferencias', desc:'Cenário da previsão, alertas e ajustes do app',
+            status: '', ok: false },
+        ]
+        return (
+          <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '24px 16px' : '32px 24px',
+            display:'flex', flexDirection:'column', alignItems:'center' }}>
+            <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight:800, color:COR.texto, margin:'0 0 6px', textAlign:'center' }}>
+              Configurações
+            </h1>
+            {!isMobile && (
+              <p style={{ fontSize:14, color:COR.textoSuave, margin:'0 0 28px', textAlign:'center' }}>
+                Tudo o que você cadastra no app mora aqui.
+              </p>
+            )}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 14 : 18,
+              width:'100%', maxWidth: isMobile ? 420 : 820, marginTop: isMobile ? 22 : 0 }}>
+              {cards.map(card => (
+                <button key={card.label} onClick={() => navigate(`/configuracoes?aba=${card.aba}`)} style={{
+                  background:COR.branco, borderRadius:20, padding: isMobile ? '20px 10px 16px' : '26px 18px 20px',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap: isMobile ? 10 : 8,
+                  border:`1px solid ${COR.borda}`, boxShadow:'0 2px 10px rgba(0,0,0,.06)',
+                  cursor:'pointer', fontFamily:'inherit', transition:'box-shadow .15s', textAlign:'center',
+                }}>
+                  <span style={{ fontSize: isMobile ? 30 : 36 }}>{card.icon}</span>
+                  <span style={{ fontSize: isMobile ? 12 : 16, fontWeight:700, color:COR.texto }}>{card.label}</span>
+                  {!isMobile && (
+                    <span style={{ fontSize:13, color:COR.textoSuave, lineHeight:1.4 }}>{card.desc}</span>
+                  )}
+                  {!isMobile && card.status && (
+                    <span style={{ marginTop:4, fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:999,
+                      background: card.ok ? COR.sucessoFundo : '#f1f5f9',
+                      color: card.ok ? COR.sucessoTexto : '#475569' }}>
+                      {card.ok ? '✓ ' : ''}{card.status}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
-      {/* BACK BAR — apenas mobile */}
-      {isMobile && aba !== 'home' && (
+      {/* VOLTAR para a tela de ícones */}
+      {aba !== 'home' && (
         <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
-          padding:'10px 16px', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-          <button onClick={() => { setAba('home'); setMobileView('list') }} style={{
+          padding: isMobile ? '10px 16px' : '10px 24px', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+          <button onClick={() => navigate('/configuracoes')} style={{
             border:'none', background:'transparent', color:COR.azul,
             fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', padding:0 }}>
-            ‹ Voltar
+            ‹ {isMobile ? 'Voltar' : 'Configurações'}
           </button>
           <span style={{ fontSize:14, fontWeight:700, color:COR.texto, marginLeft:4 }}>
             {aba === 'bancos' ? '🏦 Minhas contas'

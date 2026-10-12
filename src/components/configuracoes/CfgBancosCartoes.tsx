@@ -237,11 +237,14 @@ export default function CfgBancosCartoes({
 
       {/* Formulário conta */}
       <div onKeyDown={e => { if (e.key==='Enter' && (e.target as HTMLElement).tagName==='INPUT') salvarConta() }}
-        style={{ width: isMobile ? '100%' : nenhumaConta ? 440 : 340,
+        style={{ width: isMobile ? '100%' : nenhumaConta ? 520 : 340,
           margin: nenhumaConta ? '0 auto' : undefined,
           flexShrink:0, background:COR.branco,
           border:`1px solid ${COR.borda}`, borderRadius:12,
-          padding:20, overflowY:'auto',
+          // Sem nenhuma conta o formulário fica sozinho: cresce com o conteúdo
+          // e a página rola, em vez de uma caixa estreita com rolagem própria.
+          padding: nenhumaConta ? 28 : 20, overflowY: nenhumaConta ? 'visible' : 'auto',
+          alignSelf: nenhumaConta ? 'flex-start' : undefined,
           display: isMobile && mobileView==='list' ? 'none' : 'block' }}>
         {isMobile && (
           <button onClick={() => setMobileView('list')} style={{
@@ -251,7 +254,20 @@ export default function CfgBancosCartoes({
             ← Voltar
           </button>
         )}
-        <div style={{ display:'flex', justifyContent:'space-between',
+        {nenhumaConta && (
+          <div style={{ textAlign:'center', marginBottom:22 }}>
+            <div style={{ fontSize:40 }}>{aba==='cartoes' ? '💳' : '🏦'}</div>
+            <h2 style={{ fontSize:20, fontWeight:800, color:COR.texto, margin:'6px 0 4px' }}>
+              {aba==='cartoes' ? 'Cadastre seu primeiro cartão' : 'Cadastre sua primeira conta'}
+            </h2>
+            <p style={{ fontSize:14, color:COR.textoSuave, margin:0, lineHeight:1.5 }}>
+              {aba==='cartoes'
+                ? 'Com o fechamento e o vencimento, o app sabe em que fatura cai cada compra.'
+                : 'O banco onde o seu dinheiro está hoje. O saldo pode ser aproximado: você ajusta depois.'}
+            </p>
+          </div>
+        )}
+        <div style={{ display: nenhumaConta ? 'none' : 'flex', justifyContent:'space-between',
           alignItems:'center', marginBottom:18 }}>
           <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:0 }}>
             {editContaId

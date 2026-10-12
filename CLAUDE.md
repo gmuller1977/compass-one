@@ -1895,6 +1895,22 @@ lançar" e "Começar meu plano". `/onboarding` cai na "/". Membro de conta
 compartilhada nunca vê a faixa. **As notas sobre o Onboarding abaixo e acima
 (portas, 4 telas, nomes do assistente) são histórico.**
 
+**Configurações abre numa tela de ícones, e o primeiro acesso anda sozinho.**
+Pedido do Guilherme em 12/10/2026, ao criar uma conta nova para testar: o
+formulário de conta, estreito e com rolagem própria no meio da página vazia,
+"ficou muito ruim". Ele quis manter Configurações ("para o usuário já saber
+onde ir") e escolheu as duas ideias juntas:
+
+- `/configuracoes` sem `?aba` abre a tela de ícones, no computador também —
+  as opções do menu, na mesma ordem, com o que já está cadastrado ("2 contas",
+  "Opcional", "Nenhuma ativa"). "‹ Configurações" volta para ela.
+- A faixa `PrimeirosPassos` mostra os três passos na ordem do menu (Contas ·
+  Cartões opcional · Categorias), marca o atual, tem "Começar →" na tela de
+  ícones e "Pular cartões →" nos cartões. No primeiro acesso, salvar uma
+  conta leva aos cartões e salvar um cartão às categorias.
+- Sem nenhuma conta, o formulário vira a tela: 520px, título "Cadastre sua
+  primeira conta" e a página rola, não a caixa.
+
 **O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
 Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as
 categorias estavam inativas. Desde a conta compartilhada (10/10), o login
