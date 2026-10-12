@@ -552,17 +552,17 @@ export default function Configuracoes() {
         const nGrupos = new Set(categorias.filter(c => c.ativa).map(c => c.grupo).filter(Boolean)).size
         const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
         const cards = [
-          { icon:'🏦', label:'Minhas contas', aba:'bancos', desc:'Bancos e poupanças onde está o seu dinheiro',
+          { icon:'ti-building-bank', label:'Minhas contas', aba:'bancos', desc:'Bancos e poupanças onde está o seu dinheiro',
             status: nBancos ? plural(nBancos, 'conta', 'contas') : 'Nenhuma ainda', ok: nBancos > 0 },
-          { icon:'💳', label:'Cartões', aba:'cartoes', desc:'Cartões de crédito, fechamento e vencimento da fatura',
+          { icon:'ti-credit-card', label:'Cartões', aba:'cartoes', desc:'Cartões de crédito, fechamento e vencimento da fatura',
             status: nCartoes ? plural(nCartoes, 'cartão', 'cartões') : 'Opcional', ok: nCartoes > 0 },
-          { icon:'🏷', label:'Categorias', aba:'categorias', desc:'Os tipos de receita e de gasto que você usa',
+          { icon:'ti-tags', label:'Categorias', aba:'categorias', desc:'Os tipos de receita e de gasto que você usa',
             status: nAtivas ? plural(nAtivas, 'ativa', 'ativas') : 'Nenhuma ativa', ok: nAtivas > 0 },
-          { icon:'📁', label:'Grupos', aba:'grupos', desc:'Como as categorias se juntam no Radar e no plano',
+          { icon:'ti-folders', label:'Grupos', aba:'grupos', desc:'Como as categorias se juntam no Radar e no plano',
             status: nGrupos ? plural(nGrupos, 'grupo', 'grupos') : '', ok: false },
-          { icon:'👤', label:'Perfil', aba:'perfil', desc:'Seu nome, digital, senha e compartilhamento',
+          { icon:'ti-user-circle', label:'Perfil', aba:'perfil', desc:'Seu nome, digital, senha e compartilhamento',
             status: '', ok: false },
-          { icon:'⚙️', label:'Preferências', aba:'preferencias', desc:'Cenário da previsão, alertas e ajustes do app',
+          { icon:'ti-adjustments-horizontal', label:'Preferências', aba:'preferencias', desc:'Cenário da previsão, alertas e ajustes do app',
             status: '', ok: false },
         ]
         return (
@@ -579,21 +579,28 @@ export default function Configuracoes() {
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 14 : 18,
               width:'100%', maxWidth: isMobile ? 420 : 820, marginTop: isMobile ? 22 : 0 }}>
               {cards.map(card => (
+                // Caixas no azul-escuro dos cartões do app (#0f2878 → #1e40af,
+                // a regra do #1e40af): branco 10,4:1, descrição a 75% 5,1:1,
+                // selo verde #86efac 4,8:1 no pior caso.
                 <button key={card.label} onClick={() => navigate(`/configuracoes?aba=${card.aba}`)} style={{
-                  background:COR.branco, borderRadius:20, padding: isMobile ? '20px 10px 16px' : '26px 18px 20px',
+                  background:'linear-gradient(135deg, #0f2878 0%, #1e40af 100%)', borderRadius:20,
+                  padding: isMobile ? '18px 8px 14px' : '24px 18px 20px',
                   display:'flex', flexDirection:'column', alignItems:'center', gap: isMobile ? 10 : 8,
-                  border:`1px solid ${COR.borda}`, boxShadow:'0 2px 10px rgba(0,0,0,.06)',
-                  cursor:'pointer', fontFamily:'inherit', transition:'box-shadow .15s', textAlign:'center',
+                  border:'none', boxShadow:'0 8px 20px rgba(15,40,120,.22)',
+                  cursor:'pointer', fontFamily:'inherit', textAlign:'center',
                 }}>
-                  <span style={{ fontSize: isMobile ? 30 : 36 }}>{card.icon}</span>
-                  <span style={{ fontSize: isMobile ? 12 : 16, fontWeight:700, color:COR.texto }}>{card.label}</span>
+                  <span aria-hidden style={{ width: isMobile ? 46 : 56, height: isMobile ? 46 : 56, borderRadius:16,
+                    background:'rgba(255,255,255,.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <i className={`ti ${card.icon}`} style={{ color:'#fff', fontSize: isMobile ? 24 : 30 }} />
+                  </span>
+                  <span style={{ fontSize: isMobile ? 13 : 16, fontWeight:700, color:'#fff' }}>{card.label}</span>
                   {!isMobile && (
-                    <span style={{ fontSize:13, color:COR.textoSuave, lineHeight:1.4 }}>{card.desc}</span>
+                    <span style={{ fontSize:13, color:'rgba(255,255,255,0.75)', lineHeight:1.4 }}>{card.desc}</span>
                   )}
                   {!isMobile && card.status && (
                     <span style={{ marginTop:4, fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:999,
-                      background: card.ok ? COR.sucessoFundo : '#f1f5f9',
-                      color: card.ok ? COR.sucessoTexto : '#475569' }}>
+                      background:'rgba(15,23,42,.35)',
+                      color: card.ok ? '#86efac' : '#ffffff' }}>
                       {card.ok ? '✓ ' : ''}{card.status}
                     </span>
                   )}
