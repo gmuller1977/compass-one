@@ -227,6 +227,14 @@ gastar; mês futuro tem outro envelope, cheio — a sobra não atravessa o mês.
 O excesso é um fato do mês e vale o mesmo nos três cenários, mas só no otimista
 ele zera a reserva.
 
+**O aviso do otimista na barra SAIU em 12/10/2026**, pedido do Guilherme: "não
+ajuda em nenhuma decisão" — ele só recomendava trocar de cenário. Junto, a frase
+do topo no estado "passou" deixou de ser só "as despesas variáveis passaram do
+plano em R$ X": agora diz ONDE (as categorias variáveis que passaram, maior
+excesso primeiro, até três) e, embaixo, o total e quanto ainda está planejado
+em outras categorias ("gastar menos ali compensa"). `memoriaDoRadar().excessoVariavel`
+continua calculado; nenhuma tela o lê.
+
 **Tentativa descartada, para não repetir:** um bloco "Variável do mês" dentro da
 memória, com sobras, estouro usado para abater e o que ainda falta gastar.
 Construído e revertido no mesmo dia a pedido do Guilherme. O que o convenceu foi
