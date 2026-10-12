@@ -148,6 +148,17 @@ semana a 80% (4,85) e botão "+" a 60% (3,07). No **Planejamento** a distinção
 temporal foi removida antes, de propósito: lá o que separa os meses é ter ou não
 planejamento, não a posição no tempo.
 
+**O computador tem a identidade do celular** (12/10/2026, pedido do Guilherme:
+"PC ou mobile precisam lembrar que é o mesmo sistema"). A Início do computador
+é a Bússola em duas colunas (topo azul `TOPO_AZUL`, cartões do kit
+`components/mobile/ui.tsx`); o `PageHeader`, o `KpiCard` e os grupos do Radar
+ganharam o mesmo azul, cantos e sombra — só a moldura no Radar, escolha dele:
+barras, faixas e o cinza dos grupos ficaram. **Em Lançamentos (Banco e
+Dinheiro) os dias do computador são o `NleExtratoMobile`** (`desktop`): bolinha
+de pago, "01/10 quinta · saldo", cartão branco; o formulário segue no painel da
+direita. O parágrafo acima sobre os temas de cor dos dias é histórico.
+`COR.fundo` NÃO mudou: `textoSuave` no `#f2f5fc` dá 4,36 e reprova.
+
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
 Onboarding e **"Planejamento do Zero"** no menu. Na primeira vez não há nada

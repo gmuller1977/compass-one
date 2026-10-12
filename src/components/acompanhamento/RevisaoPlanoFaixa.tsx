@@ -19,7 +19,7 @@ export default function RevisaoPlanoFaixa({ acima, onRevisar }: {
   if (!t) return null
   return (
     <div role="status" style={{
-      flexShrink: 0, borderRadius: 12, padding: '10px 14px', background: COR.avisoFundo,
+      flexShrink: 0, borderRadius: 16, padding: '10px 14px', background: COR.avisoFundo,
       border: `1px solid ${COR.avisoBorda}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
     }}>
       <div style={{ flex: '1 1 260px', minWidth: 0 }}>

@@ -21,7 +21,7 @@ export default function MotivoEstouroFaixa({ linhasSaida, ano, mes }: {
   return (
     <>
       <div role="status" style={{
-        flexShrink: 0, borderRadius: 12, padding: '10px 14px', background: COR.infoFundo,
+        flexShrink: 0, borderRadius: 16, padding: '10px 14px', background: COR.infoFundo,
         border: `1px solid ${COR.infoBorda}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
       }}>
         <div style={{ flex: '1 1 240px', minWidth: 0 }}>

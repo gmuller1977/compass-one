@@ -11,7 +11,7 @@ export default function ResumoRadarFaixa({ resumo }: { resumo: ResumoRadar }) {
   const passou = resumo.tom === 'passou'
   return (
     <div role="status" style={{
-      flexShrink: 0, borderRadius: 12, padding: '12px 16px',
+      flexShrink: 0, borderRadius: 16, padding: '12px 16px',
       background: passou ? COR.erroFundo : COR.infoFundo,
       border: `1px solid ${passou ? '#fecdd3' : COR.infoBorda}`,
       display: 'flex', flexDirection: 'column', gap: 4,

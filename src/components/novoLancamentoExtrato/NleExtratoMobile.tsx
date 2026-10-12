@@ -59,14 +59,16 @@ export default function NleExtratoMobile({
   setDiaSel, editarFixa, editarLancamento, excluir, lancar,
   desconsolidarFixa, consolidarFixa, setMobileDiaForm,
   setFTipo, setFCat, setFSubDesc, setFDesc, setFValor, setFPag,
-  setEditandoId, setEditandoFixaId, ehAutomatico,
-}: Props) {
+  setEditandoId, setEditandoFixaId, ehAutomatico, resetarParaNovo, desktop,
+}: Props & { desktop?: boolean }) {
   const [memoriaAberta, setMemoriaAberta] = React.useState(false)
   const valorRuim = parseValor(fValor) === null
   const cartaoNomesExtrato = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
 
   // O mesmo gesto do antigo "+ Adicionar neste dia".
   function novoNoDia(dia: number) {
+    // No computador o formulário é o painel da direita.
+    if (desktop) { resetarParaNovo(dia); return }
     setMobileDiaForm(dia); setDiaSel(dia)
     setFTipo('saida'); setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFPag('debito')
     setEditandoId(null); setEditandoFixaId(null)
@@ -81,15 +83,15 @@ export default function NleExtratoMobile({
   const editando = !!(editandoId || editandoFixaId)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 16px' }}>
-      <button onClick={() => novoNoDia(eMesAtual ? diaHoje : diaSel)} style={{
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: desktop ? 0 : '0 16px' }}>
+      {!desktop && <button onClick={() => novoNoDia(eMesAtual ? diaHoje : diaSel)} style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52,
         border: 'none', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
         background: `linear-gradient(135deg,${COR.azul},#2563eb)`, color: '#fff',
         fontSize: 16, fontWeight: 700, boxShadow: '0 6px 18px rgba(26,86,219,.28)',
       }}>
         <span aria-hidden style={{ fontSize: 20, lineHeight: 1 }}>＋</span> Novo lançamento
-      </button>
+      </button>}
 
       {semNada && (
         <Cartao style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -232,8 +234,9 @@ export default function NleExtratoMobile({
         )
       })}
 
-      {/* O mês termina com — a mesma barra e a mesma memória de antes. */}
-      <div style={{ borderRadius: M.raio, overflow: 'hidden', boxShadow: M.sombra,
+      {/* O mês termina com — a mesma barra e a mesma memória de antes. No
+          computador ela fica presa no pé da tela (NleExtrato). */}
+      {!desktop && <div style={{ borderRadius: M.raio, overflow: 'hidden', boxShadow: M.sombra,
         background: sf < 0 ? 'linear-gradient(135deg,#7f1d1d,#991b1b)' : 'linear-gradient(135deg,#0f2878,#1e40af)' }}>
         <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
           width: '100%', padding: '18px', display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between',
@@ -254,7 +257,7 @@ export default function NleExtratoMobile({
         {memoriaAberta && (
           <MemoriaSaldo m={memoria} positivo={sf >= 0} cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
         )}
-      </div>
+      </div>}
 
       {/* ── Folha do lançamento ─────────────────────────────────────── */}
       {mobileDiaForm !== null && (

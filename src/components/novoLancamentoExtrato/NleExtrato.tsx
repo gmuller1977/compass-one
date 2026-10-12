@@ -1,17 +1,12 @@
 import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
-import { iconeCategoria, ehCartaoCategoria } from '../../utils/categoriaIcone'
-import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import {
-  COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
-  diaSemana, diaEfetivoFixa, BadgePag,
-  formaPagCategoria, formaRecebCategoria,
+  fmt, NOMES_MESES,
   type CatFixa, type Lancamento, type DadosMes, type TipoLanc, type FormaPag, type Memoria,
-  parseValor,
-  REALCE_ERRO,
 } from './NleShared'
 import NleExtratoMobile from './NleExtratoMobile'
+import { M } from '../mobile/estilo'
 
 export type Props = {
   isMobile: boolean
@@ -76,98 +71,6 @@ export type Props = {
   setEditandoFixaId: (v: string | null) => void
   ehAutomatico: (f: CatFixa) => boolean
 }
-
-// ── Temas temporais ──────────────────────────────────────────────────────────
-const TEMA = {
-  // HOJE: o azul-ESCURO dos cartões do topo e da barra do rodapé
-  // (#0f2878 → #1e40af) — pedido do Guilherme em 26/09/2026, depois de passar
-  // um dia pelo azul médio. É o único dia com cor própria, e as LINHAS dele,
-  // abertas, ficam em azul-claro (TEMA_LINHAS_HOJE) para se diferenciarem da
-  // barra. Os tons reforçados no azul médio ficaram: rótulo 80%, saldo #e2e8f0,
-  // dia da semana 85%, botão "+" 60%, selos HOJE e FIXA com fundo marinho.
-  // Medido no extremo claro #1e40af: branco 8,72 · rótulo 6,19 · #86efac
-  // 6,21 · #fecaca 6,03 · saldo 7,08 · dia da semana 6,75 · "+" 4,20.
-  current: {
-    cardBg:        'linear-gradient(135deg, #0f2878, #1e40af)',
-    text:          '#fff',
-    label:         'rgba(255,255,255,0.8)',
-    rec:           '#86efac',
-    desp:          '#fecaca',
-    saldo:         '#e2e8f0',
-    zero:          'rgba(255,255,255,0.3)',
-    divider:       'rgba(255,255,255,0.08)',
-    boxBg:         'rgba(255,255,255,0.08)',
-    cardBorder:    '2px solid rgba(255,255,255,0.3)',
-    cardShadow:    '0 4px 16px rgba(15,40,120,0.4)',
-    selBorder:     '2px solid rgba(255,255,255,0.7)',
-    selShadow:     '0 0 0 3px rgba(255,255,255,0.12)',
-    semanaColor:   'rgba(255,255,255,0.85)',
-    diaNumColor:   '#fff',
-    listHover:     'rgba(255,255,255,0.05)',
-    listEditBg:    'rgba(255,255,255,0.1)',
-    listItemBdr:   'rgba(255,255,255,0.08)',
-    delColor:      'rgba(255,255,255,0.3)',
-    delHover:      '#f87171',
-    addColor:      'rgba(255,255,255,0.6)',
-    addHoverColor: '#fff',
-    addHoverBg:    'rgba(255,255,255,0.08)',
-    mobBoxBg:      'rgba(255,255,255,0.08)',
-    mobBoxBdr:     'rgba(255,255,255,0.15)',
-    fixaBadgeBg:   'rgba(15,23,42,0.35)',
-    fixaBadgeText: '#fde68a',
-  },
-  // Dias PASSADOS e FUTUROS usam este tema; só HOJE fica no azul-escuro e se
-  // destaca sozinho. Decidido pelo Guilherme em 26/09/2026, trazendo o esquema
-  // do Radar: fundo CINZA, neutro, com texto escuro. Antes eram três cores —
-  // passado azul médio, hoje escuro, futuro azul-claro. Passado e futuro agora
-  // se distinguem pela posição e pelos rótulos ("Saldo final" × "Saldo
-  // previsto"). Medido no pior caso, #d8dfe8: texto 7,71 · receita 6,79 ·
-  // despesa 7,46 · rótulo 5,76 · dia da semana 4,85 · botão "+" 3,07 — todos
-  // melhores que no azul-claro #93c5fd de antes.
-  future: {
-    cardBg:        'linear-gradient(135deg, #e6ebf1, #d8dfe8)',
-    text:          '#1e3a8a',
-    label:         'rgba(15,23,42,0.7)',
-    rec:           '#14532d',
-    desp:          '#7f1d1d',
-    saldo:         '#1e3a8a',
-    zero:          'rgba(30,58,138,0.2)',
-    divider:       'rgba(30,58,138,0.1)',
-    boxBg:         'rgba(30,58,138,0.06)',
-    cardBorder:    '1px solid #c3ccd8',
-    cardShadow:    'none',
-    selBorder:     '1.5px solid #1e3a8a',
-    selShadow:     '0 0 0 3px rgba(30,58,138,0.2)',
-    semanaColor:   'rgba(30,58,138,0.8)',
-    diaNumColor:   '#1e3a8a',
-    listHover:     'rgba(30,58,138,0.05)',
-    listEditBg:    '#f1f5f9',
-    listItemBdr:   'rgba(30,58,138,0.08)',
-    delColor:      'rgba(30,58,138,0.3)',
-    delHover:      COR.vermelho,
-    addColor:      'rgba(30,58,138,0.6)',
-    addHoverColor: '#1e3a8a',
-    addHoverBg:    'rgba(255,255,255,0.4)',
-    mobBoxBg:      'rgba(255,255,255,0.35)',
-    mobBoxBdr:     'rgba(30,58,138,0.15)',
-    fixaBadgeBg:   '#fde68a',
-    fixaBadgeText: '#92400e',
-  },
-}
-
-/**
- * As LINHAS do dia de hoje, abertas: azul-CLARO, para se diferenciarem da barra
- * do dia, que é azul médio — pedido do Guilherme em 26/09/2026. As cores são as
- * escuras do tema dos outros dias; só o fundo e o destaque de edição mudam.
- * Medido no pior caso, #93c5fd: texto 5,74 · receita 5,05 · despesa 5,56 ·
- * rótulo 4,91. O cabeçalho de hoje continua no tema 'current'.
- */
-const TEMA_LINHAS_HOJE = {
-  ...TEMA.future,
-  cardBg:     'linear-gradient(135deg, #bfdbfe, #93c5fd)',
-  listEditBg: 'rgba(255,255,255,0.45)',
-}
-
 
 /**
  * Memoria de calculo do saldo final previsto.
@@ -313,34 +216,10 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
   )
 }
 
-/**
- * Como a fixa se chama na lista — o mesmo texto que a linha desenha.
- *
- * A fatura nao usa o nome do cartao: ela aparece como "Cartão de Crédito".
- * Ordenar pelo nome cru colocaria "Nubank" no meio das categorias com N.
- */
-const rotuloFixa = (f: CatFixa) =>
-  f.id.startsWith('cartao-') ? 'Cartão de Crédito' : f.nome
-
 export default function NleExtrato(props: Props) {
   const {
-  isMobile, mobileView, isDinheiro,
-  mes, ano, totalDias, eMesAtual, diaHoje, anoHoje, mesHoje,
-  fixas, categorias, mesDados, saldosDia, saldoBase, saldoMes, memoria,
+  isMobile, mes, ano, totalDias, saldosDia, saldoMes, memoria,
   cenarioPrevisao, setCenarioPrevisao,
-  totalEntradas, totalSaidas,
-  contas,
-  diaSel, diasAbertos, highlightDia, editandoId, editandoFixaId, mobileDiaForm,
-  fTipo, fCat, fSubDesc, fDesc, fValor, fPag,
-  categoriasSelect, onNovaCategoria, subDescsDisponiveis,
-  valorInputRef, categoriaSelectRef, hojeRef,
-  toggleDia, resetarParaNovo, setDiaSel,
-  editarFixa, editarLancamento, excluir, lancar,
-  desconsolidarFixa, consolidarFixa,
-  setMobileDiaForm,
-  setFTipo, setFCat, setFSubDesc, setFDesc, setFValor, setFPag,
-  setEditandoId, setEditandoFixaId,
-  ehAutomatico,
   } = props
 
   // Fechada por padrao: a memoria e consulta, nao leitura obrigatoria.
@@ -348,468 +227,18 @@ export default function NleExtrato(props: Props) {
   // O celular tem desenho próprio, no padrão dos apps de banco; os números
   // e as ações são os mesmos — ver NleExtratoMobile.
   if (isMobile) return <NleExtratoMobile {...props} />
-  // Texto que nao e um valor: parseValor devolve null. O salvamento ja
-  // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
-  // nada. O realce diz ao usuario por que.
-  const valorRuim = parseValor(fValor) === null
-
-  const cartaoNomesExtrato = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
-
+  // O computador usa o MESMO desenho do celular para os dias (pedido do
+  // Guilherme em 12/10/2026: "PC ou mobile precisam lembrar que é o mesmo
+  // sistema"): bolinha de pago, dia "01/10 quinta · saldo", cartão branco.
+  // O formulário continua no painel à direita, e a barra do saldo final
+  // previsto fica no pé, como antes.
   return (
     <>
-      <div style={{flex:1,display:isMobile&&mobileView==='form'?'none':'flex',flexDirection:'column',overflow:isMobile?'visible':'hidden'}}>
-
-        {totalEntradas===0&&totalSaidas===0&&
-         fixas.filter(f=>!ehCartaoCategoria(categorias,f.categoria)).length===0&&(
-          <div style={{margin:isMobile?'6px 16px 0':'12px 20px 0 32px',padding:'13px 16px',flexShrink:0,
-            background:'#eff6ff',borderRadius:12,border:'1px solid #bfdbfe',
-            display:'flex',alignItems:'flex-start',gap:12}}>
-            <span style={{fontSize:20,lineHeight:1,flexShrink:0}}>💡</span>
-            <div>
-              <div style={{fontSize:13,fontWeight:600,color:COR.azul,marginBottom:3}}>Nenhum lançamento este mês</div>
-              <div style={{fontSize:12,color:'#3b82f6',lineHeight:1.5}}>
-                {isMobile?'Toque em qualquer dia abaixo para registrar.':'Clique em um dia e use o painel à direita para registrar.'}
-              </div>
-            </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div style={{flex:1,overflowY:'auto',padding:'20px 16px 24px'}}>
+          <div style={{maxWidth:820,margin:'0 auto'}}>
+            <NleExtratoMobile {...props} desktop />
           </div>
-        )}
-
-        <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:isMobile?6:10,
-          padding:isMobile?'0':'20px 20px 20px 32px'}}>
-
-          {Array.from({length:totalDias},(_,i)=>i+1).map(dia=>{
-            const ehHoje  = eMesAtual&&dia===diaHoje
-            const passado = eMesAtual?dia<diaHoje:ano<anoHoje||(ano===anoHoje&&mes<mesHoje)
-            const semana  = diaSemana(dia,mes,ano)
-            // Em ordem alfabetica: num dia com varias agendadas, a ordem do
-            // cadastro nao ajuda ninguem a achar a que procura.
-            const fs      = fixas.filter(f=>diaEfetivoFixa(f,mesDados.fixasMovidas,ehAutomatico(f),mes,ano,totalDias)===dia)
-              .slice().sort((a,b)=>rotuloFixa(a).localeCompare(rotuloFixa(b),'pt-BR'))
-            const lsRaw   = mesDados.lancamentos[dia]??[]
-            const ls      = lsRaw
-            const temItens= fs.length>0||ls.length>0
-            const temFixaPend=fs.some(f=>{
-              const conf=mesDados.fixasConsolidadas?.[f.id]===true
-              return !conf
-            })
-            const saldoIni = dia===1?saldoBase:(saldosDia[dia-1]??saldoBase)
-            const diaFuturo= !passado&&!ehHoje
-
-            const entradasDia=fs.filter(f=>f.tipo==='entrada')
-              .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]===true;return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
-              +ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
-            const saidasDia=fs.filter(f=>f.tipo==='saida')
-              .reduce((s,f)=>{const conf=mesDados.fixasConsolidadas?.[f.id]===true;return s+(conf?(mesDados.fixasValorOverride?.[f.id]??f.valor):f.valor)},0)
-              +ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
-            const entradasConf=
-              fs.filter(f=>f.tipo==='entrada'&&(mesDados.fixasConsolidadas?.[f.id]===true))
-              .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-              +ls.filter(l=>l.tipo==='entrada').reduce((s,l)=>s+l.valor,0)
-            const saidasConf=
-              fs.filter(f=>f.tipo==='saida'&&(mesDados.fixasConsolidadas?.[f.id]===true))
-              .reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-              +ls.filter(l=>l.tipo==='saida').reduce((s,l)=>s+l.valor,0)
-
-            const saldoDia = diaFuturo?(saldosDia[dia]??saldoIni):saldoIni+entradasConf-saidasConf
-            const selecionado=diaSel===dia
-            const aberto=diasAbertos.has(dia)
-
-            // ── Tema temporal ──────────────────────────────────────────────
-            const temaNome = ehHoje?'current':'future'
-            const tc = TEMA[temaNome]
-            // As linhas abertas têm tema próprio só hoje; nos outros dias é o mesmo.
-            const tl = ehHoje ? TEMA_LINHAS_HOJE : tc
-
-            const cardBorder = selecionado?tc.selBorder:tc.cardBorder
-            const cardShadow = selecionado?tc.selShadow:tc.cardShadow
-
-            return (
-              <div key={dia}
-                ref={ehHoje?hojeRef:undefined}
-                onClick={()=>{setMobileDiaForm(null);toggleDia(dia);if(!isMobile)resetarParaNovo(dia);else setDiaSel(dia)}}
-                style={{borderRadius:12,overflow:'hidden',flexShrink:0,cursor:'pointer',
-                  position:'relative',zIndex:selecionado?7:6,
-                  border:cardBorder,
-                  // Fora de hoje, o cartão é BRANCO e só o cabeçalho pinta o cinza:
-                  // fechado, aparece só o cabeçalho; aberto, as linhas ficam no
-                  // branco — o mesmo desenho do acordeão do Radar.
-                  background:ehHoje?TEMA_LINHAS_HOJE.cardBg:'#fff',
-                  boxShadow:cardShadow,
-                  animation:highlightDia===dia?'rowSaved 1.2s ease-out':undefined,
-                }}>
-
-                {/* Cabeçalho */}
-                <div style={{display:'flex',alignItems:'stretch',minHeight:54,
-                  background:tc.cardBg,
-                  borderBottom:aberto&&(temItens||selecionado)?`1px solid ${tc.divider}`:'none'}}>
-
-                  {/* Coluna dia */}
-                  <div style={{width:isMobile?44:62,flexShrink:0,padding:isMobile?'8px 10px':'11px 13px',
-                    borderRight:`1px solid ${tc.divider}`,display:'flex',flexDirection:'column',justifyContent:'center'}}>
-                    <div style={{fontSize:18,fontWeight:800,lineHeight:1,color:tc.diaNumColor}}>
-                      {String(dia).padStart(2,'0')}
-                    </div>
-                    <div style={{fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:.3,marginTop:1,color:tc.semanaColor}}>
-                      {semana}
-                    </div>
-                    {ehHoje&&(
-                      <div style={{fontSize:7,fontWeight:800,padding:'1px 5px',borderRadius:3,
-                        display:'inline-block',marginTop:3,letterSpacing:.3,
-                        background:'rgba(15,23,42,0.35)',color:'#fff'}}>HOJE</div>
-                    )}
-                    {temFixaPend&&(
-                      <div style={{fontSize:7,fontWeight:800,padding:'1px 5px',borderRadius:3,
-                        display:'inline-block',marginTop:ehHoje?2:3,letterSpacing:.3,
-                        background:tc.fixaBadgeBg,color:tc.fixaBadgeText}}>FIXA</div>
-                    )}
-                  </div>
-
-                  {/* Boxes de resumo */}
-                  <div style={{flex:1,display:'flex',alignItems:'center',
-                    justifyContent:'flex-end',gap:isMobile?4:6,padding:isMobile?'0 8px':0}}>
-
-                    {isMobile?(<>
-                      {/* Mobile: Inicial | Mov | Final */}
-                      {[
-                        {label:'Inicial',val:saldoIni,color:tc.text,fmt:(v:number)=>fmt(v)},
-                        {label:'Mov.',val:diaFuturo?(entradasDia-saidasDia):(entradasConf-saidasConf),
-                          color:(diaFuturo?(entradasDia-saidasDia):(entradasConf-saidasConf))>0?tc.rec:
-                                (diaFuturo?(entradasDia-saidasDia):(entradasConf-saidasConf))<0?tc.desp:tc.label,
-                          fmt:(v:number)=>v===0?'—':`${v>0?'+':'-'}${fmt(Math.abs(v))}`},
-                        {label:diaFuturo?'Prev.':ehHoje?'Atual':'Final',val:saldoDia,
-                          color:saldoDia<0?tc.desp:tc.saldo,
-                          fmt:(v:number)=>fmt(v)},
-                      ].map(col=>(
-                        <div key={col.label} style={{display:'flex',flexDirection:'column',alignItems:'center',
-                          padding:'5px 8px',borderRadius:10,flex:1,
-                          background:tc.mobBoxBg,border:`1px solid ${tc.mobBoxBdr}`}}>
-                          <span style={{fontSize:8,fontWeight:700,textTransform:'uppercase',letterSpacing:.4,marginBottom:2,color:tc.label}}>{col.label}</span>
-                          <span style={{fontSize:11,fontWeight:700,letterSpacing:'-.3px',color:col.color,fontVariantNumeric:'tabular-nums'}}>{col.fmt(col.val)}</span>
-                        </div>
-                      ))}
-                    </>):(()=>{
-                      // Desktop: 4-col grid
-                      const planejadoDia=fs.filter(f=>f.tipo==='saida'&&!(
-                        mesDados.fixasConsolidadas?.[f.id]===true
-                      )).reduce((s,f)=>s+(mesDados.fixasValorOverride?.[f.id]??f.valor),0)
-                      const saldoColor=saldoDia<0?tc.desp:diaFuturo?tc.saldo:saldoDia===0?tc.zero:tc.saldo
-                      return(
-                        <>
-                          <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr'}}>
-                            {[
-                              {label:'Entradas',val:entradasConf,color:entradasConf>0?tc.rec:tc.zero,fmt:(v:number)=>v===0?'—':`+${fmt(v)}`},
-                              {label:'Saídas',  val:saidasConf,  color:saidasConf>0?tc.desp:tc.zero,  fmt:(v:number)=>v===0?'—':`-${fmt(v)}`},
-                              {label:'Previsto',val:planejadoDia,color:planejadoDia>0?tc.label:tc.zero,fmt:(v:number)=>v===0?'—':`-${fmt(v)}`},
-                              {label:diaFuturo?'Saldo previsto':passado?'Saldo final':'Saldo atual',
-                               val:saldoDia,color:saldoColor,fmt:(v:number)=>fmt(v)},
-                            ].map(col=>(
-                              <div key={col.label} style={{padding:'10px 12px',textAlign:'right',borderRight:`1px solid ${tc.divider}`}}>
-                                <div style={{fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:.4,marginBottom:3,color:tc.label}}>{col.label}</div>
-                                <div style={{fontSize:13,fontWeight:700,color:col.color,fontVariantNumeric:'tabular-nums'}}>{col.fmt(col.val)}</div>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Botão ＋ */}
-                          <div onClick={e=>{e.stopPropagation();resetarParaNovo(dia);setTimeout(()=>valorInputRef.current?.focus(),80)}}
-                            style={{width:48,display:'flex',alignItems:'center',justifyContent:'center',
-                              borderLeft:`1px solid ${tc.divider}`,flexShrink:0,cursor:'pointer',
-                              fontSize:20,color:tc.addColor,transition:'all .15s'}}
-                            onMouseEnter={e=>{e.currentTarget.style.color=tc.addHoverColor;e.currentTarget.style.background=tc.addHoverBg}}
-                            onMouseLeave={e=>{e.currentTarget.style.color=tc.addColor;e.currentTarget.style.background='transparent'}}>
-                            ＋
-                          </div>
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
-
-                {/* Fixas */}
-                {aberto&&fs.map(f=>{
-                  const ehFaturaFixa=f.id.startsWith('cartao-')
-                  const catVisual=iconeCategoria(categorias,f.categoria)
-                  const automatico=ehAutomatico(f)
-                  const consolidada=mesDados.fixasConsolidadas?.[f.id]===true
-                  const corValor=consolidada?(f.tipo==='entrada'?tl.rec:tl.desp):tl.label
-                  const emEdicaoFixa=editandoFixaId===f.id
-                  const valorMostrado=mesDados.fixasValorOverride?.[f.id]??f.valor
-                  return(
-                    <div key={f.id} onClick={e=>e.stopPropagation()}
-                      style={{background:emEdicaoFixa?tl.listEditBg:'transparent'}}>
-                      <div onClick={()=>editarFixa(dia,f)}
-                        style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',
-                          padding:'10px 16px',borderBottom:`1px solid ${tl.listItemBdr}`}}>
-                        <input type="checkbox" checked={consolidada}
-                          onClick={e=>e.stopPropagation()}
-                          onChange={()=>{if(consolidada)desconsolidarFixa(f.id);else consolidarFixa(f.id)}}
-                          title="Marcar como paga ✓"
-                          style={{cursor:'pointer',width:15,height:15,flexShrink:0}}/>
-                        <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
-                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
-                          background:catVisual.cor,opacity:consolidada?1:0.5}}>
-                          {catVisual.icone}
-                        </div>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,fontWeight:500,color:consolidada?tl.text:tl.label,
-                            display:'flex',alignItems:'center',gap:5}}>
-                            {/* "Grupo · Nome · Variante", com o grupo no tom do
-                                rótulo — o mesmo do cartão. O grupo vem do cadastro
-                                (subtitulo = c.grupo). Pedido do Guilherme, 06/10/2026. */}
-                            {ehFaturaFixa?'Cartão de Crédito':(
-                              <span style={{minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                                {f.subtitulo&&<span style={{color:tl.label}}>{f.subtitulo} · </span>}
-                                {f.nome}{f.descricao?` · ${f.descricao}`:''}
-                              </span>
-                            )}
-                            <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                              background:consolidada?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.07)',
-                              color:consolidada?tl.rec:tl.label}}>
-                              {consolidada?(automatico?'automática ✓':'paga ✓'):'previsto'}
-                            </span>
-                            {/* Cor e fundo iguais aos do irmao: os tokens do
-                                TEMA ja estao medidos nos tres fundos, e um
-                                tom proprio teria de ser medido em cada um. */}
-                            {f.inativa&&(
-                              <span style={{fontSize:9,padding:'1px 5px',borderRadius:3,fontWeight:600,
-                                background:'rgba(255,255,255,0.07)',color:tl.label}}>
-                                categoria inativa
-                              </span>
-                            )}
-                          </div>
-                          <div style={{fontSize:10,color:tl.label,marginTop:2,display:'flex',alignItems:'center',gap:4}}>
-                            {/* Grupo e variante subiram para o título; aqui fica
-                                só a forma de pagamento. */}
-                            {ehFaturaFixa
-                              ?`${f.categoria}${f.nome!==f.categoria?' · '+f.nome:''}`
-                              :null
-                            }<BadgePag fp={f.formaPagamento}/>
-                          </div>
-                        </div>
-                        <div style={{fontSize:13,fontWeight:600,color:corValor}}>
-                          {f.tipo==='entrada'?'+':'-'}{fmt(valorMostrado)}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-
-                {/* Lançamentos variáveis */}
-                {aberto&&ls.map(l=>{
-                  const catVisual=iconeCategoria(categorias,l.categoria)
-                  const corValor=l.tipo==='entrada'?tl.rec:tl.desp
-                  const emEdicao=editandoId===l.id
-                  const catLower=l.categoria.toLowerCase()
-                  const ehFaturaLanc=cartaoNomesExtrato.has(catLower)||
-                    (catLower.includes('cart')&&(/cr[eé]d/.test(catLower)||catLower.includes('fatura')))
-                  return(
-                    <div key={l.id}
-                      onClick={e=>{e.stopPropagation();if(!l.id.startsWith('fatura-'))editarLancamento(dia,l)}}
-                      style={{display:'flex',alignItems:'center',gap:10,
-                        cursor:l.id.startsWith('fatura-')?'default':'pointer',
-                        padding:'10px 16px',borderBottom:`1px solid ${tl.listItemBdr}`,
-                        background:emEdicao?tl.listEditBg:'transparent'}}
-                      onMouseEnter={e=>{if(!emEdicao)e.currentTarget.style.background=tl.listHover}}
-                      onMouseLeave={e=>{if(!emEdicao)e.currentTarget.style.background='transparent'}}>
-                      <div style={{width:32,height:32,borderRadius:8,flexShrink:0,
-                        display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,
-                        background:catVisual.cor}}>
-                        {catVisual.icone}
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:600,color:tl.text,display:'flex',alignItems:'center',gap:5}}>
-                          {/* "Grupo · Nome · Variante", como no cartão; o grupo no
-                              tom do rótulo. Pedido do Guilherme, 06/10/2026. */}
-                          {ehFaturaLanc?'Cartão de Crédito':(()=>{
-                            const grupo=grupoDaCategoria(l.categoria,l.subCategoria,categorias)
-                            return(
-                              <span style={{minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                                {grupo&&<span style={{fontWeight:500,color:tl.label}}>{grupo} · </span>}
-                                {l.categoria}{l.subCategoria?` · ${l.subCategoria}`:''}
-                              </span>
-                            )
-                          })()}
-                          <BadgePag fp={l.formaPagamento}/>
-                        </div>
-                        {/* Embaixo, a descrição livre. Antes a variante tomava este
-                            lugar e a descrição sumia quando havia variante. */}
-                        <div style={{fontSize:11,color:tl.label,marginTop:1}}>
-                          {ehFaturaLanc?l.categoria:(l.descricao&&l.descricao!==l.categoria?l.descricao:'')}
-                        </div>
-                      </div>
-                      <div style={{fontSize:13,fontWeight:600,color:corValor}}>
-                        {l.tipo==='entrada'?'+':'-'}{fmt(l.valor)}
-                      </div>
-                      {!l.id.startsWith('fatura-')&&(
-                        <button onClick={e=>{e.stopPropagation();excluir(dia,l.id)}}
-                          style={{border:'none',background:'transparent',cursor:'pointer',
-                            color:tl.delColor,fontSize:14,padding:'2px 5px',borderRadius:6}}
-                          onMouseEnter={e=>(e.currentTarget.style.color=tl.delHover)}
-                          onMouseLeave={e=>(e.currentTarget.style.color=tl.delColor)}>✕</button>
-                      )}
-                    </div>
-                  )
-                })}
-
-                {/* INLINE FORM — mobile only */}
-                {isMobile&&aberto&&(<>
-                  <button
-                    onClick={e=>{e.stopPropagation()
-                      if(mobileDiaForm===dia){setMobileDiaForm(null)}else{
-                        setMobileDiaForm(dia);setDiaSel(dia)
-                        setFTipo('saida');setFCat('');setFSubDesc('');setFDesc('');setFValor('');setFPag('debito')
-                        setEditandoId(null);setEditandoFixaId(null)
-                        setTimeout(()=>categoriaSelectRef.current?.focus(),80)
-                      }
-                    }}
-                    style={{display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                      padding:9,fontSize:11,fontWeight:600,color:tl.addHoverColor,
-                      cursor:'pointer',border:'none',background:tl.addHoverBg,width:'100%',
-                      borderTop:`1px dashed ${tl.divider}`}}>
-                    + Adicionar neste dia
-                  </button>
-                  {mobileDiaForm===dia&&(
-                    <div onClick={e=>e.stopPropagation()}
-                      style={{background:'#f0f9ff',borderTop:`2px solid ${COR.azul}`,padding:'12px 14px'}}>
-                      <div style={{display:'flex',background:'#e0f2fe',borderRadius:8,padding:3,marginBottom:10,width:'fit-content'}}>
-                        {(['saida','entrada'] as const).map(t=>(
-                          <button key={t} onClick={()=>{setFTipo(t);setFPag(t==='entrada'?'pix':'debito')}} style={{
-                            padding:'5px 14px',border:'none',borderRadius:6,cursor:'pointer',
-                            fontSize:11,fontWeight:600,fontFamily:'inherit',
-                            background:fTipo===t?COR.branco:'transparent',
-                            color:fTipo===t?(t==='entrada'?COR.verde:COR.vermelho):'#0369a1',
-                            boxShadow:fTipo===t?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                            {t==='saida'?'Pagamento':'Recebimento'}
-                          </button>
-                        ))}
-                      </div>
-                      <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap' as never}}>
-                        <div style={{flex:'1.5 1 100px',display:'flex',flexDirection:'column',gap:3}}>
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
-                            <span style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Categoria</span>
-                            <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
-                          </div>
-                          <select ref={categoriaSelectRef}
-                            value={fCat}
-                            onChange={e=>{
-                              const nome=e.target.value
-                              if(nome==='__nova__'){onNovaCategoria();return}
-                              setFCat(nome);setFSubDesc('')
-                              const c=categorias.find((x:Categoria)=>x.nome===nome)
-                              if(c)setFPag(fTipo==='entrada'?formaRecebCategoria(c.formaPagamento,c.tipoMovimento):formaPagCategoria(c.formaPagamento,c.tipoMovimento))
-                              if(nome)setTimeout(()=>valorInputRef.current?.focus(),50)
-                            }}
-                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
-                            <option value="">Selecione...</option>
-                            <option value="__nova__" style={{color:'#1a56db',fontWeight:700}}>+ Nova categoria…</option>
-                            <option disabled>──────────────</option>
-                            {(()=>{
-                              const grps=new Map<string,Categoria[]>()
-                              for(const c of categoriasSelect){const g=c.grupo??'';if(!grps.has(g))grps.set(g,[]);grps.get(g)!.push(c)}
-                              return Array.from(grps.entries())
-                                .sort(([a],[b])=>a===''?1:b===''?-1:a.localeCompare(b,'pt-BR'))
-                                .map(([grupo,cats])=>grupo
-                                  ?<optgroup key={grupo} label={grupo}>{cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>)}</optgroup>
-                                  :cats.map(c=><option key={c.id} value={c.nome}>{c.nome}</option>))
-                            })()}
-                          </select>
-                        </div>
-                        {subDescsDisponiveis.length>0&&!fSubDesc&&(
-                          <div style={{flex:'1 1 80px',display:'flex',flexDirection:'column',gap:3}}>
-                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Variante</div>
-                            <select value={fSubDesc} onChange={e=>setFSubDesc(e.target.value)}
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
-                              <option value="">Selecione...</option>
-                              {subDescsDisponiveis.map(desc=><option key={desc} value={desc}>{desc}</option>)}
-                            </select>
-                          </div>
-                        )}
-                        <div style={{flex:'2 1 120px',display:'flex',flexDirection:'column',gap:3}}>
-                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Descrição</div>
-                          <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-                            placeholder="Ex: Mercado Extra..."
-                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}
-                            onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-                        </div>
-                        {/* Editando, o dia se troca aqui: o lancar() grava no diaSel e
-                            move do dia de origem — o mesmo que o calendário do
-                            painel do computador faz. */}
-                        {(editandoId||editandoFixaId)&&(
-                          <div style={{flex:'0 0 70px',display:'flex',flexDirection:'column',gap:3}}>
-                            <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Dia</div>
-                            <select value={diaSel} onChange={e=>setDiaSel(Number(e.target.value))} aria-label="Dia do lançamento"
-                              style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 6px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto}}>
-                              {Array.from({length:totalDias},(_,i)=>i+1).map(d=><option key={d} value={d}>{String(d).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}</option>)}
-                            </select>
-                          </div>
-                        )}
-                        <div style={{flex:'0 0 90px',display:'flex',flexDirection:'column',gap:3}}>
-                          <div style={{fontSize:9,color:'#0369a1',fontWeight:700,textTransform:'uppercase' as never,letterSpacing:.3}}>Valor</div>
-                          <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
-                            placeholder="R$ 0,00" inputMode="decimal"
-                            style={{border:`1.5px solid #bae6fd`,borderRadius:10,padding:'8px 10px',fontSize:13,outline:'none',background:'#fff',fontFamily:'inherit',color:COR.texto,...(valorRuim?REALCE_ERRO:{})}}
-                            onKeyDown={e=>e.key==='Enter'&&lancar()}/>
-                        </div>
-                      </div>
-                      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap' as never,marginBottom:8}}>
-                        <span style={{fontSize:10,color:'#0369a1',fontWeight:600}}>Pgto:</span>
-                        {(fTipo==='entrada'?FORMAS_ENT:FORMAS_SAI).filter(p=>isDinheiro||p.id!=='dinheiro').map(p=>(
-                          <button key={p.id} onClick={()=>setFPag(p.id)} style={{
-                            padding:'4px 10px',border:`1.5px solid ${fPag===p.id?COR.azul:'#bae6fd'}`,
-                            borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:600,
-                            background:fPag===p.id?'#eff6ff':'#fff',color:fPag===p.id?COR.azul:'#0369a1',
-                            fontFamily:'inherit'}}>
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div style={{display:'flex',gap:6}}>
-                        <button onClick={()=>{setMobileDiaForm(null);setEditandoId(null);setEditandoFixaId(null)}}
-                          style={{flex:1,padding:'9px 0',border:`1.5px solid ${COR.borda}`,borderRadius:8,
-                            background:'#fff',color:COR.textoSuave,fontSize:12,fontWeight:600,
-                            cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
-                        <button onClick={lancar}
-                          style={{flex:2,padding:'9px 0',border:'none',borderRadius:8,
-                            background:`linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
-                            color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{editandoId||editandoFixaId?'Salvar':'Lançar'}</button>
-                      </div>
-                      <div style={{fontSize:9,color:'#0369a1',marginTop:8,opacity:.7}}>↵ Enter no valor para salvar</div>
-                    </div>
-                  )}
-                </>)}
-              </div>
-            )
-          })}
-
-          {/* Saldo final — mobile inline */}
-          {isMobile&&(
-            <div style={{margin:'4px 0 8px',borderRadius:14,
-              background:(saldosDia[totalDias]??saldoMes)<0?'linear-gradient(135deg,#7f1d1d,#991b1b)':`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-              flexShrink:0}}>
-              <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
-                onClick={()=>setMemoriaAberta(v=>!v)}
-                onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMemoriaAberta(v=>!v)}}}
-                style={{padding:'14px 16px',display:'flex',alignItems:'center',
-                  justifyContent:'space-between',cursor:'pointer'}}>
-                <span style={{fontSize:11,fontWeight:600,color:'rgba(255,255,255,.7)',
-                  display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                  <span>Saldo final — {NOMES_MESES[mes]} {ano}</span>
-                  <ChipCenario cenario={cenarioPrevisao}/>
-                  <span style={{fontSize:9}}>{memoriaAberta?'▲':'▼'}</span>
-                </span>
-                <span style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:'-.5px'}}>
-                  {fmt(saldosDia[totalDias]??saldoMes)}
-                </span>
-              </div>
-              {/* Barra fixa: a memória aberta fica limitada a 35% da tela e rola por
-                  dentro — senão espremia o extrato e o fim dela sumia. 05/10/2026. */}
-              {memoriaAberta&&(
-                <div style={{maxHeight:'35vh',overflowY:'auto'}}>
-                  <MemoriaSaldo m={memoria} positivo={(saldosDia[totalDias]??saldoMes)>=0}
-                    cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Saldo final previsto — barra fixa desktop. Clicar abre a memoria de
@@ -819,8 +248,8 @@ export default function NleExtrato(props: Props) {
           const sf=saldosDia[totalDias]??saldoMes
           const positivo=sf>=0
           return(
-            <div style={{padding:'8px 16px',flexShrink:0,borderTop:'1px solid #e2e8f0',background:'#f8faff'}}>
-              <div style={{borderRadius:12,
+            <div style={{padding:'10px 16px 14px',flexShrink:0,background:M.fundo}}>
+              <div style={{borderRadius:18,boxShadow:'0 2px 14px rgba(15,40,120,.12)',
                 background:positivo?'linear-gradient(135deg,#0f2878,#1e40af)':'linear-gradient(135deg,#7f1d1d,#991b1b)'}}>
                 <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
                   onClick={()=>setMemoriaAberta(v=>!v)}
@@ -849,7 +278,7 @@ export default function NleExtrato(props: Props) {
                 {/* Barra fixa: a memória aberta fica limitada a 35% da tela e rola
                     por dentro — senão espremia os dias e o fim dela sumia. 05/10/2026. */}
                 {memoriaAberta&&(
-                  <div style={{maxHeight:'35vh',overflowY:'auto',borderRadius:'0 0 12px 12px'}}>
+                  <div style={{maxHeight:'35vh',overflowY:'auto',borderRadius:'0 0 18px 18px'}}>
                     <MemoriaSaldo m={memoria} positivo={positivo}
                       cenario={cenarioPrevisao} onCenario={setCenarioPrevisao}/>
                   </div>

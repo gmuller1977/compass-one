@@ -4,12 +4,13 @@ import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
+import { M } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/saldoConta'
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
-import { COR, fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
+import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
 import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
@@ -215,11 +216,11 @@ export default function RadarFinanceiro() {
   }
 
   return (
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:COR.fundo,
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:M.fundo,
       fontFamily:"-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
-      <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+      <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
         <PageHeader
           icon="ti-chart-bar"
           breadcrumb="TODO DIA"
@@ -239,7 +240,7 @@ export default function RadarFinanceiro() {
       {/* KPIs CONSOLIDADOS — clicar em qualquer um abre o detalhe por conta.
           Os saldos seguem o padrão verde/vermelho das receitas e despesas:
           verde positivo, vermelho negativo. Antes ficavam em branco. */}
-      <div style={{ padding: '8px 16px', flexShrink: 0, display: 'flex', gap: 8 }}>
+      <div style={{ padding: '14px 24px 4px', flexShrink: 0, display: 'flex', gap: 14 }}>
         <KpiCard icon="🔒" label="Saldo inicial" value={fmt(saldoInicial)}
           valueColor={corSaldo(saldoInicial)}
           sublabel={`${MESES_FULL[mes]} ${ano}`} style={{ flex: 1 }}
@@ -262,14 +263,14 @@ export default function RadarFinanceiro() {
       </div>
 
       {detalheContas && (
-        <div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
+        <div style={{ padding: '8px 24px', flexShrink: 0 }}>
           <RadarDetalheContas linhas={linhasContas} />
         </div>
       )}
 
       {/* CONTEÚDO */}
-      <div style={{flex:1,overflowY:'auto',padding:'12px 16px 80px',
-        display:'flex',flexDirection:'column',gap:12}}>
+      <div style={{flex:1,overflowY:'auto',padding:'14px 24px 80px',
+        display:'flex',flexDirection:'column',gap:14}}>
         {!dadosAno ? (
           <EmptyState
             icon="📈"
@@ -329,8 +330,8 @@ export default function RadarFinanceiro() {
       {(() => {
         const positivo = saldoPrevisto >= 0
         return (
-          <div style={{ padding: '8px 16px', flexShrink: 0, borderTop: '1px solid #e2e8f0', background: '#f8faff' }}>
-            <div style={{ borderRadius: 12,
+          <div style={{ padding: '10px 24px 14px', flexShrink: 0, background: M.fundo }}>
+            <div style={{ borderRadius: 18, boxShadow: '0 2px 14px rgba(15,40,120,.12)',
               background: positivo ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
               <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
                 onClick={() => setMemoriaAberta(v => !v)}
@@ -363,7 +364,7 @@ export default function RadarFinanceiro() {
                   altura livre: espremia o conteúdo até zero e o fim dela sumia abaixo da
                   borda. Limitada a 35% da tela, rola por dentro. Corrigido em 05/10/2026. */}
               {memoriaAberta && (
-                <div style={{ maxHeight: '35vh', overflowY: 'auto', borderRadius: '0 0 12px 12px' }}>
+                <div style={{ maxHeight: '35vh', overflowY: 'auto', borderRadius: '0 0 18px 18px' }}>
                   <MemoriaSaldo m={memoria} positivo={positivo}
                     cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />
                 </div>

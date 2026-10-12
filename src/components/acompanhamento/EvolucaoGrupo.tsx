@@ -85,15 +85,15 @@ export default function EvolucaoGrupo({
   const alternar   = () => setAberto(v => !v)
 
   return (
-    <div style={{ flexShrink: 0 }}>
+    <div style={{ flexShrink: 0, borderRadius: 16, boxShadow: '0 2px 14px rgba(15,40,120,.07)' }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
         onClick={alternar}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
         style={{
           background: FUNDO, color: TEXTO, cursor: 'pointer', border: BORDA,
-          borderRadius: aberto ? '12px 12px 0 0' : 12,
-          padding: '12px 16px',
+          borderRadius: aberto ? '16px 16px 0 0' : 16,
+          padding: '14px 18px',
         }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
@@ -154,7 +154,7 @@ export default function EvolucaoGrupo({
       {aberto && (
         <div style={{
           background: '#fff', border: '1px solid #e2e8f0',
-          borderTop: 0, borderRadius: '0 0 12px 12px', overflow: 'hidden',
+          borderTop: 0, borderRadius: '0 0 16px 16px', overflow: 'hidden',
         }}>
           {allCats.map((cat, idx) => {
             const cd = pickReal(realMap, cat.nome, cat.descricao, categorias)

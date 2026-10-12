@@ -14,18 +14,18 @@ export interface KpiCardProps {
   expandido?: boolean
 }
 
-const KPI_BG = 'linear-gradient(135deg,#0f2878,#1e40af)'
+const KPI_BG = 'linear-gradient(160deg,#0f2878,#1e40af)'
 const KPI_BORDER = '1px solid rgba(255,255,255,.15)'
 const LABEL_STYLE: React.CSSProperties = {
-  fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)',
+  fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.75)',
   textTransform: 'uppercase', letterSpacing: '.3px', marginBottom: 6,
 }
 const VALUE_STYLE: React.CSSProperties = {
-  fontSize: 18, fontWeight: 800, letterSpacing: '-.4px',
+  fontSize: 22, fontWeight: 800, letterSpacing: '-.4px',
   fontVariantNumeric: 'tabular-nums', textAlign: 'right',
 }
 const SUBLABEL_STYLE: React.CSSProperties = {
-  fontSize: 10, color: 'rgba(255,255,255,.5)', marginTop: 4, textAlign: 'right',
+  fontSize: 12, color: 'rgba(255,255,255,.75)', marginTop: 4, textAlign: 'right',
 }
 
 /**
@@ -66,7 +66,8 @@ export default function KpiCard({
       style={{
         display: 'flex', flexDirection: 'column',
         background: KPI_BG, border: KPI_BORDER,
-        borderRadius: 10, padding: '12px 16px',
+        borderRadius: 18, padding: '14px 18px',
+        boxShadow: '0 2px 14px rgba(15,40,120,.12)',
         cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}>
