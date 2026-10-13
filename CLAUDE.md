@@ -281,6 +281,11 @@ No celular (mesmo dia, pedido dele: "no web até que fica bom mas no celular
 não"), as duas caixas viram UMA, com uma linha por resposta: rótulo à
 esquerda, valor à direita e a frase embaixo, quebrada no " · ". Lado a lado
 a frase da meta ocupava quatro linhas. Mesma informação; só a arrumação.
+**"Já guardou" (item 3) SAIU no mesmo dia** (Guilherme: "como estamos na
+tela de planejamento, como pode afirmar isso? faz mais sentido algo do tipo
+no radar financeiro"). O real dos meses fechados não é assunto do
+Planejamento; o topo ficou com o saldo de 31/12 e a meta do ano.
+`resumoDoAno().jaGuardou` continua calculado; nenhuma tela o lê.
 
 **O gráfico do ano são TRÊS, escolhidos por botões** (13/10/2026, pedido do
 Guilherme: colunas e linha de saldo juntas "não ficou legal"). Um componente
