@@ -496,10 +496,10 @@ export default function Dashboard() {
           {/* ── Coluna 2: o que fazer ── */}
           <div style={{ display: 'grid', gap: 20 }}>
             <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
-              <Atalho icone={<span style={{ fontSize: 32, fontWeight: 300, lineHeight: 1 }}>+</span>} rotulo="Lançar" destaque onClick={() => navigate('/novo-lancamento')} />
-              <Atalho icone="📅" rotulo="Planejamento" onClick={() => navigate('/planejamento')} />
-              <Atalho icone="🛒" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
-              <Atalho icone="📈" rotulo="Radar" onClick={() => navigate('/radar')} />
+              <Atalho icone="ti-plus" rotulo="Lançar" onClick={() => navigate('/novo-lancamento')} />
+              <Atalho icone="ti-calendar-stats" rotulo="Planejamento" onClick={() => navigate('/planejamento')} />
+              <Atalho icone="ti-shopping-cart" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
+              <Atalho icone="ti-radar-2" rotulo="Radar" onClick={() => navigate('/radar')} />
             </Cartao>
 
             {ehMesCorrente && outrosAvisos.length > 0 && (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { COR } from '../utils/cores'
 import { useSeloNorte } from './norte/useSeloNorte'
+import { BOLINHA_AZUL } from './mobile/estilo'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -29,12 +30,12 @@ const NAV = [
 ] as const
 
 const MAIS = [
-  { icon: '📊', label: 'Planejamento',          path: '/planejamento' },
-  { icon: '📋', label: 'Lançamentos completos', path: '/novo-lancamento' },
-  { icon: '🔄', label: 'Revisão mensal',        path: '/revisaomensal' },
-  { icon: '🧮', label: 'Simulador',             path: '/simulacao' },
-  { icon: '⚙️', label: 'Configurações',         path: '/configuracoes' },
-  { icon: '🎁', label: 'Indicar amigos',        path: '/indicar' },
+  { icon: 'ti-calendar-stats', label: 'Planejamento',          path: '/planejamento' },
+  { icon: 'ti-list-details', label: 'Lançamentos completos', path: '/novo-lancamento' },
+  { icon: 'ti-refresh', label: 'Revisão mensal',        path: '/revisaomensal' },
+  { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
+  { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
+  { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
 ]
 
 export default function BottomNav() {
@@ -92,8 +93,9 @@ export default function BottomNav() {
                 border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
               }}>
-                <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: '#eef3ff',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{m.icon}</span>{m.label}
+                <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className={`ti ${m.icon}`} style={{ color: '#fff', fontSize: 21 }} /></span>{m.label}
               </button>
             ))}
           </div>

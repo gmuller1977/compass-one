@@ -52,3 +52,6 @@ export const TOPO_AZUL = 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)'
 
 /** Rótulo sobre o topo azul: 75% de branco dá 5,1 no #1e40af. */
 export const ROTULO_TOPO = 'rgba(255,255,255,.75)'
+
+/** Fundo das bolinhas de atalho: branco sobre ele 10,4:1 no pior ponto. */
+export const BOLINHA_AZUL = 'linear-gradient(135deg, #0f2878 0%, #1e40af 100%)'

@@ -159,10 +159,10 @@ export default function Bussola() {
 
         {/* ── Atalhos: o que se faz todo dia ─────────────────────────── */}
         <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
-          <Atalho icone={<span style={{ fontSize: 32, fontWeight: 300, lineHeight: 1 }}>+</span>} rotulo="Lançar" destaque onClick={() => navigate('/lancar')} />
-          <Atalho icone="📅" rotulo="Pagar contas" onClick={irParaContas} />
-          <Atalho icone="🛒" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
-          <Atalho icone="📈" rotulo="Radar" onClick={() => navigate('/radar')} />
+          <Atalho icone="ti-plus" rotulo="Lançar" onClick={() => navigate('/lancar')} />
+          <Atalho icone="ti-receipt" rotulo="Pagar contas" onClick={irParaContas} />
+          <Atalho icone="ti-shopping-cart" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
+          <Atalho icone="ti-radar-2" rotulo="Radar" onClick={() => navigate('/radar')} />
         </Cartao>
 
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}

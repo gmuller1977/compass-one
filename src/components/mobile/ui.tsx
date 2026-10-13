@@ -1,6 +1,6 @@
 import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
-import { M, mostrar } from './estilo'
+import { BOLINHA_AZUL, M, mostrar } from './estilo'
 
 /**
  * Peças do celular, no padrão dos apps de banco (Nubank, Inter, Itaú): pedido
@@ -68,8 +68,13 @@ export function Linha({ icone, cor, titulo, legenda, direita, primeira, onClick 
   )
 }
 
-/** Atalho redondo com rótulo embaixo — a fileira "Pix · Pagar · Transferir" dos bancos. */
-export function Atalho({ icone, rotulo, onClick, destaque }: { icone: ReactNode; rotulo: string; onClick: () => void; destaque?: boolean }) {
+/**
+ * Atalho redondo com rótulo embaixo — a fileira "Pix · Pagar · Transferir" dos
+ * bancos. Bolinha no azul-escuro das caixas de Configurações (#0f2878 →
+ * #1e40af) com ícone Tabler branco (`icone` = nome, ex. "ti-plus"), pedido do
+ * Guilherme em 13/10/2026: o mesmo desenho em todo atalho do app.
+ */
+export function Atalho({ icone, rotulo, onClick }: { icone: string; rotulo: string; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
       flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
@@ -77,9 +82,8 @@ export function Atalho({ icone, rotulo, onClick, destaque }: { icone: ReactNode;
     }}>
       <span aria-hidden style={{
         width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 24, background: destaque ? `linear-gradient(135deg,${COR.azul},#2563eb)` : COR.branco,
-        color: destaque ? '#fff' : COR.texto, boxShadow: M.sombra,
-      }}>{icone}</span>
+        background: BOLINHA_AZUL, boxShadow: '0 6px 16px rgba(15,40,120,.25)',
+      }}><i className={`ti ${icone}`} style={{ color: '#fff', fontSize: 27 }} /></span>
       <span style={{ fontSize: 13, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2 }}>{rotulo}</span>
     </button>
   )

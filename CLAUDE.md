@@ -2039,6 +2039,16 @@ onde ir") e escolheu as duas ideias juntas:
 - Sem nenhuma conta, o formulário vira a tela: 520px, título "Cadastre sua
   primeira conta" e a página rola, não a caixa.
 
+**Todo atalho redondo é a bolinha azul com ícone desenhado** (13/10/2026,
+pedido do Guilherme: "usar o mesmo modelo [...] da tela de configuração").
+`Atalho` (Início do computador e Bússola do celular) e a folha "Mais" da
+barra de baixo usam `BOLINHA_AZUL` (`#0f2878 → #1e40af`, em
+`mobile/estilo.ts`) com ícone Tabler branco (`icone="ti-…"`): Lançar
+`ti-plus`, Planejamento `ti-calendar-stats`, Pagar contas `ti-receipt`, Posso
+comprar? `ti-shopping-cart`, Radar `ti-radar-2`. Emoji em atalho, não. A
+fonte Tabler vem do CDN no `index.html`; a prévia local sem rede precisa
+servir o pacote do npm por `page.route`.
+
 **O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
 Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as
 categorias estavam inativas. Desde a conta compartilhada (10/10), o login
