@@ -49,7 +49,7 @@ export default function CfgPerfil({
               <div title="Em breve" style={{ position:'absolute', bottom:0, right:0,
                 width:24, height:24, borderRadius:'50%', background:'#e2e8f0',
                 border:`2px solid ${COR.branco}`, display:'flex', alignItems:'center',
-                justifyContent:'center', fontSize:11, cursor:'not-allowed' }}>✏</div>
+                justifyContent:'center', fontSize:13, color:'#475569', cursor:'not-allowed' }}><i aria-hidden className="ti ti-pencil" /></div>
             </div>
           </div>
 
@@ -117,7 +117,7 @@ export default function CfgPerfil({
             border:`1.5px solid ${COR.borda}`, borderRadius:8,
             background:COR.branco, color:COR.textoSuave, fontSize:13, fontWeight:600,
             cursor:'not-allowed', fontFamily:'inherit' }}>
-            🔑 Trocar senha
+            <i aria-hidden className="ti ti-key" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Trocar senha
           </button>
           <div style={{ fontSize:10, color:'#94a3b8', marginTop:6, textAlign:'center' }}>
             Um e-mail de redefinição será enviado para o endereço cadastrado.

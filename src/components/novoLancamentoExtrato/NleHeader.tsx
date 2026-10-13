@@ -96,10 +96,10 @@ export default function NleHeader({
           inativo, branco a 85% sobre o azul (6,7:1 no #1e40af). */}
       <div role="tablist" style={{display:'flex',gap:4,padding:4,borderRadius:999,background:'rgba(255,255,255,.12)'}}>
         {([
-          {v:'extrato'     as const, icon:'🏦', label:'Banco'},
-          {v:'cartao'      as const, icon:'💳', label:'Cartão'},
-          {v:'dinheiro'    as const, icon:'💵', label:'Dinheiro'},
-          {v:'consolidado' as const, icon:'📊', label:'Total'},
+          {v:'extrato'     as const, icon:'ti-building-bank', label:'Banco'},
+          {v:'cartao'      as const, icon:'ti-credit-card', label:'Cartão'},
+          {v:'dinheiro'    as const, icon:'ti-cash', label:'Dinheiro'},
+          {v:'consolidado' as const, icon:'ti-chart-pie', label:'Total'},
         ]).map(({v,icon,label}) => {
           const ativo = tabPrincipal === v
           return (
@@ -117,7 +117,7 @@ export default function NleHeader({
               background:ativo?'#fff':'transparent',color:ativo?'#1e3a8a':'rgba(255,255,255,.85)',
               boxShadow:ativo?'0 2px 8px rgba(15,23,42,.18)':'none',
             }}>
-              <span aria-hidden style={{fontSize:15}}>{icon}</span>{label}
+              <i className={`ti ${icon}`} aria-hidden style={{fontSize:16}} />{label}
             </button>
           )
         })}

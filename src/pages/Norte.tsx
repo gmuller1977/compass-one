@@ -103,7 +103,7 @@ export default function Norte() {
       }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span aria-hidden style={{ width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,.16)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🧭</span>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}><i className="ti ti-compass" /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Norte</div>
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
@@ -188,7 +188,7 @@ export default function Norte() {
               boxShadow: M.sombra, maxHeight: 120, minHeight: 48, boxSizing: 'border-box',
             }} />
           {Voz && !texto.trim() ? (
-            <button onClick={ouvir} aria-label={ouvindo ? 'Parar de ouvir' : 'Falar'} style={botaoRedondo(ouvindo)}>🎤</button>
+            <button onClick={ouvir} aria-label={ouvindo ? 'Parar de ouvir' : 'Falar'} style={botaoRedondo(ouvindo)}><i aria-hidden className="ti ti-microphone" style={{ fontSize: 22 }} /></button>
           ) : (
             <button onClick={() => mandar(texto)} disabled={!texto.trim() || loading} aria-label="Enviar" style={botaoRedondo(true)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -217,8 +217,8 @@ function botaoRedondo(forte: boolean) {
 function Bolha({ children }: { children: ReactNode }) {
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
-      <span aria-hidden style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, fontSize: 16,
-        background: 'linear-gradient(135deg,#0f2878,#1e40af)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🧭</span>
+      <span aria-hidden style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+        background: 'linear-gradient(135deg,#0f2878,#1e40af)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}><i className="ti ti-compass" /></span>
       <div style={{ background: '#fff', borderRadius: '20px 20px 20px 6px', padding: '12px 16px', boxShadow: M.sombra, maxWidth: '86%', minWidth: 0 }}>
         {children}
       </div>
@@ -239,7 +239,7 @@ function ItemDoDiaLinha({ it, onAcao, cad, onPagar }: {
   return (
     <div style={{ background: it.importante ? '#fff7ed' : '#f8faff', borderRadius: 14, padding: '10px 12px' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <span aria-hidden style={{ fontSize: 18, lineHeight: '22px' }}>{it.icone}</span>
+        <i aria-hidden className={`ti ${it.icone}`} style={{ fontSize: 19, lineHeight: '22px', color: it.importante ? COR.amarelo : COR.azul }} />
         <div style={{ flex: 1, minWidth: 0 }}><Texto texto={it.texto} /></div>
       </div>
       {(pedido || it.acao) && !aberto && (

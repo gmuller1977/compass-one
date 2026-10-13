@@ -78,7 +78,7 @@ export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
                     background: 'rgba(255,255,255,.14)', border: '1px solid rgba(255,255,255,.45)',
                     color: '#fff', borderRadius: 16, padding: '7px 12px', fontSize: 13,
                     cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-                  }}>🧭 {p}</button>
+                  }}><i aria-hidden className="ti ti-compass" style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 5 }} />{p}</button>
               ))}
               <button
                 onClick={() => navigate('/norte')}

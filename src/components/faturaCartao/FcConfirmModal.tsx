@@ -33,7 +33,7 @@ export default function FcConfirmModal({ mensagem, detalhe, onConfirmar, onCance
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: detalhe ? 8 : 20 }}>
           <div style={{ width:40, height:40, borderRadius:12, background:'#fef2f2',
             display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:20 }}>
-            🗑️
+            <i className="ti ti-trash" aria-hidden style={{ color:'#b91c1c' }} />
           </div>
           <p style={{ margin:0, fontSize:15, fontWeight:700, color:'#0f172a', lineHeight:1.35 }}>
             {mensagem}

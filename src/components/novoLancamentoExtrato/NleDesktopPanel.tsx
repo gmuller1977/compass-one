@@ -128,7 +128,7 @@ export default function NleDesktopPanel({
           </div>
           <span style={{fontSize:10,fontWeight:600,padding:'2px 9px',borderRadius:20,
             background:'#eff6ff',color:'#1a56db',flexShrink:0}}>
-            {isDinheiro ? '💵 Dinheiro' : (contaInfo?.icone ?? '🏦') + ' ' + (contaInfo?.banco ?? 'Banco')}
+            {isDinheiro ? <><i className="ti ti-cash" aria-hidden style={{verticalAlign:-1}} /> Dinheiro</> : (contaInfo?.icone ?? '🏦') + ' ' + (contaInfo?.banco ?? 'Banco')}
           </span>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function NleDesktopPanel({
           )}
           <div style={{marginBottom:14,position:'relative'}}>
             <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-              letterSpacing:.5,marginBottom:5}}>📅 Dia</div>
+              letterSpacing:.5,marginBottom:5}}>Dia</div>
             {/* Toda fixa pode ter a data trocada, inclusive a de debito automatico:
                 o banco pode antecipar ou atrasar, e o fixasMovidas cobre isso. */}
               <button onClick={() => setMostrarCalDia(v => !v)} style={{
@@ -239,7 +239,7 @@ export default function NleDesktopPanel({
             <div style={{marginBottom:14}}>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5,marginBottom:5}}>
-                💳 {fTipo === 'entrada' ? 'Forma de recebimento' : 'Forma de pagamento'}
+                {fTipo === 'entrada' ? 'Forma de recebimento' : 'Forma de pagamento'}
               </div>
               <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
                 {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).filter(p => isDinheiro || p.id !== 'dinheiro').map(p => (
@@ -266,7 +266,7 @@ export default function NleDesktopPanel({
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:5}}>
               <span style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5}}>
-                🏷 {fPag==='transferencia'?(fTipo==='saida'?'Transferir para':'Receber de'):'Categoria'}
+                {fPag==='transferencia'?(fTipo==='saida'?'Transferir para':'Receber de'):'Categoria'}
               </span>
               {fPag !== 'transferencia' && !editandoFixaId && (
                 <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
@@ -334,7 +334,7 @@ export default function NleDesktopPanel({
                 {subDescsDisponiveis.length > 0 && (
                   <div style={{marginTop:8}}>
                     <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-                      letterSpacing:.5,marginBottom:5}}>🔖 Variante</div>
+                      letterSpacing:.5,marginBottom:5}}>Variante</div>
                     <select value={fSubDesc} onChange={e => setFSubDesc(e.target.value)}
                       onFocus={realcarFoco} onBlur={removerRealce}
                       style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
@@ -353,7 +353,7 @@ export default function NleDesktopPanel({
           {/* Valor */}
           <div style={{marginBottom:14}}>
             <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-              letterSpacing:.5,marginBottom:5}}>💰 Valor *</div>
+              letterSpacing:.5,marginBottom:5}}>Valor *</div>
             <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00"
               onFocus={realcarFoco} onBlur={removerRealce}
@@ -367,7 +367,7 @@ export default function NleDesktopPanel({
           <div style={{marginBottom:14}}>
             <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
               letterSpacing:.5,marginBottom:5}}>
-              📝 Descrição{' '}
+              Descrição{' '}
               <span style={{fontWeight:400,color:'#94a3b8',textTransform:'none',fontSize:9}}>(opcional)</span>
             </div>
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
@@ -386,7 +386,7 @@ export default function NleDesktopPanel({
             <div style={{marginBottom:14}}>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5,marginBottom:5}}>
-                🏦 Debitar na conta
+                Debitar na conta
               </div>
               <select value={fContaFixa}
                 onChange={e => setFContaFixa(e.target.value)}
@@ -444,7 +444,7 @@ export default function NleDesktopPanel({
             <>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
                 padding:'8px 0',borderBottom:'1px solid #f8faff',marginTop:4}}>
-                <span style={{fontSize:11,color:'#64748b'}}>📅 Fixas pendentes</span>
+                <span style={{fontSize:11,color:'#64748b'}}><i className="ti ti-calendar-due" aria-hidden style={{verticalAlign:-2}} /> Fixas pendentes</span>
                 <span style={{fontSize:12,fontWeight:700,color:'#b45309'}}>{numFixasPendentes} {numFixasPendentes===1?'conta':'contas'}</span>
               </div>
               {fixasPend.slice(0,4).map(f => (

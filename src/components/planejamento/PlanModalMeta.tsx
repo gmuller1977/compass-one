@@ -60,7 +60,7 @@ export default function PlanModalMeta({
           boxShadow: '0 20px 60px rgba(0,0,0,.25)',
         }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto }}>
-          🎯 Meta de economia
+          <i aria-hidden className="ti ti-target" style={{ fontSize: 18, verticalAlign: '-2px', marginRight: 6 }} />Meta de economia
         </div>
         <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 4, marginBottom: 18 }}>
           Quanto você quer guardar por mês: o que sobra do que você ganha depois de pagar tudo. Exemplo: ganhou R$ 5.000 e gastou R$ 4.000, guardou R$ 1.000. O dinheiro que já estava na conta não conta.

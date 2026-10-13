@@ -95,7 +95,7 @@ export default function NleExtratoMobile({
 
       {semNada && (
         <Cartao style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <IconeRedondo icone="💡" />
+          <IconeRedondo icone={<i className="ti ti-bulb" style={{ color: COR.azul }} />} />
           <div>
             <div style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto }}>Nenhum lançamento este mês</div>
             <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>Toque em “Novo lançamento” para registrar.</div>

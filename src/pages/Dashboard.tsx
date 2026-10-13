@@ -395,14 +395,14 @@ export default function Dashboard() {
         {/* ── Primeiros passos: sem conta ou categoria, ou sem plano ── */}
         {(!temBanco || !temCategorias) && (
           <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <IconeRedondo icone="🧭" />
+            <IconeRedondo icone={<i className="ti ti-compass" style={{ color: COR.azul }} />} />
             <span style={{ flex: 1, fontSize: M.corpo, color: COR.texto }}>Configure suas contas e categorias para uma visão completa.</span>
             <Pilula forte onClick={() => navigate('/configuracoes')}>Configurar</Pilula>
           </Cartao>
         )}
         {temBanco && temCategorias && !temPlano && (
           <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <IconeRedondo icone="📋" cor={COR.amarelo} />
+            <IconeRedondo icone={<i className="ti ti-clipboard-list" style={{ color: COR.amarelo }} />} cor={COR.amarelo} />
             <span style={{ flex: 1, fontSize: M.corpo, color: COR.texto }}>Com um plano, a Início diz quanto ainda dá para gastar e com quanto o mês termina.</span>
             <Pilula forte onClick={() => navigate('/planejamento', { state: { openQuiz: true } })}>Montar meu plano</Pilula>
           </Cartao>
@@ -411,7 +411,7 @@ export default function Dashboard() {
         {/* Mês futuro: nada aqui aconteceu ainda. */}
         {ehFuturo && (
           <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <IconeRedondo icone="🔭" />
+            <IconeRedondo icone={<i className="ti ti-telescope" style={{ color: COR.azul }} />} />
             <div style={{ flex: 1, minWidth: 240, fontSize: M.corpo, color: COR.texto, lineHeight: 1.5 }}>
               <b>Nada aqui aconteceu ainda.</b>{' '}
               <span style={{ color: COR.textoSuave }}>São as contas do plano, as faturas já lançadas e o que o plano espera
@@ -506,7 +506,7 @@ export default function Dashboard() {
               <Cartao>
                 <TituloCartao>Pede sua atenção</TituloCartao>
                 {outrosAvisos.map((a, i) => (
-                  <Linha key={a.id} primeira={i === 0} icone="⚠️" cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
+                  <Linha key={a.id} primeira={i === 0} icone={<i className="ti ti-alert-triangle" style={{ color: a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo }} />} cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
                     titulo={<span style={{ whiteSpace: 'normal' }}>{a.titulo}</span>}
                     legenda={a.detalhe}
                     direita={<Pilula onClick={acaoDoAviso[a.id].onClick}>{acaoDoAviso[a.id].rotulo}</Pilula>} />

@@ -211,7 +211,7 @@ export default function PlanMobile(p: Props) {
             all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
             minHeight: 44, cursor: 'pointer',
           }}>
-            <IconeRedondo icone="🧰" />
+            <IconeRedondo icone={<i className="ti ti-tool" style={{ color: COR.azul }} />} />
             <span style={{ flex: 1 }}>
               <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto }}>Ferramentas do plano</span>
               <span style={{ display: 'block', fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>

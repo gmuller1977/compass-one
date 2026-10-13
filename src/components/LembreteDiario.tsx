@@ -58,7 +58,7 @@ export default function LembreteDiarioCard() {
   if (estado === 'instalar') {
     return (
       <div style={caixa}>
-        <span aria-hidden style={{ fontSize: 22 }}>🔔</span>
+        <i aria-hidden className="ti ti-bell" style={{ fontSize: 22, color: COR.azul }} />
         <span style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.45 }}>
           Para receber o lembrete das 21h no iPhone, instale o app: <b style={{ color: COR.texto }}>Compartilhar → Adicionar à Tela de Início</b>.
         </span>
@@ -68,7 +68,7 @@ export default function LembreteDiarioCard() {
   if (estado === 'ativo') {
     return (
       <div style={{ ...caixa, padding: '8px 14px' }}>
-        <span style={{ flex: 1, fontSize: 12, color: COR.textoSuave }}>🔔 Lembrete das 21h ativo neste aparelho</span>
+        <span style={{ flex: 1, fontSize: 12, color: COR.textoSuave }}><i aria-hidden className="ti ti-bell" style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 4 }} />Lembrete das 21h ativo neste aparelho</span>
         <button disabled={ocupado} onClick={async () => { setOcupado(true); await desativarLembrete().catch(() => {}); setEstado(await estadoLembrete()); setOcupado(false) }}
           style={{ border: 'none', background: 'none', color: COR.azul, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
           Desativar
@@ -78,7 +78,7 @@ export default function LembreteDiarioCard() {
   }
   return (
     <div style={{ ...caixa, flexWrap: 'wrap' }}>
-      <span aria-hidden style={{ fontSize: 22 }}>🔔</span>
+      <i aria-hidden className="ti ti-bell" style={{ fontSize: 22, color: COR.azul }} />
       <span style={{ flex: '1 1 180px' }}>
         <b style={{ display: 'block', fontSize: 14, color: COR.texto }}>Quer um lembrete às 21h?</b>
         <span style={{ fontSize: 12, color: COR.textoSuave, lineHeight: 1.4 }}>Avisa quando uma conta vence no dia seguinte e quando o dia passou sem lançamento.</span>

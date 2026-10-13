@@ -25,25 +25,25 @@ type NavItem = {
 
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
-    label: '📅 Todo dia',
+    label: 'Todo dia',
     items: [
-      { icon: '🏠', label: 'Início',      path: '/dashboard',       exact: true  },
-      { icon: '📋', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
-      { icon: '📈', label: 'Radar financeiro', path: '/radar',         exact: false },
+      { icon: 'ti-home', label: 'Início',      path: '/dashboard',       exact: true  },
+      { icon: 'ti-list-details', label: 'Lançamentos', path: '/novo-lancamento', exact: false },
+      { icon: 'ti-radar-2', label: 'Radar financeiro', path: '/radar',         exact: false },
     ],
   },
   {
-    label: '📆 Todo mês',
+    label: 'Todo mês',
     items: [
-      { icon: '🔄', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
-      { icon: '🔮', label: 'Simulador',      path: '/simulacao',     exact: false },
+      { icon: 'ti-refresh', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
+      { icon: 'ti-calculator', label: 'Simulador',      path: '/simulacao',     exact: false },
     ],
   },
   {
-    label: '🗓️ Todo ano',
+    label: 'Todo ano',
     items: [
       {
-        icon: '🎯', label: 'Planejamento', path: '/planejamento', exact: false, abreTela: true,
+        icon: 'ti-calendar-stats', label: 'Planejamento', path: '/planejamento', exact: false, abreTela: true,
         // Uma tela só: Meses e Planilha são um seletor DENTRO dela
         // (06/10/2026), e não mais subitens do menu.
         sub: [
@@ -55,10 +55,10 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     ],
   },
   {
-    label: '👤 Minha conta',
+    label: 'Minha conta',
     items: [
       {
-        icon: '⚙️', label: 'Configurações', path: '/configuracoes', exact: false,
+        icon: 'ti-settings', label: 'Configurações', path: '/configuracoes', exact: false,
         sub: [
           { label: 'Minhas Contas', path: '/configuracoes?aba=bancos'      },
           { label: 'Cartões',      path: '/configuracoes?aba=cartoes'      },
@@ -68,7 +68,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
           { label: 'Preferências', path: '/configuracoes?aba=preferencias' },
         ],
       },
-      { icon: '🎁', label: 'Indicar amigos', path: '/indicar', exact: false },
+      { icon: 'ti-gift', label: 'Indicar amigos', path: '/indicar', exact: false },
     ],
   },
 ]
@@ -121,7 +121,7 @@ function NavItemRow({
         opacity: disabled ? 0.7 : 1,
       }}
     >
-      <span style={{ fontSize: 15, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <i aria-hidden className={`ti ${icon}`} style={{ fontSize: 17, width: 18, textAlign: 'center', flexShrink: 0 }} />
       <span style={{ flex: 1 }}>{label}</span>
       {badge && (
         <span style={{
@@ -174,7 +174,7 @@ function SubItemRow({
       }}
     >
       {icon
-        ? <span style={{ fontSize: 14, flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+        ? <i aria-hidden className={`ti ${icon}`} style={{ fontSize: 15, flexShrink: 0, lineHeight: 1 }} />
         : <span style={{
             width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
             background: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.25)',
@@ -329,7 +329,7 @@ export default function Sidebar() {
                 return (
                   <div key="lancamentos">
                     <NavItemRow
-                      icon="📋"
+                      icon="ti-list-details"
                       label="Lançamentos"
                       active={lancActive}
                       hasSub
@@ -342,7 +342,7 @@ export default function Sidebar() {
                       <div style={{ animation: 'subExpand .18s ease' }}>
 
                         <SubItemRow
-                          label="Banco" icon="🏦"
+                          label="Banco" icon="ti-building-bank"
                           active={lancActive && tipoParam === 'banco'}
                           onClick={() => navigate('/novo-lancamento?tipo=banco')}
                         />
@@ -350,14 +350,14 @@ export default function Sidebar() {
                         {cartoes.length > 0 && (
                           <SubItemRow
                             label="Cartão"
-                            icon="💳"
+                            icon="ti-credit-card"
                             active={cartaoSubActive}
                             onClick={() => navigate('/novo-lancamento?tipo=cartao')}
                           />
                         )}
 
                         <SubItemRow
-                          label="Dinheiro" icon="💵"
+                          label="Dinheiro" icon="ti-cash"
                           active={lancActive && tipoParam === 'dinheiro'}
                           onClick={() => navigate('/novo-lancamento?tipo=dinheiro')}
                         />
@@ -427,7 +427,7 @@ export default function Sidebar() {
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
             background: 'linear-gradient(135deg,#1a56db,#2563eb)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-          }}>🧭</div>
+          }}><i aria-hidden className="ti ti-compass" style={{ color: '#fff', fontSize: 17 }} /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Norte</div>
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Assistente financeiro</div>
@@ -475,7 +475,7 @@ export default function Sidebar() {
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'rgba(255,255,255,.65)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.35)' }}
         >
-          ↩ Sair
+          <i aria-hidden className="ti ti-logout" style={{ fontSize: 12 }} /> Sair
         </button>
       </div>
 

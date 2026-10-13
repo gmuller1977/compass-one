@@ -291,7 +291,7 @@ function EditorItens({
           {linhas.map((l, i) => l.simulacaoId ? (
             // Item do Simulador: só muda ou sai por lá (próxima etapa).
             <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 28px', gap: 6, alignItems: 'center' }}>
-              <span style={{ ...campo, background: '#f5f3ff', color: '#6d28d9', border: 'none' }}>🔮 {l.descricao}</span>
+              <span style={{ ...campo, background: '#f5f3ff', color: '#6d28d9', border: 'none' }}><i aria-hidden className="ti ti-calculator" style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 4 }} />{l.descricao}</span>
               <span style={{ ...campo, background: '#f5f3ff', color: '#6d28d9', border: 'none', textAlign: 'right', fontWeight: 600 }}>{l.valor}</span>
               <span />
             </div>

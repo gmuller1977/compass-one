@@ -135,9 +135,9 @@ export default function AcMobileView({
     const cartao   = lancamentos.filter(l => l.fonte === 'cartao')
     const dinheiro = lancamentos.filter(l => l.fonte === 'dinheiro')
     const colunas  = [
-      { label:'🏦 Banco',    itens: banco    },
-      { label:'💳 Cartão',   itens: cartao   },
-      { label:'💵 Dinheiro', itens: dinheiro },
+      { label:'Banco',    icone:'ti-building-bank', itens: banco    },
+      { label:'Cartão',   icone:'ti-credit-card',   itens: cartao   },
+      { label:'Dinheiro', icone:'ti-cash',          itens: dinheiro },
     ].filter(c => c.itens.length > 0)
 
     return (
@@ -217,7 +217,7 @@ export default function AcMobileView({
               <div style={{ display:'grid', gridTemplateColumns:`repeat(${colunas.length},1fr)`, gap:8 }}>
                 {colunas.map(col => (
                   <div key={col.label}>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#64748b', marginBottom:6 }}>{col.label}</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#64748b', marginBottom:6 }}><i className={`ti ${col.icone}`} aria-hidden style={{ verticalAlign:-2 }} /> {col.label}</div>
                     <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
                       {col.itens.map((l,i) => (
                         <div key={i} style={{ padding:'8px 10px', borderRadius:12,
@@ -405,7 +405,7 @@ export default function AcMobileView({
       <div style={{ padding:'16px 16px 110px', display:'grid', alignContent:'start', gap:16 }}>
         {!dadosAno ? (
           <EmptyState
-            icon="📈"
+            icon="ti-radar-2"
             title="Veja se está no caminho certo"
             description={`Aqui você compara o que planejou com o que gastou em ${ano}. Para começar, monte seu plano.`}
             actionLabel="Criar plano →"

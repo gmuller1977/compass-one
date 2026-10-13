@@ -170,7 +170,7 @@ export default function Bussola() {
           <Cartao>
             <TituloCartao>Pede sua atenção</TituloCartao>
             {b.avisos.map((a, i) => (
-              <Linha key={a.id} primeira={i === 0} icone="⚠️" cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
+              <Linha key={a.id} primeira={i === 0} icone={<i className="ti ti-alert-triangle" style={{ color: a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo }} />} cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
                 titulo={<span style={{ whiteSpace: 'normal' }}>{a.titulo}</span>}
                 direita={<Pilula onClick={acaoDoAviso[a.id].onClick}>{acaoDoAviso[a.id].rotulo}</Pilula>} />
             ))}

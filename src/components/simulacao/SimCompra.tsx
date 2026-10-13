@@ -231,7 +231,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     const mesObs = NOMES_MESES[descoberta.mesObservado.mes]
     return (
       <div style={{ ...card, textAlign: 'center', padding: '36px 24px' }}>
-        <div style={{ fontSize: 34 }}>🗓</div>
+        <i aria-hidden className="ti ti-calendar-stats" style={{ fontSize: 36, color: COR.azul }} />
         <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto, marginTop: 10 }}>
           {emDescoberta
             ? (faltam <= 0
@@ -307,8 +307,8 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         <div style={{ marginTop: 18 }}>
           <label style={labelSt}>Como você vai pagar?</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {[{ id: '', rotulo: '💰 Débito ou Pix' },
-              ...cartoes.map(c => ({ id: c.id, rotulo: `${c.icone} ${c.apelido || c.banco}` }))
+            {[{ id: '', rotulo: 'Débito ou Pix', ti: 'ti-building-bank' },
+              ...cartoes.map(c => ({ id: c.id, rotulo: `${c.icone} ${c.apelido || c.banco}`, ti: '' }))
             ].map(op => {
               const ativo = ondeId === op.id
               return (
@@ -318,7 +318,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                   background: ativo ? '#eff6ff' : COR.branco,
                   color: ativo ? COR.azul : COR.textoSuave,
                   fontSize: 13, fontWeight: ativo ? 700 : 500, transition: 'all .15s',
-                }}>{op.rotulo}</button>
+                }}>{op.ti && <i aria-hidden className={`ti ${op.ti}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />}{op.rotulo}</button>
               )
             })}
           </div>
@@ -387,7 +387,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           />
         ) : duasColunas && (
           <div style={{ ...cardAzul, textAlign: 'center', padding: '40px 24px' }}>
-            <div style={{ fontSize: 30 }}>📊</div>
+            <i aria-hidden className="ti ti-chart-bar" style={{ fontSize: 32, color: '#fff' }} />
             <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,.85)', marginTop: 10, lineHeight: 1.6 }}>
               Escolha uma opção na tabela para ver o mês a mês.
             </div>
@@ -405,7 +405,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
               <button type="button" onClick={() => setIncluindo(true)} style={{
                 width: '100%', padding: '11px 16px', borderRadius: 10, border: `1px solid ${COR.borda}`,
                 background: COR.branco, color: COR.texto, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}>📅 Vou comprar — incluir no planejamento</button>
+              }}><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Vou comprar — incluir no planejamento</button>
             )}
           </div>
         )}
@@ -565,14 +565,14 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
               {r.adiarPara && (
                 <Saida
-                  icone="🗓"
+                  icone="ti-calendar-time"
                   titulo={`Esperar até ${MESES[r.adiarPara.mes]}`}
                   detalhe={`${r.adiarPara.meses} ${r.adiarPara.meses === 1 ? 'mês a mais' : 'meses a mais'} — aí cabe do jeito que você quer`}
                 />
               )}
               {r.parcelasQueCabem && (
                 <Saida
-                  icone="💳"
+                  icone="ti-credit-card"
                   titulo={`Comprar agora em ${r.parcelasQueCabem}x`}
                   detalhe={`${fmt(valorTotal / r.parcelasQueCabem)} por mês em vez de ${fmt(valorParcela)}`}
                 />
@@ -738,7 +738,7 @@ function Saida({ icone, titulo, detalhe }: { icone: string; titulo: string; deta
       borderRadius: 10, padding: '12px 14px',
     }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
-        {icone} {titulo}
+        <i aria-hidden className={`ti ${icone}`} style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />{titulo}
       </div>
       {detalhe && (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 4, lineHeight: 1.5 }}>

@@ -117,7 +117,7 @@ export default function CfgCategorias({
                       background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none',
                       borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 500,
                       cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                    }}>✨ Sugestões</button>
+                    }}><i aria-hidden className="ti ti-sparkles" style={{ fontSize: 13, verticalAlign: '-2px', marginRight: 4 }} />Sugestões</button>
                   )}
                   <button onClick={() => { novaCategoria(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
                     + Nova categoria

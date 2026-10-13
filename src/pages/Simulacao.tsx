@@ -121,7 +121,7 @@ function SimCard({ sim, onDelete }: { sim: SimRow; onDelete: (id: string) => voi
         background: isDivida ? '#fff1f2' : '#f0fdf4',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 18,
-      }}>{isDivida ? '💳' : '🐷'}</div>
+      }}><i aria-hidden className={`ti ${isDivida ? 'ti-credit-card-pay' : 'ti-pig-money'}`} style={{ color: isDivida ? COR.erroTexto : COR.sucessoTexto }} /></div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>{sim.nome}</div>
         <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
@@ -193,7 +193,7 @@ function TabelaImpacto({ parcela, planos, cor }: {
   return (
     <div style={card}>
       <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto, marginBottom: 4 }}>
-        📊 Impacto no seu planejamento
+        <i aria-hidden className="ti ti-chart-bar" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />Impacto no seu planejamento
       </div>
       <div style={{ fontSize: 12, color: COR.textoMuted, marginBottom: 16 }}>
         Como a parcela de {fmt(parcela)}/mês afeta seu resultado nos próximos 6 meses
@@ -226,7 +226,7 @@ function TabelaImpacto({ parcela, planos, cor }: {
       </div>
       {!temAlgumPlano && (
         <div style={{ fontSize: 11, color: COR.textoMuted, marginTop: 12, padding: '8px 10px', background: '#f8fafc', borderRadius: 6 }}>
-          💡 Crie um planejamento para ver o impacto real nos seus meses.
+          <i aria-hidden className="ti ti-bulb" style={{ fontSize: 13, verticalAlign: '-2px', marginRight: 4 }} />Crie um planejamento para ver o impacto real nos seus meses.
         </div>
       )}
     </div>
@@ -514,7 +514,7 @@ export default function Simulacao() {
 
         {/* Abas */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 22 }}>
-          {([['compra', '🛒 Posso comprar?'], ['divida', '💳 Quitar dívida'], ['meta', '🐷 Meta de poupança']] as const).map(([v, l]) => {
+          {([['compra', 'Posso comprar?', 'ti-shopping-cart'], ['divida', 'Quitar dívida', 'ti-credit-card-pay'], ['meta', 'Meta de poupança', 'ti-pig-money']] as const).map(([v, l, icone]) => {
             const ativo = aba === v
             return (
               <button key={v} onClick={() => { setAba(v); setSimSalva(false) }} style={{
@@ -524,7 +524,7 @@ export default function Simulacao() {
                 background: ativo ? fundoAba : COR.branco,
                 color: ativo ? corAba : '#475569',
                 border: `1px solid ${ativo ? 'transparent' : COR.borda}`,
-              }}>{l}</button>
+              }}><i aria-hidden className={`ti ${icone}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{l}</button>
             )
           })}
         </div>
@@ -678,7 +678,7 @@ export default function Simulacao() {
                       fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
                       transition: 'all .15s',
                     }}>
-                      {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
+                      {simSalva ? '✓ Simulação salva' : <><i aria-hidden className="ti ti-device-floppy" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Salvar simulação</>}
                     </button>
                     {erroSalvar && (
                       <div style={{ flexBasis: '100%', fontSize: 12, color: COR.erroTexto,
@@ -693,7 +693,7 @@ export default function Simulacao() {
                       fontSize: 13, fontWeight: 600, cursor: integrado ? 'default' : 'pointer', fontFamily: 'inherit',
                       transition: 'all .15s',
                     }}>
-                      {integrado ? '✓ No planejamento' : '📅 Incluir no planejamento'}
+                      {integrado ? '✓ No planejamento' : <><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Incluir no planejamento</>}
                     </button>
                   </div>
                   {integrado && (
@@ -820,7 +820,7 @@ export default function Simulacao() {
                       fontSize: 13, fontWeight: 700, cursor: simSalva ? 'default' : 'pointer', fontFamily: 'inherit',
                       transition: 'all .15s',
                     }}>
-                      {simSalva ? '✓ Simulação salva' : '💾 Salvar simulação'}
+                      {simSalva ? '✓ Simulação salva' : <><i aria-hidden className="ti ti-device-floppy" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Salvar simulação</>}
                     </button>
                     {erroSalvar && (
                       <div style={{ flexBasis: '100%', fontSize: 12, color: COR.erroTexto,
@@ -835,7 +835,7 @@ export default function Simulacao() {
                       fontSize: 13, fontWeight: 600, cursor: integrado ? 'default' : 'pointer', fontFamily: 'inherit',
                       transition: 'all .15s',
                     }}>
-                      {integrado ? '✓ No planejamento' : '📅 Incluir no planejamento'}
+                      {integrado ? '✓ No planejamento' : <><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Incluir no planejamento</>}
                     </button>
                   </div>
                   {integrado && (

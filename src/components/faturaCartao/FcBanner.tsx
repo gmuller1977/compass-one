@@ -46,12 +46,12 @@ export default function FcBanner({
       {/* Left: 4 stat boxes + card pills */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <KpiCard icon="💳" label="Limite planejado" value={fmt(totalPrevisto)}
+          <KpiCard icon="ti-credit-card" label="Limite planejado" value={fmt(totalPrevisto)}
             sublabel="por mês" style={{ flex: 1 }} />
           <KpiCard label="Total de todas as faturas" value={fmt(grandTotalFaturas)}
             valueColor={grandTotalFaturas > 0 ? '#f87171' : '#4ade80'}
             sublabel="lançado" style={{ flex: 1 }} />
-          <KpiCard icon="=" label="Disponível" value={fmt(disponivel)}
+          <KpiCard icon="ti-equal" label="Disponível" value={fmt(disponivel)}
             valueColor={disponivel >= 0 ? '#4ade80' : '#f87171'}
             sublabel={disponivel >= 0 ? '↑ no limite' : '↓ excedido'} style={{ flex: 1 }} />
           <KpiCard icon={statusSimb} label="Status" value={statusLbl}
@@ -94,7 +94,7 @@ export default function FcBanner({
         onMouseEnter={e => (e.currentTarget.style.opacity = '.85')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
       >
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}>🔄 Conciliação</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}><i className="ti ti-arrows-exchange" aria-hidden style={{ fontSize: 11, verticalAlign: -1 }} /> Conciliação</div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>Fatura informada</span>

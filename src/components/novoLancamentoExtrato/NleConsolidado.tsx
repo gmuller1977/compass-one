@@ -70,7 +70,7 @@ function SecaoHeader({ icone, titulo, right }: { icone: string; titulo: string; 
       padding: '10px 16px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
-      <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{icone} {titulo}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}><i className={`ti ${icone}`} aria-hidden style={{ fontSize: 16 }} />{titulo}</span>
       {right && <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.85)' }}>{right}</span>}
     </div>
   )
@@ -170,13 +170,13 @@ export default function NleConsolidado({
           {/* ── SEÇÃO A: Contas bancárias ────────────────────────────── */}
           <div style={{borderRadius:10,overflow:'hidden',marginBottom:12,
             border:`1px solid ${COR.borda}`}}>
-            <SecaoHeader icone="🏦" titulo="Contas bancárias" right={fmt(totalContasBancarias + saldoDinheiro)} />
+            <SecaoHeader icone="ti-building-bank" titulo="Contas bancárias" right={fmt(totalContasBancarias + saldoDinheiro)} />
 
             {/* Dinheiro */}
             <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
               borderLeft:'4px solid #16a34a',background:COR.branco,
               borderBottom:`1px solid #f1f5f9`}}>
-              <span style={{fontSize:18,flexShrink:0}}>💵</span>
+              <i className="ti ti-cash" aria-hidden style={{fontSize:18,flexShrink:0,color:'#16a34a'}} />
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:600,color:COR.texto}}>Dinheiro</div>
                 <div style={{fontSize:10,color:'#94a3b8'}}>Em carteira</div>
@@ -211,7 +211,7 @@ export default function NleConsolidado({
           {faturaAtualPorCartao.length > 0 && (
             <div style={{borderRadius:10,overflow:'hidden',marginBottom:12,
               border:`1px solid ${COR.borda}`}}>
-              <SecaoHeader icone="💳" titulo="Cartões de crédito" />
+              <SecaoHeader icone="ti-credit-card" titulo="Cartões de crédito" />
 
               {faturaAtualPorCartao.map(({conta,fatura},idx) => {
                 // Sem disponivel por cartao: o planejamento e por total de
@@ -275,7 +275,7 @@ export default function NleConsolidado({
 
           {/* ── SEÇÃO B: Movimentações do mês ───────────────────────── */}
           <div style={{borderRadius:10,overflow:'hidden',border:`1px solid ${COR.borda}`}}>
-            <SecaoHeader icone="🗓️" titulo={`Movimentações de ${NOMES_MESES[mes]}`}
+            <SecaoHeader icone="ti-list-details" titulo={`Movimentações de ${NOMES_MESES[mes]}`}
               right={diasComItens.length === 0 ? undefined : `${diasComItens.length} dias`} />
 
             {diasComItens.length === 0 ? (
@@ -393,7 +393,7 @@ export default function NleConsolidado({
 
         {/* Conta / Cartão */}
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>🏦 Conta / Cartão *</div>
+          <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Conta / Cartão *</div>
           <select value={fBancoConsolidado} onChange={e=>setFBancoConsolidado(e.target.value)}
             onFocus={realcarFoco} onBlur={removerRealce}
             style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
@@ -420,7 +420,7 @@ export default function NleConsolidado({
         {/* Dia */}
         <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:14}}>
           <div style={{flex:'0 0 64px'}}>
-            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>📅 Dia</div>
+            <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Dia</div>
             <input type="number" min={1} max={totalDias} value={diaSel}
               onChange={e=>setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
               onFocus={realcarFoco} onBlur={removerRealce}

@@ -437,7 +437,7 @@ export default function PlanRevisao({
         {/* Group header */}
         <div style={{ background: gradBg, borderRadius: '12px 12px 0 0', padding: '12px 16px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>{iconeGrupo}</span>
+            <i aria-hidden className={`ti ${iconeGrupo}`} style={{ fontSize: 18 }} />
             {label}
             {desvioRows.length > 0 && (
               <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '2px 8px' }}>
@@ -459,7 +459,7 @@ export default function PlanRevisao({
             <>
               <button onClick={() => setExpandOk(!expandOk)}
                 style={{ width: '100%', padding: '8px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', textAlign: 'left', fontSize: 11, fontWeight: 700, color: COR.verde, borderTop: desvioRows.length > 0 ? '1px dashed #e2e8f0' : 'none', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                ✅ {okRows.length} {okRows.length === 1 ? 'categoria' : 'categorias'} dentro do planejado {expandOk ? '▾' : '▸'}
+                <i aria-hidden className="ti ti-circle-check" style={{ fontSize: 14 }} />{okRows.length} {okRows.length === 1 ? 'categoria' : 'categorias'} dentro do planejado {expandOk ? '▾' : '▸'}
               </button>
               {expandOk && okRows.map(r => renderCatRow(r))}
             </>
@@ -546,8 +546,8 @@ export default function PlanRevisao({
           {/* ── ETAPA 1: Visão Geral ──────────────────────────────────────── */}
           {etapa === 1 && (
             <div>
-              {renderGroup('e', allEntradas, 'Receitas', '💰', totalRecPrev, totalRecReal, expandOkE, setExpandOkE)}
-              {renderGroup('s', allSaidas,   'Despesas', '💸', totalDesPrev, totalDesReal, expandOkS, setExpandOkS)}
+              {renderGroup('e', allEntradas, 'Receitas', 'ti-arrow-up', totalRecPrev, totalRecReal, expandOkE, setExpandOkE)}
+              {renderGroup('s', allSaidas,   'Despesas', 'ti-arrow-down', totalDesPrev, totalDesReal, expandOkS, setExpandOkS)}
 
               {allEntradas.length === 0 && allSaidas.length === 0 && (
                 <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '14px 16px', marginBottom: 16, border: '1px solid #bbf7d0' }}>
@@ -638,7 +638,8 @@ export default function PlanRevisao({
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           {(['pontual', 'anual', 'sazonal'] as const).map(te => (
                             <button key={te} onClick={() => setJust(key, { tipoEvento: j.tipoEvento === te ? '' : te })} style={btnBase(j.tipoEvento === te, COR.azul, '#eff6ff')}>
-                              {te === 'pontual' ? '🎯 Pontual' : te === 'anual' ? '📅 Todo ano' : '🔄 Sazonal'}
+                              <i aria-hidden className={`ti ${te === 'pontual' ? 'ti-target' : te === 'anual' ? 'ti-calendar-repeat' : 'ti-refresh'}`} style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 5 }} />
+                              {te === 'pontual' ? 'Pontual' : te === 'anual' ? 'Todo ano' : 'Sazonal'}
                             </button>
                           ))}
                         </div>
@@ -695,7 +696,7 @@ export default function PlanRevisao({
 
               {etapa2Erro && (
                 <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: COR.vermelho, fontWeight: 600 }}>
-                  ⚠️ {etapa2Erro}
+                  <i aria-hidden className="ti ti-alert-triangle" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 5 }} />{etapa2Erro}
                 </div>
               )}
 
@@ -727,14 +728,14 @@ export default function PlanRevisao({
 
                 {catsDesvio.length === 0 ? (
                   <div style={{ padding: 16, fontSize: 13, color: COR.textoSuave }}>
-                    ✅ Nenhum desvio significativo — nada a registrar neste mês.
+                    <i aria-hidden className="ti ti-circle-check" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 5 }} />Nenhum desvio significativo — nada a registrar neste mês.
                   </div>
                 ) : catsDesvio.map(({ tipo, cat, ri, planejado, real }) => {
                   const key = `${tipo}-${ri}`
                   const j   = getJust(key)
                   const { icone } = iconeCategoria(categorias, cat.nome)
                   const dm  = diffMeta(tipo, planejado, real)
-                  const tipoLabel = j.tipoEvento === 'pontual' ? ' · 🎯 Pontual' : j.tipoEvento === 'anual' ? ' · 📅 Anual' : j.tipoEvento === 'sazonal' ? ' · 🔄 Sazonal' : ''
+                  const tipoLabel = j.tipoEvento === 'pontual' ? ' · Pontual' : j.tipoEvento === 'anual' ? ' · Anual' : j.tipoEvento === 'sazonal' ? ' · Sazonal' : ''
                   const [acaoCor, acaoLabel, acaoBg] =
                     j.acao === 'aceito'  ? [COR.verde,     `Aceitar ${fmt(real)}`,                        '#dcfce7'] :
                     j.acao === 'mantido' ? [COR.azul,      `Manter ${fmt(planejado)}`,                    '#dbeafe'] :

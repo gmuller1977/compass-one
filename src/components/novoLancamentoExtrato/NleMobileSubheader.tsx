@@ -151,7 +151,7 @@ export default function NleMobileSubheader({
                 padding:'10px 14px',minHeight:48,borderRadius:16,border:'none',cursor:'pointer',
                 background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
               }}>
-                <span aria-hidden style={{fontSize:18}}>{isDinheiro ? '👛' : '🏦'}</span>
+                <i className={`ti ${isDinheiro ? 'ti-wallet' : 'ti-building-bank'}`} aria-hidden style={{fontSize:20,color:'#fff'}} />
                 <span style={{flex:1,minWidth:0}}>
                   <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
                     {isDinheiro ? 'Na carteira' : `No ${contaInfo?.banco ?? 'banco'}`}

@@ -20,8 +20,9 @@ export default function EmptyState({ icon, title, description, actionLabel, onAc
         lineHeight: 1,
         marginBottom: compact ? 2 : 4,
         filter: 'grayscale(20%)',
+        color: '#475569',
       }}>
-        {icon}
+        {icon.startsWith('ti-') ? <i aria-hidden className={`ti ${icon}`} /> : icon}
       </div>
       <div style={{
         fontSize: compact ? 14 : 15,

@@ -185,14 +185,14 @@ export default function FcMobileView({
               setEditFechVal(diaFechamento)
               setEditandoFechamento(true); setEditandoVencimento(false)
             }} style={chipAzul(editandoFechamento)}>
-            ✂ Fecha dia {diaFechamento}{mesDados.fechamentoOverride ? ' *' : ''}
+            <i className="ti ti-scissors" aria-hidden style={{fontSize:16}} />Fecha dia {diaFechamento}{mesDados.fechamentoOverride ? ' *' : ''}
           </button>
           <button onClick={() => {
               if (editandoVencimento) { setEditandoVencimento(false); return }
               setEditVencVal(diaVencimento)
               setEditandoVencimento(true); setEditandoFechamento(false)
             }} style={chipAzul(editandoVencimento)}>
-            📅 Vence dia {diaVencimento}{mesDados.vencimentoOverride ? ' *' : ''}
+            <i className="ti ti-calendar-due" aria-hidden style={{fontSize:16}} />Vence dia {diaVencimento}{mesDados.vencimentoOverride ? ' *' : ''}
           </button>
         </div>
       </div>
@@ -361,11 +361,11 @@ export default function FcMobileView({
               const dispDia = parsed?.dia ?? diaSel
               const dispMes = parsed?.mes ?? purchaseMes
               const dispAno = parsed?.ano ?? purchaseAno
-              const label = `📅 ${dispDia} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
+              const label = `${dispDia} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
               return (
                 <div style={{marginBottom:14}}>
                   <label style={rotuloForm}>
-                    📅 Data da compra
+                    Data da compra
                   </label>
                   <input ref={dataCompraRef} type="text" value={fDataCompra}
                     onChange={e => setFDataCompra(e.target.value)}
@@ -382,14 +382,14 @@ export default function FcMobileView({
                       padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                       fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
                     onKeyDown={e => { if (e.key==='Enter') (e.target as HTMLInputElement).blur() }}/>
-                  <div style={{fontSize:13,color:COR.azul,fontWeight:600,marginTop:6}}>{label}</div>
+                  <div style={{fontSize:13,color:COR.azul,fontWeight:600,marginTop:6}}><i className="ti ti-calendar" aria-hidden style={{verticalAlign:-2}} /> {label}</div>
                 </div>
               )
             })()}
 
             {/* Categoria */}
             <div style={{marginBottom:14}}>
-              <label style={rotuloForm}>🏷 Categoria</label>
+              <label style={rotuloForm}>Categoria</label>
               <select ref={categoriaSelectRef} value={fCat} onChange={e => { setFCat(e.target.value); setFVariante('') }}
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                   padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
@@ -410,7 +410,7 @@ export default function FcMobileView({
               const subDescs = fCat ? categoriasCartao.filter(c => c.nome.trim().toLowerCase() === norm && c.descricao?.trim()).map(c => c.descricao!.trim()) : []
               return subDescs.length > 0 ? (
                 <div style={{marginBottom:14}}>
-                  <label style={rotuloForm}>🔖 Variante</label>
+                  <label style={rotuloForm}>Variante</label>
                   <select value={fVariante} onChange={e => setFVariante(e.target.value)}
                     style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                       padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
@@ -427,7 +427,7 @@ export default function FcMobileView({
 
             {/* Valor da parcela */}
             <div style={{marginBottom:14}}>
-              <label style={rotuloForm}>💰 Valor da parcela</label>
+              <label style={rotuloForm}>Valor da parcela</label>
               <input ref={valorInputRef} value={fValor}
                 onChange={e => setFValor(e.target.value)}
                 placeholder="R$ 0,00"
@@ -441,7 +441,7 @@ export default function FcMobileView({
 
             {/* Parcelas */}
             <div style={{marginBottom:14}}>
-              <label style={rotuloForm}>🔢 Parcelas</label>
+              <label style={rotuloForm}>Parcelas</label>
               <div style={{display:'flex',flexWrap:'wrap' as const,gap:7}}>
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map((n, i) => {
                   const parcelasAtual = Math.max(1, parseInt(fParcelas) || 1)
@@ -482,7 +482,7 @@ export default function FcMobileView({
             {/* Descrição */}
             <div style={{marginBottom:14}}>
               <label style={rotuloForm}>
-                📝 Descrição{' '}
+                Descrição{' '}
                 <span style={{fontWeight:400}}>
                   (opcional)
                 </span>

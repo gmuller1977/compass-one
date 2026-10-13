@@ -14,12 +14,12 @@ type ToolId = 'reajuste' | 'ano'
  * para o ano inteiro.
  */
 const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
-  { id: 'reajuste', label: 'Reajuste %',    icon: '📈' },
-  { id: 'ano',      label: 'Copiar ano',    icon: '📅' },
+  { id: 'reajuste', label: 'Reajuste %',    icon: 'ti-trending-up' },
+  { id: 'ano',      label: 'Copiar ano',    icon: 'ti-copy' },
 ]
 
 /** A meta abre modal em vez de painel: nao e edicao em lote como as outras. */
-const META = { label: 'Meta de economia', icon: '🎯' }
+const META = { label: 'Meta de economia', icon: 'ti-target' }
 
 /**
  * Azul escuro com fonte branca — 10,4:1, o mesmo tom das faixas de resumo do
@@ -98,7 +98,7 @@ export default function PlanBarraFerramentas({
               title={bloqueado ? motivoBloqueio : undefined}
               style={estiloBotao(ativa, bloqueado)}
             >
-              {f.icon} {f.label}
+              <i aria-hidden className={`ti ${f.icon}`} style={{ fontSize: 15 }} />{f.label}
             </button>
           )
         })}
@@ -112,7 +112,7 @@ export default function PlanBarraFerramentas({
           title={bloqueado ? motivoBloqueio : 'Quanto você quer que sobre por mês'}
           style={estiloBotao(metaAberta, bloqueado)}
         >
-          {META.icon} {META.label}
+          <i aria-hidden className={`ti ${META.icon}`} style={{ fontSize: 15 }} />{META.label}
           {/* Ja existe meta em algum mes. Antes isso pintava o botao inteiro de
               azul claro, o que com a barra escura viraria "sempre ativo". */}
           {temMeta && !metaAberta && (

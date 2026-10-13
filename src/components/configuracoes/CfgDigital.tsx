@@ -49,7 +49,7 @@ export default function CfgDigital() {
 
   return (
     <div style={{ background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14, padding: 24 }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}>👆 Entrar com digital</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}><i aria-hidden className="ti ti-fingerprint" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Entrar com digital</h3>
       <p style={{ fontSize: 14, color: COR.textoSuave, margin: '0 0 14px', lineHeight: 1.55 }}>
         Entre encostando o dedo ou olhando para a câmera, sem digitar a senha. A digital não sai do aparelho, e o
         e-mail e a senha continuam valendo.

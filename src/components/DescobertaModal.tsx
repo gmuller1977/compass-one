@@ -63,7 +63,7 @@ export default function DescobertaModal({
           boxShadow: '0 20px 60px rgba(0,0,0,.2)',
         }}
       >
-        <div style={{ fontSize: 30, lineHeight: 1 }}>🧭</div>
+        <i aria-hidden className="ti ti-compass" style={{ display: 'block', fontSize: 32, lineHeight: 1, color: COR.azul }} />
 
         <h2 style={{
           fontSize: 19, fontWeight: 800, color: COR.texto,

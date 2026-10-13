@@ -75,14 +75,14 @@ export default function NleBanner({
           {/* Os quatro valores leem a MESMA paleta do Radar: entradas verde,
               saídas vermelho, e os saldos verde se positivos e vermelho se
               negativos — pedido do Guilherme, para as duas telas falarem igual. */}
-          <KpiCard icon="💰" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
+          <KpiCard icon="ti-wallet" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
             valueColor={saldoBase >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
             sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
-          <KpiCard icon="↑" label="Entradas" value={fmt(totalEntradas)}
+          <KpiCard icon="ti-arrow-up" label="Entradas" value={fmt(totalEntradas)}
             valueColor={RADAR_COR_AZUL.bom} sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
-          <KpiCard icon="↓" label="Saídas" value={fmt(totalSaidas)}
+          <KpiCard icon="ti-arrow-down" label="Saídas" value={fmt(totalSaidas)}
             valueColor={RADAR_COR_AZUL.ruim} sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
-          <KpiCard icon="=" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
+          <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
             valueColor={saldoMes >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
         </div>
@@ -123,7 +123,7 @@ export default function NleBanner({
         onMouseEnter={e => (e.currentTarget.style.opacity = '.85')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
       >
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}>🔄 Conciliação</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}><i className="ti ti-arrows-exchange" aria-hidden style={{ fontSize: 11, verticalAlign: -1 }} /> Conciliação</div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>{isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}</span>

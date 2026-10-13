@@ -302,7 +302,7 @@ export default function QuickLaunch() {
     const legenda = f.tipo === 'dinheiro' ? `saldo ${fmt(saldos.dinheiro ?? 0)}`
       : cartao ? `fatura de ${nomeMes(mesDoGastoNoCartao(f.conta!, ano, mes, dia))}`
       : `${f.conta?.nome ?? ''} · saldo ${fmt(saldos[f.conta!.id] ?? 0)}`
-    const icone = f.tipo === 'dinheiro' ? '💵' : f.conta?.icone || (cartao ? '💳' : '🏦')
+    const icone = f.tipo === 'dinheiro' ? <i className="ti ti-cash" style={{ color: '#15803d' }} /> : f.conta?.icone || (cartao ? '💳' : '🏦')
     return (
       <button onClick={() => escolherForma(f)} style={{
         display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '10px 4px',
@@ -490,11 +490,11 @@ export default function QuickLaunch() {
 
             {etapa === 'forma' && formasEscolhidas && (
               <div>
-                {formasEscolhidas.bancos.length > 0 && <div style={tituloGrupo}>🏦 Banco</div>}
+                {formasEscolhidas.bancos.length > 0 && <div style={tituloGrupo}><i className="ti ti-building-bank" aria-hidden style={{ verticalAlign: -2 }} /> Banco</div>}
                 {formasEscolhidas.bancos.map(c => <LinhaForma key={c.id} f={{ tipo: 'banco', conta: c }} />)}
-                {formasEscolhidas.cartoes.length > 0 && <div style={tituloGrupo}>💳 Cartão</div>}
+                {formasEscolhidas.cartoes.length > 0 && <div style={tituloGrupo}><i className="ti ti-credit-card" aria-hidden style={{ verticalAlign: -2 }} /> Cartão</div>}
                 {formasEscolhidas.cartoes.map(c => <LinhaForma key={c.id} f={{ tipo: 'cartao', conta: c }} />)}
-                {formasEscolhidas.dinheiro && <div style={tituloGrupo}>💵 Dinheiro</div>}
+                {formasEscolhidas.dinheiro && <div style={tituloGrupo}><i className="ti ti-cash" aria-hidden style={{ verticalAlign: -2 }} /> Dinheiro</div>}
                 {formasEscolhidas.dinheiro && <LinhaForma f={{ tipo: 'dinheiro' }} />}
                 {qualMes === 'atual' && catObj.tipo === 'saida' && formasProximo && formasProximo.cartoes.length > 0 && (
                   <div style={{ fontSize: 13, color: COR.textoSuave, margin: '12px 4px 0', lineHeight: 1.45 }}>
@@ -517,7 +517,7 @@ export default function QuickLaunch() {
                   <label style={{ ...chip(quando !== 'hoje' && quando !== 'ontem'), position: 'relative', display: 'inline-flex', alignItems: 'center', overflow: 'hidden', height: 40, boxSizing: 'border-box' }}>
                     {quando !== 'hoje' && quando !== 'ontem'
                       ? dataDoLancamento(quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-                      : '📅 Outro dia'}
+                      : <><i className="ti ti-calendar" aria-hidden style={{ marginRight: 4 }} />Outro dia</>}
                     <input
                       type="date"
                       max={`${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`}
@@ -591,7 +591,7 @@ export default function QuickLaunch() {
                     color: '#fff', fontSize: 15, fontWeight: 700, minHeight: 48,
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
-                >{isCartao ? '💳 Lançar na fatura' : '✓ Registrar lançamento'}</button>
+                >{isCartao ? <><i className="ti ti-credit-card" aria-hidden style={{ verticalAlign: -2 }} /> Lançar na fatura</> : '✓ Registrar lançamento'}</button>
               </>
             )}
           </div>
@@ -659,7 +659,7 @@ export default function QuickLaunch() {
                         fontSize: 12, fontWeight: 700, color: COR.textoSuave, textTransform: 'uppercase',
                         letterSpacing: '.5px', padding: '12px 20px 6px', background: '#f8fafc',
                       }}>
-                        {tipo === 'saida' ? '📤 Saídas' : '📥 Entradas'}
+                        <i className={`ti ${tipo === 'saida' ? 'ti-arrow-up-right' : 'ti-arrow-down-left'}`} aria-hidden style={{ verticalAlign: -2 }} /> {tipo === 'saida' ? 'Saídas' : 'Entradas'}
                       </div>
                       {cats.map(c => {
                         const ativo = pinLocal.has(c.id)

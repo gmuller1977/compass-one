@@ -161,7 +161,7 @@ export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoR
                     : m.sobra >= 0 ? `+ ${fmt(m.sobra, true)} de sobra` : `− ${fmt(-m.sobra, true)} no mês`}
               </span>
               {m.meta > 0 && !m.fechado && (
-                <span style={{ fontSize: 12, color: SUAVE }}>🎯 meta guardar {fmt(m.meta, true)}</span>
+                <span style={{ fontSize: 12, color: SUAVE }}><i aria-hidden className="ti ti-target" style={{ fontSize: 13, verticalAlign: '-2px', marginRight: 3 }} />meta guardar {fmt(m.meta, true)}</span>
               )}
             </button>
           )

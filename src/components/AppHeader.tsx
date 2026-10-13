@@ -62,7 +62,7 @@ export default function AppHeader({ hideBottomTab }: Props) {
           border: '1px solid #e2e8f0',
           minWidth: 190, paddingTop: 6, paddingBottom: 6,
         }}>
-          <MenuItem icon="⏻" label="Logout" danger
+          <MenuItem icon="ti-logout" label="Logout" danger
             onClick={() => { setDropdown(false); sairDaConta() }} />
         </div>
       )}
@@ -121,7 +121,7 @@ function MenuItem({ icon, label, onClick, danger = false }:
         background: hover ? (danger ? '#fff1f2' : '#f8faff') : 'transparent',
         transition: 'background .1s',
       }}>
-      <span style={{ marginRight: 8, fontSize: 14 }}>{icon}</span>
+      <i aria-hidden className={`ti ${icon}`} style={{ marginRight: 8, fontSize: 15, verticalAlign: '-2px' }} />
       {label}
     </button>
   )

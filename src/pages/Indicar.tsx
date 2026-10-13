@@ -62,7 +62,7 @@ export default function Indicar() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 90px' : '24px 28px 40px',
         display: 'grid', gap: 16 }}>
         <div style={cartao}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}>🎁 Seu link de indicação</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}><i aria-hidden className="ti ti-gift" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Seu link de indicação</h3>
           {carregando && <p style={{ fontSize: 14, color: COR.textoSuave, margin: 0 }}>Carregando…</p>}
           {!carregando && erro && (
             <div role="status" style={{ fontSize: 14, lineHeight: 1.5, borderRadius: 10, padding: '10px 12px',

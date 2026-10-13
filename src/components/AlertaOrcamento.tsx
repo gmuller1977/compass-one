@@ -65,7 +65,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
 
   const lancAtual = (
     <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: 12, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-      <span style={{ fontSize: 20 }}>💸</span>
+      <i aria-hidden className="ti ti-receipt" style={{ fontSize: 22, color: '#b45309' }} />
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>Lançamento atual</div>
         <div style={{ fontSize: 11, color: '#b45309', marginTop: 2 }}>{descricao} · {mesLabel}</div>
@@ -110,7 +110,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
         <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px 32px' }}>
           <div style={{ width: 36, height: 4, background: '#e2e8f0', borderRadius: 2, margin: '0 auto 16px' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>⚠️</div>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#b45309', flexShrink: 0 }}><i aria-hidden className="ti ti-alert-triangle" /></div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 2 }}>Categoria no limite!</div>
               <div style={{ fontSize: 12, color: '#64748b' }}>{catNome} · {mesLabel}</div>
@@ -142,7 +142,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 20, width: 480, maxWidth: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>⚠️</div>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#b45309', flexShrink: 0 }}><i aria-hidden className="ti ti-alert-triangle" /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Categoria no limite!</div>
             <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{catNome} · {mesLabel}</div>

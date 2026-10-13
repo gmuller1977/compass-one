@@ -2053,6 +2053,17 @@ A barra de baixo do celular também (mesmo dia): Início `ti-home`, Radar
 ativo, `textoSuave` inativo), e o "+" flutuante com `ti-plus` sobre
 `BOLINHA_AZUL`.
 
+**Emoji como ícone saiu do app** (13/10/2026, escolha do Guilherme no card,
+"itens 1 a 4", com Lançamentos e Radar liberados SÓ para isso): menu
+lateral, abas (Lançamentos, Simulador), ferramentas do Planejamento, títulos
+de seção, cartões, Norte e Configurações usam ícone Tabler; os rótulos de
+formulário ("Dia", "Categoria", "Valor"…) ficaram só com o texto, e os
+títulos pequenos do menu ("Todo dia"…) também. `KpiCard` e `EmptyState`
+aceitam `icon="ti-…"`; `norteProativo` guarda nomes Tabler. Ficam: 👋 nas
+saudações, símbolos dentro do texto (✓ ⚠ ✕ ✎ ★ ▲▼), o ícone que é DADO do
+usuário (categoria, conta, grupo e seus padrões quando vazio) e, por
+enquanto, Login, Cadastro, Redefinir senha e o assistente do plano.
+
 **O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
 Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as
 categorias estavam inativas. Desde a conta compartilhada (10/10), o login

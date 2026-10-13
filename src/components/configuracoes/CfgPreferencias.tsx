@@ -206,7 +206,7 @@ export default function CfgPreferencias({
             padding:'12px 14px', borderRadius:10, background:'#fff5f5',
             border:'1px solid #fecaca' }}>
             <div>
-              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🔄 Refazer planejamento</div>
+              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}><i aria-hidden className="ti ti-refresh" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Refazer planejamento</div>
               <div style={{ fontSize:11, color:COR.textoSuave, marginTop:2 }}>
                 Apaga o plano de {new Date().getFullYear()} e abre o assistente do zero.
               </div>
@@ -232,7 +232,7 @@ export default function CfgPreferencias({
             padding:'12px 14px', borderRadius:10, background:'#f8faff',
             border:`1px solid ${COR.borda}` }}>
             <div>
-              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>🧭 Dúvida sobre uma tela?</div>
+              <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}><i aria-hidden className="ti ti-compass" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Dúvida sobre uma tela?</div>
               <div style={{ fontSize:12, color:COR.textoSuave, marginTop:2 }}>
                 Toque no "?" do cabeçalho de cada tela, ou pergunte ao Norte como fazer.
               </div>

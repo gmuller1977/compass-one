@@ -54,10 +54,10 @@ export default function NleMobileWizard({
           <p style={{fontSize:13,color:COR.textoSuave,marginTop:4,marginBottom:24}}>Selecione o tipo de extrato</p>
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
             {([
-              {tipo:'extrato'     as const, icone:'🏦', label:'Banco',             desc: contasExtrato.length > 0 ? contasExtrato.slice(0,2).map(c=>c.banco).join(', ')+(contasExtrato.length>2?' ...':'') : 'Extrato bancário'},
-              {tipo:'cartao'      as const, icone:'💳', label:'Cartão de Crédito', desc:'Faturas e gastos no cartão'},
-              {tipo:'dinheiro'    as const, icone:'💵', label:'Dinheiro',           desc:'Lançamentos em espécie'},
-              {tipo:'consolidado' as const, icone:'📊', label:'Resumo mensal',      desc:'Resumo de todas as contas e movimentações'},
+              {tipo:'extrato'     as const, icone:'ti-building-bank', label:'Banco',             desc: contasExtrato.length > 0 ? contasExtrato.slice(0,2).map(c=>c.banco).join(', ')+(contasExtrato.length>2?' ...':'') : 'Extrato bancário'},
+              {tipo:'cartao'      as const, icone:'ti-credit-card', label:'Cartão de Crédito', desc:'Faturas e gastos no cartão'},
+              {tipo:'dinheiro'    as const, icone:'ti-cash', label:'Dinheiro',           desc:'Lançamentos em espécie'},
+              {tipo:'consolidado' as const, icone:'ti-chart-pie', label:'Resumo mensal',      desc:'Resumo de todas as contas e movimentações'},
             ] as const).map(({tipo,icone,label,desc}) => (
               <button key={tipo} onClick={() => {
                 setTabPrincipal(tipo)
@@ -91,7 +91,7 @@ export default function NleMobileWizard({
                 cursor:'pointer',fontFamily:'inherit',textAlign:'left',width:'100%',
                 boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
               }}>
-                <span style={{fontSize:32,lineHeight:1}}>{icone}</span>
+                <i className={`ti ${icone}`} aria-hidden style={{fontSize:32,lineHeight:1,color:COR.azul}} />
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{label}</div>
                   <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{desc}</div>

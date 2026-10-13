@@ -113,9 +113,9 @@ export default function EvolucaoLinha({
   const cartao   = lancamentos.filter(l => l.fonte === 'cartao')
   const dinheiro = lancamentos.filter(l => l.fonte === 'dinheiro')
   const colunas  = [
-    { label: '🏦 Banco',    total: totalBanc,     itens: banco    },
-    { label: '💳 Cartão',   total: totalCart,     itens: cartao   },
-    { label: '💵 Dinheiro', total: totalDinheiro, itens: dinheiro },
+    { label: 'Banco',    icone: 'ti-building-bank', total: totalBanc,     itens: banco    },
+    { label: 'Cartão',   icone: 'ti-credit-card',   total: totalCart,     itens: cartao   },
+    { label: 'Dinheiro', icone: 'ti-cash',          total: totalDinheiro, itens: dinheiro },
   ].filter(c => c.itens.length > 0)
 
   // Categoria MÃE: os lançamentos das variantes somam nela e cada um guarda a
@@ -262,7 +262,7 @@ export default function EvolucaoLinha({
               <div key={col.label}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b',
-                    textTransform: 'uppercase', letterSpacing: .5 }}>{col.label}</span>
+                    textTransform: 'uppercase', letterSpacing: .5 }}><i className={`ti ${col.icone}`} aria-hidden style={{ verticalAlign: -1 }} /> {col.label}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: isEntrada ? '#16a34a' : '#0f172a' }}>
                     {fmt(col.total)}
                   </span>

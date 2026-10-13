@@ -304,7 +304,7 @@ export default function RadarFinanceiro() {
 
         {!dadosAno ? (
           <EmptyState
-            icon="📈"
+            icon="ti-radar-2"
             title="Veja se está no caminho certo"
             description={`Aqui você compara o que planejou com o que gastou em ${ano}. Para começar, monte seu plano.`}
             actionLabel="Criar plano →"

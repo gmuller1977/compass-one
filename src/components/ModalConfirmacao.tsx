@@ -8,6 +8,7 @@ type Props = {
   labelConfirmar?: string
   corConfirmar?: string
   apenasFechar?: boolean
+  /** Nome do ícone Tabler (ex. "ti-trash"). */
   icone?: string
   onConfirmar: () => void
   onCancelar: () => void
@@ -36,7 +37,7 @@ export default function ModalConfirmacao({
 
   if (!open) return null
 
-  const iconeEfetivo = icone ?? (apenasFechar ? '⚠️' : '🗑️')
+  const iconeEfetivo = icone ?? (apenasFechar ? 'ti-alert-triangle' : 'ti-trash')
   const bgIcone = apenasFechar ? '#fef3c7' : '#fef2f2'
 
   return (
@@ -61,7 +62,7 @@ export default function ModalConfirmacao({
           background: bgIcone, display: 'flex', alignItems: 'center',
           justifyContent: 'center', fontSize: 22, marginBottom: 16,
         }}>
-          {iconeEfetivo}
+          <i aria-hidden className={`ti ${iconeEfetivo}`} style={{ fontSize: 24, color: apenasFechar ? '#b45309' : '#b91c1c' }} />
         </div>
 
         <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>

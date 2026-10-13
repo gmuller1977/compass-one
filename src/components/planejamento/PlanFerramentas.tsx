@@ -167,7 +167,7 @@ export default function PlanFerramentas({
         {/* ── Reajuste % ── */}
         {toolAberta === 'reajuste' && (
           <>
-            <div style={TITLE}>📈 Reajuste percentual</div>
+            <div style={TITLE}><i aria-hidden className="ti ti-trending-up" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Reajuste percentual</div>
             <div style={DESC}>Aplica um aumento ou redução percentual nos valores planejados.</div>
 
             <div style={{ display: 'flex', gap: 24, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -217,7 +217,7 @@ export default function PlanFerramentas({
         {/* ── Copiar ano ── */}
         {toolAberta === 'ano' && (
           <>
-            <div style={TITLE}>📅 Copiar ano anterior</div>
+            <div style={TITLE}><i aria-hidden className="ti ti-copy" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Copiar ano anterior</div>
             {dadosAnoAnterior ? (
               <>
                 <div style={DESC}>

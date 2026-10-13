@@ -53,7 +53,7 @@ export default function ContasAVencerCard({
         <div style={{ fontSize: M.corpo, color: COR.textoSuave }}>Nenhuma conta vencendo nos próximos 7 dias.</div>
       )}
       {contas.map((c, i) => {
-        const ic = c.fatura ? { icone: '💳', cor: COR.azul } : iconeCategoria(categorias, c.nome)
+        const ic = c.fatura ? { icone: <i className="ti ti-credit-card" style={{ color: COR.azul }} />, cor: COR.azul } : iconeCategoria(categorias, c.nome)
         return (
           <Linha key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
             titulo={c.fatura ? `Fatura ${c.nome}` : c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}

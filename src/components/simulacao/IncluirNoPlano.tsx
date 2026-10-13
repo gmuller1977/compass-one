@@ -141,7 +141,7 @@ export function NoSeuPlano({ itens, onDesfazer }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {itens.map(i => (
           <div key={i.simulacaoId} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <span aria-hidden style={{ fontSize: 16 }}>🔮</span>
+            <i aria-hidden className="ti ti-calculator" style={{ fontSize: 18, color: COR.azul }} />
             <div style={{ flex: 1, minWidth: 180 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>{i.descricao}</div>
               <div style={{ fontSize: 12, color: COR.textoSuave }}>{i.categoria} · {resumoDasParcelas(i.meses)}</div>

@@ -23,6 +23,7 @@ export type ItemDoDia = {
   /** Estável entre aberturas: é o que o selo compara com o que já foi visto. */
   id: string
   importante: boolean
+  /** Nome do ícone Tabler (ex. "ti-bell"). */
   icone: string
   /** Aceita **negrito**. */
   texto: string
@@ -55,20 +56,20 @@ export function conversaDoDia(p: { bussola: Bussola; nome: string; hoje: Date; l
   const resto: ContaAVencer[] = []
   for (const c of b.contas) {
     if (c.atrasada) {
-      itens.push({ id: `atrasada:${idConta(c)}`, importante: true, icone: '⚠️', pagar: c,
+      itens.push({ id: `atrasada:${idConta(c)}`, importante: true, icone: 'ti-alert-triangle', pagar: c,
         texto: `**${nomeConta(c)}** venceu dia ${c.dia} e ainda não está marcada como paga · ${R(c.valor)}` })
     } else if (dias(c) === 0) {
-      itens.push({ id: `hoje:${idConta(c)}`, importante: true, icone: '📅', pagar: c,
+      itens.push({ id: `hoje:${idConta(c)}`, importante: true, icone: 'ti-calendar-event', pagar: c,
         texto: `Hoje vence **${nomeConta(c)}** · ${R(c.valor)}` })
     } else if (dias(c) === 1) {
-      itens.push({ id: `amanha:${idConta(c)}`, importante: true, icone: '📅', pagar: c,
+      itens.push({ id: `amanha:${idConta(c)}`, importante: true, icone: 'ti-calendar-event', pagar: c,
         texto: `Amanhã vence **${nomeConta(c)}** · ${R(c.valor)}` })
     } else resto.push(c)
   }
   if (resto.length) {
     const ultimo = resto[resto.length - 1]
     const total = resto.reduce((t, c) => t + c.valor, 0)
-    itens.push({ id: 'semana', importante: false, icone: '🗓️', acao: 'contas',
+    itens.push({ id: 'semana', importante: false, icone: 'ti-calendar-week', acao: 'contas',
       texto: resto.length === 1
         ? `${DIAS_SEM[dataDe(ultimo).getDay()].replace(/^./, x => x.toUpperCase())} vence **${nomeConta(ultimo)}** · ${R(total)}`
         : `Até ${DIAS_SEM[dataDe(ultimo).getDay()]} vencem mais **${resto.length} contas** · ${R(total)}` })
@@ -78,34 +79,34 @@ export function conversaDoDia(p: { bussola: Bussola; nome: string; hoje: Date; l
   const aPagar = b.contas.reduce((t, c) => t + c.valor, 0)
   const cobre = aPagar <= b.saldoHoje + 0.004
   if (b.contas.length && !cobre) {
-    itens.push({ id: 'nao-cobre', importante: true, icone: '💸', acao: 'contas',
+    itens.push({ id: 'nao-cobre', importante: true, icone: 'ti-cash-off', acao: 'contas',
       texto: `O saldo de hoje (${R(b.saldoHoje)}) não cobre as contas da semana (${R(aPagar)}): **faltam ${R(aPagar - b.saldoHoje)}**` })
   }
 
   // Plano do mês.
   if (r?.estado === 'passou') {
-    itens.push({ id: 'passou', importante: true, icone: '🔴', acao: 'radar',
+    itens.push({ id: 'passou', importante: true, icone: 'ti-alert-circle', acao: 'radar',
       texto: `O gasto variável **passou do plano em ${R(r.gasto - r.planejado)}**. Daqui até o fim do mês, cada gasto sai do saldo` })
   } else if (r?.estado === 'acelerado') {
-    itens.push({ id: 'acelerado', importante: false, icone: '🏃', acao: 'radar',
+    itens.push({ id: 'acelerado', importante: false, icone: 'ti-run', acao: 'radar',
       texto: `Você já usou ${Math.round(r.percGasto * 100)}% da variável com ${Math.round(r.percMes * 100)}% do mês. Segurando em **${R(r.porDia)} por dia**, fecha dentro` })
   }
   const e = b.estouradas[0]
   if (e) {
-    itens.push({ id: `estourou:${e.nome}·${e.descricao}`, importante: false, icone: '📈', acao: 'radar',
+    itens.push({ id: `estourou:${e.nome}·${e.descricao}`, importante: false, icone: 'ti-trending-up', acao: 'radar',
       texto: `**${e.descricao ? `${e.nome} · ${e.descricao}` : e.nome}** ${e.semPlano ? 'teve gasto fora do plano' : 'passou do plano'}: ${R(e.excesso)}` +
         (b.estouradas.length > 1 ? ` (e mais ${b.estouradas.length - 1})` : '') })
   }
 
   // Mais à frente: os avisos da Bússola que nenhum item acima já disse.
   for (const a of b.avisos) {
-    if (a.id === 'negativo') itens.push({ id: 'negativo', importante: true, icone: '🔮', acao: 'planejamento', texto: a.titulo })
-    if (a.id === 'parcelas') itens.push({ id: 'parcelas', importante: false, icone: '🧾', acao: 'planejamento', texto: a.titulo })
+    if (a.id === 'negativo') itens.push({ id: 'negativo', importante: true, icone: 'ti-trending-down', acao: 'planejamento', texto: a.titulo })
+    if (a.id === 'parcelas') itens.push({ id: 'parcelas', importante: false, icone: 'ti-receipt', acao: 'planejamento', texto: a.titulo })
   }
 
   // À noite: lançou os gastos de hoje?
   if (!p.lancouHoje && h >= HORA_DE_PERGUNTAR) {
-    itens.push({ id: 'lancar', importante: true, icone: '✍️',
+    itens.push({ id: 'lancar', importante: true, icone: 'ti-pencil-plus',
       texto: 'Ainda não vi gastos de hoje. Gastou alguma coisa? É só me dizer, por exemplo "mercado 47"' })
   }
 

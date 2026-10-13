@@ -51,7 +51,7 @@ export default function ConviteCompartilhamento() {
       background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(15,23,42,.3)' }}>
-        <div aria-hidden style={{ fontSize: 34 }}>👥</div>
+        <i aria-hidden className="ti ti-users" style={{ display: 'block', fontSize: 36, color: COR.azul }} />
         <h2 id="convite-titulo" style={{ fontSize: 20, fontWeight: 800, color: COR.texto, margin: '8px 0 8px' }}>
           {quem} quer compartilhar as finanças com você
         </h2>

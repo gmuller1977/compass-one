@@ -72,7 +72,11 @@ export default function KpiCard({
         ...style,
       }}>
       <div style={{ ...LABEL_STYLE, display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-        <span>{icon ? `${icon} ${label}` : label}</span>
+        <span>
+          {/* "ti-…" é ícone desenhado (Tabler); outro texto sai como está. */}
+          {icon?.startsWith('ti-') ? <><i aria-hidden className={`ti ${icon}`} style={{ verticalAlign: '-2px' }} /> {label}</>
+            : icon ? `${icon} ${label}` : label}
+        </span>
         {onClick && <span aria-hidden>{expandido ? '▾' : '▸'}</span>}
       </div>
       <div style={{ ...VALUE_STYLE, color: valueColor }}>{value}</div>

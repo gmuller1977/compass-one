@@ -94,8 +94,8 @@ export default function CfgBancosCartoes({
             const favorita = isBanco ? contas.find(c => c.tipo===tipo && c.preferida) : null
             const itens = favorita ? [favorita, ...grupo] : grupo
             if (!itens.length) return null
-            const titulo = tipo==='corrente' ? '🏦 Contas Correntes'
-              : tipo==='poupanca' ? '🏧 Poupanças' : '💳 Cartões de Crédito'
+            const titulo = tipo==='corrente' ? 'Contas Correntes'
+              : tipo==='poupanca' ? 'Poupanças' : 'Cartões de Crédito'
             return (
               <div key={tipo} style={{ marginBottom:20 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
@@ -119,7 +119,7 @@ export default function CfgBancosCartoes({
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:14, fontWeight:700, color:COR.texto, display:'flex', alignItems:'center', gap:6 }}>
                           {c.tipo==='cartao' ? (c.apelido || c.banco) : c.banco}
-                          {c.preferida && <span style={{ fontSize:11, fontWeight:700, color:'#92400e', background:'#fef3c7', border:'1px solid #fbbf24', borderRadius:6, padding:'1px 6px' }}>⭐ Favorito</span>}
+                          {c.preferida && <span style={{ fontSize:11, fontWeight:700, color:'#92400e', background:'#fef3c7', border:'1px solid #fbbf24', borderRadius:6, padding:'1px 6px' }}><i aria-hidden className="ti ti-star-filled" style={{ fontSize: 11, verticalAlign: '-1px', marginRight: 3 }} />Favorito</span>}
                         </div>
                         <div style={{ fontSize:12, color:COR.textoSuave, marginTop:1 }}>
                           {c.tipo==='cartao'
@@ -130,7 +130,7 @@ export default function CfgBancosCartoes({
                           marginTop:6, border:`1px solid ${COR.borda}`, borderRadius:8,
                           background:COR.branco, color:COR.azul, fontSize:11, fontWeight:600,
                           cursor:'pointer', padding:'3px 10px', fontFamily:'inherit' }}>
-                          ✏ Editar
+                          <i aria-hidden className="ti ti-pencil" style={{ fontSize: 12, verticalAlign: '-2px', marginRight: 4 }} />Editar
                         </button>
                       </div>
                       <div style={{ textAlign:'right', flexShrink:0 }}>
@@ -162,7 +162,7 @@ export default function CfgBancosCartoes({
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: COR.textoSuave,
                 textTransform: 'uppercase', letterSpacing: .6, marginBottom: 8 }}>
-                💵 Dinheiro em carteira
+                Dinheiro em carteira
               </div>
 
               <div style={{
@@ -173,7 +173,7 @@ export default function CfgBancosCartoes({
                 boxShadow: '0 1px 4px rgba(0,0,0,.05)',
               }}>
                 <div style={{ width: 48, height: 48, borderRadius: 14, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                  💵
+                  <i aria-hidden className="ti ti-cash" style={{ color: COR.sucessoTexto }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: COR.texto }}>Dinheiro em carteira</div>
@@ -219,7 +219,7 @@ export default function CfgBancosCartoes({
                     <button
                       onClick={() => { setLocalDinheiro(saldoInicialDinheiro > 0 ? saldoInicialDinheiro.toString() : ''); setEditandoDinheiro(true) }}
                       style={{ marginTop: 6, border: `1px solid ${COR.borda}`, borderRadius: 8, background: COR.branco, color: COR.azul, fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '3px 10px', fontFamily: 'inherit' }}>
-                      ✏ Editar
+                      <i aria-hidden className="ti ti-pencil" style={{ fontSize: 12, verticalAlign: '-2px', marginRight: 4 }} />Editar
                     </button>
                   )}
                 </div>
@@ -256,7 +256,7 @@ export default function CfgBancosCartoes({
         )}
         {nenhumaConta && (
           <div style={{ textAlign:'center', marginBottom:22 }}>
-            <div style={{ fontSize:40 }}>{aba==='cartoes' ? '💳' : '🏦'}</div>
+            <i aria-hidden className={`ti ${aba==='cartoes' ? 'ti-credit-card' : 'ti-building-bank'}`} style={{ fontSize:42, color:COR.azul }} />
             <h2 style={{ fontSize:20, fontWeight:800, color:COR.texto, margin:'6px 0 4px' }}>
               {aba==='cartoes' ? 'Cadastre seu primeiro cartão' : 'Cadastre sua primeira conta'}
             </h2>
@@ -440,7 +440,7 @@ export default function CfgBancosCartoes({
               </div>
               <div style={{ background:'#f5f3ff', border:'1px solid #ede9fe', borderRadius:10, padding:'12px 14px' }}>
                 <label style={{ ...labelSt, color:'#6d28d9', marginBottom:6, display:'block' }}>
-                  💳 Fatura informada no planejamento
+                  Fatura informada no planejamento
                 </label>
                 <input
                   value={faturaStr}

@@ -615,10 +615,14 @@ export default function Configuracoes() {
             ‹ {isMobile ? 'Voltar' : 'Configurações'}
           </button>
           <span style={{ fontSize:14, fontWeight:700, color:COR.texto, marginLeft:4 }}>
-            {aba === 'bancos' ? '🏦 Minhas contas'
-              : aba === 'cartoes' ? '💳 Cartões'
-              : aba === 'categorias' ? (subAbaCat === 'grupos' ? '📁 Grupos' : '🏷 Categorias')
-              : aba === 'perfil' ? '👤 Perfil' : '⚙️ Preferências'}
+            <i aria-hidden className={`ti ${aba === 'bancos' ? 'ti-building-bank'
+              : aba === 'cartoes' ? 'ti-credit-card'
+              : aba === 'categorias' ? (subAbaCat === 'grupos' ? 'ti-folders' : 'ti-tag')
+              : aba === 'perfil' ? 'ti-user-circle' : 'ti-adjustments-horizontal'}`} style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
+            {aba === 'bancos' ? 'Minhas contas'
+              : aba === 'cartoes' ? 'Cartões'
+              : aba === 'categorias' ? (subAbaCat === 'grupos' ? 'Grupos' : 'Categorias')
+              : aba === 'perfil' ? 'Perfil' : 'Preferências'}
           </span>
         </div>
       )}
