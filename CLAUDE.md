@@ -277,6 +277,10 @@ celular (`compacto`), em `PlanResumoAnual`, com os dados de
 (`saldoFinalReal` − `saldoInicialReal`), ao lado do plano, nunca nas
 categorias. Saíram do topo os totais de receitas e despesas da janela
 ("out–dez"); a regra de `janelaQueFecha` abaixo segue valendo onde ela é lida.
+No celular (mesmo dia, pedido dele: "no web até que fica bom mas no celular
+não"), as duas caixas viram UMA, com uma linha por resposta: rótulo à
+esquerda, valor à direita e a frase embaixo, quebrada no " · ". Lado a lado
+a frase da meta ocupava quatro linhas. Mesma informação; só a arrumação.
 
 **O gráfico do ano são TRÊS, escolhidos por botões** (13/10/2026, pedido do
 Guilherme: colunas e linha de saldo juntas "não ficou legal"). Um componente

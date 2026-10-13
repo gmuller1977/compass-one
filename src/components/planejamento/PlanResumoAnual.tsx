@@ -71,18 +71,39 @@ export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamen
           color: cor(r.saldoFinal), fontVariantNumeric: 'tabular-nums' }}>{fmt(r.saldoFinal, true)}</div>
         <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>na conta em 31 de dezembro</div>
       </div>
-      <div style={{ flex: compacto ? '1 1 100%' : '1 1 520px', display: 'grid',
+      {compacto ? (
+        // Celular: uma caixa só, uma linha por resposta — rótulo à esquerda,
+        // valor à direita e a frase inteira embaixo (lado a lado, as duas
+        // caixas espremiam a frase em quatro linhas).
+        <div style={{ flex: '1 1 100%', background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)',
+          borderRadius: 14, padding: '4px 14px' }}>
+          {caixas.map((k, i) => (
+            <div key={k.rot} style={{ padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,.15)' : 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO, minWidth: 0 }}>{k.rot}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
+                  whiteSpace: 'nowrap' }}>{k.v}</div>
+              </div>
+              {k.sub.split(' · ').map(t => (
+                <div key={t} style={{ fontSize: 13, color: ROTULO_TOPO, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{t}</div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+      <div style={{ flex: '1 1 520px', display: 'grid',
         gridTemplateColumns: `repeat(${caixas.length}, minmax(0,1fr))`, gap: 8 }}>
         {caixas.map(k => (
           <div key={k.rot} style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)',
             borderRadius: 14, padding: '10px 14px', minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
-            <div style={{ fontSize: compacto ? 18 : 20, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
+            <div style={{ fontSize: 20, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
               whiteSpace: 'nowrap' }}>{k.v}</div>
             <div style={{ fontSize: 13, color: ROTULO_TOPO, fontVariantNumeric: 'tabular-nums' }}>{k.sub}</div>
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
