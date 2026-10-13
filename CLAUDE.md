@@ -929,6 +929,18 @@ cadastro — oferecido e não pedido. IPVA pelo final da placa: segunda etapa, s
 fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
 `prova51` (5 invariantes) e `prova53` (8).
 
+**A barra de ferramentas do Planejamento ficou com Reajuste %, Copiar ano e
+Meta** (13/10/2026, escolha do Guilherme no card). "Copiar mês" e "Aplicar
+valor" saíram: a repetição da categoria faz o trabalho deles, e copiar um mês
+levava "IPVA · 1 de 3" para o ano inteiro (a temporária virava permanente).
+Corrigidos junto: o filtro fixa/variável do Reajuste acha o cadastro pelo id
+e depois pelo par (nome, variante) — só o nome pegava a primeira variante; o
+Copiar ano casa a linha do mesmo jeito (antes "Seguro · Civic" caía em
+"Seguro · March"), não leva parcelas de COMPRAS (`paraCopiarAno`: rótulo
+"<x> · k de N" com x diferente do nome da categoria; a parcela da própria
+temporária fica, o IPVA volta todo ano) e só grava do mês de hoje em diante
+no ano corrente — os meses fechados guardam o plano com que foram medidos.
+
 **Itens dentro do valor do plano: Mercado = Supermercado 800 + Feira 300.**
 Pedido do Guilherme em 06/10/2026, sobre modelo validado: ele somava por fora
 e não queria criar categoria. **Variante não serve para isso** — cada

@@ -215,7 +215,7 @@ export default function PlanMobile(p: Props) {
             <span style={{ flex: 1 }}>
               <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto }}>Ferramentas do plano</span>
               <span style={{ display: 'block', fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>
-                Copiar mês ou ano, aplicar valor, reajuste, meta
+                Reajuste, copiar ano, meta
               </span>
             </span>
             <span aria-hidden style={{ fontSize: 20, color: COR.textoSuave, transform: ferramentas ? 'rotate(180deg)' : undefined }}>⌄</span>

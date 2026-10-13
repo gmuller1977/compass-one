@@ -5,11 +5,15 @@ import PlanModalMeta from './PlanModalMeta'
 import { COR, type AnoData } from './types'
 import type { Categoria } from '../../context/AppContext'
 
-type ToolId = 'copiar' | 'valor' | 'reajuste' | 'ano'
+type ToolId = 'reajuste' | 'ano'
 
+/**
+ * "Copiar mês" e "Aplicar valor" saíram em 13/10/2026: a repetição da
+ * categoria (anual repete até dezembro ao digitar; temporária pergunta as
+ * parcelas) faz o trabalho deles, e copiar um mês levava "IPVA · 1 de 3"
+ * para o ano inteiro.
+ */
 const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
-  { id: 'copiar',   label: 'Copiar mês',    icon: '📋' },
-  { id: 'valor',    label: 'Aplicar valor', icon: '💱' },
   { id: 'reajuste', label: 'Reajuste %',    icon: '📈' },
   { id: 'ano',      label: 'Copiar ano',    icon: '📅' },
 ]

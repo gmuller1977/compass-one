@@ -93,6 +93,24 @@ export function paraCopiar(cat: ComItens, mes: number): { valor: number; itens: 
   return { valor: somaItens(proprios), itens: proprios.length ? proprios : null }
 }
 
+/**
+ * Para COPIAR O ANO: além dos itens do Simulador, ficam de fora as parcelas
+ * de compras ("Bicicleta · 4 de 6"), que não se repetem no ano seguinte. As
+ * parcelas da própria categoria temporária ("IPVA · 1 de 3", rótulo com o
+ * nome da categoria) ficam: o IPVA volta todo ano.
+ */
+export function paraCopiarAno(cat: ComItens & { nome: string }, mes: number): { valor: number; itens: ItemPlano[] | null } {
+  const base = paraCopiar(cat, mes)
+  if (!base.itens) return base
+  const ehParcelaDeCompra = (i: ItemPlano) => {
+    const m = /^(.*) · \d+ de \d+$/.exec(i.descricao)
+    return !!m && m[1] !== cat.nome
+  }
+  const ficam = base.itens.filter(i => !ehParcelaDeCompra(i))
+  if (ficam.length === base.itens.length) return base
+  return { valor: somaItens(ficam), itens: ficam.length ? ficam : null }
+}
+
 /** Reajuste em %, sem tocar nos itens do Simulador: o preço da compra já está fechado. */
 export function reajustarItens(itens: ItemPlano[], fator: number): ItemPlano[] {
   return itens.map(i => (i.simulacaoId ? i : { ...i, valor: Math.round(i.valor * fator * 100) / 100 }))

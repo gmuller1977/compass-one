@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import MesesSelector from './MesesSelector'
-import { MESES_FULL, type AnoData, fmt, parseValor } from './types'
+import { MESES_FULL, type AnoData } from './types'
 import type { Categoria } from '../../context/AppContext'
-import { itensDoMes, reajustarItens, somaItens, paraCopiar, type ItemPlano } from '../../utils/itensPlano'
+import { itensDoMes, reajustarItens, somaItens, paraCopiarAno, type ItemPlano } from '../../utils/itensPlano'
+import { cadastroDaLinha } from '../acompanhamento/evolucaoCalcs'
 
 /**
  * Com `itens`, o mês recebe o detalhe e o valor vira a soma dele; sem, grava
@@ -17,7 +18,7 @@ export interface BulkOp {
 }
 
 interface Props {
-  toolAberta: 'copiar' | 'valor' | 'reajuste' | 'ano' | null
+  toolAberta: 'reajuste' | 'ano' | null
   mesAtual: number
   anoAtual: number
   /**
@@ -52,18 +53,6 @@ export default function PlanFerramentas({
 
   const [toast, setToast] = useState<string | null>(null)
 
-  // Copiar mês
-  const [origemMes, setOrigemMes] = useState(mesAtual)
-  const [copiarMeses, setCopiarMeses] = useState(defaultMeses)
-  const [copiarReceitas, setCopiarReceitas] = useState(true)
-  const [copiarDespesas, setCopiarDespesas] = useState(true)
-
-  // Aplicar valor
-  const [valorTipo, setValorTipo] = useState<'e' | 's'>('s')
-  const [valorRi, setValorRi] = useState(0)
-  const [valorStr, setValorStr] = useState('')
-  const [valorMeses, setValorMeses] = useState(defaultMeses)
-
   // Reajuste
   const [reajTipo, setReajTipo] = useState<'aumento' | 'reducao'>('aumento')
   const [reajPct, setReajPct] = useState('')
@@ -71,12 +60,7 @@ export default function PlanFerramentas({
   const [reajMeses, setReajMeses] = useState(defaultMeses)
 
   useEffect(() => {
-    setCopiarMeses(defaultMeses())
-    setValorMeses(defaultMeses())
     setReajMeses(defaultMeses())
-    setOrigemMes(mesAtual)
-    setValorRi(0)
-    setValorStr('')
     setReajPct('')
   }, [toolAberta])
 
@@ -87,35 +71,6 @@ export default function PlanFerramentas({
 
   function getMesesDest(sel: boolean[]) {
     return sel.reduce<number[]>((acc, v, i) => v ? [...acc, i] : acc, [])
-  }
-
-  function aplicarCopia() {
-    const dest = getMesesDest(copiarMeses)
-    if (!dest.length) return
-    const ops: BulkOp[] = []
-    if (copiarReceitas)
-      dadosAtivos.entradas.forEach((cat, ri) =>
-        dest.forEach(mi => ops.push({ tipo: 'e', ri, mi, ...paraCopiar(cat, origemMes) })))
-    // Copiar um mês detalhado leva o detalhe junto — sem as parcelas do
-    // Simulador, que não se repetem (paraCopiar).
-    if (copiarDespesas)
-      dadosAtivos.saidas.forEach((cat, ri) =>
-        dest.forEach(mi => ops.push({ tipo: 's', ri, mi, ...paraCopiar(cat, origemMes) })))
-    onBulkSave(ops)
-    showToast(`Valores copiados para ${dest.length} ${dest.length === 1 ? 'mês' : 'meses'} ✓`)
-  }
-
-  function aplicarValor() {
-    const dest = getMesesDest(valorMeses)
-    if (!dest.length || !valorStr) return
-    const valor = parseValor(valorStr)
-    // Antes: parseFloat com strip de ponto. "1234.56" virava 123456 e o erro
-    // de 100x ia para todos os meses escolhidos de uma vez.
-    if (valor === null) { showToast(`"${valorStr.trim()}" não é um valor`); return }
-    const lista = valorTipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas
-    if (!lista[valorRi]) return
-    onBulkSave(dest.map(mi => ({ tipo: valorTipo, ri: valorRi, mi, valor })))
-    showToast(`${fmt(valor)} aplicado em ${dest.length} ${dest.length === 1 ? 'mês' : 'meses'} ✓`)
   }
 
   function aplicarReajuste() {
@@ -141,7 +96,10 @@ export default function PlanFerramentas({
 
     dadosAtivos.saidas.forEach((cat, ri) => {
       if (reajFiltro !== 'todas') {
-        const info = categorias.find(c => c.id === cat.id || c.nome === cat.nome)
+        // Pelo id, depois pelo par (nome, variante): só o nome pegava o
+        // cadastro da primeira variante ("Financiamento · Casa" no lugar de
+        // "· Civic").
+        const info = (cat.id ? categorias.find(c => c.id === cat.id) : undefined) ?? cadastroDaLinha(cat, categorias)
         const ehFixa = info?.fixa === true
         if (reajFiltro === 'fixas' && !ehFixa) return
         if (reajFiltro === 'variaveis' && ehFixa) return
@@ -153,19 +111,30 @@ export default function PlanFerramentas({
     showToast(`Reajuste de ${pct}% aplicado ✓`)
   }
 
+  /** Meses que a cópia do ano pode gravar: ano futuro, todos; ano corrente,
+   * do mês de hoje em diante (os fechados guardam o plano com que foram
+   * medidos); ano passado, nenhum. */
+  const anoHoje = new Date().getFullYear()
+  const primeiroMesCopia = anoAtual > anoHoje ? 0 : anoAtual === anoHoje ? mesAtual : 12
+
   function aplicarCopiaAno() {
-    if (!dadosAnoAnterior) return
+    if (!dadosAnoAnterior || primeiroMesCopia > 11) return
     const ops: BulkOp[] = []
-    dadosAnoAnterior.entradas.forEach(cat => {
-      const ri = dadosAtivos.entradas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
-      if (ri < 0) return
-      cat.v.forEach((_, mi) => ops.push({ tipo: 'e', ri, mi, ...paraCopiar(cat, mi) }))
-    })
-    dadosAnoAnterior.saidas.forEach(cat => {
-      const ri = dadosAtivos.saidas.findIndex(c => (c.id && c.id === cat.id) || c.nome === cat.nome)
-      if (ri < 0) return
-      cat.v.forEach((_, mi) => ops.push({ tipo: 's', ri, mi, ...paraCopiar(cat, mi) }))
-    })
+    // A linha do ano novo é achada pelo id, depois pelo par (nome, variante):
+    // só o nome punha "Seguro · Civic" na linha de "Seguro · March".
+    const achar = (lista: AnoData['entradas'], cat: AnoData['entradas'][number]) => {
+      const porId = cat.id ? lista.findIndex(c => c.id === cat.id) : -1
+      if (porId >= 0) return porId
+      return lista.findIndex(c => c.nome === cat.nome && (c.descricao ?? '') === (cat.descricao ?? ''))
+    }
+    const copiar = (tipo: 'e' | 's', origem: AnoData['entradas'], destino: AnoData['entradas']) =>
+      origem.forEach(cat => {
+        const ri = achar(destino, cat)
+        if (ri < 0) return
+        for (let mi = primeiroMesCopia; mi < 12; mi++) ops.push({ tipo, ri, mi, ...paraCopiarAno(cat, mi) })
+      })
+    copiar('e', dadosAnoAnterior.entradas, dadosAtivos.entradas)
+    copiar('s', dadosAnoAnterior.saidas, dadosAtivos.saidas)
     onBulkSave(ops)
     showToast(`Planejamento de ${anoAtual - 1} copiado ✓`)
     onClose()
@@ -194,90 +163,6 @@ export default function PlanFerramentas({
       )}
 
       <div style={{ ...PANEL, animation: 'planFadeDown .2s ease' }}>
-
-        {/* ── Copiar mês ── */}
-        {toolAberta === 'copiar' && (
-          <>
-            <div style={TITLE}>📋 Copiar planejamento de um mês</div>
-            <div style={DESC}>Copia os valores planejados de um mês para os meses selecionados.</div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={LABEL}>Copiar de:</label>
-              <select value={origemMes} onChange={e => setOrigemMes(+e.target.value)} style={INPUT}>
-                {MESES_FULL.map((m, mi) => (
-                  <option key={mi} value={mi}>{m}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={LABEL}>Copiar para:</label>
-              <MesesSelector mesAtual={mesAtual} selecionados={copiarMeses} onChange={setCopiarMeses} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 20, marginBottom: 18 }}>
-              {([['Receitas', copiarReceitas, setCopiarReceitas], ['Despesas', copiarDespesas, setCopiarDespesas]] as const).map(([lbl, val, set]) => (
-                <label key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={val} onChange={e => set(e.target.checked)} />
-                  {lbl}
-                </label>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={BTN_OK} onClick={aplicarCopia}>Aplicar cópia</button>
-              <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
-            </div>
-          </>
-        )}
-
-        {/* ── Aplicar valor ── */}
-        {toolAberta === 'valor' && (
-          <>
-            <div style={TITLE}>💱 Aplicar valor fixo</div>
-            <div style={DESC}>Define um valor específico para uma categoria em múltiplos meses.</div>
-
-            <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-              <div style={{ flex: 1 }}>
-                <label style={LABEL}>Tipo:</label>
-                <select value={valorTipo} onChange={e => { setValorTipo(e.target.value as 'e' | 's'); setValorRi(0) }} style={INPUT}>
-                  <option value="e">Receitas</option>
-                  <option value="s">Despesas</option>
-                </select>
-              </div>
-              <div style={{ flex: 2 }}>
-                <label style={LABEL}>Categoria:</label>
-                <select value={valorRi} onChange={e => setValorRi(+e.target.value)} style={INPUT}>
-                  {(valorTipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas).map((cat, ri) => (
-                    <option key={ri} value={ri}>{cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={LABEL}>Valor (R$):</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={valorStr}
-                onChange={e => setValorStr(e.target.value)}
-                style={INPUT}
-              />
-            </div>
-
-            <div style={{ marginBottom: 18 }}>
-              <label style={LABEL}>Aplicar nos meses:</label>
-              <MesesSelector mesAtual={mesAtual} selecionados={valorMeses} onChange={setValorMeses} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={BTN_OK} onClick={aplicarValor}>Aplicar valor</button>
-              <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
-            </div>
-          </>
-        )}
 
         {/* ── Reajuste % ── */}
         {toolAberta === 'reajuste' && (
@@ -336,11 +221,14 @@ export default function PlanFerramentas({
             {dadosAnoAnterior ? (
               <>
                 <div style={DESC}>
-                  Copia todos os valores planejados de {anoAtual - 1} para {anoAtual}.<br />
-                  Os valores atuais serão substituídos.
+                  {primeiroMesCopia > 11
+                    ? <>Este ano já passou: o plano dele fica como foi medido.</>
+                    : <>Copia os valores planejados de {anoAtual - 1} para {anoAtual}
+                      {primeiroMesCopia > 0 ? `, de ${MESES_FULL[primeiroMesCopia]} a dezembro (os meses que já fecharam não mudam)` : ''}.<br />
+                      Os valores desses meses serão substituídos. Parcelas de compras não são copiadas.</>}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={BTN_OK} onClick={aplicarCopiaAno}>Confirmar cópia de {anoAtual - 1}</button>
+                  {primeiroMesCopia <= 11 && <button style={BTN_OK} onClick={aplicarCopiaAno}>Confirmar cópia de {anoAtual - 1}</button>}
                   <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
                 </div>
               </>
