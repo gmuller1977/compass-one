@@ -216,8 +216,10 @@ escolheu o cardápio entre três modelos — cardápio, colunas por situação e
 envelopes). O azul do `PageHeader` (que ganhou `children`) traz a resposta em
 40px — "Ainda dá para gastar R$ X", o `sobra` de `ritmoDoMes`, o mesmo da
 frase — e, ao lado, os quatro números de antes em miniatura, que abrem o
-detalhe por conta. Os quatro nunca cortam o valor: a fileira pede 700px (cabe até R$ 1.999.999,99) e, sem
-esse espaço ao lado da frase, desce para baixo dela (13/10/2026). Mês fechado, ou corrente que passou, mostra o saldo no
+detalhe por conta. Os quatro ficam AO LADO da frase (embaixo
+perde espaço, pedido dele em 13/10/2026) e nunca cortam o valor: acima de
+R$ 99.999,99 a letra cai de 17 para 15px. Medido: cabe R$ 1.999.999,99 de
+1280px de janela para cima; só abaixo de ~1180px a fileira desce. Mês fechado, ou corrente que passou, mostra o saldo no
 lugar da sobra. Cada grupo é um cartão branco (`EvolucaoGrupo`): ícone em
 círculo, `destaqueDoGrupo` em 20px (era 24; reduzido em 13/10/2026 a pedido dele), barra e "gastou X de Y"; aberto, ocupa a
 linha e lista as categorias (`EvolucaoLinha`, sem mudança). Grade com
