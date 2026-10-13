@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
+import { useApp, type PlanoAnoData } from '../context/AppContext'
 import { saldoBancosEDinheiro, memoriaDoRadar } from '../utils/saldoConta'
 import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
@@ -14,6 +14,7 @@ import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
+import { metaDoMes, fraseDaMeta, COR_META } from '../utils/metaDoMes'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
@@ -173,7 +174,32 @@ export default function Dashboard() {
   const [oculto, alternarOculto] = useValoresOcultos()
   const v = (n: number) => mostrar(n, oculto)
   const mesNome = MESES_FULL[viewMes]
-  const status = !ehFuturo ? STATUS_HERO[compassStatus] : null
+  // A frase do topo: o mês contra a META de sobra do Planejamento, e não
+  // contra o plano (pedido do Guilherme em 13/10/2026: "a meta é
+  // inegociável"). Ver utils/metaDoMes.
+  const metaValor = (planos[viewAno] as PlanoAnoData | undefined)?.objetivos?.[viewMes]
+  const meta = ehFuturo
+    ? (previsao ? metaDoMes(metaValor, previsao.inicial, previsao.final) : null)
+    : (memoria ? metaDoMes(metaValor, memoria.abertura, memoria.fechamento) : null)
+  const quando = ehFuturo ? 'futuro' as const : ehMesCorrente ? 'corrente' as const : 'fechado' as const
+  const linhaDaMeta = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, marginTop: 10, flexWrap: 'wrap' }}>
+      {meta ? (
+        <>
+          <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_META[meta.estado], flexShrink: 0 }} />
+          <span style={{ color: '#fff', fontWeight: meta.estado === 'dentro' ? 700 : 500 }}>
+            {fraseDaMeta(meta, mesNome, quando, v)}
+          </span>
+        </>
+      ) : !ehFuturo && compassStatus === 'sem-dados' ? (
+        <span style={{ color: ROTULO_TOPO }}>{STATUS_HERO['sem-dados'].frase(mesNome, false)}</span>
+      ) : quando !== 'fechado' ? (
+        <button onClick={() => navigate('/planejamento')} style={{ ...linkTopo, fontSize: 15 }}>
+          Defina uma meta de sobra para {mesNome.toLowerCase()}
+        </button>
+      ) : null}
+    </div>
+  )
   const r = ritmo
   const passou = r?.estado === 'passou'
 
@@ -220,14 +246,6 @@ export default function Dashboard() {
               <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Olá, {nome} <span aria-hidden>👋</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: ROTULO_TOPO, marginTop: 4 }}>
-                {status ? (
-                  <>
-                    <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: status.cor, flexShrink: 0 }} />
-                    {status.frase(mesNome, !ehMesCorrente)}
-                  </>
-                ) : `Previsão de ${mesNome.toLowerCase()} de ${viewAno}`}
-              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <SeletorMesAno
@@ -253,6 +271,7 @@ export default function Dashboard() {
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
                 <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
                   color: grande.valor < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
+                {linhaDaMeta}
               </div>
 
               <div style={{ ...pilulaTopo, alignItems: 'stretch', cursor: 'default', gap: 10 }}>
@@ -296,14 +315,6 @@ export default function Dashboard() {
               <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Olá, {nome} <span aria-hidden>👋</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: ROTULO_TOPO, marginTop: 4 }}>
-                {status ? (
-                  <>
-                    <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: status.cor, flexShrink: 0 }} />
-                    {status.frase(mesNome, !ehMesCorrente)}
-                  </>
-                ) : `Previsão de ${mesNome.toLowerCase()} de ${viewAno}`}
-              </div>
             </div>
               {grande && (
                 <div style={{ marginTop: 22 }}>
@@ -311,6 +322,7 @@ export default function Dashboard() {
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
                 <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
                   color: grande.valor < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
+                {linhaDaMeta}
               </div>
 
                 </div>

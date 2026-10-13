@@ -162,6 +162,18 @@ No topo da Início do computador (13/10/2026, pedido dele), o saldo atual
 fica logo abaixo da saudação, e a caixa do saldo final previsto fica embaixo
 dos controles, na largura deles: a borda esquerda alinha com a seta do mês.
 
+**A frase do topo da Início compara o mês com a META, não com o plano**
+(13/10/2026, pedido do Guilherme: "como o plano pode mudar não faz sentido a
+informação atual, mas a meta é inegociável"). Fica embaixo do saldo, não da
+saudação. A meta é a "meta de sobra" do Planejamento (`objetivos[mês]`), e a
+sobra comparada é saldo final previsto − saldo com que o mês abriu (memória
+do Radar; no futuro, `previsaoDoMes`) — no cenário escolhido. Três estados em
+[`metaDoMes.ts`](src/utils/metaDoMes.ts), com o corte da receita no Radar:
+≥ 100% "Parabéns! Você está dentro da meta de R$ X", 80–99% "perto · faltam
+R$ Y", abaixo de 80% "abaixo · faltam R$ Y"; mês fechado e futuro falam no
+passado e no "deve". Sem meta, "Defina uma meta de sobra para [mês]" abre o
+Planejamento. A Bússola do celular segue com o `STATUS_HERO`.
+
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
 escolheu o cardápio entre três modelos — cardápio, colunas por situação e
