@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp, type PlanoAnoData } from '../context/AppContext'
+import { useApp } from '../context/AppContext'
 import { saldoBancosEDinheiro, memoriaDoRadar } from '../utils/saldoConta'
 import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
@@ -14,7 +14,7 @@ import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
-import { metaDoMes, fraseDaMeta, COR_META } from '../utils/metaDoMes'
+import { estadoDoMes, mensagemDoMes, COR_MENSAGEM } from '../utils/mensagemDoMes'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
@@ -174,29 +174,21 @@ export default function Dashboard() {
   const [oculto, alternarOculto] = useValoresOcultos()
   const v = (n: number) => mostrar(n, oculto)
   const mesNome = MESES_FULL[viewMes]
-  // A frase do topo: o mês contra a META de resultado do Planejamento, e não
-  // contra o plano (pedido do Guilherme em 13/10/2026: "a meta é
-  // inegociável"). Ver utils/metaDoMes.
-  const metaValor = (planos[viewAno] as PlanoAnoData | undefined)?.objetivos?.[viewMes]
-  const meta = ehFuturo
-    ? (previsao ? metaDoMes(metaValor, previsao.inicial, previsao.final) : null)
-    : (memoria ? metaDoMes(metaValor, memoria.abertura, memoria.fechamento) : null)
+  // A frase do topo: uma mensagem curta, sem números, pelo saldo final
+  // previsto (pedido do Guilherme em 13/10/2026). Ver utils/mensagemDoMes.
+  const estadoMes = ehFuturo
+    ? (previsao ? estadoDoMes(previsao.inicial, previsao.final) : null)
+    : (memoria ? estadoDoMes(memoria.abertura, memoria.fechamento) : null)
   const quando = ehFuturo ? 'futuro' as const : ehMesCorrente ? 'corrente' as const : 'fechado' as const
   const linhaDaMeta = (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 15, marginTop: 10, lineHeight: 1.4 }}>
-      {meta ? (
-        <>
-          <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_META[meta.estado], flexShrink: 0, marginTop: 7 }} />
-          <span style={{ color: '#fff', fontWeight: meta.estado === 'dentro' ? 700 : 500, minWidth: 0 }}>
-            {fraseDaMeta(meta, mesNome, quando, v)}
-          </span>
-        </>
-      ) : !ehFuturo && compassStatus === 'sem-dados' ? (
+      {!ehFuturo && compassStatus === 'sem-dados' ? (
         <span style={{ color: ROTULO_TOPO }}>{STATUS_HERO['sem-dados'].frase(mesNome, false)}</span>
-      ) : quando !== 'fechado' ? (
-        <button onClick={() => navigate('/planejamento')} style={{ ...linkTopo, fontSize: 15 }}>
-          Defina quanto quer guardar em {mesNome.toLowerCase()}
-        </button>
+      ) : estadoMes ? (
+        <>
+          <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_MENSAGEM[estadoMes], flexShrink: 0, marginTop: 7 }} />
+          <span style={{ color: '#fff', fontWeight: 600, minWidth: 0 }}>{mensagemDoMes(estadoMes, quando)}</span>
+        </>
       ) : null}
     </div>
   )

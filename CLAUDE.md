@@ -197,6 +197,19 @@ mês", com o exemplo "ganhou 5.000 e gastou 4.000, guardou 1.000" e "o
 dinheiro que já estava na conta não conta". O celular voltou a "Quanto sobra
 em [mês]". Não usar "resultado", "receitas" nem "despesas" nesses textos.
 
+**A meta SAIU da Início no mesmo dia; a frase é uma mensagem sem números**
+(Guilherme: "são muitos números na mesma tela — saldo atual, saldo previsto,
+quanto gastou e a meta"). Os três parágrafos acima sobre a frase da meta são
+histórico; a meta continua só no Planejamento ("🎯 Meta de economia").
+Embaixo do saldo atual fica uma frase de [`mensagemDoMes.ts`](src/utils/mensagemDoMes.ts),
+pelo saldo final previsto do cenário escolhido contra o saldo com que o mês
+abriu: final negativo → "Atenção: do jeito que está, o mês termina no
+vermelho. Vale segurar os gastos."; final abaixo da abertura → "Cuidado:
+este mês você está gastando mais do que ganha."; senão "Muito bem! Você vai
+terminar o mês com mais dinheiro do que começou." Mês fechado e futuro têm
+versões próprias. Ponto verde, amarelo ou vermelho ao lado. Nenhum número na
+frase, de propósito.
+
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
 escolheu o cardápio entre três modelos — cardápio, colunas por situação e

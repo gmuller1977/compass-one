@@ -15,7 +15,7 @@ interface Props {
 
 /**
  * Quanto você quer que as receitas superem as despesas em cada mês (meta de
- * RESULTADO, não de saldo final — ver utils/metaDoMes).
+ * RESULTADO, não de saldo final).
  *
  * O campo já existia no modelo — `PlanoAnoData.objetivos`, doze números, um por
  * mês — declarado, gravado a cada save e nunca lido nem escrito por ninguém.
