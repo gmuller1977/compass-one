@@ -300,14 +300,14 @@ export default function AcMobileView({
           <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:COR.texto }}>
             <span aria-hidden>{grupoIcone}</span>
             <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
+            {/* O número em destaque na linha do nome, maior que ele (19px; no
+                computador são 24). Pedido do Guilherme em 13/10/2026: maior,
+                "sem exagero", e na mesma linha. */}
+            <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
+              {dg.principal}
+            </span>
             <span aria-hidden style={{ color:COR.textoSuave, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
               transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
-          </div>
-          {/* O número em destaque numa linha própria, como no computador (lá
-              24px; aqui 21, pedido do Guilherme em 13/10/2026: "sem exagero"). */}
-          <div style={{ fontSize:21, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums',
-            whiteSpace:'nowrap', marginTop:6, lineHeight:1.15 }}>
-            {dg.principal}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
             <div style={{ flex:1, height:8, borderRadius:4, background:'#e2e8f0', overflow:'hidden' }}>
