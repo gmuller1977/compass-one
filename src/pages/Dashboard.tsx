@@ -208,8 +208,13 @@ export default function Dashboard() {
       <AppHeader currentPath="/dashboard" />
 
       {/* ── Topo azul: a resposta do mês ─────────────────────────────── */}
+      {/* No computador, duas colunas (pedido do Guilherme em 13/10/2026): à
+          esquerda a saudação com o saldo logo embaixo; à direita os controles
+          e, embaixo deles, a caixa do saldo previsto na MESMA largura — a
+          borda esquerda alinha com a seta do mês. */}
       <header style={{ background: TOPO_AZUL, color: '#fff', padding: isMobile ? '18px 16px 60px' : '28px 32px 76px', borderRadius: '0 0 28px 28px' }}>
         <div style={{ maxWidth: LARGURA - 64, margin: '0 auto' }}>
+          {isMobile ? (<>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -242,10 +247,8 @@ export default function Dashboard() {
               <AjudaTela tela="inicio" />
             </div>
           </div>
-
           {grande && (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr minmax(340px, 420px)', gap: 24,
-              alignItems: 'end', marginTop: 28 }}>
+            <div style={{ display: 'grid', gap: 24, marginTop: 28 }}>
               <div>
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
                 <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
@@ -285,6 +288,88 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+          )}
+          </>) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', columnGap: 24, alignItems: 'start' }}>
+            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 26, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Olá, {nome} <span aria-hidden>👋</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: ROTULO_TOPO, marginTop: 4 }}>
+                {status ? (
+                  <>
+                    <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: status.cor, flexShrink: 0 }} />
+                    {status.frase(mesNome, !ehMesCorrente)}
+                  </>
+                ) : `Previsão de ${mesNome.toLowerCase()} de ${viewAno}`}
+              </div>
+            </div>
+              {grande && (
+                <div style={{ marginTop: 22 }}>
+              <div>
+                <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
+                <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
+                  color: grande.valor < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
+              </div>
+
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'grid', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <SeletorMesAno
+                mes={viewMes} ano={viewAno}
+                onSelect={(m, a) => { setViewMes(m); setViewAno(a); setMemoriaAberta(false) }}
+                habilitado={(m, a) => a * 12 + m <= ymHoje
+                  || (!!fimPlano && a * 12 + m <= fimPlano.ano * 12 + fimPlano.mes)}
+                compacto={isMobile}
+              />
+              <button onClick={() => navigate('/novo-lancamento')} style={{ ...botaoTopo, background: '#fff', color: '#1e3a8a', padding: '0 18px' }}>
+                + Lançar
+              </button>
+              <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}
+                style={{ ...botaoTopo, width: 44, padding: 0 }}>
+                <OlhoIcone fechado={oculto} />
+              </button>
+              <AjudaTela tela="inicio" />
+            </div>
+              {grande && (
+              <div style={{ ...pilulaTopo, alignItems: 'stretch', cursor: 'default', gap: 10 }}>
+                {ehFuturo && previsao ? (
+                  <>
+                    {([['Abre com', previsao.inicial], ['Entram', previsao.entradas], ['Saem', previsao.saidas]] as const).map(([rot, n]) => (
+                      <div key={rot} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 15 }}>
+                        <span style={{ color: ROTULO_TOPO }}>{rot}</span><b style={{ fontVariantNumeric: 'tabular-nums' }}>{v(n)}</b>
+                      </div>
+                    ))}
+                    <SeletorCenario valor={cenarioPrevisao} onEscolher={setCenarioPrevisao} />
+                  </>
+                ) : ehMesCorrente && memoria ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                      <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Saldo final previsto</span>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: memoria.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                        {v(memoria.fechamento)}
+                      </span>
+                    </div>
+                    <SeletorCenario valor={cenarioPrevisao} onEscolher={setCenarioPrevisao} />
+                  </>
+                ) : memoria ? (
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Abriu com</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: memoria.abertura < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      {v(memoria.abertura)}
+                    </span>
+                  </div>
+                ) : null}
+                <button onClick={abrirMemoria} aria-expanded={memoriaAberta} style={linkTopo}>
+                  {memoriaAberta ? 'fechar o cálculo' : 'como cheguei nesse número'}
+                </button>
+              </div>
+              )}
+            </div>
+          </div>
           )}
         </div>
       </header>

@@ -158,6 +158,9 @@ Dinheiro) os dias do computador são o `NleExtratoMobile`** (`desktop`): bolinha
 de pago, "01/10 quinta · saldo", cartão branco; o formulário segue no painel da
 direita. O parágrafo acima sobre os temas de cor dos dias é histórico.
 `COR.fundo` NÃO mudou: `textoSuave` no `#f2f5fc` dá 4,36 e reprova.
+No topo da Início do computador (13/10/2026, pedido dele), o saldo atual
+fica logo abaixo da saudação, e a caixa do saldo final previsto fica embaixo
+dos controles, na largura deles: a borda esquerda alinha com a seta do mês.
 
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
