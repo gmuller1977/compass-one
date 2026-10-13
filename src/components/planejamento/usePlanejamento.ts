@@ -221,7 +221,7 @@ export function usePlanejamento(anoAtual: number) {
   }
 
   /**
-   * A meta de sobra de cada mês, sempre com doze posições. Zero = sem meta.
+   * A meta de resultado (receitas − despesas) de cada mês, sempre com doze posições. Zero = sem meta.
    */
   const objetivos = useMemo(() => {
     const salvo = (planos[anoAtual] as PlanoAnoData | undefined)?.objetivos

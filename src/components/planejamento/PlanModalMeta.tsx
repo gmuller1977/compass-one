@@ -14,7 +14,8 @@ interface Props {
 }
 
 /**
- * Quanto você quer que sobre em cada mês.
+ * Quanto você quer que as receitas superem as despesas em cada mês (meta de
+ * RESULTADO, não de saldo final — ver utils/metaDoMes).
  *
  * O campo já existia no modelo — `PlanoAnoData.objetivos`, doze números, um por
  * mês — declarado, gravado a cada save e nunca lido nem escrito por ninguém.
@@ -59,10 +60,10 @@ export default function PlanModalMeta({
           boxShadow: '0 20px 60px rgba(0,0,0,.25)',
         }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto }}>
-          🎯 Meta mensal
+          🎯 Meta de resultado
         </div>
         <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 4, marginBottom: 18 }}>
-          Quanto você quer que sobre no fim de cada mês.
+          Quanto você quer que as receitas superem as despesas em cada mês. É o resultado do mês (receitas − despesas), não o saldo final: o saldo com que o mês começa não conta.
         </div>
 
         <label style={{ fontSize: 12, fontWeight: 600, color: COR.texto,
@@ -99,7 +100,7 @@ export default function PlanModalMeta({
                     fontSize: 12, color: COR.texto }}>
                     <span style={{ minWidth: 78 }}>{MESES_FULL[i]}</span>
                     <b style={{ minWidth: 88, fontVariantNumeric: 'tabular-nums' }}>{fmt(v, true)}</b>
-                    <span style={{ color: COR.textoSuave }}>previsto</span>
+                    <span style={{ color: COR.textoSuave }}>resultado previsto</span>
                     <b style={{ color: cumpre ? COR.sucessoTexto : COR.avisoTexto,
                       fontVariantNumeric: 'tabular-nums' }}>
                       {fmt(sobra, true)}

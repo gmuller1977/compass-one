@@ -103,7 +103,7 @@ export default function PlanMobile(p: Props) {
         <div style={{ marginTop: 18, fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
           {semPlano
             ? (observando ? `${MESES_FULL[mes]}: descobrindo seus números` : `${MESES_FULL[mes]} ainda sem plano`)
-            : `Sobra planejada em ${MESES_FULL[mes]}`}
+            : `Resultado planejado em ${MESES_FULL[mes]}`}
         </div>
         {semPlano ? (
           <div style={{ fontSize: 17, fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>
@@ -158,7 +158,7 @@ export default function PlanMobile(p: Props) {
                 : `${fmt(Math.abs(fechouEm - previsto.saldoFinal[mes]), true)} ${fechouEm > previsto.saldoFinal[mes] ? 'acima' : 'abaixo'} do previsto`} />
           )}
           {p.objetivos[mes] > 0 && (
-            <LinhaValor rotulo="Meta de sobra" valor={p.objetivos[mes]}
+            <LinhaValor rotulo="Meta de resultado" valor={p.objetivos[mes]}
               legenda={sobra >= p.objetivos[mes] ? '✓ o plano alcança' : `faltam ${fmt(p.objetivos[mes] - sobra, true)} no plano`} />
           )}
         </Cartao>
@@ -192,7 +192,7 @@ export default function PlanMobile(p: Props) {
                   </span>
                   <span style={{ display: 'block', fontSize: M.legenda, marginTop: 2, fontVariantNumeric: 'tabular-nums',
                     color: vazio ? COR.textoSuave : s < 0 ? VERMELHO : VERDE }}>
-                    {vazio ? 'sem plano' : `sobra ${s > 0 ? '+' : ''}${fmt(s, true)}`}
+                    {vazio ? 'sem plano' : `resultado ${s > 0 ? '+' : ''}${fmt(s, true)}`}
                   </span>
                 </span>
                 <span style={{ textAlign: 'right' }}>

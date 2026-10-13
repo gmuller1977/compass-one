@@ -174,7 +174,7 @@ export default function Dashboard() {
   const [oculto, alternarOculto] = useValoresOcultos()
   const v = (n: number) => mostrar(n, oculto)
   const mesNome = MESES_FULL[viewMes]
-  // A frase do topo: o mês contra a META de sobra do Planejamento, e não
+  // A frase do topo: o mês contra a META de resultado do Planejamento, e não
   // contra o plano (pedido do Guilherme em 13/10/2026: "a meta é
   // inegociável"). Ver utils/metaDoMes.
   const metaValor = (planos[viewAno] as PlanoAnoData | undefined)?.objetivos?.[viewMes]
@@ -183,11 +183,11 @@ export default function Dashboard() {
     : (memoria ? metaDoMes(metaValor, memoria.abertura, memoria.fechamento) : null)
   const quando = ehFuturo ? 'futuro' as const : ehMesCorrente ? 'corrente' as const : 'fechado' as const
   const linhaDaMeta = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, marginTop: 10, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 15, marginTop: 10, lineHeight: 1.4 }}>
       {meta ? (
         <>
-          <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_META[meta.estado], flexShrink: 0 }} />
-          <span style={{ color: '#fff', fontWeight: meta.estado === 'dentro' ? 700 : 500 }}>
+          <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_META[meta.estado], flexShrink: 0, marginTop: 7 }} />
+          <span style={{ color: '#fff', fontWeight: meta.estado === 'dentro' ? 700 : 500, minWidth: 0 }}>
             {fraseDaMeta(meta, mesNome, quando, v)}
           </span>
         </>
@@ -195,7 +195,7 @@ export default function Dashboard() {
         <span style={{ color: ROTULO_TOPO }}>{STATUS_HERO['sem-dados'].frase(mesNome, false)}</span>
       ) : quando !== 'fechado' ? (
         <button onClick={() => navigate('/planejamento')} style={{ ...linkTopo, fontSize: 15 }}>
-          Defina uma meta de sobra para {mesNome.toLowerCase()}
+          Defina uma meta de resultado para {mesNome.toLowerCase()}
         </button>
       ) : null}
     </div>

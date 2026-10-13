@@ -174,6 +174,18 @@ R$ Y", abaixo de 80% "abaixo · faltam R$ Y"; mês fechado e futuro falam no
 passado e no "deve". Sem meta, "Defina uma meta de sobra para [mês]" abre o
 Planejamento. A Bússola do celular segue com o `STATUS_HERO`.
 
+**A meta é de RESULTADO do mês (receitas − despesas), não de saldo final**
+(13/10/2026). O Guilherme leu "faltam R$ 3.795,44 para a meta de 2.000"
+esperando ~500 — a distância do saldo final previsto (1.478,95) até a meta.
+Os dois números estavam certos para réguas diferentes: o mês abria com
+3.274,39, então o resultado era −1.795,44. Ficou o resultado, porque é o que
+mostra se a pessoa está guardando (o saldo final carrega o mês anterior), e o
+nome mudou em toda parte: "Meta de resultado" na barra, na janela (que
+explica "não o saldo final"), no celular e no cartão do ano; "Sobra
+planejada" do celular virou "Resultado planejado". A frase da Início mostra
+o resultado previsto ao lado da meta — "Resultado previsto de R$ X · abaixo
+da meta de R$ Y · faltam R$ Z" —, para a conta se explicar sozinha.
+
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
 escolheu o cardápio entre três modelos — cardápio, colunas por situação e
