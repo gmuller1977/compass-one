@@ -23,10 +23,10 @@ function useIsMobile() {
  * Guilherme; "Posso comprar?" segue como atalho na Início e no "Mais".
  */
 const NAV = [
-  { icon: '🏠', label: 'Início',   path: '/' },
-  { icon: '📈', label: 'Radar',    path: '/radar' },
+  { icon: 'ti-home', label: 'Início',   path: '/' },
+  { icon: 'ti-radar-2', label: 'Radar',    path: '/radar' },
   null, // botão + flutuante
-  { icon: '🧭', label: 'Norte',    path: '/norte' },
+  { icon: 'ti-compass', label: 'Norte',    path: '/norte' },
 ] as const
 
 const MAIS = [
@@ -59,8 +59,10 @@ export default function BottomNav() {
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
       gap: 2, padding: '4px 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
     }}>
-      <span aria-hidden style={{ fontSize: 22, position: 'relative' }}>
-        {icon}
+      {/* Ícone desenhado (Tabler), na cor do rótulo: azul ativo, textoSuave
+          inativo (4,76:1 no branco). Pedido do Guilherme em 13/10/2026. */}
+      <span aria-hidden style={{ fontSize: 24, lineHeight: 1, position: 'relative', color: active ? COR.azul : COR.textoSuave }}>
+        <i className={`ti ${icon}`} />
         {badge > 0 && (
           // Branco sobre #b91c1c: 6,47:1.
           <span style={{ position: 'absolute', top: -4, right: -10, minWidth: 18, height: 18, padding: '0 5px', boxSizing: 'border-box',
@@ -116,21 +118,21 @@ export default function BottomNav() {
                   aria-label="Lançar"
                   style={{
                     width: 58, height: 58, borderRadius: '50%',
-                    background: 'linear-gradient(135deg,#1a56db,#2563eb)',
+                    background: BOLINHA_AZUL,
                     border: '3px solid #fff',
                     boxShadow: '0 4px 16px rgba(26,86,219,.4)',
                     marginTop: -30,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: 32, fontWeight: 300,
+                    color: '#fff', fontSize: 30,
                     cursor: 'pointer', flexShrink: 0,
                   }}
-                >+</button>
+                ><i aria-hidden className="ti ti-plus" /></button>
               </div>
             )
           }
           return item(n.path, n.icon, n.label, isActive(n.path), () => navigate(n.path), n.path === '/norte' ? selo : 0)
         })}
-        {item('mais', '☰', 'Mais', maisAtivo, () => setMais(true))}
+        {item('mais', 'ti-menu-2', 'Mais', maisAtivo, () => setMais(true))}
       </div>
     </>
   )

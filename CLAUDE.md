@@ -2048,6 +2048,10 @@ barra de baixo usam `BOLINHA_AZUL` (`#0f2878 → #1e40af`, em
 comprar? `ti-shopping-cart`, Radar `ti-radar-2`. Emoji em atalho, não. A
 fonte Tabler vem do CDN no `index.html`; a prévia local sem rede precisa
 servir o pacote do npm por `page.route`.
+A barra de baixo do celular também (mesmo dia): Início `ti-home`, Radar
+`ti-radar-2`, Norte `ti-compass`, Mais `ti-menu-2`, na cor do rótulo (azul
+ativo, `textoSuave` inativo), e o "+" flutuante com `ti-plus` sobre
+`BOLINHA_AZUL`.
 
 **O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
 Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as
