@@ -8,7 +8,7 @@ import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanResumoAnual from './PlanResumoAnual'
 import GraficoAnoPlano from './GraficoAnoPlano'
 import MetaNoCartao from './MetaNoCartao'
-import { mesesDoAno, type MesDoAno } from './anoDoPlano'
+import { mesesDoAno, metaContraPlano, type MesDoAno } from './anoDoPlano'
 import { type BulkOp } from './PlanFerramentas'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
@@ -266,6 +266,25 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
           <CampoMeta grande mi={mes} anoAtual={anoAtual} mesAtual={mesAtual} objetivos={objetivos} onMetaSave={onMetaSave} />
         </div>
       </div>
+      {(() => {
+        // O que o plano guarda e quanto falta para a meta, como no modal do computador.
+        const guarda = previsto.totalEntradas[mes] - previsto.totalSaidas[mes]
+        const anoCorr = new Date().getFullYear()
+        const fechado = anoAtual < anoCorr || (anoAtual === anoCorr && mes < mesAtual)
+        const c = metaContraPlano(objetivos[mes] ?? 0, guarda)
+        const linhaMeta = (rot: string, txt: string, cor: string) => (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 40, paddingLeft: 32,
+            borderBottom: `1px solid ${COR.borda}` }}>
+            <span style={{ fontSize: 14, color: COR.textoSuave }}>{rot}</span>
+            <span style={{ fontSize: M.corpo, fontWeight: 700, color: cor, fontVariantNumeric: 'tabular-nums' }}>{txt}</span>
+          </div>
+        )
+        return <>
+          {linhaMeta('O plano guarda', guarda < 0 ? `− ${fmt(-guarda, true)}` : fmt(guarda, true), guarda < 0 ? '#b91c1c' : '#14532d')}
+          {linhaMeta('Para a meta', !c || fechado ? '—' : c.ok ? '✓ dentro' : `faltam ${fmt(c.falta, true)}`,
+            !c || fechado ? COR.textoSuave : c.ok ? '#14532d' : '#b91c1c')}
+        </>
+      })()}
       {secao('Receitas', '#15803d', dados.entradas, 'e')}
       {secao('Despesas', '#b91c1c', dados.saidas, 's')}
 

@@ -81,12 +81,19 @@ export const guardaDoMes = (m: MesDoAno) => m.guardou ?? m.sobra
  * está dentro da meta"). Mês aberto compara o que o PLANO guarda; mês fechado,
  * o que ele guardou de verdade. Sem meta, `null`.
  */
-export function situacaoDaMeta(m: MesDoAno): { ok: boolean; texto: string } | null {
+export function situacaoDaMeta(m: MesDoAno): { ok: boolean; aviso: string } | null {
   if (m.meta <= 0) return null
-  const v = guardaDoMes(m)
-  const falta = m.meta - v
-  if (falta <= 0.005) return { ok: true, texto: m.fechado ? 'Guardou dentro da meta' : 'O plano está dentro da meta' }
-  return { ok: false, texto: m.fechado ? `Ficou ${fmtMeta(falta)} abaixo da meta` : `Abaixo da meta · faltam ${fmtMeta(falta)}` }
+  const ok = m.meta - guardaDoMes(m) <= 0.005
+  return { ok, aviso: m.fechado ? (ok ? 'Guardou a meta' : 'Ficou abaixo da meta') : (ok ? 'Dentro da meta' : 'Abaixo da meta') }
 }
 
-const fmtMeta = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+/**
+ * Os números da meta dentro do mês (modal do computador e mês aberto do
+ * celular): o que o PLANO guarda e quanto falta para a meta. É ali que se
+ * mexe nas categorias para alcançá-la, e os números acompanham a edição.
+ */
+export function metaContraPlano(meta: number, planoGuarda: number): { ok: boolean; falta: number } | null {
+  if (meta <= 0) return null
+  const falta = meta - planoGuarda
+  return { ok: falta <= 0.005, falta: Math.max(0, falta) }
+}

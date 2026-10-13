@@ -3,6 +3,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat, type Saldos } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import CampoMeta from './CampoMeta'
+import { metaContraPlano } from './anoDoPlano'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import { itensDoMes } from '../../utils/itensPlano'
@@ -235,6 +236,29 @@ export default function PlanModalMeses({
               <div key={mi} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                 borderBottom: `1px solid ${COR.borda}`, fontSize: 13 }}>
                 <CampoMeta mi={mi} anoAtual={anoAtual} mesAtual={mesAtual} objetivos={objetivos} onMetaSave={onMetaSave} />
+              </div>
+            ))}
+            {/* O que o plano guarda e quanto falta para a meta, vivos enquanto se
+                edita (pedido do Guilherme em 13/10/2026: é aqui que se adequa o
+                plano para alcançar a meta; no cartão fica só o aviso). */}
+            {([['O plano guarda', 'guarda'], ['Para a meta', 'meta']] as const).map(([rotulo, tipo]) => (
+              <div key={tipo} style={{ display: 'contents' }}>
+                <div style={{ position: 'sticky', left: 0, background: COR.branco, zIndex: 1, display: 'flex', alignItems: 'center',
+                  padding: '6px 8px 6px 24px', borderBottom: `1px solid ${COR.borda}`, fontSize: 13, color: COR.textoSuave }}>{rotulo}</div>
+                {meses.map(mi => {
+                  const guarda = previsto.totalEntradas[mi] - previsto.totalSaidas[mi]
+                  const fechado = anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
+                  const c = metaContraPlano(objetivos[mi] ?? 0, guarda)
+                  return (
+                    <div key={mi} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '6px 7px',
+                      borderBottom: `1px solid ${COR.borda}`, fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                      color: tipo === 'guarda' ? (guarda < 0 ? '#b91c1c' : '#14532d') : !c || fechado ? COR.textoSuave : c.ok ? '#14532d' : '#b91c1c' }}>
+                      {tipo === 'guarda'
+                        ? (guarda < 0 ? `− ${fmt(-guarda, true)}` : fmt(guarda, true))
+                        : !c || fechado ? '—' : c.ok ? '✓ dentro' : `faltam ${fmt(c.falta, true)}`}
+                    </div>
+                  )
+                })}
               </div>
             ))}
             {secao('Receitas', '#15803d', entradas, 'e')}

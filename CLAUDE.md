@@ -294,13 +294,18 @@ o botão escolhido guardado no aparelho:
 
 A linha de saldo por cima das colunas, da primeira versão, saiu.
 
-**O cartão do mês tem borda (`#c3ccd8`, o atual `#3b82f6`) e a meta com
-aviso** (mesmo dia, pedido dele). `MetaNoCartao`, por `situacaoDaMeta` em
-`anoDoPlano.ts`: mês aberto compara o que o PLANO guarda com a meta ("✓ O
-plano está dentro da meta" / "Abaixo da meta · faltam R$ X"); mês fechado, o
-que guardou de verdade ("✓ Guardou dentro da meta" / "Ficou R$ X abaixo da
-meta"). Verde `#14532d` em `#f0fdf4`, vermelho `#b91c1c` em `#fef2f2`. Sem
-meta, nada.
+**O cartão do mês tem borda (`#c3ccd8`, o atual `#3b82f6`) e SÓ o aviso da
+meta; os números moram dentro do mês** (mesmo dia, pedido dele: "no card
+deveria vir só um aviso, e dentro do plano estas informações, porque é ali
+que muda os dados e adequa o plano"). `MetaNoCartao` é uma pílula, por
+`situacaoDaMeta` em `anoDoPlano.ts`: mês aberto compara o que o PLANO guarda
+com a meta ("Dentro da meta" / "Abaixo da meta"); mês fechado, o que guardou
+de verdade ("Guardou a meta" / "Ficou abaixo da meta"). Verde `#14532d` em
+`#f0fdf4`, vermelho `#b91c1c` em `#fef2f2`. Sem meta, nada. No
+`PlanModalMeses` e no mês aberto do celular, embaixo de "Quanto quero
+guardar", ficam "O plano guarda" (receitas − despesas do plano do mês) e
+"Para a meta" ("✓ dentro" ou "faltam R$ X", por `metaContraPlano`), que
+mudam enquanto se edita. Mês fechado ou sem meta: "—".
 
 **A meta se define no próprio mês, e o botão "Meta de economia" saiu da
 barra** (mesmo dia, pedido dele). É a linha "Quanto quero guardar" no topo do
