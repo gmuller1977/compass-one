@@ -6,7 +6,8 @@ import PlanCelulaEditavel from './PlanCelulaEditavel'
 import CampoMeta from './CampoMeta'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanResumoAnual from './PlanResumoAnual'
-import GraficoGuardaAno from './GraficoGuardaAno'
+import GraficoAnoPlano from './GraficoAnoPlano'
+import MetaNoCartao from './MetaNoCartao'
 import { mesesDoAno, type MesDoAno } from './anoDoPlano'
 import { type BulkOp } from './PlanFerramentas'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
@@ -147,7 +148,7 @@ export default function PlanMobile(p: Props) {
           <button type="button" onClick={() => setAberto(v => !v)} aria-expanded={aberto} style={{
             all: 'unset', boxSizing: 'border-box', flex: 1, minWidth: 0, cursor: 'pointer',
             background: m.fechado ? '#f8fafc' : '#fff', borderRadius: 18, padding: '12px 14px', boxShadow: M.sombra,
-            border: `2px solid ${m.atual ? '#93c5fd' : 'transparent'}`,
+            border: m.atual ? '2px solid #3b82f6' : '1.5px solid #c3ccd8',
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
             <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
@@ -169,9 +170,7 @@ export default function PlanMobile(p: Props) {
                   : `${dif > 0 ? '▲' : '▼'} ${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'}`)
                 : m.sobra >= 0 ? `+ ${fmt(m.sobra, true)} de sobra` : `− ${fmt(-m.sobra, true)} no mês`)}
             </span>
-            {m.meta > 0 && !m.fechado && (
-              <span style={{ fontSize: 13, color: SUAVE }}><i aria-hidden className="ti ti-target" style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 3 }} />meta guardar {fmt(m.meta, true)}</span>
-            )}
+            {!sem && <MetaNoCartao m={m} grande />}
           </button>
           <button type="button" onClick={() => andar(1)} aria-label="Próximo mês" style={BTN_MES}>›</button>
         </div>
@@ -292,15 +291,14 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
 }
 
 /**
- * "Quanto cada mês guarda" — o mesmo gráfico do computador (GraficoGuardaAno).
+ * Os três gráficos do ano, os mesmos do computador (GraficoAnoPlano).
  * No celular as doze colunas não cabem com o valor legível, então ele rola
  * para o lado e abre no mês escolhido.
  */
 function GraficoAno({ meses, mes, onEscolher }: { meses: MesDoAno[]; mes: number; onEscolher: (mi: number) => void }) {
   return (
     <div style={{ background: '#fff', borderRadius: M.raio, boxShadow: M.sombra, padding: '16px 0 12px' }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', padding: '0 16px', marginBottom: 6 }}>Quanto cada mês guarda</div>
-      <GraficoGuardaAno meses={meses} altura={150} coluna={64} escolhido={mes} onEscolher={onEscolher} />
+      <GraficoAnoPlano meses={meses} altura={150} coluna={64} escolhido={mes} onEscolher={onEscolher} />
     </div>
   )
 }

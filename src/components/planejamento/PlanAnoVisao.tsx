@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fmt, MESES_FULL, type Saldos } from './types'
 import { mesesDoAno } from './anoDoPlano'
-import GraficoGuardaAno from './GraficoGuardaAno'
+import GraficoAnoPlano from './GraficoAnoPlano'
+import MetaNoCartao from './MetaNoCartao'
 
 interface Props {
   previsto: Saldos
@@ -20,7 +21,7 @@ interface Props {
 /**
  * O ano do Planejamento no modelo do Radar (pedido do Guilherme em
  * 12/10/2026: ele gostou dos dois modelos, "ano inteiro" e "gráfico", e
- * ficaram juntos). Em cima, o gráfico "Quanto cada mês guarda" (GraficoGuardaAno);
+ * ficaram juntos). Em cima, os três gráficos do ano (GraficoAnoPlano);
  * embaixo, os doze meses em cartões brancos, sem setas — nenhum mês escondido.
  * Clicar numa coluna ou num cartão abre o mesmo modal de sempre.
  *
@@ -58,8 +59,7 @@ export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoR
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 14px rgba(15,40,120,.07)', padding: '18px 20px 14px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Quanto cada mês guarda</div>
-        <GraficoGuardaAno meses={meses} altura={170} onEscolher={onAbrir} />
+        <GraficoAnoPlano meses={meses} altura={170} onEscolher={onAbrir} />
       </div>
 
       {/* Os doze meses, sem setas. */}
@@ -73,7 +73,7 @@ export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoR
               style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', minWidth: 0,
                 background: m.fechado ? '#f8fafc' : '#fff', borderRadius: 18, padding: '12px 14px',
                 boxShadow: '0 2px 14px rgba(15,40,120,.07)',
-                border: `2px solid ${m.atual ? '#93c5fd' : 'transparent'}`,
+                border: m.atual ? '2px solid #3b82f6' : '1.5px solid #c3ccd8',
                 display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{MESES_FULL[m.mi]}</span>
@@ -95,9 +95,7 @@ export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoR
                       : `${dif > 0 ? '▲' : '▼'} ${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'}`)
                     : m.sobra >= 0 ? `+ ${fmt(m.sobra, true)} de sobra` : `− ${fmt(-m.sobra, true)} no mês`}
               </span>
-              {m.meta > 0 && !m.fechado && (
-                <span style={{ fontSize: 12, color: SUAVE }}><i aria-hidden className="ti ti-target" style={{ fontSize: 13, verticalAlign: '-2px', marginRight: 3 }} />meta guardar {fmt(m.meta, true)}</span>
-              )}
+              {!sem && <MetaNoCartao m={m} />}
             </button>
           )
         })}

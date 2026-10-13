@@ -278,13 +278,29 @@ celular (`compacto`), em `PlanResumoAnual`, com os dados de
 categorias. Saíram do topo os totais de receitas e despesas da janela
 ("out–dez"); a regra de `janelaQueFecha` abaixo segue valendo onde ela é lida.
 
-**O gráfico do ano é "Quanto cada mês guarda"** (mesmo dia, "isso vale para
-web e mobile"), `GraficoGuardaAno`, o mesmo componente nos dois (no celular
-rola para o lado). Coluna = quanto o mês guarda (real nos fechados, plano nos
-outros); traço verde tracejado = a meta daquele mês (`#15803d`); linha âmbar
-= saldo acumulado (`#b45309`), na escala DELA — na mesma escala as colunas
-virariam traços —, com o valor no último ponto e no título de cada mês.
-Substitui "Com quanto cada mês termina".
+**O gráfico do ano são TRÊS, escolhidos por botões** (13/10/2026, pedido do
+Guilherme: colunas e linha de saldo juntas "não ficou legal"). Um componente
+só, `GraficoAnoPlano`, no computador e no celular (que rola para o lado), com
+o botão escolhido guardado no aparelho:
+
+1. **Saldo** — com quanto cada mês termina (fechamento real nos fechados,
+   saldo final previsto nos outros), o gráfico de antes.
+2. **Quanto guarda** — quanto cada mês guarda (real nos fechados, plano nos
+   outros) com um traço verde tracejado na meta daquele mês (`#15803d`).
+3. **Rumo da meta** (a terceira, sugestão do Claude) — o que vai sendo
+   guardado ACUMULADO no ano (`#1e3a8a`, ponto cheio = real, vazado = plano)
+   contra a meta acumulada (tracejada verde), na mesma escala, com "Até
+   dezembro: R$ X guardados · meta R$ Y · faltam R$ Z" em cima.
+
+A linha de saldo por cima das colunas, da primeira versão, saiu.
+
+**O cartão do mês tem borda (`#c3ccd8`, o atual `#3b82f6`) e a meta com
+aviso** (mesmo dia, pedido dele). `MetaNoCartao`, por `situacaoDaMeta` em
+`anoDoPlano.ts`: mês aberto compara o que o PLANO guarda com a meta ("✓ O
+plano está dentro da meta" / "Abaixo da meta · faltam R$ X"); mês fechado, o
+que guardou de verdade ("✓ Guardou dentro da meta" / "Ficou R$ X abaixo da
+meta"). Verde `#14532d` em `#f0fdf4`, vermelho `#b91c1c` em `#fef2f2`. Sem
+meta, nada.
 
 **A meta se define no próprio mês, e o botão "Meta de economia" saiu da
 barra** (mesmo dia, pedido dele). É a linha "Quanto quero guardar" no topo do
