@@ -79,10 +79,6 @@ export default function AcMobileView({
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
   const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)
 
-  const btnStyle = { width:44,height:44,borderRadius:'50%',border:'none',
-    background:'rgba(255,255,255,.14)',color:'#fff',
-    fontSize:22,cursor:'pointer' as const,fontWeight:700,
-    display:'flex' as const,alignItems:'center' as const,justifyContent:'center' as const }
 
   const renderMobileCatRow = (
     tipo: 'entrada'|'saida', nome: string, descricao: string,
@@ -366,17 +362,22 @@ export default function AcMobileView({
           letra legível. A faixa branca "Quanto tenho" e a marca saíram. */}
       <div style={{ background:'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', borderRadius:'0 0 28px 28px',
         padding:'calc(16px + env(safe-area-inset-top)) 20px 22px', flexShrink:0 }}>
+        {/* Título e o mês com setas ao lado, como Lançamentos e o ano no
+            Planejamento (pedido do Guilherme em 13/10/2026). */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-          <button aria-label="Mês anterior" onClick={() => { if(mes===0){setMes(11);setAno(a=>a-1)}else setMes(m=>m-1) }} style={btnStyle}>‹</button>
-          <div style={{ textAlign:'center' }}>
-            <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>{MESES_FULL[mes]}</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,.75)' }}>{ano}{ehMesAtual ? ` · dia ${diaHoje} de ${totalDias}` : ''}</div>
+          <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-.01em' }}>Radar</h1>
+          <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+            <button aria-label="Mês anterior" onClick={() => { if(mes===0){setMes(11);setAno(a=>a-1)}else setMes(m=>m-1) }} style={SETA}>‹</button>
+            <span style={{ minWidth:58, textAlign:'center', color:'#fff', lineHeight:1.15 }}>
+              <span style={{ display:'block', fontSize:17, fontWeight:800 }}>{MESES_FULL[mes].slice(0,3)}</span>
+              <span style={{ display:'block', fontSize:12, fontWeight:600, color:'rgba(255,255,255,.75)' }}>{ano}</span>
+            </span>
+            <button aria-label="Próximo mês" onClick={() => { if(mes===11){setMes(0);setAno(a=>a+1)}else setMes(m=>m+1) }} style={SETA}>›</button>
           </div>
-          <button aria-label="Próximo mês" onClick={() => { if(mes===11){setMes(0);setAno(a=>a+1)}else setMes(m=>m+1) }} style={btnStyle}>›</button>
         </div>
 
-        <div style={{ marginTop:20 }}>
-          <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{ehMesAtual ? 'Quanto tenho hoje' : 'Saldo do mês'}</div>
+        <div style={{ marginTop:18 }}>
+          <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{ehMesAtual ? `Quanto tenho hoje · dia ${diaHoje} de ${totalDias}` : 'Saldo do mês'}</div>
           <div style={{ fontSize:34, fontWeight:800, letterSpacing:'-.02em', lineHeight:1.15, fontVariantNumeric:'tabular-nums',
             color: saldoReal >= 0 ? '#fff' : '#fecaca' }}>{fmt(saldoReal)}</div>
         </div>
@@ -518,3 +519,7 @@ export default function AcMobileView({
     </div>
   )
 }
+
+/** Como o BTN_ANO do Planejamento do celular. */
+const SETA = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.15)',
+  color:'#fff', fontSize:22, fontWeight:700, cursor:'pointer', fontFamily:'inherit', lineHeight:1 } as const

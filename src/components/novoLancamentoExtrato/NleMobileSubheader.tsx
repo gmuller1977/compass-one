@@ -41,8 +41,6 @@ type Props = {
   setModalSaldoValor: (v: string) => void
   mesKey: (conta: string, ano: number, mes: number) => string
   saldoSugerido: Record<string, string>
-  onMesAnterior: () => void
-  onMesProximo: () => void
 
   // Saldo card
   isDinheiro: boolean
@@ -60,7 +58,6 @@ export default function NleMobileSubheader({
   onAlertaRevisar, onAlertaAjustarMes,
   contasExtrato, contaIdEfetivo, dados, hojeStr, mes, ano, mesNome,
   setContaId, setModalSaldo, setModalSaldoValor, mesKey, saldoSugerido,
-  onMesAnterior, onMesProximo,
   isDinheiro, contaInfo, mesDados, saldoMes, diferenca, conciliado, chaveAtual,
 }: Props) {
   return (
@@ -89,9 +86,6 @@ export default function NleMobileSubheader({
         const ehMesAtual = mes === hoje.getMonth() && ano === hoje.getFullYear()
         const futuro = ano > hoje.getFullYear() || (ano === hoje.getFullYear() && mes > hoje.getMonth())
         const temSaldo = tabPrincipal === 'extrato' || tabPrincipal === 'dinheiro'
-        const seta = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.16)',
-          display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
-          fontSize:20, color:'#fff', fontWeight:700, fontFamily:'inherit', flexShrink:0 } as const
         const abrirSaldo = () => {
           setModalSaldoValor(isDinheiro ? '' : (saldoSugerido[contaIdEfetivo] ?? ''))
           if (isDinheiro) setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:COR.verde, key:chaveAtual})
@@ -126,19 +120,8 @@ export default function NleMobileSubheader({
               </div>
             )}
 
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-              <button aria-label="Mês anterior" onClick={onMesAnterior} style={seta}>‹</button>
-              <div style={{textAlign:'center'}}>
-                <div style={{fontSize:18,fontWeight:800,color:'#fff'}}>{mesNome}</div>
-                <div style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>
-                  {ano}{tabPrincipal === 'dinheiro' ? ' · dinheiro em espécie' : tabPrincipal === 'consolidado' ? ' · todas as contas' : contaInfo ? ` · ${contaInfo.apelido ?? contaInfo.banco}` : ''}
-                </div>
-              </div>
-              <button aria-label="Próximo mês" onClick={onMesProximo} style={seta}>›</button>
-            </div>
-
             {temSaldo && (<>
-              <div style={{marginTop:18}}>
+              <div>
                 <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
                   {ehMesAtual ? 'Saldo no app' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
                 </div>

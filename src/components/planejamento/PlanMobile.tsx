@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import BottomNav from '../BottomNav'
-import { Cartao, TituloCartao, IconeRedondo } from '../mobile/ui'
+import AjudaTela from '../AjudaTela'
 import { M } from '../mobile/estilo'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
+import PlanResumoAnual from './PlanResumoAnual'
 import { type BulkOp } from './PlanFerramentas'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import { itensDoMes } from '../../utils/itensPlano'
 import { iconeCategoria } from '../../utils/categoriaIcone'
+import { corDoIcone } from '../../utils/iconeDesenhado'
+import { IconeCat } from '../IconeCat'
 import {
   COR, MESES, MESES_FULL, MOTIVO_PLANO_LOCKADO, agrupar, fmt, nomeExibicao,
   type AnoData, type Cat, type Saldos,
@@ -17,24 +20,30 @@ import type { Categoria } from '../../context/AppContext'
 import type { Descoberta } from '../../utils/descoberta'
 
 /**
- * O Planejamento no celular. Pedido do Guilherme em 11/10/2026 ("tela de
- * planejamento no mobile precisa ser revisada"): era a Grade do computador
- * espremida — faixa anual cortada na lateral, cinco botões de ferramenta antes
- * de qualquer número, cartões de mês com 125 px onde os valores saíam
- * cortados ("R$ 5.8"), e o modal do mês com uma coluna só, o rodapé azul por
- * cima das últimas categorias e "Ano inteiro" mostrando só janeiro.
+ * O Planejamento no celular. Regra do Guilherme em 13/10/2026: "o que tem no
+ * web precisa ter no mobile, nem mais nem menos". Muda só a arrumação:
  *
- * Aqui é o padrão do kit (components/mobile): topo azul com UM número — a
- * sobra planejada do mês escolhido —, os meses em pílulas, e as categorias
- * do mês direto na página, editáveis, sem modal. Nenhum número novo: tudo
- * sai de `previsto` e `dadosPrevisto`, os mesmos da Grade, e a gravação é o
- * mesmo `onSave`.
+ *   computador                         celular
+ *   PageHeader + PlanResumoAnual       topo azul + PlanResumoAnual compacto (2 × 2)
+ *   PlanBarraFerramentas               a mesma barra
+ *   gráfico, valor em cima da coluna   o mesmo gráfico, rolando para o lado
+ *   doze cartões de mês                UM cartão, com setas dos lados (pedido dele)
+ *   clique abre PlanModalMeses         toque abre o mesmo conteúdo embaixo do cartão:
+ *                                      categorias por grupo, valor editável, o nome
+ *                                      abre o ajuste, e Receitas/Despesas/Resultado
+ *
+ * Nenhum número novo: `previsto` e `dadosPrevisto`, os mesmos da Grade, e a
+ * gravação é o mesmo `onSave`.
  */
 
-/** Sobre #1e40af (o extremo claro do topo): #86efac 4,8; #fecaca 4,6; branco a 75% 5,1. */
 const AZUL_TOPO = 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)'
-const VERDE = COR.sucessoTexto   // #15803d no branco, 5,0
-const VERMELHO = '#b91c1c'       // 6,5 no branco
+// As cores do cartão e do gráfico do computador (PlanAnoVisao), no branco.
+const COR_FECHADO = '#64748b'
+const COR_PREVISTO = '#3b82f6'
+const COR_ATUAL = '#1e3a8a'
+const COR_NEG = '#b91c1c'
+const VERDE = '#14532d'
+const SUAVE = '#475569'
 
 interface Props {
   anoAtual: number
@@ -61,176 +70,122 @@ export default function PlanMobile(p: Props) {
   const anoCorrente = new Date().getFullYear()
   const ehAnoCorrente = anoAtual === anoCorrente
   const [mes, setMes] = useState(ehAnoCorrente ? mesAtual : 0)
-  const [ferramentas, setFerramentas] = useState(false)
-  const pilulas = useRef<HTMLDivElement>(null)
+  const [aberto, setAberto] = useState(false)
+  // Mês para onde as setas do cartão levam quando atravessam o ano.
+  const mesDestino = useRef<number | null>(null)
 
-  // Trocou de ano: volta ao mês corrente (ano corrente) ou a janeiro.
-  useEffect(() => { setMes(anoAtual === anoCorrente ? mesAtual : 0) }, [anoAtual, anoCorrente, mesAtual])
-
-  // A pílula do mês escolhido sempre visível na faixa.
+  // Trocou de ano: volta ao mês corrente (ano corrente) ou a janeiro — salvo
+  // quando foram as setas do cartão que atravessaram (dez → jan, jan → dez).
   useEffect(() => {
-    const el = pilulas.current?.querySelector<HTMLElement>(`[data-mes="${mes}"]`)
-    el?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
-  }, [mes])
+    const destino = mesDestino.current
+    mesDestino.current = null
+    setMes(destino ?? (anoAtual === anoCorrente ? mesAtual : 0))
+  }, [anoAtual, anoCorrente, mesAtual])
 
-  const receitas = previsto.totalEntradas[mes]
-  const despesas = previsto.totalSaidas[mes]
-  const sobra = receitas - despesas
-  const semPlano = receitas === 0 && despesas === 0
-  const fechado = anoAtual < anoCorrente || (ehAnoCorrente && mes < mesAtual)
-  const fechouEm = fechado ? p.fechamentoReal?.[mes] : undefined
+  const andar = (d: number) => {
+    const n = mes + d
+    if (n >= 0 && n <= 11) { setMes(n); return }
+    mesDestino.current = n < 0 ? 11 : 0
+    p.setAnoAtual(a => a + (n < 0 ? -1 : 1))
+  }
 
+  // O mesmo texto do cartão sem plano da Grade (PlanGrade.textoSemPlano).
   const desc = p.descoberta
-  const observando = !!desc?.ativa && desc.mesObservado.ano === anoAtual && desc.mesObservado.mes === mes
+  const semPlanoTexto = (mi: number) => {
+    if (desc?.ativa && anoAtual === desc.mesObservado.ano && mi === desc.mesObservado.mes) {
+      const faltam = desc.diasAteFechar
+      return `Descobrindo · ${faltam <= 0 ? `${MESES_FULL[mi]} fecha hoje` : `faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}`}`
+    }
+    return 'Sem planejamento · toque para planejar'
+  }
 
-  const saidas = p.hasFaturaCat
-    ? dadosPrevisto.saidas.map((c, ri) => ({ c, ri })).filter(x => x.c.t !== 'cartao')
-    : null
+  const meses = Array.from({ length: 12 }, (_, mi) => {
+    const fechado = anoAtual < anoCorrente || (ehAnoCorrente && mi < mesAtual)
+    const atual = ehAnoCorrente && mi === mesAtual
+    const receitas = previsto.totalEntradas[mi]
+    const despesas = previsto.totalSaidas[mi]
+    const real = fechado && p.fechamentoReal ? p.fechamentoReal[mi] : undefined
+    const final = previsto.saldoFinal[mi]
+    return { mi, fechado, atual, semPlano: receitas === 0 && despesas === 0, real, final,
+      sobra: receitas - despesas, valor: real ?? final, meta: p.objetivos[mi] ?? 0 }
+  })
+  const m = meses[mes]
+  const sem = m.semPlano && !m.fechado ? semPlanoTexto(mes) : null
+  const dif = m.real !== undefined ? m.real - m.final : 0
 
   return (
     <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
-      {/* ── Topo: o ano, a sobra do mês e os meses ── */}
-      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', padding: '18px 16px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Planejamento</h1>
+      {/* ── Topo: o do computador (título, ano, "?" e a resposta do ano) ── */}
+      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', padding: '18px 16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.5px', color: 'rgba(255,255,255,.75)' }}>TODO ANO</div>
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Planejamento</h1>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button onClick={() => p.setAnoAtual(a => a - 1)} aria-label="Ano anterior" style={BTN_ANO}>‹</button>
             <span style={{ fontSize: 17, fontWeight: 800, minWidth: 48, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{anoAtual}</span>
             <button onClick={() => p.setAnoAtual(a => a + 1)} aria-label="Próximo ano" style={BTN_ANO}>›</button>
+            <AjudaTela tela="planejamento" />
           </div>
         </div>
-
-        <div style={{ marginTop: 18, fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
-          {semPlano
-            ? (observando ? `${MESES_FULL[mes]}: descobrindo seus números` : `${MESES_FULL[mes]} ainda sem plano`)
-            : `Quanto sobra em ${MESES_FULL[mes]}`}
-        </div>
-        {semPlano ? (
-          <div style={{ fontSize: 17, fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>
-            {observando
-              ? (desc!.diasAteFechar <= 0 ? 'O mês fecha hoje' : `Faltam ${desc!.diasAteFechar} ${desc!.diasAteFechar === 1 ? 'dia' : 'dias'} para o mês fechar`)
-              : 'Toque num valor abaixo para começar'}
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-.5px', marginTop: 2, fontVariantNumeric: 'tabular-nums',
-              color: sobra < 0 ? '#fecaca' : '#fff' }}>
-              {sobra > 0 ? '+' : ''}{fmt(sobra, true)}
-            </div>
-            <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
-              <span><span style={{ color: 'rgba(255,255,255,.75)' }}>↑ Receitas </span><b style={{ color: '#86efac' }}>{fmt(receitas, true)}</b></span>
-              <span><span style={{ color: 'rgba(255,255,255,.75)' }}>↓ Despesas </span><b style={{ color: '#fecaca' }}>{fmt(despesas, true)}</b></span>
-            </div>
-          </>
-        )}
-
-        {/* Os doze meses numa faixa que rola com o dedo. */}
-        <div ref={pilulas} role="tablist" aria-label="Mês" style={{
-          display: 'flex', gap: 6, overflowX: 'auto', margin: '16px -16px 0', padding: '0 16px',
-          scrollbarWidth: 'none',
-        }}>
-          {MESES.map((m, i) => {
-            const ativo = i === mes
-            const atual = ehAnoCorrente && i === mesAtual
-            return (
-              <button key={m} data-mes={i} role="tab" aria-selected={ativo} onClick={() => setMes(i)} style={{
-                flexShrink: 0, minWidth: 52, minHeight: 44, borderRadius: 999, border: 'none', cursor: 'pointer',
-                fontFamily: 'inherit', fontSize: 15, fontWeight: ativo ? 800 : 600,
-                background: ativo ? '#fff' : 'rgba(255,255,255,.12)', color: ativo ? '#1e3a8a' : '#fff',
-                textDecoration: atual ? 'underline' : 'none', textUnderlineOffset: 4, textDecorationThickness: 2,
-              }}>{m}</button>
-            )
-          })}
-        </div>
+        {/* Na descoberta a resposta do ano sai, como no computador. */}
+        {!desc?.ativa && <PlanResumoAnual previsto={previsto} anoAtual={anoAtual} compacto />}
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {p.avisos}
 
-        {/* ── De onde o mês parte e onde termina ── */}
-        <Cartao>
-          <TituloCartao>Saldo de {MESES_FULL[mes]}</TituloCartao>
-          <LinhaValor rotulo="Começa com" legenda={previsto.inicialReal[mes] ? 'saldo real' : 'previsto'} valor={previsto.saldoInicial[mes]} />
-          <LinhaValor rotulo="Termina com" legenda="se o plano se cumprir" valor={previsto.saldoFinal[mes]} forte />
-          {fechouEm !== undefined && (
-            <LinhaValor rotulo="Fechou em" valor={fechouEm}
-              legenda={Math.abs(fechouEm - previsto.saldoFinal[mes]) < 0.005 ? 'igual ao previsto'
-                : `${fmt(Math.abs(fechouEm - previsto.saldoFinal[mes]), true)} ${fechouEm > previsto.saldoFinal[mes] ? 'acima' : 'abaixo'} do previsto`} />
-          )}
-          {p.objetivos[mes] > 0 && (
-            <LinhaValor rotulo="Meta de economia" valor={p.objetivos[mes]}
-              legenda={sobra >= p.objetivos[mes] ? '✓ o plano alcança' : `faltam ${fmt(p.objetivos[mes] - sobra, true)} no plano`} />
-          )}
-        </Cartao>
+        {/* A barra de ferramentas, no mesmo lugar do computador. */}
+        <PlanBarraFerramentas
+          mesAtual={mesAtual} anoAtual={anoAtual} dadosAtivos={dadosPrevisto}
+          dadosAnoAnterior={p.dadosAnoAnterior} categorias={p.categorias} onBulkSave={p.onBulkSave}
+          objetivos={p.objetivos} sobraPrevista={p.sobraPrevista} onMetaSave={p.onMetaSave}
+          motivoBloqueio={MOTIVO_PLANO_LOCKADO}
+        />
 
-        <Secao titulo="Receitas" cor={VERDE} total={receitas} tipo="e" cats={dadosPrevisto.entradas} mes={mes} categorias={p.categorias} onSave={p.onSave} />
-        <Secao titulo="Despesas" cor={VERMELHO} total={despesas} tipo="s" cats={dadosPrevisto.saidas}
-          visiveis={saidas ? new Set(saidas.map(x => x.ri)) : undefined} mes={mes} categorias={p.categorias} onSave={p.onSave} />
+        <GraficoAno meses={meses} mes={mes} onEscolher={mi => { setMes(mi); setAberto(true) }} />
 
-        <p style={{ margin: '0 4px', fontSize: 13, color: COR.textoSuave, lineHeight: 1.5 }}>
-          Toque no grupo para abrir as categorias, e numa categoria com variantes para vê-las. O valor se
-          planeja na categoria: toque nele para mudar (aceita conta, como <b>800+300</b>).
-        </p>
-
-        {/* ── O ano, mês a mês: a visão que a faixa e o "Ano inteiro" davam ── */}
-        <Cartao>
-          <TituloCartao>{anoAtual} mês a mês</TituloCartao>
-          {MESES_FULL.map((nome, i) => {
-            const r = previsto.totalEntradas[i], d = previsto.totalSaidas[i]
-            const s = r - d
-            const vazio = r === 0 && d === 0
-            const ativo = i === mes
-            return (
-              <button key={nome} onClick={() => { setMes(i); window.scrollTo({ top: 0, behavior: 'smooth' }) }} style={{
-                all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                minHeight: 52, padding: '8px 10px', margin: '0 -10px', cursor: 'pointer', borderRadius: 12,
-                borderTop: i === 0 ? 'none' : '1px solid #eef2f8', background: ativo ? '#eff6ff' : undefined,
-              }}>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: ativo ? 800 : 600, color: COR.texto }}>
-                    {nome}{ehAnoCorrente && i === mesAtual ? ' · hoje' : ''}
-                  </span>
-                  <span style={{ display: 'block', fontSize: M.legenda, marginTop: 2, fontVariantNumeric: 'tabular-nums',
-                    color: vazio ? COR.textoSuave : s < 0 ? VERMELHO : VERDE }}>
-                    {vazio ? 'sem plano' : `sobra ${s > 0 ? '+' : ''}${fmt(s, true)}`}
-                  </span>
-                </span>
-                <span style={{ textAlign: 'right' }}>
-                  <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave }}>termina com</span>
-                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-                    color: previsto.saldoFinal[i] < 0 ? VERMELHO : COR.texto }}>{fmt(previsto.saldoFinal[i], true)}</span>
-                </span>
-              </button>
-            )
-          })}
-        </Cartao>
-
-        {/* ── Ferramentas de lote: fechadas, para não vir antes dos números ── */}
-        <Cartao>
-          <button onClick={() => setFerramentas(v => !v)} aria-expanded={ferramentas} style={{
-            all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-            minHeight: 44, cursor: 'pointer',
+        {/* ── O cartão do mês, o da Grade, com setas dos lados. Tocar abre as
+            categorias do mês, como o clique abre o modal no computador. ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button type="button" onClick={() => andar(-1)} aria-label="Mês anterior" style={BTN_MES}>‹</button>
+          <button type="button" onClick={() => setAberto(v => !v)} aria-expanded={aberto} style={{
+            all: 'unset', boxSizing: 'border-box', flex: 1, minWidth: 0, cursor: 'pointer',
+            background: m.fechado ? '#f8fafc' : '#fff', borderRadius: 18, padding: '12px 14px', boxShadow: M.sombra,
+            border: `2px solid ${m.atual ? '#93c5fd' : 'transparent'}`,
+            display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <IconeRedondo icone={<i className="ti ti-tool" style={{ color: COR.azul }} />} />
-            <span style={{ flex: 1 }}>
-              <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto }}>Ferramentas do plano</span>
-              <span style={{ display: 'block', fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>
-                Reajuste, copiar ano, meta
-              </span>
+            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{MESES_FULL[mes]}</span>
+              {m.atual && <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                background: '#dbeafe', color: COR_ATUAL }}>ATUAL</span>}
+              {m.fechado && <span aria-label="Mês fechado" style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px',
+                borderRadius: 999, background: '#e2e8f0', color: '#334155' }}>✓</span>}
             </span>
-            <span aria-hidden style={{ fontSize: 20, color: COR.textoSuave, transform: ferramentas ? 'rotate(180deg)' : undefined }}>⌄</span>
+            <span style={{ fontSize: 13, color: SUAVE }}>{m.fechado ? 'fechou com' : 'termina com'}</span>
+            <span style={{ fontSize: 22, fontWeight: 800, color: m.valor < 0 ? COR_NEG : VERDE,
+              fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {fmt(m.valor, true)}
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+              color: sem ? SUAVE : m.real !== undefined ? (dif < 0 ? COR_NEG : VERDE) : (m.sobra < 0 ? COR_NEG : VERDE) }}>
+              {sem ?? (m.real !== undefined
+                ? (Math.abs(dif) < 0.005 ? 'igual ao previsto'
+                  : `${dif > 0 ? '▲' : '▼'} ${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'}`)
+                : m.sobra >= 0 ? `+ ${fmt(m.sobra, true)} de sobra` : `− ${fmt(-m.sobra, true)} no mês`)}
+            </span>
+            {m.meta > 0 && !m.fechado && (
+              <span style={{ fontSize: 13, color: SUAVE }}><i aria-hidden className="ti ti-target" style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 3 }} />meta guardar {fmt(m.meta, true)}</span>
+            )}
           </button>
-          {ferramentas && (
-            <div style={{ marginTop: 14 }}>
-              <PlanBarraFerramentas
-                mesAtual={p.mesAtual} anoAtual={anoAtual} dadosAtivos={dadosPrevisto}
-                dadosAnoAnterior={p.dadosAnoAnterior} categorias={p.categorias} onBulkSave={p.onBulkSave}
-                objetivos={p.objetivos} sobraPrevista={p.sobraPrevista} onMetaSave={p.onMetaSave}
-                motivoBloqueio={MOTIVO_PLANO_LOCKADO}
-              />
-            </div>
-          )}
-        </Cartao>
+          <button type="button" onClick={() => andar(1)} aria-label="Próximo mês" style={BTN_MES}>›</button>
+        </div>
+
+        {aberto && (
+          <CategoriasDoMes mes={mes} anoAtual={anoAtual} dados={dadosPrevisto} previsto={previsto}
+            hasFaturaCat={p.hasFaturaCat} categorias={p.categorias} onSave={p.onSave} />
+        )}
       </div>
 
       <BottomNav />
@@ -238,265 +193,175 @@ export default function PlanMobile(p: Props) {
   )
 }
 
-function LinhaValor({ rotulo, legenda, valor, forte }: { rotulo: string; legenda?: string; valor: number; forte?: boolean }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, padding: '6px 0', borderTop: '1px solid #eef2f8' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>{rotulo}</div>
-        {legenda && <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>{legenda}</div>}
-      </div>
-      <div style={{ fontSize: forte ? 18 : M.corpo, fontWeight: forte ? 800 : 700, fontVariantNumeric: 'tabular-nums',
-        color: valor < 0 ? VERMELHO : COR.texto }}>{fmt(valor, true)}</div>
-    </div>
-  )
-}
-
-type Linha = { cat: Cat; ri: number }
-
 /**
- * Uma família: a categoria MÃE e as variantes dela (utils/categoriaMae),
- * pedido do Guilherme em 11/10/2026: "precisa mostrar as categorias mãe, e ao
- * clicar as subcategorias. O planejamento inicial é na categoria".
- *
- *   - `mae`: a linha do plano sem variante (é nela que se planeja). Sem mãe
- *     cadastrada (Financiamento · Casa e · Civic), a família só agrupa.
- *   - `proprias`: variantes com linha própria no plano — as FIXAS de uma mãe,
- *     ou todas, quando não há mãe. Cada uma tem o seu valor.
- *   - `naMae`: variantes VARIÁVEIS que somam na mãe. Não têm linha: a parte
- *     delas é o item da mãe com o nome da variante, quando houver.
+ * O conteúdo do PlanModalMeses, num mês só: categorias por grupo, o nome que
+ * abre o ajuste do Radar, a célula de sempre, e no pé Receitas, Despesas e
+ * Resultado do mês (de `previsto`, o mesmo do cartão).
  */
-type Familia = { nome: string; mae?: Linha; proprias: Linha[]; naMae: string[] }
-
-const sem = (s?: string) => (s ?? '').trim()
-
-function familias(linhas: Linha[], tipo: 'entrada' | 'saida', categorias: Categoria[]): Familia[] {
-  const out: Familia[] = []
-  for (const l of linhas) {
-    const nome = sem(l.cat.nome)
-    let f = out.find(x => x.nome === nome)
-    if (!f) { f = { nome, proprias: [], naMae: [] }; out.push(f) }
-    if (sem(l.cat.descricao)) f.proprias.push(l)
-    else f.mae = l
-  }
-  for (const f of out) {
-    if (!f.mae) continue
-    f.naMae = categorias
-      .filter(c => c.ativa && c.tipo === tipo && sem(c.nome) === f.nome && sem(c.descricao) && !c.fixa)
-      .map(c => sem(c.descricao))
-      .sort((x, y) => x.localeCompare(y, 'pt-BR'))
-  }
-  return out
-}
-
-/** A parte da variante no valor da mãe: os itens com o nome dela ("Martin", "Martin · ..."). */
-function parteNaMae(mae: Cat, variante: string, mes: number): number | null {
-  const itens = itensDoMes(mae, mes)
-  if (!itens) return null
-  const dela = itens.filter(i => sem(i.descricao) === variante || sem(i.descricao).startsWith(`${variante} · `))
-  return dela.length ? dela.reduce((s, i) => s + i.valor, 0) : null
-}
-
-/** Receitas ou Despesas do mês: grupos, e em cada grupo as categorias mãe, que abrem as variantes. */
-function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSave }: {
-  titulo: string; cor: string; total: number; tipo: 'e' | 's'; cats: Cat[]
-  /** Com a fatura planejada como linha própria, as categorias de cartão não entram (o filtro dos totais). */
-  visiveis?: Set<number>
-  mes: number; categorias: Categoria[]
+function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categorias, onSave }: {
+  mes: number; anoAtual: number; dados: AnoData; previsto: Saldos; hasFaturaCat: boolean; categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
 }) {
   const abrirItens = useAbrirItens()
-  const abrirAjuste = useAbrirAjuste()
   const lancadoNoMes = useLancadoNoMes()
-  const [abertas, setAbertas] = useState<Set<string>>(() => new Set())
-  const tipoCad = tipo === 'e' ? 'entrada' : 'saida'
+  const abrirAjuste = useAbrirAjuste()
 
-  // Os grupos, cada um com as suas linhas, na ordem do agrupar().
-  const grupos: { grupo: string | null; linhas: Linha[] }[] = []
-  for (const l of agrupar(cats, tipo)) {
-    if (l.k === 'grupo') { grupos.push({ grupo: l.grupo, linhas: [] }); continue }
-    if (visiveis && !visiveis.has(l.ri)) continue
-    if (grupos.length === 0) grupos.push({ grupo: null, linhas: [] })
-    grupos[grupos.length - 1].linhas.push({ cat: l.cat, ri: l.ri })
-  }
-  const comLinhas = grupos.filter(g => g.linhas.length > 0)
-  if (comLinhas.length === 0) return null
-
-  const celula = ({ cat, ri }: Linha) => (
-    <div style={{ flexShrink: 0, maxWidth: '52%', fontSize: M.corpo, fontWeight: 600, textAlign: 'right' }}>
-      <PlanCelulaEditavel grande
-        valor={cat.v[mes] ?? 0}
-        onSave={v => onSave(tipo, ri, mes, v)}
-        itens={itensDoMes(cat, mes)}
-        onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
-        sempreItens={(lancadoNoMes?.(tipo, ri, mes) ?? 0) > 0.005}
-      />
-    </div>
-  )
-  const ajustar = (cat: Cat) => abrirAjuste?.({ tipo: tipoCad, nome: cat.nome,
-    descricao: cat.descricao, prev: cat.v[mes] ?? 0, real: 0, mes })
-
-  // Mês futuro com algo já lançado: o valor mínimo do plano, embaixo do nome.
-  const lancado = (ri: number) => lancadoNoMes?.(tipo, ri, mes) ?? 0
-  const legendaLancado = (ri: number) => {
-    const v = lancado(ri)
-    return v > 0.005 ? `já lançado ${fmt(v, true)}` : null
-  }
-
-  const linhaSimples = (l: Linha, primeira: boolean) => {
-    const { icone, cor: corCat } = iconeCategoria(categorias, l.cat.nome)
-    const jaLanc = legendaLancado(l.ri)
+  const linha = (cat: Cat, ri: number, tipo: 'e' | 's') => {
+    const { icone, cor } = iconeCategoria(categorias, cat.nome)
     return (
-      <div key={`${tipo}-${l.ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 52,
-        borderTop: primeira ? 'none' : '1px solid #eef2f8' }}>
-        <IconeRedondo icone={icone} cor={corCat} tamanho={36} />
-        <button type="button" onClick={() => ajustar(l.cat)} disabled={!abrirAjuste}
-          style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            cursor: abrirAjuste ? 'pointer' : 'default', fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeExibicao(l.cat)}</span>
-          {jaLanc && <span style={{ fontSize: 12, fontWeight: 500, color: COR.textoSuave, marginTop: 1 }}>{jaLanc}</span>}
-        </button>
-        {celula(l)}
-      </div>
-    )
-  }
-
-  const linhaFamilia = (f: Familia, primeira: boolean) => {
-    const chave = `${tipo}-${f.nome}`
-    const aberta = abertas.has(chave)
-    const alternar = () => setAbertas(prev => {
-      const novo = new Set(prev)
-      if (novo.has(chave)) novo.delete(chave)
-      else novo.add(chave)
-      return novo
-    })
-    const { icone, cor: corCat } = iconeCategoria(categorias, f.nome)
-    const nVariantes = f.naMae.length + f.proprias.length
-    const somaProprias = f.proprias.reduce((s, l) => s + (l.cat.v[mes] ?? 0), 0)
-    const jaLanc = f.mae ? legendaLancado(f.mae.ri) : null
-    const legenda = `${nVariantes} ${nVariantes === 1 ? 'variante' : 'variantes'}${jaLanc ? ` · ${jaLanc}` : ''}`
-    return (
-      <div key={chave} style={{ borderTop: primeira ? 'none' : '1px solid #eef2f8' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 56 }}>
-          <IconeRedondo icone={icone} cor={corCat} tamanho={36} />
-          <button type="button" onClick={alternar} aria-expanded={aberta}
-            style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 700, color: COR.texto,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nome}</span>
-              <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>{legenda}</span>
-            </span>
-            <span aria-hidden style={{ fontSize: 16, color: COR.textoSuave, flexShrink: 0,
-              transform: aberta ? 'rotate(90deg)' : undefined, transition: 'transform .15s' }}>›</span>
+      <div key={`${tipo}-${ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 48, borderBottom: `1px solid ${COR.borda}` }}>
+        <span style={{ fontSize: 18, flexShrink: 0, width: 22, textAlign: 'center' }}><IconeCat icone={icone} cor={corDoIcone(cor)} /></span>
+        {abrirAjuste ? (
+          <button type="button" onClick={() => abrirAjuste({ tipo: tipo === 'e' ? 'entrada' : 'saida', nome: cat.nome,
+            descricao: cat.descricao, prev: cat.v[mes] ?? 0, real: 0, mes })}
+            style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, display: 'flex', alignItems: 'center', cursor: 'pointer',
+              fontSize: M.corpo, color: COR.texto, textDecoration: 'underline', textDecorationColor: '#cbd5e1', textUnderlineOffset: 3 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeExibicao(cat)}</span>
           </button>
-          {f.mae ? celula(f.mae) : (
-            <span style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto, fontVariantNumeric: 'tabular-nums', padding: '0 8px' }}>
-              {fmt(somaProprias)}
-            </span>
-          )}
-        </div>
-        {aberta && (
-          <div style={{ margin: '0 0 10px 46px', paddingLeft: 12, borderLeft: '2px solid #dbeafe' }}>
-            {f.mae && f.naMae.map(v => {
-              const parte = parteNaMae(f.mae!.cat, v, mes)
-              return (
-                <div key={`na-${v}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 48 }}>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>{v}</span>
-                    <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>variável · dentro de {f.nome}</span>
-                  </span>
-                  <span style={{ fontSize: M.corpo, color: parte === null ? COR.textoSuave : COR.texto,
-                    fontVariantNumeric: 'tabular-nums', padding: '0 8px' }}>{parte === null ? '—' : fmt(parte, true)}</span>
-                </div>
-              )
-            })}
-            {f.proprias.map(l => (
-              <div key={`pr-${l.ri}`} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 48 }}>
-                <button type="button" onClick={() => ajustar(l.cat)} disabled={!abrirAjuste}
-                  style={{ all: 'unset', flex: 1, minWidth: 0, minHeight: 44, cursor: abrirAjuste ? 'pointer' : 'default' }}>
-                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 600, color: COR.texto,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sem(l.cat.descricao)}</span>
-                  <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>
-                    {f.mae ? 'fixa · valor próprio' : 'valor próprio'}
-                  </span>
-                </button>
-                {celula(l)}
-              </div>
-            ))}
-            {f.mae && f.naMae.length > 0 && (
-              <div style={{ fontSize: 12, color: COR.textoSuave, lineHeight: 1.5, padding: '4px 0 2px' }}>
-                O plano é na categoria. Para ver a parte de cada variante, detalhe o valor de {f.nome} em itens com o nome dela.
-              </div>
-            )}
-            {f.mae && abrirAjuste && (
-              <button type="button" onClick={() => ajustar(f.mae!.cat)} style={{
-                all: 'unset', cursor: 'pointer', fontSize: 14, fontWeight: 700, color: COR.azul, minHeight: 40,
-                display: 'inline-flex', alignItems: 'center',
-              }}>✎ Ver o já lançado e ajustar {f.nome}</button>
-            )}
-          </div>
+        ) : (
+          <span style={{ flex: 1, minWidth: 0, fontSize: M.corpo, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {nomeExibicao(cat)}
+          </span>
         )}
+        <div style={{ flexShrink: 0, maxWidth: '50%', fontSize: M.corpo, textAlign: 'right' }}>
+          <PlanCelulaEditavel grande
+            valor={cat.v[mes] ?? 0}
+            onSave={v => onSave(tipo, ri, mes, v)}
+            itens={itensDoMes(cat, mes)}
+            onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
+            sempreItens={(lancadoNoMes?.(tipo, ri, mes) ?? 0) > 0.005}
+          />
+        </div>
       </div>
     )
   }
 
-  const alternarGrupo = (g: string) => setAbertas(prev => {
-    const novo = new Set(prev)
-    if (novo.has(g)) novo.delete(g)
-    else novo.add(g)
-    return novo
-  })
-
-  // Cada grupo é um cartão próprio, FECHADO por padrão, com o total do mês —
-  // pedido do Guilherme no mesmo dia: "cada grupo deveria ter um cartão
-  // separado para não ficar esta lista". Recolhido, a seção vira um resumo
-  // por grupo, como o Radar do celular.
-  return (
+  // Com a fatura planejada como linha própria, as categorias de cartão não
+  // entram — o mesmo filtro dos totais e do modal.
+  const secao = (titulo: string, cor: string, cats: Cat[], tipo: 'e' | 's') => (
     <>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 4px -4px' }}>
-        <h2 style={{ margin: 0, fontSize: M.titulo, fontWeight: 800, color: COR.texto }}>{titulo}</h2>
-        <span style={{ fontSize: M.titulo, fontWeight: 800, color: cor, fontVariantNumeric: 'tabular-nums' }}>{fmt(total, true)}</span>
-      </div>
-      {comLinhas.map(g => {
-        const nomeGrupo = g.grupo === null || g.grupo === '__sem_grupo__' ? 'Outros' : g.grupo
-        const chave = `grupo:${tipo}:${nomeGrupo}`
-        const aberto = abertas.has(chave)
-        const soma = g.linhas.reduce((t, l) => t + (l.cat.v[mes] ?? 0), 0)
-        const fams = familias(g.linhas, tipoCad, categorias)
-        const { icone, cor: corG } = iconeCategoria(categorias, fams[0]?.nome ?? '')
-        return (
-          <Cartao key={chave} style={{ padding: aberto ? '14px 18px 8px' : '14px 18px' }}>
-            <button type="button" onClick={() => alternarGrupo(chave)} aria-expanded={aberto} style={{
-              all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-              minHeight: 48, cursor: 'pointer',
-            }}>
-              <IconeRedondo icone={icone} cor={corG} tamanho={40} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeGrupo}</span>
-                <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>
-                  {fams.length} {fams.length === 1 ? 'categoria' : 'categorias'}
-                </span>
-              </span>
-              <span style={{ fontSize: M.corpo, fontWeight: 800, color: soma > 0.005 ? COR.texto : COR.textoSuave,
-                fontVariantNumeric: 'tabular-nums' }}>{fmt(soma, true)}</span>
-              <span aria-hidden style={{ fontSize: 18, color: COR.textoSuave, transform: aberto ? 'rotate(90deg)' : undefined,
-                transition: 'transform .15s' }}>›</span>
-            </button>
-            {aberto && (
-              <div style={{ marginTop: 6, borderTop: '1px solid #eef2f8' }}>
-                {fams.map((f, i) => {
-                  const simples = f.proprias.length === 0 && f.naMae.length === 0
-                  if (simples && f.mae) return linhaSimples(f.mae, i === 0)
-                  if (!f.mae && f.proprias.length === 1 && f.naMae.length === 0) return linhaSimples(f.proprias[0], i === 0)
-                  return linhaFamilia(f, i === 0)
-                })}
-              </div>
-            )}
-          </Cartao>
-        )
+      <div style={{ fontSize: 13, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: cor, padding: '14px 0 6px' }}>{titulo}</div>
+      {agrupar(cats, tipo).map(l => {
+        if (l.k === 'grupo') {
+          return (
+            <div key={`${tipo}-g-${l.grupo}`} style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px',
+              color: COR.textoSuave, padding: '10px 0 4px', borderBottom: `1px solid ${COR.borda}` }}>
+              {l.grupo === '__sem_grupo__' ? 'Outros' : l.grupo}
+            </div>
+          )
+        }
+        if (tipo === 's' && hasFaturaCat && l.cat.t === 'cartao') return null
+        return linha(l.cat, l.ri, tipo)
       })}
     </>
   )
+
+  const receitas = previsto.totalEntradas[mes], despesas = previsto.totalSaidas[mes]
+  const resultado = receitas - despesas
+  return (
+    <div style={{ background: '#fff', borderRadius: M.raio, boxShadow: M.sombra, padding: '14px 16px 16px' }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: COR.texto }}>{MESES_FULL[mes]}</div>
+      <div style={{ fontSize: 12, color: COR.textoSuave }}>Planejamento {anoAtual}</div>
+      {secao('Receitas', '#15803d', dados.entradas, 'e')}
+      {secao('Despesas', '#b91c1c', dados.saidas, 's')}
+
+      {/* O pé azul do modal. Sobre #1e3a8a: branco 10,4; rótulo a 75% 6,5; #86efac 8,1; #fecaca 9,6. */}
+      <div style={{ marginTop: 14, background: '#1e3a8a', borderRadius: 12, padding: '6px 14px' }}>
+        {([['Receitas', receitas], ['Despesas', despesas], ['Resultado', resultado]] as const).map(([rot, v]) => (
+          <div key={rot} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 32 }}>
+            <span style={{ fontSize: 12, fontWeight: rot === 'Resultado' ? 800 : 600, textTransform: 'uppercase', letterSpacing: '.4px',
+              color: rot === 'Resultado' ? '#fff' : 'rgba(255,255,255,.75)' }}>{rot}</span>
+            <span style={{ fontSize: rot === 'Resultado' ? 15 : 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+              color: rot === 'Resultado' ? (v >= 0 ? '#86efac' : '#fecaca') : '#fff' }}>
+              {rot === 'Resultado' && v > 0 ? '+' : ''}{fmt(v, true)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 10, lineHeight: 1.5 }}>
+        Toque num valor para editar (aceita conta, como <b>800+300</b>). Toque no <b>nome</b> para ver o que já
+        está lançado nos próximos meses e ajustar o plano daqui para frente.
+      </div>
+    </div>
+  )
+}
+
+/**
+ * "Com quanto cada mês termina" — o gráfico do computador (PlanAnoVisao),
+ * com o valor em cima de cada coluna. No celular as doze colunas não cabem
+ * com o valor legível, então o gráfico rola para o lado e abre no mês
+ * escolhido. Tocar numa coluna abre o mês, como o clique no computador.
+ */
+const G_ALTURA = 150
+const G_COLUNA = 64
+
+type MesG = { mi: number; fechado: boolean; atual: boolean; semPlano: boolean; valor: number }
+
+function GraficoAno({ meses, mes, onEscolher }: { meses: MesG[]; mes: number; onEscolher: (mi: number) => void }) {
+  const rolagem = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = rolagem.current
+    if (el) el.scrollTo({ left: Math.max(0, (mes - 2) * G_COLUNA), behavior: 'smooth' })
+  }, [mes])
+
+  const max = Math.max(0, ...meses.map(m => m.valor))
+  const min = Math.min(0, ...meses.map(m => m.valor))
+  const faixa = max - min || 1
+  const zeroY = (max / faixa) * G_ALTURA
+  const curto = (v: number) => `${v < 0 ? '−' : ''}R$ ${Math.round(Math.abs(v)).toLocaleString('pt-BR')}`
+
+  return (
+    <div style={{ background: '#fff', borderRadius: M.raio, boxShadow: M.sombra, padding: '16px 0 12px' }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', padding: '0 16px', marginBottom: 6 }}>Com quanto cada mês termina</div>
+      <div ref={rolagem} style={{ overflowX: 'auto', scrollbarWidth: 'none', padding: '0 8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(12, ${G_COLUNA}px)`, position: 'relative',
+          paddingTop: 22, width: 12 * G_COLUNA }}>
+          <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: 22 + zeroY, height: 1,
+            background: min < 0 ? COR_NEG : '#94a3b8' }} />
+          {meses.map(m => {
+            const h = Math.max(2, (Math.abs(m.valor) / faixa) * G_ALTURA)
+            const top = m.valor >= 0 ? zeroY - h : zeroY
+            const cor = m.valor < 0 ? COR_NEG : m.atual ? COR_ATUAL : m.fechado ? COR_FECHADO : COR_PREVISTO
+            const vazio = m.semPlano && !m.fechado
+            const rotulo = m.fechado ? 'fechou com' : 'termina com'
+            return (
+              <button key={m.mi} type="button" onClick={() => onEscolher(m.mi)}
+                aria-label={`${MESES_FULL[m.mi]}: ${rotulo} ${fmt(m.valor, true)}`}
+                style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{ position: 'relative', width: '100%', height: G_ALTURA }}>
+                  <span style={{ position: 'absolute', left: 0, right: 0, top: m.valor >= 0 ? top - 18 : top + h + 2,
+                    fontSize: 12, fontWeight: m.atual ? 800 : 600, color: m.valor < 0 ? COR_NEG : '#0f172a',
+                    fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'center', letterSpacing: '-.3px' }}>
+                    {curto(m.valor)}
+                  </span>
+                  <span style={{ position: 'absolute', left: '16%', right: '16%', top, height: h, boxSizing: 'border-box',
+                    borderRadius: m.valor >= 0 ? '6px 6px 0 0' : '0 0 6px 6px',
+                    background: vazio ? 'transparent' : cor, border: vazio ? `1.5px dashed ${COR_FECHADO}` : 'none' }} />
+                </span>
+                <span style={{ marginTop: 6, fontSize: 12, color: m.atual ? COR_ATUAL : SUAVE, fontWeight: m.atual ? 800 : 500,
+                  padding: '2px 8px', borderRadius: 999, background: m.mi === mes ? '#dbeafe' : undefined }}>
+                  {MESES[m.mi]}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, padding: '0 16px', fontSize: 12, color: SUAVE }}>
+        {[['fechado (real)', COR_FECHADO], ['este mês', COR_ATUAL], ['previsto', COR_PREVISTO]].map(([t, c]) => (
+          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: c }} />{t}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Setas dos lados do cartão do mês, no fundo claro da página. */
+const BTN_MES: CSSProperties = {
+  width: 40, height: 40, borderRadius: '50%', border: 'none', background: '#fff', boxShadow: M.sombra, flexShrink: 0,
+  color: '#1e3a8a', fontSize: 22, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1,
 }
 
 const BTN_ANO: CSSProperties = {

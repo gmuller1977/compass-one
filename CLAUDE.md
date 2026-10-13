@@ -2483,6 +2483,36 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
 - **Total** ganhou só o topo novo: o conteúdo espera virar painel.
 - Computador não mudou (`if (isMobile)` antes de tudo).
 
+**Lançamentos e Planejamento no celular, 13/10/2026** (pedido do Guilherme).
+Lançamentos: no "Mais" o nome é "Lançamentos", como no computador; a aba
+"Total" saiu do celular (abas e assistente); o mês anda pelas setas AO LADO
+DO TÍTULO, como o ano no Planejamento (no Cartão as setas andam a fatura), e
+a linha do mês no meio do azul saiu. O avatar de sair saiu desse topo. O
+Radar do celular ganhou o mesmo título "Radar" com o mês nas setas; o "dia X
+de Y" foi para o rótulo do saldo.
+Planejamento: o topo traz a resposta do ANO (`PlanResumoAnual compacto`, as
+miniaturas em 2 × 2), embaixo o gráfico "Com quanto cada mês termina"
+(`GraficoAno`; tocar na coluna escolhe o mês, o valor do mês escolhido fica
+no título porque não cabe em cima da coluna), o cartão do mês, e os grupos
+no desenho do cardápio do Radar: valor em 22px e barra AZUL com a parte do
+grupo na seção — não verde/vermelho, que no Radar dizem dentro/passou.
+Aberto, borda `#93c5fd` e categorias na faixa `#eaf1fd`. Saíram as pílulas
+dos meses e a lista "mês a mês". Nenhum número novo.
+No mesmo dia, pedido dele: o cartão do mês é o MESMO da Grade do computador
+(nome, ATUAL/✓, "termina com"/"fechou com", "+ R$ X de sobra" ou "▲/▼ acima",
+meta guardar), com setas dos lados que atravessam o ano; os grupos só
+aparecem ao tocar no cartão ("Ver os grupos do mês"), como o clique abre o
+modal no computador. Saíram "Começa com" e a linha da meta do cartão antigo.
+**Regra dele, ainda no mesmo dia: "o que tem no web precisa ter no mobile,
+nem mais nem menos".** O `PlanMobile` passou a espelhar o computador e só
+muda a arrumação: "TODO ANO", "?" de ajuda, a barra de ferramentas visível,
+o gráfico com o valor em cima da coluna (rola para o lado), o cartão da
+Grade e, ao tocar nele, o conteúdo do `PlanModalMeses` de um mês — grupos em
+rótulo, categorias em linha (variante como "Nome · Variante"), o nome abre o
+ajuste, e o pé Receitas/Despesas/Resultado. Saíram os cartões de grupo com
+barra, a família mãe/variantes que só existia no celular e as ferramentas
+recolhidas. Não acrescentar no celular o que o computador não tem.
+
 **Conta compartilhada** (10/10/2026, pedido do Guilherme: "duas ou mais
 pessoas acessarem a mesma conta"). Cada pessoa tem o próprio login; as
 finanças continuam gravadas com o `user_id` do DONO, e quem aceita o convite

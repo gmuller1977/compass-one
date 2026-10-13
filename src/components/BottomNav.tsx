@@ -31,7 +31,7 @@ const NAV = [
 
 const MAIS = [
   { icon: 'ti-calendar-stats', label: 'Planejamento',          path: '/planejamento' },
-  { icon: 'ti-list-details', label: 'Lançamentos completos', path: '/novo-lancamento' },
+  { icon: 'ti-list-details', label: 'Lançamentos',           path: '/novo-lancamento' },
   { icon: 'ti-refresh', label: 'Revisão mensal',        path: '/revisaomensal' },
   { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
   { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
