@@ -63,14 +63,17 @@ export function resumoDoAno(meses: MesDoAno[], previsto: Saldos) {
     saldoFinal: previsto.saldoFinal[11],
     metaAno: meses.reduce((a, m) => a + m.meta, 0),
     planoGuarda: meses.reduce((a, m) => a + m.sobra, 0),
-    /** O rumo do ano: o que os meses fechados guardaram de verdade + o que o
-     *  plano guarda nos outros. É a régua da meta — o plano dos meses que já
-     *  passaram não guarda mais nada. */
-    rumo: meses.reduce((a, m) => a + guardaDoMes(m), 0),
+    /** O rumo da meta: o que os meses fechados guardaram de verdade + o que o
+     *  plano guarda nos outros — SÓ nos meses que têm meta (13/10/2026: meta
+     *  de set–dez contra o ano inteiro contava jan–ago, que não têm meta). */
+    rumo: meses.reduce((a, m) => a + (contaNaMeta(m) ? guardaDoMes(m) : 0), 0),
     jaGuardou: fechados.length ? fechados.reduce((a, m) => a + (m.guardou ?? 0), 0) : null,
     ultimoFechado: fechados.length ? fechados[fechados.length - 1].mi : -1,
   }
 }
+
+/** O mês entra na comparação com a meta só se tem meta. */
+export const contaNaMeta = (m: MesDoAno) => m.meta > 0
 
 /** A barra do gráfico: o real nos meses fechados, o plano nos outros. */
 export const guardaDoMes = (m: MesDoAno) => m.guardou ?? m.sobra

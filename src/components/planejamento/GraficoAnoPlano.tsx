@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fmt, MESES, MESES_FULL } from './types'
-import { guardaDoMes, type MesDoAno } from './anoDoPlano'
+import { contaNaMeta, guardaDoMes, type MesDoAno } from './anoDoPlano'
 
 /**
  * Os gráficos do ano do Planejamento, no computador (PlanAnoVisao) e no
@@ -79,7 +79,9 @@ export default function GraficoAnoPlano({ meses, altura, coluna, escolhido, onEs
   const acGuarda: number[] = []
   const acMeta: number[] = []
   meses.forEach((m, i) => {
-    acGuarda.push((acGuarda[i - 1] ?? 0) + guardaDoMes(m))
+    // Com meta, só os meses que têm meta somam — a mesma régua do topo
+    // (`resumoDoAno().rumo`); sem meta nenhuma, o ano inteiro.
+    acGuarda.push((acGuarda[i - 1] ?? 0) + (!temMeta || contaNaMeta(m) ? guardaDoMes(m) : 0))
     acMeta.push((acMeta[i - 1] ?? 0) + m.meta)
   })
 

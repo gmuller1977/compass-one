@@ -287,6 +287,13 @@ no radar financeiro"). O real dos meses fechados não é assunto do
 Planejamento; o topo ficou com o saldo de 31/12 e a meta do ano.
 `resumoDoAno().jaGuardou` continua calculado; nenhuma tela o lê.
 
+**O rumo da meta conta só os meses QUE TÊM META** (mesmo dia, pedido do
+Guilherme: a meta de 8.000 era de set–dez, 2.000 por mês, e o topo dizia
+"deve guardar R$ 10.948,05" somando o ano inteiro). `contaNaMeta` em
+`anoDoPlano.ts`: o rumo soma o real dos meses fechados e o plano dos abertos
+só onde `meta > 0`, no topo e no gráfico "Rumo da meta" (que fica no zero
+nos meses sem meta). Sem meta nenhuma no ano, o gráfico acumula o ano inteiro.
+
 **O gráfico do ano são TRÊS, escolhidos por botões** (13/10/2026, pedido do
 Guilherme: colunas e linha de saldo juntas "não ficou legal"). Um componente
 só, `GraficoAnoPlano`, no computador e no celular (que rola para o lado), com
