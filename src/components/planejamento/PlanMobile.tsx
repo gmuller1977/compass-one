@@ -266,25 +266,6 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
           <CampoMeta grande mi={mes} anoAtual={anoAtual} mesAtual={mesAtual} objetivos={objetivos} onMetaSave={onMetaSave} />
         </div>
       </div>
-      {(() => {
-        // O que o plano guarda e quanto falta para a meta, como no modal do computador.
-        const guarda = previsto.totalEntradas[mes] - previsto.totalSaidas[mes]
-        const anoCorr = new Date().getFullYear()
-        const fechado = anoAtual < anoCorr || (anoAtual === anoCorr && mes < mesAtual)
-        const c = metaContraPlano(objetivos[mes] ?? 0, guarda)
-        const linhaMeta = (rot: string, txt: string, cor: string) => (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 40, paddingLeft: 32,
-            borderBottom: `1px solid ${COR.borda}` }}>
-            <span style={{ fontSize: 14, color: COR.textoSuave }}>{rot}</span>
-            <span style={{ fontSize: M.corpo, fontWeight: 700, color: cor, fontVariantNumeric: 'tabular-nums' }}>{txt}</span>
-          </div>
-        )
-        return <>
-          {linhaMeta('O plano guarda', guarda < 0 ? `− ${fmt(-guarda, true)}` : fmt(guarda, true), guarda < 0 ? '#b91c1c' : '#14532d')}
-          {linhaMeta('Para a meta', !c || fechado ? '—' : c.ok ? '✓ dentro' : `faltam ${fmt(c.falta, true)}`,
-            !c || fechado ? COR.textoSuave : c.ok ? '#14532d' : '#b91c1c')}
-        </>
-      })()}
       {secao('Receitas', '#15803d', dados.entradas, 'e')}
       {secao('Despesas', '#b91c1c', dados.saidas, 's')}
 
@@ -300,6 +281,22 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
             </span>
           </div>
         ))}
+        {(() => {
+          // Falta para a meta, abaixo do Resultado, como no modal do computador.
+          const anoCorr = new Date().getFullYear()
+          const fechado = anoAtual < anoCorr || (anoAtual === anoCorr && mes < mesAtual)
+          const c = metaContraPlano(objetivos[mes] ?? 0, resultado)
+          return (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 36,
+              borderTop: '1px solid rgba(255,255,255,.2)', marginTop: 2 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.75)' }}>Falta para a meta</span>
+              <span style={{ fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+                color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fecaca' }}>
+                {!c || fechado ? '—' : c.ok ? '✓ dentro' : fmt(c.falta, true)}
+              </span>
+            </div>
+          )
+        })()}
       </div>
       <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 10, lineHeight: 1.5 }}>
         Toque num valor para editar (aceita conta, como <b>800+300</b>). Toque no <b>nome</b> para ver o que já

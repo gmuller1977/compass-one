@@ -238,29 +238,6 @@ export default function PlanModalMeses({
                 <CampoMeta mi={mi} anoAtual={anoAtual} mesAtual={mesAtual} objetivos={objetivos} onMetaSave={onMetaSave} />
               </div>
             ))}
-            {/* O que o plano guarda e quanto falta para a meta, vivos enquanto se
-                edita (pedido do Guilherme em 13/10/2026: é aqui que se adequa o
-                plano para alcançar a meta; no cartão fica só o aviso). */}
-            {([['O plano guarda', 'guarda'], ['Para a meta', 'meta']] as const).map(([rotulo, tipo]) => (
-              <div key={tipo} style={{ display: 'contents' }}>
-                <div style={{ position: 'sticky', left: 0, background: COR.branco, zIndex: 1, display: 'flex', alignItems: 'center',
-                  padding: '6px 8px 6px 24px', borderBottom: `1px solid ${COR.borda}`, fontSize: 13, color: COR.textoSuave }}>{rotulo}</div>
-                {meses.map(mi => {
-                  const guarda = previsto.totalEntradas[mi] - previsto.totalSaidas[mi]
-                  const fechado = anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
-                  const c = metaContraPlano(objetivos[mi] ?? 0, guarda)
-                  return (
-                    <div key={mi} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '6px 7px',
-                      borderBottom: `1px solid ${COR.borda}`, fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-                      color: tipo === 'guarda' ? (guarda < 0 ? '#b91c1c' : '#14532d') : !c || fechado ? COR.textoSuave : c.ok ? '#14532d' : '#b91c1c' }}>
-                      {tipo === 'guarda'
-                        ? (guarda < 0 ? `− ${fmt(-guarda, true)}` : fmt(guarda, true))
-                        : !c || fechado ? '—' : c.ok ? '✓ dentro' : `faltam ${fmt(c.falta, true)}`}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
             {secao('Receitas', '#15803d', entradas, 'e')}
             {secao('Despesas', '#b91c1c', saidas, 's')}
 
@@ -269,16 +246,16 @@ export default function PlanModalMeses({
                 Sobre #1e3a8a: branco 10,4; rótulo a 75% 6,5; #86efac 8,1;
                 #fecaca 9,6. */}
             {([
-              ['Receitas', (mi: number) => previsto.totalEntradas[mi], 2],
-              ['Despesas', (mi: number) => previsto.totalSaidas[mi], 1],
-              ['Resultado', (mi: number) => previsto.totalEntradas[mi] - previsto.totalSaidas[mi], 0],
+              ['Receitas', (mi: number) => previsto.totalEntradas[mi], 3],
+              ['Despesas', (mi: number) => previsto.totalSaidas[mi], 2],
+              ['Resultado', (mi: number) => previsto.totalEntradas[mi] - previsto.totalSaidas[mi], 1],
             ] as const).map(([rotulo, valor, nivel], i) => (
               <div key={rotulo} style={{ display: 'contents' }}>
                 <div style={{ position: 'sticky', left: 0, bottom: nivel * H_RODAPE, zIndex: 3, height: H_RODAPE,
                   background: '#1e3a8a', display: 'flex', alignItems: 'center', padding: '0 12px',
                   fontSize: 11, fontWeight: rotulo === 'Resultado' ? 800 : 600, textTransform: 'uppercase', letterSpacing: '.4px',
                   color: rotulo === 'Resultado' ? '#fff' : 'rgba(255,255,255,.75)',
-                  marginTop: i === 0 ? 12 : 0, borderTopLeftRadius: i === 0 ? 10 : 0, borderBottomLeftRadius: i === 2 ? 10 : 0 }}>
+                  marginTop: i === 0 ? 12 : 0, borderTopLeftRadius: i === 0 ? 10 : 0, borderBottomLeftRadius: 0 }}>
                   {rotulo}
                 </div>
                 {meses.map((mi, j) => {
@@ -290,13 +267,36 @@ export default function PlanModalMeses({
                       fontSize: rotulo === 'Resultado' ? 13 : 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
                       color: rotulo === 'Resultado' ? (v >= 0 ? '#86efac' : '#fecaca') : '#fff',
                       marginTop: i === 0 ? 12 : 0,
-                      borderTopRightRadius: i === 0 && ultimo ? 10 : 0, borderBottomRightRadius: i === 2 && ultimo ? 10 : 0 }}>
+                      borderTopRightRadius: i === 0 && ultimo ? 10 : 0 }}>
                       {rotulo === 'Resultado' && v > 0 ? '+' : ''}{fmt(v, true)}
                     </div>
                   )
                 })}
               </div>
             ))}
+            {/* Falta para a meta, logo abaixo do Resultado (pedido do Guilherme
+                em 13/10/2026): muda enquanto se edita o plano. Meta − o que o
+                plano guarda; mês fechado ou sem meta, "—". Sobre #1e3a8a:
+                #fecaca 9,6; #86efac 8,1. */}
+            <div style={{ position: 'sticky', left: 0, bottom: 0, zIndex: 3, height: H_RODAPE,
+              background: '#1e3a8a', display: 'flex', alignItems: 'center', padding: '0 12px',
+              fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px',
+              color: 'rgba(255,255,255,.75)', borderBottomLeftRadius: 10, borderTop: '1px solid rgba(255,255,255,.2)' }}>
+              Falta para a meta
+            </div>
+            {meses.map((mi, j) => {
+              const fechado = anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
+              const c = metaContraPlano(objetivos[mi] ?? 0, previsto.totalEntradas[mi] - previsto.totalSaidas[mi])
+              return (
+                <div key={mi} style={{ position: 'sticky', bottom: 0, zIndex: 2, height: H_RODAPE,
+                  background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 9px',
+                  fontSize: 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: '1px solid rgba(255,255,255,.2)',
+                  color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fecaca',
+                  borderBottomRightRadius: j === meses.length - 1 ? 10 : 0 }}>
+                  {!c || fechado ? '—' : c.ok ? '✓ dentro' : fmt(c.falta, true)}
+                </div>
+              )
+            })}
           </div>
           <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 10, lineHeight: 1.5, maxWidth: 520 }}>
             Clique num valor para editar (aceita conta, como <b>800+300</b>). Clique no <b>nome</b> para ver o que já

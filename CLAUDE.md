@@ -295,17 +295,19 @@ o botão escolhido guardado no aparelho:
 A linha de saldo por cima das colunas, da primeira versão, saiu.
 
 **O cartão do mês tem borda (`#c3ccd8`, o atual `#3b82f6`) e SÓ o aviso da
-meta; os números moram dentro do mês** (mesmo dia, pedido dele: "no card
+meta; o número mora dentro do mês** (mesmo dia, pedido dele: "no card
 deveria vir só um aviso, e dentro do plano estas informações, porque é ali
 que muda os dados e adequa o plano"). `MetaNoCartao` é uma pílula, por
 `situacaoDaMeta` em `anoDoPlano.ts`: mês aberto compara o que o PLANO guarda
 com a meta ("Dentro da meta" / "Abaixo da meta"); mês fechado, o que guardou
 de verdade ("Guardou a meta" / "Ficou abaixo da meta"). Verde `#14532d` em
-`#f0fdf4`, vermelho `#b91c1c` em `#fef2f2`. Sem meta, nada. No
-`PlanModalMeses` e no mês aberto do celular, embaixo de "Quanto quero
-guardar", ficam "O plano guarda" (receitas − despesas do plano do mês) e
-"Para a meta" ("✓ dentro" ou "faltam R$ X", por `metaContraPlano`), que
-mudam enquanto se edita. Mês fechado ou sem meta: "—".
+`#f0fdf4`, vermelho `#b91c1c` em `#fef2f2`. Sem meta, nada. Dentro do mês
+(`PlanModalMeses` e mês aberto do celular), em cima fica SÓ "Quanto quero
+guardar", e o pé azul ganhou a linha "Falta para a meta" embaixo do
+Resultado (`metaContraPlano`: meta − Resultado; "✓ dentro" em `#86efac`,
+valor em `#fecaca`, "—" em mês fechado ou sem meta), que muda enquanto se
+edita. Uma versão com "O plano guarda" e "Para a meta" em cima, junto da
+meta, foi trocada no mesmo dia: repetia o Resultado do pé.
 
 **A meta se define no próprio mês, e o botão "Meta de economia" saiu da
 barra** (mesmo dia, pedido dele). É a linha "Quanto quero guardar" no topo do
