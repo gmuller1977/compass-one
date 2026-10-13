@@ -183,6 +183,8 @@ o título da seção e o Total ficam fora. Aberto (computador e celular), o
 cartão ganha borda `#93c5fd` e as categorias vão para uma faixa `#eaf1fd`
 com "N categorias" (`#1e3a8a`, 9,6) e uma caixa branca de cantos 14; no
 celular o ícone da categoria cai de 44 para 36 px e o nome de 15 para 14.
+No mesmo dia, pedido dele: o "resta" do grupo no celular ganhou linha própria
+em 21px (no computador são 24 — "sem exagero"), e o da categoria foi a 16px.
 Nenhum número mudou.
 
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido

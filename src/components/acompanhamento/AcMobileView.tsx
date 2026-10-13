@@ -156,7 +156,7 @@ export default function AcMobileView({
             <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
               <div style={{ fontSize:14, fontWeight:600, color:'#0f172a', minWidth:0,
                 overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
-              <div style={{ flexShrink:0, fontSize:14, fontWeight:800, color:dispColor, whiteSpace:'nowrap',
+              <div style={{ flexShrink:0, fontSize:16, fontWeight:800, color:dispColor, whiteSpace:'nowrap',
                 fontVariantNumeric:'tabular-nums' }}>{destaque.principal}</div>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3, minWidth:0 }}>
@@ -300,11 +300,14 @@ export default function AcMobileView({
           <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:COR.texto }}>
             <span aria-hidden>{grupoIcone}</span>
             <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
-            <span style={{ fontSize:14, fontWeight:700, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
-              {dg.principal}
-            </span>
             <span aria-hidden style={{ color:COR.textoSuave, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
               transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
+          </div>
+          {/* O número em destaque numa linha própria, como no computador (lá
+              24px; aqui 21, pedido do Guilherme em 13/10/2026: "sem exagero"). */}
+          <div style={{ fontSize:21, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums',
+            whiteSpace:'nowrap', marginTop:6, lineHeight:1.15 }}>
+            {dg.principal}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
             <div style={{ flex:1, height:8, borderRadius:4, background:'#e2e8f0', overflow:'hidden' }}>
