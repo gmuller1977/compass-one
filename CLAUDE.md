@@ -216,9 +216,10 @@ escolheu o cardápio entre três modelos — cardápio, colunas por situação e
 envelopes). O azul do `PageHeader` (que ganhou `children`) traz a resposta em
 40px — "Ainda dá para gastar R$ X", o `sobra` de `ritmoDoMes`, o mesmo da
 frase — e, ao lado, os quatro números de antes em miniatura, que abrem o
-detalhe por conta. Mês fechado, ou corrente que passou, mostra o saldo no
+detalhe por conta. Os quatro nunca cortam o valor: a fileira pede 660px e, sem
+esse espaço ao lado da frase, desce para baixo dela (13/10/2026). Mês fechado, ou corrente que passou, mostra o saldo no
 lugar da sobra. Cada grupo é um cartão branco (`EvolucaoGrupo`): ícone em
-círculo, `destaqueDoGrupo` em 24px, barra e "gastou X de Y"; aberto, ocupa a
+círculo, `destaqueDoGrupo` em 20px (era 24; reduzido em 13/10/2026 a pedido dele), barra e "gastou X de Y"; aberto, ocupa a
 linha e lista as categorias (`EvolucaoLinha`, sem mudança). Grade com
 `row dense`. Cores pela `RADAR_COR_CLARO`. Saiu a barra de 200px alinhada
 entre os grupos — o "gráfico de barras" empilhado e o cinza dos cabeçalhos
@@ -235,7 +236,7 @@ cartão ganha borda `#93c5fd` e as categorias vão para uma faixa `#eaf1fd`
 com "N categorias" (`#1e3a8a`, 9,6) e uma caixa branca de cantos 14; no
 celular o ícone da categoria cai de 44 para 36 px e o nome de 15 para 14.
 No mesmo dia, pedido dele: o "resta" do grupo no celular foi a 19px, NA
-LINHA do nome (no computador são 24 — "sem exagero"; uma versão com linha
+LINHA do nome (no computador são 20 — "sem exagero"; uma versão com linha
 própria foi recusada no mesmo dia), e o da categoria foi a 16px.
 Nenhum número mudou.
 

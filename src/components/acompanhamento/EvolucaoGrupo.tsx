@@ -110,7 +110,7 @@ export default function EvolucaoGrupo({
           <span aria-hidden="true" style={{ fontSize: 14, color: ROTULO,
             transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none' }}>▾</span>
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
+        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
           fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
           {destaque.principal}
         </div>

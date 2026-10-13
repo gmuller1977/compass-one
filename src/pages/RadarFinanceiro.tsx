@@ -269,7 +269,10 @@ export default function RadarFinanceiro() {
                 {resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
               </>)}
             </div>
-            <div style={{ flex: '1 1 460px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+            {/* 660px = quatro caixas de ~160px, onde "R$ 15.326,82" em 17px cabe.
+                Sem esse espaço ao lado da frase, a fileira desce para baixo dela
+                em vez de cortar o valor. */}
+            <div style={{ flex: '1 1 660px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
               {[
                 { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null, ent: false },
                 { rot: '↑ Receitas', v: fmt(totalRealE), cor: RADAR_COR_AZUL.bom, sub: deQuanto(totalPrevE), p: percE, ent: true },
@@ -281,7 +284,7 @@ export default function RadarFinanceiro() {
                     padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
                   <div style={{ fontSize: 17, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.v}</div>
+                    whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                   {k.p !== null && (
                     <div style={{ marginTop: 6, height: 6, borderRadius: 3, overflow: 'hidden',
