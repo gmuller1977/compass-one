@@ -314,6 +314,11 @@ barra** (mesmo dia, pedido dele). É a linha "Quanto quero guardar" no topo do
 `PlanModalMeses` e do mês aberto do celular (`CampoMeta`, a célula de sempre).
 Mês fechado não muda: a meta dele é a régua com que foi medido. A barra de
 ferramentas ficou com Reajuste % e Copiar ano. O `PlanModalMeta` saiu.
+Ao digitar uma meta nova, o mês grava na hora e uma janela PERGUNTA se a
+mesma meta vale do mês seguinte até dezembro (pedido dele no mesmo dia:
+"perguntar se deseja copiar"), listando os meses que já têm outra meta e
+seriam trocados: "Só [mês]" ou "Copiar até dezembro". Sem pergunta quando os
+meses seguintes já têm essa meta, ou quando a meta é zero.
 
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
