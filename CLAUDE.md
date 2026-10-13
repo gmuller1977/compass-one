@@ -2498,6 +2498,11 @@ no desenho do cardápio do Radar: valor em 22px e barra AZUL com a parte do
 grupo na seção — não verde/vermelho, que no Radar dizem dentro/passou.
 Aberto, borda `#93c5fd` e categorias na faixa `#eaf1fd`. Saíram as pílulas
 dos meses e a lista "mês a mês". Nenhum número novo.
+No mesmo dia, pedido dele: o cartão do mês é o MESMO da Grade do computador
+(nome, ATUAL/✓, "termina com"/"fechou com", "+ R$ X de sobra" ou "▲/▼ acima",
+meta guardar), com setas dos lados que atravessam o ano; os grupos só
+aparecem ao tocar no cartão ("Ver os grupos do mês"), como o clique abre o
+modal no computador. Saíram "Começa com" e a linha da meta do cartão antigo.
 
 **Conta compartilhada** (10/10/2026, pedido do Guilherme: "duas ou mais
 pessoas acessarem a mesma conta"). Cada pessoa tem o próprio login; as
