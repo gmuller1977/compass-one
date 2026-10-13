@@ -2503,6 +2503,15 @@ No mesmo dia, pedido dele: o cartão do mês é o MESMO da Grade do computador
 meta guardar), com setas dos lados que atravessam o ano; os grupos só
 aparecem ao tocar no cartão ("Ver os grupos do mês"), como o clique abre o
 modal no computador. Saíram "Começa com" e a linha da meta do cartão antigo.
+**Regra dele, ainda no mesmo dia: "o que tem no web precisa ter no mobile,
+nem mais nem menos".** O `PlanMobile` passou a espelhar o computador e só
+muda a arrumação: "TODO ANO", "?" de ajuda, a barra de ferramentas visível,
+o gráfico com o valor em cima da coluna (rola para o lado), o cartão da
+Grade e, ao tocar nele, o conteúdo do `PlanModalMeses` de um mês — grupos em
+rótulo, categorias em linha (variante como "Nome · Variante"), o nome abre o
+ajuste, e o pé Receitas/Despesas/Resultado. Saíram os cartões de grupo com
+barra, a família mãe/variantes que só existia no celular e as ferramentas
+recolhidas. Não acrescentar no celular o que o computador não tem.
 
 **Conta compartilhada** (10/10/2026, pedido do Guilherme: "duas ou mais
 pessoas acessarem a mesma conta"). Cada pessoa tem o próprio login; as
