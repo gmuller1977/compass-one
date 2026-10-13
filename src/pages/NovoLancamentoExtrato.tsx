@@ -74,7 +74,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, user, sairDaConta, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -1123,14 +1123,6 @@ export default function NovoLancamentoExtrato() {
     setAlertaDesvio(null)
   }
 
-  function onMesAnterior() {
-    let m=mes-1, a=ano; if(m<0){m=11;a--}
-    setMes(m); resetarParaNovo(diaDefaultPara(m, a))
-  }
-  function onMesProximo() {
-    let m=mes+1, a=ano; if(m>11){m=0;a++}
-    setMes(m); resetarParaNovo(diaDefaultPara(m, a))
-  }
   function onCartaoMesSelect(m: number, a: number) {
     setCartaoMes(m); setCartaoAno(a)
   }
@@ -1151,8 +1143,6 @@ export default function NovoLancamentoExtrato() {
 
       <NleHeader
         isMobile={isMobile}
-        user={user}
-        sairDaConta={sairDaConta}
         tabPrincipal={tabPrincipal}
         setTabPrincipal={setTabPrincipal}
         contasExtrato={contasExtrato}
@@ -1213,8 +1203,6 @@ export default function NovoLancamentoExtrato() {
         setModalSaldoValor={setModalSaldoValor}
         mesKey={mesKey}
         saldoSugerido={saldoSugerido}
-        onMesAnterior={onMesAnterior}
-        onMesProximo={onMesProximo}
         isDinheiro={isDinheiro}
         contaInfo={contaInfo}
         mesDados={mesDados}

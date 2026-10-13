@@ -100,7 +100,7 @@ type Props = {
 
 export default function FcMobileView({
   contasCartao, contaId, setContaId,
-  mes, setMes, ano, setAno, anoHoje, diaHoje,
+  mes, ano, anoHoje, diaHoje,
   mobileView, setMobileView,
   editandoFechamento, setEditandoFechamento,
   editandoVencimento, setEditandoVencimento,
@@ -124,17 +124,12 @@ export default function FcMobileView({
   // nada. O realce diz ao usuario por que.
   const valorRuim = parseValor(fValor) === null
 
-  const prevMesNav = () => { if (mes === 0) { setMes(11); setAno(y => y-1) } else setMes(m => m-1) }
-  const nextMesNav = () => { if (mes === 11) { setMes(0); setAno(y => y+1) } else setMes(m => m+1) }
   const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
 
   // Sobre o azul do topo (#0f2878 → #1e40af, medido no extremo claro):
   // branco 8,72 · rótulo a 75% 5,1 · #86efac 6,21 · #fde047 6,62.
   const statusNoAzul = faturaStatus==='paga' ? '#86efac' : faturaStatus==='fechada' ? '#fff' : '#fde047'
-  const seta = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.16)',
-    display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
-    fontSize:20, color:'#fff', fontWeight:700, fontFamily:'inherit', flexShrink:0 } as const
   const chipAzul = (ativo: boolean) => ({ display:'flex', alignItems:'center', gap:6, minHeight:38, padding:'0 14px',
     borderRadius:999, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:700,
     whiteSpace:'nowrap' as const, flexShrink:0,
@@ -157,21 +152,11 @@ export default function FcMobileView({
             ))}
           </div>
         )}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-          <button aria-label="Mês anterior" onClick={prevMesNav} style={seta}>‹</button>
-          <div style={{textAlign:'center'}}>
-            <div style={{fontSize:18,fontWeight:800,color:'#fff'}}>
-              Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''}
-            </div>
-            <div style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>
-              {contasCartao.find(c => c.id === contaId)?.banco ?? 'Cartão'} · <b style={{color:statusNoAzul}}>{statusLbl}</b>
-            </div>
-          </div>
-          <button aria-label="Próximo mês" onClick={nextMesNav} style={seta}>›</button>
+        {/* O mês da fatura anda pelas setas ao lado do título "Lançamentos". */}
+        <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
+          Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''} · <b style={{color:statusNoAzul}}>{statusLbl}</b>
         </div>
-
-        <div style={{marginTop:18}}>
-          <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>Total da fatura</div>
+        <div>
           <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,color:'#fff',
             fontVariantNumeric:'tabular-nums'}}>{fmt(totalFatura)}</div>
           <div style={{fontSize:13,color:'rgba(255,255,255,.75)',marginTop:2}}>

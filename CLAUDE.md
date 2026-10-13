@@ -2483,6 +2483,20 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
 - **Total** ganhou só o topo novo: o conteúdo espera virar painel.
 - Computador não mudou (`if (isMobile)` antes de tudo).
 
+**Lançamentos e Planejamento no celular, 13/10/2026** (pedido do Guilherme).
+Lançamentos: no "Mais" o nome é "Lançamentos", como no computador; a aba
+"Total" saiu do celular (abas e assistente); o mês anda pelas setas AO LADO
+DO TÍTULO, como o ano no Planejamento (no Cartão as setas andam a fatura), e
+a linha do mês no meio do azul saiu. O avatar de sair saiu desse topo.
+Planejamento: o topo traz a resposta do ANO (`PlanResumoAnual compacto`, as
+miniaturas em 2 × 2), embaixo o gráfico "Com quanto cada mês termina"
+(`GraficoAno`; tocar na coluna escolhe o mês, o valor do mês escolhido fica
+no título porque não cabe em cima da coluna), o cartão do mês, e os grupos
+no desenho do cardápio do Radar: valor em 22px e barra AZUL com a parte do
+grupo na seção — não verde/vermelho, que no Radar dizem dentro/passou.
+Aberto, borda `#93c5fd` e categorias na faixa `#eaf1fd`. Saíram as pílulas
+dos meses e a lista "mês a mês". Nenhum número novo.
+
 **Conta compartilhada** (10/10/2026, pedido do Guilherme: "duas ou mais
 pessoas acessarem a mesma conta"). Cada pessoa tem o próprio login; as
 finanças continuam gravadas com o `user_id` do DONO, e quem aceita o convite

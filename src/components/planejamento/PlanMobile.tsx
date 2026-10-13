@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import BottomNav from '../BottomNav'
 import { Cartao, TituloCartao, IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
+import PlanResumoAnual from './PlanResumoAnual'
 import { type BulkOp } from './PlanFerramentas'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
@@ -35,6 +36,7 @@ import type { Descoberta } from '../../utils/descoberta'
 const AZUL_TOPO = 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)'
 const VERDE = COR.sucessoTexto   // #15803d no branco, 5,0
 const VERMELHO = '#b91c1c'       // 6,5 no branco
+const VERDE_ESCURO = '#14532d'   // 9,0 no branco — o número grande, como os cartões do computador
 
 interface Props {
   anoAtual: number
@@ -62,16 +64,9 @@ export default function PlanMobile(p: Props) {
   const ehAnoCorrente = anoAtual === anoCorrente
   const [mes, setMes] = useState(ehAnoCorrente ? mesAtual : 0)
   const [ferramentas, setFerramentas] = useState(false)
-  const pilulas = useRef<HTMLDivElement>(null)
 
   // Trocou de ano: volta ao mês corrente (ano corrente) ou a janeiro.
   useEffect(() => { setMes(anoAtual === anoCorrente ? mesAtual : 0) }, [anoAtual, anoCorrente, mesAtual])
-
-  // A pílula do mês escolhido sempre visível na faixa.
-  useEffect(() => {
-    const el = pilulas.current?.querySelector<HTMLElement>(`[data-mes="${mes}"]`)
-    el?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
-  }, [mes])
 
   const receitas = previsto.totalEntradas[mes]
   const despesas = previsto.totalSaidas[mes]
@@ -89,8 +84,8 @@ export default function PlanMobile(p: Props) {
 
   return (
     <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
-      {/* ── Topo: o ano, a sobra do mês e os meses ── */}
-      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', padding: '18px 16px 16px' }}>
+      {/* ── Topo: a resposta do ANO, como no computador (PlanResumoAnual) ── */}
+      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', padding: '18px 16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Planejamento</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -99,57 +94,47 @@ export default function PlanMobile(p: Props) {
             <button onClick={() => p.setAnoAtual(a => a + 1)} aria-label="Próximo ano" style={BTN_ANO}>›</button>
           </div>
         </div>
-
-        <div style={{ marginTop: 18, fontSize: 14, color: 'rgba(255,255,255,.75)' }}>
-          {semPlano
-            ? (observando ? `${MESES_FULL[mes]}: descobrindo seus números` : `${MESES_FULL[mes]} ainda sem plano`)
-            : `Quanto sobra em ${MESES_FULL[mes]}`}
-        </div>
-        {semPlano ? (
-          <div style={{ fontSize: 17, fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>
-            {observando
-              ? (desc!.diasAteFechar <= 0 ? 'O mês fecha hoje' : `Faltam ${desc!.diasAteFechar} ${desc!.diasAteFechar === 1 ? 'dia' : 'dias'} para o mês fechar`)
-              : 'Toque num valor abaixo para começar'}
+        {desc?.ativa ? (
+          <div style={{ marginTop: 14, fontSize: 15, color: 'rgba(255,255,255,.85)', lineHeight: 1.4 }}>
+            Ainda estamos descobrindo seus números. Toque num mês abaixo para planejar.
           </div>
         ) : (
-          <>
-            <div style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-.5px', marginTop: 2, fontVariantNumeric: 'tabular-nums',
-              color: sobra < 0 ? '#fecaca' : '#fff' }}>
-              {sobra > 0 ? '+' : ''}{fmt(sobra, true)}
-            </div>
-            <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
-              <span><span style={{ color: 'rgba(255,255,255,.75)' }}>↑ Receitas </span><b style={{ color: '#86efac' }}>{fmt(receitas, true)}</b></span>
-              <span><span style={{ color: 'rgba(255,255,255,.75)' }}>↓ Despesas </span><b style={{ color: '#fecaca' }}>{fmt(despesas, true)}</b></span>
-            </div>
-          </>
+          <PlanResumoAnual previsto={previsto} anoAtual={anoAtual} compacto />
         )}
-
-        {/* Os doze meses numa faixa que rola com o dedo. */}
-        <div ref={pilulas} role="tablist" aria-label="Mês" style={{
-          display: 'flex', gap: 6, overflowX: 'auto', margin: '16px -16px 0', padding: '0 16px',
-          scrollbarWidth: 'none',
-        }}>
-          {MESES.map((m, i) => {
-            const ativo = i === mes
-            const atual = ehAnoCorrente && i === mesAtual
-            return (
-              <button key={m} data-mes={i} role="tab" aria-selected={ativo} onClick={() => setMes(i)} style={{
-                flexShrink: 0, minWidth: 52, minHeight: 44, borderRadius: 999, border: 'none', cursor: 'pointer',
-                fontFamily: 'inherit', fontSize: 15, fontWeight: ativo ? 800 : 600,
-                background: ativo ? '#fff' : 'rgba(255,255,255,.12)', color: ativo ? '#1e3a8a' : '#fff',
-                textDecoration: atual ? 'underline' : 'none', textUnderlineOffset: 4, textDecorationThickness: 2,
-              }}>{m}</button>
-            )
-          })}
-        </div>
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {p.avisos}
 
-        {/* ── De onde o mês parte e onde termina ── */}
+        {/* ── O gráfico do ano: uma coluna por mês; tocar escolhe o mês ── */}
+        <GraficoAno previsto={previsto} anoAtual={anoAtual} mesAtual={mesAtual} mes={mes} setMes={setMes}
+          fechamentoReal={p.fechamentoReal} />
+
+        {/* ── O mês escolhido: quanto sobra, de onde parte e onde termina ── */}
         <Cartao>
-          <TituloCartao>Saldo de {MESES_FULL[mes]}</TituloCartao>
+          <TituloCartao direita={
+            fechado ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#e2e8f0', color: '#334155' }}>✓ fechado</span>
+              : ehAnoCorrente && mes === mesAtual ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#dbeafe', color: '#1e3a8a' }}>ESTE MÊS</span>
+                : undefined
+          }>{MESES_FULL[mes]} {anoAtual}</TituloCartao>
+          {semPlano ? (
+            <div style={{ fontSize: M.corpo, color: COR.textoSuave, lineHeight: 1.45, marginBottom: 8 }}>
+              {observando
+                ? (desc!.diasAteFechar <= 0 ? 'Descobrindo seus números: o mês fecha hoje.'
+                  : `Descobrindo seus números: faltam ${desc!.diasAteFechar} ${desc!.diasAteFechar === 1 ? 'dia' : 'dias'} para o mês fechar.`)
+                : 'Ainda sem plano. Toque num valor abaixo para começar.'}
+            </div>
+          ) : (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: M.legenda, color: COR.textoSuave }}>Quanto sobra no plano</div>
+              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.4px', fontVariantNumeric: 'tabular-nums',
+                color: sobra < 0 ? VERMELHO : VERDE_ESCURO }}>{sobra > 0 ? '+' : ''}{fmt(sobra, true)}</div>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 4, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+                <span><span style={{ color: COR.textoSuave }}>↑ Receitas </span><b style={{ color: VERDE }}>{fmt(receitas, true)}</b></span>
+                <span><span style={{ color: COR.textoSuave }}>↓ Despesas </span><b style={{ color: VERMELHO }}>{fmt(despesas, true)}</b></span>
+              </div>
+            </div>
+          )}
           <LinhaValor rotulo="Começa com" legenda={previsto.inicialReal[mes] ? 'saldo real' : 'previsto'} valor={previsto.saldoInicial[mes]} />
           <LinhaValor rotulo="Termina com" legenda="se o plano se cumprir" valor={previsto.saldoFinal[mes]} forte />
           {fechouEm !== undefined && (
@@ -171,39 +156,6 @@ export default function PlanMobile(p: Props) {
           Toque no grupo para abrir as categorias, e numa categoria com variantes para vê-las. O valor se
           planeja na categoria: toque nele para mudar (aceita conta, como <b>800+300</b>).
         </p>
-
-        {/* ── O ano, mês a mês: a visão que a faixa e o "Ano inteiro" davam ── */}
-        <Cartao>
-          <TituloCartao>{anoAtual} mês a mês</TituloCartao>
-          {MESES_FULL.map((nome, i) => {
-            const r = previsto.totalEntradas[i], d = previsto.totalSaidas[i]
-            const s = r - d
-            const vazio = r === 0 && d === 0
-            const ativo = i === mes
-            return (
-              <button key={nome} onClick={() => { setMes(i); window.scrollTo({ top: 0, behavior: 'smooth' }) }} style={{
-                all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                minHeight: 52, padding: '8px 10px', margin: '0 -10px', cursor: 'pointer', borderRadius: 12,
-                borderTop: i === 0 ? 'none' : '1px solid #eef2f8', background: ativo ? '#eff6ff' : undefined,
-              }}>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: ativo ? 800 : 600, color: COR.texto }}>
-                    {nome}{ehAnoCorrente && i === mesAtual ? ' · hoje' : ''}
-                  </span>
-                  <span style={{ display: 'block', fontSize: M.legenda, marginTop: 2, fontVariantNumeric: 'tabular-nums',
-                    color: vazio ? COR.textoSuave : s < 0 ? VERMELHO : VERDE }}>
-                    {vazio ? 'sem plano' : `sobra ${s > 0 ? '+' : ''}${fmt(s, true)}`}
-                  </span>
-                </span>
-                <span style={{ textAlign: 'right' }}>
-                  <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave }}>termina com</span>
-                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-                    color: previsto.saldoFinal[i] < 0 ? VERMELHO : COR.texto }}>{fmt(previsto.saldoFinal[i], true)}</span>
-                </span>
-              </button>
-            )
-          })}
-        </Cartao>
 
         {/* ── Ferramentas de lote: fechadas, para não vir antes dos números ── */}
         <Cartao>
@@ -446,10 +398,14 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
     return novo
   })
 
-  // Cada grupo é um cartão próprio, FECHADO por padrão, com o total do mês —
-  // pedido do Guilherme no mesmo dia: "cada grupo deveria ter um cartão
-  // separado para não ficar esta lista". Recolhido, a seção vira um resumo
-  // por grupo, como o Radar do celular.
+  // Cada grupo é um cartão próprio, FECHADO por padrão (pedido de 11/10/2026),
+  // e desde 13/10/2026 no desenho do cardápio do Radar ("usar a mesma ideia de
+  // cardápio com gráfico"): ícone em círculo, o valor do mês em destaque, uma
+  // barra com a parte do grupo no total da seção. Aberto, as categorias vão
+  // para a faixa recuada de cantos 14 com borda #93c5fd, como no Radar.
+  // Barra em azul, e não verde/vermelho: no Radar essas cores dizem "dentro
+  // do plano" e "passou", e aqui não há realizado — só o tamanho.
+  const nomeSecao = tipo === 'e' ? 'das receitas' : 'das despesas'
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '6px 4px -4px' }}>
@@ -461,35 +417,51 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
         const chave = `grupo:${tipo}:${nomeGrupo}`
         const aberto = abertas.has(chave)
         const soma = g.linhas.reduce((t, l) => t + (l.cat.v[mes] ?? 0), 0)
+        const parte = total > 0.005 ? Math.max(0, soma) / total : 0
         const fams = familias(g.linhas, tipoCad, categorias)
         const { icone, cor: corG } = iconeCategoria(categorias, fams[0]?.nome ?? '')
         return (
-          <Cartao key={chave} style={{ padding: aberto ? '14px 18px 8px' : '14px 18px' }}>
+          <Cartao key={chave} style={{ padding: '16px 18px', border: `2px solid ${aberto ? '#93c5fd' : 'transparent'}` }}>
             <button type="button" onClick={() => alternarGrupo(chave)} aria-expanded={aberto} style={{
-              all: 'unset', boxSizing: 'border-box', width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-              minHeight: 48, cursor: 'pointer',
+              all: 'unset', boxSizing: 'border-box', width: '100%', display: 'block', cursor: 'pointer',
             }}>
-              <IconeRedondo icone={icone} cor={corG} tamanho={40} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeGrupo}</span>
-                <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>
-                  {fams.length} {fams.length === 1 ? 'categoria' : 'categorias'}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <IconeRedondo icone={icone} cor={corG} tamanho={42} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: M.titulo, fontWeight: 700, color: COR.texto,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeGrupo}</span>
+                  <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave, marginTop: 1 }}>
+                    {tipo === 'e' ? '↑ receita' : '↓ despesa'} · {fams.length} {fams.length === 1 ? 'categoria' : 'categorias'}
+                  </span>
                 </span>
+                <span aria-hidden style={{ fontSize: 14, color: COR.textoSuave, transform: aberto ? 'rotate(180deg)' : undefined,
+                  transition: 'transform .15s' }}>▾</span>
               </span>
-              <span style={{ fontSize: M.corpo, fontWeight: 800, color: soma > 0.005 ? COR.texto : COR.textoSuave,
-                fontVariantNumeric: 'tabular-nums' }}>{fmt(soma, true)}</span>
-              <span aria-hidden style={{ fontSize: 18, color: COR.textoSuave, transform: aberto ? 'rotate(90deg)' : undefined,
-                transition: 'transform .15s' }}>›</span>
+              <span style={{ display: 'block', marginTop: 12, fontSize: 22, fontWeight: 800, letterSpacing: '-.3px',
+                color: soma > 0.005 ? COR.texto : COR.textoSuave, fontVariantNumeric: 'tabular-nums' }}>
+                {soma > 0.005 ? fmt(soma, true) : 'Sem plano'}
+              </span>
+              <span aria-hidden style={{ display: 'block', marginTop: 8, height: 10, borderRadius: 5, background: '#e2e8f0',
+                border: '1px solid #cbd5e1', overflow: 'hidden', boxSizing: 'border-box' }}>
+                <span style={{ display: 'block', height: '100%', width: `${Math.min(1, parte) * 100}%`, background: '#3b82f6', borderRadius: 5 }} />
+              </span>
+              <span style={{ display: 'block', marginTop: 6, fontSize: 13, color: COR.textoSuave }}>
+                {Math.round(parte * 100)}% {nomeSecao} de {MESES_FULL[mes].toLowerCase()}
+              </span>
             </button>
             {aberto && (
-              <div style={{ marginTop: 6, borderTop: '1px solid #eef2f8' }}>
-                {fams.map((f, i) => {
-                  const simples = f.proprias.length === 0 && f.naMae.length === 0
-                  if (simples && f.mae) return linhaSimples(f.mae, i === 0)
-                  if (!f.mae && f.proprias.length === 1 && f.naMae.length === 0) return linhaSimples(f.proprias[0], i === 0)
-                  return linhaFamilia(f, i === 0)
-                })}
+              <div style={{ marginTop: 14, background: '#eaf1fd', borderRadius: 16, padding: '10px 10px 10px' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1e3a8a', padding: '0 4px 8px' }}>
+                  {fams.length} {fams.length === 1 ? 'categoria' : 'categorias'}
+                </div>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '2px 12px' }}>
+                  {fams.map((f, i) => {
+                    const simples = f.proprias.length === 0 && f.naMae.length === 0
+                    if (simples && f.mae) return linhaSimples(f.mae, i === 0)
+                    if (!f.mae && f.proprias.length === 1 && f.naMae.length === 0) return linhaSimples(f.proprias[0], i === 0)
+                    return linhaFamilia(f, i === 0)
+                  })}
+                </div>
               </div>
             )}
           </Cartao>
@@ -502,4 +474,84 @@ function Secao({ titulo, cor, total, tipo, cats, visiveis, mes, categorias, onSa
 const BTN_ANO: CSSProperties = {
   width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,.15)',
   color: '#fff', fontSize: 22, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1,
+}
+
+/**
+ * "Com quanto cada mês termina" — o gráfico do Planejamento do computador
+ * (PlanAnoVisao), no celular. Pedido do Guilherme em 13/10/2026: "usar a
+ * mesma ideia de cardápio com gráfico". Os doze meses cabem na largura, sem
+ * rolar: o valor de cada coluna não cabe em cima dela (≈ 22 px), então o
+ * valor do mês ESCOLHIDO fica no título, e tocar numa coluna escolhe o mês.
+ * Mesmas cores e mesma regra: fechado mostra o fechamento real.
+ */
+const G_FECHADO = '#64748b', G_PREVISTO = '#3b82f6', G_ATUAL = '#1e3a8a', G_NEG = '#b91c1c'
+const G_ALTURA = 120
+
+function GraficoAno({ previsto, anoAtual, mesAtual, mes, setMes, fechamentoReal }: {
+  previsto: Saldos; anoAtual: number; mesAtual: number; mes: number; setMes: (m: number) => void
+  fechamentoReal?: number[]
+}) {
+  const anoCorrente = new Date().getFullYear()
+  const meses = Array.from({ length: 12 }, (_, mi) => {
+    const fechado = anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
+    const atual = anoAtual === anoCorrente && mi === mesAtual
+    const semPlano = previsto.totalEntradas[mi] === 0 && previsto.totalSaidas[mi] === 0
+    const real = fechado && fechamentoReal ? fechamentoReal[mi] : undefined
+    return { mi, fechado, atual, semPlano, valor: real ?? previsto.saldoFinal[mi] }
+  })
+  const max = Math.max(0, ...meses.map(m => m.valor))
+  const min = Math.min(0, ...meses.map(m => m.valor))
+  const faixa = max - min || 1
+  const zeroY = (max / faixa) * G_ALTURA
+  const sel = meses[mes]
+
+  return (
+    <Cartao style={{ padding: '16px 14px 12px' }}>
+      <div style={{ padding: '0 4px', marginBottom: 12 }}>
+        <div style={{ fontSize: M.titulo, fontWeight: 700, color: COR.texto }}>Com quanto cada mês termina</div>
+        <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+          {MESES_FULL[mes]} {sel.fechado ? 'fechou com' : 'termina com'}{' '}
+          <b style={{ color: sel.valor < 0 ? G_NEG : COR.texto }}>{fmt(sel.valor, true)}</b>
+        </div>
+      </div>
+      <div role="tablist" aria-label="Mês" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0,1fr))',
+        gap: 3, position: 'relative' }}>
+        <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: zeroY, height: 1,
+          background: min < 0 ? G_NEG : '#94a3b8' }} />
+        {meses.map(m => {
+          const h = Math.max(2, (Math.abs(m.valor) / faixa) * G_ALTURA)
+          const top = m.valor >= 0 ? zeroY - h : zeroY
+          const cor = m.valor < 0 ? G_NEG : m.atual ? G_ATUAL : m.fechado ? G_FECHADO : G_PREVISTO
+          const ativo = m.mi === mes
+          const vazio = m.semPlano && !m.fechado
+          return (
+            <button key={m.mi} type="button" role="tab" aria-selected={ativo} onClick={() => setMes(m.mi)}
+              aria-label={`${MESES_FULL[m.mi]}: ${m.fechado ? 'fechou com' : 'termina com'} ${fmt(m.valor, true)}`}
+              style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
+              <span style={{ position: 'relative', width: '100%', height: G_ALTURA, borderRadius: 8,
+                background: ativo ? '#eff6ff' : undefined }}>
+                <span style={{ position: 'absolute', left: '14%', right: '14%', top, height: h,
+                  borderRadius: m.valor >= 0 ? '5px 5px 0 0' : '0 0 5px 5px', boxSizing: 'border-box',
+                  background: vazio ? 'transparent' : cor, border: vazio ? `1.5px dashed ${G_FECHADO}` : 'none',
+                  outline: ativo ? `2px solid ${G_ATUAL}` : undefined, outlineOffset: 2 }} />
+              </span>
+              <span style={{ marginTop: 6, minHeight: 26, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 999, background: ativo ? G_ATUAL : undefined, color: ativo ? '#fff' : m.atual ? G_ATUAL : '#475569',
+                fontSize: 12, fontWeight: ativo || m.atual ? 800 : 600, letterSpacing: '-.3px',
+                textDecoration: m.atual && !ativo ? 'underline' : undefined, textUnderlineOffset: 3 }}>
+                {MESES[m.mi]}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, padding: '0 4px', fontSize: 12, color: '#475569' }}>
+        {[['fechado (real)', G_FECHADO], ['este mês', G_ATUAL], ['previsto', G_PREVISTO]].map(([t, c]) => (
+          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: c }} />{t}
+          </span>
+        ))}
+      </div>
+    </Cartao>
+  )
 }

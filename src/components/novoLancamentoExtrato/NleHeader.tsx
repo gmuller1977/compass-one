@@ -1,4 +1,3 @@
-import type { User } from '@supabase/supabase-js'
 import type { Conta } from '../../context/AppContext'
 import { NOMES_MESES } from './NleShared'
 import PageHeader from '../PageHeader'
@@ -8,8 +7,6 @@ type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
 type Props = {
   isMobile: boolean
-  user: User | null
-  sairDaConta: () => void
   tabPrincipal: TabPrincipal
   setTabPrincipal: (v: TabPrincipal) => void
   contasExtrato: Conta[]
@@ -26,8 +23,12 @@ type Props = {
   onCartaoMesSelect: (mes: number, ano: number) => void
 }
 
+/** Como o BTN_ANO do Planejamento do celular. */
+const SETA = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.15)',
+  color:'#fff', fontSize:22, fontWeight:700, cursor:'pointer', fontFamily:'inherit', lineHeight:1 } as const
+
 export default function NleHeader({
-  isMobile, user, sairDaConta,
+  isMobile,
   tabPrincipal, setTabPrincipal,
   contasExtrato, contaId, setContaId, setMobileDiaForm,
   mes, ano, onMesSelect,
@@ -83,14 +84,31 @@ export default function NleHeader({
   return (
     <div style={{background:'linear-gradient(180deg,#0f2878,#132f8f)',
       padding:'calc(14px + env(safe-area-inset-top)) 16px 4px',flexShrink:0}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+      {/* Título e o mês com setas ao lado, como o ano no Planejamento (pedido
+          do Guilherme em 13/10/2026: o mês ocupava uma linha inteira no meio
+          do azul). No Cartão as setas andam a fatura; nos outros, o mês. */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:14}}>
         <h1 style={{margin:0,fontSize:22,fontWeight:800,color:'#fff',letterSpacing:'-.01em'}}>Lançamentos</h1>
-        <button onClick={sairDaConta} title="Sair" aria-label="Sair"
-          style={{width:36,height:36,borderRadius:'50%',background:'rgba(255,255,255,.18)',
-            border:'none',cursor:'pointer',display:'flex',alignItems:'center',
-            justifyContent:'center',color:'#fff',fontSize:14,fontWeight:700,fontFamily:'inherit'}}>
-          {user?.email?.charAt(0).toUpperCase() ?? 'U'}
-        </button>
+        {(() => {
+          const m = tabPrincipal === 'cartao' ? cartaoMes : mes
+          const a = tabPrincipal === 'cartao' ? cartaoAno : ano
+          const ir = (d: number) => {
+            const n = m + d
+            const nm = (n + 12) % 12, na = a + (n < 0 ? -1 : n > 11 ? 1 : 0)
+            if (tabPrincipal === 'cartao') onCartaoMesSelect(nm, na)
+            else onMesSelect(nm, na)
+          }
+          return (
+            <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+              <button onClick={() => ir(-1)} aria-label="Mês anterior" style={SETA}>‹</button>
+              <span style={{minWidth:58,textAlign:'center',color:'#fff',lineHeight:1.15}}>
+                <span style={{display:'block',fontSize:17,fontWeight:800}}>{NOMES_MESES[m].slice(0,3)}</span>
+                <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)'}}>{a}</span>
+              </span>
+              <button onClick={() => ir(1)} aria-label="Próximo mês" style={SETA}>›</button>
+            </div>
+          )
+        })()}
       </div>
       {/* Tipo: controle segmentado. Ativo é pílula branca com texto marinho;
           inativo, branco a 85% sobre o azul (6,7:1 no #1e40af). */}
@@ -99,7 +117,6 @@ export default function NleHeader({
           {v:'extrato'     as const, icon:'ti-building-bank', label:'Banco'},
           {v:'cartao'      as const, icon:'ti-credit-card', label:'Cartão'},
           {v:'dinheiro'    as const, icon:'ti-cash', label:'Dinheiro'},
-          {v:'consolidado' as const, icon:'ti-chart-pie', label:'Total'},
         ]).map(({v,icon,label}) => {
           const ativo = tabPrincipal === v
           return (

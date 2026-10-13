@@ -5,6 +5,8 @@ import { fmt, MESES, MESES_FULL, janelaQueFecha, type Saldos } from './types'
 interface Props {
   previsto: Saldos
   anoAtual: number
+  /** Celular: número menor e as quatro miniaturas em 2 × 2. */
+  compacto?: boolean
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * batiam. Com ancora, os rotulos dizem de onde ela parte. A sobra da frase de
  * apoio é receitas − despesas DESSA janela, os dois números ao lado.
  */
-export default function PlanResumoAnual({ previsto, anoAtual }: Props) {
+export default function PlanResumoAnual({ previsto, anoAtual, compacto }: Props) {
   const j = janelaQueFecha(previsto)
   const doAno = j.inicio === 0
   const desde = doAno ? `${anoAtual}` : MESES[j.inicio].toLowerCase()
@@ -39,12 +41,12 @@ export default function PlanResumoAnual({ previsto, anoAtual }: Props) {
   ]
 
   return (
-    <div style={{ marginTop: 18, display: 'flex', gap: 24, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-      <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+    <div style={{ marginTop: 18, display: 'flex', gap: compacto ? 14 : 24, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+      <div style={{ flex: compacto ? '1 1 100%' : '1 1 320px', minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
           {passado ? `O plano de ${anoAtual} previa terminar com` : `Se o plano se cumprir, ${anoAtual} termina com`}
         </div>
-        <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
+        <div style={{ fontSize: compacto ? 34 : 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
           color: cor(j.saldoFinal), fontVariantNumeric: 'tabular-nums' }}>{fmt(j.saldoFinal, true)}</div>
         <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
           {sobra >= 0
@@ -52,7 +54,8 @@ export default function PlanResumoAnual({ previsto, anoAtual }: Props) {
             : `O plano gasta ${fmt(-sobra, true)} a mais do que recebe ${deQuando}`}
         </div>
       </div>
-      <div style={{ flex: '1 1 460px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+      <div style={{ flex: compacto ? '1 1 100%' : '1 1 460px', display: 'grid',
+        gridTemplateColumns: `repeat(${compacto ? 2 : 4}, minmax(0,1fr))`, gap: 8 }}>
         {minis.map(k => (
           <div key={k.rot} style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)',
             borderRadius: 14, padding: '10px 12px', minWidth: 0 }}>
