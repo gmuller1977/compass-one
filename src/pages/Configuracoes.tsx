@@ -567,7 +567,7 @@ export default function Configuracoes() {
             status: '', ok: false },
         ]
         return (
-          <div style={{ flex:1, overflowY:'auto', padding: isMobile ? 12 : 20 }}>
+          <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '12px 12px 120px' : 20 }}>
             <PageHeader icon="ti-settings" breadcrumb="Minha conta" title="Configurações"
               subtitle="Tudo o que você cadastra no app mora aqui" ajuda="configuracoes" />
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 14 : 18,
@@ -631,7 +631,7 @@ export default function Configuracoes() {
 
       {/* CONTEÚDO */}
       {aba !== 'home' && (
-        <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? 12 : 20, gap:16 }}>
+        <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? '12px 12px 120px' : 20, gap:16 }}>
 
           {(aba==='bancos' || aba==='cartoes') && (
             <CfgBancosCartoes

@@ -101,7 +101,10 @@ export default function CfgCategorias({
   )
 
   return (
-    <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0, overflow:'hidden' }}>
+    // No celular a PÁGINA rola (o conteúdo de Configurações tem overflowY
+    // auto): com overflow hidden e flex 1 esta caixa encolhia até a altura da
+    // tela e cortava a lista, sem rolagem nenhuma.
+    <div style={{ flex: isMobile ? '0 0 auto' : 1, display:'flex', flexDirection:'column', minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
       {subAbaCat === 'categorias' && (
         <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
           <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
