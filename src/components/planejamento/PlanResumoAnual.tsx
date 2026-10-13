@@ -42,7 +42,7 @@ export default function PlanResumoAnual({ previsto, anoAtual, compacto }: Props)
 
   return (
     <div style={{ marginTop: 18, display: 'flex', gap: compacto ? 14 : 24, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-      <div style={{ flex: compacto ? '1 1 100%' : '1 1 320px', minWidth: 0 }}>
+      <div style={{ flex: compacto ? '1 1 100%' : '1 1 260px', minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
           {passado ? `O plano de ${anoAtual} previa terminar com` : `Se o plano se cumprir, ${anoAtual} termina com`}
         </div>
@@ -54,15 +54,16 @@ export default function PlanResumoAnual({ previsto, anoAtual, compacto }: Props)
             : `O plano gasta ${fmt(-sobra, true)} a mais do que recebe ${deQuando}`}
         </div>
       </div>
-      <div style={{ flex: compacto ? '1 1 100%' : '1 1 460px', display: 'grid',
+      <div style={{ flex: compacto ? '1 1 100%' : '1 1 560px', display: 'grid',
         gridTemplateColumns: `repeat(${compacto ? 2 : 4}, minmax(0,1fr))`, gap: 8 }}>
         {minis.map(k => (
           <div key={k.rot} style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)',
             borderRadius: 14, padding: '10px 12px', minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO, whiteSpace: 'nowrap',
               overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.rot}</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmt(k.v, true)}</div>
+            {/* Como no Radar: o valor nunca é cortado; acima de R$ 99.999,99 cai para 15px. */}
+            <div style={{ fontSize: fmt(k.v, true).length > 12 ? 15 : 17, fontWeight: 800, color: k.cor,
+              fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(k.v, true)}</div>
           </div>
         ))}
       </div>
