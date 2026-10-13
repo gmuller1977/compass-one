@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fmt, MESES, MESES_FULL, type Saldos } from './types'
+import { fmt, MESES_FULL, type Saldos } from './types'
+import { mesesDoAno } from './anoDoPlano'
+import GraficoGuardaAno from './GraficoGuardaAno'
 
 interface Props {
   previsto: Saldos
@@ -7,6 +9,8 @@ interface Props {
   mesAtual: number
   /** Fechamento real de cada mês (bancos e dinheiro). Só vale nos meses fechados. */
   fechamentoReal?: number[]
+  /** Saldo real com que cada mês abriu. */
+  inicioReal?: number[]
   objetivos: number[]
   /** O texto do mês sem plano — na descoberta, "Descobrindo" no mês observado. */
   semPlanoTexto: (mi: number) => { titulo: string; sub?: string } | undefined
@@ -16,7 +20,7 @@ interface Props {
 /**
  * O ano do Planejamento no modelo do Radar (pedido do Guilherme em
  * 12/10/2026: ele gostou dos dois modelos, "ano inteiro" e "gráfico", e
- * ficaram juntos). Em cima, uma coluna por mês com o saldo em que ele termina;
+ * ficaram juntos). Em cima, o gráfico "Quanto cada mês guarda" (GraficoGuardaAno);
  * embaixo, os doze meses em cartões brancos, sem setas — nenhum mês escondido.
  * Clicar numa coluna ou num cartão abre o mesmo modal de sempre.
  *
@@ -31,15 +35,10 @@ interface Props {
  * #3b82f6 (3,68), atual #1e3a8a (10,4), negativo #b91c1c (6,47). Texto:
  * verde #14532d e vermelho #b91c1c.
  */
-const COR_FECHADO = '#64748b'
-const COR_PREVISTO = '#3b82f6'
 const COR_ATUAL = '#1e3a8a'
 const COR_NEG = '#b91c1c'
 const VERDE = '#14532d'
 const SUAVE = '#475569'
-const ALTURA = 170
-
-const curto = (v: number) => `${v < 0 ? '−' : ''}R$ ${Math.round(Math.abs(v)).toLocaleString('pt-BR')}`
 
 function useColunas() {
   const calc = () => (window.innerWidth >= 1280 ? 6 : window.innerWidth >= 900 ? 4 : 3)
@@ -52,79 +51,15 @@ function useColunas() {
   return n
 }
 
-export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoReal, objetivos, semPlanoTexto, onAbrir }: Props) {
+export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos, semPlanoTexto, onAbrir }: Props) {
   const colunas = useColunas()
-  const anoCorrente = new Date().getFullYear()
-
-  const meses = Array.from({ length: 12 }, (_, mi) => {
-    const fechado = anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
-    const atual = anoAtual === anoCorrente && mi === mesAtual
-    const receitas = previsto.totalEntradas[mi]
-    const despesas = previsto.totalSaidas[mi]
-    const semPlano = receitas === 0 && despesas === 0
-    const real = fechado && fechamentoReal ? fechamentoReal[mi] : undefined
-    const final = previsto.saldoFinal[mi]
-    return { mi, fechado, atual, semPlano, real, final, sobra: receitas - despesas,
-      valor: real ?? final, meta: objetivos[mi] ?? 0 }
-  })
-
-  const max = Math.max(0, ...meses.map(m => m.valor))
-  const min = Math.min(0, ...meses.map(m => m.valor))
-  const faixa = max - min || 1
-  const zeroY = (max / faixa) * ALTURA
-  const corBarra = (m: typeof meses[number]) =>
-    m.valor < 0 ? COR_NEG : m.atual ? COR_ATUAL : m.fechado ? COR_FECHADO : COR_PREVISTO
+  const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* O gráfico: uma coluna por mês, com o valor em cima. */}
       <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 14px rgba(15,40,120,.07)', padding: '18px 20px 14px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>
-          Com quanto cada mês termina
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 8,
-          position: 'relative', height: ALTURA + 36, paddingTop: 18 }}>
-          {/* Linha do zero */}
-          <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: 18 + zeroY, height: 1,
-            background: min < 0 ? COR_NEG : '#94a3b8' }} />
-          {meses.map(m => {
-            const h = Math.max(2, (Math.abs(m.valor) / faixa) * ALTURA)
-            const top = m.valor >= 0 ? zeroY - h : zeroY
-            const cor = corBarra(m)
-            const rotulo = m.fechado ? 'fechou com' : 'termina com'
-            return (
-              <button key={m.mi} type="button" onClick={() => onAbrir(m.mi)}
-                aria-label={`${MESES_FULL[m.mi]}: ${rotulo} ${fmt(m.valor, true)}`}
-                title={`${MESES_FULL[m.mi]}: ${rotulo} ${fmt(m.valor, true)}`}
-                style={{ position: 'relative', height: ALTURA, border: 'none', background: 'transparent',
-                  padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
-                <span style={{ position: 'absolute', left: 0, right: 0, top: m.valor >= 0 ? top - 18 : top + h + 2,
-                  fontSize: 11, fontWeight: m.atual ? 800 : 600, color: m.valor < 0 ? COR_NEG : '#0f172a',
-                  fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                  {curto(m.valor)}
-                </span>
-                <span style={{ position: 'absolute', left: '12%', right: '12%', top, height: h,
-                  borderRadius: m.valor >= 0 ? '6px 6px 0 0' : '0 0 6px 6px',
-                  background: m.semPlano && !m.fechado ? 'transparent' : cor,
-                  border: m.semPlano && !m.fechado ? `1.5px dashed ${COR_FECHADO}` : 'none',
-                  boxSizing: 'border-box' }} />
-              </button>
-            )
-          })}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 8, marginTop: 6 }}>
-          {meses.map(m => (
-            <span key={m.mi} style={{ textAlign: 'center', fontSize: 12, color: m.atual ? COR_ATUAL : SUAVE,
-              fontWeight: m.atual ? 800 : 500 }}>{MESES[m.mi]}</span>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, fontSize: 12, color: SUAVE }}>
-          {[['fechado (real)', COR_FECHADO], ['este mês', COR_ATUAL], ['previsto', COR_PREVISTO]].map(([t, c]) => (
-            <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 3, background: c }} />{t}
-            </span>
-          ))}
-        </div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Quanto cada mês guarda</div>
+        <GraficoGuardaAno meses={meses} altura={170} onEscolher={onAbrir} />
       </div>
 
       {/* Os doze meses, sem setas. */}

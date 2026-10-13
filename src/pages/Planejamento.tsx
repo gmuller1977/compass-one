@@ -366,6 +366,7 @@ export default function Planejamento() {
           onMetaSave={plan.editarMetas}
           descoberta={descoberta}
           fechamentoReal={plan.saldoFinalReal}
+          inicioReal={plan.saldoInicialReal}
           avisos={<>
             <AvisoSoAdministrador />
             {descoberta.ativa && (
@@ -403,7 +404,8 @@ export default function Planejamento() {
             {/* Na descoberta a resposta do ano sai: sem plano seriam quatro
                 R$ 0,00 em destaque logo abaixo de um texto que acabou de
                 explicar que ainda estamos medindo. */}
-            {!descoberta.ativa && <PlanResumoAnual previsto={plan.previsto} anoAtual={anoAtual} />}
+            {!descoberta.ativa && <PlanResumoAnual previsto={plan.previsto} anoAtual={anoAtual} mesAtual={plan.mesAtual}
+              fechamentoReal={plan.saldoFinalReal} inicioReal={plan.saldoInicialReal} objetivos={plan.objetivos} />}
           </PageHeader>
         </div>
       )}
@@ -448,6 +450,7 @@ export default function Planejamento() {
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}
             fechamentoReal={plan.saldoFinalReal}
+            inicioReal={plan.saldoInicialReal}
           />
         </AjustePlanoContexto.Provider>
         </LancadoNoMesContexto.Provider></ItensPlanoContexto.Provider>

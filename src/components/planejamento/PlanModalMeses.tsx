@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { COR, MESES_FULL, fmt, nomeExibicao, type AnoData, type Cat, type Saldos } from './types'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import CampoMeta from './CampoMeta'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import { itensDoMes } from '../../utils/itensPlano'
@@ -57,6 +58,7 @@ function porTela(): number {
  */
 export default function PlanModalMeses({
   mesInicial, anoAtual, mesAtual, dadosAtivos, previsto, hasFaturaCat, categorias, onSave, onClose,
+  objetivos, onMetaSave,
 }: {
   mesInicial: number
   anoAtual: number
@@ -68,6 +70,9 @@ export default function PlanModalMeses({
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onClose: () => void
+  /** Meta de economia de cada mês (`objetivos`): o campo fica no próprio mês. */
+  objetivos: number[]
+  onMetaSave: (objetivos: number[]) => void
 }) {
   const abrirItens = useAbrirItens()
   const lancadoNoMes = useLancadoNoMes()
@@ -218,6 +223,20 @@ export default function PlanModalMeses({
                 </div>
               )
             })}
+            {/* A meta de economia, no próprio mês (pedido do Guilherme em
+                13/10/2026, no lugar do botão "Meta de economia" da barra). */}
+            <div style={{ gridColumn: '1 / -1', fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
+              letterSpacing: '.4px', color: '#1e3a8a', padding: '14px 0 6px', position: 'sticky', left: 0 }}>Meta de economia</div>
+            <div style={{ position: 'sticky', left: 0, background: COR.branco, zIndex: 1, display: 'flex', alignItems: 'center',
+              gap: 8, padding: '6px 8px 6px 0', borderBottom: `1px solid ${COR.borda}`, fontSize: 13, color: COR.texto }}>
+              <i aria-hidden className="ti ti-target" style={{ fontSize: 16, color: '#15803d' }} />Quanto quero guardar
+            </div>
+            {meses.map(mi => (
+              <div key={mi} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                borderBottom: `1px solid ${COR.borda}`, fontSize: 13 }}>
+                <CampoMeta mi={mi} anoAtual={anoAtual} mesAtual={mesAtual} objetivos={objetivos} onMetaSave={onMetaSave} />
+              </div>
+            ))}
             {secao('Receitas', '#15803d', entradas, 'e')}
             {secao('Despesas', '#b91c1c', saidas, 's')}
 

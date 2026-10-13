@@ -200,7 +200,7 @@ em [mês]". Não usar "resultado", "receitas" nem "despesas" nesses textos.
 **A meta SAIU da Início no mesmo dia; a frase é uma mensagem sem números**
 (Guilherme: "são muitos números na mesma tela — saldo atual, saldo previsto,
 quanto gastou e a meta"). Os três parágrafos acima sobre a frase da meta são
-histórico; a meta continua só no Planejamento ("🎯 Meta de economia").
+histórico; a meta continua só no Planejamento (hoje, o campo "Quanto quero guardar" de cada mês).
 Embaixo do saldo atual fica uma frase de [`mensagemDoMes.ts`](src/utils/mensagemDoMes.ts),
 pelo saldo final previsto do cenário escolhido contra o saldo com que o mês
 abriu: final negativo → "Atenção: do jeito que está, o mês termina no
@@ -257,6 +257,40 @@ branco, gráfico ≥ 3:1: fechado `#64748b`, previsto `#3b82f6`, atual
 `#1e3a8a`, negativo `#b91c1c`. `PlanCardMes` e `PlanFaixaMeses` saíram — as
 notas abaixo sobre a faixa de quatro meses com setas e o "Fechou em" do
 cartão são histórico. Nenhum número novo; o celular (`PlanMobile`) não mudou.
+
+**O topo do Planejamento é uma bússola: três respostas** (13/10/2026, pedido
+do Guilherme: "se o Compass One é uma bússola e o plano é o caminho para
+alcançar suas metas, o que vale mostrar?"). Computador (`PageHeader`) e
+celular (`compacto`), em `PlanResumoAnual`, com os dados de
+[`anoDoPlano.ts`](src/components/planejamento/anoDoPlano.ts):
+
+1. **Para onde vou**: o saldo previsto em 31/12, em 40px (o de antes).
+2. **Estou no rumo da meta**: "Meta de economia 2026" = soma das metas dos
+   meses (`objetivos`), contra o RUMO do ano, "Até dezembro você deve guardar
+   R$ X · faltam R$ Y". O rumo é o que os meses fechados guardaram de verdade
+   + o que o plano guarda nos que faltam — e não o plano dos doze meses, que
+   contaria de novo meses que já passaram.
+3. **Quanto já percorri**: "Já guardou · jan–set", o real dos meses fechados.
+   Some em ano futuro e em janeiro.
+
+"Guardou de verdade" = fechamento real − saldo real com que o mês abriu
+(`saldoFinalReal` − `saldoInicialReal`), ao lado do plano, nunca nas
+categorias. Saíram do topo os totais de receitas e despesas da janela
+("out–dez"); a regra de `janelaQueFecha` abaixo segue valendo onde ela é lida.
+
+**O gráfico do ano é "Quanto cada mês guarda"** (mesmo dia, "isso vale para
+web e mobile"), `GraficoGuardaAno`, o mesmo componente nos dois (no celular
+rola para o lado). Coluna = quanto o mês guarda (real nos fechados, plano nos
+outros); traço verde tracejado = a meta daquele mês (`#15803d`); linha âmbar
+= saldo acumulado (`#b45309`), na escala DELA — na mesma escala as colunas
+virariam traços —, com o valor no último ponto e no título de cada mês.
+Substitui "Com quanto cada mês termina".
+
+**A meta se define no próprio mês, e o botão "Meta de economia" saiu da
+barra** (mesmo dia, pedido dele). É a linha "Quanto quero guardar" no topo do
+`PlanModalMeses` e do mês aberto do celular (`CampoMeta`, a célula de sempre).
+Mês fechado não muda: a meta dele é a régua com que foi medido. A barra de
+ferramentas ficou com Reajuste % e Copiar ano. O `PlanModalMeta` saiu.
 
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
@@ -933,7 +967,7 @@ fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
 `prova51` (5 invariantes) e `prova53` (8).
 
 **A barra de ferramentas do Planejamento ficou com Reajuste %, Copiar ano e
-Meta** (13/10/2026, escolha do Guilherme no card). "Copiar mês" e "Aplicar
+Meta** (a Meta saiu no mesmo dia, ver acima) (13/10/2026, escolha do Guilherme no card). "Copiar mês" e "Aplicar
 valor" saíram: a repetição da categoria faz o trabalho deles, e copiar um mês
 levava "IPVA · 1 de 3" para o ano inteiro (a temporária virava permanente).
 Corrigidos junto: o filtro fixa/variável do Reajuste acha o cadastro pelo id

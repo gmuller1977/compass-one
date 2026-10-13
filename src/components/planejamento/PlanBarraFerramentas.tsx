@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useToast } from '../Toast'
 import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
-import PlanModalMeta from './PlanModalMeta'
 import { COR, type AnoData } from './types'
 import type { Categoria } from '../../context/AppContext'
 
@@ -18,8 +17,6 @@ const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
   { id: 'ano',      label: 'Copiar ano',    icon: 'ti-copy' },
 ]
 
-/** A meta abre modal em vez de painel: nao e edicao em lote como as outras. */
-const META = { label: 'Meta de economia', icon: 'ti-target' }
 
 /**
  * Azul escuro com fonte branca — 10,4:1, o mesmo tom das faixas de resumo do
@@ -54,11 +51,6 @@ interface Props {
   dadosAnoAnterior: AnoData | null
   categorias: Categoria[]
   onBulkSave: (ops: BulkOp[]) => void
-  /** Doze metas de sobra, uma por mes. Zero = sem meta. */
-  objetivos: number[]
-  /** Resultado previsto de cada mes, para o modal comparar com a meta. */
-  sobraPrevista: number[]
-  onMetaSave: (objetivos: number[]) => void
   /** Edicao indisponivel (plano travado, ou aba so de leitura). */
   bloqueado?: boolean
   motivoBloqueio?: string
@@ -70,13 +62,11 @@ interface Props {
  */
 export default function PlanBarraFerramentas({
   mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior, categorias,
-  onBulkSave, objetivos, sobraPrevista, onMetaSave,
+  onBulkSave,
   bloqueado = false, motivoBloqueio,
 }: Props) {
   const [toolAberta, setToolAberta] = useState<ToolId | null>(null)
-  const [metaAberta, setMetaAberta] = useState(false)
   const { toast } = useToast()
-  const temMeta = objetivos.some(v => v > 0)
 
   function toggleTool(id: ToolId) {
     if (bloqueado) {
@@ -103,36 +93,7 @@ export default function PlanBarraFerramentas({
           )
         })}
 
-        {/* Ao lado das de lote, mas separada: abre modal, nao painel. */}
-        <button
-          onClick={() => {
-            if (bloqueado) { if (motivoBloqueio) toast(motivoBloqueio, 'info'); return }
-            setMetaAberta(true)
-          }}
-          title={bloqueado ? motivoBloqueio : 'Quanto você quer que sobre por mês'}
-          style={estiloBotao(metaAberta, bloqueado)}
-        >
-          <i aria-hidden className={`ti ${META.icon}`} style={{ fontSize: 15 }} />{META.label}
-          {/* Ja existe meta em algum mes. Antes isso pintava o botao inteiro de
-              azul claro, o que com a barra escura viraria "sempre ativo". */}
-          {temMeta && !metaAberta && (
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: '#86efac', marginLeft: 1,
-            }} />
-          )}
-        </button>
       </div>
-
-      {metaAberta && (
-        <PlanModalMeta
-          mesAtual={mesAtual}
-          objetivos={objetivos}
-          sobraPrevista={sobraPrevista}
-          onSalvar={onMetaSave}
-          onFechar={() => setMetaAberta(false)}
-        />
-      )}
 
       <PlanFerramentas
         toolAberta={bloqueado ? null : toolAberta}

@@ -26,6 +26,8 @@ interface Props {
   descoberta?: Descoberta
   /** Fechamento real de cada mês (bancos e dinheiro) — o "Fechou em" dos cartões fechados. */
   fechamentoReal?: number[]
+  /** Saldo real com que cada mês abriu — para o que o mês guardou de verdade. */
+  inicioReal?: number[]
 }
 
 export default function PlanGrade(props: Props) {
@@ -33,7 +35,7 @@ export default function PlanGrade(props: Props) {
 
   const {
     anoAtual, mesAtual, dadosPrevisto, dadosAnoAnterior,
-    previsto, objetivos, sobraPrevista, onMetaSave,
+    previsto, objetivos, onMetaSave,
   } = props
 
   const planTotais = previsto
@@ -72,9 +74,6 @@ export default function PlanGrade(props: Props) {
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={props.categorias}
         onBulkSave={props.onBulkSave}
-        objetivos={objetivos}
-        sobraPrevista={sobraPrevista}
-        onMetaSave={onMetaSave}
         bloqueado={bloqueado}
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />
@@ -86,6 +85,7 @@ export default function PlanGrade(props: Props) {
         anoAtual={anoAtual}
         mesAtual={mesAtual}
         fechamentoReal={props.fechamentoReal}
+        inicioReal={props.inicioReal}
         objetivos={objetivos}
         semPlanoTexto={textoSemPlano}
         onAbrir={setModalMes}
@@ -104,6 +104,8 @@ export default function PlanGrade(props: Props) {
           categorias={props.categorias}
           onSave={props.onSave}
           onClose={() => setModalMes(null)}
+          objetivos={objetivos}
+          onMetaSave={onMetaSave}
         />
       )}
     </div>
