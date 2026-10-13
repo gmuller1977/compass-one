@@ -13,6 +13,7 @@ import { reconhecimentoDeVoz, type Reconhecimento } from '../utils/voz'
 import { COR } from '../utils/cores'
 import { conversaDoDia, lancouHoje, marcarVisto, type ItemDoDia } from '../utils/norteProativo'
 import { SIDEBAR_W } from '../components/Sidebar'
+import { IconeCat } from '../components/IconeCat'
 
 /**
  * A tela do Norte (10/10/2026): pedido do Guilherme, "temos que melhorar muito
@@ -335,7 +336,7 @@ function CartaoPedido({ pedido, estado, cad, onFeito, onCancelar }: {
       <div style={{ fontSize: 26, fontWeight: 800, color: d.entrada ? COR.azul : COR.texto, margin: '2px 0 6px' }}>
         {d.entrada ? '+' : '−'}{fmt(pedido.valor)}{pedido.parcelas > 1 && <span style={{ fontSize: 15, fontWeight: 600, color: COR.textoSuave }}> por parcela</span>}
       </div>
-      {linha('Categoria', <>{d.icone} {d.categoria}</>)}
+      {linha('Categoria', <><IconeCat icone={d.icone} cor={COR.azul} /> {d.categoria}</>)}
       {linha(d.entrada ? 'Entra em' : 'Pago com', d.conta)}
       {linha('Quando', d.quando)}
       {pedido.parcelas > 1 && linha('Parcelas', `${pedido.parcelas}× · total ${fmt(pedido.valor * pedido.parcelas)}`)}

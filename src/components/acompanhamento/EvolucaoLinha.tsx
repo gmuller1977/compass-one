@@ -4,6 +4,8 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
 import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 interface EvolucaoLinhaProps {
   nome: string
@@ -55,7 +57,7 @@ export default function EvolucaoLinha({
 }: EvolucaoLinhaProps) {
   const [aberto, setAberto] = useState(false)
   const abrirAjuste = useAbrirAjuste()
-  const { icone } = iconeCategoria(categorias, nome)
+  const { icone, cor: corCat } = iconeCategoria(categorias, nome)
   const status = calcStatus(isEntrada, prev, real)
   const dif    = calcDif(isEntrada, prev, real)
 
@@ -182,7 +184,7 @@ export default function EvolucaoLinha({
       >
         <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: '#f1f5f9',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-          {icone}
+          <IconeCat icone={icone} cor={corDoIcone(corCat)} />
         </div>
         <div style={{ flex: 1, minWidth: 140 }}>
           {/* Fixa ou variável, como no cadastro — é a divisão que a memória do

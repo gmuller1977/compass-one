@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
 import { montarCategoria, previaDe, gruposDisponiveis } from '../../utils/novaCategoria'
 import type { Categoria, TipoCategoria } from '../../context/AppContext'
+import { IconeCat } from '../IconeCat'
 
 /**
  * Criar categoria sem sair do lançamento.
@@ -113,7 +114,7 @@ export default function NleNovaCategoria({
               display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5,
               fontSize: 12, color: '#475569',
             }}>
-              <span style={{ fontSize: 16 }}>{previa.icone}</span>
+              <span style={{ fontSize: 16 }}><IconeCat icone={previa.icone} cor={COR.azul} /></span>
               <span>
                 {previa.reconhecida
                   ? <>Grupo sugerido — troque se não for isso</>

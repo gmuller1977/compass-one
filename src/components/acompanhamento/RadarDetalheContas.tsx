@@ -2,6 +2,7 @@ import { COR } from '../../utils/cores'
 import { fmt } from './AcShared'
 import { ehZero } from '../../utils/moeda'
 import type { LinhaMes } from '../../utils/saldoConta'
+import { IconeCat } from '../IconeCat'
 
 /**
  * Como o saldo do mês se formou, conta por conta.
@@ -90,7 +91,7 @@ function Linha({ l, temAjuste, celula }: {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-        <span style={{ fontSize: 14 }}>{l.icone}</span>
+        <span style={{ fontSize: 14 }}><IconeCat icone={l.icone} cor={COR.azul} /></span>
         <span style={{ fontSize: 12, fontWeight: 600, color: COR.texto,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {l.nome}

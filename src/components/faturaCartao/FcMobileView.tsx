@@ -11,6 +11,7 @@ import {
 import { lancLabelComGrupo } from './fcRotulo'
 import { IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
+import { IconeCat } from '../IconeCat'
 
 const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
@@ -151,7 +152,7 @@ export default function FcMobileView({
             {contasCartao.map(c => (
               <button key={c.id} onClick={() => { setContaId(c.id); resetarParaNovo(diaDefaultPara(mes,ano)) }}
                 style={chipAzul(c.id === contaId)}>
-                <span aria-hidden>{c.icone}</span>{c.banco}{c.apelido ? ` ${c.apelido}` : ''}
+                <IconeCat icone={c.icone} />{c.banco}{c.apelido ? ` ${c.apelido}` : ''}
               </button>
             ))}
           </div>

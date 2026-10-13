@@ -10,6 +10,8 @@ import {
   parseValor,
   REALCE_ERRO,
 } from './NleShared'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 type SaldoConta  = { conta: Conta; saldo: number }
 type FaturaCartao = { conta: Conta; fatura: number }
@@ -191,7 +193,7 @@ export default function NleConsolidado({
                 <div key={conta.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
                   borderLeft:`4px solid ${conta.cor}`,background:COR.branco,
                   borderBottom:idx<saldoAtualPorConta.length-1?`1px solid #f1f5f9`:'none'}}>
-                  <span style={{fontSize:18,flexShrink:0}}>{conta.icone}</span>
+                  <span style={{fontSize:18,flexShrink:0}}><IconeCat icone={conta.icone} cor={corDoIcone(conta.cor)} /></span>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:600,color:COR.texto,
                       overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
@@ -228,7 +230,7 @@ export default function NleConsolidado({
                       gridTemplateColumns:'1fr 90px',
                       gap:8,alignItems:'center',marginBottom:0}}>
                       <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-                        <span style={{fontSize:18,flexShrink:0}}>{conta.icone||'💳'}</span>
+                        <span style={{fontSize:18,flexShrink:0}}><IconeCat icone={conta.icone||'💳'} cor={corDoIcone(conta.cor)} /></span>
                         <div style={{minWidth:0}}>
                           <div style={{fontSize:12,fontWeight:600,color:COR.texto,
                             overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
@@ -349,7 +351,7 @@ export default function NleConsolidado({
                       <span style={{flexShrink:0,fontSize:9,fontWeight:700,
                         padding:'2px 6px',borderRadius:4,whiteSpace:'nowrap' as const,
                         background:l.cor+'20',color:l.cor}}>
-                        {l.icone} {l.banco}
+                        <IconeCat icone={l.icone} /> {l.banco}
                       </span>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,fontWeight:600,color:COR.texto,
@@ -403,14 +405,14 @@ export default function NleConsolidado({
             {contasExtrato.length>0 && (
               <optgroup label="Contas bancárias">
                 {contasExtrato.map(c=>(
-                  <option key={c.id} value={c.id}>{c.icone} {c.banco} — {c.nome}</option>
+                  <option key={c.id} value={c.id}>{c.banco} — {c.nome}</option>
                 ))}
               </optgroup>
             )}
             {contas.filter(c=>c.tipo==='cartao').length>0 && (
               <optgroup label="Cartões de crédito">
                 {contas.filter(c=>c.tipo==='cartao').map(c=>(
-                  <option key={c.id} value={c.id}>{c.icone||'💳'} {c.nome}</option>
+                  <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}
               </optgroup>
             )}

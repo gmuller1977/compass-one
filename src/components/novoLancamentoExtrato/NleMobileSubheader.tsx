@@ -1,6 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import AlertaOrcamento from '../AlertaOrcamento'
 import { COR, fmt, type DadosMes } from './NleShared'
+import { IconeCat } from '../IconeCat'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -118,7 +119,7 @@ export default function NleMobileSubheader({
                       cursor:'pointer',whiteSpace:'nowrap',fontFamily:'inherit',
                       fontSize:14,fontWeight:700,color:ativo?'#1e3a8a':'#fff',
                     }}>
-                      <span aria-hidden>{c.icone}</span>{c.apelido ?? c.banco}
+                      <IconeCat icone={c.icone} />{c.apelido ?? c.banco}
                     </button>
                   )
                 })}

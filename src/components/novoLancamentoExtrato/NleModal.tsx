@@ -1,3 +1,6 @@
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
+
 type ModalSaldoInfo = {
   contaId: string; banco: string; icone: string; cor: string; key: string
 }
@@ -30,7 +33,7 @@ export default function NleModal({
           <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
             display:'inline-flex',alignItems:'center',gap:6,
             background:modalSaldo.cor+'18',border:`1px solid ${modalSaldo.cor}55`}}>
-            <span>{modalSaldo.icone}</span>
+            <span><IconeCat icone={modalSaldo.icone} cor={corDoIcone(modalSaldo.cor)} /></span>
             <span style={{color:modalSaldo.cor,fontWeight:700}}>{modalSaldo.banco}</span>
           </span>
         </div>

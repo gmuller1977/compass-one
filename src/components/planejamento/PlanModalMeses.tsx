@@ -6,6 +6,8 @@ import { useAbrirItens, useLancadoNoMes } from './itensContexto'
 import { useAbrirAjuste } from '../acompanhamento/ajustePlanoContexto'
 import { itensDoMes } from '../../utils/itensPlano'
 import type { Categoria } from '../../context/AppContext'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 const CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const W_NOME = 220
@@ -106,12 +108,12 @@ export default function PlanModalMeses({
     : comIndice(dadosAtivos.saidas))
 
   function linhaCat({ cat, ri }: CatIdx, tipo: 'e' | 's') {
-    const { icone } = iconeCategoria(categorias, cat.nome)
+    const { icone, cor: corCat } = iconeCategoria(categorias, cat.nome)
     return (
       <div key={`${tipo}-${ri}`} style={{ display: 'contents' }}>
         <div style={{ position: 'sticky', left: 0, background: COR.branco, zIndex: 1, display: 'flex', alignItems: 'center',
           gap: 8, padding: '6px 8px 6px 0', borderBottom: `1px solid ${COR.borda}`, minWidth: 0 }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>{icone}</span>
+          <span style={{ fontSize: 16, flexShrink: 0 }}><IconeCat icone={icone} cor={corDoIcone(corCat)} /></span>
           {abrirAjuste ? (
             <button type="button" title="Ver o já lançado nos próximos meses e ajustar o plano"
               onClick={() => abrirAjuste({ tipo: tipo === 'e' ? 'entrada' : 'saida', nome: cat.nome,

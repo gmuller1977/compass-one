@@ -9,6 +9,7 @@ import {
   parseValor,
   REALCE_ERRO,
 } from './NleShared'
+import { IconeCat } from '../IconeCat'
 
 type Props = {
   isMobile: boolean
@@ -128,7 +129,7 @@ export default function NleDesktopPanel({
           </div>
           <span style={{fontSize:10,fontWeight:600,padding:'2px 9px',borderRadius:20,
             background:'#eff6ff',color:'#1a56db',flexShrink:0}}>
-            {isDinheiro ? <><i className="ti ti-cash" aria-hidden style={{verticalAlign:-1}} /> Dinheiro</> : (contaInfo?.icone ?? '🏦') + ' ' + (contaInfo?.banco ?? 'Banco')}
+            {isDinheiro ? <><i className="ti ti-cash" aria-hidden style={{verticalAlign:-1}} /> Dinheiro</> : <><IconeCat icone={contaInfo?.icone ?? '🏦'} /> {contaInfo?.banco ?? 'Banco'}</>}
           </span>
         </div>
       </div>
@@ -283,7 +284,7 @@ export default function NleDesktopPanel({
                   fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
                 <option value="">Selecione a conta...</option>
                 {contasExtrato.filter(c => c.id !== contaIdEfetivo).map(c=>(
-                  <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                  <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
                 ))}
               </select>
             ) : (
@@ -394,7 +395,7 @@ export default function NleDesktopPanel({
                 style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                   fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
                 {contasExtrato.map(c=>(
-                  <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                  <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
                 ))}
               </select>
               <div style={{fontSize:10,color:'#94a3b8',marginTop:4}}>

@@ -10,6 +10,7 @@ import {
 } from './CfgShared'
 import type { ConfirmState } from './CfgShared'
 import NomeCategoriaCampo from './NomeCategoriaCampo'
+import { IconeCat } from '../IconeCat'
 
 interface Props {
   isMobile: boolean
@@ -231,7 +232,7 @@ export default function CfgCategorias({
               <div style={{ width:52, height:52, borderRadius:14, background:formCat.cor,
                 display:'flex', alignItems:'center', justifyContent:'center',
                 fontSize:24, flexShrink:0 }}>
-                {formCat.icone}
+                <IconeCat icone={formCat.icone} cor="#fff" />
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:COR.texto }}>
@@ -504,7 +505,7 @@ export default function CfgCategorias({
                     className="campo-cfg" style={inputSt}>
                     <option value="">Selecione a conta...</option>
                     {contas.filter(c => c.tipo !== 'cartao').map(c => (
-                      <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                      <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
                     ))}
                   </select>
                   <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>

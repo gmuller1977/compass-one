@@ -1,5 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { COR, type DadosMes } from './NleShared'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 type MobileStep   = 'tipo' | 'conta' | 'extrato'
@@ -131,7 +133,7 @@ export default function NleMobileWizard({
                 boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
               }}>
                 <div style={{width:40,height:40,borderRadius:10,background:c.cor+'22',border:`1.5px solid ${c.cor}55`,
-                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{c.icone}</div>
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{c.banco}</div>
                   {c.apelido && <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{c.apelido}</div>}
@@ -157,7 +159,7 @@ export default function NleMobileWizard({
                 boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
               }}>
                 <div style={{width:40,height:40,borderRadius:10,background:c.cor+'22',border:`1.5px solid ${c.cor}55`,
-                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{c.icone}</div>
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:700,color:COR.texto}}>{c.banco}</div>
                   <div style={{fontSize:12,color:COR.textoSuave,marginTop:2}}>{c.nome}</div>

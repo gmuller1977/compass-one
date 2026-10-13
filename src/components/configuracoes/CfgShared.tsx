@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { IconeCat } from '../IconeCat'
 import type { Conta, Categoria, FormaPagamentoCategoria, TipoMovimento } from '../../context/AppContext'
 
 // ── Tipos exportados ─────────────────────────────────────────────────
@@ -165,9 +166,9 @@ export function IconPicker({ icones, valor, onChange }: { icones:string[]; valor
           style={{
             width:34, height:34, border:`2px solid ${valor===ic ? COR.azul : COR.borda}`,
             borderRadius:8, background: valor===ic ? '#eff6ff' : COR.branco,
-            cursor:'pointer', fontSize:16, display:'flex', outline:'none',
-            alignItems:'center', justifyContent:'center',
-          }}>{ic}</button>
+            cursor:'pointer', fontSize:18, display:'flex', outline:'none',
+            alignItems:'center', justifyContent:'center', color: valor===ic ? COR.azul : '#475569',
+          }}><IconeCat icone={ic} /></button>
       ))}
     </div>
   )
@@ -191,8 +192,8 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
     }}>
       <div style={{ width:36, height:36, borderRadius:10, background:c.cor,
         display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:17, flexShrink:0 }}>
-        {c.icone}
+        fontSize:20, flexShrink:0 }}>
+        <IconeCat icone={c.icone} cor="#fff" />
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:COR.texto }}>{c.nome}</div>
@@ -242,7 +243,7 @@ export function CatCard({ c, editCatId, toggleAtiva, editarCategoria, contas }: 
             return conta ? (
               <span style={{ fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:600,
                 background:'#f8faff', color:'#1a56db' }}>
-                {conta.icone} {conta.banco}
+                <IconeCat icone={conta.icone} cor="#1a56db" /> {conta.banco}
               </span>
             ) : null
           })()}

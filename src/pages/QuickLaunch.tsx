@@ -13,6 +13,8 @@ import { lancarNaFatura, lancarNoExtrato, dataDoLancamento } from '../utils/lanc
 import { formasDoMes, gastoDeHoje, mesDoGastoNoCartao, type MesRef, type QualMes } from '../utils/lancarPorMes'
 import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import { nomeDaConta } from '../utils/nomeDaConta'
+import { IconeCat } from '../components/IconeCat'
+import { corDoIcone } from '../utils/iconeDesenhado'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -302,7 +304,7 @@ export default function QuickLaunch() {
     const legenda = f.tipo === 'dinheiro' ? `saldo ${fmt(saldos.dinheiro ?? 0)}`
       : cartao ? `fatura de ${nomeMes(mesDoGastoNoCartao(f.conta!, ano, mes, dia))}`
       : `${f.conta?.nome ?? ''} · saldo ${fmt(saldos[f.conta!.id] ?? 0)}`
-    const icone = f.tipo === 'dinheiro' ? <i className="ti ti-cash" style={{ color: '#15803d' }} /> : f.conta?.icone || (cartao ? '💳' : '🏦')
+    const icone = f.tipo === 'dinheiro' ? <i className="ti ti-cash" style={{ color: '#15803d' }} /> : <IconeCat icone={f.conta?.icone || (cartao ? '💳' : '🏦')} cor={corDoIcone(f.conta?.cor ?? COR.azul)} />
     return (
       <button onClick={() => escolherForma(f)} style={{
         display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '10px 4px',
@@ -416,7 +418,7 @@ export default function QuickLaunch() {
                   width: 46, height: 46, borderRadius: '50%', fontSize: 24,
                   background: '#e6ebf1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{c.icone}</span>
+                }}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></span>
                 <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', textAlign: 'center', lineHeight: 1.2,
                   maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
@@ -466,7 +468,7 @@ export default function QuickLaunch() {
                 width: 44, height: 44, borderRadius: '50%', flexShrink: 0, fontSize: 22,
                 background: `${/^#[0-9a-f]{6}$/i.test(catObj.cor ?? '') ? catObj.cor : COR.azul}1f`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>{catObj.icone || '💰'}</span>
+              }}><IconeCat icone={catObj.icone || '💰'} cor={corDoIcone(catObj.cor ?? '')} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 17, fontWeight: 700, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {catObj.descricao ? `${catObj.nome} · ${catObj.descricao}` : catObj.nome}
@@ -675,7 +677,7 @@ export default function QuickLaunch() {
                               transition: 'background .15s',
                             }}
                           >
-                            <span style={{ fontSize: 24, opacity: c.ativa ? 1 : .4, flexShrink: 0 }}>{c.icone}</span>
+                            <span style={{ fontSize: 24, opacity: c.ativa ? 1 : .4, flexShrink: 0 }}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></span>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 14, fontWeight: 600, color: c.ativa ? COR.texto : '#94a3b8' }}>
                                 {c.nome}

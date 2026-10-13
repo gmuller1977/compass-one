@@ -216,7 +216,7 @@ escolheu o cardápio entre três modelos — cardápio, colunas por situação e
 envelopes). O azul do `PageHeader` (que ganhou `children`) traz a resposta em
 40px — "Ainda dá para gastar R$ X", o `sobra` de `ritmoDoMes`, o mesmo da
 frase — e, ao lado, os quatro números de antes em miniatura, que abrem o
-detalhe por conta. Os quatro nunca cortam o valor: a fileira pede 660px e, sem
+detalhe por conta. Os quatro nunca cortam o valor: a fileira pede 700px (cabe até R$ 1.999.999,99) e, sem
 esse espaço ao lado da frase, desce para baixo dela (13/10/2026). Mês fechado, ou corrente que passou, mostra o saldo no
 lugar da sobra. Cada grupo é um cartão branco (`EvolucaoGrupo`): ícone em
 círculo, `destaqueDoGrupo` em 20px (era 24; reduzido em 13/10/2026 a pedido dele), barra e "gastou X de Y"; aberto, ocupa a
@@ -2064,6 +2064,18 @@ aceitam `icon="ti-…"`; `norteProativo` guarda nomes Tabler. Ficam: 👋 nas
 saudações, símbolos dentro do texto (✓ ⚠ ✕ ✎ ★ ▲▼), o ícone que é DADO do
 usuário (categoria, conta, grupo e seus padrões quando vazio) e, por
 enquanto, Login, Cadastro, Redefinir senha e o assistente do plano.
+
+**O ícone da categoria e da conta também é desenhado, e continua gravado
+como emoji** (13/10/2026, pedido do Guilherme: "no lançamento, radar,
+planejamento os ícones das categorias também"). O banco de todo usuário tem
+emoji, então só a LEITURA mudou: [`iconeDesenhado.ts`](src/utils/iconeDesenhado.ts)
+traduz cada emoji dos seletores e das categorias padrão para um nome Tabler
+(🛒 → `ti-shopping-cart`), e `IconeCat` desenha. Emoji fora da tabela segue
+como emoji. O seletor do cadastro mostra os desenhos e grava o emoji de
+sempre — nenhuma migração, e o app antigo continua lendo. `IconeRedondo`
+converte sozinho quando recebe texto, na cor da categoria escurecida até
+3,3:1 no branco (`corDoIcone`). Dentro de `<option>` não há como desenhar:
+o emoji saiu e fica só o nome.
 
 **O Onboarding nunca desativa categoria, e não abre para quem já o fez.**
 Relatado pelo Guilherme em 12/10/2026: entrou pela digital e todas as

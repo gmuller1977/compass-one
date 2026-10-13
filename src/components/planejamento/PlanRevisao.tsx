@@ -13,6 +13,8 @@ import { rotuloDaLinha } from '../../utils/motivoDoEstouro'
 import { useMotivosDoMes, avisarMotivosMudaram } from '../motivo/useMotivosDoMes'
 import type { CatReal } from '../acompanhamento/AcShared'
 import type { Categoria } from '../../context/AppContext'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 /**
  * Valor lancado de uma categoria. As chaves do mapa sao (nome + variante),
@@ -316,7 +318,7 @@ export default function PlanRevisao({
   // ── Row renderer ─────────────────────────────────────────────────────────
   function renderCatRow(row: CatRow) {
     const { tipo, cat, ri, planejado, real, temDesvio } = row
-    const { icone } = iconeCategoria(categorias, cat.nome)
+    const { icone, cor: corCat } = iconeCategoria(categorias, cat.nome)
     const rm = rowMeta(tipo, planejado, real)
     const dm = diffMeta(tipo, planejado, real)
 
@@ -329,7 +331,7 @@ export default function PlanRevisao({
       }}>
         <div style={{ width: 3, height: 32, borderRadius: 2, background: rm.barCor, flexShrink: 0 }} />
         <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0, background: temDesvio ? '#fee2e2' : '#f1f5f9' }}>
-          {icone}
+          <IconeCat icone={icone} cor={corDoIcone(corCat)} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 500, color: COR.texto, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
@@ -582,7 +584,7 @@ export default function PlanRevisao({
                   <div key={key} style={{ background: COR.branco, borderRadius: 14, boxShadow: '0 1px 6px rgba(0,0,0,.07)', marginBottom: 16, overflow: 'hidden' }}>
                     {/* Card header — gradient */}
                     <div style={{ background: gradBg, padding: '12px 16px', color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 20 }}>{icone}</span>
+                      <span style={{ fontSize: 20 }}><IconeCat icone={icone} cor="#fff" /></span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 700 }}>
                           {cat.nome}{cat.descricao && <span style={{ fontWeight: 400, opacity: .8 }}> · {cat.descricao}</span>}
@@ -733,7 +735,7 @@ export default function PlanRevisao({
                 ) : catsDesvio.map(({ tipo, cat, ri, planejado, real }) => {
                   const key = `${tipo}-${ri}`
                   const j   = getJust(key)
-                  const { icone } = iconeCategoria(categorias, cat.nome)
+                  const { icone, cor: corCat } = iconeCategoria(categorias, cat.nome)
                   const dm  = diffMeta(tipo, planejado, real)
                   const tipoLabel = j.tipoEvento === 'pontual' ? ' · Pontual' : j.tipoEvento === 'anual' ? ' · Anual' : j.tipoEvento === 'sazonal' ? ' · Sazonal' : ''
                   const [acaoCor, acaoLabel, acaoBg] =
@@ -744,7 +746,7 @@ export default function PlanRevisao({
 
                   return (
                     <div key={key} style={{ padding: '10px 16px', borderBottom: `1px solid ${COR.borda}`, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icone}</span>
+                      <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}><IconeCat icone={icone} cor={corDoIcone(corCat)} /></span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>
                           {cat.nome}{cat.descricao && <span style={{ fontWeight: 400, color: COR.textoSuave }}> · {cat.descricao}</span>}

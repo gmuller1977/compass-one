@@ -13,6 +13,8 @@ import { RADAR_COR_CLARO, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 interface AcMobileViewProps {
   mes: number
@@ -148,7 +150,7 @@ export default function AcMobileView({
             cursor:'pointer', background: aberto ? '#f8faff' : '#fff' }}>
           <div style={{ width:36, height:36, borderRadius:'50%', flexShrink:0,
             background:corIcone+'1f', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
-            {icone}
+            <IconeCat icone={icone} cor={corDoIcone(corIcone)} />
           </div>
           {/* Nome e o número que importa na mesma linha; o "gastou X de Y"
               embaixo, na largura toda — ao lado do número ele era cortado. */}
@@ -298,7 +300,7 @@ export default function AcMobileView({
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px', background:'#fff',
             border:'none', cursor:'pointer', fontFamily:'inherit' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:COR.texto }}>
-            <span aria-hidden>{grupoIcone}</span>
+            <IconeCat icone={grupoIcone} cor={COR.azul} />
             <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
             {/* O número em destaque na linha do nome, maior que ele (19px; no
                 computador são 24). Pedido do Guilherme em 13/10/2026: maior,

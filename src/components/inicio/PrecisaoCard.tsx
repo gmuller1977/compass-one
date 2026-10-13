@@ -2,6 +2,8 @@ import type { Categoria } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import type { PrecisaoDoPlano } from '../../utils/precisaoDoPlano'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 // Par divergente sobre o branco: quente contra frio, cinza neutro no meio.
 // Gastou MAIS #b91c1c (6,47); gastou MENOS #1a56db (6,2). Sem verde para
@@ -79,10 +81,11 @@ export default function PrecisaoCard({ p, categorias, isMobile }: {
             // na ponta, que não pode quebrar para baixo da barra.
             const larg = (Math.abs(c.desvioPerc) / maiorAbs) * 36
             const nome = c.descricao ? `${c.nome} · ${c.descricao}` : c.nome
+            const ic = iconeCategoria(categorias, c.nome)
             return (
               <div key={`${c.nome}||${c.descricao}`} style={{ marginBottom: 15 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-                  <span aria-hidden style={{ fontSize: 14, flexShrink: 0 }}>{iconeCategoria(categorias, c.nome).icone}</span>
+                  <span aria-hidden style={{ fontSize: 14, flexShrink: 0 }}><IconeCat icone={ic.icone} cor={corDoIcone(ic.cor)} /></span>
                   <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500, color: COR.texto,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nome}</span>
                   <span style={{ fontSize: 11, color: COR.textoSuave, whiteSpace: 'nowrap' }}>

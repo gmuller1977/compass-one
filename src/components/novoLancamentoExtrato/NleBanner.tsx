@@ -2,6 +2,7 @@ import type { Conta } from '../../context/AppContext'
 import { fmt, parseBRL, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
 import { RADAR_COR_AZUL } from '../acompanhamento/radarCores'
+import { IconeCat } from '../IconeCat'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -102,7 +103,7 @@ export default function NleBanner({
                   fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.cor, flexShrink: 0 }} />
-                  {c.icone} {c.banco}
+                  <IconeCat icone={c.icone} /> {c.banco}
                 </button>
               )
             })}

@@ -9,6 +9,8 @@ import {
 import { useToast } from '../Toast'
 import { parseBRL, parseValor } from '../../utils/moeda'
 import type { Aba } from './CfgShared'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 // A fatura do cartao e uma fixa como outra qualquer: precisa dizer COMO e paga
 // e EM QUAL conta aparece. Sem isso ela flutuava — projetava em todas as contas
@@ -114,7 +116,7 @@ export default function CfgBancosCartoes({
                       <div style={{ width:48, height:48, borderRadius:14, background:c.cor+'22',
                         display:'flex', alignItems:'center', justifyContent:'center',
                         fontSize:22, flexShrink:0 }}>
-                        {c.icone}
+                        <IconeCat icone={c.icone} cor={corDoIcone(c.cor)} />
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:14, fontWeight:700, color:COR.texto, display:'flex', alignItems:'center', gap:6 }}>
@@ -289,7 +291,7 @@ export default function CfgBancosCartoes({
             boxShadow:'0 6px 20px rgba(26,86,219,.30)' }}>
             <div style={{ width:52, height:52, borderRadius:14, background:'rgba(255,255,255,.15)',
               display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>
-              {formConta.icone}
+              <IconeCat icone={formConta.icone} cor="#fff" />
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:15, fontWeight:800, opacity:.95 }}>
@@ -323,7 +325,7 @@ export default function CfgBancosCartoes({
             boxShadow:`0 6px 20px ${formConta.cor}55` }}>
             <div style={{ width:52, height:52, borderRadius:14, background:'rgba(255,255,255,.15)',
               display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>
-              {formConta.icone}
+              <IconeCat icone={formConta.icone} cor="#fff" />
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:14, fontWeight:800, opacity:.95 }}>
@@ -431,7 +433,7 @@ export default function CfgBancosCartoes({
                   className="campo-cfg" style={inputSt}>
                   <option value="">Selecione a conta...</option>
                   {contas.filter(c => c.tipo !== 'cartao').map(c => (
-                    <option key={c.id} value={c.id}>{c.icone} {c.nome} — {c.banco}</option>
+                    <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
                   ))}
                 </select>
                 <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>

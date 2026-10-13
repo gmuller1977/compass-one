@@ -1,6 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, type DadosMes } from './FcShared'
 import KpiCard from '../KpiCard'
+import { IconeCat } from '../IconeCat'
 
 type Props = {
   contasCartao: Conta[]
@@ -73,7 +74,7 @@ export default function FcBanner({
                   fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.cor, flexShrink: 0 }} />
-                  {c.icone} {c.banco}
+                  <IconeCat icone={c.icone} /> {c.banco}
                 </button>
               )
             })}

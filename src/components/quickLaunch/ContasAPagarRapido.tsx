@@ -9,6 +9,8 @@ import { parseBRL } from '../../utils/moeda'
 import { COR } from '../../utils/cores'
 import { M } from '../mobile/estilo'
 import { nomeDaConta } from '../../utils/nomeDaConta'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -99,9 +101,9 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
         )}
       </div>
       {lista.slice(0, 5).map((c, i) => {
-        const ic = c.fatura ? { icone: '💳' } : iconeCategoria(categorias, c.nome)
+        const ic = c.fatura ? { icone: '💳', cor: COR.azul } : iconeCategoria(categorias, c.nome)
         return (
-          <LinhaAzul key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={ic.icone}
+          <LinhaAzul key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={<IconeCat icone={ic.icone} cor={corDoIcone(ic.cor)} />}
             titulo={nome(c)}
             legenda={<><span style={{ color: c.atrasada ? '#fecaca' : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span> · {v(c.valor)}</>}
             direita={<button onClick={() => abrir(c)} style={{

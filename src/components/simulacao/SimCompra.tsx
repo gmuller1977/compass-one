@@ -308,7 +308,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           <label style={labelSt}>Como você vai pagar?</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {[{ id: '', rotulo: 'Débito ou Pix', ti: 'ti-building-bank' },
-              ...cartoes.map(c => ({ id: c.id, rotulo: `${c.icone} ${c.apelido || c.banco}`, ti: '' }))
+              ...cartoes.map(c => ({ id: c.id, rotulo: c.apelido || c.banco, ti: '' }))
             ].map(op => {
               const ativo = ondeId === op.id
               return (

@@ -24,6 +24,8 @@ import NleExtrato         from '../components/novoLancamentoExtrato/NleExtrato'
 import NleDesktopPanel   from '../components/novoLancamentoExtrato/NleDesktopPanel'
 import NleModal           from '../components/novoLancamentoExtrato/NleModal'
 import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
+import { IconeCat } from '../components/IconeCat'
+import { corDoIcone } from '../utils/iconeDesenhado'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -1426,7 +1428,7 @@ export default function NovoLancamentoExtrato() {
                       borderRadius:10, cursor:'pointer', fontFamily:'inherit', textAlign:'left' as const,
                       border: c.preferida ? `1.5px solid ${COR.azul}` : `1px solid ${COR.borda}`,
                       background: c.preferida ? '#eff6ff' : '#fff' }}>
-                    <span style={{ fontSize:18 }}>{c.icone || '🏦'}</span>
+                    <span style={{ fontSize:18 }}><IconeCat icone={c.icone || '🏦'} cor={corDoIcone(c.cor)} /></span>
                     <span style={{ flex:1 }}>
                       <span style={{ display:'block', fontSize:13, fontWeight:600, color:COR.texto }}>
                         {c.apelido ?? c.banco ?? c.nome}

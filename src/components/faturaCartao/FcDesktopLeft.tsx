@@ -6,6 +6,7 @@ import {
   type Lancamento, type DadosMes,
 } from './FcShared'
 import { grupoDoLanc } from './fcRotulo'
+import { IconeCat } from '../IconeCat'
 
 type Props = {
   mesDados: DadosMes
@@ -99,7 +100,7 @@ export default function FcDesktopLeft({
 
                   <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: 16, background: catVisual.cor }}>
-                    {catVisual.icone}
+                    <IconeCat icone={catVisual.icone} cor="#fff" />
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>

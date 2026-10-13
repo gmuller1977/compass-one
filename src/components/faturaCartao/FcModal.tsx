@@ -1,6 +1,8 @@
 import React from 'react'
 import type { Conta } from '../../context/AppContext'
 import { COR, type DadosMes } from './FcShared'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 type Props = {
   modalFatura: boolean
@@ -33,7 +35,7 @@ export default function FcModal({
             <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
               display:'inline-flex',alignItems:'center',gap:6,
               background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
-              <span>{contaInfo.icone}</span>
+              <span><IconeCat icone={contaInfo.icone} cor={corDoIcone(contaInfo.cor)} /></span>
               <span style={{color:contaInfo.cor,fontWeight:700}}>{contaInfo.banco}</span>
             </span>
           )}

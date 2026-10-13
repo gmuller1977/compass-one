@@ -1,6 +1,8 @@
 import { Fragment, type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
 import { BOLINHA_AZUL, M, mostrar } from './estilo'
+import { IconeCat } from '../IconeCat'
+import { corDoIcone } from '../../utils/iconeDesenhado'
 
 /**
  * Peças do celular, no padrão dos apps de banco (Nubank, Inter, Itaú): pedido
@@ -39,12 +41,14 @@ export function TituloCartao({ children, direita }: { children: ReactNode; direi
 
 /** Ícone num círculo com o tom da cor (a 12% de opacidade). */
 export function IconeRedondo({ icone, cor = COR.azul, tamanho = 44 }: { icone: ReactNode; cor?: string; tamanho?: number }) {
+  // Texto gravado (emoji do cadastro) vira o ícone desenhado, na cor da categoria.
+  const conteudo = typeof icone === 'string' ? <IconeCat icone={icone} cor={corDoIcone(cor)} /> : icone
   return (
     <span aria-hidden style={{
       width: tamanho, height: tamanho, borderRadius: '50%', flexShrink: 0,
       background: `${cor.length === 7 ? cor : COR.azul}1f`,
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(tamanho * 0.48),
-    }}>{icone}</span>
+    }}>{conteudo}</span>
   )
 }
 
