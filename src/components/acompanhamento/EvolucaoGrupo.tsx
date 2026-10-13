@@ -125,7 +125,15 @@ export default function EvolucaoGrupo({
       </div>
 
       {aberto && (
-        <div style={{ borderTop: '1px solid #e2e8f0' }}>
+        // As categorias numa caixa recuada, sobre faixa azul-clara: aberto, o
+        // grupo não pode parecer mais um grupo (pedido do Guilherme em
+        // 13/10/2026, o mesmo do celular). Rótulo #1e3a8a no #eaf1fd: 9,6.
+        <div style={{ background: '#eaf1fd', borderTop: '1px solid #dbe6f8', padding: '10px 14px 14px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#1e3a8a', letterSpacing: '.04em',
+            textTransform: 'uppercase', margin: '0 4px 8px' }}>
+            {allCats.length} {allCats.length === 1 ? 'categoria' : 'categorias'}
+          </div>
+          <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #dbe6f8' }}>
           {allCats.map((cat, idx) => {
             const cd = pickReal(realMap, cat.nome, cat.descricao, categorias)
             return (
@@ -145,6 +153,7 @@ export default function EvolucaoGrupo({
               />
             )
           })}
+          </div>
         </div>
       )}
     </div>

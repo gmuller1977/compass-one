@@ -175,6 +175,16 @@ descritos abaixo são histórico no computador. A página inteira rola; a barra
 do saldo final previsto segue presa no pé. Nenhum número novo; o celular
 (`AcMobileView`) não mudou.
 
+**No Radar, cada grupo é uma CAIXA, e as categorias abertas ficam numa caixa
+recuada dentro dela** (13/10/2026, pedido do Guilherme: aberto, "parece ser
+tudo grupo"). No celular, os grupos deixaram de ser linhas de um cartão único
+de Despesas/Receitas: cada um é um cartão próprio, como o dia em Lançamentos;
+o título da seção e o Total ficam fora. Aberto (computador e celular), o
+cartão ganha borda `#93c5fd` e as categorias vão para uma faixa `#eaf1fd`
+com "N categorias" (`#1e3a8a`, 9,6) e uma caixa branca de cantos 14; no
+celular o ícone da categoria cai de 44 para 36 px e o nome de 15 para 14.
+Nenhum número mudou.
+
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e
 "gráfico"). O azul do `PageHeader` traz a resposta do ano em 40px — "Se o

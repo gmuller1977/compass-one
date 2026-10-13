@@ -141,22 +141,22 @@ export default function AcMobileView({
     ].filter(c => c.itens.length > 0)
 
     return (
-      <div key={uid} style={{ background:'#fff', borderBottom:'1px solid #f5f7ff' }}>
+      <div key={uid} style={{ background:'#fff' }}>
         {/* COMPACT ROW */}
         <div onClick={() => toggleAberto(uid)}
-          style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px 8px',
+          style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px 8px',
             cursor:'pointer', background: aberto ? '#f8faff' : '#fff' }}>
-          <div style={{ width:44, height:44, borderRadius:'50%', flexShrink:0,
-            background:corIcone+'1f', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>
+          <div style={{ width:36, height:36, borderRadius:'50%', flexShrink:0,
+            background:corIcone+'1f', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
             {icone}
           </div>
           {/* Nome e o número que importa na mesma linha; o "gastou X de Y"
               embaixo, na largura toda — ao lado do número ele era cortado. */}
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
-              <div style={{ fontSize:15, fontWeight:700, color:'#0f172a', minWidth:0,
+              <div style={{ fontSize:14, fontWeight:600, color:'#0f172a', minWidth:0,
                 overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
-              <div style={{ flexShrink:0, fontSize:15, fontWeight:800, color:dispColor, whiteSpace:'nowrap',
+              <div style={{ flexShrink:0, fontSize:14, fontWeight:800, color:dispColor, whiteSpace:'nowrap',
                 fontVariantNumeric:'tabular-nums' }}>{destaque.principal}</div>
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3, minWidth:0 }}>
@@ -172,7 +172,7 @@ export default function AcMobileView({
         </div>
         {/* PROGRESS BAR */}
         {(prev > 0 || lancAbs > 0) && (
-          <div style={{ margin:'0 16px 12px 72px' }}>
+          <div style={{ margin:'0 14px 12px 62px' }}>
             <div style={{ background:'#eef2f8', borderRadius:4, height:6, overflow:'hidden' }}>
               <div style={{ width:`${Math.min(perc,1)*100}%`, height:6, borderRadius:4, background:progressColor }}/>
             </div>
@@ -286,11 +286,17 @@ export default function AcMobileView({
       const gid = `g-${tipo}-${grupo}`
       const aberto = abertos.has(gid)
       const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : (gReal > 0 ? 100 : 0)
+      // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
+      // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
+      // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
+      // faixa azul-clara, com ícone e letra um degrau menores.
       return [
-        <button key={`sub-${grupo}`} onClick={() => toggleAberto(gid)} aria-expanded={aberto}
+        <div key={`g-${grupo}`} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
+          boxShadow:'0 2px 14px rgba(15,40,120,.07)', border:`2px solid ${aberto ? '#93c5fd' : 'transparent'}` }}>
+        <button onClick={() => toggleAberto(gid)} aria-expanded={aberto}
           aria-label={`${grupoLabel}: ${dg.principal}`}
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px', background:'#fff',
-            border:'none', borderTop:'1px solid #eef2f8', cursor:'pointer', fontFamily:'inherit' }}>
+            border:'none', cursor:'pointer', fontFamily:'inherit' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:COR.texto }}>
             <span aria-hidden>{grupoIcone}</span>
             <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
@@ -308,8 +314,16 @@ export default function AcMobileView({
               {fmtK(gReal)}{gPrev > 0 ? ` de ${fmtK(gPrev)}` : ''}
             </span>
           </div>
-        </button>,
-        ...(!aberto ? [] : allCats.map((cat, idx) => {
+        </button>
+        {aberto && (
+          <div style={{ background:'#eaf1fd', borderTop:'1px solid #dbe6f8', padding:'10px 10px 12px' }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'#1e3a8a', letterSpacing:'.04em',
+              textTransform:'uppercase', margin:'0 6px 8px' }}>
+              {allCats.length} {allCats.length === 1 ? 'categoria' : 'categorias'}
+            </div>
+            <div style={{ background:'#fff', borderRadius:14, overflow:'hidden', border:'1px solid #dbe6f8',
+              marginTop:-1 }}>
+        {allCats.map((cat, idx) => {
           const cd      = pickReal(realMap, cat.nome, cat.descricao, categorias)
           const prev    = cat.v[mes] ?? 0
           // O total da linha, dinheiro incluído, como no Radar do computador.
@@ -321,8 +335,16 @@ export default function AcMobileView({
               ? categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo && c.descricao===cat.descricao)
               : undefined)
             ?? categorias.find((c: Categoria) => c.nome===cat.nome && c.tipo===tipo)
-          return renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, catInfo, uid, cd?.lancamentos ?? [])
-        })),
+          return (
+            <div key={uid} style={{ borderTop: idx > 0 ? '1px solid #e2e8f0' : 'none' }}>
+              {renderMobileCatRow(tipo, cat.nome, cat.descricao, prev, lancAbs, catInfo, uid, cd?.lancamentos ?? [])}
+            </div>
+          )
+        })}
+            </div>
+          </div>
+        )}
+        </div>,
       ]
     })
   }
@@ -391,9 +413,9 @@ export default function AcMobileView({
           <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={onRevisar} />
           {faixaMotivo}
           {(dadosAno.entradas ?? []).length > 0 && (
-            <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 2px 14px rgba(15,40,120,.07)', background:'#fff' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                padding:'16px 16px 8px', background:'#fff' }}>
+                padding:'6px 4px 0' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                   <span style={{ fontSize:19, fontWeight:800, color:COR.texto }}>Receitas</span>
                 </div>
@@ -409,7 +431,8 @@ export default function AcMobileView({
                 gruposEntrada.includes('__sem_grupo__') ? gruposEntrada : [...gruposEntrada, '__sem_grupo__'],
                 dadosAno.entradas ?? [], entradasMap)}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'14px 16px', background:'#f8faff', borderTop:'1px solid #eef2f8', gap:8 }}>
+                padding:'14px 16px', background:'#fff', borderRadius:20, gap:8,
+                boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
                 <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
                 <div style={{ display:'flex', gap:10, minWidth:0 }}>
                   {([['Previsto','#64748b',fmt(totalPrevE)],['Realizado','#16a34a',fmt(totalRealE)],['A receber','#b45309',fmt(totalAReceberE)]] as [string,string,string][]).map(([lbl,cor,val]) => (
@@ -424,9 +447,9 @@ export default function AcMobileView({
           )}
 
           {(dadosAno.saidas ?? []).length > 0 && (
-            <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 2px 14px rgba(15,40,120,.07)', background:'#fff' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-                padding:'16px 16px 8px', background:'#fff' }}>
+                padding:'6px 4px 0' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                   <span style={{ fontSize:19, fontWeight:800, color:COR.texto }}>Despesas</span>
                 </div>
@@ -441,7 +464,8 @@ export default function AcMobileView({
               </div>
               {renderMobileSecao('saida', gruposSaida, dadosAno.saidas ?? [], saidasMap)}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-                padding:'14px 16px', background:'#f8faff', borderTop:'1px solid #eef2f8', gap:8 }}>
+                padding:'14px 16px', background:'#fff', borderRadius:20, gap:8,
+                boxShadow:'0 2px 14px rgba(15,40,120,.07)' }}>
                 <span style={{ fontSize:15, fontWeight:800, color:COR.texto }}>Total</span>
                 <div style={{ display:'flex', gap:10, minWidth:0 }}>
                   {([['Previsto','#64748b',fmt(totalPrevS)],['Realizado','#dc2626',fmt(totalRealS)],['Disponível','#16a34a',fmt(totalApagarS)]] as [string,string,string][]).map(([lbl,cor,val]) => (
