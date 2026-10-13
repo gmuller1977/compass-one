@@ -151,7 +151,7 @@ export function construirRealizadoMes(params: {
             : undefined
           const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
           const { k, variante } = chaveDe(l.categoria, 'saida', sub)
-          const daVariante = variante ? { variante } : {}
+          const daVariante = { ...(variante ? { variante } : {}), ...(pMes !== mes ? { mesFatura: pMes } : {}) }
           if (l.tipo === 'entrada') {
             const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor

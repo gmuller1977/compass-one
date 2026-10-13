@@ -10,7 +10,11 @@ export const MESES_FULL   = ['Janeiro','Fevereiro','Março','Abril','Maio','Junh
 // histórico do Radar; nenhuma conta lê.
 export type Lanc = { dia: number; descricao: string; valor: number; sub: string; fonte: 'banco'|'cartao'|'dinheiro'; parcela?: { atual: number; total: number; compra?: { contaId: string; base: string } }
   /** A variante, quando o lançamento soma na categoria mãe (utils/categoriaMae) — para o detalhe. */
-  variante?: string }
+  variante?: string
+  /** Mês (0–11) da fatura em que a compra está, quando não é o mês do Radar:
+   *  o cartão que vence antes de fechar põe no Radar de outubro a fatura de
+   *  setembro, e a data tem de dizer 23/09, não 23/10. */
+  mesFatura?: number }
 export type CatReal = { total: number; totalBanc: number; totalCart: number; totalDinheiro: number; lancamentos: Lanc[] }
 export type CatSel = {
   uid: string

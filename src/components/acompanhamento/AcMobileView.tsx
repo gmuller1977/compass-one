@@ -227,7 +227,7 @@ export default function AcMobileView({
                           display:'flex', flexDirection:'column', gap:1 }}>
                           <div style={{ display:'flex', justifyContent:'space-between', gap:6 }}>
                             <span style={{ fontSize:13, color:COR.textoSuave, flexShrink:0 }}>
-                              {String(l.dia).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}
+                              {String(l.dia).padStart(2,'0')}/{String((l.mesFatura ?? mes)+1).padStart(2,'0')}
                               {l.parcela && <b style={{ color:'#475569', fontWeight:700, marginLeft:6 }}>{l.parcela.atual} de {l.parcela.total}</b>}
                             </span>
                             <span style={{ fontSize:14, fontWeight:700, flexShrink:0,
