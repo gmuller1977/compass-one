@@ -1,5 +1,5 @@
 /**
- * A frase do topo da Início: o mês contra a META DE RESULTADO que a pessoa definiu
+ * A frase do topo da Início: o mês contra a META DE ECONOMIA (quanto guardar) que a pessoa definiu
  * no Planejamento (`PlanoAnoData.objetivos`). Pedido do Guilherme em
  * 13/10/2026: "como o plano pode mudar não faz sentido a informação atual,
  * mas a meta é inegociável".
@@ -39,24 +39,27 @@ export function metaDoMes(meta: number | undefined, abertura: number, fechamento
   return { estado, meta, sobra, falta: falta < 0.005 ? 0 : falta }
 }
 
-/** Mês corrente ou futuro fala no presente; mês fechado, no passado. */
+/**
+ * Linguagem de quem não é de finanças (pedido do Guilherme em 13/10/2026,
+ * "pessoas comuns"): a meta é QUANTO GUARDAR, e o resultado do mês vira
+ * "você deve guardar R$ X" ou, negativo, "gastar R$ X a mais do que ganha".
+ * Mês corrente ou futuro fala no "deve"; mês fechado, no passado.
+ */
 export function fraseDaMeta(m: MetaDoMes, mes: string, quando: 'corrente' | 'fechado' | 'futuro', fmt: (n: number) => string): string {
   const meta = fmt(m.meta)
   const falta = fmt(m.falta)
-  const res = fmt(m.sobra)
+  const guarda = fmt(m.sobra)
+  const amais = fmt(-m.sobra)
   if (quando === 'fechado') {
-    if (m.estado === 'dentro') return `Parabéns! ${mes} teve resultado de ${res} e bateu a meta de ${meta}`
-    if (m.estado === 'perto') return `${mes} teve resultado de ${res} · perto da meta de ${meta} · faltaram ${falta}`
-    return `${mes} teve resultado de ${res} · abaixo da meta de ${meta} · faltaram ${falta}`
+    if (m.estado === 'dentro') return `Parabéns! Em ${mes} você guardou ${guarda} e bateu a meta de ${meta}`
+    if (m.sobra < 0) return `Em ${mes} você gastou ${amais} a mais do que ganhou. A meta era guardar ${meta}`
+    return `Em ${mes} você guardou ${guarda}. A meta era ${meta}: faltaram ${falta}`
   }
-  if (quando === 'futuro') {
-    if (m.estado === 'dentro') return `Resultado previsto de ${res} · ${mes} deve bater a meta de ${meta}`
-    if (m.estado === 'perto') return `Resultado previsto de ${res} · perto da meta de ${meta} · faltam ${falta}`
-    return `Resultado previsto de ${res} · abaixo da meta de ${meta} · faltam ${falta}`
-  }
-  if (m.estado === 'dentro') return `Parabéns! Resultado previsto de ${res}, dentro da meta de ${meta}`
-  if (m.estado === 'perto') return `Resultado previsto de ${res} · perto da meta de ${meta} · faltam ${falta}`
-  return `Resultado previsto de ${res} · abaixo da meta de ${meta} · faltam ${falta}`
+  const quem = quando === 'futuro' ? `Em ${mes} você` : 'Este mês você'
+  if (m.estado === 'dentro') return `Parabéns! ${quem} deve guardar ${guarda} e bater a meta de ${meta}`
+  if (m.sobra < 0) return `${quem} deve gastar ${amais} a mais do que ganha. Sua meta é guardar ${meta}`
+  const perto = m.estado === 'perto' ? 'Está perto! ' : ''
+  return `${perto}${quem} deve guardar ${guarda}. Sua meta é ${meta}: faltam ${falta}`
 }
 
 /** Ponto sobre o azul do topo (elemento gráfico, 3:1 no #1e40af). */

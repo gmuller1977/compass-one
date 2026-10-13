@@ -186,6 +186,17 @@ planejada" do celular virou "Resultado planejado". A frase da Início mostra
 o resultado previsto ao lado da meta — "Resultado previsto de R$ X · abaixo
 da meta de R$ Y · faltam R$ Z" —, para a conta se explicar sozinha.
 
+**No mesmo dia virou "Meta de economia", em linguagem de pessoa comum**
+(Guilherme: "ainda ficou confuso para quem não é da área de finanças"). A
+régua é a mesma (receitas − despesas); só as palavras mudaram. A frase diz
+"Este mês você deve guardar R$ X. Sua meta é R$ Y: faltam R$ Z", "Está
+perto! …", e, com o mês no vermelho, "Este mês você deve gastar R$ X a mais
+do que ganha. Sua meta é guardar R$ Y". Mês fechado: "você guardou" /
+"gastou a mais do que ganhou". A janela pergunta "Quanto quero guardar por
+mês", com o exemplo "ganhou 5.000 e gastou 4.000, guardou 1.000" e "o
+dinheiro que já estava na conta não conta". O celular voltou a "Quanto sobra
+em [mês]". Não usar "resultado", "receitas" nem "despesas" nesses textos.
+
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
 escolheu o cardápio entre três modelos — cardápio, colunas por situação e

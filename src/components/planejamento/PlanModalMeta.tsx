@@ -60,15 +60,15 @@ export default function PlanModalMeta({
           boxShadow: '0 20px 60px rgba(0,0,0,.25)',
         }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto }}>
-          🎯 Meta de resultado
+          🎯 Meta de economia
         </div>
         <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 4, marginBottom: 18 }}>
-          Quanto você quer que as receitas superem as despesas em cada mês. É o resultado do mês (receitas − despesas), não o saldo final: o saldo com que o mês começa não conta.
+          Quanto você quer guardar por mês: o que sobra do que você ganha depois de pagar tudo. Exemplo: ganhou R$ 5.000 e gastou R$ 4.000, guardou R$ 1.000. O dinheiro que já estava na conta não conta.
         </div>
 
         <label style={{ fontSize: 12, fontWeight: 600, color: COR.texto,
           display: 'block', marginBottom: 4 }}>
-          Valor da meta
+          Quanto quero guardar por mês
         </label>
         <input autoFocus value={valorStr} onChange={e => setValorStr(e.target.value)}
           placeholder="R$ 500,00" onKeyDown={e => e.key === 'Enter' && salvar()}
@@ -100,7 +100,7 @@ export default function PlanModalMeta({
                     fontSize: 12, color: COR.texto }}>
                     <span style={{ minWidth: 78 }}>{MESES_FULL[i]}</span>
                     <b style={{ minWidth: 88, fontVariantNumeric: 'tabular-nums' }}>{fmt(v, true)}</b>
-                    <span style={{ color: COR.textoSuave }}>resultado previsto</span>
+                    <span style={{ color: COR.textoSuave }}>o plano guarda</span>
                     <b style={{ color: cumpre ? COR.sucessoTexto : COR.avisoTexto,
                       fontVariantNumeric: 'tabular-nums' }}>
                       {fmt(sobra, true)}

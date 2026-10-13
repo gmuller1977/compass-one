@@ -15,7 +15,7 @@ const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
 ]
 
 /** A meta abre modal em vez de painel: nao e edicao em lote como as outras. */
-const META = { label: 'Meta de resultado', icon: '🎯' }
+const META = { label: 'Meta de economia', icon: '🎯' }
 
 /**
  * Azul escuro com fonte branca — 10,4:1, o mesmo tom das faixas de resumo do

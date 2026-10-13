@@ -195,7 +195,7 @@ export default function Dashboard() {
         <span style={{ color: ROTULO_TOPO }}>{STATUS_HERO['sem-dados'].frase(mesNome, false)}</span>
       ) : quando !== 'fechado' ? (
         <button onClick={() => navigate('/planejamento')} style={{ ...linkTopo, fontSize: 15 }}>
-          Defina uma meta de resultado para {mesNome.toLowerCase()}
+          Defina quanto quer guardar em {mesNome.toLowerCase()}
         </button>
       ) : null}
     </div>
