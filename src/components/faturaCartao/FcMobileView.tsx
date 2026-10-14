@@ -545,12 +545,14 @@ export default function FcMobileView({
                 {allItems.map(({dia, dc, mc, ac, l}, idx) => {
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
-                  const nomePrimario = hasDesc ? l.descricao : lancLabelComGrupo(l, categorias)
+                  // Título é a categoria ("Grupo · Nome · Variante"), como no
+                  // computador e no banco; a descrição vai na linha de baixo.
+                  const nomePrimario = lancLabelComGrupo(l, categorias)
                   // Data primeiro: é por ela que se confere contra a fatura do banco.
                   const legenda = [
                     `${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${ac !== purchaseAno ? `/${ac}` : ''}`,
                     l.parcelas && l.parcelas > 1 ? `${l.parcelaAtual} de ${l.parcelas}` : undefined,
-                    hasDesc ? lancLabelComGrupo(l, categorias) : undefined,
+                    hasDesc ? l.descricao : undefined,
                     buscarCategoria(categorias, l.categoria)?.ativa === false ? 'inativa' : undefined,
                   ].filter(Boolean).join(' · ')
                   return (
