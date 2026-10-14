@@ -1,5 +1,6 @@
 import type { Conta } from '../context/AppContext'
-import { mesDaFaturaDaCompra, totalComprasFatura } from './lancamentoRapido'
+import { mesDaFaturaDaCompra } from './lancamentoRapido'
+import { ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
 
 /**
  * O Lançar do celular começa pela CATEGORIA, depois o MÊS, depois a forma de
@@ -51,24 +52,55 @@ export function formasDoMes(contas: Conta[], hoje: Date, qual: QualMes, tipo: 's
 
 const chave = (conta: string, { ano, mes }: MesRef) => `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
 
-type Lanc = { tipo: string; valor: number }
+type Lanc = {
+  tipo: string; valor: number; id?: string; categoria?: string
+  parcelaAtual?: number; diaCompra?: number; mesCompra?: number; anoCompra?: number
+}
 type MesComLanc = { lancamentos?: Record<string | number, Lanc[]> }
 
-/** Quanto saiu hoje somando bancos, dinheiro e as compras no cartão. */
+/**
+ * Quanto saiu HOJE: as despesas lançadas hoje no banco e no dinheiro, e as
+ * compras feitas hoje no cartão (só a 1ª parcela — a compra entra uma vez).
+ *
+ * Fica de fora o que não é gasto novo: transferência entre contas próprias e
+ * o pagamento da fatura no banco (a compra já contou no dia em que foi feita).
+ * Antes contava os dois, e no cartão somava as parcelas de compras ANTIGAS
+ * que caíam na fatura do mês sob o mesmo número de dia (14/10/2026).
+ */
 export function gastoDeHoje(
   contas: Conta[], extratoData: Record<string, unknown>, faturaData: Record<string, unknown>, hoje: Date,
 ): number {
   const atual = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
   const dia = hoje.getDate()
+  const cartaoNomes = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
   let total = 0
   const ext = extratoData as Record<string, MesComLanc>
   for (const id of [...contas.filter(c => c.tipo !== 'cartao').map(c => c.id), 'dinheiro']) {
-    for (const l of ext[chave(id, atual)]?.lancamentos?.[dia] ?? []) if (l.tipo === 'saida') total += l.valor
+    for (const l of ext[chave(id, atual)]?.lancamentos?.[dia] ?? []) {
+      if (l.tipo !== 'saida') continue
+      if (l.id?.startsWith('fatura-') || ehTransferencia(l.categoria ?? '')) continue
+      if (cartaoNomes.has((l.categoria ?? '').toLowerCase())) continue
+      total += l.valor
+    }
   }
+  // A compra pode estar na fatura deste mês ou na seguinte (depois do
+  // fechamento); olha as duas e decide pela data da COMPRA.
   const fat = faturaData as Record<string, MesComLanc>
   for (const c of contas.filter(c => c.tipo === 'cartao')) {
-    const dm = fat[chave(c.id, mesDaFaturaDaCompra(c, atual.ano, atual.mes, dia))]
-    total += totalComprasFatura({ lancamentos: { [dia]: dm?.lancamentos?.[dia] ?? [] } })
+    const daCompra = mesDaFaturaDaCompra(c, atual.ano, atual.mes, dia)
+    for (const m of [atual, proximoMes(atual)]) {
+      for (const itens of Object.entries(fat[chave(c.id, m)]?.lancamentos ?? {})) {
+        const [diaChave, ls] = itens
+        for (const l of ls) {
+          if ((l.parcelaAtual ?? 1) > 1) continue
+          const ehHoje = l.anoCompra != null && l.mesCompra != null && l.diaCompra != null
+            ? l.anoCompra === atual.ano && l.mesCompra === atual.mes && l.diaCompra === dia
+            // Sem data de compra gravada: a regra antiga, dia da chave no mês da fatura de hoje.
+            : Number(diaChave) === dia && indice(m) === indice(daCompra)
+          if (ehHoje) total += l.tipo === 'entrada' ? l.valor : -l.valor
+        }
+      }
+    }
   }
   return total
 }
