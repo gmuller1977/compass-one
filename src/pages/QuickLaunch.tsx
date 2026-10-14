@@ -15,6 +15,7 @@ import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import { nomeDaConta } from '../utils/nomeDaConta'
 import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
+import { grupoDaCategoria } from '../utils/rotuloCategoria'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -670,9 +671,15 @@ export default function QuickLaunch() {
                             <span style={{ fontSize: 24, opacity: c.ativa ? 1 : .4, flexShrink: 0 }}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></span>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 14, fontWeight: 600, color: c.ativa ? COR.texto : '#94a3b8' }}>
-                                {c.nome}
+                                {c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
                               </div>
-                              {!c.ativa && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 1 }}>inativa</div>}
+                              {/* Grupo embaixo: com a variante, distingue "Seguro · Civic"
+                                  de "Seguro · March" (pedido do Guilherme, 14/10/2026). */}
+                              {(() => {
+                                const sub = [grupoDaCategoria(c.nome, c.descricao, categorias), c.ativa ? undefined : 'inativa']
+                                  .filter(Boolean).join(' · ')
+                                return sub && <div style={{ fontSize: 12, color: c.ativa ? COR.textoSuave : '#94a3b8', marginTop: 1 }}>{sub}</div>
+                              })()}
                             </div>
                             <div style={{
                               width: 44, height: 24, borderRadius: 12, flexShrink: 0,
