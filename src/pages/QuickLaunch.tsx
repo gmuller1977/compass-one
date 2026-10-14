@@ -134,12 +134,18 @@ export default function QuickLaunch() {
   const gastosHoje = useMemo(() => gastoDeHoje(contas, extratoData, faturaData, hoje), [contas, extratoData, faturaData, dia]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Categorias variáveis
-  const catsVariaveis = useMemo(() => categorias.filter(c => !c.fixa), [categorias])
+  // Atalhos e lista de escolha em ordem alfabética de "Nome · Variante"
+  // (pedido do Guilherme, 14/10/2026).
+  const catsOrdenadas = useMemo(() => {
+    const rot = (c: { nome: string; descricao?: string }) => c.descricao ? `${c.nome} · ${c.descricao}` : c.nome
+    return [...categorias].sort((a, b) => rot(a).localeCompare(rot(b), 'pt-BR', { sensitivity: 'base' }))
+  }, [categorias])
+  const catsVariaveis = useMemo(() => catsOrdenadas.filter(c => !c.fixa), [catsOrdenadas])
   const hasAnyPin = useMemo(() => categorias.some(c => c.pinQuick === true), [categorias])
   const catsGrid = useMemo(() => {
-    if (hasAnyPin) return categorias.filter(c => c.ativa && c.pinQuick === true)
-    return categorias.filter(c => c.ativa && !c.fixa)
-  }, [categorias, hasAnyPin])
+    if (hasAnyPin) return catsOrdenadas.filter(c => c.ativa && c.pinQuick === true)
+    return catsOrdenadas.filter(c => c.ativa && !c.fixa)
+  }, [catsOrdenadas, hasAnyPin])
 
   function abrirGerenciar() {
     if (hasAnyPin) {
