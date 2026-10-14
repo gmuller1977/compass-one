@@ -394,10 +394,6 @@ export default function QuickLaunch() {
               )
             }
             const active     = catSel === c.id
-            const { prev: previsto, real: realizado } = linhaDaCategoria(c)
-            const disponivel = previsto - realizado
-            const temPrevisto = previsto > 0 && c.tipo === 'saida'
-            const ult = temPrevisto ? null : ultimoValorCat(c.nome)
             return (
               <button
                 key={c.id}
@@ -419,19 +415,13 @@ export default function QuickLaunch() {
                   background: '#e6ebf1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', textAlign: 'center', lineHeight: 1.2,
-                  maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {/* Nome inteiro, com a variante, e sem valor: o disponível
+                    depende do mês em que se paga, que só se escolhe depois
+                    (pedido do Guilherme, 14/10/2026). */}
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', textAlign: 'center', lineHeight: 1.25,
+                  maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
                   {c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
                 </span>
-                {temPrevisto ? (
-                  <span style={{ fontSize: 13, color: disponivel < 0 ? '#fecaca' : '#86efac', fontWeight: 700, textAlign: 'center' }}>
-                    {fmt(disponivel)}
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,.75)' }}>
-                    {ult ? fmt(ult) : c.tipo === 'entrada' ? 'receita' : ''}
-                  </span>
-                )}
               </button>
             )
           })}
