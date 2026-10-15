@@ -1207,6 +1207,15 @@ a resposta), e os cartõezinhos mês a mês viraram o gráfico "Seu saldo, antes
 e depois" (sem a compra tracejado branco, comprando `#93c5fd` com o semáforo
 nos pontos). A tabela de números segue em "Ver os números em detalhe".
 
+**A resposta do Simulador diz se a meta de economia continua de pé**
+(15/10/2026, pedido do Guilherme). Régua do Planejamento: o que o PLANO
+guarda no mês (`previstoDoAno`, receitas − despesas planejadas) menos a
+parcela, contra `objetivos[mês]`, nos meses com meta e com parcela. A parcela
+cai onde "incluir no planejamento" a gravaria (mês da compra em diante, sem o
+deslocamento do cartão) — incluída, o cartão do mês no Planejamento diz o
+mesmo. Regras em [`metaNaSimulacao.ts`](src/utils/metaNaSimulacao.ts); a
+frase separa os meses que a compra derruba dos que já estavam abaixo.
+
 **O Simulador terminava acima do Planejamento: dois furos na previsão**
 (mesmo dia; dez/2027 dava 76.344,42 contra 68.013,12). Os dois em
 `saldoConta.ts`, e valem também para Radar, Início e Lançamentos:

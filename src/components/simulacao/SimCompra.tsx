@@ -19,6 +19,8 @@ import { incluirNoPlano, parcelasDesde, dividirEmParcelas, novoIdSimulacao, resu
 import type { Categoria } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
 import { medirDescoberta } from '../../utils/descoberta'
+import { metaNaSimulacao, type MetaNaSimulacao } from '../../utils/metaNaSimulacao'
+import { previstoDoAno, type CtxPlano } from '../planejamento/previstoDoAno'
 import { NOMES_MESES } from '../novoLancamentoExtrato/NleShared'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
@@ -206,6 +208,29 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     [pedido],
   )
   useEffect(() => { setIncluidoEm('') }, [pedido])
+
+  // A meta de economia com a compra (utils/metaNaSimulacao). O que o plano
+  // guarda em cada mês sai da passagem do Planejamento — um ano por vez.
+  const meta = useMemo(() => {
+    if (!pedido) return null
+    const ctx: CtxPlano = {
+      anoCorrente: hoje.getFullYear(), mesAtual: hoje.getMonth(), categorias, contas, faturaData,
+      planos: planos as Record<number, unknown>,
+      saldoInicialFixo: contas.filter(c => (c.tipo === 'corrente' || c.tipo === 'poupanca') && c.incluirNoSaldoInicial !== false)
+        .reduce((t, c) => t + c.saldoInicial, 0),
+      depsSaldo: deps,
+    }
+    const anos = new Map<number, ReturnType<typeof previstoDoAno> | null>()
+    return metaNaSimulacao(parcelasDaCompra, (ano, mes) => {
+      const plano = (planos as Record<number, PlanoAnoData | undefined>)[ano]
+      const alvo = plano?.objetivos?.[mes] ?? 0
+      if (!plano || alvo <= 0) return null
+      if (!anos.has(ano)) anos.set(ano, previstoDoAno(ano, ctx))
+      const p = anos.get(ano)!
+      return p ? { guarda: p.totalEntradas[mes] - p.totalSaidas[mes], meta: alvo } : null
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedido, parcelasDaCompra, planos, categorias, contas, faturaData, deps])
   function confirmarInclusao(cat: Categoria, descricao: string) {
     const r = incluirNoPlano(planos, cat, parcelasDaCompra, descricao, novoIdSimulacao())
     setPlanos(r.planos as typeof planos)
@@ -461,7 +486,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         {resultado && pedido ? (
           <Resposta
             nome={nome} r={resultado} isMobile={isMobile}
-            piso={pedido.piso} mensal={modo === 'mensal'}
+            piso={pedido.piso} mensal={modo === 'mensal'} meta={meta}
             valorTotal={pedido.valorTotal} parcelas={pedido.parcelas}
           />
         ) : duasColunas && (
@@ -542,8 +567,10 @@ const CORES: Record<Situacao, { ponto: string; texto: string }> = {
   falta:    { ponto: '#f87171', texto: '#fecaca' },
 }
 
-export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false }: {
+export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null }: {
   nome: string
+  /** A meta de economia com a compra. Sem meta no plano, `null`. */
+  meta?: MetaNaSimulacao | null
   /** Gasto fixo todo mês (mensalidade), e não uma compra parcelada. */
   mensal?: boolean
   r: ResultadoCompra
@@ -630,6 +657,8 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
         <div style={{ fontSize: 13, color: '#fff', marginTop: 8, lineHeight: 1.6 }}>
           {explicacao}
         </div>
+
+        {meta && <AvisoMeta m={meta} mensal={mensal} />}
 
         {/* O mes ja seria ruim sem a compra. Muda a conversa: o problema nao e
             o que se quer comprar, e o mes. */}
@@ -840,6 +869,47 @@ function GraficoAntesDepois({ meses, piso, parcela, isMobile }: {
           </span>
         ))}
       </div>
+    </div>
+  )
+}
+
+/**
+ * A meta de economia, numa frase. Mesmas palavras do Planejamento ("guardar",
+ * "meta"), e nunca "resultado", "receitas" ou "despesas" — a regra do texto
+ * da meta no CLAUDE.md.
+ */
+function AvisoMeta({ m, mensal }: { m: MetaNaSimulacao; mensal: boolean }) {
+  const n = m.meses.length
+  const nm = (k: number) => `${k} ${k === 1 ? 'mês' : 'meses'}`
+  const mes = (x: { mes: number; ano: number }) => `${MESES[x.mes].toLowerCase()}${x.ano !== new Date().getFullYear() ? ` de ${x.ano}` : ''}`
+  const p = m.pior
+  const caixa: React.CSSProperties = {
+    marginTop: 12, padding: '10px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.55, color: '#fff',
+    background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.18)',
+  }
+  if (!m.caem.length && !m.jaAbaixo.length) {
+    return (
+      <div style={caixa}>
+        <b style={{ color: TOM.ok.texto }}>✓ Sua meta de economia continua de pé.</b>{' '}
+        {n === 1 ? 'No mês com meta' : `Nos ${nm(n)} com meta`}, você ainda guarda o que planejou.
+      </div>
+    )
+  }
+  return (
+    <div style={caixa}>
+      {m.caem.length > 0 && (
+        <><b style={{ color: TOM.atencao.texto }}>⚠ {mensal ? 'Com esse gasto' : 'Com essa compra'} você guarda menos que a meta</b>{' '}
+          {m.caem.length === n ? (n === 1 ? 'no mês com meta' : `nos ${nm(n)} com meta`) : `em ${m.caem.length} dos ${nm(n)} com meta`}.</>
+      )}
+      {p && (
+        <> {m.caem.length > 0 ? 'O pior é' : 'Em'} <b>{mes(p)}</b>:{' '}
+          {p.guardaCom >= 0
+            ? <>guarda <b>{fmt(p.guardaCom)}</b> de uma meta de <b>{fmt(p.meta)}</b>.</>
+            : <>você gasta <b>{fmt(-p.guardaCom)}</b> a mais do que ganha, e a meta era guardar <b>{fmt(p.meta)}</b>.</>}</>
+      )}
+      {m.jaAbaixo.length > 0 && (
+        <> {m.caem.length > 0 ? 'E em' : 'Em'} {nm(m.jaAbaixo.length)} o plano já não alcançava a meta, mesmo sem a compra.</>
+      )}
     </div>
   )
 }
