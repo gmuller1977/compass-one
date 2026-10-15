@@ -7,7 +7,7 @@ import type { ParcelaNoPlano } from './simuladorNoPlano'
  * do mês diz "Dentro da meta" quando o que o PLANO guarda (receitas −
  * despesas planejadas) alcança `objetivos[mês]`. Aqui é a mesma régua menos a
  * parcela, e a parcela cai onde "Vou comprar — incluir no planejamento" a
- * gravaria (do mês da compra em diante, sem o deslocamento do cartão). Assim,
+ * gravaria (no cartão, a partir do mês da fatura). Assim,
  * se a pessoa incluir a compra, o Planejamento mostra exatamente o que esta
  * conta previu.
  *

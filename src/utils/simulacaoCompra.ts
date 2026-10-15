@@ -1,5 +1,6 @@
 import type { Conta } from '../context/AppContext'
 import { saldoTotalNoFim, type Deps } from './saldoConta'
+import { mesDoGastoNoCartao } from './lancarPorMes'
 
 /**
  * "Comprar isso agora quebra algum mês? Se quebra, quando dá?"
@@ -30,6 +31,12 @@ export type Parcelamento = {
   cartaoId?: string
   ano: number
   mes: number
+  /**
+   * Dia da compra. No cartão ele decide a fatura: comprar depois do
+   * fechamento joga a primeira parcela para a fatura seguinte. Sem dia, vale
+   * o dia 1 — o comportamento de antes.
+   */
+  dia?: number
 }
 
 export type PontoFluxo = {
@@ -82,25 +89,34 @@ export function fimDoPlanejamento(planos: Deps['planos']): Mes | null {
   return melhor
 }
 
-function deslocamentoDoCartao(cartaoId: string | undefined, contas: Conta[]) {
-  const cartao = cartaoId ? contas.find(c => c.id === cartaoId) : undefined
-  return cartao && (cartao.diaVencimento ?? 1) < (cartao.diaFechamento ?? 1) ? 1 : 0
+/**
+ * O mês em que sai a PRIMEIRA parcela.
+ *
+ * No débito e no PIX é o mês da compra. No cartão é o mês em que VENCE a
+ * fatura que recebe a compra — `mesDoGastoNoCartao`, a mesma regra do
+ * realizado (`construirRealizadoMes`) e do Lançar. Pedido do Guilherme em
+ * 15/10/2026: com o XP aberto e a fatura vencendo em novembro, a simulação
+ * cobrava a primeira parcela em outubro. Antes só se olhava se o cartão vence
+ * antes de fechar, nunca se a fatura do mês já tinha fechado.
+ */
+export function primeiroMesDoParcelamento(
+  p: { cartaoId?: string; ano: number; mes: number; dia?: number },
+  contas: Conta[],
+): Mes {
+  const cartao = p.cartaoId ? contas.find(c => c.id === p.cartaoId) : undefined
+  return cartao ? mesDoGastoNoCartao(cartao, p.ano, p.mes, p.dia ?? 1) : { ano: p.ano, mes: p.mes }
 }
 
 /**
- * Em que mês cada parcela sai do bolso.
- *
- * No débito e no PIX sai no próprio mês da parcela. No cartão sai quando a
- * fatura vence, e é a mesma regra de deslocamento que o extrato já usa: quando
- * o cartão vence ANTES de fechar, a fatura daquela compra só é paga no mês
- * seguinte.
+ * Em que mês cada parcela sai do bolso: a primeira em
+ * `primeiroMesDoParcelamento`, as outras nos meses seguintes.
  */
 export function saidasDoParcelamento(p: Parcelamento, contas: Conta[]) {
-  const desloc = deslocamentoDoCartao(p.cartaoId, contas)
+  const primeira = primeiroMesDoParcelamento(p, contas)
   const valor = p.parcelas > 0 ? p.valorTotal / p.parcelas : 0
 
   return Array.from({ length: Math.max(0, p.parcelas) }, (_, k) => ({
-    ...somaMes(p.ano, p.mes, k + desloc),
+    ...somaMes(primeira.ano, primeira.mes, k),
     valor,
   }))
 }
@@ -132,12 +148,12 @@ export function mesesQueOPlanoCobre(planos: Deps['planos'], de: Mes): number {
 
 export function parcelasQueOPlanoCobre(
   planos: Deps['planos'],
-  compra: { ano: number; mes: number; cartaoId?: string },
+  compra: { ano: number; mes: number; cartaoId?: string; dia?: number },
   contas: Conta[],
 ): number {
   const fim = fimDoPlanejamento(planos)
   if (!fim) return 0
-  const primeira = somaMes(compra.ano, compra.mes, deslocamentoDoCartao(compra.cartaoId, contas))
+  const primeira = primeiroMesDoParcelamento(compra, contas)
   return mesesAte(primeira, fim)
 }
 

@@ -382,7 +382,7 @@ function CartaoPedido({ pedido, estado, cad, onFeito, onCancelar }: {
 function Simulacao({ pedido, deps }: { pedido: Extract<PedidoNorte, { tipo: 'simular' }>; deps: Deps }) {
   const r = useMemo(() => {
     const h = new Date()
-    return simularCompra({ valorTotal: pedido.valor, parcelas: pedido.parcelas, cartaoId: pedido.cartaoId, ano: h.getFullYear(), mes: h.getMonth() }, deps, { piso: 0 })
+    return simularCompra({ valorTotal: pedido.valor, parcelas: pedido.parcelas, cartaoId: pedido.cartaoId, ano: h.getFullYear(), mes: h.getMonth(), dia: h.getDate() }, deps, { piso: 0 })
   }, [pedido, deps])
   if (!r) return (
     <Bolha><div style={{ fontSize: 15, color: COR.texto }}>Para simular, preciso de um plano para os próximos meses.</div></Bolha>

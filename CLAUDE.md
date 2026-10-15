@@ -1211,8 +1211,8 @@ nos pontos). A tabela de números segue em "Ver os números em detalhe".
 (15/10/2026, pedido do Guilherme). Régua do Planejamento: o que o PLANO
 guarda no mês (`previstoDoAno`, receitas − despesas planejadas) menos a
 parcela, contra `objetivos[mês]`, nos meses com meta e com parcela. A parcela
-cai onde "incluir no planejamento" a gravaria (mês da compra em diante, sem o
-deslocamento do cartão) — incluída, o cartão do mês no Planejamento diz o
+cai onde "incluir no planejamento" a gravaria (no cartão, a partir do mês da
+fatura) — incluída, o cartão do mês no Planejamento diz o
 mesmo. Regras em [`metaNaSimulacao.ts`](src/utils/metaNaSimulacao.ts); a
 frase separa os meses que a compra derruba dos que já estavam abaixo.
 
@@ -1325,10 +1325,15 @@ dos itens com `simulacaoId` (`integracoesNoPlano`); a coluna `simulacoes` não
 mudou. Dívida/meta já salva empresta o id da linha, e o Desfazer desmarca o
 `integrado_planejamento` dela.
 
-Parcelas da compra caem no mês da COMPRA em diante, sem o deslocamento do
-cartão: o plano da categoria é consumido na compra, pela regra do realizado; o
-mês em que a fatura vence é assunto da previsão. Atravessa a virada do ano; mês
-de ano sem plano fica de fora e a janela avisa antes.
+Parcelas da compra caem a partir do mês em que sai a PRIMEIRA parcela: no
+débito, o mês da compra; no cartão, o mês em que vence a fatura que recebe a
+compra (`primeiroMesDoParcelamento` → `mesDoGastoNoCartao`, a regra do
+realizado). Corrigido em 15/10/2026, pedido do Guilherme: com o XP aberto e
+fatura em novembro, a janela dizia "out/2026 a jul/2027" e a simulação cobrava
+outubro. A nota antiga ("mês da compra, sem o deslocamento do cartão") estava
+errada: o realizado conta a compra no cartão no mês da fatura, então o plano
+ficava num mês e o gasto no seguinte. Atravessa a virada do ano; mês de ano
+sem plano fica de fora e a janela avisa antes.
 
 Ferramentas do plano não espalham a compra: "copiar mês/ano" leva só os itens
 próprios (`paraCopiar`) e o reajuste % não toca item do Simulador

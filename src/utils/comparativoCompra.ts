@@ -66,7 +66,7 @@ export type LinhaComparativo = {
 export type ContextoComparativo = {
   serie: SerieDoPlano
   contas: Conta[]
-  alvo: { ano: number; mes: number; cartaoId?: string }
+  alvo: { ano: number; mes: number; cartaoId?: string; dia?: number }
   /** Quantas parcelas o plano alcança a partir de `alvo`. Não varia por linha. */
   teto: number
   /** A reserva que não se quer encostar. Zero quando não há. */
@@ -112,7 +112,7 @@ export function compararOpcoes(
     const r = simularCompraSobre(
       ctx.serie,
       { valorTotal: total, parcelas: opcao.parcelas, cartaoId: ctx.alvo.cartaoId,
-        ano: ctx.alvo.ano, mes: ctx.alvo.mes },
+        ano: ctx.alvo.ano, mes: ctx.alvo.mes, dia: ctx.alvo.dia },
       ctx.contas,
       { piso },
     )

@@ -9,7 +9,7 @@ import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
 import {
   simularCompra, fimDoPlanejamento, parcelasQueOPlanoCobre, diagnosticar,
-  serieBaseDoPlano,
+  serieBaseDoPlano, primeiroMesDoParcelamento,
   type PontoFluxo, type ResultadoCompra,
 } from '../../utils/simulacaoCompra'
 import { compararOpcoes, opcoesPadrao, precoAVista, editarOpcao, resemear, type Opcao } from '../../utils/comparativoCompra'
@@ -127,7 +127,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   const tetoParcelas = useMemo(
     () => parcelasQueOPlanoCobre(
       planos as Record<number, PlanoAnoData | undefined>,
-      { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), cartaoId: ondeId || undefined },
+      { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), cartaoId: ondeId || undefined, dia: hoje.getDate() },
       contas,
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,7 +155,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     return compararOpcoes(opcoes, {
       serie, contas,
       alvo: { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(),
-        cartaoId: ondeId || undefined },
+        cartaoId: ondeId || undefined, dia: hoje.getDate() },
       teto: tetoParcelas,
       piso: guardarNum,
     })
@@ -178,7 +178,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   const pedido = useMemo(() => {
     const base = {
-      cartaoId: ondeId || undefined,
+      cartaoId: ondeId || undefined, dia: hoje.getDate(),
       ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), piso: guardarNum,
     }
     if (modo === 'mensal') {
@@ -198,14 +198,20 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   )
 
   // Aprovar a compra: ela entra no plano como item de uma categoria, somando
-  // ao que já estava planejado (utils/simuladorNoPlano). As parcelas caem no
-  // mês da COMPRA em diante — é quando o plano da categoria é consumido, pela
-  // mesma regra do realizado; quando a fatura vence é a previsão que resolve.
+  // ao que já estava planejado (utils/simuladorNoPlano).
   const [incluindo, setIncluindo] = useState(false)
   const [incluidoEm, setIncluidoEm] = useState('')
   const parcelasDaCompra = useMemo(
-    () => (pedido ? parcelasDesde(pedido.ano, pedido.mes, dividirEmParcelas(pedido.valorTotal, pedido.parcelas)) : []),
-    [pedido],
+    () => {
+      if (!pedido) return []
+      // A partir do mês em que sai a primeira parcela — no cartão, o da fatura
+      // (primeiroMesDoParcelamento). É onde o realizado conta a compra, então
+      // é onde o plano tem de ter o item: senão o Radar mostraria o plano num
+      // mês e o gasto no seguinte.
+      const p1 = primeiroMesDoParcelamento(pedido, contas)
+      return parcelasDesde(p1.ano, p1.mes, dividirEmParcelas(pedido.valorTotal, pedido.parcelas))
+    },
+    [pedido, contas],
   )
   useEffect(() => { setIncluidoEm('') }, [pedido])
 
@@ -371,7 +377,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                 ? <>Sem prazo, a conta vai até o fim do seu planejamento, <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b> ({tetoParcelas} {tetoParcelas === 1 ? 'mês' : 'meses'}).</>
                 : Number(mesesStr) > tetoParcelas
                   ? <>Seu planejamento vai até <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b>: a conta olha os {tetoParcelas} meses que ele alcança.</>
-                  : <>A conta olha {mesesMensal} {mesesMensal === 1 ? 'mês' : 'meses'} a partir de {MESES[inicioCompra.getMonth()].toLowerCase()}.</>)}
+                  : <>A conta olha {mesesMensal} {mesesMensal === 1 ? 'mês' : 'meses'} a partir de {MESES[primeiroMesDoParcelamento({ cartaoId: ondeId || undefined, ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), dia: hoje.getDate() }, contas).mes].toLowerCase()}.</>)}
             </div>
           </div>
         ) : (<>
