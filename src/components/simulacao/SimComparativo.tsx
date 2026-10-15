@@ -133,12 +133,16 @@ export default function SimComparativo({
           <tbody>
             {linhas.map(l => {
               const ativa = selecionada === l.opcao.id
-              const fundo = l.recomendada ? 'rgba(255,255,255,.16)' : ativa ? 'rgba(255,255,255,.09)' : 'transparent'
+              // Só a ESCOLHIDA tem fundo e marca: é a que a resposta ao lado
+              // mostra. A recomendada leva só a etiqueta "melhor" (Guilherme,
+              // 15/10/2026: à vista e 10× apareciam os dois em destaque).
+              const fundo = ativa ? 'rgba(255,255,255,.20)' : 'transparent'
               return (
                 <tr key={l.opcao.id}
                   onClick={() => l.veredito && onSelecionar(l.opcao.id)}
                   style={{
                     background: fundo,
+                    boxShadow: ativa ? 'inset 4px 0 0 #fff' : undefined,
                     borderTop: `1px solid ${LINHA}`,
                     cursor: l.veredito ? 'pointer' : 'default',
                     opacity: l.veredito ? 1 : 0.6,
@@ -155,6 +159,12 @@ export default function SimComparativo({
                     <span style={{ marginLeft: 6, fontSize: 12, color: SUAVE }}>
                       {l.opcao.parcelas === 1 ? 'à vista' : '×'}
                     </span>
+                    {ativa && (
+                      <span style={{
+                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: '#1e3a8a', background: '#fff',
+                        borderRadius: 5, padding: '2px 6px', textTransform: 'uppercase', letterSpacing: '.3px',
+                      }}>escolhida</span>
+                    )}
                     {l.recomendada && (
                       <span style={{
                         marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: BOM,

@@ -1241,6 +1241,19 @@ frase separa os meses que a compra derruba dos que já estavam abaixo.
   salvar avisa que falta ativar. Regras em
   [`simulacoesDeCompra.ts`](src/utils/simulacoesDeCompra.ts).
 
+**Dois gráficos com seletor, e o mês com o ano** (mesmo dia, pedido dele: a
+linha da meta no eixo da direita "ficou confusa"). `GraficosDaSimulacao`
+tem pílulas "Saldo" | "Quanto guarda" (escolha guardada no aparelho):
+Saldo = sem a compra (branco tracejado) × comprando (`#93c5fd`); Quanto
+guarda = colunas do que o plano guarda menos a parcela, verdes ou vermelhas
+contra a meta do mês, com a meta tracejada amarela (`#fde047`) e o plano sem
+a compra tracejado branco, na MESMA escala — o mesmo número do gráfico
+"Quanto guarda" do Planejamento. A linha amarela com bolinhas saiu. As
+frases da resposta dizem o ano ("dezembro de 2027", `mesEAno`), porque a
+simulação atravessa a virada. Na tabela de condições só a linha ESCOLHIDA
+tem fundo, traço branco à esquerda e o selo "escolhida"; a recomendada fica
+só com o selo "melhor".
+
 **O Simulador terminava acima do Planejamento: dois furos na previsão**
 (mesmo dia; dez/2027 dava 76.344,42 contra 68.013,12). Os dois em
 `saldoConta.ts`, e valem também para Radar, Início e Lançamentos:

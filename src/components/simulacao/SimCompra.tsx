@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   LineChart, Line, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Bar, Cell,
 } from 'recharts'
 import { useApp } from '../../context/AppContext'
 import type { Conta, DadosMes, PlanoAnoData } from '../../context/AppContext'
@@ -354,7 +355,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     return resultado.fluxo.map(pt => {
       const x = planoDoMes(pt.ano, pt.mes)
       const parcela = parcelasDaCompra.find(q => q.ano === pt.ano && q.mes === pt.mes)?.valor ?? 0
-      return x ? { guarda: x.guarda - parcela, meta: Math.max(x.meta, guardarNum) } : null
+      return x ? { guarda: x.guarda - parcela, sem: x.guarda, meta: Math.max(x.meta, guardarNum) } : null
     })
   }, [resultado, parcelasDaCompra, planoDoMes, guardarNum])
 
@@ -669,6 +670,9 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   )
 }
 
+/** "dezembro de 2027": o ano sempre junto, para não haver dúvida de qual dezembro. */
+const mesEAno = (p: { ano: number; mes: number }) => `${MESES[p.mes].toLowerCase()} de ${p.ano}`
+
 // ── O cartão e a data ───────────────────────────────────────────────
 
 const dm = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -754,7 +758,7 @@ const COM_COMPRA = '#93c5fd'
 export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null, guardaMensal = [] }: {
   nome: string
   /** Quanto o plano guarda em cada mês do fluxo, já com a compra, e a meta. */
-  guardaMensal?: ({ guarda: number; meta: number } | null)[]
+  guardaMensal?: ({ guarda: number; sem: number; meta: number } | null)[]
   /** A meta de economia com a compra. Sem meta no plano, `null`. */
   meta?: MetaNaSimulacao | null
   /** Gasto fixo todo mês (mensalidade), e não uma compra parcelada. */
@@ -797,28 +801,28 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
   // O numero grande responde a pergunta de cada caso: onde se chega, quando
   // cabe; quanto falta, quando nao cabe.
   const destaque = d.gravidade === 'nao'
-    ? { rotulo: <>Já em <b>{MESES[aperto.mes].toLowerCase()}</b> ia faltar</>,
+    ? { rotulo: <>Já em <b>{mesEAno(aperto)}</b> ia faltar</>,
         valor: piso - aperto.comCompra }
-    : { rotulo: <>No fim de <b>{MESES[d.fim.mes].toLowerCase()}</b> você fica com</>,
+    : { rotulo: <>No fim de <b>{mesEAno(d.fim)}</b> você fica com</>,
         valor: d.fim.comCompra }
 
   const explicacao = {
     'folgado': d.pior !== d.fim
-      ? <>O mês mais apertado é <b>{MESES[d.pior.mes].toLowerCase()}</b>, com <b>{fmt(d.pior.comCompra)}</b>.</>
+      ? <>O mês mais apertado é <b>{mesEAno(d.pior)}</b>, com <b>{fmt(d.pior.comCompra)}</b>.</>
       : <>Todos os meses ficam tranquilos.</>,
     'no-limite':
-      <>Em <b>{MESES[d.pior.mes].toLowerCase()}</b> sobra pouco: <b>{fmt(d.pior.comCompra)}</b>.
+      <>Em <b>{mesEAno(d.pior)}</b> sobra pouco: <b>{fmt(d.pior.comCompra)}</b>.
         Qualquer imprevisto nesse mês aperta.</>,
     'mexe-na-reserva':
       <>Em {nMeses(d.abaixo.length)} você fica abaixo dos <b>{fmt(piso)}</b> que
         queria manter guardados — o menor é <b>{fmt(d.pior.comCompra)}</b>. Dinheiro
         na conta não falta.</>,
     'vermelho-passageiro':
-      <>{nMeses(d.negativos.length)} no vermelho, o pior em <b>{MESES[d.pior.mes].toLowerCase()}</b> com{' '}
+      <>{nMeses(d.negativos.length)} no vermelho, o pior em <b>{mesEAno(d.pior)}</b> com{' '}
         <b>{fmt(d.pior.comCompra)}</b>. Depois você volta ao azul.</>,
     'vermelho-ate-o-fim':
-      <>A partir de <b>{MESES[aperto.mes].toLowerCase()}</b> o saldo não se
-        recupera: em <b>{MESES[d.fim.mes].toLowerCase()}</b> você ainda estaria
+      <>A partir de <b>{mesEAno(aperto)}</b> o saldo não se
+        recupera: em <b>{mesEAno(d.fim)}</b> você ainda estaria
         com <b>{fmt(d.fim.comCompra)}</b>.</>,
   }[d.caso]
 
@@ -912,14 +916,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
       )}
 
       <div style={cardAzul}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>
-          Seu saldo, antes e depois
-        </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 12 }}>
-          Com quanto cada mês termina sem a compra e {mensal ? 'pagando todo mês' : 'já pagando as parcelas'}.
-        </div>
-
-        <GraficoAntesDepois meses={meses} guarda={guardaMensal} isMobile={isMobile} />
+        <GraficosDaSimulacao meses={meses} guarda={guardaMensal} isMobile={isMobile} mensal={mensal} />
 
         <Fechamento meses={meses} isMobile={isMobile} />
 
@@ -991,101 +988,165 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
 }
 
 
-/**
- * O saldo de cada mês, sem a compra e com ela, num gráfico só.
- *
- * Pedido do Guilherme em 15/10/2026, no lugar dos cartõezinhos mês a mês: a
- * pergunta é a TRAJETÓRIA — onde as duas linhas se afastam, e se a de baixo
- * encosta no zero. Sem a compra é a linha branca tracejada; comprando, a azul
- * clara.
- *
- * No mesmo dia, a terceira linha: QUANTO GUARDA NO MÊS, já com a compra (o
- * que o plano guarda menos a parcela), em amarelo e no eixo da direita — o
- * saldo vai a dezenas de milhares e o mês fica em poucos milhares, e no mesmo
- * eixo a linha seria um traço no chão. As bolinhas dela dizem se o mês fica
- * ACIMA (verde) ou ABAIXO (vermelho) da meta de economia; mês sem meta fica
- * sem bolinha colorida. O semáforo saiu dos pontos do saldo para as cores não
- * dizerem duas coisas no mesmo gráfico — ele segue na frase da resposta.
- * Medido sobre `#1e40af`: `#93c5fd` 5,7:1, `#fde047` 6,6:1, branco 8,7:1;
- * pontos são elemento gráfico (3:1).
- */
 const ACIMA = '#4ade80'
 const ABAIXO = '#f87171'
-const GUARDA = '#fde047'
+const META = '#fde047'
+type QualGrafico = 'saldo' | 'guarda'
+const CHAVE_GRAFICO = 'simulador-grafico'
 
-function GraficoAntesDepois({ meses, guarda, isMobile }: {
-  meses: PontoFluxo[]; guarda: ({ guarda: number; meta: number } | null)[]; isMobile: boolean
+/**
+ * Dois gráficos, escolhidos por botões (pedido do Guilherme em 15/10/2026: a
+ * linha do quanto guarda por cima do saldo, em outro eixo, "ficou confuso").
+ * O botão escolhido fica no aparelho, como no gráfico do Planejamento.
+ *
+ * 1. Saldo — com quanto cada mês termina, sem a compra e comprando.
+ * 2. Quanto guarda — o que o PLANO guarda no mês (a barra "Quanto guarda" do
+ *    Planejamento) já menos a parcela, em barras verdes (na meta ou acima) e
+ *    vermelhas (abaixo), com a meta do mês num traço amarelo e o que guardaria
+ *    sem a compra num traço branco. Um eixo só: a meta se lê no próprio valor.
+ *
+ * Medido sobre `#1e40af`: `#93c5fd` 5,7:1, `#fde047` 6,6:1, branco 8,7:1;
+ * barras e linhas são elemento gráfico (3:1): `#4ade80` 5,0, `#f87171` 3,15.
+ */
+function GraficosDaSimulacao({ meses, guarda, isMobile, mensal }: {
+  meses: PontoFluxo[]; guarda: ({ guarda: number; sem: number; meta: number } | null)[]; isMobile: boolean; mensal: boolean
 }) {
   const temGuarda = guarda.some(g => g)
-  const temMeta = guarda.some(g => g && g.meta > 0)
-  const dados = meses.map((p, i) => ({
-    rotulo: p.mes === 0 || i === 0 ? `${MESES_CURTOS[p.mes]}/${String(p.ano).slice(2)}` : MESES_CURTOS[p.mes],
-    sem: Math.round(p.semCompra * 100) / 100,
-    com: Math.round(p.comCompra * 100) / 100,
-    guarda: guarda[i] ? Math.round(guarda[i]!.guarda * 100) / 100 : null,
-    meta: guarda[i]?.meta ?? 0,
-  }))
-  const curto = (v: number) => Math.abs(v) >= 1000
-    ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`
-    : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
-  const pontoGuarda = (props: { cx?: number; cy?: number; payload?: { guarda: number | null; meta: number } }) => {
-    const { cx, cy, payload } = props
-    if (cx === undefined || cy === undefined || !payload || payload.guarda === null) return <g />
-    if (payload.meta <= 0) return <circle cx={cx} cy={cy} r={2.5} fill={GUARDA} />
-    const cor = payload.guarda >= payload.meta - 0.005 ? ACIMA : ABAIXO
-    return <circle cx={cx} cy={cy} r={4.5} fill={cor} stroke="#0f2878" strokeWidth={1.5} />
+  const [qual, setQual] = useState<QualGrafico>(() => {
+    try { return localStorage.getItem(CHAVE_GRAFICO) === 'guarda' ? 'guarda' : 'saldo' } catch { return 'saldo' }
+  })
+  const escolher = (q: QualGrafico) => {
+    setQual(q)
+    try { localStorage.setItem(CHAVE_GRAFICO, q) } catch { /* sem armazenamento */ }
   }
-  const legenda = (cor: string, txt: string, tipo: 'linha' | 'tracejado' | 'ponto') => (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-      {tipo === 'ponto'
-        ? <span style={{ width: 9, height: 9, borderRadius: '50%', background: cor }} />
-        : <span style={{ width: 16, borderTop: `${tipo === 'tracejado' ? 2 : 3}px ${tipo === 'tracejado' ? 'dashed' : 'solid'} ${cor}` }} />}
-      {txt}
-    </span>
-  )
+  const mostra: QualGrafico = temGuarda ? qual : 'saldo'
   return (
     <div>
-      <div style={{ height: isMobile ? 220 : 250 }}
-        role="img"
-        aria-label={`Saldo no fim de cada mês. ${meses.map((p, i) => `${MESES_CURTOS[p.mes]}: sem a compra ${fmt(p.semCompra)}, comprando ${fmt(p.comCompra)}${guarda[i] ? `, guarda ${fmt(guarda[i]!.guarda)}${guarda[i]!.meta > 0 ? ` de uma meta de ${fmt(guarda[i]!.meta)}` : ''}` : ''}`).join('; ')}`}>
+      {temGuarda && (
+        <div role="tablist" aria-label="Gráfico" style={{
+          display: 'inline-flex', gap: 4, padding: 3, borderRadius: 10, marginBottom: 12,
+          background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)',
+        }}>
+          {([['saldo', 'Saldo'], ['guarda', 'Quanto guarda']] as const).map(([id, txt]) => {
+            const ativo = mostra === id
+            return (
+              <button key={id} role="tab" aria-selected={ativo} onClick={() => escolher(id)} style={{
+                padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 13, fontWeight: 700,
+                background: ativo ? COR.branco : 'transparent', color: ativo ? COR.azulEscuro : '#fff',
+              }}>{txt}</button>
+            )
+          })}
+        </div>
+      )}
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>
+        {mostra === 'saldo' ? 'Seu saldo, antes e depois' : 'Quanto você guarda em cada mês'}
+      </div>
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 12, lineHeight: 1.5 }}>
+        {mostra === 'saldo'
+          ? <>Com quanto cada mês termina sem a compra e {mensal ? 'pagando todo mês' : 'já pagando as parcelas'}.</>
+          : <>O que o seu planejamento guarda no mês, já {mensal ? 'pagando o gasto' : 'com a parcela'}, contra a meta de cada mês.</>}
+      </div>
+      {mostra === 'saldo'
+        ? <GraficoSaldo meses={meses} isMobile={isMobile} />
+        : <GraficoGuarda meses={meses} guarda={guarda} isMobile={isMobile} />}
+    </div>
+  )
+}
+
+const rotuloMes = (p: PontoFluxo, i: number) =>
+  p.mes === 0 || i === 0 ? `${MESES_CURTOS[p.mes]}/${String(p.ano).slice(2)}` : MESES_CURTOS[p.mes]
+const curto = (v: number) => Math.abs(v) >= 1000
+  ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`
+  : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+const eixo = { fontSize: 11, fill: 'rgba(255,255,255,.85)' }
+const tooltipSt = { fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }
+
+function Legenda({ itens }: { itens: [string, string, 'linha' | 'tracejado' | 'barra'][] }) {
+  return (
+    <div style={{ display: 'flex', gap: '6px 14px', flexWrap: 'wrap', marginTop: 8,
+      fontSize: 12, color: 'rgba(255,255,255,.85)', alignItems: 'center' }}>
+      {itens.map(([cor, txt, tipo]) => (
+        <span key={txt} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          {tipo === 'barra'
+            ? <span style={{ width: 10, height: 10, borderRadius: 2, background: cor }} />
+            : <span style={{ width: 16, borderTop: `${tipo === 'tracejado' ? 2 : 3}px ${tipo === 'tracejado' ? 'dashed' : 'solid'} ${cor}` }} />}
+          {txt}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function GraficoSaldo({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean }) {
+  const dados = meses.map((p, i) => ({
+    rotulo: rotuloMes(p, i),
+    sem: Math.round(p.semCompra * 100) / 100,
+    com: Math.round(p.comCompra * 100) / 100,
+  }))
+  return (
+    <div>
+      <div style={{ height: isMobile ? 210 : 240 }} role="img"
+        aria-label={`Saldo no fim de cada mês. ${meses.map(p => `${mesEAno(p)}: sem a compra ${fmt(p.semCompra)}, comprando ${fmt(p.comCompra)}`).join('; ')}`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={dados} margin={{ top: 8, right: temGuarda ? 0 : 8, left: 0, bottom: 0 }}>
+          <LineChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
-            <XAxis dataKey="rotulo" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }}
-              tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
-            <YAxis yAxisId="saldo" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} width={52}
-              tickLine={false} axisLine={false} tickFormatter={curto} />
-            {temGuarda && (
-              <YAxis yAxisId="guarda" orientation="right" tick={{ fontSize: 11, fill: GUARDA }} width={48}
-                tickLine={false} axisLine={false} tickFormatter={curto} />
-            )}
-            <Tooltip
-              formatter={(v, n, item) => {
-                if (n === 'guarda') {
-                  const m = (item?.payload as { meta?: number } | undefined)?.meta ?? 0
-                  return [m > 0 ? `${fmt(Number(v ?? 0))} (meta ${fmt(m)})` : fmt(Number(v ?? 0)), 'Guarda no mês']
-                }
-                return [fmt(Number(v ?? 0)), n === 'com' ? 'Saldo comprando' : 'Saldo sem a compra']
-              }}
-              contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
-            <ReferenceLine yAxisId="saldo" y={0} stroke={NEG} strokeDasharray="4 4" />
-            <Line yAxisId="saldo" type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
-            <Line yAxisId="saldo" type="monotone" dataKey="com" stroke={COM_COMPRA} strokeWidth={3} dot={false} activeDot={{ r: 5 }} isAnimationActive={false} />
-            {temGuarda && (
-              <Line yAxisId="guarda" type="monotone" dataKey="guarda" stroke={GUARDA} strokeWidth={2}
-                dot={pontoGuarda} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
-            )}
+            <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
+            <YAxis tick={eixo} width={52} tickLine={false} axisLine={false} tickFormatter={curto} />
+            <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Saldo comprando' : 'Saldo sem a compra']}
+              contentStyle={tooltipSt} />
+            <ReferenceLine y={0} stroke={NEG} strokeDasharray="4 4" />
+            <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="com" stroke={COM_COMPRA} strokeWidth={3} dot={false} activeDot={{ r: 5 }} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: 'flex', gap: '6px 14px', flexWrap: 'wrap', marginTop: 8,
-        fontSize: 12, color: 'rgba(255,255,255,.85)', alignItems: 'center' }}>
-        {legenda('#fff', 'saldo sem a compra', 'tracejado')}
-        {legenda(COM_COMPRA, 'saldo comprando', 'linha')}
-        {temGuarda && legenda(GUARDA, 'quanto guarda no mês (eixo da direita)', 'linha')}
-        {temMeta && legenda(ACIMA, 'acima da meta', 'ponto')}
-        {temMeta && legenda(ABAIXO, 'abaixo da meta', 'ponto')}
+      <Legenda itens={[['#fff', 'sem a compra', 'tracejado'], [COM_COMPRA, 'comprando', 'linha']]} />
+    </div>
+  )
+}
+
+function GraficoGuarda({ meses, guarda, isMobile }: {
+  meses: PontoFluxo[]; guarda: ({ guarda: number; sem: number; meta: number } | null)[]; isMobile: boolean
+}) {
+  const dados = meses.map((p, i) => {
+    const g = guarda[i]
+    return {
+      rotulo: rotuloMes(p, i),
+      com: g ? Math.round(g.guarda * 100) / 100 : null,
+      sem: g ? Math.round(g.sem * 100) / 100 : null,
+      meta: g && g.meta > 0 ? g.meta : null,
+    }
+  })
+  const temMeta = dados.some(d => d.meta !== null)
+  return (
+    <div>
+      <div style={{ height: isMobile ? 210 : 240 }} role="img"
+        aria-label={`Quanto guarda em cada mês. ${meses.map((p, i) => guarda[i] ? `${mesEAno(p)}: ${fmt(guarda[i]!.guarda)}${guarda[i]!.meta > 0 ? ` de uma meta de ${fmt(guarda[i]!.meta)}` : ''}` : `${mesEAno(p)}: sem plano`).join('; ')}`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
+            <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
+            <YAxis tick={eixo} width={52} tickLine={false} axisLine={false} tickFormatter={curto} />
+            <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)),
+              n === 'com' ? 'Guarda comprando' : n === 'sem' ? 'Guardaria sem a compra' : 'Meta do mês']}
+              contentStyle={tooltipSt} />
+            <ReferenceLine y={0} stroke="rgba(255,255,255,.5)" />
+            <Bar dataKey="com" radius={[3, 3, 0, 0]} maxBarSize={22} isAnimationActive={false}>
+              {dados.map((d, i) => (
+                <Cell key={i} fill={d.meta === null ? COM_COMPRA : (d.com ?? 0) >= d.meta - 0.005 ? ACIMA : ABAIXO} />
+              ))}
+            </Bar>
+            <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls isAnimationActive={false} />
+            {temMeta && <Line type="stepAfter" dataKey="meta" stroke={META} strokeWidth={2.5} strokeDasharray="6 4" dot={false} isAnimationActive={false} />}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
+      <Legenda itens={[
+        ...(temMeta ? [[ACIMA, 'na meta ou acima', 'barra'], [ABAIXO, 'abaixo da meta', 'barra'], [META, 'meta do mês', 'tracejado']] as [string, string, 'barra' | 'tracejado'][]
+          : [[COM_COMPRA, 'guarda comprando', 'barra']] as [string, string, 'barra'][]),
+        ['#fff', 'sem a compra', 'tracejado'],
+      ]} />
     </div>
   )
 }
