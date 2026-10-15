@@ -902,7 +902,7 @@ function AvisoMeta({ m, mensal }: { m: MetaNaSimulacao; mensal: boolean }) {
           {m.caem.length === n ? (n === 1 ? 'no mês com meta' : `nos ${nm(n)} com meta`) : `em ${m.caem.length} dos ${nm(n)} com meta`}.</>
       )}
       {p && (
-        <> {m.caem.length > 0 ? 'O pior é' : 'Em'} <b>{mes(p)}</b>:{' '}
+        <> {m.caem.length > 1 ? 'O pior é' : 'Em'} <b>{mes(p)}</b>:{' '}
           {p.guardaCom >= 0
             ? <>guarda <b>{fmt(p.guardaCom)}</b> de uma meta de <b>{fmt(p.meta)}</b>.</>
             : <>você gasta <b>{fmt(-p.guardaCom)}</b> a mais do que ganha, e a meta era guardar <b>{fmt(p.meta)}</b>.</>}</>
