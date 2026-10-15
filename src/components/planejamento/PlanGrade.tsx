@@ -19,6 +19,7 @@ interface Props {
   somaCartaoMes: number[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
+  onRevisarAno?: () => void
   objetivos: number[]
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
@@ -73,7 +74,7 @@ export default function PlanGrade(props: Props) {
         dadosAtivos={dadosAtivos}
         dadosAnoAnterior={dadosAnoAnterior}
         categorias={props.categorias}
-        onBulkSave={props.onBulkSave}
+        onBulkSave={props.onBulkSave} onRevisarAno={props.onRevisarAno}
         bloqueado={bloqueado}
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}
       />

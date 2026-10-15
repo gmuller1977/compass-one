@@ -275,6 +275,24 @@ export function usePlanejamento(anoAtual: number) {
     })
   }
 
+  /**
+   * Várias células de uma vez, numa gravação só — a revisão do plano anual
+   * ("Preencher os vazios"). Chamar editarValor em sequência perderia todas
+   * menos a última: cada uma parte do mesmo dadosPrevisto.
+   */
+  function editarCelulas(ops: { tipo: 'e' | 's'; ri: number; mi: number; valor: number; itens?: ItemPlano[] | null }[]) {
+    updateAno(d => {
+      const entradas = [...d.entradas], saidas = [...d.saidas]
+      for (const op of ops) {
+        const lista = op.tipo === 'e' ? entradas : saidas
+        const alvo = lista[op.ri]
+        if (!alvo) continue
+        lista[op.ri] = op.itens ? comItens(alvo, [op.mi], op.itens) : comValor(alvo, op.mi, op.valor)
+      }
+      return { ...d, entradas, saidas }
+    })
+  }
+
   const planoAnoAnterior: AnoData | null = useMemo(() =>
     (planos[anoAtual - 1] as AnoData | undefined) ?? null,
   [planos, anoAtual])
@@ -302,6 +320,7 @@ export function usePlanejamento(anoAtual: number) {
     editarValor,
     editarMultiplosValores,
     editarItens,
+    editarCelulas,
     objetivos,
     editarMetas,
     planoAnoAnterior,

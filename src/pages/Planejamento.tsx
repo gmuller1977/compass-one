@@ -23,6 +23,7 @@ import { AjustePlanoContexto, type AbrirAjuste } from '../components/acompanhame
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { pickReal, cadastroDaLinha } from '../components/acompanhamento/evolucaoCalcs'
+import PlanRevisaoAnual from '../components/planejamento/PlanRevisaoAnual'
 import RepetirValorDialog from '../components/planejamento/RepetirValorDialog'
 import { mesesParaRepetir, separarDestinos, rotuloParcela, nomeDoMes, type MesRef } from '../utils/recorrencia'
 import { useToast } from '../components/Toast'
@@ -134,6 +135,15 @@ export default function Planejamento() {
   }
 
 
+
+  // Revisão do plano anual: o ano que passou × o plano do próximo, mês a mês.
+  // Ela edita o ano NOVO pela mesma lista da tela (o mesmo `ri`), então abrir
+  // a partir do ano corrente (ou de antes) leva a tela para o ano seguinte.
+  const [revisaoAnual, setRevisaoAnual] = useState(false)
+  function abrirRevisaoAnual() {
+    if (anoAtual <= anoCorrente) setAnoAtual(anoCorrente + 1)
+    setRevisaoAnual(true)
+  }
 
   function handleBulkSave(ops: Parameters<typeof plan.editarMultiplosValores>[0]) {
     plan.editarMultiplosValores(ops)
@@ -309,6 +319,12 @@ export default function Planejamento() {
           ano={anoAtual} mes={ajuste.mes ?? plan.mesAtual} categorias={categorias} deps={depsAjuste} />
       )}
 
+      {revisaoAnual && anoAtual > anoCorrente && (
+        <PlanRevisaoAnual alvo={anoAtual} mesInicial={0} dadosAtivos={dadosAtivos} previsto={plan.previsto}
+          hasFaturaCat={plan.hasFaturaCat} onEditar={plan.editarCelulas} abrirItens={abrirItens}
+          onFechar={() => setRevisaoAnual(false)} />
+      )}
+
       {itensAbertos && (() => {
         const { tipo, ri, mi, partes } = itensAbertos
         const cat = (tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]
@@ -361,6 +377,7 @@ export default function Planejamento() {
           categorias={plan.categorias}
           onSave={handleSave}
           onBulkSave={handleBulkSave}
+          onRevisarAno={abrirRevisaoAnual}
           objetivos={plan.objetivos}
           sobraPrevista={sobraPrevista}
           onMetaSave={plan.editarMetas}
@@ -446,6 +463,7 @@ export default function Planejamento() {
             somaCartaoMes={plan.somaCartaoMes}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
+            onRevisarAno={abrirRevisaoAnual}
             objetivos={plan.objetivos}
             sobraPrevista={sobraPrevista}
             onMetaSave={plan.editarMetas}

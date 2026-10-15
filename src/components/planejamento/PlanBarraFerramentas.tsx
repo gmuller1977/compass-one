@@ -54,6 +54,8 @@ interface Props {
   /** Edicao indisponivel (plano travado, ou aba so de leitura). */
   bloqueado?: boolean
   motivoBloqueio?: string
+  /** Abre a revisão do plano anual (PlanRevisaoAnual): o ano que passou × o que se monta. */
+  onRevisarAno?: () => void
 }
 
 /**
@@ -63,7 +65,7 @@ interface Props {
 export default function PlanBarraFerramentas({
   mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior, categorias,
   onBulkSave,
-  bloqueado = false, motivoBloqueio,
+  bloqueado = false, motivoBloqueio, onRevisarAno,
 }: Props) {
   const [toolAberta, setToolAberta] = useState<ToolId | null>(null)
   const { toast } = useToast()
@@ -92,7 +94,12 @@ export default function PlanBarraFerramentas({
             </button>
           )
         })}
-
+        {onRevisarAno && (
+          <button onClick={() => { setToolAberta(null); onRevisarAno() }} style={estiloBotao(false, false)}
+            title="Comparar cada mês do ano que passou com o plano do próximo ano">
+            <i aria-hidden className="ti ti-arrows-left-right" style={{ fontSize: 15 }} />Revisão anual
+          </button>
+        )}
       </div>
 
       <PlanFerramentas

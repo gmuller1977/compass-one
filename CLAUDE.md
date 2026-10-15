@@ -336,6 +336,22 @@ mesma meta vale do mês seguinte até dezembro (pedido dele no mesmo dia:
 seriam trocados: "Só [mês]" ou "Copiar até dezembro". Sem pergunta quando os
 meses seguintes já têm essa meta, ou quando a meta é zero.
 
+**"Revisão anual": o mesmo mês de dois anos, para montar o plano do ano
+seguinte** (15/10/2026, pedido do Guilherme: "janeiro 2026 realizado,
+janeiro 2027 planejado e os parcelados"). Botão na barra de ferramentas do
+Planejamento (computador e celular, a mesma janela `PlanRevisaoAnual`);
+aberto no ano corrente, a tela vai para o ano seguinte, porque a revisão
+edita o ano novo pela lista da tela (mesmo `ri`). Por grupo e categoria:
+realizado do mês no ano base (o do Radar, com "plano R$ X" embaixo), já
+lançado no ano novo (parcelas), o plano do ano novo editável (grava SÓ aquele
+mês, sem a repetição até dezembro) e "Usar R$ X", a sugestão do "mês a mês"
+(`sugestaoDoMes` / `itensDaSugestao`: realizado sem parcelas + parcelas do
+ano novo, em itens). Mês base em andamento ou futuro não sugere pela metade.
+"Preencher N vazias" grava as linhas sem plano numa gravação só
+(`editarCelulas`). Realizado sem linha vira "Outras", e o pé fecha com o
+Radar. Regras em [`revisaoAnual.ts`](src/components/planejamento/revisaoAnual.ts);
+`prova73` (26 invariantes).
+
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
 Onboarding e **"Planejamento do Zero"** no menu. Na primeira vez não há nada
