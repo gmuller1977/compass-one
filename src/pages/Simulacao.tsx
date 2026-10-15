@@ -47,7 +47,7 @@ type MetaResult = {
 
 type SimRow = {
   id: string
-  tipo: 'divida' | 'meta'
+  tipo: 'divida' | 'meta' | 'compra'
   nome: string
   valor_total: number
   parcela: number
@@ -303,7 +303,8 @@ export default function Simulacao() {
 
   useEffect(() => { loadSims() }, [loadSims])
 
-  const simListFiltrada = simList.filter(s => s.tipo === aba)
+  // As compras têm lista própria, com a comparação por loja (SimSalvas).
+  const simListFiltrada = aba === 'compra' ? [] : simList.filter(s => s.tipo === aba)
 
   async function excluirSim(id: string) {
     await supabase.from('simulacoes').delete().eq('id', id)

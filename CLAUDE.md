@@ -1204,8 +1204,7 @@ plano) e roda a MESMA `simularCompra`, com total = mensal × meses; não
 oferece "comprar em Nx". No mesmo pedido: a resposta da direita já abre com a
 opção À VISTA (a escolhida é derivada, não guardada — editar a linha atualiza
 a resposta), e os cartõezinhos mês a mês viraram o gráfico "Seu saldo, antes
-e depois" (sem a compra tracejado branco, comprando `#93c5fd` com o semáforo
-nos pontos). A tabela de números segue em "Ver os números em detalhe".
+e depois" (sem a compra tracejado branco, comprando `#93c5fd`). A tabela de números segue em "Ver os números em detalhe".
 
 **A resposta do Simulador diz se a meta de economia continua de pé**
 (15/10/2026, pedido do Guilherme). Régua do Planejamento: o que o PLANO
@@ -1215,6 +1214,32 @@ cai onde "incluir no planejamento" a gravaria (no cartão, a partir do mês da
 fatura) — incluída, o cartão do mês no Planejamento diz o
 mesmo. Regras em [`metaNaSimulacao.ts`](src/utils/metaNaSimulacao.ts); a
 frase separa os meses que a compra derruba dos que já estavam abaixo.
+
+**No mesmo dia, mais quatro pedidos dele no Simulador:**
+- **Gráfico:** linha amarela "quanto guarda no mês" (eixo da direita, o plano
+  menos a parcela) com bolinhas verde/vermelha = acima/abaixo da meta. O
+  semáforo saiu dos pontos do saldo: a cor no gráfico fala só da meta.
+- **"Quanto deseja guardar por mês?"** substituiu "Quer deixar um dinheiro
+  guardado?" (que era piso de SALDO). Começa na meta do mês; valor maior vale,
+  menor fica a meta (`max(meta, digitado)`, mês a mês). O "cabe" voltou a ser
+  só não ficar no vermelho (piso 0). Saiu o "Mais opções".
+- **Data da compra** (campo de data, padrão hoje) e, no cartão, a caixa
+  "entra na fatura que fecha em X e vence em Y · N dias para pagar" e o
+  **melhor dia para comprar**, o dia seguinte ao próximo fechamento, com
+  "Simular nesse dia". Regras em [`melhorDiaCartao.ts`](src/utils/melhorDiaCartao.ts),
+  a mesma `mesDaFaturaDaCompra`.
+- **"Ver se cabe no meu bolso" saiu** (a resposta já aparece ao lado):
+  ficaram **Salvar simulação** e **Vou comprar**. O campo **"De quem?"** (loja)
+  e a lista **Simulações salvas** embaixo, agrupada pelo item (sem acento e
+  caixa), com "Melhor oferta" = menor total entre as que cabem. Cada salva é
+  JULGADA DE NOVO contra o plano de hoje (`avaliarSalva`), nunca pelo veredito
+  gravado. "Abrir" recarrega o formulário; salvar com o mesmo item e loja
+  atualiza, trocando a loja vira outra. Vou comprar com uma salva aberta usa
+  o id dela no item e marca `integrado_planejamento`. Mora em `simulacoes`
+  com `tipo: 'compra'`, `fornecedor` e `detalhes` (jsonb, o formulário):
+  migração `019_simulacoes_compra.sql`, rodada pelo Guilherme; sem ela,
+  salvar avisa que falta ativar. Regras em
+  [`simulacoesDeCompra.ts`](src/utils/simulacoesDeCompra.ts).
 
 **O Simulador terminava acima do Planejamento: dois furos na previsão**
 (mesmo dia; dez/2027 dava 76.344,42 contra 68.013,12). Os dois em

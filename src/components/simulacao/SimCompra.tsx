@@ -4,7 +4,7 @@ import {
   LineChart, Line, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useApp } from '../../context/AppContext'
-import type { DadosMes, PlanoAnoData } from '../../context/AppContext'
+import type { Conta, DadosMes, PlanoAnoData } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
 import {
@@ -22,6 +22,11 @@ import { medirDescoberta } from '../../utils/descoberta'
 import { metaNaSimulacao, type MetaNaSimulacao } from '../../utils/metaNaSimulacao'
 import { previstoDoAno, type CtxPlano } from '../planejamento/previstoDoAno'
 import { NOMES_MESES } from '../novoLancamentoExtrato/NleShared'
+import { supabase } from '../../lib/supabase'
+import SimSalvas from './SimSalvas'
+import type { CompraSalva, DetalhesCompra } from '../../utils/simulacoesDeCompra'
+import { chaveDoItem } from '../../utils/simulacoesDeCompra'
+import { faturaDaCompra, diasParaPagar, melhorDiaDeCompra } from '../../utils/melhorDiaCartao'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
   'Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -74,19 +79,24 @@ const cardAzul: React.CSSProperties = {
  * semáforo, e a planilha só para quem pedir. A primeira versão empilhava
  * veredito, gráfico e tabela de quatro colunas — tudo correto e ilegível.
  */
+const isoDe = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 export default function SimCompra({ isMobile }: { isMobile: boolean }) {
-  const { contas, categorias, planos, setPlanos, extratoData, faturaData, saldoInicialDinheiro,
+  const { user, contas, categorias, planos, setPlanos, extratoData, faturaData, saldoInicialDinheiro,
     cenarioPrevisao, onboardingCompleto } = useApp()
   const navigate = useNavigate()
   const hoje = new Date()
 
   const [nome, setNome]         = useState('')
+  /** De quem: a loja ou o vendedor. É o que separa as ofertas do mesmo item. */
+  const [fornecedor, setFornecedor] = useState('')
   const [valorStr, setValorStr] = useState('')
 
   const [ondeId, setOndeId]     = useState('')          // '' = débito/PIX
-  const [inicio, setInicio]     = useState(0)           // meses a partir de hoje
+  // A data da compra (ou do começo da mensalidade). No cartão ela decide a
+  // fatura: depois do fechamento, a compra vai para a seguinte.
+  const [dataStr, setDataStr]   = useState(() => isoDe(new Date()))
   const [guardarStr, setGuardar] = useState('')
-  const [maisOpcoes, setMaisOpcoes] = useState(false)
   const [erro, setErro]         = useState('')
   /**
    * Compra parcelada (a tabela de opções do vendedor) ou gasto FIXO todo mês —
@@ -99,6 +109,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   const [mesesStr, setMeses]    = useState('')
 
   const cartoes = contas.filter(c => c.tipo === 'cartao')
+  const cartaoEscolhido = cartoes.find(c => c.id === ondeId)
   const valorNum = parseValor(valorStr) ?? 0
   const guardarNum = parseValor(guardarStr) ?? 0
 
@@ -114,7 +125,13 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   // O planejamento e o horizonte: nada aqui extrapola. Comprar mais tarde ou
   // no cartao que vence antes de fechar come meses desse teto.
-  const inicioCompra = new Date(hoje.getFullYear(), hoje.getMonth() + inicio, 1)
+  const dataCompra = (() => {
+    const [a, m, d] = dataStr.split('-').map(Number)
+    const dt = a && m && d ? new Date(a, m - 1, d) : null
+    const h0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+    return !dt || isNaN(dt.getTime()) || dt < h0 ? h0 : dt
+  })()
+  const inicioCompra = dataCompra
   // A mesma medida que o Planejamento usa. Derivada, nunca guardada.
   const descoberta = useMemo(() => medirDescoberta({
     onboardingCompleto, planos, extratoData, contas,
@@ -127,11 +144,11 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   const tetoParcelas = useMemo(
     () => parcelasQueOPlanoCobre(
       planos as Record<number, PlanoAnoData | undefined>,
-      { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), cartaoId: ondeId || undefined, dia: hoje.getDate() },
+      { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), cartaoId: ondeId || undefined, dia: dataCompra.getDate() },
       contas,
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [planos, contas, ondeId, inicio],
+    [planos, contas, ondeId, dataStr],
   )
 
   const deps: Deps = useMemo(() => ({
@@ -155,12 +172,12 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     return compararOpcoes(opcoes, {
       serie, contas,
       alvo: { ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(),
-        cartaoId: ondeId || undefined, dia: hoje.getDate() },
+        cartaoId: ondeId || undefined, dia: dataCompra.getDate() },
       teto: tetoParcelas,
-      piso: guardarNum,
+      piso: 0,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serie, opcoes, contas, ondeId, inicio, tetoParcelas, guardarNum])
+  }, [serie, opcoes, contas, ondeId, dataStr, tetoParcelas])
 
   const mensalNum = parseValor(mensalStr) ?? 0
   /** Sem prazo, a mensalidade vai até onde o plano alcança. */
@@ -178,8 +195,8 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   const pedido = useMemo(() => {
     const base = {
-      cartaoId: ondeId || undefined, dia: hoje.getDate(),
-      ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), piso: guardarNum,
+      cartaoId: ondeId || undefined, dia: dataCompra.getDate(),
+      ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), piso: 0,
     }
     if (modo === 'mensal') {
       if (mensalNum <= 0 || mesesMensal <= 0) return null
@@ -189,13 +206,88 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     if (!l || !l.veredito) return null
     return { ...base, valorTotal: l.total, parcelas: l.opcao.parcelas }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modo, mensalNum, mesesMensal, linhas, idEscolhida, ondeId, inicio, guardarNum])
+  }, [modo, mensalNum, mesesMensal, linhas, idEscolhida, ondeId, dataStr])
 
   const resultado = useMemo(
     () => (pedido ? simularCompra(pedido, deps, { piso: pedido.piso, hoje }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [pedido, deps],
   )
+
+  // ── Simulações salvas ────────────────────────────────────────────────
+  // Por login, como a Dívida e a Meta (RLS de `simulacoes`). Tabela sem a
+  // migração 019 recusa `tipo: 'compra'`: o erro diz que falta ativar.
+  const [salvas, setSalvas] = useState<CompraSalva[]>([])
+  const [aberta, setAberta] = useState<{ id: string; nome: string; fornecedor: string } | null>(null)
+  const [avisoSalvar, setAvisoSalvar] = useState<{ ok: boolean; texto: string } | null>(null)
+  useEffect(() => {
+    if (!user) return
+    supabase.from('simulacoes').select('*').eq('tipo', 'compra').order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error('simulacoes (compras):', error.message)
+        if (data) setSalvas(data as CompraSalva[])
+      })
+  }, [user])
+  useEffect(() => { setAvisoSalvar(null) }, [pedido, nome, fornecedor])
+
+  function detalhesAtuais(): DetalhesCompra {
+    return { modo, valor: valorStr, opcoes, escolhida: idEscolhida, cartaoId: ondeId, data: dataStr,
+      mensal: mensalStr, meses: mesesStr, guardar: guardarStr }
+  }
+
+  async function salvar() {
+    if (!user) return
+    if (!pedido) { simular(); return }
+    const nomeOk = nome.trim() || (modo === 'mensal' ? 'Gasto mensal' : 'Compra')
+    const forn = fornecedor.trim()
+    const row = {
+      nome: nomeOk, fornecedor: forn || null,
+      valor_total: pedido.valorTotal, parcela: pedido.valorTotal / pedido.parcelas, juros: 0,
+      resultado_meses: pedido.parcelas,
+      data_conclusao: `${MESES[parcelasDaCompra[parcelasDaCompra.length - 1]?.mes ?? 0]}/${parcelasDaCompra[parcelasDaCompra.length - 1]?.ano ?? ''}`,
+      detalhes: detalhesAtuais(),
+    }
+    // Mesmo item e mesma loja da simulação aberta: atualiza. Trocou a loja ou
+    // o item, é outra oferta e vira outra simulação.
+    const atualizar = aberta && chaveDoItem(aberta.nome) === chaveDoItem(nomeOk)
+      && chaveDoItem(aberta.fornecedor) === chaveDoItem(forn)
+    const { data, error } = atualizar
+      ? await supabase.from('simulacoes').update(row).eq('id', aberta!.id).select().single()
+      : await supabase.from('simulacoes').insert([{ ...row, user_id: user.id, tipo: 'compra' }]).select().single()
+    if (error || !data) {
+      console.error('simulacoes (salvar compra):', error?.message)
+      const faltaMigracao = /check|column|fornecedor|detalhes/i.test(error?.message ?? '')
+      setAvisoSalvar({ ok: false, texto: faltaMigracao
+        ? 'Salvar compras ainda não está ativado no banco. Falta rodar a migração 019.'
+        : 'Não foi possível salvar a simulação. Tente de novo.' })
+      return
+    }
+    const nova = data as CompraSalva
+    setSalvas(prev => [nova, ...prev.filter(x => x.id !== nova.id)])
+    setAberta({ id: nova.id, nome: nomeOk, fornecedor: forn })
+    setAvisoSalvar({ ok: true, texto: atualizar ? 'Simulação atualizada.' : 'Simulação salva. Ela está na lista embaixo.' })
+  }
+
+  function abrir(sv: CompraSalva) {
+    const d = sv.detalhes
+    if (!d) return
+    setModo(d.modo); setNome(sv.nome); setFornecedor(sv.fornecedor ?? '')
+    setValorStr(d.valor); setOpcoes(d.opcoes); setSelecionada(d.escolhida); setOndeId(d.cartaoId)
+    const h0 = isoDe(hoje)
+    setDataStr(d.data && d.data >= h0 ? d.data : h0)
+    setMensal(d.mensal); setMeses(d.meses); setGuardar(d.guardar)
+    setAberta({ id: sv.id, nome: sv.nome, fornecedor: sv.fornecedor ?? '' })
+    setErro('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function excluir(sv: CompraSalva) {
+    if (!window.confirm(`Excluir a simulação "${sv.nome}${sv.fornecedor ? ` · ${sv.fornecedor}` : ''}"?`)) return
+    const { error } = await supabase.from('simulacoes').delete().eq('id', sv.id)
+    if (error) { console.error('simulacoes (excluir compra):', error.message); return }
+    setSalvas(prev => prev.filter(x => x.id !== sv.id))
+    if (aberta?.id === sv.id) setAberta(null)
+  }
 
   // Aprovar a compra: ela entra no plano como item de uma categoria, somando
   // ao que já estava planejado (utils/simuladorNoPlano).
@@ -217,8 +309,8 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   // A meta de economia com a compra (utils/metaNaSimulacao). O que o plano
   // guarda em cada mês sai da passagem do Planejamento — um ano por vez.
-  const meta = useMemo(() => {
-    if (!pedido) return null
+  /** O que o PLANO guarda num mês e a meta dele, pela passagem do Planejamento. */
+  const planoDoMes = useMemo(() => {
     const ctx: CtxPlano = {
       anoCorrente: hoje.getFullYear(), mesAtual: hoje.getMonth(), categorias, contas, faturaData,
       planos: planos as Record<number, unknown>,
@@ -227,20 +319,56 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
       depsSaldo: deps,
     }
     const anos = new Map<number, ReturnType<typeof previstoDoAno> | null>()
-    return metaNaSimulacao(parcelasDaCompra, (ano, mes) => {
+    return (ano: number, mes: number): { guarda: number; meta: number } | null => {
       const plano = (planos as Record<number, PlanoAnoData | undefined>)[ano]
-      const alvo = plano?.objetivos?.[mes] ?? 0
-      if (!plano || alvo <= 0) return null
+      if (!plano) return null
       if (!anos.has(ano)) anos.set(ano, previstoDoAno(ano, ctx))
       const p = anos.get(ano)!
-      return p ? { guarda: p.totalEntradas[mes] - p.totalSaidas[mes], meta: alvo } : null
-    })
+      return p ? { guarda: p.totalEntradas[mes] - p.totalSaidas[mes], meta: plano.objetivos?.[mes] ?? 0 } : null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pedido, parcelasDaCompra, planos, categorias, contas, faturaData, deps])
+  }, [planos, categorias, contas, faturaData, deps])
+
+  // A meta de economia com a compra (utils/metaNaSimulacao).
+  //
+  // "Quanto deseja guardar por mês?" (Guilherme, 15/10/2026): começa na meta
+  // do mês e só vale um valor MAIOR — abaixo da meta, fica a meta. Antes era
+  // "Quer deixar um dinheiro guardado?", um piso de saldo; o "cabe" voltou a
+  // ser só não ficar no vermelho, e a régua do guardar é esta.
+  const alvoDoMes = useMemo(() => (ano: number, mes: number) => {
+    const x = planoDoMes(ano, mes)
+    if (!x) return null
+    const alvo = Math.max(x.meta, guardarNum)
+    return alvo > 0 ? { guarda: x.guarda, meta: alvo } : null
+  }, [planoDoMes, guardarNum])
+  const meta = useMemo(() => (pedido
+    ? metaNaSimulacao(parcelasDaCompra, alvoDoMes)
+    : null), [pedido, parcelasDaCompra, alvoDoMes])
+  /** A meta do mês da compra, para o campo mostrar de onde parte. */
+  const metaDoInicio = planoDoMes(inicioCompra.getFullYear(), inicioCompra.getMonth())?.meta ?? 0
+
+  // A linha "quanto guarda no mês" do gráfico: o plano menos a parcela daquele
+  // mês, nos mesmos meses do saldo.
+  const guardaMensal = useMemo(() => {
+    if (!resultado) return []
+    return resultado.fluxo.map(pt => {
+      const x = planoDoMes(pt.ano, pt.mes)
+      const parcela = parcelasDaCompra.find(q => q.ano === pt.ano && q.mes === pt.mes)?.valor ?? 0
+      return x ? { guarda: x.guarda - parcela, meta: Math.max(x.meta, guardarNum) } : null
+    })
+  }, [resultado, parcelasDaCompra, planoDoMes, guardarNum])
+
   function confirmarInclusao(cat: Categoria, descricao: string) {
-    const r = incluirNoPlano(planos, cat, parcelasDaCompra, descricao, novoIdSimulacao())
+    // Simulação salva e aberta: o id dela vira o do item, como na Dívida.
+    const id = aberta?.id ?? novoIdSimulacao()
+    const r = incluirNoPlano(planos, cat, parcelasDaCompra, descricao, id)
     setPlanos(r.planos as typeof planos)
     setIncluindo(false)
+    if (aberta) {
+      supabase.from('simulacoes').update({ integrado_planejamento: true }).eq('id', aberta.id)
+        .then(({ error }) => { if (error) console.error('simulacoes (integrar compra):', error.message) })
+      setSalvas(prev => prev.map(x => x.id === aberta.id ? { ...x, integrado_planejamento: true } : x))
+    }
     const nomeCat = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
     setIncluidoEm(`Entrou em ${nomeCat}: ${resumoDasParcelas(r.gravadas)}`)
   }
@@ -327,6 +455,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   // tabela encolher e refluir no meio do uso.
   const duasColunas = !isMobile
   return (
+    <div>
     <div style={{
       display: duasColunas ? 'grid' : 'flex',
       gridTemplateColumns: duasColunas ? 'minmax(0,1.35fr) minmax(0,1fr)' : undefined,
@@ -354,11 +483,16 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         </div>
 
         {modo === 'mensal' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
             <div>
               <label style={labelSt}>O que é?</label>
               <input value={nome} onChange={e => setNome(e.target.value)}
                 placeholder="Academia" style={inputSt} />
+            </div>
+            <div>
+              <label style={labelSt}>De quem?</label>
+              <input value={fornecedor} onChange={e => setFornecedor(e.target.value)}
+                placeholder="Loja ou vendedor" style={inputSt} />
             </div>
             <div>
               <label style={labelSt}>Quanto por mês?</label>
@@ -377,15 +511,20 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
                 ? <>Sem prazo, a conta vai até o fim do seu planejamento, <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b> ({tetoParcelas} {tetoParcelas === 1 ? 'mês' : 'meses'}).</>
                 : Number(mesesStr) > tetoParcelas
                   ? <>Seu planejamento vai até <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b>: a conta olha os {tetoParcelas} meses que ele alcança.</>
-                  : <>A conta olha {mesesMensal} {mesesMensal === 1 ? 'mês' : 'meses'} a partir de {MESES[primeiroMesDoParcelamento({ cartaoId: ondeId || undefined, ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), dia: hoje.getDate() }, contas).mes].toLowerCase()}.</>)}
+                  : <>A conta olha {mesesMensal} {mesesMensal === 1 ? 'mês' : 'meses'} a partir de {MESES[primeiroMesDoParcelamento({ cartaoId: ondeId || undefined, ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), dia: dataCompra.getDate() }, contas).mes].toLowerCase()}.</>)}
             </div>
           </div>
         ) : (<>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr 1fr', gap: 16 }}>
           <div>
             <label style={labelSt}>O que você quer comprar?</label>
             <input value={nome} onChange={e => setNome(e.target.value)}
               placeholder="Uma bicicleta" style={inputSt} />
+          </div>
+          <div>
+            <label style={labelSt}>De quem?</label>
+            <input value={fornecedor} onChange={e => setFornecedor(e.target.value)}
+            placeholder="Loja ou vendedor" style={inputSt} />
           </div>
           <div>
             <label style={labelSt}>Quanto custa?</label>
@@ -434,41 +573,33 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           </div>
         </div>
 
-        <button onClick={() => setMaisOpcoes(v => !v)} style={{
-          marginTop: 18, background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-          fontFamily: 'inherit', fontSize: 13, color: '#fff', fontWeight: 600,
-        }}>
-          {maisOpcoes ? '▾' : '▸'} Mais opções
-        </button>
-
-        {maisOpcoes && (
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-            gap: 16, marginTop: 14, paddingTop: 16, borderTop: `1px solid ${COR.bordaSuave}` }}>
-            <div>
-              <label style={labelSt}>{modo === 'mensal' ? 'Quando começa?' : 'Quando você vai comprar?'}</label>
-              <select value={inicio} onChange={e => setInicio(Number(e.target.value))} style={inputSt}>
-                {Array.from({ length: 12 }, (_, i) => {
-                  const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1)
-                  return (
-                    <option key={i} value={i}>
-                      {i === 0 ? 'Agora' : `Em ${MESES[d.getMonth()]}`}
-                      {d.getFullYear() !== hoje.getFullYear() ? ` de ${d.getFullYear()}` : ''}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-            <div>
-              <label style={labelSt}>Quer deixar um dinheiro guardado?</label>
-              <input value={guardarStr} onChange={e => setGuardar(e.target.value)}
-                placeholder="R$ 0,00" style={inputSt}
-                onKeyDown={e => e.key === 'Enter' && simular()} />
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 6, lineHeight: 1.5 }}>
-                Um valor que você não quer encostar. Sem isso, a conta só evita
-                ficar no vermelho.
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginTop: 18 }}>
+          <div>
+            <label style={labelSt}>{modo === 'mensal' ? 'Quando começa?' : 'Quando você vai comprar?'}</label>
+            <input type="date" value={dataStr} min={isoDe(hoje)}
+              max={fimDoPlano ? isoDe(new Date(fimDoPlano.ano, fimDoPlano.mes + 1, 0)) : undefined}
+              onChange={e => setDataStr(e.target.value || isoDe(new Date()))} style={inputSt} />
+          </div>
+          <div>
+            <label style={labelSt}>Quanto deseja guardar por mês?</label>
+            <input value={guardarStr} onChange={e => setGuardar(e.target.value)}
+              placeholder={metaDoInicio > 0 ? fmt(metaDoInicio) : 'R$ 0,00'} style={inputSt} inputMode="decimal"
+              onKeyDown={e => e.key === 'Enter' && simular()} />
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 6, lineHeight: 1.5 }}>
+              {metaDoInicio > 0
+                ? (guardarNum > metaDoInicio
+                    ? <>Acima da sua meta de {fmt(metaDoInicio)}: a simulação usa {fmt(guardarNum)}.</>
+                    : guardarStr.trim() && guardarNum < metaDoInicio
+                      ? <>Abaixo da sua meta de {fmt(metaDoInicio)}: a simulação usa a meta.</>
+                      : <>Começa na sua meta de {MESES[inicioCompra.getMonth()].toLowerCase()}. Um valor maior passa a valer.</>)
+                : <>Sem meta no planejamento. Com um valor aqui, a simulação confere se ele continua de pé.</>}
             </div>
           </div>
+        </div>
+
+        {cartaoEscolhido && (
+          <InfoDoCartao cartao={cartaoEscolhido} data={dataCompra} hoje={hoje}
+            onUsar={d => setDataStr(isoDe(d))} />
         )}
 
         {erro && (
@@ -476,14 +607,35 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
             padding: '9px 13px', fontSize: 13, marginTop: 16 }}>⚠ {erro}</div>
         )}
 
-        {/* Botão azul sobre card azul sumiria. Invertido: fundo branco, texto
-            no azul escuro — 14,8:1. */}
-        <button onClick={simular} style={{
-          marginTop: 18, width: '100%', padding: 14, border: 'none', borderRadius: 10,
-          background: COR.branco, color: COR.azulEscuro,
-          fontSize: 15, fontWeight: 800, cursor: 'pointer',
-          fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(0,0,0,.22)',
-        }}>Ver se cabe no meu bolso</button>
+        {/* A resposta já aparece ao lado enquanto se digita: o botão de "ver se
+            cabe" não tinha mais o que fazer (Guilherme, 15/10/2026). Ficam as
+            duas decisões: guardar para comparar e aprovar a compra. Botão azul
+            sobre card azul sumiria — o principal é branco com texto
+            azul-escuro (14,8:1); o outro, contorno branco. */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginTop: 18 }}>
+          <button onClick={salvar} style={{
+            padding: 13, borderRadius: 10, border: '1.5px solid rgba(255,255,255,.75)',
+            background: 'transparent', color: '#fff', fontSize: 14.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+          }}><i aria-hidden className="ti ti-bookmark" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
+            {aberta && chaveDoItem(aberta.nome) === chaveDoItem(nome.trim() || aberta.nome) && chaveDoItem(aberta.fornecedor) === chaveDoItem(fornecedor) ? 'Salvar alterações' : 'Salvar simulação'}</button>
+          <button onClick={() => (pedido ? setIncluindo(true) : simular())} disabled={!!incluidoEm} style={{
+            padding: 13, border: 'none', borderRadius: 10,
+            background: COR.branco, color: COR.azulEscuro, opacity: incluidoEm ? .6 : 1,
+            fontSize: 14.5, fontWeight: 800, cursor: incluidoEm ? 'default' : 'pointer',
+            fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(0,0,0,.22)',
+          }}><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
+            {modo === 'mensal' ? 'Vou pagar' : 'Vou comprar'}</button>
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 8, lineHeight: 1.5 }}>
+          "{modo === 'mensal' ? 'Vou pagar' : 'Vou comprar'}" coloca as parcelas no seu planejamento, dentro de uma categoria.
+        </div>
+        {(avisoSalvar || incluidoEm) && (
+          <div role="status" style={{ marginTop: 10, fontSize: 13, fontWeight: 600, lineHeight: 1.5,
+            color: avisoSalvar && !avisoSalvar.ok ? '#fecaca' : '#86efac' }}>
+            {avisoSalvar && <div>{avisoSalvar.ok ? '✓ ' : '⚠ '}{avisoSalvar.texto}</div>}
+            {incluidoEm && <div>✓ {incluidoEm}. Para tirar, use “Desfazer” no topo do Simulador.</div>}
+          </div>
+        )}
       </div>
 
       <div style={duasColunas
@@ -492,7 +644,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         {resultado && pedido ? (
           <Resposta
             nome={nome} r={resultado} isMobile={isMobile}
-            piso={pedido.piso} mensal={modo === 'mensal'} meta={meta}
+            piso={pedido.piso} mensal={modo === 'mensal'} meta={meta} guardaMensal={guardaMensal}
             valorTotal={pedido.valorTotal} parcelas={pedido.parcelas}
           />
         ) : duasColunas && (
@@ -503,22 +655,6 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
             </div>
           </div>
         )}
-        {resultado && pedido && (
-          // Página clara: cartão branco com texto escuro; o verde do "incluído"
-          // é sucessoTexto (#15803d), 5,02 no branco.
-          <div style={{ background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 12, padding: '14px 16px' }}>
-            {incluidoEm ? (
-              <div role="status" style={{ fontSize: 13, color: COR.sucessoTexto, fontWeight: 600, lineHeight: 1.5 }}>
-                ✓ {incluidoEm}. Para tirar, use “Desfazer” no topo do Simulador.
-              </div>
-            ) : (
-              <button type="button" onClick={() => setIncluindo(true)} style={{
-                width: '100%', padding: '11px 16px', borderRadius: 10, border: `1px solid ${COR.borda}`,
-                background: COR.branco, color: COR.texto, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{modo === 'mensal' ? 'Vou pagar — incluir no planejamento' : 'Vou comprar — incluir no planejamento'}</button>
-            )}
-          </div>
-        )}
         {incluindo && (
           <IncluirNoPlano descricaoInicial={nome.trim() || 'Compra'} parcelas={parcelasDaCompra}
             planos={planos as Record<number, PlanoAnoData | undefined>} categorias={categorias} contas={contas}
@@ -526,25 +662,73 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         )}
       </div>
     </div>
+    <SimSalvas sims={salvas} serie={serie} contas={contas}
+      planos={planos as Record<number, PlanoAnoData | undefined>} hoje={hoje} isMobile={isMobile}
+      abertaId={aberta?.id ?? null} onAbrir={abrir} onExcluir={excluir} />
+    </div>
   )
 }
 
-// ── Resposta ────────────────────────────────────────────────────────────
+// ── O cartão e a data ───────────────────────────────────────────────
 
-type Situacao = 'ok' | 'apertado' | 'falta'
+const dm = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 
 /**
- * O semáforo de um mês.
- *
- * "Apertado" é estar a menos de uma parcela do limite: mais um mês como esse e
- * fura. É um corte explicável, que é o que importa para quem vai ler o
- * amarelo e decidir alguma coisa.
+ * Em qual fatura a compra cai, pela data escolhida e o fechamento do cartão,
+ * e o melhor dia para comprar — o dia seguinte ao próximo fechamento (pedido
+ * do Guilherme em 15/10/2026). No card azul: branco e branco a 85%.
  */
-function situacao(saldo: number, piso: number, parcela: number): Situacao {
-  if (saldo < piso) return 'falta'
-  if (saldo < piso + parcela) return 'apertado'
-  return 'ok'
+function InfoDoCartao({ cartao, data, hoje, onUsar }: {
+  cartao: Conta; data: Date; hoje: Date; onUsar: (d: Date) => void
+}) {
+  if (!cartao.diaFechamento) {
+    return (
+      <div style={caixaCartao}>
+        Cadastre o dia de fechamento deste cartão em Configurações para a
+        simulação saber em qual fatura a compra cai.
+      </div>
+    )
+  }
+  const fat = faturaDaCompra(cartao, data)
+  const dias = diasParaPagar(data, fat)
+  const melhor = melhorDiaDeCompra(cartao, hoje)
+  const ehMelhor = melhor.data.toDateString() === data.toDateString()
+  const mesesEntre = (melhor.data.getFullYear() - hoje.getFullYear()) * 12 + melhor.data.getMonth() - hoje.getMonth()
+  const ehHoje = melhor.data.toDateString() === new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).toDateString()
+  return (
+    <div style={caixaCartao}>
+      <div>
+        Comprando em <b>{dm(data)}</b>, a compra entra na fatura que fecha em{' '}
+        <b>{dm(fat.fechaEm)}</b> e vence em <b>{dm(fat.venceEm)}</b>
+        {' '}({dias} dias para pagar). A primeira parcela é de{' '}
+        <b>{MESES[fat.venceEm.getMonth()].toLowerCase()}</b>.
+      </div>
+      <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+        <span>
+          <i aria-hidden className="ti ti-calendar-star" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6, color: '#fde047' }} />
+          Melhor dia para comprar: <b>{ehHoje ? 'hoje' : dm(melhor.data)}</b>
+          {' '}— vence em {dm(melhor.fatura.venceEm)}, {melhor.dias} dias para pagar.
+        </span>
+        {!ehMelhor && mesesEntre <= 1 && (
+          <button onClick={() => onUsar(melhor.data)} style={{
+            padding: '5px 10px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+            border: '1px solid rgba(255,255,255,.6)', background: 'transparent', color: '#fff',
+            fontSize: 12, fontWeight: 600,
+          }}>Simular nesse dia</button>
+        )}
+        {ehMelhor && <span style={{ color: '#86efac', fontWeight: 700 }}>✓ é o dia escolhido</span>}
+      </div>
+    </div>
+  )
 }
+
+const caixaCartao: React.CSSProperties = {
+  marginTop: 12, padding: '12px 14px', borderRadius: 10,
+  background: 'rgba(15,23,42,.25)', border: '1px solid rgba(255,255,255,.2)',
+  color: 'rgba(255,255,255,.92)', fontSize: 13, lineHeight: 1.55,
+}
+
+// ── Resposta ────────────────────────────────────────────────────────────
 
 /** O tom do cartao de resposta. Fundo e texto medidos em par, ver CLAUDE.md. */
 /**
@@ -567,14 +751,10 @@ const TOM = {
 const NEG = '#fecaca'
 const COM_COMPRA = '#93c5fd'
 
-const CORES: Record<Situacao, { ponto: string; texto: string }> = {
-  ok:       { ponto: '#4ade80', texto: '#86efac' },
-  apertado: { ponto: '#fbbf24', texto: '#fde047' },
-  falta:    { ponto: '#f87171', texto: '#fecaca' },
-}
-
-export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null }: {
+export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null, guardaMensal = [] }: {
   nome: string
+  /** Quanto o plano guarda em cada mês do fluxo, já com a compra, e a meta. */
+  guardaMensal?: ({ guarda: number; meta: number } | null)[]
   /** A meta de economia com a compra. Sem meta no plano, `null`. */
   meta?: MetaNaSimulacao | null
   /** Gasto fixo todo mês (mensalidade), e não uma compra parcelada. */
@@ -739,7 +919,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal
           Com quanto cada mês termina sem a compra e {mensal ? 'pagando todo mês' : 'já pagando as parcelas'}.
         </div>
 
-        <GraficoAntesDepois meses={meses} piso={piso} parcela={valorParcela} isMobile={isMobile} />
+        <GraficoAntesDepois meses={meses} guarda={guardaMensal} isMobile={isMobile} />
 
         <Fechamento meses={meses} isMobile={isMobile} />
 
@@ -817,63 +997,94 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
  * Pedido do Guilherme em 15/10/2026, no lugar dos cartõezinhos mês a mês: a
  * pergunta é a TRAJETÓRIA — onde as duas linhas se afastam, e se a de baixo
  * encosta no zero. Sem a compra é a linha branca tracejada; comprando, a azul
- * clara, com o semáforo de cada mês no ponto (verde tranquilo, amarelo
- * apertado, vermelho falta). Medido sobre `#1e40af`: `#93c5fd` 5,7:1, branco
- * 8,7:1; o ponto é elemento gráfico (3:1).
+ * clara.
+ *
+ * No mesmo dia, a terceira linha: QUANTO GUARDA NO MÊS, já com a compra (o
+ * que o plano guarda menos a parcela), em amarelo e no eixo da direita — o
+ * saldo vai a dezenas de milhares e o mês fica em poucos milhares, e no mesmo
+ * eixo a linha seria um traço no chão. As bolinhas dela dizem se o mês fica
+ * ACIMA (verde) ou ABAIXO (vermelho) da meta de economia; mês sem meta fica
+ * sem bolinha colorida. O semáforo saiu dos pontos do saldo para as cores não
+ * dizerem duas coisas no mesmo gráfico — ele segue na frase da resposta.
+ * Medido sobre `#1e40af`: `#93c5fd` 5,7:1, `#fde047` 6,6:1, branco 8,7:1;
+ * pontos são elemento gráfico (3:1).
  */
-function GraficoAntesDepois({ meses, piso, parcela, isMobile }: {
-  meses: PontoFluxo[]; piso: number; parcela: number; isMobile: boolean
+const ACIMA = '#4ade80'
+const ABAIXO = '#f87171'
+const GUARDA = '#fde047'
+
+function GraficoAntesDepois({ meses, guarda, isMobile }: {
+  meses: PontoFluxo[]; guarda: ({ guarda: number; meta: number } | null)[]; isMobile: boolean
 }) {
-  const dados = meses.map(p => ({
-    rotulo: p.mes === 0 || p === meses[0] ? `${MESES_CURTOS[p.mes]}/${String(p.ano).slice(2)}` : MESES_CURTOS[p.mes],
+  const temGuarda = guarda.some(g => g)
+  const temMeta = guarda.some(g => g && g.meta > 0)
+  const dados = meses.map((p, i) => ({
+    rotulo: p.mes === 0 || i === 0 ? `${MESES_CURTOS[p.mes]}/${String(p.ano).slice(2)}` : MESES_CURTOS[p.mes],
     sem: Math.round(p.semCompra * 100) / 100,
     com: Math.round(p.comCompra * 100) / 100,
-    s: situacao(p.comCompra, piso, parcela),
+    guarda: guarda[i] ? Math.round(guarda[i]!.guarda * 100) / 100 : null,
+    meta: guarda[i]?.meta ?? 0,
   }))
   const curto = (v: number) => Math.abs(v) >= 1000
     ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`
     : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
-  const ponto = (props: { cx?: number; cy?: number; payload?: { s: Situacao } }) => {
+  const pontoGuarda = (props: { cx?: number; cy?: number; payload?: { guarda: number | null; meta: number } }) => {
     const { cx, cy, payload } = props
-    if (cx === undefined || cy === undefined || !payload) return <g />
-    return <circle cx={cx} cy={cy} r={4} fill={CORES[payload.s].ponto} stroke="#0f2878" strokeWidth={1.5} />
+    if (cx === undefined || cy === undefined || !payload || payload.guarda === null) return <g />
+    if (payload.meta <= 0) return <circle cx={cx} cy={cy} r={2.5} fill={GUARDA} />
+    const cor = payload.guarda >= payload.meta - 0.005 ? ACIMA : ABAIXO
+    return <circle cx={cx} cy={cy} r={4.5} fill={cor} stroke="#0f2878" strokeWidth={1.5} />
   }
+  const legenda = (cor: string, txt: string, tipo: 'linha' | 'tracejado' | 'ponto') => (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      {tipo === 'ponto'
+        ? <span style={{ width: 9, height: 9, borderRadius: '50%', background: cor }} />
+        : <span style={{ width: 16, borderTop: `${tipo === 'tracejado' ? 2 : 3}px ${tipo === 'tracejado' ? 'dashed' : 'solid'} ${cor}` }} />}
+      {txt}
+    </span>
+  )
   return (
     <div>
-      <div style={{ height: isMobile ? 200 : 230 }}
+      <div style={{ height: isMobile ? 220 : 250 }}
         role="img"
-        aria-label={`Saldo no fim de cada mês. ${meses.map(p => `${MESES_CURTOS[p.mes]}: sem a compra ${fmt(p.semCompra)}, comprando ${fmt(p.comCompra)}`).join('; ')}`}>
+        aria-label={`Saldo no fim de cada mês. ${meses.map((p, i) => `${MESES_CURTOS[p.mes]}: sem a compra ${fmt(p.semCompra)}, comprando ${fmt(p.comCompra)}${guarda[i] ? `, guarda ${fmt(guarda[i]!.guarda)}${guarda[i]!.meta > 0 ? ` de uma meta de ${fmt(guarda[i]!.meta)}` : ''}` : ''}`).join('; ')}`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <LineChart data={dados} margin={{ top: 8, right: temGuarda ? 0 : 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
             <XAxis dataKey="rotulo" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }}
               tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
-            <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} width={52}
+            <YAxis yAxisId="saldo" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} width={52}
               tickLine={false} axisLine={false} tickFormatter={curto} />
+            {temGuarda && (
+              <YAxis yAxisId="guarda" orientation="right" tick={{ fontSize: 11, fill: GUARDA }} width={48}
+                tickLine={false} axisLine={false} tickFormatter={curto} />
+            )}
             <Tooltip
-              formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Comprando' : 'Sem a compra']}
+              formatter={(v, n, item) => {
+                if (n === 'guarda') {
+                  const m = (item?.payload as { meta?: number } | undefined)?.meta ?? 0
+                  return [m > 0 ? `${fmt(Number(v ?? 0))} (meta ${fmt(m)})` : fmt(Number(v ?? 0)), 'Guarda no mês']
+                }
+                return [fmt(Number(v ?? 0)), n === 'com' ? 'Saldo comprando' : 'Saldo sem a compra']
+              }}
               contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
-            <ReferenceLine y={0} stroke={NEG} strokeDasharray="4 4" />
-            {piso > 0 && <ReferenceLine y={piso} stroke="#fde047" strokeDasharray="2 4" />}
-            <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="com" stroke={COM_COMPRA} strokeWidth={3} dot={ponto} activeDot={{ r: 5 }} isAnimationActive={false} />
+            <ReferenceLine yAxisId="saldo" y={0} stroke={NEG} strokeDasharray="4 4" />
+            <Line yAxisId="saldo" type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
+            <Line yAxisId="saldo" type="monotone" dataKey="com" stroke={COM_COMPRA} strokeWidth={3} dot={false} activeDot={{ r: 5 }} isAnimationActive={false} />
+            {temGuarda && (
+              <Line yAxisId="guarda" type="monotone" dataKey="guarda" stroke={GUARDA} strokeWidth={2}
+                dot={pontoGuarda} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
       <div style={{ display: 'flex', gap: '6px 14px', flexWrap: 'wrap', marginTop: 8,
         fontSize: 12, color: 'rgba(255,255,255,.85)', alignItems: 'center' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 16, borderTop: '2px dashed #fff' }} /> sem a compra
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 16, borderTop: `3px solid ${COM_COMPRA}` }} /> comprando
-        </span>
-        {([['ok','tranquilo'],['apertado','apertado'],['falta','falta dinheiro']] as const).map(([k, txt]) => (
-          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: CORES[k].ponto }} />
-            {txt}
-          </span>
-        ))}
+        {legenda('#fff', 'saldo sem a compra', 'tracejado')}
+        {legenda(COM_COMPRA, 'saldo comprando', 'linha')}
+        {temGuarda && legenda(GUARDA, 'quanto guarda no mês (eixo da direita)', 'linha')}
+        {temMeta && legenda(ACIMA, 'acima da meta', 'ponto')}
+        {temMeta && legenda(ABAIXO, 'abaixo da meta', 'ponto')}
       </div>
     </div>
   )
@@ -903,18 +1114,22 @@ function AvisoMeta({ m, mensal }: { m: MetaNaSimulacao; mensal: boolean }) {
   }
   return (
     <div style={caixa}>
+      {m.caem.length === 0 && (
+        <><b style={{ color: TOM.atencao.texto }}>⚠ Mesmo sem {mensal ? 'esse gasto' : 'a compra'}, o plano não alcança a meta</b>{' '}
+          {m.jaAbaixo.length === n ? (n === 1 ? 'no mês com meta' : `nos ${nm(n)} com meta`) : `em ${m.jaAbaixo.length} dos ${nm(n)} com meta`}.</>
+      )}
       {m.caem.length > 0 && (
         <><b style={{ color: TOM.atencao.texto }}>⚠ {mensal ? 'Com esse gasto' : 'Com essa compra'} você guarda menos que a meta</b>{' '}
           {m.caem.length === n ? (n === 1 ? 'no mês com meta' : `nos ${nm(n)} com meta`) : `em ${m.caem.length} dos ${nm(n)} com meta`}.</>
       )}
       {p && (
-        <> {m.caem.length > 1 ? 'O pior é' : 'Em'} <b>{mes(p)}</b>:{' '}
+        <> {m.caem.length > 1 || (!m.caem.length && m.jaAbaixo.length > 1) ? 'O pior é' : 'Em'} <b>{mes(p)}</b>{m.caem.length ? '' : `, ${mensal ? 'com o gasto' : 'com a compra'}`}:{' '}
           {p.guardaCom >= 0
             ? <>guarda <b>{fmt(p.guardaCom)}</b> de uma meta de <b>{fmt(p.meta)}</b>.</>
             : <>você gasta <b>{fmt(-p.guardaCom)}</b> a mais do que ganha, e a meta era guardar <b>{fmt(p.meta)}</b>.</>}</>
       )}
-      {m.jaAbaixo.length > 0 && (
-        <> {m.caem.length > 0 ? 'E em' : 'Em'} {nm(m.jaAbaixo.length)} o plano já não alcançava a meta, mesmo sem a compra.</>
+      {m.caem.length > 0 && m.jaAbaixo.length > 0 && (
+        <> E em {nm(m.jaAbaixo.length)} o plano já não alcançava a meta, mesmo sem a compra.</>
       )}
     </div>
   )
