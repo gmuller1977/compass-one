@@ -1189,6 +1189,30 @@ A simulação em si não é cortada de propósito: "com essa parcela leva 24 mes
 é exatamente o que o usuário precisa saber, e é aritmética da dívida, não
 projeção do plano. Cortar o número esconderia a dívida para proteger o plano.
 
+**Trocar a quantidade recalcula a parcela pelo total** (15/10/2026, pedido
+do Guilherme: de 12× para 10× a parcela ficava nos 691,67 e a compra de 8.300
+virava 6.916,67). A linha só deixa de acompanhar o total quando a PARCELA é
+digitada (`manual`); aí a diferença para o à vista aparece como juro, com a
+taxa ao mês embaixo (`taxaMensal`, parcelas a partir de um mês depois). Total
+abaixo do à vista aparece como desconto. O campo da parcela guarda o texto
+enquanto está em foco — antes "8" virava "8,00" e não dava para digitar 800.
+
+**O Simulador terminava acima do Planejamento: dois furos na previsão**
+(mesmo dia; dez/2027 dava 76.344,42 contra 68.013,12). Os dois em
+`saldoConta.ts`, e valem também para Radar, Início e Lançamentos:
+- conta FIXA paga no CARTÃO (assinatura) não era prevista em mês nenhum —
+  o laço das fixas só sabe de banco e dinheiro. Hoje entra em
+  `faltaVariavelDoMes` como `plano − o que já está nas faturas do mês`, por
+  categoria e FORA do envelope do cenário, e na memória como fixa a pagar,
+  sem o "Pagar" das contas a vencer;
+- categoria com conta de débito EXCLUÍDA (ou apontando para cartão) sumia;
+  hoje cai na preferida (`debitoOuPadrao`).
+Diferença que continua legítima: o mês corrente, que no Simulador soma o
+realizado e no Planejamento só o plano. E uma do lado do Planejamento, não
+corrigida: com uma categoria homônima do cartão, `somaCartaoDoAno` lê o sinal
+da fatura invertido (compra é `entrada`) e o `exclCartao` tira as categorias
+de cartão — o Planejamento fica sem os gastos no cartão.
+
 **"Posso comprar?" compara formas de pagamento, não escolhe uma.** A tela
 perguntava "em quantas vezes?" e o usuário escolhia. Mas ninguém chega na loja
 com a parcela decidida — chega com as opções que o vendedor ofereceu, e a

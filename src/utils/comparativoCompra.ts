@@ -43,6 +43,8 @@ export type LinhaComparativo = {
   total: number
   /** Contra o preço à vista. `null` quando não há linha à vista. */
   juroEmbutido: number | null
+  /** O mesmo juro, em taxa ao mês (`taxaMensal`). `null` sem juro. */
+  taxaMes: number | null
   /**
    * `null` quando as parcelas passam do horizonte do plano. A linha NÃO some
    * da tabela nesse caso — ela aparece marcada, com o teto e o convite a
@@ -87,19 +89,20 @@ export function compararOpcoes(
   const linhas: LinhaComparativo[] = opcoes.map(opcao => {
     const total = opcao.parcelas * opcao.valorParcela
     const juroEmbutido = base === null ? null : total - base
+    const taxaMes = base === null ? null : taxaMensal(base, opcao.valorParcela, opcao.parcelas)
 
     // Linha SEM VALOR não é linha fora do plano: não há o que julgar, e dizer
     // "fora do plano" numa linha vazia acusa um limite que não foi atingido.
     // Só quem excede o horizonte carrega `tetoDoPlano`.
     if (total <= 0) {
-      return { opcao, total, juroEmbutido, veredito: null, recomendada: false }
+      return { opcao, total, juroEmbutido, taxaMes, veredito: null, recomendada: false }
     }
 
     // Fora do horizonte: não há série para julgar, e estender o plano por
     // conta própria foi descartado no módulo irmão.
     if (opcao.parcelas > ctx.teto) {
       return {
-        opcao, total, juroEmbutido,
+        opcao, total, juroEmbutido, taxaMes,
         veredito: null,
         tetoDoPlano: ctx.teto,
         recomendada: false,
@@ -116,7 +119,7 @@ export function compararOpcoes(
     const d = diagnosticar(r, piso, total / opcao.parcelas)
 
     return {
-      opcao, total, juroEmbutido,
+      opcao, total, juroEmbutido, taxaMes,
       veredito: { cabe: r.cabe, gravidade: d.gravidade, pior: r.pior, adiarPara: r.adiarPara },
       recomendada: false,
     }
@@ -154,20 +157,63 @@ function marcarRecomendada(linhas: LinhaComparativo[]): LinhaComparativo[] {
  * `parseBRL` e não `parseValor` porque o `onChange` roda a cada tecla: `null`
  * no meio da digitação travaria o campo na vírgula. É a regra do CLAUDE.md.
  *
- * Toda edição marca a linha como `manual` — inclusive apagar o campo. Quem
- * apagou quis apagar, e re-semear por cima seria desfazer isso na cara dele.
+ * **Trocar a QUANTIDADE recalcula a parcela pelo total** — enquanto ninguém
+ * digitou a parcela. Pedido do Guilherme em 15/10/2026: de 12× para 10× a
+ * parcela ficava nos 691,67 do 12×, e a linha passava a valer 6.916,67 por
+ * uma compra de 8.300. Quantidade é só a forma de dividir; o que o vendedor
+ * DISSE é a parcela.
+ *
+ * Digitar a PARCELA marca a linha como `manual` — inclusive apagar o campo.
+ * Dali em diante ela é dado do vendedor: trocar a quantidade ou o valor da
+ * compra não a sobrescreve, e a diferença para o preço à vista aparece como
+ * juro.
  */
 export function editarOpcao(
   opcoes: Opcao[], id: string, campo: 'parcelas' | 'valorParcela', valor: string,
+  valorTotal = 0,
 ): Opcao[] {
   return opcoes.map(o => {
     if (o.id !== id) return o
     if (campo === 'parcelas') {
       const n = parseInt(valor.replace(/\D/g, ''), 10)
-      return { ...o, parcelas: Number.isFinite(n) ? Math.min(n, 99) : 0, manual: true }
+      const parcelas = Number.isFinite(n) ? Math.min(n, 99) : 0
+      if (o.manual || parcelas <= 0) return { ...o, parcelas }
+      return { ...o, parcelas, valorParcela: valorTotal > 0 ? valorTotal / parcelas : 0 }
     }
     return { ...o, valorParcela: parseBRL(valor), manual: true }
   })
+}
+
+/** A parcela automática: o total dividido igualmente. Linha manual fica como está. */
+export function resemear(opcoes: Opcao[], valorTotal: number): Opcao[] {
+  return opcoes.map(o => (o.manual || o.parcelas <= 0)
+    ? o
+    : { ...o, valorParcela: valorTotal > 0 ? valorTotal / o.parcelas : 0 })
+}
+
+/**
+ * Taxa de juro ao MÊS embutida num parcelamento, contra o preço à vista.
+ *
+ * É a taxa `i` que faz as `n` parcelas, a primeira um mês depois da compra
+ * (o crediário e o cartão parcelado "com juros"), valerem hoje o preço à
+ * vista: `aVista = parcela × (1 − (1+i)^−n) / i`. Por bisseção, porque a
+ * equação não se resolve à mão.
+ *
+ * `null` quando não há juro (total igual ou abaixo do à vista), quando é à
+ * vista ou quando falta o preço à vista. Teto de 30% ao mês: acima disso o
+ * número não ajuda ninguém a decidir.
+ */
+export function taxaMensal(aVista: number, parcela: number, n: number): number | null {
+  if (n < 2 || aVista <= 0 || parcela <= 0 || parcela * n <= aVista + 0.005) return null
+  const vp = (i: number) => parcela * (1 - Math.pow(1 + i, -n)) / i
+  let lo = 1e-9, hi = 0.3
+  if (vp(hi) > aVista) return null
+  for (let k = 0; k < 80; k++) {
+    const mid = (lo + hi) / 2
+    if (vp(mid) > aVista) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
 }
 
 /**

@@ -12,7 +12,7 @@ import {
   serieBaseDoPlano,
   type PontoFluxo, type ResultadoCompra,
 } from '../../utils/simulacaoCompra'
-import { compararOpcoes, opcoesPadrao, precoAVista, editarOpcao, type Opcao } from '../../utils/comparativoCompra'
+import { compararOpcoes, opcoesPadrao, precoAVista, editarOpcao, resemear, type Opcao } from '../../utils/comparativoCompra'
 import SimComparativo from './SimComparativo'
 import IncluirNoPlano from './IncluirNoPlano'
 import { incluirNoPlano, parcelasDesde, dividirEmParcelas, novoIdSimulacao, resumoDasParcelas } from '../../utils/simuladorNoPlano'
@@ -56,6 +56,8 @@ const card: React.CSSProperties = {
 const cardAzul: React.CSSProperties = {
   background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
   border: '1px solid rgba(255,255,255,.12)', borderRadius: 12, padding: '20px 22px',
+  // Sem isto, no celular a tabela (460px) alargava o card além da tela.
+  minWidth: 0,
 }
 
 /**
@@ -99,17 +101,9 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   // Trocar o valor da compra re-semeia as linhas AUTOMÁTICAS e preserva as
   // que o usuário digitou: o que o vendedor disse é dado real e não pode ser
-  // sobrescrito por um palpite de divisão igual.
-  useEffect(() => {
-    setOpcoes(prev => {
-      const padrao = opcoesPadrao(valorNum)
-      return prev.map(o => {
-        if (o.manual) return o
-        const novo = padrao.find(p => p.parcelas === o.parcelas)
-        return novo ? { ...o, valorParcela: novo.valorParcela } : o
-      })
-    })
-  }, [valorNum])
+  // sobrescrito por um palpite de divisão igual. Vale para qualquer
+  // quantidade, não só as quatro com que a tabela abre — o 10× também.
+  useEffect(() => { setOpcoes(prev => resemear(prev, valorNum)) }, [valorNum])
 
   // O planejamento e o horizonte: nada aqui extrapola. Comprar mais tarde ou
   // no cartao que vence antes de fechar come meses desse teto.
@@ -269,7 +263,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
       display: duasColunas ? 'grid' : 'flex',
       gridTemplateColumns: duasColunas ? 'minmax(0,1.35fr) minmax(0,1fr)' : undefined,
       flexDirection: duasColunas ? undefined : 'column',
-      alignItems: 'start', gap: 16,
+      alignItems: duasColunas ? 'start' : 'stretch', gap: 16,
     }}>
       <div style={cardAzul}>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 16 }}>
@@ -290,9 +284,9 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           linhas={linhas}
           selecionada={selecionada}
           onSelecionar={escolher}
-          onEditar={(id, campo, valor) => setOpcoes(prev => editarOpcao(prev, id, campo, valor))}
+          onEditar={(id, campo, valor) => setOpcoes(prev => editarOpcao(prev, id, campo, valor, valorNum))}
           onAdicionar={() => setOpcoes(prev => [...prev, {
-            id: `p${Date.now()}`, parcelas: 1, valorParcela: 0, manual: true,
+            id: `p${Date.now()}`, parcelas: 2, valorParcela: valorNum > 0 ? valorNum / 2 : 0,
           }])}
           onRemover={id => {
             setOpcoes(prev => prev.filter(o => o.id !== id))

@@ -349,10 +349,26 @@ export function saldoTotalNoFim(
  * Conta onde uma categoria APARECE. A mesma regra da cascata de Lançamentos:
  * a conta de débito quando existe, senão a preferida — nunca "todas".
  */
-function contaDaCategoria(cat: Categoria, padrao: string | undefined) {
+function contaDaCategoria(cat: Categoria, padrao: string | undefined, contas: Conta[]) {
   if (cat.tipoMovimento === 'dinheiro') return 'dinheiro'
   if (cat.tipoMovimento === 'cartao') return undefined
-  return cat.contaDebitoId ?? padrao
+  return debitoOuPadrao(cat, padrao, contas)
+}
+
+/**
+ * A conta de débito da categoria, se ela ainda existe e tem saldo; senão a
+ * preferida.
+ *
+ * Categoria cuja conta de débito foi EXCLUÍDA (ou que aponta para um cartão)
+ * sumia da previsão: o motor atribuía a fixa a um id que não está entre as
+ * contas com saldo, e nenhuma conta a somava. O Planejamento contava, e o
+ * Simulador terminava o ano acima dele pelo valor inteiro. Medido numa
+ * fixture: uma fixa de 700 por mês, 10.500 a mais em 15 meses. Corrigido em
+ * 15/10/2026.
+ */
+function debitoOuPadrao(cat: Categoria, padrao: string | undefined, contas: Conta[]) {
+  const id = cat.contaDebitoId
+  return id && contas.some(c => c.id === id && c.tipo !== 'cartao') ? id : padrao
 }
 
 /**
@@ -385,6 +401,8 @@ export function faltaVariavelDoMes(
   saidaBanco: number; saidaCartao: number; entrada: number; diaCartao?: number
   /** As linhas que formam as somas acima, com o valor DEPOIS do rateio. */
   itens: ItemPrevisto[]
+  /** As contas fixas pagas no cartão, também nas somas acima. */
+  itensFixa: ItemPrevisto[]
   /**
    * As despesas variaveis ANTES do corte do cenario: o que sobrou do plano e o
    * que estourou, so desta conta. E a entrada do motor, nao uma conta
@@ -396,7 +414,8 @@ export function faltaVariavelDoMes(
   const { categorias, planos, contas, extratoData } = deps
   const padrao = contaPadrao(contas)
   const variaveis = categorias.filter(c => c.ativa && !c.fixa)
-  if (!variaveis.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [], sobras: 0, estouros: 0 }
+  const fixasCartao = categorias.filter(c => c.ativa && c.fixa && c.tipo === 'saida' && c.tipoMovimento === 'cartao')
+  if (!variaveis.length && !fixasCartao.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [], itensFixa: [], sobras: 0, estouros: 0 }
 
   // O cartão em aberto de vencimento mais cedo decide quem paga a sobra do
   // cartão — a mesma regra que já valia para o complemento da fatura.
@@ -454,7 +473,7 @@ export function faltaVariavelDoMes(
     // Quem escreveu o plano ja disse que espera receber — nao e chute do app.
     // Cartao nao recebe: entrada cai na conta de deposito da categoria.
     if (cat.tipo === 'entrada') {
-      const onde = cat.tipoMovimento === 'dinheiro' ? 'dinheiro' : (cat.contaDebitoId ?? padrao)
+      const onde = cat.tipoMovimento === 'dinheiro' ? 'dinheiro' : debitoOuPadrao(cat, padrao, contas)
       if (onde) parcelas.push({ conta: onde, balde: 'entrada', grupo, falta, nome: cat.nome, descricao: cat.descricao })
       continue
     }
@@ -473,11 +492,11 @@ export function faltaVariavelDoMes(
       //
       // Sobra não sobrevive ao mês. Mês que vem tem plano e limite próprios —
       // gastar menos que o planejado é economia, não saldo acumulado.
-      const ondeCartao = cat.contaDebitoId ?? padrao
+      const ondeCartao = debitoOuPadrao(cat, padrao, contas)
       if (ondeCartao) parcelas.push({ conta: ondeCartao, balde: 'banco', grupo, falta, nome: cat.nome, descricao: cat.descricao })
       continue
     }
-    const onde = contaDaCategoria(cat, padrao)
+    const onde = contaDaCategoria(cat, padrao, contas)
     if (onde) parcelas.push({ conta: onde, balde: 'banco', grupo, falta, nome: cat.nome, descricao: cat.descricao })
   }
 
@@ -538,6 +557,8 @@ export function faltaVariavelDoMes(
    * — o pessimista continua exatamente o que era.
    */
   const alocado: number[] = parcelas.map(() => 0)
+  /** Índices das fixas do cartão: entram nas somas, não no envelope. */
+  const fixaFora = new Set<number>()
   for (const ehEntrada of [false, true]) {
     const doLado = parcelas
       .map((p, i) => [p, i] as const)
@@ -562,6 +583,34 @@ export function faltaVariavelDoMes(
     }
   }
 
+  /**
+   * Conta FIXA paga no CARTÃO: o que falta do plano dela no mês.
+   *
+   * Ela não tem caminho de confirmação — a assinatura cai na fatura como
+   * qualquer compra —, e o laço das fixas, que só sabe de banco e dinheiro, a
+   * descartava. A previsão não a contava em mês nenhum: uma assinatura de 55
+   * fazia o Simulador terminar 2027 com 825 a mais que o Planejamento.
+   * Corrigido em 15/10/2026.
+   *
+   * Entra como a variável do cartão — `plano − o que já está nas faturas do
+   * mês`, para a compra lançada não contar duas vezes (a fatura dela já entra
+   * pelo `totalFatura`) —, mas por categoria e FORA do envelope do cenário:
+   * fixa não compensa nem é compensada, a regra do envelope da variável.
+   */
+  for (const cat of fixasCartao) {
+    const plano = valorFixaNoMes(cat, planos[ano], mes, categorias)
+    if (plano <= 0) continue
+    const k = resolverRealKey(saidasMap, cat.nome, cat.descricao, categorias)
+    const falta = plano - (k ? saidasMap[k].total : 0)
+    if (falta <= 0) continue
+    const conta = refAberta && contaDoCartao ? contaDoCartao : debitoOuPadrao(cat, padrao, contas)
+    if (!conta) continue
+    parcelas.push({ conta, balde: refAberta && contaDoCartao ? 'cartao' : 'banco',
+      grupo: cat.grupo ?? '__sem_grupo__', falta, nome: cat.nome, descricao: cat.descricao })
+    alocado.push(falta)
+    fixaFora.add(parcelas.length - 1)
+  }
+
   const somar = (balde: Balde) =>
     parcelas.reduce((s, p, i) => (p.balde === balde && p.conta === alvo ? s + alocado[i] : s), 0)
 
@@ -573,16 +622,22 @@ export function faltaVariavelDoMes(
     // O MESMO filtro de `somar` (esta conta) e o MESMO `alocado`. Linha
     // zerada fica de fora: nao soma nada e, na tela, so faria ruido.
     itens: parcelas
-      .map((p, i) => ({ p, v: alocado[i] }))
-      .filter(({ p, v }) => p.conta === alvo && v > 0)
+      .map((p, i) => ({ p, v: alocado[i], i }))
+      .filter(({ p, v, i }) => p.conta === alvo && v > 0 && !fixaFora.has(i))
+      .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
+    // As fixas do cartão vão para a memória como FIXAS a pagar, sem id: não
+    // têm o "Pagar" das contas a vencer — são pagas na fatura.
+    itensFixa: parcelas
+      .map((p, i) => ({ p, v: alocado[i], i }))
+      .filter(({ p, i }) => p.conta === alvo && fixaFora.has(i))
       .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
     // Filtradas POR CONTA, como `somar`. As parcelas cobrem todas as contas a
     // cada chamada; somar o mes inteiro aqui e depois somar nas contas
     // multiplicaria pelo numero de contas — o bug das fixas triplicadas.
-    sobras: parcelas.reduce((s, q) =>
-      q.conta === alvo && q.balde !== 'entrada' ? s + Math.max(0, q.falta) : s, 0),
-    estouros: parcelas.reduce((s, q) =>
-      q.conta === alvo && q.balde !== 'entrada' ? s + Math.max(0, -q.falta) : s, 0),
+    sobras: parcelas.reduce((s, q, i) =>
+      q.conta === alvo && q.balde !== 'entrada' && !fixaFora.has(i) ? s + Math.max(0, q.falta) : s, 0),
+    estouros: parcelas.reduce((s, q, i) =>
+      q.conta === alvo && q.balde !== 'entrada' && !fixaFora.has(i) ? s + Math.max(0, -q.falta) : s, 0),
   }
 }
 
@@ -691,7 +746,7 @@ export function detalharProjecaoDaConta(
 
   for (const cat of categorias) {
     if (!cat.ativa) continue
-    if (contaDaCategoria(cat, padrao) !== alvo) continue
+    if (contaDaCategoria(cat, padrao, contas) !== alvo) continue
 
     if (cat.fixa) {
       if (resolverFixaDoMes(cat.id, dms).consolidada) continue
@@ -719,6 +774,7 @@ export function detalharProjecaoDaConta(
   const falta = faltaVariavelDoMes(alvo, ano, mes, deps, hoje)
   saidas += falta.saidaBanco + falta.saidaCartao
   entradas += falta.entrada
+  fixasSaida.push(...falta.itensFixa)
 
   const abertas = contas
     .filter(c => c.tipo === 'cartao' && c.diaVencimento)

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { COR } from '../../utils/cores'
 import type { LinhaComparativo } from '../../utils/comparativoCompra'
 
@@ -16,6 +17,36 @@ const BOM    = '#86efac'
 const RUIM   = '#fecaca'
 const ALERTA = '#fde047'
 const LINHA  = 'rgba(255,255,255,.16)'
+
+const fmtCampo = (v: number) => (v ? v.toFixed(2).replace('.', ',') : '')
+
+/**
+ * O campo da parcela guarda o TEXTO enquanto está em foco.
+ *
+ * Antes ele mostrava o número formatado a cada tecla: digitar "8" virava
+ * "8,00" com o cursor no fim, e o "0" seguinte entrava depois dos centavos —
+ * não havia como digitar 800 sem selecionar tudo. Fora do foco, volta a
+ * mostrar o valor com duas casas.
+ */
+function CampoParcela({ valor, onMudar, style }: {
+  valor: number; onMudar: (texto: string) => void; style: React.CSSProperties
+}) {
+  const [rascunho, setRascunho] = useState<string | null>(null)
+  return (
+    <input
+      value={rascunho ?? fmtCampo(valor)}
+      onFocus={e => { setRascunho(fmtCampo(valor)); e.target.select() }}
+      onBlur={() => setRascunho(null)}
+      onChange={e => { setRascunho(e.target.value); onMudar(e.target.value) }}
+      onClick={e => e.stopPropagation()}
+      inputMode="decimal"
+      aria-label="Valor da parcela"
+      style={style}
+    />
+  )
+}
+
+const fmtTaxa = (t: number) => `${(t * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% ao mês`
 
 /**
  * A tabela de formas de pagamento.
@@ -133,22 +164,25 @@ export default function SimComparativo({
                     )}
                   </td>
                   <td style={td}>
-                    <input
-                      value={l.opcao.valorParcela ? l.opcao.valorParcela.toFixed(2).replace('.', ',') : ''}
-                      onChange={e => onEditar(l.opcao.id, 'valorParcela', e.target.value)}
-                      onClick={e => e.stopPropagation()}
-                      inputMode="decimal"
-                      aria-label="Valor da parcela"
+                    <CampoParcela
+                      valor={l.opcao.valorParcela}
+                      onMudar={t => onEditar(l.opcao.id, 'valorParcela', t)}
                       style={inputSt}
                     />
                   </td>
                   <td style={{ ...td, fontWeight: 700, color: TEXTO }}>{fmt(l.total)}</td>
                   <td style={td}>
-                    {l.juroEmbutido === null
+                    {l.juroEmbutido === null || Math.abs(l.juroEmbutido) < 0.005
                       ? <span style={{ color: SUAVE }}>—</span>
-                      : l.juroEmbutido <= 0
-                        ? <span style={{ color: SUAVE }}>—</span>
-                        : <span style={{ color: ALERTA, fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>}
+                      : l.juroEmbutido < 0
+                        ? <span style={{ color: BOM, fontWeight: 700 }} title="Sai mais barato que à vista">
+                            −{fmt(-l.juroEmbutido)}</span>
+                        : <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.25 }}>
+                            <span style={{ color: ALERTA, fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>
+                            {l.taxaMes !== null && (
+                              <span style={{ fontSize: 11, color: SUAVE }}>{fmtTaxa(l.taxaMes)}</span>
+                            )}
+                          </span>}
                   </td>
                   <td style={{ ...td, textAlign: 'center', fontSize: 12 }}><Veredito l={l}/></td>
                   <td style={td}>
