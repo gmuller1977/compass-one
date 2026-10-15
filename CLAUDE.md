@@ -1197,6 +1197,16 @@ taxa ao mês embaixo (`taxaMensal`, parcelas a partir de um mês depois). Total
 abaixo do à vista aparece como desconto. O campo da parcela guarda o texto
 enquanto está em foco — antes "8" virava "8,00" e não dava para digitar 800.
 
+**A aba Compra tem dois modos: "Compra parcelada" e "Gasto mensal"**
+(15/10/2026, pedido do Guilherme: "compra fixa, tipo mensalidade"). O
+mensal pergunta quanto por mês e por quantos meses (vazio = até o fim do
+plano) e roda a MESMA `simularCompra`, com total = mensal × meses; não
+oferece "comprar em Nx". No mesmo pedido: a resposta da direita já abre com a
+opção À VISTA (a escolhida é derivada, não guardada — editar a linha atualiza
+a resposta), e os cartõezinhos mês a mês viraram o gráfico "Seu saldo, antes
+e depois" (sem a compra tracejado branco, comprando `#93c5fd` com o semáforo
+nos pontos). A tabela de números segue em "Ver os números em detalhe".
+
 **O Simulador terminava acima do Planejamento: dois furos na previsão**
 (mesmo dia; dez/2027 dava 76.344,42 contra 68.013,12). Os dois em
 `saldoConta.ts`, e valem também para Radar, Início e Lançamentos:

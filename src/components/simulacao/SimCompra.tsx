@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  AreaChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useApp } from '../../context/AppContext'
 import type { DadosMes, PlanoAnoData } from '../../context/AppContext'
@@ -86,10 +86,15 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   const [guardarStr, setGuardar] = useState('')
   const [maisOpcoes, setMaisOpcoes] = useState(false)
   const [erro, setErro]         = useState('')
-  const [pedido, setPedido]     = useState<{
-    valorTotal: number; parcelas: number; cartaoId?: string
-    ano: number; mes: number; piso: number
-  } | null>(null)
+  /**
+   * Compra parcelada (a tabela de opções do vendedor) ou gasto FIXO todo mês —
+   * a mensalidade da academia, a escola, uma assinatura. Pedido do Guilherme
+   * em 15/10/2026. Na mensalidade ninguém compara formas de pagamento: o dado
+   * é quanto sai por mês e por quanto tempo.
+   */
+  const [modo, setModo]         = useState<'parcelada' | 'mensal'>('parcelada')
+  const [mensalStr, setMensal]  = useState('')
+  const [mesesStr, setMeses]    = useState('')
 
   const cartoes = contas.filter(c => c.tipo === 'cartao')
   const valorNum = parseValor(valorStr) ?? 0
@@ -135,11 +140,6 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     saldoInicialDinheiro, cenarioPrevisao,
   }), [extratoData, faturaData, contas, categorias, planos, saldoInicialDinheiro, cenarioPrevisao])
 
-  const resultado = useMemo(
-    () => (pedido ? simularCompra(pedido, deps, { piso: pedido.piso, hoje }) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pedido, deps],
-  )
 
   // A parte CARA, calculada uma vez e compartilhada por todas as linhas.
   const serie = useMemo(
@@ -159,6 +159,41 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serie, opcoes, contas, ondeId, inicio, tetoParcelas, guardarNum])
+
+  const mensalNum = parseValor(mensalStr) ?? 0
+  /** Sem prazo, a mensalidade vai até onde o plano alcança. */
+  const mesesMensal = Math.min(tetoParcelas, parseInt(mesesStr.replace(/\D/g, ''), 10) || tetoParcelas)
+
+  /**
+   * A opção que a resposta mostra. Sem clique nenhum, é a À VISTA — pedido do
+   * Guilherme em 15/10/2026: o quadro da direita já abre respondendo, em vez
+   * de um convite vazio. É derivada, não guardada: editar a linha escolhida
+   * (ou o valor da compra) atualiza a resposta na hora.
+   */
+  const idEscolhida = selecionada && linhas.some(l => l.opcao.id === selecionada && l.veredito)
+    ? selecionada
+    : (linhas.find(l => l.opcao.parcelas === 1 && l.veredito) ?? linhas.find(l => l.veredito))?.opcao.id ?? null
+
+  const pedido = useMemo(() => {
+    const base = {
+      cartaoId: ondeId || undefined,
+      ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(), piso: guardarNum,
+    }
+    if (modo === 'mensal') {
+      if (mensalNum <= 0 || mesesMensal <= 0) return null
+      return { ...base, valorTotal: mensalNum * mesesMensal, parcelas: mesesMensal }
+    }
+    const l = linhas.find(x => x.opcao.id === idEscolhida)
+    if (!l || !l.veredito) return null
+    return { ...base, valorTotal: l.total, parcelas: l.opcao.parcelas }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modo, mensalNum, mesesMensal, linhas, idEscolhida, ondeId, inicio, guardarNum])
+
+  const resultado = useMemo(
+    () => (pedido ? simularCompra(pedido, deps, { piso: pedido.piso, hoje }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pedido, deps],
+  )
 
   // Aprovar a compra: ela entra no plano como item de uma categoria, somando
   // ao que já estava planejado (utils/simuladorNoPlano). As parcelas caem no
@@ -185,12 +220,6 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     if (!l || !l.veredito) return
     setSelecionada(id)
     setErro('')
-    setPedido({
-      valorTotal: l.total, parcelas: l.opcao.parcelas,
-      cartaoId: ondeId || undefined,
-      ano: inicioCompra.getFullYear(), mes: inicioCompra.getMonth(),
-      piso: guardarNum,
-    })
   }
 
   /**
@@ -201,6 +230,14 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
    * de um alvo, e a recomendada é a resposta que a tela já deu.
    */
   function simular() {
+    if (modo === 'mensal') {
+      if (parseValor(mensalStr) === null) return setErro(`"${mensalStr.trim()}" não é um valor`)
+      if (mensalNum <= 0) return setErro('Quanto sai por mês? Preencha o valor.')
+      if (guardarStr.trim() && parseValor(guardarStr) === null) {
+        return setErro(`"${guardarStr.trim()}" não é um valor`)
+      }
+      return setErro('')
+    }
     if (parseValor(valorStr) === null) return setErro(`"${valorStr.trim()}" não é um valor`)
     if (valorNum <= 0) return setErro('Quanto custa? Preencha o valor.')
     if (guardarStr.trim() && parseValor(guardarStr) === null) {
@@ -266,6 +303,53 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
       alignItems: duasColunas ? 'start' : 'stretch', gap: 16,
     }}>
       <div style={cardAzul}>
+        {/* Pílulas: a ativa é branca com texto azul-escuro (14,8:1); a inativa,
+            texto branco sobre o azul (8,7:1 no #1e40af). */}
+        <div role="tablist" aria-label="Tipo de gasto" style={{
+          display: 'flex', gap: 4, padding: 4, borderRadius: 12, marginBottom: 18,
+          background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)',
+        }}>
+          {([['parcelada', 'Compra parcelada', 'ti-shopping-cart'], ['mensal', 'Gasto mensal', 'ti-repeat']] as const).map(([id, txt, ti]) => {
+            const ativo = modo === id
+            return (
+              <button key={id} role="tab" aria-selected={ativo} onClick={() => { setModo(id); setErro('') }} style={{
+                flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700,
+                background: ativo ? COR.branco : 'transparent',
+                color: ativo ? COR.azulEscuro : '#fff',
+              }}><i aria-hidden className={`ti ${ti}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{txt}</button>
+            )
+          })}
+        </div>
+
+        {modo === 'mensal' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelSt}>O que é?</label>
+              <input value={nome} onChange={e => setNome(e.target.value)}
+                placeholder="Academia" style={inputSt} />
+            </div>
+            <div>
+              <label style={labelSt}>Quanto por mês?</label>
+              <input value={mensalStr} onChange={e => setMensal(e.target.value)}
+                placeholder="R$ 150,00" style={inputSt} inputMode="decimal"
+                onKeyDown={e => e.key === 'Enter' && simular()} />
+            </div>
+            <div>
+              <label style={labelSt}>Por quantos meses?</label>
+              <input value={mesesStr} onChange={e => setMeses(e.target.value.replace(/\D/g, ''))}
+                placeholder="Sem prazo" style={inputSt} inputMode="numeric"
+                onKeyDown={e => e.key === 'Enter' && simular()} />
+            </div>
+            <div style={{ gridColumn: '1 / -1', fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: -6, lineHeight: 1.5 }}>
+              {fimDoPlano && (!mesesStr.trim()
+                ? <>Sem prazo, a conta vai até o fim do seu planejamento, <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b> ({tetoParcelas} {tetoParcelas === 1 ? 'mês' : 'meses'}).</>
+                : Number(mesesStr) > tetoParcelas
+                  ? <>Seu planejamento vai até <b>{MESES[fimDoPlano.mes].toLowerCase()} de {fimDoPlano.ano}</b>: a conta olha os {tetoParcelas} meses que ele alcança.</>
+                  : <>A conta olha {mesesMensal} {mesesMensal === 1 ? 'mês' : 'meses'} a partir de {MESES[inicioCompra.getMonth()].toLowerCase()}.</>)}
+            </div>
+          </div>
+        ) : (<>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 16 }}>
           <div>
             <label style={labelSt}>O que você quer comprar?</label>
@@ -282,7 +366,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
         <SimComparativo
           linhas={linhas}
-          selecionada={selecionada}
+          selecionada={idEscolhida}
           onSelecionar={escolher}
           onEditar={(id, campo, valor) => setOpcoes(prev => editarOpcao(prev, id, campo, valor, valorNum))}
           onAdicionar={() => setOpcoes(prev => [...prev, {
@@ -290,13 +374,14 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           }])}
           onRemover={id => {
             setOpcoes(prev => prev.filter(o => o.id !== id))
-            if (selecionada === id) { setSelecionada(null); setPedido(null) }
+            if (selecionada === id) setSelecionada(null)
           }}
           semAVista={valorNum > 0 && precoAVista(opcoes) === null}
           fimDoPlano={fimDoPlano}
           onPlanejarMais={() => fimDoPlano && navigate(`/planejamento?ano=${fimDoPlano.ano + 1}`)}
           isMobile={isMobile}
         />
+        </>)}
 
         <div style={{ marginTop: 18 }}>
           <label style={labelSt}>Como você vai pagar?</label>
@@ -329,7 +414,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
             gap: 16, marginTop: 14, paddingTop: 16, borderTop: `1px solid ${COR.bordaSuave}` }}>
             <div>
-              <label style={labelSt}>Quando você vai comprar?</label>
+              <label style={labelSt}>{modo === 'mensal' ? 'Quando começa?' : 'Quando você vai comprar?'}</label>
               <select value={inicio} onChange={e => setInicio(Number(e.target.value))} style={inputSt}>
                 {Array.from({ length: 12 }, (_, i) => {
                   const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1)
@@ -376,7 +461,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         {resultado && pedido ? (
           <Resposta
             nome={nome} r={resultado} isMobile={isMobile}
-            piso={pedido.piso}
+            piso={pedido.piso} mensal={modo === 'mensal'}
             valorTotal={pedido.valorTotal} parcelas={pedido.parcelas}
           />
         ) : duasColunas && (
@@ -399,7 +484,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
               <button type="button" onClick={() => setIncluindo(true)} style={{
                 width: '100%', padding: '11px 16px', borderRadius: 10, border: `1px solid ${COR.borda}`,
                 background: COR.branco, color: COR.texto, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-              }}><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Vou comprar — incluir no planejamento</button>
+              }}><i aria-hidden className="ti ti-calendar-plus" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{modo === 'mensal' ? 'Vou pagar — incluir no planejamento' : 'Vou comprar — incluir no planejamento'}</button>
             )}
           </div>
         )}
@@ -457,8 +542,10 @@ const CORES: Record<Situacao, { ponto: string; texto: string }> = {
   falta:    { ponto: '#f87171', texto: '#fecaca' },
 }
 
-export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
+export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false }: {
   nome: string
+  /** Gasto fixo todo mês (mensalidade), e não uma compra parcelada. */
+  mensal?: boolean
   r: ResultadoCompra
   isMobile: boolean
   piso: number
@@ -485,7 +572,9 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
   const nMeses = (n: number) => `${n} ${n === 1 ? 'mês' : 'meses'}`
 
   const titulo = {
-    'folgado':             oQue ? `Sim, dá para comprar ${oQue}.` : 'Sim, dá para comprar.',
+    'folgado':             mensal
+      ? (oQue ? `Sim, ${oQue} cabe todo mês.` : 'Sim, cabe todo mês.')
+      : (oQue ? `Sim, dá para comprar ${oQue}.` : 'Sim, dá para comprar.'),
     'no-limite':           'Dá, mas fica no limite.',
     'mexe-na-reserva':     'Dá, mas mexe no seu dinheiro guardado.',
     'vermelho-passageiro': 'Aperta, mas você se recupera.',
@@ -551,7 +640,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
           </div>
         )}
 
-        {d.gravidade !== 'ok' && (r.adiarPara || r.parcelasQueCabem) && (
+        {d.gravidade !== 'ok' && (r.adiarPara || (!mensal && r.parcelasQueCabem)) && (
           <div style={{ marginTop: 18 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
               O que dá para fazer:
@@ -560,11 +649,11 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
               {r.adiarPara && (
                 <Saida
                   icone="ti-calendar-time"
-                  titulo={`Esperar até ${MESES[r.adiarPara.mes]}`}
+                  titulo={mensal ? `Começar em ${MESES[r.adiarPara.mes]}` : `Esperar até ${MESES[r.adiarPara.mes]}`}
                   detalhe={`${r.adiarPara.meses} ${r.adiarPara.meses === 1 ? 'mês a mais' : 'meses a mais'} — aí cabe do jeito que você quer`}
                 />
               )}
-              {r.parcelasQueCabem && (
+              {!mensal && r.parcelasQueCabem && (
                 <Saida
                   icone="ti-credit-card"
                   titulo={`Comprar agora em ${r.parcelasQueCabem}x`}
@@ -575,11 +664,13 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
           </div>
         )}
 
-        {d.gravidade === 'nao' && !r.adiarPara && !r.parcelasQueCabem && (
+        {d.gravidade === 'nao' && !r.adiarPara && (mensal || !r.parcelasQueCabem) && (
           <div style={{ fontSize: 14, color: '#fff', marginTop: 16, lineHeight: 1.6 }}>
             {r.limitadoPeloPlano
               ? 'Dentro do que você já planejou não há saída — nem esperando, nem dividindo em mais vezes.'
-              : 'Nem esperando um ano, nem dividindo em mais vezes. Para esta compra caber, o caminho é sobrar mais dinheiro por mês.'}
+              : mensal
+                ? 'Nem começando mais tarde. Para este gasto caber, o caminho é sobrar mais dinheiro por mês.'
+                : 'Nem esperando um ano, nem dividindo em mais vezes. Para esta compra caber, o caminho é sobrar mais dinheiro por mês.'}
           </div>
         )}
       </div>
@@ -607,56 +698,15 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
 
       <div style={cardAzul}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 3 }}>
-          Mês a mês, antes e depois
+          Seu saldo, antes e depois
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 16 }}>
-          Em cima, o que sobraria sem a compra. Embaixo, já pagando as parcelas.
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 12 }}>
+          Com quanto cada mês termina sem a compra e {mensal ? 'pagando todo mês' : 'já pagando as parcelas'}.
         </div>
 
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
-          {meses.map(p => {
-            const s = situacao(p.comCompra, piso, valorParcela)
-            return (
-              <div key={`${p.ano}-${p.mes}`} style={{
-                flex: '0 0 auto', minWidth: 88, textAlign: 'center',
-                border: '1px solid rgba(255,255,255,.18)', borderRadius: 10, padding: '10px 8px',
-                // Translúcido sobre o azul: o texto do mês é branco e os tons do
-                // semáforo são os de fundo escuro. Era COR.branco — branco no
-                // branco, e só o ponto aparecia.
-                background: 'rgba(255,255,255,.06)',
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.85)' }}>
-                  {MESES_CURTOS[p.mes]}
-                </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.85)', marginTop: 6,
-                  fontVariantNumeric: 'tabular-nums' }}>
-                  {fmt(p.semCompra)}
-                </div>
-                <div style={{
-                  width: 10, height: 10, borderRadius: '50%', margin: '5px auto',
-                  background: CORES[s].ponto,
-                }} />
-                <div style={{ fontSize: 13, fontWeight: 700, color: CORES[s].texto,
-                  fontVariantNumeric: 'tabular-nums' }}>
-                  {fmt(p.comCompra)}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <GraficoAntesDepois meses={meses} piso={piso} parcela={valorParcela} isMobile={isMobile} />
 
         <Fechamento meses={meses} isMobile={isMobile} />
-
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 14,
-          fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
-          {([['ok','tranquilo'],['apertado','apertado'],['falta','falta dinheiro']] as const).map(([s, txt]) => (
-            <span key={s} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: CORES[s].ponto }} />
-              {txt}
-            </span>
-          ))}
-          <span>o semáforo olha o número de baixo</span>
-        </div>
 
         <button onClick={() => setDetalhes(v => !v)} style={{
           marginTop: 16, background: 'none', border: 'none', padding: 0, cursor: 'pointer',
@@ -665,7 +715,7 @@ export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas }: {
           {detalhes ? '▾ Esconder os números' : '▸ Ver os números em detalhe'}
         </button>
 
-        {detalhes && <Detalhes meses={meses} isMobile={isMobile} />}
+        {detalhes && <Detalhes meses={meses} mensal={mensal} />}
       </div>
     </>
   )
@@ -725,6 +775,75 @@ function Fechamento({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolea
   )
 }
 
+
+/**
+ * O saldo de cada mês, sem a compra e com ela, num gráfico só.
+ *
+ * Pedido do Guilherme em 15/10/2026, no lugar dos cartõezinhos mês a mês: a
+ * pergunta é a TRAJETÓRIA — onde as duas linhas se afastam, e se a de baixo
+ * encosta no zero. Sem a compra é a linha branca tracejada; comprando, a azul
+ * clara, com o semáforo de cada mês no ponto (verde tranquilo, amarelo
+ * apertado, vermelho falta). Medido sobre `#1e40af`: `#93c5fd` 5,7:1, branco
+ * 8,7:1; o ponto é elemento gráfico (3:1).
+ */
+function GraficoAntesDepois({ meses, piso, parcela, isMobile }: {
+  meses: PontoFluxo[]; piso: number; parcela: number; isMobile: boolean
+}) {
+  const dados = meses.map(p => ({
+    rotulo: p.mes === 0 || p === meses[0] ? `${MESES_CURTOS[p.mes]}/${String(p.ano).slice(2)}` : MESES_CURTOS[p.mes],
+    sem: Math.round(p.semCompra * 100) / 100,
+    com: Math.round(p.comCompra * 100) / 100,
+    s: situacao(p.comCompra, piso, parcela),
+  }))
+  const curto = (v: number) => Math.abs(v) >= 1000
+    ? `${(v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`
+    : v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+  const ponto = (props: { cx?: number; cy?: number; payload?: { s: Situacao } }) => {
+    const { cx, cy, payload } = props
+    if (cx === undefined || cy === undefined || !payload) return <g />
+    return <circle cx={cx} cy={cy} r={4} fill={CORES[payload.s].ponto} stroke="#0f2878" strokeWidth={1.5} />
+  }
+  return (
+    <div>
+      <div style={{ height: isMobile ? 200 : 230 }}
+        role="img"
+        aria-label={`Saldo no fim de cada mês. ${meses.map(p => `${MESES_CURTOS[p.mes]}: sem a compra ${fmt(p.semCompra)}, comprando ${fmt(p.comCompra)}`).join('; ')}`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
+            <XAxis dataKey="rotulo" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }}
+              tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} width={52}
+              tickLine={false} axisLine={false} tickFormatter={curto} />
+            <Tooltip
+              formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Comprando' : 'Sem a compra']}
+              contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
+            <ReferenceLine y={0} stroke={NEG} strokeDasharray="4 4" />
+            {piso > 0 && <ReferenceLine y={piso} stroke="#fde047" strokeDasharray="2 4" />}
+            <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="com" stroke={COM_COMPRA} strokeWidth={3} dot={ponto} activeDot={{ r: 5 }} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div style={{ display: 'flex', gap: '6px 14px', flexWrap: 'wrap', marginTop: 8,
+        fontSize: 12, color: 'rgba(255,255,255,.85)', alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 16, borderTop: '2px dashed #fff' }} /> sem a compra
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 16, borderTop: `3px solid ${COM_COMPRA}` }} /> comprando
+        </span>
+        {([['ok','tranquilo'],['apertado','apertado'],['falta','falta dinheiro']] as const).map(([k, txt]) => (
+          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: CORES[k].ponto }} />
+            {txt}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Saida({ icone, titulo, detalhe }: { icone: string; titulo: string; detalhe: string }) {
   return (
     <div style={{
@@ -743,43 +862,13 @@ function Saida({ icone, titulo, detalhe }: { icone: string; titulo: string; deta
   )
 }
 
-function Detalhes({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean }) {
+function Detalhes({ meses, mensal }: { meses: PontoFluxo[]; mensal: boolean }) {
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ height: isMobile ? 190 : 240 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={meses.map(p => ({
-            mes: MESES_CURTOS[p.mes], com: Math.round(p.comCompra), sem: Math.round(p.semCompra),
-          }))} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.18)" />
-            <XAxis dataKey="mes" tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} />
-            <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,.85)' }} width={60} />
-            <Tooltip
-              formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Comprando' : 'Sem comprar']}
-              contentStyle={{ fontSize: 13, borderRadius: 8, border: `1px solid ${COR.borda}` }} />
-            <ReferenceLine y={0} stroke={NEG} strokeDasharray="4 4" />
-            <Area type="monotone" dataKey="sem" stroke="#cbd5e1" fill="#cbd5e1" fillOpacity={.18} />
-            <Area type="monotone" dataKey="com" stroke={COM_COMPRA} fill={COM_COMPRA} fillOpacity={.28} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div style={{ display: 'flex', gap: 16, marginTop: 6, marginBottom: 16,
-        fontSize: 12, color: 'rgba(255,255,255,.85)' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: COM_COMPRA, opacity: .8 }} />
-          comprando
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#cbd5e1', opacity: .7 }} />
-          sem comprar
-        </span>
-      </div>
-
       <div style={{ display: 'grid',
         gridTemplateColumns: 'minmax(60px,1fr) repeat(3,minmax(78px,1fr))',
         gap: '6px 10px', alignItems: 'center' }}>
-        {['Mês', 'Sem comprar', 'Parcela', 'Sobra'].map((h, i) => (
+        {['Mês', 'Sem comprar', mensal ? 'Por mês' : 'Parcela', 'Sobra'].map((h, i) => (
           <div key={h} style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.85)',
             textTransform: 'uppercase', letterSpacing: '.3px',
             textAlign: i === 0 ? 'left' : 'right' }}>{h}</div>
