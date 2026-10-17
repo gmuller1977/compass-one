@@ -17,11 +17,7 @@ export type OpCelula = { tipo: 'e' | 's'; ri: number; mi: number; valor: number;
 
 const CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const CHAVE_MODO = 'compass:revisao-anual-base'
-const MODOS: { id: ModoBase; rotulo: string }[] = [
-  { id: 'mes', rotulo: 'Realizado do mês' },
-  { id: 'media', rotulo: 'Média anual' },
-  { id: 'anterior', rotulo: 'Mês anterior' },
-]
+const MODOS: { id: ModoBase }[] = [{ id: 'mes' }, { id: 'media' }, { id: 'anterior' }]
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -103,6 +99,12 @@ export default function PlanRevisaoAnual({
   const tituloBase: [string, string] = modo === 'media' ? [`Média ${base}`, faixaMedia || 'sem mês fechado']
     : modo === 'anterior' ? [`${MESES_FULL[mb[0].mes]} ${mb[0].ano}`, 'mês anterior']
     : [`${nomeMes} ${base}`, 'plano']
+  // A etiqueta diz o mês de verdade (pedido do Guilherme, 17/10/2026:
+  // revisando jan/2027, "Realizado do mês" confundia).
+  const hj = new Date(), antIdx = hj.getFullYear() * 12 + hj.getMonth() - 1
+  const rotuloDoModo = (m: ModoBase) => m === 'mes' ? `Realizado ${CURTOS[mes]}/${base}`
+    : m === 'media' ? `Média ${base}`
+    : `Mês anterior · ${CURTOS[antIdx % 12]}/${Math.floor(antIdx / 12)}`
   const descrBase = modo === 'media' ? `a média de ${faixaMedia}` : `o realizado de ${rotBase}`
   const rotAlvo = `${CURTOS[mes]}/${alvo}`
   const hojeIdx = new Date().getFullYear() * 12 + new Date().getMonth()
@@ -133,14 +135,17 @@ export default function PlanRevisaoAnual({
     <div style={{ fontSize: 12, color: cor, marginTop: 2, whiteSpace: 'nowrap' }}>{t}</div>
   )
 
-  // Como no Planejamento: o plano em cima e o realizado embaixo, com o termo
-  // do Radar ("já gastou" / "já recebeu") — pedido do Guilherme (17/10/2026).
+  // Como no Planejamento: o plano em cima e o realizado embaixo — pedido do
+  // Guilherme (17/10/2026). O mês da base já passou: "gastou" / "recebeu";
+  // só o mês em andamento diz "já gastou".
   // infoTexto #0369a1 no branco: 5,9.
   const usou = (v: number, entrada: boolean) => (
     <span style={{ marginTop: 2, fontSize: isMobile ? 12 : 11, fontWeight: 600, color: COR.infoTexto, whiteSpace: 'nowrap',
       display: 'inline-flex', alignItems: 'center', gap: 3, fontVariantNumeric: 'tabular-nums' }}>
       <i aria-hidden className="ti ti-calendar-check" style={{ fontSize: isMobile ? 13 : 12 }} />
-      {modo === 'media' ? (entrada ? 'recebeu em média' : 'gastou em média') : (entrada ? 'já recebeu' : 'já gastou')} {fmt(v, true)}
+      {modo === 'media' ? (entrada ? 'recebeu em média' : 'gastou em média')
+        : r.estadoBase === 'corrente' ? (entrada ? 'já recebeu' : 'já gastou')
+        : (entrada ? 'recebeu' : 'gastou')} {fmt(v, true)}
     </span>
   )
 
@@ -329,7 +334,7 @@ export default function PlanRevisaoAnual({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>Comparar com</span>
             <div role="tablist" aria-label="Comparar com" style={{ display: 'inline-flex', background: '#eef2f8',
-              borderRadius: 999, padding: 3, gap: 2, maxWidth: '100%', overflowX: 'auto' }}>
+              borderRadius: isMobile ? 18 : 999, padding: 3, gap: 2, maxWidth: '100%', flexWrap: 'wrap' }}>
               {MODOS.map(o => {
                 const ativo = o.id === modo
                 return (
@@ -337,7 +342,7 @@ export default function PlanRevisaoAnual({
                     style={{ border: 'none', borderRadius: 999, padding: isMobile ? '8px 11px' : '6px 14px', cursor: 'pointer',
                       fontFamily: 'inherit', fontSize: 13, fontWeight: ativo ? 700 : 600, whiteSpace: 'nowrap',
                       background: ativo ? '#1e3a8a' : 'transparent', color: ativo ? '#fff' : '#334155' }}>
-                    {o.rotulo}
+                    {rotuloDoModo(o.id)}
                   </button>
                 )
               })}
