@@ -225,7 +225,8 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
             onSave={v => onSave(tipo, ri, mes, v)}
             itens={itensDoMes(cat, mes)}
             onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
-            sempreItens={(lancadoNoMes?.(tipo, ri, mes) ?? 0) > 0.005}
+            lancado={lancadoNoMes?.(tipo, ri, mes) ?? 0}
+              sempreItens={(lancadoNoMes?.(tipo, ri, mes) ?? 0) > 0.005}
           />
         </div>
       </div>

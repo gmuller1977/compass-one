@@ -143,6 +143,7 @@ export default function PlanModalMeses({
               onSave={v => onSave(tipo, ri, mi, v)}
               itens={itensDoMes(cat, mi)}
               onItens={abrirItens ? p => abrirItens(tipo, ri, mi, p) : undefined}
+              lancado={lancadoNoMes?.(tipo, ri, mi) ?? 0}
               sempreItens={(lancadoNoMes?.(tipo, ri, mi) ?? 0) > 0.005}
             />
           </div>

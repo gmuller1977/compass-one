@@ -22,6 +22,9 @@ interface Props {
   /** Celular: campo com letra de 16 px (abaixo disso o iPhone dá zoom ao
    *  focar) e toque maior. O valor em repouso herda a letra de quem envolve. */
   grande?: boolean
+  /** Quanto já está lançado na categoria neste mês (mês futuro: parcelas e
+   *  compras adiantadas). Aparece embaixo do valor, sem abrir o detalhe. */
+  lancado?: number
 }
 
 /**
@@ -36,7 +39,7 @@ interface Props {
  * listar os elementos marcados na ordem do DOM, sem que este componente
  * precise saber onde está na grade.
  */
-export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false, sempreItens = false }: Props) {
+export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false, sempreItens = false, lancado = 0 }: Props) {
   const { toast } = useToast()
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
@@ -74,6 +77,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
   }, [editando])
 
   const temItens = !!itens && itens.length > 0
+  const temLancado = lancado > 0.005
 
   function iniciar(inicial?: string) {
     if (readOnly) {
@@ -179,7 +183,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       data-celula=""
       tabIndex={0}
       role="button"
-      aria-label={`Valor ${fmt(valor)}${temItens ? `, ${itens!.length} itens` : ''}${readOnly ? ', somente leitura' : temItens ? ', Enter para ver os itens' : ', Enter para editar'}`}
+      aria-label={`Valor ${fmt(valor)}${temLancado ? `, já lançado ${fmt(lancado)}` : ''}${temItens ? `, ${itens!.length} itens` : ''}${readOnly ? ', somente leitura' : temItens ? ', Enter para ver os itens' : ', Enter para editar'}`}
       onClick={() => iniciar()}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); iniciar() }
@@ -191,7 +195,8 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       style={{
         padding: grande ? '10px 8px' : '3px 7px', borderRadius: 6,
         cursor: readOnly ? (motivoBloqueio ? 'not-allowed' : 'default') : 'pointer',
-        display: 'inline-block', minWidth: 60,
+        display: 'inline-flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start',
+        minWidth: 60, lineHeight: 1.25,
         textAlign: align, fontVariantNumeric: 'tabular-nums',
         transition: 'background .15s', color: corVal, outline: 'none',
       }}
@@ -212,11 +217,20 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
         el.style.color = corVal
       }}
     >
-      {fmt(valor)}
-      {/* infoTexto #0369a1 sobre #dbeafe: 5,0. */}
-      {temItens && (
-        <span aria-hidden style={{ marginLeft: 6, fontSize: grande ? 12 : 10, fontWeight: 700, color: COR.infoTexto,
-          background: '#dbeafe', borderRadius: 999, padding: '1px 6px', verticalAlign: 1 }}>
+      <span>{fmt(valor)}</span>
+      {/* Embaixo do valor, não ao lado: ao lado a coluna de 118 px quebrava a
+          linha. O já lançado vence o "N itens" — no mês futuro os itens são
+          justamente o lançado e o resto. infoTexto #0369a1 no branco: 5,9;
+          sobre #dbeafe: 5,0. */}
+      {temLancado ? (
+        <span aria-hidden style={{ marginTop: 2, fontSize: grande ? 12 : 10, fontWeight: 600, color: COR.infoTexto,
+          whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          <i className="ti ti-calendar-check" style={{ fontSize: grande ? 13 : 11 }} />
+          lançado {fmt(lancado)}
+        </span>
+      ) : temItens && (
+        <span aria-hidden style={{ marginTop: 2, fontSize: grande ? 12 : 10, fontWeight: 700, color: COR.infoTexto,
+          background: '#dbeafe', borderRadius: 999, padding: '0 6px', whiteSpace: 'nowrap' }}>
           {itens!.length === 1 ? '1 item' : `${itens!.length} itens`}
         </span>
       )}
