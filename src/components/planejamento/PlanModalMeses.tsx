@@ -13,7 +13,6 @@ import { corDoIcone } from '../../utils/iconeDesenhado'
 import { TOPO_AZUL, ROTULO_TOPO } from '../mobile/estilo'
 import { PH_BTN_WHITE, PH_BTN_TAB_ATIVA } from '../PageHeader'
 
-const CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const W_NOME = 220
 const W_MES = 118
 const H_RODAPE = 30
@@ -237,13 +236,24 @@ export default function PlanModalMeses({
           <div style={{ display: 'grid', gridTemplateColumns: colunas, width: 'max-content' }}>
             {/* Cabeçalho dos meses, preso no topo ao rolar. */}
             <div style={{ position: 'sticky', top: 0, left: 0, zIndex: 3, background: COR.branco }} />
+            {/* O mês por extenso numa caixa, como o cartão do mês da Grade:
+                o atual no azul-escuro (branco 10,4; "mês atual" a 75%: 6,5),
+                os outros no cinza dos grupos com o texto marinho (#1e3a8a no
+                #eef2f8: 9,6; a situação em #475569: 6,9). Embaixo, a situação: fechado, atual ou
+                previsto — a mesma divisão dos cartões ("fechou com" ×
+                "termina com"). Pedido do Guilherme em 17/10/2026. */}
             {meses.map(mi => {
               const atual = mi === mesAtual && anoAtual === anoCorrente
+              const fechado = anoAtual < anoCorrente || (anoAtual === anoCorrente && mi < mesAtual)
               return (
-                <div key={mi} style={{ position: 'sticky', top: 0, zIndex: 2, background: COR.branco, textAlign: 'right',
-                  padding: '12px 7px 6px', fontSize: 12, fontWeight: atual ? 800 : 600,
-                  color: atual ? '#1e3a8a' : COR.textoSuave, borderBottom: `2px solid ${atual ? '#1e3a8a' : COR.borda}` }}>
-                  {CURTOS[mi]}{atual ? ' · atual' : ''}
+                <div key={mi} style={{ position: 'sticky', top: 0, zIndex: 2, background: COR.branco, padding: '12px 0 8px 6px' }}>
+                  <div style={{ borderRadius: 12, padding: '7px 9px', textAlign: 'right',
+                    background: atual ? '#1e3a8a' : '#eef2f8', border: atual ? 'none' : '1px solid #dbe2ec' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: atual ? '#fff' : '#1e3a8a', lineHeight: 1.2 }}>{MESES_FULL[mi]}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, marginTop: 1, color: atual ? 'rgba(255,255,255,.75)' : '#475569' }}>
+                      {atual ? 'mês atual' : fechado ? 'fechado' : 'previsto'}
+                    </div>
+                  </div>
                 </div>
               )
             })}
