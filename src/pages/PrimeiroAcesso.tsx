@@ -67,7 +67,11 @@ export default function PrimeiroAcesso() {
   const nomeCompleto = (perfil.nome || (user?.user_metadata?.nome as string | undefined) || '').trim()
   const nome = (perfil.apelido || nomeCompleto).split(' ')[0]
 
-  useEffect(() => { topoRef.current?.scrollIntoView({ block: 'start' }); window.scrollTo(0, 0) }, [passo])
+  useEffect(() => {
+    // No computador o celular desenhado rola por dentro; no celular, a página.
+    if (topoRef.current) topoRef.current.scrollTop = 0
+    window.scrollTo(0, 0)
+  }, [passo])
 
   const banco = e.banco === 'Outro' ? e.bancoOutro.trim() : e.banco
   // Com mais de um banco ou cartão, cada conta e parcela diz de qual sai.
@@ -135,7 +139,7 @@ export default function PrimeiroAcesso() {
     titulo = 'Em qual banco cai o seu salário?'
     sub = 'É por ele que a gente começa.'
     corpo = (<>
-      <Cartao><Chips lista={BANCOS} valor={e.banco} onEscolher={v => set('banco', v)} /></Cartao>
+      <Cartao><Chips colunas lista={BANCOS} valor={e.banco} onEscolher={v => set('banco', v)} /></Cartao>
       {e.banco && (
         <Cartao>
           {e.banco === 'Outro' && (<>
@@ -152,7 +156,7 @@ export default function PrimeiroAcesso() {
           <Rotulo>Tem dinheiro em outro banco também?</Rotulo>
           {e.outrosBancos.map((b, i) => (
             <Bloco key={i} onRemover={() => set('outrosBancos', e.outrosBancos.filter((_, j) => j !== i))}>
-              <Chips pequeno lista={BANCOS.filter(x => x !== 'Outro' && x !== e.banco)} valor={b.banco}
+              <Chips pequeno colunas lista={BANCOS.filter(x => x !== 'Outro' && x !== e.banco)} valor={b.banco}
                 onEscolher={v => set('outrosBancos', e.outrosBancos.map((q, j) => (j === i ? { ...q, banco: v } : q)))} />
               {b.banco && (<><Mini>Quanto tem lá hoje, mais ou menos?</Mini>
                 <Campo valor={b.saldo} onMudar={v => set('outrosBancos', e.outrosBancos.map((q, j) => (j === i ? { ...q, saldo: v } : q)))} placeholder="0" pequeno /></>)}
@@ -194,7 +198,7 @@ export default function PrimeiroAcesso() {
       {e.usaCartao === 'sim' && (
         <Cartao>
           <Rotulo>De qual banco?</Rotulo>
-          <Chips lista={BANCOS.filter(b => b !== 'Outro')} valor={e.cartao} onEscolher={v => set('cartao', v)} />
+          <Chips colunas lista={BANCOS.filter(b => b !== 'Outro')} valor={e.cartao} onEscolher={v => set('cartao', v)} />
           <Rotulo>Em que dia vence a fatura?</Rotulo>
           <Chips lista={[1, 5, 10, 15, 20, 25].map(d => `Dia ${d}`)} valor={e.venc ? `Dia ${e.venc}` : ''}
             onEscolher={v => set('venc', parseInt(v.slice(4)))} />
@@ -206,7 +210,7 @@ export default function PrimeiroAcesso() {
           {e.outrosCartoes.map((c, i) => (
             <Bloco key={i} onRemover={() => set('outrosCartoes', e.outrosCartoes.filter((_, j) => j !== i))}>
               <Mini>Outro cartão: de qual banco?</Mini>
-              <Chips pequeno lista={BANCOS.filter(b => b !== 'Outro')} valor={c.cartao}
+              <Chips pequeno colunas lista={BANCOS.filter(b => b !== 'Outro')} valor={c.cartao}
                 onEscolher={v => set('outrosCartoes', e.outrosCartoes.map((q, j) => (j === i ? { ...q, cartao: v } : q)))} />
               <Mini>Vence no dia</Mini>
               <Chips pequeno lista={[1, 5, 10, 15, 20, 25].map(d => `Dia ${d}`)} valor={c.venc ? `Dia ${c.venc}` : ''}
@@ -468,9 +472,23 @@ export default function PrimeiroAcesso() {
     pe = <Pe rotulo="Anotar meu primeiro gasto" onSeguir={() => concluir('/lancar')} pular="Agora não, só quero olhar o app" onPular={() => concluir('/')} />
   }
 
+  // No computador as perguntas aparecem dentro de um celular desenhado
+  // (pedido do Guilherme em 17/10/2026, sobre o protótipo): a tela é de
+  // celular, e esticada na largura toda ficava perdida. No celular de
+  // verdade, a moldura some e a página rola como antes.
   return (
-    <div style={{ minHeight: '100dvh', background: '#f2f5fc', display: 'flex', justifyContent: 'center' }}>
-      <div ref={topoRef} style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column' }}>
+    <div className="pa-palco" style={{ minHeight: '100dvh', background: '#f2f5fc', display: 'flex', justifyContent: 'center' }}>
+      <style>{`
+        @media (min-width: 900px) {
+          .pa-palco { height: 100dvh; align-items: center; padding: 24px; box-sizing: border-box }
+          .pa-tel { max-width: 390px !important; height: min(844px, calc(100dvh - 48px)); overflow-y: auto;
+            border: 10px solid #0b1533; border-radius: 44px; box-shadow: 0 24px 60px rgba(15,40,120,.22); background: #f2f5fc;
+            scrollbar-width: none }
+          .pa-tel::-webkit-scrollbar { display: none }
+          .pa-pe { position: sticky; bottom: 0; background: linear-gradient(rgba(242,245,252,0), #f2f5fc 18px); padding-top: 22px !important }
+        }
+      `}</style>
+      <div ref={topoRef} className="pa-tel" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
         <div style={{ background: TOPO_AZUL, color: '#fff', padding: '22px 22px 30px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.85)' }}>
             {voltar && (
@@ -492,7 +510,7 @@ export default function PrimeiroAcesso() {
           {sub && <p style={{ margin: '8px 0 0', fontSize: 14, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>{sub}</p>}
         </div>
         <div style={{ flex: 1, padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 14, marginTop: -14 }}>{corpo}</div>
-        <div style={{ padding: '12px 16px 26px' }}>{pe}</div>
+        <div className="pa-pe" style={{ padding: '12px 16px 26px' }}>{pe}</div>
       </div>
     </div>
   )
@@ -629,11 +647,13 @@ function Dica({ children }: { children: ReactNode }) {
   )
 }
 
-function Chips({ lista, valor, onEscolher, pequeno }: { lista: string[]; valor: string; onEscolher: (v: string) => void; pequeno?: boolean }) {
+/** `colunas`: bancos e cartões em duas colunas, alinhados à esquerda (pedido do Guilherme, 17/10/2026). */
+function Chips({ lista, valor, onEscolher, pequeno, colunas }: { lista: string[]; valor: string; onEscolher: (v: string) => void; pequeno?: boolean; colunas?: boolean }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+    <div style={colunas ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } : { display: 'flex', flexWrap: 'wrap', gap: 8 }}>
       {lista.map(v => (
-        <button key={v} type="button" aria-pressed={valor === v} onClick={() => onEscolher(v)} style={chip(valor === v, pequeno)}>{v}</button>
+        <button key={v} type="button" aria-pressed={valor === v} onClick={() => onEscolher(v)}
+          style={colunas ? { ...chip(valor === v, pequeno), justifyContent: 'flex-start', textAlign: 'left', paddingLeft: 16 } : chip(valor === v, pequeno)}>{v}</button>
       ))}
     </div>
   )
@@ -646,10 +666,10 @@ function DeOnde({ forma, bancos, cartoes, banco, cartao, onBanco, onCartao }: {
 }) {
   if (forma === 'cartao') {
     if (cartoes.length < 2 || !onCartao) return null
-    return (<><Mini>Em qual cartão?</Mini><Chips pequeno lista={cartoes} valor={cartao && cartoes.includes(cartao) ? cartao : cartoes[0]} onEscolher={onCartao} /></>)
+    return (<><Mini>Em qual cartão?</Mini><Chips pequeno colunas lista={cartoes} valor={cartao && cartoes.includes(cartao) ? cartao : cartoes[0]} onEscolher={onCartao} /></>)
   }
   if (forma === 'dinheiro' || bancos.length < 2) return null
-  return (<><Mini>De qual banco sai?</Mini><Chips pequeno lista={bancos} valor={banco && bancos.includes(banco) ? banco : bancos[0]} onEscolher={onBanco} /></>)
+  return (<><Mini>De qual banco sai?</Mini><Chips pequeno colunas lista={bancos} valor={banco && bancos.includes(banco) ? banco : bancos[0]} onEscolher={onBanco} /></>)
 }
 
 function Campo({ valor, onMudar, placeholder, pequeno, numerico, texto, autoFoco }: {
