@@ -350,12 +350,12 @@ ano novo, em itens). Mês base em andamento ou futuro não sugere pela metade.
 "Preencher N vazias" grava as linhas sem plano numa gravação só
 (`editarCelulas`). Realizado sem linha vira "Outras", e o pé fecha com o
 Radar. Regras em [`revisaoAnual.ts`](src/components/planejamento/revisaoAnual.ts);
-`prova73` (37 invariantes).
+`prova73` (38 invariantes).
 Em 17/10/2026, pedido dele: a janela tem o cabeçalho azul (`PageHeader`) e o
 `SeletorMesAno` das outras telas, preso no ano novo; a base se escolhe em
 "Comparar com" (guardado no aparelho): **Realizado do mês** (o mesmo mês do
 ano base), **Média anual** (média dos meses FECHADOS do ano base, desde o
-primeiro registro, zeros contados) ou **Mês anterior** (o último mês fechado);
+primeiro registro, zeros contados) ou **Mês anterior** (o mês antes do revisado: jan/2027 → dez/2026, set/2027 → ago/2027; sem ter fechado, só o plano dele e sem sugestão);
 a sugestão é a mesma regra sobre a base escolhida. A coluna "Já lançado" saiu:
 o lançado vai embaixo do plano ("já gastou" / "já recebeu"), como no
 Planejamento. A coluna da base segue o mesmo padrão: o PLANO do ano

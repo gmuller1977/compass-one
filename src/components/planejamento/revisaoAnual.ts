@@ -26,7 +26,8 @@ export type ParcelaLancada = { descricao: string; valor: number; atual: number; 
  * Com o que comparar o ano novo (pedido do Guilherme em 17/10/2026):
  * - `mes`: o mesmo mês do ano base (janeiro de 2026 para janeiro de 2027);
  * - `media`: a média dos meses FECHADOS do ano base, desde o primeiro registro;
- * - `anterior`: o último mês fechado (hoje, setembro).
+ * - `anterior`: o mês antes do revisado (jan/2027 → dez/2026; set/2027 →
+ *   ago/2027), pedido dele no mesmo dia. Sem fechar, mostra só o plano dele.
  * As três passam pela mesma conta: a média dos meses da lista (um mês só nas
  * duas primeiras), cada um pelo realizado do Radar.
  */
@@ -86,7 +87,10 @@ export function mesesDaBase(modo: ModoBase, base: number, mes: number, hoje: Dat
   extratoData: Record<string, DadosMes>): MesRef[] {
   if (modo === 'mes') return [{ ano: base, mes }]
   const h = hoje.getFullYear() * 12 + hoje.getMonth()
-  if (modo === 'anterior') return [{ ano: Math.floor((h - 1) / 12), mes: (h - 1) % 12 }]
+  if (modo === 'anterior') {
+    const a = (base + 1) * 12 + mes - 1
+    return [{ ano: Math.floor(a / 12), mes: a % 12 }]
+  }
   const primeiro = primeiroMesComRegistro(extratoData as Parameters<typeof primeiroMesComRegistro>[0])
   const lista: MesRef[] = []
   for (let m = 0; m < 12; m++) {
@@ -172,7 +176,10 @@ export function revisaoDoMes(p: {
       const ja = (crA?.lancamentos ?? []).filter(l => Math.abs(l.valor) > 0.005)
         .map(l => ({ descricao: l.descricao, valor: l.valor, ...(l.parcela ? { parcela: l.parcela } : {}) }))
       const sug = sugestaoDoMes(baseSug, plano, ja, lancado)
-      const muda = Math.abs(sug - plano) > 0.005
+      // Sem botão (pedido do Guilherme, 17/10/2026) quando a sugestão é zero
+      // ou quando o plano do ano novo já bate com a base e cobre o já lançado.
+      const bateComBase = Math.abs(plano - real) < 0.005 && plano >= lancado - 0.005
+      const muda = Math.abs(sug - plano) > 0.005 && sug > 0.005 && !bateComBase
       const linha: LinhaRevisao = {
         tipo, ri, cat, real, planoBase, plano, lancado, parcelas,
         sugerido: muda ? sug : null,

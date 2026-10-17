@@ -101,7 +101,7 @@ export default function PlanRevisaoAnual({
     : [`${nomeMes} ${base}`, 'plano']
   // A etiqueta diz o mês de verdade (pedido do Guilherme, 17/10/2026:
   // revisando jan/2027, "Realizado do mês" confundia).
-  const hj = new Date(), antIdx = hj.getFullYear() * 12 + hj.getMonth() - 1
+  const antIdx = alvo * 12 + mes - 1
   const rotuloDoModo = (m: ModoBase) => m === 'mes' ? `Realizado ${CURTOS[mes]}/${base}`
     : m === 'media' ? `Média ${base}`
     : `Mês anterior · ${CURTOS[antIdx % 12]}/${Math.floor(antIdx / 12)}`
@@ -118,13 +118,14 @@ export default function PlanRevisaoAnual({
     toast(`${vazias.length} ${vazias.length === 1 ? 'categoria preenchida' : 'categorias preenchidas'} em ${nomeMes.toLowerCase()} de ${alvo}.`, 'success')
   }
 
+  const mesDaBase = modo === 'anterior' && mb[0] ? `${MESES_FULL[mb[0].mes]} de ${mb[0].ano}` : `${nomeMes} de ${base}`
   const aviso = r.estadoBase === 'fechado'
     ? `Sugestão: ${descrBase} sem as parcelas, mais as parcelas já lançadas em ${rotAlvo}.`
     : modo === 'media'
       ? `${base} ainda não tem mês fechado para fazer a média.`
     : r.estadoBase === 'corrente'
-      ? `${nomeMes} de ${base} ainda está em andamento: o realizado é até hoje, e a sugestão só cobre o já lançado.`
-      : `${nomeMes} de ${base} ainda não aconteceu: embaixo do realizado aparece o que o plano de ${base} prevê.`
+      ? `${mesDaBase} ainda está em andamento: o realizado é até hoje, e a sugestão só cobre o já lançado.`
+      : `${mesDaBase} ainda não aconteceu: aparece só o plano dele, sem sugestão.`
 
   // ── Peças ───────────────────────────────────────────────────────────
   const num = (v: number, forte = false, cor: string = COR.texto) => (
@@ -139,7 +140,8 @@ export default function PlanRevisaoAnual({
   // Guilherme (17/10/2026). O mês da base já passou: "gastou" / "recebeu";
   // só o mês em andamento diz "já gastou".
   // infoTexto #0369a1 no branco: 5,9.
-  const usou = (v: number, entrada: boolean) => (
+  // Mês da base que ainda não aconteceu não tem realizado: só o plano.
+  const usou = (v: number, entrada: boolean) => r.estadoBase === 'futuro' ? null : (
     <span style={{ marginTop: 2, fontSize: isMobile ? 12 : 11, fontWeight: 600, color: COR.infoTexto, whiteSpace: 'nowrap',
       display: 'inline-flex', alignItems: 'center', gap: 3, fontVariantNumeric: 'tabular-nums' }}>
       <i aria-hidden className="ti ti-calendar-check" style={{ fontSize: isMobile ? 13 : 12 }} />
@@ -288,10 +290,14 @@ export default function PlanRevisaoAnual({
   // Pé: o mês nos dois anos. Realizado = os cartões do Radar daquele mês;
   // plano = os totais do Planejamento (`previsto`). Sobre #1e3a8a: branco
   // 10,4; rótulo a 75% 6,5; #86efac 8,1; #fecaca 9,6.
+  // Base que ainda não aconteceu: o pé mostra o plano dela, não um real zerado.
+  const semReal = r.estadoBase === 'futuro'
+  const planoDaBase = (gs: typeof r.entradas) => gs.reduce((t, g) => t + g.linhas.reduce((u, l) => u + l.planoBase, 0), 0)
+  const peBase = semReal ? { e: planoDaBase(r.entradas), s: planoDaBase(r.saidas) } : r.realTotal
   const pe = ([
-    ['Receitas', r.realTotal.e, previsto.totalEntradas[mes]],
-    ['Despesas', r.realTotal.s, previsto.totalSaidas[mes]],
-    ['Resultado', r.realTotal.e - r.realTotal.s, previsto.totalEntradas[mes] - previsto.totalSaidas[mes]],
+    ['Receitas', peBase.e, previsto.totalEntradas[mes]],
+    ['Despesas', peBase.s, previsto.totalSaidas[mes]],
+    ['Resultado', peBase.e - peBase.s, previsto.totalEntradas[mes] - previsto.totalSaidas[mes]],
   ] as const)
   const corPe = (rot: string, v: number) => rot !== 'Resultado' ? '#fff' : v >= 0 ? '#86efac' : '#fecaca'
 
@@ -382,7 +388,7 @@ export default function PlanRevisaoAnual({
           gridTemplateColumns: isMobile ? '1fr auto auto' : 'minmax(200px, 1fr) 150px 150px 150px', columnGap: 12, rowGap: 4,
           alignItems: 'center', fontVariantNumeric: 'tabular-nums' }}>
           <span />
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>{modo === 'media' ? rotBase : `${rotBase} real`}</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>{modo === 'media' ? rotBase : `${rotBase} ${semReal ? 'plano' : 'real'}`}</span>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>{rotAlvo} plano</span>
           {!isMobile && <span />}
           {pe.map(([rot, vb, va]) => (
