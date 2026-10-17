@@ -7,13 +7,21 @@ import { itensDoMes, type ItemPlano } from '../../utils/itensPlano'
 import { IconeCat } from '../IconeCat'
 import { useToast } from '../Toast'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
+import PageHeader, { PH_BTN_WHITE } from '../PageHeader'
+import SeletorMesAno from '../SeletorMesAno'
 import { COR, MESES_FULL, SEM_GRUPO, fmt, nomeExibicao, type AnoData, type Saldos } from './types'
-import { linhasVazias, revisaoDoMes, type GrupoRevisao, type LinhaRevisao } from './revisaoAnual'
+import { linhasVazias, revisaoDoMes, type GrupoRevisao, type LinhaRevisao, type ModoBase } from './revisaoAnual'
 import type { AbrirItens } from './itensContexto'
 
 export type OpCelula = { tipo: 'e' | 's'; ri: number; mi: number; valor: number; itens?: ItemPlano[] | null }
 
 const CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+const CHAVE_MODO = 'compass:revisao-anual-base'
+const MODOS: { id: ModoBase; rotulo: string }[] = [
+  { id: 'mes', rotulo: 'Realizado do mês' },
+  { id: 'media', rotulo: 'Média anual' },
+  { id: 'anterior', rotulo: 'Mês anterior' },
+]
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -30,6 +38,10 @@ function useIsMobile() {
  * dois anos lado a lado, para montar o plano do ano que vem olhando o que
  * aconteceu — janeiro de 2026 realizado × janeiro de 2027 planejado, por grupo
  * e categoria, com o que já está lançado em 2027 (parcelas da fatura).
+ *
+ * Em 17/10/2026, pedido dele: o cabeçalho azul e o seletor de mês das outras
+ * telas, a base escolhida entre o mesmo mês, a média do ano e o mês anterior,
+ * e o já lançado embaixo do plano ("já gastou"), no lugar da coluna própria.
  *
  * A mesma janela no computador e no celular; só a arrumação muda: no
  * computador as colunas ficam numa linha, no celular os três números vão
@@ -55,6 +67,12 @@ export default function PlanRevisaoAnual({
   const isMobile = useIsMobile()
   const { toast } = useToast()
   const [mes, setMes] = useState(mesInicial)
+  // A base escolhida fica no aparelho, como o botão dos gráficos do ano.
+  const [modo, setModo] = useState<ModoBase>(() => {
+    try { const v = localStorage.getItem(CHAVE_MODO); if (v === 'mes' || v === 'media' || v === 'anterior') return v } catch { /* sem armazenamento */ }
+    return 'mes'
+  })
+  const escolherModo = (m: ModoBase) => { setModo(m); try { localStorage.setItem(CHAVE_MODO, m) } catch { /* sem armazenamento */ } }
   const base = alvo - 1
   const fecharRef = useRef(onFechar)
   fecharRef.current = onFechar
@@ -68,14 +86,24 @@ export default function PlanRevisaoAnual({
   }, [])
 
   const r = useMemo(() => revisaoDoMes({
-    alvo, mes, dadosAlvo: dadosAtivos, hasFaturaCat,
+    alvo, mes, modo, dadosAlvo: dadosAtivos, hasFaturaCat,
     extratoData: extratoData as Record<string, DadosMes>, faturaData: faturaData as Record<string, unknown>,
     contas, categorias, planos,
-  }), [alvo, mes, dadosAtivos, hasFaturaCat, extratoData, faturaData, contas, categorias, planos])
+  }), [alvo, mes, modo, dadosAtivos, hasFaturaCat, extratoData, faturaData, contas, categorias, planos])
   const vazias = useMemo(() => linhasVazias(r), [r])
 
   const nomeMes = MESES_FULL[mes]
-  const rotBase = `${CURTOS[mes]}/${base}`
+  const mb = r.mesesBase
+  const faixaMedia = mb.length === 0 ? '' : mb.length === 1 ? `${CURTOS[mb[0].mes]}/${base}`
+    : `${CURTOS[mb[0].mes]}–${CURTOS[mb[mb.length - 1].mes]}/${base}`
+  // Como a base se chama em cada lugar: rótulo curto (celular e pé), título
+  // da coluna e a frase da sugestão.
+  const rotBase = modo === 'media' ? `média ${base}`
+    : `${CURTOS[mb[0]?.mes ?? mes]}/${mb[0]?.ano ?? base}`
+  const tituloBase: [string, string] = modo === 'media' ? [`Média ${base}`, faixaMedia || 'sem mês fechado']
+    : modo === 'anterior' ? [`${MESES_FULL[mb[0].mes]} ${mb[0].ano}`, 'mês anterior']
+    : [`${nomeMes} ${base}`, 'realizado']
+  const descrBase = modo === 'media' ? `a média de ${faixaMedia}` : `o realizado de ${rotBase}`
   const rotAlvo = `${CURTOS[mes]}/${alvo}`
   const hojeIdx = new Date().getFullYear() * 12 + new Date().getMonth()
   const futuroAlvo = alvo * 12 + mes > hojeIdx
@@ -89,7 +117,9 @@ export default function PlanRevisaoAnual({
   }
 
   const aviso = r.estadoBase === 'fechado'
-    ? `Sugestão: o realizado de ${rotBase} sem as parcelas, mais as parcelas já lançadas em ${rotAlvo}.`
+    ? `Sugestão: ${descrBase} sem as parcelas, mais as parcelas já lançadas em ${rotAlvo}.`
+    : modo === 'media'
+      ? `${base} ainda não tem mês fechado para fazer a média.`
     : r.estadoBase === 'corrente'
       ? `${nomeMes} de ${base} ainda está em andamento: o realizado é até hoje, e a sugestão só cobre o já lançado.`
       : `${nomeMes} de ${base} ainda não aconteceu: embaixo do realizado aparece o que o plano de ${base} prevê.`
@@ -112,26 +142,21 @@ export default function PlanRevisaoAnual({
     )
   }
 
-  function celulaLancado(l: LinhaRevisao) {
-    const titulo = l.parcelas.map(p => `${p.descricao} · ${p.atual} de ${p.total}: ${fmt(p.valor)}`).join('\n')
-    return (
-      <div style={{ textAlign: 'right' }} title={titulo || undefined}>
-        {num(l.lancado)}
-        {l.parcelas.length > 0 && legenda(l.parcelas.length === 1 ? '1 parcela' : `${l.parcelas.length} parcelas`)}
-      </div>
-    )
-  }
-
   function celulaPlano(l: LinhaRevisao) {
     const abaixo = futuroAlvo && l.lancado - l.plano > 0.005
+    const titulo = l.parcelas.map(p => `${p.descricao} · ${p.atual} de ${p.total}: ${fmt(p.valor)}`).join('\n')
+    // O já lançado vai embaixo do valor, como no Planejamento ("já gastou" /
+    // "já recebeu"): a coluna própria saiu a pedido do Guilherme (17/10/2026).
     return (
-      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+      <div title={titulo || undefined} style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
         <PlanCelulaEditavel
           valor={l.plano}
           onSave={v => gravar(l, v)}
           itens={itensDoMes(l.cat, mes)}
           onItens={p => abrirItens(l.tipo, l.ri, mes, p)}
           sempreItens={futuroAlvo && l.lancado > 0.005}
+          lancado={l.lancado}
+          entrada={l.tipo === 'e'}
           grande={isMobile}
         />
         {abaixo && legenda('abaixo do já lançado', COR.erroTexto)}
@@ -153,7 +178,7 @@ export default function PlanRevisaoAnual({
     )
   }
 
-  const colunas = 'minmax(180px, 1fr) 130px 120px 140px 140px'
+  const colunas = 'minmax(200px, 1fr) 150px 150px 150px'
 
   function nomeLinha(l: LinhaRevisao) {
     const { icone, cor } = iconeCategoria(categorias, l.cat.nome)
@@ -172,9 +197,8 @@ export default function PlanRevisaoAnual({
       return (
         <div key={`${l.tipo}-${l.ri}`} style={{ padding: '12px 0', borderBottom: `1px solid ${COR.borda}` }}>
           {nomeLinha(l)}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 8, alignItems: 'start' }}>
-            <div>{rot(`${rotBase} real`)}{celulaBase(l)}</div>
-            <div>{rot('já lançado')}{celulaLancado(l)}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8, alignItems: 'start' }}>
+            <div>{rot(modo === 'media' ? rotBase : `${rotBase} real`)}{celulaBase(l)}</div>
             <div>{rot(`${rotAlvo} plano`)}{celulaPlano(l)}</div>
           </div>
           {l.sugerido !== null && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>{botaoSugestao(l)}</div>}
@@ -186,7 +210,6 @@ export default function PlanRevisaoAnual({
         padding: '7px 0', borderBottom: `1px solid ${COR.borda}` }}>
         {nomeLinha(l)}
         {celulaBase(l)}
-        {celulaLancado(l)}
         {celulaPlano(l)}
         {botaoSugestao(l)}
       </div>
@@ -203,11 +226,6 @@ export default function PlanRevisaoAnual({
         <span style={{ ...estilo, textTransform: 'none', letterSpacing: 0, fontVariantNumeric: 'tabular-nums' }}>
           {fmt(g.real, true)} → {fmt(g.plano, true)}
         </span>
-        {g.lancado > 0.005 && (
-          <span style={{ flexBasis: '100%', textAlign: 'right', fontSize: 12, color: '#1e3a8a', marginTop: -2 }}>
-            já lançado em {rotAlvo}: {fmt(g.lancado, true)}
-          </span>
-        )}
       </div>
     )
     return (
@@ -215,7 +233,6 @@ export default function PlanRevisaoAnual({
         padding: '8px 10px', background: '#eaf1fd', borderRadius: 10, marginTop: 10 }}>
         <span style={estilo}>{nome}</span>
         <span style={{ textAlign: 'right' }}>{num(g.real, true, '#1e3a8a')}</span>
-        <span style={{ textAlign: 'right' }}>{num(g.lancado, true, '#1e3a8a')}</span>
         <span style={{ textAlign: 'right', paddingRight: 6 }}>{num(g.plano, true, '#1e3a8a')}</span>
         <span />
       </div>
@@ -239,24 +256,10 @@ export default function PlanRevisaoAnual({
         {Math.abs(outras) > 0.005 && (
           <div style={{ padding: '10px 10px 0', fontSize: 13, color: COR.textoSuave, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
             <span>Outras · categoria desativada ou excluída</span>
-            <span style={{ fontWeight: 600, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>{fmt(outras, true)} em {rotBase}</span>
+            <span style={{ fontWeight: 600, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>{fmt(outras, true)} {modo === 'media' ? `na ${rotBase}` : `em ${rotBase}`}</span>
           </div>
         )}
       </div>
-    )
-  }
-
-  const seta = (dir: -1 | 1) => {
-    const desligada = dir < 0 ? mes <= 0 : mes >= 11
-    return (
-      <button type="button" aria-label={dir < 0 ? 'Mês anterior' : 'Próximo mês'} disabled={desligada}
-        onClick={() => setMes(m => Math.max(0, Math.min(11, m + dir)))}
-        style={{ width: 40, height: 40, borderRadius: '50%', border: `1px solid ${COR.borda}`, display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          background: desligada ? COR.superficie : COR.branco, color: desligada ? COR.textoVazio : '#1e3a8a',
-          cursor: desligada ? 'default' : 'pointer' }}>
-        <i aria-hidden className={`ti ti-chevron-${dir < 0 ? 'left' : 'right'}`} style={{ fontSize: 18 }} />
-      </button>
     )
   }
 
@@ -275,31 +278,53 @@ export default function PlanRevisaoAnual({
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 0 : 16,
     }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="revisao-anual-titulo" style={{
+      <div role="dialog" aria-modal="true" aria-label={`Revisão do plano ${alvo}`} style={{
         background: COR.branco, borderRadius: isMobile ? 0 : 20, width: isMobile ? '100%' : 'min(960px, 96vw)',
         height: isMobile ? '100%' : undefined, maxHeight: isMobile ? '100%' : '92vh',
         overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: "-apple-system, 'Inter', sans-serif",
       }}>
-        {/* Topo: título, o mês com setas, e o que a tela compara. */}
-        <div style={{ padding: isMobile ? '14px 16px 12px' : '16px 20px 12px', borderBottom: `1px solid ${COR.borda}` }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <div style={{ marginRight: 'auto', minWidth: 0 }}>
-              <div id="revisao-anual-titulo" style={{ fontSize: isMobile ? 17 : 18, fontWeight: 800, color: COR.texto }}>
-                Revisão do plano {alvo}
+        {/* Topo: o cabeçalho azul das telas (PageHeader) com o seletor de mês
+            de sempre — preso no ano que se monta —, e embaixo a escolha da base. */}
+        <div style={{ padding: isMobile ? '12px 12px 0' : '14px 14px 0' }}>
+          <PageHeader
+            icon="ti-arrows-left-right"
+            breadcrumb="Planejamento"
+            title={`Revisão do plano ${alvo}`}
+            subtitle={`O que aconteceu × o que você planeja para ${alvo}`}
+            mb={0}
+            rightContent={<>
+              {!isMobile && <SeletorMesAno mes={mes} ano={alvo} anoFixo habilitado={(_, a) => a === alvo}
+                onSelect={m => setMes(m)} />}
+              <button type="button" onClick={onFechar} aria-label="Fechar"
+                style={{ ...PH_BTN_WHITE, width: 36, height: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i aria-hidden className="ti ti-x" style={{ fontSize: 18 }} />
+              </button>
+            </>}
+          >
+            {isMobile && (
+              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
+                <SeletorMesAno mes={mes} ano={alvo} anoFixo habilitado={(_, a) => a === alvo} onSelect={m => setMes(m)} />
               </div>
-              <div style={{ fontSize: 13, color: COR.textoSuave }}>O que aconteceu em {base} × o que você planeja para {alvo}</div>
+            )}
+          </PageHeader>
+        </div>
+        <div style={{ padding: isMobile ? '12px 16px 10px' : '12px 20px 10px', borderBottom: `1px solid ${COR.borda}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto }}>Comparar com</span>
+            <div role="tablist" aria-label="Comparar com" style={{ display: 'inline-flex', background: '#eef2f8',
+              borderRadius: 999, padding: 3, gap: 2, maxWidth: '100%', overflowX: 'auto' }}>
+              {MODOS.map(o => {
+                const ativo = o.id === modo
+                return (
+                  <button key={o.id} type="button" role="tab" aria-selected={ativo} onClick={() => escolherModo(o.id)}
+                    style={{ border: 'none', borderRadius: 999, padding: isMobile ? '8px 11px' : '6px 14px', cursor: 'pointer',
+                      fontFamily: 'inherit', fontSize: 13, fontWeight: ativo ? 700 : 600, whiteSpace: 'nowrap',
+                      background: ativo ? '#1e3a8a' : 'transparent', color: ativo ? '#fff' : '#334155' }}>
+                    {o.rotulo}
+                  </button>
+                )
+              })}
             </div>
-            <button type="button" onClick={onFechar} aria-label="Fechar" style={{ border: 'none', background: '#f1f5f9',
-              borderRadius: 10, width: 40, height: 40, cursor: 'pointer', color: '#475569', flexShrink: 0 }}>
-              <i aria-hidden className="ti ti-x" style={{ fontSize: 18 }} />
-            </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {seta(-1)}
-              <span style={{ minWidth: 110, textAlign: 'center', fontSize: 16, fontWeight: 800, color: '#1e3a8a' }}>{nomeMes}</span>
-              {seta(1)}
-            </span>
             {vazias.length > 0 && (
               <button type="button" onClick={preencher} style={{ marginLeft: isMobile ? 0 : 'auto', border: 'none',
                 background: 'linear-gradient(135deg, #0f2878, #1e40af)', color: '#fff', borderRadius: 10, padding: '10px 14px',
@@ -318,8 +343,7 @@ export default function PlanRevisaoAnual({
               background: COR.branco, padding: '12px 10px 8px', borderBottom: `2px solid ${COR.borda}`,
               fontSize: 12, fontWeight: 700, color: COR.textoSuave, textAlign: 'right' }}>
               <span style={{ textAlign: 'left' }}>Categoria</span>
-              <span>{nomeMes} {base}<br /><span style={{ fontWeight: 500 }}>realizado</span></span>
-              <span>Já lançado<br /><span style={{ fontWeight: 500 }}>em {rotAlvo}</span></span>
+              <span>{tituloBase[0]}<br /><span style={{ fontWeight: 500 }}>{tituloBase[1]}</span></span>
               <span style={{ color: '#1e3a8a' }}>{nomeMes} {alvo}<br /><span style={{ fontWeight: 500 }}>plano</span></span>
               <span>Sugestão</span>
             </div>
@@ -333,11 +357,10 @@ export default function PlanRevisaoAnual({
         </div>
 
         <div style={{ background: '#1e3a8a', padding: isMobile ? '10px 16px' : '10px 30px', display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr auto auto' : `minmax(180px, 1fr) 130px 120px 140px 140px`, columnGap: 12, rowGap: 4,
+          gridTemplateColumns: isMobile ? '1fr auto auto' : 'minmax(200px, 1fr) 150px 150px 150px', columnGap: 12, rowGap: 4,
           alignItems: 'center', fontVariantNumeric: 'tabular-nums' }}>
           <span />
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>{rotBase} real</span>
-          {!isMobile && <span />}
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>{modo === 'media' ? rotBase : `${rotBase} real`}</span>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', textAlign: 'right' }}>{rotAlvo} plano</span>
           {!isMobile && <span />}
           {pe.map(([rot, vb, va]) => (
@@ -345,7 +368,6 @@ export default function PlanRevisaoAnual({
               <span style={{ fontSize: 12, fontWeight: rot === 'Resultado' ? 800 : 600, textTransform: 'uppercase', letterSpacing: '.4px',
                 color: rot === 'Resultado' ? '#fff' : 'rgba(255,255,255,.75)' }}>{rot}</span>
               <span style={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: corPe(rot, vb) }}>{fmt(vb, true)}</span>
-              {!isMobile && <span />}
               <span style={{ fontSize: 13, fontWeight: 800, textAlign: 'right', color: corPe(rot, va) }}>{fmt(va, true)}</span>
               {!isMobile && <span />}
             </div>
