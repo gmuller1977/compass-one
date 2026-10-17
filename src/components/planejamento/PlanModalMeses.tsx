@@ -10,6 +10,8 @@ import { itensDoMes } from '../../utils/itensPlano'
 import type { Categoria } from '../../context/AppContext'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
+import { TOPO_AZUL, ROTULO_TOPO } from '../mobile/estilo'
+import { PH_BTN_WHITE, PH_BTN_TAB_ATIVA } from '../PageHeader'
 
 const CURTOS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const W_NOME = 220
@@ -176,14 +178,19 @@ export default function PlanModalMeses({
     )
   }
 
+  // Setas no azul, como as do mês ao lado do título em Lançamentos e no
+  // Radar: branco translúcido. Desligada, branco a 35% (só desenho).
   const seta = (dir: -1 | 1) => {
     const desligada = dir < 0 ? ini <= 0 : ini >= 12 - n
     return (
       <button type="button" aria-label={dir < 0 ? 'Mês anterior' : 'Próximo mês'} disabled={desligada}
         onClick={() => setInicio(Math.max(0, Math.min(12 - n, ini + dir)))}
-        style={{ width: 32, height: 32, borderRadius: '50%', border: `1px solid ${COR.borda}`,
-          background: desligada ? '#f8fafc' : COR.branco, color: desligada ? '#cbd5e1' : '#1e3a8a',
-          fontSize: 17, fontWeight: 700, cursor: desligada ? 'default' : 'pointer' }}>{dir < 0 ? '‹' : '›'}</button>
+        style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', flexShrink: 0,
+          background: desligada ? 'rgba(255,255,255,.06)' : 'rgba(255,255,255,.15)',
+          color: desligada ? 'rgba(255,255,255,.35)' : '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, cursor: desligada ? 'default' : 'pointer' }}>
+        <i aria-hidden className={`ti ti-chevron-${dir < 0 ? 'left' : 'right'}`} />
+      </button>
     )
   }
 
@@ -196,20 +203,34 @@ export default function PlanModalMeses({
         background: COR.branco, borderRadius: 20, maxWidth: '96vw', maxHeight: '90vh',
         overflow: 'hidden', display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${COR.borda}`, display: 'flex',
-          alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ marginRight: 'auto' }}>
-            <div id="meses-titulo" style={{ fontSize: 18, fontWeight: 800, color: COR.texto }}>{titulo}</div>
-            <div style={{ fontSize: 11, color: COR.textoSuave }}>Planejamento {anoAtual}</div>
+        {/* O cabeçalho das outras telas (PageHeader): o azul #0f2878 → #1e40af,
+            ícone em círculo, "PLANEJAMENTO 2026" em cima e o título branco,
+            com as setas do mês AO LADO do título. Pedido do Guilherme em
+            17/10/2026, junto com a Revisão anual. Branco no #1e40af: 8,7;
+            rótulo a 75%: 5,1. */}
+        <div style={{ background: TOPO_AZUL, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,.14)', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i aria-hidden className="ti ti-calendar-stats" style={{ color: '#fff', fontSize: 20 }} />
           </div>
-          {!anoInteiro && <span style={{ display: 'flex', gap: 6 }}>{seta(-1)}{seta(1)}</span>}
-          <button type="button" aria-pressed={anoInteiro} onClick={() => setAnoInteiro(v => !v)} style={{
-            border: `1px solid ${anoInteiro ? COR.azul : COR.borda}`, borderRadius: 999, padding: '6px 12px',
-            fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            background: anoInteiro ? '#eff6ff' : COR.branco, color: '#1e3a8a',
-          }}>{anoInteiro ? (n === 1 ? '1 mês' : `${n} meses`) : 'Ano inteiro'}</button>
-          <button type="button" onClick={onClose} style={{ border: 'none', background: '#f1f5f9', borderRadius: 8,
-            padding: '6px 12px', cursor: 'pointer', fontSize: 13, color: '#475569', fontFamily: 'inherit' }}>Fechar</button>
+          <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 11, color: ROTULO_TOPO, letterSpacing: '.3px', textTransform: 'uppercase', fontWeight: 500, marginBottom: 2 }}>
+                Planejamento {anoAtual}
+              </div>
+              <div id="meses-titulo" style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.2, whiteSpace: 'nowrap' }}>{titulo}</div>
+            </div>
+            {!anoInteiro && <span style={{ display: 'flex', gap: 6 }}>{seta(-1)}{seta(1)}</span>}
+          </div>
+          <button type="button" aria-pressed={anoInteiro} onClick={() => setAnoInteiro(v => !v)}
+            style={anoInteiro ? PH_BTN_TAB_ATIVA : PH_BTN_WHITE}>
+            {anoInteiro ? (n === 1 ? '1 mês' : `${n} meses`) : 'Ano inteiro'}
+          </button>
+          <button type="button" onClick={onClose} aria-label="Fechar" title="Fechar"
+            style={{ ...PH_BTN_WHITE, width: 34, height: 34, padding: 0, borderRadius: '50%', display: 'inline-flex',
+              alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+            <i aria-hidden className="ti ti-x" />
+          </button>
         </div>
 
         <div style={{ overflow: 'auto', flex: 1, padding: '0 20px 16px' }}>
