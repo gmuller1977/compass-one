@@ -12,6 +12,8 @@ import { limparUltimaAtividade } from '../utils/inatividade'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
 
+import type { EstimativasIniciais } from '../utils/primeiroAcesso'
+
 // ── Types compartilhados ─────────────────────────────────────────────
 export type Compartilhamento = { papel: 'proprio' | 'membro'; donoNome: string; donoEmail: string; /** Membros aceitos, para o dono. */ membros: number }
 export type Perfil = { nome: string; apelido: string }
@@ -64,7 +66,9 @@ export type Categoria = {
 // `itens`: o detalhe do valor de cada mês (utils/itensPlano). `v` continua
 // sendo a verdade; quem lê o plano não precisa saber que os itens existem.
 export type PlanoCat     = { id?: string; nome: string; descricao?: string; grupo?: string; t?: string; v: number[]; itens?: ItensPorMes }
-export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number; mesInicio?: number }
+// `estimativas`: as respostas do primeiro acesso, lidas pela proposta do
+// primeiro plano (utils/primeiroAcesso). Nenhum outro leitor do plano as vê.
+export type PlanoAnoData = { saldoInicialJan: number; entradas: PlanoCat[]; saidas: PlanoCat[]; objetivos?: number[]; metaAnual?: number; mesInicio?: number; estimativas?: EstimativasIniciais }
 
 export type MetaSim = {
   nome: string

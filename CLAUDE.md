@@ -2218,6 +2218,39 @@ voltavam se ninguém marcasse "não mostrar novamente".
   primeiro reabria o cadastro inicial, e confirmar as categorias de novo
   desativava as que não estavam entre as sugeridas.
 
+**Conta nova começa pelo PRIMEIRO ACESSO** (`/primeiro-acesso`, 17/10/2026,
+protótipo aprovado pelo Guilherme: "melhorou bastante, pode publicar"). Tela
+cheia, sem menu: "Para te ajudar, preciso te conhecer um pouco melhor. Vamos
+lá?", e cinco perguntas, uma por tela, tudo aproximado e pulável: banco do
+salário e saldo (+ outros bancos), quanto recebe e o dia, cartões e
+vencimento (fechamento = vencimento − 7, ajustável), "Quais contas você paga
+todo mês?" (valor, dia e "Como você paga?": Eu pago (PIX, boleto) · Débito
+automático · No cartão · Em dinheiro, + "Outra conta") e o dia a dia
+(chute, + "Outro gasto"), e compras parceladas. O resultado mostra a sobra
+(contas, dia a dia estimado, parcelas), quando as parcelas acabam, e pergunta
+"Quanto você quer guardar por mês?". Regras em
+[`primeiroAcesso.ts`](src/utils/primeiroAcesso.ts); `prova74` (32).
+
+- **Grava na hora:** contas (banco do salário preferido), cartões pagos por
+  ele, categorias sugeridas ligadas, forma de pagar e conta de débito das
+  marcadas, nome livre por `montarCategoria`, e a meta em `objetivos` do mês
+  atual a dezembro.
+- **Fica para o primeiro plano:** valores e dias vão em
+  `planos[ano].estimativas` (jsonb, sem migração). Nenhum valor no plano:
+  `fimDoPlanejamento` só olha `v > 0`, e o Modo Descoberta continua. A
+  proposta (`propostaDoMes`) usa o realizado e, onde a categoria não teve
+  lançamento, a estimativa ("sem lançamento, valor que você informou"). Ao
+  criar o plano, as contas marcadas viram FIXAS com o dia
+  (`fixasDoPrimeiroAcesso`), e a meta já definida é preservada (antes o
+  "Criar meu plano" apagava `objetivos`).
+- **Não viram fixas no primeiro dia de propósito:** fixa sem valor no plano
+  não aparece para pagar em Lançamentos nem no Lançar.
+- Parcelas em andamento ficam só em `estimativas.parcelas`, sem lançamento
+  (etapa 2 da jornada). 13º não é perguntado: não há lembrete que o use.
+- "Prefiro configurar tudo sozinho" leva a Configurações (`PrimeirosPassos`),
+  e quem já tem conta cadastrada também segue por lá
+  (`vaiParaPrimeiroAcesso`). Membro nunca vê.
+
 **O guia de boas-vindas (Onboarding) saiu em 12/10/2026.** Escolha do
 Guilherme: "quem quer arrumar suas finanças precisa saber usar as telas de
 configurações". Conta nova cai em Configurações com `PrimeirosPassos` no topo:

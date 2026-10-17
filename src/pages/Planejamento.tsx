@@ -12,6 +12,7 @@ import { jaViu, marcarVisto } from '../utils/vistoNaConta'
 import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
 import { medirDescoberta } from '../utils/descoberta'
 import { propostaDoMes } from '../utils/primeiroPlano'
+import { estimativasDosPlanos, fixasDoPrimeiroAcesso } from '../utils/primeiroAcesso'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanResumoAnual from '../components/planejamento/PlanResumoAnual'
 import PlanMobile from '../components/planejamento/PlanMobile'
@@ -62,7 +63,7 @@ export default function Planejamento() {
 
   const plan = usePlanejamento(anoAtual)
   const { planos, extratoData, contas, onboardingCompleto, user,
-    setPlanos, faturaData, setFaturaData, categorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+    setPlanos, faturaData, setFaturaData, categorias, setCategorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
 
   // Uma tela só (06/10/2026): a Grade. A planilha mora no modal que abre ao
   // clicar num mês (PlanModalMeses), e a Lista saiu. Link antigo com
@@ -222,8 +223,9 @@ export default function Planejamento() {
     return propostaDoMes({
       ano: descoberta.mesBase.ano, mes: descoberta.mesBase.mes,
       extratoData, faturaData, contas, categorias,
+      estimativas: estimativasDosPlanos(planos),
     })
-  }, [descoberta.ativa, descoberta.mesBase, extratoData, faturaData, contas, categorias])
+  }, [descoberta.ativa, descoberta.mesBase, extratoData, faturaData, contas, categorias, planos])
 
   const [verProposta, setVerProposta] = useState(false)
   const propostaAvaliada = useRef(false)
@@ -269,7 +271,11 @@ export default function Planejamento() {
             onCriar={p => {
               // O plano nasce no ano CORRENTE, não no ano do mês-base: um
               // plano é do ano que ele cobre, e a cobertura começa hoje.
-              setPlanos(prev => ({ ...prev, [anoCorrente]: p }))
+              // A meta já definida (primeiro acesso ou Planejamento) fica.
+              setPlanos(prev => ({ ...prev, [anoCorrente]: { ...prev[anoCorrente], ...p } }))
+              // As contas do mês do primeiro acesso viram fixas, com o dia.
+              const est = estimativasDosPlanos(planos)
+              if (est) setCategorias(prev => fixasDoPrimeiroAcesso(prev, est))
               fecharProposta()
               setAnoAtual(anoCorrente)
             }}

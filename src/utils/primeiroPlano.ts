@@ -1,6 +1,7 @@
 import type { Categoria, Conta, DadosMes, PlanoAnoData } from '../context/AppContext'
 import { construirRealizadoMes } from './realizadoMes'
 import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
+import type { EstimativasIniciais } from './primeiroAcesso'
 
 /**
  * O primeiro plano, montado a partir de um mês que já aconteceu.
@@ -32,6 +33,8 @@ export type LinhaProposta = {
   fixa: boolean
   /** Categoria de cartão: o plano guarda isso em `t`. */
   ehCartao: boolean
+  /** Sem lançamento no mês: o valor veio do primeiro acesso. */
+  estimado?: boolean
 }
 
 export type Proposta = {
@@ -50,10 +53,12 @@ type Params = {
   faturaData: Record<string, unknown>
   contas: Conta[]
   categorias: Categoria[]
+  /** As respostas do primeiro acesso (utils/primeiroAcesso), se houver. */
+  estimativas?: EstimativasIniciais
 }
 
 export function propostaDoMes({
-  ano, mes, extratoData, faturaData, contas, categorias,
+  ano, mes, extratoData, faturaData, contas, categorias, estimativas,
 }: Params): Proposta {
   // Sem plano nenhum — é essa a situação em que esta função existe —, então
   // planoAno vai indefinido de propósito.
@@ -69,11 +74,17 @@ export function propostaDoMes({
         // resolverRealKey é o mesmo casamento (nome, variante) que o Radar
         // usa; escrever outro aqui reabriria a divergência de sempre.
         const k = resolverRealKey(mapa, c.nome, c.descricao, categorias)
+        const real = k ? mapa[k].total : 0
+        // Onde o mês não teve lançamento, vale o que a pessoa contou no
+        // primeiro acesso: o aluguel não lançado não pode sumir do plano.
+        const est = estimativas?.porCategoria[c.id]
+        const estimado = real <= 0 && (est?.valor ?? 0) > 0
         return {
           id: c.id, nome: c.nome, descricao: c.descricao, grupo: c.grupo, tipo,
-          valor: k ? mapa[k].total : 0,
-          fixa: c.fixa,
+          valor: estimado ? est!.valor : real,
+          fixa: c.fixa || !!(est?.fixa && est.dia),
           ehCartao: c.tipoMovimento === 'cartao',
+          ...(estimado ? { estimado: true } : {}),
         }
       })
       // Categoria sem movimento no mês não entra: propor zero é ruído, e o

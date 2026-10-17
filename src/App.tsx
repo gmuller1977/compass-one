@@ -22,6 +22,9 @@ import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
 import Indicar             from './pages/Indicar'
+import PrimeiroAcesso      from './pages/PrimeiroAcesso'
+import { CHAVE_PRIMEIRO_ACESSO, vaiParaPrimeiroAcesso } from './utils/primeiroAcesso'
+import { jaViu } from './utils/vistoNaConta'
 import { guardarCodigoRecebido, registrarIndicacaoPendente } from './utils/indicacao'
 import AvisoInatividade from './components/AvisoInatividade'
 import IndicadorGravacao from './components/IndicadorGravacao'
@@ -92,12 +95,22 @@ function ReceberIndicacao() {
   return <Navigate to="/" replace />
 }
 
+/** Onde fica quem ainda não terminou o começo: o primeiro acesso ou Configurações. */
+function useInicioDoNovo() {
+  const { user, contas, compartilhamento } = useApp()
+  return vaiParaPrimeiroAcesso({
+    onboardingCompleto: false, temConta: contas.length > 0,
+    membro: compartilhamento.papel === 'membro', visto: jaViu(user, CHAVE_PRIMEIRO_ACESSO),
+  }) ? '/primeiro-acesso' : '/configuracoes'
+}
+
 function HomeRoute() {
   const { user, carregando, onboardingCompleto } = useApp()
   const isMobile = useIsMobile()
+  const inicioDoNovo = useInicioDoNovo()
   if (carregando) return <LoadingSpinner />
   if (!user) return <LandingPage />
-  if (!onboardingCompleto) return <Navigate to="/configuracoes" replace />
+  if (!onboardingCompleto) return <Navigate to={inicioDoNovo} replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
   return <AppShell><Bussola /></AppShell>
 }
@@ -122,16 +135,27 @@ function SoNoComputador({ children, senao }: { children: ReactNode; senao: strin
   return <Protegido>{children}</Protegido>
 }
 
+/** Sem AppShell: o primeiro acesso ocupa a tela inteira. Quem já terminou volta para a "/". */
+function RotaPrimeiroAcesso() {
+  const { user, carregando, onboardingCompleto } = useApp()
+  if (carregando) return <LoadingSpinner />
+  if (!user) return <Navigate to="/login" replace />
+  if (onboardingCompleto) return <Navigate to="/" replace />
+  return <PrimeiroAcesso />
+}
+
 function Protegido({ children }: { children: ReactNode }) {
   const { user, carregando, onboardingCompleto } = useApp()
   const location = useLocation()
+  const inicioDoNovo = useInicioDoNovo()
   if (carregando) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
-  // Conta nova fica em Configurações até cadastrar uma conta e ativar uma
-  // categoria (PrimeirosPassos). O guia de boas-vindas saiu em 12/10/2026.
+  // Conta nova começa pelo primeiro acesso (17/10/2026). Quem escolheu
+  // configurar sozinho, ou já tinha cadastrado uma conta, fica em
+  // Configurações até ter conta e categoria ativa (PrimeirosPassos).
   const bypass = ['/configuracoes', '/wizard-planejamento']
   if (!onboardingCompleto && !bypass.some(p => location.pathname.startsWith(p))) {
-    return <Navigate to="/configuracoes" replace />
+    return <Navigate to={inicioDoNovo} replace />
   }
   return <AppShell>{children}</AppShell>
 }
@@ -161,6 +185,7 @@ export default function App() {
           <Route path="/novo-lancamento"    element={<Protegido><NovoLancamento /></Protegido>} />
           <Route path="/configuracoes"      element={<Protegido><Configuracoes /></Protegido>} />
           <Route path="/onboarding"         element={<Navigate to="/" replace />} />
+          <Route path="/primeiro-acesso"    element={<RotaPrimeiroAcesso />} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
           <Route path="/resumo-mensal"      element={<Navigate to="/revisaomensal" replace />} />

@@ -72,7 +72,7 @@ export default function PrimeiroPlanoModal({
             {l.nome}{l.descricao ? ' · ' + l.descricao : ''}
           </div>
           <div style={{ fontSize: 10.5, color: COR.textoSuave }}>
-            {l.grupo ?? 'Outros'}{l.fixa ? ' · fixa' : ''}
+            {l.grupo ?? 'Outros'}{l.fixa ? ' · fixa' : ''}{l.estimado ? ' · sem lançamento, valor que você informou' : ''}
           </div>
         </div>
         <input
