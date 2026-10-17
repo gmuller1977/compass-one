@@ -555,7 +555,7 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
             </div>
           ))}
           <div style={{ fontSize: 14, lineHeight: 1.5, color: COR.textoSuave, padding: 12, borderRadius: 14, background: '#f8fafc' }}>
-            Com os <b style={{ color: COR.texto }}>seus</b> números, do jeito que eles são. Sem promessa e sem julgamento.
+            Estas são algumas das informações que você terá, <b style={{ color: COR.texto }}>e muito mais</b>.
           </div>
         </div>
 
