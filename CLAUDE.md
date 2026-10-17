@@ -2256,6 +2256,10 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   regra "fixa só conta quando confirmada". Financiamento e parcelas levam
   `ate` (último mês; no cartão, contado do mês em que a fatura vence), e
   `planoDaProposta` zera os meses depois dele.
+- **No computador, as perguntas ficam num celular desenhado** (moldura
+  `#0b1533`, rola por dentro, Continuar preso embaixo; pedido do Guilherme,
+  mesmo dia, sobre o protótipo). As boas-vindas seguem em duas colunas, sem
+  moldura. Bancos e cartões em duas colunas alinhadas à esquerda (`colunas`).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).
