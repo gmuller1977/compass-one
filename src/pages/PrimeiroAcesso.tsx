@@ -6,6 +6,7 @@ import { COR } from '../utils/cores'
 import { marcarVisto } from '../utils/vistoNaConta'
 import { primeiroMesCompleto } from '../utils/descoberta'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
+import { LogoCompass } from '../components/LogoCompass'
 import {
   CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, fechamentoDoVencimento,
   CHAVE_PRIMEIRO_ACESSO, type FormaDaConta, type Respostas,
@@ -128,19 +129,7 @@ export default function PrimeiroAcesso() {
 
   let titulo = '', sub = '', corpo: ReactNode = null, pe: ReactNode = null
 
-  if (passo === 0) {
-    titulo = nome ? `Que bom ter você aqui, ${nome}!` : 'Que bom ter você aqui!'
-    sub = 'Vamos olhar juntos para o seu dinheiro, sem planilha e sem complicação.'
-    corpo = (
-      <Cartao>
-        <p style={ola}><b style={{ color: COR.texto }}>Para te ajudar, preciso te conhecer um pouco melhor.</b> Vamos lá?</p>
-        <Ponto icone="ti-pencil">Pode ser tudo <b style={{ color: COR.texto }}>aproximado</b>. Dá para ajustar depois, quando quiser.</Ponto>
-        <Ponto icone="ti-calendar">Não sabe alguma resposta? <b style={{ color: COR.texto }}>Pule</b>. O app descobre com o tempo.</Ponto>
-        <Ponto icone="ti-lock">Nunca pedimos <b style={{ color: COR.texto }}>senha do banco</b>. Você conta só o que quiser.</Ponto>
-      </Cartao>
-    )
-    pe = <Pe rotulo="Vamos lá" onSeguir={seguir} pular="Prefiro configurar tudo sozinho" onPular={configurarSozinho} />
-  }
+  if (passo === 0) return <BoasVindas nome={nome} onSeguir={seguir} onSozinho={configurarSozinho} />
 
   if (passo === 1) {
     titulo = 'Em qual banco cai o seu salário?'
@@ -509,6 +498,95 @@ export default function PrimeiroAcesso() {
   )
 }
 
+// ── Boas-vindas ───────────────────────────────────────────────────────
+
+/**
+ * A primeira tela (17/10/2026, pedido do Guilherme: a versão em cartão
+ * "ficou fria, sem graça, sem emoção"). O azul ocupa a largura toda, a
+ * bússola gira devagar, e um EXEMPLO do que a pessoa vai ver todo dia (a
+ * frase da Bússola e a da Início) mostra o destino antes das perguntas.
+ * O exemplo diz que é exemplo: nenhum número dele é da pessoa.
+ */
+function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () => void; onSozinho: () => void }) {
+  return (
+    <div style={{ minHeight: '100dvh', background: '#f2f5fc', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        @keyframes pa-agulha { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(14deg) } }
+        @keyframes pa-sobe { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+        @keyframes pa-barra { from { width: 0 } to { width: 62% } }
+        .pa-agulha { animation: pa-agulha 4s ease-in-out infinite; transform-origin: center }
+        .pa-sobe { animation: pa-sobe .6s ease-out both }
+        .pa-barra { animation: pa-barra 1.4s .5s ease-out both }
+        @media (prefers-reduced-motion: reduce) { .pa-agulha, .pa-sobe, .pa-barra { animation: none } }
+      `}</style>
+      <div style={{ background: TOPO_AZUL, color: '#fff', position: 'relative', overflow: 'hidden', paddingBottom: 96 }}>
+        {/* luzes de fundo: só enfeite, atrás do texto */}
+        <span aria-hidden style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', top: -180, right: -120,
+          background: 'radial-gradient(circle, rgba(147,197,253,.22), transparent 65%)' }} />
+        <span aria-hidden style={{ position: 'absolute', width: 360, height: 360, borderRadius: '50%', bottom: -200, left: -140,
+          background: 'radial-gradient(circle, rgba(147,197,253,.16), transparent 65%)' }} />
+        <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto', padding: '28px 22px 0', textAlign: 'center' }}>
+          <div className="pa-sobe" style={{ width: 84, height: 84, borderRadius: 26, margin: '6px auto 0', background: 'rgba(255,255,255,.12)',
+            border: '1px solid rgba(255,255,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 12px 30px rgba(8,20,70,.35)' }}>
+            <span className="pa-agulha" style={{ display: 'flex' }}><LogoCompass size={48} /></span>
+          </div>
+          <h1 className="pa-sobe" style={{ fontSize: 30, lineHeight: 1.2, margin: '22px 0 0', letterSpacing: '-.4px', animationDelay: '.08s' }}>
+            {nome ? `Oi, ${nome}! 👋` : 'Oi! 👋'}<br />Que bom ter você aqui.
+          </h1>
+          <p className="pa-sobe" style={{ margin: '14px auto 0', maxWidth: 400, fontSize: 16, lineHeight: 1.55, color: 'rgba(255,255,255,.88)', animationDelay: '.16s' }}>
+            Imagina chegar no fim do mês sabendo <b style={{ color: '#fff' }}>para onde foi cada real</b> e quanto ainda
+            sobra. É isso que a gente vai construir, juntos.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ width: '100%', boxSizing: 'border-box', maxWidth: 480, margin: '-72px auto 0', padding: '0 16px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+        <div className="pa-sobe" style={{ background: '#fff', borderRadius: 24, padding: 18, boxShadow: '0 18px 40px rgba(15,40,120,.18)', animationDelay: '.26s' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>Assim vai ser o seu dia a dia</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', borderRadius: 999, padding: '3px 10px' }}>Exemplo</span>
+          </div>
+          <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 12 }}>Ainda dá para gastar</div>
+          <div style={{ fontSize: 34, fontWeight: 800, color: COR.sucessoTexto, letterSpacing: '-.5px', fontVariantNumeric: 'tabular-nums' }}>R$ 1.240</div>
+          <div style={{ fontSize: 13, color: COR.textoSuave }}>até o dia 31 · R$ 82 por dia</div>
+          <div style={{ height: 10, borderRadius: 6, background: '#e2e8f0', marginTop: 12, overflow: 'hidden' }}>
+            <div className="pa-barra" style={{ height: '100%', width: '62%', borderRadius: 6, background: BARRA.sobra }} />
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14, padding: 12, borderRadius: 14, background: '#f0fdf4' }}>
+            <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: BARRA.sobra, marginTop: 6, flexShrink: 0 }} />
+            <span style={{ fontSize: 14, lineHeight: 1.5, color: '#14532d', fontWeight: 600 }}>
+              Muito bem! Você vai terminar o mês com mais dinheiro do que começou.
+            </span>
+          </div>
+        </div>
+
+        <div className="pa-sobe" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, animationDelay: '.36s' }}>
+          {[
+            { icone: 'ti-pencil', t: 'Tudo aproximado' },
+            { icone: 'ti-player-skip-forward', t: 'Não sabe? Pule' },
+            { icone: 'ti-lock', t: 'Sem senha do banco' },
+          ].map(x => (
+            <div key={x.t} style={{ background: '#fff', borderRadius: 16, padding: '12px 8px', textAlign: 'center',
+              boxShadow: '0 4px 14px rgba(30,64,175,.07)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 36, height: 36, borderRadius: '50%', background: BOLINHA_AZUL, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className={`ti ${x.icone}`} aria-hidden style={{ fontSize: 18 }} /></span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: COR.texto, lineHeight: 1.3 }}>{x.t}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="pa-sobe" style={{ ...ola, textAlign: 'center', fontSize: 16, animationDelay: '.44s' }}>
+          <b style={{ color: COR.texto }}>Para te ajudar, preciso te conhecer um pouco melhor.</b><br />Vamos lá?
+        </p>
+        <div style={{ marginTop: 'auto', padding: '4px 0 26px' }}>
+          <Pe rotulo="Vamos lá" onSeguir={onSeguir} pular="Prefiro configurar tudo sozinho" onPular={onSozinho} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Peças ─────────────────────────────────────────────────────────────
 
 const ola: CSSProperties = { fontSize: 15, lineHeight: 1.6, color: COR.textoSuave, margin: 0 }
@@ -538,16 +616,6 @@ function Dica({ children }: { children: ReactNode }) {
   return (
     <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
       <i className="ti ti-info-circle" aria-hidden style={{ fontSize: 16, color: '#1a56db', marginTop: 1 }} /><span>{children}</span>
-    </div>
-  )
-}
-
-function Ponto({ icone, children }: { icone: string; children: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: '#eff6ff', color: '#1e40af',
-        display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className={`ti ${icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
-      <p style={ola}>{children}</p>
     </div>
   )
 }
