@@ -2221,12 +2221,14 @@ voltavam se ninguém marcasse "não mostrar novamente".
 **Conta nova começa pelo PRIMEIRO ACESSO** (`/primeiro-acesso`, 17/10/2026,
 protótipo aprovado pelo Guilherme: "melhorou bastante, pode publicar"). Tela
 cheia, sem menu: "Para te ajudar, preciso te conhecer um pouco melhor. Vamos
-lá?", e cinco perguntas, uma por tela, tudo aproximado e pulável: banco do
-salário e saldo (+ outros bancos), quanto recebe e o dia, cartões e
+lá?", e seis perguntas, uma por tela, tudo aproximado e pulável: banco do
+salário e saldo (+ outros bancos), quanto recebe, o dia e se recebe 13º, cartões e
 vencimento (fechamento = vencimento − 7, ajustável), "Quais contas você paga
 todo mês?" (valor, dia e "Como você paga?": Eu pago (PIX, boleto) · Débito
-automático · No cartão · Em dinheiro, + "Outra conta") e o dia a dia
-(chute, + "Outro gasto"), e compras parceladas. O resultado mostra a sobra
+automático · No cartão · Em dinheiro, + "Outra conta"), o dia a dia num
+passo próprio (chute, + "Outro gasto"), e quanto falta: o financiamento
+marcado nas contas (casa ou carro) aparece pronto, pedindo só quantas
+parcelas faltam, e as compras parceladas. O resultado mostra a sobra
 (contas, dia a dia estimado, parcelas), quando as parcelas acabam, e pergunta
 "Quanto você quer guardar por mês?". Regras em
 [`primeiroAcesso.ts`](src/utils/primeiroAcesso.ts); `prova74` (32).
@@ -2245,8 +2247,12 @@ automático · No cartão · Em dinheiro, + "Outra conta") e o dia a dia
   "Criar meu plano" apagava `objetivos`).
 - **Não viram fixas no primeiro dia de propósito:** fixa sem valor no plano
   não aparece para pagar em Lançamentos nem no Lançar.
-- Parcelas em andamento ficam só em `estimativas.parcelas`, sem lançamento
-  (etapa 2 da jornada). 13º não é perguntado: não há lembrete que o use.
+- Parcelas em andamento ficam só em `estimativas.parcelas` (o financiamento
+  com `contaDoMes`, sem somar de novo), sem lançamento (etapa 2 da jornada).
+- **13º** (pedido do Guilherme no mesmo dia): categoria "13º salário"
+  (receita, Renda), estimada pelo salário líquido, metade em novembro e
+  metade em dezembro, e só lá (`valoresDoDecimo`). A proposta tira o 13º das
+  linhas do mês (senão viraria doze 13º) e o põe à parte no plano.
 - "Prefiro configurar tudo sozinho" leva a Configurações (`PrimeirosPassos`),
   e quem já tem conta cadastrada também segue por lá
   (`vaiParaPrimeiroAcesso`). Membro nunca vê.

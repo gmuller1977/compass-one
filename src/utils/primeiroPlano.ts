@@ -1,7 +1,7 @@
 import type { Categoria, Conta, DadosMes, PlanoAnoData } from '../context/AppContext'
 import { construirRealizadoMes } from './realizadoMes'
 import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
-import type { EstimativasIniciais } from './primeiroAcesso'
+import { NOME_DECIMO, valoresDoDecimo, type EstimativasIniciais } from './primeiroAcesso'
 
 /**
  * O primeiro plano, montado a partir de um mês que já aconteceu.
@@ -44,6 +44,8 @@ export type Proposta = {
   saidas: LinhaProposta[]
   totalEntradas: number
   totalSaidas: number
+  /** O 13º do primeiro acesso: entra só em novembro e dezembro, fora dos totais do mês. */
+  decimo?: { id: string; nome: string; grupo?: string; valor: number }
 }
 
 type Params = {
@@ -69,7 +71,9 @@ export function propostaDoMes({
   const linhas = (tipo: 'entrada' | 'saida'): LinhaProposta[] => {
     const mapa = tipo === 'entrada' ? entradasMap : saidasMap
     return categorias
-      .filter(c => c.ativa && c.tipo === tipo)
+      // O 13º não é do mês: repetir o recebido em todos os meses inventaria
+      // doze 13º. Ele entra à parte, em novembro e dezembro.
+      .filter(c => c.ativa && c.tipo === tipo && c.nome !== NOME_DECIMO)
       .map(c => {
         // resolverRealKey é o mesmo casamento (nome, variante) que o Radar
         // usa; escrever outro aqui reabriria a divergência de sempre.
@@ -96,8 +100,13 @@ export function propostaDoMes({
   const entradas = linhas('entrada')
   const saidas = linhas('saida')
 
+  const catDecimo = estimativas?.decimo && categorias.find(c => c.id === estimativas.decimo!.categoriaId && c.ativa)
+  const decimo = catDecimo && estimativas!.decimo!.valor > 0
+    ? { id: catDecimo.id, nome: catDecimo.nome, grupo: catDecimo.grupo, valor: estimativas!.decimo!.valor }
+    : undefined
+
   return {
-    ano, mes, entradas, saidas,
+    ano, mes, entradas, saidas, ...(decimo ? { decimo } : {}),
     totalEntradas: entradas.reduce((s, l) => s + l.valor, 0),
     totalSaidas: saidas.reduce((s, l) => s + l.valor, 0),
   }
@@ -133,7 +142,12 @@ export function planoDaProposta(
 
   return {
     saldoInicialJan: 0,
-    entradas: p.entradas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha),
+    entradas: [
+      ...p.entradas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha),
+      ...(p.decimo && valoresDoDecimo(p.decimo.valor, mesInicio).some(v => v > 0)
+        ? [{ id: p.decimo.id, nome: p.decimo.nome, grupo: p.decimo.grupo, v: valoresDoDecimo(p.decimo.valor, mesInicio) }]
+        : []),
+    ],
     saidas: p.saidas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha),
   }
 }

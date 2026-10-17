@@ -149,6 +149,14 @@ export default function PrimeiroPlanoModal({
             {bloco('Receitas', proposta.entradas, totalE, '#15803d')}
             {bloco('Despesas', proposta.saidas, totalS, '#b91c1c')}
 
+            {proposta.decimo && mesInicio <= 11 && (
+              <p style={{ fontSize: 12.5, color: COR.textoSuave, lineHeight: 1.5, margin: '14px 0 0' }}>
+                <b style={{ color: COR.texto }}>{proposta.decimo.nome}:</b> entra à parte, em{' '}
+                {mesInicio <= 10 ? `novembro e dezembro, ${fmt(proposta.decimo.valor / 2)} em cada` : `dezembro, ${fmt(proposta.decimo.valor / 2)}`},
+                calculado pelo salário que você informou.
+              </p>
+            )}
+
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
               marginTop: 16, padding: '12px 14px', borderRadius: 10,

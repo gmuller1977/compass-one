@@ -4,7 +4,7 @@ import { montarCategoria } from './novaCategoria'
 import { buscarCategoria } from './categoriaIcone'
 
 /**
- * O primeiro acesso de uma conta nova: cinco perguntas e um resultado.
+ * O primeiro acesso de uma conta nova: seis perguntas e um resultado.
  * Pedido do Guilherme em 17/10/2026, sobre protótipo aprovado ("melhorou
  * bastante, pode publicar"): quem chegava caía em Configurações, num
  * formulário, e a primeira impressão era de trabalho, não de ajuda.
@@ -39,6 +39,24 @@ export function vaiParaPrimeiroAcesso(a: { onboardingCompleto: boolean; temConta
   return !a.onboardingCompleto && !a.temConta && !a.membro && !a.visto
 }
 
+/**
+ * O 13º (pedido do Guilherme em 17/10/2026): categoria própria de receita,
+ * calculada pelo salário líquido informado, metade em novembro e metade em
+ * dezembro. É aproximado: a 1ª parcela é metade do BRUTO e a 2ª desconta
+ * INSS e IR do ano todo, então somadas dão perto de um salário líquido.
+ * Entra no plano só nesses dois meses (`planoDaProposta`), nunca repetido.
+ */
+export const NOME_DECIMO = '13º salário'
+const DECIMO_NOVO: Omit<Categoria, 'id'> = {
+  nome: NOME_DECIMO, tipo: 'entrada', icone: '🎉', grupo: 'Renda',
+  fixa: false, tipoMovimento: 'banco', formaPagamento: 'pix', cor: '#6b7280', ativa: true,
+}
+
+/** Metade em novembro, metade em dezembro, só nos meses do plano. */
+export function valoresDoDecimo(valor: number, mesInicio: number): number[] {
+  return Array.from({ length: 12 }, (_, i) => ((i === 10 || i === 11) && i >= mesInicio ? Math.round(valor * 50) / 100 : 0))
+}
+
 export type FormaDaConta = 'automatico' | 'manual' | 'cartao' | 'dinheiro'
 
 export type ItemPrimeiroAcesso = {
@@ -47,12 +65,15 @@ export type ItemPrimeiroAcesso = {
   categoria: string
   rotulo: string
   icone: string
+  /** Tem fim: a tela de parcelas pergunta quantas faltam, sem pedir o valor de novo. */
+  financiamento?: boolean
 }
 
 /** Contas do mês. "Financiamento do carro" não é categoria padrão: é criada se marcada. */
 export const CONTAS_DO_MES: ItemPrimeiroAcesso[] = [
-  { id: 'casa',      categoria: 'Aluguel / Financiamento', rotulo: 'Aluguel ou financiamento da casa', icone: 'ti-home' },
-  { id: 'carro',     categoria: 'Financiamento do carro',  rotulo: 'Financiamento do carro',           icone: 'ti-car' },
+  { id: 'aluguel',   categoria: 'Aluguel / Financiamento', rotulo: 'Aluguel',                          icone: 'ti-home' },
+  { id: 'casa',      categoria: 'Aluguel / Financiamento', rotulo: 'Financiamento da casa',            icone: 'ti-building-bank', financiamento: true },
+  { id: 'carro',     categoria: 'Financiamento do carro',  rotulo: 'Financiamento do carro',           icone: 'ti-car', financiamento: true },
   { id: 'luz',       categoria: 'Energia Elétrica',        rotulo: 'Luz',                              icone: 'ti-bolt' },
   { id: 'agua',      categoria: 'Água / Saneamento',       rotulo: 'Água',                             icone: 'ti-droplet' },
   { id: 'internet',  categoria: 'Internet / Celular',      rotulo: 'Internet e celular',               icone: 'ti-wifi' },
@@ -83,6 +104,8 @@ export type Respostas = {
   renda: number
   /** Dia em que o salário cai; 0 = não informado. */
   diaRenda: number
+  /** Recebe 13º salário. */
+  decimo: boolean
   usaCartao: boolean
   cartao: string
   vencimento: number
@@ -90,7 +113,7 @@ export type Respostas = {
   outrosBancos: { banco: string; saldo: number }[]
   /** Outros cartões além do primeiro. */
   outrosCartoes: { cartao: string; vencimento: number }[]
-  contas: Record<string, { valor: number; dia: number; forma: FormaDaConta }>
+  contas: Record<string, { valor: number; dia: number; forma: FormaDaConta; faltam?: number }>
   /** Contas do mês fora da lista, pelo nome que a pessoa deu. */
   outrasContas: { nome: string; valor: number; dia: number; forma: FormaDaConta }[]
   diaADia: Record<string, number>
@@ -104,18 +127,30 @@ export type Respostas = {
 export type EstimativasIniciais = {
   /** Por id de categoria. */
   porCategoria: Record<string, { valor: number; dia?: number; fixa?: boolean }>
-  parcelas?: { nome: string; valor: number; faltam: number; desde: string }[]
+  /** O 13º estimado (o salário líquido) e a categoria dele. */
+  decimo?: { categoriaId: string; valor: number }
+  /** `contaDoMes`: um financiamento já somado nas contas do mês, só com o fim. */
+  parcelas?: { nome: string; valor: number; faltam: number; desde: string; contaDoMes?: boolean }[]
 }
 
-export type Resumo = { renda: number; contas: number; diaADia: number; parcelas: number; sobra: number; mesesDeParcela: number }
+/** `liberado`: quanto deixa de sair quando a última parcela (ou financiamento) acabar. */
+export type Resumo = { renda: number; contas: number; diaADia: number; parcelas: number; sobra: number; mesesDeParcela: number; liberado: number }
+
+/** Os financiamentos marcados nas contas do mês, com quantas parcelas faltam. */
+export function financiamentosComFim(r: Respostas) {
+  return CONTAS_DO_MES.filter(i => i.financiamento && r.contas[i.id] && r.contas[i.id].valor > 0 && (r.contas[i.id].faltam ?? 0) > 0)
+    .map(i => ({ nome: i.rotulo, valor: r.contas[i.id].valor, faltam: r.contas[i.id].faltam! }))
+}
 
 export function resumoDasRespostas(r: Respostas): Resumo {
   const contas = Object.values(r.contas).reduce((s, c) => s + c.valor, 0) + r.outrasContas.filter(c => c.nome.trim()).reduce((s, c) => s + c.valor, 0)
   const diaADia = Object.values(r.diaADia).reduce((s, v) => s + v, 0) + r.outrosGastos.filter(c => c.nome.trim()).reduce((s, c) => s + c.valor, 0)
   const parcs = r.parcelas.filter(p => p.valor > 0)
   const parcelas = parcs.reduce((s, p) => s + p.valor, 0)
-  const mesesDeParcela = parcs.length ? Math.max(...parcs.map(p => Math.max(1, Math.round(p.faltam) || 1))) : 0
-  return { renda: r.renda, contas, diaADia, parcelas, sobra: r.renda - contas - diaADia - parcelas, mesesDeParcela }
+  const comFim = [...parcs, ...financiamentosComFim(r)]
+  const mesesDeParcela = comFim.length ? Math.max(...comFim.map(p => Math.max(1, Math.round(p.faltam) || 1))) : 0
+  const liberado = comFim.reduce((s, p) => s + p.valor, 0)
+  return { renda: r.renda, contas, diaADia, parcelas, sobra: r.renda - contas - diaADia - parcelas, mesesDeParcela, liberado }
 }
 
 /** Fecha uns 7 dias antes de vencer, o comum no Brasil. Ajustável em Configurações. */
@@ -186,13 +221,14 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   const achar = (nome: string, tipo: 'entrada' | 'saida') =>
     cats.find(c => c.nome === nome && c.tipo === tipo && !c.descricao)
 
+  let decimo: EstimativasIniciais['decimo']
   const garantir = (nome: string, tipo: 'entrada' | 'saida'): Categoria => {
     const ja = achar(nome, tipo)
     if (ja) {
       if (!ja.ativa) cats = cats.map(c => (c.id === ja.id ? { ...c, ativa: true } : c))
       return { ...ja, ativa: true }
     }
-    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
+    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
     const nova: Categoria = padrao
       ? { ...padrao, ativa: true, id: gerarId() }
       : { nome, tipo, icone: '📌', grupo: 'Outros', fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true, id: gerarId() }
@@ -223,6 +259,11 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   if (r.renda > 0) {
     const sal = garantir('Salário', 'entrada')
     if (r.banco) cats = cats.map(c => (c.id === sal.id ? { ...c, tipoMovimento: 'banco', formaPagamento: 'pix', contaDebitoId: idBanco } : c))
+    if (r.decimo) {
+      const dec = garantir(NOME_DECIMO, 'entrada')
+      if (r.banco) cats = cats.map(c => (c.id === dec.id ? { ...c, contaDebitoId: idBanco } : c))
+      decimo = { categoriaId: dec.id, valor: r.renda }
+    }
     porCategoria[sal.id] = { valor: r.renda, dia: r.diaRenda || undefined, fixa: !!r.diaRenda }
   }
   for (const item of CONTAS_DO_MES) {
@@ -256,14 +297,17 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   const ano = hoje.getFullYear()
   const mes = hoje.getMonth()
   const desde = `${ano}-${String(mes + 1).padStart(2, '0')}`
-  const parcelas = r.parcelas.filter(p => p.valor > 0).map(p => ({ ...p, desde }))
+  const parcelas = [
+    ...financiamentosComFim(r).map(f => ({ ...f, desde, contaDoMes: true })),
+    ...r.parcelas.filter(p => p.valor > 0).map(p => ({ ...p, desde })),
+  ]
 
   const base: PlanoAnoData = planoDoAno ?? { saldoInicialJan: 0, entradas: [], saidas: [] }
   const objetivos = Array.from({ length: 12 }, (_, i) => (r.meta > 0 && i >= mes ? r.meta : base.objetivos?.[i] ?? 0))
   const plano: PlanoAnoData = {
     ...base,
     objetivos,
-    estimativas: { porCategoria, ...(parcelas.length ? { parcelas } : {}) },
+    estimativas: { porCategoria, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}) },
   }
 
   return { contas: contasFinal, categorias: cats, plano }

@@ -6,13 +6,13 @@ import { COR } from '../utils/cores'
 import { marcarVisto } from '../utils/vistoNaConta'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import {
-  CONTAS_DO_MES, DIA_A_DIA, aplicarRespostas, resumoDasRespostas, fechamentoDoVencimento,
+  CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, fechamentoDoVencimento,
   CHAVE_PRIMEIRO_ACESSO, type FormaDaConta, type Respostas,
 } from '../utils/primeiroAcesso'
 
 /**
  * O primeiro acesso de uma conta nova (17/10/2026, protótipo aprovado pelo
- * Guilherme). Cinco perguntas, uma por tela, sobre o que a pessoa sabe de
+ * Guilherme). Seis perguntas, uma por tela, sobre o que a pessoa sabe de
  * cabeça, e um resultado que já mostra o mês dela. Tudo aproximado e tudo
  * pulável. O que cada resposta vira está em utils/primeiroAcesso.
  *
@@ -21,7 +21,7 @@ import {
 
 const BANCOS = ['Nubank', 'Itaú', 'Bradesco', 'Caixa', 'Banco do Brasil', 'Santander', 'Inter', 'C6 Bank', 'Sicredi', 'Outro']
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
-const TOTAL = 5
+const TOTAL = 6
 
 const FORMAS: { id: FormaDaConta; rotulo: string }[] = [
   { id: 'manual', rotulo: 'Eu pago (PIX, boleto)' },
@@ -37,11 +37,11 @@ const BARRA = { contas: '#1e40af', dia: '#b45309', parcelas: '#3b82f6', sobra: '
 
 type Estado = {
   banco: string; bancoOutro: string; saldo: string
-  renda: string; diaRenda: number
+  renda: string; diaRenda: number; decimo: '' | 'sim' | 'nao'
   usaCartao: '' | 'sim' | 'nao'; cartao: string; venc: number
   outrosBancos: { banco: string; saldo: string }[]
   outrosCartoes: { cartao: string; venc: number }[]
-  contas: Record<string, { valor: string; dia: string; forma: FormaDaConta }>
+  contas: Record<string, { valor: string; dia: string; forma: FormaDaConta; faltam?: string }>
   outrasContas: { nome: string; valor: string; dia: string; forma: FormaDaConta }[]
   diaADia: Record<string, string>
   outrosGastos: { nome: string; valor: string }[]
@@ -50,7 +50,7 @@ type Estado = {
 }
 
 const INICIAL: Estado = {
-  banco: '', bancoOutro: '', saldo: '', renda: '', diaRenda: 0, usaCartao: '', cartao: '', venc: 0,
+  banco: '', bancoOutro: '', saldo: '', renda: '', diaRenda: 0, decimo: '', usaCartao: '', cartao: '', venc: 0,
   outrosBancos: [], outrosCartoes: [], contas: {}, outrasContas: [], diaADia: {}, outrosGastos: [], parcelas: [], meta: '',
 }
 
@@ -73,6 +73,7 @@ export default function PrimeiroAcesso() {
     saldo: parseBRL(e.saldo),
     renda: parseBRL(e.renda),
     diaRenda: e.diaRenda,
+    decimo: e.decimo === 'sim',
     usaCartao: e.usaCartao === 'sim',
     cartao: e.cartao,
     vencimento: e.venc,
@@ -81,7 +82,7 @@ export default function PrimeiroAcesso() {
     outrasContas: e.outrasContas.map(c => ({ nome: c.nome, valor: parseBRL(c.valor), dia: Math.min(31, parseInt(c.dia) || 0), forma: c.forma })),
     outrosGastos: e.outrosGastos.map(g => ({ nome: g.nome, valor: parseBRL(g.valor) })),
     contas: Object.fromEntries(Object.entries(e.contas).map(([id, c]) => [id, {
-      valor: parseBRL(c.valor), dia: Math.min(31, Math.max(0, parseInt(c.dia) || 0)), forma: c.forma,
+      valor: parseBRL(c.valor), dia: Math.min(31, Math.max(0, parseInt(c.dia) || 0)), forma: c.forma, faltam: parseInt(c.faltam ?? '') || 0,
     }])),
     diaADia: Object.fromEntries(Object.entries(e.diaADia).map(([id, v]) => [id, parseBRL(v)])),
     parcelas: e.parcelas.map(p => ({ nome: p.nome.trim() || 'Compra parcelada', valor: parseBRL(p.valor), faltam: parseInt(p.faltam) || 1 })),
@@ -166,6 +167,12 @@ export default function PrimeiroAcesso() {
         <Rotulo>Em que dia costuma cair?</Rotulo>
         <Chips lista={[1, 5, 10, 15, 20, 25, 30].map(d => `Dia ${d}`)} valor={e.diaRenda ? `Dia ${e.diaRenda}` : ''}
           onEscolher={v => set('diaRenda', parseInt(v.slice(4)))} />
+        <Rotulo>Você recebe 13º salário?</Rotulo>
+        <Chips lista={['Sim', 'Não']} valor={e.decimo === 'sim' ? 'Sim' : e.decimo === 'nao' ? 'Não' : ''}
+          onEscolher={v => set('decimo', v === 'Sim' ? 'sim' : 'nao')} />
+        {e.decimo === 'sim' && respostas.renda > 0 && (
+          <Dica>Ótimo. Ele entra no seu plano: cerca de {R(respostas.renda / 2)} em novembro e {R(respostas.renda / 2)} em dezembro, calculado pelo seu salário.</Dica>
+        )}
       </Cartao>
     )
     pe = <Pe rotulo="Continuar" onSeguir={seguir} desabilitado={!(respostas.renda > 0)} pular="Prefiro não dizer agora" onPular={() => { set('renda', ''); seguir() }} />
@@ -258,9 +265,15 @@ export default function PrimeiroAcesso() {
         <Adicionar onClick={() => set('outrasContas', [...e.outrasContas, { nome: '', valor: '', dia: '', forma: 'manual' }])}>Outra conta</Adicionar>
         <Dica>Só as que você lembra. As outras aparecem quando você anotar os gastos.</Dica>
       </Cartao>
+    </>)
+    pe = <Pe rotulo="Continuar" onSeguir={seguir} />
+  }
+
+  if (passo === 5) {
+    titulo = 'E no dia a dia, quanto vai por mês?'
+    sub = 'Agora os gastos que mudam todo mês. Não precisa saber certinho: um chute já ajuda.'
+    corpo = (<>
       <Cartao>
-        <Rotulo>E no dia a dia, quanto vai por mês?</Rotulo>
-        <p style={ola}>Mercado, combustível, farmácia... Não precisa saber certinho: um chute já ajuda.</p>
         {DIA_A_DIA.map(item => {
           const v = e.diaADia[item.id]
           const on = v !== undefined
@@ -291,13 +304,38 @@ export default function PrimeiroAcesso() {
     pe = <Pe rotulo="Continuar" onSeguir={seguir} />
   }
 
-  if (passo === 5) {
-    titulo = 'Tem compras parceladas ainda sendo pagas?'
-    sub = 'Muita gente tem, é super comum. Anotar aqui mostra quando cada uma termina.'
+  if (passo === 6) {
     const mudar = (i: number, k: 'nome' | 'valor' | 'faltam', x: string) =>
       setE(p => ({ ...p, parcelas: p.parcelas.map((q, j) => (j === i ? { ...q, [k]: k === 'faltam' ? x.replace(/\D/g, '').slice(0, 3) : x } : q)) }))
+    const financiamentos = CONTAS_DO_MES.filter(i => i.financiamento && e.contas[i.id])
+    titulo = financiamentos.length ? 'Quanto falta para terminar de pagar?' : 'Tem compras parceladas ainda sendo pagas?'
+    sub = financiamentos.length
+      ? 'Do financiamento e das compras parceladas. Assim a gente mostra quando o dinheiro volta a sobrar.'
+      : 'Muita gente tem, é super comum. Anotar aqui mostra quando cada uma termina.'
     corpo = (
       <Cartao>
+        {financiamentos.map(item => {
+          const c = e.contas[item.id]
+          return (
+            <div key={item.id} style={{ border: '1.5px solid #93c5fd', background: '#f8fbff', borderRadius: 16, padding: 12, display: 'grid', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: BOLINHA_AZUL, color: '#fff' }}><i className={`ti ${item.icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{item.rotulo}</div>
+                  <div style={{ fontSize: 13, color: COR.textoSuave }}>
+                    {parseBRL(c.valor) > 0 ? `${R(parseBRL(c.valor))} por mês, já nas suas contas do mês` : 'Já está nas suas contas do mês'}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 92px', gap: 8, alignItems: 'end' }}>
+                <Mini>Quantas parcelas ainda faltam?</Mini>
+                <Campo valor={c.faltam ?? ''} placeholder="24" pequeno numerico
+                  onMudar={x => setE(p => ({ ...p, contas: { ...p.contas, [item.id]: { ...p.contas[item.id], faltam: x.replace(/\D/g, '').slice(0, 3) } } }))} />
+              </div>
+            </div>
+          )
+        })}
         {e.parcelas.map((p, i) => (
           <div key={i} style={{ border: `1.5px solid ${COR.borda}`, borderRadius: 16, padding: 12, display: 'grid', gap: 8 }}>
             <input value={p.nome} onChange={ev => mudar(i, 'nome', ev.target.value)} placeholder="O que foi? Ex.: Geladeira"
@@ -316,10 +354,10 @@ export default function PrimeiroAcesso() {
         <Dica>Não precisa ser exato. "Faltam" é quantas parcelas ainda vão vir, contando a deste mês.</Dica>
       </Cartao>
     )
-    pe = <Pe rotulo={e.parcelas.length ? 'Ver o resultado' : 'Não tenho, ver o resultado'} onSeguir={seguir} />
+    pe = <Pe rotulo={e.parcelas.length || financiamentos.length ? 'Ver o resultado' : 'Não tenho, ver o resultado'} onSeguir={seguir} />
   }
 
-  if (passo === 6) {
+  if (passo === 7) {
     const s = resumoDasRespostas(respostas)
     const hoje = new Date()
     const semRenda = s.renda <= 0
@@ -371,7 +409,7 @@ export default function PrimeiroAcesso() {
         {s.mesesDeParcela > 0 && (
           <div style={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 700, color: COR.sucessoTexto, background: '#f0fdf4',
             padding: '6px 11px', borderRadius: 12, lineHeight: 1.4 }}>
-            Suas parcelas terminam em {mesFim}. Depois disso, sobram mais {R(s.parcelas)} por mês.
+            {(n => (n === 0 ? 'Suas parcelas terminam' : `${n === 1 ? 'Seu financiamento' : 'Seus financiamentos'}${s.parcelas > 0 ? ' e as parcelas terminam' : n === 1 ? ' termina' : ' terminam'}`))(financiamentosComFim(respostas).length)} em {mesFim}. Depois disso, sobram mais {R(s.liberado)} por mês.
           </div>
         )}
       </Cartao>
