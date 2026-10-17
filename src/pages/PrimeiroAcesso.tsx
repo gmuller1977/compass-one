@@ -73,9 +73,11 @@ export default function PrimeiroAcesso() {
     window.scrollTo(0, 0)
   }, [passo])
 
-  const banco = e.banco === 'Outro' ? e.bancoOutro.trim() : e.banco
+  // "Outro" é marcador na lista: o nome digitado mora em `bancoOutro`.
+  const nomeDoBanco = (b: string) => (b === 'Outro' ? e.bancoOutro.trim() : b)
+  const banco = nomeDoBanco(e.banco)
   // Com mais de um banco ou cartão, cada conta e parcela diz de qual sai.
-  const nomesBancos = [banco, ...e.outrosBancos.map(b => b.banco)].filter((b, i, a) => b && a.indexOf(b) === i)
+  const nomesBancos = [banco, ...e.outrosBancos.map(b => nomeDoBanco(b.banco))].filter((b, i, a) => b && a.indexOf(b) === i)
   const nomesCartoes = e.usaCartao === 'sim'
     ? [e.venc ? e.cartao : '', ...e.outrosCartoes.filter(c => c.venc).map(c => c.cartao)].filter((c, i, a) => c && a.indexOf(c) === i)
     : []
@@ -88,7 +90,7 @@ export default function PrimeiroAcesso() {
     usaCartao: e.usaCartao === 'sim',
     cartao: e.cartao,
     vencimento: e.venc,
-    outrosBancos: e.outrosBancos.map(b => ({ banco: b.banco, saldo: parseBRL(b.saldo) })),
+    outrosBancos: e.outrosBancos.map(b => ({ banco: nomeDoBanco(b.banco), saldo: parseBRL(b.saldo) })).filter(b => b.banco),
     outrosCartoes: e.outrosCartoes.map(c => ({ cartao: c.cartao, vencimento: c.venc })),
     outrasContas: e.outrasContas.map(c => ({ nome: c.nome, valor: parseBRL(c.valor), dia: Math.min(31, parseInt(c.dia) || 0), forma: c.forma, banco: c.banco })),
     outrosGastos: e.outrosGastos.map(g => ({ nome: g.nome, valor: parseBRL(g.valor) })),
@@ -136,35 +138,40 @@ export default function PrimeiroAcesso() {
   if (passo === 0) return <BoasVindas nome={nome} onSeguir={seguir} onSozinho={configurarSozinho} />
 
   if (passo === 1) {
-    titulo = 'Em qual banco cai o seu salário?'
-    sub = 'É por ele que a gente começa.'
+    // Uma lista só: tocar no banco marca e abre o saldo AO LADO (pedido do
+    // Guilherme, 17/10/2026). O primeiro marcado é o do salário; dá para trocar.
+    const marcado = (b: string) => b === e.banco || e.outrosBancos.some(o => o.banco === b)
+    const saldoDe = (b: string) => (b === e.banco ? e.saldo : e.outrosBancos.find(o => o.banco === b)?.saldo ?? '')
+    const alternar = (b: string) => setE(p => {
+      if (b === p.banco) {
+        const [prox, ...resto] = p.outrosBancos
+        return { ...p, banco: prox?.banco ?? '', saldo: prox?.saldo ?? '', outrosBancos: resto }
+      }
+      if (p.outrosBancos.some(o => o.banco === b)) return { ...p, outrosBancos: p.outrosBancos.filter(o => o.banco !== b) }
+      if (!p.banco) return { ...p, banco: b, saldo: '' }
+      return { ...p, outrosBancos: [...p.outrosBancos, { banco: b, saldo: '' }] }
+    })
+    const mudarSaldo = (b: string, v: string) => setE(p => (b === p.banco ? { ...p, saldo: v }
+      : { ...p, outrosBancos: p.outrosBancos.map(o => (o.banco === b ? { ...o, saldo: v } : o)) }))
+    const doSalario = (b: string) => setE(p => ({
+      ...p, banco: b, saldo: saldoDe(b),
+      outrosBancos: [{ banco: p.banco, saldo: p.saldo }, ...p.outrosBancos.filter(o => o.banco !== b)],
+    }))
+    const varios = [e.banco, ...e.outrosBancos.map(o => o.banco)].filter(Boolean).length > 1
+    titulo = 'Quais bancos você usa?'
+    sub = 'Toque em cada um e diga quanto tem lá hoje, mais ou menos. O primeiro é o do salário.'
     corpo = (<>
-      <Cartao><Chips colunas lista={BANCOS} valor={e.banco} onEscolher={v => set('banco', v)} /></Cartao>
-      {e.banco && (
-        <Cartao>
-          {e.banco === 'Outro' && (<>
-            <Rotulo>Qual banco?</Rotulo>
-            <Campo valor={e.bancoOutro} onMudar={v => set('bancoOutro', v)} placeholder="Nome do banco" texto />
-          </>)}
-          <Rotulo>Quanto tem lá hoje, mais ou menos?</Rotulo>
-          <Campo valor={e.saldo} onMudar={v => set('saldo', v)} placeholder="0" />
-          <Dica>Um valor redondo já serve. Se não lembrar, deixe em branco.</Dica>
-        </Cartao>
-      )}
-      {banco && (
-        <Cartao>
-          <Rotulo>Tem dinheiro em outro banco também?</Rotulo>
-          {e.outrosBancos.map((b, i) => (
-            <Bloco key={i} onRemover={() => set('outrosBancos', e.outrosBancos.filter((_, j) => j !== i))}>
-              <Chips pequeno colunas lista={BANCOS.filter(x => x !== 'Outro' && x !== e.banco)} valor={b.banco}
-                onEscolher={v => set('outrosBancos', e.outrosBancos.map((q, j) => (j === i ? { ...q, banco: v } : q)))} />
-              {b.banco && (<><Mini>Quanto tem lá hoje, mais ou menos?</Mini>
-                <Campo valor={b.saldo} onMudar={v => set('outrosBancos', e.outrosBancos.map((q, j) => (j === i ? { ...q, saldo: v } : q)))} placeholder="0" pequeno /></>)}
-            </Bloco>
+      <Cartao>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {BANCOS.map(b => (
+            <LinhaBanco key={b} nome={b} on={marcado(b)} salario={b === e.banco} varios={varios} saldo={saldoDe(b)}
+              onTocar={() => alternar(b)} onSaldo={v => mudarSaldo(b, v)} onSalario={() => doSalario(b)}>
+              {b === 'Outro' && marcado(b) && <NomeLivre valor={e.bancoOutro} onMudar={v => set('bancoOutro', v)} placeholder="Nome do banco" />}
+            </LinhaBanco>
           ))}
-          <Adicionar onClick={() => set('outrosBancos', [...e.outrosBancos, { banco: '', saldo: '' }])}>Adicionar outro banco</Adicionar>
-        </Cartao>
-      )}
+        </div>
+        <Dica>Um valor redondo já serve. Se não lembrar, deixe em branco.</Dica>
+      </Cartao>
     </>)
     pe = <Pe rotulo="Continuar" onSeguir={seguir} desabilitado={!banco} />
   }
@@ -702,6 +709,45 @@ function Item({ icone, rotulo, on, onTocar, children }: { icone: string; rotulo:
         </span>
       </button>
       {children}
+    </div>
+  )
+}
+
+/** Banco marcado: o saldo abre na mesma linha, à direita. */
+function LinhaBanco({ nome, on, salario, varios, saldo, onTocar, onSaldo, onSalario, children }: {
+  nome: string; on: boolean; salario: boolean; varios: boolean; saldo: string
+  onTocar: () => void; onSaldo: (v: string) => void; onSalario: () => void; children?: ReactNode
+}) {
+  return (
+    <div style={{ border: `1.5px solid ${on ? '#1a56db' : '#dbe3f0'}`, background: on ? '#eff6ff' : '#fff', borderRadius: 16,
+      padding: on ? '8px 8px 8px 12px' : '0 12px', transition: 'background .15s, border-color .15s', display: 'grid', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: on ? 46 : 48 }}>
+        <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: 0,
+          display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, minHeight: 44, cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
+          <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `2px solid ${on ? '#1a56db' : '#c3ccd8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
+            {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
+          </span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{nome}</span>
+            {on && varios && salario && <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#1e40af' }}>cai o salário</span>}
+          </span>
+        </button>
+        {on && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4, width: 140, flexShrink: 0, minHeight: 44, padding: '0 10px',
+            background: '#fff', border: '1.5px solid #93c5fd', borderRadius: 12 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: COR.textoSuave }}>R$</span>
+            <input value={saldo} onChange={ev => onSaldo(ev.target.value)} placeholder="saldo" inputMode="decimal" autoFocus aria-label={`Saldo no ${nome}`}
+              style={{ border: 'none', outline: 'none', font: 'inherit', fontSize: 16, fontWeight: 700, width: '100%', minWidth: 0,
+                color: COR.texto, background: 'transparent', fontVariantNumeric: 'tabular-nums' }} />
+          </label>
+        )}
+      </div>
+      {children}
+      {on && varios && !salario && (
+        <button type="button" onClick={onSalario} style={{ font: 'inherit', fontSize: 12, fontWeight: 700, color: '#1e40af', background: 'none',
+          border: 'none', padding: '0 0 0 34px', textAlign: 'left', cursor: 'pointer', justifySelf: 'start' }}>O salário cai aqui</button>
+      )}
     </div>
   )
 }

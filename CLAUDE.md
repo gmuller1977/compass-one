@@ -2259,7 +2259,9 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
 - **No computador, as perguntas ficam num celular desenhado** (moldura
   `#0b1533`, rola por dentro, Continuar preso embaixo; pedido do Guilherme,
   mesmo dia, sobre o protótipo). As boas-vindas seguem em duas colunas, sem
-  moldura. Bancos e cartões em duas colunas alinhadas à esquerda (`colunas`).
+  moldura. Cartões em duas colunas alinhadas à esquerda (`colunas`). Os bancos
+  são UMA lista (`LinhaBanco`): tocar marca e abre o saldo na mesma linha; o
+  primeiro marcado é o do salário, e "O salário cai aqui" troca.
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).
