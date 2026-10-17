@@ -30,8 +30,18 @@ export type Descoberta = {
   categoriasVistas: number
   /** Quantos dias faltam para o mês observado fechar. 0 = fecha hoje. */
   diasAteFechar: number
-  /** O mês que vira o primeiro plano quando fechar. */
+  /**
+   * O mês que vira o primeiro plano quando fechar: sempre um mês INTEIRO.
+   * Quem começou depois do dia `DIA_LIMITE_DO_MES_COMPLETO` observa o
+   * mês seguinte.
+   */
   mesObservado: { ano: number; mes: number }
+  /**
+   * O mês corrente quando ele começou pela metade (o primeiro mês de uso).
+   * Os lançamentos dele valem, mas ele não vira plano. `null` quando o mês
+   * corrente é inteiro.
+   */
+  mesParcial: { ano: number; mes: number } | null
   /**
    * O mês JÁ FECHADO que tem material para virar plano, se houver um.
    *
@@ -62,6 +72,33 @@ function chavesDoMes(extratoData: Record<string, DadosMes>, contas: Conta[], ano
     .map(([, dm]) => dm)
 }
 
+/**
+ * Até que dia o primeiro mês ainda conta como inteiro. Pedido do Guilherme em
+ * 17/10/2026: quem começa no dia 10, 15 ou 20 não tem um mês para virar
+ * plano — o mercado da primeira quinzena não está lá, e o plano nasceria
+ * pela metade. Até o dia 5 sobra pouco a perder, e quem lança os dias que
+ * passaram (com a data deles) também tem o mês inteiro.
+ */
+export const DIA_LIMITE_DO_MES_COMPLETO = 5
+
+/** O primeiro mês inteiro para quem começa a usar hoje. */
+export function primeiroMesCompleto(hoje = new Date()): { ano: number; mes: number } {
+  const ano = hoje.getFullYear(), mes = hoje.getMonth()
+  if (hoje.getDate() <= DIA_LIMITE_DO_MES_COMPLETO) return { ano, mes }
+  return mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 }
+}
+
+/** O primeiro dia com lançamento num mês, ou null. */
+function primeiroDiaComRegistro(extratoData: Record<string, DadosMes>, contas: Conta[], ano: number, mes: number): number | null {
+  let menor: number | null = null
+  for (const dm of chavesDoMes(extratoData, contas, ano, mes)) {
+    for (const [diaStr, itens] of Object.entries(dm.lancamentos ?? {})) {
+      if (itens.length > 0 && (menor === null || Number(diaStr) < menor)) menor = Number(diaStr)
+    }
+  }
+  return menor
+}
+
 export function medirDescoberta({
   onboardingCompleto, planos, extratoData, contas, hoje = new Date(),
 }: Entrada): Descoberta {
@@ -83,15 +120,33 @@ export function medirDescoberta({
     }
   }
 
-  // O mês fechado mais recente COM registro, olhando até um ano para trás.
+  // O primeiro mês com registro, olhando até um ano para trás (o corrente
+  // incluído), e o dia em que começou.
+  let primeiro: { ano: number; mes: number; dia: number } | null = null
+  for (let atras = 0; atras <= 12; atras++) {
+    let m = mes - atras, a = ano
+    while (m < 0) { m += 12; a-- }
+    const dia = primeiroDiaComRegistro(extratoData, contas, a, m)
+    if (dia !== null) primeiro = { ano: a, mes: m, dia }
+  }
+  // Começou pela metade: é o primeiro mês e o primeiro lançamento é depois
+  // do limite. Sem registro nenhum, o começo é hoje.
+  const parcial = (a: number, m: number) => primeiro
+    ? primeiro.ano === a && primeiro.mes === m && primeiro.dia > DIA_LIMITE_DO_MES_COMPLETO
+    : a === ano && m === mes && hoje.getDate() > DIA_LIMITE_DO_MES_COMPLETO
+
+  // O mês fechado mais recente COM registro e INTEIRO, até um ano para trás.
   let mesBase: { ano: number; mes: number } | null = null
   for (let atras = 1; atras <= 12 && !mesBase; atras++) {
     let m = mes - atras, a = ano
     while (m < 0) { m += 12; a-- }
-    const temRegistro = chavesDoMes(extratoData, contas, a, m)
-      .some(dm => Object.values(dm.lancamentos ?? {}).some(itens => itens.length > 0))
-    if (temRegistro) mesBase = { ano: a, mes: m }
+    if (primeiroDiaComRegistro(extratoData, contas, a, m) !== null && !parcial(a, m)) mesBase = { ano: a, mes: m }
   }
+
+  const correnteParcial = parcial(ano, mes)
+  const mesObservado = correnteParcial ? (mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 }) : { ano, mes }
+  const fimObservado = new Date(mesObservado.ano, mesObservado.mes + 1, 0)
+  const inicioHoje = new Date(ano, mes, hoje.getDate())
 
   return {
     ativa: onboardingCompleto && fimDoPlanejamento(planos) === null,
@@ -99,7 +154,8 @@ export function medirDescoberta({
     lancamentos,
     diasComRegistro: dias.size,
     categoriasVistas: cats.size,
-    diasAteFechar: totalDias - hoje.getDate(),
-    mesObservado: { ano, mes },
+    diasAteFechar: correnteParcial ? Math.round((fimObservado.getTime() - inicioHoje.getTime()) / 86400000) : totalDias - hoje.getDate(),
+    mesObservado,
+    mesParcial: correnteParcial ? { ano, mes } : null,
   }
 }

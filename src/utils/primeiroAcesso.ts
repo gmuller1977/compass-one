@@ -2,6 +2,8 @@ import type { Categoria, Conta, PlanoAnoData, TipoMovimento, FormaPagamentoCateg
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
 import { montarCategoria } from './novaCategoria'
 import { buscarCategoria } from './categoriaIcone'
+import { mesDaFaturaDaCompra, tipoNaFatura } from './lancamentoRapido'
+import { mesDoGastoNoCartao } from './lancarPorMes'
 
 /**
  * O primeiro acesso de uma conta nova: seis perguntas e um resultado.
@@ -98,6 +100,27 @@ const CARRO_NOVO: Omit<Categoria, 'id'> = {
   fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true,
 }
 
+/** Onde caem as compras parceladas no cartão: a categoria não foi perguntada. */
+export const NOME_PARCELADAS = 'Compras parceladas'
+const PARCELADAS_NOVO: Omit<Categoria, 'id'> = {
+  nome: NOME_PARCELADAS, tipo: 'saida', icone: '🏷', grupo: 'Outros',
+  fixa: false, tipoMovimento: 'cartao', formaPagamento: 'parcelado', cor: '#6b7280', ativa: true,
+}
+
+/**
+ * Uma parcela em andamento. No CARTÃO, as que faltam são lançadas na fatura
+ * (como a FaturaCartao grava uma compra parcelada). Fora dele, vira uma
+ * conta fixa até a última parcela (`ate`), que aparece em Lançamentos para
+ * confirmar quando o plano nasce: débito automático não se presume pago.
+ * `banco` e `cartao` são o NOME escolhido quando há mais de um.
+ */
+export type ParcelaInformada = {
+  nome: string; valor: number; faltam: number; forma?: FormaDaConta
+  /** Total de parcelas, se a pessoa souber ("4 de 12"). */
+  total?: number
+  dia?: number; banco?: string; cartao?: string
+}
+
 export type Respostas = {
   banco: string
   saldo: number
@@ -113,24 +136,24 @@ export type Respostas = {
   outrosBancos: { banco: string; saldo: number }[]
   /** Outros cartões além do primeiro. */
   outrosCartoes: { cartao: string; vencimento: number }[]
-  contas: Record<string, { valor: number; dia: number; forma: FormaDaConta; faltam?: number }>
+  contas: Record<string, { valor: number; dia: number; forma: FormaDaConta; faltam?: number; banco?: string }>
   /** Contas do mês fora da lista, pelo nome que a pessoa deu. */
-  outrasContas: { nome: string; valor: number; dia: number; forma: FormaDaConta }[]
+  outrasContas: { nome: string; valor: number; dia: number; forma: FormaDaConta; banco?: string }[]
   diaADia: Record<string, number>
   /** Gastos do dia a dia fora da lista. */
   outrosGastos: { nome: string; valor: number }[]
-  parcelas: { nome: string; valor: number; faltam: number }[]
+  parcelas: ParcelaInformada[]
   meta: number
 }
 
 /** O que o primeiro plano lê. Guardado no plano do ano, que é jsonb: sem migração. */
 export type EstimativasIniciais = {
-  /** Por id de categoria. */
-  porCategoria: Record<string, { valor: number; dia?: number; fixa?: boolean }>
+  /** Por id de categoria. `ate`: último mês ("AAAA-MM") de um financiamento ou parcela. */
+  porCategoria: Record<string, { valor: number; dia?: number; fixa?: boolean; ate?: string }>
   /** O 13º estimado (o salário líquido) e a categoria dele. */
   decimo?: { categoriaId: string; valor: number }
   /** `contaDoMes`: um financiamento já somado nas contas do mês, só com o fim. */
-  parcelas?: { nome: string; valor: number; faltam: number; desde: string; contaDoMes?: boolean }[]
+  parcelas?: { nome: string; valor: number; faltam: number; desde: string; contaDoMes?: boolean; forma?: FormaDaConta }[]
 }
 
 /** `liberado`: quanto deixa de sair quando a última parcela (ou financiamento) acabar. */
@@ -139,7 +162,7 @@ export type Resumo = { renda: number; contas: number; diaADia: number; parcelas:
 /** Os financiamentos marcados nas contas do mês, com quantas parcelas faltam. */
 export function financiamentosComFim(r: Respostas) {
   return CONTAS_DO_MES.filter(i => i.financiamento && r.contas[i.id] && r.contas[i.id].valor > 0 && (r.contas[i.id].faltam ?? 0) > 0)
-    .map(i => ({ nome: i.rotulo, valor: r.contas[i.id].valor, faltam: r.contas[i.id].faltam! }))
+    .map(i => ({ nome: i.rotulo, valor: r.contas[i.id].valor, faltam: r.contas[i.id].faltam!, forma: r.contas[i.id].forma }))
 }
 
 export function resumoDasRespostas(r: Respostas): Resumo {
@@ -175,18 +198,27 @@ function formaParaCategoria(forma: FormaDaConta, idBanco: string | undefined):
   return { tipoMovimento: 'banco', formaPagamento: forma === 'automatico' ? 'automatico' : 'pix', contaDebitoId: idBanco }
 }
 
+/** O mês ("AAAA-MM") da última de `faltam` parcelas, contando a deste mês. */
+export function ultimoMes(hoje: Date, faltam: number) {
+  const t = hoje.getFullYear() * 12 + hoje.getMonth() + Math.max(1, faltam) - 1
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`
+}
+
 /**
  * As respostas viram cadastro. Pura: devolve as listas novas e o plano do
- * ano com a meta e as estimativas; quem chama grava.
+ * ano com a meta e as estimativas; quem chama grava. As parcelas no cartão
+ * voltam lançadas em `faturas`.
  */
-export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAno, hoje = new Date() }: {
+
+export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAno, faturaData = {}, hoje = new Date() }: {
   r: Respostas
   nomeTitular: string
   contas: Conta[]
   categorias: Categoria[]
   planoDoAno: PlanoAnoData | undefined
+  faturaData?: Record<string, unknown>
   hoje?: Date
-}): { contas: Conta[]; categorias: Categoria[]; plano: PlanoAnoData } {
+}): { contas: Conta[]; categorias: Categoria[]; plano: PlanoAnoData; faturas: Record<string, unknown> } {
   // Contas: o banco do salário é a preferida; o cartão é pago por ele.
   const idBanco = gerarId()
   const novas: Conta[] = []
@@ -209,6 +241,9 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     formaPagamentoFatura: 'boleto', contaPagamentoId: r.banco ? idBanco : undefined,
   }))
   const temCartao = cartoes.length > 0
+  // Com mais de um banco ou cartão, a pessoa diz qual pelo nome.
+  const idDoBanco = (nome?: string) => (nome && novas.find(n => n.tipo !== 'cartao' && n.banco === nome)?.id) || (r.banco ? idBanco : undefined)
+  const cartaoPorNome = (nome?: string) => novas.find(n => n.tipo === 'cartao' && n.banco === nome) ?? novas.find(n => n.tipo === 'cartao')
   const contasFinal = [
     ...contas.map(c => (novas.some(n => n.preferida) && c.tipo !== 'cartao' ? { ...c, preferida: false } : c)),
     ...novas,
@@ -228,7 +263,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
       if (!ja.ativa) cats = cats.map(c => (c.id === ja.id ? { ...c, ativa: true } : c))
       return { ...ja, ativa: true }
     }
-    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
+    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
     const nova: Categoria = padrao
       ? { ...padrao, ativa: true, id: gerarId() }
       : { nome, tipo, icone: '📌', grupo: 'Outros', fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true, id: gerarId() }
@@ -251,9 +286,11 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     cats = [...cats, nova]
     return nova
   }
-  const somar = (id: string, e: { valor: number; dia?: number; fixa?: boolean }) => {
+  const somar = (id: string, e: { valor: number; dia?: number; fixa?: boolean; ate?: string }) => {
     const ja = porCategoria[id]
-    porCategoria[id] = ja ? { ...ja, valor: ja.valor + e.valor } : e
+    // Duas parcelas na mesma categoria: a linha vai até a que termina por último.
+    const ate = ja?.ate && e.ate ? (ja.ate > e.ate ? ja.ate : e.ate) : undefined
+    porCategoria[id] = ja ? { ...ja, valor: ja.valor + e.valor, ate } : e
   }
 
   if (r.renda > 0) {
@@ -271,15 +308,16 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     if (!resp) continue
     const cat = garantir(item.categoria, 'saida')
     const forma = resp.forma === 'cartao' && !temCartao ? 'manual' : resp.forma
-    cats = cats.map(c => (c.id === cat.id ? { ...c, ...formaParaCategoria(forma, r.banco ? idBanco : undefined) } : c))
-    if (resp.valor > 0) somar(cat.id, { valor: resp.valor, dia: resp.dia || undefined, fixa: true })
+    cats = cats.map(c => (c.id === cat.id ? { ...c, ...formaParaCategoria(forma, idDoBanco(resp.banco)) } : c))
+    const ate = item.financiamento && (resp.faltam ?? 0) > 0 ? ultimoMes(hoje, resp.faltam!) : undefined
+    if (resp.valor > 0) somar(cat.id, { valor: resp.valor, dia: resp.dia || undefined, fixa: true, ...(ate ? { ate } : {}) })
   }
   for (const o of r.outrasContas) {
     if (!o.nome.trim()) continue
     const cat = pelaPessoa(o.nome)
     if (!cat) continue
     const forma = o.forma === 'cartao' && !temCartao ? 'manual' : o.forma
-    cats = cats.map(c => (c.id === cat.id ? { ...c, ...formaParaCategoria(forma, r.banco ? idBanco : undefined) } : c))
+    cats = cats.map(c => (c.id === cat.id ? { ...c, ...formaParaCategoria(forma, idDoBanco(o.banco)) } : c))
     if (o.valor > 0) somar(cat.id, { valor: o.valor, dia: o.dia || undefined, fixa: true })
   }
   for (const item of DIA_A_DIA) {
@@ -293,6 +331,52 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     const cat = pelaPessoa(o.nome)
     if (cat && o.valor > 0) somar(cat.id, { valor: o.valor })
   }
+
+  // Parcelas: no cartão, lançadas na fatura; fora dele, conta fixa até a última.
+  let faturas = faturaData
+  r.parcelas.filter(p => p.valor > 0).forEach((p, i) => {
+    const faltam = Math.max(1, Math.round(p.faltam) || 1)
+    const cartao = p.forma === 'cartao' && temCartao ? cartaoPorNome(p.cartao) : undefined
+    if (cartao) {
+      const n = p.total && p.total >= faltam ? p.total : faltam
+      const primeira = n - faltam + 1
+      const inicio = mesDaFaturaDaCompra(cartao, hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+      // No plano a parcela conta no mês em que a fatura VENCE (a regra do
+      // realizado): a última é esse mês + faltam − 1, não hoje + faltam − 1.
+      const gasto = mesDoGastoNoCartao(cartao, hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+      const parc = garantir(NOME_PARCELADAS, 'saida')
+      somar(parc.id, { valor: p.valor, ate: ultimoMes(new Date(gasto.ano, gasto.mes, 1), faltam) })
+      // A compra foi no mês da fatura da parcela 1.
+      const tc = inicio.ano * 12 + inicio.mes - (primeira - 1)
+      const baseId = `pa-${Date.now()}-${i}`
+      const out = { ...faturas }
+      for (let k = 0; k < faltam; k++) {
+        const t = inicio.ano * 12 + inicio.mes + k
+        const chave = `${cartao.id}-${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`
+        const dm = (out[chave] as { lancamentos: Record<number, unknown[]>; faturaAtual?: string } | undefined) ?? { lancamentos: {}, faturaAtual: '' }
+        out[chave] = {
+          ...dm,
+          lancamentos: {
+            ...dm.lancamentos,
+            1: [...(dm.lancamentos[1] ?? []), {
+              id: `${baseId}-${primeira + k}`, tipo: tipoNaFatura('saida'),
+              descricao: p.nome, categoria: NOME_PARCELADAS, valor: p.valor,
+              formaPagamento: 'credito', tipoLanc: 'variavel', consolidado: k === 0,
+              ...(n > 1 ? { parcelas: n, parcelaAtual: primeira + k } : {}),
+              diaCompra: 1, mesCompra: tc % 12, anoCompra: Math.floor(tc / 12),
+            }],
+          },
+        }
+      }
+      faturas = out
+    } else {
+      const cat = pelaPessoa(p.nome)
+      if (!cat) return
+      const forma = p.forma === 'cartao' ? 'manual' : p.forma ?? 'manual'
+      cats = cats.map(c => (c.id === cat.id ? { ...c, ...formaParaCategoria(forma, idDoBanco(p.banco)), recorrencia: 'temporaria' } : c))
+      somar(cat.id, { valor: p.valor, dia: p.dia || undefined, fixa: true, ate: ultimoMes(hoje, faltam) })
+    }
+  })
 
   const ano = hoje.getFullYear()
   const mes = hoje.getMonth()
@@ -310,7 +394,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     estimativas: { porCategoria, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}) },
   }
 
-  return { contas: contasFinal, categorias: cats, plano }
+  return { contas: contasFinal, categorias: cats, plano, faturas }
 }
 
 /** As estimativas do primeiro acesso, em qualquer ano do plano (o mês pode ter virado o ano). */

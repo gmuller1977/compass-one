@@ -35,6 +35,8 @@ export type LinhaProposta = {
   ehCartao: boolean
   /** Sem lançamento no mês: o valor veio do primeiro acesso. */
   estimado?: boolean
+  /** Último mês ("AAAA-MM") de um financiamento ou parcela: depois dele, zero. */
+  ate?: string
 }
 
 export type Proposta = {
@@ -89,6 +91,7 @@ export function propostaDoMes({
           fixa: c.fixa || !!(est?.fixa && est.dia),
           ehCartao: c.tipoMovimento === 'cartao',
           ...(estimado ? { estimado: true } : {}),
+          ...(est?.ate ? { ate: est.ate } : {}),
         }
       })
       // Categoria sem movimento no mês não entra: propor zero é ruído, e o
@@ -128,11 +131,15 @@ export function planoDaProposta(
   p: Proposta,
   mesInicio: number,
   valores?: Record<string, number>,
+  anoDoPlano = new Date().getFullYear(),
 ): PlanoAnoData {
   const chave = (l: LinhaProposta) => `${l.tipo}|${l.nome}|${l.descricao ?? ''}`
+  // Financiamento e parcela informados no primeiro acesso terminam: depois
+  // da última, o plano não inventa mais nenhuma.
+  const dentro = (l: LinhaProposta, i: number) => !l.ate || `${anoDoPlano}-${String(i + 1).padStart(2, '0')}` <= l.ate
   const v = (l: LinhaProposta) => {
     const val = valores?.[chave(l)] ?? l.valor
-    return Array(12).fill(0).map((_, i) => (i >= mesInicio ? val : 0))
+    return Array(12).fill(0).map((_, i) => (i >= mesInicio && dentro(l, i) ? val : 0))
   }
   const linha = (l: LinhaProposta) => ({
     id: l.id, nome: l.nome, descricao: l.descricao, grupo: l.grupo,
@@ -143,12 +150,12 @@ export function planoDaProposta(
   return {
     saldoInicialJan: 0,
     entradas: [
-      ...p.entradas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha),
+      ...p.entradas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha).filter(l => l.v.some(x => x > 0)),
       ...(p.decimo && valoresDoDecimo(p.decimo.valor, mesInicio).some(v => v > 0)
         ? [{ id: p.decimo.id, nome: p.decimo.nome, grupo: p.decimo.grupo, v: valoresDoDecimo(p.decimo.valor, mesInicio) }]
         : []),
     ],
-    saidas: p.saidas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha),
+    saidas: p.saidas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha).filter(l => l.v.some(x => x > 0)),
   }
 }
 

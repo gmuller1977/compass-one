@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext'
 import { parseBRL } from '../utils/moeda'
 import { COR } from '../utils/cores'
 import { marcarVisto } from '../utils/vistoNaConta'
+import { primeiroMesCompleto } from '../utils/descoberta'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import {
   CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, fechamentoDoVencimento,
@@ -41,11 +42,11 @@ type Estado = {
   usaCartao: '' | 'sim' | 'nao'; cartao: string; venc: number
   outrosBancos: { banco: string; saldo: string }[]
   outrosCartoes: { cartao: string; venc: number }[]
-  contas: Record<string, { valor: string; dia: string; forma: FormaDaConta; faltam?: string }>
-  outrasContas: { nome: string; valor: string; dia: string; forma: FormaDaConta }[]
+  contas: Record<string, { valor: string; dia: string; forma: FormaDaConta; faltam?: string; banco?: string }>
+  outrasContas: { nome: string; valor: string; dia: string; forma: FormaDaConta; banco?: string }[]
   diaADia: Record<string, string>
   outrosGastos: { nome: string; valor: string }[]
-  parcelas: { nome: string; valor: string; faltam: string }[]
+  parcelas: { nome: string; valor: string; faltam: string; total: string; dia: string; forma: FormaDaConta; banco?: string; cartao?: string }[]
   meta: string
 }
 
@@ -56,7 +57,7 @@ const INICIAL: Estado = {
 
 export default function PrimeiroAcesso() {
   const navigate = useNavigate()
-  const { user, perfil, contas, categorias, planos, setContas, setCategorias, setPlanos, setOnboardingCompleto } = useApp()
+  const { user, perfil, contas, categorias, planos, faturaData, setContas, setCategorias, setPlanos, setFaturaData, setOnboardingCompleto } = useApp()
   const [passo, setPasso] = useState(0)
   const [e, setE] = useState<Estado>(INICIAL)
   const topoRef = useRef<HTMLDivElement>(null)
@@ -68,6 +69,11 @@ export default function PrimeiroAcesso() {
   useEffect(() => { topoRef.current?.scrollIntoView({ block: 'start' }); window.scrollTo(0, 0) }, [passo])
 
   const banco = e.banco === 'Outro' ? e.bancoOutro.trim() : e.banco
+  // Com mais de um banco ou cartão, cada conta e parcela diz de qual sai.
+  const nomesBancos = [banco, ...e.outrosBancos.map(b => b.banco)].filter((b, i, a) => b && a.indexOf(b) === i)
+  const nomesCartoes = e.usaCartao === 'sim'
+    ? [e.venc ? e.cartao : '', ...e.outrosCartoes.filter(c => c.venc).map(c => c.cartao)].filter((c, i, a) => c && a.indexOf(c) === i)
+    : []
   const respostas: Respostas = {
     banco,
     saldo: parseBRL(e.saldo),
@@ -79,20 +85,24 @@ export default function PrimeiroAcesso() {
     vencimento: e.venc,
     outrosBancos: e.outrosBancos.map(b => ({ banco: b.banco, saldo: parseBRL(b.saldo) })),
     outrosCartoes: e.outrosCartoes.map(c => ({ cartao: c.cartao, vencimento: c.venc })),
-    outrasContas: e.outrasContas.map(c => ({ nome: c.nome, valor: parseBRL(c.valor), dia: Math.min(31, parseInt(c.dia) || 0), forma: c.forma })),
+    outrasContas: e.outrasContas.map(c => ({ nome: c.nome, valor: parseBRL(c.valor), dia: Math.min(31, parseInt(c.dia) || 0), forma: c.forma, banco: c.banco })),
     outrosGastos: e.outrosGastos.map(g => ({ nome: g.nome, valor: parseBRL(g.valor) })),
     contas: Object.fromEntries(Object.entries(e.contas).map(([id, c]) => [id, {
-      valor: parseBRL(c.valor), dia: Math.min(31, Math.max(0, parseInt(c.dia) || 0)), forma: c.forma, faltam: parseInt(c.faltam ?? '') || 0,
+      valor: parseBRL(c.valor), dia: Math.min(31, Math.max(0, parseInt(c.dia) || 0)), forma: c.forma, faltam: parseInt(c.faltam ?? '') || 0, banco: c.banco,
     }])),
     diaADia: Object.fromEntries(Object.entries(e.diaADia).map(([id, v]) => [id, parseBRL(v)])),
-    parcelas: e.parcelas.map(p => ({ nome: p.nome.trim() || 'Compra parcelada', valor: parseBRL(p.valor), faltam: parseInt(p.faltam) || 1 })),
+    parcelas: e.parcelas.map(p => ({
+      nome: p.nome.trim() || 'Compra parcelada', valor: parseBRL(p.valor), faltam: parseInt(p.faltam) || 1, forma: p.forma,
+      total: parseInt(p.total) || undefined, dia: Math.min(31, parseInt(p.dia) || 0) || undefined, banco: p.banco, cartao: p.cartao,
+    })),
     meta: parseBRL(e.meta),
   }
 
   function concluir(destino: string) {
     const ano = new Date().getFullYear()
-    const r = aplicarRespostas({ r: respostas, nomeTitular: nomeCompleto, contas, categorias, planoDoAno: planos[ano] })
+    const r = aplicarRespostas({ r: respostas, nomeTitular: nomeCompleto, contas, categorias, planoDoAno: planos[ano], faturaData })
     setContas(r.contas)
+    if (r.faturas !== faturaData) setFaturaData(r.faturas)
     setCategorias(r.categorias)
     setPlanos(prev => ({ ...prev, [ano]: r.plano }))
     setOnboardingCompleto(true)
@@ -104,6 +114,14 @@ export default function PrimeiroAcesso() {
     void marcarVisto(user, CHAVE_PRIMEIRO_ACESSO)
     navigate('/configuracoes', { replace: true })
   }
+
+  // O primeiro plano nasce de um mês INTEIRO (utils/descoberta): começando
+  // depois do dia 5, é o mês seguinte. As frases dizem o mês, nunca "30 dias".
+  const completo = primeiroMesCompleto()
+  const mesCompleto = MESES[completo.mes]
+  const mesDoPlano = MESES[(completo.mes + 1) % 12]
+  const comecaNoMeio = completo.mes !== new Date().getMonth()
+  const maiuscula = (m: string) => m[0].toUpperCase() + m.slice(1)
 
   const seguir = () => setPasso(p => Math.min(TOTAL + 1, p + 1))
   const voltar = passo > 0 ? () => setPasso(p => p - 1) : undefined
@@ -242,12 +260,14 @@ export default function PrimeiroAcesso() {
                 <Mini>Como você paga?</Mini>
                 <Chips pequeno lista={formas.map(f => f.rotulo)} valor={FORMAS.find(f => f.id === v.forma)?.rotulo ?? ''}
                   onEscolher={x => setE(p => ({ ...p, contas: { ...p.contas, [item.id]: { ...p.contas[item.id], forma: FORMAS.find(f => f.rotulo === x)!.id } } }))} />
+                <DeOnde forma={v.forma} bancos={nomesBancos} cartoes={[]} banco={v.banco}
+                  onBanco={x => setE(p => ({ ...p, contas: { ...p.contas, [item.id]: { ...p.contas[item.id], banco: x } } }))} />
               </>)}
             </Item>
           )
         })}
         {e.outrasContas.map((c, i) => {
-          const mudar = (k: 'nome' | 'valor' | 'dia' | 'forma', x: string) =>
+          const mudar = (k: 'nome' | 'valor' | 'dia' | 'forma' | 'banco', x: string) =>
             set('outrasContas', e.outrasContas.map((q, j) => (j === i ? { ...q, [k]: k === 'dia' ? x.replace(/\D/g, '').slice(0, 2) : x } : q)))
           return (
             <Bloco key={i} onRemover={() => set('outrasContas', e.outrasContas.filter((_, j) => j !== i))}>
@@ -259,6 +279,7 @@ export default function PrimeiroAcesso() {
               <Mini>Como você paga?</Mini>
               <Chips pequeno lista={formas.map(f => f.rotulo)} valor={FORMAS.find(f => f.id === c.forma)?.rotulo ?? ''}
                 onEscolher={x => mudar('forma', FORMAS.find(f => f.rotulo === x)!.id)} />
+              <DeOnde forma={c.forma} bancos={nomesBancos} cartoes={[]} banco={c.banco} onBanco={x => mudar('banco', x)} />
             </Bloco>
           )
         })}
@@ -298,15 +319,15 @@ export default function PrimeiroAcesso() {
           </Bloco>
         ))}
         <Adicionar onClick={() => set('outrosGastos', [...e.outrosGastos, { nome: '', valor: '' }])}>Outro gasto</Adicionar>
-        <Dica>Não faz ideia? Tudo bem, pule. Em 30 dias anotando, o app descobre para você.</Dica>
+        <Dica>Não faz ideia? Tudo bem, pule. Anotando os gastos de {mesCompleto}, o app descobre para você.</Dica>
       </Cartao>
     </>)
     pe = <Pe rotulo="Continuar" onSeguir={seguir} />
   }
 
   if (passo === 6) {
-    const mudar = (i: number, k: 'nome' | 'valor' | 'faltam', x: string) =>
-      setE(p => ({ ...p, parcelas: p.parcelas.map((q, j) => (j === i ? { ...q, [k]: k === 'faltam' ? x.replace(/\D/g, '').slice(0, 3) : x } : q)) }))
+    const mudar = (i: number, k: 'nome' | 'valor' | 'faltam' | 'total' | 'dia' | 'banco' | 'cartao', x: string) =>
+      setE(p => ({ ...p, parcelas: p.parcelas.map((q, j) => (j === i ? { ...q, [k]: k === 'faltam' || k === 'total' ? x.replace(/\D/g, '').slice(0, 3) : k === 'dia' ? x.replace(/\D/g, '').slice(0, 2) : x } : q)) }))
     const financiamentos = CONTAS_DO_MES.filter(i => i.financiamento && e.contas[i.id])
     titulo = financiamentos.length ? 'Quanto falta para terminar de pagar?' : 'Tem compras parceladas ainda sendo pagas?'
     sub = financiamentos.length
@@ -324,7 +345,7 @@ export default function PrimeiroAcesso() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{item.rotulo}</div>
                   <div style={{ fontSize: 13, color: COR.textoSuave }}>
-                    {parseBRL(c.valor) > 0 ? `${R(parseBRL(c.valor))} por mês, já nas suas contas do mês` : 'Já está nas suas contas do mês'}
+                    {parseBRL(c.valor) > 0 ? `${R(parseBRL(c.valor))} por mês` : 'Já está nas suas contas do mês'}{` · ${(FORMAS.find(f => f.id === c.forma)?.rotulo ?? '').replace(' (PIX, boleto)', ' (PIX ou boleto)').toLowerCase()}`}
                   </div>
                 </div>
               </div>
@@ -346,9 +367,29 @@ export default function PrimeiroAcesso() {
               <div><Mini>Valor da parcela</Mini><Campo valor={p.valor} onMudar={x => mudar(i, 'valor', x)} placeholder="0" pequeno /></div>
               <div><Mini>Faltam</Mini><Campo valor={p.faltam} onMudar={x => mudar(i, 'faltam', x)} placeholder="6" pequeno numerico /></div>
             </div>
+            <Mini>Como você paga?</Mini>
+            <Chips pequeno lista={FORMAS.filter(f => f.id !== 'cartao' || e.usaCartao === 'sim').map(f => f.rotulo)}
+              valor={FORMAS.find(f => f.id === p.forma)?.rotulo ?? ''}
+              onEscolher={x => setE(q => ({ ...q, parcelas: q.parcelas.map((y, j) => (j === i ? { ...y, forma: FORMAS.find(f => f.rotulo === x)!.id } : y)) }))} />
+            <DeOnde forma={p.forma} bancos={nomesBancos} cartoes={nomesCartoes} banco={p.banco} cartao={p.cartao}
+              onBanco={x => mudar(i, 'banco', x)} onCartao={x => mudar(i, 'cartao', x)} />
+            {p.forma === 'cartao' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 92px', gap: 8, alignItems: 'end' }}>
+                <Mini>De quantas no total? (se souber)</Mini>
+                <Campo valor={p.total} onMudar={x => mudar(i, 'total', x)} placeholder="12" pequeno numerico />
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 92px', gap: 8, alignItems: 'end' }}>
+                <Mini>Em que dia vence?</Mini>
+                <Campo valor={p.dia} onMudar={x => mudar(i, 'dia', x)} placeholder="10" pequeno numerico />
+              </div>
+            )}
+            <Mini>{p.forma === 'cartao'
+              ? 'As parcelas que faltam já entram na fatura do cartão.'
+              : 'Vira uma conta do mês até a última parcela, que você marca como paga.'}</Mini>
           </div>
         ))}
-        <button type="button" onClick={() => set('parcelas', [...e.parcelas, { nome: '', valor: '', faltam: '' }])} style={chip(false)}>
+        <button type="button" onClick={() => set('parcelas', [...e.parcelas, { nome: '', valor: '', faltam: '', total: '', dia: '', forma: e.usaCartao === 'sim' ? 'cartao' : 'manual' }])} style={chip(false)}>
           <i className="ti ti-shopping-bag" aria-hidden style={{ fontSize: 18 }} /> Adicionar uma compra parcelada
         </button>
         <Dica>Não precisa ser exato. "Faltam" é quantas parcelas ainda vão vir, contando a deste mês.</Dica>
@@ -371,12 +412,12 @@ export default function PrimeiroAcesso() {
       : s.sobra >= 0 && s.diaADia > 0 ? (<>
           <Rotulo>Sobra no fim do mês</Rotulo>
           <div style={numeroGrande}>{R(s.sobra)}</div>
-          <p style={ola}>É o que fica do seu salário depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, em 30 dias a gente confere esse número com os seus gastos de verdade.</p>
+          <p style={ola}>É o que fica do seu salário depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, quando {mesCompleto} fechar a gente confere esse número com os seus gastos de verdade.</p>
         </>)
       : s.sobra >= 0 ? (<>
           <Rotulo>Sobra para o dia a dia</Rotulo>
           <div style={numeroGrande}>{R(s.sobra)}</div>
-          <p style={ola}>É o que fica depois das contas{s.parcelas ? ' e das parcelas' : ''}. <b style={{ color: COR.texto }}>Daqui ainda saem</b> mercado, combustível, farmácia e o resto. Em 30 dias anotando, a gente descobre quanto vai nisso e quanto sobra de verdade.</p>
+          <p style={ola}>É o que fica depois das contas{s.parcelas ? ' e das parcelas' : ''}. <b style={{ color: COR.texto }}>Daqui ainda saem</b> mercado, combustível, farmácia e o resto. Anotando {mesCompleto}, a gente descobre quanto vai nisso e quanto sobra de verdade.</p>
         </>)
       : (<>
           <Rotulo>Seu mês hoje</Rotulo>
@@ -385,7 +426,7 @@ export default function PrimeiroAcesso() {
     let respostaMeta: string | null = null
     if (meta > 0 && !semRenda) {
       if (s.sobra >= meta) respostaMeta = `Dá para guardar ${R(meta)}${s.diaADia ? '' : ', se o dia a dia couber no resto'}. A gente te mostra ao longo do mês se você está no caminho.`
-      else if (s.sobra > 0) respostaMeta = `Hoje sobram ${R(s.sobra)}, faltam ${R(meta - s.sobra)} para a sua meta. Nos próximos 30 dias a gente te mostra onde dá para ajustar.`
+      else if (s.sobra > 0) respostaMeta = `Hoje sobram ${R(s.sobra)}, faltam ${R(meta - s.sobra)} para a sua meta. Anotando os gastos, a gente te mostra onde dá para ajustar.`
       else respostaMeta = `Primeiro a gente equilibra o mês, depois começa a guardar. Sua meta de ${R(meta)} fica anotada.`
     }
     corpo = (<>
@@ -426,11 +467,12 @@ export default function PrimeiroAcesso() {
       )}
       <Cartao>
         <Rotulo>Agora, o seu próximo passo</Rotulo>
-        <p style={ola}>Anote seus gastos por <b style={{ color: COR.texto }}>30 dias</b>, do jeito que der. Leva poucos segundos cada um. Não precisa acertar tudo: é só para conhecer o seu mês de verdade.</p>
+        <p style={ola}>Anote seus gastos {comecaNoMeio ? <>de hoje até o fim de <b style={{ color: COR.texto }}>{mesCompleto}</b></> : <>até o fim de <b style={{ color: COR.texto }}>{mesCompleto}</b></>}, do jeito que der. Leva poucos segundos cada um. Não precisa acertar tudo: é só para conhecer o seu mês de verdade.</p>
+        {comecaNoMeio && <Dica>O seu plano parte de um mês inteiro. Como {MESES[new Date().getMonth()]} já começou, o mês que conta é {mesCompleto}. O que você anotar até lá já aparece no app e serve de treino.</Dica>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, textAlign: 'center', fontSize: 12, color: COR.textoSuave }}>
           <Etapa icone="ti-pencil" forte titulo="Hoje">anote o primeiro gasto</Etapa>
-          <Etapa icone="ti-calendar" titulo="30 dias">anotando o dia a dia</Etapa>
-          <Etapa icone="ti-compass" titulo={(m => m[0].toUpperCase() + m.slice(1))(MESES[(hoje.getMonth() + 1) % 12])}>seu plano pronto</Etapa>
+          <Etapa icone="ti-calendar" titulo={maiuscula(mesCompleto)}>o mês inteiro anotado</Etapa>
+          <Etapa icone="ti-compass" titulo={maiuscula(mesDoPlano)}>seu plano pronto</Etapa>
         </div>
       </Cartao>
     </>)
@@ -518,6 +560,19 @@ function Chips({ lista, valor, onEscolher, pequeno }: { lista: string[]; valor: 
       ))}
     </div>
   )
+}
+
+/** "De qual banco sai?" / "Em qual cartão?": só aparece com mais de um. Sem escolha, vale o primeiro. */
+function DeOnde({ forma, bancos, cartoes, banco, cartao, onBanco, onCartao }: {
+  forma: FormaDaConta; bancos: string[]; cartoes: string[]; banco?: string; cartao?: string
+  onBanco: (v: string) => void; onCartao?: (v: string) => void
+}) {
+  if (forma === 'cartao') {
+    if (cartoes.length < 2 || !onCartao) return null
+    return (<><Mini>Em qual cartão?</Mini><Chips pequeno lista={cartoes} valor={cartao && cartoes.includes(cartao) ? cartao : cartoes[0]} onEscolher={onCartao} /></>)
+  }
+  if (forma === 'dinheiro' || bancos.length < 2) return null
+  return (<><Mini>De qual banco sai?</Mini><Chips pequeno lista={bancos} valor={banco && bancos.includes(banco) ? banco : bancos[0]} onEscolher={onBanco} /></>)
 }
 
 function Campo({ valor, onMudar, placeholder, pequeno, numerico, texto, autoFoco }: {

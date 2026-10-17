@@ -105,6 +105,7 @@ export default function DescobertaModal({
           {fechaHoje
             ? <>Com o que você já registrou dá para montar o primeiro plano agora.</>
             : <>Faltam <b style={{ color: COR.texto }}>{d.diasAteFechar} {d.diasAteFechar === 1 ? 'dia' : 'dias'}</b>.
+                {d.mesParcial && <> {NOMES_MESES[d.mesParcial.mes]} começou no meio: o que você lançar nele conta, mas o plano parte de um mês inteiro.</>}
                 Até lá, o que ajuda é registrar o que entra e o que sai — quanto mais
                 completo o mês, melhor a proposta.</>}
         </p>

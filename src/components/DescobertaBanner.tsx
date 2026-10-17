@@ -83,7 +83,8 @@ export default function DescobertaBanner({ d, onComoFunciona, onVerProposta }: {
             : fechaHoje
               ? <><b style={{ color: '#fff' }}>{mes} fecha hoje.</b> Com o que você registrou já dá para montar o primeiro plano.</>
               : <>Seu plano nasce quando <b style={{ color: '#fff' }}>{mes.toLowerCase()}</b> fechar — faltam{' '}
-                  <b style={{ color: '#fff' }}>{d.diasAteFechar}</b> {d.diasAteFechar === 1 ? 'dia' : 'dias'}.</>}
+                  <b style={{ color: '#fff' }}>{d.diasAteFechar}</b> {d.diasAteFechar === 1 ? 'dia' : 'dias'}.
+                  {d.mesParcial && <> {NOMES_MESES[d.mesParcial.mes]} começou no meio, e o plano precisa de um mês inteiro.</>}</>}
         </div>
 
         {/* A faixa diz o estado; o modal diz o combinado. Depois da primeira

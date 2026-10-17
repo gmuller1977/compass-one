@@ -2231,7 +2231,7 @@ marcado nas contas (casa ou carro) aparece pronto, pedindo só quantas
 parcelas faltam, e as compras parceladas. O resultado mostra a sobra
 (contas, dia a dia estimado, parcelas), quando as parcelas acabam, e pergunta
 "Quanto você quer guardar por mês?". Regras em
-[`primeiroAcesso.ts`](src/utils/primeiroAcesso.ts); `prova74` (32).
+[`primeiroAcesso.ts`](src/utils/primeiroAcesso.ts); `prova74` (65).
 
 - **Grava na hora:** contas (banco do salário preferido), cartões pagos por
   ele, categorias sugeridas ligadas, forma de pagar e conta de débito das
@@ -2247,8 +2247,24 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   "Criar meu plano" apagava `objetivos`).
 - **Não viram fixas no primeiro dia de propósito:** fixa sem valor no plano
   não aparece para pagar em Lançamentos nem no Lançar.
-- Parcelas em andamento ficam só em `estimativas.parcelas` (o financiamento
-  com `contaDoMes`, sem somar de novo), sem lançamento (etapa 2 da jornada).
+- **Parcelas dizem como são pagas** (mesmo dia, pedido dele). No CARTÃO, as
+  que faltam são LANÇADAS na fatura do cartão escolhido como a FaturaCartao
+  grava (id `<base>-<p>`, `parcelaAtual` pelo "de quantas no total", só a
+  1ª consolidada), na categoria "Compras parceladas" (criada, de cartão).
+  Débito automático, PIX/boleto ou dinheiro: a compra vira categoria
+  TEMPORÁRIA com o dia, fixa ao nascer o plano, e NÃO é lançada: segue a
+  regra "fixa só conta quando confirmada". Financiamento e parcelas levam
+  `ate` (último mês; no cartão, contado do mês em que a fatura vence), e
+  `planoDaProposta` zera os meses depois dele.
+- **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
+  perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
+  sem escolha, o banco do salário e o primeiro cartão).
+- **Mês INTEIRO** (mesmo dia, pedido dele: "se começou no dia 10, 15 ou 20
+  a promessa não fecha"): o primeiro plano nasce de um mês completo. Mês
+  cujo primeiro lançamento é depois do dia 5 (`DIA_LIMITE_DO_MES_COMPLETO`)
+  não vira `mesBase`, e o mês observado passa a ser o seguinte
+  (`mesParcial`, `primeiroMesCompleto` em `descoberta.ts`). As frases dizem
+  o mês, nunca "30 dias".
 - **13º** (pedido do Guilherme no mesmo dia): categoria "13º salário"
   (receita, Renda), estimada pelo salário líquido, metade em novembro e
   metade em dezembro, e só lá (`valoresDoDecimo`). A proposta tira o 13º das
