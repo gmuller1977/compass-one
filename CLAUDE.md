@@ -2608,6 +2608,15 @@ família só agrupa e mostra a soma. Nenhum
 número novo: `previsto` e `dadosPrevistoFinal`, os mesmos da Grade, e o
 mesmo `handleSave`. O computador não mudou.
 
+**O Norte está DESLIGADO desde 17/10/2026** (pedido do Guilherme): a chave
+do Gemini é do plano gratuito, cujos termos deixam o Google usar o conteúdo
+enviado — o resumo financeiro da pessoa. Volta com uma conta paga.
+`NORTE_ATIVO` em [`norteAtivo.ts`](src/utils/norteAtivo.ts): desligado, `/norte`
+cai na "/", a barra de baixo mostra "Comprar?" (Simulador) e somem o cartão da
+Sidebar, as perguntas do "?" e o botão de Preferências. O código fica. Para
+religar: `true` ali e o parágrafo do Google na política de privacidade. As
+notas abaixo descrevem o Norte ligado.
+
 **O Norte virou tela própria (`/norte`) e passou a saber os números do app**
 (10/10/2026, pedido do Guilherme: "temos que melhorar muito o agente"; o
 WhatsApp foi descartado por ele). Antes o contexto que ia para o Gemini era

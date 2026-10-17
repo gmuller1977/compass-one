@@ -540,7 +540,6 @@ export default function LandingPage() {
                   'Dashboard com bússola',
                   'Lançamentos, planejamento, evolução',
                   'Categorias personalizadas',
-                  'Assistente Norte (IA)',
                   'Simulador de compras e dívidas',
                   'Metas de economia',
                   'Conta compartilhada com a família',

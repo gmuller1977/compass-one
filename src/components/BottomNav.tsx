@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { COR } from '../utils/cores'
 import { useSeloNorte } from './norte/useSeloNorte'
+import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { BOLINHA_AZUL } from './mobile/estilo'
 
 function useIsMobile() {
@@ -26,8 +27,10 @@ const NAV = [
   { icon: 'ti-home', label: 'Início',   path: '/' },
   { icon: 'ti-radar-2', label: 'Radar',    path: '/radar' },
   null, // botão + flutuante
-  { icon: 'ti-compass', label: 'Norte',    path: '/norte' },
-] as const
+  NORTE_ATIVO
+    ? { icon: 'ti-compass', label: 'Norte',    path: '/norte' }
+    : { icon: 'ti-shopping-cart', label: 'Comprar?', path: '/simulacao' },
+]
 
 const MAIS = [
   { icon: 'ti-calendar-stats', label: 'Planejamento',          path: '/planejamento' },
@@ -45,7 +48,7 @@ export default function BottomNav() {
   const [mais, setMais] = useState(false)
   // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
   // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
-  const selo = useSeloNorte(isMobile && !pathname.startsWith('/norte'))
+  const selo = useSeloNorte(NORTE_ATIVO && isMobile && !pathname.startsWith('/norte'))
 
   if (!isMobile) return null
 

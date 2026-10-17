@@ -26,6 +26,7 @@ import { guardarCodigoRecebido, registrarIndicacaoPendente } from './utils/indic
 import AvisoInatividade from './components/AvisoInatividade'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
+import { NORTE_ATIVO } from './utils/norteAtivo'
 import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
 import AvisoPermissao from './components/compartilhar/AvisoPermissao'
@@ -148,7 +149,7 @@ export default function App() {
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
-          <Route path="/norte"           element={<Protegido><Norte /></Protegido>} />
+          <Route path="/norte"           element={NORTE_ATIVO ? <Protegido><Norte /></Protegido> : <Navigate to="/" replace />} />
           <Route path="/posso-comprar"   element={<Navigate to="/simulacao" replace />} />
           <Route path="/dashboard"       element={<SoNoComputador senao="/"><Dashboard /></SoNoComputador>} />
           <Route path="/analises"        element={<Navigate to="/revisaomensal" replace />} />

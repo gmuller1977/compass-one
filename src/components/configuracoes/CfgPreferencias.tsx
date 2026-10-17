@@ -1,4 +1,5 @@
 import PageHeader from '../PageHeader'
+import { NORTE_ATIVO } from '../../utils/norteAtivo'
 import { COR, EmBreve, inputSt } from './CfgShared'
 import CfgCenarioPrevisao from './CfgCenarioPrevisao'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -234,15 +235,15 @@ export default function CfgPreferencias({
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}><i aria-hidden className="ti ti-compass" style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />Dúvida sobre uma tela?</div>
               <div style={{ fontSize:12, color:COR.textoSuave, marginTop:2 }}>
-                Toque no "?" do cabeçalho de cada tela, ou pergunte ao Norte como fazer.
+                Toque no "?" do cabeçalho de cada tela{NORTE_ATIVO ? ', ou pergunte ao Norte como fazer' : ''}.
               </div>
             </div>
-            <button onClick={() => navigate('/norte')} style={{
+            {NORTE_ATIVO && <button onClick={() => navigate('/norte')} style={{
               padding:'7px 14px', border:'none', borderRadius:8, cursor:'pointer',
               fontFamily:'inherit', fontSize:12, fontWeight:600, flexShrink:0,
               background:COR.azul, color:'#fff' }}>
               Abrir o Norte
-            </button>
+            </button>}
           </div>
         </div>
 

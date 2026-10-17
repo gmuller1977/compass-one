@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
 import ModalTopo from './ModalTopo'
 
@@ -59,6 +60,7 @@ export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
               ))}
             </div>
 
+            {NORTE_ATIVO && <>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>
               Ficou com dúvida? Pergunte ao Norte
             </div>
@@ -79,6 +81,7 @@ export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
                   padding: '7px 12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 }}>Outra pergunta →</button>
             </div>
+            </>}
             </div>
           </div>
         </div>

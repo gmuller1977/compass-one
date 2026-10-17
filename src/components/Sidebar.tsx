@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { useApp } from '../context/AppContext'
 
 export const SIDEBAR_W = 220
@@ -410,7 +411,7 @@ export default function Sidebar() {
       }}>
 
         {/* North card */}
-        <div
+        {NORTE_ATIVO && <div
           onClick={abrirNorth}
           style={{
             display: 'flex', alignItems: 'center', gap: 9,
@@ -436,7 +437,7 @@ export default function Sidebar() {
             width: 8, height: 8, borderRadius: '50%',
             background: '#16a34a', boxShadow: '0 0 6px rgba(22,163,74,.7)', flexShrink: 0,
           }}/>
-        </div>
+        </div>}
 
         {/* User info */}
         <div style={{
