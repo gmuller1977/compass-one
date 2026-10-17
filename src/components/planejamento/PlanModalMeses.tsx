@@ -101,7 +101,7 @@ export default function PlanModalMeses({
   const meses = anoInteiro
     ? Array.from({ length: 12 }, (_, i) => i)
     : Array.from({ length: Math.min(n, 12) }, (_, i) => ini + i)
-  const titulo = anoInteiro ? `${anoAtual}`
+  const titulo = anoInteiro ? 'Janeiro – Dezembro'
     : meses.length === 1 ? MESES_FULL[meses[0]]
     : `${MESES_FULL[meses[0]]} – ${MESES_FULL[meses[meses.length - 1]]}`
   const anoCorrente = new Date().getFullYear()
