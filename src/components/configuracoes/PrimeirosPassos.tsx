@@ -12,8 +12,11 @@ import { jaViu, marcarVisto } from '../../utils/vistoNaConta'
  * guia de boas-vindas, retirado em 12/10/2026 a pedido do Guilherme: "quem
  * quer arrumar suas finanças precisa saber usar as telas de configurações".
  *
- * - Conta sem nenhuma categoria recebe as sugeridas DESATIVADAS, como o
- *   "importar sugestões" — a pessoa liga as que usa.
+ * - Conta sem nenhuma categoria recebe as sugeridas JÁ LIGADAS — a pessoa
+ *   desliga as que não usa. Até 17/10/2026 vinham desligadas, e quem não
+ *   entende de finanças travava escolhendo do zero (decisão do Guilherme no
+ *   card, etapa 1 da jornada do cliente). O "importar sugestões" de
+ *   Configurações continua trazendo desligadas: ali a pessoa já tem as dela.
  * - O app fica em Configurações até haver uma conta e uma categoria ativa;
  *   aí o onboarding conta como feito (o Modo Descoberta depende disso).
  * - Os passos seguem a ordem do menu (Contas, Cartões, Categorias); salvar
@@ -40,7 +43,7 @@ export default function PrimeirosPassos() {
     semeou.current = true
     const base = `id-${Date.now()}`
     setCategorias(CATEGORIAS_PADRAO.map((c, i) => ({
-      ...c, ativa: false, id: `${base}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      ...c, ativa: true, id: `${base}-${i}-${Math.random().toString(36).slice(2, 6)}`,
     })))
   }, [eraNova, categorias.length, setCategorias])
 
@@ -52,14 +55,18 @@ export default function PrimeirosPassos() {
   // Os passos seguem a ordem do menu. Salvar uma conta leva aos cartões, e
   // salvar um cartão às categorias (Configuracoes.salvarConta).
   const abaAtual = searchParams.get('aba') ?? 'home'
+  // Com as categorias já ligadas, o passo só conta depois de a pessoa abrir a
+  // lista: senão o "tudo pronto" aparecia logo ao salvar a conta.
+  const [viuCategorias, setViuCategorias] = useState(false)
+  useEffect(() => { if (abaAtual === 'categorias') setViuCategorias(true) }, [abaAtual])
   const temCartao = contas.some(c => c.tipo === 'cartao')
   const passos = [
     { aba: 'bancos',     rotulo: 'Contas',     feito: temConta,
       texto: 'O banco onde o seu dinheiro está hoje. O saldo pode ser aproximado.' },
     { aba: 'cartoes',    rotulo: 'Cartões',    feito: temCartao, opcional: true,
       texto: 'Se usa cartão de crédito: fechamento e vencimento da fatura.' },
-    { aba: 'categorias', rotulo: 'Categorias', feito: temCategoria,
-      texto: 'Ligue os tipos de receita e de gasto que você usa.' },
+    { aba: 'categorias', rotulo: 'Categorias', feito: temCategoria && viuCategorias,
+      texto: 'Já vêm prontas as mais comuns. Confira e desligue as que não usa.' },
   ]
   const proximo = passos.find(p => !p.feito && !p.opcional) ?? passos[2]
 
@@ -71,7 +78,7 @@ export default function PrimeirosPassos() {
 
   if (!eraNova) return null
 
-  if (pronto) {
+  if (pronto && viuCategorias) {
     if (!prontoAberto) return null
     return (
       <Janela onFechar={() => setProntoAberto(false)} titulo="Tudo pronto para começar">

@@ -2221,8 +2221,8 @@ voltavam se ninguém marcasse "não mostrar novamente".
 **O guia de boas-vindas (Onboarding) saiu em 12/10/2026.** Escolha do
 Guilherme: "quem quer arrumar suas finanças precisa saber usar as telas de
 configurações". Conta nova cai em Configurações com `PrimeirosPassos` no topo:
-recebe as categorias sugeridas DESATIVADAS (como o "importar sugestões"), e o
-app fica lá até haver uma conta e uma categoria ativa — aí `onboardingCompleto`
+recebe as categorias sugeridas JÁ LIGADAS (desde 17/10/2026, escolha dele no card; antes vinham desativadas, e o "importar sugestões" de Configurações segue trazendo desativadas), e o
+app fica lá até haver uma conta e uma categoria ativa (com as sugeridas ligadas, basta a conta; a janela "Tudo pronto" espera a pessoa abrir Categorias) — aí `onboardingCompleto`
 vira verdadeiro (o Modo Descoberta depende dele) e a faixa oferece "Começar a
 lançar" e "Começar meu plano". `/onboarding` cai na "/". Membro de conta
 compartilhada nunca vê a faixa. **As notas sobre o Onboarding abaixo e acima
