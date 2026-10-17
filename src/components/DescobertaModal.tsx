@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { COR } from '../utils/cores'
+import ModalTopo from './ModalTopo'
 import { NOMES_MESES } from './novoLancamentoExtrato/NleShared'
 import type { Descoberta } from '../utils/descoberta'
 
@@ -56,21 +57,16 @@ export default function DescobertaModal({
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Descobrindo seus números"
+        aria-labelledby="descoberta-titulo"
         style={{
-          background: COR.branco, borderRadius: 16, padding: '28px 28px 24px',
-          maxWidth: 500, width: '100%', maxHeight: '90vh', overflowY: 'auto',
+          background: COR.branco, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          maxWidth: 500, width: '100%', maxHeight: '90vh',
           boxShadow: '0 20px 60px rgba(0,0,0,.2)',
         }}
       >
-        <i aria-hidden className="ti ti-compass" style={{ display: 'block', fontSize: 32, lineHeight: 1, color: COR.azul }} />
-
-        <h2 style={{
-          fontSize: 19, fontWeight: 800, color: COR.texto,
-          margin: '14px 0 8px', textWrap: 'balance',
-        }}>
-          Descobrindo seus números
-        </h2>
+        <ModalTopo icone="ti-compass" rotulo="Modo descoberta" titulo="Descobrindo seus números" id="descoberta-titulo"
+          onFechar={onFechar} />
+        <div style={{ overflowY: 'auto', padding: '20px 28px 24px' }}>
 
         <p style={{ fontSize: 14, color: COR.textoSuave, lineHeight: 1.6, margin: 0 }}>
           Um plano só serve se partir do que você <b style={{ color: COR.texto }}>de fato</b> ganha
@@ -147,6 +143,7 @@ export default function DescobertaModal({
         <p style={{ fontSize: 12, color: COR.textoSuave, margin: '10px 0 0', lineHeight: 1.5 }}>
           Não precisa esperar se você já sabe quanto ganha e quanto gasta.
         </p>
+        </div>
       </div>
     </div>
   )

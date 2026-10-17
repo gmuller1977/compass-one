@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
+import ModalTopo from './ModalTopo'
 
 /**
  * O "?" do cabeçalho: abre a explicação da tela quando a pessoa pede, e
@@ -9,8 +10,8 @@ import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
  *
  * As perguntas levam ao Norte já perguntando (`/norte?pergunta=`).
  *
- * Cartão em #0f2878 → #1e40af: o texto a 85% de branco dá 5,6:1 no extremo
- * mais claro; as dicas ficam em caixas brancas com texto escuro.
+ * O cabeçalho é o das janelas (ModalTopo); as dicas ficam em caixas
+ * #eef2f8 com texto escuro, e as perguntas em #1e3a8a sobre #eff6ff (9,6:1).
  */
 export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
   const [aberta, setAberta] = useState(false)
@@ -42,32 +43,23 @@ export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
           }}
         >
           <div style={{
-            background: 'linear-gradient(160deg, #0f2878 0%, #1e40af 100%)',
-            borderRadius: 18, padding: '22px 20px 18px', maxWidth: 440, width: '100%',
-            maxHeight: '90vh', overflowY: 'auto',
+            background: '#fff', borderRadius: 18, maxWidth: 440, width: '100%',
+            maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
             boxShadow: '0 24px 60px rgba(0,0,0,.4)', fontFamily: "-apple-system,'Inter',sans-serif",
           }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{a.titulo}</div>
-                <div style={{ fontSize: 14, color: 'rgba(255,255,255,.85)', lineHeight: 1.5 }}>{a.resumo}</div>
-              </div>
-              <button onClick={() => setAberta(false)} aria-label="Fechar" style={{
-                background: 'none', border: 'none', color: '#fff', fontSize: 22, lineHeight: 1,
-                cursor: 'pointer', padding: 2,
-              }}>×</button>
-            </div>
-
+            <ModalTopo icone="ti-help-circle" rotulo="Como usar" titulo={a.titulo} subtitulo={a.resumo}
+              onFechar={() => setAberta(false)} />
+            <div style={{ overflowY: 'auto', padding: '16px 20px 18px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
               {a.dicas.map((d, i) => (
                 <div key={i} style={{
-                  background: '#fff', borderRadius: 10, padding: '10px 12px',
+                  background: '#eef2f8', borderRadius: 10, padding: '10px 12px',
                   fontSize: 13, color: '#1e293b', lineHeight: 1.45,
                 }}>{d}</div>
               ))}
             </div>
 
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>
               Ficou com dúvida? Pergunte ao Norte
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -75,17 +67,18 @@ export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
                 <button key={p}
                   onClick={() => navigate(`/norte?pergunta=${encodeURIComponent(p)}`)}
                   style={{
-                    background: 'rgba(255,255,255,.14)', border: '1px solid rgba(255,255,255,.45)',
-                    color: '#fff', borderRadius: 16, padding: '7px 12px', fontSize: 13,
+                    background: '#eff6ff', border: '1px solid #93c5fd',
+                    color: '#1e3a8a', borderRadius: 16, padding: '7px 12px', fontSize: 13,
                     cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
                   }}><i aria-hidden className="ti ti-compass" style={{ fontSize: 14, verticalAlign: '-2px', marginRight: 5 }} />{p}</button>
               ))}
               <button
                 onClick={() => navigate('/norte')}
                 style={{
-                  background: '#fff', border: 'none', color: '#0f2878', borderRadius: 16,
+                  background: '#1a56db', border: 'none', color: '#fff', borderRadius: 16,
                   padding: '7px 12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 }}>Outra pergunta →</button>
+            </div>
             </div>
           </div>
         </div>

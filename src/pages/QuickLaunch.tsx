@@ -15,6 +15,7 @@ import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import { nomeDaConta } from '../utils/nomeDaConta'
 import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
+import ModalTopo from '../components/ModalTopo'
 import { grupoDaCategoria } from '../utils/rotuloCategoria'
 
 function useIsMobile() {
@@ -448,37 +449,16 @@ export default function QuickLaunch() {
           <div onClick={fecharInput} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 110 }} />
           <div role="dialog" aria-label={`Lançar em ${catObj.nome}`} style={{
             position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 111,
-            background: '#fff', borderRadius: '20px 20px 0 0', maxHeight: '88vh', overflowY: 'auto',
-            padding: '10px 16px calc(16px + env(safe-area-inset-bottom))', animation: 'slideUp .2s ease',
+            background: '#fff', borderRadius: '20px 20px 0 0', maxHeight: '88vh',
+            display: 'flex', flexDirection: 'column', animation: 'slideUp .2s ease',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 8 }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0' }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              {etapa !== 'mes' && (
-                <button onClick={voltar} aria-label="Voltar" style={{
-                  border: 'none', background: '#f1f5f9', borderRadius: '50%', width: 40, height: 40, flexShrink: 0,
-                  fontSize: 20, color: COR.texto, cursor: 'pointer', fontFamily: 'inherit',
-                }}>‹</button>
-              )}
-              <span aria-hidden style={{
-                width: 44, height: 44, borderRadius: '50%', flexShrink: 0, fontSize: 22,
-                background: `${/^#[0-9a-f]{6}$/i.test(catObj.cor ?? '') ? catObj.cor : COR.azul}1f`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}><IconeCat icone={catObj.icone || '💰'} cor={corDoIcone(catObj.cor ?? '')} /></span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 700, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {catObj.descricao ? `${catObj.nome} · ${catObj.descricao}` : catObj.nome}
-                </div>
-                <div style={{ fontSize: 13, color: COR.textoSuave }}>
-                  {etapa === 'mes' ? 'Em qual mês?'
-                    : etapa === 'forma' ? `${Maiusc(nomeMes(formasEscolhidas!.mes))} · como você pagou?`
-                    : `${Maiusc(nomeMes(formasEscolhidas!.mes))} · ${forma ? nomeDaForma(forma) : ''}${isCartao ? ' · crédito' : ''}`}
-                </div>
-              </div>
-              <button onClick={fecharInput} aria-label="Fechar"
-                style={{ border: 'none', background: 'transparent', fontSize: 20, color: '#94a3b8', cursor: 'pointer', padding: 8 }}>✕</button>
-            </div>
+            <ModalTopo raio={20} voltar={etapa !== 'mes' ? voltar : undefined} onFechar={fecharInput}
+              icone={<IconeCat icone={catObj.icone || '💰'} cor="#fff" tamanho={22} />}
+              rotulo={etapa === 'mes' ? 'Em qual mês?'
+                : etapa === 'forma' ? `${Maiusc(nomeMes(formasEscolhidas!.mes))} · como você pagou?`
+                : `${Maiusc(nomeMes(formasEscolhidas!.mes))} · ${forma ? nomeDaForma(forma) : ''}${isCartao ? ' · crédito' : ''}`}
+              titulo={catObj.descricao ? `${catObj.nome} · ${catObj.descricao}` : catObj.nome} />
+            <div style={{ overflowY: 'auto', padding: '14px 16px calc(16px + env(safe-area-inset-bottom))' }}>
 
             {etapa === 'mes' && (
               <div style={{ display: 'flex', gap: 10 }}>
@@ -593,6 +573,7 @@ export default function QuickLaunch() {
                 >{isCartao ? <><i className="ti ti-credit-card" aria-hidden style={{ verticalAlign: -2 }} /> Lançar na fatura</> : '✓ Registrar lançamento'}</button>
               </>
             )}
+            </div>
           </div>
         </>
       )}
@@ -624,24 +605,8 @@ export default function QuickLaunch() {
             maxHeight: '82vh', display: 'flex', flexDirection: 'column',
             animation: 'slideUp .25s ease',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0' }}/>
-            </div>
-            <div style={{
-              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-              padding: '12px 20px 14px', borderBottom: `1px solid ${COR.borda}`,
-            }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: COR.texto }}>Categorias no Início</div>
-                <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 3 }}>
-                  Categorias variáveis disponíveis no lançamento rápido
-                </div>
-              </div>
-              <button
-                onClick={() => setGerenciar(false)}
-                style={{ border: 'none', background: 'transparent', fontSize: 20, color: '#94a3b8', cursor: 'pointer', padding: 4, flexShrink: 0 }}
-              >✕</button>
-            </div>
+            <ModalTopo raio={20} icone="ti-layout-grid" rotulo="Lançar" titulo="Categorias no Início"
+              subtitulo="Categorias variáveis disponíveis no lançamento rápido" onFechar={() => setGerenciar(false)} />
 
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {catsVariaveis.length === 0 ? (

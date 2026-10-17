@@ -4,6 +4,7 @@ import { iconeCategoria, ehCartaoCategoria } from '../../utils/categoriaIcone'
 import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import { Cartao, IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
+import ModalTopo from '../ModalTopo'
 import {
   COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
   diaEfetivoFixa, formaPagCategoria, formaRecebCategoria,
@@ -266,19 +267,12 @@ export default function NleExtratoMobile({
           display: 'flex', alignItems: 'flex-end',
         }}>
           <div onClick={e => e.stopPropagation()} role="dialog" aria-label={editando ? 'Editar lançamento' : 'Novo lançamento'} style={{
-            width: '100%', maxHeight: '92vh', overflowY: 'auto', background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '10px 16px calc(20px + env(safe-area-inset-bottom))', boxSizing: 'border-box',
+            width: '100%', maxHeight: '92vh', background: '#fff', borderRadius: '24px 24px 0 0',
+            display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
           }}>
-            <div aria-hidden style={{ width: 40, height: 5, borderRadius: 3, background: '#cbd5e1', margin: '0 auto 12px' }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: COR.texto }}>
-                {editando ? 'Editar lançamento' : 'Novo lançamento'}
-              </h2>
-              <button aria-label="Fechar" onClick={fecharForm} style={{
-                width: 40, height: 40, borderRadius: '50%', border: 'none', background: '#f1f5f9', color: COR.texto,
-                fontSize: 18, cursor: 'pointer', fontFamily: 'inherit',
-              }}>✕</button>
-            </div>
+            <ModalTopo icone={editando ? 'ti-pencil' : 'ti-plus'} rotulo="Lançamentos" raio={24} onFechar={fecharForm}
+              titulo={editando ? 'Editar lançamento' : 'Novo lançamento'} />
+            <div style={{ overflowY: 'auto', padding: '16px 16px calc(20px + env(safe-area-inset-bottom))' }}>
 
             <div role="tablist" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: '#f1f5f9', marginBottom: 16 }}>
               {(['saida', 'entrada'] as const).map(t => {
@@ -389,6 +383,7 @@ export default function NleExtratoMobile({
                 background: '#fff', color: VERMELHO, fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
               }}>Excluir lançamento</button>
             )}
+            </div>
           </div>
         </div>
       )}

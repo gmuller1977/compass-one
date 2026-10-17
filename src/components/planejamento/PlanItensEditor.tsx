@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { parseConta } from '../../utils/moeda'
 import { novoIdItem, somaItens, type ItemPlano } from '../../utils/itensPlano'
 import { MESES_FULL } from './types'
@@ -107,13 +108,12 @@ function EditorLancado({ nome, grupo, mes, valorAtual, onSalvar, onFechar, onRen
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="lancado-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 440, padding: '18px 20px',
-        boxShadow: '0 20px 50px rgba(15,23,42,.25)', maxHeight: '90vh', overflowY: 'auto',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 440, overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(15,23,42,.25)', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
-          <h3 id="lancado-titulo" style={{ margin: 0, fontSize: 16, color: COR.texto }}>{nome} · {nomeMes}</h3>
-          {grupo && <span style={{ fontSize: 12, color: COR.textoSuave }}>{grupo}</span>}
-        </div>
+        <ModalTopo icone="ti-calendar-stats" rotulo={grupo ? `Planejamento · ${grupo}` : 'Planejamento'}
+          titulo={`${nome} · ${nomeMes}`} id="lancado-titulo" onFechar={onFechar} />
+        <div style={{ overflowY: 'auto', padding: '2px 20px 18px' }}>
 
         <form onSubmit={e => { e.preventDefault(); salvar() }} style={{ marginTop: 14 }}>
           <label htmlFor="valor-planejado" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: COR.texto, marginBottom: 6 }}>
@@ -180,6 +180,7 @@ function EditorLancado({ nome, grupo, mes, valorAtual, onSalvar, onFechar, onRen
             fontSize: 13, fontWeight: 700, cursor: 'pointer', background: '#f1f5f9', color: '#1e3a8a' }}>Cancelar</button>
           <button type="button" onClick={salvar} style={{ border: 'none', borderRadius: 999, padding: '8px 16px', font: 'inherit',
             fontSize: 13, fontWeight: 700, cursor: 'pointer', background: COR.azul, color: '#fff' }}>Salvar</button>
+        </div>
         </div>
       </div>
     </div>
@@ -275,16 +276,13 @@ function EditorItens({
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div ref={caixa} role="dialog" aria-modal="true" aria-labelledby="itens-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 440, padding: '18px 20px',
-        boxShadow: '0 20px 50px rgba(15,23,42,.25)', maxHeight: '90vh', overflowY: 'auto',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 440, overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(15,23,42,.25)', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
-          <h3 id="itens-titulo" style={{ margin: 0, fontSize: 16, color: COR.texto }}>{nome} · {nomeMes.toLowerCase()}</h3>
-          {grupo && <span style={{ fontSize: 12, color: COR.textoSuave }}>{grupo}</span>}
-        </div>
-        <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 3 }}>
-          O plano guarda o total; os itens são o detalhe dele.
-        </div>
+        <ModalTopo icone="ti-list-details" rotulo={grupo ? `Planejamento · ${grupo}` : 'Planejamento'}
+          titulo={`${nome} · ${nomeMes}`} id="itens-titulo" onFechar={onFechar}
+          subtitulo="O plano guarda o total; os itens são o detalhe dele." />
+        <div style={{ overflowY: 'auto', padding: '0 20px 18px' }}>
 
         <form onSubmit={e => { e.preventDefault(); salvar() }}
           style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: '14px 0 10px' }}>
@@ -376,6 +374,7 @@ function EditorItens({
             <button type="button" onClick={salvar} style={{ border: 'none', borderRadius: 999, padding: '8px 16px', font: 'inherit',
               fontSize: 13, fontWeight: 700, cursor: 'pointer', background: COR.azul, color: '#fff' }}>Salvar</button>
           </span>
+        </div>
         </div>
       </div>
     </div>

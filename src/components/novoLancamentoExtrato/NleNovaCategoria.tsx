@@ -3,6 +3,7 @@ import { COR } from '../../utils/cores'
 import { montarCategoria, previaDe, gruposDisponiveis } from '../../utils/novaCategoria'
 import type { Categoria, TipoCategoria } from '../../context/AppContext'
 import { IconeCat } from '../IconeCat'
+import ModalTopo from '../ModalTopo'
 
 /**
  * Criar categoria sem sair do lançamento.
@@ -72,19 +73,16 @@ export default function NleNovaCategoria({
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Nova categoria"
+        aria-labelledby="nova-categoria-titulo"
         style={{
-          background: COR.branco, borderRadius: 14, padding: '22px 22px 18px',
+          background: COR.branco, borderRadius: 16, overflow: 'hidden',
           maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)',
         }}
       >
-        <div style={{ fontSize: 16, fontWeight: 800, color: COR.texto, marginBottom: 4 }}>
-          Nova {ehEntrada ? 'receita' : 'despesa'}
-        </div>
-        <div style={{ fontSize: 12.5, color: COR.textoSuave, lineHeight: 1.5, marginBottom: 14 }}>
-          Só o nome. O resto o app preenche a partir deste lançamento — e você
-          ajusta depois em Configurações, se quiser.
-        </div>
+        <ModalTopo icone="ti-category-plus" rotulo="Nova categoria" titulo={`Nova ${ehEntrada ? 'receita' : 'despesa'}`}
+          id="nova-categoria-titulo" onFechar={onFechar}
+          subtitulo="Só o nome. O resto o app preenche a partir deste lançamento, e você ajusta depois em Configurações, se quiser." />
+        <div style={{ padding: '16px 22px 18px' }}>
 
         <input
           ref={inputRef}
@@ -158,6 +156,7 @@ export default function NleNovaCategoria({
             color: '#fff', fontSize: 13.5, fontWeight: 800,
             cursor: nome.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
           }}>Criar e usar</button>
+        </div>
         </div>
       </div>
     </div>

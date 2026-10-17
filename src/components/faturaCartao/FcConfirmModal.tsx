@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import ModalTopo from '../ModalTopo'
 
 type Props = {
   mensagem: string
@@ -25,26 +26,20 @@ export default function FcConfirmModal({ mensagem, detalhe, onConfirmar, onCance
       onClick={onCancelar}
     >
       <div
-        style={{ background:'#fff', borderRadius:16, padding:'28px 28px 24px',
+        role="dialog" aria-modal="true" aria-labelledby="fc-confirma-titulo"
+        style={{ background:'#fff', borderRadius:16, overflow:'hidden',
           minWidth:300, maxWidth:380, width:'100%',
           boxShadow:'0 24px 64px rgba(0,0,0,0.28)' }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: detalhe ? 8 : 20 }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:'#fef2f2',
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:20 }}>
-            <i className="ti ti-trash" aria-hidden style={{ color:'#b91c1c' }} />
-          </div>
-          <p style={{ margin:0, fontSize:15, fontWeight:700, color:'#0f172a', lineHeight:1.35 }}>
-            {mensagem}
-          </p>
-        </div>
+        <ModalTopo icone="ti-trash" rotulo="Confirmar" titulo={mensagem} id="fc-confirma-titulo" onFechar={onCancelar} />
+        <div style={{ padding:'18px 24px 22px' }}>
         {detalhe && (
-          <p style={{ margin:'0 0 20px 52px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>
+          <p style={{ margin:'0 0 18px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>
             {detalhe}
           </p>
         )}
-        <div style={{ display:'flex', gap:10, marginTop: detalhe ? 0 : 4 }}>
+        <div style={{ display:'flex', gap:10 }}>
           <button
             onClick={onCancelar}
             style={{ flex:1, padding:'10px', borderRadius:10, border:'1.5px solid #e2e8f0',
@@ -62,6 +57,7 @@ export default function FcConfirmModal({ mensagem, detalhe, onConfirmar, onCance
           >
             {labelConfirmar}
           </button>
+        </div>
         </div>
       </div>
     </div>

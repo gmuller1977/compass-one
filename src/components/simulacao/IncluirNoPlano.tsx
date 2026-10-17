@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Categoria, Conta, PlanoAnoData } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { nomesDeCartao, ehTransferencia } from '../acompanhamento/evolucaoCalcs'
 import { resumoDasParcelas, type IntegracaoNoPlano, type ParcelaNoPlano } from '../../utils/simuladorNoPlano'
 
@@ -72,13 +73,13 @@ export default function IncluirNoPlano({
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="incluir-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 440, padding: '20px 22px',
-        boxShadow: '0 20px 50px rgba(15,23,42,.25)', maxHeight: '90vh', overflowY: 'auto',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 440, overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(15,23,42,.25)', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <h3 id="incluir-titulo" style={{ margin: 0, fontSize: 16, color: COR.texto }}>Incluir no planejamento</h3>
-        <div style={{ fontSize: 14, color: COR.texto, marginTop: 6, fontWeight: 600 }}>{resumoDasParcelas(parcelas)}</div>
-
-        <form onSubmit={e => { e.preventDefault(); confirmar() }} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+        <ModalTopo icone="ti-calculator" rotulo="Simulador" titulo="Incluir no planejamento" id="incluir-titulo"
+          onFechar={onFechar} subtitulo={resumoDasParcelas(parcelas)} />
+        <div style={{ overflowY: 'auto', padding: '16px 22px 20px' }}>
+        <form onSubmit={e => { e.preventDefault(); confirmar() }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <label htmlFor="incluir-cat" style={rotulo}>Em qual categoria?</label>
             <select id="incluir-cat" ref={primeiro} value={catId} onChange={e => { setCatId(e.target.value); setErro('') }} style={campo}>
@@ -115,6 +116,7 @@ export default function IncluirNoPlano({
             fontSize: 13, fontWeight: 700, cursor: 'pointer', background: '#f1f5f9', color: '#1e3a8a' }}>Cancelar</button>
           <button type="button" onClick={confirmar} style={{ border: 'none', borderRadius: 999, padding: '8px 16px', fontFamily: 'inherit',
             fontSize: 13, fontWeight: 700, cursor: 'pointer', background: COR.azul, color: '#fff' }}>Incluir</button>
+        </div>
         </div>
       </div>
     </div>

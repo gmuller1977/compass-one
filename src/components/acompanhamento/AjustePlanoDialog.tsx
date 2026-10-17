@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { parseConta, partesDaConta } from '../../utils/moeda'
 import type { JaLancado } from '../../utils/historicoDaCategoria'
 import { valorMesAMes, somaDeParcelas } from '../../utils/ajustePlano'
@@ -125,13 +126,12 @@ export default function AjustePlanoDialog({
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="ajuste-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 460, padding: '18px 20px',
-        boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', overflowY: 'auto',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 460, overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <h3 id="ajuste-titulo" style={{ margin: 0, fontSize: 16 }}>Ajustar o plano · {nome}</h3>
-        <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 4 }}>
-          {visto}: {isEntrada ? 'recebeu' : 'gastou'} {fmt(realVisto)} de {fmt(prevVisto)}
-        </div>
+        <ModalTopo icone="ti-adjustments" rotulo="Ajustar o plano" titulo={nome} id="ajuste-titulo" onFechar={onFechar}
+          subtitulo={`${visto}: ${isEntrada ? 'recebeu' : 'gastou'} ${fmt(realVisto)} de ${fmt(prevVisto)}`} />
+        <div style={{ overflowY: 'auto', padding: '2px 20px 18px' }}>
 
         {aviso || !alvo ? (
           <div style={{ fontSize: 13, color: COR.avisoTexto, background: COR.avisoFundo, border: `1px solid ${COR.avisoBorda}`,
@@ -226,6 +226,7 @@ export default function AjustePlanoDialog({
             <button type="button" onClick={onFechar} style={botao(false)}>{aviso || !alvo ? 'Fechar' : 'Cancelar'}</button>
             {!aviso && alvo && <button type="button" onClick={salvar} style={botao(true)}>Salvar</button>}
           </span>
+        </div>
         </div>
       </div>
     </div>

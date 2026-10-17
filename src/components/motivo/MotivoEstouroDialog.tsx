@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { useToast } from '../Toast'
 import type { EstouroComMotivo, Motivo } from '../../utils/motivoDoEstouro'
 
@@ -65,13 +66,13 @@ export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFecha
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="motivo-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 560, padding: '18px 20px',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 560, overflow: 'hidden',
         boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <h3 id="motivo-titulo" style={{ margin: 0, fontSize: 17 }}>Por que passou do plano?</h3>
-        <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 4, lineHeight: 1.4 }}>
-          Uma frase basta. No fim de {nomeMes}, a Revisão mensal abre com o que você anotar aqui.
-        </div>
+        <ModalTopo icone="ti-pencil" rotulo={`Anotar o motivo · ${nomeMes}`} titulo="Por que passou do plano?" id="motivo-titulo"
+          onFechar={onFechar}
+          subtitulo={`Uma frase basta. No fim de ${nomeMes}, a Revisão mensal abre com o que você anotar aqui.`} />
+        <div style={{ padding: '4px 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
 
         <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
           {estouros.map(e => (
@@ -128,6 +129,7 @@ export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFecha
             border: 'none', borderRadius: 999, padding: '8px 16px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
             cursor: salvando ? 'default' : 'pointer', background: COR.azul, color: '#fff', opacity: salvando ? 0.6 : 1,
           }}>{salvando ? 'Salvando…' : 'Salvar'}</button>
+        </div>
         </div>
       </div>
     </div>

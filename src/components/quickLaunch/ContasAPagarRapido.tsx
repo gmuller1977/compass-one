@@ -8,6 +8,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { parseBRL } from '../../utils/moeda'
 import { COR } from '../../utils/cores'
 import { M } from '../mobile/estilo'
+import ModalTopo from '../ModalTopo'
 import { nomeDaConta } from '../../utils/nomeDaConta'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
@@ -121,11 +122,12 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
           onClick={() => setPagando(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: '#fff', width: '100%', borderRadius: '20px 20px 0 0', padding: '18px 16px 28px',
+            background: '#fff', width: '100%', borderRadius: '20px 20px 0 0',
             fontFamily: "-apple-system,'Inter',sans-serif", animation: 'slideUp .2s ease',
           }}>
-            <div style={{ fontSize: 19, fontWeight: 700, color: COR.texto }}>{nome(pagando)}</div>
-            <div style={{ fontSize: 14, color: COR.textoSuave, marginBottom: 14 }}>Previsto {fmt(pagando.valor)} · {quando(pagando)}</div>
+            <ModalTopo icone="ti-receipt" rotulo="Pagar conta" titulo={nome(pagando)} raio={20}
+              subtitulo={`Previsto ${fmt(pagando.valor)} · ${quando(pagando)}`} onFechar={() => setPagando(null)} />
+            <div style={{ padding: '16px 16px 28px' }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: COR.textoSuave }}>Valor pago
               <input value={valor} onChange={e => setValor(e.target.value)} inputMode="decimal" style={{
                 display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 4, marginBottom: 10,
@@ -146,6 +148,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
               background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`, color: '#fff',
               fontSize: 16, fontWeight: 700, fontFamily: 'inherit',
             }}>✓ Marcar como paga</button>
+            </div>
           </div>
         </div>
       )}

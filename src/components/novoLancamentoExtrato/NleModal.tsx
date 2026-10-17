@@ -1,5 +1,4 @@
-import { IconeCat } from '../IconeCat'
-import { corDoIcone } from '../../utils/iconeDesenhado'
+import ModalTopo from '../ModalTopo'
 
 type ModalSaldoInfo = {
   contaId: string; banco: string; icone: string; cor: string; key: string
@@ -26,27 +25,19 @@ export default function NleModal({
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
       display:'flex',alignItems:'center',justifyContent:'center'}}
       onClick={() => setModalSaldo(null)}>
-      <div style={{background:'#fff',borderRadius:14,padding:'28px 32px',minWidth:360,
+      <div role="dialog" aria-modal="true" aria-labelledby="nle-saldo-titulo"
+        style={{background:'#fff',borderRadius:16,overflow:'hidden',width:400,maxWidth:'calc(100vw - 32px)',
         boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
         onClick={e => e.stopPropagation()}>
-        <div style={{marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
-            display:'inline-flex',alignItems:'center',gap:6,
-            background:modalSaldo.cor+'18',border:`1px solid ${modalSaldo.cor}55`}}>
-            <span><IconeCat icone={modalSaldo.icone} cor={corDoIcone(modalSaldo.cor)} /></span>
-            <span style={{color:modalSaldo.cor,fontWeight:700}}>{modalSaldo.banco}</span>
-          </span>
-        </div>
         {/* O dinheiro nao tem banco nem conta: perguntar "saldo no banco" para
             quem esta conferindo a carteira e pedir a coisa errada. */}
-        <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 6px'}}>
-          {ehDinheiro ? 'Quanto você tem em espécie agora?' : 'Qual é o saldo atual no banco?'}
-        </p>
-        <p style={{fontSize:12,color:'#64748b',margin:'0 0 16px'}}>
-          {ehDinheiro
+        <ModalTopo icone={ehDinheiro ? 'ti-cash' : 'ti-building-bank'} rotulo={modalSaldo.banco}
+          titulo={ehDinheiro ? 'Quanto você tem em espécie agora?' : 'Qual é o saldo atual no banco?'}
+          id="nle-saldo-titulo" onFechar={() => setModalSaldo(null)}
+          subtitulo={ehDinheiro
             ? 'Conte o que está na carteira para conferir se seus lançamentos estão batendo.'
-            : 'Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.'}
-        </p>
+            : 'Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.'} />
+        <div style={{padding:'18px 24px 22px'}}>
         <input autoFocus
           value={modalSaldoValor}
           onChange={e => setModalSaldoValor(e.target.value)}
@@ -72,6 +63,7 @@ export default function NleModal({
               cursor:'pointer',fontFamily:'inherit'}}>
             Confirmar
           </button>
+        </div>
         </div>
       </div>
     </div>

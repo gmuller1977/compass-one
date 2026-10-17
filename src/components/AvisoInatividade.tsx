@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { COR } from '../utils/cores'
+import ModalTopo from './ModalTopo'
 import {
   estadoInatividade, lerUltimaAtividade, marcarAtividade, marcarSaidaPorInatividade,
 } from '../utils/inatividade'
@@ -91,13 +92,12 @@ export default function AvisoInatividade() {
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       }}>
       <div style={{
-        background: COR.branco, borderRadius: 14, padding: '22px 22px 18px',
+        background: COR.branco, borderRadius: 16, overflow: 'hidden',
         maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.22)',
       }}>
-        <div id="inat-titulo" style={{ fontSize: 17, fontWeight: 800, color: COR.texto }}>
-          Você ainda está aí?
-        </div>
-        <p id="inat-texto" style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.55, margin: '8px 0 18px' }}>
+        <ModalTopo icone="ti-clock" rotulo="Segurança" titulo="Você ainda está aí?" id="inat-titulo" />
+        <div style={{ padding: '16px 22px 18px' }}>
+        <p id="inat-texto" style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.55, margin: '0 0 18px' }}>
           Por segurança, você será desconectado em{' '}
           <b style={{ color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>{segundos} s</b>.
         </p>
@@ -112,6 +112,7 @@ export default function AvisoInatividade() {
             border: `1.5px solid ${COR.borda}`, background: COR.branco, color: COR.texto,
             fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           }}>Sair agora</button>
+        </div>
         </div>
       </div>
     </div>

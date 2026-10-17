@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useToast } from './Toast'
 import { parseValor } from '../utils/moeda'
+import ModalTopo from './ModalTopo'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -107,15 +108,10 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
   if (isMobile) {
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,.5)', zIndex: 1000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-        <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px 32px' }}>
-          <div style={{ width: 36, height: 4, background: '#e2e8f0', borderRadius: 2, margin: '0 auto 16px' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#b45309', flexShrink: 0 }}><i aria-hidden className="ti ti-alert-triangle" /></div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginBottom: 2 }}>Categoria no limite!</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>{catNome} · {mesLabel}</div>
-            </div>
-          </div>
+        <div role="dialog" aria-modal="true" aria-labelledby="alerta-orc-titulo" style={{ background: '#fff', borderRadius: '20px 20px 0 0' }}>
+          <ModalTopo raio={20} icone="ti-alert-triangle" rotulo={`${catNome} · ${mesLabel}`} titulo="Categoria no limite!"
+            id="alerta-orc-titulo" onFechar={onIgnorar} />
+          <div style={{ padding: '16px 20px 32px' }}>
           {progresso}
           {lancAtual}
           {ajusteField}
@@ -132,6 +128,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
               Ignorar
             </button>
           </div>
+          </div>
         </div>
       </div>
     )
@@ -140,15 +137,9 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
   // Web: modal centralizado
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: 480, maxWidth: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#b45309', flexShrink: 0 }}><i aria-hidden className="ti ti-alert-triangle" /></div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Categoria no limite!</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{catNome} · {mesLabel}</div>
-          </div>
-          <button onClick={onIgnorar} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 14, color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-        </div>
+      <div role="dialog" aria-modal="true" aria-labelledby="alerta-orc-titulo" style={{ background: '#fff', borderRadius: 20, width: 480, maxWidth: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
+        <ModalTopo icone="ti-alert-triangle" rotulo={`${catNome} · ${mesLabel}`} titulo="Categoria no limite!"
+          id="alerta-orc-titulo" onFechar={onIgnorar} />
         <div style={{ padding: '20px 24px' }}>
           {progresso}
           {lancAtual}

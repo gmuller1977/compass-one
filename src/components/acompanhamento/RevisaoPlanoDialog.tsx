@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { parseConta } from '../../utils/moeda'
 import type { Categoria, PlanoAnoData } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
@@ -153,13 +154,13 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="revisao-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 680, padding: '18px 20px',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 680, overflow: 'hidden',
         boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <h3 id="revisao-titulo" style={{ margin: 0, fontSize: 17 }}>Revisão do planejamento</h3>
-        <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 4, lineHeight: 1.4 }}>
-          O que já está lançado passa do plano destes meses. Confira o valor sugerido e confirme.
-        </div>
+        <ModalTopo icone="ti-calendar-search" rotulo="Planejamento" titulo="Revisão do planejamento" id="revisao-titulo"
+          onFechar={onFechar}
+          subtitulo="O que já está lançado passa do plano destes meses. Confira o valor sugerido e confirme." />
+        <div style={{ padding: '4px 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
 
         <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0 }}>
           {linhas.length === 0 ? (
@@ -307,6 +308,7 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
               Confirmar {escolhidas.length === 1 ? '1 mês' : `${escolhidas.length} meses`}
             </button>
           )}
+        </div>
         </div>
       </div>
     </div>

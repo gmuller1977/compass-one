@@ -727,6 +727,16 @@ e os meses das colunas por extenso, numa caixa: o atual em `#1e3a8a` com
 "mês atual", os outros em `#eef2f8`. Um "fechado / previsto" embaixo dos
 outros meses foi recusado no mesmo dia.
 
+**Toda janela tem esse cabeçalho: `ModalTopo`** (17/10/2026, pedido do
+Guilherme: "verifique nas outras telas de modal"). Azul de ponta a ponta,
+ícone desenhado no círculo, rótulo em maiúsculas, título branco e ✕
+redondo; corpo branco embaixo. Vale para as janelas centrais e para as
+folhas de baixo do celular (`raio`, sem o tracinho de arrastar). Com
+`setas`, o título tem largura fixa (`larguraTitulo`): as setas do mês não
+mudam de lugar com o nome do mês. Janela nova usa o `ModalTopo`, nunca um
+título escuro sobre branco. Ficou de fora o menu "Mais" (lista de atalhos,
+não janela) e os avisos rápidos (toasts).
+
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
 ajuste não mexer no mês corrente. Um aviso na hora do lançamento convida a

@@ -3,6 +3,7 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
+import ModalTopo from '../components/ModalTopo'
 import BottomNav from '../components/BottomNav'
 import { useToast } from '../components/Toast'
 import { parseValor } from '../utils/moeda'
@@ -751,11 +752,11 @@ export default function Configuracoes() {
       {modalExcluirConta && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)',
           zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-          <div style={{ background:COR.branco, borderRadius:14, padding:28,
+          <div role="dialog" aria-modal="true" aria-labelledby="excluir-conta-titulo" style={{ background:COR.branco, borderRadius:16, overflow:'hidden',
             maxWidth:420, width:'100%', boxShadow:'0 8px 40px rgba(0,0,0,.2)' }}>
-            <h3 style={{ fontSize:16, fontWeight:700, color:COR.vermelho, margin:'0 0 10px' }}>
-              Excluir conta permanentemente
-            </h3>
+            <ModalTopo icone="ti-trash" rotulo="Perfil" titulo="Excluir conta permanentemente" id="excluir-conta-titulo"
+              onFechar={deletando ? undefined : () => setModalExcluirConta(false)} />
+            <div style={{ padding:'18px 24px 22px' }}>
             <p style={{ fontSize:13, color:COR.textoSuave, margin:'0 0 18px', lineHeight:1.6 }}>
               Esta ação é <strong>irreversível</strong>. Todos os seus dados serão apagados e não poderão ser recuperados.<br /><br />
               Para confirmar, digite <strong style={{ color:COR.texto }}>EXCLUIR</strong> no campo abaixo:
@@ -794,6 +795,7 @@ export default function Configuracoes() {
                   transition:'background .2s' }}>
                 {deletando ? 'Excluindo...' : 'Excluir conta'}
               </button>
+            </div>
             </div>
           </div>
         </div>

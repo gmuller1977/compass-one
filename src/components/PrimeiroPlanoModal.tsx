@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { COR } from '../utils/cores'
+import ModalTopo from './ModalTopo'
 import { NOMES_MESES } from './novoLancamentoExtrato/NleShared'
 import { parseBRL } from '../utils/moeda'
 import { chaveDaLinha, planoDaProposta, type LinhaProposta, type Proposta } from '../utils/primeiroPlano'
@@ -122,18 +123,16 @@ export default function PrimeiroPlanoModal({
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Seu primeiro plano"
+        aria-labelledby="primeiro-plano-titulo"
         style={{
-          background: COR.branco, borderRadius: 16, padding: '26px 26px 22px',
-          maxWidth: 520, width: '100%', maxHeight: '88vh', overflowY: 'auto',
+          background: COR.branco, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          maxWidth: 520, width: '100%', maxHeight: '88vh',
           boxShadow: '0 20px 60px rgba(0,0,0,.22)',
         }}
       >
-        <div style={{ fontSize: 28, lineHeight: 1 }}>📋</div>
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: COR.texto,
-          margin: '12px 0 8px', textWrap: 'balance' }}>
-          {mesBase} fechou. Aqui está o seu primeiro plano.
-        </h2>
+        <ModalTopo icone="ti-clipboard-list" rotulo="Seu primeiro plano" id="primeiro-plano-titulo"
+          titulo={`${mesBase} fechou. Aqui está o seu primeiro plano.`} onFechar={onFechar} />
+        <div style={{ overflowY: 'auto', padding: '18px 26px 22px' }}>
 
         <p style={{ fontSize: 13.5, color: COR.textoSuave, lineHeight: 1.6, margin: 0 }}>
           {nada
@@ -190,6 +189,7 @@ export default function PrimeiroPlanoModal({
             Nada disso é definitivo: depois de criado, o plano se ajusta mês a mês na Grade.
           </p>
         )}
+        </div>
       </div>
     </div>
   )

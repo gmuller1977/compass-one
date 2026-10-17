@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import ModalTopo from './ModalTopo'
 
 type Props = {
   open: boolean
@@ -38,7 +39,6 @@ export default function ModalConfirmacao({
   if (!open) return null
 
   const iconeEfetivo = icone ?? (apenasFechar ? 'ti-alert-triangle' : 'ti-trash')
-  const bgIcone = apenasFechar ? '#fef3c7' : '#fef2f2'
 
   return (
     <div
@@ -52,22 +52,15 @@ export default function ModalConfirmacao({
     >
       <div
         onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="confirmacao-titulo"
         style={{
-          background: '#fff', borderRadius: 14, padding: '28px 28px 24px',
+          background: '#fff', borderRadius: 16, overflow: 'hidden',
           maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)',
         }}
       >
-        <div style={{
-          width: 48, height: 48, borderRadius: 12,
-          background: bgIcone, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 22, marginBottom: 16,
-        }}>
-          <i aria-hidden className={`ti ${iconeEfetivo}`} style={{ fontSize: 24, color: apenasFechar ? '#b45309' : '#b91c1c' }} />
-        </div>
-
-        <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>
-          {titulo}
-        </div>
+        <ModalTopo icone={iconeEfetivo} rotulo={apenasFechar ? 'Aviso' : 'Confirmar'} titulo={titulo}
+          id="confirmacao-titulo" onFechar={onCancelar} />
+        <div style={{ padding: '18px 24px 22px' }}>
 
         {mensagem && (
           <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, marginBottom: detalhe ? 10 : 0 }}>
@@ -85,7 +78,7 @@ export default function ModalConfirmacao({
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: mensagem || detalhe ? 22 : 0 }}>
           {apenasFechar ? (
             <button
               ref={btnRef}
@@ -126,6 +119,7 @@ export default function ModalConfirmacao({
               </button>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>

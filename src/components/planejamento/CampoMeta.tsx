@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import PlanCelulaEditavel from './PlanCelulaEditavel'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { MESES_FULL, fmt } from './types'
 
 /**
@@ -82,14 +83,13 @@ function CopiarMetaDialog({ mi, valor, base, onCopiar, onFechar }: {
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="copiar-meta-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 420, padding: '18px 20px',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 420, overflow: 'hidden',
         boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, textAlign: 'left',
       }}>
-        <div style={{ fontSize: 12, color: COR.textoSuave }}>Meta de economia · {MESES_FULL[mi]}</div>
-        <h3 id="copiar-meta-titulo" style={{ margin: '4px 0 0', fontSize: 16, lineHeight: 1.35 }}>
-          Copiar a meta para os próximos meses?
-        </h3>
-        <div style={{ fontSize: 14, color: COR.texto, marginTop: 6, lineHeight: 1.45 }}>
+        <ModalTopo icone="ti-target-arrow" rotulo={`Meta de economia · ${MESES_FULL[mi]}`}
+          titulo="Copiar a meta para os próximos meses?" id="copiar-meta-titulo" onFechar={onFechar} />
+        <div style={{ padding: '16px 20px 18px' }}>
+        <div style={{ fontSize: 14, color: COR.texto, lineHeight: 1.45 }}>
           Guardar <b>{fmt(valor, true)}</b> também de {periodo}.
         </div>
         {outras.length > 0 && (
@@ -102,6 +102,7 @@ function CopiarMetaDialog({ mi, valor, base, onCopiar, onFechar }: {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
           <button type="button" onClick={onFechar} style={btn(false)}>Só {MESES_FULL[mi].toLowerCase()}</button>
           <button type="button" autoFocus onClick={onCopiar} style={btn(true)}>Copiar até dezembro</button>
+        </div>
         </div>
       </div>
     </div>

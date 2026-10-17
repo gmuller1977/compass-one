@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { aceitarConvite, convitesParaMim, removerConvite, type Convite } from '../../utils/compartilhamento'
 
 /**
@@ -50,11 +51,9 @@ export default function ConviteCompartilhamento() {
     <div role="dialog" aria-modal="true" aria-labelledby="convite-titulo" style={{ position: 'fixed', inset: 0, zIndex: 400,
       background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       fontFamily: "-apple-system,'Inter',sans-serif" }}>
-      <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(15,23,42,.3)' }}>
-        <i aria-hidden className="ti ti-users" style={{ display: 'block', fontSize: 36, color: COR.azul }} />
-        <h2 id="convite-titulo" style={{ fontSize: 20, fontWeight: 800, color: COR.texto, margin: '8px 0 8px' }}>
-          {quem} quer compartilhar as finanças com você
-        </h2>
+      <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(15,23,42,.3)' }}>
+        <ModalTopo icone="ti-users" rotulo="Convite" titulo={`${quem} quer compartilhar as finanças com você`} id="convite-titulo" />
+        <div style={{ padding: '18px 24px 24px' }}>
         <p style={{ fontSize: 15, color: COR.texto, lineHeight: 1.55, margin: '0 0 6px' }}>
           Aceitando, você passa a ver e lançar nas contas, categorias e plano {convite.dono_nome ? `de ${convite.dono_nome}` : 'dessa pessoa'},
           com o seu próprio login.
@@ -70,6 +69,7 @@ export default function ConviteCompartilhamento() {
             background: COR.azul, color: '#fff', fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
             {ocupado ? 'Entrando…' : 'Aceitar'}
           </button>
+        </div>
         </div>
       </div>
     </div>

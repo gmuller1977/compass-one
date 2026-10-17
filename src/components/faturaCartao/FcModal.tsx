@@ -1,8 +1,7 @@
 import React from 'react'
 import type { Conta } from '../../context/AppContext'
 import { COR, type DadosMes } from './FcShared'
-import { IconeCat } from '../IconeCat'
-import { corDoIcone } from '../../utils/iconeDesenhado'
+import ModalTopo from '../ModalTopo'
 
 type Props = {
   modalFatura: boolean
@@ -27,25 +26,14 @@ export default function FcModal({
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
       display:'flex',alignItems:'center',justifyContent:'center'}}
       onClick={() => setModalFatura(false)}>
-      <div style={{background:'#fff',borderRadius:14,padding:'28px 32px',minWidth:360,
+      <div role="dialog" aria-modal="true" aria-labelledby="fc-fatura-titulo"
+        style={{background:'#fff',borderRadius:16,overflow:'hidden',width:400,maxWidth:'calc(100vw - 32px)',
         boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
         onClick={e => e.stopPropagation()}>
-        <div style={{marginBottom:20}}>
-          {contaInfo && (
-            <span style={{fontSize:14,fontWeight:500,padding:'4px 12px',borderRadius:6,
-              display:'inline-flex',alignItems:'center',gap:6,
-              background:contaInfo.cor+'18',border:`1px solid ${contaInfo.cor}55`}}>
-              <span><IconeCat icone={contaInfo.icone} cor={corDoIcone(contaInfo.cor)} /></span>
-              <span style={{color:contaInfo.cor,fontWeight:700}}>{contaInfo.banco}</span>
-            </span>
-          )}
-        </div>
-        <p style={{fontSize:14,color:'#0f172a',fontWeight:600,margin:'0 0 6px'}}>
-          Qual é o valor atual da fatura?
-        </p>
-        <p style={{fontSize:12,color:'#94a3b8',margin:'0 0 16px'}}>
-          Informe o valor do cartão para acompanhar a diferença em relação ao sistema.
-        </p>
+        <ModalTopo icone="ti-credit-card" rotulo={contaInfo ? `Cartão · ${contaInfo.apelido ?? contaInfo.banco}` : 'Cartão'}
+          titulo="Qual é o valor atual da fatura?" id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
+          subtitulo="Informe o valor do cartão para acompanhar a diferença em relação ao sistema." />
+        <div style={{padding:'18px 24px 22px'}}>
         <input autoFocus
           value={modalFaturaValor}
           onChange={e => setModalFaturaValor(e.target.value)}
@@ -73,6 +61,7 @@ export default function FcModal({
               cursor:'pointer',fontFamily:'inherit'}}>
             Confirmar
           </button>
+        </div>
         </div>
       </div>
     </div>

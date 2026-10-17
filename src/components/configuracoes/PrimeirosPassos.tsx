@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../../data/categoriasPadrao'
 import { COR } from '../../utils/cores'
-import SeloCompass from '../LogoCompass'
+import { LogoCompass } from '../LogoCompass'
+import ModalTopo from '../ModalTopo'
 import { jaViu, marcarVisto } from '../../utils/vistoNaConta'
 
 /**
@@ -73,9 +74,7 @@ export default function PrimeirosPassos() {
   if (pronto) {
     if (!prontoAberto) return null
     return (
-      <Janela onFechar={() => setProntoAberto(false)} rotulo="Tudo pronto">
-        <SeloCompass />
-        <h2 style={tituloSt}>Tudo pronto para começar</h2>
+      <Janela onFechar={() => setProntoAberto(false)} titulo="Tudo pronto para começar">
         <p style={textoSt}>
           Lance o que gastar a partir de hoje. Se já sabe quanto ganha e gasta, monte o plano agora.
         </p>
@@ -90,9 +89,7 @@ export default function PrimeirosPassos() {
   if (abaAtual === 'home') {
     if (!bemVindo) return null
     return (
-      <Janela onFechar={fecharBemVindo} rotulo="Bem-vindo ao Compass One">
-        <SeloCompass />
-        <h2 style={tituloSt}>Bem-vindo ao Compass One!</h2>
+      <Janela onFechar={fecharBemVindo} titulo="Bem-vindo ao Compass One!">
         <p style={textoSt}>
           A sua jornada começa hoje com apenas 3 passos rápidos. Com eles, a sua bússola
           já sabe onde está o seu dinheiro e para onde ele vai.
@@ -153,10 +150,9 @@ export default function PrimeirosPassos() {
 
 const CHAVE_BEM_VINDO = 'boas-vindas-configuracoes'
 
-const tituloSt: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: COR.texto, margin: '16px 0 8px' }
 const textoSt: React.CSSProperties = { fontSize: 14, color: COR.textoSuave, lineHeight: 1.6, margin: 0 }
 
-function Janela({ onFechar, rotulo, children }: { onFechar: () => void; rotulo: string; children: React.ReactNode }) {
+function Janela({ onFechar, titulo, children }: { onFechar: () => void; titulo: string; children: React.ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onFechar() }
     document.addEventListener('keydown', onKey)
@@ -165,10 +161,11 @@ function Janela({ onFechar, rotulo, children }: { onFechar: () => void; rotulo: 
   return (
     <div onClick={onFechar} role="presentation" style={{ position: 'fixed', inset: 0, zIndex: 9999,
       background: 'rgba(15,23,42,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={rotulo} style={{
-        background: COR.branco, borderRadius: 16, padding: '28px 28px 24px', maxWidth: 500, width: '100%',
-        maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
-        {children}
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="primeiros-passos-titulo" style={{
+        background: COR.branco, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        maxWidth: 500, width: '100%', maxHeight: '90vh', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
+        <ModalTopo icone={<LogoCompass size={24} />} rotulo="Primeiros passos" titulo={titulo} id="primeiros-passos-titulo" onFechar={onFechar} />
+        <div style={{ overflowY: 'auto', padding: '20px 28px 24px' }}>{children}</div>
       </div>
     </div>
   )

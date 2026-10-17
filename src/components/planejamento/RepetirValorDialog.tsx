@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
+import ModalTopo from '../ModalTopo'
 import { nomeDoMes, type MesRef } from '../../utils/recorrencia'
 
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
@@ -59,17 +60,18 @@ export default function RepetirValorDialog({
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="repetir-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 420, padding: '18px 20px',
-        boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', overflowY: 'auto',
+        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 420, overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ fontSize: 12, color: COR.textoSuave }}>{nome} · {tipo === 'anual' ? 'anual' : 'temporária'}</div>
-
+        <ModalTopo icone="ti-repeat" rotulo={`${nome} · ${tipo === 'anual' ? 'anual' : 'temporária'}`} id="repetir-titulo"
+          onFechar={onFechar}
+          titulo={tipo === 'anual'
+            ? (diferentes.length === 1 ? 'Este mês tem outro valor' : 'Estes meses têm outro valor')
+            : 'Quantas parcelas?'} />
+        <div style={{ overflowY: 'auto', padding: '16px 20px 18px' }}>
         {tipo === 'anual' ? (
           <>
-            <h3 id="repetir-titulo" style={{ margin: '4px 0 0', fontSize: 16, lineHeight: 1.35 }}>
-              {diferentes.length === 1 ? 'Este mês tem outro valor' : 'Estes meses têm outro valor'}
-            </h3>
-            <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 4, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.4 }}>
               {repetidoAte
                 ? <>{fmt(valor)} foi repetido até {nomeMes(repetidoAte)}, menos {diferentes.length === 1 ? 'neste' : 'nestes'}:</>
                 : <>{fmt(valor)} não foi repetido. Alterar também?</>}
@@ -97,8 +99,7 @@ export default function RepetirValorDialog({
           </>
         ) : (
           <>
-            <h3 id="repetir-titulo" style={{ margin: '4px 0 0', fontSize: 16 }}>Quantas parcelas?</h3>
-            <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: COR.textoSuave }}>
               {fmt(valor)} por mês, a partir de {MESES[mes]}.
             </div>
             {candidatos.length > 0 ? (
@@ -127,6 +128,7 @@ export default function RepetirValorDialog({
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   )

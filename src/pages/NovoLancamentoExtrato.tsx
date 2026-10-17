@@ -26,6 +26,7 @@ import NleModal           from '../components/novoLancamentoExtrato/NleModal'
 import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
+import ModalTopo from '../components/ModalTopo'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -1403,12 +1404,12 @@ export default function NovoLancamentoExtrato() {
             display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
             onClick={() => setEscolherContaFixa(null)}>
             <div onClick={e => e.stopPropagation()}
-              style={{ background:'#fff', borderRadius:14, padding:20, minWidth:300, maxWidth:380,
+              role="dialog" aria-modal="true" aria-labelledby="conta-fixa-titulo"
+              style={{ background:'#fff', borderRadius:16, overflow:'hidden', minWidth:300, maxWidth:380, width:'100%',
                 boxShadow:'0 8px 32px rgba(0,0,0,.22)' }}>
-              <div style={{ fontSize:15, fontWeight:700, color:COR.texto, marginBottom:4 }}>
-                {cat?.tipo === 'entrada' ? 'Receber em qual conta?' : 'Pagar de qual conta?'}
-              </div>
-              <div style={{ fontSize:12, color:COR.textoSuave, marginBottom:14 }}>{nome}</div>
+              <ModalTopo icone="ti-building-bank" rotulo={nome} id="conta-fixa-titulo" onFechar={() => setEscolherContaFixa(null)}
+                titulo={cat?.tipo === 'entrada' ? 'Receber em qual conta?' : 'Pagar de qual conta?'} />
+              <div style={{ padding:'16px 20px 20px' }}>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {contasExtrato.map(c => (
                   <button key={c.id} onClick={() => confirmarFixaEm(escolherContaFixa, c.id)}
@@ -1434,6 +1435,7 @@ export default function NovoLancamentoExtrato() {
                   fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
                 Cancelar
               </button>
+              </div>
             </div>
           </div>
         )
