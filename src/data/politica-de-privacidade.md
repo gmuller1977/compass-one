@@ -57,7 +57,7 @@ Compartilhamos dados apenas com:
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
 - **Vercel (hospedagem):** hospedagem da aplicação web
 - **Resend (e-mail):** envio de e-mails transacionais (confirmação de conta, recuperação de senha, convites)
-- **Google (Gemini, inteligência artificial):** usado **somente quando você conversa com o assistente Norte**. Para responder, enviamos ao Google a sua pergunta, o histórico recente da conversa e um resumo das suas finanças calculado pela Plataforma (saldos, totais do mês, plano, contas a vencer e nomes de categorias e contas). Não enviamos e-mail, senha nem dados de cartão. Se você não usa o Norte, nada é enviado ao Google
+- **Google (Gemini, inteligência artificial):** usado **somente quando você conversa com o assistente Norte**. Para responder, enviamos ao Google a sua pergunta, o histórico recente da conversa e um resumo das suas finanças calculado pela Plataforma (saldos, totais do mês, plano, contas a vencer e nomes de categorias e contas). Não enviamos e-mail, senha nem dados de cartão. Se você não usa o Norte, nada é enviado ao Google. **Atenção:** neste momento o Norte usa o serviço gratuito do Gemini, cujos termos permitem ao Google usar o conteúdo enviado para melhorar os produtos dele, inclusive com leitura por revisores humanos. Se você não concorda, não use o Norte; o restante da Plataforma funciona sem ele
 
 O reconhecimento de voz (microfone) é feito pelo seu navegador. Dependendo do navegador, o áudio pode ser processado pelo fornecedor dele (por exemplo, Google no Chrome ou Apple no Safari), conforme a política desse fornecedor.
 
