@@ -104,6 +104,8 @@ export default function PlanModalMeses({
   const titulo = anoInteiro ? 'Janeiro – Dezembro'
     : meses.length === 1 ? MESES_FULL[meses[0]]
     : `${MESES_FULL[meses[0]]} – ${MESES_FULL[meses[meses.length - 1]]}`
+  const titulosPossiveis = Array.from({ length: 13 - Math.min(n, 12) }, (_, i) => n <= 1 ? MESES_FULL[i]
+    : `${MESES_FULL[i]} – ${MESES_FULL[i + Math.min(n, 12) - 1]}`)
   const anoCorrente = new Date().getFullYear()
   const colunas = `${W_NOME}px repeat(${meses.length}, ${W_MES}px)`
 
@@ -217,7 +219,16 @@ export default function PlanModalMeses({
               <div style={{ fontSize: 11, color: ROTULO_TOPO, letterSpacing: '.3px', textTransform: 'uppercase', fontWeight: 500, marginBottom: 2 }}>
                 Planejamento {anoAtual}
               </div>
-              <div id="meses-titulo" style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.2, whiteSpace: 'nowrap' }}>{titulo}</div>
+              {/* As setas não andam com o nome do mês (pedido do Guilherme em
+                  17/10/2026): todos os títulos possíveis da janela ficam
+                  invisíveis na mesma célula da grade, e ela fica com a largura
+                  do maior. */}
+              <div style={{ display: 'grid', fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                <div id="meses-titulo" style={{ gridArea: '1 / 1' }}>{titulo}</div>
+                {!anoInteiro && titulosPossiveis.map(t => (
+                  <div key={t} aria-hidden style={{ gridArea: '1 / 1', visibility: 'hidden' }}>{t}</div>
+                ))}
+              </div>
             </div>
             {!anoInteiro && <span style={{ display: 'flex', gap: 6 }}>{seta(-1)}{seta(1)}</span>}
           </div>

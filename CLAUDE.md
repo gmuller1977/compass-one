@@ -724,7 +724,8 @@ No mesmo dia o `PlanModalMeses` ganhou o cabeçalho azul das outras telas
 (ícone em círculo, "PLANEJAMENTO 2026", título branco com as setas ao lado,
 "Ano inteiro" e ✕ à direita; no ano inteiro o título é "Janeiro – Dezembro")
 e os meses das colunas por extenso, numa caixa: o atual em `#1e3a8a` com
-"mês atual", os outros em `#eef2f8`. Um "fechado / previsto" embaixo dos
+"mês atual", os outros em `#eef2f8`. As setas ficam paradas ao trocar de mês: o título
+reserva a largura do maior nome possível da janela (mesmo dia, pedido dele). Um "fechado / previsto" embaixo dos
 outros meses foi recusado no mesmo dia.
 
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
