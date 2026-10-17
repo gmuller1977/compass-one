@@ -503,9 +503,9 @@ export default function PrimeiroAcesso() {
 /**
  * A primeira tela (17/10/2026, pedido do Guilherme: a versão em cartão
  * "ficou fria, sem graça, sem emoção"). O azul ocupa a largura toda, a
- * bússola gira devagar, e um EXEMPLO do que a pessoa vai ver todo dia (a
- * frase da Bússola e a da Início) mostra o destino antes das perguntas.
- * O exemplo diz que é exemplo: nenhum número dele é da pessoa.
+ * bússola balança devagar. O cartão mostra as PERGUNTAS que o app vai responder, não um resultado de
+ * exemplo: um "vai sobrar R$ 1.240" criava uma expectativa que a realidade
+ * da pessoa pode não cumprir (Guilherme, mesmo dia).
  */
 function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () => void; onSozinho: () => void }) {
   return (
@@ -513,11 +513,9 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
       <style>{`
         @keyframes pa-agulha { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(14deg) } }
         @keyframes pa-sobe { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
-        @keyframes pa-barra { from { width: 0 } to { width: 62% } }
         .pa-agulha { animation: pa-agulha 4s ease-in-out infinite; transform-origin: center }
         .pa-sobe { animation: pa-sobe .6s ease-out both }
-        .pa-barra { animation: pa-barra 1.4s .5s ease-out both }
-        @media (prefers-reduced-motion: reduce) { .pa-agulha, .pa-sobe, .pa-barra { animation: none } }
+        @media (prefers-reduced-motion: reduce) { .pa-agulha, .pa-sobe { animation: none } }
       `}</style>
       <div style={{ background: TOPO_AZUL, color: '#fff', position: 'relative', overflow: 'hidden', paddingBottom: 96 }}>
         {/* luzes de fundo: só enfeite, atrás do texto */}
@@ -535,29 +533,29 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
             {nome ? `Oi, ${nome}! 👋` : 'Oi! 👋'}<br />Que bom ter você aqui.
           </h1>
           <p className="pa-sobe" style={{ margin: '14px auto 0', maxWidth: 400, fontSize: 16, lineHeight: 1.55, color: 'rgba(255,255,255,.88)', animationDelay: '.16s' }}>
-            Imagina chegar no fim do mês sabendo <b style={{ color: '#fff' }}>para onde foi cada real</b> e quanto ainda
-            sobra. É isso que a gente vai construir, juntos.
+            Imagina chegar no fim do mês sabendo <b style={{ color: '#fff' }}>para onde foi cada real</b>.
+            É isso que a gente vai construir, juntos.
           </p>
         </div>
       </div>
 
       <div style={{ width: '100%', boxSizing: 'border-box', maxWidth: 480, margin: '-72px auto 0', padding: '0 16px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
-        <div className="pa-sobe" style={{ background: '#fff', borderRadius: 24, padding: 18, boxShadow: '0 18px 40px rgba(15,40,120,.18)', animationDelay: '.26s' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>Assim vai ser o seu dia a dia</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', background: '#eff6ff', borderRadius: 999, padding: '3px 10px' }}>Exemplo</span>
-          </div>
-          <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 12 }}>Ainda dá para gastar</div>
-          <div style={{ fontSize: 34, fontWeight: 800, color: COR.sucessoTexto, letterSpacing: '-.5px', fontVariantNumeric: 'tabular-nums' }}>R$ 1.240</div>
-          <div style={{ fontSize: 13, color: COR.textoSuave }}>até o dia 31 · R$ 82 por dia</div>
-          <div style={{ height: 10, borderRadius: 6, background: '#e2e8f0', marginTop: 12, overflow: 'hidden' }}>
-            <div className="pa-barra" style={{ height: '100%', width: '62%', borderRadius: 6, background: BARRA.sobra }} />
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14, padding: 12, borderRadius: 14, background: '#f0fdf4' }}>
-            <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: BARRA.sobra, marginTop: 6, flexShrink: 0 }} />
-            <span style={{ fontSize: 14, lineHeight: 1.5, color: '#14532d', fontWeight: 600 }}>
-              Muito bem! Você vai terminar o mês com mais dinheiro do que começou.
-            </span>
+        <div className="pa-sobe" style={{ background: '#fff', borderRadius: 24, padding: 18, boxShadow: '0 18px 40px rgba(15,40,120,.18)', animationDelay: '.26s',
+          display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>Com o tempo, o app responde para você</span>
+          {[
+            { icone: 'ti-wallet', t: 'Quanto ainda posso gastar este mês?' },
+            { icone: 'ti-compass', t: 'Vou terminar o mês no azul?' },
+            { icone: 'ti-chart-pie', t: 'Para onde está indo o meu dinheiro?' },
+          ].map(x => (
+            <div key={x.t} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: '#eff6ff', color: '#1e40af',
+                display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className={`ti ${x.icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: COR.texto, lineHeight: 1.35 }}>{x.t}</span>
+            </div>
+          ))}
+          <div style={{ fontSize: 14, lineHeight: 1.5, color: COR.textoSuave, padding: 12, borderRadius: 14, background: '#f8fafc' }}>
+            Com os <b style={{ color: COR.texto }}>seus</b> números, do jeito que eles são. Sem promessa e sem julgamento.
           </div>
         </div>
 
