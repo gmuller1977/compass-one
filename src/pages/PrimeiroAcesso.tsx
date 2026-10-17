@@ -509,21 +509,32 @@ export default function PrimeiroAcesso() {
  */
 function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () => void; onSozinho: () => void }) {
   return (
-    <div style={{ minHeight: '100dvh', background: '#f2f5fc', display: 'flex', flexDirection: 'column' }}>
+    <div className="pa-bv" style={{ background: '#f2f5fc' }}>
       <style>{`
+        /* Celular: azul em cima e o cartão subindo nele. Computador (largo):
+           duas colunas numa tela só, sem rolar (pedido do Guilherme). */
+        .pa-bv { min-height: 100dvh; display: flex; flex-direction: column }
+        .pa-bv-topo { padding-bottom: 96px }
+        .pa-bv-corpo { margin: -72px auto 0; flex: 1 }
+        @media (min-width: 900px) {
+          .pa-bv { display: grid; grid-template-columns: 1fr 1fr; height: 100dvh; min-height: 560px }
+          .pa-bv-topo { padding-bottom: 0; display: flex; align-items: center; justify-content: center }
+          .pa-bv-corpo { margin: auto; flex: none; max-height: 100dvh; justify-content: center }
+          .pa-bv-pe { margin-top: 0 !important; padding-bottom: 0 !important }
+        }
         @keyframes pa-agulha { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(14deg) } }
         @keyframes pa-sobe { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
         .pa-agulha { animation: pa-agulha 4s ease-in-out infinite; transform-origin: center }
         .pa-sobe { animation: pa-sobe .6s ease-out both }
         @media (prefers-reduced-motion: reduce) { .pa-agulha, .pa-sobe { animation: none } }
       `}</style>
-      <div style={{ background: TOPO_AZUL, color: '#fff', position: 'relative', overflow: 'hidden', paddingBottom: 96 }}>
+      <div className="pa-bv-topo" style={{ background: TOPO_AZUL, color: '#fff', position: 'relative', overflow: 'hidden' }}>
         {/* luzes de fundo: só enfeite, atrás do texto */}
         <span aria-hidden style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', top: -180, right: -120,
           background: 'radial-gradient(circle, rgba(147,197,253,.22), transparent 65%)' }} />
         <span aria-hidden style={{ position: 'absolute', width: 360, height: 360, borderRadius: '50%', bottom: -200, left: -140,
           background: 'radial-gradient(circle, rgba(147,197,253,.16), transparent 65%)' }} />
-        <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto', padding: '28px 22px 0', textAlign: 'center' }}>
+        <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto', padding: '28px 22px 0', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
           <div className="pa-sobe" style={{ width: 84, height: 84, borderRadius: 26, margin: '6px auto 0', background: 'rgba(255,255,255,.12)',
             border: '1px solid rgba(255,255,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 12px 30px rgba(8,20,70,.35)' }}>
@@ -539,7 +550,7 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
         </div>
       </div>
 
-      <div style={{ width: '100%', boxSizing: 'border-box', maxWidth: 480, margin: '-72px auto 0', padding: '0 16px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+      <div className="pa-bv-corpo" style={{ width: '100%', boxSizing: 'border-box', maxWidth: 480, padding: '0 16px', position: 'relative', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="pa-sobe" style={{ background: '#fff', borderRadius: 24, padding: 18, boxShadow: '0 18px 40px rgba(15,40,120,.18)', animationDelay: '.26s',
           display: 'flex', flexDirection: 'column', gap: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>Com o tempo, o app responde para você</span>
@@ -577,7 +588,7 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
           ))}
         </div>
 
-        <div style={{ marginTop: 'auto', padding: '4px 0 26px' }}>
+        <div className="pa-bv-pe" style={{ marginTop: 'auto', padding: '4px 0 26px' }}>
           <Pe rotulo="Vamos lá" onSeguir={onSeguir} pular="Prefiro configurar tudo sozinho" onPular={onSozinho} />
         </div>
       </div>
