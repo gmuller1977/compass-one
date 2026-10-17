@@ -720,6 +720,12 @@ o editor (`LancadoNoMesContexto`, um `construirRealizadoMes` por mês), e
 EMBAIXO DO VALOR, sem abrir nada, aparece "já gastou R$ X" (receita: "já
 recebeu"), o termo do Radar, no computador e no celular (17/10/2026, pedido
 dele). O selo "N itens" saiu: a célula mostra o total, não a quantidade.
+No mesmo dia o `PlanModalMeses` ganhou o cabeçalho azul das outras telas
+(ícone em círculo, "PLANEJAMENTO 2026", título branco com as setas ao lado,
+"Ano inteiro" e ✕ à direita; no ano inteiro o título é "Janeiro – Dezembro")
+e os meses das colunas por extenso, numa caixa: o atual em `#1e3a8a` com
+"mês atual", os outros em `#eef2f8`. Um "fechado / previsto" embaixo dos
+outros meses foi recusado no mesmo dia.
 
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
