@@ -703,8 +703,10 @@ campo abre no maior entre o plano e o lançado. Mês corrente e passado: só
 avisa — a regra do ajuste (o plano não sobe para cobrir o gasto do mês) — e,
 abaixo, grava só o valor (`editarValor`). Acima, grava em itens: cada
 lançamento + "Outros gastos". Em mês futuro a célula com lançado sempre abre
-o editor (`LancadoNoMesContexto`, um `construirRealizadoMes` por mês); o
-celular mostra "já lançado R$ X" embaixo do nome.
+o editor (`LancadoNoMesContexto`, um `construirRealizadoMes` por mês), e
+EMBAIXO DO VALOR, sem abrir nada, aparece "já gastou R$ X" (receita: "já
+recebeu"), o termo do Radar, no computador e no celular (17/10/2026, pedido
+dele). O selo "N itens" saiu: a célula mostra o total, não a quantidade.
 
 **Não há alerta no momento de lançar a compra**, decidido pelo Guilherme em
 06/10/2026 — não por Lançamentos estar congelado, mas pelo mesmo motivo de o
