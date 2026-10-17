@@ -27,6 +27,8 @@ export type DadosNorte = {
   hoje: Date
   nome: string
   cenario: string
+  /** O objetivo escolhido no assistente de planejamento (`objetivoUsuario`), se houver. */
+  objetivo?: string
   bussola: Bussola
   temPlano: boolean
   receitas: { real: number; prev: number; linhas: LinhaDoMes[] }
@@ -38,7 +40,7 @@ export type DadosNorte = {
   historico: MesComparado[]
 }
 
-export function dadosDoNorte(p: { deps: Deps; nome: string; hoje?: Date }): DadosNorte {
+export function dadosDoNorte(p: { deps: Deps; nome: string; objetivo?: string; hoje?: Date }): DadosNorte {
   const hoje = p.hoje ?? new Date()
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const { deps } = p
@@ -71,7 +73,7 @@ export function dadosDoNorte(p: { deps: Deps; nome: string; hoje?: Date }): Dado
     .slice(0, 15)
 
   return {
-    hoje, nome: p.nome, cenario: deps.cenarioPrevisao ?? 'pessimista',
+    hoje, nome: p.nome, cenario: deps.cenarioPrevisao ?? 'pessimista', objetivo: p.objetivo,
     bussola, temPlano: usaPlanoNoMes,
     receitas: { real: t.entrada.real, prev: t.entrada.prev, linhas: t.entrada.linhas },
     despesas: { real: t.saida.real, prev: t.saida.prev, linhas: t.saida.linhas },
@@ -89,6 +91,14 @@ const R = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency
 const nomeLinha = (l: { nome: string; descricao?: string }) => (l.descricao ? `${l.nome} · ${l.descricao}` : l.nome)
 
 /** O contexto em texto, para o Gemini. Só números prontos; nada para ele somar. */
+/** Os objetivos do assistente de planejamento, em palavras para o Norte. */
+const OBJETIVOS_NORTE: Record<string, string> = {
+  controlar: 'controlar os gastos (saber para onde vai o dinheiro e evitar surpresa no fim do mês)',
+  economizar: 'economizar e guardar dinheiro todo mês, montando uma reserva',
+  sonho: 'realizar um sonho (uma viagem, compra ou conquista importante)',
+  dividas: 'sair das dívidas',
+}
+
 export function contextoNorte(d: DadosNorte, categorias: Categoria[]): string {
   const b = d.bussola
   const m = b.memoria
@@ -98,6 +108,8 @@ export function contextoNorte(d: DadosNorte, categorias: Categoria[]): string {
 
   out.push(`Hoje: ${d.hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`)
   out.push(`Nome: ${d.nome || 'não informado'} · Cenário da previsão: ${d.cenario}`)
+  const objetivo = d.objetivo ? OBJETIVOS_NORTE[d.objetivo] : undefined
+  if (objetivo) out.push(`Objetivo que a pessoa escolheu: ${objetivo}`)
 
   sec('A resposta do mês (os números da tela Início)')
   const r = b.ritmo
@@ -210,7 +222,7 @@ export const SYSTEM_NORTE = `Você é o Norte, o assistente financeiro do app Co
 ## Como responder
 - Curto: 1 a 3 frases. Lista só se a pergunta pedir várias coisas (no máximo 5 itens).
 - Comece pela resposta. O número principal em **negrito**.
-- Se fizer sentido, termine com UMA dica prática e concreta, baseada nos dados.
+- Se fizer sentido, termine com UMA dica prática e concreta, baseada nos dados. Quando houver "Objetivo que a pessoa escolheu", prefira a dica que aproxima a pessoa desse objetivo.
 - Para levar a pessoa à tela certa, termine com até 2 destes códigos, sozinhos na última linha: [[radar]] [[lancar]] [[contas]] [[posso-comprar]] [[planejamento]] [[revisao]]. Eles viram botões. Não escreva o nome da tela por extenso quando usar o código.
 
 ## Fazer: lançar, pagar uma conta, simular uma compra

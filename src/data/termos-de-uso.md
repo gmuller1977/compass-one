@@ -39,7 +39,7 @@ A Plataforma **não** realiza transações financeiras, movimentações bancári
 
 5.1. Todos os dados financeiros inseridos na Plataforma pertencem exclusivamente a você.
 
-5.2. A Plataforma armazena seus dados utilizando o serviço Supabase com criptografia e políticas de segurança por linha (Row Level Security), garantindo que apenas você tenha acesso aos seus dados.
+5.2. A Plataforma armazena seus dados utilizando o serviço Supabase com criptografia e políticas de segurança por linha (Row Level Security), garantindo que apenas você, e as pessoas com quem você decidir compartilhar a sua conta, tenham acesso aos seus dados.
 
 5.3. Você pode solicitar a exclusão completa dos seus dados a qualquer momento por meio das Configurações da Plataforma ou entrando em contato pelo e-mail informado na seção 11.
 

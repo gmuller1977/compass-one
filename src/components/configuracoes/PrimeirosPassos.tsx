@@ -76,11 +76,12 @@ export default function PrimeirosPassos() {
     return (
       <Janela onFechar={() => setProntoAberto(false)} titulo="Tudo pronto para começar">
         <p style={textoSt}>
-          Lance o que gastar a partir de hoje. Se já sabe quanto ganha e gasta, monte o plano agora.
+          Ainda não sabe quanto gasta por mês? Comece lançando o que gastar a partir de hoje.
+          Quando o mês fechar, o Compass One monta o seu primeiro plano com os seus números de verdade.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
           <button onClick={() => navigate('/lancar')} style={botao(true)}>Começar a lançar</button>
-          <button onClick={() => navigate('/wizard-planejamento')} style={botao(false)}>Começar meu plano</button>
+          <button onClick={() => navigate('/wizard-planejamento')} style={botao(false)}>Já sei meus números: montar o plano</button>
         </div>
       </Janela>
     )

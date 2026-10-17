@@ -2227,6 +2227,15 @@ vira verdadeiro (o Modo Descoberta depende dele) e a faixa oferece "Começar a
 lançar" e "Começar meu plano". `/onboarding` cai na "/". Membro de conta
 compartilhada nunca vê a faixa. **As notas sobre o Onboarding abaixo e acima
 (portas, 4 telas, nomes do assistente) são histórico.**
+Na janela "Tudo pronto" (17/10/2026, etapa 1 da jornada do cliente leigo,
+`analises/jornada-cliente-1-ano.md`), a porta recomendada é LANÇAR: o texto
+diz que, quando o mês fechar, o app monta o primeiro plano com os números
+reais (Modo Descoberta), e o assistente fica como "Já sei meus números:
+montar o plano". Quem inventa números no primeiro dia pula a Descoberta.
+O objetivo escolhido no assistente (`objetivoUsuario`) vai para o contexto
+do Norte, que puxa a dica para ele; antes era gravado e nenhuma tela lia.
+A política de privacidade cita o Google (Gemini) como operador do Norte,
+com o que é enviado; recurso novo que mande dado a terceiro entra lá.
 
 **Configurações abre numa tela de ícones, e o primeiro acesso anda sozinho.**
 Pedido do Guilherme em 12/10/2026, ao criar uma conta nova para testar: o

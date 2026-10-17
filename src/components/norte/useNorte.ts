@@ -32,14 +32,14 @@ function lerConversa(uid: string | undefined): Mensagem[] {
  * e pelo painel do computador.
  */
 export function useNorte() {
-  const { user, perfil, contas, categorias, extratoData, updateExtratoMes, setFaturaData } = useApp()
+  const { user, perfil, objetivoUsuario, contas, categorias, extratoData, updateExtratoMes, setFaturaData } = useApp()
   const uid = user?.id
   const hoje = new Date()
   const { deps } = useMesDaInicio(hoje.getFullYear(), hoje.getMonth())
   const nome = perfil.apelido || perfil.nome.split(' ')[0] || ''
 
   // Recalcula só quando os dados mudam; o dia não muda durante a conversa.
-  const dados: DadosNorte = useMemo(() => dadosDoNorte({ deps, nome }), [deps, nome])
+  const dados: DadosNorte = useMemo(() => dadosDoNorte({ deps, nome, objetivo: objetivoUsuario }), [deps, nome, objetivoUsuario])
 
   const [messages, setMessages] = useState<Mensagem[]>(() => lerConversa(uid))
   const [loading, setLoading] = useState(false)

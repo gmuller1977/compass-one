@@ -1,6 +1,6 @@
 # Política de Privacidade — Compass One
 
-**Última atualização:** Julho de 2026
+**Última atualização:** Outubro de 2026
 
 Esta Política de Privacidade descreve como o Compass One ("Plataforma", "nós") coleta, utiliza, armazena e protege seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).
 
@@ -21,7 +21,7 @@ Esta Política de Privacidade descreve como o Compass One ("Plataforma", "nós")
 - Senhas bancárias ou credenciais de acesso a instituições financeiras
 - Números completos de cartões de crédito
 - CPF, RG ou documentos de identificação
-- Dados biométricos
+- Dados biométricos: no login por digital, a leitura é feita pelo seu próprio aparelho, e a Plataforma guarda apenas uma chave pública, que não permite reconstruir a sua digital
 
 ## 2. Como Utilizamos seus Dados
 
@@ -31,6 +31,7 @@ Utilizamos seus dados exclusivamente para:
 - Autenticar seu acesso e proteger sua conta
 - Armazenar e exibir seus dados financeiros conforme inseridos por você
 - Gerar relatórios e visualizações para sua organização financeira pessoal
+- Responder às perguntas que você faz ao assistente Norte (ver item 4)
 - Enviar comunicações essenciais (recuperação de senha, atualizações de segurança)
 - Melhorar a experiência do usuário e corrigir problemas técnicos
 
@@ -43,6 +44,7 @@ Utilizamos seus dados exclusivamente para:
 | Cadastro e autenticação | Execução de contrato (Art. 7º, V) |
 | Armazenamento de dados financeiros | Consentimento (Art. 7º, I) |
 | Comunicações essenciais | Legítimo interesse (Art. 7º, IX) |
+| Respostas do assistente Norte | Consentimento (Art. 7º, I), dado a cada uso do assistente |
 | Segurança e prevenção de fraude | Legítimo interesse (Art. 7º, IX) |
 | Cumprimento de obrigações legais | Obrigação legal (Art. 7º, II) |
 
@@ -54,7 +56,10 @@ Compartilhamos dados apenas com:
 
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
 - **Vercel (hospedagem):** hospedagem da aplicação web
-- **Resend (e-mail):** envio de e-mails transacionais (confirmação de conta, recuperação de senha)
+- **Resend (e-mail):** envio de e-mails transacionais (confirmação de conta, recuperação de senha, convites)
+- **Google (Gemini, inteligência artificial):** usado **somente quando você conversa com o assistente Norte**. Para responder, enviamos ao Google a sua pergunta, o histórico recente da conversa e um resumo das suas finanças calculado pela Plataforma (saldos, totais do mês, plano, contas a vencer e nomes de categorias e contas). Não enviamos e-mail, senha nem dados de cartão. Se você não usa o Norte, nada é enviado ao Google
+
+O reconhecimento de voz (microfone) é feito pelo seu navegador. Dependendo do navegador, o áudio pode ser processado pelo fornecedor dele (por exemplo, Google no Chrome ou Apple no Safari), conforme a política desse fornecedor.
 
 Todos os prestadores acima atuam como operadores de dados e estão sujeitos a obrigações de confidencialidade e segurança.
 
