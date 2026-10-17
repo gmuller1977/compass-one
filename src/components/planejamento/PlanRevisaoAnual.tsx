@@ -102,7 +102,7 @@ export default function PlanRevisaoAnual({
     : `${CURTOS[mb[0]?.mes ?? mes]}/${mb[0]?.ano ?? base}`
   const tituloBase: [string, string] = modo === 'media' ? [`Média ${base}`, faixaMedia || 'sem mês fechado']
     : modo === 'anterior' ? [`${MESES_FULL[mb[0].mes]} ${mb[0].ano}`, 'mês anterior']
-    : [`${nomeMes} ${base}`, 'realizado']
+    : [`${nomeMes} ${base}`, 'plano']
   const descrBase = modo === 'media' ? `a média de ${faixaMedia}` : `o realizado de ${rotBase}`
   const rotAlvo = `${CURTOS[mes]}/${alvo}`
   const hojeIdx = new Date().getFullYear() * 12 + new Date().getMonth()
@@ -133,11 +133,22 @@ export default function PlanRevisaoAnual({
     <div style={{ fontSize: 12, color: cor, marginTop: 2, whiteSpace: 'nowrap' }}>{t}</div>
   )
 
+  // Como no Planejamento: o plano em cima e o realizado embaixo, com o termo
+  // do Radar ("já gastou" / "já recebeu") — pedido do Guilherme (17/10/2026).
+  // infoTexto #0369a1 no branco: 5,9.
+  const usou = (v: number, entrada: boolean) => (
+    <span style={{ marginTop: 2, fontSize: isMobile ? 12 : 11, fontWeight: 600, color: COR.infoTexto, whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: 3, fontVariantNumeric: 'tabular-nums' }}>
+      <i aria-hidden className="ti ti-calendar-check" style={{ fontSize: isMobile ? 13 : 12 }} />
+      {modo === 'media' ? (entrada ? 'recebeu em média' : 'gastou em média') : (entrada ? 'já recebeu' : 'já gastou')} {fmt(v, true)}
+    </span>
+  )
+
   function celulaBase(l: LinhaRevisao) {
     return (
-      <div style={{ textAlign: 'right' }}>
-        {num(l.real)}
-        {l.planoBase > 0.005 && legenda(`plano ${fmt(l.planoBase)}`)}
+      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        {num(l.planoBase)}
+        {Math.abs(l.real) > 0.005 && usou(l.real, l.tipo === 'e')}
       </div>
     )
   }
@@ -198,7 +209,7 @@ export default function PlanRevisaoAnual({
         <div key={`${l.tipo}-${l.ri}`} style={{ padding: '12px 0', borderBottom: `1px solid ${COR.borda}` }}>
           {nomeLinha(l)}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8, alignItems: 'start' }}>
-            <div>{rot(modo === 'media' ? rotBase : `${rotBase} real`)}{celulaBase(l)}</div>
+            <div>{rot(modo === 'media' ? rotBase : `${rotBase} plano`)}{celulaBase(l)}</div>
             <div>{rot(`${rotAlvo} plano`)}{celulaPlano(l)}</div>
           </div>
           {l.sugerido !== null && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>{botaoSugestao(l)}</div>}
@@ -216,6 +227,8 @@ export default function PlanRevisaoAnual({
     )
   }
 
+  const planoBaseDo = (g: GrupoRevisao) => g.linhas.reduce((s, l) => s + l.planoBase, 0)
+
   function cabecalhoGrupo(g: GrupoRevisao, tipo: 'e' | 's') {
     const nome = g.grupo === SEM_GRUPO ? 'Outros' : g.grupo
     const estilo = { fontSize: 12, fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase' as const, letterSpacing: '.4px' }
@@ -224,15 +237,19 @@ export default function PlanRevisaoAnual({
         background: '#eaf1fd', borderRadius: 10, marginTop: 10 }}>
         <span style={estilo}>{nome}</span>
         <span style={{ ...estilo, textTransform: 'none', letterSpacing: 0, fontVariantNumeric: 'tabular-nums' }}>
-          {fmt(g.real, true)} → {fmt(g.plano, true)}
+          {fmt(planoBaseDo(g), true)} → {fmt(g.plano, true)}
         </span>
+        {Math.abs(g.real) > 0.005 && <span style={{ flexBasis: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: -4 }}>{usou(g.real, tipo === 'e')}</span>}
       </div>
     )
     return (
       <div key={`g-${tipo}-${g.grupo}`} style={{ display: 'grid', gridTemplateColumns: colunas, gap: 12, alignItems: 'center',
         padding: '8px 10px', background: '#eaf1fd', borderRadius: 10, marginTop: 10 }}>
         <span style={estilo}>{nome}</span>
-        <span style={{ textAlign: 'right' }}>{num(g.real, true, '#1e3a8a')}</span>
+        <span style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          {num(planoBaseDo(g), true, '#1e3a8a')}
+          {Math.abs(g.real) > 0.005 && usou(g.real, tipo === 'e')}
+        </span>
         <span style={{ textAlign: 'right', paddingRight: 6 }}>{num(g.plano, true, '#1e3a8a')}</span>
         <span />
       </div>

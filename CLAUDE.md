@@ -358,7 +358,9 @@ ano base), **Média anual** (média dos meses FECHADOS do ano base, desde o
 primeiro registro, zeros contados) ou **Mês anterior** (o último mês fechado);
 a sugestão é a mesma regra sobre a base escolhida. A coluna "Já lançado" saiu:
 o lançado vai embaixo do plano ("já gastou" / "já recebeu"), como no
-Planejamento.
+Planejamento. A coluna da base segue o mesmo padrão: o PLANO do ano
+base em cima e o realizado embaixo ("já gastou R$ X"; na média, "gastou em
+média"), linha e grupo; o pé azul continua com o realizado ("jan/2026 real").
 
 **O assistente de planejamento tem dois nomes, de propósito.** A rota é uma só
 (`/wizard-planejamento`), mas ela se chama **"Começar meu plano"** no fim do
