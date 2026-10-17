@@ -226,6 +226,7 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
             itens={itensDoMes(cat, mes)}
             onItens={abrirItens ? pt => abrirItens(tipo, ri, mes, pt) : undefined}
             lancado={lancadoNoMes?.(tipo, ri, mes) ?? 0}
+              entrada={tipo === 'e'}
               sempreItens={(lancadoNoMes?.(tipo, ri, mes) ?? 0) > 0.005}
           />
         </div>

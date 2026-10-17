@@ -144,6 +144,7 @@ export default function PlanModalMeses({
               itens={itensDoMes(cat, mi)}
               onItens={abrirItens ? p => abrirItens(tipo, ri, mi, p) : undefined}
               lancado={lancadoNoMes?.(tipo, ri, mi) ?? 0}
+              entrada={tipo === 'e'}
               sempreItens={(lancadoNoMes?.(tipo, ri, mi) ?? 0) > 0.005}
             />
           </div>

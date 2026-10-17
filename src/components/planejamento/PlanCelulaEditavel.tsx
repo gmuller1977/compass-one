@@ -25,6 +25,8 @@ interface Props {
   /** Quanto já está lançado na categoria neste mês (mês futuro: parcelas e
    *  compras adiantadas). Aparece embaixo do valor, sem abrir o detalhe. */
   lancado?: number
+  /** Receita: o já lançado se lê "já recebeu", como no Radar; despesa, "já gastou". */
+  entrada?: boolean
 }
 
 /**
@@ -39,7 +41,7 @@ interface Props {
  * listar os elementos marcados na ordem do DOM, sem que este componente
  * precise saber onde está na grade.
  */
-export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false, sempreItens = false, lancado = 0 }: Props) {
+export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloqueio, onSave, align = 'right', itens, onItens, grande = false, sempreItens = false, lancado = 0, entrada = false }: Props) {
   const { toast } = useToast()
   const [editando, setEditando] = useState(false)
   const [temp, setTemp] = useState('')
@@ -183,7 +185,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
       data-celula=""
       tabIndex={0}
       role="button"
-      aria-label={`Valor ${fmt(valor)}${temLancado ? `, já lançado ${fmt(lancado)}` : ''}${temItens ? `, ${itens!.length} itens` : ''}${readOnly ? ', somente leitura' : temItens ? ', Enter para ver os itens' : ', Enter para editar'}`}
+      aria-label={`Valor ${fmt(valor)}${temLancado ? `, ${entrada ? 'já recebeu' : 'já gastou'} ${fmt(lancado)}` : ''}${temItens ? `, ${itens!.length} itens` : ''}${readOnly ? ', somente leitura' : temItens ? ', Enter para ver os itens' : ', Enter para editar'}`}
       onClick={() => iniciar()}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); iniciar() }
@@ -219,19 +221,15 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
     >
       <span>{fmt(valor)}</span>
       {/* Embaixo do valor, não ao lado: ao lado a coluna de 118 px quebrava a
-          linha. O já lançado vence o "N itens" — no mês futuro os itens são
-          justamente o lançado e o resto. infoTexto #0369a1 no branco: 5,9;
-          sobre #dbeafe: 5,0. */}
-      {temLancado ? (
+          linha. O termo é o do Radar ("gastou X de Y"). O total, não a
+          quantidade de itens: o "N itens" saiu a pedido do Guilherme
+          (17/10/2026); os itens seguem no title e no editor.
+          infoTexto #0369a1 no branco: 5,9. */}
+      {temLancado && (
         <span aria-hidden style={{ marginTop: 2, fontSize: grande ? 12 : 10, fontWeight: 600, color: COR.infoTexto,
           whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
           <i className="ti ti-calendar-check" style={{ fontSize: grande ? 13 : 11 }} />
-          lançado {fmt(lancado)}
-        </span>
-      ) : temItens && (
-        <span aria-hidden style={{ marginTop: 2, fontSize: grande ? 12 : 10, fontWeight: 700, color: COR.infoTexto,
-          background: '#dbeafe', borderRadius: 999, padding: '0 6px', whiteSpace: 'nowrap' }}>
-          {itens!.length === 1 ? '1 item' : `${itens!.length} itens`}
+          {entrada ? 'já recebeu' : 'já gastou'} {fmt(lancado)}
         </span>
       )}
     </span>
