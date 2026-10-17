@@ -559,7 +559,10 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
           </div>
         </div>
 
-        <div className="pa-sobe" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, animationDelay: '.36s' }}>
+        <p className="pa-sobe" style={{ ...ola, textAlign: 'center', fontSize: 16, animationDelay: '.36s' }}>
+          <b style={{ color: COR.texto }}>Para te ajudar, preciso te conhecer um pouco melhor.</b><br />Vamos lá?
+        </p>
+        <div className="pa-sobe" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, animationDelay: '.44s' }}>
           {[
             { icone: 'ti-pencil', t: 'Tudo aproximado' },
             { icone: 'ti-player-skip-forward', t: 'Não sabe? Pule' },
@@ -574,9 +577,6 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
           ))}
         </div>
 
-        <p className="pa-sobe" style={{ ...ola, textAlign: 'center', fontSize: 16, animationDelay: '.44s' }}>
-          <b style={{ color: COR.texto }}>Para te ajudar, preciso te conhecer um pouco melhor.</b><br />Vamos lá?
-        </p>
         <div style={{ marginTop: 'auto', padding: '4px 0 26px' }}>
           <Pe rotulo="Vamos lá" onSeguir={onSeguir} pular="Prefiro configurar tudo sozinho" onPular={onSozinho} />
         </div>
