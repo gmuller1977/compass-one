@@ -2257,13 +2257,18 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   atual a dezembro.
 - **O plano inicial nasce no fim do primeiro acesso** (18/10/2026, pedido
   do Guilherme: "o cliente informou um monte de coisa mas não se usa para
-  nada"). Os valores informados viram o plano do primeiro mês INTEIRO até
-  dezembro, o mesmo valor todo mês (`planoDoPrimeiroAcesso` em
+  nada"). Os valores informados viram o plano do primeiro mês INTEIRO por
+  12 meses, o mesmo valor todo mês (`planoDoPrimeiroAcesso` em
   `primeiroPlano.ts`: `propostaDoMes` + `planoDaProposta` com realizado
   vazio). Mês inteiro = o corrente até o dia 5, senão o seguinte
   (`primeiroMesCompleto`; dezembro pela metade vai para janeiro do ano
   seguinte), pedido dele: "se o cliente entrar no meio do mês, o plano não
-  faz sentido". A tela diz "Vamos construir um plano inicial" e que ele é
+  faz sentido". São 12 meses, atravessando a virada do ano
+  (`MESES_DO_PLANO_INICIAL`, um plano por ano): quem entra em 18/10 tem
+  plano de nov/2026 a out/2027. Até dezembro, como era no começo, quem
+  chegava em outubro saía com dois meses de plano, e em janeiro as contas
+  sumiam e o Simulador ficava sem horizonte (análise da chegada,
+  `analises/chegada-do-cliente-v2.md`). `prova76` (18). A tela diz "Vamos construir um plano inicial" e que ele é
   um ponto de partida, revisado com os lançamentos. Fim de financiamento e
   parcela (`ate`), parcela no cartão a partir do mês da fatura (`desde`), 13º
   em nov/dez; as contas marcadas viram FIXAS com o dia e a meta começa no

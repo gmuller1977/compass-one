@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { parseBRL } from '../utils/moeda'
 import { COR } from '../utils/cores'
 import { marcarVisto } from '../utils/vistoNaConta'
-import { planoDoPrimeiroAcesso, primeiroMesCompleto } from '../utils/primeiroPlano'
+import { planoDoPrimeiroAcesso, primeiroMesCompleto, ultimoMesDoPlanoInicial } from '../utils/primeiroPlano'
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import { LogoCompass } from '../components/LogoCompass'
@@ -130,25 +130,27 @@ export default function PrimeiroAcesso() {
   function concluir(destino: string) {
     const ano = new Date().getFullYear()
     const r = aplicarRespostas({ r: respostas, nomeTitular: nomeCompleto, contas, categorias, planoDoAno: planos[ano], faturaData })
-    // O plano inicial nasce aqui, com o que a pessoa contou (18/10/2026), a
-    // partir do primeiro mês INTEIRO. Nunca por cima de um ano já planejado.
-    const novo = planoDoPrimeiroAcesso(r.categorias, r.plano.estimativas)
+    // O plano inicial nasce aqui, com o que a pessoa contou (18/10/2026): 12
+    // meses a partir do primeiro mês INTEIRO, em um ou dois anos. Nunca por
+    // cima de um ano já planejado.
     const temValor = (a: number) => [...(planos[a]?.entradas ?? []), ...(planos[a]?.saidas ?? [])].some(l => l.v.some(v => v > 0))
-    const plano = novo && !temValor(novo.ano) ? novo : null
+    const novos = planoDoPrimeiroAcesso(r.categorias, r.plano.estimativas).filter(x => !temValor(x.ano))
     setContas(r.contas)
     if (r.faturas !== faturaData) setFaturaData(r.faturas)
     // Com plano, as contas do mês viram FIXAS com o dia: aparecem para pagar.
-    setCategorias(plano ? fixasDoPrimeiroAcesso(r.categorias, r.plano.estimativas) : r.categorias)
+    setCategorias(novos.length ? fixasDoPrimeiroAcesso(r.categorias, r.plano.estimativas) : r.categorias)
     setPlanos(prev => {
-      if (!plano) return { ...prev, [ano]: r.plano }
-      // A meta acompanha o plano: começa no mesmo mês dele.
-      const metas = (base?: number[]) => Array.from({ length: 12 }, (_, i) => (respostas.meta > 0 && i >= plano.mes ? respostas.meta : base?.[i] ?? 0))
-      if (plano.ano === ano) return { ...prev, [ano]: { ...r.plano, ...plano.plano, objetivos: metas(prev[ano]?.objetivos) } }
-      return {
-        ...prev,
-        [ano]: { ...r.plano, objetivos: prev[ano]?.objetivos ?? r.plano.objetivos?.map(() => 0) },
-        [plano.ano]: { ...prev[plano.ano], ...plano.plano, objetivos: metas(prev[plano.ano]?.objetivos) },
+      if (!novos.length) return { ...prev, [ano]: r.plano }
+      // A meta acompanha o plano: os mesmos meses dele.
+      const metas = (x: { mesInicio: number; mesFim: number }, base?: number[]) => Array.from({ length: 12 }, (_, i) =>
+        (respostas.meta > 0 && i >= x.mesInicio && i <= x.mesFim ? respostas.meta : base?.[i] ?? 0))
+      const prox = { ...prev }
+      // O ano de hoje guarda as estimativas, mesmo quando o plano só começa no seguinte.
+      if (!novos.some(x => x.ano === ano)) prox[ano] = { ...r.plano, objetivos: prev[ano]?.objetivos ?? r.plano.objetivos?.map(() => 0) }
+      for (const x of novos) {
+        prox[x.ano] = { ...(x.ano === ano ? r.plano : prev[x.ano]), ...x.plano, objetivos: metas(x, prev[x.ano]?.objetivos) }
       }
+      return prox
     })
     setOnboardingCompleto(true)
     void marcarVisto(user, CHAVE_PRIMEIRO_ACESSO)
@@ -165,6 +167,9 @@ export default function PrimeiroAcesso() {
   const inicio = primeiroMesCompleto()
   const comecaNoMeio = inicio.mes !== new Date().getMonth()
   const mesDoPlano = `${MESES[inicio.mes]}${inicio.ano !== new Date().getFullYear() ? ` de ${inicio.ano}` : ''}`
+  // Doze meses: o fim sempre leva o ano, porque quase sempre é o seguinte.
+  const fim = ultimoMesDoPlanoInicial()
+  const mesFimDoPlano = `${MESES[fim.mes]} de ${fim.ano}`
 
   const seguir = () => setPasso(p => Math.min(TOTAL + 2, p + 1))
   const voltar = passo > 0 ? () => setPasso(p => p - 1) : undefined
@@ -510,13 +515,13 @@ export default function PrimeiroAcesso() {
             onEscolher={v => set('meta', v.slice(3))} />
           <Campo valor={e.meta} onMudar={v => set('meta', v)} placeholder="Outro valor" />
           {respostaMeta && <Dica>{respostaMeta}</Dica>}
-          {meta > 0 && <Dica>Fica como a sua meta de economia de cada mês no Planejamento, de {mesDoPlano} até dezembro.</Dica>}
+          {meta > 0 && <Dica>Fica como a sua meta de economia de cada mês no Planejamento, de {mesDoPlano} a {mesFimDoPlano}.</Dica>}
         </Cartao>
       )}
       <Cartao>
         {temPlano ? (<>
           <Rotulo>Seu plano inicial</Rotulo>
-          <p style={ola}>Vamos construir um plano inicial com o que você contou: {partesDoPlano}, o mesmo valor todo mês, a partir de <b style={{ color: COR.texto }}>{mesDoPlano}</b>.</p>
+          <p style={ola}>Vamos construir um plano inicial com o que você contou: {partesDoPlano}, o mesmo valor todo mês, por 12 meses: de <b style={{ color: COR.texto }}>{mesDoPlano}</b> a <b style={{ color: COR.texto }}>{mesFimDoPlano}</b>.</p>
           <p style={ola}>Ele é um ponto de partida. Conforme você anota os seus gastos, o Radar mostra onde o plano acertou e onde errou, e você revisa no Planejamento.</p>
           {comecaNoMeio && <Dica>Como {MESES[new Date().getMonth()]} já começou, o plano parte de {mesDoPlano}, o primeiro mês inteiro. O que você anotar até lá já aparece no app.</Dica>}
         </>) : (<>

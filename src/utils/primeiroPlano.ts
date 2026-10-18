@@ -121,7 +121,8 @@ export function propostaDoMes({
 /**
  * A proposta virando plano do ano.
  *
- * O valor se repete de `mesInicio` até dezembro e fica ZERO nos meses
+ * O valor se repete de `mesInicio` até `mesFim` (dezembro, salvo no segundo
+ * ano do plano inicial) e fica ZERO nos meses
  * anteriores. Preencher janeiro a agosto com o gasto de setembro inventaria
  * um passado que não houve — e o Planejamento compara mês a mês, então esse
  * passado apareceria como se tivesse sido planejado.
@@ -135,6 +136,7 @@ export function planoDaProposta(
   mesInicio: number,
   valores?: Record<string, number>,
   anoDoPlano = new Date().getFullYear(),
+  mesFim = 11,
 ): PlanoAnoData {
   const chave = (l: LinhaProposta) => `${l.tipo}|${l.nome}|${l.descricao ?? ''}`
   // Financiamento e parcela informados no primeiro acesso terminam: depois
@@ -145,8 +147,9 @@ export function planoDaProposta(
   }
   const v = (l: LinhaProposta) => {
     const val = valores?.[chave(l)] ?? l.valor
-    return Array(12).fill(0).map((_, i) => (i >= mesInicio && dentro(l, i) ? val : 0))
+    return Array(12).fill(0).map((_, i) => (i >= mesInicio && i <= mesFim && dentro(l, i) ? val : 0))
   }
+  const decimo = p.decimo ? valoresDoDecimo(p.decimo.valor, mesInicio).map((x, i) => (i <= mesFim ? x : 0)) : []
   const linha = (l: LinhaProposta) => ({
     id: l.id, nome: l.nome, descricao: l.descricao, grupo: l.grupo,
     t: l.ehCartao ? 'cartao' : undefined,
@@ -157,8 +160,8 @@ export function planoDaProposta(
     saldoInicialJan: 0,
     entradas: [
       ...p.entradas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha).filter(l => l.v.some(x => x > 0)),
-      ...(p.decimo && valoresDoDecimo(p.decimo.valor, mesInicio).some(v => v > 0)
-        ? [{ id: p.decimo.id, nome: p.decimo.nome, grupo: p.decimo.grupo, v: valoresDoDecimo(p.decimo.valor, mesInicio) }]
+      ...(p.decimo && decimo.some(v => v > 0)
+        ? [{ id: p.decimo.id, nome: p.decimo.nome, grupo: p.decimo.grupo, v: decimo }]
         : []),
     ],
     saidas: p.saidas.filter(l => (valores?.[chave(l)] ?? l.valor) > 0).map(linha).filter(l => l.v.some(x => x > 0)),
@@ -184,6 +187,9 @@ export function primeiroMesCompleto(hoje = new Date()): { ano: number; mes: numb
   return mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 }
 }
 
+/** Quantos meses o plano inicial cobre, a partir do primeiro mês inteiro. */
+export const MESES_DO_PLANO_INICIAL = 12
+
 /**
  * O plano inicial, montado no fim do primeiro acesso com o que a pessoa
  * contou (18/10/2026, pedido do Guilherme: "o cliente informou um monte de
@@ -191,18 +197,35 @@ export function primeiroMesCompleto(hoje = new Date()): { ano: number; mes: numb
  * seu primeiro planejamento repetindo os valores mês a mês"). No mesmo dia o
  * Modo Descoberta saiu: com as perguntas, todo mundo já sai com um plano.
  *
- * Começa no primeiro mês INTEIRO (`primeiroMesCompleto`) e vai até dezembro
- * desse ano, o mesmo valor todo mês, com o fim de cada financiamento e
- * parcela (`ate`), a parcela no cartão a partir do mês da fatura (`desde`) e
- * o 13º em novembro e dezembro. Toda linha sai da estimativa: o realizado é
- * vazio. Sem nenhum valor informado, devolve `null`.
+ * Começa no primeiro mês INTEIRO (`primeiroMesCompleto`) e cobre 12 meses,
+ * atravessando a virada do ano (mesmo dia, análise da chegada do cliente:
+ * até dezembro, quem chegava em outubro saía com dois meses de plano, e em
+ * janeiro as contas sumiam). O mesmo valor todo mês, com o fim de cada
+ * financiamento e parcela (`ate`), a parcela no cartão a partir do mês da
+ * fatura (`desde`) e o 13º em novembro e dezembro, se caírem dentro. Toda
+ * linha sai da estimativa: o realizado é vazio. Devolve um plano por ano
+ * (um ou dois), e lista vazia sem nenhum valor informado.
  */
 export function planoDoPrimeiroAcesso(
   categorias: Categoria[], estimativas: EstimativasIniciais | undefined, hoje = new Date(),
-): { ano: number; mes: number; plano: PlanoAnoData } | null {
-  if (!estimativas) return null
+): { ano: number; mesInicio: number; mesFim: number; plano: PlanoAnoData }[] {
+  if (!estimativas) return []
   const { ano, mes } = primeiroMesCompleto(hoje)
-  const p = propostaDoMes({ ano, mes, extratoData: {}, faturaData: {}, contas: [], categorias, estimativas })
-  const plano = planoDaProposta(p, mes, undefined, ano)
-  return plano.entradas.length || plano.saidas.length ? { ano, mes, plano } : null
+  const ultimo = ano * 12 + mes + MESES_DO_PLANO_INICIAL - 1
+  const anos: { ano: number; mesInicio: number; mesFim: number }[] = []
+  for (let a = ano; a <= Math.floor(ultimo / 12); a++) {
+    anos.push({ ano: a, mesInicio: a === ano ? mes : 0, mesFim: a === Math.floor(ultimo / 12) ? ultimo % 12 : 11 })
+  }
+  const saida = anos.map(({ ano: a, mesInicio, mesFim }) => {
+    const p = propostaDoMes({ ano: a, mes: mesInicio, extratoData: {}, faturaData: {}, contas: [], categorias, estimativas })
+    return { ano: a, mesInicio, mesFim, plano: planoDaProposta(p, mesInicio, undefined, a, mesFim) }
+  }).filter(x => x.plano.entradas.length || x.plano.saidas.length)
+  return saida
+}
+
+/** O último mês do plano inicial, para a tela dizer até quando ele vai. */
+export function ultimoMesDoPlanoInicial(hoje = new Date()): { ano: number; mes: number } {
+  const { ano, mes } = primeiroMesCompleto(hoje)
+  const t = ano * 12 + mes + MESES_DO_PLANO_INICIAL - 1
+  return { ano: Math.floor(t / 12), mes: t % 12 }
 }

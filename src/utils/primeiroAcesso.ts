@@ -17,7 +17,7 @@ import { mesDoGastoNoCartao } from './lancarPorMes'
  *   sugeridas ligadas, a forma de pagar de cada conta do mês, e a meta de
  *   economia nos meses que faltam do ano (`objetivos`).
  * - **O plano inicial** (18/10/2026, pedido do Guilherme): os valores
- *   informados viram o plano do primeiro mês INTEIRO até dezembro, o mesmo
+ *   informados viram o plano do primeiro mês INTEIRO, por 12 meses, o mesmo
  *   valor todo mês (`planoDoPrimeiroAcesso` em utils/primeiroPlano), e as
  *   contas do mês viram FIXAS com o dia (`fixasDoPrimeiroAcesso`). As
  *   `estimativas` ficam guardadas no plano do ano, de onde o plano é lido.
