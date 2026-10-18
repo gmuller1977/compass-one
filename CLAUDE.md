@@ -241,6 +241,13 @@ cartão virou "Confira seus saldos" e ganhou a CARTEIRA (`CARTEIRA`, quando
 a pessoa usa dinheiro: saldo inicial, lançamento ou categoria em espécie),
 pelo `saldoFinalDinheiro`; o informado da carteira não vence o calculado,
 então a diferença fica à vista o mês inteiro. `prova76` (17).
+Saldo ZERO ou NEGATIVO vale (mesmo dia, pedido dele: conta zerada, cheque
+especial; a carteira não fica negativa). Antes só valia positivo. Meses
+antigos podem ter "R$ 0,00" gravado com o sentido de nada, então zero ou
+negativo só vale com a marca `saldoBancoInformado`, que a caixa de
+Lançamentos e o cartão gravam agora; positivo vale como sempre. Uma regra
+só, `saldoInformado` em [`saldoInformado.ts`](src/utils/saldoInformado.ts),
+para Radar, Lançamentos e o cartão. `prova82` (7).
 
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele

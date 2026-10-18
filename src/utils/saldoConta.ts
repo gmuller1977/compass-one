@@ -1,6 +1,6 @@
+import { saldoInformado } from './saldoInformado'
 import type { Conta, Categoria, DadosMes, PlanoAnoData } from '../context/AppContext'
 import type { Memoria } from '../components/novoLancamentoExtrato/NleShared'
-import { parseBRL } from './moeda'
 import { valorFixaNoMes } from './valorFixa'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
@@ -87,10 +87,7 @@ export function saldoFinalConta(
   const prefixo = conta.id + '-'
   const alvo = ym(ano, mes)
 
-  const informadoDe = (dm?: DadosMes) => {
-    const v = parseBRL(dm?.saldoBanco ?? '')
-    return v > 0 ? v : null
-  }
+  const informadoDe = (dm?: DadosMes) => saldoInformado(dm)
 
   const chave = `${conta.id}-${ano}-${String(mes + 1).padStart(2, '0')}`
   const jaInformado = informadoDe(extratoData[chave])

@@ -1,6 +1,6 @@
+import { saldoInformado } from './saldoInformado'
 import type { Conta, DadosMes } from '../context/AppContext'
 import { saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
-import { parseBRL } from './moeda'
 
 /**
  * "Confira o saldo dos bancos", na Início (18/10/2026, pedido do Guilherme).
@@ -91,13 +91,7 @@ export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
     .map(conta => {
       const k = chaveDoMes(conta.id, ano, mes)
       const dm = deps.extratoData[k]
-      const v = parseBRL(dm?.saldoBanco ?? '')
-      // Banco: zero ou negativo não é informado, a regra de saldoFinalConta.
-      // Carteira: o informado não entra na base, então zero vale (a pessoa
-      // gastou todo o dinheiro e o app ainda acha que sobra).
-      const informado = conta.id === CARTEIRA.id
-        ? ((dm?.saldoBanco ?? '').trim() && v >= 0 ? v : null)
-        : (v > 0 ? v : null)
+      const informado = saldoInformado(dm)
       const semInformado = dm ? { ...deps, extratoData: { ...deps.extratoData, [k]: { ...dm, saldoBanco: '' } } } : deps
       const calculado = conta.id === CARTEIRA.id
         ? saldoFinalDinheiro(ano, mes, deps)
@@ -123,5 +117,5 @@ export function marcarConferido(dm: DadosMes, hoje: Date): DadosMes {
 
 /** Outro valor: o saldo do banco, com a data — o que a caixa de Lançamentos grava. */
 export function informarSaldo(dm: DadosMes, valorFormatado: string, hoje: Date): DadosMes {
-  return { ...dm, saldoBanco: valorFormatado, saldoBancoData: dataDeHoje(hoje) }
+  return { ...dm, saldoBanco: valorFormatado, saldoBancoData: dataDeHoje(hoje), saldoBancoInformado: true }
 }

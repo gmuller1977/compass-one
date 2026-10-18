@@ -1,5 +1,5 @@
 import type { Conta } from '../../context/AppContext'
-import { fmt, parseBRL, NOMES_MESES } from './NleShared'
+import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
 import { RADAR_COR_AZUL } from '../acompanhamento/radarCores'
 import { IconeCat } from '../IconeCat'
@@ -19,6 +19,8 @@ type Props = {
   ano: number
   // Saldo banco salvo (mesDados.saldoBanco)
   saldoBancoSalvo: string
+  /** O informado de verdade (utils/saldoInformado), ou null. */
+  saldoBancoNum: number | null
   // Modal handlers
   setModalSaldo: (v: ModalSaldoInfo | null) => void
   setModalSaldoValor: (v: string) => void
@@ -32,7 +34,7 @@ export default function NleBanner({
   isMobile, tabPrincipal,
   saldoBase, saldoBasePrevisto, totalEntradas, totalSaidas, saldoMes,
   mes, ano,
-  saldoBancoSalvo,
+  saldoBancoSalvo, saldoBancoNum,
   setModalSaldo, setModalSaldoValor,
   contasExtrato, contaIdEfetivo, onContaSelect,
 }: Props) {
@@ -43,8 +45,7 @@ export default function NleBanner({
   const mesStr     = String(mes + 1).padStart(2, '0')
   const chaveAtual = isDinheiro ? `dinheiro-${ano}-${mesStr}` : `${contaIdEfetivo}-${ano}-${mesStr}`
 
-  const saldoBancoNum = parseBRL(saldoBancoSalvo)
-  const diferenca     = saldoBancoNum > 0 ? saldoBancoNum - saldoMes : null
+  const diferenca     = saldoBancoNum !== null ? saldoBancoNum - saldoMes : null
   const conciliado    = diferenca !== null && Math.abs(diferenca) < 0.01
 
   /**

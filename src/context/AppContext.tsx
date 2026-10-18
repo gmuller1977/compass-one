@@ -89,6 +89,8 @@ export type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   saldoBanco: string
   saldoBancoData?: string
+  /** Zero ou negativo em `saldoBanco` foi informado de verdade (utils/saldoInformado). */
+  saldoBancoInformado?: boolean
   fixasConsolidadas?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
   fixasValorOverride?: Record<string, number>

@@ -1,3 +1,5 @@
+import { saldoInformado } from '../utils/saldoInformado'
+import { parseValor } from '../utils/moeda'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { tipoNaFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -240,9 +242,8 @@ export default function NovoLancamentoExtrato() {
         }
       }
       const calculado = c.saldoInicial + te - ts
-      const manualStr = dm?.saldoBanco ?? ''
-      const manual = parseBRL(manualStr)
-      return { conta: c, saldo: manual > 0 ? manual : calculado, calculado }
+      const manual = saldoInformado(dm)
+      return { conta: c, saldo: manual ?? calculado, calculado }
     })
   }, [contasExtrato, dados, ano, mes])
 
@@ -384,7 +385,7 @@ export default function NovoLancamentoExtrato() {
   const eMesAtual = mes===mesHoje && ano===anoHoje
   const key       = mesKey(contaIdEfetivo, ano, mes)
   const mesDados  = dados[key] ?? { lancamentos:{}, saldoBanco:'' }
-  const saldoExtNum = parseBRL(mesDados.saldoBanco)
+  const saldoExtNum = saldoInformado(mesDados)
 
   useEffect(() => {
     if (tabPrincipal !== 'extrato') return
@@ -529,9 +530,9 @@ export default function NovoLancamentoExtrato() {
 
   function confirmarModalSaldo() {
     if (!modalSaldo) return
-    const n = parseBRL(modalSaldoValor)
-    if (modalSaldoValor.trim()) {
-      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n), saldoBancoData: hojeStr}))
+    const n = parseValor(modalSaldoValor)
+    if (modalSaldoValor.trim() && n !== null) {
+      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n), saldoBancoData: hojeStr, saldoBancoInformado: true}))
     } else {
       updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBancoData: hojeStr}))
     }
@@ -882,7 +883,7 @@ export default function NovoLancamentoExtrato() {
   }, [mesFuturo, cascata, dados, key, contaId, totalDias, mes, ano, categorias])
 
   const saldoMes   = saldoBaseExibido + totalEntradas - totalSaidas
-  const diferenca  = saldoExtNum > 0 ? saldoExtNum - saldoMes : null
+  const diferenca  = saldoExtNum !== null ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
 
   const catEditandoFixa = editandoFixaId ? categorias.find(c => c.id === editandoFixaId) : null
@@ -1261,6 +1262,7 @@ export default function NovoLancamentoExtrato() {
             mes={mes}
             ano={ano}
             saldoBancoSalvo={mesDados.saldoBanco ?? ''}
+            saldoBancoNum={saldoExtNum}
             setModalSaldo={setModalSaldo}
             setModalSaldoValor={setModalSaldoValor}
             contasExtrato={contasExtrato}
