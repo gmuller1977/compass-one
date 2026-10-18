@@ -103,9 +103,9 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontSize: M.corpo, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-                  color: d.naoSaiu || d.agendado ? COR.textoSuave : d.entrada ? COR.sucessoTexto : COR.texto,
+                  color: d.naoSaiu || d.agendado ? COR.textoSuave : d.entrada ? COR.sucessoTexto : COR.erroTexto,
                   textDecoration: d.naoSaiu ? 'line-through' : undefined }}>
-                  {d.entrada ? '+ ' : ''}{mostrar(d.valor, oculto)}
+                  {d.entrada ? '+ ' : '− '}{mostrar(d.valor, oculto)}
                 </div>
                 {mudou && <div style={{ fontSize: 12, color: COR.textoSuave, whiteSpace: 'nowrap' }}>previsto {mostrar(d.previsto, oculto)}</div>}
               </div>

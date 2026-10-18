@@ -98,8 +98,8 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                 {s.naoMarcadas.map(n => (
                   <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: M.legenda, padding: '3px 0' }}>
                     <span style={{ color: COR.texto, minWidth: 0 }}>{n.nome} <span style={{ color: COR.textoSuave }}>· {n.entrada ? 'a receber' : 'a pagar'}</span></span>
-                    <b style={{ color: n.entrada ? COR.sucessoTexto : COR.texto, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                      {n.entrada ? '+ ' : ''}{mostrar(n.valor, oculto)}
+                    <b style={{ color: n.entrada ? COR.sucessoTexto : COR.erroTexto, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                      {n.entrada ? '+ ' : '− '}{mostrar(n.valor, oculto)}
                     </b>
                   </div>
                 ))}
