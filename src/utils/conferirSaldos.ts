@@ -1,5 +1,6 @@
 import type { Conta, DadosMes } from '../context/AppContext'
 import { saldoFinalConta, type Deps } from './saldoConta'
+import { parseBRL } from './moeda'
 
 /**
  * "Confira o saldo dos bancos", na Início (18/10/2026, pedido do Guilherme).
@@ -19,13 +20,6 @@ import { saldoFinalConta, type Deps } from './saldoConta'
 /** Uma conta pede conferência todo dia em que ainda não foi conferida (pedido do Guilherme, 18/10/2026). */
 export const DIAS_ENTRE_CONFERENCIAS = 1
 
-export type SaldoAConferir = {
-  conta: Conta
-  /** O saldo de hoje no app: `saldoFinalConta` do mês corrente. */
-  saldoNoApp: number
-  /** Data (AAAA-MM-DD) da última conferência, em qualquer mês, ou null. */
-  ultima: string | null
-}
 
 export const chaveDoMes = (contaId: string, ano: number, mes: number) =>
   `${contaId}-${ano}-${String(mes + 1).padStart(2, '0')}`
@@ -51,18 +45,48 @@ function diasEntre(de: string, ate: string): number {
   return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86_400_000)
 }
 
-/** As contas de banco que pedem conferência hoje, na ordem do cadastro. */
-export function saldosAConferir(deps: Deps, hoje = new Date()): SaldoAConferir[] {
+/**
+ * Todas as contas de banco no mês corrente, com o que a Início mostra
+ * (18/10/2026, pedido do Guilherme: o cartão fica logo abaixo do saldo e,
+ * conferido, mostra a diferença):
+ *   - `calculado`: o saldo pelos lançamentos, SEM o saldo informado neste
+ *     mês — o "Sistema" da caixa de Lançamentos;
+ *   - `informado`: o saldo do banco digitado neste mês, ou null;
+ *   - `diferenca`: informado − calculado (0 sem informado);
+ *   - `pendente`: ainda não conferida hoje.
+ */
+export type SaldoDoBanco = {
+  conta: Conta
+  calculado: number
+  informado: number | null
+  diferenca: number
+  pendente: boolean
+}
+
+export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const hojeStr = dataDeHoje(hoje)
   return deps.contas
     .filter(c => c.tipo !== 'cartao')
-    .map(conta => ({
-      conta,
-      saldoNoApp: saldoFinalConta(conta, ano, mes, deps),
-      ultima: ultimaConferencia(conta.id, deps.extratoData),
-    }))
-    .filter(s => !s.ultima || diasEntre(s.ultima, hojeStr) >= DIAS_ENTRE_CONFERENCIAS)
+    .map(conta => {
+      const k = chaveDoMes(conta.id, ano, mes)
+      const dm = deps.extratoData[k]
+      const v = parseBRL(dm?.saldoBanco ?? '')
+      const informado = v > 0 ? v : null
+      const semInformado = dm ? { ...deps, extratoData: { ...deps.extratoData, [k]: { ...dm, saldoBanco: '' } } } : deps
+      const calculado = saldoFinalConta(conta, ano, mes, semInformado)
+      const ultima = ultimaConferencia(conta.id, deps.extratoData)
+      return {
+        conta, calculado, informado,
+        diferenca: informado === null ? 0 : informado - calculado,
+        pendente: !ultima || diasEntre(ultima, hojeStr) >= DIAS_ENTRE_CONFERENCIAS,
+      }
+    })
+}
+
+/** As contas que ainda pedem conferência hoje. */
+export function saldosAConferir(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
+  return saldosDosBancos(deps, hoje).filter(s => s.pendente)
 }
 
 /** "Confere": só a data, nenhum número muda. */

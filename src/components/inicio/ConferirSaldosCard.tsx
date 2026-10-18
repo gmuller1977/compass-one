@@ -1,20 +1,19 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
-import { Cartao, Linha, Pilula, TituloCartao } from '../mobile/ui'
+import { Cartao, Etiqueta, Linha, Pilula, TituloCartao } from '../mobile/ui'
 import { M, fmt, mostrar } from '../mobile/estilo'
 import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
-import { chaveDoMes, informarSaldo, marcarConferido, saldosAConferir } from '../../utils/conferirSaldos'
+import { chaveDoMes, informarSaldo, marcarConferido, saldosDosBancos, type SaldoDoBanco } from '../../utils/conferirSaldos'
 import type { Deps } from '../../utils/saldoConta'
 
-type Resultado = { contaId: string; nome: string; banco: number; app: number }
-
 /**
- * "Confira o saldo dos bancos" (18/10/2026, pedido do Guilherme). Uma linha
- * por conta ainda não conferida hoje: o saldo de hoje no app, "Confere" e
- * "Está diferente". Regras em utils/conferirSaldos.ts. A mesma na Início do
- * computador e na Bússola do celular.
+ * "Confira o saldo dos bancos" (18/10/2026, pedidos do Guilherme). Logo
+ * abaixo do saldo, na Início do computador e na Bússola do celular. Uma linha
+ * por banco: não conferido hoje, "Confere" e "Está diferente"; conferido, o
+ * resultado fica à vista — "✓ confere" ou a diferença entre o banco e o app,
+ * com "Ver Lançamentos". Regras em utils/conferirSaldos.ts.
  */
 export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; oculto: boolean }) {
   const navigate = useNavigate()
@@ -22,53 +21,77 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
   const hoje = new Date()
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
 
-  const pendentes = useMemo(() => saldosAConferir(deps), [deps])
+  const bancos = useMemo(() => saldosDosBancos(deps), [deps])
   const [editando, setEditando] = useState<string | null>(null)
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
-  const [resultado, setResultado] = useState<Resultado | null>(null)
 
-  if (pendentes.length === 0 && !resultado) return null
+  if (bancos.length === 0) return null
+
+  // O nome do banco; o apelido da conta só desempata dois do mesmo banco.
+  const nomeDe = (s: SaldoDoBanco) => {
+    const banco = s.conta.banco || s.conta.nome
+    const repetido = bancos.filter(b => (b.conta.banco || b.conta.nome) === banco).length > 1
+    return repetido ? `${banco} · ${s.conta.apelido || s.conta.nome}` : banco
+  }
 
   const vazio = { lancamentos: {}, saldoBanco: '' }
   const confere = (contaId: string) =>
     updateExtratoMes(chaveDoMes(contaId, ano, mes), prev => marcarConferido(prev ?? vazio, hoje))
 
-  const salvar = (contaId: string, nome: string, app: number) => {
+  const salvar = (contaId: string) => {
     const n = parseValor(texto)
     if (n === null || texto.trim() === '') { setErro('Digite o saldo, por exemplo 1.234,56.'); return }
     if (n <= 0) { setErro('Saldo zerado ou negativo se ajusta em Lançamentos.'); return }
     updateExtratoMes(chaveDoMes(contaId, ano, mes), prev => informarSaldo(prev ?? vazio, fmt(n), hoje))
     setEditando(null); setTexto(''); setErro('')
-    setResultado({ contaId, nome, banco: n, app })
   }
 
-  const dif = resultado ? resultado.banco - resultado.app : 0
+  const pendentes = bancos.filter(b => b.pendente).length
 
   return (
     <Cartao>
-      <TituloCartao>Confira o saldo dos bancos</TituloCartao>
-      {pendentes.length > 0 && (
+      <TituloCartao direita={pendentes === 0
+        ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
+        : undefined}>
+        Confira o saldo dos bancos
+      </TituloCartao>
+      {pendentes > 0 && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -4, marginBottom: 6, lineHeight: 1.45 }}>
           Abra o app do banco e veja se o saldo de hoje é o mesmo daqui.
         </div>
       )}
 
-      {pendentes.map((s, i) => {
-        const nome = s.conta.apelido || s.conta.nome
+      {bancos.map((s, i) => {
+        const nome = nomeDe(s)
         const aberto = editando === s.conta.id
+        const temDif = s.informado !== null && Math.abs(s.diferenca) >= 0.005
         return (
           <div key={s.conta.id}>
             <Linha primeira={i === 0} icone={s.conta.icone || '🏦'} cor={s.conta.cor || COR.azul}
               titulo={nome}
-              legenda={<>No app: <b style={{ color: s.saldoNoApp < 0 ? COR.erroTexto : COR.texto }}>{mostrar(s.saldoNoApp, oculto)}</b></>}
-              />
-            {!aberto && (
-              <div style={{ display: 'flex', gap: 8, padding: '0 0 12px 56px', flexWrap: 'wrap' }}>
+              legenda={temDif
+                ? <>No banco: <b style={{ color: COR.texto }}>{mostrar(s.informado!, oculto)}</b><br />No app: {mostrar(s.calculado, oculto)}</>
+                : <>No app: <b style={{ color: s.calculado < 0 ? COR.erroTexto : COR.texto }}>{mostrar(s.calculado, oculto)}</b></>}
+              direita={!s.pendente && !aberto && !temDif &&
+                <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>} />
+
+            {s.pendente && !aberto && (
+              <div style={botoes}>
                 <Pilula forte onClick={() => confere(s.conta.id)}>Confere</Pilula>
                 <Pilula onClick={() => { setEditando(s.conta.id); setTexto(''); setErro('') }}>Está diferente</Pilula>
               </div>
             )}
+
+            {!s.pendente && !aberto && temDif && (
+              <div style={{ ...botoes, alignItems: 'center' }}>
+                <Etiqueta cor={COR.avisoTexto} fundo={COR.avisoFundo}>
+                  {s.diferenca < 0 ? 'faltam' : 'sobram'} {oculto ? '••••' : fmt(Math.abs(s.diferenca))}
+                </Etiqueta>
+                <Pilula onClick={() => navigate(`/novo-lancamento?tipo=banco&conta=${s.conta.id}`)}>Ver Lançamentos</Pilula>
+              </div>
+            )}
+
             {aberto && (
               <div style={{ padding: '0 0 12px 56px' }}>
                 <label style={{ display: 'block', fontSize: M.legenda, color: COR.textoSuave, marginBottom: 6 }}>
@@ -77,9 +100,9 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <input autoFocus inputMode="decimal" value={texto} placeholder="R$ 0,00"
                     onChange={e => setTexto(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') salvar(s.conta.id, nome, s.saldoNoApp) }}
+                    onKeyDown={e => { if (e.key === 'Enter') salvar(s.conta.id) }}
                     style={campo} />
-                  <Pilula forte onClick={() => salvar(s.conta.id, nome, s.saldoNoApp)}>Salvar</Pilula>
+                  <Pilula forte onClick={() => salvar(s.conta.id)}>Salvar</Pilula>
                   <button type="button" onClick={() => setEditando(null)} style={link}>Cancelar</button>
                 </div>
                 {erro && <div role="alert" style={{ fontSize: M.legenda, color: COR.erroTexto, marginTop: 6 }}>{erro}</div>}
@@ -88,26 +111,11 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
           </div>
         )
       })}
-
-      {resultado && (
-        <div style={{ marginTop: pendentes.length ? 8 : 0, padding: 14, borderRadius: 14,
-          background: Math.abs(dif) < 0.005 ? COR.sucessoFundo : COR.avisoFundo, lineHeight: 1.45, fontSize: M.legenda, color: COR.texto }}>
-          {Math.abs(dif) < 0.005
-            ? <>Saldo do {resultado.nome} anotado: confere com o app.</>
-            : <>No {resultado.nome} há <b>{mostrar(resultado.banco, oculto)}</b> e o app tinha <b>{mostrar(resultado.app, oculto)}</b>:
-                {' '}{dif > 0 ? 'sobram' : 'faltam'} <b>{mostrar(Math.abs(dif), oculto)}</b>. O app passa a usar o saldo do banco.
-                {dif < 0 ? ' Algum gasto ficou sem lançar?' : ' Alguma entrada ficou sem lançar?'}</>}
-          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-            {Math.abs(dif) >= 0.005 && (
-              <Pilula onClick={() => navigate(`/novo-lancamento?tipo=banco&conta=${resultado.contaId}`)}>Ver Lançamentos</Pilula>
-            )}
-            <button type="button" onClick={() => setResultado(null)} style={link}>Fechar</button>
-          </div>
-        </div>
-      )}
     </Cartao>
   )
 }
+
+const botoes: CSSProperties = { display: 'flex', gap: 8, padding: '0 0 12px 56px', flexWrap: 'wrap' }
 
 // 16 px: abaixo disso o iPhone dá zoom no campo.
 const campo: CSSProperties = {

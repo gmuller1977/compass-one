@@ -143,6 +143,9 @@ export default function Bussola() {
           </div>
         )}
 
+        {/* Logo abaixo do saldo (pedido do Guilherme, 18/10/2026). */}
+        <ConferirSaldosCard deps={deps} oculto={oculto} />
+
         {/* ── Previsto × realizado do mês, com o resultado ────────────── */}
         <Cartao>
           <TituloCartao>{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} até agora</TituloCartao>
@@ -177,8 +180,6 @@ export default function Bussola() {
             ))}
           </Cartao>
         )}
-
-        <ConferirSaldosCard deps={deps} oculto={oculto} />
 
         {/* ── Onde o gasto passou do plano ───────────────────────────── */}
         {usaPlanoNoMes ? (

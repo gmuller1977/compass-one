@@ -393,6 +393,9 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Logo abaixo do saldo (pedido do Guilherme, 18/10/2026). */}
+        {ehMesCorrente && <ConferirSaldosCard deps={deps} oculto={oculto} />}
+
         {/* ── Primeiros passos: sem conta ou categoria, ou sem plano ── */}
         {(!temBanco || !temCategorias) && (
           <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -514,8 +517,6 @@ export default function Dashboard() {
                 ))}
               </Cartao>
             )}
-
-            {ehMesCorrente && <ConferirSaldosCard deps={deps} oculto={oculto} />}
 
             {(ehMesCorrente || (ehFuturo && contasFuturo.length > 0)) && (
               <ContasAVencerCard contas={ehFuturo ? contasFuturo : aVencer} categorias={categorias} oculto={oculto}
