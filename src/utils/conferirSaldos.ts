@@ -1,5 +1,5 @@
 import type { Conta, DadosMes } from '../context/AppContext'
-import { saldoFinalConta, type Deps } from './saldoConta'
+import { saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
 import { parseBRL } from './moeda'
 
 /**
@@ -63,18 +63,40 @@ export type SaldoDoBanco = {
   pendente: boolean
 }
 
+/**
+ * A carteira entra como mais uma linha (pedido do Guilherme, 18/10/2026:
+ * "assim a pessoa já tem informação de quanto tem e onde está"), quando a
+ * pessoa usa dinheiro: saldo inicial, lançamento ou categoria em espécie.
+ * O saldo informado da carteira não vence o calculado (regra de sempre), então
+ * a diferença fica à vista o mês inteiro.
+ */
+export const CARTEIRA: Conta = {
+  id: 'dinheiro', nome: 'Dinheiro', banco: 'Dinheiro', tipo: 'corrente',
+  saldoInicial: 0, cor: '#16a34a', icone: '💵',
+}
+
+export function usaDinheiro(deps: Deps): boolean {
+  return (deps.saldoInicialDinheiro ?? 0) !== 0
+    || deps.categorias.some(c => c.ativa && c.tipoMovimento === 'dinheiro')
+    || Object.entries(deps.extratoData).some(([k, dm]) =>
+      k.startsWith('dinheiro-') && Object.keys(dm?.lancamentos ?? {}).length > 0)
+}
+
 export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const hojeStr = dataDeHoje(hoje)
-  return deps.contas
-    .filter(c => c.tipo !== 'cartao')
+  const contas = deps.contas.filter(c => c.tipo !== 'cartao')
+  if (usaDinheiro(deps)) contas.push(CARTEIRA)
+  return contas
     .map(conta => {
       const k = chaveDoMes(conta.id, ano, mes)
       const dm = deps.extratoData[k]
       const v = parseBRL(dm?.saldoBanco ?? '')
       const informado = v > 0 ? v : null
       const semInformado = dm ? { ...deps, extratoData: { ...deps.extratoData, [k]: { ...dm, saldoBanco: '' } } } : deps
-      const calculado = saldoFinalConta(conta, ano, mes, semInformado)
+      const calculado = conta.id === CARTEIRA.id
+        ? saldoFinalDinheiro(ano, mes, deps)
+        : saldoFinalConta(conta, ano, mes, semInformado)
       const ultima = ultimaConferencia(conta.id, deps.extratoData)
       return {
         conta, calculado, informado,

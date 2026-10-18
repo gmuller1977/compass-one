@@ -5,13 +5,13 @@ import { Cartao, Etiqueta, Linha, Pilula, TituloCartao } from '../mobile/ui'
 import { M, fmt, mostrar } from '../mobile/estilo'
 import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
-import { chaveDoMes, informarSaldo, marcarConferido, saldosDosBancos, type SaldoDoBanco } from '../../utils/conferirSaldos'
+import { CARTEIRA, chaveDoMes, informarSaldo, marcarConferido, saldosDosBancos, type SaldoDoBanco } from '../../utils/conferirSaldos'
 import type { Deps } from '../../utils/saldoConta'
 
 /**
- * "Confira o saldo dos bancos" (18/10/2026, pedidos do Guilherme). Logo
+ * "Confira seus saldos" (18/10/2026, pedidos do Guilherme). Logo
  * abaixo do saldo, na Início do computador e na Bússola do celular. Uma linha
- * por banco: não conferido hoje, "Confere" e "Está diferente"; conferido, o
+ * por banco, e a carteira quando a pessoa usa dinheiro: não conferido hoje, "Confere" e "Está diferente"; conferido, o
  * resultado fica à vista — "✓ confere" ou a diferença entre o banco e o app,
  * com "Ver Lançamentos". Regras em utils/conferirSaldos.ts.
  */
@@ -54,11 +54,11 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
       <TituloCartao direita={pendentes === 0
         ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
         : undefined}>
-        Confira o saldo dos bancos
+        Confira seus saldos
       </TituloCartao>
       {pendentes > 0 && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -4, marginBottom: 6, lineHeight: 1.45 }}>
-          Abra o app do banco e veja se o saldo de hoje é o mesmo daqui.
+          Abra o app do banco, conte o dinheiro e veja se o saldo de hoje é o mesmo daqui.
         </div>
       )}
 
@@ -88,14 +88,14 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                 <Etiqueta cor={COR.avisoTexto} fundo={COR.avisoFundo}>
                   {s.diferenca < 0 ? 'faltam' : 'sobram'} {oculto ? '••••' : fmt(Math.abs(s.diferenca))}
                 </Etiqueta>
-                <Pilula onClick={() => navigate(`/novo-lancamento?tipo=banco&conta=${s.conta.id}`)}>Ver Lançamentos</Pilula>
+                <Pilula onClick={() => navigate(s.conta.id === CARTEIRA.id ? '/novo-lancamento?tipo=dinheiro' : `/novo-lancamento?tipo=banco&conta=${s.conta.id}`)}>Ver Lançamentos</Pilula>
               </div>
             )}
 
             {aberto && (
               <div style={{ padding: '0 0 12px 56px' }}>
                 <label style={{ display: 'block', fontSize: M.legenda, color: COR.textoSuave, marginBottom: 6 }}>
-                  Quanto tem no {nome} hoje?
+                  {s.conta.id === CARTEIRA.id ? 'Quanto tem em dinheiro hoje?' : `Quanto tem no ${nome} hoje?`}
                 </label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <input autoFocus inputMode="decimal" value={texto} placeholder="R$ 0,00"

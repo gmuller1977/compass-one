@@ -234,10 +234,13 @@ informado do mês (o "Sistema" da caixa de Lançamentos). Grava no MESMO campo
 da caixa de saldo de Lançamentos: "Confere" só a data; outro valor,
 `saldoBanco` + data. Daí vale a regra de sempre: o Radar usa o informado
 até o fim do mês. Regras em [`conferirSaldos.ts`](src/utils/conferirSaldos.ts),
-cartão `ConferirSaldosCard`; `prova76` (10).
+cartão `ConferirSaldosCard`.
 Com isso, Lançamentos deixou de abrir a caixa de saldo sozinha ao entrar
-num BANCO (mesmo dia, pedido dele); ela abre pelo toque. O dinheiro
-continua perguntando ao entrar, porque a Início não confere a carteira.
+no banco e no dinheiro (mesmo dia, pedido dele); ela abre pelo toque. O
+cartão virou "Confira seus saldos" e ganhou a CARTEIRA (`CARTEIRA`, quando
+a pessoa usa dinheiro: saldo inicial, lançamento ou categoria em espécie),
+pelo `saldoFinalDinheiro`; o informado da carteira não vence o calculado,
+então a diferença fica à vista o mês inteiro. `prova76` (17).
 
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele

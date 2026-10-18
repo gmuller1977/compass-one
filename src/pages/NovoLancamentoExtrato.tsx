@@ -435,21 +435,9 @@ export default function NovoLancamentoExtrato() {
     }
   }, [location.search, contasExtrato.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (tabPrincipal === 'dinheiro') {
-      const k = mesKey('dinheiro', ano, mes)
-      if (dados[k]?.saldoBancoData === hojeStr) return
-      // Sugere o saldo calculado, como no banco. Vinha vazio: a pergunta e
-      // "achamos que voce tem X, quanto tem de verdade?", e sem o X ela vira
-      // so "digite um numero".
-      setModalSaldoValor(fmt(saldoMes))
-      setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
-      return
-    }
-    // O banco não pergunta mais ao entrar: a conferência do saldo dos bancos
-    // é feita na Início (18/10/2026, pedido do Guilherme). A caixa de saldo
-    // continua abrindo pelo toque.
-  }, [tabPrincipal])
+  // Banco e dinheiro não perguntam mais o saldo ao entrar: a conferência é
+  // feita na Início (18/10/2026, pedido do Guilherme). A caixa de saldo
+  // continua abrindo pelo toque.
 
 
 
