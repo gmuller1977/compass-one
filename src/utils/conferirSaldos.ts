@@ -1,4 +1,4 @@
-import { saldoInformado } from './saldoInformado'
+import { saldoInformado, saldoInformadoDaCarteira } from './saldoInformado'
 import type { Conta, DadosMes } from '../context/AppContext'
 import { saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
 
@@ -91,7 +91,7 @@ export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
     .map(conta => {
       const k = chaveDoMes(conta.id, ano, mes)
       const dm = deps.extratoData[k]
-      const informado = saldoInformado(dm)
+      const informado = conta.id === CARTEIRA.id ? saldoInformadoDaCarteira(dm) : saldoInformado(dm)
       const semInformado = dm ? { ...deps, extratoData: { ...deps.extratoData, [k]: { ...dm, saldoBanco: '' } } } : deps
       const calculado = conta.id === CARTEIRA.id
         ? saldoFinalDinheiro(ano, mes, deps)

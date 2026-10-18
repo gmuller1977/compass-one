@@ -17,3 +17,13 @@ export function saldoInformado(dm?: { saldoBanco?: string; saldoBancoInformado?:
   if (v > 0) return v
   return dm?.saldoBancoInformado ? v : null
 }
+
+/**
+ * A carteira: qualquer valor gravado vale, zero inclusive, com marca ou sem.
+ * O informado do dinheiro não entra na base de tela nenhuma (saldoFinalDinheiro),
+ * só mostra a diferença, então um "R$ 0,00" antigo não move número nenhum.
+ */
+export function saldoInformadoDaCarteira(dm?: { saldoBanco?: string } | null): number | null {
+  const s = (dm?.saldoBanco ?? '').trim()
+  return s ? parseBRL(s) : null
+}

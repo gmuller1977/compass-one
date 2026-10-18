@@ -58,7 +58,7 @@ export default function NleMobileSubheader({
   onAlertaRevisar, onAlertaAjustarMes,
   contasExtrato, contaIdEfetivo, mes, ano, mesNome,
   setContaId, setModalSaldo, setModalSaldoValor, saldoSugerido,
-  isDinheiro, contaInfo, mesDados, saldoMes, diferenca, conciliado, chaveAtual,
+  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, chaveAtual,
 }: Props) {
   return (
     <>
@@ -136,7 +136,7 @@ export default function NleMobileSubheader({
                     {isDinheiro ? 'Na carteira' : `No ${contaInfo?.banco ?? 'banco'}`}
                   </span>
                   <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-                    {mesDados.saldoBanco || 'Informar saldo ✎'}
+                    {diferenca !== null ? fmt(saldoMes + diferenca) : 'Informar saldo ✎'}
                   </span>
                 </span>
                 {diferenca !== null && (

@@ -247,7 +247,9 @@ antigos podem ter "R$ 0,00" gravado com o sentido de nada, então zero ou
 negativo só vale com a marca `saldoBancoInformado`, que a caixa de
 Lançamentos e o cartão gravam agora; positivo vale como sempre. Uma regra
 só, `saldoInformado` em [`saldoInformado.ts`](src/utils/saldoInformado.ts),
-para Radar, Lançamentos e o cartão. `prova82` (7).
+para Radar, Lançamentos e o cartão; a carteira aceita qualquer valor gravado
+(`saldoInformadoDaCarteira`: o informado dela não move número). A caixa de
+Lançamentos mostra o que a regra lê, não o texto cru. `prova82` (8).
 
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele

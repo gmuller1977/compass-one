@@ -1,4 +1,4 @@
-import { saldoInformado } from '../utils/saldoInformado'
+import { saldoInformado, saldoInformadoDaCarteira } from '../utils/saldoInformado'
 import { parseValor } from '../utils/moeda'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { tipoNaFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
@@ -385,7 +385,7 @@ export default function NovoLancamentoExtrato() {
   const eMesAtual = mes===mesHoje && ano===anoHoje
   const key       = mesKey(contaIdEfetivo, ano, mes)
   const mesDados  = dados[key] ?? { lancamentos:{}, saldoBanco:'' }
-  const saldoExtNum = saldoInformado(mesDados)
+  const saldoExtNum = isDinheiro ? saldoInformadoDaCarteira(mesDados) : saldoInformado(mesDados)
 
   useEffect(() => {
     if (tabPrincipal !== 'extrato') return
@@ -1262,7 +1262,6 @@ export default function NovoLancamentoExtrato() {
             saldoMes={saldoMes}
             mes={mes}
             ano={ano}
-            saldoBancoSalvo={mesDados.saldoBanco ?? ''}
             saldoBancoNum={saldoExtNum}
             setModalSaldo={setModalSaldo}
             setModalSaldoValor={setModalSaldoValor}
