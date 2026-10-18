@@ -60,7 +60,9 @@ export function confirmarDebito(dm: DadosMes | undefined, d: DebitoParaConfirmar
  * (18/10/2026, pedido do Guilherme: "dois quadros, um de saldo e outro de
  * débito automático, para ser conferido"). É a outra metade da decisão
  * acima: o app confirma sozinho, e a pessoa confere no extrato do banco se
- * saiu e no valor certo. Só o mês corrente, do dia 1 até hoje.
+ * saiu e no valor certo. Só o mês corrente: do dia 1 até hoje para
+ * conferir, e os que ainda vão vencer como agendados (pedido dele: o quadro
+ * não some, e diz quando não há débito agendado).
  *
  * As respostas gravam nos campos de sempre, na conta onde a fixa cai:
  *   - "Confere": só `debitosConferidos[id]`, nenhum número muda;
@@ -78,6 +80,8 @@ export type DebitoDoMes = {
   previsto: number
   naoSaiu: boolean
   conferido: boolean
+  /** Vence depois de hoje: aparece como agendado, sem nada a conferir. */
+  agendado: boolean
 }
 
 export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
@@ -91,20 +95,21 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
     const marcas = doMes.map(dm => dm?.fixasConsolidadas?.[cat.id])
     const paga = marcas.includes(true)
     const naoSaiu = !paga && marcas.includes(false)
-    if (!paga && !naoSaiu) continue
     const contaId = contaDoPagamento(cat.id, ano, mes, deps.contas, deps.categorias, deps.extratoData)
     if (!contaId) continue
     const chave = `${contaId}${fim}`
     const dm = deps.extratoData[chave]
     const dia = diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm?.fixasMovidas, true, mes, ano, totalDias)
-    if (dia > hoje.getDate()) continue
     const override = doMes.map(d => d?.fixasValorOverride?.[cat.id]).find(v => v !== undefined)
     const previsto = valorFixaNoMes(cat, deps.planos[ano], mes, deps.categorias)
+    // Agendado: ativo e com valor no plano, como nas contas a vencer.
+    const agendado = dia > hoje.getDate() && !paga && !naoSaiu
+    if (agendado ? !cat.ativa || (override ?? previsto) <= 0 : !paga && !naoSaiu) continue
     out.push({
       id: cat.id, nome: cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome,
       contaId, chave, dia, previsto,
       valor: override ?? previsto,
-      naoSaiu,
+      naoSaiu, agendado,
       conferido: dm?.debitosConferidos?.[cat.id] === true,
     })
   }

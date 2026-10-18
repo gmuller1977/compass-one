@@ -22,7 +22,6 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
 
-  if (debitos.length === 0) return null
 
   const vazio: DadosMes = { lancamentos: {}, saldoBanco: '' }
   const gravar = (d: DebitoDoMes, f: (dm: DadosMes) => DadosMes) =>
@@ -38,11 +37,12 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
     setEditando(null); setTexto(''); setErro('')
   }
 
-  const pendentes = debitos.filter(d => !d.conferido).length
+  const pendentes = debitos.filter(d => !d.conferido && !d.agendado).length
+  const vencidos = debitos.filter(d => !d.agendado).length
 
   return (
     <Cartao>
-      <TituloCartao direita={pendentes === 0
+      <TituloCartao direita={pendentes === 0 && vencidos > 0
         ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
         : undefined}>
         Débitos automáticos
@@ -50,6 +50,11 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
       {pendentes > 0 && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -4, marginBottom: 6, lineHeight: 1.45 }}>
           Já marcamos como pagos. Veja no extrato do banco se saíram e no valor certo.
+        </div>
+      )}
+      {debitos.length === 0 && (
+        <div style={{ fontSize: M.corpo, color: COR.textoSuave, lineHeight: 1.45, padding: '6px 0' }}>
+          Não há débito automático agendado para este mês.
         </div>
       )}
 
@@ -68,12 +73,13 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
                   textDecoration: d.naoSaiu ? 'line-through' : undefined, fontVariantNumeric: 'tabular-nums' }}>
                   {mostrar(d.valor, oculto)}
                 </div>
+                {d.agendado && <Etiqueta cor={COR.infoTexto} fundo={COR.infoFundo}>agendado</Etiqueta>}
                 {d.conferido && !aberto && (d.naoSaiu
                   ? <Etiqueta cor={COR.avisoTexto} fundo={COR.avisoFundo}>não saiu</Etiqueta>
                   : <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>)}
               </div>} />
 
-            {!d.conferido && !aberto && (
+            {!d.conferido && !d.agendado && !aberto && (
               <div style={botoes}>
                 <Pilula forte onClick={() => gravar(d, dm => debitoConfere(dm, d))}>Confere</Pilula>
                 <Pilula onClick={() => { setEditando(d.id); setTexto(''); setErro('') }}>Outro valor</Pilula>
@@ -100,6 +106,11 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
           </div>
         )
       })}
+      {debitos.length > 0 && !debitos.some(d => d.agendado) && (
+        <div style={{ fontSize: M.legenda, color: COR.textoSuave, lineHeight: 1.45, paddingTop: 10, borderTop: '1px solid #eef2f8' }}>
+          Não há mais débito automático agendado para os próximos dias deste mês.
+        </div>
+      )}
     </Cartao>
   )
 }
