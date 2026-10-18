@@ -24,7 +24,7 @@ import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
 import AjudaTela from '../components/AjudaTela'
-import { Atalho, Barrinha, Cartao, Etiqueta, IconeRedondo, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
+import { Barrinha, Cartao, Etiqueta, IconeRedondo, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
 import { M, ROTULO_TOPO, TOPO_AZUL, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
@@ -407,9 +407,14 @@ export default function Dashboard() {
 
         {/* Logo abaixo do saldo (pedido do Guilherme, 18/10/2026). */}
         {/* Ao lado, os débitos automáticos para conferir (pedido dele, mesmo dia). */}
+        {/* Embaixo dos saldos, as contas da semana com o "Pagar" (pedido dele, mesmo dia). */}
         {ehMesCorrente && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, alignItems: 'start' }}>
-            <ConferirSaldosCard deps={deps} oculto={oculto} />
+            <div style={{ display: 'grid', gap: 16 }}>
+              <ConferirSaldosCard deps={deps} oculto={oculto} />
+              <ContasAVencerCard contas={aVencer} categorias={categorias} oculto={oculto} titulo="Contas da semana"
+                saldoHoje={saldoDisponivel} podePagar={!isMobile} onAbrir={() => navigate('/novo-lancamento')} />
+            </div>
             <DebitosAutomaticosCard deps={deps} oculto={oculto} />
           </div>
         )}
@@ -517,13 +522,6 @@ export default function Dashboard() {
 
           {/* ── Coluna 2: o que fazer ── */}
           <div style={{ display: 'grid', gap: 20 }}>
-            <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
-              <Atalho icone="ti-plus" rotulo="Lançar" onClick={() => navigate('/novo-lancamento')} />
-              <Atalho icone="ti-calendar-stats" rotulo="Planejamento" onClick={() => navigate('/planejamento')} />
-              <Atalho icone="ti-shopping-cart" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
-              <Atalho icone="ti-radar-2" rotulo="Radar" onClick={() => navigate('/radar')} />
-            </Cartao>
-
             {ehMesCorrente && (outrosAvisos.length > 0 || fechouTexto) && (
               <Cartao>
                 <TituloCartao>Pede sua atenção</TituloCartao>
@@ -542,12 +540,9 @@ export default function Dashboard() {
               </Cartao>
             )}
 
-            {(ehMesCorrente || (ehFuturo && contasFuturo.length > 0)) && (
-              <ContasAVencerCard contas={ehFuturo ? contasFuturo : aVencer} categorias={categorias} oculto={oculto}
-                titulo={ehFuturo ? `Contas de ${mesNome.toLowerCase()}` : 'Contas da semana'}
-                saldoHoje={ehMesCorrente ? saldoDisponivel : undefined}
-                podePagar={ehMesCorrente && !isMobile}
-                onAbrir={() => navigate('/novo-lancamento')} />
+            {ehFuturo && contasFuturo.length > 0 && (
+              <ContasAVencerCard contas={contasFuturo} categorias={categorias} oculto={oculto}
+                titulo={`Contas de ${mesNome.toLowerCase()}`} onAbrir={() => navigate('/novo-lancamento')} />
             )}
           </div>
         </div>
