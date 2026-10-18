@@ -414,7 +414,8 @@ export default function NovoLancamentoExtrato() {
   useEffect(() => { if (isDinheiro) setFPag('dinheiro') }, [tabPrincipal])
 
   useEffect(() => {
-    if (isMobile) return
+    // Vale no celular também: o "Ver Lançamentos" da conferência de saldos
+    // abre a conta com diferença (18/10/2026, pedido do Guilherme).
     const params  = new URLSearchParams(location.search)
     let rawTipo   = params.get('tipo')
     const conta   = params.get('conta')
@@ -432,7 +433,7 @@ export default function NovoLancamentoExtrato() {
       }
     }
     if (tipo === 'cartao' && conta) {
-      setCartaoNavId(conta)
+      if (isMobile) setMobileCartaoId(conta); else setCartaoNavId(conta)
     }
   }, [location.search, contasExtrato.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
