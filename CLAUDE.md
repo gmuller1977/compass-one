@@ -2892,6 +2892,13 @@ acelerada, a categoria mais estourada, mês negativo à frente e, a partir das
   consigo lançar" horas depois da Fase B. Ao voltar para o app e a cada 5 min
   ele compara o script do `index.html` publicado com o que está rodando.
 - `prova65` (28 invariantes).
+**A barra de baixo do celular é Início · Lançamentos · + · Radar · Plano,
+sem "Mais"** (18/10/2026, pedido do Guilherme). As outras telas (Simulador,
+Revisão mensal, Configurações, Indicar amigos; o Norte quando religado)
+abrem ARRASTANDO a barra para cima, como no Android; o tracinho embaixo do
+"+" também abre, e arrastar a folha para baixo fecha. As notas abaixo sobre
+"Comprar?", Norte e "Mais" na barra são histórico.
+
 **Lançamentos no celular, no padrão dos apps de banco** (12/10/2026, pedido
 do Guilherme: "o mesmo trabalho que fizemos na tela de Início e Quick"). O
 congelamento de Lançamentos foi aberto por ele SÓ para o desenho: nenhuma
