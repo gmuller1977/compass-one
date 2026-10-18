@@ -38,6 +38,10 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
     setEditando(null); setTexto(''); setErro('')
   }
 
+  // Três grupos, nesta ordem (pedido do Guilherme, 18/10/2026: "agendados
+  // sempre acima dos conferidos"): o que falta conferir, o que ainda vai
+  // sair e o que já foi conferido. Dentro de cada um, pelo dia.
+  const ordenados = [...debitos].sort((a, b) => ORDEM[grupoDe(a)] - ORDEM[grupoDe(b)] || a.dia - b.dia)
   const pendentes = debitos.filter(d => !d.conferido && !d.agendado).length
   const vencidos = debitos.filter(d => !d.agendado).length
   const temEntrada = debitos.some(d => d.entrada && !d.agendado)
@@ -60,7 +64,9 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
         </div>
       )}
 
-      {debitos.map((d, i) => {
+      {ordenados.map((d, i) => {
+        const grupo = grupoDe(d)
+        const titulo = i === 0 || grupoDe(ordenados[i - 1]) !== grupo ? ROTULO_GRUPO[grupo] : null
         const aberto = editando === d.id
         const opcoes = escolhendo === d.id
         const mudou = !d.naoSaiu && Math.abs(d.valor - d.previsto) > 0.004
@@ -78,9 +84,13 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
               : { border: '2px solid #94a3b8', background: '#fff' }
         return (
           <div key={d.id}>
+            {titulo && (
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: COR.textoSuave,
+                padding: i === 0 ? '4px 0 0' : '14px 0 0', borderTop: i === 0 ? 'none' : '1px solid #eef2f8' }}>{titulo}</div>
+            )}
             <div onClick={() => { if (!d.agendado && !aberto) setEscolhendo(opcoes ? null : d.id) }} style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', minHeight: 48,
-              borderTop: i === 0 ? 'none' : '1px solid #eef2f8', cursor: d.agendado ? undefined : 'pointer',
+              borderTop: titulo ? 'none' : '1px solid #eef2f8', cursor: d.agendado ? undefined : 'pointer',
             }}>
               <button type="button" disabled={d.agendado}
                 aria-label={d.agendado ? `${d.nome}: agendado` : d.naoSaiu ? `${d.nome}: não ${saiu}` : conferido ? `Desfazer: ${d.nome} confere` : `${d.nome} confere`}
@@ -98,7 +108,7 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
               <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6, overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 <span style={{ fontSize: M.corpo, fontWeight: 600, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.nome}</span>
                 <span style={{ fontSize: M.legenda, color: COR.textoSuave, flexShrink: 0 }}>
-                  dia {String(d.dia).padStart(2, '0')} · {bancoDe(d)}{d.agendado ? ' · agendado' : d.naoSaiu ? ` · não ${saiu}` : ''}
+                  dia {String(d.dia).padStart(2, '0')} · {bancoDe(d)}{d.naoSaiu ? ` · não ${saiu}` : ''}
                 </span>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -144,6 +154,11 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
     </Cartao>
   )
 }
+
+type Grupo = 'conferir' | 'agendado' | 'conferido'
+const grupoDe = (d: DebitoDoMes): Grupo => (d.agendado ? 'agendado' : d.conferido ? 'conferido' : 'conferir')
+const ORDEM: Record<Grupo, number> = { conferir: 0, agendado: 1, conferido: 2 }
+const ROTULO_GRUPO: Record<Grupo, string> = { conferir: 'A conferir', agendado: 'Agendados', conferido: 'Conferidos' }
 
 const botoes: CSSProperties = { display: 'flex', gap: 8, padding: '0 0 12px 42px', flexWrap: 'wrap', alignItems: 'center' }
 
