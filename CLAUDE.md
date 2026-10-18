@@ -2259,10 +2259,13 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
 - **No computador, as perguntas ficam num celular desenhado** (moldura
   `#0b1533`, rola por dentro, Continuar preso embaixo; pedido do Guilherme,
   mesmo dia, sobre o protótipo). As boas-vindas seguem em duas colunas, sem
-  moldura. Cartões em duas colunas alinhadas à esquerda (`colunas`). Os bancos
-  são UMA lista (`LinhaBanco`): tocar marca e abre o saldo na mesma linha; o
-  primeiro marcado é o do salário, e "O salário cai aqui" troca. Marcado, abre
-  embaixo uma caixa azul com o saldo, que entra como slide (`pa-abre`/`pa-slide`).
+  moldura. Todo passo de escolha é uma lista (`Escolha`): tocar marca e abre
+  embaixo a caixa azul (`CaixaAzul`, entra como slide, `pa-abre`/`pa-slide`)
+  com as perguntas daquele item; dentro dela rótulos e pílulas usam a paleta
+  do fundo escuro (`NaCaixa`). Bancos (o primeiro é o do salário, "O salário
+  cai aqui" troca), cartões (o vencimento), contas do mês e dia a dia. O que a
+  pessoa acrescenta ("Outra conta", compra parcelada) e o financiamento são a
+  mesma caixa azul, com ✕ (pedido do Guilherme, 18/10/2026).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { parseBRL } from '../utils/moeda'
@@ -138,8 +138,8 @@ export default function PrimeiroAcesso() {
   if (passo === 0) return <BoasVindas nome={nome} onSeguir={seguir} onSozinho={configurarSozinho} />
 
   if (passo === 1) {
-    // Uma lista só: tocar no banco marca e abre o saldo AO LADO (pedido do
-    // Guilherme, 17/10/2026). O primeiro marcado é o do salário; dá para trocar.
+    // Uma lista só: tocar no banco marca e abre a caixa do saldo (pedido do
+    // Guilherme, 17–18/10/2026). O primeiro marcado é o do salário; dá para trocar.
     const marcado = (b: string) => b === e.banco || e.outrosBancos.some(o => o.banco === b)
     const saldoDe = (b: string) => (b === e.banco ? e.saldo : e.outrosBancos.find(o => o.banco === b)?.saldo ?? '')
     const alternar = (b: string) => setE(p => {
@@ -164,13 +164,16 @@ export default function PrimeiroAcesso() {
       <Cartao>
         <div style={{ display: 'grid', gap: 8 }}>
           {BANCOS.map(b => (
-            <LinhaBanco key={b} nome={b} on={marcado(b)} salario={b === e.banco} varios={varios} saldo={saldoDe(b)}
-              onTocar={() => alternar(b)} onSaldo={v => mudarSaldo(b, v)} onSalario={() => doSalario(b)}>
+            <Escolha key={b} rotulo={b} on={marcado(b)} selo={varios && b === e.banco ? 'salário' : undefined} onTocar={() => alternar(b)}>
               {b === 'Outro' && (<>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Qual banco?</div>
+                <Pergunta>Qual banco?</Pergunta>
                 <Campo valor={e.bancoOutro} onMudar={v => set('bancoOutro', v)} placeholder="Nome do banco" texto autoFoco />
               </>)}
-            </LinhaBanco>
+              <Pergunta>Quanto tem lá hoje?</Pergunta>
+              <CampoGrande valor={saldoDe(b)} onMudar={v => mudarSaldo(b, v)} rotulo={`Saldo hoje: ${b}`} autoFoco={b !== 'Outro'} />
+              <Mini>Mais ou menos. Se não lembrar, deixe em branco.</Mini>
+              {varios && b !== e.banco && <BotaoNaCaixa onClick={() => doSalario(b)}>O salário cai aqui</BotaoNaCaixa>}
+            </Escolha>
           ))}
         </div>
       </Cartao>
@@ -199,6 +202,20 @@ export default function PrimeiroAcesso() {
   }
 
   if (passo === 3) {
+    // Mesma lista dos bancos: tocar marca o cartão e abre o vencimento.
+    const cartaoMarcado = (b: string) => b === e.cartao || e.outrosCartoes.some(c => c.cartao === b)
+    const vencDe = (b: string) => (b === e.cartao ? e.venc : e.outrosCartoes.find(c => c.cartao === b)?.venc ?? 0)
+    const alternarCartao = (b: string) => setE(p => {
+      if (b === p.cartao) {
+        const [prox, ...resto] = p.outrosCartoes
+        return { ...p, cartao: prox?.cartao ?? '', venc: prox?.venc ?? 0, outrosCartoes: resto }
+      }
+      if (p.outrosCartoes.some(c => c.cartao === b)) return { ...p, outrosCartoes: p.outrosCartoes.filter(c => c.cartao !== b) }
+      if (!p.cartao) return { ...p, cartao: b, venc: 0 }
+      return { ...p, outrosCartoes: [...p.outrosCartoes, { cartao: b, venc: 0 }] }
+    })
+    const mudarVenc = (b: string, d: number) => setE(p => (b === p.cartao ? { ...p, venc: d }
+      : { ...p, outrosCartoes: p.outrosCartoes.map(c => (c.cartao === b ? { ...c, venc: d } : c)) }))
     titulo = 'Você usa cartão de crédito?'
     sub = 'Assim a gente sabe em que mês cada compra pesa no bolso.'
     corpo = (<>
@@ -206,29 +223,20 @@ export default function PrimeiroAcesso() {
         onEscolher={v => set('usaCartao', v === 'Uso' ? 'sim' : 'nao')} /></Cartao>
       {e.usaCartao === 'sim' && (
         <Cartao>
-          <Rotulo>De qual banco?</Rotulo>
-          <Chips colunas lista={BANCOS.filter(b => b !== 'Outro')} valor={e.cartao} onEscolher={v => set('cartao', v)} />
-          <Rotulo>Em que dia vence a fatura?</Rotulo>
-          <Chips lista={[1, 5, 10, 15, 20, 25].map(d => `Dia ${d}`)} valor={e.venc ? `Dia ${e.venc}` : ''}
-            onEscolher={v => set('venc', parseInt(v.slice(4)))} />
-          <Dica>
-            {e.venc
-              ? `Vamos considerar que a fatura fecha no dia ${fechamentoDoVencimento(e.venc)}, uma semana antes. Se for outro dia, você ajusta em Configurações.`
-              : 'Tem mais de um cartão? Dá para adicionar os outros logo abaixo.'}
-          </Dica>
-          {e.outrosCartoes.map((c, i) => (
-            <Bloco key={i} onRemover={() => set('outrosCartoes', e.outrosCartoes.filter((_, j) => j !== i))}>
-              <Mini>Outro cartão: de qual banco?</Mini>
-              <Chips pequeno colunas lista={BANCOS.filter(b => b !== 'Outro')} valor={c.cartao}
-                onEscolher={v => set('outrosCartoes', e.outrosCartoes.map((q, j) => (j === i ? { ...q, cartao: v } : q)))} />
-              <Mini>Vence no dia</Mini>
-              <Chips pequeno lista={[1, 5, 10, 15, 20, 25].map(d => `Dia ${d}`)} valor={c.venc ? `Dia ${c.venc}` : ''}
-                onEscolher={v => set('outrosCartoes', e.outrosCartoes.map((q, j) => (j === i ? { ...q, venc: parseInt(v.slice(4)) } : q)))} />
-            </Bloco>
-          ))}
-          {e.cartao && e.venc > 0 && (
-            <Adicionar onClick={() => set('outrosCartoes', [...e.outrosCartoes, { cartao: '', venc: 0 }])}>Adicionar outro cartão</Adicionar>
-          )}
+          <Rotulo>De quais bancos?</Rotulo>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {BANCOS.filter(b => b !== 'Outro').map(b => {
+              const venc = vencDe(b)
+              return (
+                <Escolha key={b} icone="ti-credit-card" rotulo={b} on={cartaoMarcado(b)} onTocar={() => alternarCartao(b)}>
+                  <Pergunta>Em que dia vence a fatura?</Pergunta>
+                  <Chips pequeno lista={[1, 5, 10, 15, 20, 25].map(d => `Dia ${d}`)} valor={venc ? `Dia ${venc}` : ''}
+                    onEscolher={v => mudarVenc(b, parseInt(v.slice(4)))} />
+                  {venc > 0 && <Mini>A fatura deve fechar no dia {fechamentoDoVencimento(venc)}, uma semana antes. Se for outro dia, você ajusta em Configurações.</Mini>}
+                </Escolha>
+              )
+            })}
+          </div>
         </Cartao>
       )}
     </>)
@@ -245,7 +253,7 @@ export default function PrimeiroAcesso() {
           const v = e.contas[item.id]
           const on = !!v
           return (
-            <Item key={item.id} icone={item.icone} rotulo={item.rotulo} on={on}
+            <Escolha key={item.id} icone={item.icone} rotulo={item.rotulo} on={on}
               onTocar={() => setE(p => {
                 const contas = { ...p.contas }
                 if (contas[item.id]) delete contas[item.id]
@@ -265,7 +273,7 @@ export default function PrimeiroAcesso() {
                 <DeOnde forma={v.forma} bancos={nomesBancos} cartoes={[]} banco={v.banco}
                   onBanco={x => setE(p => ({ ...p, contas: { ...p.contas, [item.id]: { ...p.contas[item.id], banco: x } } }))} />
               </>)}
-            </Item>
+            </Escolha>
           )
         })}
         {e.outrasContas.map((c, i) => {
@@ -301,7 +309,7 @@ export default function PrimeiroAcesso() {
           const v = e.diaADia[item.id]
           const on = v !== undefined
           return (
-            <Item key={item.id} icone={item.icone} rotulo={item.rotulo} on={on}
+            <Escolha key={item.id} icone={item.icone} rotulo={item.rotulo} on={on}
               onTocar={() => setE(p => {
                 const diaADia = { ...p.diaADia }
                 if (diaADia[item.id] !== undefined) delete diaADia[item.id]
@@ -310,7 +318,7 @@ export default function PrimeiroAcesso() {
               })}>
               {on && (<div><Mini>Por mês, mais ou menos</Mini>
                 <Campo valor={v} onMudar={x => setE(p => ({ ...p, diaADia: { ...p.diaADia, [item.id]: x } }))} placeholder="0" pequeno autoFoco /></div>)}
-            </Item>
+            </Escolha>
           )
         })}
         {e.outrosGastos.map((g, i) => (
@@ -340,13 +348,13 @@ export default function PrimeiroAcesso() {
         {financiamentos.map(item => {
           const c = e.contas[item.id]
           return (
-            <div key={item.id} style={{ border: '1.5px solid #93c5fd', background: '#f8fbff', borderRadius: 16, padding: 12, display: 'grid', gap: 8 }}>
+            <CaixaAzul key={item.id} abre={false}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: BOLINHA_AZUL, color: '#fff' }}><i className={`ti ${item.icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
+                  background: 'rgba(255,255,255,.16)', color: '#fff' }}><i className={`ti ${item.icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: COR.texto }}>{item.rotulo}</div>
-                  <div style={{ fontSize: 13, color: COR.textoSuave }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>{item.rotulo}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)' }}>
                     {parseBRL(c.valor) > 0 ? `${R(parseBRL(c.valor))} por mês` : 'Já está nas suas contas do mês'}{` · ${(FORMAS.find(f => f.id === c.forma)?.rotulo ?? '').replace(' (PIX, boleto)', ' (PIX ou boleto)').toLowerCase()}`}
                   </div>
                 </div>
@@ -356,15 +364,12 @@ export default function PrimeiroAcesso() {
                 <Campo valor={c.faltam ?? ''} placeholder="24" pequeno numerico
                   onMudar={x => setE(p => ({ ...p, contas: { ...p.contas, [item.id]: { ...p.contas[item.id], faltam: x.replace(/\D/g, '').slice(0, 3) } } }))} />
               </div>
-            </div>
+            </CaixaAzul>
           )
         })}
         {e.parcelas.map((p, i) => (
-          <div key={i} style={{ border: `1.5px solid ${COR.borda}`, borderRadius: 16, padding: 12, display: 'grid', gap: 8 }}>
-            <input value={p.nome} onChange={ev => mudar(i, 'nome', ev.target.value)} placeholder="O que foi? Ex.: Geladeira"
-              aria-label="O que foi comprado" autoFocus={!p.nome && !p.valor}
-              style={{ border: 'none', borderBottom: `1.5px solid ${COR.borda}`, font: 'inherit', fontSize: 16, fontWeight: 700,
-                padding: '6px 0', outline: 'none', color: COR.texto, background: 'transparent' }} />
+          <Bloco key={i} onRemover={() => set('parcelas', e.parcelas.filter((_, j) => j !== i))}>
+            <NomeLivre valor={p.nome} onMudar={x => mudar(i, 'nome', x)} placeholder="O que foi? Ex.: Geladeira" autoFoco={!p.nome && !p.valor} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 92px', gap: 8 }}>
               <div><Mini>Valor da parcela</Mini><Campo valor={p.valor} onMudar={x => mudar(i, 'valor', x)} placeholder="0" pequeno /></div>
               <div><Mini>Faltam</Mini><Campo valor={p.faltam} onMudar={x => mudar(i, 'faltam', x)} placeholder="6" pequeno numerico /></div>
@@ -389,7 +394,7 @@ export default function PrimeiroAcesso() {
             <Mini>{p.forma === 'cartao'
               ? 'As parcelas que faltam já entram na fatura do cartão.'
               : 'Vira uma conta do mês até a última parcela, que você marca como paga.'}</Mini>
-          </div>
+          </Bloco>
         ))}
         <button type="button" onClick={() => set('parcelas', [...e.parcelas, { nome: '', valor: '', faltam: '', total: '', dia: '', forma: e.usaCartao === 'sim' ? 'cartao' : 'manual' }])} style={chip(false)}>
           <i className="ti ti-shopping-bag" aria-hidden style={{ fontSize: 18 }} /> Adicionar uma compra parcelada
@@ -496,12 +501,13 @@ export default function PrimeiroAcesso() {
           .pa-tel::-webkit-scrollbar { display: none }
           .pa-pe { position: sticky; bottom: 0; background: linear-gradient(rgba(242,245,252,0), #f2f5fc 18px); padding-top: 22px !important }
         }
-        @keyframes pa-abre { from { max-height: 0 } to { max-height: 320px } }
+        @keyframes pa-abre { from { max-height: 0 } to { max-height: 640px } }
         @keyframes pa-slide { from { opacity: 0; transform: translateX(28px) scale(.96) } to { opacity: 1; transform: none } }
         @keyframes pa-pop { 0% { transform: scale(.4) } 60% { transform: scale(1.18) } 100% { transform: scale(1) } }
-        .pa-abre { animation: pa-abre .38s cubic-bezier(.2,.8,.2,1) both; overflow: hidden }
+        .pa-abre { animation: pa-abre .38s cubic-bezier(.2,.8,.2,1) backwards; overflow: hidden }
         .pa-slide { animation: pa-slide .42s cubic-bezier(.2,.8,.2,1) .06s both }
         .pa-pop { animation: pa-pop .3s ease-out }
+        .pa-caixa .pa-nome::placeholder { color: rgba(255,255,255,.7) }
         @media (prefers-reduced-motion: reduce) { .pa-abre, .pa-slide, .pa-pop { animation: none } }
       `}</style>
       <div ref={topoRef} className="pa-tel" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
@@ -635,7 +641,9 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
 const ola: CSSProperties = { fontSize: 15, lineHeight: 1.6, color: COR.textoSuave, margin: 0 }
 const numeroGrande: CSSProperties = { fontSize: 34, fontWeight: 800, color: COR.sucessoTexto, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.5px' }
 
-function chip(on: boolean, pequeno?: boolean): CSSProperties {
+function chip(on: boolean, pequeno?: boolean, escuro?: boolean): CSSProperties {
+  if (escuro) return { ...chip(on, pequeno), border: `1.5px solid ${on ? '#fff' : 'rgba(255,255,255,.4)'}`,
+    background: on ? '#fff' : 'rgba(255,255,255,.12)', color: on ? '#1e3a8a' : '#fff' }
   return {
     font: 'inherit', fontSize: pequeno ? 13 : 14, fontWeight: 600, padding: pequeno ? '8px 12px' : '10px 14px', minHeight: pequeno ? 40 : 44,
     borderRadius: 999, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7,
@@ -648,28 +656,32 @@ function Cartao({ children }: { children: ReactNode }) {
 }
 
 function Rotulo({ children }: { children: ReactNode }) {
-  return <div style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>{children}</div>
+  const escuro = useContext(NaCaixa)
+  return <div style={{ fontSize: 13, fontWeight: 700, color: escuro ? '#fff' : COR.textoSuave }}>{children}</div>
 }
 
 function Mini({ children }: { children: ReactNode }) {
-  return <div style={{ fontSize: 12, fontWeight: 600, color: COR.textoSuave, marginBottom: 4 }}>{children}</div>
+  const escuro = useContext(NaCaixa)
+  return <div style={{ fontSize: 12, fontWeight: 600, color: escuro ? 'rgba(255,255,255,.85)' : COR.textoSuave, marginBottom: 4 }}>{children}</div>
 }
 
 function Dica({ children }: { children: ReactNode }) {
+  const escuro = useContext(NaCaixa)
   return (
-    <div style={{ fontSize: 13, color: COR.textoSuave, lineHeight: 1.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-      <i className="ti ti-info-circle" aria-hidden style={{ fontSize: 16, color: '#1a56db', marginTop: 1 }} /><span>{children}</span>
+    <div style={{ fontSize: 13, color: escuro ? 'rgba(255,255,255,.85)' : COR.textoSuave, lineHeight: 1.5, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+      <i className="ti ti-info-circle" aria-hidden style={{ fontSize: 16, color: escuro ? '#fff' : '#1a56db', marginTop: 1 }} /><span>{children}</span>
     </div>
   )
 }
 
 /** `colunas`: bancos e cartões em duas colunas, alinhados à esquerda (pedido do Guilherme, 17/10/2026). */
 function Chips({ lista, valor, onEscolher, pequeno, colunas }: { lista: string[]; valor: string; onEscolher: (v: string) => void; pequeno?: boolean; colunas?: boolean }) {
+  const escuro = useContext(NaCaixa)
   return (
     <div style={colunas ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } : { display: 'flex', flexWrap: 'wrap', gap: 8 }}>
       {lista.map(v => (
         <button key={v} type="button" aria-pressed={valor === v} onClick={() => onEscolher(v)}
-          style={colunas ? { ...chip(valor === v, pequeno), justifyContent: 'flex-start', textAlign: 'left', paddingLeft: 16 } : chip(valor === v, pequeno)}>{v}</button>
+          style={colunas ? { ...chip(valor === v, pequeno, escuro), justifyContent: 'flex-start', textAlign: 'left', paddingLeft: 16 } : chip(valor === v, pequeno, escuro)}>{v}</button>
       ))}
     </div>
   )
@@ -703,86 +715,95 @@ function Campo({ valor, onMudar, placeholder, pequeno, numerico, texto, autoFoco
   )
 }
 
-function Item({ icone, rotulo, on, onTocar, children }: { icone: string; rotulo: string; on: boolean; onTocar: () => void; children: ReactNode }) {
+/** Dentro da caixa azul os rótulos e as pílulas trocam para a paleta do
+ *  fundo escuro (`#1e40af` no extremo claro: branco 8,7; 75% 5,1). */
+const NaCaixa = createContext(false)
+
+/** A caixa azul que entra como transição de slide (pedido do Guilherme,
+ *  18/10/2026: "chama mais atenção"). Ao abrir, rola até ficar à vista. */
+function CaixaAzul({ children, abre = true, rolar = abre }: { children: ReactNode; abre?: boolean; rolar?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (!rolar) return; const t = setTimeout(() => ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 380); return () => clearTimeout(t) }, [rolar])
   return (
-    <div style={{ border: `1.5px solid ${on ? '#93c5fd' : '#dbe3f0'}`, background: on ? '#f8fbff' : '#fff', borderRadius: 16, padding: 12,
-      display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: 0,
-        display: 'flex', alignItems: 'center', gap: 12, width: '100%', cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
-        <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: on ? BOLINHA_AZUL : '#eff6ff', color: on ? '#fff' : '#1e40af' }}><i className={`ti ${icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: 15 }}>{rotulo}</span>
-        <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: `2px solid ${on ? '#1a56db' : '#dbe3f0'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
-          {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
-        </span>
-      </button>
-      {children}
+    <div ref={ref} className={abre ? 'pa-abre' : undefined}>
+      <div className="pa-slide pa-caixa" style={{ borderRadius: 14, background: TOPO_AZUL, padding: 14, display: 'grid', gap: 10, position: 'relative' }}>
+        <NaCaixa.Provider value={true}>{children}</NaCaixa.Provider>
+      </div>
     </div>
   )
 }
 
-/** Banco marcado: abre embaixo uma caixa azul, que entra como transição de
- *  slide (pedido do Guilherme, 18/10/2026: "chama mais atenção"). */
-function LinhaBanco({ nome, on, salario, varios, saldo, onTocar, onSaldo, onSalario, children }: {
-  nome: string; on: boolean; salario: boolean; varios: boolean; saldo: string
-  onTocar: () => void; onSaldo: (v: string) => void; onSalario: () => void; children?: ReactNode
+/** Uma linha que se marca com um toque; marcada, abre a caixa azul embaixo. */
+function Escolha({ icone, rotulo, on, selo, onTocar, children }: {
+  icone?: string; rotulo: string; on: boolean; selo?: string; onTocar: () => void; children?: ReactNode
 }) {
-  const caixa = useRef<HTMLDivElement>(null)
-  // A caixa que abre embaixo do último banco da tela não pode ficar escondida.
-  useEffect(() => { if (on) setTimeout(() => caixa.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 380) }, [on])
+  const check = (
+    <span aria-hidden className={on ? 'pa-pop' : undefined} style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', border: `2px solid ${on ? '#1a56db' : '#c3ccd8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
+      {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
+    </span>
+  )
   return (
     <div style={{ border: `1.5px solid ${on ? '#1a56db' : '#dbe3f0'}`, background: on ? '#eff6ff' : '#fff', borderRadius: 16,
       transition: 'background .2s, border-color .2s, box-shadow .2s', boxShadow: on ? '0 8px 22px rgba(30,64,175,.16)' : 'none', overflow: 'hidden' }}>
-      <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: '0 12px',
-        display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
-        <span aria-hidden className={on ? 'pa-pop' : undefined} style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', border: `2px solid ${on ? '#1a56db' : '#c3ccd8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
-          {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
-        </span>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{nome}</span>
-        {on && varios && salario && <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#1e40af', borderRadius: 999, padding: '3px 9px' }}>salário</span>}
+      <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: icone ? '8px 12px' : '0 12px',
+        display: 'flex', alignItems: 'center', gap: icone ? 12 : 10, width: '100%', minHeight: 48, cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
+        {icone ? (
+          <span style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: on ? BOLINHA_AZUL : '#eff6ff', color: on ? '#fff' : '#1e40af', transition: 'background .2s' }}>
+            <i className={`ti ${icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
+        ) : check}
+        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{rotulo}</span>
+        {selo && <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#1e40af', borderRadius: 999, padding: '3px 9px' }}>{selo}</span>}
+        {icone && check}
       </button>
-      {on && (
-        <div className="pa-abre" ref={caixa}>
-          <div className="pa-slide" style={{ margin: '0 8px 8px', borderRadius: 14, background: TOPO_AZUL, padding: 14, display: 'grid', gap: 10 }}>
-            {children}
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Quanto tem lá hoje?</div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 12, padding: '0 14px', minHeight: 52 }}>
-              <span style={{ fontWeight: 700, color: COR.textoSuave }}>R$</span>
-              <input value={saldo} onChange={ev => onSaldo(ev.target.value)} placeholder="0" inputMode="decimal" autoFocus={nome !== 'Outro'}
-                aria-label={`Saldo hoje: ${nome}`} style={{ border: 'none', outline: 'none', font: 'inherit', fontSize: 22, fontWeight: 800, width: '100%',
-                  minWidth: 0, color: COR.texto, background: 'transparent', fontVariantNumeric: 'tabular-nums' }} />
-            </label>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.75)' }}>Mais ou menos. Se não lembrar, deixe em branco.</div>
-            {varios && !salario && (
-              <button type="button" onClick={onSalario} style={{ font: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,.14)',
-                border: '1px solid rgba(255,255,255,.35)', borderRadius: 999, padding: '7px 12px', cursor: 'pointer', justifySelf: 'start' }}>O salário cai aqui</button>
-            )}
-          </div>
-        </div>
-      )}
+      {on && children && <div style={{ padding: '0 8px 8px' }}><CaixaAzul>{children}</CaixaAzul></div>}
     </div>
   )
 }
 
+/** O campo grande da caixa azul ("Quanto tem lá hoje?"). */
+function CampoGrande({ valor, onMudar, rotulo, autoFoco = true }: { valor: string; onMudar: (v: string) => void; rotulo: string; autoFoco?: boolean }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 12, padding: '0 14px', minHeight: 52 }}>
+      <span style={{ fontWeight: 700, color: COR.textoSuave }}>R$</span>
+      <input value={valor} onChange={ev => onMudar(ev.target.value)} placeholder="0" inputMode="decimal" autoFocus={autoFoco} aria-label={rotulo}
+        style={{ border: 'none', outline: 'none', font: 'inherit', fontSize: 22, fontWeight: 800, width: '100%', minWidth: 0,
+          color: COR.texto, background: 'transparent', fontVariantNumeric: 'tabular-nums' }} />
+    </label>
+  )
+}
+
+function Pergunta({ children }: { children: ReactNode }) {
+  return <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{children}</div>
+}
+
+function BotaoNaCaixa({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} style={{ font: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,.14)',
+      border: '1px solid rgba(255,255,255,.35)', borderRadius: 999, padding: '7px 12px', cursor: 'pointer', justifySelf: 'start' }}>{children}</button>
+  )
+}
+
+/** Item que a pessoa acrescentou ("Outra conta", compra parcelada): a mesma caixa azul, com ✕. */
 function Bloco({ children, onRemover }: { children: ReactNode; onRemover: () => void }) {
   return (
-    <div style={{ border: '1.5px solid #93c5fd', background: '#f8fbff', borderRadius: 16, padding: '12px 40px 12px 12px', display: 'grid', gap: 8, position: 'relative' }}>
+    <CaixaAzul>
       <button type="button" onClick={onRemover} aria-label="Remover" style={{ position: 'absolute', top: 6, right: 6, width: 32, height: 32,
-        borderRadius: '50%', border: 'none', background: 'transparent', color: COR.textoSuave, cursor: 'pointer' }}>
+        borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,.14)', color: '#fff', cursor: 'pointer' }}>
         <i className="ti ti-x" aria-hidden style={{ fontSize: 16 }} />
       </button>
       {children}
-    </div>
+    </CaixaAzul>
   )
 }
 
-function NomeLivre({ valor, onMudar, placeholder }: { valor: string; onMudar: (v: string) => void; placeholder: string }) {
+function NomeLivre({ valor, onMudar, placeholder, autoFoco }: { valor: string; onMudar: (v: string) => void; placeholder: string; autoFoco?: boolean }) {
+  const escuro = useContext(NaCaixa)
   return (
-    <input value={valor} onChange={ev => onMudar(ev.target.value)} placeholder={placeholder} aria-label={placeholder} autoFocus={!valor}
-      maxLength={40} style={{ border: 'none', borderBottom: `1.5px solid ${COR.borda}`, font: 'inherit', fontSize: 16, fontWeight: 700,
-        padding: '6px 36px 6px 0', outline: 'none', color: COR.texto, background: 'transparent' }} />
+    <input className="pa-nome" value={valor} onChange={ev => onMudar(ev.target.value)} placeholder={placeholder} aria-label={placeholder} autoFocus={autoFoco ?? !valor}
+      maxLength={40} style={{ border: 'none', borderBottom: `1.5px solid ${escuro ? 'rgba(255,255,255,.5)' : COR.borda}`, font: 'inherit', fontSize: 16, fontWeight: 700,
+        padding: '6px 36px 6px 0', outline: 'none', color: escuro ? '#fff' : COR.texto, background: 'transparent' }} />
   )
 }
 
