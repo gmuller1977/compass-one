@@ -4,6 +4,7 @@ import type { DadosMes } from '../../context/AppContext'
 import { construirRealizadoMes } from '../../utils/realizadoMes'
 import type { Deps } from '../../utils/saldoConta'
 import { nomesDeCartao, totaisDoMes } from '../acompanhamento/evolucaoCalcs'
+import { mesDaChegada } from '../../utils/primeiroPlano'
 
 /**
  * Os números de um mês que a Início e Análises leem — a mesma passagem para as
@@ -46,9 +47,13 @@ export function useMesDaInicio(ano: number, mes: number) {
            (p.entradas ?? []).some(c => c.v.some(v => v > 0))
   }, [planos, ano])
 
+  // O mês em que a pessoa chegou, quando o plano só começa no seguinte: tem
+  // no plano só as contas que ainda vencem, e não é julgado (utils/primeiroPlano).
+  const chegada = useMemo(() => mesDaChegada(planos, ano, mes), [planos, ano, mes])
+
   // Com plano no mês, os quadros julgam contra o plano (estouradas, ritmo);
   // sem plano, mostram só o que se gastou.
-  const usaPlanoNoMes = temPlano && totais.totalPrevS > 0
+  const usaPlanoNoMes = temPlano && totais.totalPrevS > 0 && !chegada
 
-  return { ...totais, deps, temPlano, usaPlanoNoMes }
+  return { ...totais, deps, temPlano, usaPlanoNoMes, chegada }
 }

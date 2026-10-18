@@ -2331,6 +2331,20 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   só no mês em que pesa (`pontuais` nas estimativas), para não aparecer como
   estouro; antes do primeiro mês do plano fica como gasto do mês. A lista de
   cartões tem "Outro", com o nome, como a dos bancos. `prova77` (23).
+- **O mês da chegada não é julgado** (18/10/2026, etapa 3 da análise da
+  chegada). Quem entra depois do dia 5 tem o plano a partir do mês seguinte,
+  e o mês da chegada ficava sem plano: as contas informadas não apareciam
+  para pagar nem no saldo previsto, e o salário que ainda não caiu fazia a
+  frase dizer "gastando mais do que ganha". Hoje o plano desse mês leva SÓ
+  as fixas que vencem depois de hoje (banco e dinheiro; a do cartão cai na
+  fatura), o salário que ainda vai cair e as faturas que pesam nele
+  (`comMesDaChegada`); o dia a dia não, porque não se sabe quanto falta de
+  um mês pela metade. `estimativas.chegada` guarda o dia, e `mesDaChegada`
+  desliga os julgamentos (`usaPlanoNoMes`, ritmo, estouradas) e tira o mês
+  do comparativo e da precisão. A Início e a Bússola dizem "Este mês é para
+  conhecer seus gastos. Anote o que puder: o seu plano começa em
+  [mês]", com ponto azul-claro. A meta segue começando no mês do plano.
+  O Radar (congelado) não mudou. `prova78` (19).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).

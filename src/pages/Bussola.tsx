@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import { STATUS_HERO, statusDoMes } from '../components/inicio/statusHero'
+import { mensagemDaChegada, COR_CHEGADA } from '../utils/mensagemDoMes'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
@@ -45,7 +46,7 @@ export default function Bussola() {
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const mesNome = MESES[mes]
 
-  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, linhasSaida, deps, temPlano, usaPlanoNoMes } = useMesDaInicio(ano, mes)
+  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, linhasSaida, deps, temPlano, usaPlanoNoMes, chegada } = useMesDaInicio(ano, mes)
   const b = useMemo(
     () => bussolaDoMes({ deps, linhasSaida, categorias, usaPlanoNoMes }),
     [deps, linhasSaida, categorias, usaPlanoNoMes],
@@ -89,8 +90,8 @@ export default function Bussola() {
                 {nome ? `Olá, ${nome}` : 'Olá'} <span aria-hidden>👋</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: ROTULO, marginTop: 4 }}>
-                <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: status.cor, flexShrink: 0 }} />
-                {status.frase(mesNome, false)}
+                <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: chegada ? COR_CHEGADA : status.cor, flexShrink: 0 }} />
+                {chegada ? mensagemDaChegada(MESES[chegada.mes].toLowerCase(), 'corrente') : status.frase(mesNome, false)}
               </div>
             </div>
             <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}

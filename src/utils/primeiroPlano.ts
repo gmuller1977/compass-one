@@ -1,7 +1,7 @@
 import type { Categoria, Conta, DadosMes, PlanoAnoData } from '../context/AppContext'
 import { construirRealizadoMes } from './realizadoMes'
 import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
-import { NOME_DECIMO, valoresDoDecimo, type EstimativasIniciais } from './primeiroAcesso'
+import { NOME_DECIMO, estimativasDosPlanos, valoresDoDecimo, type EstimativasIniciais } from './primeiroAcesso'
 
 /**
  * O primeiro plano, montado a partir de um mês que já aconteceu.
@@ -230,8 +230,71 @@ export function planoDoPrimeiroAcesso(
         t: cat.tipoMovimento === 'cartao' ? 'cartao' : undefined, v: Array.from({ length: 12 }, (_, i) => (i === pt.mes ? pt.valor : 0)) })
     }
     return { ano: a, mesInicio, mesFim, plano }
-  }).filter(x => x.plano.entradas.length || x.plano.saidas.length)
-  return saida
+  })
+  comMesDaChegada(saida, categorias, estimativas, hoje)
+  return saida.filter(x => x.plano.entradas.length || x.plano.saidas.length)
+}
+
+/**
+ * O mês da chegada, quando o plano só começa no seguinte (etapa 3 da análise
+ * da chegada, 18/10/2026): as contas FIXAS informadas que ainda vencem neste
+ * mês (dia depois de hoje), o salário que ainda vai cair e as faturas que
+ * pesam neste mês entram no plano SÓ deste mês. É o que as faz aparecer para
+ * pagar e contar no saldo final previsto. O dia a dia não entra: não há como
+ * saber quanto falta gastar de um mês pela metade, e a Início não julga este
+ * mês (`mesDaChegada`). Fixa no cartão também não: ela cai na fatura.
+ * Mexe em `saida` no lugar; o ano da chegada entra na lista, sem meses de
+ * plano (mesInicio > mesFim), quando o plano começa no ano seguinte.
+ */
+function comMesDaChegada(
+  saida: { ano: number; mesInicio: number; mesFim: number; plano: PlanoAnoData }[],
+  categorias: Categoria[], estimativas: EstimativasIniciais, hoje: Date,
+) {
+  const a = hoje.getFullYear(), m = hoje.getMonth(), dia = hoje.getDate()
+  const inicio = primeiroMesCompleto(hoje)
+  if (inicio.ano === a && inicio.mes === m) return
+  const chave = `${a}-${String(m + 1).padStart(2, '0')}`
+  const soma: { cat: Categoria; valor: number }[] = []
+  for (const [id, e] of Object.entries(estimativas.porCategoria)) {
+    const cat = categorias.find(c => c.id === id && c.ativa)
+    if (!cat || !e.fixa || !e.dia || e.dia <= dia || e.valor <= 0 || cat.tipoMovimento === 'cartao') continue
+    if ((e.desde && e.desde > chave) || (e.ate && e.ate < chave)) continue
+    soma.push({ cat, valor: e.valor })
+  }
+  for (const pt of estimativas.pontuais ?? []) {
+    const cat = categorias.find(c => c.id === pt.categoriaId && c.ativa)
+    if (cat && pt.ano === a && pt.mes === m && pt.valor > 0) soma.push({ cat, valor: pt.valor })
+  }
+  if (!soma.length) return
+  let item = saida.find(x => x.ano === a)
+  if (!item) {
+    item = { ano: a, mesInicio: 12, mesFim: 11, plano: { saldoInicialJan: 0, entradas: [], saidas: [] } }
+    saida.unshift(item)
+  }
+  for (const { cat, valor } of soma) {
+    const lista = cat.tipo === 'entrada' ? item.plano.entradas : item.plano.saidas
+    const ja = lista.find(l => l.id === cat.id)
+    if (ja) ja.v = ja.v.map((x, i) => (i === m ? x + valor : x))
+    else lista.push({ id: cat.id, nome: cat.nome, descricao: cat.descricao, grupo: cat.grupo,
+      t: cat.tipoMovimento === 'cartao' ? 'cartao' : undefined, v: Array.from({ length: 12 }, (_, i) => (i === m ? valor : 0)) })
+  }
+}
+
+/**
+ * Se (ano, mes) é o mês em que a pessoa chegou e o plano inicial só começa
+ * no seguinte, devolve o mês em que ele começa; senão null. Nesse mês a
+ * Início não julga contra o plano (não há plano para o mês inteiro, só as
+ * contas que ainda vencem) e diz que é o mês de conhecer os gastos.
+ */
+export function mesDaChegada(
+  planos: Record<number, PlanoAnoData | undefined>, ano: number, mes: number,
+): { ano: number; mes: number } | null {
+  const c = estimativasDosPlanos(planos)?.chegada
+  if (!c) return null
+  const [a, m, d] = c.split('-').map(Number)
+  if (a !== ano || m - 1 !== mes) return null
+  const inicio = primeiroMesCompleto(new Date(a, m - 1, d))
+  return inicio.ano === ano && inicio.mes === mes ? null : inicio
 }
 
 /** O último mês do plano inicial, para a tela dizer até quando ele vai. */

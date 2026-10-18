@@ -1,3 +1,4 @@
+import { mesDaChegada } from './primeiroPlano'
 import type { Categoria, DadosMes } from '../context/AppContext'
 import { construirRealizadoMes } from './realizadoMes'
 import { nomesDeCartao, totaisDoMes, cadastroDaLinha, type LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
@@ -53,7 +54,7 @@ export function dadosDoNorte(p: { deps: Deps; nome: string; objetivo?: string; h
   })
   const t = totaisDoMes({ mes, planoAno, categorias: deps.categorias, cartaoNomes: nomesDeCartao(deps.contas), entradasMap, saidasMap })
   const temPlano = !!planoAno && [...(planoAno.saidas ?? []), ...(planoAno.entradas ?? [])].some(c => c.v.some(v => v > 0))
-  const usaPlanoNoMes = temPlano && t.saida.prev > 0
+  const usaPlanoNoMes = temPlano && t.saida.prev > 0 && !mesDaChegada(deps.planos, ano, mes)
 
   const bussola = bussolaDoMes({ deps, linhasSaida: t.saida.linhas, categorias: deps.categorias, usaPlanoNoMes, hoje })
 

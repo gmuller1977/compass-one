@@ -198,6 +198,8 @@ export type EstimativasIniciais = {
   parcelas?: { nome: string; valor: number; faltam: number; desde: string; contaDoMes?: boolean; forma?: FormaDaConta }[]
   /** Gastos de um mês só (as faturas em aberto): entram no plano só naquele mês. */
   pontuais?: { categoriaId: string; ano: number; mes: number; valor: number }[]
+  /** O dia do primeiro acesso ("AAAA-MM-DD"): ver `mesDaChegada`. */
+  chegada?: string
 }
 
 /** `liberado`: quanto deixa de sair quando a última parcela (ou financiamento) acabar. */
@@ -475,7 +477,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   const plano: PlanoAnoData = {
     ...base,
     objetivos,
-    estimativas: { porCategoria, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}), ...(pontuais.length ? { pontuais } : {}) },
+    estimativas: { porCategoria, chegada: `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}), ...(pontuais.length ? { pontuais } : {}) },
   }
 
   return { contas: contasFinal, categorias: cats, plano, faturas }

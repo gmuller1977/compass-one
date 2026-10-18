@@ -49,3 +49,15 @@ export const COR_MENSAGEM: Record<EstadoMensagem, string> = {
   cuidado: '#fde047',
   vermelho: '#f87171',
 }
+
+/**
+ * O mês da chegada (o plano só começa no seguinte): nada a julgar, só o
+ * convite para anotar. Ponto azul-claro, neutro (5,2:1 no #1e40af).
+ */
+export function mensagemDaChegada(mesDoPlano: string, quando: 'corrente' | 'fechado'): string {
+  return quando === 'corrente'
+    ? `Este mês é para conhecer seus gastos. Anote o que puder: o seu plano começa em ${mesDoPlano}.`
+    : `Este foi o mês de conhecer seus gastos. O seu plano começou em ${mesDoPlano}.`
+}
+
+export const COR_CHEGADA = '#93c5fd'

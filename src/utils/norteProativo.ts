@@ -1,3 +1,4 @@
+import { mesDaChegada } from './primeiroPlano'
 import type { Categoria, DadosMes } from '../context/AppContext'
 import type { Bussola } from './bussolaDoMes'
 import { bussolaDoMes } from './bussolaDoMes'
@@ -155,7 +156,7 @@ export function bussolaDeHoje(deps: Deps, categorias: Categoria[], hoje: Date): 
   })
   const t = totaisDoMes({ mes, planoAno, categorias, cartaoNomes: nomesDeCartao(deps.contas), entradasMap, saidasMap })
   const temPlano = !!planoAno && [...(planoAno.saidas ?? []), ...(planoAno.entradas ?? [])].some(c => c.v.some(v => v > 0))
-  const valor = bussolaDoMes({ deps, linhasSaida: t.saida.linhas, categorias, usaPlanoNoMes: temPlano && t.saida.prev > 0, hoje })
+  const valor = bussolaDoMes({ deps, linhasSaida: t.saida.linhas, categorias, usaPlanoNoMes: temPlano && t.saida.prev > 0 && !mesDaChegada(deps.planos, hoje.getFullYear(), hoje.getMonth()), hoje })
   guardada = { chave, valor }
   return valor
 }

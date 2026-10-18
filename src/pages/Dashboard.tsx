@@ -14,7 +14,7 @@ import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
-import { estadoDoMes, mensagemDoMes, COR_MENSAGEM } from '../utils/mensagemDoMes'
+import { estadoDoMes, mensagemDoMes, mensagemDaChegada, COR_MENSAGEM, COR_CHEGADA } from '../utils/mensagemDoMes'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
@@ -62,7 +62,7 @@ export default function Dashboard() {
   // ── Cálculos do mês ──────────────────────────────────────────────────
   // Nenhum número desta tela é calculado aqui: saem das MESMAS funções do
   // Radar, pela passagem que a Início divide com Análises (useMesDaInicio).
-  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, linhasSaida, deps, temPlano, usaPlanoNoMes } =
+  const { totalEntradas, totalSaidas, totalPrevS, totalPrevE, linhasSaida, deps, temPlano, usaPlanoNoMes, chegada } =
     useMesDaInicio(viewAno, viewMes)
 
   // O saldo das contas de banco e do dinheiro ao fim do mês escolhido — no mês
@@ -183,7 +183,14 @@ export default function Dashboard() {
   const quando = ehFuturo ? 'futuro' as const : ehMesCorrente ? 'corrente' as const : 'fechado' as const
   const linhaDaMeta = (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 15, marginTop: 10, lineHeight: 1.4 }}>
-      {!ehFuturo && compassStatus === 'sem-dados' ? (
+      {chegada ? (
+        <>
+          <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_CHEGADA, flexShrink: 0, marginTop: 7 }} />
+          <span style={{ color: '#fff', fontWeight: 600, minWidth: 0 }}>
+            {mensagemDaChegada(MESES_FULL[chegada.mes].toLowerCase(), ehMesCorrente ? 'corrente' : 'fechado')}
+          </span>
+        </>
+      ) : !ehFuturo && compassStatus === 'sem-dados' ? (
         <span style={{ color: ROTULO_TOPO }}>{STATUS_HERO['sem-dados'].frase(mesNome, false)}</span>
       ) : estadoMes ? (
         <>

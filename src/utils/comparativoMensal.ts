@@ -1,3 +1,4 @@
+import { mesDaChegada } from './primeiroPlano'
 import type { DadosMes } from '../context/AppContext'
 import type { Deps } from './saldoConta'
 import { construirRealizadoMes } from './realizadoMes'
@@ -54,6 +55,9 @@ export function comparativoMensal(
     const ano = hoje.getFullYear() + Math.floor(t / 12)
     const mes = ((t % 12) + 12) % 12
     if (ymRegistro(ano, mes) < primeiro) continue
+    // O mês da chegada só tem no plano as contas que ainda venciam: comparar
+    // o mês inteiro com ele acusaria um erro de plano que não houve.
+    if (mesDaChegada(planos, ano, mes)) continue
     const planoAno = planos[ano]
     const { saidasMap, entradasMap } = construirRealizadoMes({
       ano, mes, extratoData: deps.extratoData as Record<string, DadosMes>,
