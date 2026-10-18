@@ -12,7 +12,7 @@ type Resultado = { contaId: string; nome: string; banco: number; app: number }
 
 /**
  * "Confira o saldo dos bancos" (18/10/2026, pedido do Guilherme). Uma linha
- * por conta não conferida há uma semana: o saldo de hoje no app, "Confere" e
+ * por conta ainda não conferida hoje: o saldo de hoje no app, "Confere" e
  * "Está diferente". Regras em utils/conferirSaldos.ts. A mesma na Início do
  * computador e na Bússola do celular.
  */

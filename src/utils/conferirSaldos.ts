@@ -16,8 +16,8 @@ import { saldoFinalConta, type Deps } from './saldoConta'
  *     já existe: o Radar mostra o informado e Lançamentos mostra a diferença.
  */
 
-/** Uma conta pede conferência se não foi conferida nestes últimos dias. */
-export const DIAS_ENTRE_CONFERENCIAS = 7
+/** Uma conta pede conferência todo dia em que ainda não foi conferida (pedido do Guilherme, 18/10/2026). */
+export const DIAS_ENTRE_CONFERENCIAS = 1
 
 export type SaldoAConferir = {
   conta: Conta
