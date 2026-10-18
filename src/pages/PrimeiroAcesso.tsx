@@ -9,8 +9,8 @@ import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import { LogoCompass } from '../components/LogoCompass'
 import {
-  CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, fechamentoDoVencimento,
-  CHAVE_PRIMEIRO_ACESSO, fixasDoPrimeiroAcesso, type FormaDaConta, type Respostas,
+  CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas,
+  CHAVE_PRIMEIRO_ACESSO, fixasDoPrimeiroAcesso, faturasDeHoje, type FormaDaConta, type Respostas,
 } from '../utils/primeiroAcesso'
 
 /**
@@ -32,6 +32,9 @@ const FORMAS: { id: FormaDaConta; rotulo: string }[] = [
   { id: 'cartao', rotulo: 'No cartão' },
   { id: 'dinheiro', rotulo: 'Em dinheiro' },
 ]
+
+/** "03/11": o dia num mês de fatura. */
+const diaMes = (dia: number, m: { mes: number }) => `${String(dia).padStart(2, '0')}/${String(m.mes + 1).padStart(2, '0')}`
 
 const R = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
@@ -60,6 +63,10 @@ const GUIA: { quando: string; telas: { tela: TelaAjuda; icone: string; uso: stri
 
 type Estado = {
   banco: string; bancoOutro: string; saldo: string
+  /** Nome do cartão "Outro", como `bancoOutro`. */
+  cartaoOutro: string
+  /** Por cartão da lista: o que já está na fatura aberta e na fechada que vai vencer. */
+  faturas: Record<string, { aberta: string; aPagar: string }>
   renda: string; diaRenda: number; decimo: '' | 'sim' | 'nao'
   usaCartao: '' | 'sim' | 'nao'; cartao: string; venc: number
   outrosBancos: { banco: string; saldo: string }[]
@@ -73,7 +80,7 @@ type Estado = {
 }
 
 const INICIAL: Estado = {
-  banco: '', bancoOutro: '', saldo: '', renda: '', diaRenda: 0, decimo: '', usaCartao: '', cartao: '', venc: 0,
+  banco: '', bancoOutro: '', saldo: '', cartaoOutro: '', faturas: {}, renda: '', diaRenda: 0, decimo: '', usaCartao: '', cartao: '', venc: 0,
   outrosBancos: [], outrosCartoes: [], contas: {}, outrasContas: [], diaADia: {}, outrosGastos: [], parcelas: [], meta: '',
 }
 
@@ -97,11 +104,12 @@ export default function PrimeiroAcesso() {
 
   // "Outro" é marcador na lista: o nome digitado mora em `bancoOutro`.
   const nomeDoBanco = (b: string) => (b === 'Outro' ? e.bancoOutro.trim() : b)
+  const nomeDoCartao = (b: string) => (b === 'Outro' ? e.cartaoOutro.trim() : b)
   const banco = nomeDoBanco(e.banco)
   // Com mais de um banco ou cartão, cada conta e parcela diz de qual sai.
   const nomesBancos = [banco, ...e.outrosBancos.map(b => nomeDoBanco(b.banco))].filter((b, i, a) => b && a.indexOf(b) === i)
   const nomesCartoes = e.usaCartao === 'sim'
-    ? [e.venc ? e.cartao : '', ...e.outrosCartoes.filter(c => c.venc).map(c => c.cartao)].filter((c, i, a) => c && a.indexOf(c) === i)
+    ? [e.venc ? nomeDoCartao(e.cartao) : '', ...e.outrosCartoes.filter(c => c.venc).map(c => nomeDoCartao(c.cartao))].filter((c, i, a) => c && a.indexOf(c) === i)
     : []
   const respostas: Respostas = {
     banco,
@@ -110,10 +118,11 @@ export default function PrimeiroAcesso() {
     diaRenda: e.diaRenda,
     decimo: e.decimo === 'sim',
     usaCartao: e.usaCartao === 'sim',
-    cartao: e.cartao,
+    cartao: nomeDoCartao(e.cartao),
     vencimento: e.venc,
     outrosBancos: e.outrosBancos.map(b => ({ banco: nomeDoBanco(b.banco), saldo: parseBRL(b.saldo) })).filter(b => b.banco),
-    outrosCartoes: e.outrosCartoes.map(c => ({ cartao: c.cartao, vencimento: c.venc })),
+    outrosCartoes: e.outrosCartoes.map(c => ({ cartao: nomeDoCartao(c.cartao), vencimento: c.venc })),
+    faturas: Object.fromEntries(Object.entries(e.faturas).map(([b, f]) => [nomeDoCartao(b), { aberta: parseBRL(f.aberta), aPagar: parseBRL(f.aPagar) }])),
     outrasContas: e.outrasContas.map(c => ({ nome: c.nome, valor: parseBRL(c.valor), dia: Math.min(31, parseInt(c.dia) || 0), forma: c.forma, banco: c.banco })),
     outrosGastos: e.outrosGastos.map(g => ({ nome: g.nome, valor: parseBRL(g.valor) })),
     contas: Object.fromEntries(Object.entries(e.contas).map(([id, c]) => [id, {
@@ -266,14 +275,31 @@ export default function PrimeiroAcesso() {
         <Cartao>
           <Rotulo>De quais bancos?</Rotulo>
           <div style={{ display: 'grid', gap: 8 }}>
-            {BANCOS.filter(b => b !== 'Outro').map(b => {
+            {BANCOS.map(b => {
               const venc = vencDe(b)
+              const fat = venc > 0 ? faturasDeHoje(venc) : null
+              const f = e.faturas[b] ?? { aberta: '', aPagar: '' }
+              const mudarFat = (k: 'aberta' | 'aPagar', v: string) => setE(p => ({ ...p, faturas: { ...p.faturas, [b]: { ...(p.faturas[b] ?? { aberta: '', aPagar: '' }), [k]: v } } }))
               return (
                 <Escolha key={b} icone="ti-credit-card" rotulo={b} on={cartaoMarcado(b)} onTocar={() => alternarCartao(b)}>
+                  {b === 'Outro' && (<>
+                    <Pergunta>Qual cartão?</Pergunta>
+                    <Campo valor={e.cartaoOutro} onMudar={v => set('cartaoOutro', v)} placeholder="Ex.: Mercado Pago, Renner" texto autoFoco />
+                  </>)}
                   <Pergunta>Em que dia vence a fatura?</Pergunta>
                   <Chips pequeno lista={[1, 5, 10, 15, 20, 25].map(d => `Dia ${d}`)} valor={venc ? `Dia ${venc}` : ''}
                     onEscolher={v => mudarVenc(b, parseInt(v.slice(4)))} />
-                  {venc > 0 && <Mini>A fatura deve fechar no dia {fechamentoDoVencimento(venc)}, uma semana antes. Se for outro dia, você ajusta em Configurações.</Mini>}
+                  {fat && (<>
+                    <Mini>A fatura deve fechar no dia {fat.aberta.fecha}, uma semana antes. Se for outro dia, você ajusta em Configurações.</Mini>
+                    <Pergunta>Quanto já tem na fatura que fecha em {diaMes(fat.aberta.fecha, fat.aberta)}?</Pergunta>
+                    <Campo valor={f.aberta} onMudar={v => mudarFat('aberta', v)} placeholder="0" pequeno />
+                    <Mini>Veja no app do banco. Pode ser o total, com as parcelas. Se não souber, deixe em branco.</Mini>
+                    {fat.aPagar && (<>
+                      <Pergunta>E a fatura que vence em {diaMes(venc, fat.aPagar.vence)}, já fechada: quanto falta pagar?</Pergunta>
+                      <Campo valor={f.aPagar} onMudar={v => mudarFat('aPagar', v)} placeholder="0" pequeno />
+                      <Mini>Se já pagou, deixe em branco.</Mini>
+                    </>)}
+                  </>)}
                 </Escolha>
               )
             })}
@@ -281,7 +307,7 @@ export default function PrimeiroAcesso() {
         </Cartao>
       )}
     </>)
-    pe = <Pe rotulo="Continuar" onSeguir={seguir} desabilitado={!(e.usaCartao === 'nao' || (e.cartao && e.venc))} />
+    pe = <Pe rotulo="Continuar" onSeguir={seguir} desabilitado={!(e.usaCartao === 'nao' || (nomeDoCartao(e.cartao) && e.venc))} />
   }
 
   if (passo === 4) {

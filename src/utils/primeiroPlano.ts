@@ -218,7 +218,18 @@ export function planoDoPrimeiroAcesso(
   }
   const saida = anos.map(({ ano: a, mesInicio, mesFim }) => {
     const p = propostaDoMes({ ano: a, mes: mesInicio, extratoData: {}, faturaData: {}, contas: [], categorias, estimativas })
-    return { ano: a, mesInicio, mesFim, plano: planoDaProposta(p, mesInicio, undefined, a, mesFim) }
+    const plano = planoDaProposta(p, mesInicio, undefined, a, mesFim)
+    // O que já estava nas faturas entra no plano só no mês em que pesa: é um
+    // gasto conhecido, não um estouro (a categoria nasce no primeiro acesso).
+    for (const pt of estimativas.pontuais ?? []) {
+      const cat = categorias.find(c => c.id === pt.categoriaId && c.ativa)
+      if (!cat || pt.ano !== a || pt.mes < mesInicio || pt.mes > mesFim) continue
+      const ja = plano.saidas.find(l => l.id === cat.id)
+      if (ja) ja.v = ja.v.map((x, i) => (i === pt.mes ? x + pt.valor : x))
+      else plano.saidas.push({ id: cat.id, nome: cat.nome, descricao: cat.descricao, grupo: cat.grupo,
+        t: cat.tipoMovimento === 'cartao' ? 'cartao' : undefined, v: Array.from({ length: 12 }, (_, i) => (i === pt.mes ? pt.valor : 0)) })
+    }
+    return { ano: a, mesInicio, mesFim, plano }
   }).filter(x => x.plano.entradas.length || x.plano.saidas.length)
   return saida
 }
