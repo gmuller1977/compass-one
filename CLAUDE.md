@@ -210,6 +210,16 @@ terminar o mês com mais dinheiro do que começou." Mês fechado e futuro têm
 versões próprias. Ponto verde, amarelo ou vermelho ao lado. Nenhum número na
 frase, de propósito.
 
+**"Confira o saldo dos bancos" na Início** (18/10/2026, pedido do
+Guilherme), no computador e no celular, só no mês corrente: uma linha por
+conta de banco não conferida há 7 dias (`saldoBancoData` em qualquer mês),
+com o saldo de hoje no app (`saldoFinalConta`, o do Radar), "Confere" e
+"Está diferente". Grava no MESMO campo da caixa de saldo de Lançamentos:
+"Confere" só a data; outro valor, `saldoBanco` + data, e mostra a diferença
+com "Ver Lançamentos". Daí vale a regra de sempre: o Radar usa o informado
+até o fim do mês. Regras em [`conferirSaldos.ts`](src/utils/conferirSaldos.ts),
+cartão `ConferirSaldosCard`; `prova76` (10).
+
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
 escolheu o cardápio entre três modelos — cardápio, colunas por situação e

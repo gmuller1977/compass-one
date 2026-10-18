@@ -17,6 +17,7 @@ import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inic
 import { estadoDoMes, mensagemDoMes, COR_MENSAGEM } from '../utils/mensagemDoMes'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import ContasAVencerCard from '../components/ContasAVencerCard'
+import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
@@ -513,6 +514,8 @@ export default function Dashboard() {
                 ))}
               </Cartao>
             )}
+
+            {ehMesCorrente && <ConferirSaldosCard deps={deps} oculto={oculto} />}
 
             {(ehMesCorrente || (ehFuturo && contasFuturo.length > 0)) && (
               <ContasAVencerCard contas={ehFuturo ? contasFuturo : aVencer} categorias={categorias} oculto={oculto}

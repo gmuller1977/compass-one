@@ -8,6 +8,7 @@ import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
+import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import { Atalho, Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
 import { M, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
@@ -176,6 +177,8 @@ export default function Bussola() {
             ))}
           </Cartao>
         )}
+
+        <ConferirSaldosCard deps={deps} oculto={oculto} />
 
         {/* ── Onde o gasto passou do plano ───────────────────────────── */}
         {usaPlanoNoMes ? (
