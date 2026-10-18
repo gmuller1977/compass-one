@@ -1,29 +1,22 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useApp } from '../../context/AppContext'
-import type { DadosMes } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
 import { contasAVencer, type ContaAVencer } from '../../utils/contasAVencer'
-import { contaDoPagamento, confirmarPagamento } from '../../utils/pagarConta'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { parseBRL } from '../../utils/moeda'
 import { COR } from '../../utils/cores'
 import { M } from '../mobile/estilo'
-import ModalTopo from '../ModalTopo'
-import { nomeDaConta } from '../../utils/nomeDaConta'
+import PagarContaDialog from '../PagarContaDialog'
+import { nomeDaContaAVencer, quandoVence } from '../../utils/quandoVence'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
 
 /**
  * "Contas a pagar" na home do celular, com o "Pagar" ali mesmo. A lista é a
  * da Início (`contasAVencer`: atrasadas + próximos 7 dias, as linhas da
- * memória de cálculo). Pagar grava o MESMO que marcar a fixa em Lançamentos —
- * `fixasConsolidadas`, e o valor real em `fixasValorOverride` quando é outro —
- * na conta onde a fixa aparece (`contaDoPagamento`). A conta vem escolhida e
- * pode ser trocada, como no "Pagar de qual conta?" de Lançamentos.
+ * memória de cálculo). O "Pagar" abre `PagarContaDialog`, a mesma janela da
+ * Início do computador.
  */
 export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = false }: {
   deps: Deps
@@ -34,16 +27,9 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
   /** O olho da Bússola: esconde os valores. */
   oculto?: boolean
 }) {
-  const { contas, categorias, extratoData, updateExtratoMes } = useApp()
+  const { categorias } = useApp()
   const lista = useMemo(() => contasAVencer(deps), [deps])
   const [pagando, setPagando] = useState<ContaAVencer | null>(null)
-  const [valor, setValor] = useState('')
-  const [conta, setConta] = useState<string>('')
-
-  const destinos = useMemo(() => [
-    ...contas.filter(c => c.tipo !== 'cartao').map(c => ({ id: c.id, nome: nomeDaConta(c, contas) })),
-    { id: 'dinheiro', nome: 'Dinheiro' },
-  ], [contas])
 
   const v = (n: number) => (oculto ? 'R$ ••••' : fmt(n))
   if (lista.length === 0) {
@@ -60,30 +46,8 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
   const total = lista.reduce((t, c) => t + c.valor, 0)
   const falta = saldoHoje === undefined ? 0 : total - saldoHoje
 
-  const hoje = new Date()
-  const hoje0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
-  const quando = (c: ContaAVencer) => {
-    const d = new Date(c.ano, c.mes, c.dia)
-    const dd = `${String(c.dia).padStart(2, '0')}/${String(c.mes + 1).padStart(2, '0')}`
-    if (c.atrasada) return `Venceu ${dd}`
-    const diff = Math.round((d.getTime() - hoje0.getTime()) / 86_400_000)
-    return diff === 0 ? 'Hoje' : diff === 1 ? 'Amanhã' : `${DIAS_SEM[d.getDay()]} ${dd}`
-  }
-  const nome = (c: ContaAVencer) => c.fatura ? `Fatura ${c.nome}` : c.descricao ? `${c.nome} · ${c.descricao}` : c.nome
-
-  function abrir(c: ContaAVencer) {
-    setPagando(c)
-    setValor(c.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))
-    setConta(contaDoPagamento(c.id, c.ano, c.mes, contas, categorias, extratoData as Record<string, DadosMes>) ?? destinos[0]?.id ?? '')
-  }
-
-  function confirmar() {
-    if (!pagando || !conta) return
-    const v = parseBRL(valor)
-    if (v <= 0) return
-    updateExtratoMes(chave(conta, pagando.ano, pagando.mes), dm => confirmarPagamento(dm, pagando.id, v, pagando.valor))
-    setPagando(null)
-  }
+  const quando = (c: ContaAVencer) => quandoVence(c)
+  const nome = nomeDaContaAVencer
 
   // Uma etiqueta no título no lugar da frase: "✓ saldo cobre" ou "faltam R$ X".
   // No azul, a paleta escura do app: #fecaca 4,6 e #86efac 4,8 no #1e40af.
@@ -107,7 +71,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
           <LinhaAzul key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={<IconeCat icone={ic.icone} cor={corDoIcone(ic.cor)} />}
             titulo={nome(c)}
             legenda={<><span style={{ color: c.atrasada ? '#fecaca' : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span> · {v(c.valor)}</>}
-            direita={<button onClick={() => abrir(c)} style={{
+            direita={<button onClick={() => setPagando(c)} style={{
               border: 'none', background: '#fff', color: '#1e3a8a', borderRadius: 999, padding: '9px 16px', minHeight: 40,
               fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}>Pagar</button>} />
@@ -117,41 +81,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
         <div style={{ fontSize: M.legenda, color: ROTULO, marginTop: 6 }}>e mais {lista.length - 5} em Lançamentos</div>
       )}
 
-      {pagando && (
-        <div role="dialog" aria-modal="true" aria-label={`Pagar ${nome(pagando)}`}
-          onClick={() => setPagando(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: '#fff', width: '100%', borderRadius: '20px 20px 0 0',
-            fontFamily: "-apple-system,'Inter',sans-serif", animation: 'slideUp .2s ease',
-          }}>
-            <ModalTopo icone="ti-receipt" rotulo="Pagar conta" titulo={nome(pagando)} raio={20}
-              subtitulo={`Previsto ${fmt(pagando.valor)} · ${quando(pagando)}`} onFechar={() => setPagando(null)} />
-            <div style={{ padding: '16px 16px 28px' }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: COR.textoSuave }}>Valor pago
-              <input value={valor} onChange={e => setValor(e.target.value)} inputMode="decimal" style={{
-                display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 4, marginBottom: 10,
-                border: `2px solid ${COR.azul}`, borderRadius: 12, padding: '10px 12px', fontSize: 18, fontWeight: 700,
-                color: COR.azul, background: '#eff6ff', fontFamily: 'inherit', outline: 'none',
-              }} />
-            </label>
-            <label style={{ fontSize: 14, fontWeight: 600, color: COR.textoSuave }}>Pago de
-              <select value={conta} onChange={e => setConta(e.target.value)} style={{
-                display: 'block', width: '100%', marginTop: 4, marginBottom: 14, border: `1.5px solid ${COR.borda}`,
-                borderRadius: 12, padding: '10px 12px', fontSize: 14, color: COR.texto, background: '#fff', fontFamily: 'inherit',
-              }}>
-                {destinos.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-              </select>
-            </label>
-            <button onClick={confirmar} style={{
-              width: '100%', padding: 16, border: 'none', borderRadius: 16, cursor: 'pointer',
-              background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`, color: '#fff',
-              fontSize: 16, fontWeight: 700, fontFamily: 'inherit',
-            }}>✓ Marcar como paga</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {pagando && <PagarContaDialog conta={pagando} onFechar={() => setPagando(null)} />}
     </div>
   )
 }

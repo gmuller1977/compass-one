@@ -153,6 +153,14 @@ lista com "Marcar em Lançamentos" e "Não, o saldo é outro"
 saldo atual, e o que não foi marcado entraria ou sairia DUAS vezes no saldo
 previsto (análise da chegada v3, C1). `prova80` (19).
 
+**"Pagar" nas contas da semana da Início do computador** (18/10/2026,
+pedido do Guilherme). A mesma janela do Lançar do celular,
+`PagarContaDialog` (central no computador, folha no celular): grava
+`fixasConsolidadas` pelo `confirmarPagamento`, na conta de
+`contaDoPagamento`. Só no mês corrente. A divisão: a Início CONFIRMA o que
+o app já prevê (fixas, automáticos, saldos); Lançamentos é onde se lança o
+que ele não prevê (variáveis, cartão) e se corrige.
+
 **Transferência em Lançamentos** (18/10/2026, pedido dele): banco ↔ banco e
 banco ↔ dinheiro, no computador e no celular, sem categoria (grava
 "Transferência", fora do realizado). Banco → dinheiro é "Saque", dinheiro →

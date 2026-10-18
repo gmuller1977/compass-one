@@ -546,6 +546,7 @@ export default function Dashboard() {
               <ContasAVencerCard contas={ehFuturo ? contasFuturo : aVencer} categorias={categorias} oculto={oculto}
                 titulo={ehFuturo ? `Contas de ${mesNome.toLowerCase()}` : 'Contas da semana'}
                 saldoHoje={ehMesCorrente ? saldoDisponivel : undefined}
+                podePagar={ehMesCorrente && !isMobile}
                 onAbrir={() => navigate('/novo-lancamento')} />
             )}
           </div>

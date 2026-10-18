@@ -2,7 +2,9 @@ import type { Categoria } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import type { ContaAVencer } from '../utils/contasAVencer'
-import { Cartao, Etiqueta, Linha, TituloCartao, Valor } from './mobile/ui'
+import { useState } from 'react'
+import { Cartao, Etiqueta, Linha, Pilula, TituloCartao, Valor } from './mobile/ui'
+import PagarContaDialog from './PagarContaDialog'
 import { M, mostrar } from './mobile/estilo'
 
 const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -13,10 +15,12 @@ const DIAS_SEM = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
  * celular: ícone da categoria em círculo, nome e quando, valor à direita.
  * Com `saldoHoje`, a etiqueta diz se o saldo de hoje cobre o total, como as
  * "Contas da semana" do celular. Atrasada em COR.erroTexto (6,5:1 no branco).
+ * Com `podePagar` (mês corrente), cada linha tem o "Pagar" do Lançar do
+ * celular, a mesma `PagarContaDialog` (pedido do Guilherme, 18/10/2026).
  */
 export default function ContasAVencerCard({
   contas, categorias, onAbrir, hoje = new Date(), oculto = false, saldoHoje,
-  titulo = 'Contas dos próximos 7 dias', acao = 'Ver em Lançamentos ›',
+  titulo = 'Contas dos próximos 7 dias', acao = 'Ver em Lançamentos ›', podePagar = false,
 }: {
   contas: ContaAVencer[]
   categorias: Categoria[]
@@ -26,7 +30,9 @@ export default function ContasAVencerCard({
   saldoHoje?: number
   titulo?: string
   acao?: string
+  podePagar?: boolean
 }) {
+  const [pagando, setPagando] = useState<ContaAVencer | null>(null)
   const hoje0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
   const quando = (c: ContaAVencer) => {
     const d = new Date(c.ano, c.mes, c.dia)
@@ -58,7 +64,10 @@ export default function ContasAVencerCard({
           <Linha key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
             titulo={c.fatura ? `Fatura ${c.nome}` : c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
             legenda={<span style={{ color: c.atrasada ? COR.erroTexto : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span>}
-            direita={<Valor cor={c.atrasada ? COR.erroTexto : COR.texto}>{mostrar(c.valor, oculto)}</Valor>} />
+            direita={<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Valor cor={c.atrasada ? COR.erroTexto : COR.texto}>{mostrar(c.valor, oculto)}</Valor>
+              {podePagar && <Pilula onClick={() => setPagando(c)}>Pagar</Pilula>}
+            </div>} />
         )
       })}
       {contas.length > 0 && (
@@ -67,6 +76,7 @@ export default function ContasAVencerCard({
           background: 'none', color: COR.azul, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
         }}>{acao}</button>
       )}
+      {pagando && <PagarContaDialog conta={pagando} central onFechar={() => setPagando(null)} />}
     </Cartao>
   )
 }
