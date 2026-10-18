@@ -15,6 +15,7 @@ import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import { nomeDaConta } from '../utils/nomeDaConta'
 import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
+import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 import ModalTopo from '../components/ModalTopo'
 import { grupoDaCategoria } from '../utils/rotuloCategoria'
 
@@ -90,6 +91,8 @@ export default function QuickLaunch() {
 
   // Gerenciamento do grid
   const [gerenciar, setGerenciar] = useState(false)
+  // "+ Nova categoria" dentro do "adicionar": a mesma caixa de Lançamentos.
+  const [novaCatAberta, setNovaCatAberta] = useState(false)
   const [pinLocal, setPinLocal]   = useState<Set<string>>(new Set())
 
   const valorRef = useRef<HTMLInputElement>(null)
@@ -592,6 +595,16 @@ export default function QuickLaunch() {
         </div>
       )}
 
+      <NleNovaCategoria aberto={novaCatAberta} tipo="saida" isDinheiro={false}
+        contaId={(contas.find(c => c.preferida && c.tipo !== 'cartao') ?? contas.find(c => c.tipo !== 'cartao'))?.id}
+        categorias={categorias} onFechar={() => setNovaCatAberta(false)}
+        onCriar={c => {
+          // Com atalhos escolhidos, a nova entra neles; sem, a grade mostra todas as variáveis.
+          const nova = hasAnyPin ? { ...c, pinQuick: true } : c
+          setCategorias(prev => [...prev, nova])
+          setNovaCatAberta(false); setGerenciar(false)
+          abrirCat(nova)
+        }} />
       {/* ── Bottom sheet: gerenciar categorias do grid ── */}
       {gerenciar && (
         <>
@@ -609,6 +622,13 @@ export default function QuickLaunch() {
               subtitulo="Categorias variáveis disponíveis no lançamento rápido" onFechar={() => setGerenciar(false)} />
 
             <div style={{ overflowY: 'auto', flex: 1 }}>
+              <button type="button" onClick={() => setNovaCatAberta(true)} style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '14px 20px',
+                border: 'none', borderBottom: `1px solid ${COR.borda}`, background: '#fff', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: COR.azul, textAlign: 'left',
+              }}>
+                <i className="ti ti-plus" aria-hidden style={{ fontSize: 20 }} /> Nova categoria
+              </button>
               {catsVariaveis.length === 0 ? (
                 <div style={{ padding: 32, textAlign: 'center', color: COR.textoSuave, fontSize: 13 }}>
                   Nenhuma categoria variável cadastrada.

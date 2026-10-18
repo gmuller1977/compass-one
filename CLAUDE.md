@@ -2204,6 +2204,14 @@ só, e é justo nesse mês que o usuário olha o Radar pela primeira vez.
 rótulo. Dentro da lista ele só aparece para quem já a abriu, e quem não encontra
 a categoria costuma fechar antes de chegar ao fim.
 
+**O "+ Nova" chegou à fatura e ao Lançar do celular** (18/10/2026, pedido
+do Guilherme, com Lançamentos liberado só para isso). A mesma caixa
+`NleNovaCategoria`: na fatura, ao lado de "Categoria" (computador e celular),
+criando categoria de CARTÃO (`isCartao`, sem conta de débito); no Lançar,
+como primeira linha da folha do "adicionar", criando de banco na conta
+preferida e já abrindo o lançamento nela (com atalhos escolhidos, ela entra
+neles). O plano dela vem pelo "Outubro fechou" da Início.
+
 **Tentativa descartada, para não repetir:** esconder a opção fora da fase de
 descoberta. Quem percebe uma categoria faltando no meio de um lançamento tem o
 mesmo problema com ou sem plano.

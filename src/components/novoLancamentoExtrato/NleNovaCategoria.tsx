@@ -19,11 +19,13 @@ import ModalTopo from '../ModalTopo'
  * tarefa de quem ainda está descobrindo os próprios números.
  */
 export default function NleNovaCategoria({
-  aberto, tipo, isDinheiro, contaId, categorias, onCriar, onFechar,
+  aberto, tipo, isDinheiro, isCartao, contaId, categorias, onCriar, onFechar,
 }: {
   aberto: boolean
   tipo: TipoCategoria
   isDinheiro: boolean
+  /** Na fatura: categoria de cartão. */
+  isCartao?: boolean
   contaId?: string
   categorias: Categoria[]
   /** Recebe a categoria pronta. Quem grava é a página. */
@@ -54,7 +56,7 @@ export default function NleNovaCategoria({
   const grupoEfetivo = grupo || previa.grupo
 
   function confirmar() {
-    const r = montarCategoria(nome, { tipo, isDinheiro, contaId, categorias, grupo: grupoEfetivo })
+    const r = montarCategoria(nome, { tipo, isDinheiro, isCartao, contaId, categorias, grupo: grupoEfetivo })
     if ('erro' in r) { setErro(r.erro); return }
     onCriar(r)
   }

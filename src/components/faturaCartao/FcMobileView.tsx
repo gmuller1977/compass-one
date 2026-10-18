@@ -86,6 +86,7 @@ type Props = {
   // Refs
   dataCompraRef: React.RefObject<HTMLInputElement | null>
   categoriaSelectRef: React.RefObject<HTMLSelectElement | null>
+  onNovaCategoria: () => void
   valorInputRef: React.RefObject<HTMLInputElement | null>
   parcelasBtnRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>
 
@@ -116,7 +117,7 @@ export default function FcMobileView({
   faturaStatus, totalPrevisto, grandTotalFaturas, totalFatura,
   mesVenc, anoVenc,
   categorias, categoriasCartao,
-  dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs,
+  dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
@@ -375,7 +376,13 @@ export default function FcMobileView({
 
             {/* Categoria */}
             <div style={{marginBottom:14}}>
-              <label style={rotuloForm}>Categoria</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label style={{ ...rotuloForm, marginBottom: 0 }}>Categoria</label>
+                <button type="button" onClick={onNovaCategoria} style={{
+                  border: 'none', background: '#eff6ff', borderRadius: 999, padding: '6px 12px', cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: COR.azul,
+                }}>+ Nova</button>
+              </div>
               <select ref={categoriaSelectRef} value={fCat} onChange={e => { setFCat(e.target.value); setFVariante('') }}
                 style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                   padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',

@@ -52,6 +52,7 @@ type Props = {
   // Refs
   dataCompraRef: React.RefObject<HTMLInputElement | null>
   categoriaSelectRef: React.RefObject<HTMLSelectElement | null>
+  onNovaCategoria: () => void
   valorInputRef: React.RefObject<HTMLInputElement | null>
   parcelasBtnRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>
 
@@ -72,7 +73,7 @@ export default function FcDesktopPanel({
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
   mesDados, purchaseMes, purchaseAno, diaSel, setDiaSel, mesVenc, anoVenc,
   categoriasCartao,
-  dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs,
+  dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
   resetarParaNovo, excluirAtual, lancar, updateMes,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
@@ -212,8 +213,11 @@ export default function FcDesktopPanel({
           )
         })()}
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
-            letterSpacing:.5,marginBottom:5}}>Categoria</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:5}}>
+            <span style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
+              letterSpacing:.5}}>Categoria</span>
+            <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
+          </div>
           {(() => {
             const _seen = new Set<string>()
             const catsSemDup = categoriasCartao.filter(c => {

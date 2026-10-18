@@ -28,8 +28,10 @@ export type Contexto = {
   tipo: TipoCategoria
   /** A aba do dinheiro cria categoria de dinheiro; o extrato, de banco. */
   isDinheiro: boolean
-  /** A conta em que ele está lançando. Ignorada no dinheiro. */
+  /** A conta em que ele está lançando. Ignorada no dinheiro e no cartão. */
   contaId?: string
+  /** A fatura do cartão cria categoria de cartão (sem conta de débito). */
+  isCartao?: boolean
   categorias: Categoria[]
   /**
    * Grupo escolhido na caixa. Vence a sugestão — o campo nasce preenchido
@@ -90,8 +92,8 @@ export function montarCategoria(nomeCru: string, ctx: Contexto): Categoria | Rec
     tipo: ctx.tipo,
     fixa: false,
     ativa: true,
-    tipoMovimento: ctx.isDinheiro ? 'dinheiro' : 'banco',
-    contaDebitoId: ctx.isDinheiro ? undefined : ctx.contaId,
+    tipoMovimento: ctx.isCartao ? 'cartao' : ctx.isDinheiro ? 'dinheiro' : 'banco',
+    contaDebitoId: ctx.isDinheiro || ctx.isCartao ? undefined : ctx.contaId,
     icone: sug?.icone ?? '📁',
     cor: sug?.cor ?? '#6b7280',
     grupo: ctx.grupo?.trim() || sug?.grupo || 'Outros',

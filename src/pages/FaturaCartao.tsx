@@ -12,6 +12,7 @@ import FcDesktopLeft from '../components/faturaCartao/FcDesktopLeft'
 import FcDesktopPanel from '../components/faturaCartao/FcDesktopPanel'
 import FcModal from '../components/faturaCartao/FcModal'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
+import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 
 function useIsMobile() {
@@ -43,7 +44,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
 
-  const { contas, categorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
+  const { contas, categorias, setCategorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
+  // "+ Nova" categoria, a mesma caixa de Lançamentos, criando categoria de cartão.
+  const [novaCatAberta, setNovaCatAberta] = useState(false)
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
   const dados = faturaData as Record<string, DadosMes>
   const setDados = setFaturaData as React.Dispatch<React.SetStateAction<Record<string, DadosMes>>>
@@ -602,6 +605,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         categorias={categorias} categoriasCartao={categoriasCartao}
         dataCompraRef={dataCompraRef}
         categoriaSelectRef={categoriaSelectRef}
+        onNovaCategoria={() => setNovaCatAberta(true)}
         valorInputRef={valorInputRef}
         parcelasBtnRefs={parcelasBtnRefs}
         resetarParaNovo={resetarParaNovo}
@@ -619,6 +623,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           onCancelar={() => setConfirmacao(null)}
         />
       )}
+      <NleNovaCategoria aberto={novaCatAberta} tipo="saida" isDinheiro={false} isCartao categorias={categorias}
+        onFechar={() => setNovaCatAberta(false)}
+        onCriar={c => { setCategorias(prev => [...prev, c]); setFCat(c.nome); setFVariante(''); setNovaCatAberta(false) }} />
       </>
     )
   }
@@ -677,6 +684,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           categoriasCartao={categoriasCartao}
           dataCompraRef={dataCompraRef}
           categoriaSelectRef={categoriaSelectRef}
+          onNovaCategoria={() => setNovaCatAberta(true)}
           valorInputRef={valorInputRef}
           parcelasBtnRefs={parcelasBtnRefs}
           resetarParaNovo={resetarParaNovo}
@@ -701,6 +709,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           onCancelar={() => setConfirmacao(null)}
         />
       )}
+      <NleNovaCategoria aberto={novaCatAberta} tipo="saida" isDinheiro={false} isCartao categorias={categorias}
+        onFechar={() => setNovaCatAberta(false)}
+        onCriar={c => { setCategorias(prev => [...prev, c]); setFCat(c.nome); setFVariante(''); setNovaCatAberta(false) }} />
     </div>
   )
 }
