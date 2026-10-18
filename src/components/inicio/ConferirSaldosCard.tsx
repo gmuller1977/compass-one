@@ -23,6 +23,9 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
 
   const bancos = useMemo(() => saldosDosBancos(deps), [deps])
   const [editando, setEditando] = useState<string | null>(null)
+  // "Está diferente" numa conta com contas vencidas e não marcadas: antes do
+  // campo, a lista do que pode explicar a diferença (conferirSaldos.ts).
+  const [explicando, setExplicando] = useState<string | null>(null)
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
 
@@ -48,6 +51,9 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
   }
 
   const pendentes = bancos.filter(b => b.pendente).length
+  const abrirCampo = (contaId: string) => { setExplicando(null); setEditando(contaId); setTexto(''); setErro('') }
+  const verLancamentos = (contaId: string) =>
+    navigate(contaId === CARTEIRA.id ? '/novo-lancamento?tipo=dinheiro' : `/novo-lancamento?tipo=banco&conta=${contaId}`)
 
   return (
     <Cartao>
@@ -65,6 +71,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
       {bancos.map((s, i) => {
         const nome = nomeDe(s)
         const aberto = editando === s.conta.id
+        const explicar = explicando === s.conta.id
         const temDif = s.informado !== null && Math.abs(s.diferenca) >= 0.005
         return (
           <div key={s.conta.id}>
@@ -76,10 +83,34 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
               direita={!s.pendente && !aberto && !temDif &&
                 <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>} />
 
-            {s.pendente && !aberto && (
+            {s.pendente && !aberto && !explicar && (
               <div style={botoes}>
                 <Pilula forte onClick={() => confere(s.conta.id)}>Confere</Pilula>
-                <Pilula onClick={() => { setEditando(s.conta.id); setTexto(''); setErro('') }}>Está diferente</Pilula>
+                <Pilula onClick={() => (s.naoMarcadas.length ? setExplicando(s.conta.id) : abrirCampo(s.conta.id))}>Está diferente</Pilula>
+              </div>
+            )}
+
+            {explicar && (
+              <div style={{ padding: '0 0 12px 56px' }}>
+                <div style={{ fontSize: M.legenda, color: COR.texto, lineHeight: 1.45, marginBottom: 6 }}>
+                  {s.naoMarcadas.length === 1 ? 'Esta conta venceu e ainda não está marcada no app:' : 'Estas contas venceram e ainda não estão marcadas no app:'}
+                </div>
+                {s.naoMarcadas.map(n => (
+                  <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: M.legenda, padding: '3px 0' }}>
+                    <span style={{ color: COR.texto, minWidth: 0 }}>{n.nome} <span style={{ color: COR.textoSuave }}>· {n.entrada ? 'a receber' : 'a pagar'}</span></span>
+                    <b style={{ color: n.entrada ? COR.sucessoTexto : COR.texto, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                      {n.entrada ? '+ ' : ''}{mostrar(n.valor, oculto)}
+                    </b>
+                  </div>
+                ))}
+                <div style={{ fontSize: M.legenda, color: COR.textoSuave, lineHeight: 1.45, margin: '6px 0 8px' }}>
+                  Se já {s.naoMarcadas.every(n => n.entrada) ? 'entrou' : s.naoMarcadas.some(n => n.entrada) ? 'entrou ou saiu' : 'saiu'} do banco, marque em Lançamentos: o saldo do app se acerta sozinho.
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Pilula forte onClick={() => verLancamentos(s.conta.id)}>Marcar em Lançamentos</Pilula>
+                  <Pilula onClick={() => abrirCampo(s.conta.id)}>Não, o saldo é outro</Pilula>
+                  <button type="button" onClick={() => setExplicando(null)} style={link}>Cancelar</button>
+                </div>
               </div>
             )}
 
@@ -88,7 +119,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                 <Etiqueta cor={COR.avisoTexto} fundo={COR.avisoFundo}>
                   {s.diferenca < 0 ? 'faltam' : 'sobram'} {oculto ? '••••' : fmt(Math.abs(s.diferenca))}
                 </Etiqueta>
-                <Pilula onClick={() => navigate(s.conta.id === CARTEIRA.id ? '/novo-lancamento?tipo=dinheiro' : `/novo-lancamento?tipo=banco&conta=${s.conta.id}`)}>Ver Lançamentos</Pilula>
+                <Pilula onClick={() => verLancamentos(s.conta.id)}>Ver Lançamentos</Pilula>
               </div>
             )}
 

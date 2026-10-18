@@ -1,4 +1,4 @@
-import type { DadosMes } from '../context/AppContext'
+import type { Categoria, DadosMes } from '../context/AppContext'
 import type { Deps } from './saldoConta'
 import { contasAVencer } from './contasAVencer'
 import { confirmarPagamento, contaDoPagamento } from './pagarConta'
@@ -27,6 +27,27 @@ import { valorFixaNoMes } from './valorFixa'
  */
 export type DebitoParaConfirmar = { id: string; nome: string; chave: string; valor: number }
 
+/**
+ * A regra, nas palavras do Guilherme (18/10/2026): "tudo que é recebimento e
+ * pagamento que não depende de movimentação manual, entra ou sai de forma
+ * automática, e o usuário só precisa confirmar".
+ *
+ * - Débito automático: despesa fixa de banco com forma "Débito Automático".
+ * - Recebimento automático: TODA receita fixa que cai no banco (salário,
+ *   aluguel recebido, pensão). Ninguém precisa fazer nada para ela entrar, e
+ *   o cadastro de receita só oferece PIX e transferência, as duas feitas por
+ *   quem paga. Receita em dinheiro fica de fora: alguém entrega na mão.
+ *
+ * Sem isso o salário ficava "a receber" até a pessoa marcar em Lançamentos,
+ * e quem conferia o saldo na Início e digitava o valor do banco tinha o
+ * salário contado duas vezes no saldo previsto (análise da chegada v3, C1).
+ */
+export const ehDebitoAutomatico = (c: Categoria) =>
+  c.fixa && c.tipo === 'saida' && c.tipoMovimento === 'banco' && c.formaPagamento === 'automatico'
+export const ehRecebimentoAutomatico = (c: Categoria) =>
+  c.fixa && c.tipo === 'entrada' && c.tipoMovimento !== 'dinheiro' && c.tipoMovimento !== 'cartao'
+export const ehAutomatica = (c: Categoria) => ehDebitoAutomatico(c) || ehRecebimentoAutomatico(c)
+
 const sufixo = (ano: number, mes: number) => `-${ano}-${String(mes + 1).padStart(2, '0')}`
 
 export function debitosParaConfirmar(deps: Deps, hoje = new Date()): DebitoParaConfirmar[] {
@@ -44,6 +65,24 @@ export function debitosParaConfirmar(deps: Deps, hoje = new Date()): DebitoParaC
     const conta = contaDoPagamento(c.id, ano, mes, deps.contas, deps.categorias, deps.extratoData)
     if (!conta) continue
     out.push({ id: c.id, nome: c.descricao ? `${c.nome} · ${c.descricao}` : c.nome, chave: `${conta}${fim}`, valor: c.valor })
+  }
+
+  // Recebimentos: as contas a vencer só listam despesas, então a receita é
+  // achada pelo cadastro, com as mesmas regras (ativa, com valor no plano,
+  // venceu até hoje, ninguém marcou nem desmarcou).
+  const totalDias = new Date(ano, mes + 1, 0).getDate()
+  for (const cat of deps.categorias) {
+    if (!cat.ativa || !ehRecebimentoAutomatico(cat)) continue
+    if (doMes.some(([, dm]) => dm?.fixasConsolidadas?.[cat.id] !== undefined)) continue
+    const conta = contaDoPagamento(cat.id, ano, mes, deps.contas, deps.categorias, deps.extratoData)
+    if (!conta) continue
+    const dm = deps.extratoData[`${conta}${fim}`]
+    const dia = diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm?.fixasMovidas, false, mes, ano, totalDias)
+    if (dia > hoje.getDate()) continue
+    const previsto = valorFixaNoMes(cat, deps.planos[ano], mes, deps.categorias)
+    if (previsto <= 0) continue
+    const override = doMes.map(([, d]) => d?.fixasValorOverride?.[cat.id]).find(v => v !== undefined)
+    out.push({ id: cat.id, nome: cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome, chave: `${conta}${fim}`, valor: override ?? previsto })
   }
   return out
 }
@@ -82,6 +121,8 @@ export type DebitoDoMes = {
   conferido: boolean
   /** Vence depois de hoje: aparece como agendado, sem nada a conferir. */
   agendado: boolean
+  /** Recebimento (entra na conta), e não débito. */
+  entrada: boolean
 }
 
 export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
@@ -91,7 +132,7 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
   const doMes = Object.entries(deps.extratoData).filter(([k]) => k.endsWith(fim)).map(([, dm]) => dm)
   const out: DebitoDoMes[] = []
   for (const cat of deps.categorias) {
-    if (!cat.fixa || cat.tipo !== 'saida' || cat.tipoMovimento !== 'banco' || cat.formaPagamento !== 'automatico') continue
+    if (!ehAutomatica(cat)) continue
     const marcas = doMes.map(dm => dm?.fixasConsolidadas?.[cat.id])
     const paga = marcas.includes(true)
     const naoSaiu = !paga && marcas.includes(false)
@@ -99,7 +140,8 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
     if (!contaId) continue
     const chave = `${contaId}${fim}`
     const dm = deps.extratoData[chave]
-    const dia = diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm?.fixasMovidas, true, mes, ano, totalDias)
+    const entrada = cat.tipo === 'entrada'
+    const dia = diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm?.fixasMovidas, !entrada, mes, ano, totalDias)
     const override = doMes.map(d => d?.fixasValorOverride?.[cat.id]).find(v => v !== undefined)
     const previsto = valorFixaNoMes(cat, deps.planos[ano], mes, deps.categorias)
     // Agendado: ativo e com valor no plano, como nas contas a vencer.
@@ -109,7 +151,7 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
       id: cat.id, nome: cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome,
       contaId, chave, dia, previsto,
       valor: override ?? previsto,
-      naoSaiu, agendado,
+      naoSaiu, agendado, entrada,
       conferido: dm?.debitosConferidos?.[cat.id] === true,
     })
   }
@@ -134,6 +176,18 @@ export function debitoComOutroValor(dm: DadosMes, d: DebitoDoMes, valor: number)
     return comConferido({ ...pago, fixasValorOverride: resto }, d.id)
   }
   return comConferido(pago, d.id)
+}
+
+/** Tirar o "confere" (a bolinha de novo vazia): nenhum número muda. */
+export function debitoDesconferir(dm: DadosMes, d: DebitoDoMes): DadosMes {
+  const resto = { ...dm.debitosConferidos }
+  delete resto[d.id]
+  return { ...dm, debitosConferidos: resto }
+}
+
+/** Depois de um "Não saiu": saiu, sim, no valor previsto. */
+export function debitoSaiuSim(dm: DadosMes, d: DebitoDoMes): DadosMes {
+  return comConferido(confirmarPagamento(dm, d.id, d.previsto, d.previsto), d.id)
 }
 
 /** "Não saiu": desmarca, e a conta volta a ser uma conta a pagar. */

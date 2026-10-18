@@ -1,24 +1,25 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { useApp } from '../../context/AppContext'
-import { Cartao, Etiqueta, Linha, Pilula, TituloCartao } from '../mobile/ui'
+import { Cartao, Etiqueta, Pilula, TituloCartao } from '../mobile/ui'
 import { M, fmt, mostrar } from '../mobile/estilo'
 import { COR } from '../../utils/cores'
 import { parseValor } from '../../utils/moeda'
-import { iconeCategoria } from '../../utils/categoriaIcone'
-import { debitoComOutroValor, debitoConfere, debitoNaoSaiu, debitosDoMes, type DebitoDoMes } from '../../utils/debitoAutomatico'
+import { debitoComOutroValor, debitoConfere, debitoDesconferir, debitoNaoSaiu, debitoSaiuSim, debitosDoMes, type DebitoDoMes } from '../../utils/debitoAutomatico'
 import type { DadosMes } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
 
 /**
- * "Débitos automáticos" (18/10/2026, pedido do Guilherme), ao lado de
+ * "Automáticos do mês" (18/10/2026, pedido do Guilherme; era "Débitos
+ * automáticos" até os recebimentos entrarem, no mesmo dia), ao lado de
  * "Confira seus saldos" na Início do computador e embaixo dele na Bússola.
  * O app confirma o débito sozinho no vencimento; aqui a pessoa confere no
  * extrato do banco se saiu e no valor certo. Regras em utils/debitoAutomatico.ts.
  */
 export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; oculto: boolean }) {
-  const { updateExtratoMes, categorias } = useApp()
+  const { updateExtratoMes } = useApp()
   const debitos = useMemo(() => debitosDoMes(deps), [deps])
   const [editando, setEditando] = useState<string | null>(null)
+  const [escolhendo, setEscolhendo] = useState<string | null>(null)
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
 
@@ -32,75 +33,104 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   }
   const salvar = (d: DebitoDoMes) => {
     const n = parseValor(texto)
-    if (n === null || n <= 0 || texto.trim() === '') { setErro('Digite o valor que saiu, por exemplo 123,45.'); return }
+    if (n === null || n <= 0 || texto.trim() === '') { setErro(`Digite o valor que ${d.entrada ? 'entrou' : 'saiu'}, por exemplo 123,45.`); return }
     gravar(d, dm => debitoComOutroValor(dm, d, n))
     setEditando(null); setTexto(''); setErro('')
   }
 
   const pendentes = debitos.filter(d => !d.conferido && !d.agendado).length
   const vencidos = debitos.filter(d => !d.agendado).length
+  const temEntrada = debitos.some(d => d.entrada && !d.agendado)
 
   return (
     <Cartao>
       <TituloCartao direita={pendentes === 0 && vencidos > 0
         ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
         : undefined}>
-        Débitos automáticos
+        Automáticos do mês
       </TituloCartao>
       {pendentes > 0 && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -4, marginBottom: 6, lineHeight: 1.45 }}>
-          Já marcamos como pagos. Veja no extrato do banco se saíram e no valor certo.
+          {temEntrada ? 'Já marcamos o que entrou e saiu sozinho.' : 'Já marcamos como pagos.'} Viu no extrato? Toque na bolinha. Valor diferente: toque na linha.
         </div>
       )}
       {debitos.length === 0 && (
         <div style={{ fontSize: M.corpo, color: COR.textoSuave, lineHeight: 1.45, padding: '6px 0' }}>
-          Não há débito automático agendado para este mês.
+          Não há recebimento nem débito automático agendado para este mês.
         </div>
       )}
 
       {debitos.map((d, i) => {
-        const cat = categorias.find(c => c.id === d.id)
-        const vis = cat ? { icone: cat.icone, cor: cat.cor } : iconeCategoria(categorias, d.nome)
         const aberto = editando === d.id
+        const opcoes = escolhendo === d.id
         const mudou = !d.naoSaiu && Math.abs(d.valor - d.previsto) > 0.004
+        const conferido = d.conferido && !d.naoSaiu
+        const saiu = d.entrada ? 'caiu' : 'saiu'
+        // A bolinha de Lançamentos: vazia = falta conferir; verde = confere;
+        // tracejada = agendado; âmbar = não saiu. Tocar nela confere (ou
+        // desfaz); tocar na linha abre "Outro valor" e "Não saiu".
+        const bolinha: CSSProperties = d.agendado
+          ? { border: `2px dashed ${COR.borda}`, background: '#fff', cursor: 'default' }
+          : d.naoSaiu
+            ? { border: 'none', background: COR.avisoFundo, color: COR.avisoTexto }
+            : conferido
+              ? { border: 'none', background: COR.sucessoTexto, color: '#fff' }
+              : { border: '2px solid #94a3b8', background: '#fff' }
         return (
           <div key={d.id}>
-            <Linha primeira={i === 0} icone={vis.icone} cor={vis.cor}
-              titulo={d.nome}
-              legenda={<>Dia {String(d.dia).padStart(2, '0')} · {bancoDe(d)}{mudou && <> · previsto {mostrar(d.previsto, oculto)}</>}</>}
-              direita={<div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: M.corpo, fontWeight: 700, color: d.naoSaiu ? COR.textoSuave : COR.texto,
-                  textDecoration: d.naoSaiu ? 'line-through' : undefined, fontVariantNumeric: 'tabular-nums' }}>
-                  {mostrar(d.valor, oculto)}
+            <div onClick={() => { if (!d.agendado && !aberto) setEscolhendo(opcoes ? null : d.id) }} style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', minHeight: 48,
+              borderTop: i === 0 ? 'none' : '1px solid #eef2f8', cursor: d.agendado ? undefined : 'pointer',
+            }}>
+              <button type="button" disabled={d.agendado}
+                aria-label={d.agendado ? `${d.nome}: agendado` : d.naoSaiu ? `${d.nome}: não ${saiu}` : conferido ? `Desfazer: ${d.nome} confere` : `${d.nome} confere`}
+                aria-pressed={conferido}
+                onClick={e => {
+                  e.stopPropagation()
+                  if (d.agendado) return
+                  if (d.naoSaiu) { setEscolhendo(opcoes ? null : d.id); return }
+                  gravar(d, dm => (conferido ? debitoDesconferir(dm, d) : debitoConfere(dm, d)))
+                }}
+                style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, padding: 0, cursor: 'pointer',
+                  fontSize: 16, fontWeight: 800, fontFamily: 'inherit', lineHeight: 1, ...bolinha }}>
+                {d.naoSaiu ? '!' : conferido ? '✓' : ''}
+              </button>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: M.corpo, fontWeight: 600, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.nome}</span>
+                <span style={{ fontSize: M.legenda, color: COR.textoSuave, flexShrink: 0 }}>
+                  dia {String(d.dia).padStart(2, '0')} · {bancoDe(d)}{d.agendado ? ' · agendado' : d.naoSaiu ? ` · não ${saiu}` : ''}
+                </span>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: M.corpo, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                  color: d.naoSaiu || d.agendado ? COR.textoSuave : d.entrada ? COR.sucessoTexto : COR.texto,
+                  textDecoration: d.naoSaiu ? 'line-through' : undefined }}>
+                  {d.entrada ? '+ ' : ''}{mostrar(d.valor, oculto)}
                 </div>
-                {d.agendado && <Etiqueta cor={COR.infoTexto} fundo={COR.infoFundo}>agendado</Etiqueta>}
-                {d.conferido && !aberto && (d.naoSaiu
-                  ? <Etiqueta cor={COR.avisoTexto} fundo={COR.avisoFundo}>não saiu</Etiqueta>
-                  : <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>)}
-              </div>} />
+                {mudou && <div style={{ fontSize: 12, color: COR.textoSuave, whiteSpace: 'nowrap' }}>previsto {mostrar(d.previsto, oculto)}</div>}
+              </div>
+            </div>
 
-            {!d.conferido && !d.agendado && !aberto && (
+            {opcoes && !aberto && (
               <div style={botoes}>
-                <Pilula forte onClick={() => gravar(d, dm => debitoConfere(dm, d))}>Confere</Pilula>
-                <Pilula onClick={() => { setEditando(d.id); setTexto(''); setErro('') }}>Outro valor</Pilula>
-                <Pilula onClick={() => gravar(d, dm => debitoNaoSaiu(dm, d))}>Não saiu</Pilula>
+                {d.naoSaiu
+                  ? <Pilula forte onClick={() => { gravar(d, dm => debitoSaiuSim(dm, d)); setEscolhendo(null) }}>{d.entrada ? 'Caiu, sim' : 'Saiu, sim'}</Pilula>
+                  : <Pilula onClick={() => { setEditando(d.id); setEscolhendo(null); setTexto(''); setErro('') }}>Outro valor</Pilula>}
+                {!d.naoSaiu && <Pilula onClick={() => { gravar(d, dm => debitoNaoSaiu(dm, d)); setEscolhendo(null) }}>{d.entrada ? 'Não caiu' : 'Não saiu'}</Pilula>}
+                <button type="button" onClick={() => setEscolhendo(null)} style={link}>Cancelar</button>
               </div>
             )}
 
             {aberto && (
-              <div style={{ padding: '0 0 12px 56px' }}>
-                <label style={{ display: 'block', fontSize: M.legenda, color: COR.textoSuave, marginBottom: 6 }}>
-                  Quanto saiu no extrato?
-                </label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <input autoFocus inputMode="decimal" value={texto} placeholder={fmt(d.valor)}
-                    onChange={e => setTexto(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') salvar(d) }}
-                    style={campo} />
-                  <Pilula forte onClick={() => salvar(d)}>Salvar</Pilula>
-                  <button type="button" onClick={() => setEditando(null)} style={link}>Cancelar</button>
-                </div>
-                {erro && <div role="alert" style={{ fontSize: M.legenda, color: COR.erroTexto, marginTop: 6 }}>{erro}</div>}
+              <div style={botoes}>
+                <input autoFocus inputMode="decimal" value={texto} placeholder={fmt(d.valor)}
+                  aria-label={d.entrada ? 'Quanto entrou no extrato?' : 'Quanto saiu no extrato?'}
+                  onChange={e => setTexto(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') salvar(d) }}
+                  style={campo} />
+                <Pilula forte onClick={() => salvar(d)}>Salvar</Pilula>
+                <button type="button" onClick={() => setEditando(null)} style={link}>Cancelar</button>
+                {erro && <div role="alert" style={{ flexBasis: '100%', fontSize: M.legenda, color: COR.erroTexto }}>{erro}</div>}
               </div>
             )}
           </div>
@@ -108,14 +138,14 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
       })}
       {debitos.length > 0 && !debitos.some(d => d.agendado) && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, lineHeight: 1.45, paddingTop: 10, borderTop: '1px solid #eef2f8' }}>
-          Não há mais débito automático agendado para os próximos dias deste mês.
+          Não há mais nada automático agendado para os próximos dias deste mês.
         </div>
       )}
     </Cartao>
   )
 }
 
-const botoes: CSSProperties = { display: 'flex', gap: 8, padding: '0 0 12px 56px', flexWrap: 'wrap' }
+const botoes: CSSProperties = { display: 'flex', gap: 8, padding: '0 0 12px 42px', flexWrap: 'wrap', alignItems: 'center' }
 
 // 16 px: abaixo disso o iPhone dá zoom no campo.
 const campo: CSSProperties = {

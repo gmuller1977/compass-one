@@ -1,6 +1,6 @@
 import { saldoInformado, saldoInformadoDaCarteira } from './saldoInformado'
 import type { Conta, DadosMes } from '../context/AppContext'
-import { saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
+import { detalharProjecaoDaConta, saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
 
 /**
  * "Confira o saldo dos bancos", na Início (18/10/2026, pedido do Guilherme).
@@ -61,6 +61,33 @@ export type SaldoDoBanco = {
   informado: number | null
   diferenca: number
   pendente: boolean
+  /** Contas desta conta que venceram e ninguém marcou: ver `naoMarcadasDaConta`. */
+  naoMarcadas: NaoMarcada[]
+}
+
+export type NaoMarcada = { id: string; nome: string; valor: number; entrada: boolean }
+
+/**
+ * O que venceu até hoje nesta conta e ainda não está marcado como pago ou
+ * recebido: fixas de despesa e de receita e a fatura do cartão. São as linhas
+ * que a projeção ainda vai somar (`detalharProjecaoDaConta`, a mesma passagem
+ * do saldo previsto), sem as fixas pagas no cartão, que caem na fatura.
+ *
+ * Existe por causa do "Está diferente" (análise da chegada v3, C1): o saldo
+ * digitado vence como saldo atual, mas a projeção continua somando o que não
+ * foi marcado. Aluguel pago e não marcado sairia duas vezes; salário
+ * recebido e não marcado entraria duas vezes. Antes de aceitar o valor, a
+ * Início mostra estas linhas e manda marcar em Lançamentos.
+ */
+export function naoMarcadasDaConta(contaId: string, deps: Deps, hoje = new Date()): NaoMarcada[] {
+  const d = detalharProjecaoDaConta(contaId, hoje.getFullYear(), hoje.getMonth(), deps, hoje)
+  return [
+    ...d.fixasEntrada.map(i => ({ ...i, entrada: true })),
+    ...d.fixasSaida.filter(i => i.balde !== 'cartao').map(i => ({ ...i, entrada: false })),
+    ...d.faturas.map(i => ({ ...i, entrada: false })),
+  ]
+    .filter(i => i.id && i.dia !== undefined && i.dia <= hoje.getDate() && i.valor > 0.005)
+    .map(i => ({ id: i.id!, nome: i.descricao ? `${i.nome} · ${i.descricao}` : i.nome, valor: i.valor, entrada: i.entrada }))
 }
 
 /**
@@ -101,6 +128,7 @@ export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
         conta, calculado, informado,
         diferenca: informado === null ? 0 : informado - calculado,
         pendente: !ultima || diasEntre(ultima, hojeStr) >= DIAS_ENTRE_CONFERENCIAS,
+        naoMarcadas: naoMarcadasDaConta(conta.id, deps, hoje),
       }
     })
 }

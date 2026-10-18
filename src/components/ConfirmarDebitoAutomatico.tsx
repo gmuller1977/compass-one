@@ -4,8 +4,8 @@ import type { Deps } from '../utils/saldoConta'
 import { confirmarDebito, debitosParaConfirmar } from '../utils/debitoAutomatico'
 
 /**
- * Confirma as contas em débito automático que venceram neste mês
- * (utils/debitoAutomatico.ts). Montado no AppShell, em qualquer tela. Nada
+ * Confirma as contas em débito automático e os recebimentos que caem sozinhos
+ * no banco, vencidos neste mês (utils/debitoAutomatico.ts). Montado no AppShell, em qualquer tela. Nada
  * com a cópia do aparelho (os números podem ser velhos) nem durante o load.
  */
 export default function ConfirmarDebitoAutomatico() {

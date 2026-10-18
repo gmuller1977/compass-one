@@ -139,6 +139,20 @@ saiu (`fixasConsolidadas = false`, volta para as contas a pagar); os que
 vencem depois aparecem como "agendado"; sem nenhum, diz que não há. Conferido
 em `debitosConferidos` do mês (`debitosDoMes`, `DebitosAutomaticosCard`).
 
+**Recebimento automático também se confirma sozinho** (18/10/2026,
+regra do Guilherme: "tudo que é recebimento e pagamento que não depende de
+movimentação manual, entra ou sai de forma automática e o usuário só precisa
+confirmar"). Toda receita FIXA que cai no banco (salário, aluguel recebido)
+se marca recebida no dia, pelo mesmo `ConfirmarDebitoAutomatico`; receita em
+dinheiro não. O quadro da Início virou **"Automáticos do mês"**, com as
+entradas em verde e "Não caiu" no lugar de "Não saiu". `ehAutomatica` em
+`debitoAutomatico.ts`. E o **"Está diferente"** de "Confira seus saldos",
+quando a conta tem fixa ou fatura vencida e não marcada, mostra antes essa
+lista com "Marcar em Lançamentos" e "Não, o saldo é outro"
+(`naoMarcadasDaConta`, as linhas da projeção): o saldo digitado vence como
+saldo atual, e o que não foi marcado entraria ou sairia DUAS vezes no saldo
+previsto (análise da chegada v3, C1). `prova80` (19).
+
 **Transferência em Lançamentos** (18/10/2026, pedido dele): banco ↔ banco e
 banco ↔ dinheiro, no computador e no celular, sem categoria (grava
 "Transferência", fora do realizado). Banco → dinheiro é "Saque", dinheiro →
