@@ -159,18 +159,20 @@ export default function PrimeiroAcesso() {
     }))
     const varios = [e.banco, ...e.outrosBancos.map(o => o.banco)].filter(Boolean).length > 1
     titulo = 'Quais bancos você usa?'
-    sub = 'Toque em cada um e diga quanto tem lá hoje, mais ou menos. O primeiro é o do salário.'
+    sub = 'Toque em cada um para dizer quanto tem lá. O primeiro é o do salário.'
     corpo = (<>
       <Cartao>
         <div style={{ display: 'grid', gap: 8 }}>
           {BANCOS.map(b => (
             <LinhaBanco key={b} nome={b} on={marcado(b)} salario={b === e.banco} varios={varios} saldo={saldoDe(b)}
               onTocar={() => alternar(b)} onSaldo={v => mudarSaldo(b, v)} onSalario={() => doSalario(b)}>
-              {b === 'Outro' && marcado(b) && <NomeLivre valor={e.bancoOutro} onMudar={v => set('bancoOutro', v)} placeholder="Nome do banco" />}
+              {b === 'Outro' && (<>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Qual banco?</div>
+                <Campo valor={e.bancoOutro} onMudar={v => set('bancoOutro', v)} placeholder="Nome do banco" texto autoFoco />
+              </>)}
             </LinhaBanco>
           ))}
         </div>
-        <Dica>Um valor redondo já serve. Se não lembrar, deixe em branco.</Dica>
       </Cartao>
     </>)
     pe = <Pe rotulo="Continuar" onSeguir={seguir} desabilitado={!banco} />
@@ -494,6 +496,13 @@ export default function PrimeiroAcesso() {
           .pa-tel::-webkit-scrollbar { display: none }
           .pa-pe { position: sticky; bottom: 0; background: linear-gradient(rgba(242,245,252,0), #f2f5fc 18px); padding-top: 22px !important }
         }
+        @keyframes pa-abre { from { max-height: 0 } to { max-height: 320px } }
+        @keyframes pa-slide { from { opacity: 0; transform: translateX(28px) scale(.96) } to { opacity: 1; transform: none } }
+        @keyframes pa-pop { 0% { transform: scale(.4) } 60% { transform: scale(1.18) } 100% { transform: scale(1) } }
+        .pa-abre { animation: pa-abre .38s cubic-bezier(.2,.8,.2,1) both; overflow: hidden }
+        .pa-slide { animation: pa-slide .42s cubic-bezier(.2,.8,.2,1) .06s both }
+        .pa-pop { animation: pa-pop .3s ease-out }
+        @media (prefers-reduced-motion: reduce) { .pa-abre, .pa-slide, .pa-pop { animation: none } }
       `}</style>
       <div ref={topoRef} className="pa-tel" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
         <div style={{ background: TOPO_AZUL, color: '#fff', padding: '22px 22px 30px' }}>
@@ -713,40 +722,45 @@ function Item({ icone, rotulo, on, onTocar, children }: { icone: string; rotulo:
   )
 }
 
-/** Banco marcado: o saldo abre na mesma linha, à direita. */
+/** Banco marcado: abre embaixo uma caixa azul, que entra como transição de
+ *  slide (pedido do Guilherme, 18/10/2026: "chama mais atenção"). */
 function LinhaBanco({ nome, on, salario, varios, saldo, onTocar, onSaldo, onSalario, children }: {
   nome: string; on: boolean; salario: boolean; varios: boolean; saldo: string
   onTocar: () => void; onSaldo: (v: string) => void; onSalario: () => void; children?: ReactNode
 }) {
+  const caixa = useRef<HTMLDivElement>(null)
+  // A caixa que abre embaixo do último banco da tela não pode ficar escondida.
+  useEffect(() => { if (on) setTimeout(() => caixa.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 380) }, [on])
   return (
     <div style={{ border: `1.5px solid ${on ? '#1a56db' : '#dbe3f0'}`, background: on ? '#eff6ff' : '#fff', borderRadius: 16,
-      padding: on ? '8px 8px 8px 12px' : '0 12px', transition: 'background .15s, border-color .15s', display: 'grid', gap: 6 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: on ? 46 : 48 }}>
-        <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: 0,
-          display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, minHeight: 44, cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
-          <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: `2px solid ${on ? '#1a56db' : '#c3ccd8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
-            {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
-          </span>
-          <span style={{ minWidth: 0 }}>
-            <span style={{ display: 'block', fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{nome}</span>
-            {on && varios && salario && <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#1e40af' }}>cai o salário</span>}
-          </span>
-        </button>
-        {on && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 4, width: 140, flexShrink: 0, minHeight: 44, padding: '0 10px',
-            background: '#fff', border: '1.5px solid #93c5fd', borderRadius: 12 }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: COR.textoSuave }}>R$</span>
-            <input value={saldo} onChange={ev => onSaldo(ev.target.value)} placeholder="saldo" inputMode="decimal" autoFocus aria-label={`Saldo no ${nome}`}
-              style={{ border: 'none', outline: 'none', font: 'inherit', fontSize: 16, fontWeight: 700, width: '100%', minWidth: 0,
-                color: COR.texto, background: 'transparent', fontVariantNumeric: 'tabular-nums' }} />
-          </label>
-        )}
-      </div>
-      {children}
-      {on && varios && !salario && (
-        <button type="button" onClick={onSalario} style={{ font: 'inherit', fontSize: 12, fontWeight: 700, color: '#1e40af', background: 'none',
-          border: 'none', padding: '0 0 0 34px', textAlign: 'left', cursor: 'pointer', justifySelf: 'start' }}>O salário cai aqui</button>
+      transition: 'background .2s, border-color .2s, box-shadow .2s', boxShadow: on ? '0 8px 22px rgba(30,64,175,.16)' : 'none', overflow: 'hidden' }}>
+      <button type="button" aria-pressed={on} onClick={onTocar} style={{ font: 'inherit', background: 'none', border: 'none', padding: '0 12px',
+        display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, cursor: 'pointer', textAlign: 'left', color: COR.texto }}>
+        <span aria-hidden className={on ? 'pa-pop' : undefined} style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', border: `2px solid ${on ? '#1a56db' : '#c3ccd8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
+          {on && <i className="ti ti-check" style={{ fontSize: 14 }} />}
+        </span>
+        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{nome}</span>
+        {on && varios && salario && <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#1e40af', borderRadius: 999, padding: '3px 9px' }}>salário</span>}
+      </button>
+      {on && (
+        <div className="pa-abre" ref={caixa}>
+          <div className="pa-slide" style={{ margin: '0 8px 8px', borderRadius: 14, background: TOPO_AZUL, padding: 14, display: 'grid', gap: 10 }}>
+            {children}
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Quanto tem lá hoje?</div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 12, padding: '0 14px', minHeight: 52 }}>
+              <span style={{ fontWeight: 700, color: COR.textoSuave }}>R$</span>
+              <input value={saldo} onChange={ev => onSaldo(ev.target.value)} placeholder="0" inputMode="decimal" autoFocus={nome !== 'Outro'}
+                aria-label={`Saldo hoje: ${nome}`} style={{ border: 'none', outline: 'none', font: 'inherit', fontSize: 22, fontWeight: 800, width: '100%',
+                  minWidth: 0, color: COR.texto, background: 'transparent', fontVariantNumeric: 'tabular-nums' }} />
+            </label>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.75)' }}>Mais ou menos. Se não lembrar, deixe em branco.</div>
+            {varios && !salario && (
+              <button type="button" onClick={onSalario} style={{ font: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,.14)',
+                border: '1px solid rgba(255,255,255,.35)', borderRadius: 999, padding: '7px 12px', cursor: 'pointer', justifySelf: 'start' }}>O salário cai aqui</button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )

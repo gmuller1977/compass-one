@@ -2261,7 +2261,8 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   mesmo dia, sobre o protótipo). As boas-vindas seguem em duas colunas, sem
   moldura. Cartões em duas colunas alinhadas à esquerda (`colunas`). Os bancos
   são UMA lista (`LinhaBanco`): tocar marca e abre o saldo na mesma linha; o
-  primeiro marcado é o do salário, e "O salário cai aqui" troca.
+  primeiro marcado é o do salário, e "O salário cai aqui" troca. Marcado, abre
+  embaixo uma caixa azul com o saldo, que entra como slide (`pa-abre`/`pa-slide`).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).
