@@ -3,9 +3,8 @@ import PlanAnoVisao from './PlanAnoVisao'
 import PlanModalMeses from './PlanModalMeses'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import { type BulkOp } from './PlanFerramentas'
-import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos, MESES_FULL } from './types'
+import { type AnoData, MOTIVO_PLANO_LOCKADO, type Saldos } from './types'
 import type { Categoria } from '../../context/AppContext'
-import type { Descoberta } from '../../utils/descoberta'
 
 interface Props {
   anoAtual: number
@@ -23,8 +22,6 @@ interface Props {
   objetivos: number[]
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
-  /** A fase de observação, quando ela está valendo. Ver utils/descoberta. */
-  descoberta?: Descoberta
   /** Fechamento real de cada mês (bancos e dinheiro) — o "Fechou em" dos cartões fechados. */
   fechamentoReal?: number[]
   /** Saldo real com que cada mês abriu — para o que o mês guardou de verdade. */
@@ -41,25 +38,6 @@ export default function PlanGrade(props: Props) {
 
   const planTotais = previsto
 
-  /**
-   * O que o cartão cinza diz. Só o mês OBSERVADO muda de texto: ele é o que
-   * está sendo medido e o que vira o primeiro plano ao fechar. Os outros onze
-   * seguem sem plano de verdade, e dizer isso neles continua sendo o certo —
-   * trocar os doze de uma vez só daria a impressão de que o ano inteiro está
-   * em observação.
-   */
-  const { descoberta: desc } = props
-  const textoSemPlano = (mi: number) => {
-    if (!desc?.ativa) return undefined
-    if (anoAtual !== desc.mesObservado.ano || mi !== desc.mesObservado.mes) return undefined
-    const faltam = desc.diasAteFechar
-    return {
-      titulo: 'Descobrindo',
-      sub: faltam <= 0
-        ? `${MESES_FULL[mi]} fecha hoje`
-        : `faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}`,
-    }
-  }
 
   const dadosAtivos = dadosPrevisto
   const bloqueado = false
@@ -88,7 +66,6 @@ export default function PlanGrade(props: Props) {
         fechamentoReal={props.fechamentoReal}
         inicioReal={props.inicioReal}
         objetivos={objetivos}
-        semPlanoTexto={textoSemPlano}
         onAbrir={setModalMes}
       />
 

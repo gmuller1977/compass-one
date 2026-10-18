@@ -16,14 +16,11 @@ import { mesDoGastoNoCartao } from './lancarPorMes'
  * - **Na hora:** a conta do banco (com o saldo), o cartão, as categorias
  *   sugeridas ligadas, a forma de pagar de cada conta do mês, e a meta de
  *   economia nos meses que faltam do ano (`objetivos`).
- * - **No primeiro plano, também na hora** (18/10/2026, pedido do Guilherme:
- *   "o cliente informou um monte de coisa mas não se usa para nada"): os
- *   valores informados viram o plano do mês corrente a dezembro, o mesmo
+ * - **O plano inicial** (18/10/2026, pedido do Guilherme): os valores
+ *   informados viram o plano do primeiro mês INTEIRO até dezembro, o mesmo
  *   valor todo mês (`planoDoPrimeiroAcesso` em utils/primeiroPlano), e as
- *   contas do mês viram FIXAS com o dia (`fixasDoPrimeiroAcesso`). Com valor
- *   no plano elas aparecem para pagar, e o Modo Descoberta não abre.
- *   As `estimativas` continuam guardadas no plano do ano: sem nenhum valor
- *   informado não há plano, e a proposta do Modo Descoberta as usa.
+ *   contas do mês viram FIXAS com o dia (`fixasDoPrimeiroAcesso`). As
+ *   `estimativas` ficam guardadas no plano do ano, de onde o plano é lido.
  */
 
 /** "Visto" na conta (vistoNaConta): quem já passou, ou escolheu configurar sozinho. */

@@ -171,24 +171,38 @@ export function chaveDaLinha(l: LinhaProposta) {
 }
 
 /**
- * O primeiro plano, montado NA HORA com o que a pessoa contou no primeiro
- * acesso (18/10/2026, pedido do Guilherme: "o cliente informou um monte de
+ * Até que dia do mês o mês corrente ainda conta como inteiro. Depois dele,
+ * o primeiro plano começa no mês seguinte (pedido do Guilherme em
+ * 18/10/2026: "se o cliente entrar no meio do mês, o plano não faz sentido").
+ */
+export const DIA_LIMITE_DO_MES_COMPLETO = 5
+
+/** O primeiro mês inteiro para quem começa a usar hoje: o do plano inicial. */
+export function primeiroMesCompleto(hoje = new Date()): { ano: number; mes: number } {
+  const ano = hoje.getFullYear(), mes = hoje.getMonth()
+  if (hoje.getDate() <= DIA_LIMITE_DO_MES_COMPLETO) return { ano, mes }
+  return mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 }
+}
+
+/**
+ * O plano inicial, montado no fim do primeiro acesso com o que a pessoa
+ * contou (18/10/2026, pedido do Guilherme: "o cliente informou um monte de
  * coisa mas não se usa para nada... poderia ser aproveitado para já montar
- * seu primeiro planejamento repetindo os valores mês a mês").
+ * seu primeiro planejamento repetindo os valores mês a mês"). No mesmo dia o
+ * Modo Descoberta saiu: com as perguntas, todo mundo já sai com um plano.
  *
- * É a mesma proposta do Modo Descoberta, só que sem mês observado: o
- * realizado é vazio, então toda linha sai da estimativa. Do mês corrente a
- * dezembro, com o fim de cada financiamento e parcela (`ate`) e o 13º em
- * novembro e dezembro. Sem nenhum valor informado, devolve `null` e o Modo
- * Descoberta segue como antes.
+ * Começa no primeiro mês INTEIRO (`primeiroMesCompleto`) e vai até dezembro
+ * desse ano, o mesmo valor todo mês, com o fim de cada financiamento e
+ * parcela (`ate`), a parcela no cartão a partir do mês da fatura (`desde`) e
+ * o 13º em novembro e dezembro. Toda linha sai da estimativa: o realizado é
+ * vazio. Sem nenhum valor informado, devolve `null`.
  */
 export function planoDoPrimeiroAcesso(
   categorias: Categoria[], estimativas: EstimativasIniciais | undefined, hoje = new Date(),
-): PlanoAnoData | null {
+): { ano: number; mes: number; plano: PlanoAnoData } | null {
   if (!estimativas) return null
-  const ano = hoje.getFullYear()
-  const mes = hoje.getMonth()
+  const { ano, mes } = primeiroMesCompleto(hoje)
   const p = propostaDoMes({ ano, mes, extratoData: {}, faturaData: {}, contas: [], categorias, estimativas })
   const plano = planoDaProposta(p, mes, undefined, ano)
-  return plano.entradas.length || plano.saidas.length ? plano : null
+  return plano.entradas.length || plano.saidas.length ? { ano, mes, plano } : null
 }

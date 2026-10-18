@@ -2114,7 +2114,15 @@ todas: enquanto flutuava, cada banco projetava a fatura de todos os cartões.
 Só existem essas três formas de pagar fatura; transferência foi removida do
 tipo em 06/09/2026.
 
-**O MODO DESCOBERTA existe porque o público-alvo não consegue responder ao
+**O Modo Descoberta SAIU em 18/10/2026** (Guilherme: "não quero mais este
+modo, com esta nova sequência de perguntas ele já sai com um plano"). Saíram
+`descoberta.ts`, `DescobertaBanner`, `DescobertaModal` e `PrimeiroPlanoModal`;
+o Planejamento e o Simulador sem plano só convidam a montar o plano, e a
+janela "Tudo pronto" de Configurações leva ao assistente ("Montar meu plano
+inicial"). Ficaram `propostaDoMes`/`planoDaProposta`, que montam o plano
+inicial. Tudo abaixo sobre o Modo Descoberta é histórico.
+
+**O MODO DESCOBERTA existia porque o público-alvo não consegue responder ao
 wizard.** Quem chega sem saber quanto ganha nem quanto gasta não tem como
 preencher "quanto você planeja gastar em mercado?" — e o app inteiro dependia
 dessa resposta. Antes dele o usuário tinha duas saídas: inventar números, ou
@@ -2237,34 +2245,26 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   ele, categorias sugeridas ligadas, forma de pagar e conta de débito das
   marcadas, nome livre por `montarCategoria`, e a meta em `objetivos` do mês
   atual a dezembro.
-- **O primeiro plano nasce no fim do primeiro acesso** (18/10/2026, pedido
+- **O plano inicial nasce no fim do primeiro acesso** (18/10/2026, pedido
   do Guilherme: "o cliente informou um monte de coisa mas não se usa para
-  nada"). Os valores informados viram o plano do mês corrente a dezembro, o
-  mesmo valor todo mês (`planoDoPrimeiroAcesso`, a mesma `propostaDoMes` +
-  `planoDaProposta` do Modo Descoberta, com realizado vazio), com o fim de
-  cada financiamento e parcela (`ate`), a parcela no cartão a partir do mês
-  em que a fatura vence (`desde`) e o 13º em novembro e dezembro. As contas
-  marcadas viram FIXAS com o dia, e a meta fica. Nunca por cima de um ano que
-  já tem valor planejado. Sem nenhum valor informado não há plano, e o Modo
-  Descoberta segue; as `estimativas` continuam em `planos[ano]` para ele.
-  `prova75` (16). As notas abaixo sobre "fica para o primeiro plano" e "não
-  viram fixas no primeiro dia" valem só para quem não informou valor.
+  nada"). Os valores informados viram o plano do primeiro mês INTEIRO até
+  dezembro, o mesmo valor todo mês (`planoDoPrimeiroAcesso` em
+  `primeiroPlano.ts`: `propostaDoMes` + `planoDaProposta` com realizado
+  vazio). Mês inteiro = o corrente até o dia 5, senão o seguinte
+  (`primeiroMesCompleto`; dezembro pela metade vai para janeiro do ano
+  seguinte), pedido dele: "se o cliente entrar no meio do mês, o plano não
+  faz sentido". A tela diz "Vamos construir um plano inicial" e que ele é
+  um ponto de partida, revisado com os lançamentos. Fim de financiamento e
+  parcela (`ate`), parcela no cartão a partir do mês da fatura (`desde`), 13º
+  em nov/dez; as contas marcadas viram FIXAS com o dia e a meta começa no
+  mesmo mês do plano. Nunca por cima de um ano que já tem valor planejado.
+  Sem nenhum valor informado não há plano. `prova75` (15).
 - **O fim do primeiro acesso é um guia** ("Conheça o seu Compass One", mesmo
   dia: o cliente "fica sem rumo" ao cair na Início). As telas na ordem do
   menu (Todo dia · Todo mês · Todo ano), cada uma uma `Escolha` com seta que
   abre a caixa azul com o resumo do "?" (`AJUDA`, uma fonte só) e quando
   usar. Embaixo, "Anotar meu primeiro gasto" e "Ir para o início"; é ali que
   tudo é gravado.
-- **Fica para o primeiro plano:** valores e dias vão em
-  `planos[ano].estimativas` (jsonb, sem migração). Nenhum valor no plano:
-  `fimDoPlanejamento` só olha `v > 0`, e o Modo Descoberta continua. A
-  proposta (`propostaDoMes`) usa o realizado e, onde a categoria não teve
-  lançamento, a estimativa ("sem lançamento, valor que você informou"). Ao
-  criar o plano, as contas marcadas viram FIXAS com o dia
-  (`fixasDoPrimeiroAcesso`), e a meta já definida é preservada (antes o
-  "Criar meu plano" apagava `objetivos`).
-- **Não viram fixas no primeiro dia de propósito:** fixa sem valor no plano
-  não aparece para pagar em Lançamentos nem no Lançar.
 - **Parcelas dizem como são pagas** (mesmo dia, pedido dele). No CARTÃO, as
   que faltam são LANÇADAS na fatura do cartão escolhido como a FaturaCartao
   grava (id `<base>-<p>`, `parcelaAtual` pelo "de quantas no total", só a
@@ -2287,12 +2287,6 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).
-- **Mês INTEIRO** (mesmo dia, pedido dele: "se começou no dia 10, 15 ou 20
-  a promessa não fecha"): o primeiro plano nasce de um mês completo. Mês
-  cujo primeiro lançamento é depois do dia 5 (`DIA_LIMITE_DO_MES_COMPLETO`)
-  não vira `mesBase`, e o mês observado passa a ser o seguinte
-  (`mesParcial`, `primeiroMesCompleto` em `descoberta.ts`). As frases dizem
-  o mês, nunca "30 dias".
 - **13º** (pedido do Guilherme no mesmo dia): categoria "13º salário"
   (receita, Renda), estimada pelo salário líquido, metade em novembro e
   metade em dezembro, e só lá (`valoresDoDecimo`). A proposta tira o 13º das

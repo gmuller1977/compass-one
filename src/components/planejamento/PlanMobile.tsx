@@ -21,7 +21,6 @@ import {
   type AnoData, type Cat, type Saldos,
 } from './types'
 import type { Categoria } from '../../context/AppContext'
-import type { Descoberta } from '../../utils/descoberta'
 
 /**
  * O Planejamento no celular. Regra do Guilherme em 13/10/2026: "o que tem no
@@ -62,10 +61,9 @@ interface Props {
   objetivos: number[]
   sobraPrevista: number[]
   onMetaSave: (objetivos: number[]) => void
-  descoberta?: Descoberta
   fechamentoReal?: number[]
   inicioReal?: number[]
-  /** Faixas que vêm antes das categorias (descoberta, revisão, só administrador). */
+  /** Faixas que vêm antes das categorias (revisão, só administrador). */
   avisos?: ReactNode
 }
 
@@ -93,20 +91,10 @@ export default function PlanMobile(p: Props) {
     p.setAnoAtual(a => a + (n < 0 ? -1 : 1))
   }
 
-  // O mesmo texto do cartão sem plano da Grade (PlanGrade.textoSemPlano).
-  const desc = p.descoberta
-  const semPlanoTexto = (mi: number) => {
-    if (desc?.ativa && anoAtual === desc.mesObservado.ano && mi === desc.mesObservado.mes) {
-      const faltam = desc.diasAteFechar
-      return `Descobrindo · ${faltam <= 0 ? `${MESES_FULL[mi]} fecha hoje` : `faltam ${faltam} ${faltam === 1 ? 'dia' : 'dias'}`}`
-    }
-    return 'Sem planejamento · toque para planejar'
-  }
-
   const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal: p.fechamentoReal,
     inicioReal: p.inicioReal, objetivos: p.objetivos })
   const m = meses[mes]
-  const sem = m.semPlano && !m.fechado ? semPlanoTexto(mes) : null
+  const sem = m.semPlano && !m.fechado ? 'Sem planejamento · toque para planejar' : null
   const dif = m.real !== undefined ? m.real - m.final : 0
 
   return (
@@ -125,9 +113,8 @@ export default function PlanMobile(p: Props) {
             <AjudaTela tela="planejamento" />
           </div>
         </div>
-        {/* Na descoberta a resposta do ano sai, como no computador. */}
-        {!desc?.ativa && <PlanResumoAnual previsto={previsto} anoAtual={anoAtual} mesAtual={mesAtual} fechamentoReal={p.fechamentoReal}
-          inicioReal={p.inicioReal} objetivos={p.objetivos} compacto />}
+        <PlanResumoAnual previsto={previsto} anoAtual={anoAtual} mesAtual={mesAtual} fechamentoReal={p.fechamentoReal}
+          inicioReal={p.inicioReal} objetivos={p.objetivos} compacto />
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>

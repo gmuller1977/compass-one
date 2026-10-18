@@ -1,18 +1,11 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { SeletorAno } from '../components/SeletorMesAno'
 import { usePlanejamento } from '../components/planejamento/usePlanejamento'
 import { COR } from '../components/planejamento/types'
 import { useApp } from '../context/AppContext'
-import DescobertaBanner from '../components/DescobertaBanner'
-import DescobertaModal from '../components/DescobertaModal'
-import { jaViu, marcarVisto } from '../utils/vistoNaConta'
-import PrimeiroPlanoModal from '../components/PrimeiroPlanoModal'
-import { medirDescoberta } from '../utils/descoberta'
-import { propostaDoMes } from '../utils/primeiroPlano'
-import { estimativasDosPlanos, fixasDoPrimeiroAcesso } from '../utils/primeiroAcesso'
 import PlanGrade from '../components/planejamento/PlanGrade'
 import PlanResumoAnual from '../components/planejamento/PlanResumoAnual'
 import PlanMobile from '../components/planejamento/PlanMobile'
@@ -50,7 +43,6 @@ function useIsMobile() {
 }
 
 export default function Planejamento() {
-  const navigate = useNavigate()
   const isMobile = useIsMobile()
 
   const anoCorrente = new Date().getFullYear()
@@ -62,8 +54,8 @@ export default function Planejamento() {
   )
 
   const plan = usePlanejamento(anoAtual)
-  const { planos, extratoData, contas, onboardingCompleto, user,
-    setPlanos, faturaData, setFaturaData, categorias, setCategorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+  const { planos, extratoData, contas,
+    setPlanos, faturaData, setFaturaData, categorias, saldoInicialDinheiro, cenarioPrevisao } = useApp()
 
   // Uma tela só (06/10/2026): a Grade. A planilha mora no modal que abre ao
   // clicar num mês (PlanModalMeses), e a Lista saiu. Link antigo com
@@ -200,88 +192,8 @@ export default function Planejamento() {
     }
   }, [anoAtual, hojeIdx, dadosAtivos, extratoData, faturaData, contas, categorias, planos])
 
-  // A fase e DERIVADA: onboarding feito e nenhum plano em lugar nenhum. Ver
-  // utils/descoberta — nao existe campo guardado que possa discordar disso.
-  const descoberta = useMemo(() => medirDescoberta({
-    onboardingCompleto, planos, extratoData, contas,
-  }), [onboardingCompleto, planos, extratoData, contas])
-
-  // A explicação da fase abre só pelo "Como funciona" da faixa. Até
-  // 11/10/2026 ela abria sozinha na primeira entrada, com o "visto" no
-  // navegador — noutro computador abria de novo. A faixa já diz o que está
-  // acontecendo; a explicação fica a um toque.
-  const [verIntro, setVerIntro] = useState(false)
-  const fecharIntro = useCallback(() => setVerIntro(false), [])
-
-  // ── A proposta do primeiro plano ────────────────────────────────────
-  //
-  // Só existe quando há um mês fechado com registro. O valor de cada linha é
-  // o realizado daquele mês, pela MESMA função que alimenta o Radar — ver
-  // utils/primeiroPlano.
-  const proposta = useMemo(() => {
-    if (!descoberta.ativa || !descoberta.mesBase) return null
-    return propostaDoMes({
-      ano: descoberta.mesBase.ano, mes: descoberta.mesBase.mes,
-      extratoData, faturaData, contas, categorias,
-      estimativas: estimativasDosPlanos(planos),
-    })
-  }, [descoberta.ativa, descoberta.mesBase, extratoData, faturaData, contas, categorias, planos])
-
-  const [verProposta, setVerProposta] = useState(false)
-  const propostaAvaliada = useRef(false)
-  const chaveProposta = descoberta.mesBase
-    ? `proposta:${descoberta.mesBase.ano}-${descoberta.mesBase.mes}`
-    : ''
-
-  // Abre sozinha UMA vez por mês-base. É o momento que a fase inteira
-  // prometeu; deixá-lo atrás de um clique seria esconder a entrega. Depois
-  // disso, só pelo botão da faixa.
-  useEffect(() => {
-    if (propostaAvaliada.current || !chaveProposta || !proposta) return
-    propostaAvaliada.current = true
-    // O "visto" mora na conta (utils/vistoNaConta); a chave antiga, deste
-    // navegador, vale para quem já tinha visto antes da mudança.
-    let vistoAntigo = false
-    try { vistoAntigo = localStorage.getItem(`compass:proposta:${user?.id}:${chaveProposta.slice(9)}`) === '1' } catch { /* aba anônima */ }
-    if (!vistoAntigo && !jaViu(user, chaveProposta)) setVerProposta(true)
-  }, [chaveProposta, proposta, user])
-
-  const fecharProposta = useCallback(() => {
-    setVerProposta(false)
-    if (chaveProposta) void marcarVisto(user, chaveProposta)
-  }, [chaveProposta, user])
-
   const dialogos = (
     <>
-        {/* A explicação da fase só faz sentido enquanto ainda se observa. Com
-            o mês fechado, quem manda é a proposta. */}
-        {verIntro && descoberta.ativa && !descoberta.mesBase && (
-          <DescobertaModal
-            d={descoberta}
-            onFechar={fecharIntro}
-            onMontarPlano={() => { fecharIntro(); navigate('/wizard-planejamento') }}
-          />
-        )}
-
-        {verProposta && proposta && (
-          <PrimeiroPlanoModal
-            proposta={proposta}
-            mesInicio={new Date().getMonth()}
-            onFechar={fecharProposta}
-            onCriar={p => {
-              // O plano nasce no ano CORRENTE, não no ano do mês-base: um
-              // plano é do ano que ele cobre, e a cobertura começa hoje.
-              // A meta já definida (primeiro acesso ou Planejamento) fica.
-              setPlanos(prev => ({ ...prev, [anoCorrente]: { ...prev[anoCorrente], ...p } }))
-              // As contas do mês do primeiro acesso viram fixas, com o dia.
-              const est = estimativasDosPlanos(planos)
-              if (est) setCategorias(prev => fixasDoPrimeiroAcesso(prev, est))
-              fecharProposta()
-              setAnoAtual(anoCorrente)
-            }}
-          />
-        )}
-
       {repetir && (() => {
         const { tipo, mi, valor, cat, cad, repetidoAte, diferentes } = repetir
         const nome = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
@@ -387,15 +299,10 @@ export default function Planejamento() {
           objetivos={plan.objetivos}
           sobraPrevista={sobraPrevista}
           onMetaSave={plan.editarMetas}
-          descoberta={descoberta}
           fechamentoReal={plan.saldoFinalReal}
           inicioReal={plan.saldoInicialReal}
           avisos={<>
             <AvisoSoAdministrador />
-            {descoberta.ativa && (
-              <DescobertaBanner d={descoberta}
-                onComoFunciona={() => setVerIntro(true)} onVerProposta={() => setVerProposta(true)} />
-            )}
             {lancadoAcima.length > 0 && <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />}
           </>}
         />
@@ -424,11 +331,8 @@ export default function Planejamento() {
             mb={12}
             rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
           >
-            {/* Na descoberta a resposta do ano sai: sem plano seriam quatro
-                R$ 0,00 em destaque logo abaixo de um texto que acabou de
-                explicar que ainda estamos medindo. */}
-            {!descoberta.ativa && <PlanResumoAnual previsto={plan.previsto} anoAtual={anoAtual} mesAtual={plan.mesAtual}
-              fechamentoReal={plan.saldoFinalReal} inicioReal={plan.saldoInicialReal} objetivos={plan.objetivos} />}
+            <PlanResumoAnual previsto={plan.previsto} anoAtual={anoAtual} mesAtual={plan.mesAtual}
+              fechamentoReal={plan.saldoFinalReal} inicioReal={plan.saldoInicialReal} objetivos={plan.objetivos} />
           </PageHeader>
         </div>
       )}
@@ -436,18 +340,6 @@ export default function Planejamento() {
       <AvisoSoAdministrador style={{ margin: '8px 16px 0', flexShrink: 0 }} />
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {/* A faixa da fase, acima de qualquer visao: e ela que troca doze
-            cartoes cinzas dizendo "Sem Planejamento" por um progresso. */}
-        {descoberta.ativa && (
-          <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px' }}>
-            <DescobertaBanner
-              d={descoberta}
-              onComoFunciona={() => setVerIntro(true)}
-              onVerProposta={() => setVerProposta(true)}
-            />
-          </div>
-        )}
-
         {lancadoAcima.length > 0 && (
           <div style={{ padding: isMobile ? '10px 12px 0' : '0 20px 12px' }}>
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
@@ -457,8 +349,7 @@ export default function Planejamento() {
         <ItensPlanoContexto.Provider value={abrirItens}><LancadoNoMesContexto.Provider value={lancadoNoMes}>
         <AjustePlanoContexto.Provider value={abrirAjuste}>
           <PlanGrade
-            descoberta={descoberta}
-            anoAtual={anoAtual}
+              anoAtual={anoAtual}
             mesAtual={plan.mesAtual}
             dadosPrevisto={plan.dadosPrevistoFinal}
             dadosAnoAnterior={plan.planoAnoAnterior}

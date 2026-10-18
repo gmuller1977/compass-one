@@ -13,8 +13,6 @@ interface Props {
   /** Saldo real com que cada mês abriu. */
   inicioReal?: number[]
   objetivos: number[]
-  /** O texto do mês sem plano — na descoberta, "Descobrindo" no mês observado. */
-  semPlanoTexto: (mi: number) => { titulo: string; sub?: string } | undefined
   onAbrir: (mi: number) => void
 }
 
@@ -52,7 +50,7 @@ function useColunas() {
   return n
 }
 
-export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos, semPlanoTexto, onAbrir }: Props) {
+export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos, onAbrir }: Props) {
   const colunas = useColunas()
   const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos })
 
@@ -65,7 +63,7 @@ export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoR
       {/* Os doze meses, sem setas. */}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${colunas}, minmax(0,1fr))`, gap: 12 }}>
         {meses.map(m => {
-          const sem = m.semPlano && !m.fechado ? (semPlanoTexto(m.mi) ?? { titulo: 'Sem planejamento', sub: 'clique para planejar' }) : null
+          const sem = m.semPlano && !m.fechado ? { titulo: 'Sem planejamento', sub: 'clique para planejar' } : null
           const dif = m.real !== undefined ? m.real - m.final : 0
           return (
             <button key={m.mi} type="button" onClick={() => onAbrir(m.mi)}

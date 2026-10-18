@@ -10,7 +10,7 @@ import { buscarCategoria } from './categoriaIcone'
  * movimento é banco ou dinheiro conforme a aba, a conta é a que ele está
  * lançando. Pedir ícone, cor, grupo e forma de pagamento na hora é cobrar a
  * conclusão antes da observação — e cada campo a mais é uma chance de
- * abandonar o registro, que é a ÚNICA tarefa da fase de descoberta.
+ * abandonar o registro, que é a tarefa do dia a dia.
  *
  * `fixa` sai sempre falso. Não se sabe se algo se repete todo mês a partir de
  * um gasto só; essa pergunta pertence ao fechamento do mês, quando ele já viu

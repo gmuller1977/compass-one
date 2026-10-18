@@ -18,7 +18,7 @@ import { jaViu, marcarVisto } from '../../utils/vistoNaConta'
  *   card, etapa 1 da jornada do cliente). O "importar sugestões" de
  *   Configurações continua trazendo desligadas: ali a pessoa já tem as dela.
  * - O app fica em Configurações até haver uma conta e uma categoria ativa;
- *   aí o onboarding conta como feito (o Modo Descoberta depende disso).
+ *   aí o onboarding conta como feito.
  * - Os passos seguem a ordem do menu (Contas, Cartões, Categorias); salvar
  *   uma conta leva aos cartões, e um cartão às categorias. Pedido do
  *   Guilherme em 12/10/2026, ao testar o primeiro acesso.
@@ -83,12 +83,13 @@ export default function PrimeirosPassos() {
     return (
       <Janela onFechar={() => setProntoAberto(false)} titulo="Tudo pronto para começar">
         <p style={textoSt}>
-          Ainda não sabe quanto gasta por mês? Comece lançando o que gastar a partir de hoje.
-          Quando o mês fechar, o Compass One monta o seu primeiro plano com os seus números de verdade.
+          Agora vamos construir um plano inicial: quanto você recebe e quanto gasta em cada
+          categoria, do jeito que souber. Ele é um ponto de partida, revisado ao longo do tempo
+          com base nos seus lançamentos.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
-          <button onClick={() => navigate('/lancar')} style={botao(true)}>Começar a lançar</button>
-          <button onClick={() => navigate('/wizard-planejamento')} style={botao(false)}>Já sei meus números: montar o plano</button>
+          <button onClick={() => navigate('/wizard-planejamento')} style={botao(true)}>Montar meu plano inicial</button>
+          <button onClick={() => navigate('/lancar')} style={botao(false)}>Começar a lançar</button>
         </div>
       </Janela>
     )
