@@ -120,6 +120,19 @@ uma fixa de R$ 25,00 nunca marcada aparecia como paga num lado e não no outro,
 e o saldo divergia do extrato. Débito automático falha, muda de valor e é
 cancelado; presumir esconde isso. Decidido em 31/08/2026.
 
+**Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
+decisão do Guilherme: "débito automático pode já ser confirmada, e pegamos a
+diferença no valor da conta na tela inicial"). Revê o parágrafo acima só
+para a fixa de banco com `formaPagamento: 'automatico'`. A confirmação é
+GRAVADA, não presumida na leitura: `ConfirmarDebitoAutomatico` (no AppShell)
+marca `fixasConsolidadas[id] = true` pelo mesmo `confirmarPagamento` do
+"Pagar", na conta de `contaDoPagamento`, e todas as telas leem como sempre.
+Só o mês corrente, do dia 1 até hoje (dia útil, a regra de `diaDaFixa`);
+mês fechado não se mexe. Desmarcada pela pessoa (`false`) não volta. Fatura
+fica fora. Débito que falhou ou mudou de valor aparece na conferência do
+saldo dos bancos da Início. Regras em
+[`debitoAutomatico.ts`](src/utils/debitoAutomatico.ts); `prova77` (10).
+
 Consolidação vive no `DadosMes` de cada **conta**, mas a fixa é do **mês**.
 Somar percorrendo as chaves do extrato conta a mesma fixa uma vez por conta —
 com três contas, triplicava. Usar `resolverFixaDoMes` de
