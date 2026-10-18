@@ -132,6 +132,18 @@ mês fechado não se mexe. Desmarcada pela pessoa (`false`) não volta. Fatura
 fica fora. Débito que falhou ou mudou de valor aparece na conferência do
 saldo dos bancos da Início. Regras em
 [`debitoAutomatico.ts`](src/utils/debitoAutomatico.ts); `prova77` (10).
+Na Início (18/10/2026, pedido dele), o quadro **"Débitos automáticos"** fica
+ao lado de "Confira seus saldos" (no celular, embaixo) e NÃO some: os
+vencidos até hoje pedem Confere / Outro valor (`fixasValorOverride`) / Não
+saiu (`fixasConsolidadas = false`, volta para as contas a pagar); os que
+vencem depois aparecem como "agendado"; sem nenhum, diz que não há. Conferido
+em `debitosConferidos` do mês (`debitosDoMes`, `DebitosAutomaticosCard`).
+
+**Transferência em Lançamentos** (18/10/2026, pedido dele): banco ↔ banco e
+banco ↔ dinheiro, no computador e no celular, sem categoria (grava
+"Transferência", fora do realizado). Banco → dinheiro é "Saque", dinheiro →
+banco "Depósito"; na carteira vai o nome do banco. Regras em
+[`transferencia.ts`](src/utils/transferencia.ts).
 
 Consolidação vive no `DadosMes` de cada **conta**, mas a fixa é do **mês**.
 Somar percorrendo as chaves do extrato conta a mesma fixa uma vez por conta —
