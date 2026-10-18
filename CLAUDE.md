@@ -225,7 +225,8 @@ frase, de propósito.
 
 **"Confira o saldo dos bancos" na Início** (18/10/2026, pedido do
 Guilherme), no computador e no celular, só no mês corrente: uma linha por
-conta de banco não conferida há 7 dias (`saldoBancoData` em qualquer mês),
+conta de banco ainda não conferida HOJE (`saldoBancoData`; era 7 dias e
+virou diário no mesmo dia, pedido dele),
 com o saldo de hoje no app (`saldoFinalConta`, o do Radar), "Confere" e
 "Está diferente". Grava no MESMO campo da caixa de saldo de Lançamentos:
 "Confere" só a data; outro valor, `saldoBanco` + data, e mostra a diferença
