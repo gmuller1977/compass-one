@@ -42,7 +42,12 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
   const salvar = (contaId: string) => {
     const n = parseValor(texto)
     if (n === null || texto.trim() === '') { setErro('Digite o saldo, por exemplo 1.234,56.'); return }
-    if (n <= 0) { setErro('Saldo zerado ou negativo se ajusta em Lançamentos.'); return }
+    if (contaId === CARTEIRA.id ? n < 0 : n <= 0) {
+      setErro(contaId === CARTEIRA.id
+        ? 'O dinheiro não fica negativo: digite zero ou mais.'
+        : 'Saldo de banco zerado ou negativo ainda não dá para registrar aqui. Confira os lançamentos em Lançamentos.')
+      return
+    }
     updateExtratoMes(chaveDoMes(contaId, ano, mes), prev => informarSaldo(prev ?? vazio, fmt(n), hoje))
     setEditando(null); setTexto(''); setErro('')
   }

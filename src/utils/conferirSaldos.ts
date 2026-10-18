@@ -92,7 +92,12 @@ export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
       const k = chaveDoMes(conta.id, ano, mes)
       const dm = deps.extratoData[k]
       const v = parseBRL(dm?.saldoBanco ?? '')
-      const informado = v > 0 ? v : null
+      // Banco: zero ou negativo não é informado, a regra de saldoFinalConta.
+      // Carteira: o informado não entra na base, então zero vale (a pessoa
+      // gastou todo o dinheiro e o app ainda acha que sobra).
+      const informado = conta.id === CARTEIRA.id
+        ? ((dm?.saldoBanco ?? '').trim() && v >= 0 ? v : null)
+        : (v > 0 ? v : null)
       const semInformado = dm ? { ...deps, extratoData: { ...deps.extratoData, [k]: { ...dm, saldoBanco: '' } } } : deps
       const calculado = conta.id === CARTEIRA.id
         ? saldoFinalDinheiro(ano, mes, deps)
