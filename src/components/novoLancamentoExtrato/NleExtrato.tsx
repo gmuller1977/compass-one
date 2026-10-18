@@ -6,6 +6,7 @@ import {
   type CatFixa, type Lancamento, type DadosMes, type TipoLanc, type FormaPag, type Memoria,
 } from './NleShared'
 import NleExtratoMobile from './NleExtratoMobile'
+import type { DestinoTransferencia } from '../../utils/transferencia'
 import { M } from '../mobile/estilo'
 
 export type Props = {
@@ -44,6 +45,10 @@ export type Props = {
   fDesc: string
   fValor: string
   fPag: FormaPag
+  /** Transferência: a outra conta (banco ou 'dinheiro'). */
+  fContaDestino: string
+  setFContaDestino: (v: string) => void
+  destinosTransf: DestinoTransferencia[]
   categoriasSelect: Categoria[]
   /** Abre a caixa de criar categoria sem sair do lançamento. */
   onNovaCategoria: () => void

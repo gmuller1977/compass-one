@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { ehCartaoCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, fmt, NOMES_MESES, FORMAS_SAI, FORMAS_ENT,
+  COR, fmt, NOMES_MESES, formasDoLancamento,
   realcarFoco, removerRealce, diaSemana,
   formaPagCategoria, formaRecebCategoria,
   type CatFixa, type DadosMes, type TipoLanc, type FormaPag,
@@ -10,6 +10,7 @@ import {
   REALCE_ERRO,
 } from './NleShared'
 import { IconeCat } from '../IconeCat'
+import { destinosDaTransferencia } from '../../utils/transferencia'
 
 type Props = {
   isMobile: boolean
@@ -236,14 +237,14 @@ export default function NleDesktopPanel({
           )}
 
           {/* Forma de pagamento */}
-          {!isDinheiro && (!editandoFixaId || (editandoFixaId && !fixaEhAutomatica)) && (
+          {(isDinheiro ? !editandoFixaId : (!editandoFixaId || (editandoFixaId && !fixaEhAutomatica))) && (
             <div style={{marginBottom:14}}>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5,marginBottom:5}}>
                 {fTipo === 'entrada' ? 'Forma de recebimento' : 'Forma de pagamento'}
               </div>
               <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                {(fTipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).filter(p => isDinheiro || p.id !== 'dinheiro').map(p => (
+                {formasDoLancamento(fTipo, isDinheiro).map(p => (
                   <button key={p.id} onClick={() => { setFPag(p.id); if(p.id!=='transferencia') setFContaDestino('') }} style={{
                     padding:'6px 12px',borderRadius:8,
                     border:`1.5px solid ${fPag===p.id?COR.azul:'#e2e8f0'}`,
@@ -283,8 +284,8 @@ export default function NleDesktopPanel({
                 style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                   fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
                 <option value="">Selecione a conta...</option>
-                {contasExtrato.filter(c => c.id !== contaIdEfetivo).map(c=>(
-                  <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
+                {destinosDaTransferencia(contasExtrato, contaIdEfetivo).map(c=>(
+                  <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}
               </select>
             ) : (

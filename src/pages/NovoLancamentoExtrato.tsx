@@ -29,6 +29,7 @@ import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategor
 import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
 import ModalTopo from '../components/ModalTopo'
+import { CARTEIRA_ID, descricoesDaTransferencia, destinosDaTransferencia } from '../utils/transferencia'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -136,6 +137,8 @@ export default function NovoLancamentoExtrato() {
   const isDinheiro = tabPrincipal === 'dinheiro'
 
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
+  // Banco transfere para outro banco ou para o dinheiro; o dinheiro, para um banco.
+  const destinosTransf = destinosDaTransferencia(contasExtrato, contaIdEfetivo)
   const dados = extratoData as Record<string, DadosMes>
   // Os mesmos Deps que o Radar monta: a cascata e a projecao do saldo tem de
   // olhar exatamente os mesmos dados.
@@ -474,8 +477,7 @@ export default function NovoLancamentoExtrato() {
     if (l.formaPagamento === 'transferencia') {
       const tipoOposto = l.tipo === 'saida' ? 'entrada' : 'saida'
       const mesStr = String(mes+1).padStart(2,'0')
-      const destino = contasExtrato.find(ct => {
-        if (ct.id === contaIdEfetivo) return false
+      const destino = destinosTransf.find(ct => {
         const d = (extratoData as Record<string, DadosMes>)[`${ct.id}-${ano}-${mesStr}`]
         return d?.lancamentos?.[dia]?.some(
           lc => lc.valor === l.valor && lc.tipo === tipoOposto && lc.formaPagamento === 'transferencia'
@@ -914,11 +916,12 @@ export default function NovoLancamentoExtrato() {
     if (fPag === 'transferencia' && !editandoId) {
       if (valor <= 0 || !fContaDestino) return
       const diaFuturoAlvo = ehDiaFuturo(diaSel)
-      const contaDestNome = contasExtrato.find(c => c.id === fContaDestino)?.nome ?? ''
-      const contaOriNome  = contaInfo?.nome ?? ''
+      const nomeDaConta = (id: string) => id === CARTEIRA_ID ? 'Dinheiro' : (contasExtrato.find(c => c.id === id)?.nome ?? '')
       const tipoOposto: TipoLanc = fTipo === 'saida' ? 'entrada' : 'saida'
-      const descPrimaria = fDesc.trim() || (fTipo === 'saida' ? `→ ${contaDestNome}` : `← ${contaDestNome}`)
-      const descEspelho  = fDesc.trim() || (tipoOposto === 'entrada' ? `← ${contaOriNome}` : `→ ${contaOriNome}`)
+      const { primaria: descPrimaria, espelho: descEspelho } = descricoesDaTransferencia({
+        origemId: contaIdEfetivo, destinoId: fContaDestino, tipo: fTipo,
+        nomeOrigem: nomeDaConta(contaIdEfetivo), nomeDestino: nomeDaConta(fContaDestino), texto: fDesc,
+      })
       updateMes(prev => ({
         ...prev,
         lancamentos: {
@@ -943,6 +946,7 @@ export default function NovoLancamentoExtrato() {
           }],
         },
       }))
+      toast('Transferência registrada')
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFContaDestino('')
       if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
       return
@@ -1306,6 +1310,9 @@ export default function NovoLancamentoExtrato() {
               fDesc={fDesc}
               fValor={fValor}
               fPag={fPag}
+              fContaDestino={fContaDestino}
+              setFContaDestino={setFContaDestino}
+              destinosTransf={destinosTransf}
               categoriasSelect={categoriasSelect}
               onNovaCategoria={() => setNovaCatAberta(true)}
               subDescsDisponiveis={subDescsDisponiveis}

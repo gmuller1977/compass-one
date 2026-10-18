@@ -119,6 +119,16 @@ export const FORMAS_ENT: { id: FormaPag; label: string }[] = [
   { id:'transferencia', label:'Transferência' },
 ]
 
+/**
+ * As formas oferecidas no lançamento. No dinheiro só há o próprio dinheiro e
+ * a transferência para um banco (depósito); no banco, as de sempre, com a
+ * transferência para outro banco ou para o dinheiro (saque).
+ */
+export function formasDoLancamento(tipo: 'saida' | 'entrada', isDinheiro: boolean): { id: FormaPag; label: string }[] {
+  if (isDinheiro) return [{ id:'dinheiro', label:'Dinheiro' }, { id:'transferencia', label:'Transferência' }]
+  return (tipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).filter(p => p.id !== 'dinheiro')
+}
+
 // ── Funções auxiliares ────────────────────────────────────────────────
 // A regra do dia da fixa mora em utils/diaDaFixa: o motor de previsão e a tela
 // Início usam a mesma. Reexportada aqui para Lançamentos não mudar de import.
