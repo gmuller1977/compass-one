@@ -293,6 +293,23 @@ export default function NleExtratoMobile({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Mesma ordem do computador: tipo, forma de pagamento, categoria. */}
+              <div>
+                <span style={rotuloCampo}>{fTipo === 'entrada' ? 'Como recebeu' : 'Como pagou'}</span>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {formasDoLancamento(fTipo, isDinheiro).map(p => {
+                    const on = fPag === p.id
+                    return (
+                      <button key={p.id} onClick={() => { setFPag(p.id as FormaPag); if (p.id !== 'transferencia') setFContaDestino('') }} aria-pressed={on} style={{
+                        minHeight: 40, padding: '0 16px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 14, fontWeight: 700, border: on ? 'none' : `1.5px solid ${COR.borda}`,
+                        background: on ? COR.azul : '#fff', color: on ? '#fff' : '#475569',
+                      }}>{p.label}</button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Transferência não pede categoria: só a outra conta. */}
               {fPag === 'transferencia' ? (
                 <label>
@@ -370,22 +387,6 @@ export default function NleExtratoMobile({
                 <input value={fDesc} onChange={e => setFDesc(e.target.value)} placeholder="Ex.: Mercado Extra"
                   style={campo} onKeyDown={e => e.key === 'Enter' && lancar()} />
               </label>
-
-              <div>
-                <span style={rotuloCampo}>{fTipo === 'entrada' ? 'Como recebeu' : 'Como pagou'}</span>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {formasDoLancamento(fTipo, isDinheiro).map(p => {
-                    const on = fPag === p.id
-                    return (
-                      <button key={p.id} onClick={() => { setFPag(p.id as FormaPag); if (p.id !== 'transferencia') setFContaDestino('') }} aria-pressed={on} style={{
-                        minHeight: 40, padding: '0 16px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
-                        fontSize: 14, fontWeight: 700, border: on ? 'none' : `1.5px solid ${COR.borda}`,
-                        background: on ? COR.azul : '#fff', color: on ? '#fff' : '#475569',
-                      }}>{p.label}</button>
-                    )
-                  })}
-                </div>
-              </div>
             </div>
 
             <button onClick={lancar} style={{
