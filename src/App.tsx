@@ -29,6 +29,7 @@ import { guardarCodigoRecebido, registrarIndicacaoPendente } from './utils/indic
 import AvisoInatividade from './components/AvisoInatividade'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
+import ConfirmarDebitoAutomatico from './components/ConfirmarDebitoAutomatico'
 import { NORTE_ATIVO } from './utils/norteAtivo'
 import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
@@ -54,7 +55,7 @@ function AppShell({ children }: { children: ReactNode }) {
     registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isMobile) return <>{children}<AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
+  if (isMobile) return <>{children}<AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
   return (
     <>
       <Sidebar />
@@ -64,6 +65,7 @@ function AppShell({ children }: { children: ReactNode }) {
       </div>
       <IndicadorGravacao />
       <SincronizarLembrete />
+      <ConfirmarDebitoAutomatico />
       <AvisoNovaVersao />
       <ConviteCompartilhamento />
       <AvisoPermissao />
