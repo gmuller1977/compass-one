@@ -1,3 +1,4 @@
+import { ehFaturaDoCartao, MSG_FATURA_NAO_E_CATEGORIA } from '../utils/novaCategoria'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -371,6 +372,11 @@ export default function Configuracoes() {
   function salvarCategoria() {
     if (!formCat.nome.trim()) return setErroCat('Informe o nome da categoria')
     setErroCat('')
+    // A fatura do cartão não é categoria (ehFaturaDoCartao). Só barra o nome
+    // novo: quem já tem uma assim consegue editar o resto até excluí-la.
+    const nomeAntigo = editCatId ? categorias.find(c => c.id === editCatId)?.nome : undefined
+    if (formCat.nome.trim() !== nomeAntigo && ehFaturaDoCartao(formCat.nome, contas.filter(c => c.tipo === 'cartao').flatMap(c => [c.nome, c.banco, c.apelido ?? ''])))
+      return setErroCat(MSG_FATURA_NAO_E_CATEGORIA)
     // A validacao ja usava trim, mas o que ia para o banco era o texto cru.
     // Um "Financiamento " com espaco no fim nao casava com a linha do plano
     // em nenhuma comparacao por nome, e a categoria sumia do Radar.

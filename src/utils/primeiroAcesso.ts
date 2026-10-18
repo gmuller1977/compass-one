@@ -1,6 +1,6 @@
 import type { Categoria, Conta, PlanoAnoData, TipoMovimento, FormaPagamentoCategoria } from '../context/AppContext'
 import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
-import { montarCategoria } from './novaCategoria'
+import { montarCategoria, ehFaturaDoCartao } from './novaCategoria'
 import { buscarCategoria } from './categoriaIcone'
 import { mesDaFaturaDaCompra, tipoNaFatura } from './lancamentoRapido'
 import { mesDoGastoNoCartao } from './lancarPorMes'
@@ -321,13 +321,17 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
 
   // Nome digitado pela pessoa: a categoria que já existe com esse nome
   // (sem acento e caixa), ou uma nova pela regra de criar no lançamento.
+  // A fatura do cartão escrita como conta ("Cartão de crédito") não vira
+  // categoria: os cartões informados já trazem a fatura (ehFaturaDoCartao).
+  const nomesCartoes = [...cartoes.map(c => c.cartao), ...contas.filter(c => c.tipo === 'cartao').flatMap(c => [c.nome, c.banco, c.apelido ?? ''])]
   const pelaPessoa = (nome: string): Categoria | null => {
+    if (ehFaturaDoCartao(nome, nomesCartoes)) return null
     const existente = buscarCategoria(cats.filter(c => c.tipo === 'saida'), nome)
     if (existente) {
       if (!existente.ativa) cats = cats.map(c => (c.id === existente.id ? { ...c, ativa: true } : c))
       return existente
     }
-    const nova = montarCategoria(nome, { tipo: 'saida', isDinheiro: false, contaId: r.banco ? idBanco : undefined, categorias: cats })
+    const nova = montarCategoria(nome, { tipo: 'saida', isDinheiro: false, contaId: r.banco ? idBanco : undefined, categorias: cats, nomesCartoes })
     if ('erro' in nova) return null
     cats = [...cats, nova]
     return nova

@@ -33,6 +33,8 @@ export type Contexto = {
   /** A fatura do cartão cria categoria de cartão (sem conta de débito). */
   isCartao?: boolean
   categorias: Categoria[]
+  /** Nomes dos cartões cadastrados: categoria com o nome deles é a fatura. */
+  nomesCartoes?: string[]
   /**
    * Grupo escolhido na caixa. Vence a sugestão — o campo nasce preenchido
    * com ela, então quando os dois diferem é porque o usuário trocou de
@@ -69,10 +71,29 @@ function sugestaoDe(nome: string, tipo: TipoCategoria) {
   return CATEGORIAS_PADRAO.find(c => c.tipo === tipo && normalizar(c.nome) === alvo)
 }
 
+/**
+ * O nome é a FATURA do cartão, e não um gasto ("Cartão de crédito", "Fatura
+ * Nubank", o nome do próprio cartão). Isso não pode virar categoria
+ * (18/10/2026, Guilherme: "ela não pode existir"): a fatura entra pelo
+ * cartão, e as compras dela já estão nas categorias do que foi comprado.
+ * Uma categoria assim contaria a mesma compra duas vezes. "Anuidade do
+ * cartão" é gasto de verdade e passa.
+ */
+export function ehFaturaDoCartao(nomeCru: string, nomesCartoes: string[] = []): boolean {
+  const n = normalizar(nomeCru).replace(/\s+/g, ' ')
+  if (!n) return false
+  if (/^(a |minha |meu )?(fatura|cartao|cartoes)\b/.test(n)) return true
+  return nomesCartoes.some(c => normalizar(c) && normalizar(c) === n)
+}
+
+export const MSG_FATURA_NAO_E_CATEGORIA =
+  'A fatura do cartão não é uma categoria: ela entra pelo próprio cartão. Lance cada compra na categoria do que foi comprado.'
+
 export function montarCategoria(nomeCru: string, ctx: Contexto): Categoria | Recusa {
   const nome = nomeCru.trim().replace(/\s+/g, ' ')
   if (!nome) return { erro: 'Dê um nome à categoria.' }
   if (nome.length > 40) return { erro: 'Nome muito longo — até 40 caracteres.' }
+  if (ehFaturaDoCartao(nome, ctx.nomesCartoes)) return { erro: MSG_FATURA_NAO_E_CATEGORIA }
 
   // buscarCategoria já normaliza acento e caixa, então "mercado" encontra
   // "Mercado". Sinônimo ele não pega: "supermercado" nasce como categoria

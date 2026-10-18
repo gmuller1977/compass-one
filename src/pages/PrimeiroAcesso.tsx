@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { parseBRL } from '../utils/moeda'
 import { COR } from '../utils/cores'
+import { ehFaturaDoCartao } from '../utils/novaCategoria'
 import { marcarVisto } from '../utils/vistoNaConta'
 import { planoDoPrimeiroAcesso, primeiroMesCompleto, ultimoMesDoPlanoInicial } from '../utils/primeiroPlano'
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
@@ -349,6 +350,7 @@ export default function PrimeiroAcesso() {
           return (
             <Bloco key={i} onRemover={() => set('outrasContas', e.outrasContas.filter((_, j) => j !== i))}>
               <NomeLivre valor={c.nome} onMudar={x => mudar('nome', x)} placeholder="Qual conta? Ex.: Condomínio" />
+              {ehFaturaDoCartao(c.nome, nomesCartoes) && <Dica>{AVISO_FATURA}</Dica>}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 92px', gap: 8 }}>
                 <div><Mini>Quanto, mais ou menos</Mini><Campo valor={c.valor} onMudar={x => mudar('valor', x)} placeholder="0" pequeno /></div>
                 <div><Mini>Dia</Mini><Campo valor={c.dia} onMudar={x => mudar('dia', x)} placeholder="10" pequeno numerico /></div>
@@ -391,6 +393,7 @@ export default function PrimeiroAcesso() {
         {e.outrosGastos.map((g, i) => (
           <Bloco key={i} onRemover={() => set('outrosGastos', e.outrosGastos.filter((_, j) => j !== i))}>
             <NomeLivre valor={g.nome} onMudar={x => set('outrosGastos', e.outrosGastos.map((q, j) => (j === i ? { ...q, nome: x } : q)))} placeholder="Qual gasto? Ex.: Pet" />
+            {ehFaturaDoCartao(g.nome, nomesCartoes) && <Dica>{AVISO_FATURA}</Dica>}
             <div><Mini>Por mês, mais ou menos</Mini>
               <Campo valor={g.valor} onMudar={x => set('outrosGastos', e.outrosGastos.map((q, j) => (j === i ? { ...q, valor: x } : q)))} placeholder="0" pequeno /></div>
           </Bloco>
@@ -812,6 +815,9 @@ function Campo({ valor, onMudar, placeholder, pequeno, numerico, texto, autoFoco
 
 /** Dentro da caixa azul os rótulos e as pílulas trocam para a paleta do
  *  fundo escuro (`#1e40af` no extremo claro: branco 8,7; 75% 5,1). */
+/** A fatura escrita como conta ou gasto: não vira categoria (ehFaturaDoCartao). */
+const AVISO_FATURA = 'A fatura do cartão não entra aqui: ela já vem dos cartões que você informou, e cada compra entra no gasto do que foi comprado. Este item não será gravado.'
+
 const NaCaixa = createContext(false)
 
 /** A caixa azul que entra como transição de slide (pedido do Guilherme,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
 import { montarCategoria, previaDe, gruposDisponiveis } from '../../utils/novaCategoria'
-import type { Categoria, TipoCategoria } from '../../context/AppContext'
+import { useApp, type Categoria, type TipoCategoria } from '../../context/AppContext'
 import { IconeCat } from '../IconeCat'
 import ModalTopo from '../ModalTopo'
 
@@ -38,6 +38,7 @@ export default function NleNovaCategoria({
   const [grupo, setGrupo] = useState('')
   const [erro, setErro] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const { contas } = useApp()
 
   useEffect(() => {
     if (!aberto) return
@@ -56,7 +57,8 @@ export default function NleNovaCategoria({
   const grupoEfetivo = grupo || previa.grupo
 
   function confirmar() {
-    const r = montarCategoria(nome, { tipo, isDinheiro, isCartao, contaId, categorias, grupo: grupoEfetivo })
+    const r = montarCategoria(nome, { tipo, isDinheiro, isCartao, contaId, categorias, grupo: grupoEfetivo,
+      nomesCartoes: contas.filter(c => c.tipo === 'cartao').flatMap(c => [c.nome, c.banco, c.apelido ?? '']) })
     if ('erro' in r) { setErro(r.erro); return }
     onCriar(r)
   }

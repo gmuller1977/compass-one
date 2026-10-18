@@ -3105,6 +3105,16 @@ anotados do login. Só texto, nenhum valor. Renomear para um par que já existe
 é recusado, porque juntaria duas categorias sem volta. Renomear a mãe não leva
 as variantes com cadastro próprio. `prova72` (18 invariantes).
 
+**A fatura do cartão nunca vira categoria** (18/10/2026, Guilherme: "a
+categoria de cartão de crédito não pode existir"). Nome que É a fatura
+("Cartão de crédito", "Fatura Nubank", o nome do próprio cartão) é recusado
+por `ehFaturaDoCartao` em [`novaCategoria.ts`](src/utils/novaCategoria.ts):
+no "+ Nova" (`montarCategoria`), em Configurações (nome novo) e no primeiro
+acesso, onde "Outra conta" / "Outro gasto" com esse nome avisa e não grava.
+A fatura entra pelo cartão e as compras dela já estão nas categorias; uma
+categoria assim contaria a compra duas vezes. "Anuidade do cartão" passa.
+Quem já tem uma exclui em Configurações. `prova83` (13).
+
 **O nome no cadastro tem autocomplete, e é gravado com a grafia da
 existente.** Pedido do Guilherme em 08/10/2026: o campo era aberto. Ao digitar,
 as categorias do tipo com uma palavra que começa com o digitado (sem acento e
