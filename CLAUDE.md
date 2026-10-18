@@ -2237,6 +2237,24 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   ele, categorias sugeridas ligadas, forma de pagar e conta de débito das
   marcadas, nome livre por `montarCategoria`, e a meta em `objetivos` do mês
   atual a dezembro.
+- **O primeiro plano nasce no fim do primeiro acesso** (18/10/2026, pedido
+  do Guilherme: "o cliente informou um monte de coisa mas não se usa para
+  nada"). Os valores informados viram o plano do mês corrente a dezembro, o
+  mesmo valor todo mês (`planoDoPrimeiroAcesso`, a mesma `propostaDoMes` +
+  `planoDaProposta` do Modo Descoberta, com realizado vazio), com o fim de
+  cada financiamento e parcela (`ate`), a parcela no cartão a partir do mês
+  em que a fatura vence (`desde`) e o 13º em novembro e dezembro. As contas
+  marcadas viram FIXAS com o dia, e a meta fica. Nunca por cima de um ano que
+  já tem valor planejado. Sem nenhum valor informado não há plano, e o Modo
+  Descoberta segue; as `estimativas` continuam em `planos[ano]` para ele.
+  `prova75` (16). As notas abaixo sobre "fica para o primeiro plano" e "não
+  viram fixas no primeiro dia" valem só para quem não informou valor.
+- **O fim do primeiro acesso é um guia** ("Conheça o seu Compass One", mesmo
+  dia: o cliente "fica sem rumo" ao cair na Início). As telas na ordem do
+  menu (Todo dia · Todo mês · Todo ano), cada uma uma `Escolha` com seta que
+  abre a caixa azul com o resumo do "?" (`AJUDA`, uma fonte só) e quando
+  usar. Embaixo, "Anotar meu primeiro gasto" e "Ir para o início"; é ali que
+  tudo é gravado.
 - **Fica para o primeiro plano:** valores e dias vão em
   `planos[ano].estimativas` (jsonb, sem migração). Nenhum valor no plano:
   `fimDoPlanejamento` só olha `v > 0`, e o Modo Descoberta continua. A

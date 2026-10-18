@@ -16,17 +16,14 @@ import { mesDoGastoNoCartao } from './lancarPorMes'
  * - **Na hora:** a conta do banco (com o saldo), o cartão, as categorias
  *   sugeridas ligadas, a forma de pagar de cada conta do mês, e a meta de
  *   economia nos meses que faltam do ano (`objetivos`).
- * - **No primeiro plano** (Modo Descoberta, quando o mês fechar): os valores
- *   e os dias informados ficam guardados em `estimativas`, no plano do ano.
- *   A proposta usa o realizado do mês; onde a categoria não teve lançamento,
- *   usa a estimativa. Ao criar o plano, as contas do mês viram FIXAS, com o
- *   dia de vencimento.
- *
- * Por que as contas não viram fixas logo: fixa sem valor no plano não aparece
- * para pagar em Lançamentos nem no Lançar (`semPlanoEIntocada`, e o Lançar
- * só mostra variáveis). Sem plano no primeiro mês, a pessoa não teria onde
- * lançar o aluguel. E valor no plano encerraria o Modo Descoberta
- * (`fimDoPlanejamento` olha só valores acima de zero).
+ * - **No primeiro plano, também na hora** (18/10/2026, pedido do Guilherme:
+ *   "o cliente informou um monte de coisa mas não se usa para nada"): os
+ *   valores informados viram o plano do mês corrente a dezembro, o mesmo
+ *   valor todo mês (`planoDoPrimeiroAcesso` em utils/primeiroPlano), e as
+ *   contas do mês viram FIXAS com o dia (`fixasDoPrimeiroAcesso`). Com valor
+ *   no plano elas aparecem para pagar, e o Modo Descoberta não abre.
+ *   As `estimativas` continuam guardadas no plano do ano: sem nenhum valor
+ *   informado não há plano, e a proposta do Modo Descoberta as usa.
  */
 
 /** "Visto" na conta (vistoNaConta): quem já passou, ou escolheu configurar sozinho. */
@@ -148,8 +145,12 @@ export type Respostas = {
 
 /** O que o primeiro plano lê. Guardado no plano do ano, que é jsonb: sem migração. */
 export type EstimativasIniciais = {
-  /** Por id de categoria. `ate`: último mês ("AAAA-MM") de um financiamento ou parcela. */
-  porCategoria: Record<string, { valor: number; dia?: number; fixa?: boolean; ate?: string }>
+  /**
+   * Por id de categoria. `ate`: último mês ("AAAA-MM") de um financiamento ou
+   * parcela. `desde`: primeiro mês, quando não é o de hoje (a parcela no
+   * cartão conta no mês em que a fatura vence).
+   */
+  porCategoria: Record<string, { valor: number; dia?: number; fixa?: boolean; ate?: string; desde?: string }>
   /** O 13º estimado (o salário líquido) e a categoria dele. */
   decimo?: { categoriaId: string; valor: number }
   /** `contaDoMes`: um financiamento já somado nas contas do mês, só com o fim. */
@@ -286,11 +287,13 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     cats = [...cats, nova]
     return nova
   }
-  const somar = (id: string, e: { valor: number; dia?: number; fixa?: boolean; ate?: string }) => {
+  const somar = (id: string, e: { valor: number; dia?: number; fixa?: boolean; ate?: string; desde?: string }) => {
     const ja = porCategoria[id]
-    // Duas parcelas na mesma categoria: a linha vai até a que termina por último.
+    // Duas parcelas na mesma categoria: a linha vai da que começa primeiro
+    // até a que termina por último.
     const ate = ja?.ate && e.ate ? (ja.ate > e.ate ? ja.ate : e.ate) : undefined
-    porCategoria[id] = ja ? { ...ja, valor: ja.valor + e.valor, ate } : e
+    const desde = ja?.desde && e.desde ? (ja.desde < e.desde ? ja.desde : e.desde) : undefined
+    porCategoria[id] = ja ? { ...ja, valor: ja.valor + e.valor, ate, ...(desde ? { desde } : {}) } : e
   }
 
   if (r.renda > 0) {
@@ -345,7 +348,8 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
       // realizado): a última é esse mês + faltam − 1, não hoje + faltam − 1.
       const gasto = mesDoGastoNoCartao(cartao, hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
       const parc = garantir(NOME_PARCELADAS, 'saida')
-      somar(parc.id, { valor: p.valor, ate: ultimoMes(new Date(gasto.ano, gasto.mes, 1), faltam) })
+      somar(parc.id, { valor: p.valor, ate: ultimoMes(new Date(gasto.ano, gasto.mes, 1), faltam),
+        desde: `${gasto.ano}-${String(gasto.mes + 1).padStart(2, '0')}` })
       // A compra foi no mês da fatura da parcela 1.
       const tc = inicio.ano * 12 + inicio.mes - (primeira - 1)
       const baseId = `pa-${Date.now()}-${i}`

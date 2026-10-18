@@ -37,6 +37,8 @@ export type LinhaProposta = {
   estimado?: boolean
   /** Último mês ("AAAA-MM") de um financiamento ou parcela: depois dele, zero. */
   ate?: string
+  /** Primeiro mês ("AAAA-MM") da parcela no cartão: antes dele, zero. */
+  desde?: string
 }
 
 export type Proposta = {
@@ -92,6 +94,7 @@ export function propostaDoMes({
           ehCartao: c.tipoMovimento === 'cartao',
           ...(estimado ? { estimado: true } : {}),
           ...(est?.ate ? { ate: est.ate } : {}),
+          ...(estimado && est?.desde ? { desde: est.desde } : {}),
         }
       })
       // Categoria sem movimento no mês não entra: propor zero é ruído, e o
@@ -136,7 +139,10 @@ export function planoDaProposta(
   const chave = (l: LinhaProposta) => `${l.tipo}|${l.nome}|${l.descricao ?? ''}`
   // Financiamento e parcela informados no primeiro acesso terminam: depois
   // da última, o plano não inventa mais nenhuma.
-  const dentro = (l: LinhaProposta, i: number) => !l.ate || `${anoDoPlano}-${String(i + 1).padStart(2, '0')}` <= l.ate
+  const dentro = (l: LinhaProposta, i: number) => {
+    const m = `${anoDoPlano}-${String(i + 1).padStart(2, '0')}`
+    return (!l.ate || m <= l.ate) && (!l.desde || m >= l.desde)
+  }
   const v = (l: LinhaProposta) => {
     const val = valores?.[chave(l)] ?? l.valor
     return Array(12).fill(0).map((_, i) => (i >= mesInicio && dentro(l, i) ? val : 0))
@@ -162,4 +168,27 @@ export function planoDaProposta(
 /** A chave que a tela usa para guardar o valor editado de uma linha. */
 export function chaveDaLinha(l: LinhaProposta) {
   return `${l.tipo}|${l.nome}|${l.descricao ?? ''}`
+}
+
+/**
+ * O primeiro plano, montado NA HORA com o que a pessoa contou no primeiro
+ * acesso (18/10/2026, pedido do Guilherme: "o cliente informou um monte de
+ * coisa mas não se usa para nada... poderia ser aproveitado para já montar
+ * seu primeiro planejamento repetindo os valores mês a mês").
+ *
+ * É a mesma proposta do Modo Descoberta, só que sem mês observado: o
+ * realizado é vazio, então toda linha sai da estimativa. Do mês corrente a
+ * dezembro, com o fim de cada financiamento e parcela (`ate`) e o 13º em
+ * novembro e dezembro. Sem nenhum valor informado, devolve `null` e o Modo
+ * Descoberta segue como antes.
+ */
+export function planoDoPrimeiroAcesso(
+  categorias: Categoria[], estimativas: EstimativasIniciais | undefined, hoje = new Date(),
+): PlanoAnoData | null {
+  if (!estimativas) return null
+  const ano = hoje.getFullYear()
+  const mes = hoje.getMonth()
+  const p = propostaDoMes({ ano, mes, extratoData: {}, faturaData: {}, contas: [], categorias, estimativas })
+  const plano = planoDaProposta(p, mes, undefined, ano)
+  return plano.entradas.length || plano.saidas.length ? plano : null
 }

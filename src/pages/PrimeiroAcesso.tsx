@@ -4,12 +4,13 @@ import { useApp } from '../context/AppContext'
 import { parseBRL } from '../utils/moeda'
 import { COR } from '../utils/cores'
 import { marcarVisto } from '../utils/vistoNaConta'
-import { primeiroMesCompleto } from '../utils/descoberta'
+import { planoDoPrimeiroAcesso } from '../utils/primeiroPlano'
+import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import { LogoCompass } from '../components/LogoCompass'
 import {
   CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, fechamentoDoVencimento,
-  CHAVE_PRIMEIRO_ACESSO, type FormaDaConta, type Respostas,
+  CHAVE_PRIMEIRO_ACESSO, fixasDoPrimeiroAcesso, type FormaDaConta, type Respostas,
 } from '../utils/primeiroAcesso'
 
 /**
@@ -37,6 +38,26 @@ const R = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency
 // Gráfico sobre branco: 3:1 no mínimo (CLAUDE.md).
 const BARRA = { contas: '#1e40af', dia: '#b45309', parcelas: '#3b82f6', sobra: '#16a34a' }
 
+/**
+ * O guia do fim do primeiro acesso (18/10/2026, pedido do Guilherme: ao
+ * terminar, "o cliente fica sem rumo"). As telas na ordem do menu, com o
+ * resumo do "?" de cada uma (ajudaDasTelas, uma fonte só) e quando usar.
+ */
+const GUIA: { quando: string; telas: { tela: TelaAjuda; icone: string; uso: string }[] }[] = [
+  { quando: 'Todo dia', telas: [
+    { tela: 'inicio', icone: 'ti-home', uso: 'Abra para saber, num olhar, se o mês vai fechar no azul e quanto ainda dá para gastar.' },
+    { tela: 'lancamentos', icone: 'ti-plus', uso: 'Anote cada gasto na hora, em poucos segundos. É o que deixa todos os números do app de verdade.' },
+    { tela: 'radar', icone: 'ti-radar-2', uso: 'Veja, grupo por grupo, onde você está dentro do plano e onde passou.' },
+  ] },
+  { quando: 'Todo mês', telas: [
+    { tela: 'revisao', icone: 'ti-refresh', uso: 'No começo do mês, olhe o que aconteceu no anterior e ajuste o que precisar.' },
+    { tela: 'simulador', icone: 'ti-calculator', uso: 'Antes de uma compra maior, veja se cabe no bolso e qual forma de pagar é melhor.' },
+  ] },
+  { quando: 'Todo ano', telas: [
+    { tela: 'planejamento', icone: 'ti-calendar-stats', uso: 'O seu plano já começa preenchido. Ajuste os valores e defina quanto quer guardar por mês.' },
+  ] },
+]
+
 type Estado = {
   banco: string; bancoOutro: string; saldo: string
   renda: string; diaRenda: number; decimo: '' | 'sim' | 'nao'
@@ -61,6 +82,7 @@ export default function PrimeiroAcesso() {
   const { user, perfil, contas, categorias, planos, faturaData, setContas, setCategorias, setPlanos, setFaturaData, setOnboardingCompleto } = useApp()
   const [passo, setPasso] = useState(0)
   const [e, setE] = useState<Estado>(INICIAL)
+  const [aberta, setAberta] = useState<TelaAjuda | ''>('')
   const topoRef = useRef<HTMLDivElement>(null)
   const set = <K extends keyof Estado>(k: K, v: Estado[K]) => setE(p => ({ ...p, [k]: v }))
 
@@ -108,10 +130,15 @@ export default function PrimeiroAcesso() {
   function concluir(destino: string) {
     const ano = new Date().getFullYear()
     const r = aplicarRespostas({ r: respostas, nomeTitular: nomeCompleto, contas, categorias, planoDoAno: planos[ano], faturaData })
+    // O primeiro plano nasce aqui, com o que a pessoa contou (18/10/2026).
+    // Só num ano ainda sem valor planejado: nunca por cima de um plano.
+    const jaTemPlano = [...(planos[ano]?.entradas ?? []), ...(planos[ano]?.saidas ?? [])].some(l => l.v.some(v => v > 0))
+    const novo = jaTemPlano ? null : planoDoPrimeiroAcesso(r.categorias, r.plano.estimativas)
     setContas(r.contas)
     if (r.faturas !== faturaData) setFaturaData(r.faturas)
-    setCategorias(r.categorias)
-    setPlanos(prev => ({ ...prev, [ano]: r.plano }))
+    // Com plano, as contas do mês viram FIXAS com o dia: aparecem para pagar.
+    setCategorias(novo ? fixasDoPrimeiroAcesso(r.categorias, r.plano.estimativas) : r.categorias)
+    setPlanos(prev => ({ ...prev, [ano]: novo ? { ...r.plano, ...novo } : r.plano }))
     setOnboardingCompleto(true)
     void marcarVisto(user, CHAVE_PRIMEIRO_ACESSO)
     navigate(destino, { replace: true })
@@ -122,15 +149,9 @@ export default function PrimeiroAcesso() {
     navigate('/configuracoes', { replace: true })
   }
 
-  // O primeiro plano nasce de um mês INTEIRO (utils/descoberta): começando
-  // depois do dia 5, é o mês seguinte. As frases dizem o mês, nunca "30 dias".
-  const completo = primeiroMesCompleto()
-  const mesCompleto = MESES[completo.mes]
-  const mesDoPlano = MESES[(completo.mes + 1) % 12]
-  const comecaNoMeio = completo.mes !== new Date().getMonth()
-  const maiuscula = (m: string) => m[0].toUpperCase() + m.slice(1)
+  const mesAtual = MESES[new Date().getMonth()]
 
-  const seguir = () => setPasso(p => Math.min(TOTAL + 1, p + 1))
+  const seguir = () => setPasso(p => Math.min(TOTAL + 2, p + 1))
   const voltar = passo > 0 ? () => setPasso(p => p - 1) : undefined
 
   let titulo = '', sub = '', corpo: ReactNode = null, pe: ReactNode = null
@@ -329,7 +350,7 @@ export default function PrimeiroAcesso() {
           </Bloco>
         ))}
         <Adicionar onClick={() => set('outrosGastos', [...e.outrosGastos, { nome: '', valor: '' }])}>Outro gasto</Adicionar>
-        <Dica>Não faz ideia? Tudo bem, pule. Anotando os gastos de {mesCompleto}, o app descobre para você.</Dica>
+        <Dica>Não faz ideia? Tudo bem, pule. Anotando os gastos, o Radar mostra quanto vai em cada um.</Dica>
       </Cartao>
     </>)
     pe = <Pe rotulo="Continuar" onSeguir={seguir} />
@@ -412,6 +433,11 @@ export default function PrimeiroAcesso() {
     const pct = (v: number) => (s.renda > 0 ? Math.max(0, Math.min(100, (v / s.renda) * 100)) : 0)
     const mesFim = (() => { const t = hoje.getMonth() + s.mesesDeParcela - 1; return `${MESES[t % 12]} de ${hoje.getFullYear() + Math.floor(t / 12)}` })()
     const meta = respostas.meta
+    // O que entrou no plano montado em `concluir` (planoDoPrimeiroAcesso).
+    const partes = [s.renda > 0 && 'o salário', s.contas > 0 && 'as contas do mês', s.diaADia > 0 && 'o dia a dia', s.parcelas > 0 && 'as parcelas']
+      .filter((x): x is string => !!x)
+    const temPlano = partes.length > 0
+    const partesDoPlano = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} e ${partes[partes.length - 1]}` : partes[0]
     titulo = nome ? `Pronto, ${nome}! Olha o que já descobrimos` : 'Pronto! Olha o que já descobrimos'
     sub = 'Com o que você contou, já dá para ver o seu mês de um jeito novo.'
     const destaque = semRenda
@@ -419,12 +445,12 @@ export default function PrimeiroAcesso() {
       : s.sobra >= 0 && s.diaADia > 0 ? (<>
           <Rotulo>Sobra no fim do mês</Rotulo>
           <div style={numeroGrande}>{R(s.sobra)}</div>
-          <p style={ola}>É o que fica do seu salário depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, quando {mesCompleto} fechar a gente confere esse número com os seus gastos de verdade.</p>
+          <p style={ola}>É o que fica do seu salário depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, o Radar vai mostrando, ao longo do mês, quanto você gasta de verdade.</p>
         </>)
       : s.sobra >= 0 ? (<>
           <Rotulo>Sobra para o dia a dia</Rotulo>
           <div style={numeroGrande}>{R(s.sobra)}</div>
-          <p style={ola}>É o que fica depois das contas{s.parcelas ? ' e das parcelas' : ''}. <b style={{ color: COR.texto }}>Daqui ainda saem</b> mercado, combustível, farmácia e o resto. Anotando {mesCompleto}, a gente descobre quanto vai nisso e quanto sobra de verdade.</p>
+          <p style={ola}>É o que fica depois das contas{s.parcelas ? ' e das parcelas' : ''}. <b style={{ color: COR.texto }}>Daqui ainda saem</b> mercado, combustível, farmácia e o resto. Anotando os gastos, o Radar mostra quanto vai nisso e quanto sobra de verdade.</p>
         </>)
       : (<>
           <Rotulo>Seu mês hoje</Rotulo>
@@ -473,17 +499,39 @@ export default function PrimeiroAcesso() {
         </Cartao>
       )}
       <Cartao>
-        <Rotulo>Agora, o seu próximo passo</Rotulo>
-        <p style={ola}>Anote seus gastos {comecaNoMeio ? <>de hoje até o fim de <b style={{ color: COR.texto }}>{mesCompleto}</b></> : <>até o fim de <b style={{ color: COR.texto }}>{mesCompleto}</b></>}, do jeito que der. Leva poucos segundos cada um. Não precisa acertar tudo: é só para conhecer o seu mês de verdade.</p>
-        {comecaNoMeio && <Dica>O seu plano parte de um mês inteiro. Como {MESES[new Date().getMonth()]} já começou, o mês que conta é {mesCompleto}. O que você anotar até lá já aparece no app e serve de treino.</Dica>}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, textAlign: 'center', fontSize: 12, color: COR.textoSuave }}>
-          <Etapa icone="ti-pencil" forte titulo="Hoje">anote o primeiro gasto</Etapa>
-          <Etapa icone="ti-calendar" titulo={maiuscula(mesCompleto)}>o mês inteiro anotado</Etapa>
-          <Etapa icone="ti-compass" titulo={maiuscula(mesDoPlano)}>seu plano pronto</Etapa>
-        </div>
+        {temPlano ? (<>
+          <Rotulo>Seu plano já está pronto</Rotulo>
+          <p style={ola}>Com o que você contou, montamos o seu planejamento de <b style={{ color: COR.texto }}>{mesAtual} a dezembro</b>: {partesDoPlano}, o mesmo valor todo mês.</p>
+          <Dica>Os valores são aproximados, e tudo bem. Conforme você anota os gastos, o Radar mostra onde o plano acertou, e você ajusta no Planejamento.</Dica>
+        </>) : (<>
+          <Rotulo>Seu plano</Rotulo>
+          <p style={ola}>Sem valores ainda, o plano nasce dos seus gastos: quando um mês inteiro estiver anotado, o app monta o planejamento com os seus números.</p>
+        </>)}
       </Cartao>
     </>)
-    pe = <Pe rotulo="Anotar meu primeiro gasto" onSeguir={() => concluir('/lancar')} pular="Agora não, só quero olhar o app" onPular={() => concluir('/')} />
+    pe = <Pe rotulo="Continuar" onSeguir={seguir} />
+  }
+
+  if (passo === 8) {
+    titulo = 'Conheça o seu Compass One'
+    sub = 'Toque em cada parte para ver para que serve. Fica tudo no menu, quando precisar.'
+    corpo = (<>
+      {GUIA.map((g, i) => (
+        // O primeiro grupo desce para o rótulo não cair no azul do topo.
+        <div key={g.quando} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: i === 0 ? 22 : 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: COR.textoSuave, margin: '4px 4px 0' }}>{g.quando}</div>
+          {g.telas.map(t => (
+            <Escolha key={t.tela} icone={t.icone} rotulo={AJUDA[t.tela].titulo} on={aberta === t.tela} seta
+              onTocar={() => setAberta(a => (a === t.tela ? '' : t.tela))}>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#fff', fontWeight: 600 }}>{AJUDA[t.tela].resumo}</p>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: 'rgba(255,255,255,.85)' }}>{t.uso}</p>
+            </Escolha>
+          ))}
+        </div>
+      ))}
+      <Dica>Em qualquer tela, o <b>?</b> no cabeçalho explica o que está nela.</Dica>
+    </>)
+    pe = <Pe rotulo="Anotar meu primeiro gasto" onSeguir={() => concluir('/lancar')} pular="Ir para o início" onPular={() => concluir('/')} />
   }
 
   // No computador as perguntas aparecem dentro de um celular desenhado
@@ -734,8 +782,8 @@ function CaixaAzul({ children, abre = true, rolar = abre }: { children: ReactNod
 }
 
 /** Uma linha que se marca com um toque; marcada, abre a caixa azul embaixo. */
-function Escolha({ icone, rotulo, on, selo, onTocar, children }: {
-  icone?: string; rotulo: string; on: boolean; selo?: string; onTocar: () => void; children?: ReactNode
+function Escolha({ icone, rotulo, on, selo, seta, onTocar, children }: {
+  icone?: string; rotulo: string; on: boolean; selo?: string; seta?: boolean; onTocar: () => void; children?: ReactNode
 }) {
   const check = (
     <span aria-hidden className={on ? 'pa-pop' : undefined} style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex',
@@ -755,7 +803,9 @@ function Escolha({ icone, rotulo, on, selo, onTocar, children }: {
         ) : check}
         <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{rotulo}</span>
         {selo && <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#1e40af', borderRadius: 999, padding: '3px 9px' }}>{selo}</span>}
-        {icone && check}
+        {icone && (seta
+          ? <i className="ti ti-chevron-down" aria-hidden style={{ fontSize: 20, color: '#1e40af', transition: 'transform .25s', transform: on ? 'rotate(180deg)' : 'none' }} />
+          : check)}
       </button>
       {on && children && <div style={{ padding: '0 8px 8px' }}><CaixaAzul>{children}</CaixaAzul></div>}
     </div>
@@ -820,16 +870,6 @@ function Legenda({ cor, rotulo, valor }: { cor: string; rotulo: string; valor: n
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: COR.texto }}>
       <span style={{ width: 12, height: 12, borderRadius: 4, background: cor, flexShrink: 0 }} />{rotulo}
       <span style={{ marginLeft: 'auto', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{R(valor)}</span>
-    </div>
-  )
-}
-
-function Etapa({ icone, titulo, forte, children }: { icone: string; titulo: string; forte?: boolean; children: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <span style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: forte ? BOLINHA_AZUL : '#eff6ff', color: forte ? '#fff' : '#1e40af' }}><i className={`ti ${icone}`} aria-hidden style={{ fontSize: 20 }} /></span>
-      <b style={{ color: COR.texto, fontSize: 13 }}>{titulo}</b>{children}
     </div>
   )
 }
