@@ -446,13 +446,9 @@ export default function NovoLancamentoExtrato() {
       setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:'#16a34a', key:k})
       return
     }
-    if (tabPrincipal !== 'extrato') return
-    const conta = contasExtrato.find(c => c.id === contaId) ?? contasExtrato[0]
-    if (!conta) return
-    const k = mesKey(conta.id, ano, mes)
-    if (dados[k]?.saldoBancoData === hojeStr) return
-    setModalSaldoValor(fmt(saldoMes))
-    setModalSaldo({contaId:conta.id, banco:conta.banco, icone:conta.icone, cor:conta.cor, key:k})
+    // O banco não pergunta mais ao entrar: a conferência do saldo dos bancos
+    // é feita na Início (18/10/2026, pedido do Guilherme). A caixa de saldo
+    // continua abrindo pelo toque.
   }, [tabPrincipal])
 
 

@@ -41,9 +41,8 @@ export default function NleMobileWizard({
   tabPrincipal, setTabPrincipal,
   contasExtrato, contas,
   setContaId, setMobileCartaoId, setMobileView,
-  mes, ano, dados, hojeStr,
+  mes, ano,
   resetarParaNovo, diaDefaultPara,
-  setModalSaldo, setModalSaldoValor, mesKey, saldoSugerido,
 }: Props) {
   if (!isMobile) return null
 
@@ -67,11 +66,6 @@ export default function NleMobileWizard({
                     const c = contasExtrato[0]
                     setContaId(c.id)
                     resetarParaNovo(diaDefaultPara(mes, ano))
-                    const k = mesKey(c.id, ano, mes)
-                    if (dados[k]?.saldoBancoData !== hojeStr) {
-                      setModalSaldoValor(saldoSugerido[c.id] ?? '')
-                      setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
-                    }
                     setMobileView('extrato'); setMobileStep('extrato')
                   } else {
                     setMobileStep('conta')
@@ -145,11 +139,6 @@ export default function NleMobileWizard({
               <button key={c.id} onClick={() => {
                 setContaId(c.id)
                 resetarParaNovo(diaDefaultPara(mes, ano))
-                const k = mesKey(c.id, ano, mes)
-                if (dados[k]?.saldoBancoData !== hojeStr) {
-                  setModalSaldoValor(dados[k]?.saldoBanco ?? '')
-                  setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
-                }
                 setMobileView('extrato'); setMobileStep('extrato')
               }} style={{
                 background:COR.branco,border:`1.5px solid ${COR.borda}`,borderRadius:14,

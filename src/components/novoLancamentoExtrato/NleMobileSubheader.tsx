@@ -56,8 +56,8 @@ export default function NleMobileSubheader({
   isMobile, tabPrincipal,
   alertaDesvio, setAlertaDesvio, mesLabel,
   onAlertaRevisar, onAlertaAjustarMes,
-  contasExtrato, contaIdEfetivo, dados, hojeStr, mes, ano, mesNome,
-  setContaId, setModalSaldo, setModalSaldoValor, mesKey, saldoSugerido,
+  contasExtrato, contaIdEfetivo, mes, ano, mesNome,
+  setContaId, setModalSaldo, setModalSaldoValor, saldoSugerido,
   isDinheiro, contaInfo, mesDados, saldoMes, diferenca, conciliado, chaveAtual,
 }: Props) {
   return (
@@ -101,11 +101,6 @@ export default function NleMobileSubheader({
                   return (
                     <button key={c.id} onClick={() => {
                       setContaId(c.id)
-                      const k = mesKey(c.id, ano, mes)
-                      if (dados[k]?.saldoBancoData !== hojeStr) {
-                        setModalSaldoValor(saldoSugerido[c.id] ?? '')
-                        setModalSaldo({contaId:c.id, banco:c.banco, icone:c.icone, cor:c.cor, key:k})
-                      }
                     }} style={{
                       display:'flex',alignItems:'center',gap:6,minHeight:38,
                       padding:'0 14px',borderRadius:999,flexShrink:0,border:'none',

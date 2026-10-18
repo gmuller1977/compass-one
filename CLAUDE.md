@@ -235,6 +235,9 @@ da caixa de saldo de Lançamentos: "Confere" só a data; outro valor,
 `saldoBanco` + data. Daí vale a regra de sempre: o Radar usa o informado
 até o fim do mês. Regras em [`conferirSaldos.ts`](src/utils/conferirSaldos.ts),
 cartão `ConferirSaldosCard`; `prova76` (10).
+Com isso, Lançamentos deixou de abrir a caixa de saldo sozinha ao entrar
+num BANCO (mesmo dia, pedido dele); ela abre pelo toque. O dinheiro
+continua perguntando ao entrar, porque a Início não confere a carteira.
 
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele
