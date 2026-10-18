@@ -2345,6 +2345,22 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   conhecer seus gastos. Anote o que puder: o seu plano começa em
   [mês]", com ponto azul-claro. A meta segue começando no mês do plano.
   O Radar (congelado) não mudou. `prova78` (19).
+- **"Outubro fechou": o que vai se repetir entra no plano pela Início**
+  (18/10/2026, pedido do Guilherme ao perguntar como uma categoria criada no
+  meio do mês entra no plano: "no início é bom, toda informação ou ação parte
+  desta tela"). A partir do dia 1, no "Pede sua atenção" da Início e da
+  Bússola, até cada item ser resolvido: categoria VARIÁVEL com gasto no mês
+  que fechou e sem plano no mês de hoje ("Colocar no plano" / "Foi só uma
+  vez"), e, no primeiro mês do plano inicial, o gasto que ficou longe do
+  estimado no primeiro acesso, 10% e R$ 20 ou mais ("Ajustar o plano" /
+  "Manter como está"). O valor oferecido é o gasto sem parcelas, editável,
+  e grava do mês de HOJE até o fim do plano (`valorMesAMes`, parcela por
+  cima, em itens): exceção consciente à regra de o mês corrente não se
+  mexer, porque o valor é o do mês que fechou. Fixas e as categorias do que
+  já estava na fatura ficam de fora; quem entrou por convite não vê.
+  "Lembrar depois" some até amanhã. Regras em
+  [`mesQueFechou.ts`](src/utils/mesQueFechou.ts), janela
+  `MesQueFechouDialog`; `prova79` (15).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).

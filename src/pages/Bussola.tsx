@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
+import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import { STATUS_HERO, statusDoMes } from '../components/inicio/statusHero'
 import { mensagemDaChegada, COR_CHEGADA } from '../utils/mensagemDoMes'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
@@ -53,6 +54,7 @@ export default function Bussola() {
   )
   // O motivo de ter passado, anotado na hora (Revisão mensal abre com ele).
   const motivo = useLembreteMotivo(usaPlanoNoMes ? linhasSaida : [], ano, mes)
+  const fechou = useMesQueFechou(deps)
   const status = STATUS_HERO[statusDoMes({ totalEntradas, totalSaidas, totalPrevS, temPlano })]
 
   const [memoriaAberta, setMemoriaAberta] = useState(false)
@@ -171,11 +173,17 @@ export default function Bussola() {
         </Cartao>
 
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}
-        {b.avisos.length > 0 && (
+        {(b.avisos.length > 0 || fechou.texto) && (
           <Cartao>
             <TituloCartao>Pede sua atenção</TituloCartao>
+            {fechou.texto && (
+              <Linha primeira icone={<i className="ti ti-calendar-check" style={{ color: COR.azul }} />} cor={COR.azul}
+                titulo={<span style={{ whiteSpace: 'normal' }}>{fechou.texto.titulo}</span>}
+                legenda={fechou.texto.detalhe}
+                direita={<Pilula onClick={fechou.abrir}>Revisar</Pilula>} />
+            )}
             {b.avisos.map((a, i) => (
-              <Linha key={a.id} primeira={i === 0} icone={<i className="ti ti-alert-triangle" style={{ color: a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo }} />} cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
+              <Linha key={a.id} primeira={i === 0 && !fechou.texto} icone={<i className="ti ti-alert-triangle" style={{ color: a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo }} />} cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
                 titulo={<span style={{ whiteSpace: 'normal' }}>{a.titulo}</span>}
                 direita={<Pilula onClick={acaoDoAviso[a.id].onClick}>{acaoDoAviso[a.id].rotulo}</Pilula>} />
             ))}
@@ -250,6 +258,7 @@ export default function Bussola() {
       </div>
 
       {motivo.dialog}
+      {fechou.dialog}
       {revisando && (
         <RevisaoPlanoDialog acima={b.lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
           categorias={categorias} onFechar={() => setRevisando(false)} />

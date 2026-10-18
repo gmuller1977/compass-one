@@ -16,6 +16,7 @@ import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
 import { estadoDoMes, mensagemDoMes, mensagemDaChegada, COR_MENSAGEM, COR_CHEGADA } from '../utils/mensagemDoMes'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
+import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
@@ -171,6 +172,9 @@ export default function Dashboard() {
     [ehMesCorrente, usaPlanoNoMes, estouradas, linhasSaida, categorias])
   // Contas e "passou" têm cartão próprio aqui; o aviso deles não se repete.
   const outrosAvisos = avisos.filter(a => a.id !== 'contas' && a.id !== 'passou')
+  // "Outubro fechou": o que vai se repetir entra no plano (utils/mesQueFechou).
+  const fechou = useMesQueFechou(deps)
+  const fechouTexto = ehMesCorrente ? fechou.texto : null
 
   const [oculto, alternarOculto] = useValoresOcultos()
   const v = (n: number) => mostrar(n, oculto)
@@ -513,11 +517,17 @@ export default function Dashboard() {
               <Atalho icone="ti-radar-2" rotulo="Radar" onClick={() => navigate('/radar')} />
             </Cartao>
 
-            {ehMesCorrente && outrosAvisos.length > 0 && (
+            {ehMesCorrente && (outrosAvisos.length > 0 || fechouTexto) && (
               <Cartao>
                 <TituloCartao>Pede sua atenção</TituloCartao>
+                {fechouTexto && (
+                  <Linha primeira icone={<i className="ti ti-calendar-check" style={{ color: COR.azul }} />} cor={COR.azul}
+                    titulo={<span style={{ whiteSpace: 'normal' }}>{fechouTexto.titulo}</span>}
+                    legenda={fechouTexto.detalhe}
+                    direita={<Pilula onClick={fechou.abrir}>Revisar</Pilula>} />
+                )}
                 {outrosAvisos.map((a, i) => (
-                  <Linha key={a.id} primeira={i === 0} icone={<i className="ti ti-alert-triangle" style={{ color: a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo }} />} cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
+                  <Linha key={a.id} primeira={i === 0 && !fechouTexto} icone={<i className="ti ti-alert-triangle" style={{ color: a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo }} />} cor={a.tom === 'vermelho' ? COR.erroTexto : COR.amarelo}
                     titulo={<span style={{ whiteSpace: 'normal' }}>{a.titulo}</span>}
                     legenda={a.detalhe}
                     direita={<Pilula onClick={acaoDoAviso[a.id].onClick}>{acaoDoAviso[a.id].rotulo}</Pilula>} />
@@ -555,6 +565,7 @@ export default function Dashboard() {
       </div>
 
       {motivo.dialog}
+      {fechou.dialog}
       {revisando && (
         <RevisaoPlanoDialog acima={lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
           categorias={categorias} onFechar={() => setRevisando(false)} />
