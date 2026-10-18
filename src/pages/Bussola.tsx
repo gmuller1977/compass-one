@@ -11,6 +11,7 @@ import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
+import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
 import { Atalho, Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
 import { M, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
@@ -148,6 +149,7 @@ export default function Bussola() {
 
         {/* Logo abaixo do saldo (pedido do Guilherme, 18/10/2026). */}
         <ConferirSaldosCard deps={deps} oculto={oculto} />
+        <DebitosAutomaticosCard deps={deps} oculto={oculto} />
 
         {/* ── Previsto × realizado do mês, com o resultado ────────────── */}
         <Cartao>

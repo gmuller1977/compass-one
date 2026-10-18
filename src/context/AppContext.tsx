@@ -92,6 +92,8 @@ export type DadosMes = {
   /** Zero ou negativo em `saldoBanco` foi informado de verdade (utils/saldoInformado). */
   saldoBancoInformado?: boolean
   fixasConsolidadas?: Record<string, boolean>
+  /** Débito automático conferido na Início (utils/debitoAutomatico). */
+  debitosConferidos?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>

@@ -19,6 +19,7 @@ import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
+import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
@@ -405,7 +406,13 @@ export default function Dashboard() {
         )}
 
         {/* Logo abaixo do saldo (pedido do Guilherme, 18/10/2026). */}
-        {ehMesCorrente && <ConferirSaldosCard deps={deps} oculto={oculto} />}
+        {/* Ao lado, os débitos automáticos para conferir (pedido dele, mesmo dia). */}
+        {ehMesCorrente && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, alignItems: 'start' }}>
+            <ConferirSaldosCard deps={deps} oculto={oculto} />
+            <DebitosAutomaticosCard deps={deps} oculto={oculto} />
+          </div>
+        )}
 
         {/* ── Primeiros passos: sem conta ou categoria, ou sem plano ── */}
         {(!temBanco || !temCategorias) && (
