@@ -102,6 +102,45 @@ const PARCELADAS_NOVO: Omit<Categoria, 'id'> = {
 }
 
 /**
+ * O que já estava na fatura quando a pessoa chegou (18/10/2026, análise da
+ * chegada: sem isso, no primeiro vencimento o app mostrava uma fatura bem
+ * menor que a do banco). Um lançamento só por fatura, nesta categoria.
+ */
+export const NOME_ANTERIORES = 'Compras antes do Compass One'
+const ANTERIORES_NOVO: Omit<Categoria, 'id'> = {
+  nome: NOME_ANTERIORES, tipo: 'saida', icone: '💳', grupo: 'Outros',
+  fixa: false, tipoMovimento: 'cartao', formaPagamento: 'avista', cor: '#6b7280', ativa: true,
+}
+
+type MesFat = { ano: number; mes: number }
+const somaMes = (m: MesFat, n: number): MesFat => { const t = m.ano * 12 + m.mes + n; return { ano: Math.floor(t / 12), mes: t % 12 } }
+
+/**
+ * As faturas de um cartão no dia de hoje: a ABERTA (onde cai a compra de
+ * hoje, `mesDaFaturaDaCompra`) e, se houver, a FECHADA que ainda vai vencer.
+ * `ano`/`mes` são o mês da fatura (a chave dela); `vence` é o dia em que
+ * vence, e `gasto` o mês em que ela pesa no plano (`mesDoGastoNoCartao`).
+ */
+export function faturasDeHoje(venc: number, hoje = new Date()): {
+  aberta: MesFat & { fecha: number; vence: MesFat; gasto: MesFat }
+  aPagar?: MesFat & { vence: MesFat; gasto: MesFat }
+} {
+  const fecha = fechamentoDoVencimento(venc)
+  const cartao = { diaFechamento: fecha, diaVencimento: venc }
+  const aberta = mesDaFaturaDaCompra(cartao, hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+  // Vence no mês seguinte ao do fechamento quando o dia de vencer é menor.
+  const desloc = venc < fecha ? 1 : 0
+  const anterior = somaMes(aberta, -1)
+  const venceAnterior = somaMes(anterior, desloc)
+  const dataVence = new Date(venceAnterior.ano, venceAnterior.mes, venc)
+  const hojeZero = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+  return {
+    aberta: { ...aberta, fecha, vence: somaMes(aberta, desloc), gasto: somaMes(aberta, desloc) },
+    ...(dataVence >= hojeZero ? { aPagar: { ...anterior, vence: venceAnterior, gasto: venceAnterior } } : {}),
+  }
+}
+
+/**
  * Uma parcela em andamento. No CARTÃO, as que faltam são lançadas na fatura
  * (como a FaturaCartao grava uma compra parcelada). Fora dele, vira uma
  * conta fixa até a última parcela (`ate`), que aparece em Lançamentos para
@@ -137,6 +176,11 @@ export type Respostas = {
   /** Gastos do dia a dia fora da lista. */
   outrosGastos: { nome: string; valor: number }[]
   parcelas: ParcelaInformada[]
+  /**
+   * Por nome do cartão: o que já está na fatura aberta (com as parcelas, como
+   * o app do banco mostra) e na fechada que ainda não venceu.
+   */
+  faturas?: Record<string, { aberta: number; aPagar: number }>
   meta: number
 }
 
@@ -152,6 +196,8 @@ export type EstimativasIniciais = {
   decimo?: { categoriaId: string; valor: number }
   /** `contaDoMes`: um financiamento já somado nas contas do mês, só com o fim. */
   parcelas?: { nome: string; valor: number; faltam: number; desde: string; contaDoMes?: boolean; forma?: FormaDaConta }[]
+  /** Gastos de um mês só (as faturas em aberto): entram no plano só naquele mês. */
+  pontuais?: { categoriaId: string; ano: number; mes: number; valor: number }[]
 }
 
 /** `liberado`: quanto deixa de sair quando a última parcela (ou financiamento) acabar. */
@@ -261,7 +307,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
       if (!ja.ativa) cats = cats.map(c => (c.id === ja.id ? { ...c, ativa: true } : c))
       return { ...ja, ativa: true }
     }
-    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
+    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : nome === NOME_ANTERIORES ? ANTERIORES_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
     const nova: Categoria = padrao
       ? { ...padrao, ativa: true, id: gerarId() }
       : { nome, tipo, icone: '📌', grupo: 'Outros', fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true, id: gerarId() }
@@ -379,6 +425,43 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     }
   })
 
+  // O que já estava nas faturas: um lançamento por fatura. Na aberta, o
+  // valor informado inclui as parcelas que acabaram de ser lançadas nela.
+  const pontuais: NonNullable<EstimativasIniciais['pontuais']> = []
+  for (const cartao of novas.filter(n => n.tipo === 'cartao')) {
+    const f = r.faturas?.[cartao.banco ?? cartao.nome]
+    if (!f || !cartao.diaVencimento) continue
+    const hojeF = faturasDeHoje(cartao.diaVencimento, hoje)
+    const lancar = (m: MesFat & { gasto: MesFat }, informado: number, descontarParcelas: boolean, sufixo: string) => {
+      const chave = `${cartao.id}-${m.ano}-${String(m.mes + 1).padStart(2, '0')}`
+      const dm = (faturas[chave] as { lancamentos: Record<number, { tipo: string; valor: number }[]>; faturaAtual?: string } | undefined)
+        ?? { lancamentos: {}, faturaAtual: '' }
+      const jaLancado = descontarParcelas
+        ? Object.values(dm.lancamentos).flat().reduce((s, l) => s + (l.tipo === 'entrada' ? l.valor : -l.valor), 0) : 0
+      const valor = Math.round((informado - jaLancado) * 100) / 100
+      if (valor <= 0) return
+      const cat = garantir(NOME_ANTERIORES, 'saida')
+      faturas = {
+        ...faturas,
+        [chave]: {
+          ...dm,
+          lancamentos: {
+            ...dm.lancamentos,
+            1: [...(dm.lancamentos[1] ?? []), {
+              id: `pa-ant-${Date.now()}-${cartao.id}-${sufixo}`, tipo: tipoNaFatura('saida'),
+              descricao: NOME_ANTERIORES, categoria: NOME_ANTERIORES, valor,
+              formaPagamento: 'credito', tipoLanc: 'variavel', consolidado: true,
+              diaCompra: 1, mesCompra: m.mes, anoCompra: m.ano,
+            }],
+          },
+        },
+      }
+      pontuais.push({ categoriaId: cat.id, ano: m.gasto.ano, mes: m.gasto.mes, valor })
+    }
+    if (f.aberta > 0) lancar(hojeF.aberta, f.aberta, true, 'a')
+    if (f.aPagar > 0 && hojeF.aPagar) lancar(hojeF.aPagar, f.aPagar, false, 'f')
+  }
+
   const ano = hoje.getFullYear()
   const mes = hoje.getMonth()
   const desde = `${ano}-${String(mes + 1).padStart(2, '0')}`
@@ -392,7 +475,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   const plano: PlanoAnoData = {
     ...base,
     objetivos,
-    estimativas: { porCategoria, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}) },
+    estimativas: { porCategoria, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}), ...(pontuais.length ? { pontuais } : {}) },
   }
 
   return { contas: contasFinal, categorias: cats, plano, faturas }

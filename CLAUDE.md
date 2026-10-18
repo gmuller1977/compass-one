@@ -2312,6 +2312,16 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   cai aqui" troca), cartões (o vencimento), contas do mês e dia a dia. O que a
   pessoa acrescenta ("Outra conta", compra parcelada) e o financiamento são a
   mesma caixa azul, com ✕ (pedido do Guilherme, 18/10/2026).
+- **O que já está na fatura** (18/10/2026, análise da chegada: sem isso, no
+  primeiro vencimento a fatura do app saía bem menor que a do banco). Cada
+  cartão marcado pergunta quanto já tem na fatura ABERTA e, entre o
+  fechamento e o vencimento, quanto falta pagar da FECHADA
+  (`faturasDeHoje`). Vira um lançamento por fatura na categoria "Compras
+  antes do Compass One" (criada, de cartão); na aberta, menos as parcelas já
+  lançadas nela, porque o app do banco mostra o total. Entra também no plano,
+  só no mês em que pesa (`pontuais` nas estimativas), para não aparecer como
+  estouro; antes do primeiro mês do plano fica como gasto do mês. A lista de
+  cartões tem "Outro", com o nome, como a dos bancos. `prova77` (23).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).
