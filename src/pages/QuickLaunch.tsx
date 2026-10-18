@@ -621,14 +621,17 @@ export default function QuickLaunch() {
             <ModalTopo raio={20} icone="ti-layout-grid" rotulo="Lançar" titulo="Categorias no Início"
               subtitulo="Categorias variáveis disponíveis no lançamento rápido" onFechar={() => setGerenciar(false)} />
 
-            <div style={{ overflowY: 'auto', flex: 1 }}>
+            {/* Fixo acima da lista, que rola sozinha (pedido do Guilherme, 18/10/2026). */}
+            <div style={{ padding: '12px 20px', borderBottom: `1px solid ${COR.borda}`, flexShrink: 0 }}>
               <button type="button" onClick={() => setNovaCatAberta(true)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '14px 20px',
-                border: 'none', borderBottom: `1px solid ${COR.borda}`, background: '#fff', cursor: 'pointer',
-                fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: COR.azul, textAlign: 'left',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', minHeight: 48,
+                border: 'none', borderRadius: 14, background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: '#fff',
               }}>
                 <i className="ti ti-plus" aria-hidden style={{ fontSize: 20 }} /> Nova categoria
               </button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
               {catsVariaveis.length === 0 ? (
                 <div style={{ padding: 32, textAlign: 'center', color: COR.textoSuave, fontSize: 13 }}>
                   Nenhuma categoria variável cadastrada.
