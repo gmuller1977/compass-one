@@ -309,15 +309,9 @@ export default function Sidebar() {
           }
         `}</style>
         {NAV_GROUPS.map(group => (
-          <div key={group.label} style={{ marginBottom: 18 }}>
-            <div style={{
-              fontSize: 9, fontWeight: 800,
-              color: 'rgba(255,255,255,0.3)',
-              letterSpacing: '1px', textTransform: 'uppercase',
-              padding: '0 10px', marginBottom: 4,
-            }}>
-              {group.label}
-            </div>
+          // Sem os títulos "Todo dia", "Todo mês"... (19/10/2026, pedido do
+          // Guilherme); os grupos só ordenam o menu.
+          <div key={group.label}>
             {group.items.map(item => {
               const sub = item.sub ?? []
               const parentActive = !item.disabled && isParentActive(item.path, item.exact, item.excludeIfSearch)
