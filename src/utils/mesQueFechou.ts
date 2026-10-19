@@ -100,20 +100,23 @@ export function mesQueFechou(deps: Deps, hoje: Date = new Date()): MesQueFechou 
 
 /**
  * Grava o valor de cada item escolhido, do mês de hoje até o fim do plano,
- * cada mês no plano do ano dele. Mês com parcela lançada: o valor + a
+ * cada mês no plano do ano dele. Com `meses` ("em parcelas", 19/10/2026,
+ * análise da chegada v3, C5: IPVA, matrícula, seguro), só nos N meses a
+ * partir de hoje; os seguintes ficam como estão. Mês com parcela lançada: o valor + a
  * parcela, em itens ("Gasto normal" e a parcela), como na revisão do plano.
  * Ano sem plano fica de fora.
  */
 export function colocarNoPlano(
-  planos: Record<number, PlanoAnoData>, escolhas: { item: ItemDoMesQueFechou; valor: number }[],
+  planos: Record<number, PlanoAnoData>, escolhas: { item: ItemDoMesQueFechou; valor: number; meses?: number }[],
   deps: Deps, categorias: Categoria[], hoje: Date = new Date(),
 ): Record<number, PlanoAnoData> {
   const fim = fimDoPlanejamento(planos)
   if (!fim) return planos
   const de = hoje.getFullYear() * 12 + hoje.getMonth(), ate = fim.ano * 12 + fim.mes
-  const meses = Array.from({ length: Math.max(0, ate - de + 1) }, (_, i) => ({ ano: Math.floor((de + i) / 12), mes: (de + i) % 12 }))
+  const todos = Array.from({ length: Math.max(0, ate - de + 1) }, (_, i) => ({ ano: Math.floor((de + i) / 12), mes: (de + i) % 12 }))
   let novo = { ...planos }
-  for (const { item, valor } of escolhas) {
+  for (const { item, valor, meses: n } of escolhas) {
+    const meses = n && n > 0 ? todos.slice(0, n) : todos
     const cad = cadastroPlanejavel(item.nome, item.descricao, categorias)
     if (!cad) continue
     const cat = { id: cad.id, nome: cad.nome, descricao: cad.descricao || undefined, grupo: cad.grupo, tipoMovimento: cad.tipoMovimento }

@@ -14,12 +14,17 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
   f: MesQueFechou
   onFechar: () => void
   onLembrarDepois: () => void
-  onResolver: (f: MesQueFechou, escolhas: { item: ItemDoMesQueFechou; valor: number | null }[]) => number
+  onResolver: (f: MesQueFechou, escolhas: { item: ItemDoMesQueFechou; valor: number | null; meses?: number }[]) => number
 }) {
   const { toast } = useToast()
   const [valores, setValores] = useState<Record<string, string>>(
     () => Object.fromEntries(f.itens.map(i => [rotulo(i), String(i.sugerido)])))
-  const [umaVez, setUmaVez] = useState<Record<string, boolean>>({})
+  // "plano": todo mês até o fim do plano; "parcelas": só N meses (IPVA,
+  // matrícula, seguro); "uma": foi só uma vez / manter como está.
+  const [modo, setModo] = useState<Record<string, 'plano' | 'parcelas' | 'uma'>>({})
+  const [parcelas, setParcelas] = useState<Record<string, string>>({})
+  const modoDe = (k: string) => modo[k] ?? 'plano'
+  const nDe = (k: string) => parseInt(parcelas[k] ?? '') || 0
   const fecharRef = useRef(onFechar)
   fecharRef.current = onFechar
   useEffect(() => {
@@ -28,13 +33,22 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
     return () => window.removeEventListener('keydown', esc)
   }, [])
   const nomeMes = MESES[f.mes]
-  const invalido = f.itens.some(i => !umaVez[rotulo(i)] && parseValor(valores[rotulo(i)] ?? '') === null)
+  const invalido = f.itens.some(i => modoDe(rotulo(i)) !== 'uma' && parseValor(valores[rotulo(i)] ?? '') === null)
+  const semMeses = f.itens.some(i => modoDe(rotulo(i)) === 'parcelas' && nDe(rotulo(i)) < 1)
+  const hoje = new Date()
+  const ateMes = (n: number) => {
+    const ym = hoje.getFullYear() * 12 + hoje.getMonth() + n - 1
+    const a = Math.floor(ym / 12)
+    return `${MESES[ym % 12]}${a !== hoje.getFullYear() ? ` de ${a}` : ''}`
+  }
 
   function confirmar() {
     if (invalido) { toast('Confira os valores: algum não é um número.', 'error'); return }
-    const n = onResolver(f, f.itens.map(i => ({
-      item: i, valor: umaVez[rotulo(i)] ? null : parseValor(valores[rotulo(i)] ?? ''),
-    })))
+    if (semMeses) { toast('Diga em quantos meses ainda vai pagar.', 'error'); return }
+    const n = onResolver(f, f.itens.map(i => {
+      const k = rotulo(i), m = modoDe(k)
+      return { item: i, valor: m === 'uma' ? null : parseValor(valores[k] ?? ''), ...(m === 'parcelas' ? { meses: nDe(k) } : {}) }
+    }))
     toast(n === 0 ? 'Pronto, nada mudou no plano' : n === 1 ? 'Colocado no plano' : `${n} categorias colocadas no plano`)
     onFechar()
   }
@@ -58,12 +72,14 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
           onFechar={onFechar}
           subtitulo={f.parcial
             ? `Você usou o app só parte de ${nomeMes}: confira se o valor vale para um mês inteiro.`
-            : 'O valor entra no plano deste mês até o fim do plano. Dá para mudar no Planejamento.'} />
+            : 'Todo mês: entra deste mês até o fim do plano. Em parcelas: só nos meses que faltam. Dá para mudar no Planejamento.'} />
         <div style={{ padding: '4px 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {f.itens.map(i => {
               const k = rotulo(i)
-              const so = !!umaVez[k]
+              const m = modoDe(k)
+              const so = m === 'uma'
+              const n = nDe(k)
               return (
                 <div key={k} style={{ borderTop: `1px solid ${COR.borda}`, paddingTop: 12 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{k}</div>
@@ -73,10 +89,15 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
                       : `Gastou ${reais(i.gasto)} em ${nomeMes}, fora do plano.`}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
-                    <button type="button" aria-pressed={!so} onClick={() => setUmaVez(s => ({ ...s, [k]: false }))} style={pilula(!so)}>
-                      {i.tipo === 'chute' ? 'Ajustar o plano' : 'Colocar no plano'}
+                    <button type="button" aria-pressed={m === 'plano'} onClick={() => setModo(s => ({ ...s, [k]: 'plano' }))} style={pilula(m === 'plano')}>
+                      {i.tipo === 'chute' ? 'Ajustar o plano' : 'Todo mês'}
                     </button>
-                    <button type="button" aria-pressed={so} onClick={() => setUmaVez(s => ({ ...s, [k]: true }))} style={pilula(so)}>
+                    {i.tipo === 'nova' && (
+                      <button type="button" aria-pressed={m === 'parcelas'} onClick={() => setModo(s => ({ ...s, [k]: 'parcelas' }))} style={pilula(m === 'parcelas')}>
+                        Em parcelas
+                      </button>
+                    )}
+                    <button type="button" aria-pressed={so} onClick={() => setModo(s => ({ ...s, [k]: 'uma' }))} style={pilula(so)}>
                       {i.tipo === 'chute' ? 'Manter como está' : 'Foi só uma vez'}
                     </button>
                   </div>
@@ -90,6 +111,20 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
                           fontSize: 16, fontFamily: 'inherit', color: COR.texto, outline: 'none',
                         }} />
                       por mês
+                    </label>
+                  )}
+                  {m === 'parcelas' && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 13, color: '#475569', flexWrap: 'wrap' }}>
+                      Ainda faltam
+                      <input inputMode="numeric" value={parcelas[k] ?? ''} aria-label={`Quantos meses ainda faltam de ${k}`}
+                        onChange={e => setParcelas(v => ({ ...v, [k]: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
+                        placeholder="0"
+                        style={{
+                          width: 56, border: `1.5px solid ${COR.borda}`, borderRadius: 8, padding: '7px 10px',
+                          fontSize: 16, fontFamily: 'inherit', color: COR.texto, outline: 'none', textAlign: 'center',
+                        }} />
+                      {n === 1 ? 'mês' : 'meses'}
+                      {n > 0 && <span style={{ color: COR.textoSuave }}>{n === 1 ? `só ${ateMes(1)}` : `de ${ateMes(1)} a ${ateMes(n)}`}</span>}
                     </label>
                   )}
                 </div>

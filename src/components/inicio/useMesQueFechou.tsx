@@ -37,8 +37,8 @@ export function useMesQueFechou(deps: Deps) {
     if (user) { try { localStorage.setItem(chaveAdiado(user.id), hojeISO()) } catch { /* aba anônima */ } }
     setVersao(v => v + 1)
   }
-  const resolver = (f: MesQueFechou, escolhas: { item: ItemDoMesQueFechou; valor: number | null }[]) => {
-    const noPlano = escolhas.filter((e): e is { item: ItemDoMesQueFechou; valor: number } => e.valor !== null && e.valor > 0)
+  const resolver = (f: MesQueFechou, escolhas: { item: ItemDoMesQueFechou; valor: number | null; meses?: number }[]) => {
+    const noPlano = escolhas.filter((e): e is { item: ItemDoMesQueFechou; valor: number; meses?: number } => e.valor !== null && e.valor > 0)
     if (noPlano.length) setPlanos(prev => colocarNoPlano(prev, noPlano, deps, categorias))
     void Promise.all(escolhas.map(e => marcarVisto(user, chaveDoItem(f, e.item)))).then(() => setVersao(v => v + 1))
     setVersao(v => v + 1)

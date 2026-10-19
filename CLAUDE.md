@@ -2467,6 +2467,11 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   "Lembrar depois" some até amanhã. Regras em
   [`mesQueFechou.ts`](src/utils/mesQueFechou.ts), janela
   `MesQueFechouDialog`; `prova79` (15).
+  "Colocar no plano" virou "Todo mês" e ganhou **"Em parcelas"** (19/10/2026,
+  análise da chegada v3, C5: IPVA, matrícula, seguro), só para categoria
+  nova: "Ainda faltam N meses", e o valor vai só nesses meses a partir de
+  hoje (`colocarNoPlano` com `meses`); os seguintes ficam como estão.
+  `prova86` (9).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).
