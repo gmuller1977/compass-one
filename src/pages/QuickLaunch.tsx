@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { parseBRL } from '../utils/moeda'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { useToast } from '../components/Toast'
+import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import BottomNav from '../components/BottomNav'
 import type { Conta, DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
@@ -54,6 +56,7 @@ const corDoDisponivel = (disp: number) => (disp < 0 ? COR.erroTexto : COR.sucess
 
 export default function QuickLaunch() {
   const { user, contas, categorias, extratoData, faturaData, planos, updateExtratoMes, setFaturaData, setCategorias, perfil, saldoInicialDinheiro, cenarioPrevisao } = useApp()
+  const { toast } = useToast()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
@@ -232,6 +235,9 @@ export default function QuickLaunch() {
     const [aL, mL, dL] = [data.getFullYear(), data.getMonth(), data.getDate()]
     const descricao = desc.trim() || catObj.nome
     const baseId = `v-${Date.now()}`
+    // Antes da data do saldo da conta, já está no saldo (utils/saldoDesde).
+    const trava = forma.tipo !== 'dinheiro' && lancamentoAntesDoSaldo(forma.conta, aL, mL, dL)
+    if (trava) { toast(trava, 'error'); return }
 
     if (forma.tipo === 'cartao' && forma.conta) {
       // Mesmo formato da tela da fatura: fechamento, parcelas e compra como

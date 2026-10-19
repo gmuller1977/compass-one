@@ -2430,6 +2430,27 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   conhecer seus gastos. Anote o que puder: o seu plano começa em
   [mês]", com ponto azul-claro. A meta segue começando no mês do plano.
   O Radar (congelado) não mudou. `prova78` (19).
+- **O saldo informado tem DATA: hoje ou dia 1º** (19/10/2026, análise da
+  chegada v3, C4; Guilherme: "cliente pode optar em lançar o saldo do dia 01
+  e lançar tudo que já passou, ou saldo do dia, e lançar de hoje em diante.
+  Assim evita lançar e não somar"). O saldo inicial é a base de antes de
+  tudo, então lançar o que já aconteceu contava duas vezes. O primeiro
+  acesso pergunta "a partir de quando?" no passo dos bancos ("De hoje em
+  diante", o padrão, ou "Desde o dia 1º"), e cada conta grava
+  `saldoInicialDesde` (coluna `saldo_inicial_desde`, migração 020; sem ela o
+  app grava as contas sem a data). Lançamento NOVO antes dessa data é
+  recusado com aviso em Lançamentos (inclusive as duas pontas da
+  transferência e a troca de dia na edição), na fatura e no Lançar
+  (`lancamentoAntesDoSaldo` em [`saldoDesde.ts`](src/utils/saldoDesde.ts));
+  nenhuma conta do saldo mudou. O cartão leva a data de HOJE só quando a
+  fatura foi informada (o app do banco mostra o total de agora). No mês da
+  chegada, com o dia 1º, TODAS as fixas do mês entram no plano (as vencidas
+  se confirmam sozinhas ou ficam atrasadas); com hoje e chegada até o dia 5,
+  as fixas que venceram até hoje saem do plano do mês. Em Configurações o
+  banco tem "Esse saldo é de quando?" (dia 1º / hoje; tocar na marcada tira
+  a data), pedido dele no mesmo dia: "deve permitir a mudança se o cliente
+  mudar de ideia". Conta nova lá nasce com hoje; conta antiga, sem data,
+  não trava. `prova85` (29).
 - **"Outubro fechou": o que vai se repetir entra no plano pela Início**
   (18/10/2026, pedido do Guilherme ao perguntar como uma categoria criada no
   meio do mês entra no plano: "no início é bom, toda informação ou ação parte

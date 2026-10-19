@@ -5,6 +5,7 @@ import { tipoNaFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
+import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import { ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
 import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
@@ -913,6 +914,13 @@ export default function NovoLancamentoExtrato() {
       if (isMobile) setMobileDiaForm(null)
       return
     }
+    // Antes da data do saldo da conta o lançamento já está no saldo
+    // (utils/saldoDesde). Editar no mesmo dia não passa por aqui.
+    if (!editandoId || (editandoDiaOriginal ?? diaSel) !== diaSel) {
+      const contasDoLanc = fPag === 'transferencia' && !editandoId ? [contaIdEfetivo, fContaDestino] : [contaIdEfetivo]
+      const trava = contasDoLanc.map(id => lancamentoAntesDoSaldo(contas.find(c => c.id === id), ano, mes, diaSel)).find(Boolean)
+      if (trava) { toast(trava, 'error'); return }
+    }
     if (fPag === 'transferencia' && !editandoId) {
       if (valor <= 0 || !fContaDestino) return
       const diaFuturoAlvo = ehDiaFuturo(diaSel)
@@ -1026,6 +1034,8 @@ export default function NovoLancamentoExtrato() {
     if (!fCat || valor <= 0 || !fBancoConsolidado) return
     const diaFuturoAlvo = ehDiaFuturo(diaSel)
     const contaSel = contas.find(c => c.id === fBancoConsolidado)
+    const trava = lancamentoAntesDoSaldo(contaSel, ano, mes, diaSel)
+    if (trava) { toast(trava, 'error'); return }
     if (contaSel?.tipo === 'cartao') {
       // Mesmas regras da tela da fatura: depois do fechamento a compra vai
       // para a fatura seguinte, e na fatura compra é `entrada` (lancamentoRapido).

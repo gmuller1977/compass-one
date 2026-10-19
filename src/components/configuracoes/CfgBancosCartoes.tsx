@@ -11,6 +11,7 @@ import { parseBRL, parseValor } from '../../utils/moeda'
 import type { Aba } from './CfgShared'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
+import { dataDoSaldo, diaDoSaldo } from '../../utils/saldoDesde'
 
 // A fatura do cartao e uma fixa como outra qualquer: precisa dizer COMO e paga
 // e EM QUAL conta aparece. Sem isso ela flutuava — projetava em todas as contas
@@ -542,6 +543,8 @@ export default function CfgBancosCartoes({
                   Pode ser um valor aproximado — você ajusta depois.
                 </div>
               </div>
+              <DataDoSaldo valor={formConta.saldoInicialDesde}
+                onMudar={d => setFormConta(p => ({ ...p, saldoInicialDesde: d }))} />
             </>
           )}
           <div>
@@ -580,5 +583,46 @@ export default function CfgBancosCartoes({
         </div>
       </div>
     </>
+  )
+}
+
+const MESES_EXTENSO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+
+/**
+ * De quando é o saldo inicial (utils/saldoDesde): o dia 1º do mês ou hoje.
+ * Pedido do Guilherme em 19/10/2026: quem escolheu no primeiro acesso pode
+ * mudar de ideia aqui. Tocar na opção marcada tira a data (sem trava).
+ */
+function DataDoSaldo({ valor, onMudar }: { valor?: string; onMudar: (d: string | undefined) => void }) {
+  const hoje = new Date()
+  const opcoes = [
+    { data: dataDoSaldo('dia1', hoje), rotulo: `Dia 1º de ${MESES_EXTENSO[hoje.getMonth()]}`, ajuda: 'Lanço tudo do mês' },
+    { data: dataDoSaldo('hoje', hoje), rotulo: `Hoje, ${diaDoSaldo(dataDoSaldo('hoje', hoje))}`, ajuda: 'Lanço daqui para frente' },
+  ].filter((o, i, a) => a.findIndex(x => x.data === o.data) === i)
+  // Uma data antiga (de outro mês, ou de outro dia) aparece como está.
+  if (valor && !opcoes.some(o => o.data === valor)) opcoes.unshift({ data: valor, rotulo: `Desde ${diaDoSaldo(valor)}`, ajuda: 'A data de antes' })
+  return (
+    <div>
+      <label style={labelSt}>Esse saldo é de quando?</label>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+        {opcoes.map(o => {
+          const on = o.data === valor
+          return (
+            <button key={o.data} type="button" onClick={() => onMudar(on ? undefined : o.data)} aria-pressed={on}
+              style={{ flex:'1 1 140px', padding:'7px 10px', fontFamily:'inherit', textAlign:'left',
+                border:`1.5px solid ${on ? COR.azul : COR.borda}`, borderRadius:8, cursor:'pointer',
+                background: on ? '#eff6ff' : COR.branco }}>
+              <div style={{ fontSize:12, fontWeight:600, color: on ? COR.azul : COR.texto }}>{o.rotulo}</div>
+              <div style={{ fontSize:11, color: COR.textoSuave }}>{o.ajuda}</div>
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ fontSize:11, color: COR.textoSuave, marginTop:4 }}>
+        {valor
+          ? `Lançamentos antes de ${diaDoSaldo(valor)} não são aceitos nesta conta: eles já estão no saldo.`
+          : 'Sem data, a conta aceita lançamento de qualquer dia, e o que for lançado antes de hoje soma em cima do saldo.'}
+      </div>
+    </div>
   )
 }

@@ -37,6 +37,12 @@ export type Conta = {
   contaPagamentoId?: string
   apelido?: string
   preferida?: boolean
+  /**
+   * De quando é o `saldoInicial` ("AAAA-MM-DD"): o que aconteceu antes desse
+   * dia já está nele, e o app não aceita lançamento novo anterior a ele
+   * (utils/saldoDesde). Sem data, como sempre foi: nenhuma trava.
+   */
+  saldoInicialDesde?: string
 }
 
 export type Categoria = {
@@ -195,6 +201,9 @@ function contaToRow(c: Conta, userId: string) {
     apelido: c.apelido ?? null,
     preferida: c.preferida ?? false,
     ativo: true,
+    // Só vai quando existe: sem a migração 020, a coluna não existe e o
+    // upsert das contas sem data segue funcionando (ver saveContas).
+    ...(c.saldoInicialDesde ? { saldo_inicial_desde: c.saldoInicialDesde } : {}),
   }
 }
 
@@ -225,6 +234,7 @@ type ContaRow = {
   conta_pagamento_id?: string | null
   apelido?: string | null
   preferida?: boolean | null
+  saldo_inicial_desde?: string | null
 }
 
 type CategoriaRow = {
@@ -281,6 +291,7 @@ function rowToConta(row: ContaRow): Conta {
     contaPagamentoId: row.conta_pagamento_id ?? undefined,
     apelido: row.apelido ?? undefined,
     preferida: row.preferida ?? false,
+    saldoInicialDesde: row.saldo_inicial_desde ?? undefined,
   }
 }
 
@@ -799,7 +810,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (import.meta.env.DEV) console.log('💾 [saveContas] chamado:', { qtd: list.length, savedCount: savedCountRef.current.contas, dataLoaded: dataLoadedRef.current })
     if (list.length === 0 && !safeSaveCheck('contas', 0)) return
     if (list.length > 0) {
-      const { error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid)))
+      let { error } = await supabase.from('contas').upsert(list.map(c => contaToRow(c, uid)))
+      // Coluna saldo_inicial_desde ainda não criada (migração 020): grava sem
+      // ela, e a conta fica sem a trava de data até a migração rodar.
+      if (error && /saldo_inicial_desde/.test(error.message)) {
+        console.warn('saveContas: falta a migração 020 (saldo_inicial_desde)')
+        ;({ error } = await supabase.from('contas').upsert(list.map(c => {
+          const { saldo_inicial_desde: _, ...resto } = contaToRow(c, uid) as ReturnType<typeof contaToRow> & { saldo_inicial_desde?: string }
+          return resto
+        })))
+      }
       if (error) { console.error('❌ [saveContas] upsert error:', error.message, error.code); return }
     }
     // Só apaga o que este aparelho viu no banco e tirou da lista: conta criada

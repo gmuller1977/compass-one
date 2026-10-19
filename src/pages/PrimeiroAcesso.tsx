@@ -7,6 +7,7 @@ import { ehFaturaDoCartao } from '../utils/novaCategoria'
 import { marcarVisto } from '../utils/vistoNaConta'
 import { planoDoPrimeiroAcesso, primeiroMesCompleto, ultimoMesDoPlanoInicial } from '../utils/primeiroPlano'
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
+import type { OrigemDoSaldo } from '../utils/saldoDesde'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import { LogoCompass } from '../components/LogoCompass'
 import {
@@ -77,11 +78,13 @@ type Estado = {
   outrosGastos: { nome: string; valor: string }[]
   parcelas: { nome: string; valor: string; faltam: string; total: string; dia: string; forma: FormaDaConta; banco?: string; cartao?: string }[]
   meta: string
+  /** De quando é o saldo dos bancos (utils/saldoDesde). */
+  origemSaldo: OrigemDoSaldo
 }
 
 const INICIAL: Estado = {
   banco: '', bancoOutro: '', saldo: '', cartaoOutro: '', faturas: {}, renda: '', diaRenda: 0, decimo: '', usaCartao: '', cartao: '', venc: 0,
-  outrosBancos: [], outrosCartoes: [], contas: {}, outrasContas: [], diaADia: {}, outrosGastos: [], parcelas: [], meta: '',
+  outrosBancos: [], outrosCartoes: [], contas: {}, outrasContas: [], diaADia: {}, outrosGastos: [], parcelas: [], meta: '', origemSaldo: 'hoje',
 }
 
 export default function PrimeiroAcesso() {
@@ -134,6 +137,7 @@ export default function PrimeiroAcesso() {
       total: parseInt(p.total) || undefined, dia: Math.min(31, parseInt(p.dia) || 0) || undefined, banco: p.banco, cartao: p.cartao,
     })),
     meta: parseBRL(e.meta),
+    saldoDe: e.origemSaldo,
   }
 
   function concluir(destino: string) {
@@ -208,9 +212,24 @@ export default function PrimeiroAcesso() {
       outrosBancos: [{ banco: p.banco, saldo: p.saldo }, ...p.outrosBancos.filter(o => o.banco !== b)],
     }))
     const varios = [e.banco, ...e.outrosBancos.map(o => o.banco)].filter(Boolean).length > 1
+    // Saldo de hoje ou do dia 1º (19/10/2026, pedido do Guilherme: "assim
+    // evita lançar e não somar"). No dia 1º os dois são o mesmo.
+    const hojeD = new Date()
+    const dia1 = e.origemSaldo === 'dia1' && hojeD.getDate() !== 1
+    const OPCOES = { hoje: 'De hoje em diante', dia1: `Desde o dia 1º de ${MESES[hojeD.getMonth()]}` }
     titulo = 'Quais bancos você usa?'
     sub = 'Toque em cada um para dizer quanto tem lá. O primeiro é o do salário.'
     corpo = (<>
+      {hojeD.getDate() !== 1 && (
+        <Cartao>
+          <Rotulo>Quer lançar seus gastos a partir de quando?</Rotulo>
+          <Chips lista={[OPCOES.hoje, OPCOES.dia1]} valor={OPCOES[e.origemSaldo]} colunas
+            onEscolher={v => set('origemSaldo', v === OPCOES.dia1 ? 'dia1' : 'hoje')} />
+          <Mini>{dia1
+            ? 'Informe quanto tinha em cada banco no dia 1º e lance tudo o que entrou e saiu da conta desde então. As compras no cartão vêm pelo valor da fatura, mais adiante.'
+            : 'Informe o saldo de hoje e lance só o que acontecer daqui para frente. O que já passou está no saldo.'}</Mini>
+        </Cartao>
+      )}
       <Cartao>
         <div style={{ display: 'grid', gap: 8 }}>
           {BANCOS.map(b => (
@@ -219,8 +238,8 @@ export default function PrimeiroAcesso() {
                 <Pergunta>Qual banco?</Pergunta>
                 <Campo valor={e.bancoOutro} onMudar={v => set('bancoOutro', v)} placeholder="Nome do banco" texto autoFoco />
               </>)}
-              <Pergunta>Quanto tem lá hoje?</Pergunta>
-              <CampoGrande valor={saldoDe(b)} onMudar={v => mudarSaldo(b, v)} rotulo={`Saldo hoje: ${b}`} autoFoco={b !== 'Outro'} />
+              <Pergunta>{dia1 ? 'Quanto tinha lá no dia 1º?' : 'Quanto tem lá hoje?'}</Pergunta>
+              <CampoGrande valor={saldoDe(b)} onMudar={v => mudarSaldo(b, v)} rotulo={`${dia1 ? 'Saldo no dia 1º' : 'Saldo hoje'}: ${b}`} autoFoco={b !== 'Outro'} />
               <Mini>Mais ou menos. Se não lembrar, deixe em branco.</Mini>
               {varios && b !== e.banco && <BotaoNaCaixa onClick={() => doSalario(b)}>O salário cai aqui</BotaoNaCaixa>}
             </Escolha>

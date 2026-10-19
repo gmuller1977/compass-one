@@ -4,6 +4,7 @@ import { montarCategoria, ehFaturaDoCartao } from './novaCategoria'
 import { buscarCategoria } from './categoriaIcone'
 import { mesDaFaturaDaCompra, tipoNaFatura } from './lancamentoRapido'
 import { mesDoGastoNoCartao } from './lancarPorMes'
+import { dataDoSaldo, type OrigemDoSaldo } from './saldoDesde'
 
 /**
  * O primeiro acesso de uma conta nova: seis perguntas e um resultado.
@@ -182,6 +183,13 @@ export type Respostas = {
    */
   faturas?: Record<string, { aberta: number; aPagar: number }>
   meta: number
+  /**
+   * De quando são os saldos e as faturas informados (utils/saldoDesde): hoje
+   * (o padrão; lança de hoje em diante) ou o dia 1º do mês (lança o que já
+   * passou). Vira a data do saldo de cada banco criado aqui; o cartão com
+   * fatura informada leva sempre hoje.
+   */
+  saldoDe?: OrigemDoSaldo
 }
 
 /** O que o primeiro plano lê. Guardado no plano do ano, que é jsonb: sem migração. */
@@ -200,6 +208,8 @@ export type EstimativasIniciais = {
   pontuais?: { categoriaId: string; ano: number; mes: number; valor: number }[]
   /** O dia do primeiro acesso ("AAAA-MM-DD"): ver `mesDaChegada`. */
   chegada?: string
+  /** `Respostas.saldoDe`: decide o que do mês da chegada entra no plano. */
+  saldoDe?: OrigemDoSaldo
 }
 
 /** `liberado`: quanto deixa de sair quando a última parcela (ou financiamento) acabar. */
@@ -268,15 +278,16 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   // Contas: o banco do salário é a preferida; o cartão é pago por ele.
   const idBanco = gerarId()
   const novas: Conta[] = []
+  const saldoInicialDesde = dataDoSaldo(r.saldoDe ?? 'hoje', hoje)
   if (r.banco) {
     novas.push({
       id: idBanco, nome: nomeTitular.trim() || r.banco, banco: r.banco, tipo: 'corrente',
-      saldoInicial: r.saldo, cor: '#1a56db', icone: '🏦', preferida: true,
+      saldoInicial: r.saldo, cor: '#1a56db', icone: '🏦', preferida: true, saldoInicialDesde,
     })
   }
   r.outrosBancos.filter(b => b.banco && b.banco !== r.banco).forEach((b, i) => novas.push({
     id: `${gerarId()}-b${i}`, nome: nomeTitular.trim() || b.banco, banco: b.banco, tipo: 'corrente',
-    saldoInicial: b.saldo, cor: '#0891b2', icone: '🏦',
+    saldoInicial: b.saldo, cor: '#0891b2', icone: '🏦', saldoInicialDesde,
   }))
   const cartoes = r.usaCartao
     ? [{ cartao: r.cartao, vencimento: r.vencimento }, ...r.outrosCartoes].filter(c => c.cartao && c.vencimento)
@@ -285,6 +296,10 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     id: `${gerarId()}-c${i}`, nome: c.cartao, banco: c.cartao, tipo: 'cartao', saldoInicial: 0,
     cor: '#7c3aed', icone: '💳', diaVencimento: c.vencimento, diaFechamento: fechamentoDoVencimento(c.vencimento),
     formaPagamentoFatura: 'boleto', contaPagamentoId: r.banco ? idBanco : undefined,
+    // A fatura informada é a de HOJE, mesmo no "desde o dia 1º": o app do
+    // banco mostra o total de agora. Sem valor informado, não há o que travar.
+    ...(((r.faturas?.[c.cartao]?.aberta ?? 0) > 0 || (r.faturas?.[c.cartao]?.aPagar ?? 0) > 0)
+      ? { saldoInicialDesde: dataDoSaldo('hoje', hoje) } : {}),
   }))
   const temCartao = cartoes.length > 0
   // Com mais de um banco ou cartão, a pessoa diz qual pelo nome.
@@ -481,7 +496,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
   const plano: PlanoAnoData = {
     ...base,
     objetivos,
-    estimativas: { porCategoria, chegada: `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}), ...(pontuais.length ? { pontuais } : {}) },
+    estimativas: { porCategoria, chegada: `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`, ...(decimo ? { decimo } : {}), ...(parcelas.length ? { parcelas } : {}), ...(pontuais.length ? { pontuais } : {}), ...(r.saldoDe === 'dia1' ? { saldoDe: 'dia1' as const } : {}) },
   }
 
   return { contas: contasFinal, categorias: cats, plano, faturas }

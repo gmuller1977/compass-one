@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
+import { useToast } from '../components/Toast'
+import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import type { DadosMes as ExtratoDadosMes } from '../context/AppContext'
 import {
   COR, DADOS_MES_VAZIO,
@@ -42,6 +44,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const anoHoje = hoje.getFullYear()
   const hojeStr = hoje.toISOString().slice(0,10)
   const isMobile = useIsMobile()
+  const { toast } = useToast()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
 
   const { contas, categorias, setCategorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
@@ -346,6 +349,11 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     const diaCompraFinal = parsedCompra?.dia ?? diaSel
     const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
     const anoCompraFinal = parsedCompra?.ano ?? purchaseAno
+    // Compra antes do valor de fatura informado já está nele (utils/saldoDesde).
+    if (!editandoId) {
+      const trava = lancamentoAntesDoSaldo(contaInfo, anoCompraFinal, mesCompraFinal, diaCompraFinal)
+      if (trava) { toast(trava, 'error'); return }
+    }
 
     const routeToNext = !editandoId && (() => {
       if (anoCompraFinal > purchaseAno) return true

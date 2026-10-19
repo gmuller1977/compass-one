@@ -1,5 +1,6 @@
 import type { Categoria, Conta, DadosMes, PlanoAnoData } from '../context/AppContext'
 import { construirRealizadoMes } from './realizadoMes'
+import { comValor } from './itensPlano'
 import { resolverRealKey } from '../components/acompanhamento/evolucaoCalcs'
 import { NOME_DECIMO, estimativasDosPlanos, valoresDoDecimo, type EstimativasIniciais } from './primeiroAcesso'
 
@@ -252,15 +253,32 @@ function comMesDaChegada(
 ) {
   const a = hoje.getFullYear(), m = hoje.getMonth(), dia = hoje.getDate()
   const inicio = primeiroMesCompleto(hoje)
-  if (inicio.ano === a && inicio.mes === m) return
   const chave = `${a}-${String(m + 1).padStart(2, '0')}`
-  const soma: { cat: Categoria; valor: number }[] = []
-  for (const [id, e] of Object.entries(estimativas.porCategoria)) {
+  // Com o saldo do dia 1º, o que venceu até hoje NÃO está no saldo: entra
+  // também (o automático se confirma sozinho, o resto fica atrasado para
+  // marcar). Com o saldo de hoje, já está, e entraria duas vezes.
+  const dia1 = estimativas.saldoDe === 'dia1'
+  const fixasDoMes = (entra: (diaDaFixa: number) => boolean) => Object.entries(estimativas.porCategoria).flatMap(([id, e]) => {
     const cat = categorias.find(c => c.id === id && c.ativa)
-    if (!cat || !e.fixa || !e.dia || e.dia <= dia || e.valor <= 0 || cat.tipoMovimento === 'cartao') continue
-    if ((e.desde && e.desde > chave) || (e.ate && e.ate < chave)) continue
-    soma.push({ cat, valor: e.valor })
+    if (!cat || !e.fixa || !e.dia || e.valor <= 0 || cat.tipoMovimento === 'cartao') return []
+    if (!entra(e.dia)) return []
+    if ((e.desde && e.desde > chave) || (e.ate && e.ate < chave)) return []
+    return [{ cat, valor: e.valor }]
+  })
+  if (inicio.ano === a && inicio.mes === m) {
+    // O plano começa neste mês, com as fixas do mês inteiro. Com o saldo de
+    // hoje, as que já venceram saem dele (19/10/2026, análise da chegada v3, C4).
+    if (dia1) return
+    const item = saida.find(x => x.ano === a)
+    if (!item) return
+    for (const { cat, valor } of fixasDoMes(d => d <= dia)) {
+      const lista = cat.tipo === 'entrada' ? item.plano.entradas : item.plano.saidas
+      const i = lista.findIndex(l => l.id === cat.id)
+      if (i >= 0) lista[i] = comValor(lista[i], m, Math.max(0, lista[i].v[m] - valor))
+    }
+    return
   }
+  const soma: { cat: Categoria; valor: number }[] = fixasDoMes(d => dia1 || d > dia)
   for (const pt of estimativas.pontuais ?? []) {
     const cat = categorias.find(c => c.id === pt.categoriaId && c.ativa)
     if (cat && pt.ano === a && pt.mes === m && pt.valor > 0) soma.push({ cat, valor: pt.valor })

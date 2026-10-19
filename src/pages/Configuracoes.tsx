@@ -1,4 +1,5 @@
 import { ehFaturaDoCartao, MSG_FATURA_NAO_E_CATEGORIA } from '../utils/novaCategoria'
+import { dataDoSaldo } from '../utils/saldoDesde'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -133,6 +134,8 @@ export default function Configuracoes() {
   const contaVazia: Omit<Conta,'id'> = {
     nome:'', banco:'', tipo:'corrente', saldoInicial:0,
     cor:CORES_PRESET[0], icone:ICONES_CONTA[0],
+    // Conta nova: o saldo é o de hoje (utils/saldoDesde); dá para trocar no formulário.
+    saldoInicialDesde: dataDoSaldo('hoje'),
   }
   const [formConta,   setFormConta]   = useState<Omit<Conta,'id'>>(contaVazia)
   const [editContaId, setEditContaId] = useState<string|null>(null)
@@ -233,6 +236,8 @@ export default function Configuracoes() {
       ? (formConta.apelido?.trim() || bancoEfetivo)
       : formConta.nome.trim()
     const contaFinal = { ...formConta, nome: nomeEfetivo, banco: bancoEfetivo }
+    // Cartão novo não trava: a data dele é a da fatura informada no primeiro acesso.
+    if (ehCartao && !editContaId) delete contaFinal.saldoInicialDesde
     setErroConta('')
     const contaId = editContaId || gerarId()
     if (editContaId) {
