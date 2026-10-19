@@ -61,3 +61,29 @@ export function mensagemDaChegada(mesDoPlano: string, quando: 'corrente' | 'fech
 }
 
 export const COR_CHEGADA = '#93c5fd'
+
+/**
+ * O primeiro mês do plano costuma abrir apertado por um motivo que a pessoa
+ * não escolheu agora: as faturas de cartão que ela informou no primeiro
+ * acesso, compras feitas ANTES de chegar (análise da chegada v3, C7). Quando
+ * esse valor pesa no mês, a frase diz isso, ainda sem números:
+ * - sem essas compras o mês ficaria bem → a frase inteira explica;
+ * - ficaria menos ruim → a frase de sempre ganha "Parte disso...".
+ * Sem compras de antes, ou mês que já vai bem, é a frase de sempre.
+ */
+export function mensagemComComprasDeAntes(
+  estado: EstadoMensagem, quando: 'corrente' | 'fechado' | 'futuro',
+  abertura: number, fechamento: number, deAntes: number,
+): string {
+  const base = mensagemDoMes(estado, quando)
+  if (estado === 'bem' || deAntes <= 0.005) return base
+  const sem = estadoDoMes(abertura, fechamento + deAntes)
+  if (sem === 'bem') {
+    return {
+      corrente: 'Este mês fica apertado só por causa das compras no cartão feitas antes de você chegar. Sem elas, o mês fecharia bem.',
+      futuro: 'Este mês deve ficar apertado só por causa das compras no cartão feitas antes de você chegar. Sem elas, ele fecharia bem.',
+      fechado: 'Este mês ficou apertado só por causa das compras no cartão feitas antes de você chegar. Sem elas, teria fechado bem.',
+    }[quando]
+  }
+  return `${base} ${quando === 'fechado' ? 'Parte disso foram' : 'Parte disso são'} compras no cartão feitas antes de você chegar.`
+}

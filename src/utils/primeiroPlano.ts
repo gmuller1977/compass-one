@@ -321,3 +321,19 @@ export function ultimoMesDoPlanoInicial(hoje = new Date()): { ano: number; mes: 
   const t = ano * 12 + mes + MESES_DO_PLANO_INICIAL - 1
   return { ano: Math.floor(t / 12), mes: t % 12 }
 }
+
+/**
+ * Quanto do plano deste mês são as faturas informadas no primeiro acesso
+ * (compras de antes de a pessoa chegar). Só o que o primeiro acesso gravou
+ * em `estimativas.pontuais`; nenhuma conta nova. Serve para a frase do topo
+ * explicar o vermelho do primeiro mês (análise da chegada v3, C7).
+ */
+export function comprasDeAntesNoMes(
+  planos: Record<number, PlanoAnoData | undefined>, ano: number, mes: number,
+): number {
+  let total = 0
+  for (const pt of estimativasDosPlanos(planos)?.pontuais ?? []) {
+    if (pt.ano === ano && pt.mes === mes && pt.valor > 0) total += pt.valor
+  }
+  return total
+}

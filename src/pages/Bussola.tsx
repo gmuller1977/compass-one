@@ -4,7 +4,8 @@ import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import { STATUS_HERO, statusDoMes } from '../components/inicio/statusHero'
-import { mensagemDaChegada, COR_CHEGADA } from '../utils/mensagemDoMes'
+import { mensagemDaChegada, COR_CHEGADA, COR_MENSAGEM, estadoDoMes, mensagemDoMes, mensagemComComprasDeAntes } from '../utils/mensagemDoMes'
+import { comprasDeAntesNoMes } from '../utils/primeiroPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
@@ -55,6 +56,12 @@ export default function Bussola() {
   )
   const fechou = useMesQueFechou(deps)
   const status = STATUS_HERO[statusDoMes({ totalEntradas, totalSaidas, totalPrevS, temPlano })]
+  // Primeiro mês do plano apertado pelas faturas de antes de chegar: a mesma
+  // explicação da Início do computador (análise da chegada v3, C7).
+  const estadoMes = estadoDoMes(b.memoria.abertura, b.memoria.fechamento)
+  const fraseDeAntes = mensagemComComprasDeAntes(estadoMes, 'corrente', b.memoria.abertura, b.memoria.fechamento,
+    comprasDeAntesNoMes(planos, ano, mes))
+  const deAntes = fraseDeAntes !== mensagemDoMes(estadoMes, 'corrente') ? fraseDeAntes : null
 
   const [memoriaAberta, setMemoriaAberta] = useState(false)
   const [revisando, setRevisando] = useState(false)
@@ -91,8 +98,8 @@ export default function Bussola() {
                 {nome ? `Olá, ${nome}` : 'Olá'} <span aria-hidden>👋</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: ROTULO, marginTop: 4 }}>
-                <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: chegada ? COR_CHEGADA : status.cor, flexShrink: 0 }} />
-                {chegada ? mensagemDaChegada(MESES[chegada.mes].toLowerCase(), 'corrente') : status.frase(mesNome, false)}
+                <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: chegada ? COR_CHEGADA : deAntes ? COR_MENSAGEM[estadoMes] : status.cor, flexShrink: 0 }} />
+                {chegada ? mensagemDaChegada(MESES[chegada.mes].toLowerCase(), 'corrente') : deAntes ?? status.frase(mesNome, false)}
               </div>
             </div>
             <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}

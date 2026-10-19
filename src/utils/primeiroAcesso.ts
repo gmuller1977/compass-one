@@ -232,6 +232,33 @@ export function resumoDasRespostas(r: Respostas): Resumo {
   return { renda: r.renda, contas, diaADia, parcelas, sobra: r.renda - contas - diaADia - parcelas, mesesDeParcela, liberado }
 }
 
+/**
+ * O que a pessoa contou que já está nas faturas dos cartões (compras de
+ * antes de chegar) e os meses em que isso pesa: o mês em que cada fatura
+ * vence, a mesma regra que grava os `pontuais`. A tela do resultado mostra
+ * à parte, porque não se repete todo mês (análise da chegada v3, C7).
+ */
+export function faturasInformadas(r: Respostas, hoje = new Date()): { total: number; meses: MesFat[] } {
+  if (!r.usaCartao) return { total: 0, meses: [] }
+  const cartoes = [{ cartao: r.cartao, vencimento: r.vencimento }, ...r.outrosCartoes].filter(c => c.cartao && c.vencimento)
+  let total = 0
+  const meses: MesFat[] = []
+  const anotar = (m: MesFat, v: number) => {
+    if (v <= 0) return
+    total += v
+    if (!meses.some(x => x.ano === m.ano && x.mes === m.mes)) meses.push(m)
+  }
+  for (const c of cartoes) {
+    const f = r.faturas?.[c.cartao]
+    if (!f) continue
+    const h = faturasDeHoje(c.vencimento, hoje)
+    anotar(h.aberta.gasto, f.aberta)
+    if (h.aPagar) anotar(h.aPagar.gasto, f.aPagar)
+  }
+  meses.sort((a, b) => a.ano * 12 + a.mes - (b.ano * 12 + b.mes))
+  return { total: Math.round(total * 100) / 100, meses }
+}
+
 /** Fecha uns 7 dias antes de vencer, o comum no Brasil. Ajustável em Configurações. */
 export function fechamentoDoVencimento(venc: number) {
   const f = venc - 7

@@ -2451,6 +2451,19 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   a data), pedido dele no mesmo dia: "deve permitir a mudança se o cliente
   mudar de ideia". Conta nova lá nasce com hoje; conta antiga, sem data,
   não trava. `prova85` (29).
+- **O primeiro mês explica o aperto das faturas de antes** (19/10/2026,
+  análise da chegada v3, C7). Quando o mês tem fatura informada no primeiro
+  acesso (`estimativas.pontuais`, `comprasDeAntesNoMes`) e a frase do topo
+  seria "cuidado" ou "vermelho", `mensagemComComprasDeAntes` troca: se sem
+  essas compras o mês ficaria bem, "Este mês fica apertado só por causa das
+  compras no cartão feitas antes de você chegar. Sem elas, o mês fecharia
+  bem."; se não, a frase de sempre + "Parte disso são compras no cartão
+  feitas antes de você chegar." Sem números (a regra de 13/10; a análise
+  sugeria "R$ 1.330"). Início do computador e Bússola (que só troca a frase
+  do status nesse caso). No resultado do primeiro acesso, a sobra continua
+  sem as faturas, e embaixo da legenda uma dica diz quanto já há nelas e em
+  que meses pesam (`faturasInformadas`, os mesmos meses dos `pontuais`).
+  `prova87` (13).
 - **"Outubro fechou": o que vai se repetir entra no plano pela Início**
   (18/10/2026, pedido do Guilherme ao perguntar como uma categoria criada no
   meio do mês entra no plano: "no início é bom, toda informação ou ação parte

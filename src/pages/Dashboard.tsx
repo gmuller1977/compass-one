@@ -13,7 +13,8 @@ import { iconeCategoria } from '../utils/categoriaIcone'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
-import { estadoDoMes, mensagemDoMes, mensagemDaChegada, COR_MENSAGEM, COR_CHEGADA } from '../utils/mensagemDoMes'
+import { estadoDoMes, mensagemComComprasDeAntes, mensagemDaChegada, COR_MENSAGEM, COR_CHEGADA } from '../utils/mensagemDoMes'
+import { comprasDeAntesNoMes } from '../utils/primeiroPlano'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
 import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import ContasAVencerCard from '../components/ContasAVencerCard'
@@ -182,6 +183,13 @@ export default function Dashboard() {
     ? (previsao ? estadoDoMes(previsao.inicial, previsao.final) : null)
     : (memoria ? estadoDoMes(memoria.abertura, memoria.fechamento) : null)
   const quando = ehFuturo ? 'futuro' as const : ehMesCorrente ? 'corrente' as const : 'fechado' as const
+  // No primeiro mês do plano, as faturas informadas no primeiro acesso
+  // (compras de antes de chegar) explicam o aperto (análise da chegada v3, C7).
+  const deAntes = comprasDeAntesNoMes(planos, viewAno, viewMes)
+  const [aberturaMes, fechamentoMes] = ehFuturo
+    ? [previsao?.inicial ?? 0, previsao?.final ?? 0]
+    : [memoria?.abertura ?? 0, memoria?.fechamento ?? 0]
+  const fraseDoMes = estadoMes ? mensagemComComprasDeAntes(estadoMes, quando, aberturaMes, fechamentoMes, deAntes) : ''
   const linhaDaMeta = (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 15, marginTop: 10, lineHeight: 1.4 }}>
       {chegada ? (
@@ -196,7 +204,7 @@ export default function Dashboard() {
       ) : estadoMes ? (
         <>
           <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: COR_MENSAGEM[estadoMes], flexShrink: 0, marginTop: 7 }} />
-          <span style={{ color: '#fff', fontWeight: 600, minWidth: 0 }}>{mensagemDoMes(estadoMes, quando)}</span>
+          <span style={{ color: '#fff', fontWeight: 600, minWidth: 0 }}>{fraseDoMes}</span>
         </>
       ) : null}
     </div>

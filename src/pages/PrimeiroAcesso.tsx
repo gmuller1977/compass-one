@@ -11,7 +11,7 @@ import type { OrigemDoSaldo } from '../utils/saldoDesde'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
 import { LogoCompass } from '../components/LogoCompass'
 import {
-  CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas,
+  CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, faturasInformadas,
   CHAVE_PRIMEIRO_ACESSO, fixasDoPrimeiroAcesso, faturasDeHoje, type FormaDaConta, type Respostas,
 } from '../utils/primeiroAcesso'
 
@@ -496,6 +496,10 @@ export default function PrimeiroAcesso() {
   if (passo === 7) {
     const s = resumoDasRespostas(respostas)
     const hoje = new Date()
+    // As faturas informadas não entram na sobra: pesam num mês só (C7).
+    const antes = faturasInformadas(respostas, hoje)
+    const nomesDeAntes = antes.meses.map(m => MESES[m.mes])
+    const mesesDeAntes = nomesDeAntes.length > 1 ? `${nomesDeAntes.slice(0, -1).join(', ')} e ${nomesDeAntes[nomesDeAntes.length - 1]}` : nomesDeAntes[0]
     const semRenda = s.renda <= 0
     const pct = (v: number) => (s.renda > 0 ? Math.max(0, Math.min(100, (v / s.renda) * 100)) : 0)
     const mesFim = (() => { const t = hoje.getMonth() + s.mesesDeParcela - 1; return `${MESES[t % 12]} de ${hoje.getFullYear() + Math.floor(t / 12)}` })()
@@ -546,6 +550,12 @@ export default function PrimeiroAcesso() {
             {s.parcelas > 0 && <Legenda cor={BARRA.parcelas} rotulo="Parcelas" valor={s.parcelas} />}
             <Legenda cor={BARRA.sobra} rotulo={s.diaADia ? 'Sobra' : 'Sobra para o dia a dia'} valor={Math.max(0, s.sobra)} />
           </div>
+          {antes.total > 0 && (
+            <Dica>
+              Fora isso, já há <b style={{ color: COR.texto }}>{R(antes.total)}</b> nas faturas do cartão, de compras feitas antes de você chegar.
+              {' '}Elas pesam só em {mesesDeAntes} e não se repetem: por isso o primeiro mês pode começar mais apertado.
+            </Dica>
+          )}
         </>)}
         {s.mesesDeParcela > 0 && (
           <div style={{ alignSelf: 'flex-start', fontSize: 13, fontWeight: 700, color: COR.sucessoTexto, background: '#f0fdf4',
