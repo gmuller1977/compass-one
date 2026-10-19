@@ -16,7 +16,6 @@ import RadarFinanceiro from './pages/RadarFinanceiro'
 import Configuracoes       from './pages/Configuracoes'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
 import Simulacao           from './pages/Simulacao'
-import RevisaoMensal       from './pages/RevisaoMensal'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
@@ -178,7 +177,7 @@ export default function App() {
           <Route path="/norte"           element={NORTE_ATIVO ? <Protegido><Norte /></Protegido> : <Navigate to="/" replace />} />
           <Route path="/posso-comprar"   element={<Navigate to="/simulacao" replace />} />
           <Route path="/dashboard"       element={<SoNoComputador senao="/"><Dashboard /></SoNoComputador>} />
-          <Route path="/analises"        element={<Navigate to="/revisaomensal" replace />} />
+          <Route path="/analises"        element={<Navigate to="/radar" replace />} />
           <Route path="/planejamento"    element={<Protegido><Planejamento /></Protegido>} />
           <Route path="/radar"           element={<Protegido><RadarFinanceiro /></Protegido>} />
           <Route path="/painel"          element={<Navigate to="/radar" replace />} />
@@ -190,8 +189,8 @@ export default function App() {
           <Route path="/primeiro-acesso"    element={<RotaPrimeiroAcesso />} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
-          <Route path="/resumo-mensal"      element={<Navigate to="/revisaomensal" replace />} />
-          <Route path="/revisaomensal"      element={<Protegido><RevisaoMensal /></Protegido>} />
+          <Route path="/resumo-mensal"      element={<Navigate to="/radar" replace />} />
+          <Route path="/revisaomensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/indicar"           element={<Protegido><Indicar /></Protegido>} />
           <Route path="/aurix"             element={<Navigate to="/indicar" replace />} />
           <Route path="/i/:codigo"         element={<ReceberIndicacao />} />

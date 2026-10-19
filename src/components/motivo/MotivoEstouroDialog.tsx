@@ -71,7 +71,7 @@ export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFecha
       }}>
         <ModalTopo icone="ti-pencil" rotulo={`Anotar o motivo · ${nomeMes}`} titulo="Por que passou do plano?" id="motivo-titulo"
           onFechar={onFechar}
-          subtitulo={`Uma frase basta. No fim de ${nomeMes}, a Revisão mensal mostra o que você anotar aqui.`} />
+          subtitulo={`Uma frase basta, enquanto você lembra o que aconteceu em ${nomeMes}.`} />
         <div style={{ padding: '4px 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
 
         <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>

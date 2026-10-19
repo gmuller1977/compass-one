@@ -15,7 +15,7 @@
 
 export type TelaAjuda =
   | 'inicio' | 'lancamentos' | 'planejamento' | 'radar'
-  | 'configuracoes' | 'simulador' | 'revisao'
+  | 'configuracoes' | 'simulador'
 
 export type Ajuda = {
   titulo: string
@@ -35,7 +35,6 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       'No topo, o saldo previsto para o fim do mês e quanto ainda dá para gastar nas despesas variáveis.',
       '"Como cheguei nesse número" abre a conta linha a linha.',
       'Os avisos só aparecem quando há algo a fazer: conta vencendo, grupo que passou do plano, mês negativo à frente.',
-      'O detalhe mês a mês e por categoria fica na Revisão mensal.',
     ],
     perguntas: ['O que significa "ainda dá para gastar"?', 'Como o app calcula o saldo previsto?'],
   },
@@ -68,7 +67,7 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       'Verde é dentro do plano (o verde-claro está no limite); vermelho passou do planejado.',
       'Cada grupo abre e mostra as categorias, com quanto resta ou quanto passou.',
       'Errou o plano de uma categoria? Abra ela e use "ajustar plano"; vale do mês seguinte em diante.',
-      'Passou do plano? "Anotar motivo" guarda o porquê na hora; a Revisão mensal abre com ele.',
+      'Passou do plano? "Anotar motivo" guarda o porquê na hora, enquanto você lembra.',
       'A barra no pé mostra o saldo final previsto e abre a conta dele.',
     ],
     perguntas: ['O que significam as cores do Radar?', 'Como ajusto o plano pelo Radar?'],
@@ -92,17 +91,6 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       '"Vou comprar" inclui as parcelas no planejamento, numa categoria que você escolhe.',
     ],
     perguntas: ['Como uso o "Posso comprar?"', 'Como incluo uma compra no planejamento?'],
-  },
-  revisao: {
-    titulo: 'Revisão mensal',
-    resumo: 'Como foi o mês que fechou: o resultado, o que passou do plano com o motivo anotado, e como os meses se comportaram contra o plano.',
-    dicas: [
-      'O motivo se anota durante o mês, no Radar ou na Início; aqui ele aparece ao lado da categoria.',
-      'Para mudar o plano dos próximos meses, use "ajustar plano" na categoria do Radar.',
-      '"Mês a mês" e "Por categoria" mostram previsto × realizado ao longo dos meses.',
-      'A precisão do plano diz em média quanto o plano erra, e onde.',
-    ],
-    perguntas: ['Como leio a precisão do plano?'],
   },
 }
 

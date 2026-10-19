@@ -54,7 +54,6 @@ const GUIA: { quando: string; telas: { tela: TelaAjuda; icone: string; uso: stri
     { tela: 'radar', icone: 'ti-radar-2', uso: 'Veja, grupo por grupo, onde você está dentro do plano e onde passou.' },
   ] },
   { quando: 'Todo mês', telas: [
-    { tela: 'revisao', icone: 'ti-refresh', uso: 'No começo do mês, olhe o que aconteceu no anterior e ajuste o que precisar.' },
     { tela: 'simulador', icone: 'ti-calculator', uso: 'Antes de uma compra maior, veja se cabe no bolso e qual forma de pagar é melhor.' },
   ] },
   { quando: 'Todo ano', telas: [

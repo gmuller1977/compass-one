@@ -36,7 +36,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: 'Todo mês',
     items: [
-      { icon: 'ti-refresh', label: 'Revisão mensal', path: '/revisaomensal', exact: false },
       { icon: 'ti-calculator', label: 'Simulador',      path: '/simulacao',     exact: false },
     ],
   },

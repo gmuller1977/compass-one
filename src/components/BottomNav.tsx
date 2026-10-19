@@ -19,9 +19,9 @@ function useIsMobile() {
  * Barra de baixo do celular, Fase 3 do plano mobile: o que se usa todo dia na
  * frente, e o "+" no meio, que abre o lançamento rápido (/lancar). Plano e
  * Config — tarefas de sentar e pensar, mais do computador — foram para "Mais",
- * junto com a Revisão mensal, o Simulador e a tela completa de Lançamentos.
+ * junto com o Simulador e a tela completa de Lançamentos.
  * Em 18/10/2026, pedido do Guilherme: Início · Lançamentos · + · Radar ·
- * Plano, sem "Mais": as outras telas (Simulador, Revisão, Configurações)
+ * Plano, sem "Mais": as outras telas (Simulador, Configurações)
  * abrem ARRASTANDO a barra para cima, como no Android (pedido dele). O
  * tracinho em cima da barra também abre, para quem toca em vez de arrastar.
  * Arrastar a folha para baixo fecha.
@@ -37,7 +37,6 @@ const NAV = [
 const MAIS = [
   ...(NORTE_ATIVO ? [{ icon: 'ti-compass', label: 'Norte', path: '/norte' }] : []),
   { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
-  { icon: 'ti-refresh', label: 'Revisão mensal',        path: '/revisaomensal' },
   { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
   { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
 ]

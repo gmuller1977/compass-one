@@ -67,6 +67,6 @@ export function textoDoLembrete(pendentes: EstouroComMotivo[]): { titulo: string
     titulo: sem.length === 1
       ? `${sem[0].rotulo} passou do plano: por quê?`
       : `${sem.length} categorias passaram do plano: por quê?`,
-    detalhe: 'Anote o motivo agora, enquanto lembra. A Revisão mensal mostra ele no fim do mês.',
+    detalhe: 'Anote o motivo agora, enquanto lembra.',
   }
 }

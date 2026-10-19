@@ -1805,15 +1805,19 @@ como receita e despesa. `/resumo-mensal` e `/analises` caem em
   Últimas movimentações (Lançamentos), Metas e dívidas (Simulador), Aurix
   (tela própria). No Norte, o botão `[[analises]]` virou `[[revisao]]`.
 
-A Revisão mensal FICA, por escolha dele. Em 19/10/2026 ela virou **"Como
-foi o mês"** (mesmo nome no menu), só leitura: resultado do mês fechado
-(recebeu, gastou, guardou; repete o Radar, e ele escolheu manter no card),
-"O que passou do plano" com o motivo anotado ao lado (`estourosComMotivo`,
-sem linha sem plano), Mês a mês e Precisão do plano. Saíram as etapas
-Justificar/Confirmar e o ajuste do plano dela (parava em dezembro e
-ignorava parcelas): o motivo se anota durante o mês, o plano se ajusta pelo
-Radar e pelo "fechou" da Início. `PlanRevisao.tsx` foi apagado. A aba "Total" de Lançamentos não foi
-tocada (tela congelada). As menções a Análises mais abaixo são histórico.
+**A Revisão mensal SAIU em 19/10/2026** (Guilherme: "pode excluir o
+revisão mensal"; antes, no mesmo dia, ela tinha virado "Como foi o mês" e
+ele achou que repetia o Radar). `/revisaomensal`, `/analises` e
+`/resumo-mensal` caem no `/radar`; saiu do menu, da folha do celular, do
+guia do primeiro acesso, do "?" e do botão `[[revisao]]` do Norte.
+`PlanRevisao.tsx`, `RevisaoMensal.tsx` e os quadros que só ela mostrava
+(`ComparativoMensal`, `CategoriasMesAMes`, `PrecisaoCard`) foram apagados.
+Mês a mês e Precisão do plano não aparecem mais em tela nenhuma;
+`comparativoMensal` e `precisaoDoPlano` ficam, porque o contexto do Norte
+os lê. O motivo anotado continua gravado em `licoes_aprendidas` e serve ao
+lembrete do Radar e da Início, mas nenhuma tela lista os motivos de meses
+passados. A aba "Total" de Lançamentos não foi tocada (tela congelada).
+As menções a Revisão mensal e a Análises acima e abaixo são histórico.
 
 **"Posso comprar?" virou o Simulador** (mesmo dia, escolha do Guilherme no
 card: "Só o Simulador"). A tela do celular repetia a aba Compra — a mesma
@@ -2916,7 +2920,7 @@ acelerada, a categoria mais estourada, mês negativo à frente e, a partir das
 - `prova65` (28 invariantes).
 **A barra de baixo do celular é Início · Lançamentos · + · Radar · Plano,
 sem "Mais"** (18/10/2026, pedido do Guilherme). As outras telas (Simulador,
-Revisão mensal, Configurações, Indicar amigos; o Norte quando religado)
+Configurações, Indicar amigos; o Norte quando religado)
 abrem ARRASTANDO a barra para cima, como no Android; o tracinho embaixo do
 "+" também abre, e arrastar a folha para baixo fecha. As notas abaixo sobre
 "Comprar?", Norte e "Mais" na barra são histórico.
