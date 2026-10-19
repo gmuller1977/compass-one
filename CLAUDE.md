@@ -1805,7 +1805,14 @@ como receita e despesa. `/resumo-mensal` e `/analises` caem em
   Últimas movimentações (Lançamentos), Metas e dívidas (Simulador), Aurix
   (tela própria). No Norte, o botão `[[analises]]` virou `[[revisao]]`.
 
-A Revisão mensal FICA, por escolha dele. A aba "Total" de Lançamentos não foi
+A Revisão mensal FICA, por escolha dele. Em 19/10/2026 ela virou **"Como
+foi o mês"** (mesmo nome no menu), só leitura: resultado do mês fechado
+(recebeu, gastou, guardou; repete o Radar, e ele escolheu manter no card),
+"O que passou do plano" com o motivo anotado ao lado (`estourosComMotivo`,
+sem linha sem plano), Mês a mês e Precisão do plano. Saíram as etapas
+Justificar/Confirmar e o ajuste do plano dela (parava em dezembro e
+ignorava parcelas): o motivo se anota durante o mês, o plano se ajusta pelo
+Radar e pelo "fechou" da Início. `PlanRevisao.tsx` foi apagado. A aba "Total" de Lançamentos não foi
 tocada (tela congelada). As menções a Análises mais abaixo são histórico.
 
 **"Posso comprar?" virou o Simulador** (mesmo dia, escolha do Guilherme no

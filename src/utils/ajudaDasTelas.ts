@@ -95,9 +95,10 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
   },
   revisao: {
     titulo: 'Revisão mensal',
-    resumo: 'Fecha o mês que passou: o porquê de cada categoria que passou do plano, e como os meses se comportaram contra ele.',
+    resumo: 'Como foi o mês que fechou: o resultado, o que passou do plano com o motivo anotado, e como os meses se comportaram contra o plano.',
     dicas: [
-      'Os motivos anotados durante o mês já vêm preenchidos.',
+      'O motivo se anota durante o mês, no Radar ou na Início; aqui ele aparece ao lado da categoria.',
+      'Para mudar o plano dos próximos meses, use "ajustar plano" na categoria do Radar.',
       '"Mês a mês" e "Por categoria" mostram previsto × realizado ao longo dos meses.',
       'A precisão do plano diz em média quanto o plano erra, e onde.',
     ],
