@@ -11,7 +11,8 @@ import type { Deps } from '../../utils/saldoConta'
 /**
  * "Confira seus saldos" (18/10/2026, pedidos do Guilherme). Logo
  * abaixo do saldo, na Início do computador e na Bússola do celular. Uma linha
- * por banco, e a carteira quando a pessoa usa dinheiro: não conferido hoje, "Confere" e "Está diferente"; conferido, o
+ * por banco, e a carteira quando a pessoa usa dinheiro: pedindo conferência
+ * (dia de movimento ou muitos dias sem conferir), "Confere" e "Está diferente"; conferido, o
  * resultado fica à vista — "✓ confere" ou a diferença entre o banco e o app,
  * com "Ver Lançamentos". Regras em utils/conferirSaldos.ts.
  */
@@ -50,7 +51,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
     setEditando(null); setTexto(''); setErro('')
   }
 
-  const pendentes = bancos.filter(b => b.pendente).length
+  const pendentes = bancos.filter(b => b.pendente || b.aviso).length
   const abrirCampo = (contaId: string) => { setExplicando(null); setEditando(contaId); setTexto(''); setErro('') }
   const verLancamentos = (contaId: string) =>
     navigate(contaId === CARTEIRA.id ? '/novo-lancamento?tipo=dinheiro' : `/novo-lancamento?tipo=banco&conta=${contaId}`)
@@ -73,6 +74,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
         const aberto = editando === s.conta.id
         const explicar = explicando === s.conta.id
         const temDif = s.informado !== null && Math.abs(s.diferenca) >= 0.005
+        const pede = s.pendente || s.aviso
         return (
           <div key={s.conta.id}>
             <Linha primeira={i === 0} icone={s.conta.icone || '🏦'} cor={s.conta.cor || COR.azul}
@@ -80,10 +82,19 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
               legenda={temDif
                 ? <>No banco: <b style={{ color: COR.texto }}>{mostrar(s.informado!, oculto)}</b><br />No app: {mostrar(s.calculado, oculto)}</>
                 : <>No app: <b style={{ color: s.calculado < 0 ? COR.erroTexto : COR.texto }}>{mostrar(s.calculado, oculto)}</b></>}
-              direita={!s.pendente && !aberto && !temDif &&
+              direita={!pede && !aberto && !temDif &&
                 <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>} />
 
-            {s.pendente && !aberto && !explicar && (
+            {s.aviso && !aberto && !explicar && (
+              <div style={{ padding: '0 0 8px 56px' }}>
+                <div style={{ fontSize: M.legenda, fontWeight: 600, color: COR.avisoTexto, background: COR.avisoFundo,
+                  borderRadius: 10, padding: '6px 10px', lineHeight: 1.45 }}>
+                  Faz {s.diasSemConferir} dias que este saldo não é conferido. Isso pode deixar a previsão diferente do banco.
+                </div>
+              </div>
+            )}
+
+            {pede && !aberto && !explicar && (
               <div style={botoes}>
                 <Pilula forte onClick={() => confere(s.conta.id)}>Confere</Pilula>
                 <Pilula onClick={() => (s.naoMarcadas.length ? setExplicando(s.conta.id) : abrirCampo(s.conta.id))}>Está diferente</Pilula>
@@ -114,7 +125,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
               </div>
             )}
 
-            {!s.pendente && !aberto && temDif && (
+            {!pede && !aberto && temDif && (
               <div style={{ ...botoes, alignItems: 'center' }}>
                 <Etiqueta cor={COR.avisoTexto} fundo={COR.avisoFundo}>
                   {s.diferenca < 0 ? 'faltam' : 'sobram'} {oculto ? '••••' : fmt(Math.abs(s.diferenca))}

@@ -7,7 +7,6 @@ import { parseValor } from '../../utils/moeda'
 import { debitoComOutroValor, debitoConfere, debitoDesconferir, debitoNaoSaiu, debitoSaiuSim, debitosDoMes, type DebitoDoMes } from '../../utils/debitoAutomatico'
 import type { DadosMes } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
-import { useIsMobile } from '../novoLancamentoExtrato/NleShared'
 
 /**
  * "Automáticos do mês" (18/10/2026, pedido do Guilherme; era "Débitos
@@ -23,11 +22,10 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   const [escolhendo, setEscolhendo] = useState<string | null>(null)
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
-  // No celular os conferidos ficam recolhidos (pedido do Guilherme,
-  // 19/10/2026: "para não ocupar tanto a tela"); no computador, abertos.
-  const isMobile = useIsMobile()
+  // Os conferidos ficam recolhidos (pedido do Guilherme, 19/10/2026: "para
+  // não ocupar tanto a tela"), no celular e, no mesmo dia, no computador.
   const [verConferidos, setVerConferidos] = useState(false)
-  const recolhe = isMobile && !verConferidos
+  const recolhe = !verConferidos
 
 
   const vazio: DadosMes = { lancamentos: {}, saldoBanco: '' }
@@ -74,7 +72,7 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
       {ordenados.map((d, i) => {
         const grupo = grupoDe(d)
         const titulo = i === 0 || grupoDe(ordenados[i - 1]) !== grupo ? ROTULO_GRUPO[grupo] : null
-        const emAcordeao = isMobile && grupo === 'conferido'
+        const emAcordeao = grupo === 'conferido'
         const acordeao = emAcordeao && titulo ? (
               // Com cara de botão (pedido do Guilherme, mesmo dia: "não dá
               // para saber que ao clicar abre"): caixa cinza, ✓ verde e

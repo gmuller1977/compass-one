@@ -138,8 +138,8 @@ vencidos até hoje pedem Confere / Outro valor (`fixasValorOverride`) / Não
 saiu (`fixasConsolidadas = false`, volta para as contas a pagar); os que
 vencem depois aparecem como "agendado"; sem nenhum, diz que não há. Conferido
 em `debitosConferidos` do mês (`debitosDoMes`, `DebitosAutomaticosCard`).
-No celular o grupo "Conferidos · N" é um acordeão RECOLHIDO (19/10/2026,
-pedido dele: "para não ocupar tanto a tela"); no computador fica aberto.
+O grupo "Conferidos · N" é um acordeão RECOLHIDO (19/10/2026, pedido dele:
+"para não ocupar tanto a tela"), no celular e, no mesmo dia, no computador.
 
 **Recebimento automático também se confirma sozinho** (18/10/2026,
 regra do Guilherme: "tudo que é recebimento e pagamento que não depende de
@@ -291,6 +291,17 @@ só, `saldoInformado` em [`saldoInformado.ts`](src/utils/saldoInformado.ts),
 para Radar, Lançamentos e o cartão; a carteira aceita qualquer valor gravado
 (`saldoInformadoDaCarteira`: o informado dela não move número). A caixa de
 Lançamentos mostra o que a regra lê, não o texto cru. `prova82` (8).
+**A conferência só é pedida nos dias de movimento** (19/10/2026, decisão
+do Guilherme sobre a análise da chegada v3, C6: "opção B"; antes era todo
+dia, e o cartão virava ruído). Uma conta pede "Confere / Está diferente"
+quando nunca foi conferida ou quando, desde a última conferência, passou um
+dia em que o dinheiro se mexe sozinho nela: fixa automática (salário,
+débito automático, `ehAutomatica`, com valor no plano) ou vencimento de
+fatura que ela paga (`diasDeMovimento`, `pedeConferencia`). O saldo do
+cadastro (`saldoInicialDesde`) vale como conferência. E, pedido dele no
+mesmo dia, a partir de 7 dias sem conferir (`DIAS_PARA_AVISAR`) a linha
+avisa "Faz N dias que este saldo não é conferido. Isso pode deixar a
+previsão diferente do banco." e oferece conferir. `prova88` (18).
 
 **Sem plano, o Radar não julga: só mostra o realizado** (19/10/2026,
 decisão do Guilherme sobre a análise da chegada v3, C2: "ele não deve julgar

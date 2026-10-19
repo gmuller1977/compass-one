@@ -1,6 +1,10 @@
 import { saldoInformado, saldoInformadoDaCarteira } from './saldoInformado'
 import type { Conta, DadosMes } from '../context/AppContext'
 import { detalharProjecaoDaConta, saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
+import { ehAutomatica } from './debitoAutomatico'
+import { contaDoPagamento } from './pagarConta'
+import { diaEfetivoFixa, diaUtilOuProximo } from './diaDaFixa'
+import { valorFixaNoMes } from './valorFixa'
 
 /**
  * "Confira o saldo dos bancos", na Início (18/10/2026, pedido do Guilherme).
@@ -17,8 +21,20 @@ import { detalharProjecaoDaConta, saldoFinalConta, saldoFinalDinheiro, type Deps
  *     já existe: o Radar mostra o informado e Lançamentos mostra a diferença.
  */
 
-/** Uma conta pede conferência todo dia em que ainda não foi conferida (pedido do Guilherme, 18/10/2026). */
-export const DIAS_ENTRE_CONFERENCIAS = 1
+/**
+ * Quando a conta pede conferência (19/10/2026, decisão do Guilherme sobre a
+ * análise da chegada v3, C6: "opção B", só nos dias de movimento). Antes era
+ * todo dia, e o cartão no topo da Início virava ruído a partir da segunda
+ * semana. Agora pede quando, desde a última conferência (ou nunca), passou um
+ * dia em que o dinheiro se mexe sozinho nessa conta: recebimento ou débito
+ * automático (`ehAutomatica`) ou o vencimento de uma fatura que ela paga.
+ * Quem pulou o dia do salário vê o pedido na próxima vez que abrir.
+ *
+ * E, pedido dele no mesmo dia, um aviso quando a conta fica muitos dias sem
+ * conferir: "isso pode interferir nos resultados". A partir de
+ * `DIAS_PARA_AVISAR` dias, a linha diz há quantos dias e oferece conferir.
+ */
+export const DIAS_PARA_AVISAR = 7
 
 
 export const chaveDoMes = (contaId: string, ano: number, mes: number) =>
@@ -46,6 +62,46 @@ function diasEntre(de: string, ate: string): number {
 }
 
 /**
+ * Os dias do mês corrente, até hoje, em que o dinheiro se mexe sozinho nesta
+ * conta: fixas automáticas (salário, débito automático) e o vencimento das
+ * faturas que ela paga. Só com valor no plano e categoria ativa, como as
+ * contas a vencer; o dia é o de Lançamentos (`diaEfetivoFixa`).
+ */
+export function diasDeMovimento(contaId: string, deps: Deps, hoje = new Date()): number[] {
+  const ano = hoje.getFullYear(), mes = hoje.getMonth()
+  const totalDias = new Date(ano, mes + 1, 0).getDate()
+  const dias = new Set<number>()
+  for (const cat of deps.categorias) {
+    if (!cat.ativa || !ehAutomatica(cat)) continue
+    if (contaDoPagamento(cat.id, ano, mes, deps.contas, deps.categorias, deps.extratoData) !== contaId) continue
+    if (valorFixaNoMes(cat, deps.planos[ano], mes, deps.categorias) <= 0.005) continue
+    const dm = deps.extratoData[chaveDoMes(contaId, ano, mes)]
+    dias.add(diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm?.fixasMovidas, cat.tipo !== 'entrada', mes, ano, totalDias))
+  }
+  for (const cartao of deps.contas) {
+    if (cartao.tipo !== 'cartao' || !cartao.diaVencimento) continue
+    if (contaDoPagamento(`cartao-${cartao.id}`, ano, mes, deps.contas, deps.categorias, deps.extratoData) !== contaId) continue
+    dias.add(diaUtilOuProximo(Math.min(cartao.diaVencimento, totalDias), mes, ano, totalDias))
+  }
+  return [...dias].filter(d => d <= hoje.getDate()).sort((a, b) => a - b)
+}
+
+/**
+ * A conta pede conferência? Nunca conferida: sim. Senão, só se houve dia de
+ * movimento depois da última conferência. O saldo informado no cadastro
+ * (`saldoInicialDesde`) vale como conferência: no dia em que a pessoa acabou
+ * de digitar o saldo, o app não pede de novo.
+ */
+export function pedeConferencia(conta: Conta, ultima: string | null, deps: Deps, hoje = new Date()): boolean {
+  const base = [ultima, conta.saldoInicialDesde ?? null].filter((x): x is string => !!x).sort().pop() ?? null
+  if (!base) return true
+  const hojeStr = dataDeHoje(hoje)
+  if (base >= hojeStr) return false
+  return diasDeMovimento(conta.id, deps, hoje)
+    .some(d => dataDeHoje(new Date(hoje.getFullYear(), hoje.getMonth(), d)) > base)
+}
+
+/**
  * Todas as contas de banco no mês corrente, com o que a Início mostra
  * (18/10/2026, pedido do Guilherme: o cartão fica logo abaixo do saldo e,
  * conferido, mostra a diferença):
@@ -61,6 +117,10 @@ export type SaldoDoBanco = {
   informado: number | null
   diferenca: number
   pendente: boolean
+  /** Dias desde a última conferência (ou desde o saldo do cadastro); null se nunca. */
+  diasSemConferir: number | null
+  /** Ficou `DIAS_PARA_AVISAR` dias ou mais sem conferir, e não pede hoje por movimento. */
+  aviso: boolean
   /** Contas desta conta que venceram e ninguém marcou: ver `naoMarcadasDaConta`. */
   naoMarcadas: NaoMarcada[]
 }
@@ -124,10 +184,15 @@ export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
         ? saldoFinalDinheiro(ano, mes, deps)
         : saldoFinalConta(conta, ano, mes, semInformado)
       const ultima = ultimaConferencia(conta.id, deps.extratoData)
+      const base = [ultima, conta.saldoInicialDesde ?? null].filter((x): x is string => !!x).sort().pop() ?? null
+      const diasSemConferir = base ? Math.max(0, diasEntre(base, hojeStr)) : null
+      const pendente = pedeConferencia(conta, ultima, deps, hoje)
       return {
         conta, calculado, informado,
         diferenca: informado === null ? 0 : informado - calculado,
-        pendente: !ultima || diasEntre(ultima, hojeStr) >= DIAS_ENTRE_CONFERENCIAS,
+        pendente,
+        diasSemConferir,
+        aviso: !pendente && diasSemConferir !== null && diasSemConferir >= DIAS_PARA_AVISAR,
         naoMarcadas: naoMarcadasDaConta(conta.id, deps, hoje),
       }
     })
