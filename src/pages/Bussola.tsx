@@ -11,7 +11,7 @@ import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
-import { Atalho, Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
+import { Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
 import { M, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
 import { iconeCategoria } from '../utils/categoriaIcone'
@@ -32,7 +32,8 @@ const ROTULO = 'rgba(255,255,255,.75)'
  *     saldo atual de bancos e dinheiro, e o saldo final previsto com os três
  *     cenários ali mesmo. Logo abaixo, previsto × realizado com o resultado
  *     e a folga da variável (`ritmoDoMes`). O olho esconde os valores.
- *   - Uma fileira de atalhos redondos: Lançar, Pagar, Posso comprar?, Radar.
+ *   - Sem atalhos redondos (19/10/2026, pedido do Guilherme, como no
+ *     computador): Lançar, Radar e Plano estão na barra de baixo.
  *   - Cartões curtos: uma lista com ícone colorido da categoria e o valor à
  *     direita. Explicação só quando tocada ("como cheguei").
  *
@@ -161,14 +162,6 @@ export default function Bussola() {
                     {r.diasRestantes > 1 ? <>, {v(r.porDia)} por dia até o dia {r.totalDias}.</> : ' até hoje, último dia do mês.'}</>}
             </div>
           )}
-        </Cartao>
-
-        {/* ── Atalhos: o que se faz todo dia ─────────────────────────── */}
-        <Cartao style={{ display: 'flex', gap: 4, padding: '18px 8px 16px' }}>
-          <Atalho icone="ti-plus" rotulo="Lançar" onClick={() => navigate('/lancar')} />
-          <Atalho icone="ti-receipt" rotulo="Pagar contas" onClick={irParaContas} />
-          <Atalho icone="ti-shopping-cart" rotulo="Posso comprar?" onClick={() => navigate('/simulacao')} />
-          <Atalho icone="ti-radar-2" rotulo="Radar" onClick={() => navigate('/radar')} />
         </Cartao>
 
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}

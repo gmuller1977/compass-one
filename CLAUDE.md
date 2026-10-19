@@ -165,7 +165,8 @@ que ele não prevê (variáveis, cartão) e se corrige.
 No mesmo dia, pedido dele: "Contas da semana" fica LOGO ABAIXO de "Confira
 seus saldos" (o mês futuro segue com "Contas de [mês]" na coluna 2), e os
 atalhos redondos (Lançar, Planejamento, Posso comprar?, Radar) saíram da
-Início do computador: estão no menu.
+Início do computador: estão no menu. No celular a fileira saiu da Bússola em 19/10/2026 (pedido
+dele): Lançar, Radar e Plano estão na barra de baixo.
 
 **Transferência em Lançamentos** (18/10/2026, pedido dele): banco ↔ banco e
 banco ↔ dinheiro, no computador e no celular, sem categoria (grava
