@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 import { saldoBancosEDinheiro, memoriaDoRadar } from '../utils/saldoConta'
 import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
-import { contasAVencer, contasDoMes } from '../utils/contasAVencer'
+import { contasAVencer, contasDoMes, contasParaPagar } from '../utils/contasAVencer'
 import { previsaoDoMes } from '../utils/previsaoDoMes'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { avisosDoMes, type Aviso } from '../utils/avisosDoMes'
@@ -128,7 +128,7 @@ export default function Dashboard() {
 
   // Contas dos próximos 7 dias: as linhas de fixa e fatura da memória de
   // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
-  const aVencer = useMemo(() => (ehMesCorrente ? contasAVencer(deps) : []), [ehMesCorrente, deps])
+  const aVencer = useMemo(() => (ehMesCorrente ? contasParaPagar(contasAVencer(deps), categorias) : []), [ehMesCorrente, deps, categorias])
 
   // Ritmo do mês: só no mês corrente e com plano. Vira a folga do hero ("ainda
   // dá para gastar") e, acelerado, um aviso. Ver utils/ritmoDoMes.

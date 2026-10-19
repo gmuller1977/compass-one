@@ -2,7 +2,7 @@ import type { Categoria } from '../context/AppContext'
 import type { LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import { memoriaDoRadar, saldoBancosEDinheiro, type Deps } from './saldoConta'
 import { ritmoDoMes, type RitmoDoMes } from './ritmoDoMes'
-import { contasAVencer, type ContaAVencer } from './contasAVencer'
+import { contasAVencer, contasParaPagar, type ContaAVencer } from './contasAVencer'
 import { categoriasEstouradas, maisPertoDoLimite, type Estouro } from './categoriasEstouradas'
 import { serieBaseDoPlano, piorMesDaSerie } from './simulacaoCompra'
 import { lancadoAcimaDoPlano, type LancadoAcima } from './lancadoAcimaDoPlano'
@@ -56,7 +56,7 @@ export function bussolaDoMes(p: {
   const serie = serieBaseDoPlano(p.deps, hoje)
   const negativo = serie ? piorMesDaSerie(serie).primeiroNegativo : null
   const lancadoAcima = lancadoAcimaDoPlano(p.deps, hoje)
-  const contas = contasAVencer(p.deps, hoje)
+  const contas = contasParaPagar(contasAVencer(p.deps, hoje), p.deps.categorias)
   // As contas da semana viraram aviso aqui (com "Pagar", que abre o Lançar):
   // o quadro delas foi para o Lançar em 10/10/2026. "Passou" e ritmo têm
   // quadro próprio na Bússola e não repetem.

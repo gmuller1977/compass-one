@@ -1,3 +1,5 @@
+import type { Categoria } from '../context/AppContext'
+import { ehDebitoAutomatico } from './debitoAutomatico'
 import { detalharPrevisto, type Deps } from './saldoConta'
 
 /**
@@ -70,4 +72,22 @@ function listar(deps: Deps, hoje: Date, inicio: Date, fim: Date, comAtrasadas: b
   }
   const quando = (c: ContaAVencer) => c.ano * 10000 + c.mes * 100 + c.dia
   return out.sort((a, b) => quando(a) - quando(b) || b.valor - a.valor)
+}
+
+/**
+ * As contas que a pessoa ainda tem de PAGAR: sem o débito automático que
+ * não está atrasado (19/10/2026, relatado pelo Guilherme: o financiamento em
+ * débito automático aparecia "agendado" em "Automáticos do mês" e, ao mesmo
+ * tempo, com "Pagar" em "Contas da semana"). Ele se confirma sozinho no dia
+ * (`ConfirmarDebitoAutomatico`) e é conferido no quadro dos automáticos.
+ * Atrasado só fica quando a pessoa disse "Não saiu": aí volta a ser conta a
+ * pagar, como sempre. A fatura fica: ela não está no quadro dos automáticos.
+ * Só filtra a lista; nenhum número muda.
+ */
+export function contasParaPagar(lista: ContaAVencer[], categorias: Categoria[]): ContaAVencer[] {
+  return lista.filter(c => {
+    if (c.fatura || c.atrasada) return true
+    const cat = categorias.find(x => x.id === c.id)
+    return !cat || !ehDebitoAutomatico(cat)
+  })
 }

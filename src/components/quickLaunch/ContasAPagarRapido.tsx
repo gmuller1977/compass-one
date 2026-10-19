@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useApp } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
-import { contasAVencer, type ContaAVencer } from '../../utils/contasAVencer'
+import { contasAVencer, contasParaPagar, type ContaAVencer } from '../../utils/contasAVencer'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { COR } from '../../utils/cores'
 import { M } from '../mobile/estilo'
@@ -28,7 +28,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
   oculto?: boolean
 }) {
   const { categorias } = useApp()
-  const lista = useMemo(() => contasAVencer(deps), [deps])
+  const lista = useMemo(() => contasParaPagar(contasAVencer(deps), categorias), [deps, categorias])
   const [pagando, setPagando] = useState<ContaAVencer | null>(null)
 
   const v = (n: number) => (oculto ? 'R$ ••••' : fmt(n))

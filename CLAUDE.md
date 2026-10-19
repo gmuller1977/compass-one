@@ -162,6 +162,14 @@ pedido do Guilherme). A mesma janela do Lançar do celular,
 `contaDoPagamento`. Só no mês corrente. A divisão: a Início CONFIRMA o que
 o app já prevê (fixas, automáticos, saldos); Lançamentos é onde se lança o
 que ele não prevê (variáveis, cartão) e se corrige.
+**"Contas da semana" é o que a pessoa paga: PIX, boleto ou dinheiro**
+(19/10/2026, Guilherme: "automático é débito automático, contas da semana
+deveria ser pix e boleto ou dinheiro"). O débito automático não atrasado
+sai da lista (`contasParaPagar`), na Início, no Lançar e no aviso da
+Bússola: ele já aparece em "Automáticos do mês" e se confirma sozinho.
+Com "Não saiu" ele fica atrasado e volta. A fatura fica. Nenhum número
+muda; o lembrete e a confirmação automática seguem lendo `contasAVencer`.
+`prova89` (5).
 No mesmo dia, pedido dele: "Contas da semana" fica LOGO ABAIXO de "Confira
 seus saldos" (o mês futuro segue com "Contas de [mês]" na coluna 2), e os
 atalhos redondos (Lançar, Planejamento, Posso comprar?, Radar) saíram da
