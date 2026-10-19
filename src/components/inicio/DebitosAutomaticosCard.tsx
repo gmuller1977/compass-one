@@ -76,16 +76,25 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
         const titulo = i === 0 || grupoDe(ordenados[i - 1]) !== grupo ? ROTULO_GRUPO[grupo] : null
         const emAcordeao = isMobile && grupo === 'conferido'
         const acordeao = emAcordeao && titulo ? (
-              <button type="button" aria-expanded={!recolhe} onClick={() => setVerConferidos(v => !v)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 44,
-                padding: i === 0 ? '0' : '6px 0 0', border: 'none', borderTop: i === 0 ? 'none' : '1px solid #eef2f8',
-                background: 'none', cursor: 'pointer', fontFamily: 'inherit', color: COR.textoSuave,
-              }}>
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase' }}>
-                  {titulo} · {nConferidos}
-                </span>
-                <span aria-hidden style={{ fontSize: 14, transition: 'transform .15s', transform: recolhe ? 'none' : 'rotate(180deg)' }}>▾</span>
-              </button>
+              // Com cara de botão (pedido do Guilherme, mesmo dia: "não dá
+              // para saber que ao clicar abre"): caixa cinza, ✓ verde e
+              // "Ver" / "Esconder" em azul. #1a56db no #f1f5f9: 4,9.
+              <div style={{ paddingTop: i === 0 ? 0 : 12, borderTop: i === 0 ? 'none' : '1px solid #eef2f8', marginTop: i === 0 ? 0 : 2 }}>
+                <button type="button" aria-expanded={!recolhe} onClick={() => setVerConferidos(v => !v)} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, padding: '0 14px',
+                  border: `1px solid ${COR.borda}`, borderRadius: 14, background: '#f1f5f9',
+                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                }}>
+                  <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', background: COR.sucessoTexto, color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>✓</span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
+                    {nConferidos} {nConferidos === 1 ? 'conferido' : 'conferidos'}
+                  </span>
+                  <span style={{ fontSize: M.legenda, fontWeight: 700, color: '#1a56db', whiteSpace: 'nowrap' }}>
+                    {recolhe ? 'Ver' : 'Esconder'} <span aria-hidden style={{ display: 'inline-block', transform: recolhe ? 'none' : 'rotate(180deg)' }}>▾</span>
+                  </span>
+                </button>
+              </div>
         ) : null
         if (emAcordeao && recolhe) return titulo ? <div key={d.id}>{acordeao}</div> : null
         const aberto = editando === d.id
