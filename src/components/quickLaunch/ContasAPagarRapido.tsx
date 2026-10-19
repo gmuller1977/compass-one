@@ -28,7 +28,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
   oculto?: boolean
 }) {
   const { categorias } = useApp()
-  const lista = useMemo(() => contasParaPagar(contasAVencer(deps), categorias), [deps, categorias])
+  const lista = useMemo(() => contasParaPagar(contasAVencer(deps), categorias, deps.contas), [deps, categorias])
   const [pagando, setPagando] = useState<ContaAVencer | null>(null)
 
   const v = (n: number) => (oculto ? 'R$ ••••' : fmt(n))

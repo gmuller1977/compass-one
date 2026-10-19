@@ -128,7 +128,7 @@ export default function Dashboard() {
 
   // Contas dos próximos 7 dias: as linhas de fixa e fatura da memória de
   // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
-  const aVencer = useMemo(() => (ehMesCorrente ? contasParaPagar(contasAVencer(deps), categorias) : []), [ehMesCorrente, deps, categorias])
+  const aVencer = useMemo(() => (ehMesCorrente ? contasParaPagar(contasAVencer(deps), categorias, deps.contas) : []), [ehMesCorrente, deps, categorias])
 
   // Ritmo do mês: só no mês corrente e com plano. Vira a folga do hero ("ainda
   // dá para gastar") e, acelerado, um aviso. Ver utils/ritmoDoMes.

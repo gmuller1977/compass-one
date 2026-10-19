@@ -152,7 +152,7 @@ function movimentoDoMes(
 }
 
 /** Total da fatura paga num mês de vencimento. */
-function totalFatura(
+export function totalFatura(
   cardId: string,
   anoVenc: number,
   mesVenc: number,

@@ -1,8 +1,8 @@
 import type { Categoria, DadosMes } from '../context/AppContext'
-import type { Deps } from './saldoConta'
+import { totalFatura, type Deps } from './saldoConta'
 import { contasAVencer } from './contasAVencer'
 import { confirmarPagamento, contaDoPagamento } from './pagarConta'
-import { diaEfetivoFixa } from './diaDaFixa'
+import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
 import { valorFixaNoMes } from './valorFixa'
 
 /**
@@ -22,8 +22,13 @@ import { valorFixaNoMes } from './valorFixa'
  *
  * Só o mês corrente, do dia 1 até hoje: mês fechado não se mexe. Conta
  * desmarcada pela pessoa (`fixasConsolidadas[id] === false`, o que Lançamentos
- * grava ao tirar a bolinha) não volta a ser marcada. Fatura de cartão fica
- * fora: o valor dela não é o do plano.
+ * grava ao tirar a bolinha) não volta a ser marcada.
+ *
+ * A fatura do cartão pago em débito automático (`faturaEhAutomatica`, o que
+ * o cadastro do cartão diz) entrou em 19/10/2026, pedido do Guilherme: "se
+ * débito aparece no automático, se boleto nas contas da semana". Ela se
+ * confirma no dia, no valor lançado na fatura (`totalFatura`, o mesmo que o
+ * saldo desconta), e a diferença do banco se acerta em "Outro valor".
  */
 export type DebitoParaConfirmar = { id: string; nome: string; chave: string; valor: number }
 
@@ -83,6 +88,37 @@ export function debitosParaConfirmar(deps: Deps, hoje = new Date()): DebitoParaC
     if (previsto <= 0) continue
     const override = doMes.map(([, d]) => d?.fixasValorOverride?.[cat.id]).find(v => v !== undefined)
     out.push({ id: cat.id, nome: cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome, chave: `${conta}${fim}`, valor: override ?? previsto })
+  }
+  for (const f of faturasAutomaticas(deps, hoje)) {
+    if (f.marcada !== undefined || f.dia > hoje.getDate() || f.valor <= 0.005) continue
+    out.push({ id: f.id, nome: f.nome, chave: f.chave, valor: f.valor })
+  }
+  return out
+}
+
+/**
+ * As faturas pagas em débito automático no mês corrente, com o dia de
+ * vencimento (dia útil), a conta que paga e o valor lançado. `marcada` é o
+ * que está gravado (`fixasConsolidadas`): undefined, true ou false.
+ */
+function faturasAutomaticas(deps: Deps, hoje: Date) {
+  const ano = hoje.getFullYear(), mes = hoje.getMonth()
+  const fim = sufixo(ano, mes)
+  const totalDias = new Date(ano, mes + 1, 0).getDate()
+  const doMes = Object.entries(deps.extratoData).filter(([k]) => k.endsWith(fim)).map(([, dm]) => dm)
+  const out: { id: string; nome: string; chave: string; dia: number; valor: number; previsto: number; marcada: boolean | undefined }[] = []
+  for (const cartao of deps.contas) {
+    if (cartao.tipo !== 'cartao' || !cartao.diaVencimento || !faturaEhAutomatica(cartao)) continue
+    const id = `cartao-${cartao.id}`
+    const conta = contaDoPagamento(id, ano, mes, deps.contas, deps.categorias, deps.extratoData)
+    if (!conta) continue
+    const chave = `${conta}${fim}`
+    const marcas = doMes.map(dm => dm?.fixasConsolidadas?.[id])
+    const marcada = marcas.includes(true) ? true : marcas.includes(false) ? false : undefined
+    const dia = diaEfetivoFixa({ id, diaVencimento: cartao.diaVencimento }, deps.extratoData[chave]?.fixasMovidas, true, mes, ano, totalDias)
+    const previsto = totalFatura(cartao.id, ano, mes, deps.contas, deps.faturaData)
+    const override = doMes.map(dm => dm?.fixasValorOverride?.[id]).find(v => v !== undefined && v > 0)
+    out.push({ id, nome: `Fatura ${cartao.banco || cartao.nome}`, chave, dia, previsto, valor: override ?? previsto, marcada })
   }
   return out
 }
@@ -153,6 +189,16 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
       valor: override ?? previsto,
       naoSaiu, agendado, entrada,
       conferido: dm?.debitosConferidos?.[cat.id] === true,
+    })
+  }
+  for (const f of faturasAutomaticas(deps, hoje)) {
+    const paga = f.marcada === true, naoSaiu = f.marcada === false
+    const agendado = f.dia > hoje.getDate() && !paga && !naoSaiu
+    if (agendado ? f.valor <= 0.005 : !paga && !naoSaiu) continue
+    out.push({
+      id: f.id, nome: f.nome, contaId: f.chave.slice(0, -fim.length), chave: f.chave, dia: f.dia,
+      previsto: f.previsto, valor: f.valor, naoSaiu, agendado, entrada: false,
+      conferido: deps.extratoData[f.chave]?.debitosConferidos?.[f.id] === true,
     })
   }
   return out.sort((a, b) => a.dia - b.dia || a.nome.localeCompare(b.nome, 'pt-BR'))

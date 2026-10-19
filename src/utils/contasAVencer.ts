@@ -1,4 +1,5 @@
-import type { Categoria } from '../context/AppContext'
+import type { Categoria, Conta } from '../context/AppContext'
+import { faturaEhAutomatica } from './diaDaFixa'
 import { ehDebitoAutomatico } from './debitoAutomatico'
 import { detalharPrevisto, type Deps } from './saldoConta'
 
@@ -81,12 +82,17 @@ function listar(deps: Deps, hoje: Date, inicio: Date, fim: Date, comAtrasadas: b
  * tempo, com "Pagar" em "Contas da semana"). Ele se confirma sozinho no dia
  * (`ConfirmarDebitoAutomatico`) e é conferido no quadro dos automáticos.
  * Atrasado só fica quando a pessoa disse "Não saiu": aí volta a ser conta a
- * pagar, como sempre. A fatura fica: ela não está no quadro dos automáticos.
+ * pagar, como sempre. A fatura segue o cadastro do cartão (mesmo dia, pedido
+ * dele): em débito automático vai para os automáticos; boleto ou PIX fica.
  * Só filtra a lista; nenhum número muda.
  */
-export function contasParaPagar(lista: ContaAVencer[], categorias: Categoria[]): ContaAVencer[] {
+export function contasParaPagar(lista: ContaAVencer[], categorias: Categoria[], contas: Conta[]): ContaAVencer[] {
   return lista.filter(c => {
-    if (c.fatura || c.atrasada) return true
+    if (c.atrasada) return true
+    if (c.fatura) {
+      const cartao = contas.find(x => `cartao-${x.id}` === c.id)
+      return !cartao || !faturaEhAutomatica(cartao)
+    }
     const cat = categorias.find(x => x.id === c.id)
     return !cat || !ehDebitoAutomatico(cat)
   })

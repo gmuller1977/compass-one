@@ -129,7 +129,7 @@ marca `fixasConsolidadas[id] = true` pelo mesmo `confirmarPagamento` do
 "Pagar", na conta de `contaDoPagamento`, e todas as telas leem como sempre.
 Só o mês corrente, do dia 1 até hoje (dia útil, a regra de `diaDaFixa`);
 mês fechado não se mexe. Desmarcada pela pessoa (`false`) não volta. Fatura
-fica fora. Débito que falhou ou mudou de valor aparece na conferência do
+em débito automático entra desde 19/10 (ver "Contas da semana" abaixo). Débito que falhou ou mudou de valor aparece na conferência do
 saldo dos bancos da Início. Regras em
 [`debitoAutomatico.ts`](src/utils/debitoAutomatico.ts); `prova77` (10).
 Na Início (18/10/2026, pedido dele), o quadro **"Débitos automáticos"** fica
@@ -167,9 +167,16 @@ que ele não prevê (variáveis, cartão) e se corrige.
 deveria ser pix e boleto ou dinheiro"). O débito automático não atrasado
 sai da lista (`contasParaPagar`), na Início, no Lançar e no aviso da
 Bússola: ele já aparece em "Automáticos do mês" e se confirma sozinho.
-Com "Não saiu" ele fica atrasado e volta. A fatura fica. Nenhum número
-muda; o lembrete e a confirmação automática seguem lendo `contasAVencer`.
-`prova89` (5).
+Com "Não saiu" ele fica atrasado e volta. Nenhum número muda; o lembrete
+e a confirmação automática seguem lendo `contasAVencer`. `prova89` (5).
+**A fatura segue o cadastro do cartão** (mesmo dia, Guilherme: "se débito
+aparece no automático, se boleto nas contas da semana"). Fatura em débito
+automático (`faturaEhAutomatica`) sai das contas da semana, entra em
+"Automáticos do mês" (agendada até vencer) e se confirma sozinha no dia
+útil do vencimento, no valor lançado na fatura (`totalFatura`), por
+`faturasAutomaticas` em `debitoAutomatico.ts`. Revê o "fatura fica fora"
+de 18/10. Diferença do banco: "Outro valor"; "Não saiu" volta para as
+contas da semana como atrasada. `prova90` (11).
 No mesmo dia, pedido dele: "Contas da semana" fica LOGO ABAIXO de "Confira
 seus saldos" (o mês futuro segue com "Contas de [mês]" na coluna 2), e os
 atalhos redondos (Lançar, Planejamento, Posso comprar?, Radar) saíram da

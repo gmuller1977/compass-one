@@ -56,7 +56,7 @@ export function bussolaDoMes(p: {
   const serie = serieBaseDoPlano(p.deps, hoje)
   const negativo = serie ? piorMesDaSerie(serie).primeiroNegativo : null
   const lancadoAcima = lancadoAcimaDoPlano(p.deps, hoje)
-  const contas = contasParaPagar(contasAVencer(p.deps, hoje), p.deps.categorias)
+  const contas = contasParaPagar(contasAVencer(p.deps, hoje), p.deps.categorias, p.deps.contas)
   // As contas da semana viraram aviso aqui (com "Pagar", que abre o Lançar):
   // o quadro delas foi para o Lançar em 10/10/2026. "Passou" e ritmo têm
   // quadro próprio na Bússola e não repetem.
