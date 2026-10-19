@@ -12,7 +12,6 @@ import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEsto
 import { iconeCategoria } from '../utils/categoriaIcone'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
-import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
 import { estadoDoMes, mensagemDoMes, mensagemDaChegada, COR_MENSAGEM, COR_CHEGADA } from '../utils/mensagemDoMes'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
@@ -79,9 +78,6 @@ export default function Dashboard() {
   // previsão — pedido do Guilherme em 27/09/2026, para se preparar para o
   // mês que vem. O seletor vai até o fim do plano; sem plano, até hoje.
   const ehMesCorrente = viewAno === hoje.getFullYear() && viewMes === hoje.getMonth()
-  // "Passou do plano: por quê?" — o botão do aviso "passou" abre a anotação
-  // do motivo enquanto alguma categoria estourada não tem um.
-  const motivo = useLembreteMotivo(ehMesCorrente && usaPlanoNoMes ? linhasSaida : [], viewAno, viewMes)
   const ymHoje = hoje.getFullYear() * 12 + hoje.getMonth()
   const ehFuturo = viewAno * 12 + viewMes > ymHoje
   const olhaAFrente = ehMesCorrente || ehFuturo
@@ -490,12 +486,6 @@ export default function Dashboard() {
                             direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
                         )
                       })}
-                      {motivo.texto && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COR.borda}` }}>
-                          <span style={{ flex: 1, fontSize: M.legenda, color: COR.textoSuave }}>Por que passou? Anote agora, enquanto lembra.</span>
-                          <Pilula onClick={motivo.abrir}>Anotar motivo</Pilula>
-                        </div>
-                      )}
                     </>
                   ) : (
                     <>
@@ -567,7 +557,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {motivo.dialog}
       {fechou.dialog}
       {revisando && (
         <RevisaoPlanoDialog acima={lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}

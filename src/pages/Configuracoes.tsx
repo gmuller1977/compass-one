@@ -27,8 +27,6 @@ import PrimeirosPassos from '../components/configuracoes/PrimeirosPassos'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
 import { nomeCanonico, mesmoNome } from '../utils/nomeCategoria'
 import { mudouIdentidade, renomearNoExtrato, renomearNaFaturaDaCategoria, renomearNosPlanos } from '../utils/renomearCategoria'
-import { rotuloDaLinha } from '../utils/motivoDoEstouro'
-import { supabase } from '../lib/supabase'
 import CfgPreferencias from '../components/configuracoes/CfgPreferencias'
 
 // ── Componente principal ─────────────────────────────────────────────
@@ -409,13 +407,6 @@ export default function Configuracoes() {
         setExtratoData(renomearNoExtrato(extratoData, antiga, antes, depois, categorias))
         setFaturaData(f => renomearNaFaturaDaCategoria(f, antiga, antes, depois, categorias))
         setPlanos(p => renomearNosPlanos(p, antiga, antes, depois, categorias))
-        // Motivos anotados (Radar, Revisão mensal) são do login, pelo rótulo.
-        if (user) {
-          void supabase.from('licoes_aprendidas')
-            .update({ categoria_nome: rotuloDaLinha(depois) })
-            .eq('user_id', user.id).eq('categoria_nome', rotuloDaLinha(antes))
-            .then(({ error }) => { if (error) console.warn('renomear motivos:', error.message) })
-        }
       }
       setCategorias(prev => prev.map(c => c.id===editCatId ? {id:editCatId,...limpo, ativa:true} : c))
       toast('Categoria atualizada')

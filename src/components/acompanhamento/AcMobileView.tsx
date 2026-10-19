@@ -51,8 +51,6 @@ interface AcMobileViewProps {
   /** Já lançado acima do plano dos próximos meses, e o botão da revisão. */
   lancadoAcima: LancadoAcima[]
   onRevisar: () => void
-  /** "Passou do plano: por quê?" — o lembrete do motivo, só no mês corrente. */
-  faixaMotivo?: React.ReactNode
 }
 
 export default function AcMobileView({
@@ -64,7 +62,7 @@ export default function AcMobileView({
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
   saldoAtual, saldoPrevisto, resumo,
-  memoria, cenario, onCenario, lancadoAcima, onRevisar, faixaMotivo,
+  memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
   const [memoriaAberta, setMemoriaAberta] = useState(false)
@@ -429,7 +427,6 @@ export default function AcMobileView({
         ) : (<>
           {resumo && <ResumoRadarFaixa resumo={resumo} />}
           <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={onRevisar} />
-          {faixaMotivo}
           {(dadosAno.entradas ?? []).length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',

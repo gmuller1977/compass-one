@@ -6,7 +6,6 @@ import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import { STATUS_HERO, statusDoMes } from '../components/inicio/statusHero'
 import { mensagemDaChegada, COR_CHEGADA } from '../utils/mensagemDoMes'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
-import { useLembreteMotivo } from '../components/motivo/useLembreteMotivo'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
@@ -53,8 +52,6 @@ export default function Bussola() {
     () => bussolaDoMes({ deps, linhasSaida, categorias, usaPlanoNoMes }),
     [deps, linhasSaida, categorias, usaPlanoNoMes],
   )
-  // O motivo de ter passado, anotado na hora (Revisão mensal abre com ele).
-  const motivo = useLembreteMotivo(usaPlanoNoMes ? linhasSaida : [], ano, mes)
   const fechou = useMesQueFechou(deps)
   const status = STATUS_HERO[statusDoMes({ totalEntradas, totalSaidas, totalPrevS, temPlano })]
 
@@ -209,21 +206,6 @@ export default function Bussola() {
                       direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
                   )
                 })}
-                {motivo.texto && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12,
-                    borderTop: `1px solid ${COR.borda}` }}>
-                    <span style={{ flex: 1, fontSize: M.legenda, color: COR.textoSuave, lineHeight: 1.4 }}>
-                      Por que passou? Anote agora, enquanto lembra.
-                    </span>
-                    <Pilula onClick={motivo.abrir}>Anotar motivo</Pilula>
-                  </div>
-                )}
-                {motivo.texto && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 4 }}>
-                    <button type="button" onClick={motivo.lembrarDepois} style={linkMotivo}>Lembrar depois</button>
-                    <button type="button" onClick={motivo.fechar} style={linkMotivo}>Fechar</button>
-                  </div>
-                )}
               </>
             ) : (
               <>
@@ -259,7 +241,6 @@ export default function Bussola() {
         <LembreteDiarioCard />
       </div>
 
-      {motivo.dialog}
       {fechou.dialog}
       {revisando && (
         <RevisaoPlanoDialog acima={b.lancadoAcima} deps={deps} planos={planos} setPlanos={setPlanos}
@@ -271,12 +252,6 @@ export default function Bussola() {
 }
 
 
-
-// Toque de 44 px (o kit do celular); textoSuave no branco dá 4,76.
-const linkMotivo: CSSProperties = {
-  border: 'none', background: 'none', color: COR.textoSuave, minHeight: 44, padding: '0 4px',
-  fontFamily: 'inherit', fontSize: M.legenda, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline',
-}
 
 const linkRodape: CSSProperties = {
   display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',

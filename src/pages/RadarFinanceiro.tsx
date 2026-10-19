@@ -17,7 +17,6 @@ import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
-import MotivoEstouroFaixa from '../components/motivo/MotivoEstouroFaixa'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { resumoDoMes } from '../utils/resumoRadar'
@@ -212,8 +211,6 @@ export default function RadarFinanceiro() {
         onCenario={setCenarioPrevisao}
         lancadoAcima={lancadoAcima}
         onRevisar={() => setRevisando(true)}
-        faixaMotivo={ehMesCorrente && dadosAno
-          ? <MotivoEstouroFaixa linhasSaida={linhasSaida} ano={ano} mes={mes} /> : null}
       />
       {revisando && (
         <RevisaoPlanoDialog acima={lancadoAcima} deps={depsSaldo} planos={planos} setPlanos={setPlanos}
@@ -322,7 +319,6 @@ export default function RadarFinanceiro() {
         ) : (
           <AjustePlanoContexto.Provider value={setAjuste}>
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
-            {ehMesCorrente && <MotivoEstouroFaixa linhasSaida={linhasSaida} ano={ano} mes={mes} />}
             {/* O cardápio: um cartão por grupo, receitas e depois despesas, numa
                 grade. O cartão aberto ocupa a linha inteira (EvolucaoGrupo). */}
             {/* dense: com um cartão aberto ocupando a linha, os seguintes sobem

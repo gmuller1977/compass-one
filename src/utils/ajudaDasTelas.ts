@@ -67,7 +67,6 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       'Verde é dentro do plano (o verde-claro está no limite); vermelho passou do planejado.',
       'Cada grupo abre e mostra as categorias, com quanto resta ou quanto passou.',
       'Errou o plano de uma categoria? Abra ela e use "ajustar plano"; vale do mês seguinte em diante.',
-      'Passou do plano? "Anotar motivo" guarda o porquê na hora, enquanto você lembra.',
       'A barra no pé mostra o saldo final previsto e abre a conta dele.',
     ],
     perguntas: ['O que significam as cores do Radar?', 'Como ajusto o plano pelo Radar?'],

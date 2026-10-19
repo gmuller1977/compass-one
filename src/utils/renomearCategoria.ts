@@ -1,6 +1,7 @@
 import type { Categoria, DadosMes, Lancamento, PlanoAnoData, PlanoCat } from '../context/AppContext'
 import { catKey, norm, resolverPlanCats } from '../components/acompanhamento/evolucaoCalcs'
-import { rotuloDaLinha } from './motivoDoEstouro'
+const rotuloDaLinha = (l: { nome: string; descricao?: string }) =>
+  l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
 import { lerRotuloParcela, rotuloParcela } from './renomearCompra'
 
 /**

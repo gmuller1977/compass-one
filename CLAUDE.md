@@ -1814,9 +1814,12 @@ guia do primeiro acesso, do "?" e do botão `[[revisao]]` do Norte.
 (`ComparativoMensal`, `CategoriasMesAMes`, `PrecisaoCard`) foram apagados.
 Mês a mês e Precisão do plano não aparecem mais em tela nenhuma;
 `comparativoMensal` e `precisaoDoPlano` ficam, porque o contexto do Norte
-os lê. O motivo anotado continua gravado em `licoes_aprendidas` e serve ao
-lembrete do Radar e da Início, mas nenhuma tela lista os motivos de meses
-passados. A aba "Total" de Lançamentos não foi tocada (tela congelada).
+os lê. No mesmo dia saiu também o PEDIDO DE MOTIVO (Guilherme: "ninguém vai
+preencher; a revisão anual já mostra e sugere com base no mês do ano
+passado"): a faixa do Radar (computador e celular), a linha da Bússola e
+da Início, a janela e `motivoDoEstouro.ts`. O que já está gravado em
+`licoes_aprendidas` fica no banco, sem tela que leia; renomear categoria
+não o atualiza mais. As notas sobre o motivo acima são histórico. A aba "Total" de Lançamentos não foi tocada (tela congelada).
 As menções a Revisão mensal e a Análises acima e abaixo são histórico.
 
 **"Posso comprar?" virou o Simulador** (mesmo dia, escolha do Guilherme no
