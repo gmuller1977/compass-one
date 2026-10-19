@@ -105,9 +105,10 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
                   fontSize: 16, fontWeight: 800, fontFamily: 'inherit', lineHeight: 1, ...bolinha }}>
                 {d.naoSaiu ? '!' : conferido ? '✓' : ''}
               </button>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 6, overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                <span style={{ fontSize: M.corpo, fontWeight: 600, color: COR.texto, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.nome}</span>
-                <span style={{ fontSize: M.legenda, color: COR.textoSuave, flexShrink: 0 }}>
+              {/* Dia e banco ao lado do nome; sem espaço (celular), descem para a linha de baixo. */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6, rowGap: 0, overflow: 'hidden' }}>
+                <span style={{ fontSize: M.corpo, fontWeight: 600, color: COR.texto, minWidth: 0, overflowWrap: 'anywhere' }}>{d.nome}</span>
+                <span style={{ fontSize: M.legenda, color: COR.textoSuave, whiteSpace: 'nowrap' }}>
                   dia {String(d.dia).padStart(2, '0')} · {bancoDe(d)}{d.naoSaiu ? ` · não ${saiu}` : ''}
                 </span>
               </div>

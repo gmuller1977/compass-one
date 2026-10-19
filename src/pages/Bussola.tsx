@@ -136,7 +136,7 @@ export default function Bussola() {
         </div>
       </header>
 
-      <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-44px auto 0', display: 'grid', gap: 16 }}>
+      <div style={{ padding: '0 16px 110px', maxWidth: 560, margin: '-44px auto 0', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 16 }}>
         {/* O cálculo abre logo abaixo do número, e a tela rola até ele: lá
             embaixo dos atalhos ele abria fora da vista e parecia que o link
             não fazia nada (relatado pelo Guilherme em 10/10/2026). */}
