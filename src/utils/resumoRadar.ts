@@ -23,13 +23,15 @@ const reais = (v: number) => `R$ ${Math.round(Math.abs(v)).toLocaleString('pt-BR
 
 /**
  * Os grupos cujo realizado passou do previsto, do maior excesso para o menor —
- * o mesmo total que o cabeçalho do grupo no Radar desenha. Também é a fonte
+ * o mesmo total que o cabeçalho do grupo no Radar desenha, só com as linhas
+ * que têm plano (C2, 19/10/2026: sem plano não há julgamento). Também é a fonte
  * do aviso "passou do plano" da Início (utils/avisosDoMes). `grupo` é a chave
  * do Radar; `nome` já troca "__sem_grupo__" por "Outras".
  */
 export function gruposQuePassaram(linhas: LinhaDoMes[]): { grupo: string; nome: string; excesso: number }[] {
   const porGrupo = new Map<string, number>()
-  for (const l of linhas) porGrupo.set(l.grupo, (porGrupo.get(l.grupo) ?? 0) + l.real - l.prev)
+  // Só as linhas COM plano: gasto sem plano não é julgado (C2, 19/10/2026).
+  for (const l of linhas) if (l.prev > 0.005) porGrupo.set(l.grupo, (porGrupo.get(l.grupo) ?? 0) + l.real - l.prev)
   return [...porGrupo.entries()]
     .filter(([, excesso]) => excesso > 0.005)
     .sort((a, b) => b[1] - a[1])

@@ -20,6 +20,8 @@ const NEUTRO = '#334155'
  */
 function corDaCelula(c: Celula, isEntrada: boolean, parcial: boolean): { cor: string; fundo?: string } {
   if (c.fixaPaga) return { cor: RADAR_COR_CLARO.bom }
+  // Sem plano não há julgamento, como no Radar (C2, 19/10/2026).
+  if (c.prev <= MEIO_CENTAVO) return { cor: NEUTRO }
   if (parcial) {
     return !isEntrada && c.real - c.prev > MEIO_CENTAVO
       ? { cor: RADAR_COR_CLARO.ruim, fundo: FUNDO_RUIM } : { cor: NEUTRO }

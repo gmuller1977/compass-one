@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_COR_AZUL, faixaRadar } from '../components/acompanhamento/radarCores'
+import { RADAR_COR_AZUL, faixaRadar, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
@@ -75,10 +75,12 @@ export default function RadarFinanceiro() {
   const gruposEntrada = useMemo(() => gruposDoRadar('entrada', categorias, cartaoNomes), [categorias, cartaoNomes])
 
   // Os totais saem de totaisDoMes, a mesma função que a tela Início usa.
-  const { totalPrevS, totalRealS, totalPrevE, totalRealE, linhasSaida } = useMemo(() => {
+  // As barrinhas dos cartões julgam só as linhas COM plano (totaisJulgados):
+  // o gasto sem plano conta no número, não no julgamento (C2, 19/10/2026).
+  const { totalPrevS, totalRealS, totalPrevE, totalRealE, linhasSaida, julgE, julgS } = useMemo(() => {
     const t = totaisDoMes({ mes, planoAno: dadosAno, categorias, cartaoNomes, entradasMap, saidasMap })
     return { totalPrevE: t.entrada.prev, totalRealE: t.entrada.real, totalPrevS: t.saida.prev, totalRealS: t.saida.real,
-      linhasSaida: t.saida.linhas }
+      linhasSaida: t.saida.linhas, julgE: totaisJulgados(t.entrada.linhas), julgS: totaisJulgados(t.saida.linhas) }
   }, [dadosAno, mes, entradasMap, saidasMap, categorias, cartaoNomes])
 
   // A resposta prática do mês, antes dos números: quanto ainda dá para gastar
@@ -146,8 +148,8 @@ export default function RadarFinanceiro() {
   const saldoPrevisto = memoria.fechamento
 
   const perc = (real: number, prev: number) => (prev > 0 ? real / prev : null)
-  const percE = perc(totalRealE, totalPrevE)
-  const percS = perc(totalRealS, totalPrevS)
+  const percE = perc(julgE.real, julgE.prev)
+  const percS = perc(julgS.real, julgS.prev)
   const deQuanto = (prev: number) => (prev > 0 ? `de ${fmt(prev)}` : 'sem plano')
   // As barrinhas dos cartões seguem a MESMA regra e as MESMAS cores das barras
   // de grupo: o cartão tem o mesmo fundo azul, e três tons de vermelho na mesma
@@ -194,6 +196,8 @@ export default function RadarFinanceiro() {
         totalPrevS={totalPrevS}
         totalRealE={totalRealE}
         totalRealS={totalRealS}
+        percJulgadoE={percE}
+        percJulgadoS={percS}
         categorias={categorias}
         cartaoNomes={cartaoNomes}
         user={user}

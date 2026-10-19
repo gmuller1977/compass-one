@@ -205,7 +205,7 @@ export default function Bussola() {
                   return (
                     <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
                       titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
-                      legenda={l.semPlano ? 'fora do plano' : `${v(l.real)} de ${v(l.prev)}`}
+                      legenda={`${v(l.real)} de ${v(l.prev)}`}
                       direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
                   )
                 })}

@@ -138,6 +138,8 @@ vencidos até hoje pedem Confere / Outro valor (`fixasValorOverride`) / Não
 saiu (`fixasConsolidadas = false`, volta para as contas a pagar); os que
 vencem depois aparecem como "agendado"; sem nenhum, diz que não há. Conferido
 em `debitosConferidos` do mês (`debitosDoMes`, `DebitosAutomaticosCard`).
+No celular o grupo "Conferidos · N" é um acordeão RECOLHIDO (19/10/2026,
+pedido dele: "para não ocupar tanto a tela"); no computador fica aberto.
 
 **Recebimento automático também se confirma sozinho** (18/10/2026,
 regra do Guilherme: "tudo que é recebimento e pagamento que não depende de
@@ -288,6 +290,19 @@ só, `saldoInformado` em [`saldoInformado.ts`](src/utils/saldoInformado.ts),
 para Radar, Lançamentos e o cartão; a carteira aceita qualquer valor gravado
 (`saldoInformadoDaCarteira`: o informado dela não move número). A caixa de
 Lançamentos mostra o que a regra lê, não o texto cru. `prova82` (8).
+
+**Sem plano, o Radar não julga: só mostra o realizado** (19/10/2026,
+decisão do Guilherme sobre a análise da chegada v3, C2: "ele não deve julgar
+porque não tem plano, somente mostrar o total realizado"). Linha sem plano no
+mês diz "gastou R$ X" / "recebeu R$ X" com "sem plano neste mês", em
+`RADAR_COR_NEUTRA` (`#334155`) e barra vazia, no computador e no celular.
+Grupo e cartões do topo julgam só as linhas COM plano (`totaisJulgados` em
+`radarCores.ts`); o gasto sem plano aparece ao lado ("· R$ Z sem plano"), e
+grupo sem plano nenhum fica neutro. `categoriasEstouradas` (Início, Bússola,
+avisos, Norte) e o pedido de motivo não incluem mais linha sem plano, e
+`gruposQuePassaram` soma só as planejadas. Nenhum número mudou (envelope,
+ritmo, saldo previsto). No fim do mês, o "fechou" da Início
+(`mesQueFechou`) já oferece o gasto como plano do mês seguinte. `prova84` (17).
 
 **O Radar do computador é um CARDÁPIO de grupos** (12/10/2026, pedido do
 Guilherme: "está frio, não chama atenção, os números não convencem"; ele

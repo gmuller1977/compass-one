@@ -95,7 +95,6 @@ export function avisosDoMes(p: {
         id: 'passou', tom: 'vermelho', tag: 'Passou do plano',
         titulo: `${g.nome} passou ${reais(g.excesso)} do planejado`,
         detalhe: !puxou ? 'Some as categorias do grupo no Radar.'
-          : puxou.semPlano ? `${puxou.nome}: ${reais(puxou.real)} sem plano.`
           : `${puxou.nome} puxou: ${reais(puxou.real)} de ${reais(puxou.prev)}.`,
       })
     } else {

@@ -65,6 +65,25 @@ export function faixaRadar(percArredondado: number, isEntrada: boolean): FaixaRa
   return 'bom'
 }
 
+/** Linha sem plano no mês: o Radar não julga (cor neutra, sem barra). */
+export const semPlano = (prev: number) => prev <= 0.005
+
+/** A cor neutra de quem não é julgado, no branco: #334155, 10,4. */
+export const RADAR_COR_NEUTRA = '#334155'
+
+/**
+ * Os totais que o Radar JULGA: só as linhas com plano. O realizado das linhas
+ * sem plano vem à parte, em `fora` — conta no dinheiro, não no julgamento.
+ */
+export function totaisJulgados(linhas: { prev: number; real: number }[]): { prev: number; real: number; fora: number } {
+  let prev = 0, real = 0, fora = 0
+  for (const l of linhas) {
+    if (semPlano(l.prev)) fora += l.real
+    else { prev += l.prev; real += l.real }
+  }
+  return { prev, real, fora }
+}
+
 /**
  * O que cada linha do Radar mostra em destaque — pedido do Guilherme em
  * 06/10/2026: "parece um monte de número, não me traz algo prático". O número
@@ -83,6 +102,12 @@ export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   { principal: string; contexto: string } {
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   if (prev <= 0.005 && Math.abs(real) <= 0.005) return { principal: '—', contexto: 'sem plano neste mês' }
+  // Sem plano não há o que julgar: mostra só o realizado, sem "passou" nem
+  // vermelho. Decisão do Guilherme em 19/10/2026 (análise da chegada v3, C2):
+  // "ele não deve julgar porque não tem plano, somente mostrar o total
+  // realizado". No fim do mês, o "fechou" da Início (mesQueFechou) oferece
+  // esse total como plano do mês seguinte.
+  if (semPlano(prev)) return { principal: `${isEntrada ? 'recebeu' : 'gastou'} ${fmt(real)}`, contexto: 'sem plano neste mês' }
   if (isEntrada) {
     const contexto = prev > 0.005 ? `recebeu ${fmt(real)} de ${fmt(prev)}` : `recebeu ${fmt(real)} sem plano`
     if (opts.fixa && Math.abs(real) <= 0.005 && prev > 0.005) return { principal: `a receber ${fmt(prev)}`, contexto }
@@ -118,17 +143,23 @@ export function ehFixaPaga(prev: number, real: number, isEntrada: boolean, fixa:
  * Fixa paga entra pelo valor PAGO, não pelo previsto: a sobra de centavos
  * dela não vira "resta" (o saldo previsto já não conta nada dela), nem abate
  * o estouro de outra linha. Grupo só de fixas pagas é "✓ pago". O "gastou X
- * de Y" segue com os totais de verdade, os mesmos da barra.
+ * de Y" e a barra são das linhas COM plano; o gasto sem plano vai ao lado
+ * ("· R$ Z sem plano") e não pesa no julgamento (C2, 19/10/2026). Os totais
+ * devolvidos são os da barra.
  */
 export function destaqueDoGrupo(
   linhas: { prev: number; real: number; fixa: boolean }[], isEntrada: boolean,
-): { principal: string; contexto: string } {
-  const prev = linhas.reduce((s, l) => s + l.prev, 0)
-  const real = linhas.reduce((s, l) => s + l.real, 0)
-  const { contexto } = destaqueRadar(prev, real, isEntrada)
-  const comValor = linhas.filter(l => l.prev > 0.005 || Math.abs(l.real) > 0.005)
-  const pagas = comValor.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa))
-  if (comValor.length > 0 && pagas.every(Boolean)) return { principal: '✓ pago', contexto }
-  const prevEfetivo = comValor.reduce((s, l, i) => s + (pagas[i] ? l.real : l.prev), 0)
-  return { principal: destaqueRadar(prevEfetivo, real, isEntrada).principal, contexto }
+): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number } {
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  const t = totaisJulgados(linhas)
+  // Grupo sem nenhuma linha com plano: só o realizado, como a linha.
+  if (semPlano(t.prev)) return { ...destaqueRadar(0, t.fora, isEntrada), julgado: false, ...t }
+  // Julga só as linhas com plano; o gasto sem plano aparece ao lado, sem peso.
+  const planejadas = linhas.filter(l => !semPlano(l.prev))
+  const base = destaqueRadar(t.prev, t.real, isEntrada).contexto
+  const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
+  const pagas = planejadas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa))
+  if (pagas.every(Boolean)) return { principal: '✓ pago', contexto, julgado: true, ...t }
+  const prevEfetivo = planejadas.reduce((s, l, i) => s + (pagas[i] ? l.real : l.prev), 0)
+  return { principal: destaqueRadar(prevEfetivo, t.real, isEntrada).principal, contexto, julgado: true, ...t }
 }

@@ -7,6 +7,7 @@ import { parseValor } from '../../utils/moeda'
 import { debitoComOutroValor, debitoConfere, debitoDesconferir, debitoNaoSaiu, debitoSaiuSim, debitosDoMes, type DebitoDoMes } from '../../utils/debitoAutomatico'
 import type { DadosMes } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
+import { useIsMobile } from '../novoLancamentoExtrato/NleShared'
 
 /**
  * "Automáticos do mês" (18/10/2026, pedido do Guilherme; era "Débitos
@@ -22,6 +23,11 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   const [escolhendo, setEscolhendo] = useState<string | null>(null)
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
+  // No celular os conferidos ficam recolhidos (pedido do Guilherme,
+  // 19/10/2026: "para não ocupar tanto a tela"); no computador, abertos.
+  const isMobile = useIsMobile()
+  const [verConferidos, setVerConferidos] = useState(false)
+  const recolhe = isMobile && !verConferidos
 
 
   const vazio: DadosMes = { lancamentos: {}, saldoBanco: '' }
@@ -45,6 +51,7 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   const pendentes = debitos.filter(d => !d.conferido && !d.agendado).length
   const vencidos = debitos.filter(d => !d.agendado).length
   const temEntrada = debitos.some(d => d.entrada && !d.agendado)
+  const nConferidos = debitos.filter(d => grupoDe(d) === 'conferido').length
 
   return (
     <Cartao>
@@ -67,6 +74,20 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
       {ordenados.map((d, i) => {
         const grupo = grupoDe(d)
         const titulo = i === 0 || grupoDe(ordenados[i - 1]) !== grupo ? ROTULO_GRUPO[grupo] : null
+        const emAcordeao = isMobile && grupo === 'conferido'
+        const acordeao = emAcordeao && titulo ? (
+              <button type="button" aria-expanded={!recolhe} onClick={() => setVerConferidos(v => !v)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: 44,
+                padding: i === 0 ? '0' : '6px 0 0', border: 'none', borderTop: i === 0 ? 'none' : '1px solid #eef2f8',
+                background: 'none', cursor: 'pointer', fontFamily: 'inherit', color: COR.textoSuave,
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase' }}>
+                  {titulo} · {nConferidos}
+                </span>
+                <span aria-hidden style={{ fontSize: 14, transition: 'transform .15s', transform: recolhe ? 'none' : 'rotate(180deg)' }}>▾</span>
+              </button>
+        ) : null
+        if (emAcordeao && recolhe) return titulo ? <div key={d.id}>{acordeao}</div> : null
         const aberto = editando === d.id
         const opcoes = escolhendo === d.id
         const mudou = !d.naoSaiu && Math.abs(d.valor - d.previsto) > 0.004
@@ -84,7 +105,8 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
               : { border: '2px solid #94a3b8', background: '#fff' }
         return (
           <div key={d.id}>
-            {titulo && (
+            {titulo && emAcordeao && acordeao}
+            {titulo && !emAcordeao && (
               <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: COR.textoSuave,
                 padding: i === 0 ? '4px 0 0' : '14px 0 0', borderTop: i === 0 ? 'none' : '1px solid #eef2f8' }}>{titulo}</div>
             )}

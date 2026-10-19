@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga } from './radarCores'
+import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga, semPlano, RADAR_COR_NEUTRA } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
@@ -142,7 +142,9 @@ export default function EvolucaoLinha({
   // do grupo, 100% numa despesa é amarelo, e AABB 120 de 120 apareceria como
   // alerta.
   const noValorExato = prev > 0 && Math.abs(real - prev) < 0.005
-  const semDados = prev <= 0 && real === 0
+  // Sem plano no mês o Radar não julga: número neutro e barra vazia, só o
+  // realizado (C2, decisão do Guilherme em 19/10/2026).
+  const semDados = semPlano(prev)
   const percArred = Math.round(perc * 100) / 100
 
   // Conta FIXA de despesa paga até o previsto é verde e "✓ Pago" — decidido
@@ -159,7 +161,7 @@ export default function EvolucaoLinha({
   const fixaPaga = ehFixaPaga(prev, real, isEntrada, !!cadastro?.fixa)
 
   const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
-  const cor = semDados ? '#94a3b8' : COR[faixa]
+  const cor = semDados ? (Math.abs(real) > 0.005 ? RADAR_COR_NEUTRA : '#94a3b8') : COR[faixa]
   // O número grande é o que importa agora — resta, passou, a pagar, ✓ pago —,
   // e o "gastou X de Y" desce para a linha de baixo. O percentual saiu: a
   // barra já mostra a proporção. Mesma regra do grupo (destaqueRadar), pedido

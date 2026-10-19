@@ -95,7 +95,7 @@ export function conversaDoDia(p: { bussola: Bussola; nome: string; hoje: Date; l
   const e = b.estouradas[0]
   if (e) {
     itens.push({ id: `estourou:${e.nome}·${e.descricao}`, importante: false, icone: 'ti-trending-up', acao: 'radar',
-      texto: `**${e.descricao ? `${e.nome} · ${e.descricao}` : e.nome}** ${e.semPlano ? 'teve gasto fora do plano' : 'passou do plano'}: ${R(e.excesso)}` +
+      texto: `**${e.descricao ? `${e.nome} · ${e.descricao}` : e.nome}** passou do plano: ${R(e.excesso)}` +
         (b.estouradas.length > 1 ? ` (e mais ${b.estouradas.length - 1})` : '') })
   }
 

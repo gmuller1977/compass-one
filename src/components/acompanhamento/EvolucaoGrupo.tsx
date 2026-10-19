@@ -3,7 +3,7 @@ import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { type CatReal } from './AcShared'
 import { RADAR_COR_CLARO as COR, faixaRadar, destaqueDoGrupo } from './radarCores'
-import { buildAllCats, calcGrupoReal, calcGrupoPrev, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
+import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 import { IconeRedondo } from '../mobile/ui'
 
@@ -51,30 +51,29 @@ export default function EvolucaoGrupo({
   const allCats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
   if (allCats.length === 0) return null
 
-  const totalPrev = calcGrupoPrev(allCats, mes)
-  const totalReal = calcGrupoReal(allCats, realMap, categorias)
-
   const primNome = allCats[0]?.nome
   const grupoIcone = primNome ? iconeCategoria(categorias, primNome).icone : (isEntrada ? '💰' : '📂')
   const grupoCor = primNome ? iconeCategoria(categorias, primNome).cor : '#94a3b8'
 
-  const semDados   = totalPrev <= 0 && totalReal <= 0
-  const perc       = totalPrev > 0 ? totalReal / totalPrev : (totalReal > 0 ? 1 : 0)
+  // Fixa paga entra pelo valor pago, e grupo só de fixas pagas é "✓ pago" —
+  // senão o grupo dizia "resta R$ 0,28" em cima de categorias "✓ pago".
+  // Barra e cor julgam só as linhas COM plano; grupo sem plano nenhum fica
+  // neutro e mostra só o realizado (C2, 19/10/2026).
+  const destaque   = destaqueDoGrupo(allCats.map(cat => ({
+    prev: cat.v[mes] ?? 0,
+    real: pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0,
+    fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa,
+  })), isEntrada)
+  const semDados   = !destaque.julgado
+  const perc       = destaque.prev > 0 ? destaque.real / destaque.prev : 0
   const percClamp  = Math.min(perc, 1)
-  const percLabel  = semDados ? '—' : `${Math.round(perc * 100)}%`
+  const percLabel  = semDados ? 'sem plano' : `${Math.round(perc * 100)}%`
   // A cor segue o percentual ARREDONDADO, o que está escrito na tela. Com o
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
   const corFaixa   = COR[faixa]
   const corNumero  = semDados ? TEXTO : corFaixa
-  // Fixa paga entra pelo valor pago, e grupo só de fixas pagas é "✓ pago" —
-  // senão o grupo dizia "resta R$ 0,28" em cima de categorias "✓ pago".
-  const destaque   = destaqueDoGrupo(allCats.map(cat => ({
-    prev: cat.v[mes] ?? 0,
-    real: pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0,
-    fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa,
-  })), isEntrada)
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = () => setAberto(v => !v)
 

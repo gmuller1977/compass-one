@@ -10,21 +10,23 @@ import { cadastroDaLinha, type LinhaDoMes } from '../components/acompanhamento/e
  * Radar desenha, por (nome, variante) — e o excesso é o "Estourou" da linha
  * de categoria do Radar: realizado − previsto, sempre que o realizado passa.
  *
- * Categoria SEM plano com gasto entra também, marcada: o Radar mostra
- * "Estourou" nela, e é dinheiro que saiu fora do que foi planejado — muitas
- * vezes o mais importante de ver.
+ * Categoria SEM plano NÃO entra: sem plano não há o que estourar, e o Radar
+ * só mostra o realizado dela (C2, decisão do Guilherme em 19/10/2026). Antes
+ * entrava marcada "sem plano", e o mês da chegada, ainda sem plano de dia a
+ * dia, virava uma lista de estouros e de pedidos de motivo. O que se repete
+ * vira plano no "fechou" da Início (mesQueFechou).
  *
  * Ordem: pelo excesso em reais, do maior para o menor. É o que pesa no
  * saldo; o percentual vai ao lado.
  */
-export type Estouro = LinhaDoMes & { excesso: number; semPlano: boolean }
+export type Estouro = LinhaDoMes & { excesso: number }
 
 const MEIO_CENTAVO = 0.005
 
 export function categoriasEstouradas(linhas: LinhaDoMes[], n = 3): Estouro[] {
   return linhas
-    .filter(l => l.real - l.prev > MEIO_CENTAVO)
-    .map(l => ({ ...l, excesso: l.real - l.prev, semPlano: l.prev <= MEIO_CENTAVO }))
+    .filter(l => l.prev > MEIO_CENTAVO && l.real - l.prev > MEIO_CENTAVO)
+    .map(l => ({ ...l, excesso: l.real - l.prev }))
     .sort((a, b) => b.excesso - a.excesso)
     .slice(0, n)
 }

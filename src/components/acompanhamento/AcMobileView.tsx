@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_COR_CLARO, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga } from './radarCores'
+import { RADAR_COR_CLARO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -31,6 +31,9 @@ interface AcMobileViewProps {
   totalPrevS: number
   totalRealE: number
   totalRealS: number
+  /** Real ÷ plano só das linhas com plano (totaisJulgados); null sem plano. */
+  percJulgadoE: number | null
+  percJulgadoS: number | null
   categorias: Categoria[]
   cartaoNomes: Set<string>
   user: unknown
@@ -57,7 +60,7 @@ export default function AcMobileView({
   totalDias, dadosAno,
   gruposEntrada, gruposSaida,
   entradasMap, saidasMap,
-  totalPrevE, totalPrevS, totalRealE, totalRealS,
+  totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
   saldoAtual, saldoPrevisto, resumo,
@@ -73,8 +76,9 @@ export default function AcMobileView({
   // levavam em conta o saldo com que o mês abriu.
   const saldoReal = saldoAtual
   const saldoPrev = saldoPrevisto
-  const percE     = totalPrevE > 0 ? Math.min(totalRealE / totalPrevE, 1) : (totalRealE > 0 ? 1 : 0)
-  const percS     = totalPrevS > 0 ? Math.min(totalRealS / totalPrevS, 1) : (totalRealS > 0 ? 1 : 0)
+  // A barra julga só as linhas com plano; sem plano fica vazia (C2).
+  const percE     = Math.min(percJulgadoE ?? 0, 1)
+  const percS     = Math.min(percJulgadoS ?? 0, 1)
   const fmtK = (v: number) => 'R$ ' + Math.round(v).toLocaleString('pt-BR')
   const totalAReceberE = Math.max(totalPrevE - totalRealE, 0)
   const totalApagarS   = Math.max(totalPrevS - totalRealS, 0)
@@ -97,7 +101,11 @@ export default function AcMobileView({
     const fixa      = !!cadastroDaLinha({ nome, descricao }, categorias)?.fixa
     const fixaPaga  = ehFixaPaga(prev, lancAbs, isEntrada, fixa)
     const destaque  = destaqueRadar(prev, lancAbs, isEntrada, { fixa, fixaPaga })
+    // Sem plano no mês não há julgamento: só o realizado, em cor neutra e
+    // sem barra (C2, decisão do Guilherme em 19/10/2026).
+    const naoJulga  = semPlano(prev)
     const dispColor = (prev === 0 && lancAbs === 0) ? COR.textoSuave
+      : naoJulga ? RADAR_COR_NEUTRA
       : fixaPaga ? RADAR_COR_CLARO.bom
       : RADAR_COR_CLARO[faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
 
@@ -107,8 +115,8 @@ export default function AcMobileView({
 
     // Detail: status badge
     let statusLabel: string, statusBg: string, statusColor: string
-    if (prev === 0 && lancAbs === 0) {
-      statusLabel = 'Sem previsão'; statusBg = '#f1f5f9'; statusColor = '#64748b'
+    if (naoJulga) {
+      statusLabel = 'Sem plano neste mês'; statusBg = '#f1f5f9'; statusColor = '#475569'
     } else if (isEntrada) {
       if (lancAbs >= prev && prev > 0) { statusLabel = '✓ Recebido';                      statusBg = '#dcfce7'; statusColor = '#166534' }
       else if (lancAbs > 0)            { statusLabel = `${Math.round(perc*100)}% receb.`;  statusBg = '#fef9c3'; statusColor = '#92400e' }
@@ -125,9 +133,9 @@ export default function AcMobileView({
       : (lancAbs > 0 ? '#dc2626' : '#94a3b8')
     const realBg  = isEntrada ? (lancAbs > 0 ? '#f0fdf4' : '#f8faff') : (lancAbs > 0 ? '#fff1f2' : '#f8faff')
     const realBd  = isEntrada ? (lancAbs > 0 ? '#bbf7d0' : COR.borda) : (lancAbs > 0 ? '#fecdd3' : COR.borda)
-    const dispBg2 = (prev===0&&lancAbs===0) ? '#f8faff' : (disponivel >= 0 ? '#f0fdf4' : '#fff1f2')
-    const dispBd2 = (prev===0&&lancAbs===0) ? COR.borda : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
-    const dispC2  = (prev===0&&lancAbs===0) ? '#94a3b8' : (disponivel >= 0 ? '#16a34a' : '#dc2626')
+    const dispBg2 = naoJulga ? '#f8faff' : (disponivel >= 0 ? '#f0fdf4' : '#fff1f2')
+    const dispBd2 = naoJulga ? COR.borda : (disponivel >= 0 ? '#bbf7d0' : '#fecdd3')
+    const dispC2  = naoJulga ? '#64748b' : (disponivel >= 0 ? '#16a34a' : '#dc2626')
 
     const banco    = lancamentos.filter(l => l.fonte === 'banco')
     const cartao   = lancamentos.filter(l => l.fonte === 'cartao')
@@ -169,7 +177,7 @@ export default function AcMobileView({
           </div>
         </div>
         {/* PROGRESS BAR */}
-        {(prev > 0 || lancAbs > 0) && (
+        {!naoJulga && (
           <div style={{ margin:'0 14px 12px 62px' }}>
             <div style={{ background:'#eef2f8', borderRadius:4, height:6, overflow:'hidden' }}>
               <div style={{ width:`${Math.min(perc,1)*100}%`, height:6, borderRadius:4, background:progressColor }}/>
@@ -207,7 +215,7 @@ export default function AcMobileView({
                   {isEntrada ? 'A receber' : 'Disponível'}
                 </div>
                 <div style={{ fontSize:14, fontWeight:800, fontVariantNumeric:'tabular-nums', color:dispC2 }}>
-                  {(prev===0&&lancAbs===0)?'—':fmt(disponivel)}
+                  {naoJulga?'—':fmt(disponivel)}
                 </div>
               </div>
             </div>
@@ -273,17 +281,20 @@ export default function AcMobileView({
         return { prev, real, fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa }
       })
       const dg = destaqueDoGrupo(linhasGrupo, isEntrada)
-      const gPrev = linhasGrupo.reduce((t, l) => t + l.prev, 0)
-      const gReal = linhasGrupo.reduce((t, l) => t + l.real, 0)
-      const gPerc = gPrev > 0 ? gReal / gPrev : (gReal > 0 ? 1 : 0)
+      // Barra e cor julgam só as linhas COM plano (destaqueDoGrupo); grupo
+      // sem plano nenhum fica neutro, só com o realizado (C2, 19/10/2026).
+      const gPrev = dg.prev
+      const gReal = dg.real
+      const gPerc = gPrev > 0 ? gReal / gPrev : 0
       const gCor  = dg.principal === '—' ? COR.textoSuave
+        : !dg.julgado ? RADAR_COR_NEUTRA
         : RADAR_COR_CLARO[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
       // Cada grupo é um acordeão, FECHADO por padrão, como no computador:
       // recolhida, a tela vira um painel de barras (pedido do Guilherme em
       // 10/10/2026). "Outras" também fecha.
       const gid = `g-${tipo}-${grupo}`
       const aberto = abertos.has(gid)
-      const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : (gReal > 0 ? 100 : 0)
+      const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
@@ -312,7 +323,8 @@ export default function AcMobileView({
               <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gCor }} />
             </div>
             <span style={{ fontSize:13, color:COR.textoSuave, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
-              {fmtK(gReal)}{gPrev > 0 ? ` de ${fmtK(gPrev)}` : ''}
+              {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
+              {dg.julgado && Math.abs(dg.fora) > 0.005 ? ` · ${fmtK(dg.fora)} sem plano` : ''}
             </span>
           </div>
         </button>

@@ -80,14 +80,12 @@ export default function MotivoEstouroDialog({ estouros, nomeMes, salvar, onFecha
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 14, fontWeight: 700 }}>{e.rotulo}</span>
                 <span style={{ fontSize: 13, color: COR.erroTexto, fontWeight: 700 }}>
-                  {e.semPlano ? `${reais(e.real)} sem plano` : `passou ${reais(e.excesso)}`}
+                  passou {reais(e.excesso)}
                 </span>
               </div>
-              {!e.semPlano && (
-                <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
-                  gastou {reais(e.real)} de {reais(e.prev)}
-                </div>
-              )}
+              <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2 }}>
+                gastou {reais(e.real)} de {reais(e.prev)}
+              </div>
               <textarea value={textos[e.rotulo] ?? ''} rows={2}
                 aria-label={`Motivo de ${e.rotulo}`}
                 placeholder="Ex.: troquei o pneu do carro"
