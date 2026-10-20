@@ -844,7 +844,7 @@ function Campo({ valor, onMudar, placeholder, pequeno, numerico, texto, autoFoco
 /** Dentro da caixa azul os rótulos e as pílulas trocam para a paleta do
  *  fundo escuro (`#1e40af` no extremo claro: branco 8,7; 75% 5,1). */
 /** A fatura escrita como conta ou gasto: não vira categoria (ehFaturaDoCartao). */
-const AVISO_FATURA = 'A fatura do cartão não entra aqui: ela já vem dos cartões que você informou, e cada compra entra no gasto do que foi comprado. Este item não será gravado.'
+const AVISO_FATURA = 'Cartão de crédito é uma forma de pagamento, não uma conta ou gasto: ele se cadastra no passo dos cartões (e depois em Configurações › Cartões), e cada compra entra no gasto do que foi comprado. Este item não será gravado.'
 
 const NaCaixa = createContext(false)
 

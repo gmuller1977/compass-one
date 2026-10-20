@@ -3274,6 +3274,9 @@ acesso, onde "Outra conta" / "Outro gasto" com esse nome avisa e não grava.
 A fatura entra pelo cartão e as compras dela já estão nas categorias; uma
 categoria assim contaria a compra duas vezes. "Anuidade do cartão" passa.
 Quem já tem uma exclui em Configurações. `prova83` (13).
+O aviso diz que cartão é FORMA DE PAGAMENTO e se cadastra em Configurações ›
+Cartões (20/10/2026, pedido dele), e em Configurações aparece já ao
+digitar o nome, antes de salvar.
 
 **O nome no cadastro tem autocomplete, e é gravado com a grafia da
 existente.** Pedido do Guilherme em 08/10/2026: o campo era aberto. Ao digitar,

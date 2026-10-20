@@ -3,6 +3,7 @@ import type { Categoria, TipoCategoria } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
 import { inputSt } from './CfgShared'
 import { nomesParaSugerir, mesmoNome, type NomeSugerido } from '../../utils/nomeCategoria'
+import { ehFaturaDoCartao, MSG_FATURA_NAO_E_CATEGORIA } from '../../utils/novaCategoria'
 
 /**
  * "Nome da categoria" com autocomplete: ao digitar, as categorias já
@@ -95,7 +96,14 @@ export default function NomeCategoriaCampo({
 
       {/* Existente ou nova — o que acontece ao salvar. infoTexto/infoFundo 5,5:1;
           sucessoTexto/sucessoFundo 4,8:1 (cores.ts). */}
-      {formCat.nome.trim() && !nomeIgualAoOriginal && !mostrar && (existente ? (
+      {/* Cartão é forma de pagamento: avisa enquanto digita, antes do salvar
+          recusar (20/10/2026, pedido do Guilherme). avisoTexto 6,8:1. */}
+      {!nomeIgualAoOriginal && ehFaturaDoCartao(formCat.nome) ? (
+        <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.4, color: COR.avisoTexto, background: COR.avisoFundo,
+          border: `1px solid ${COR.avisoBorda}`, borderRadius: 8, padding: '6px 8px' }}>
+          {MSG_FATURA_NAO_E_CATEGORIA}
+        </div>
+      ) : formCat.nome.trim() && !nomeIgualAoOriginal && !mostrar && (existente ? (
         <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.4, color: COR.infoTexto, background: COR.infoFundo,
           borderRadius: 8, padding: '6px 8px' }}>
           <b>{existente.nome}</b> já existe{existente.grupo ? ` (${existente.grupo})` : ''}: esta será uma nova variante dela.

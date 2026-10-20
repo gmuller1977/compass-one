@@ -87,7 +87,7 @@ export function ehFaturaDoCartao(nomeCru: string, nomesCartoes: string[] = []): 
 }
 
 export const MSG_FATURA_NAO_E_CATEGORIA =
-  'A fatura do cartão não é uma categoria: ela entra pelo próprio cartão. Lance cada compra na categoria do que foi comprado.'
+  'Cartão de crédito é uma forma de pagamento, não uma categoria. O cartão se cadastra em Configurações › Cartões, e cada compra entra na categoria do que foi comprado (mercado, farmácia…).'
 
 export function montarCategoria(nomeCru: string, ctx: Contexto): Categoria | Recusa {
   const nome = nomeCru.trim().replace(/\s+/g, ' ')
