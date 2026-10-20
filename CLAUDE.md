@@ -140,6 +140,10 @@ vencem depois aparecem como "agendado"; sem nenhum, diz que não há. Conferido
 em `debitosConferidos` do mês (`debitosDoMes`, `DebitosAutomaticosCard`).
 O grupo "Conferidos · N" é um acordeão RECOLHIDO (19/10/2026, pedido dele:
 "para não ocupar tanto a tela"), no celular e, no mesmo dia, no computador.
+Em 20/10/2026 (pedido dele) o quadro voltou a se chamar **"Débito
+automático"**, e os "Agendados" (vencem depois de hoje, ainda no mês)
+também ficam num acordeão recolhido: abertos, "parece que está faltando
+pagar no mês". As notas que dizem "Automáticos do mês" são histórico.
 
 **Recebimento automático também se confirma sozinho** (18/10/2026,
 regra do Guilherme: "tudo que é recebimento e pagamento que não depende de

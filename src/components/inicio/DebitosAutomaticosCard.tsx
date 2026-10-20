@@ -9,8 +9,8 @@ import type { DadosMes } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
 
 /**
- * "Automáticos do mês" (18/10/2026, pedido do Guilherme; era "Débitos
- * automáticos" até os recebimentos entrarem, no mesmo dia), ao lado de
+ * "Débito automático" (18/10/2026, pedido do Guilherme; foi "Automáticos do
+ * mês" de 18 a 20/10, quando ele pediu o nome de volta), ao lado de
  * "Confira seus saldos" na Início do computador e embaixo dele na Bússola.
  * O app confirma o débito sozinho no vencimento; aqui a pessoa confere no
  * extrato do banco se saiu e no valor certo. Regras em utils/debitoAutomatico.ts.
@@ -24,8 +24,9 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   const [erro, setErro] = useState('')
   // Os conferidos ficam recolhidos (pedido do Guilherme, 19/10/2026: "para
   // não ocupar tanto a tela"), no celular e, no mesmo dia, no computador.
-  const [verConferidos, setVerConferidos] = useState(false)
-  const recolhe = !verConferidos
+  // Os agendados também (20/10/2026, pedido dele: abertos, "parece que está
+  // faltando pagar no mês"): ainda não venceram, não há o que fazer.
+  const [abertos, setAbertos] = useState<Record<Grupo, boolean>>({ conferir: true, agendado: false, conferido: false })
 
 
   const vazio: DadosMes = { lancamentos: {}, saldoBanco: '' }
@@ -49,14 +50,14 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
   const pendentes = debitos.filter(d => !d.conferido && !d.agendado).length
   const vencidos = debitos.filter(d => !d.agendado).length
   const temEntrada = debitos.some(d => d.entrada && !d.agendado)
-  const nConferidos = debitos.filter(d => grupoDe(d) === 'conferido').length
+  const quantos = (g: Grupo) => debitos.filter(d => grupoDe(d) === g).length
 
   return (
     <Cartao>
       <TituloCartao direita={pendentes === 0 && vencidos > 0
         ? <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ conferido</Etiqueta>
         : undefined}>
-        Automáticos do mês
+        Débito automático
       </TituloCartao>
       {pendentes > 0 && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -4, marginBottom: 6, lineHeight: 1.45 }}>
@@ -72,21 +73,28 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
       {ordenados.map((d, i) => {
         const grupo = grupoDe(d)
         const titulo = i === 0 || grupoDe(ordenados[i - 1]) !== grupo ? ROTULO_GRUPO[grupo] : null
-        const emAcordeao = grupo === 'conferido'
+        const emAcordeao = grupo !== 'conferir'
+        const recolhe = !abertos[grupo]
+        const n = quantos(grupo)
         const acordeao = emAcordeao && titulo ? (
               // Com cara de botão (pedido do Guilherme, mesmo dia: "não dá
               // para saber que ao clicar abre"): caixa cinza, ✓ verde e
               // "Ver" / "Esconder" em azul. #1a56db no #f1f5f9: 4,9.
-              <div style={{ paddingTop: i === 0 ? 0 : 12, borderTop: i === 0 ? 'none' : '1px solid #eef2f8', marginTop: i === 0 ? 0 : 2 }}>
-                <button type="button" aria-expanded={!recolhe} onClick={() => setVerConferidos(v => !v)} style={{
+              <div style={{ paddingTop: i === 0 ? 0 : 12, paddingBottom: grupo === 'agendado' && !recolhe ? 0 : undefined, borderTop: i === 0 ? 'none' : '1px solid #eef2f8', marginTop: i === 0 ? 0 : 2 }}>
+                <button type="button" aria-expanded={!recolhe} onClick={() => setAbertos(a => ({ ...a, [grupo]: !a[grupo] }))} style={{
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, padding: '0 14px',
                   border: `1px solid ${COR.borda}`, borderRadius: 14, background: '#f1f5f9',
                   cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
                 }}>
-                  <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', background: COR.sucessoTexto, color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>✓</span>
+                  {grupo === 'conferido'
+                    ? <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', background: COR.sucessoTexto, color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>✓</span>
+                    : <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', border: `2px dashed ${COR.borda}`,
+                        background: '#fff', boxSizing: 'border-box', flexShrink: 0 }} />}
                   <span style={{ flex: 1, minWidth: 0, fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
-                    {nConferidos} {nConferidos === 1 ? 'conferido' : 'conferidos'}
+                    {grupo === 'conferido'
+                      ? `${n} ${n === 1 ? 'conferido' : 'conferidos'}`
+                      : `${n} ${n === 1 ? 'agendado' : 'agendados'} até o fim do mês`}
                   </span>
                   <span style={{ fontSize: M.legenda, fontWeight: 700, color: '#1a56db', whiteSpace: 'nowrap' }}>
                     {recolhe ? 'Ver' : 'Esconder'} <span aria-hidden style={{ display: 'inline-block', transform: recolhe ? 'none' : 'rotate(180deg)' }}>▾</span>
