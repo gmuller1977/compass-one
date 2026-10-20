@@ -132,7 +132,7 @@ export default function PlanCelulaEditavel({ valor, readOnly = false, motivoBloq
     const resultado = ehConta ? parseConta(temp) : null
     return (
       <span style={{ position: 'relative', display: 'block' }}>
-      <input
+      <input inputMode="decimal"
         ref={inputRef}
         autoFocus
         value={temp}

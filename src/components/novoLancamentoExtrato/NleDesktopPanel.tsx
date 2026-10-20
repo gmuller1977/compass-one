@@ -356,7 +356,7 @@ export default function NleDesktopPanel({
           <div style={{marginBottom:14}}>
             <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
               letterSpacing:.5,marginBottom:5}}>Valor *</div>
-            <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+            <input inputMode="decimal" ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00"
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{width:'100%',border:'2px solid #1a56db',borderRadius:10,padding:'10px 14px',

@@ -393,7 +393,7 @@ export default function CfgCategorias({
               {((formCat.fixa && formCat.tipoMovimento !== 'cartao') || (formCat.tipoMovimento === 'banco' && formCat.formaPagamento === 'automatico')) && (
                 <div>
                   <label style={labelSt}>Dia de vencimento</label>
-                  <input type="number" min="1" max="31"
+                  <input inputMode="numeric" type="number" min="1" max="31"
                     value={formCat.diaVencimento||''}
                     onChange={e => setFormCat(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
                     placeholder="Ex: 10" className="campo-cfg" style={inputSt} />

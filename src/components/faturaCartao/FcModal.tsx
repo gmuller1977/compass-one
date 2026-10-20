@@ -34,7 +34,7 @@ export default function FcModal({
           titulo="Qual é o valor atual da fatura?" id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
           subtitulo="Informe o valor do cartão para acompanhar a diferença em relação ao sistema." />
         <div style={{padding:'18px 24px 22px'}}>
-        <input autoFocus
+        <input inputMode="decimal" autoFocus
           value={modalFaturaValor}
           onChange={e => setModalFaturaValor(e.target.value)}
           onFocus={e => e.target.select()}

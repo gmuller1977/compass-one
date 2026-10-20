@@ -204,7 +204,7 @@ export default function PlanFerramentas({
               </div>
               <div>
                 <label style={LABEL}>Percentual (%):</label>
-                <input
+                <input inputMode="decimal"
                   type="number"
                   min="0.1" max="500" step="0.1"
                   placeholder="0.0"

@@ -88,7 +88,7 @@ export default function PlanCelulaNav({
 
   if (editando) {
     return (
-      <input
+      <input inputMode="decimal"
         ref={inputRef}
         value={inputVal}
         onChange={e => setInputVal(e.target.value)}

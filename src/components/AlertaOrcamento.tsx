@@ -79,7 +79,7 @@ export default function AlertaOrcamento({ catNome, previsto, totalGasto, valorAt
     <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
       <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600, marginBottom: 8 }}>Novo valor planejado para {catNome} em {mesLabel}:</div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input
+        <input inputMode="decimal"
           value={novoValor}
           onChange={e => setNovoValor(e.target.value)}
           style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #b45309', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', textAlign: 'right', background: '#fff' }}

@@ -504,7 +504,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
           </div>
           <div>
             <label style={labelSt}>Quanto custa?</label>
-            <input value={valorStr} onChange={e => setValorStr(e.target.value)}
+            <input inputMode="decimal" value={valorStr} onChange={e => setValorStr(e.target.value)}
               placeholder="R$ 1.800,00" style={inputSt}
               onKeyDown={e => e.key === 'Enter' && simular()} />
           </div>

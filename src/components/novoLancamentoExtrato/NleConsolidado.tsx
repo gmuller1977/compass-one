@@ -423,7 +423,7 @@ export default function NleConsolidado({
         <div style={{display:'flex',alignItems:'flex-end',gap:8,marginBottom:14}}>
           <div style={{flex:'0 0 64px'}}>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Dia</div>
-            <input type="number" min={1} max={totalDias} value={diaSel}
+            <input inputMode="numeric" type="number" min={1} max={totalDias} value={diaSel}
               onChange={e=>setDiaSel(Math.min(Math.max(parseInt(e.target.value)||1,1),totalDias))}
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
@@ -523,7 +523,7 @@ export default function NleConsolidado({
           </div>
           <div>
             <div style={{fontSize:10,color:'#0369a1',fontWeight:600,marginBottom:4}}>Valor *</div>
-            <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+            <input inputMode="decimal" ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
               placeholder="R$ 0,00" onFocus={realcarFoco} onBlur={removerRealce}
               style={{border:'1.5px solid #bae6fd',borderRadius:8,padding:'7px 10px',
                 fontSize:12,outline:'none',background:'#fff',

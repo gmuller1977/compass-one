@@ -183,7 +183,7 @@ export default function CfgBancosCartoes({
                   <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 1 }}>Saldo inicial em espécie</div>
                   {editandoDinheiro ? (
                     <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
-                      <input
+                      <input inputMode="decimal"
                         autoFocus
                         type="number"
                         min="0"
@@ -365,7 +365,7 @@ export default function CfgBancosCartoes({
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                 <div>
                   <label style={labelSt}>Dia fechamento</label>
-                  <input type="number" min="1" max="31"
+                  <input inputMode="numeric" type="number" min="1" max="31"
                     value={formConta.diaFechamento||''}
                     onChange={e => setFormConta(p=>({...p, diaFechamento:parseInt(e.target.value)||undefined}))}
                     placeholder="Ex: 10" className="campo-cfg" style={inputSt} />
@@ -375,7 +375,7 @@ export default function CfgBancosCartoes({
                 </div>
                 <div>
                   <label style={labelSt}>Dia vencimento</label>
-                  <input type="number" min="1" max="31"
+                  <input inputMode="numeric" type="number" min="1" max="31"
                     value={formConta.diaVencimento||''}
                     onChange={e => setFormConta(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
                     placeholder="Ex: 17" className="campo-cfg" style={inputSt} />
@@ -445,7 +445,7 @@ export default function CfgBancosCartoes({
                 <label style={{ ...labelSt, color:'#6d28d9', marginBottom:6, display:'block' }}>
                   Fatura informada no planejamento
                 </label>
-                <input
+                <input inputMode="decimal"
                   value={faturaStr}
                   onChange={e => {
                     const raw = e.target.value.replace(/[^0-9.,]/g, '')
@@ -488,7 +488,7 @@ export default function CfgBancosCartoes({
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                     <div>
                       <label style={labelSt}>Agência</label>
-                      <input value={formConta.agencia||''}
+                      <input inputMode="numeric" value={formConta.agencia||''}
                         onChange={e => setFormConta(p=>({...p, agencia:e.target.value}))}
                         placeholder="Ex: 0001" className="campo-cfg" style={inputSt} />
                     </div>
@@ -532,7 +532,7 @@ export default function CfgBancosCartoes({
               )}
               <div>
                 <label style={labelSt}>Saldo inicial</label>
-                <input value={saldoStr}
+                <input inputMode="decimal" value={saldoStr}
                   onChange={e => {
                     const raw = e.target.value.replace(/[^0-9.,]/g, '')
                     setSaldoStr(raw)

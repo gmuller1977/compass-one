@@ -574,19 +574,19 @@ export default function Simulacao() {
                 </div>
                 <div>
                   <label style={labelSt}>Valor total (R$)</label>
-                  <input value={valorDivida} onChange={e => setValorDivida(e.target.value)}
+                  <input inputMode="decimal" value={valorDivida} onChange={e => setValorDivida(e.target.value)}
                     placeholder="R$ 10.000,00" style={inputSt} />
                 </div>
                 <div>
                   <label style={labelSt}>Parcela mensal (R$)</label>
-                  <input value={parcelaStr} onChange={e => setParcelaStr(e.target.value)}
+                  <input inputMode="decimal" value={parcelaStr} onChange={e => setParcelaStr(e.target.value)}
                     placeholder="R$ 500,00" style={inputSt} />
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelSt}>
                     Juros mensal (%) <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— opcional</span>
                   </label>
-                  <input value={taxaStr} onChange={e => setTaxaStr(e.target.value)}
+                  <input inputMode="decimal" value={taxaStr} onChange={e => setTaxaStr(e.target.value)}
                     placeholder="Ex: 2,5 — deixe em branco se não souber" style={inputSt} />
                 </div>
               </div>
@@ -725,12 +725,12 @@ export default function Simulacao() {
                 </div>
                 <div>
                   <label style={labelSt}>Valor total (R$)</label>
-                  <input value={valorMeta} onChange={e => setValorMeta(e.target.value)}
+                  <input inputMode="decimal" value={valorMeta} onChange={e => setValorMeta(e.target.value)}
                     placeholder="R$ 20.000,00" style={inputSt} />
                 </div>
                 <div>
                   <label style={labelSt}>Quanto pode guardar por mês (R$)</label>
-                  <input value={guardaStr} onChange={e => setGuardaStr(e.target.value)}
+                  <input inputMode="decimal" value={guardaStr} onChange={e => setGuardaStr(e.target.value)}
                     placeholder="R$ 800,00" style={inputSt} />
                 </div>
               </div>

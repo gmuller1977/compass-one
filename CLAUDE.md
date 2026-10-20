@@ -3187,6 +3187,14 @@ travaria o campo na vírgula.
 Exceção: `<input type="number">` entrega formato en-US e continua com
 `parseFloat`. Aplicar `parseValor` ali leria `1.234` como milhar.
 
+**Todo campo numérico abre o teclado de números no celular** (20/10/2026,
+pedido do Guilherme): valor em dinheiro e percentual com
+`inputMode="decimal"` (números e vírgula), dia e quantidade com
+`inputMode="numeric"`. Campo novo de número já nasce com um dos dois.
+Consequência aceita: no teclado decimal não há "+", então a conta
+"800+300" da célula do plano fica para o computador; no celular o
+caminho é "detalhar em itens".
+
 Cálculos ficam em `number`, não em centavos inteiros: a deriva medida na cascata
 de 12 meses com 53 categorias é de R$ 1e-10, ~43 milhões de vezes abaixo do
 centavo. Para perguntar se um valor é zero, usar `ehZero()` — comparar com `=== 0`

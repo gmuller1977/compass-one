@@ -367,7 +367,7 @@ export default function WizardPlanejamento() {
                     {c.tipo === 'poupanca' ? 'Poupança' : 'Conta Corrente'}
                   </div>
                 </div>
-                <input
+                <input inputMode="decimal"
                   value={saldos[c.id] ?? ''}
                   onChange={e => setSaldos(prev => ({ ...prev, [c.id]: maskBRL(e.target.value) }))}
                   placeholder="R$ 0,00"
@@ -412,7 +412,7 @@ export default function WizardPlanejamento() {
             <div style={{ flex:1 }}>
               <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{c.nome}</div>
             </div>
-            <input
+            <input inputMode="decimal"
               value={faturas[c.id] ?? ''}
               onChange={e => setFaturas(prev => ({ ...prev, [c.id]: maskBRL(e.target.value) }))}
               onFocus={e => { e.target.style.borderColor='#7c3aed'; e.target.style.background='#fff' }}
@@ -494,7 +494,7 @@ export default function WizardPlanejamento() {
                     </label>
                   )}
                 </div>
-                <input
+                <input inputMode="decimal"
                   value={values[catKey(c.nome, c.descricao)] ?? ''}
                   onChange={e => setValues(prev => ({ ...prev, [catKey(c.nome, c.descricao)]: maskBRL(e.target.value) }))}
                   onFocus={e => { e.target.style.borderColor='#1a56db'; e.target.style.background='#fff' }}

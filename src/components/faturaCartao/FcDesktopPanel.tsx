@@ -101,7 +101,7 @@ export default function FcDesktopPanel({
           <div style={{display:'flex',alignItems:'center',gap:6,background:'#eff6ff',
             border:`1px solid ${COR.azul}44`,borderRadius:8,padding:'6px 12px'}}>
             <span style={{fontSize:11,fontWeight:600,color:COR.azul,flex:1}}>Fecha dia</span>
-            <input type="number" min={1} max={31} autoFocus
+            <input inputMode="numeric" type="number" min={1} max={31} autoFocus
               defaultValue={diaFechamento}
               onBlur={e => {
                 const v = Math.min(Math.max(parseInt(e.target.value)||diaFechamentoBase,1),31)
@@ -131,7 +131,7 @@ export default function FcDesktopPanel({
           <div style={{display:'flex',alignItems:'center',gap:6,background:'#fff5f5',
             border:`1px solid ${COR.vermelho}44`,borderRadius:8,padding:'6px 12px'}}>
             <span style={{fontSize:11,fontWeight:600,color:COR.vermelho,flex:1}}>Vence dia</span>
-            <input type="number" min={1} max={31} autoFocus
+            <input inputMode="numeric" type="number" min={1} max={31} autoFocus
               defaultValue={diaVencimento}
               onBlur={e => {
                 const v = Math.min(Math.max(parseInt(e.target.value)||diaVencimentoBase,1),31)
@@ -274,7 +274,7 @@ export default function FcDesktopPanel({
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
             letterSpacing:.5,marginBottom:5}}>Valor da parcela *</div>
-          <input ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
+          <input inputMode="decimal" ref={valorInputRef} value={fValor} onChange={e=>setFValor(e.target.value)}
             placeholder="R$ 0,00"
             onFocus={realcarFoco} onBlur={removerRealce}
             style={{width:'100%',border:'2px solid #1a56db',borderRadius:10,padding:'10px 14px',
@@ -314,7 +314,7 @@ export default function FcDesktopPanel({
                 </button>
               )
             })}
-            <input
+            <input inputMode="numeric"
               type="number" min={13} placeholder="+12x"
               tabIndex={parseInt(fParcelas) > 12 ? 0 : -1}
               value={parseInt(fParcelas)>12 ? fParcelas : ''}

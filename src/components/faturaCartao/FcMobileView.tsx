@@ -201,7 +201,7 @@ export default function FcMobileView({
                   background:'#fff',fontSize:22,fontWeight:700,color:COR.azul,
                   cursor:'pointer',fontFamily:'inherit',display:'flex',
                   alignItems:'center',justifyContent:'center'}}>−</button>
-              <input type="number" min={1} max={31} value={editFechVal}
+              <input inputMode="numeric" type="number" min={1} max={31} value={editFechVal}
                 onChange={e => setEditFechVal(Math.min(31,Math.max(1,parseInt(e.target.value)||1)))}
                 style={{flex:1,textAlign:'center' as const,fontSize:28,fontWeight:800,
                   color:COR.azul,border:`2px solid ${COR.azul}`,borderRadius:12,
@@ -249,7 +249,7 @@ export default function FcMobileView({
                   background:'#fff',fontSize:22,fontWeight:700,color:COR.vermelho,
                   cursor:'pointer',fontFamily:'inherit',display:'flex',
                   alignItems:'center',justifyContent:'center'}}>−</button>
-              <input type="number" min={1} max={31} value={editVencVal}
+              <input inputMode="numeric" type="number" min={1} max={31} value={editVencVal}
                 onChange={e => setEditVencVal(Math.min(31,Math.max(1,parseInt(e.target.value)||1)))}
                 style={{flex:1,textAlign:'center' as const,fontSize:28,fontWeight:800,
                   color:COR.vermelho,border:`2px solid ${COR.vermelho}`,borderRadius:12,
@@ -421,7 +421,7 @@ export default function FcMobileView({
             {/* Valor da parcela */}
             <div style={{marginBottom:14}}>
               <label style={rotuloForm}>Valor da parcela</label>
-              <input ref={valorInputRef} value={fValor}
+              <input inputMode="decimal" ref={valorInputRef} value={fValor}
                 onChange={e => setFValor(e.target.value)}
                 placeholder="R$ 0,00"
                 style={{width:'100%',border:`2px solid ${COR.azul}`,borderRadius:12,

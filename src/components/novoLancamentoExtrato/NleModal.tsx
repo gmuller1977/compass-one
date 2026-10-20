@@ -38,7 +38,7 @@ export default function NleModal({
             ? 'Conte o que está na carteira para conferir se seus lançamentos estão batendo.'
             : 'Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.'} />
         <div style={{padding:'18px 24px 22px'}}>
-        <input autoFocus
+        <input inputMode="decimal" autoFocus
           value={modalSaldoValor}
           onChange={e => setModalSaldoValor(e.target.value)}
           onFocus={e => e.target.select()}
