@@ -359,10 +359,9 @@ export default function CfgCategorias({
                 </div>
               </div>
 
-              {/* Repetição (utils/recorrencia): só da FIXA desde 20/10/2026.
-                  Mensal repete até dezembro; parcelada pergunta "3x" ao
-                  planejar. Variável sempre repete até dezembro. */}
-              {formCat.fixa && (
+              {/* Repetição (utils/recorrencia), em toda categoria: mensal repete
+                  até dezembro; parcelada pergunta "3x" ao planejar. */}
+              {(
                 <div>
                   <label style={labelSt}>Repetição</label>
                   <div style={{ display:'flex', gap:6 }}>
@@ -385,7 +384,7 @@ export default function CfgCategorias({
                     </div>
                   ) : (
                     <div style={{ fontSize:11, color:'#64748b', marginTop:6, lineHeight:1.4 }}>
-                      Por alguns meses (IPVA, IPTU, seguro). Ao planejar, o app pergunta em quantas vezes: 2x, 3x…
+                      Não é todo mês (IPVA, viagem, presentes). Ao planejar, o app pergunta em quantas vezes: só este mês, 2x, 3x…
                     </div>
                   )}
                 </div>

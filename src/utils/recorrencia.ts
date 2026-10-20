@@ -8,10 +8,9 @@
  *     pergunta quantas parcelas.
  *
  * Em 20/10/2026 (Guilherme) os nomes viraram MENSAL e PARCELADA, e a escolha
- * passou a valer só para a FIXA. Variável sempre repete até dezembro: no plano,
- * o valor dela é um teto do mês, "quase uma fixa". O banco segue gravando
- * 'anual' / 'temporaria'; uma variável que tenha 'temporaria' gravado é lida
- * como mensal (`ehParcelada`).
+ * valeu só para a fixa por alguns minutos; no mesmo dia voltou para TODA
+ * categoria (Viagem é variável e não se repete). O banco segue gravando
+ * 'anual' / 'temporaria'.
  *
  * O PLANO continua sendo a verdade: Lançamentos, contas a vencer, previsão e
  * Radar seguem o valor de cada mês, e mês sem valor é conta que não aparece.
@@ -21,9 +20,8 @@ export type MesRef = { ano: number; mes: number }
 
 const ym = (m: MesRef) => m.ano * 12 + m.mes
 
-/** Fixa parcelada (IPVA, IPTU, seguro): ao planejar, pergunta "3x". Variável nunca é. */
-export const ehParcelada = (c: { fixa?: boolean; recorrencia?: string | null }) =>
-  !!c.fixa && c.recorrencia === 'temporaria'
+/** Parcelada (IPVA, viagem, presentes): ao planejar, pergunta "3x". Fixa ou variável. */
+export const ehParcelada = (c: { recorrencia?: string | null }) => c.recorrencia === 'temporaria'
 
 /** Para onde a ANUAL repete o valor digitado em (ano, mes): os meses seguintes até dezembro. */
 export function mesesParaRepetir(ano: number, mes: number): MesRef[] {

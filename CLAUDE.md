@@ -1193,15 +1193,16 @@ código — o app grava categoria com todas as colunas).
 Consequência aceita: toda variável já cadastrada é anual (o padrão da coluna)
 e passa a se repetir sozinha ao digitar. Quem não quer, marca temporária.
 
-**Mensal e Parcelada, só na FIXA** (20/10/2026, Guilherme: a variável "para
-o planejamento seria quase uma fixa", um teto do mês). No cadastro, "Anual"
-virou **Mensal** e "Temporária" virou **Parcelada**, e a escolha só aparece
-com a categoria fixa. Variável SEMPRE repete até dezembro ao digitar, sem
-pergunta. A parcelada pergunta no modelo do cartão: "Em quantas vezes?",
-"3x · até maio" (no Planejamento e no assistente). O banco segue com
-`anual` / `temporaria`, sem migração; variável com `temporaria` gravado é
-lida como mensal (`ehParcelada` em `recorrencia.ts`). O que está abaixo
-sobre "anual/temporária" de qualquer categoria é histórico.
+**Mensal e Parcelada, em toda categoria** (20/10/2026, Guilherme). No
+cadastro, "Anual" virou **Mensal** e "Temporária" virou **Parcelada**. A
+parcelada pergunta no modelo do cartão: "Em quantas vezes?", "3x · até
+maio", com "Só [mês]" para o avulso (no Planejamento e no assistente).
+Vale para fixa e variável: no mesmo dia a escolha passou umas horas só na
+fixa ("variável é quase uma fixa, um teto do mês") e voltou, porque Viagem
+é variável e não se repete (parcela de viagem feita ou reserva para a
+próxima). O banco segue com `anual` / `temporaria`, sem migração
+(`ehParcelada` em `recorrencia.ts`). Reservar para viagem é guardar, não
+gastar: uma "caixinha"/objetivo fica para outra rodada.
 
 **O "Até quando?" saiu** a pedido do Guilherme em 08/10/2026 — era o fim da
 anual (financiamento até mar/2029), que atravessava os anos com plano e zerava

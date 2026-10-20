@@ -8,8 +8,8 @@ type ToolId = 'reajuste' | 'ano' | 'zerar'
 
 /**
  * "Copiar mês" e "Aplicar valor" saíram em 13/10/2026: a repetição da
- * categoria (mensal e variável repetem até dezembro ao digitar; fixa
- * parcelada pergunta as vezes) faz o trabalho deles, e copiar um mês levava "IPVA · 1 de 3"
+ * categoria (mensal repete até dezembro ao digitar; parcelada pergunta
+ * as vezes) faz o trabalho deles, e copiar um mês levava "IPVA · 1 de 3"
  * para o ano inteiro.
  */
 const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [

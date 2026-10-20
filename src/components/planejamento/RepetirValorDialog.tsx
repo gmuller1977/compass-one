@@ -8,8 +8,7 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 
 /**
  * A janela que aparece ao digitar um valor no Planejamento — utils/recorrencia.
- * A pergunta de parcelas é só da fixa PARCELADA (20/10/2026); variável e
- * fixa MENSAL caem no primeiro caso.
+ * Vale para qualquer categoria, fixa ou variável (20/10/2026).
  *
  *   - MENSAL: o valor já foi repetido sozinho até dezembro (ou até o fim). A
  *     janela só abre se algum mês tinha valor DIFERENTE — o reajuste de julho,

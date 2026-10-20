@@ -69,9 +69,8 @@ export default function Planejamento() {
     (e: number, i: number) => e - plan.previsto.totalSaidas[i])
 
   // Digitou um valor (utils/recorrencia), em qualquer categoria — fixa ou
-  // variável. MENSAL (e toda variável) repete sozinho até dezembro, e só
-  // pergunta pelos meses que tinham outro valor; a fixa PARCELADA pergunta
-  // "3x". Só quando o valor mudou.
+  // variável. MENSAL repete sozinho até dezembro, e só pergunta pelos meses
+  // que tinham outro valor; PARCELADA pergunta "3x". Só quando o valor mudou.
   const { toast } = useToast()
   const [repetir, setRepetir] = useState<{
     tipo: 'e' | 's'; mi: number; valor: number

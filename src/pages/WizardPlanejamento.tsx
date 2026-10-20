@@ -135,7 +135,7 @@ export default function WizardPlanejamento() {
   // categoria. Começa no primeiro mês aplicado. Ver utils/recorrencia.
   const inicioAplicar = aplicar === 'todos' ? 0 : MES_ATU
   const [ateTemp, setAteTemp] = useState<Record<string, number>>({})
-  const ehTemporaria = (c: { fixa?: boolean; recorrencia?: string }) => ehParcelada(c)
+  const ehTemporaria = (c: { recorrencia?: string }) => ehParcelada(c)
   const ateDe = (k: string) => Math.max(inicioAplicar, ateTemp[k] ?? inicioAplicar)
 
   /**
@@ -480,7 +480,7 @@ export default function WizardPlanejamento() {
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:'#0f172a' }}>{c.nome}</div>
                   {c.descricao && <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>{c.descricao}</div>}
-                  {/* Fixa parcelada: em quantas vezes, no modelo do cartão. #475569 no branco: 7,6. */}
+                  {/* Parcelada: em quantas vezes, no modelo do cartão. #475569 no branco: 7,6. */}
                   {ehTemporaria(c) && parseBRL(values[catKey(c.nome, c.descricao)] ?? '') > 0 && (
                     <label style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, fontSize:11, color:'#475569' }}>
                       Em
