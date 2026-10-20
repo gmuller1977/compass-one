@@ -131,7 +131,6 @@ type AppCtx = {
   extratoData: Record<string, DadosMes>
   faturaData:  Record<string, unknown>
   planos:     Record<number, PlanoAnoData>
-  desvioMinPerc: number
   percentualAlerta: number
   metodoSugestao: string
   /** Como o saldo previsto agrega a sobra do plano. Ver utils/saldoConta. */
@@ -144,7 +143,6 @@ type AppCtx = {
   setExtratoData: (v: Record<string, DadosMes>) => void
   setFaturaData:  Dispatch<SetStateAction<Record<string, unknown>>>
   setPlanos:      Dispatch<SetStateAction<Record<number, PlanoAnoData>>>
-  setDesvioMinPerc: (v: number) => void
   setPercentualAlerta: (v: number) => void
   setMetodoSugestao: (v: string) => void
   setCenarioPrevisao: (v: CenarioPrevisao) => void
@@ -428,7 +426,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [planos,          setPlanosState]     = useState<Record<number, PlanoAnoData>>({})
   const [planosReal,      setPlanosRealState] = useState<Record<number, PlanoAnoData>>({})
   const [planejamentoLockado, setPlanejamentoLockadoState] = useState(false)
-  const [desvioMinPerc,       setDesvioMinPercState]       = useState(10)
   const [percentualAlerta,    setPercentualAlertaState]    = useState(5)
   const [metodoSugestao,      setMetodoSugestaoState]      = useState('media_3_meses')
   // Pessimista e o padrao porque e o comportamento que ja estava no ar, e
@@ -687,7 +684,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hasData = contasLoaded.length > 0 || (categoriasRows ?? []).length > 0
     setOnboardingCompletoState(pref?.onboarding_completo ?? hasData)
     setPlanejamentoLockadoState(pref?.planejamento_lockado ?? false)
-    setDesvioMinPercState(Number(pref?.desvio_min_perc ?? 10))
     setPercentualAlertaState(Number(pref?.percentual_alerta ?? 5))
     setMetodoSugestaoState(pref?.metodo_sugestao ?? 'media_3_meses')
     setCenarioPrevisaoState(
@@ -780,7 +776,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPlanosState({})
     setPlanosRealState({})
     setPlanejamentoLockadoState(false)
-    setDesvioMinPercState(10)
     setPerfilState({ nome: '', apelido: '' })
     setOnboardingCompletoState(false)
   }
@@ -1172,7 +1167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveUserPrefs(
-    p: Perfil, oc: boolean, pl: boolean, dmp: number, ou = '', ms: MetaSim | null = null,
+    p: Perfil, oc: boolean, pl: boolean, ou = '', ms: MetaSim | null = null,
     pa = 5, metodo = 'media_3_meses', sid = 0, cen: CenarioPrevisao = 'pessimista'
   ) {
     if (!canSave() || modoAparelhoRef.current) return
@@ -1194,7 +1189,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...(membro ? {} : { perfil_nome: p.nome, perfil_apelido: p.apelido }),
       onboarding_completo: oc,
       planejamento_lockado: pl,
-      desvio_min_perc: dmp,
       percentual_alerta: pa,
       metodo_sugestao: metodo,
       cenario_previsao: cen,
@@ -1235,7 +1229,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       categorias: categoriasRef.current.map(c => categoriaToRow(c, uid)),
       pref: {
         perfil_nome: perfil.nome, perfil_apelido: perfil.apelido, onboarding_completo: onboardingCompleto,
-        planejamento_lockado: planejamentoLockado, desvio_min_perc: desvioMinPerc, percentual_alerta: percentualAlerta,
+        planejamento_lockado: planejamentoLockado, percentual_alerta: percentualAlerta,
         metodo_sugestao: metodoSugestao, cenario_previsao: cenarioPrevisao, objetivo_usuario: objetivoUsuario || null,
         meta_simulacao: metaSim, saldo_inicial_dinheiro: saldoInicialDinheiro,
       } satisfies PrefRow,
@@ -1263,7 +1257,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (dataLoaded) agendarCopia()
   }, [dataLoaded, contas, categorias, planos, planosReal, perfil, onboardingCompleto, planejamentoLockado,
-    desvioMinPerc, percentualAlerta, metodoSugestao, cenarioPrevisao, objetivoUsuario, metaSim, saldoInicialDinheiro])
+    percentualAlerta, metodoSugestao, cenarioPrevisao, objetivoUsuario, metaSim, saldoInicialDinheiro])
 
   // Mostrando a cópia do aparelho: tenta o banco a cada 30 s. O evento
   // "online" nem sempre vem (o sinal volta sem o navegador perceber, ou o
@@ -1307,8 +1301,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [planosReal])
   useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!dataLoadedRef.current) return
-    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao)
-  }, [perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao])
+    saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao)
+  }, [perfil, onboardingCompleto, planejamentoLockado, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao])
 
   // ── Funções de update ────────────────────────────────────────────────
   // Conta compartilhada (10/10/2026, escolha do Guilherme): contas,
@@ -1346,7 +1340,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // deixaria o modelo de dois planos voltar pela porta dos fundos.
   // planosReal continua sendo carregado e salvo apenas como historico.
 
-  function setDesvioMinPerc(v: number) { setDesvioMinPercState(v) }
   function setPercentualAlerta(v: number) { setPercentualAlertaState(v) }
   function setMetodoSugestao(v: string) { setMetodoSugestaoState(v) }
   function setCenarioPrevisao(v: CenarioPrevisao) { setCenarioPrevisaoState(v) }
@@ -1381,7 +1374,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveFaturaData(faturaData),
         savePlanosData(planos, 'previsto'),
         savePlanosData(planosReal, 'real'),
-        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, desvioMinPerc, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao),
+        saveUserPrefs(perfil, onboardingCompleto, planejamentoLockado, objetivoUsuario, metaSim, percentualAlerta, metodoSugestao, saldoInicialDinheiro, cenarioPrevisao),
       ])
     }
     marcarSaida()
@@ -1399,13 +1392,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{
       user, carregando,
       contas, categorias, extratoData, faturaData, planos,
-      desvioMinPerc, percentualAlerta, metodoSugestao, cenarioPrevisao, perfil,
+      percentualAlerta, metodoSugestao, cenarioPrevisao, perfil,
       saldoInicialDinheiro, setSaldoInicialDinheiro, salvarSaldoInicialDinheiro,
       setContas, setCategorias,
       setExtratoData, updateExtratoMes,
       setFaturaData: setFaturaState,
       setPlanos,
-      setDesvioMinPerc, setPercentualAlerta, setMetodoSugestao, setCenarioPrevisao, setPerfil,
+      setPercentualAlerta, setMetodoSugestao, setCenarioPrevisao, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
       objetivoUsuario, setObjetivoUsuario,
       metaSim, setMetaSim,

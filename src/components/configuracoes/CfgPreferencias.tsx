@@ -5,8 +5,6 @@ import CfgCenarioPrevisao from './CfgCenarioPrevisao'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
 
 interface Props {
-  desvioMinPerc: number
-  setDesvioMinPerc: (v: number) => void
   percentualAlerta: number
   setPercentualAlerta: (v: number) => void
   metodoSugestao: string
@@ -17,7 +15,6 @@ interface Props {
 }
 
 export default function CfgPreferencias({
-  desvioMinPerc, setDesvioMinPerc,
   percentualAlerta, setPercentualAlerta,
   metodoSugestao, setMetodoSugestao,
   cenarioPrevisao, setCenarioPrevisao,
@@ -132,27 +129,6 @@ export default function CfgPreferencias({
         {/* Card: Planejamento — funcional */}
         <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24 }}>
           <h3 style={{ fontSize:14, fontWeight:700, color:COR.texto, margin:'0 0 16px' }}>Planejamento</h3>
-
-          <div style={{ marginBottom:16 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:600, color:COR.textoSuave,
-              textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>
-              Sensibilidade — Revisão por Desvio
-            </label>
-            <div style={{ display:'flex', gap:6 }}>
-              {[5, 10, 15, 20].map(p => (
-                <button key={p} onClick={() => setDesvioMinPerc(p)}
-                  style={{ flex:1, padding:'7px 0', fontFamily:'inherit', fontSize:12, fontWeight:500,
-                    border:`1.5px solid ${desvioMinPerc === p ? '#2563eb' : COR.borda}`, borderRadius:8,
-                    cursor:'pointer', background: desvioMinPerc === p ? '#eff6ff' : COR.branco,
-                    color: desvioMinPerc === p ? '#2563eb' : COR.textoSuave }}>
-                  {p}%
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize:10, color:'#94a3b8', marginTop:5 }}>
-              Categorias com desvio acima deste % entre previsto e realizado aparecem na revisão.
-            </div>
-          </div>
 
           <div style={{ marginBottom:16 }}>
             <label style={{ display:'block', fontSize:11, fontWeight:600, color:COR.textoSuave,

@@ -50,7 +50,6 @@ export default function Configuracoes() {
   const { user, contas, categorias, setContas, setCategorias,
           extratoData, faturaData, setExtratoData, setFaturaData, compartilhamento,
           planos, setPlanos,
-          desvioMinPerc, setDesvioMinPerc,
           percentualAlerta, setPercentualAlerta,
           metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
@@ -735,8 +734,6 @@ export default function Configuracoes() {
 
           {aba==='preferencias' && (
             <CfgPreferencias
-              desvioMinPerc={desvioMinPerc}
-              setDesvioMinPerc={setDesvioMinPerc}
               percentualAlerta={percentualAlerta}
               setPercentualAlerta={setPercentualAlerta}
               metodoSugestao={metodoSugestao}
