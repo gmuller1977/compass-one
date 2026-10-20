@@ -49,6 +49,18 @@ const DECIMO_NOVO: Omit<Categoria, 'id'> = {
   fixa: false, tipoMovimento: 'banco', formaPagamento: 'pix', cor: '#6b7280', ativa: true,
 }
 
+/**
+ * A renda de outra pessoa da casa (20/10/2026, decisão do Guilherme sobre a
+ * análise da chegada, N5): só o que ela PÕE nas contas da casa, no banco em
+ * que cai. Receita VARIÁVEL, sem dia e sem 13º: autônomo não tem data nem
+ * valor certos, e o 13º sai só do salário de quem respondeu.
+ */
+export const NOME_OUTRA_RENDA = 'Renda da casa'
+const OUTRA_RENDA_NOVO: Omit<Categoria, 'id'> = {
+  nome: NOME_OUTRA_RENDA, tipo: 'entrada', icone: '🤝', grupo: 'Renda',
+  fixa: false, tipoMovimento: 'banco', formaPagamento: 'pix', cor: '#6b7280', ativa: true,
+}
+
 /** Metade em novembro, metade em dezembro, só nos meses do plano. */
 export function valoresDoDecimo(valor: number, mesInicio: number): number[] {
   return Array.from({ length: 12 }, (_, i) => ((i === 10 || i === 11) && i >= mesInicio ? Math.round(valor * 50) / 100 : 0))
@@ -163,6 +175,8 @@ export type Respostas = {
   diaRenda: number
   /** Recebe 13º salário. */
   decimo: boolean
+  /** O que outra pessoa da casa põe nas contas por mês, e o banco em que cai. */
+  outraRenda?: { valor: number; banco?: string }
   usaCartao: boolean
   cartao: string
   vencimento: number
@@ -229,7 +243,8 @@ export function resumoDasRespostas(r: Respostas): Resumo {
   const comFim = [...parcs, ...financiamentosComFim(r)]
   const mesesDeParcela = comFim.length ? Math.max(...comFim.map(p => Math.max(1, Math.round(p.faltam) || 1))) : 0
   const liberado = comFim.reduce((s, p) => s + p.valor, 0)
-  return { renda: r.renda, contas, diaADia, parcelas, sobra: r.renda - contas - diaADia - parcelas, mesesDeParcela, liberado }
+  const renda = r.renda + (r.outraRenda?.valor ?? 0)
+  return { renda, contas, diaADia, parcelas, sobra: renda - contas - diaADia - parcelas, mesesDeParcela, liberado }
 }
 
 /**
@@ -351,7 +366,7 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
       if (!ja.ativa) cats = cats.map(c => (c.id === ja.id ? { ...c, ativa: true } : c))
       return { ...ja, ativa: true }
     }
-    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : nome === NOME_ANTERIORES ? ANTERIORES_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
+    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : nome === NOME_ANTERIORES ? ANTERIORES_NOVO : nome === NOME_OUTRA_RENDA ? OUTRA_RENDA_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
     const nova: Categoria = padrao
       ? { ...padrao, ativa: true, id: gerarId() }
       : { nome, tipo, icone: '📌', grupo: 'Outros', fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true, id: gerarId() }
@@ -396,6 +411,12 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
       decimo = { categoriaId: dec.id, valor: r.renda }
     }
     porCategoria[sal.id] = { valor: r.renda, dia: r.diaRenda || undefined, fixa: !!r.diaRenda }
+  }
+  if (r.outraRenda && r.outraRenda.valor > 0) {
+    const casa = garantir(NOME_OUTRA_RENDA, 'entrada')
+    const conta = idDoBanco(r.outraRenda.banco)
+    cats = cats.map(c => (c.id === casa.id ? { ...c, tipoMovimento: 'banco', fixa: false, ...(conta ? { contaDebitoId: conta } : {}) } : c))
+    porCategoria[casa.id] = { valor: r.outraRenda.valor }
   }
   for (const item of CONTAS_DO_MES) {
     const resp = r.contas[item.id]

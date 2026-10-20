@@ -69,6 +69,8 @@ type Estado = {
   /** Por cartão da lista: o que já está na fatura aberta e na fechada que vai vencer. */
   faturas: Record<string, { aberta: string; aPagar: string }>
   renda: string; diaRenda: number; decimo: '' | 'sim' | 'nao'
+  /** Outra pessoa da casa põe dinheiro nas contas (N5): quanto e em qual banco. */
+  outraRenda?: '' | 'sim' | 'nao'; outraRendaValor?: string; outraRendaBanco?: string
   usaCartao: '' | 'sim' | 'nao'; cartao: string; venc: number
   outrosBancos: { banco: string; saldo: string }[]
   outrosCartoes: { cartao: string; venc: number }[]
@@ -120,6 +122,9 @@ export default function PrimeiroAcesso() {
     renda: parseBRL(e.renda),
     diaRenda: e.diaRenda,
     decimo: e.decimo === 'sim',
+    ...(e.outraRenda === 'sim' && parseBRL(e.outraRendaValor ?? '') > 0
+      ? { outraRenda: { valor: parseBRL(e.outraRendaValor ?? ''), banco: e.outraRendaBanco && nomesBancos.includes(e.outraRendaBanco) ? e.outraRendaBanco : banco } }
+      : {}),
     usaCartao: e.usaCartao === 'sim',
     cartao: nomeDoCartao(e.cartao),
     vencimento: e.venc,
@@ -265,6 +270,19 @@ export default function PrimeiroAcesso() {
         {e.decimo === 'sim' && respostas.renda > 0 && (
           <Dica>Ótimo. Ele entra no seu plano: cerca de {R(respostas.renda / 2)} em novembro e {R(respostas.renda / 2)} em dezembro, calculado pelo seu salário.</Dica>
         )}
+        <Rotulo>Mais alguém da casa ajuda nas contas?</Rotulo>
+        <Chips lista={['Sim', 'Não']} valor={e.outraRenda === 'sim' ? 'Sim' : e.outraRenda === 'nao' ? 'Não' : ''}
+          onEscolher={v => set('outraRenda', v === 'Sim' ? 'sim' : 'nao')} />
+        {e.outraRenda === 'sim' && (<>
+          <Mini>Quanto essa pessoa põe nas contas da casa por mês? Se varia, coloque uma média.</Mini>
+          <Campo valor={e.outraRendaValor ?? ''} onMudar={v => set('outraRendaValor', v)} placeholder="0" pequeno autoFoco />
+          {nomesBancos.length > 1 && (<>
+            <Mini>Em qual banco esse dinheiro cai?</Mini>
+            <Chips pequeno colunas lista={nomesBancos} valor={e.outraRendaBanco && nomesBancos.includes(e.outraRendaBanco) ? e.outraRendaBanco : nomesBancos[0]}
+              onEscolher={v => set('outraRendaBanco', v)} />
+          </>)}
+          <Dica>Entra no plano como "Renda da casa", sem dia certo e sem 13º. Os gastos dessa pessoa que não passam pelas suas contas ficam de fora.</Dica>
+        </>)}
       </Cartao>
     )
     pe = <Pe rotulo="Continuar" onSeguir={seguir} desabilitado={!(respostas.renda > 0)} pular="Prefiro não dizer agora" onPular={() => { set('renda', ''); seguir() }} />
@@ -505,7 +523,8 @@ export default function PrimeiroAcesso() {
     const mesFim = (() => { const t = hoje.getMonth() + s.mesesDeParcela - 1; return `${MESES[t % 12]} de ${hoje.getFullYear() + Math.floor(t / 12)}` })()
     const meta = respostas.meta
     // O que entrou no plano montado em `concluir` (planoDoPrimeiroAcesso).
-    const partes = [s.renda > 0 && 'o salário', s.contas > 0 && 'as contas do mês', s.diaADia > 0 && 'o dia a dia', s.parcelas > 0 && 'as parcelas']
+    const casa = !!respostas.outraRenda
+    const partes = [s.renda > 0 && (casa ? 'o salário, a renda da casa' : 'o salário'), s.contas > 0 && 'as contas do mês', s.diaADia > 0 && 'o dia a dia', s.parcelas > 0 && 'as parcelas']
       .filter((x): x is string => !!x)
     const temPlano = partes.length > 0
     const partesDoPlano = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} e ${partes[partes.length - 1]}` : partes[0]
@@ -516,7 +535,7 @@ export default function PrimeiroAcesso() {
       : s.sobra >= 0 && s.diaADia > 0 ? (<>
           <Rotulo>Sobra no fim do mês</Rotulo>
           <div style={numeroGrande}>{R(s.sobra)}</div>
-          <p style={ola}>É o que fica do seu salário depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, o Radar vai mostrando, ao longo do mês, quanto você gasta de verdade.</p>
+          <p style={ola}>É o que fica {casa ? 'das rendas da casa' : 'do seu salário'} depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, o Radar vai mostrando, ao longo do mês, quanto você gasta de verdade.</p>
         </>)
       : s.sobra >= 0 ? (<>
           <Rotulo>Sobra para o dia a dia</Rotulo>
