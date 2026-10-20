@@ -4,7 +4,7 @@ import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
 import { COR, type AnoData } from './types'
 import type { Categoria } from '../../context/AppContext'
 
-type ToolId = 'reajuste' | 'ano'
+type ToolId = 'reajuste' | 'ano' | 'zerar'
 
 /**
  * "Copiar mês" e "Aplicar valor" saíram em 13/10/2026: a repetição da
@@ -15,6 +15,7 @@ type ToolId = 'reajuste' | 'ano'
 const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
   { id: 'reajuste', label: 'Reajuste %',    icon: 'ti-trending-up' },
   { id: 'ano',      label: 'Copiar ano',    icon: 'ti-copy' },
+  { id: 'zerar',    label: 'Zerar',         icon: 'ti-eraser' },
 ]
 
 

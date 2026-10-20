@@ -55,7 +55,7 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
     dicas: [
       'Clique num mês para editar os valores; ao digitar, o valor se repete até dezembro nas categorias anuais.',
       'A célula aceita conta ("800+300") e itens (Mercado = Supermercado + Feira).',
-      '"Planejamento do Zero", no menu, monta o ano inteiro em poucos passos.',
+      '"Zerar", na barra de ferramentas, apaga o plano de um mês ou do ano para você planejar de novo.',
       'O plano inicial é um ponto de partida: revise com o tempo, pelo que os lançamentos mostram no Radar.',
     ],
     perguntas: ['Como monto meu primeiro plano?', 'Como ajusto o plano de uma categoria?'],
@@ -101,7 +101,7 @@ export function guiaDoAppParaNorte(): string {
   const telas = (Object.values(AJUDA) as Ajuda[])
     .map(a => `- ${a.titulo}: ${a.resumo} ${a.dicas.join(' ')}`)
     .join('\n')
-  return `Para começar: cadastrar contas, cartões e categorias (Configurações), montar o plano (Planejamento → "Planejamento do Zero"); o plano inicial é um ponto de partida, revisado com o tempo pelos lançamentos. No dia a dia: lançar pelo "+" (no celular) ou em Lançamentos, e acompanhar pelo Radar.
+  return `Para começar: cadastrar contas, cartões e categorias (Configurações), montar o plano (o primeiro acesso já monta um plano inicial; no Planejamento, "Zerar" limpa um mês ou o ano); o plano inicial é um ponto de partida, revisado com o tempo pelos lançamentos. No dia a dia: lançar pelo "+" (no celular) ou em Lançamentos, e acompanhar pelo Radar.
 No celular a barra de baixo tem Início, Radar, "+" (lançar), Norte e Mais.
 ${telas}`
 }

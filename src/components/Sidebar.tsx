@@ -20,7 +20,8 @@ type NavItem = {
   excludeIfSearch?: string
   /** Com subitens, o clique ABRE a tela e mostra os subitens — em vez de só
    *  expandir. O Planejamento perdeu Grade/Painel/Lista (06/10/2026) e ficou
-   *  só com "Planejamento do Zero": sem isto, o clique não levava à tela. */
+   *  só com "Planejamento do Zero" (que saiu em 19/10/2026): sem isto, o
+   *  clique não levava à tela. */
   abreTela?: boolean
 }
 
@@ -43,14 +44,10 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Todo ano',
     items: [
       {
-        icon: 'ti-calendar-stats', label: 'Planejamento', path: '/planejamento', exact: false, abreTela: true,
-        // Uma tela só: Meses e Planilha são um seletor DENTRO dela
-        // (06/10/2026), e não mais subitens do menu.
-        sub: [
-          // Sobrescreve o plano do ano inteiro: separado pelo divisor.
-          { divider: 'Recomeçar' },
-          { label: 'Planejamento do Zero', path: '/wizard-planejamento'    },
-        ],
+        // "Planejamento do Zero" saiu do menu em 19/10/2026 (pedido do
+        // Guilherme): zerar um mês ou o ano é a ferramenta "Zerar" do
+        // próprio Planejamento.
+        icon: 'ti-calendar-stats', label: 'Planejamento', path: '/planejamento', exact: false,
       },
     ],
   },

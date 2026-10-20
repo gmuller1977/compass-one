@@ -492,6 +492,19 @@ Onboarding e **"Planejamento do Zero"** no menu. Na primeira vez não há nada
 para refazer, e "do zero" ali soaria estranho; no menu, o nome precisa avisar
 que a ação sobrescreve o ano. Não unificar.
 
+**"Planejamento do Zero" saiu do menu** (19/10/2026, Guilherme: "esta
+opção poderia se colocar dentro do planejamento para zerar o mês selecionado
+ou o ano"). Na barra de ferramentas do Planejamento (computador e celular, a
+mesma `PlanBarraFerramentas`) há **"Zerar"**: "Só o mês" (escolhido numa
+lista) ou "O ano inteiro", com um segundo toque para confirmar. Zera valor e
+itens de toda receita e despesa (os do Simulador também); meta de economia e
+lançamentos não mudam. Mês fechado não muda, a regra do Copiar ano: ano
+corrente zera do mês de hoje em diante, ano passado não zera. Regras em
+[`zerarPlano.ts`](src/components/planejamento/zerarPlano.ts); `prova91`
+(11). A rota do assistente continua: "Montar meu plano inicial" (Tudo
+pronto) e "Refazer planejamento" (Preferências). O parágrafo acima sobre os
+dois nomes é histórico.
+
 Vale lembrar a divisão: o **Onboarding não cria plano** — ele cadastra contas,
 cartões e categorias, e no fim manda para o wizard. O **wizard** preenche os
 valores, mas replica o mesmo valor em todos os meses. Ajuste mês a mês só na

@@ -4,6 +4,7 @@ import { MESES_FULL, type AnoData } from './types'
 import type { Categoria } from '../../context/AppContext'
 import { itensDoMes, reajustarItens, somaItens, paraCopiarAno, type ItemPlano } from '../../utils/itensPlano'
 import { cadastroDaLinha } from '../acompanhamento/evolucaoCalcs'
+import { opsParaZerar, primeiroMesZeravel } from './zerarPlano'
 
 /**
  * Com `itens`, o mês recebe o detalhe e o valor vira a soma dele; sem, grava
@@ -18,7 +19,7 @@ export interface BulkOp {
 }
 
 interface Props {
-  toolAberta: 'reajuste' | 'ano' | null
+  toolAberta: 'reajuste' | 'ano' | 'zerar' | null
   mesAtual: number
   anoAtual: number
   /**
@@ -59,10 +60,18 @@ export default function PlanFerramentas({
   const [reajFiltro, setReajFiltro] = useState<'todas' | 'fixas' | 'variaveis'>('todas')
   const [reajMeses, setReajMeses] = useState(defaultMeses)
 
+  // Zerar: um mês (o primeiro que pode mudar) ou o ano, e um segundo toque
+  // para confirmar, porque não há como desfazer.
+  const primeiroZeravel = primeiroMesZeravel(anoAtual)
+  const [zerarQual, setZerarQual] = useState<'mes' | 'ano'>('mes')
+  const [zerarMes, setZerarMes] = useState(primeiroZeravel)
+  const [zerarConfirma, setZerarConfirma] = useState(false)
+
   useEffect(() => {
     setReajMeses(defaultMeses())
     setReajPct('')
-  }, [toolAberta])
+    setZerarQual('mes'); setZerarMes(Math.min(primeiroZeravel, 11)); setZerarConfirma(false)
+  }, [toolAberta, anoAtual])
 
   function showToast(msg: string) {
     setToast(msg)
@@ -137,6 +146,19 @@ export default function PlanFerramentas({
     copiar('s', dadosAnoAnterior.saidas, dadosAtivos.saidas)
     onBulkSave(ops)
     showToast(`Planejamento de ${anoAtual - 1} copiado ✓`)
+    onClose()
+  }
+
+  const mesesZerar = zerarQual === 'ano'
+    ? Array.from({ length: 12 - primeiroZeravel }, (_, i) => primeiroZeravel + i)
+    : [zerarMes]
+  const nomeZerar = zerarQual === 'ano'
+    ? (primeiroZeravel > 0 ? `${MESES_FULL[primeiroZeravel]} a dezembro de ${anoAtual}` : `todo o ano de ${anoAtual}`)
+    : `${MESES_FULL[zerarMes]} de ${anoAtual}`
+
+  function aplicarZerar() {
+    onBulkSave(opsParaZerar(dadosAtivos, mesesZerar))
+    showToast(`Plano de ${nomeZerar} zerado ✓`)
     onClose()
   }
 
@@ -238,6 +260,60 @@ export default function PlanFerramentas({
                   Nenhum planejamento encontrado para {anoAtual - 1}.
                 </div>
                 <button style={BTN_CANCEL} onClick={onClose}>Fechar</button>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── Zerar ── */}
+        {toolAberta === 'zerar' && (
+          <>
+            <div style={TITLE}><i aria-hidden className="ti ti-eraser" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Zerar o plano</div>
+            {primeiroZeravel > 11 ? (
+              <>
+                <div style={DESC}>Este ano já passou: o plano dele fica como foi medido.</div>
+                <button style={BTN_CANCEL} onClick={onClose}>Fechar</button>
+              </>
+            ) : (
+              <>
+                <div style={{ ...DESC, color: '#475569' }}>
+                  Apaga os valores planejados de receitas e despesas, para você planejar de novo.
+                  A meta de economia e os lançamentos não mudam.
+                  {primeiroZeravel > 0 && ' Os meses que já fecharam não mudam.'}
+                </div>
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                    <input type="radio" name="zerarQual" checked={zerarQual === 'mes'}
+                      onChange={() => { setZerarQual('mes'); setZerarConfirma(false) }} />
+                    Só o mês
+                    <select value={zerarMes} disabled={zerarQual !== 'mes'}
+                      onChange={e => { setZerarMes(Number(e.target.value)); setZerarConfirma(false) }}
+                      style={{ ...INPUT, width: 'auto', padding: '6px 10px', fontSize: 16 }}>
+                      {MESES_FULL.map((m, mi) => mi >= primeiroZeravel && <option key={mi} value={mi}>{m}</option>)}
+                    </select>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                    <input type="radio" name="zerarQual" checked={zerarQual === 'ano'}
+                      onChange={() => { setZerarQual('ano'); setZerarConfirma(false) }} />
+                    {primeiroZeravel > 0 ? `De ${MESES_FULL[primeiroZeravel]} a dezembro` : `O ano inteiro`}
+                  </label>
+                </div>
+                {zerarConfirma ? (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600, marginBottom: 8 }}>
+                      Zerar o plano de {nomeZerar}? Isso não dá para desfazer.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button style={{ ...BTN_OK, background: '#b91c1c' }} onClick={aplicarZerar}>Sim, zerar</button>
+                      <button style={BTN_CANCEL} onClick={() => setZerarConfirma(false)}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button style={{ ...BTN_OK, background: '#b91c1c' }} onClick={() => setZerarConfirma(true)}>Zerar {nomeZerar}</button>
+                    <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
+                  </div>
+                )}
               </>
             )}
           </>
