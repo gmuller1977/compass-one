@@ -2547,15 +2547,16 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   nova: "Ainda faltam N meses", e o valor vai só nesses meses a partir de
   hoje (`colocarNoPlano` com `meses`); os seguintes ficam como estão.
   `prova86` (9).
-- **Renda de outra pessoa da casa** (20/10/2026, decisão do Guilherme sobre
-  a análise da chegada, N5: "o que ela põe na casa"). No passo da renda,
-  "Mais alguém da casa ajuda nas contas?": quanto essa pessoa põe nas contas
-  por mês (média, se varia) e, com mais de um banco, em qual cai. Vira a
-  categoria "Renda da casa" (receita VARIÁVEL, grupo Renda, sem dia), no
-  plano todo mês desde o primeiro mês inteiro; sem 13º (o 13º sai só do
-  salário) e fora do mês da chegada, como o dia a dia. A sobra do resultado
-  soma as duas rendas. Os gastos dessa pessoa fora das contas do app ficam
-  de fora. `prova93` (12).
+- **Outra receita além do salário** (20/10/2026, pedido do Guilherme sobre
+  a análise da chegada, N5: "Além dessa receita existe alguma a mais?"; uma
+  versão "Mais alguém da casa ajuda nas contas?" foi trocada no mesmo dia,
+  porque a pergunta geral cobre salário do cônjuge, aluguel e bico). No
+  passo da renda: "De onde vem?" (vira o NOME da categoria; vazio, "Outra
+  renda"), quanto entra por mês (média, se varia) e, com mais de um banco,
+  em qual cai. Receita VARIÁVEL, grupo Renda, sem dia, no plano todo mês
+  desde o primeiro mês inteiro; sem 13º (o 13º sai só do salário) e fora do
+  mês da chegada, como o dia a dia. Uma só: mais de uma vai somada e se
+  separa em Configurações. A sobra do resultado soma as receitas. `prova93` (14).
 - **Mais de um banco ou cartão:** contas do mês, outras contas e parcelas
   perguntam "De qual banco sai?" / "Em qual cartão?" (só com mais de um;
   sem escolha, o banco do salário e o primeiro cartão).

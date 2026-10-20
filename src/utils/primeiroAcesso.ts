@@ -50,12 +50,13 @@ const DECIMO_NOVO: Omit<Categoria, 'id'> = {
 }
 
 /**
- * A renda de outra pessoa da casa (20/10/2026, decisão do Guilherme sobre a
- * análise da chegada, N5): só o que ela PÕE nas contas da casa, no banco em
- * que cai. Receita VARIÁVEL, sem dia e sem 13º: autônomo não tem data nem
- * valor certos, e o 13º sai só do salário de quem respondeu.
+ * Outra receita além do salário (20/10/2026, pedido do Guilherme: "Além
+ * dessa receita existe alguma a mais?"): salário de alguém da casa, aluguel,
+ * bico. A pessoa dá o nome, o valor por mês e o banco em que cai. Receita
+ * VARIÁVEL, sem dia e sem 13º: não se sabe a data nem se o valor é certo, e
+ * o 13º sai só do salário de quem respondeu. Sem nome, "Outra renda".
  */
-export const NOME_OUTRA_RENDA = 'Renda da casa'
+export const NOME_OUTRA_RENDA = 'Outra renda'
 const OUTRA_RENDA_NOVO: Omit<Categoria, 'id'> = {
   nome: NOME_OUTRA_RENDA, tipo: 'entrada', icone: '🤝', grupo: 'Renda',
   fixa: false, tipoMovimento: 'banco', formaPagamento: 'pix', cor: '#6b7280', ativa: true,
@@ -175,8 +176,8 @@ export type Respostas = {
   diaRenda: number
   /** Recebe 13º salário. */
   decimo: boolean
-  /** O que outra pessoa da casa põe nas contas por mês, e o banco em que cai. */
-  outraRenda?: { valor: number; banco?: string }
+  /** Outra receita por mês além do salário: valor, banco em que cai e nome. */
+  outraRenda?: { valor: number; banco?: string; nome?: string }
   usaCartao: boolean
   cartao: string
   vencimento: number
@@ -366,7 +367,8 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
       if (!ja.ativa) cats = cats.map(c => (c.id === ja.id ? { ...c, ativa: true } : c))
       return { ...ja, ativa: true }
     }
-    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : nome === NOME_ANTERIORES ? ANTERIORES_NOVO : nome === NOME_OUTRA_RENDA ? OUTRA_RENDA_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
+    const padrao = nome === CARRO_NOVO.nome ? CARRO_NOVO : nome === NOME_DECIMO ? DECIMO_NOVO : nome === NOME_PARCELADAS ? PARCELADAS_NOVO : nome === NOME_ANTERIORES ? ANTERIORES_NOVO : CATEGORIAS_PADRAO.find(c => c.nome === nome && c.tipo === tipo)
+      ?? (tipo === 'entrada' ? { ...OUTRA_RENDA_NOVO, nome } : undefined)
     const nova: Categoria = padrao
       ? { ...padrao, ativa: true, id: gerarId() }
       : { nome, tipo, icone: '📌', grupo: 'Outros', fixa: false, tipoMovimento: 'banco', cor: '#6b7280', ativa: true, id: gerarId() }
@@ -413,7 +415,8 @@ export function aplicarRespostas({ r, nomeTitular, contas, categorias, planoDoAn
     porCategoria[sal.id] = { valor: r.renda, dia: r.diaRenda || undefined, fixa: !!r.diaRenda }
   }
   if (r.outraRenda && r.outraRenda.valor > 0) {
-    const casa = garantir(NOME_OUTRA_RENDA, 'entrada')
+    const nomeOutra = r.outraRenda.nome?.trim().replace(/\s+/g, ' ')
+    const casa = garantir(nomeOutra ? nomeOutra.charAt(0).toUpperCase() + nomeOutra.slice(1) : NOME_OUTRA_RENDA, 'entrada')
     const conta = idDoBanco(r.outraRenda.banco)
     cats = cats.map(c => (c.id === casa.id ? { ...c, tipoMovimento: 'banco', fixa: false, ...(conta ? { contaDebitoId: conta } : {}) } : c))
     porCategoria[casa.id] = { valor: r.outraRenda.valor }
