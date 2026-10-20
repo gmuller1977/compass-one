@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 import { catKey } from '../components/acompanhamento/evolucaoCalcs'
 import { parseBRL } from '../utils/moeda'
-import { rotuloParcela } from '../utils/recorrencia'
+import { rotuloParcela, ehParcelada } from '../utils/recorrencia'
 import { comItens, novoIdItem } from '../utils/itensPlano'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
@@ -135,7 +135,7 @@ export default function WizardPlanejamento() {
   // categoria. Começa no primeiro mês aplicado. Ver utils/recorrencia.
   const inicioAplicar = aplicar === 'todos' ? 0 : MES_ATU
   const [ateTemp, setAteTemp] = useState<Record<string, number>>({})
-  const ehTemporaria = (c: { recorrencia?: string }) => c.recorrencia === 'temporaria'
+  const ehTemporaria = (c: { fixa?: boolean; recorrencia?: string }) => ehParcelada(c)
   const ateDe = (k: string) => Math.max(inicioAplicar, ateTemp[k] ?? inicioAplicar)
 
   /**
@@ -480,15 +480,15 @@ export default function WizardPlanejamento() {
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:'#0f172a' }}>{c.nome}</div>
                   {c.descricao && <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>{c.descricao}</div>}
-                  {/* Temporária: até qual mês vão as parcelas. #475569 no branco: 7,6. */}
+                  {/* Fixa parcelada: em quantas vezes, no modelo do cartão. #475569 no branco: 7,6. */}
                   {ehTemporaria(c) && parseBRL(values[catKey(c.nome, c.descricao)] ?? '') > 0 && (
                     <label style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, fontSize:11, color:'#475569' }}>
-                      Parcelas até
+                      Em
                       <select value={ateDe(catKey(c.nome, c.descricao))}
                         onChange={e => setAteTemp(p => ({ ...p, [catKey(c.nome, c.descricao)]: Number(e.target.value) }))}
                         style={{ fontSize:11, padding:'2px 4px', borderRadius:6, border:'1px solid #cbd5e1', fontFamily:'inherit' }}>
                         {Array.from({ length: 12 - inicioAplicar }, (_, i) => inicioAplicar + i).map(m => (
-                          <option key={m} value={m}>{MESES_FULL[m]} · {m - inicioAplicar + 1} {m === inicioAplicar ? 'parcela' : 'parcelas'}</option>
+                          <option key={m} value={m}>{m - inicioAplicar + 1}x · até {MESES_FULL[m]}</option>
                         ))}
                       </select>
                     </label>

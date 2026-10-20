@@ -19,7 +19,7 @@ import { construirRealizadoMes } from '../utils/realizadoMes'
 import { pickReal, cadastroDaLinha } from '../components/acompanhamento/evolucaoCalcs'
 import PlanRevisaoAnual from '../components/planejamento/PlanRevisaoAnual'
 import RepetirValorDialog from '../components/planejamento/RepetirValorDialog'
-import { mesesParaRepetir, separarDestinos, rotuloParcela, nomeDoMes, type MesRef } from '../utils/recorrencia'
+import { mesesParaRepetir, separarDestinos, rotuloParcela, nomeDoMes, ehParcelada, type MesRef } from '../utils/recorrencia'
 import { useToast } from '../components/Toast'
 import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
@@ -69,9 +69,9 @@ export default function Planejamento() {
     (e: number, i: number) => e - plan.previsto.totalSaidas[i])
 
   // Digitou um valor (utils/recorrencia), em qualquer categoria — fixa ou
-  // variável, pedido do Guilherme em 08/10/2026. ANUAL repete sozinho até
-  // dezembro, e só pergunta pelos meses que tinham outro
-  // valor; TEMPORÁRIA pergunta quantas parcelas. Só quando o valor mudou.
+  // variável. MENSAL (e toda variável) repete sozinho até dezembro, e só
+  // pergunta pelos meses que tinham outro valor; a fixa PARCELADA pergunta
+  // "3x". Só quando o valor mudou.
   const { toast } = useToast()
   const [repetir, setRepetir] = useState<{
     tipo: 'e' | 's'; mi: number; valor: number
@@ -90,11 +90,11 @@ export default function Planejamento() {
       ?? cadastroDaLinha({ nome: linha.nome, descricao: linha.descricao ?? '' }, categorias)
     if (!cad) return
     const cat = { id: linha.id ?? cad.id, nome: linha.nome, descricao: linha.descricao, grupo: linha.grupo, tipoMovimento: cad.tipoMovimento }
-    if (cad.recorrencia === 'temporaria') {
+    if (ehParcelada(cad)) {
       setRepetir({ tipo, mi, valor, cat, cad, repetidoAte: null, diferentes: [] })
       return
     }
-    // Anual: os meses seguintes, até dezembro.
+    // Mensal: os meses seguintes, até dezembro.
     const destinos = mesesParaRepetir(anoAtual, mi)
     if (destinos.length === 0) return
     const { livres, diferentes } = separarDestinos(destinos.map(m => {
@@ -197,8 +197,8 @@ export default function Planejamento() {
       {repetir && (() => {
         const { tipo, mi, valor, cat, cad, repetidoAte, diferentes } = repetir
         const nome = cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome
-        const temporaria = cad.recorrencia === 'temporaria'
-        // Temporária: o último mês pode ser qualquer um adiante, nos anos que
+        const temporaria = ehParcelada(cad)
+        // Parcelada: o último mês pode ser qualquer um adiante, nos anos que
         // têm plano (até 23 parcelas).
         const candidatos: MesRef[] = []
         if (temporaria) for (let n = anoAtual * 12 + mi + 1; candidatos.length < 23; n++) {

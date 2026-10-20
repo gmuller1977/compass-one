@@ -359,14 +359,14 @@ export default function CfgCategorias({
                 </div>
               </div>
 
-              {/* Repetição (06/10/2026, ver utils/recorrencia), para QUALQUER
-                  categoria desde 08/10/2026: anual repete todo mês, até dezembro;
-                  temporária vale por um período curto,
-                  perguntado ao planejar. */}
+              {/* Repetição (utils/recorrencia): só da FIXA desde 20/10/2026.
+                  Mensal repete até dezembro; parcelada pergunta "3x" ao
+                  planejar. Variável sempre repete até dezembro. */}
+              {formCat.fixa && (
                 <div>
                   <label style={labelSt}>Repetição</label>
                   <div style={{ display:'flex', gap:6 }}>
-                    {([['anual','Anual'],['temporaria','Temporária']] as const).map(([v,l]) => {
+                    {([['anual','Mensal'],['temporaria','Parcelada']] as const).map(([v,l]) => {
                       const ativo = (formCat.recorrencia ?? 'anual') === v
                       return (
                         <button key={v} type="button" aria-pressed={ativo}
@@ -385,10 +385,11 @@ export default function CfgCategorias({
                     </div>
                   ) : (
                     <div style={{ fontSize:11, color:'#64748b', marginTop:6, lineHeight:1.4 }}>
-                      Vale por alguns meses (IPVA, IPTU, seguro). Ao planejar, o app pergunta quantas parcelas.
+                      Por alguns meses (IPVA, IPTU, seguro). Ao planejar, o app pergunta em quantas vezes: 2x, 3x…
                     </div>
                   )}
                 </div>
+              )}
 
               {((formCat.fixa && formCat.tipoMovimento !== 'cartao') || (formCat.tipoMovimento === 'banco' && formCat.formaPagamento === 'automatico')) && (
                 <div>

@@ -8,13 +8,14 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 
 /**
  * A janela que aparece ao digitar um valor no Planejamento — utils/recorrencia.
- * Vale para qualquer categoria, fixa ou variável (pedido do Guilherme em
- * 08/10/2026; antes era só a fixa).
+ * A pergunta de parcelas é só da fixa PARCELADA (20/10/2026); variável e
+ * fixa MENSAL caem no primeiro caso.
  *
- *   - ANUAL: o valor já foi repetido sozinho até dezembro (ou até o fim). A
+ *   - MENSAL: o valor já foi repetido sozinho até dezembro (ou até o fim). A
  *     janela só abre se algum mês tinha valor DIFERENTE — o reajuste de julho,
  *     um mês com itens —, e pergunta se muda esses também. Desmarcados.
- *   - TEMPORÁRIA: "Quantas parcelas?". As parcelas viram itens: "IPVA · 1 de 3".
+ *   - PARCELADA: "Em quantas vezes?", no modelo do cartão ("3x · até maio").
+ *     As parcelas viram itens: "IPVA · 1 de 3".
  *
  * "Só [mês]" / "Manter" deixa como está — o digitado já está gravado.
  */
@@ -63,11 +64,11 @@ export default function RepetirValorDialog({
         background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 420, overflow: 'hidden',
         boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
-        <ModalTopo icone="ti-repeat" rotulo={`${nome} · ${tipo === 'anual' ? 'anual' : 'temporária'}`} id="repetir-titulo"
+        <ModalTopo icone="ti-repeat" rotulo={`${nome} · ${tipo === 'anual' ? 'mensal' : 'parcelada'}`} id="repetir-titulo"
           onFechar={onFechar}
           titulo={tipo === 'anual'
             ? (diferentes.length === 1 ? 'Este mês tem outro valor' : 'Estes meses têm outro valor')
-            : 'Quantas parcelas?'} />
+            : 'Em quantas vezes?'} />
         <div style={{ overflowY: 'auto', padding: '16px 20px 18px' }}>
         {tipo === 'anual' ? (
           <>
@@ -103,11 +104,11 @@ export default function RepetirValorDialog({
               {fmt(valor)} por mês, a partir de {MESES[mes]}.
             </div>
             {candidatos.length > 0 ? (
-              <select value={ate} onChange={e => setAte(Number(e.target.value))} aria-label="Quantidade de parcelas"
+              <select value={ate} onChange={e => setAte(Number(e.target.value))} aria-label="Em quantas vezes"
                 style={{ marginTop: 12, width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${COR.azul}`,
                   fontFamily: 'inherit', fontSize: 14, background: COR.branco, color: COR.texto }}>
                 {candidatos.map((m, i) => (
-                  <option key={chave(m)} value={i}>{i + 2} parcelas · até {nomeMes(m)}</option>
+                  <option key={chave(m)} value={i}>{i + 2}x · até {nomeMes(m)}</option>
                 ))}
               </select>
             ) : (
@@ -122,7 +123,7 @@ export default function RepetirValorDialog({
               <button type="button" onClick={onFechar} style={btn(false)}>Só {MESES[mes]}</button>
               {candidatos.length > 0 && (
                 <button type="button" autoFocus style={btn(true)} onClick={() => onParcelas(candidatos[ate])}>
-                  Gravar {nParcelas} parcelas
+                  Gravar em {nParcelas}x
                 </button>
               )}
             </div>
