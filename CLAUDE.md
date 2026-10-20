@@ -317,6 +317,13 @@ cadastro (`saldoInicialDesde`) vale como conferência. E, pedido dele no
 mesmo dia, a partir de 7 dias sem conferir (`DIAS_PARA_AVISAR`) a linha
 avisa "Faz N dias que este saldo não é conferido. Isso pode deixar a
 previsão diferente do banco." e oferece conferir. `prova88` (18).
+**"Confere" apaga o saldo digitado antes** (20/10/2026, relatado pelo
+Guilherme): o informado é uma foto do dia. Com 580,76 digitado num dia e o
+débito automático confirmado no outro, o app foi a 1,53, ele tocou "Confere"
+e o "No banco" ficou em 580,76 ("sobram 579,23"), com o Radar somando o
+valor velho no saldo atual. Hoje `marcarConferido` grava a data e limpa
+`saldoBanco`; pedindo conferência, a linha mostra só o "No app"; e a linha
+com diferença ganhou "Já confere". `prova92` (6).
 
 **Sem plano, o Radar não julga: só mostra o realizado** (19/10/2026,
 decisão do Guilherme sobre a análise da chegada v3, C2: "ele não deve julgar

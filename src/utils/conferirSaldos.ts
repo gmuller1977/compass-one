@@ -203,9 +203,17 @@ export function saldosAConferir(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
   return saldosDosBancos(deps, hoje).filter(s => s.pendente)
 }
 
-/** "Confere": só a data, nenhum número muda. */
+/**
+ * "Confere": o saldo do app é o do banco. Grava a data e APAGA o saldo
+ * informado antes, se houver (20/10/2026, relatado pelo Guilherme): o
+ * informado é uma foto do dia em que foi digitado. Com 580,76 digitado num
+ * dia e o débito automático confirmado no seguinte, o app foi a 1,53, a
+ * pessoa tocou "Confere" e o "No banco" seguia em 580,76, com "sobram
+ * 579,23" e o Radar somando os 580,76 no saldo atual. Sem informado, vale o
+ * calculado, que é o número que a pessoa acabou de conferir.
+ */
 export function marcarConferido(dm: DadosMes, hoje: Date): DadosMes {
-  return { ...dm, saldoBancoData: dataDeHoje(hoje) }
+  return { ...dm, saldoBanco: '', saldoBancoInformado: false, saldoBancoData: dataDeHoje(hoje) }
 }
 
 /** Outro valor: o saldo do banco, com a data — o que a caixa de Lançamentos grava. */

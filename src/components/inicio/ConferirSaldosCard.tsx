@@ -79,7 +79,9 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
           <div key={s.conta.id}>
             <Linha primeira={i === 0} icone={s.conta.icone || '🏦'} cor={s.conta.cor || COR.azul}
               titulo={nome}
-              legenda={temDif
+              // Pedindo conferência, a pergunta é se o número do APP confere:
+              // um "No banco" digitado antes do último movimento seria velho.
+              legenda={temDif && !pede
                 ? <>No banco: <b style={{ color: COR.texto }}>{mostrar(s.informado!, oculto)}</b><br />No app: {mostrar(s.calculado, oculto)}</>
                 : <>No app: <b style={{ color: s.calculado < 0 ? COR.erroTexto : COR.texto }}>{mostrar(s.calculado, oculto)}</b></>}
               direita={!pede && !aberto && !temDif &&
@@ -131,6 +133,8 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                   {s.diferenca < 0 ? 'faltam' : 'sobram'} {oculto ? '••••' : fmt(Math.abs(s.diferenca))}
                 </Etiqueta>
                 <Pilula onClick={() => verLancamentos(s.conta.id)}>Ver Lançamentos</Pilula>
+                {/* Acertou em Lançamentos, ou o banco mudou depois: o app confere agora. */}
+                <Pilula onClick={() => confere(s.conta.id)}>Já confere</Pilula>
               </div>
             )}
 
