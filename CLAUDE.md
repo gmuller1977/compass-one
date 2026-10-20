@@ -3308,6 +3308,23 @@ aleatório. Aconteceu em 31/08/2026 no Radar.
 
 ## Supabase
 
+**Tabela nova no `public` leva GRANT na mesma migração** (a partir de
+30/10/2026 o Supabase deixa de dar acesso automático da Data API a tabelas
+novas; as existentes, até a 020, não mudam). Sem o grant, o supabase-js
+recebe "permission denied". Padrão, logo depois do `create table` e antes
+do RLS:
+
+```sql
+grant select, insert, update, delete on public.nova_tabela to authenticated;
+grant select, insert, update, delete on public.nova_tabela to service_role;
+```
+
+**`anon` não recebe grant**: o app só lê e grava logado, e o que precisa
+passar sem login vai por função `security definer`. Grant continua não
+substituindo RLS: toda tabela nova segue com `enable row level security` e
+políticas. Vale também para `supabase db reset` e projeto novo, que recriam
+o schema pelas migrações.
+
 **A sessão cai depois de 30 minutos sem uso**, com aviso no último minuto
 ("Você ainda está aí?" · Continuar conectado / Sair agora). Decidido pelo
 Guilherme em 26/09/2026: o Supabase renova a sessão sozinho, sem prazo, e quem
