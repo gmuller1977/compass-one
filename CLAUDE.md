@@ -1656,6 +1656,19 @@ tela cujo trabalho é avisar que o dinheiro vai faltar.
 | Planejamento | se o plano se cumprir | `calcSaldos` |
 | Simulador | e se eu comprar em 6× | `serieBase` + parcelas |
 
+**A série do saldo previsto é UMA passagem** (20/10/2026, Início lenta,
+relato do Guilherme). `serieBase` chamava `saldoTotalNoFim` mês a mês, e cada
+chamada refazia a projeção desde o mês corrente: 15 meses de plano eram 120
+projeções de mês. Hoje é `saldosPrevistosEmSerie`, o mesmo laço, idêntico bit
+a bit a `saldoTotalNoFim({comoAbertura})` em cada ponto. E a parte de
+`faltaVariavelDoMes` que é do mês (`rateioDoMes`) é calculada uma vez por
+`projecaoDoMes`, não uma por conta. Medido numa conta de teste com 3 bancos,
+2 cartões e 12 meses de histórico: a série caiu de 208 para 26 ms; nenhum
+número mudou (2.151 comparações contra a versão anterior). Função nova que
+precise do previsto de vários meses usa a série, nunca `saldoTotalNoFim` num
+laço. O build separa as bibliotecas (`bibliotecas-*.js`, `vite.config.ts`):
+a cada publicação só o código do app é baixado de novo.
+
 **A tela Início não calcula número nenhum: lê as funções do Radar.** Feito em
 26/09/2026 (fase 0 dos indicadores). Ela somava só o extrato — sem fixa, sem
 compra no cartão, sem a carteira, com transferência entre contas contada como

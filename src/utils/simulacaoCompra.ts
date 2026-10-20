@@ -1,5 +1,5 @@
 import type { Conta } from '../context/AppContext'
-import { saldoTotalNoFim, type Deps } from './saldoConta'
+import { saldosPrevistosEmSerie, type Deps } from './saldoConta'
 import { mesDoGastoNoCartao } from './lancarPorMes'
 
 /**
@@ -171,9 +171,10 @@ export function parcelasQueOPlanoCobre(
  */
 function serieBase(deps: Deps, hoje: Date, fim: Mes): PontoFluxo[] {
   const inicio = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
-  return Array.from({ length: mesesAte(inicio, fim) }, (_, i) => {
+  // Cada ponto é o saldoTotalNoFim({ comoAbertura }) do mês, numa passagem só.
+  const valores = saldosPrevistosEmSerie(Math.max(0, mesesAte(inicio, fim)), deps, hoje)
+  return valores.map((valor, i) => {
     const { ano, mes } = somaMes(inicio.ano, inicio.mes, i)
-    const valor = saldoTotalNoFim(ano, mes, deps, { comoAbertura: true, hoje }).valor
     return { ano, mes, semCompra: valor, comCompra: valor, parcela: 0 }
   })
 }

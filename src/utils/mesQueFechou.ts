@@ -84,11 +84,15 @@ export function mesQueFechou(deps: Deps, hoje: Date = new Date()): MesQueFechou 
     if (FORA.has(l.nome) || l.real <= 0.5) continue
     const cad = cadastroPlanejavel(l.nome, l.descricao, deps.categorias)
     if (!cad || cad.fixa) continue
+    // Só os dois casos abaixo viram item; sem nenhum deles, nem vale somar o
+    // lançado (que refaz o realizado do mês para cada linha).
+    const semPlano = ehZero(l.prev) && ehZero(agora.get(catKey(l.nome, l.descricao)) ?? 0)
+    if (!semPlano && !(ehPrimeiroDoPlano && l.prev > 0.005)) continue
     const lanc = jaLancadoNosMeses(deps, 'saida', l.nome, l.descricao || undefined, [{ ano, mes }])[0]
     const gasto = Math.round((l.real - somaDeParcelas(lanc.itens)) * 100) / 100
     if (gasto <= 0.5) continue
     const base = { nome: l.nome, descricao: l.descricao, grupo: l.grupo, gasto, plano: l.prev, sugerido: Math.round(gasto) }
-    if (ehZero(l.prev) && ehZero(agora.get(catKey(l.nome, l.descricao)) ?? 0)) itens.push({ ...base, tipo: 'nova' })
+    if (semPlano) itens.push({ ...base, tipo: 'nova' })
     else if (ehPrimeiroDoPlano && l.prev > 0.005 && Math.abs(gasto - l.prev) >= Math.max(20, l.prev * 0.1)) {
       itens.push({ ...base, tipo: 'chute' })
     }

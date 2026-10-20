@@ -343,6 +343,31 @@ export function saldoTotalNoFim(
 }
 
 /**
+ * `saldoTotalNoFim(..., { comoAbertura: true })` de `n` meses seguidos, a
+ * partir do mês de `hoje` — a série do Simulador e do gráfico da Início.
+ *
+ * O mesmo laço de `detalharPrevisto`, numa passagem só. Chamar aquela mês a
+ * mês refazia a projeção de todos os meses anteriores a cada ponto: 15 meses
+ * de plano eram 120 projeções de mês em vez de 15, e era o que deixava a
+ * Início lenta (20/10/2026). A soma segue a mesma ordem — `projecao +=
+ * liquido` mês a mês, e `realizado + projecao` no fim —, então cada ponto sai
+ * idêntico bit a bit ao de `saldoTotalNoFim`.
+ */
+export function saldosPrevistosEmSerie(n: number, deps: Deps, hoje: Date = new Date()): number[] {
+  const out: number[] = []
+  let projecao = 0
+  let a = hoje.getFullYear()
+  let m = hoje.getMonth()
+  for (let i = 0; i < n; i++) {
+    projecao += projecaoDoMes(a, m, deps, hoje).liquido
+    out.push(saldoBancosEDinheiro(a, m, deps) + projecao)
+    m++
+    if (m > 11) { m = 0; a++ }
+  }
+  return out
+}
+
+/**
  * Conta onde uma categoria APARECE. A mesma regra da cascata de Lançamentos:
  * a conta de débito quando existe, senão a preferida — nunca "todas".
  */
@@ -394,6 +419,7 @@ function debitoOuPadrao(cat: Categoria, padrao: string | undefined, contas: Cont
  */
 export function faltaVariavelDoMes(
   alvo: string, ano: number, mes: number, deps: Deps, hoje: Date = new Date(),
+  rateio: RateioDoMes | null = rateioDoMes(ano, mes, deps, hoje),
 ): {
   saidaBanco: number; saidaCartao: number; entrada: number; diaCartao?: number
   /** As linhas que formam as somas acima, com o valor DEPOIS do rateio. */
@@ -408,11 +434,71 @@ export function faltaVariavelDoMes(
   sobras: number
   estouros: number
 } {
+  if (!rateio) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [], itensFixa: [], sobras: 0, estouros: 0 }
+  const { parcelas, alocado, fixaFora } = rateio
+
+  const somar = (balde: Balde) =>
+    parcelas.reduce((s, p, i) => (p.balde === balde && p.conta === alvo ? s + alocado[i] : s), 0)
+
+  return {
+    saidaBanco: somar('banco'),
+    saidaCartao: somar('cartao'),
+    entrada: somar('entrada'),
+    diaCartao: rateio.diaCartao,
+    // O MESMO filtro de `somar` (esta conta) e o MESMO `alocado`. Linha
+    // zerada fica de fora: nao soma nada e, na tela, so faria ruido.
+    itens: parcelas
+      .map((p, i) => ({ p, v: alocado[i], i }))
+      .filter(({ p, v, i }) => p.conta === alvo && v > 0 && !fixaFora.has(i))
+      .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
+    // As fixas do cartão vão para a memória como FIXAS a pagar, sem id: não
+    // têm o "Pagar" das contas a vencer — são pagas na fatura.
+    itensFixa: parcelas
+      .map((p, i) => ({ p, v: alocado[i], i }))
+      .filter(({ p, i }) => p.conta === alvo && fixaFora.has(i))
+      .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
+    // Filtradas POR CONTA, como `somar`. As parcelas cobrem todas as contas a
+    // cada chamada; somar o mes inteiro aqui e depois somar nas contas
+    // multiplicaria pelo numero de contas — o bug das fixas triplicadas.
+    sobras: parcelas.reduce((s, q, i) =>
+      q.conta === alvo && q.balde !== 'entrada' && !fixaFora.has(i) ? s + Math.max(0, q.falta) : s, 0),
+    estouros: parcelas.reduce((s, q, i) =>
+      q.conta === alvo && q.balde !== 'entrada' && !fixaFora.has(i) ? s + Math.max(0, -q.falta) : s, 0),
+  }
+}
+
+/**
+ * Uma linha por categoria, com a sobra AINDA COM SINAL: negativa quer dizer
+ * estouro. O corte no zero acontece depois, no nivel que o cenario pedir —
+ * cortar aqui jogaria fora justamente a informacao que distingue os tres.
+ */
+type Parcela = {
+  conta: string; balde: Balde; grupo: string; falta: number
+  /** De qual categoria veio, para o detalhe poder nomeá-la. */
+  nome: string; descricao?: string
+}
+
+/**
+ * A parte de `faltaVariavelDoMes` que é do MÊS, não da conta: as parcelas de
+ * todas as contas e o rateio do cenário. Não depende de `alvo`, então
+ * `projecaoDoMes` calcula uma vez e reparte entre as contas, em vez de refazer
+ * o realizado do mês inteiro para cada conta (20/10/2026). `null`: nenhuma
+ * categoria variável nem fixa no cartão.
+ */
+export type RateioDoMes = {
+  parcelas: Parcela[]
+  alocado: number[]
+  /** Índices das fixas do cartão: entram nas somas, não no envelope. */
+  fixaFora: Set<number>
+  diaCartao?: number
+}
+
+export function rateioDoMes(ano: number, mes: number, deps: Deps, hoje: Date = new Date()): RateioDoMes | null {
   const { categorias, planos, contas, extratoData } = deps
   const padrao = contaPadrao(contas)
   const variaveis = categorias.filter(c => c.ativa && !c.fixa)
   const fixasCartao = categorias.filter(c => c.ativa && c.fixa && c.tipo === 'saida' && c.tipoMovimento === 'cartao')
-  if (!variaveis.length && !fixasCartao.length) return { saidaBanco: 0, saidaCartao: 0, entrada: 0, itens: [], itensFixa: [], sobras: 0, estouros: 0 }
+  if (!variaveis.length && !fixasCartao.length) return null
 
   // O cartão em aberto de vencimento mais cedo decide quem paga a sobra do
   // cartão — a mesma regra que já valia para o complemento da fatura.
@@ -438,16 +524,6 @@ export function faltaVariavelDoMes(
     contas, categorias, planoAno: planos[ano],
   })
 
-  /**
-   * Uma linha por categoria, com a sobra AINDA COM SINAL: negativa quer dizer
-   * estouro. O corte no zero acontece depois, no nivel que o cenario pedir —
-   * cortar aqui jogaria fora justamente a informacao que distingue os tres.
-   */
-  type Parcela = {
-    conta: string; balde: Balde; grupo: string; falta: number
-    /** De qual categoria veio, para o detalhe poder nomeá-la. */
-    nome: string; descricao?: string
-  }
   const parcelas: Parcela[] = []
 
   for (const cat of variaveis) {
@@ -608,34 +684,7 @@ export function faltaVariavelDoMes(
     fixaFora.add(parcelas.length - 1)
   }
 
-  const somar = (balde: Balde) =>
-    parcelas.reduce((s, p, i) => (p.balde === balde && p.conta === alvo ? s + alocado[i] : s), 0)
-
-  return {
-    saidaBanco: somar('banco'),
-    saidaCartao: somar('cartao'),
-    entrada: somar('entrada'),
-    diaCartao: ref?.diaVencimento,
-    // O MESMO filtro de `somar` (esta conta) e o MESMO `alocado`. Linha
-    // zerada fica de fora: nao soma nada e, na tela, so faria ruido.
-    itens: parcelas
-      .map((p, i) => ({ p, v: alocado[i], i }))
-      .filter(({ p, v, i }) => p.conta === alvo && v > 0 && !fixaFora.has(i))
-      .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
-    // As fixas do cartão vão para a memória como FIXAS a pagar, sem id: não
-    // têm o "Pagar" das contas a vencer — são pagas na fatura.
-    itensFixa: parcelas
-      .map((p, i) => ({ p, v: alocado[i], i }))
-      .filter(({ p, i }) => p.conta === alvo && fixaFora.has(i))
-      .map(({ p, v }) => ({ balde: p.balde, grupo: p.grupo, nome: p.nome, descricao: p.descricao, valor: v })),
-    // Filtradas POR CONTA, como `somar`. As parcelas cobrem todas as contas a
-    // cada chamada; somar o mes inteiro aqui e depois somar nas contas
-    // multiplicaria pelo numero de contas — o bug das fixas triplicadas.
-    sobras: parcelas.reduce((s, q, i) =>
-      q.conta === alvo && q.balde !== 'entrada' && !fixaFora.has(i) ? s + Math.max(0, q.falta) : s, 0),
-    estouros: parcelas.reduce((s, q, i) =>
-      q.conta === alvo && q.balde !== 'entrada' && !fixaFora.has(i) ? s + Math.max(0, -q.falta) : s, 0),
-  }
+  return { parcelas, alocado, fixaFora, diaCartao: ref?.diaVencimento }
 }
 
 function contaPadrao(contas: Conta[]) {
@@ -721,6 +770,7 @@ export function detalharProjecaoDaConta(
   mes: number,
   deps: Deps,
   hoje: Date = new Date(),
+  rateio: RateioDoMes | null = rateioDoMes(ano, mes, deps, hoje),
 ): ProjecaoDetalhe {
   const { extratoData, contas, categorias, planos, faturaData } = deps
   const sufixo = `-${ano}-${String(mes + 1).padStart(2, '0')}`
@@ -768,7 +818,7 @@ export function detalharProjecaoDaConta(
     // não projeta, e incluir só aqui faria as duas telas discordarem.
   }
 
-  const falta = faltaVariavelDoMes(alvo, ano, mes, deps, hoje)
+  const falta = faltaVariavelDoMes(alvo, ano, mes, deps, hoje, rateio)
   saidas += falta.saidaBanco + falta.saidaCartao
   entradas += falta.entrada
   fixasSaida.push(...falta.itensFixa)
@@ -843,8 +893,10 @@ function projecaoDoMes(
     liquido: 0, entradas: 0, saidas: 0, sobrasVariavel: 0, estourosVariavel: 0,
     fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
   }
+  // O rateio da variável é do mês: uma vez para todas as contas.
+  const rateio = rateioDoMes(ano, mes, deps, hoje)
   for (const a of alvosDeSaldo(deps.contas)) {
-    const c = detalharProjecaoDaConta(a.id, ano, mes, deps, hoje)
+    const c = detalharProjecaoDaConta(a.id, ano, mes, deps, hoje, rateio)
     // Mesma ordem do reduce que existia aqui: (acc + entradas) - saidas.
     d.liquido = d.liquido + c.entradas - c.saidas
     d.entradas += c.entradas
