@@ -2579,7 +2579,9 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   muda: "Ajustar o plano" / "Manter como está". Uma pergunta "Você anotou
   todos os gastos?" para o gasto abaixo do estimado foi tirada no mesmo
   dia (Guilherme: "dá impressão de desconfiança e pressão; quem está no
-  controle é o usuário, o Compass dá o caminho"). `prova94`.
+  controle é o usuário, o Compass dá o caminho"). `prova94`. A categoria sem plano diz "Gastou R$ X em outubro · sem plano
+  neste mês", o termo do Radar, nunca "fora do plano" (pedido dele no
+  mesmo dia: não havia plano).
 - **Outra receita além do salário** (20/10/2026, pedido do Guilherme sobre
   a análise da chegada, N5: "Além dessa receita existe alguma a mais?"; uma
   versão "Mais alguém da casa ajuda nas contas?" foi trocada no mesmo dia,
