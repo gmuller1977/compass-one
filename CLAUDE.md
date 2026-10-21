@@ -1210,6 +1210,9 @@ código — o app grava categoria com todas as colunas).
     gravar só o valor apagaria o detalhe sem ninguém ver. Para esses abre
     `RepetirValorDialog`, desmarcados: "Em julho o valor planejado é R$ 520.
     Trocar por R$ 350?". Mês vazio não é diferente. `separarDestinos`.
+    Desde 21/10/2026 (pedido dele) a janela é uma TABELA: caixa, mês,
+    planejado e "Valor de troca" editável (começa no digitado); editar o
+    valor marca o mês. Botões Manter · Alterar todos · Alterar marcados.
   - temporária → "Quantas parcelas?" ("3 parcelas · até maio"), e cada mês
     vira item "IPVA · 1 de 3". "Só [mês]" deixa só o digitado.
 - **Assistente:** temporária ganha "Parcelas até [mês]" na linha da
