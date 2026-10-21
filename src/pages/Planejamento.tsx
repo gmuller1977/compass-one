@@ -209,7 +209,11 @@ export default function Planejamento() {
         return (
           <RepetirValorDialog nome={nome} tipo={temporaria ? 'temporaria' : 'anual'} ano={anoAtual} mes={mi} valor={valor}
             repetidoAte={repetidoAte} diferentes={diferentes} candidatos={candidatos}
-            onAlterar={meses => { gravarMeses(tipo, cat, meses, (l, m) => comValor(l, m.mes, valor)); fechar() }}
+            onAlterar={trocas => {
+              const valorDe = (m: MesRef) => trocas.find(t => t.m.ano === m.ano && t.m.mes === m.mes)?.valor ?? valor
+              gravarMeses(tipo, cat, trocas.map(t => t.m), (l, m) => comValor(l, m.mes, valorDe(m)))
+              fechar()
+            }}
             onParcelas={ultimo => {
               // Do mês digitado até o escolhido, cada um com a sua parcela.
               const meses: MesRef[] = []
