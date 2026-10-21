@@ -9,6 +9,7 @@ import { useToast } from '../Toast'
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
 const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const rotulo = (i: ItemDoMesQueFechou) => (i.descricao ? `${i.nome} · ${i.descricao}` : i.nome)
+type Modo = 'plano' | 'parcelas' | 'uma' | 'esperar'
 
 export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onResolver }: {
   f: MesQueFechou
@@ -20,10 +21,16 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
   const [valores, setValores] = useState<Record<string, string>>(
     () => Object.fromEntries(f.itens.map(i => [rotulo(i), String(i.sugerido)])))
   // "plano": todo mês até o fim do plano; "parcelas": só N meses (IPVA,
-  // matrícula, seguro); "uma": foi só uma vez / manter como está.
-  const [modo, setModo] = useState<Record<string, 'plano' | 'parcelas' | 'uma'>>({})
+  // matrícula, seguro); "uma": foi só uma vez / manter como está;
+  // "esperar": o mês foi anotado pela metade e a pessoa decide na próxima
+  // virada, com um mês inteiro (C9). "Esperar" e "uma" não gravam nada.
+  const [modo, setModo] = useState<Record<string, Modo>>({})
   const [parcelas, setParcelas] = useState<Record<string, string>>({})
-  const modoDe = (k: string) => modo[k] ?? 'plano'
+  // Chute com gasto ABAIXO do estimado num mês anotado inteiro: baixar o
+  // plano só depois de a pessoa dizer que anotou tudo (C9). Até ela
+  // responder, o item fica sem escolha.
+  const perguntaAnotou = (i: ItemDoMesQueFechou) => i.tipo === 'chute' && i.media === undefined && i.gasto < i.plano
+  const modoDe = (k: string, i?: ItemDoMesQueFechou): Modo | undefined => modo[k] ?? (i && perguntaAnotou(i) ? undefined : 'plano')
   const nDe = (k: string) => parseInt(parcelas[k] ?? '') || 0
   const fecharRef = useRef(onFechar)
   fecharRef.current = onFechar
@@ -33,8 +40,12 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
     return () => window.removeEventListener('keydown', esc)
   }, [])
   const nomeMes = MESES[f.mes]
-  const invalido = f.itens.some(i => modoDe(rotulo(i)) !== 'uma' && parseValor(valores[rotulo(i)] ?? '') === null)
-  const semMeses = f.itens.some(i => modoDe(rotulo(i)) === 'parcelas' && nDe(rotulo(i)) < 1)
+  const grava = (m: Modo | undefined) => m === 'plano' || m === 'parcelas'
+  const invalido = f.itens.some(i => grava(modoDe(rotulo(i), i)) && parseValor(valores[rotulo(i)] ?? '') === null)
+  const semMeses = f.itens.some(i => modoDe(rotulo(i), i) === 'parcelas' && nDe(rotulo(i)) < 1)
+  const semResposta = f.itens.some(i => !modoDe(rotulo(i), i))
+  const mesSeguinte = MESES[(f.mes + 1) % 12]
+  const diasAnotados = f.anotado ? f.anotado.ate - f.anotado.de + 1 : 0
   const hoje = new Date()
   const ateMes = (n: number) => {
     const ym = hoje.getFullYear() * 12 + hoje.getMonth() + n - 1
@@ -45,9 +56,10 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
   function confirmar() {
     if (invalido) { toast('Confira os valores: algum não é um número.', 'error'); return }
     if (semMeses) { toast('Diga em quantos meses ainda vai pagar.', 'error'); return }
+    if (semResposta) { toast('Diga se anotou todos os gastos.', 'error'); return }
     const n = onResolver(f, f.itens.map(i => {
-      const k = rotulo(i), m = modoDe(k)
-      return { item: i, valor: m === 'uma' ? null : parseValor(valores[k] ?? ''), ...(m === 'parcelas' ? { meses: nDe(k) } : {}) }
+      const k = rotulo(i), m = modoDe(k, i)
+      return { item: i, valor: grava(m) ? parseValor(valores[k] ?? '') : null, ...(m === 'parcelas' ? { meses: nDe(k) } : {}) }
     }))
     toast(n === 0 ? 'Pronto, nada mudou no plano' : n === 1 ? 'Colocado no plano' : `${n} categorias colocadas no plano`)
     onFechar()
@@ -70,16 +82,20 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
       }}>
         <ModalTopo icone="ti-calendar-check" rotulo={`${nomeMes} fechou`} titulo="O que vai se repetir?" id="mes-fechou-titulo"
           onFechar={onFechar}
-          subtitulo={f.parcial
+          subtitulo={f.anotado
+            ? `Você anotou ${diasAnotados} dias de ${nomeMes} (${f.anotado.de} a ${f.anotado.ate}). Para um mês inteiro, o app sugere a média por dia; dá para usar só o anotado ou esperar ${mesSeguinte}.`
+            : f.parcial
             ? `Você usou o app só parte de ${nomeMes}: confira se o valor vale para um mês inteiro.`
             : 'Todo mês: entra deste mês até o fim do plano. Em parcelas: só nos meses que faltam. Dá para mudar no Planejamento.'} />
         <div style={{ padding: '4px 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {f.itens.map(i => {
               const k = rotulo(i)
-              const m = modoDe(k)
-              const so = m === 'uma'
+              const m = modoDe(k, i)
+              const so = !grava(m)
               const n = nDe(k)
+              const valorAtual = parseValor(valores[k] ?? '')
+              const escolherValor = (v: number) => setValores(s => ({ ...s, [k]: String(v) }))
               return (
                 <div key={k} style={{ borderTop: `1px solid ${COR.borda}`, paddingTop: 12 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{k}</div>
@@ -87,20 +103,46 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
                     {i.tipo === 'chute'
                       ? `Você estimou ${reais(i.plano)} e gastou ${reais(i.gasto)} em ${nomeMes}.`
                       : `Gastou ${reais(i.gasto)} em ${nomeMes}, fora do plano.`}
+                    {i.media !== undefined && ` Em ${diasAnotados} dias anotados, uma média de ${reais(i.gasto / diasAnotados)} por dia: no mês inteiro, seriam cerca de ${reais(i.media)}.`}
                   </div>
+                  {perguntaAnotou(i) && (
+                    <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginTop: 8 }}>
+                      Você anotou todos os gastos de {k} em {nomeMes}?
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
                     <button type="button" aria-pressed={m === 'plano'} onClick={() => setModo(s => ({ ...s, [k]: 'plano' }))} style={pilula(m === 'plano')}>
-                      {i.tipo === 'chute' ? 'Ajustar o plano' : 'Todo mês'}
+                      {perguntaAnotou(i) ? `Anotei tudo: baixar para ${reais(i.sugerido)}` : i.tipo === 'chute' ? 'Ajustar o plano' : 'Todo mês'}
                     </button>
                     {i.tipo === 'nova' && (
                       <button type="button" aria-pressed={m === 'parcelas'} onClick={() => setModo(s => ({ ...s, [k]: 'parcelas' }))} style={pilula(m === 'parcelas')}>
                         Em parcelas
                       </button>
                     )}
-                    <button type="button" aria-pressed={so} onClick={() => setModo(s => ({ ...s, [k]: 'uma' }))} style={pilula(so)}>
-                      {i.tipo === 'chute' ? 'Manter como está' : 'Foi só uma vez'}
+                    <button type="button" aria-pressed={m === 'uma'} onClick={() => setModo(s => ({ ...s, [k]: 'uma' }))} style={pilula(m === 'uma')}>
+                      {perguntaAnotou(i) ? `Faltou anotar: manter ${reais(i.plano)}` : i.tipo === 'chute' ? 'Manter como está' : 'Foi só uma vez'}
                     </button>
+                    {i.media !== undefined && i.tipo === 'nova' && (
+                      <button type="button" aria-pressed={m === 'esperar'} onClick={() => setModo(s => ({ ...s, [k]: 'esperar' }))} style={pilula(m === 'esperar')}>
+                        Esperar {mesSeguinte}
+                      </button>
+                    )}
                   </div>
+                  {i.media !== undefined && !so && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                      <button type="button" aria-pressed={valorAtual === i.media} onClick={() => escolherValor(i.media!)} style={pilula(valorAtual === i.media)}>
+                        Usar a média: {reais(i.media)}
+                      </button>
+                      <button type="button" aria-pressed={valorAtual === Math.round(i.gasto)} onClick={() => escolherValor(Math.round(i.gasto))} style={pilula(valorAtual === Math.round(i.gasto))}>
+                        Só o anotado: {reais(Math.round(i.gasto))}
+                      </button>
+                    </div>
+                  )}
+                  {m === 'esperar' && (
+                    <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 8 }}>
+                      Na virada de {mesSeguinte}, com o mês inteiro anotado, o app pergunta de novo.
+                    </div>
+                  )}
                   {!so && (
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 13, color: '#475569' }}>
                       R$

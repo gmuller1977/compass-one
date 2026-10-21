@@ -41,8 +41,11 @@ export type ItemDoMesQueFechou = {
   gasto: number
   /** O plano do mês que fechou (o chute; zero na nova). */
   plano: number
-  /** O valor que a janela oferece: o gasto, em reais inteiros. */
+  /** O valor que a janela oferece: o gasto, em reais inteiros (no mês
+   *  anotado pela metade, a média do mês inteiro). */
   sugerido: number
+  /** Mês anotado pela metade: o gasto por dia anotado × os dias do mês. */
+  media?: number
 }
 
 export type MesQueFechou = {
@@ -50,10 +53,34 @@ export type MesQueFechou = {
   mes: number
   /** O mês da chegada: a pessoa usou o app só parte dele. */
   parcial: boolean
+  /** Os dias do mês em que os gastos foram anotados, quando não foi o mês
+   *  inteiro (saldo informado "a partir de hoje" no meio do mês). */
+  anotado?: { de: number; ate: number }
   itens: ItemDoMesQueFechou[]
 }
 
 const ehZero = (v: number) => Math.abs(v) < 0.005
+
+/**
+ * Desde que dia do mês os gastos foram anotados (20/10/2026, decisão do
+ * Guilherme sobre a análise da chegada v3, C9). Só o mês da chegada pode ser
+ * anotado pela metade: o saldo informado "a partir de hoje" deixa os dias
+ * antes dele sem lançamento. Vale o saldo de banco ou dinheiro mais cedo
+ * daquele mês (`saldoInicialDesde`); "desde o dia 1º" é o mês inteiro. Sem
+ * data nas contas, o dia da chegada. Devolve null quando foi o mês inteiro.
+ */
+export function diasAnotados(deps: Deps, ano: number, mes: number): { de: number; ate: number } | null {
+  const chegada = estimativasDosPlanos(deps.planos)?.chegada
+  if (!chegada) return null
+  const [a, m, d] = chegada.split('-').map(Number)
+  if (a !== ano || m - 1 !== mes) return null
+  const prefixo = `${ano}-${String(mes + 1).padStart(2, '0')}-`
+  const dias = deps.contas
+    .filter(c => c.tipo !== 'cartao' && c.saldoInicialDesde?.startsWith(prefixo))
+    .map(c => Number(c.saldoInicialDesde!.slice(8, 10)))
+  const de = dias.length ? Math.min(...dias) : d
+  return de > 1 ? { de, ate: new Date(ano, mes + 1, 0).getDate() } : null
+}
 const FORA = new Set([NOME_ANTERIORES, NOME_PARCELADAS])
 
 function linhasDoMes(deps: Deps, ano: number, mes: number) {
@@ -98,8 +125,17 @@ export function mesQueFechou(deps: Deps, hoje: Date = new Date()): MesQueFechou 
     }
   }
   if (!itens.length) return null
-  itens.sort((a, b) => (a.tipo === b.tipo ? b.gasto - a.gasto : a.tipo === 'chute' ? -1 : 1))
-  return { ano, mes, parcial: !!mesDaChegada(deps.planos, ano, mes), itens }
+  // Anotado pela metade: o gasto daqueles dias, por dia, vezes o mês inteiro.
+  // É o que a janela oferece primeiro; o anotado e o "esperar" são escolhas.
+  const anotado = diasAnotados(deps, ano, mes)
+  const comMedia = anotado
+    ? itens.map(i => {
+      const media = Math.round(i.gasto / (anotado.ate - anotado.de + 1) * anotado.ate)
+      return { ...i, media, sugerido: media }
+    })
+    : itens
+  comMedia.sort((a, b) => (a.tipo === b.tipo ? b.gasto - a.gasto : a.tipo === 'chute' ? -1 : 1))
+  return { ano, mes, parcial: !!mesDaChegada(deps.planos, ano, mes) || !!anotado, ...(anotado ? { anotado } : {}), itens: comMedia }
 }
 
 /**

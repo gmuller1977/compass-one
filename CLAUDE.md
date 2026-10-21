@@ -2567,6 +2567,18 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   nova: "Ainda faltam N meses", e o valor vai só nesses meses a partir de
   hoje (`colocarNoPlano` com `meses`); os seguintes ficam como estão.
   `prova86` (9).
+  **O gasto anotado pode ser parcial** (21/10/2026, decisão do Guilherme
+  sobre a análise da chegada v3, C9). No mês da chegada com o saldo "a
+  partir de hoje", os dias antes dele não têm lançamento
+  (`diasAnotados`: o `saldoInicialDesde` de banco ou dinheiro mais cedo
+  naquele mês, ou o dia da chegada; "desde o dia 1º" é o mês inteiro). A
+  janela diz "Você anotou 14 dias de outubro (18 a 31)", oferece a MÉDIA
+  (gasto ÷ dias anotados × dias do mês, o valor sugerido), "Só o anotado"
+  e, na categoria nova, "Esperar [mês seguinte]" (não grava; a virada
+  seguinte pergunta de novo com o mês inteiro). No mês inteiro, o chute com
+  gasto ABAIXO do estimado pergunta "Você anotou todos os gastos?":
+  "Anotei tudo" baixa o plano, "Faltou anotar" mantém; sem resposta não
+  confirma. Acima do estimado, nada muda. `prova94` (13).
 - **Outra receita além do salário** (20/10/2026, pedido do Guilherme sobre
   a análise da chegada, N5: "Além dessa receita existe alguma a mais?"; uma
   versão "Mais alguém da casa ajuda nas contas?" foi trocada no mesmo dia,
