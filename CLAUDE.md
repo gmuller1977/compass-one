@@ -2575,10 +2575,11 @@ parcelas faltam, e as compras parceladas. O resultado mostra a sobra
   janela diz "Você anotou 14 dias de outubro (18 a 31)", oferece a MÉDIA
   (gasto ÷ dias anotados × dias do mês, o valor sugerido), "Só o anotado"
   e, na categoria nova, "Esperar [mês seguinte]" (não grava; a virada
-  seguinte pergunta de novo com o mês inteiro). No mês inteiro, o chute com
-  gasto ABAIXO do estimado pergunta "Você anotou todos os gastos?":
-  "Anotei tudo" baixa o plano, "Faltou anotar" mantém; sem resposta não
-  confirma. Acima do estimado, nada muda. `prova94` (13).
+  seguinte pergunta de novo com o mês inteiro). No mês inteiro, nada
+  muda: "Ajustar o plano" / "Manter como está". Uma pergunta "Você anotou
+  todos os gastos?" para o gasto abaixo do estimado foi tirada no mesmo
+  dia (Guilherme: "dá impressão de desconfiança e pressão; quem está no
+  controle é o usuário, o Compass dá o caminho"). `prova94`.
 - **Outra receita além do salário** (20/10/2026, pedido do Guilherme sobre
   a análise da chegada, N5: "Além dessa receita existe alguma a mais?"; uma
   versão "Mais alguém da casa ajuda nas contas?" foi trocada no mesmo dia,

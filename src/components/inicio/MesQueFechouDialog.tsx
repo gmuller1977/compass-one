@@ -26,11 +26,7 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
   // virada, com um mês inteiro (C9). "Esperar" e "uma" não gravam nada.
   const [modo, setModo] = useState<Record<string, Modo>>({})
   const [parcelas, setParcelas] = useState<Record<string, string>>({})
-  // Chute com gasto ABAIXO do estimado num mês anotado inteiro: baixar o
-  // plano só depois de a pessoa dizer que anotou tudo (C9). Até ela
-  // responder, o item fica sem escolha.
-  const perguntaAnotou = (i: ItemDoMesQueFechou) => i.tipo === 'chute' && i.media === undefined && i.gasto < i.plano
-  const modoDe = (k: string, i?: ItemDoMesQueFechou): Modo | undefined => modo[k] ?? (i && perguntaAnotou(i) ? undefined : 'plano')
+  const modoDe = (k: string): Modo => modo[k] ?? 'plano'
   const nDe = (k: string) => parseInt(parcelas[k] ?? '') || 0
   const fecharRef = useRef(onFechar)
   fecharRef.current = onFechar
@@ -40,10 +36,9 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
     return () => window.removeEventListener('keydown', esc)
   }, [])
   const nomeMes = MESES[f.mes]
-  const grava = (m: Modo | undefined) => m === 'plano' || m === 'parcelas'
-  const invalido = f.itens.some(i => grava(modoDe(rotulo(i), i)) && parseValor(valores[rotulo(i)] ?? '') === null)
-  const semMeses = f.itens.some(i => modoDe(rotulo(i), i) === 'parcelas' && nDe(rotulo(i)) < 1)
-  const semResposta = f.itens.some(i => !modoDe(rotulo(i), i))
+  const grava = (m: Modo) => m === 'plano' || m === 'parcelas'
+  const invalido = f.itens.some(i => grava(modoDe(rotulo(i))) && parseValor(valores[rotulo(i)] ?? '') === null)
+  const semMeses = f.itens.some(i => modoDe(rotulo(i)) === 'parcelas' && nDe(rotulo(i)) < 1)
   const mesSeguinte = MESES[(f.mes + 1) % 12]
   const diasAnotados = f.anotado ? f.anotado.ate - f.anotado.de + 1 : 0
   const hoje = new Date()
@@ -56,9 +51,8 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
   function confirmar() {
     if (invalido) { toast('Confira os valores: algum não é um número.', 'error'); return }
     if (semMeses) { toast('Diga em quantos meses ainda vai pagar.', 'error'); return }
-    if (semResposta) { toast('Diga se anotou todos os gastos.', 'error'); return }
     const n = onResolver(f, f.itens.map(i => {
-      const k = rotulo(i), m = modoDe(k, i)
+      const k = rotulo(i), m = modoDe(k)
       return { item: i, valor: grava(m) ? parseValor(valores[k] ?? '') : null, ...(m === 'parcelas' ? { meses: nDe(k) } : {}) }
     }))
     toast(n === 0 ? 'Pronto, nada mudou no plano' : n === 1 ? 'Colocado no plano' : `${n} categorias colocadas no plano`)
@@ -91,7 +85,7 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
           <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {f.itens.map(i => {
               const k = rotulo(i)
-              const m = modoDe(k, i)
+              const m = modoDe(k)
               const so = !grava(m)
               const n = nDe(k)
               const valorAtual = parseValor(valores[k] ?? '')
@@ -105,14 +99,9 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
                       : `Gastou ${reais(i.gasto)} em ${nomeMes}, fora do plano.`}
                     {i.media !== undefined && ` Em ${diasAnotados} dias anotados, uma média de ${reais(i.gasto / diasAnotados)} por dia: no mês inteiro, seriam cerca de ${reais(i.media)}.`}
                   </div>
-                  {perguntaAnotou(i) && (
-                    <div style={{ fontSize: 13, fontWeight: 700, color: COR.texto, marginTop: 8 }}>
-                      Você anotou todos os gastos de {k} em {nomeMes}?
-                    </div>
-                  )}
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
                     <button type="button" aria-pressed={m === 'plano'} onClick={() => setModo(s => ({ ...s, [k]: 'plano' }))} style={pilula(m === 'plano')}>
-                      {perguntaAnotou(i) ? `Anotei tudo: baixar para ${reais(i.sugerido)}` : i.tipo === 'chute' ? 'Ajustar o plano' : 'Todo mês'}
+                      {i.tipo === 'chute' ? 'Ajustar o plano' : 'Todo mês'}
                     </button>
                     {i.tipo === 'nova' && (
                       <button type="button" aria-pressed={m === 'parcelas'} onClick={() => setModo(s => ({ ...s, [k]: 'parcelas' }))} style={pilula(m === 'parcelas')}>
@@ -120,7 +109,7 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
                       </button>
                     )}
                     <button type="button" aria-pressed={m === 'uma'} onClick={() => setModo(s => ({ ...s, [k]: 'uma' }))} style={pilula(m === 'uma')}>
-                      {perguntaAnotou(i) ? `Faltou anotar: manter ${reais(i.plano)}` : i.tipo === 'chute' ? 'Manter como está' : 'Foi só uma vez'}
+                      {i.tipo === 'chute' ? 'Manter como está' : 'Foi só uma vez'}
                     </button>
                     {i.media !== undefined && i.tipo === 'nova' && (
                       <button type="button" aria-pressed={m === 'esperar'} onClick={() => setModo(s => ({ ...s, [k]: 'esperar' }))} style={pilula(m === 'esperar')}>
