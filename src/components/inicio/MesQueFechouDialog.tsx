@@ -96,7 +96,7 @@ export default function MesQueFechouDialog({ f, onFechar, onLembrarDepois, onRes
                   <div style={{ fontSize: 13, color: COR.textoSuave, marginTop: 2 }}>
                     {i.tipo === 'chute'
                       ? `Você estimou ${reais(i.plano)} e gastou ${reais(i.gasto)} em ${nomeMes}.`
-                      : `Gastou ${reais(i.gasto)} em ${nomeMes}, fora do plano.`}
+                      : `Gastou ${reais(i.gasto)} em ${nomeMes} · sem plano neste mês.`}
                     {i.media !== undefined && ` Em ${diasAnotados} dias anotados, uma média de ${reais(i.gasto / diasAnotados)} por dia: no mês inteiro, seriam cerca de ${reais(i.media)}.`}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>

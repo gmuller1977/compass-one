@@ -18,7 +18,7 @@ import { mesDaChegada, primeiroMesCompleto } from './primeiroPlano'
  * Bússola, a partir do dia 1, até cada item ser resolvido:
  *
  * - **nova**: categoria variável com gasto no mês que fechou e SEM plano no
- *   mês de hoje. Sem isso, o mesmo gasto vira "fora do plano" todo mês.
+ *   mês de hoje. Sem isso, o mesmo gasto fica "sem plano" todo mês.
  * - **chute**: o mês que fechou é o primeiro do plano inicial, e o gasto ficou
  *   longe do que a pessoa estimou no primeiro acesso (10% e R$ 20 ou mais).
  *
@@ -184,7 +184,7 @@ export function textoDoMesQueFechou(f: MesQueFechou): { titulo: string; detalhe:
   const chutes = f.itens.length - novas
   const partes = [
     chutes ? `${chutes} ${chutes === 1 ? 'gasto ficou longe' : 'gastos ficaram longe'} do que você estimou` : '',
-    novas ? `${novas} ${novas === 1 ? 'gasto ficou' : 'gastos ficaram'} fora do plano` : '',
+    novas ? `${novas} ${novas === 1 ? 'categoria teve' : 'categorias tiveram'} gasto sem plano` : '',
   ].filter(Boolean)
   return {
     titulo: `${m} fechou: ${partes.join(' e ')}`,

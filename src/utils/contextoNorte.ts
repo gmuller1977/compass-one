@@ -153,7 +153,7 @@ export function contextoNorte(d: DadosNorte, categorias: Categoria[]): string {
 
   const fixa = (l: LinhaDoMes) => !!cadastroDaLinha(l, categorias)?.fixa
   const situacao = (l: LinhaDoMes, entrada: boolean) => {
-    if (l.prev <= 0) return entrada ? `recebeu ${R(l.real)} (fora do plano)` : `gastou ${R(l.real)} (fora do plano)`
+    if (l.prev <= 0) return entrada ? `recebeu ${R(l.real)} (sem plano neste mês)` : `gastou ${R(l.real)} (sem plano neste mês)`
     if (entrada) return l.real >= l.prev ? `recebeu ${R(l.real)} de ${R(l.prev)}` : `recebeu ${R(l.real)} de ${R(l.prev)}, falta ${R(l.prev - l.real)}`
     if (fixa(l)) return l.real > 0 ? `conta fixa, pagou ${R(l.real)} (plano ${R(l.prev)})` : `conta fixa, a pagar ${R(l.prev)}`
     return l.real > l.prev ? `gastou ${R(l.real)} de ${R(l.prev)}, PASSOU ${R(l.real - l.prev)}` : `gastou ${R(l.real)} de ${R(l.prev)}, resta ${R(l.prev - l.real)}`
