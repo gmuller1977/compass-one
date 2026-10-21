@@ -892,6 +892,12 @@ plano de outubro para caber a compra apagaria do Radar que outubro passou. E
 ele não faz falta: a parcela 1 é realizado e já aparece no Radar e no Ritmo, e
 as seguintes são pegas pelo alerta acima, que é recalculado assim que a compra
 é salva. Não reabrir sem pedido explícito.
+Em 21/10/2026 (pedido do Guilherme) saiu também o "Alerta de orçamento"
+antigo de Lançamentos, que abria ao lançar acima do plano + tolerância e
+oferecia subir o plano do mês corrente; com ele saíram de Preferências a
+"Tolerância de Alerta", a "Sensibilidade" e o "Método de Sugestão" (estas
+duas eram da Revisão mensal). As colunas `percentual_alerta`,
+`desvio_min_perc` e `metodo_sugestao` ficam no banco, sem ser lidas.
 
 Isto só GRAVA no plano — `comValor` / `comItens`, as funções do Planejamento —,
 e o Radar relê. A linha CRU é achada por [`linhaDoPlano.ts`](src/utils/linhaDoPlano.ts):

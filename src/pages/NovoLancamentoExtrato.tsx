@@ -69,7 +69,6 @@ export default function NovoLancamentoExtrato() {
   const [novaCatAberta, setNovaCatAberta] = useState(false)
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
-  const [alertaDesvio, setAlertaDesvio] = useState<{catNome:string; totalGasto:number; previsto:number; valorAtual:number; descricao:string}|null>(null)
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
   const [mobileStep, setMobileStep] = useState<'tipo'|'conta'|'extrato'>('extrato')
@@ -79,7 +78,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, setPlanos, faturaData, setFaturaData, percentualAlerta, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, faturaData, setFaturaData, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -118,11 +117,6 @@ export default function NovoLancamentoExtrato() {
     if (dm?.fixasConsolidadas?.[f.id] === true) return false
     if (dm?.fixasValorOverride?.[f.id] !== undefined) return false
     return true
-  }
-
-  function valorPrevistoPorNome(catNome: string, tipoLanc: TipoLanc): number {
-    const cat = categorias.find(c => c.nome === catNome)
-    return valorPrevistoCat(cat?.id ?? '', catNome, tipoLanc)
   }
 
   const contasExtrato = contas
@@ -1007,20 +1001,6 @@ export default function NovoLancamentoExtrato() {
     } else {
       toast('Lançamento registrado')
     }
-    if (fTipo === 'saida' && fCat && !editandoId) {
-      const previsto = valorPrevistoPorNome(fCat, 'saida')
-      if (previsto > 0) {
-        const totalExistente = Object.values(mesDados.lancamentos)
-          .flat()
-          .filter(l => l.categoria === fCat && l.tipo === 'saida')
-          .reduce((s, l) => s + l.valor, 0)
-        const totalNovo = totalExistente + valor
-        const limiteAlerta = previsto * (1 + percentualAlerta / 100)
-        if (totalNovo > limiteAlerta) {
-          setAlertaDesvio({ catNome: fCat, totalGasto: totalNovo, previsto, valorAtual: valor, descricao: fDesc.trim() || fCat })
-        }
-      }
-    }
     setEditandoId(null); setEditandoDiaOriginal(null)
     setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
     if (isMobile) { setMobileDiaForm(null) } else {
@@ -1106,23 +1086,6 @@ export default function NovoLancamentoExtrato() {
 
   // ── Handlers built in parent for child components ──────────────────
 
-  function onAlertaAjustarMes(novoVal: number) {
-    if (!alertaDesvio) return
-    const catNome = alertaDesvio.catNome
-    const planoBase = planos[ano]
-    if (planoBase) {
-      setPlanos(prev => ({
-        ...prev,
-        [ano]: {
-          ...planoBase,
-          saidas: (planoBase.saidas ?? []).map(c =>
-            c.nome === catNome ? { ...c, v: c.v.map((v, mi) => mi === mes ? novoVal : v) } : c
-          ),
-        },
-      }))
-    }
-    setAlertaDesvio(null)
-  }
 
   function onCartaoMesSelect(m: number, a: number) {
     setCartaoMes(m); setCartaoAno(a)
@@ -1187,11 +1150,6 @@ export default function NovoLancamentoExtrato() {
       <NleMobileSubheader
         isMobile={isMobile}
         tabPrincipal={tabPrincipal}
-        alertaDesvio={alertaDesvio}
-        setAlertaDesvio={setAlertaDesvio}
-        mesLabel={NOMES_MESES[mes]}
-        onAlertaRevisar={() => { setAlertaDesvio(null); navigate('/planejamento', { state: { aba: 'revisao' } }) }}
-        onAlertaAjustarMes={onAlertaAjustarMes}
         contasExtrato={contasExtrato}
         contaIdEfetivo={contaIdEfetivo}
         dados={dados}

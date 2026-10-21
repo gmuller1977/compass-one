@@ -50,7 +50,6 @@ export default function Configuracoes() {
   const { user, contas, categorias, setContas, setCategorias,
           extratoData, faturaData, setExtratoData, setFaturaData, compartilhamento,
           planos, setPlanos,
-          percentualAlerta, setPercentualAlerta,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
           saldoInicialDinheiro, salvarSaldoInicialDinheiro,
           cenarioPrevisao, setCenarioPrevisao, onboardingCompleto } = useApp()
@@ -733,8 +732,6 @@ export default function Configuracoes() {
 
           {aba==='preferencias' && (
             <CfgPreferencias
-              percentualAlerta={percentualAlerta}
-              setPercentualAlerta={setPercentualAlerta}
               cenarioPrevisao={cenarioPrevisao}
               setCenarioPrevisao={setCenarioPrevisao}
               navigate={navigate}

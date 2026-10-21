@@ -1,17 +1,8 @@
 import type { Conta } from '../../context/AppContext'
-import AlertaOrcamento from '../AlertaOrcamento'
 import { COR, fmt, type DadosMes } from './NleShared'
 import { IconeCat } from '../IconeCat'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
-
-type AlertaDesvio = {
-  catNome: string
-  totalGasto: number
-  previsto: number
-  valorAtual: number
-  descricao: string
-}
 
 type ModalSaldoInfo = {
   contaId: string; banco: string; icone: string; cor: string; key: string
@@ -20,13 +11,6 @@ type ModalSaldoInfo = {
 type Props = {
   isMobile: boolean
   tabPrincipal: TabPrincipal
-
-  // Alerta orçamento
-  alertaDesvio: AlertaDesvio | null
-  setAlertaDesvio: (v: AlertaDesvio | null) => void
-  mesLabel: string
-  onAlertaRevisar: () => void
-  onAlertaAjustarMes: (novoVal: number) => void
 
   // Sub-header
   contasExtrato: Conta[]
@@ -54,29 +38,12 @@ type Props = {
 
 export default function NleMobileSubheader({
   isMobile, tabPrincipal,
-  alertaDesvio, setAlertaDesvio, mesLabel,
-  onAlertaRevisar, onAlertaAjustarMes,
   contasExtrato, contaIdEfetivo, mes, ano, mesNome,
   setContaId, setModalSaldo, setModalSaldoValor, saldoSugerido,
   isDinheiro, contaInfo, saldoMes, diferenca, conciliado, chaveAtual,
 }: Props) {
   return (
     <>
-      {/* ALERTA DE ORÇAMENTO */}
-      {alertaDesvio && (
-        <AlertaOrcamento
-          catNome={alertaDesvio.catNome}
-          previsto={alertaDesvio.previsto}
-          totalGasto={alertaDesvio.totalGasto}
-          valorAtual={alertaDesvio.valorAtual}
-          descricao={alertaDesvio.descricao}
-          mesLabel={mesLabel}
-          onRevisar={onAlertaRevisar}
-          onAjustarMes={onAlertaAjustarMes}
-          onIgnorar={() => setAlertaDesvio(null)}
-        />
-      )}
-
       {/* SUB-HEADER MOBILE: continua o topo azul do NleHeader — contas em
           pílulas, o mês, e o saldo em destaque, como nos apps de banco.
           Sobre #0f2878 → #1e40af, medido no extremo claro: branco 8,72 ·
