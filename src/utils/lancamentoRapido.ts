@@ -1,3 +1,4 @@
+import { diaNoMes } from './diasDaFatura'
 import type { Conta } from '../context/AppContext'
 
 /**
@@ -70,11 +71,13 @@ export function lancarNaFatura(
     while (m > 11) { m -= 12; a++ }
     const k = `${p.cartao.id}-${a}-${String(m + 1).padStart(2, '0')}`
     const dm = (out[k] as MesFatura | undefined) ?? { lancamentos: {}, faturaAtual: '' }
+    // Compra no dia 31 não cai no "dia 31" de um mês de 30 (utils/diasDaFatura).
+    const d = diaNoMes(p.dia, a, m)
     out[k] = {
       ...dm,
       lancamentos: {
         ...dm.lancamentos,
-        [p.dia]: [...(dm.lancamentos[p.dia] ?? []), {
+        [d]: [...(dm.lancamentos[d] ?? []), {
           id: `${p.baseId}-${i}`,
           tipo: tipoNaFatura(p.tipoDaCategoria),
           descricao: p.descricao, categoria: p.categoria,

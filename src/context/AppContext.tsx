@@ -9,6 +9,7 @@ import { guardarCopia, lerCopia, apagarCopias, type LinhasDoBanco } from '../uti
 import { supabase } from '../lib/supabase'
 import { marcarSaida } from '../utils/digital'
 import { limparUltimaAtividade } from '../utils/inatividade'
+import { ajustarDiasDasFaturas } from '../utils/diasDaFatura'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
 
@@ -713,8 +714,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     for (const [k, dm] of Object.entries(pendentes.fatura)) {
       if (contaIdSet.has(parseExtratoKey(k).contaId)) faturaLoaded[k] = dm
     }
+    // Parcela num dia que o mês não tem (29/02, 31/04) vai para o último dia
+    // e é gravada assim — utils/diasDaFatura. Membro não grava: fica com o
+    // que o administrador ajustar.
+    const faturaAjustada = ehMembro() ? faturaLoaded : ajustarDiasDasFaturas(faturaLoaded)
     faturaAGravarRef.current = faturaLoaded
-    setFaturaState(faturaLoaded)
+    setFaturaState(faturaAjustada)
 
     // Planos
     const planosLoaded: Record<number, PlanoAnoData> = {}
@@ -1091,7 +1096,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return true
     }))
     setExtratoState(extrato)
-    setFaturaState(fatura)
+    setFaturaState(ehMembro() ? fatura : ajustarDiasDasFaturas(fatura))
     setPlanosState(planosLidos)
   }
 

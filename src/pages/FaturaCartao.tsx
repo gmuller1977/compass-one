@@ -1,3 +1,4 @@
+import { diaNoMes } from '../utils/diasDaFatura'
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -228,14 +229,17 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     if (carregando) return
     const dm = dados[key] ?? DADOS_MES_VAZIO
     if (dm.faturaAtualData === hojeStr) return
-    // Fatura ja conciliada no banco nao precisa mais do valor informado.
-    if (faturaPaga) return
+    // Só a fatura EM ABERTO de agora pede o valor: a que fecha no próximo
+    // fechamento. Fechada, paga ou futura, não — passando os meses a janela
+    // abria em cada um (pedido do Guilherme, 21/10/2026).
+    if (faturaStatus !== 'aberta') return
+    if (new Date(purchaseAno, purchaseMes - 1, diaFechamentoBase) > hoje) return
     const t = setTimeout(() => {
       setModalFaturaValor(dm.faturaAtual ?? '')
       setModalFatura(true)
     }, 50)
     return () => clearTimeout(t)
-  }, [key, carregando, faturaPaga]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, carregando, faturaStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
 
@@ -459,13 +463,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           const k = mesKey(contaId, a, m)
           const dadosMes = result[k] ?? DADOS_MES_VAZIO
           const desc = fDesc.trim() || fCat
+          // Dia 29, 30 ou 31 num mês mais curto: o último dia (utils/diasDaFatura).
+          const dP = diaNoMes(diaSel, a, m)
           result = {
             ...result,
             [k]: {
               ...dadosMes,
               lancamentos: {
                 ...dadosMes.lancamentos,
-                [diaSel]: [...(dadosMes.lancamentos[diaSel]??[]), {
+                [dP]: [...(dadosMes.lancamentos[dP]??[]), {
                   id:`${baseId}-${p}`, tipo:fTipo,
                   descricao:desc, categoria:fCat, subCategoria:subCatToSave,
                   valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
