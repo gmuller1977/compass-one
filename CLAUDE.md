@@ -858,6 +858,17 @@ seguem indo só quando mudam — uma filha pode ter valor próprio. Correção d
 em tela congelada, feita em 08/10/2026; salvar a mãe de novo conserta as
 compras antigas.
 
+**Parcela não fica em dia que o mês não tem** (21/10/2026, relatado pelo
+Guilherme: compra em 29/09, a parcela 5 de 12 sumia da fatura de fevereiro
+de 2027, do Radar e do "já gastou"). A fatura grava cada parcela no dia da
+compra, e as telas percorrem o mês do dia 1 ao último. Hoje a parcela nova
+vai para o último dia do mês (`diaNoMes`), e o que já estava gravado em dia
+inexistente é movido ao carregar e volta ao banco na gravação
+(`ajustarDiasDasFaturas` em [`diasDaFatura.ts`](src/utils/diasDaFatura.ts));
+membro não move, fica com o que o administrador gravar.
+No mesmo dia: a janela "valor da fatura" só abre na fatura EM ABERTO de
+agora (a que fecha no próximo fechamento); futura, fechada ou paga não pede.
+
 **O nome de uma compra PARCELADA se troca pelo plano, e vale para todas as
 parcelas.** Pedido do Guilherme em 11/10/2026: a fatura grava compra sem
 descrição com o nome da categoria (`fDesc.trim() || fCat`), e a revisão copia
