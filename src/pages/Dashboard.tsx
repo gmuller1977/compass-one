@@ -545,10 +545,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Um gráfico só: para onde o saldo vai ── */}
+        {/* ── Um gráfico só: a evolução do saldo mês a mês ── */}
         {evolucao.length >= 2 && (
           <Cartao style={{ padding: isMobile ? '16px 12px 10px' : '20px 22px 14px' }}>
-            <TituloCartao>Para onde o seu saldo está indo</TituloCartao>
+            <TituloCartao>Evolução do saldo mensal</TituloCartao>
             <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -6, marginBottom: 10 }}>
               Bancos e dinheiro · linha cheia é o que aconteceu, tracejada é a previsão
               {serie && fimPlano ? ` até ${MESES_FULL[fimPlano.mes].toLowerCase()} de ${fimPlano.ano}` : ''}

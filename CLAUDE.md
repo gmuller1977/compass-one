@@ -1926,7 +1926,7 @@ como histórico.
    cabeçalho do Radar) → primeiro mês negativo À FRENTE → ritmo acelerado. O
    "passou" do ritmo não vira aviso: o hero já diz. Sem nenhum, "Tudo em dia ✓".
    "Ver contas" abre a lista ali mesmo. `prova43` (10 invariantes).
-3. **Um gráfico só** — "Para onde o seu saldo está indo".
+3. **Um gráfico só** — "Evolução do saldo mensal" (era "Para onde o seu saldo está indo" até 20/10/2026, pedido do Guilherme: "meio sem sentido").
 4. **"Quer ver em detalhe?"** — quatro botões para `/analises#âncora`.
 
 Saíram para **Análises** (`/analises`, menu "Todo mês"), sem reescrever
