@@ -29,6 +29,7 @@ import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrado
 import { nomeCanonico, mesmoNome } from '../utils/nomeCategoria'
 import { mudouIdentidade, renomearNoExtrato, renomearNaFaturaDaCategoria, renomearNosPlanos } from '../utils/renomearCategoria'
 import CfgPreferencias from '../components/configuracoes/CfgPreferencias'
+import { ehContaDisponivel } from '../utils/saldoConta'
 
 // ── Componente principal ─────────────────────────────────────────────
 export default function Configuracoes() {
@@ -146,8 +147,8 @@ export default function Configuracoes() {
   // aparece. A favorita ja vem sugerida: e o caso comum, e sem um dono a fixa
   // aparecia em todas as contas, deixando o saldo previsto de cada uma errado.
   const contaFavoritaId = useMemo(
-    () => (contas.find(c => c.tipo !== 'cartao' && c.preferida)
-        ?? contas.find(c => c.tipo !== 'cartao'))?.id,
+    () => (contas.find(c => ehContaDisponivel(c) && c.preferida)
+        ?? contas.find(ehContaDisponivel))?.id,
     [contas],
   )
 

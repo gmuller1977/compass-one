@@ -31,6 +31,7 @@ import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
 import ModalTopo from '../components/ModalTopo'
 import { CARTEIRA_ID, descricoesDaTransferencia, destinosDaTransferencia } from '../utils/transferencia'
+import { ehContaDisponivel } from '../utils/saldoConta'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -128,7 +129,7 @@ export default function NovoLancamentoExtrato() {
   // Fixa sem conta de debito cadastrada precisa de um dono, senao aparece em
   // todas as contas — e num mes futuro, onde nada esta confirmado, cada conta
   // projeta todas elas. Era o que deixava a Caixa negativa.
-  const contaPadraoFixas = (contasExtrato.find(c => c.preferida) ?? contasExtrato[0])?.id
+  const contaPadraoFixas = (contasExtrato.find(c => c.preferida && ehContaDisponivel(c)) ?? contasExtrato.find(ehContaDisponivel))?.id
   const isDinheiro = tabPrincipal === 'dinheiro'
 
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')

@@ -1,6 +1,7 @@
 import type { Conta } from '../context/AppContext'
 import { mesDaFaturaDaCompra } from './lancamentoRapido'
 import { ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
+import { ehContaDisponivel } from './saldoConta'
 
 /**
  * O Lançar do celular começa pela CATEGORIA, depois o MÊS, depois a forma de
@@ -44,7 +45,7 @@ export function formasDoMes(contas: Conta[], hoje: Date, qual: QualMes, tipo: 's
   })
   return {
     mes: doMes ? atual : proximoMes(atual),
-    bancos: doMes ? contas.filter(c => c.tipo !== 'cartao') : [],
+    bancos: doMes ? contas.filter(ehContaDisponivel) : [],
     cartoes,
     dinheiro: doMes,
   }

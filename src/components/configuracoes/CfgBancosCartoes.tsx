@@ -12,6 +12,7 @@ import type { Aba } from './CfgShared'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 import { dataDoSaldo, diaDoSaldo } from '../../utils/saldoDesde'
+import { ehContaDisponivel } from '../../utils/saldoConta'
 
 // A fatura do cartao e uma fixa como outra qualquer: precisa dizer COMO e paga
 // e EM QUAL conta aparece. Sem isso ela flutuava — projetava em todas as contas
@@ -433,7 +434,7 @@ export default function CfgBancosCartoes({
                   onChange={e => setFormConta(p=>({...p, contaPagamentoId: e.target.value || undefined}))}
                   className="campo-cfg" style={inputSt}>
                   <option value="">Selecione a conta...</option>
-                  {contas.filter(c => c.tipo !== 'cartao').map(c => (
+                  {contas.filter(ehContaDisponivel).map(c => (
                     <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
                   ))}
                 </select>

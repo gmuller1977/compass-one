@@ -8,6 +8,7 @@ import { parseBRL } from '../utils/moeda'
 import { COR } from '../utils/cores'
 import { nomeDaConta } from '../utils/nomeDaConta'
 import ModalTopo from './ModalTopo'
+import { ehContaDisponivel } from '../utils/saldoConta'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
@@ -27,7 +28,7 @@ export default function PagarContaDialog({ conta: pagando, onFechar, central = f
 }) {
   const { contas, categorias, extratoData, updateExtratoMes } = useApp()
   const destinos = useMemo(() => [
-    ...contas.filter(c => c.tipo !== 'cartao').map(c => ({ id: c.id, nome: nomeDaConta(c, contas) })),
+    ...contas.filter(ehContaDisponivel).map(c => ({ id: c.id, nome: nomeDaConta(c, contas) })),
     { id: 'dinheiro', nome: 'Dinheiro' },
   ], [contas])
   const [valor, setValor] = useState(() => pagando.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))

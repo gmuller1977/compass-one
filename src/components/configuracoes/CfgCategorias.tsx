@@ -11,6 +11,7 @@ import {
 import type { ConfirmState } from './CfgShared'
 import NomeCategoriaCampo from './NomeCategoriaCampo'
 import { IconeCat } from '../IconeCat'
+import { ehContaDisponivel } from '../../utils/saldoConta'
 
 interface Props {
   isMobile: boolean
@@ -85,8 +86,8 @@ export default function CfgCategorias({
   confirmar, fecharConfirm,
 }: Props) {
   // A conta sugerida por padrao nas categorias de banco.
-  const contaFavoritaId = (contas.find(c => c.tipo !== 'cartao' && c.preferida)
-    ?? contas.find(c => c.tipo !== 'cartao'))?.id
+  const contaFavoritaId = (contas.find(c => ehContaDisponivel(c) && c.preferida)
+    ?? contas.find(ehContaDisponivel))?.id
 
   const gruposCustom = Array.from(new Set([
     ...gruposExtra,
@@ -507,7 +508,7 @@ export default function CfgCategorias({
                     onChange={e => setFormCat(p=>({...p, contaDebitoId: e.target.value || undefined}))}
                     className="campo-cfg" style={inputSt}>
                     <option value="">Selecione a conta...</option>
-                    {contas.filter(c => c.tipo !== 'cartao').map(c => (
+                    {contas.filter(ehContaDisponivel).map(c => (
                       <option key={c.id} value={c.id}>{c.nome} — {c.banco}</option>
                     ))}
                   </select>

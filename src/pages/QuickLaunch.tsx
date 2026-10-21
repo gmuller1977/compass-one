@@ -20,6 +20,7 @@ import { corDoIcone } from '../utils/iconeDesenhado'
 import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 import ModalTopo from '../components/ModalTopo'
 import { grupoDaCategoria } from '../utils/rotuloCategoria'
+import { ehContaDisponivel } from '../utils/saldoConta'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -100,7 +101,7 @@ export default function QuickLaunch() {
 
   const valorRef = useRef<HTMLInputElement>(null)
 
-  const contasBanco = useMemo(() => contas.filter(c => c.tipo !== 'cartao'), [contas])
+  const contasBanco = useMemo(() => contas.filter(ehContaDisponivel), [contas])
   const isCartao = forma?.tipo === 'cartao'
 
   // O saldo das contas é o MESMO do Radar e de Lançamentos (saldoConta).
@@ -602,7 +603,7 @@ export default function QuickLaunch() {
       )}
 
       <NleNovaCategoria aberto={novaCatAberta} tipo="saida" isDinheiro={false}
-        contaId={(contas.find(c => c.preferida && c.tipo !== 'cartao') ?? contas.find(c => c.tipo !== 'cartao'))?.id}
+        contaId={(contas.find(c => c.preferida && ehContaDisponivel(c)) ?? contas.find(ehContaDisponivel))?.id}
         categorias={categorias} onFechar={() => setNovaCatAberta(false)}
         onCriar={c => {
           // Com atalhos escolhidos, a nova entra neles; sem, a grade mostra todas as variáveis.

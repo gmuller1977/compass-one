@@ -13,13 +13,14 @@ export const CARTEIRA_ID = 'dinheiro'
 
 export type DestinoTransferencia = { id: string; nome: string }
 
-type ContaBanco = { id: string; nome: string; banco?: string }
+type ContaBanco = { id: string; nome: string; banco?: string; tipo?: string }
 
 /** Para onde dá para transferir a partir da conta aberta. */
 export function destinosDaTransferencia(bancos: ContaBanco[], origemId: string): DestinoTransferencia[] {
   const lista = bancos
     .filter(c => c.id !== origemId)
-    .map(c => ({ id: c.id, nome: c.banco && c.banco !== c.nome ? `${c.nome} — ${c.banco}` : c.nome }))
+    .map(c => ({ id: c.id, nome: (c.banco && c.banco !== c.nome ? `${c.nome} — ${c.banco}` : c.nome)
+      + (c.tipo === 'poupanca' ? ' · Investimento' : '') }))
   return origemId === CARTEIRA_ID ? lista : [...lista, { id: CARTEIRA_ID, nome: 'Dinheiro (carteira)' }]
 }
 
