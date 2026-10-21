@@ -98,7 +98,7 @@ export default function CfgBancosCartoes({
             const itens = favorita ? [favorita, ...grupo] : grupo
             if (!itens.length) return null
             const titulo = tipo==='corrente' ? 'Contas Correntes'
-              : tipo==='poupanca' ? 'Poupanças' : 'Cartões de Crédito'
+              : tipo==='poupanca' ? 'Investimentos' : 'Cartões de Crédito'
             return (
               <div key={tipo} style={{ marginBottom:20 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:COR.textoSuave,
@@ -505,7 +505,7 @@ export default function CfgBancosCartoes({
                   <div>
                     <label style={labelSt}>Tipo</label>
                     <div style={{ display:'flex', gap:6 }}>
-                      {([['corrente','Corrente'],['poupanca','Poupança']] as const).map(([v,l], i) => (
+                      {([['corrente','Corrente'],['poupanca','Investimento']] as const).map(([v,l], i) => (
                         <button key={v}
                           ref={el => { tipoBancoRefs.current[i] = el }}
                           tabIndex={formConta.tipo===v ? 0 : -1}

@@ -364,7 +364,7 @@ export default function WizardPlanejamento() {
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>{c.nome}</div>
                   <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>
-                    {c.tipo === 'poupanca' ? 'Poupança' : 'Conta Corrente'}
+                    {c.tipo === 'poupanca' ? 'Investimento' : 'Conta Corrente'}
                   </div>
                 </div>
                 <input inputMode="decimal"
