@@ -195,6 +195,16 @@ banco ↔ dinheiro, no computador e no celular, sem categoria (grava
 banco "Depósito"; na carteira vai o nome do banco. Regras em
 [`transferencia.ts`](src/utils/transferencia.ts).
 
+**Conta de INVESTIMENTO fica fora do disponível** (21/10/2026, pedido do
+Guilherme). O tipo `poupanca` aparece como "Investimento" em Configurações
+(o banco segue gravando `poupanca`) e não soma no saldo atual, no previsto,
+na projeção, no "Confira seus saldos" nem no saldo inicial do Planejamento e
+do Simulador: `ehContaDisponivel` em `saldoConta.ts`. Fixa ou categoria com
+débito num investimento cai na preferida, como a conta excluída. A conta
+segue em Lançamentos com o saldo dela; transferir para ela tira do
+disponível, resgatar devolve. No menu (computador e celular) há
+"Investimentos" com o selo "Em breve", sem tela ainda.
+
 Consolidação vive no `DadosMes` de cada **conta**, mas a fixa é do **mês**.
 Somar percorrendo as chaves do extrato conta a mesma fixa uma vez por conta —
 com três contas, triplicava. Usar `resolverFixaDoMes` de

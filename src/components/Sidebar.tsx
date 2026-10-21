@@ -52,6 +52,14 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     ],
   },
   {
+    // Menu próprio dos investimentos, ainda sem tela
+    // (21/10/2026, pedido do Guilherme: "coloque em breve").
+    label: 'Investimentos',
+    items: [
+      { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos', exact: false, badge: 'Em breve', disabled: true },
+    ],
+  },
+  {
     label: 'Minha conta',
     items: [
       {

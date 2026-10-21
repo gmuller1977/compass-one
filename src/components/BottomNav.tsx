@@ -34,9 +34,11 @@ const NAV = [
   { icon: 'ti-calendar-stats', label: 'Plano', path: '/planejamento' },
 ]
 
-const MAIS = [
+const MAIS: { icon: string; label: string; path: string; emBreve?: boolean }[] = [
   ...(NORTE_ATIVO ? [{ icon: 'ti-compass', label: 'Norte', path: '/norte' }] : []),
   { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
+  // Menu dos investimentos, ainda sem tela (21/10/2026, como no computador).
+  { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos', emBreve: true },
   { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
   { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
 ]
@@ -103,14 +105,18 @@ export default function BottomNav() {
           }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: COR.borda, margin: '0 auto 8px' }} />
             {MAIS.map(m => (
-              <button key={m.path} onClick={() => { setMais(false); navigate(m.path) }} style={{
+              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); navigate(m.path) }} style={{
                 display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 22px',
-                border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: 'pointer',
+                border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
               }}>
                 <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, flexShrink: 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className={`ti ${m.icon}`} style={{ color: '#fff', fontSize: 21 }} /></span>{m.label}
+                {m.emBreve && (
+                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 8,
+                    background: '#eef2f8', color: '#475569', textTransform: 'uppercase', letterSpacing: '.4px' }}>Em breve</span>
+                )}
               </button>
             ))}
           </div>
