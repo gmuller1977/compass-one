@@ -376,6 +376,17 @@ LINHA do nome (no computador são 20 — "sem exagero"; uma versão com linha
 própria foi recusada no mesmo dia), e o da categoria foi a 16px.
 Nenhum número mudou.
 
+**No Radar abre UM grupo por vez, e o cartão não sai do lugar** (21/10/2026,
+pedido do Guilherme: aberto, o cartão descia para a linha de baixo e a grade
+`row dense` embaralhava a ordem). No computador o cartão aberto fica do
+mesmo tamanho, AZUL-ESCURO (`#0f2878 → #1e40af`, `RADAR_COR_AZUL`, rótulo
+75%, barra no trilho escuro com borda branca, ícone em círculo branco), e as
+categorias entram numa faixa de largura inteira logo depois da LINHA dele
+(`CategoriasDoGrupo`; as colunas são medidas no RadarFinanceiro com a conta
+do `auto-fill`). Abrir outro fecha o anterior. No celular, o mesmo: um
+grupo por vez, cabeçalho aberto azul, e a tela rola até o clicado. As
+notas acima sobre "aberto, ocupa a linha" e a borda `#93c5fd` são histórico.
+
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e
 "gráfico"). O azul do `PageHeader` traz a resposta do ano em 40px — "Se o

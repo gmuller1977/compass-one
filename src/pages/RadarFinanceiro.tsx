@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Fragment } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
@@ -12,9 +12,9 @@ import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/N
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
 import { RADAR_COR_AZUL, faixaRadar, totaisJulgados } from '../components/acompanhamento/radarCores'
-import { nomesDeCartao, gruposDoRadar, totaisDoMes } from '../components/acompanhamento/evolucaoCalcs'
+import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
-import EvolucaoGrupo from '../components/acompanhamento/EvolucaoGrupo'
+import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
 import RadarDetalheContas from '../components/acompanhamento/RadarDetalheContas'
 import RevisaoPlanoFaixa from '../components/acompanhamento/RevisaoPlanoFaixa'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
@@ -44,6 +44,21 @@ export default function RadarFinanceiro() {
   const [mes, setMes]               = useState(mesHoje)
   const [ano, setAno]               = useState(anoHoje)
   const [abertos, setAbertos] = useState<Set<string>>(new Set())
+  // Computador: UM grupo aberto por vez, e o cartão fica no lugar (pedido do
+  // Guilherme em 21/10/2026). As categorias entram numa faixa de largura
+  // inteira depois da LINHA do cartão, então é preciso saber quantas colunas
+  // a grade tem: a mesma conta do repeat(auto-fill, minmax(260px, 1fr)).
+  const [grupoAberto, setGrupoAberto] = useState<string | null>(null)
+  const [grade, setGrade] = useState<HTMLDivElement | null>(null)
+  const [colunas, setColunas] = useState(1)
+  useEffect(() => {
+    if (!grade) return
+    const medir = () => setColunas(Math.max(1, Math.floor((grade.clientWidth + 16) / (260 + 16))))
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(grade)
+    return () => ro.disconnect()
+  }, [grade])
   const [detalheContas, setDetalheContas] = useState(false)
   const [memoriaAberta, setMemoriaAberta] = useState(false)
 
@@ -170,8 +185,22 @@ export default function RadarFinanceiro() {
 
   const alternarDetalhe = () => setDetalheContas(v => !v)
 
+  // Grupo é um por vez (21/10/2026, pedido do Guilherme): abrir um fecha o
+  // anterior, como no computador. Categoria segue abrindo à vontade.
   function toggleAberto(uid: string) {
-    setAbertos(prev => { const n = new Set(prev); n.has(uid)?n.delete(uid):n.add(uid); return n })
+    const ehGrupo = uid.startsWith('g-')
+    const abrindo = !abertos.has(uid)
+    setAbertos(prev => {
+      const n = new Set(prev)
+      if (n.has(uid)) { n.delete(uid); return n }
+      if (ehGrupo) for (const k of [...n]) if (k.startsWith('g-')) n.delete(k)
+      n.add(uid)
+      return n
+    })
+    // Fechar o grupo de cima puxa o clicado para cima: leva a tela até ele.
+    if (ehGrupo && abrindo) requestAnimationFrame(() => {
+      document.querySelector(`[data-grupo="${CSS.escape(uid)}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
   }
 
   // ── Mobile: early return ───────────────────────────────────────────────
@@ -320,36 +349,54 @@ export default function RadarFinanceiro() {
           <AjustePlanoContexto.Provider value={setAjuste}>
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
             {/* O cardápio: um cartão por grupo, receitas e depois despesas, numa
-                grade. O cartão aberto ocupa a linha inteira (EvolucaoGrupo). */}
-            {/* dense: com um cartão aberto ocupando a linha, os seguintes sobem
-                para os buracos que ele deixaria. */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16,
-              gridAutoFlow: 'row dense', alignItems: 'start', flexShrink: 0 }}>
-            {(dadosAno.entradas ?? []).length > 0 && gruposEntrada.map(grupo => (
-              <EvolucaoGrupo
-                key={`entrada-${grupo}`}
-                tipo="entrada"
-                grupo={grupo}
-                planCats={dadosAno.entradas ?? []}
-                realMap={entradasMap}
-                categorias={categorias}
-                cartaoNomes={cartaoNomes}
-                mes={mes}
-              />
-            ))}
-
-            {(dadosAno.saidas ?? []).length > 0 && gruposSaida.map(grupo => (
-              <EvolucaoGrupo
-                key={`saida-${grupo}`}
-                tipo="saida"
-                grupo={grupo}
-                planCats={dadosAno.saidas ?? []}
-                realMap={saidasMap}
-                categorias={categorias}
-                cartaoNomes={cartaoNomes}
-                mes={mes}
-              />
-            ))}
+                grade, na ordem de sempre: abrir não move cartão nenhum. */}
+            <div ref={setGrade} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16,
+              alignItems: 'start', flexShrink: 0 }}>
+            {(() => {
+              const cartoes = [
+                ...((dadosAno.entradas ?? []).length > 0
+                  ? gruposEntrada.map(grupo => ({ tipo: 'entrada' as const, grupo, planCats: dadosAno.entradas ?? [], realMap: entradasMap }))
+                  : []),
+                ...((dadosAno.saidas ?? []).length > 0
+                  ? gruposSaida.map(grupo => ({ tipo: 'saida' as const, grupo, planCats: dadosAno.saidas ?? [], realMap: saidasMap }))
+                  : []),
+              ].filter(c => buildAllCats(c.tipo, c.grupo, c.planCats, c.realMap, categorias, cartaoNomes).length > 0)
+              const idxAberto = cartoes.findIndex(c => `${c.tipo}-${c.grupo}` === grupoAberto)
+              // Último cartão da linha do aberto: a faixa entra logo depois dele.
+              const fimDaLinha = idxAberto < 0 ? -1
+                : Math.min(cartoes.length, Math.floor(idxAberto / colunas) * colunas + colunas) - 1
+              const aberto = idxAberto >= 0 ? cartoes[idxAberto] : null
+              return cartoes.map((c, i) => {
+                const id = `${c.tipo}-${c.grupo}`
+                return (
+                  <Fragment key={id}>
+                    <EvolucaoGrupo
+                      tipo={c.tipo}
+                      grupo={c.grupo}
+                      planCats={c.planCats}
+                      realMap={c.realMap}
+                      categorias={categorias}
+                      cartaoNomes={cartaoNomes}
+                      mes={mes}
+                      aberto={id === grupoAberto}
+                      onAlternar={() => setGrupoAberto(v => v === id ? null : id)}
+                    />
+                    {i === fimDaLinha && aberto && (
+                      <CategoriasDoGrupo
+                        key={`cats-${id}`}
+                        tipo={aberto.tipo}
+                        grupo={aberto.grupo}
+                        planCats={aberto.planCats}
+                        realMap={aberto.realMap}
+                        categorias={categorias}
+                        cartaoNomes={cartaoNomes}
+                        mes={mes}
+                      />
+                    )}
+                  </Fragment>
+                )
+              })
+            })()}
             </div>
           </AjustePlanoContexto.Provider>
         )}

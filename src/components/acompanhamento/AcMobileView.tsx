@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_COR_CLARO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_COR_CLARO, RADAR_COR_AZUL, RADAR_TRILHO_AZUL, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -284,28 +284,35 @@ export default function AcMobileView({
       const gPrev = dg.prev
       const gReal = dg.real
       const gPerc = gPrev > 0 ? gReal / gPrev : 0
-      const gCor  = dg.principal === '—' ? COR.textoSuave
-        : !dg.julgado ? RADAR_COR_NEUTRA
-        : RADAR_COR_CLARO[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
       // Cada grupo é um acordeão, FECHADO por padrão, como no computador:
       // recolhida, a tela vira um painel de barras (pedido do Guilherme em
       // 10/10/2026). "Outras" também fecha.
       const gid = `g-${tipo}-${grupo}`
       const aberto = abertos.has(gid)
+      // Aberto, o cabeçalho fica AZUL-ESCURO, como no computador (21/10/2026),
+      // com a paleta do azul (RADAR_COR_AZUL) e rótulo a 75% (5,1).
+      const gCor  = dg.principal === '—' ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
+        : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
+        : (aberto ? RADAR_COR_AZUL : RADAR_COR_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
+      const gTexto  = aberto ? '#ffffff' : COR.texto
+      const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
       // faixa azul-clara, com ícone e letra um degrau menores.
       return [
-        <div key={`g-${grupo}`} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
-          boxShadow:'0 2px 14px rgba(15,40,120,.07)', border:`2px solid ${aberto ? '#93c5fd' : 'transparent'}` }}>
+        <div key={`g-${grupo}`} data-grupo={gid} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
+          scrollMarginTop: 12,
+          boxShadow: aberto ? '0 6px 22px rgba(30,64,175,.22)' : '0 2px 14px rgba(15,40,120,.07)',
+          border:`2px solid ${aberto ? '#1e40af' : 'transparent'}` }}>
         <button onClick={() => toggleAberto(gid)} aria-expanded={aberto}
           aria-label={`${grupoLabel}: ${dg.principal}`}
-          style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px', background:'#fff',
+          style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px',
+            background: aberto ? 'linear-gradient(135deg, #0f2878 0%, #1e40af 100%)' : '#fff',
             border:'none', cursor:'pointer', fontFamily:'inherit' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:COR.texto }}>
-            <IconeCat icone={grupoIcone} cor={COR.azul} />
+          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
+            <IconeCat icone={grupoIcone} cor={aberto ? '#ffffff' : COR.azul} />
             <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
             {/* O número em destaque na linha do nome, maior que ele (19px; no
                 computador são 24). Pedido do Guilherme em 13/10/2026: maior,
@@ -313,21 +320,22 @@ export default function AcMobileView({
             <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
               {dg.principal}
             </span>
-            <span aria-hidden style={{ color:COR.textoSuave, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
+            <span aria-hidden style={{ color:gRotulo, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
               transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
-            <div style={{ flex:1, height:8, borderRadius:4, background:'#e2e8f0', overflow:'hidden' }}>
+            <div style={{ flex:1, height:8, borderRadius:4, overflow:'hidden', boxSizing:'border-box',
+              background: aberto ? RADAR_TRILHO_AZUL : '#e2e8f0', border: aberto ? '1px solid #ffffff' : 'none' }}>
               <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gCor }} />
             </div>
-            <span style={{ fontSize:13, color:COR.textoSuave, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
+            <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
               {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
               {dg.julgado && Math.abs(dg.fora) > 0.005 ? ` · ${fmtK(dg.fora)} sem plano` : ''}
             </span>
           </div>
         </button>
         {aberto && (
-          <div style={{ background:'#eaf1fd', borderTop:'1px solid #dbe6f8', padding:'10px 10px 12px' }}>
+          <div style={{ background:'#eaf1fd', padding:'10px 10px 12px' }}>
             <div style={{ fontSize:12, fontWeight:700, color:'#1e3a8a', letterSpacing:'.04em',
               textTransform:'uppercase', margin:'0 6px 8px' }}>
               {allCats.length} {allCats.length === 1 ? 'categoria' : 'categorias'}
