@@ -120,8 +120,11 @@ export default function NovoLancamentoExtrato() {
     return true
   }
 
+  // Investimento não aparece em Banco (21/10/2026, pedido do Guilherme): ele
+  // não paga conta e não é dinheiro disponível. Só entra como destino da
+  // transferência (contasDaTransferencia).
   const contasExtrato = contas
-    .filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+    .filter(c => c.tipo === 'corrente')
     .sort((a, b) => {
       const pDiff = (b.preferida ? 1 : 0) - (a.preferida ? 1 : 0)
       return pDiff !== 0 ? pDiff : a.nome.localeCompare(b.nome, 'pt-BR')
@@ -134,7 +137,8 @@ export default function NovoLancamentoExtrato() {
 
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   // Banco transfere para outro banco ou para o dinheiro; o dinheiro, para um banco.
-  const destinosTransf = destinosDaTransferencia(contasExtrato, contaIdEfetivo)
+  const contasDaTransferencia = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+  const destinosTransf = destinosDaTransferencia(contasDaTransferencia, contaIdEfetivo)
   const dados = extratoData as Record<string, DadosMes>
   // Os mesmos Deps que o Radar monta: a cascata e a projecao do saldo tem de
   // olhar exatamente os mesmos dados.
@@ -388,7 +392,7 @@ export default function NovoLancamentoExtrato() {
 
   useEffect(() => {
     if (tabPrincipal !== 'extrato') return
-    const bancos = contas.filter(c => c.tipo==='corrente'||c.tipo==='poupanca')
+    const bancos = contas.filter(c => c.tipo==='corrente')
     const preferida = bancos.find(c => c.preferida)
     const inicial = preferida ?? bancos[0]
     if (inicial) { setContaId(inicial.id); setFBancoConsolidado(inicial.id) }
@@ -919,7 +923,7 @@ export default function NovoLancamentoExtrato() {
     if (fPag === 'transferencia' && !editandoId) {
       if (valor <= 0 || !fContaDestino) return
       const diaFuturoAlvo = ehDiaFuturo(diaSel)
-      const nomeDaConta = (id: string) => id === CARTEIRA_ID ? 'Dinheiro' : (contasExtrato.find(c => c.id === id)?.nome ?? '')
+      const nomeDaConta = (id: string) => id === CARTEIRA_ID ? 'Dinheiro' : (contasDaTransferencia.find(c => c.id === id)?.nome ?? '')
       const tipoOposto: TipoLanc = fTipo === 'saida' ? 'entrada' : 'saida'
       const { primaria: descPrimaria, espelho: descEspelho } = descricoesDaTransferencia({
         origemId: contaIdEfetivo, destinoId: fContaDestino, tipo: fTipo,
@@ -1311,6 +1315,7 @@ export default function NovoLancamentoExtrato() {
 
             <NleDesktopPanel
               isMobile={isMobile}
+              destinosTransf={destinosTransf}
               mes={mes}
               ano={ano}
               diaSel={diaSel}

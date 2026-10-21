@@ -10,7 +10,7 @@ import {
   REALCE_ERRO,
 } from './NleShared'
 import { IconeCat } from '../IconeCat'
-import { destinosDaTransferencia } from '../../utils/transferencia'
+import type { DestinoTransferencia } from '../../utils/transferencia'
 
 type Props = {
   isMobile: boolean
@@ -45,6 +45,8 @@ type Props = {
   onNovaCategoria: () => void
   subDescsDisponiveis: string[]
   contasExtrato: Conta[]
+  /** Para onde dá para transferir: os bancos e também os investimentos. */
+  destinosTransf: DestinoTransferencia[]
   contaIdEfetivo: string
   categorias: Categoria[]
   fixas: CatFixa[]
@@ -74,7 +76,7 @@ export default function NleDesktopPanel({
   editandoId, editandoFixaId, fixaEhAutomatica,
   fTipo, fCat, fSubDesc, fDesc, fValor, fPag, fContaFixa, fContaDestino,
   isDinheiro, contaInfo,
-  categoriasSelect, onNovaCategoria, subDescsDisponiveis, contasExtrato, contaIdEfetivo, categorias,
+  categoriasSelect, onNovaCategoria, subDescsDisponiveis, contasExtrato, destinosTransf, categorias,
   fixas, mesDados, totalSaidas,
   categoriaSelectRef, valorInputRef,
   resetarParaNovo,
@@ -284,7 +286,7 @@ export default function NleDesktopPanel({
                 style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                   fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>
                 <option value="">Selecione a conta...</option>
-                {destinosDaTransferencia(contasExtrato, contaIdEfetivo).map(c=>(
+                {destinosTransf.map(c=>(
                   <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}
               </select>
