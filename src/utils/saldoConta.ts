@@ -212,9 +212,21 @@ export function saldoFinalDinheiro(ano: number, mes: number, deps: Deps): number
  * Cartão fica de fora por decisão de produto — cartão não tem saldo, tem
  * fatura, e a fatura já aparece como despesa no mês em que é paga.
  */
+/**
+ * A conta entra no dinheiro DISPONÍVEL: banco que não é cartão nem
+ * investimento. O tipo 'poupanca' aparece como "Investimento" desde
+ * 21/10/2026 (pedido do Guilherme): o que está aplicado não é dinheiro para
+ * gastar, então fica fora do saldo atual, do previsto e da projeção. A conta
+ * segue em Lançamentos com o saldo dela; transferir para ela tira do
+ * disponível, resgatar devolve.
+ */
+export function ehContaDisponivel(c: Pick<Conta, 'tipo'>): boolean {
+  return c.tipo !== 'cartao' && c.tipo !== 'poupanca'
+}
+
 export function saldoBancosEDinheiro(ano: number, mes: number, deps: Deps): number {
   const bancos = deps.contas
-    .filter(c => c.tipo !== 'cartao')
+    .filter(ehContaDisponivel)
     .reduce((s, c) => s + saldoFinalConta(c, ano, mes, deps), 0)
   return bancos + saldoFinalDinheiro(ano, mes, deps)
 }
@@ -390,7 +402,7 @@ function contaDaCategoria(cat: Categoria, padrao: string | undefined, contas: Co
  */
 function debitoOuPadrao(cat: Categoria, padrao: string | undefined, contas: Conta[]) {
   const id = cat.contaDebitoId
-  return id && contas.some(c => c.id === id && c.tipo !== 'cartao') ? id : padrao
+  return id && contas.some(c => c.id === id && ehContaDisponivel(c)) ? id : padrao
 }
 
 /**
@@ -688,8 +700,8 @@ export function rateioDoMes(ano: number, mes: number, deps: Deps, hoje: Date = n
 }
 
 function contaPadrao(contas: Conta[]) {
-  return (contas.find(c => c.tipo !== 'cartao' && c.preferida)
-    ?? contas.find(c => c.tipo !== 'cartao'))?.id
+  return (contas.find(c => ehContaDisponivel(c) && c.preferida)
+    ?? contas.find(ehContaDisponivel))?.id
 }
 
 /**
@@ -873,7 +885,7 @@ function projecaoDaConta(
 /** As contas que têm saldo: bancos e o dinheiro. Cartão não tem saldo. */
 function alvosDeSaldo(contas: Conta[]): { id: string; nome: string; icone: string }[] {
   return [
-    ...contas.filter(c => c.tipo !== 'cartao')
+    ...contas.filter(ehContaDisponivel)
       .map(c => ({ id: c.id, nome: c.banco || c.nome, icone: c.icone })),
     { id: 'dinheiro', nome: 'Dinheiro em carteira', icone: '💵' },
   ]

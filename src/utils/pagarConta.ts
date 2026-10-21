@@ -1,4 +1,5 @@
 import type { Conta, Categoria, DadosMes } from '../context/AppContext'
+import { ehContaDisponivel } from './saldoConta'
 
 const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
 
@@ -18,7 +19,7 @@ export function contaDoPagamento(
   id: string, ano: number, mes: number,
   contas: Conta[], categorias: Categoria[], extratoData: Record<string, DadosMes>,
 ): string | undefined {
-  const padrao = (contas.find(c => c.tipo !== 'cartao' && c.preferida) ?? contas.find(c => c.tipo !== 'cartao'))?.id
+  const padrao = (contas.find(c => ehContaDisponivel(c) && c.preferida) ?? contas.find(ehContaDisponivel))?.id
   if (id.startsWith('cartao-')) {
     const cartao = contas.find(c => c.id === id.slice(7))
     return cartao?.contaPagamentoId ?? padrao

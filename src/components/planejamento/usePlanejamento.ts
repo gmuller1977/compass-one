@@ -24,7 +24,7 @@ export function usePlanejamento(anoAtual: number) {
   const anoCorrente = new Date().getFullYear()
   const mesAtual = new Date().getMonth()
 
-  const contasSaldoIni = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+  const contasSaldoIni = contas.filter(c => c.tipo === 'corrente')
   const SALDO_INICIAL_FIXO = contasSaldoIni
     .filter(c => c.incluirNoSaldoInicial !== false)
     .reduce((s, c) => s + c.saldoInicial, 0)

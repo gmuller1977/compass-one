@@ -309,7 +309,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
     const ctx: CtxPlano = {
       anoCorrente: hoje.getFullYear(), mesAtual: hoje.getMonth(), categorias, contas, faturaData,
       planos: planos as Record<number, unknown>,
-      saldoInicialFixo: contas.filter(c => (c.tipo === 'corrente' || c.tipo === 'poupanca') && c.incluirNoSaldoInicial !== false)
+      saldoInicialFixo: contas.filter(c => c.tipo === 'corrente' && c.incluirNoSaldoInicial !== false)
         .reduce((t, c) => t + c.saldoInicial, 0),
       depsSaldo: deps,
     }

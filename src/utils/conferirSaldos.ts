@@ -1,6 +1,6 @@
 import { saldoInformado, saldoInformadoDaCarteira } from './saldoInformado'
 import type { Conta, DadosMes } from '../context/AppContext'
-import { detalharProjecaoDaConta, saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
+import { detalharProjecaoDaConta, ehContaDisponivel, saldoFinalConta, saldoFinalDinheiro, type Deps } from './saldoConta'
 import { ehAutomatica } from './debitoAutomatico'
 import { contaDoPagamento } from './pagarConta'
 import { diaEfetivoFixa, diaUtilOuProximo } from './diaDaFixa'
@@ -172,7 +172,7 @@ export function usaDinheiro(deps: Deps): boolean {
 export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const hojeStr = dataDeHoje(hoje)
-  const contas = deps.contas.filter(c => c.tipo !== 'cartao')
+  const contas = deps.contas.filter(ehContaDisponivel)
   if (usaDinheiro(deps)) contas.push(CARTEIRA)
   return contas
     .map(conta => {
