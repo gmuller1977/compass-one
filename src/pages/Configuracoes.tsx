@@ -51,7 +51,6 @@ export default function Configuracoes() {
           extratoData, faturaData, setExtratoData, setFaturaData, compartilhamento,
           planos, setPlanos,
           percentualAlerta, setPercentualAlerta,
-          metodoSugestao, setMetodoSugestao,
           perfil, setPerfil, excluirConta: excluirContaUsuario,
           saldoInicialDinheiro, salvarSaldoInicialDinheiro,
           cenarioPrevisao, setCenarioPrevisao, onboardingCompleto } = useApp()
@@ -736,8 +735,6 @@ export default function Configuracoes() {
             <CfgPreferencias
               percentualAlerta={percentualAlerta}
               setPercentualAlerta={setPercentualAlerta}
-              metodoSugestao={metodoSugestao}
-              setMetodoSugestao={setMetodoSugestao}
               cenarioPrevisao={cenarioPrevisao}
               setCenarioPrevisao={setCenarioPrevisao}
               navigate={navigate}
