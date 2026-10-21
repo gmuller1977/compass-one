@@ -84,6 +84,17 @@ export default function Planejamento() {
     const linha = (tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]
     const anterior = linha?.v[mi] ?? 0
     plan.editarValor(tipo, ri, mi, valor)
+    repetirAposDigitar(tipo, ri, mi, anterior, valor)
+  }
+
+  /**
+   * A repetição depois que o valor de um mês mudou — pela célula ou pela
+   * janela do já lançado (EditorLancado), que grava em itens: a categoria
+   * com lançamento no mês também repete e pergunta (21/10/2026, relatado pelo
+   * Guilherme: Academia · Gui com 96,90 lançado, digitou 100 e nada abriu).
+   */
+  function repetirAposDigitar(tipo: 'e' | 's', ri: number, mi: number, anterior: number, valor: number) {
+    const linha = (tipo === 'e' ? dadosAtivos.entradas : dadosAtivos.saidas)[ri]
     if (!linha || Math.abs(anterior - valor) < 0.005) return
     const cad = (linha.id ? categorias.find(c => c.id === linha.id) : undefined)
       ?? cadastroDaLinha({ nome: linha.nome, descricao: linha.descricao ?? '' }, categorias)
@@ -263,12 +274,17 @@ export default function Planejamento() {
             key={`${tipo}-${ri}-${mi}`}
             nome={nomeExibicao(cat)} grupo={cat.grupo} mes={mi}
             valorAtual={cat.v[mi] ?? 0} itens={itens} partes={partes}
-            onSalvar={(novos, meses) => { plan.editarItens(tipo, ri, meses, novos); fechar() }}
+            onSalvar={(novos, meses) => {
+              plan.editarItens(tipo, ri, meses, novos)
+              // Pela janela do já lançado o total muda como um valor digitado.
+              if (ja.length && novos) repetirAposDigitar(tipo, ri, mi, cat.v[mi] ?? 0, novos.reduce((t, i) => t + i.valor, 0))
+              fechar()
+            }}
             onTirar={itens ? () => { plan.editarItens(tipo, ri, [mi], null); fechar() } : undefined}
             onFechar={fechar}
             compras={compras}
             jaLancado={ja} futuro={anoAtual * 12 + mi > hojeIdx}
-            onSalvarValor={v => { plan.editarValor(tipo, ri, mi, v); fechar() }}
+            onSalvarValor={v => { plan.editarValor(tipo, ri, mi, v); repetirAposDigitar(tipo, ri, mi, cat.v[mi] ?? 0, v); fechar() }}
             onRenomear={(ref, antigo, novo) => {
               setFaturaData(f => renomearNaFatura(f, ref, novo))
               setPlanos(p => renomearNosPlanos(p, cat.nome, antigo, ref.total, novo))
