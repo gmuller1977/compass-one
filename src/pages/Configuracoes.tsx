@@ -203,7 +203,7 @@ export default function Configuracoes() {
         }
       : rest
     const bancoNaLista = BANCOS.includes(c.banco)
-    if (c.tipo === 'cartao' && !bancoNaLista && c.banco) {
+    if (!bancoNaLista && c.banco) {
       setFormConta({ ...restFinal, banco: 'Outro' })
       setBancoCustom(c.banco)
     } else {
@@ -226,9 +226,9 @@ export default function Configuracoes() {
   }
   function salvarConta() {
     const ehCartao = formConta.tipo === 'cartao'
-    const bancoEfetivo = (ehCartao && formConta.banco === 'Outro') ? bancoCustom.trim() : formConta.banco
+    const bancoEfetivo = formConta.banco === 'Outro' ? bancoCustom.trim() : formConta.banco
     if (!ehCartao && !formConta.nome.trim()) return setErroConta('Informe o titular da conta')
-    if (!bancoEfetivo) return setErroConta(ehCartao ? 'Selecione ou informe o banco' : 'Selecione o banco')
+    if (!bancoEfetivo) return setErroConta('Selecione ou informe o banco')
     const nomeEfetivo = ehCartao
       ? (formConta.apelido?.trim() || bancoEfetivo)
       : formConta.nome.trim()

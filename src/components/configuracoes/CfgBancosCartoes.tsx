@@ -299,7 +299,7 @@ export default function CfgBancosCartoes({
                 {formConta.nome || 'Titular'}
               </div>
               <div style={{ fontSize:12, opacity:.75, marginTop:2 }}>
-                {formConta.banco || 'Banco'}
+                {(formConta.banco === 'Outro' ? bancoCustom : formConta.banco) || 'Banco'}
               </div>
             </div>
             <div style={{ textAlign:'right', flexShrink:0 }}>
@@ -333,7 +333,7 @@ export default function CfgBancosCartoes({
                 {formConta.apelido || formConta.banco || 'Cartão'}
               </div>
               <div style={{ fontSize:12, opacity:.75, marginTop:2 }}>
-                {formConta.banco || 'Banco'}
+                {(formConta.banco === 'Outro' ? bancoCustom : formConta.banco) || 'Banco'}
                 {formConta.diaFechamento ? ` · Fecha dia ${formConta.diaFechamento}` : ''}
               </div>
             </div>
@@ -470,12 +470,20 @@ export default function CfgBancosCartoes({
               <div>
                 <label style={labelSt}>Banco</label>
                 <select value={formConta.banco}
-                  onChange={e => setFormConta(p=>({...p, banco:e.target.value}))}
+                  onChange={e => { setFormConta(p=>({...p, banco:e.target.value})); if (e.target.value !== 'Outro') setBancoCustom('') }}
                   className="campo-cfg" style={inputSt}>
                   <option value="">Selecione...</option>
                   {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
+              {formConta.banco === 'Outro' && (
+                <div>
+                  <label style={labelSt}>Qual banco?</label>
+                  <input value={bancoCustom}
+                    onChange={e => setBancoCustom(e.target.value)}
+                    placeholder="Nome do banco" className="campo-cfg" style={inputSt} />
+                </div>
+              )}
               <div>
                 <label style={labelSt}>Nome da conta</label>
                 <input ref={nomeContaRef} value={formConta.nome}
