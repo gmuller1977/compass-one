@@ -391,9 +391,25 @@ export default function FcMobileView({
                   backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E\")",
                   backgroundRepeat:'no-repeat',backgroundPosition:'calc(100% - 14px) center'}}>
                 <option value="">Selecione...</option>
-                {categoriasCartao.map(c => (
-                  <option key={c.id} value={c.nome}>{c.nome}</option>
-                ))}
+                {(() => {
+                  // Uma linha por nome, agrupada, como no computador e no banco:
+                  // a variante se escolhe no campo de baixo.
+                  const vistos = new Set<string>()
+                  const grupos = new Map<string, typeof categoriasCartao>()
+                  for (const c of categoriasCartao) {
+                    const k = c.nome.trim().toLowerCase()
+                    if (vistos.has(k)) continue
+                    vistos.add(k)
+                    const g = c.grupo ?? ''
+                    if (!grupos.has(g)) grupos.set(g, [])
+                    grupos.get(g)!.push(c)
+                  }
+                  return Array.from(grupos.entries())
+                    .sort(([a], [b]) => a === '' ? 1 : b === '' ? -1 : a.localeCompare(b, 'pt-BR'))
+                    .map(([grupo, cats]) => grupo
+                      ? <optgroup key={grupo} label={grupo}>{cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}</optgroup>
+                      : cats.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>))
+                })()}
               </select>
             </div>
 
