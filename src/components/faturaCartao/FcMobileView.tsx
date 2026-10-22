@@ -59,6 +59,7 @@ type Props = {
   fDataCompra: string
   setFDataCompra: React.Dispatch<React.SetStateAction<string>>
   editandoId: string | null
+  avisoParcelas?: string
   editandoDiaOriginal: number | null
   diaSel: number
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
@@ -110,7 +111,7 @@ export default function FcMobileView({
   fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc, fVariante, setFVariante,
   fValor, setFValor, fParcelas, setFParcelas,
   fDataCompra, setFDataCompra,
-  editandoId, editandoDiaOriginal,
+  editandoId, editandoDiaOriginal, avisoParcelas,
   diaSel, setDiaSel,
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
   mesDados, totalDias, purchaseMes, purchaseAno,
@@ -446,6 +447,9 @@ export default function FcMobileView({
                   textAlign:'center' as const,letterSpacing:-.4,
                   boxSizing:'border-box' as const,...(valorRuim?REALCE_ERRO:{})}}
                 onKeyDown={e => e.key==='Enter' && lancar()}/>
+              {avisoParcelas && (
+            <div style={{fontSize:13,color:'#475569',marginTop:6}}>{avisoParcelas}</div>
+          )}
             </div>
 
             {/* Parcelas */}

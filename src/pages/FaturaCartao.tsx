@@ -333,6 +333,17 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     }, 0)
   }, [dados, mes, ano, contas])
 
+  // Editando a parcela k de N (k < N): avisa que um valor novo vale também
+  // para as seguintes, a regra de lancar() (22/10/2026).
+  const parcelaEditada = editandoId && editandoDiaOriginal !== null
+    ? (mesDados.lancamentos[editandoDiaOriginal] ?? []).find(l => l.id === editandoId)
+    : undefined
+  const avisoParcelas = parcelaEditada?.parcelas && (parcelaEditada.parcelaAtual ?? 1) < parcelaEditada.parcelas
+    ? ((parcelaEditada.parcelaAtual ?? 1) + 1 === parcelaEditada.parcelas
+      ? `Um valor novo vale também para a parcela ${parcelaEditada.parcelas}.`
+      : `Um valor novo vale também para as parcelas ${(parcelaEditada.parcelaAtual ?? 1) + 1} a ${parcelaEditada.parcelas}.`)
+    : undefined
+
   function lancar() {
     const valorParcela = parseBRL(fValor)
     const nParcelas    = Math.max(1, parseInt(fParcelas) || 1)
@@ -411,11 +422,16 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         // relatado em 08/10/2026. Salvar a mae de novo conserta as que ja
         // ficaram para tras. Descricao e valor so vao quando mudaram: uma
         // filha pode ter valor proprio.
+        //
+        // VALOR corrigido em QUALQUER parcela segue para as SEGUINTES; as
+        // anteriores ficam (22/10/2026, pedido do Guilherme: a 1ª foi 103,15 e
+        // as outras 103,05 — corrigir a 2ª corrige da 3ª em diante, sem ir uma
+        // a uma). Editar uma filha continua sem mexer em categoria e descricao.
         const currentParcela = entrada.parcelaAtual ?? 1
         const ehMae = currentParcela === 1
-        const mudouDesc = novaDesc !== entrada.descricao
+        const mudouDesc = ehMae && novaDesc !== entrada.descricao
         const mudouValor = valorParcela !== entrada.valor
-        if (ehMae && entrada.parcelas && entrada.parcelas > 1) {
+        if ((ehMae || mudouValor) && entrada.parcelas && entrada.parcelas > 1) {
           const baseId = entrada.id.replace(/-\d+$/, '')
           const totalParcelas = entrada.parcelas
           let baseMes = purchaseMes - (currentParcela - 1)
@@ -437,9 +453,10 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
               const newList = (list as Lancamento[]).map(l => {
                 if (l.id !== targetId) return l
                 const nova = {
-                  ...l, categoria: fCat, subCategoria: subCatToSave,
+                  ...l,
+                  ...(ehMae ? { categoria: fCat, subCategoria: subCatToSave } : {}),
                   ...(mudouDesc ? { descricao: novaDesc } : {}),
-                  ...(mudouValor ? { valor: valorParcela } : {}),
+                  ...(mudouValor && p > currentParcela ? { valor: valorParcela } : {}),
                 }
                 if (nova.categoria === l.categoria && nova.subCategoria === l.subCategoria
                   && nova.descricao === l.descricao && nova.valor === l.valor) return l
@@ -607,7 +624,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         fParcelas={fParcelas} setFParcelas={setFParcelas}
         fDataCompra={fDataCompra} setFDataCompra={setFDataCompra}
         editandoId={editandoId}
-        editandoDiaOriginal={editandoDiaOriginal}
+        editandoDiaOriginal={editandoDiaOriginal} avisoParcelas={avisoParcelas}
         diaSel={diaSel} setDiaSel={setDiaSel}
         diaFechamento={diaFechamento} diaVencimento={diaVencimento}
         diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
@@ -679,7 +696,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           setDiaSel={setDiaSel}
         />
         <FcDesktopPanel
-          editandoId={editandoId}
+          editandoId={editandoId} avisoParcelas={avisoParcelas}
           editandoFechamento={editandoFechamento} setEditandoFechamento={setEditandoFechamento}
           editandoVencimento={editandoVencimento} setEditandoVencimento={setEditandoVencimento}
           fTipo={fTipo} setFTipo={setFTipo}

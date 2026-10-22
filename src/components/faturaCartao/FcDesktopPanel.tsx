@@ -10,6 +10,8 @@ import {
 
 type Props = {
   editandoId: string | null
+  /** Editando uma parcela que não é a última: o valor novo segue para as seguintes. */
+  avisoParcelas?: string
 
   // Fechamento/Vencimento inline editors
   editandoFechamento: boolean
@@ -64,7 +66,7 @@ type Props = {
 }
 
 export default function FcDesktopPanel({
-  editandoId,
+  editandoId, avisoParcelas,
   editandoFechamento, setEditandoFechamento,
   editandoVencimento, setEditandoVencimento,
   fTipo, setFTipo, fCat, setFCat, fDesc, setFDesc, fVariante, setFVariante,
@@ -281,6 +283,9 @@ export default function FcDesktopPanel({
               fontSize:20,fontWeight:800,color:'#1a56db',background:'#eff6ff',outline:'none',
               fontFamily:'inherit',textAlign:'center',letterSpacing:'-.4px',...(valorRuim?REALCE_ERRO:{})}}
             onKeyDown={e=>e.key==='Enter'&&lancar()}/>
+          {avisoParcelas && (
+            <div style={{fontSize:12,color:'#475569',marginTop:6}}>{avisoParcelas}</div>
+          )}
         </div>
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',

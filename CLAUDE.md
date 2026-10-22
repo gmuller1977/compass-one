@@ -857,6 +857,12 @@ categoria sem variante (Academia de dezembro em diante). Descrição e valor
 seguem indo só quando mudam — uma filha pode ter valor próprio. Correção de bug
 em tela congelada, feita em 08/10/2026; salvar a mãe de novo conserta as
 compras antigas.
+**O valor corrigido numa parcela segue para as SEGUINTES** (22/10/2026,
+pedido do Guilherme: lançada 12× de 103,15, só a 1ª foi 103,15 e as outras
+103,05). Corrigir a parcela k grava o valor novo de k+1 até N; as anteriores
+ficam. Editar uma filha não mexe em categoria nem descrição. Editando parcela
+que não é a última, embaixo do valor aparece "Um valor novo vale também para
+as parcelas k+1 a N" (computador e celular).
 
 **Parcela não fica em dia que o mês não tem** (21/10/2026, relatado pelo
 Guilherme: compra em 29/09, a parcela 5 de 12 sumia da fatura de fevereiro
