@@ -1535,8 +1535,9 @@ de cartão — o Planejamento fica sem os gastos no cartão.
 
 **"Quitar dívida" tem "Quitar à vista"** (22/10/2026, pedido do Guilherme:
 quitar o financiamento do Civic, 16 × 1.149,72 já no plano, sem saldo hoje).
-A pessoa escolhe a dívida (despesa fixa ou parcelada com valor no plano do mês
-corrente em diante) e digita o valor de quitação de HOJE. O juro do contrato
+A pessoa escolhe a dívida (categoria de despesa PARCELADA no cadastro, com valor
+no plano do mês corrente em diante; mesmo dia, Guilherme: "fixas não têm fim,
+porque se repetem todos os anos", então fixa mensal não aparece) e digita o valor de quitação de HOJE. O juro do contrato
 sai desse valor (`taxaImplicita`, tabela Price) e o valor de cada mês seguinte
 é estimado por ele ("o banco confirma"): com o valor fixo, quitar mais tarde
 aparecia "custando a mais". Sobre a série do Simulador (`serieBaseDoPlano`),

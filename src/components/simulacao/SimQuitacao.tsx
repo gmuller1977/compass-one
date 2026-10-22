@@ -180,8 +180,9 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
         </div>
         {!divida ? (
           <div style={apoio}>
-            Não encontrei no seu planejamento uma conta fixa com parcelas a vencer. Quando o financiamento
-            estiver no plano, ele aparece aqui. Para simular uma dívida fora do plano, use "Pagar em parcelas".
+            Aqui aparecem as categorias cadastradas como Parcelada, com parcelas no planejamento. Se o
+            financiamento está como Mensal, troque para Parcelada em Configurações › Categorias. Para
+            simular uma dívida fora do plano, use "Pagar em parcelas".
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>

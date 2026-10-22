@@ -72,17 +72,16 @@ function quitadaEm(planos: Planos, cat: Categoria, m: Mes): boolean {
 }
 
 /**
- * As dívidas que o plano já carrega: despesa FIXA ou PARCELADA, ativa, com
- * valor do mês corrente em diante. As que acabam antes do fim do plano
- * (financiamento, empréstimo) vêm primeiro; as que vão até o fim (aluguel,
- * escola) ficam depois, porque também podem ser um contrato a quitar.
+ * As dívidas que o plano já carrega: despesa PARCELADA no cadastro, ativa,
+ * com valor do mês corrente em diante. Fixa mensal não entra: ela se repete
+ * todo ano e não tem o que quitar (aluguel, luz).
  */
 export function dividasNoPlano(planos: Planos, categorias: Categoria[], de: Mes, fim: Mes | null): DividaNoPlano[] {
   if (!fim) return []
   const total = Math.max(0, (fim.ano - de.ano) * 12 + (fim.mes - de.mes) + 1)
   const out: DividaNoPlano[] = []
   for (const cat of categorias) {
-    if (cat.tipo !== 'saida' || !cat.ativa || !(cat.fixa || ehParcelada(cat))) continue
+    if (cat.tipo !== 'saida' || !cat.ativa || !ehParcelada(cat)) continue
     const parcelas: ParcelaDaDivida[] = []
     for (let k = 0; k < total; k++) {
       const m = somaMes(de, k)
@@ -103,7 +102,7 @@ export function dividasNoPlano(planos: Planos, categorias: Categoria[], de: Mes,
     })
   }
   const rotulo = (d: DividaNoPlano) => `${d.cat.nome} ${d.cat.descricao ?? ''}`
-  return out.sort((a, b) => Number(a.vaiAteOFim) - Number(b.vaiAteOFim) || rotulo(a).localeCompare(rotulo(b), 'pt-BR'))
+  return out.sort((a, b) => rotulo(a).localeCompare(rotulo(b), 'pt-BR'))
 }
 
 /** Meses entre dois meses (b − a). */
