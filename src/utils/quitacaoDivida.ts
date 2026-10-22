@@ -41,6 +41,8 @@ export type DividaNoPlano = {
   ultima: ParcelaDaDivida
   /** Vai até o fim do plano: parece conta de todo mês, não dívida que acaba. */
   vaiAteOFim: boolean
+  /** Tudo o que o plano tem do mês corrente em diante, mesmo além do fim do contrato. */
+  noPlano: ParcelaDaDivida[]
 }
 
 const MEIO_CENTAVO = 0.005
@@ -71,26 +73,68 @@ function quitadaEm(planos: Planos, cat: Categoria, m: Mes): boolean {
   return (itensDoMes(plano.saidas[i], m.mes) ?? []).some(it => it.descricao === ROTULO_QUITACAO)
 }
 
+/** "k de N" num item do mês ("Financiamento · 7 de 16"): quantas faltam, contando esta. */
+function faltamPeloRotulo(planos: Planos, cat: Categoria, m: Mes): { k: number; faltam: number } | null {
+  const plano = planos[m.ano]
+  const i = plano ? acharLinhaDoPlano(plano.saidas ?? [], cat) : null
+  if (!plano || typeof i !== 'number') return null
+  for (const it of itensDoMes(plano.saidas[i], m.mes) ?? []) {
+    const x = /(\d+)\s+de\s+(\d+)\s*$/.exec(it.descricao ?? '')
+    if (x && +x[1] >= 1 && +x[2] >= +x[1]) return { k: +x[1], faltam: +x[2] - +x[1] + 1 }
+  }
+  return null
+}
+
+/** A mesma dívida com só as `n` primeiras parcelas: o que o contrato diz que falta. */
+export function comParcelasRestantes(d: DividaNoPlano, n: number, fim: Mes | null): DividaNoPlano {
+  const k = Math.max(1, Math.min(d.noPlano.length, Math.floor(n)))
+  const parcelas = d.noPlano.slice(0, k)
+  const ultima = parcelas[parcelas.length - 1]
+  return {
+    ...d, parcelas, ultima,
+    total: r2(parcelas.reduce((t, p) => t + p.valor, 0)),
+    vaiAteOFim: !!fim && ymDe(ultima) === ymDe(fim),
+  }
+}
+
 /**
  * As dívidas que o plano já carrega: despesa PARCELADA no cadastro, ativa,
  * com valor do mês corrente em diante. Fixa mensal não entra: ela se repete
  * todo ano e não tem o que quitar (aluguel, luz).
+ *
+ * E só a que JÁ COMEÇOU (pedido do Guilherme no mesmo dia): parcela no mês
+ * anterior, item "k de N" com k > 1, ou a deste mês já paga
+ * (`pagaNoMesCorrente`). Parcelamento que começa no futuro (o IPVA do ano que
+ * vem) não é dívida ainda.
+ *
+ * Quando o item do mês diz "k de N", as parcelas param na N-ésima: o plano
+ * pode ter o valor repetido além do fim do contrato (copiar ano).
  */
-export function dividasNoPlano(planos: Planos, categorias: Categoria[], de: Mes, fim: Mes | null): DividaNoPlano[] {
+export function dividasNoPlano(
+  planos: Planos, categorias: Categoria[], de: Mes, fim: Mes | null,
+  pagaNoMesCorrente: (cat: Categoria) => boolean = () => false,
+): DividaNoPlano[] {
   if (!fim) return []
   const total = Math.max(0, (fim.ano - de.ano) * 12 + (fim.mes - de.mes) + 1)
   const out: DividaNoPlano[] = []
   for (const cat of categorias) {
     if (cat.tipo !== 'saida' || !cat.ativa || !ehParcelada(cat)) continue
-    const parcelas: ParcelaDaDivida[] = []
+    const todas: ParcelaDaDivida[] = []
     for (let k = 0; k < total; k++) {
       const m = somaMes(de, k)
       const v = valorNoPlano(planos, cat, m.ano, m.mes)
-      if (v > MEIO_CENTAVO) parcelas.push({ ...m, valor: v })
+      if (v > MEIO_CENTAVO) todas.push({ ...m, valor: v })
     }
-    if (!parcelas.length) continue
+    if (!todas.length) continue
     // Já quitada por aqui: o mês da quitação é o último, e não há o que simular.
-    if (parcelas.some(p => quitadaEm(planos, cat, p))) continue
+    if (todas.some(p => quitadaEm(planos, cat, p))) continue
+    const rotulo = faltamPeloRotulo(planos, cat, todas[0])
+    const anterior = somaMes(de, -1)
+    const comecou = valorNoPlano(planos, cat, anterior.ano, anterior.mes) > MEIO_CENTAVO
+      || (rotulo !== null && rotulo.k > 1)
+      || (ymDe(todas[0]) === ymDe(de) && pagaNoMesCorrente(cat))
+    if (!comecou) continue
+    const parcelas = rotulo ? todas.slice(0, rotulo.faltam) : todas
     const contagem = new Map<number, number>()
     for (const p of parcelas) contagem.set(r2(p.valor), (contagem.get(r2(p.valor)) ?? 0) + 1)
     const valorMensal = [...contagem.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0]
@@ -99,10 +143,11 @@ export function dividasNoPlano(planos: Planos, categorias: Categoria[], de: Mes,
       cat, parcelas, valorMensal, ultima,
       total: r2(parcelas.reduce((t, p) => t + p.valor, 0)),
       vaiAteOFim: ymDe(ultima) === ymDe(fim),
+      noPlano: todas,
     })
   }
-  const rotulo = (d: DividaNoPlano) => `${d.cat.nome} ${d.cat.descricao ?? ''}`
-  return out.sort((a, b) => rotulo(a).localeCompare(rotulo(b), 'pt-BR'))
+  const rotuloDe = (d: DividaNoPlano) => `${d.cat.nome} ${d.cat.descricao ?? ''}`
+  return out.sort((a, b) => rotuloDe(a).localeCompare(rotuloDe(b), 'pt-BR'))
 }
 
 /** Meses entre dois meses (b − a). */
@@ -231,6 +276,11 @@ export function quitarNoPlano(planos: Planos, divida: DividaNoPlano, r: Resultad
   for (const p of r.removidas) {
     if (ymDe(p) === ymDe(r.quando)) continue
     mudar(p.ano, l => comValor(l, p.mes, 0))
+  }
+  // O que o plano tinha DEPOIS da última parcela do contrato (valor repetido
+  // por engano) também sai: quitada, a dívida não tem mês nenhum depois.
+  for (const p of divida.noPlano) {
+    if (ymDe(p) > ymDe(divida.ultima) && ymDe(p) > ymDe(r.quando)) mudar(p.ano, l => comValor(l, p.mes, 0))
   }
   const { ano, mes } = r.quando
   const parcelaPaga = r.removidas.some(p => ymDe(p) === ymDe(r.quando)) ? 0 : valorNoPlano(planos, divida.cat, ano, mes)

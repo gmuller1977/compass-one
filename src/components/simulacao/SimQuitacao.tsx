@@ -8,7 +8,7 @@ import { serieBaseDoPlano, type Mes } from '../../utils/simulacaoCompra'
 import type { Deps } from '../../utils/saldoConta'
 import { dadosBancariosDoMes, resolverFixaDoMes } from '../../utils/fixasDoMes'
 import {
-  dividasNoPlano, mesesParaQuitar, simularQuitacao, quitarNoPlano, type DividaNoPlano,
+  dividasNoPlano, comParcelasRestantes, mesesParaQuitar, simularQuitacao, quitarNoPlano, type DividaNoPlano,
 } from '../../utils/quitacaoDivida'
 import { usePlanoDoMes } from './usePlanoDoMes'
 import { GraficosDaSimulacao } from './SimCompra'
@@ -71,11 +71,20 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
   )
   const planoDoMes = usePlanoDoMes(deps)
 
+  // As fixas do mês corrente, para saber se a parcela de hoje já foi paga.
+  const dmsHoje = useMemo(() => dadosBancariosDoMes(
+    extratoData as Record<string, DadosMes>,
+    `-${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`,
+    k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [extratoData, contas])
+
   const dividas = useMemo(
     () => dividasNoPlano(planos as Record<number, PlanoAnoData | undefined>, categorias,
-      { ano: hoje.getFullYear(), mes: hoje.getMonth() }, serie?.fimDoPlano ?? null),
+      { ano: hoje.getFullYear(), mes: hoje.getMonth() }, serie?.fimDoPlano ?? null,
+      cat => resolverFixaDoMes(cat.id, dmsHoje).consolidada),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [planos, categorias, serie],
+    [planos, categorias, serie, dmsHoje],
   )
 
   const [dividaId, setDividaId] = useState('')
@@ -86,21 +95,23 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
   /** Depois de gravar: o que mudou e o plano de antes, para o Desfazer. */
   const [feito, setFeito] = useState<{ texto: string; antes: typeof planos } | null>(null)
 
-  const divida = dividas.find(d => d.cat.id === dividaId) ?? dividas[0]
+  const [faltamStr, setFaltamStr] = useState<string | null>(null)
+  const base = dividas.find(d => d.cat.id === dividaId) ?? dividas[0]
+  useEffect(() => { setFaltamStr(null) }, [base?.cat.id])
+  // Quantas faltam pelo contrato: o plano pode ter o valor repetido além do fim.
+  const faltam = Math.floor(Number(faltamStr ?? ''))
+  const divida = useMemo(
+    () => (base && faltamStr && faltam >= 1 ? comParcelasRestantes(base, faltam, serie?.fimDoPlano ?? null) : base),
+    [base, faltamStr, faltam, serie],
+  )
   const valor = parseValor(valorStr) ?? 0
-  useEffect(() => { setEscolhido(null) }, [dividaId, valor])
+  useEffect(() => { setEscolhido(null) }, [dividaId, valor, faltam])
 
   // A parcela deste mês já marcada paga não volta: a quitação tira as seguintes.
   const jaPaga = useMemo(() => {
     if (!divida) return false
-    const dms = dadosBancariosDoMes(
-      extratoData as Record<string, DadosMes>,
-      `-${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`,
-      k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)),
-    )
-    return resolverFixaDoMes(divida.cat.id, dms).consolidada
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [divida, extratoData, contas])
+    return resolverFixaDoMes(divida.cat.id, dmsHoje).consolidada
+  }, [divida, dmsHoje])
 
   const candidatos = useMemo(
     () => (serie && divida && valor > 0 ? mesesParaQuitar(serie, divida, valor, jaPaga) : null),
@@ -191,16 +202,22 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
               <select id="quitar-divida" value={divida.cat.id} onChange={e => { setDividaId(e.target.value); setFeito(null) }} style={inputSt}>
                 {dividas.map(d => (
                   <option key={d.cat.id} value={d.cat.id}>
-                    {rotuloDa(d)} · {d.parcelas.length}× de {fmt(d.valorMensal)}{d.vaiAteOFim ? '' : ` · até ${curto(d.ultima)}`}
+                    {rotuloDa(d)} · {fmt(d.valorMensal)} por mês
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label style={labelSt} htmlFor="quitar-faltam">Quantas parcelas faltam?</label>
+              <input id="quitar-faltam" inputMode="numeric" value={faltamStr ?? String(divida.parcelas.length)}
+                onChange={e => { setFaltamStr(e.target.value.replace(/\D/g, '')); setFeito(null) }}
+                style={inputSt} />
               <div style={{ ...apoio, marginTop: 6 }}>
-                No plano: {divida.parcelas.length} {divida.parcelas.length === 1 ? 'parcela' : 'parcelas'} de {curto(divida.parcelas[0])} a {curto(divida.ultima)}, {fmt(divida.total)} no total.
-                {jaPaga && <> A de {MESES[hoje.getMonth()]} já está paga.</>}
+                Contando a de {MESES[divida.parcelas[0].mes]}{jaPaga ? ', que já está paga' : ''}: de {curto(divida.parcelas[0])} a {curto(divida.ultima)}, {fmt(divida.total)} no total.
+                {divida.noPlano.length > divida.parcelas.length && <> O plano tem a parcela até {curto(divida.noPlano[divida.noPlano.length - 1])}; ao quitar, os meses depois da última saem do plano também.</>}
               </div>
             </div>
-            <div style={{ gridColumn: isMobile ? undefined : '1 / -1' }}>
+            <div>
               <label style={labelSt} htmlFor="quitar-valor">Valor para quitar à vista</label>
               <input id="quitar-valor" inputMode="decimal" value={valorStr}
                 onChange={e => { setValorStr(e.target.value); setFeito(null) }}

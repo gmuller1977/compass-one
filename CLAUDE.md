@@ -1537,7 +1537,11 @@ de cartão — o Planejamento fica sem os gastos no cartão.
 quitar o financiamento do Civic, 16 × 1.149,72 já no plano, sem saldo hoje).
 A pessoa escolhe a dívida (categoria de despesa PARCELADA no cadastro, com valor
 no plano do mês corrente em diante; mesmo dia, Guilherme: "fixas não têm fim,
-porque se repetem todos os anos", então fixa mensal não aparece) e digita o valor de quitação de HOJE. O juro do contrato
+porque se repetem todos os anos", então fixa mensal não aparece; e só a que JÁ
+COMEÇOU: parcela no mês anterior, item "k de N" com k > 1 ou a deste mês paga.
+"Quantas parcelas faltam?" vem do "k de N" do plano, senão do plano, e é
+editável: o Civic tinha o valor repetido até dez/2028 por cópia de ano, 27
+meses contra 16 do contrato; quitar zera também os meses além da última) e digita o valor de quitação de HOJE. O juro do contrato
 sai desse valor (`taxaImplicita`, tabela Price) e o valor de cada mês seguinte
 é estimado por ele ("o banco confirma"): com o valor fixo, quitar mais tarde
 aparecia "custando a mais". Sobre a série do Simulador (`serieBaseDoPlano`),
@@ -1549,7 +1553,7 @@ em [mês]: atualizar o plano" pergunta antes e grava: o mês com o item
 "Quitação à vista" (com a parcela, se já paga) e as parcelas seguintes em zero;
 "Desfazer" volta o plano. Nada é lançado. A simulação antiga ficou em "Pagar
 em parcelas". Regras em [`quitacaoDivida.ts`](src/utils/quitacaoDivida.ts);
-`prova95` (29).
+`prova95` (36).
 
 **"Posso comprar?" compara formas de pagamento, não escolhe uma.** A tela
 perguntava "em quantas vezes?" e o usuário escolhia. Mas ninguém chega na loja
