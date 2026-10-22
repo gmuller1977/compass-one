@@ -213,7 +213,8 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
                 onChange={e => { setFaltamStr(e.target.value.replace(/\D/g, '')); setFeito(null) }}
                 style={inputSt} />
               <div style={{ ...apoio, marginTop: 6 }}>
-                Contando a de {MESES[divida.parcelas[0].mes]}{jaPaga ? ', que já está paga' : ''}: de {curto(divida.parcelas[0])} a {curto(divida.ultima)}, {fmt(divida.total)} no total.
+                Em aberto: de {curto(divida.parcelas[0])} a {curto(divida.ultima)}, {fmt(divida.total)} no total.
+                {jaPaga && <> A de {MESES[hoje.getMonth()]} já está paga e não entra.</>}
                 {divida.noPlano.length > divida.parcelas.length && <> O plano tem a parcela até {curto(divida.noPlano[divida.noPlano.length - 1])}; ao quitar, os meses depois da última saem do plano também.</>}
               </div>
             </div>

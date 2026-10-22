@@ -33,7 +33,7 @@ export type ParcelaDaDivida = { ano: number; mes: number; valor: number }
 
 export type DividaNoPlano = {
   cat: Categoria
-  /** As parcelas do plano do mês corrente em diante, em ordem. */
+  /** As parcelas EM ABERTO do plano, em ordem (a deste mês já paga fica fora). */
   parcelas: ParcelaDaDivida[]
   /** A parcela que mais se repete — a "de R$ 1.149,72". */
   valorMensal: number
@@ -41,7 +41,7 @@ export type DividaNoPlano = {
   ultima: ParcelaDaDivida
   /** Vai até o fim do plano: parece conta de todo mês, não dívida que acaba. */
   vaiAteOFim: boolean
-  /** Tudo o que o plano tem do mês corrente em diante, mesmo além do fim do contrato. */
+  /** As parcelas em aberto que o plano tem, mesmo além do fim do contrato. */
   noPlano: ParcelaDaDivida[]
 }
 
@@ -134,7 +134,12 @@ export function dividasNoPlano(
       || (rotulo !== null && rotulo.k > 1)
       || (ymDe(todas[0]) === ymDe(de) && pagaNoMesCorrente(cat))
     if (!comecou) continue
-    const parcelas = rotulo ? todas.slice(0, rotulo.faltam) : todas
+    // Só as parcelas em aberto: a deste mês, já paga, não entra na lista.
+    const pagaHoje = ymDe(todas[0]) === ymDe(de) && pagaNoMesCorrente(cat)
+    const abertas = pagaHoje ? todas.slice(1) : todas
+    if (!abertas.length) continue
+    const parcelas = rotulo ? abertas.slice(0, rotulo.faltam - (pagaHoje ? 1 : 0)) : abertas
+    if (!parcelas.length) continue
     const contagem = new Map<number, number>()
     for (const p of parcelas) contagem.set(r2(p.valor), (contagem.get(r2(p.valor)) ?? 0) + 1)
     const valorMensal = [...contagem.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0]
@@ -143,7 +148,7 @@ export function dividasNoPlano(
       cat, parcelas, valorMensal, ultima,
       total: r2(parcelas.reduce((t, p) => t + p.valor, 0)),
       vaiAteOFim: ymDe(ultima) === ymDe(fim),
-      noPlano: todas,
+      noPlano: abertas,
     })
   }
   const rotuloDe = (d: DividaNoPlano) => `${d.cat.nome} ${d.cat.descricao ?? ''}`
