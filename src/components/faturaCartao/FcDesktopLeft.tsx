@@ -171,10 +171,13 @@ export default function FcDesktopLeft({
       <div style={{ flexShrink: 0, padding: '0 12px 12px' }}>
         <div style={{ background: totalFatura < 0 ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : `linear-gradient(135deg,#0f2878,#1e40af)`, borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.6)' }}>
-              Total da fatura — {NOMES_MESES[purchaseMes]} {purchaseAno}
+            {/* O mês da fatura é o do VENCIMENTO, como o seletor do topo (o
+                rodapé dizia o mês das compras; 22/10/2026). Branco, um ponto
+                maior, pedido do Guilherme. */}
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#fff' }}>
+              Total da fatura — {NOMES_MESES[mesVenc]} {anoVenc}
             </div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.4)', marginTop: 1 }}>
+            <div style={{ fontSize: 10, color: '#fff', marginTop: 1 }}>
               Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
             </div>
           </div>
