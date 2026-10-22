@@ -354,7 +354,7 @@ export default function NleExtratoMobile({
                 </select>
               </div>}
 
-              {fPag !== 'transferencia' && subDescsDisponiveis.length > 0 && !fSubDesc && (
+              {fPag !== 'transferencia' && subDescsDisponiveis.length > 0 && (
                 <label>
                   <span style={rotuloCampo}>Variante</span>
                   <select value={fSubDesc} onChange={e => setFSubDesc(e.target.value)} style={campo}>
