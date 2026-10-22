@@ -64,6 +64,7 @@ export default function NleExtratoMobile({
   setEditandoId, setEditandoFixaId, ehAutomatico, resetarParaNovo, desktop,
 }: Props & { desktop?: boolean }) {
   const [memoriaAberta, setMemoriaAberta] = React.useState(false)
+  const [futurosAbertos, setFuturosAbertos] = React.useState(false)
   const valorRuim = parseValor(fValor) === null
   const cartaoNomesExtrato = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
 
@@ -105,13 +106,15 @@ export default function NleExtratoMobile({
         </Cartao>
       )}
 
-      {Array.from({ length: totalDias }, (_, i) => i + 1).map(dia => {
+      {(() => {
+      const renderDia = (dia: number) => {
         // ── Mesma conta do NleExtrato ──────────────────────────────────
         const ehHoje = eMesAtual && dia === diaHoje
         const passado = eMesAtual ? dia < diaHoje : ano < anoHoje || (ano === anoHoje && mes < mesHoje)
         const fs = fixas.filter(f => diaEfetivoFixa(f, mesDados.fixasMovidas, ehAutomatico(f), mes, ano, totalDias) === dia)
           .slice().sort((a, b) => rotuloFixa(a).localeCompare(rotuloFixa(b), 'pt-BR'))
-        const ls = mesDados.lancamentos[dia] ?? []
+        // No dia, o último lançado no topo, como no extrato do banco.
+        const ls = (mesDados.lancamentos[dia] ?? []).slice().reverse()
         const temItens = fs.length > 0 || ls.length > 0
         if (!temItens && !ehHoje) return null
         const saldoIni = dia === 1 ? saldoBase : (saldosDia[dia - 1] ?? saldoBase)
@@ -237,7 +240,41 @@ export default function NleExtratoMobile({
             </Cartao>
           </section>
         )
-      })}
+      }
+
+      // Do último dia para o primeiro, como o extrato do banco (pedido do
+      // Guilherme, 22/10/2026). No mês corrente, os dias depois de hoje ficam
+      // num acordeão "Lançamentos futuros", fechado, acima de hoje: quando o
+      // dia chega, a conta sai dele sozinha e fica no dia.
+      const ordem = Array.from({ length: totalDias }, (_, i) => totalDias - i)
+      const diasFuturos = eMesAtual ? ordem.filter(d => d > diaHoje) : []
+      const qtdFuturos = diasFuturos.reduce((n, d) =>
+        n + fixas.filter(f => diaEfetivoFixa(f, mesDados.fixasMovidas, ehAutomatico(f), mes, ano, totalDias) === d).length
+          + (mesDados.lancamentos[d]?.length ?? 0), 0)
+      const resto = eMesAtual ? ordem.filter(d => d <= diaHoje) : ordem
+      return (
+        <>
+          {qtdFuturos > 0 && (
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <button onClick={() => setFuturosAbertos(v => !v)} aria-expanded={futurosAbertos} style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 52, padding: '12px 16px',
+                border: 'none', borderRadius: M.raio, background: '#fff', boxShadow: M.sombra, cursor: 'pointer',
+                fontFamily: 'inherit', textAlign: 'left',
+              }}>
+                <i className="ti ti-calendar-time" aria-hidden style={{ fontSize: 20, color: COR.azul }} />
+                <span style={{ flex: 1, fontSize: M.corpo, fontWeight: 700, color: COR.texto }}>Lançamentos futuros</span>
+                <span style={{ fontSize: M.legenda, color: COR.textoSuave, fontWeight: 600 }}>
+                  {qtdFuturos} {qtdFuturos === 1 ? 'previsto' : 'previstos'}
+                </span>
+                <i className={`ti ti-chevron-${futurosAbertos ? 'up' : 'down'}`} aria-hidden style={{ fontSize: 18, color: COR.textoSuave }} />
+              </button>
+              {futurosAbertos && diasFuturos.map(renderDia)}
+            </section>
+          )}
+          {resto.map(renderDia)}
+        </>
+      )
+      })()}
 
       {/* O mês termina com — a mesma barra e a mesma memória de antes. No
           computador ela fica presa no pé da tela (NleExtrato). */}
