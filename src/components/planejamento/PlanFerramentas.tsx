@@ -80,8 +80,8 @@ export default function PlanFerramentas({
   const primeiroMesCopia = anoAtual > anoHoje ? 0 : anoAtual === anoHoje ? mesAtual : 12
 
   const chaveGrupo = (tipo: 'e' | 's', cat: Cat) => `${tipo}|${cat.grupo ?? SEM_GRUPO}`
-  const fatorDe = (chave: string) => {
-    const pct = comAtualizacao ? parseBRL(pctGrupo[chave] ?? '') : 0
+  const fatorDe = (chave: string, usar = comAtualizacao) => {
+    const pct = usar ? parseBRL(pctGrupo[chave] ?? '') : 0
     return pct > 0 ? 1 + pct / 100 : 1
   }
 
@@ -119,7 +119,7 @@ export default function PlanFerramentas({
     return linhas
   })()
 
-  function aplicarCopiaAno() {
+  function aplicarCopiaAno(usar = comAtualizacao) {
     if (!dadosAnoAnterior || primeiroMesCopia > 11) return
     const ops: BulkOp[] = []
     // A linha do ano novo é achada pelo id, depois pelo par (nome, variante):
@@ -133,13 +133,13 @@ export default function PlanFerramentas({
       origem.forEach(cat => {
         const ri = achar(destino, cat)
         if (ri < 0) return
-        const fator = fatorDe(chaveGrupo(tipo, cat))
+        const fator = fatorDe(chaveGrupo(tipo, cat), usar)
         for (let mi = primeiroMesCopia; mi < 12; mi++) ops.push({ tipo, ri, mi, ...atualizar(paraCopiarAno(cat, mi), fator) })
       })
     copiar('e', dadosAnoAnterior.entradas, dadosAtivos.entradas)
     copiar('s', dadosAnoAnterior.saidas, dadosAtivos.saidas)
     onBulkSave(ops)
-    showToast(comAtualizacao ? `Planejamento de ${anoAtual - 1} copiado com atualização de valor ✓`
+    showToast(usar ? `Planejamento de ${anoAtual - 1} copiado com atualização de valor ✓`
       : `Planejamento de ${anoAtual - 1} copiado ✓`)
     onClose()
   }
@@ -196,7 +196,7 @@ export default function PlanFerramentas({
                 </div>
                 {primeiroMesCopia <= 11 && !comAtualizacao && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button style={BTN_OK} onClick={aplicarCopiaAno}>Copiar {anoAtual - 1}</button>
+                    <button style={BTN_OK} onClick={() => aplicarCopiaAno(false)}>Copiar {anoAtual - 1}</button>
                     <button style={{ ...BTN_OK, background: '#fff', color: '#1a56db', border: '1.5px solid #1a56db' }}
                       onClick={() => setComAtualizacao(true)}>Copiar com atualização de valor</button>
                     <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
@@ -250,7 +250,9 @@ export default function PlanFerramentas({
                       </table>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button style={BTN_OK} onClick={aplicarCopiaAno}>Copiar com atualização</button>
+                      <button style={BTN_OK} onClick={() => aplicarCopiaAno(true)}>Copiar com atualização</button>
+                      <button style={{ ...BTN_OK, background: '#fff', color: '#1a56db', border: '1.5px solid #1a56db' }}
+                        onClick={() => aplicarCopiaAno(false)}>Copiar sem atualização</button>
                       <button style={BTN_CANCEL} onClick={() => setComAtualizacao(false)}>Voltar</button>
                     </div>
                   </>
