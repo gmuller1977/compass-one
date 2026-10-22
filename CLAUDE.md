@@ -3146,8 +3146,8 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
   Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",
   "Saldo na carteira" ou "Fatura do cartão", com o valor informado, a
-  diferença em palavras ("✓ igual ao Compass", "faltam/sobram R$ X no
-  Compass"; no cartão, "falta lançar R$ X") e a pílula "✎ Informar" /
+  diferença em palavras, a mesma nos três ("✓ igual ao Compass", "falta
+  lançar R$ X", "R$ X a mais no Compass") e a pílula "✎ Informar" /
   "✎ Alterar". O rodapé da fatura diz "Total lançado no Compass — [mês do
   vencimento]". No celular, "Saldo no app" virou "Saldo no Compass", com a
   mesma frase da diferença.

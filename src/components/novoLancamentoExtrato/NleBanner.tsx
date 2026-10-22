@@ -104,7 +104,7 @@ export default function NleBanner({
                 color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
               }}>
                 {diferenca === null ? 'não informado' : conciliado ? '✓ igual ao Compass'
-                  : `${diferenca > 0 ? 'faltam' : 'sobram'} ${fmt(Math.abs(diferenca))} no Compass`}
+                  : diferenca > 0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
               </div>
               <div style={{ textAlign: 'right', marginTop: 6 }}>
                 <span style={{

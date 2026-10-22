@@ -109,7 +109,7 @@ export default function NleMobileSubheader({
                 {diferenca !== null && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
                     background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fecaca'}}>
-                    {conciliado ? '✓ igual ao Compass' : `${diferenca>0?'faltam':'sobram'} ${fmt(Math.abs(diferenca))} no Compass`}
+                    {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
                   </span>
                 )}
               </button>
