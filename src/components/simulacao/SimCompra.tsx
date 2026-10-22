@@ -20,7 +20,7 @@ import { incluirNoPlano, parcelasDesde, dividirEmParcelas, novoIdSimulacao, resu
 import type { Categoria } from '../../context/AppContext'
 import type { Deps } from '../../utils/saldoConta'
 import { metaNaSimulacao, type MetaNaSimulacao } from '../../utils/metaNaSimulacao'
-import { previstoDoAno, type CtxPlano } from '../planejamento/previstoDoAno'
+import { usePlanoDoMes } from './usePlanoDoMes'
 import { supabase } from '../../lib/supabase'
 import SimSalvas from './SimSalvas'
 import type { CompraSalva, DetalhesCompra } from '../../utils/simulacoesDeCompra'
@@ -302,27 +302,8 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
   )
   useEffect(() => { setIncluidoEm('') }, [pedido])
 
-  // A meta de economia com a compra (utils/metaNaSimulacao). O que o plano
-  // guarda em cada mês sai da passagem do Planejamento — um ano por vez.
-  /** O que o PLANO guarda num mês e a meta dele, pela passagem do Planejamento. */
-  const planoDoMes = useMemo(() => {
-    const ctx: CtxPlano = {
-      anoCorrente: hoje.getFullYear(), mesAtual: hoje.getMonth(), categorias, contas, faturaData,
-      planos: planos as Record<number, unknown>,
-      saldoInicialFixo: contas.filter(c => c.tipo === 'corrente' && c.incluirNoSaldoInicial !== false)
-        .reduce((t, c) => t + c.saldoInicial, 0),
-      depsSaldo: deps,
-    }
-    const anos = new Map<number, ReturnType<typeof previstoDoAno> | null>()
-    return (ano: number, mes: number): { guarda: number; meta: number } | null => {
-      const plano = (planos as Record<number, PlanoAnoData | undefined>)[ano]
-      if (!plano) return null
-      if (!anos.has(ano)) anos.set(ano, previstoDoAno(ano, ctx))
-      const p = anos.get(ano)!
-      return p ? { guarda: p.totalEntradas[mes] - p.totalSaidas[mes], meta: plano.objetivos?.[mes] ?? 0 } : null
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planos, categorias, contas, faturaData, deps])
+  // O que o plano guarda em cada mês e a meta dele (usePlanoDoMes).
+  const planoDoMes = usePlanoDoMes(deps)
 
   // A meta de economia com a compra (utils/metaNaSimulacao).
   //
@@ -969,6 +950,13 @@ const META = '#fde047'
 type QualGrafico = 'saldo' | 'guarda'
 const CHAVE_GRAFICO = 'simulador-grafico'
 
+type TextosGrafico = { sem: string; com: string; saldo: string; guarda: string }
+const textosDaCompra = (mensal: boolean): TextosGrafico => ({
+  sem: 'sem a compra', com: 'comprando',
+  saldo: `Com quanto cada mês termina sem a compra e ${mensal ? 'pagando todo mês' : 'já pagando as parcelas'}.`,
+  guarda: `O que o seu planejamento guarda no mês, já ${mensal ? 'pagando o gasto' : 'com a parcela'}, contra a meta de cada mês.`,
+})
+
 /**
  * Dois gráficos, escolhidos por botões (pedido do Guilherme em 15/10/2026: a
  * linha do quanto guarda por cima do saldo, em outro eixo, "ficou confuso").
@@ -983,8 +971,10 @@ const CHAVE_GRAFICO = 'simulador-grafico'
  * Medido sobre `#1e40af`: `#93c5fd` 5,7:1, `#fde047` 6,6:1, branco 8,7:1;
  * barras e linhas são elemento gráfico (3:1): `#4ade80` 5,0, `#f87171` 3,15.
  */
-function GraficosDaSimulacao({ meses, guarda, isMobile, mensal }: {
+export function GraficosDaSimulacao({ meses, guarda, isMobile, mensal, textos }: {
   meses: PontoFluxo[]; guarda: ({ guarda: number; sem: number; meta: number } | null)[]; isMobile: boolean; mensal: boolean
+  /** Outra simulação (a quitação) troca as palavras; os desenhos são os mesmos. */
+  textos?: TextosGrafico
 }) {
   const temGuarda = guarda.some(g => g)
   const [qual, setQual] = useState<QualGrafico>(() => {
@@ -995,6 +985,7 @@ function GraficosDaSimulacao({ meses, guarda, isMobile, mensal }: {
     try { localStorage.setItem(CHAVE_GRAFICO, q) } catch { /* sem armazenamento */ }
   }
   const mostra: QualGrafico = temGuarda ? qual : 'saldo'
+  const t = textos ?? textosDaCompra(mensal)
   return (
     <div>
       {temGuarda && (
@@ -1019,12 +1010,12 @@ function GraficosDaSimulacao({ meses, guarda, isMobile, mensal }: {
       </div>
       <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 12, lineHeight: 1.5 }}>
         {mostra === 'saldo'
-          ? <>Com quanto cada mês termina sem a compra e {mensal ? 'pagando todo mês' : 'já pagando as parcelas'}.</>
-          : <>O que o seu planejamento guarda no mês, já {mensal ? 'pagando o gasto' : 'com a parcela'}, contra a meta de cada mês.</>}
+          ? t.saldo
+          : t.guarda}
       </div>
       {mostra === 'saldo'
-        ? <GraficoSaldo meses={meses} isMobile={isMobile} />
-        : <GraficoGuarda meses={meses} guarda={guarda} isMobile={isMobile} />}
+        ? <GraficoSaldo meses={meses} isMobile={isMobile} t={t} />
+        : <GraficoGuarda meses={meses} guarda={guarda} isMobile={isMobile} t={t} />}
     </div>
   )
 }
@@ -1053,7 +1044,7 @@ function Legenda({ itens }: { itens: [string, string, 'linha' | 'tracejado' | 'b
   )
 }
 
-function GraficoSaldo({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: boolean }) {
+function GraficoSaldo({ meses, isMobile, t }: { meses: PontoFluxo[]; isMobile: boolean; t: TextosGrafico }) {
   const dados = meses.map((p, i) => ({
     rotulo: rotuloMes(p, i),
     sem: Math.round(p.semCompra * 100) / 100,
@@ -1062,13 +1053,13 @@ function GraficoSaldo({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: bool
   return (
     <div>
       <div style={{ height: isMobile ? 210 : 240 }} role="img"
-        aria-label={`Saldo no fim de cada mês. ${meses.map(p => `${mesEAno(p)}: sem a compra ${fmt(p.semCompra)}, comprando ${fmt(p.comCompra)}`).join('; ')}`}>
+        aria-label={`Saldo no fim de cada mês. ${meses.map(p => `${mesEAno(p)}: ${t.sem} ${fmt(p.semCompra)}, ${t.com} ${fmt(p.comCompra)}`).join('; ')}`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={dados} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.14)" vertical={false} />
             <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
             <YAxis tick={eixo} width={52} tickLine={false} axisLine={false} tickFormatter={curto} />
-            <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? 'Saldo comprando' : 'Saldo sem a compra']}
+            <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)), n === 'com' ? `Saldo ${t.com}` : `Saldo ${t.sem}`]}
               contentStyle={tooltipSt} />
             <ReferenceLine y={0} stroke={NEG} strokeDasharray="4 4" />
             <Line type="monotone" dataKey="sem" stroke="#fff" strokeWidth={2} strokeDasharray="5 4" dot={false} isAnimationActive={false} />
@@ -1076,13 +1067,13 @@ function GraficoSaldo({ meses, isMobile }: { meses: PontoFluxo[]; isMobile: bool
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <Legenda itens={[['#fff', 'sem a compra', 'tracejado'], [COM_COMPRA, 'comprando', 'linha']]} />
+      <Legenda itens={[['#fff', t.sem, 'tracejado'], [COM_COMPRA, t.com, 'linha']]} />
     </div>
   )
 }
 
-function GraficoGuarda({ meses, guarda, isMobile }: {
-  meses: PontoFluxo[]; guarda: ({ guarda: number; sem: number; meta: number } | null)[]; isMobile: boolean
+function GraficoGuarda({ meses, guarda, isMobile, t }: {
+  meses: PontoFluxo[]; guarda: ({ guarda: number; sem: number; meta: number } | null)[]; isMobile: boolean; t: TextosGrafico
 }) {
   const dados = meses.map((p, i) => {
     const g = guarda[i]
@@ -1104,7 +1095,7 @@ function GraficoGuarda({ meses, guarda, isMobile }: {
             <XAxis dataKey="rotulo" tick={eixo} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,.3)' }} interval="preserveStartEnd" />
             <YAxis tick={eixo} width={52} tickLine={false} axisLine={false} tickFormatter={curto} />
             <Tooltip formatter={(v, n) => [fmt(Number(v ?? 0)),
-              n === 'com' ? 'Guarda comprando' : n === 'sem' ? 'Guardaria sem a compra' : 'Meta do mês']}
+              n === 'com' ? `Guarda ${t.com}` : n === 'sem' ? `Guardaria ${t.sem}` : 'Meta do mês']}
               contentStyle={tooltipSt} />
             <ReferenceLine y={0} stroke="rgba(255,255,255,.5)" />
             <Bar dataKey="com" radius={[3, 3, 0, 0]} maxBarSize={22} isAnimationActive={false}>
@@ -1119,8 +1110,8 @@ function GraficoGuarda({ meses, guarda, isMobile }: {
       </div>
       <Legenda itens={[
         ...(temMeta ? [[ACIMA, 'na meta ou acima', 'barra'], [ABAIXO, 'abaixo da meta', 'barra'], [META, 'meta do mês', 'tracejado']] as [string, string, 'barra' | 'tracejado'][]
-          : [[COM_COMPRA, 'guarda comprando', 'barra']] as [string, string, 'barra'][]),
-        ['#fff', 'sem a compra', 'tracejado'],
+          : [[COM_COMPRA, `guarda ${t.com}`, 'barra']] as [string, string, 'barra'][]),
+        ['#fff', t.sem, 'tracejado'],
       ]} />
     </div>
   )

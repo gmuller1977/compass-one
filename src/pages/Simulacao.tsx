@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import { COR } from '../utils/cores'
 import SimCompra from '../components/simulacao/SimCompra'
+import SimQuitacao from '../components/simulacao/SimQuitacao'
 import IncluirNoPlano, { NoSeuPlano } from '../components/simulacao/IncluirNoPlano'
 import {
   incluirNoPlano, desfazerNoPlano, integracoesNoPlano, parcelasDesde, novoIdSimulacao, resumoDasParcelas,
@@ -240,6 +241,12 @@ export default function Simulacao() {
   const hoje                              = new Date()
 
   const [aba, setAba] = useState<'compra' | 'divida' | 'meta'>('compra')
+  /**
+   * Na Dívida, dois jeitos (22/10/2026, pedido do Guilherme): quitar à vista
+   * uma dívida que já está no plano (SimQuitacao) ou ver em quanto tempo uma
+   * dívida acaba pagando em parcelas — a simulação de antes.
+   */
+  const [modoDivida, setModoDivida] = useState<'avista' | 'parcelas'>('avista')
 
   // ── O horizonte do plano ────────────────────────────────────────────
   //
@@ -304,7 +311,7 @@ export default function Simulacao() {
   useEffect(() => { loadSims() }, [loadSims])
 
   // As compras têm lista própria, com a comparação por loja (SimSalvas).
-  const simListFiltrada = aba === 'compra' ? [] : simList.filter(s => s.tipo === aba)
+  const simListFiltrada = aba === 'compra' || (aba === 'divida' && modoDivida === 'avista') ? [] : simList.filter(s => s.tipo === aba)
 
   async function excluirSim(id: string) {
     await supabase.from('simulacoes').delete().eq('id', id)
@@ -562,6 +569,26 @@ export default function Simulacao() {
 
         {/* ═══ ABA DÍVIDA ═══ */}
         {isDivida && (
+          <div role="tablist" aria-label="Como quitar" style={{
+            display: 'flex', gap: 4, padding: 4, borderRadius: 12, marginBottom: 16,
+            background: '#e8eefb', border: `1px solid ${COR.borda}`,
+          }}>
+            {([['avista', 'Quitar à vista', 'ti-cash'], ['parcelas', 'Pagar em parcelas', 'ti-calendar-repeat']] as const).map(([id, txt, ti]) => {
+              const ativo = modoDivida === id
+              return (
+                <button key={id} role="tab" aria-selected={ativo} onClick={() => setModoDivida(id)} style={{
+                  flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700,
+                  background: ativo ? COR.azulEscuro : 'transparent',
+                  color: ativo ? '#fff' : '#334155',
+                }}><i aria-hidden className={`ti ${ti}`} style={{ fontSize: 15, verticalAlign: '-2px', marginRight: 6 }} />{txt}</button>
+              )
+            })}
+          </div>
+        )}
+        {isDivida && modoDivida === 'avista' && <SimQuitacao isMobile={isMobile} />}
+
+        {isDivida && modoDivida === 'parcelas' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={card}>

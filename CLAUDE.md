@@ -1533,6 +1533,23 @@ corrigida: com uma categoria homônima do cartão, `somaCartaoDoAno` lê o sinal
 da fatura invertido (compra é `entrada`) e o `exclCartao` tira as categorias
 de cartão — o Planejamento fica sem os gastos no cartão.
 
+**"Quitar dívida" tem "Quitar à vista"** (22/10/2026, pedido do Guilherme:
+quitar o financiamento do Civic, 16 × 1.149,72 já no plano, sem saldo hoje).
+A pessoa escolhe a dívida (despesa fixa ou parcelada com valor no plano do mês
+corrente em diante) e digita o valor de quitação de HOJE. O juro do contrato
+sai desse valor (`taxaImplicita`, tabela Price) e o valor de cada mês seguinte
+é estimado por ele ("o banco confirma"): com o valor fixo, quitar mais tarde
+aparecia "custando a mais". Sobre a série do Simulador (`serieBaseDoPlano`),
+sai o valor no mês e as parcelas dali em diante voltam; o SUGERIDO é o primeiro
+mês em que nenhum mês fica negativo (aperto que já existia e não piora não
+conta). Mostra o valor no mês, a parcela que deixa de sair, a economia, a meta
+de economia dos meses seguintes e o gráfico sem quitar × quitando. "Vou quitar
+em [mês]: atualizar o plano" pergunta antes e grava: o mês com o item
+"Quitação à vista" (com a parcela, se já paga) e as parcelas seguintes em zero;
+"Desfazer" volta o plano. Nada é lançado. A simulação antiga ficou em "Pagar
+em parcelas". Regras em [`quitacaoDivida.ts`](src/utils/quitacaoDivida.ts);
+`prova95` (29).
+
 **"Posso comprar?" compara formas de pagamento, não escolhe uma.** A tela
 perguntava "em quantas vezes?" e o usuário escolhia. Mas ninguém chega na loja
 com a parcela decidida — chega com as opções que o vendedor ofereceu, e a
