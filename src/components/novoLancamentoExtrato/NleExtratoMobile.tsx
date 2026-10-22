@@ -257,19 +257,23 @@ export default function NleExtratoMobile({
           {qtdFuturos > 0 && (
             <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* O desenho do "Conferidos" da Início (DebitosAutomaticosCard):
-                  caixa cinza com cara de botão e "Ver" / "Esconder" em azul
-                  (#1a56db no #f1f5f9: 4,9). */}
+                  caixa com cara de botão e "Ver" / "Esconder" em azul, com
+                  borda azul de destaque e fundo azul-claro (pedido do Guilherme,
+                  22/10/2026). No #dbeafe: #1a56db 5,2; #334155 8,8. */}
               <button type="button" onClick={() => setFuturosAbertos(v => !v)} aria-expanded={futurosAbertos} style={{
                 display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, padding: '0 14px',
-                border: `1px solid ${COR.borda}`, borderRadius: 14, background: '#f1f5f9',
+                border: `2px solid ${COR.azul}`, borderRadius: 14, background: '#dbeafe',
                 cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
               }}>
                 <span aria-hidden style={{ width: 24, height: 24, borderRadius: '50%', background: COR.azul, color: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
                   <i className="ti ti-clock" />
                 </span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: M.corpo, fontWeight: 600, color: COR.texto }}>
-                  Lançamentos futuros · {qtdFuturos} {qtdFuturos === 1 ? 'previsto' : 'previstos'}
+                <span style={{ flex: 1, minWidth: 0, padding: '8px 0' }}>
+                  <span style={{ display: 'block', fontSize: M.corpo, fontWeight: 700, color: COR.texto }}>Lançamentos futuros</span>
+                  <span style={{ display: 'block', fontSize: M.legenda, color: '#334155', marginTop: 2 }}>
+                    {qtdFuturos} {qtdFuturos === 1 ? 'lançamento previsto' : 'lançamentos previstos'}
+                  </span>
                 </span>
                 <span style={{ fontSize: M.legenda, fontWeight: 700, color: '#1a56db', whiteSpace: 'nowrap' }}>
                   {futurosAbertos ? 'Esconder' : 'Ver'} <span aria-hidden style={{ display: 'inline-block', transform: futurosAbertos ? 'rotate(180deg)' : 'none' }}>▾</span>
