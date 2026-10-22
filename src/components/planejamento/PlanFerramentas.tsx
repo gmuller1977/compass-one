@@ -269,7 +269,7 @@ export default function PlanFerramentas({
                 {confirmaCopia !== null && (
                   <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 12px' }}>
                     <div style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600, marginBottom: 8 }}>
-                      {anoAtual} já possui planejamento. Deseja substituir pelo de {anoAtual - 1}{confirmaCopia ? ' com atualização' : ''}? Isso não dá para desfazer.
+                      O ano de {anoAtual} já possui planejamento. Deseja substituir?
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <button style={{ ...BTN_OK, background: '#b91c1c' }} onClick={() => { const u = confirmaCopia; setConfirmaCopia(null); aplicarCopiaAno(u) }}>Sim, substituir</button>

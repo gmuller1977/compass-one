@@ -1270,7 +1270,7 @@ meses copiados, um % ao lado (só aumento) e "Fica em [ano]". O % vale para
 cada categoria do grupo (nos itens, menos os do Simulador); sem % copia
 igual. A barra ficou com Copiar ano e Zerar; o filtro fixas/variáveis, a
 redução e a escolha de meses do reajuste antigo saíram. Se o ano de destino já tem
-plano, a cópia pergunta "[ano] já possui planejamento. Deseja substituir?"
+plano, a cópia pergunta "O ano de [ano] já possui planejamento. Deseja substituir?"
 antes de gravar.
 
 **A barra de ferramentas do Planejamento ficou com Reajuste %, Copiar ano e
