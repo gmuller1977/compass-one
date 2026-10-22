@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Conta } from '../../context/AppContext'
-import { COR, type DadosMes } from './FcShared'
+import { COR, NOMES_MESES, type DadosMes } from './FcShared'
 import ModalTopo from '../ModalTopo'
 
 type Props = {
@@ -12,6 +12,13 @@ type Props = {
   hojeStr: string
   confirmarModalFatura: () => void
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
+  // De qual fatura se trata (pedido do Guilherme, 22/10/2026: "para evitar
+  // dúvidas"): o mês em que ela VENCE, como no seletor do topo.
+  mesVenc: number
+  anoVenc: number
+  diaVencimento: number
+  purchaseMes: number
+  diaFechamento: number
 }
 
 export default function FcModal({
@@ -19,8 +26,11 @@ export default function FcModal({
   modalFaturaValor, setModalFaturaValor,
   contaInfo, hojeStr,
   confirmarModalFatura, updateMes,
+  mesVenc, anoVenc, diaVencimento, purchaseMes, diaFechamento,
 }: Props) {
   if (!modalFatura) return null
+  const nomeMes = NOMES_MESES[mesVenc].toLowerCase()
+  const dd = (d: number, m: number) => `${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}`
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
@@ -31,8 +41,8 @@ export default function FcModal({
         boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
         onClick={e => e.stopPropagation()}>
         <ModalTopo icone="ti-credit-card" rotulo={contaInfo ? `Cartão · ${contaInfo.apelido ?? contaInfo.banco}` : 'Cartão'}
-          titulo="Qual é o valor atual da fatura?" id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
-          subtitulo="Informe o valor do cartão para acompanhar a diferença em relação ao sistema." />
+          titulo={`Qual é o valor atual da fatura de ${nomeMes}?`} id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
+          subtitulo={`Fatura de ${nomeMes} de ${anoVenc} · fecha ${dd(diaFechamento, purchaseMes)} · vence ${dd(diaVencimento, mesVenc)}. Informe o valor que aparece no app do cartão para acompanhar a diferença em relação ao sistema.`} />
         <div style={{padding:'18px 24px 22px'}}>
         <input inputMode="decimal" autoFocus
           value={modalFaturaValor}
