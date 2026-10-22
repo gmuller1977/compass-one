@@ -51,7 +51,6 @@ export default function PlanGrade(props: Props) {
         anoAtual={anoAtual}
         dadosAtivos={dadosAtivos}
         dadosAnoAnterior={dadosAnoAnterior}
-        categorias={props.categorias}
         onBulkSave={props.onBulkSave} onRevisarAno={props.onRevisarAno}
         bloqueado={bloqueado}
         motivoBloqueio={MOTIVO_PLANO_LOCKADO}

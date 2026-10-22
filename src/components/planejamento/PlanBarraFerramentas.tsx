@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { useToast } from '../Toast'
 import PlanFerramentas, { type BulkOp } from './PlanFerramentas'
 import { COR, type AnoData } from './types'
-import type { Categoria } from '../../context/AppContext'
 
-type ToolId = 'reajuste' | 'ano' | 'zerar'
+type ToolId = 'ano' | 'zerar'
 
 /**
  * "Copiar mês" e "Aplicar valor" saíram em 13/10/2026: a repetição da
@@ -13,7 +12,6 @@ type ToolId = 'reajuste' | 'ano' | 'zerar'
  * para o ano inteiro.
  */
 const FERRAMENTAS: { id: ToolId; label: string; icon: string }[] = [
-  { id: 'reajuste', label: 'Reajuste %',    icon: 'ti-trending-up' },
   { id: 'ano',      label: 'Copiar ano',    icon: 'ti-copy' },
   { id: 'zerar',    label: 'Zerar',         icon: 'ti-eraser' },
 ]
@@ -50,7 +48,6 @@ interface Props {
   /** Dados da aba corrente: e deles que as ferramentas leem e para eles que gravam. */
   dadosAtivos: AnoData
   dadosAnoAnterior: AnoData | null
-  categorias: Categoria[]
   onBulkSave: (ops: BulkOp[]) => void
   /** Edicao indisponivel (plano travado, ou aba so de leitura). */
   bloqueado?: boolean
@@ -64,7 +61,7 @@ interface Props {
  * Antes existia so na Grade, duplicada inline dentro dela.
  */
 export default function PlanBarraFerramentas({
-  mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior, categorias,
+  mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior,
   onBulkSave,
   bloqueado = false, motivoBloqueio, onRevisarAno,
 }: Props) {
@@ -109,7 +106,6 @@ export default function PlanBarraFerramentas({
         anoAtual={anoAtual}
         dadosAtivos={dadosAtivos}
         dadosAnoAnterior={dadosAnoAnterior}
-        categorias={categorias}
         onBulkSave={onBulkSave}
         onClose={() => setToolAberta(null)}
       />

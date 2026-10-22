@@ -123,7 +123,7 @@ export default function PlanMobile(p: Props) {
         {/* A barra de ferramentas, no mesmo lugar do computador. */}
         <PlanBarraFerramentas
           mesAtual={mesAtual} anoAtual={anoAtual} dadosAtivos={dadosPrevisto}
-          dadosAnoAnterior={p.dadosAnoAnterior} categorias={p.categorias} onBulkSave={p.onBulkSave} onRevisarAno={p.onRevisarAno}
+          dadosAnoAnterior={p.dadosAnoAnterior} onBulkSave={p.onBulkSave} onRevisarAno={p.onRevisarAno}
           motivoBloqueio={MOTIVO_PLANO_LOCKADO}
         />
 

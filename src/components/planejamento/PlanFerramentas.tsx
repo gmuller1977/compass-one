@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import MesesSelector from './MesesSelector'
 import { MESES_FULL, type AnoData } from './types'
-import type { Categoria } from '../../context/AppContext'
-import { itensDoMes, reajustarItens, somaItens, paraCopiarAno, type ItemPlano } from '../../utils/itensPlano'
-import { cadastroDaLinha } from '../acompanhamento/evolucaoCalcs'
+import { reajustarItens, somaItens, paraCopiarAno, type ItemPlano } from '../../utils/itensPlano'
+import { parseBRL } from '../../utils/moeda'
 import { opsParaZerar, primeiroMesZeravel } from './zerarPlano'
 
 /**
@@ -19,7 +17,7 @@ export interface BulkOp {
 }
 
 interface Props {
-  toolAberta: 'reajuste' | 'ano' | 'zerar' | null
+  toolAberta: 'ano' | 'zerar' | null
   mesAtual: number
   anoAtual: number
   /**
@@ -30,7 +28,6 @@ interface Props {
    */
   dadosAtivos: AnoData
   dadosAnoAnterior: AnoData | null
-  categorias: Categoria[]
   onBulkSave: (ops: BulkOp[]) => void
   onClose: () => void
 }
@@ -47,18 +44,15 @@ const BTN_OK: React.CSSProperties = { background: '#1a56db', color: '#fff', bord
 const BTN_CANCEL: React.CSSProperties = { background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }
 
 export default function PlanFerramentas({
-  toolAberta, mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior, categorias,
+  toolAberta, mesAtual, anoAtual, dadosAtivos, dadosAnoAnterior,
   onBulkSave, onClose,
 }: Props) {
-  const defaultMeses = () => Array.from({ length: 12 }, (_, i) => i > mesAtual)
-
   const [toast, setToast] = useState<string | null>(null)
 
-  // Reajuste
+  // Reajuste na cópia do ano (22/10/2026, pedido do Guilherme: o botão
+  // "Reajuste %" saiu e virou opção do Copiar ano). Vazio = copia igual.
   const [reajTipo, setReajTipo] = useState<'aumento' | 'reducao'>('aumento')
   const [reajPct, setReajPct] = useState('')
-  const [reajFiltro, setReajFiltro] = useState<'todas' | 'fixas' | 'variaveis'>('todas')
-  const [reajMeses, setReajMeses] = useState(defaultMeses)
 
   // Zerar: um mês (o primeiro que pode mudar) ou o ano, e um segundo toque
   // para confirmar, porque não há como desfazer.
@@ -68,7 +62,6 @@ export default function PlanFerramentas({
   const [zerarConfirma, setZerarConfirma] = useState(false)
 
   useEffect(() => {
-    setReajMeses(defaultMeses())
     setReajPct('')
     setZerarQual('mes'); setZerarMes(Math.min(primeiroZeravel, 11)); setZerarConfirma(false)
   }, [toolAberta, anoAtual])
@@ -76,48 +69,6 @@ export default function PlanFerramentas({
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
-  }
-
-  function getMesesDest(sel: boolean[]) {
-    return sel.reduce<number[]>((acc, v, i) => v ? [...acc, i] : acc, [])
-  }
-
-  function aplicarReajuste() {
-    const dest = getMesesDest(reajMeses)
-    const pct = parseFloat(reajPct)
-    if (!dest.length || isNaN(pct) || pct <= 0) return
-    const fator = reajTipo === 'aumento' ? 1 + pct / 100 : 1 - pct / 100
-    const ops: BulkOp[] = []
-
-    const round2 = (n: number) => Math.round(n * 100) / 100
-    // Mês com itens: o % vai em cada item (menos os do Simulador, de preço
-    // fechado), e o total segue a soma deles.
-    const reajustar = (tipo: 'e' | 's', ri: number, cat: { v: number[]; itens?: Record<number, ItemPlano[]> }, mi: number): BulkOp => {
-      const itens = itensDoMes(cat, mi)
-      if (!itens) return { tipo, ri, mi, valor: round2(cat.v[mi] * fator) }
-      const novos = reajustarItens(itens, fator)
-      return { tipo, ri, mi, valor: somaItens(novos), itens: novos }
-    }
-
-    if (reajFiltro === 'todas')
-      dadosAtivos.entradas.forEach((cat, ri) =>
-        dest.forEach(mi => { if (cat.v[mi] > 0) ops.push(reajustar('e', ri, cat, mi)) }))
-
-    dadosAtivos.saidas.forEach((cat, ri) => {
-      if (reajFiltro !== 'todas') {
-        // Pelo id, depois pelo par (nome, variante): só o nome pegava o
-        // cadastro da primeira variante ("Financiamento · Casa" no lugar de
-        // "· Civic").
-        const info = (cat.id ? categorias.find(c => c.id === cat.id) : undefined) ?? cadastroDaLinha(cat, categorias)
-        const ehFixa = info?.fixa === true
-        if (reajFiltro === 'fixas' && !ehFixa) return
-        if (reajFiltro === 'variaveis' && ehFixa) return
-      }
-      dest.forEach(mi => { if (cat.v[mi] > 0) ops.push(reajustar('s', ri, cat, mi)) })
-    })
-
-    onBulkSave(ops)
-    showToast(`Reajuste de ${pct}% aplicado ✓`)
   }
 
   /** Meses que a cópia do ano pode gravar: ano futuro, todos; ano corrente,
@@ -128,6 +79,17 @@ export default function PlanFerramentas({
 
   function aplicarCopiaAno() {
     if (!dadosAnoAnterior || primeiroMesCopia > 11) return
+    const pct = parseBRL(reajPct)
+    if (pct < 0 || (reajTipo === 'reducao' && pct >= 100)) return
+    const fator = pct > 0 ? (reajTipo === 'aumento' ? 1 + pct / 100 : 1 - pct / 100) : 1
+    // Com %, cada valor (ou cada item, menos os do Simulador, de preço
+    // fechado) é reajustado, e o total segue a soma dos itens.
+    const reajustar = (c: { valor: number; itens: ItemPlano[] | null }) => {
+      if (fator === 1) return c
+      if (!c.itens) return { valor: Math.round(c.valor * fator * 100) / 100, itens: null }
+      const novos = reajustarItens(c.itens, fator)
+      return { valor: somaItens(novos), itens: novos }
+    }
     const ops: BulkOp[] = []
     // A linha do ano novo é achada pelo id, depois pelo par (nome, variante):
     // só o nome punha "Seguro · Civic" na linha de "Seguro · March".
@@ -140,12 +102,13 @@ export default function PlanFerramentas({
       origem.forEach(cat => {
         const ri = achar(destino, cat)
         if (ri < 0) return
-        for (let mi = primeiroMesCopia; mi < 12; mi++) ops.push({ tipo, ri, mi, ...paraCopiarAno(cat, mi) })
+        for (let mi = primeiroMesCopia; mi < 12; mi++) ops.push({ tipo, ri, mi, ...reajustar(paraCopiarAno(cat, mi)) })
       })
     copiar('e', dadosAnoAnterior.entradas, dadosAtivos.entradas)
     copiar('s', dadosAnoAnterior.saidas, dadosAtivos.saidas)
     onBulkSave(ops)
-    showToast(`Planejamento de ${anoAtual - 1} copiado ✓`)
+    showToast(fator === 1 ? `Planejamento de ${anoAtual - 1} copiado ✓`
+      : `Planejamento de ${anoAtual - 1} copiado com ${reajTipo === 'aumento' ? 'aumento' : 'redução'} de ${pct.toLocaleString('pt-BR')}% ✓`)
     onClose()
   }
 
@@ -186,56 +149,6 @@ export default function PlanFerramentas({
 
       <div style={{ ...PANEL, animation: 'planFadeDown .2s ease' }}>
 
-        {/* ── Reajuste % ── */}
-        {toolAberta === 'reajuste' && (
-          <>
-            <div style={TITLE}><i aria-hidden className="ti ti-trending-up" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Reajuste percentual</div>
-            <div style={DESC}>Aplica um aumento ou redução percentual nos valores planejados.</div>
-
-            <div style={{ display: 'flex', gap: 24, marginBottom: 14, flexWrap: 'wrap' }}>
-              <div>
-                <label style={LABEL}>Tipo:</label>
-                {(['aumento', 'reducao'] as const).map(t => (
-                  <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginBottom: 4 }}>
-                    <input type="radio" name="reajTipo" checked={reajTipo === t} onChange={() => setReajTipo(t)} />
-                    {t === 'aumento' ? '↑ Aumento' : '↓ Redução'}
-                  </label>
-                ))}
-              </div>
-              <div>
-                <label style={LABEL}>Percentual (%):</label>
-                <input inputMode="decimal"
-                  type="number"
-                  min="0.1" max="500" step="0.1"
-                  placeholder="0.0"
-                  value={reajPct}
-                  onChange={e => setReajPct(e.target.value)}
-                  style={{ ...INPUT, width: 100 }}
-                />
-              </div>
-              <div>
-                <label style={LABEL}>Aplicar em:</label>
-                {([['todas', 'Todas as categorias'], ['fixas', 'Só despesas fixas'], ['variaveis', 'Só despesas variáveis']] as const).map(([v, l]) => (
-                  <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', marginBottom: 4 }}>
-                    <input type="radio" name="reajFiltro" checked={reajFiltro === v} onChange={() => setReajFiltro(v)} />
-                    {l}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 18 }}>
-              <label style={LABEL}>Meses:</label>
-              <MesesSelector mesAtual={mesAtual} selecionados={reajMeses} onChange={setReajMeses} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={BTN_OK} onClick={aplicarReajuste}>Aplicar reajuste</button>
-              <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
-            </div>
-          </>
-        )}
-
         {/* ── Copiar ano ── */}
         {toolAberta === 'ano' && (
           <>
@@ -249,8 +162,31 @@ export default function PlanFerramentas({
                       {primeiroMesCopia > 0 ? `, de ${MESES_FULL[primeiroMesCopia]} a dezembro (os meses que já fecharam não mudam)` : ''}.<br />
                       Os valores desses meses serão substituídos. Parcelas de compras não são copiadas.</>}
                 </div>
+                {primeiroMesCopia <= 11 && (
+                  <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 16 }}>
+                    <div>
+                      <label style={LABEL}>Reajuste (opcional):</label>
+                      <div style={{ display: 'flex', gap: 14 }}>
+                        {(['aumento', 'reducao'] as const).map(t => (
+                          <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                            <input type="radio" name="reajTipo" checked={reajTipo === t} onChange={() => setReajTipo(t)} />
+                            {t === 'aumento' ? '↑ Aumento' : '↓ Redução'}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={LABEL}>Percentual (%):</label>
+                      <input inputMode="decimal" placeholder="0" value={reajPct}
+                        onChange={e => setReajPct(e.target.value)}
+                        style={{ ...INPUT, width: 100, fontSize: 16 }} />
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {primeiroMesCopia <= 11 && <button style={BTN_OK} onClick={aplicarCopiaAno}>Confirmar cópia de {anoAtual - 1}</button>}
+                  {primeiroMesCopia <= 11 && <button style={BTN_OK} onClick={aplicarCopiaAno}>
+                    Confirmar cópia de {anoAtual - 1}{parseBRL(reajPct) > 0 ? ` com ${reajTipo === 'aumento' ? '+' : '−'}${reajPct.trim()}%` : ''}
+                  </button>}
                   <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
                 </div>
               </>
