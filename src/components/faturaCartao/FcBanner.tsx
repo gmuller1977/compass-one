@@ -57,6 +57,27 @@ export default function FcBanner({
             sublabel={disponivel >= 0 ? '↑ no limite' : '↓ excedido'} style={{ flex: 1 }} />
           <KpiCard icon={statusSimb} label="Status" value={statusLbl}
             valueColor={statusCor} sublabel={`Vence dia ${diaVencimento}`} style={{ flex: 1 }} />
+          {/* Conciliação: o mesmo cartão dos outros quatro, do mesmo tamanho e
+              com as mesmas letras (pedido do Guilherme, 22/10/2026). Tocar abre
+              a janela do valor da fatura. Diferença na paleta do fundo escuro:
+              #86efac 4,8 e #fecaca 4,6 no #1e40af. */}
+          <div role="button" tabIndex={0} aria-label="Informar o valor da fatura"
+            onClick={abrirModal}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
+            style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
+            <KpiCard icon="ti-arrows-exchange" label="Conciliação"
+              value={mesDados.faturaAtual || 'Informar ✎'}
+              valueColor={mesDados.faturaAtual ? '#fff' : 'rgba(255,255,255,.75)'}
+              style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 12, marginTop: 4, textAlign: 'right',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
+              }}>
+                {diferenca === null ? 'para conferir a diferença' : conciliado ? '✓ Conciliado'
+                  : `diferença ${diferenca > 0 ? '+' : '-'}${fmt(Math.abs(diferenca))}`}
+              </div>
+            </KpiCard>
+          </div>
         </div>
 
         {/* Card selector pills */}
@@ -82,39 +103,6 @@ export default function FcBanner({
         )}
       </div>
 
-      {/* Right: Conciliação */}
-      <div
-        onClick={abrirModal}
-        style={{
-          display: 'flex', flexDirection: 'column', gap: 8,
-          background: 'linear-gradient(135deg,#0f2878,#1e40af)',
-          border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '12px 14px',
-          flexShrink: 0, cursor: 'pointer', minWidth: 200,
-          transition: 'opacity .15s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-      >
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}><i className="ti ti-arrows-exchange" aria-hidden style={{ fontSize: 11, verticalAlign: -1 }} /> Conciliação</div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>Fatura informada</span>
-          <span style={{ fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: mesDados.faturaAtual ? '#fff' : 'rgba(255,255,255,.4)' }}>
-            {mesDados.faturaAtual || <span style={{ fontSize: 11, fontStyle: 'italic' }}>Informar ✎</span>}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>Diferença</span>
-          <span style={{
-            fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, whiteSpace: 'nowrap' as const,
-            background: diferenca === null ? 'rgba(100,116,139,.3)' : conciliado ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)',
-            color: diferenca === null ? 'rgba(255,255,255,.4)' : conciliado ? '#86efac' : '#fca5a5',
-          }}>
-            {diferenca === null ? '— informar' : conciliado ? '✓ Conciliado' : `${diferenca > 0 ? '+' : '-'}${fmt(Math.abs(diferenca))}`}
-          </span>
-        </div>
-      </div>
     </div>
   )
 }
