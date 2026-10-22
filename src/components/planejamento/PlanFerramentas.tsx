@@ -201,9 +201,8 @@ export default function PlanFerramentas({
                 <div style={DESC}>
                   {primeiroMesCopia > 11
                     ? <>Este ano já passou: o plano dele fica como foi medido.</>
-                    : <>Copia o planejamento de {anoAtual - 1} para {anoAtual}
-                      {primeiroMesCopia > 0 ? `, de ${MESES_FULL[primeiroMesCopia]} a dezembro (os meses que já fecharam não mudam)` : ''}.<br />
-                      O que já estiver planejado em {anoAtual} será substituído. Parcelas de compras não são copiadas.</>}
+                    : <>Esta opção faz a cópia do planejamento de {anoAtual - 1} para {anoAtual}. Você pode copiar os mesmos valores de {anoAtual - 1} ou realizar ajustes atualizando os valores.
+                      {primeiroMesCopia > 0 && <><br />Os meses de {anoAtual} que já fecharam não mudam: a cópia vai de {MESES_FULL[primeiroMesCopia].toLowerCase()} a dezembro.</>}</>}
                 </div>
                 {primeiroMesCopia <= 11 && !comAtualizacao && confirmaCopia === null && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
