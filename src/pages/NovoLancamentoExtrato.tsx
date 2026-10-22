@@ -399,7 +399,9 @@ export default function NovoLancamentoExtrato() {
   }, [tabPrincipal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (eMesAtual)
+    // No celular a página abre no topo: o saldo da conta vem antes da lista
+    // (pedido do Guilherme, 22/10/2026). Hoje já é o primeiro dia aberto.
+    if (eMesAtual && !isMobile)
       setTimeout(() => hojeRef.current?.scrollIntoView({behavior:'smooth',block:'start'}), 150)
 
     // Abre tambem os dias com fixa ainda nao confirmada — o que a tela chama
