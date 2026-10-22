@@ -85,17 +85,35 @@ export default function PlanFerramentas({
     return pct > 0 ? 1 + pct / 100 : 1
   }
 
+  // Com %, cada valor (ou cada item, menos os do Simulador, de preço
+  // fechado) é atualizado, e o total segue a soma dos itens.
+  const atualizar = (c: { valor: number; itens: ItemPlano[] | null }, fator: number) => {
+    if (fator === 1) return c
+    if (!c.itens) return { valor: Math.round(c.valor * fator * 100) / 100, itens: null }
+    const novos = reajustarItens(c.itens, fator)
+    return { valor: somaItens(novos), itens: novos }
+  }
+
   /** Os grupos do ano anterior, com o total que a cópia leva (dos meses que
    * ela grava, sem as parcelas de compras). */
   const gruposDaCopia = (() => {
     if (!dadosAnoAnterior || primeiroMesCopia > 11) return []
-    const linhas: { chave: string; tipo: 'e' | 's'; grupo: string; total: number }[] = []
+    // "Fica em" é a soma do que a cópia GRAVA (a mesma `atualizar`, mês a
+    // mês e categoria a categoria), não total × %: com os centavos e os itens
+    // do Simulador, os dois podiam diferir.
+    const linhas: { chave: string; tipo: 'e' | 's'; grupo: string; total: number; novo: number }[] = []
     for (const [tipo, lista] of [['e', dadosAnoAnterior.entradas], ['s', dadosAnoAnterior.saidas]] as const) {
       for (const l of agrupar(lista, tipo)) {
         if (l.k !== 'grupo') continue
-        let total = 0
-        for (const ri of l.ris) for (let mi = primeiroMesCopia; mi < 12; mi++) total += paraCopiarAno(lista[ri], mi).valor
-        if (total > 0) linhas.push({ chave: `${tipo}|${l.grupo}`, tipo, grupo: l.grupo, total })
+        const chave = `${tipo}|${l.grupo}`
+        const fator = fatorDe(chave)
+        let total = 0, novo = 0
+        for (const ri of l.ris) for (let mi = primeiroMesCopia; mi < 12; mi++) {
+          const c = paraCopiarAno(lista[ri], mi)
+          total += c.valor
+          novo += atualizar(c, fator).valor
+        }
+        if (total > 0) linhas.push({ chave, tipo, grupo: l.grupo, total, novo })
       }
     }
     return linhas
@@ -103,14 +121,6 @@ export default function PlanFerramentas({
 
   function aplicarCopiaAno() {
     if (!dadosAnoAnterior || primeiroMesCopia > 11) return
-    // Com %, cada valor (ou cada item, menos os do Simulador, de preço
-    // fechado) é atualizado, e o total segue a soma dos itens.
-    const atualizar = (c: { valor: number; itens: ItemPlano[] | null }, fator: number) => {
-      if (fator === 1) return c
-      if (!c.itens) return { valor: Math.round(c.valor * fator * 100) / 100, itens: null }
-      const novos = reajustarItens(c.itens, fator)
-      return { valor: somaItens(novos), itens: novos }
-    }
     const ops: BulkOp[] = []
     // A linha do ano novo é achada pelo id, depois pelo par (nome, variante):
     // só o nome punha "Seguro · Civic" na linha de "Seguro · March".
@@ -230,7 +240,7 @@ export default function PlanFerramentas({
                                     </span>
                                   </td>
                                   <td style={{ padding: '6px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#0f172a' }}>
-                                    {fmtR(g.total * fatorDe(g.chave))}
+                                    {fmtR(g.novo)}
                                   </td>
                                 </tr>
                               </Fragment>
