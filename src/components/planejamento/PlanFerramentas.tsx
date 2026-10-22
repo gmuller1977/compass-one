@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { MESES_FULL, type AnoData } from './types'
+import { useState, useEffect, Fragment } from 'react'
+import { MESES_FULL, SEM_GRUPO, agrupar, type AnoData, type Cat } from './types'
 import { reajustarItens, somaItens, paraCopiarAno, type ItemPlano } from '../../utils/itensPlano'
 import { parseBRL } from '../../utils/moeda'
 import { opsParaZerar, primeiroMesZeravel } from './zerarPlano'
@@ -38,9 +38,9 @@ const PANEL: React.CSSProperties = {
 }
 const TITLE: React.CSSProperties = { fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 4 }
 const DESC: React.CSSProperties = { fontSize: 12, color: '#94a3b8', marginBottom: 16 }
-const LABEL: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'block' }
 const INPUT: React.CSSProperties = { border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, width: '100%', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }
 const BTN_OK: React.CSSProperties = { background: '#1a56db', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
+const fmtR = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const BTN_CANCEL: React.CSSProperties = { background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }
 
 export default function PlanFerramentas({
@@ -49,10 +49,12 @@ export default function PlanFerramentas({
 }: Props) {
   const [toast, setToast] = useState<string | null>(null)
 
-  // Reajuste na cópia do ano (22/10/2026, pedido do Guilherme: o botão
-  // "Reajuste %" saiu e virou opção do Copiar ano). Vazio = copia igual.
-  const [reajTipo, setReajTipo] = useState<'aumento' | 'reducao'>('aumento')
-  const [reajPct, setReajPct] = useState('')
+  // Copiar ano com ATUALIZAÇÃO DE VALOR (22/10/2026, pedido do Guilherme: o
+  // "Reajuste %" saiu). Duas portas: copiar igual, ou abrir uma tabela por
+  // grupo com um % de atualização em cada (só aumento). Chave "e|grupo" ou
+  // "s|grupo"; vazio = sem atualização.
+  const [comAtualizacao, setComAtualizacao] = useState(false)
+  const [pctGrupo, setPctGrupo] = useState<Record<string, string>>({})
 
   // Zerar: um mês (o primeiro que pode mudar) ou o ano, e um segundo toque
   // para confirmar, porque não há como desfazer.
@@ -62,7 +64,7 @@ export default function PlanFerramentas({
   const [zerarConfirma, setZerarConfirma] = useState(false)
 
   useEffect(() => {
-    setReajPct('')
+    setComAtualizacao(false); setPctGrupo({})
     setZerarQual('mes'); setZerarMes(Math.min(primeiroZeravel, 11)); setZerarConfirma(false)
   }, [toolAberta, anoAtual])
 
@@ -77,14 +79,33 @@ export default function PlanFerramentas({
   const anoHoje = new Date().getFullYear()
   const primeiroMesCopia = anoAtual > anoHoje ? 0 : anoAtual === anoHoje ? mesAtual : 12
 
+  const chaveGrupo = (tipo: 'e' | 's', cat: Cat) => `${tipo}|${cat.grupo ?? SEM_GRUPO}`
+  const fatorDe = (chave: string) => {
+    const pct = comAtualizacao ? parseBRL(pctGrupo[chave] ?? '') : 0
+    return pct > 0 ? 1 + pct / 100 : 1
+  }
+
+  /** Os grupos do ano anterior, com o total que a cópia leva (dos meses que
+   * ela grava, sem as parcelas de compras). */
+  const gruposDaCopia = (() => {
+    if (!dadosAnoAnterior || primeiroMesCopia > 11) return []
+    const linhas: { chave: string; tipo: 'e' | 's'; grupo: string; total: number }[] = []
+    for (const [tipo, lista] of [['e', dadosAnoAnterior.entradas], ['s', dadosAnoAnterior.saidas]] as const) {
+      for (const l of agrupar(lista, tipo)) {
+        if (l.k !== 'grupo') continue
+        let total = 0
+        for (const ri of l.ris) for (let mi = primeiroMesCopia; mi < 12; mi++) total += paraCopiarAno(lista[ri], mi).valor
+        if (total > 0) linhas.push({ chave: `${tipo}|${l.grupo}`, tipo, grupo: l.grupo, total })
+      }
+    }
+    return linhas
+  })()
+
   function aplicarCopiaAno() {
     if (!dadosAnoAnterior || primeiroMesCopia > 11) return
-    const pct = parseBRL(reajPct)
-    if (pct < 0 || (reajTipo === 'reducao' && pct >= 100)) return
-    const fator = pct > 0 ? (reajTipo === 'aumento' ? 1 + pct / 100 : 1 - pct / 100) : 1
     // Com %, cada valor (ou cada item, menos os do Simulador, de preço
-    // fechado) é reajustado, e o total segue a soma dos itens.
-    const reajustar = (c: { valor: number; itens: ItemPlano[] | null }) => {
+    // fechado) é atualizado, e o total segue a soma dos itens.
+    const atualizar = (c: { valor: number; itens: ItemPlano[] | null }, fator: number) => {
       if (fator === 1) return c
       if (!c.itens) return { valor: Math.round(c.valor * fator * 100) / 100, itens: null }
       const novos = reajustarItens(c.itens, fator)
@@ -102,13 +123,14 @@ export default function PlanFerramentas({
       origem.forEach(cat => {
         const ri = achar(destino, cat)
         if (ri < 0) return
-        for (let mi = primeiroMesCopia; mi < 12; mi++) ops.push({ tipo, ri, mi, ...reajustar(paraCopiarAno(cat, mi)) })
+        const fator = fatorDe(chaveGrupo(tipo, cat))
+        for (let mi = primeiroMesCopia; mi < 12; mi++) ops.push({ tipo, ri, mi, ...atualizar(paraCopiarAno(cat, mi), fator) })
       })
     copiar('e', dadosAnoAnterior.entradas, dadosAtivos.entradas)
     copiar('s', dadosAnoAnterior.saidas, dadosAtivos.saidas)
     onBulkSave(ops)
-    showToast(fator === 1 ? `Planejamento de ${anoAtual - 1} copiado ✓`
-      : `Planejamento de ${anoAtual - 1} copiado com ${reajTipo === 'aumento' ? 'aumento' : 'redução'} de ${pct.toLocaleString('pt-BR')}% ✓`)
+    showToast(comAtualizacao ? `Planejamento de ${anoAtual - 1} copiado com atualização de valor ✓`
+      : `Planejamento de ${anoAtual - 1} copiado ✓`)
     onClose()
   }
 
@@ -162,33 +184,68 @@ export default function PlanFerramentas({
                       {primeiroMesCopia > 0 ? `, de ${MESES_FULL[primeiroMesCopia]} a dezembro (os meses que já fecharam não mudam)` : ''}.<br />
                       Os valores desses meses serão substituídos. Parcelas de compras não são copiadas.</>}
                 </div>
-                {primeiroMesCopia <= 11 && (
-                  <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 16 }}>
-                    <div>
-                      <label style={LABEL}>Reajuste (opcional):</label>
-                      <div style={{ display: 'flex', gap: 14 }}>
-                        {(['aumento', 'reducao'] as const).map(t => (
-                          <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                            <input type="radio" name="reajTipo" checked={reajTipo === t} onChange={() => setReajTipo(t)} />
-                            {t === 'aumento' ? '↑ Aumento' : '↓ Redução'}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={LABEL}>Percentual (%):</label>
-                      <input inputMode="decimal" placeholder="0" value={reajPct}
-                        onChange={e => setReajPct(e.target.value)}
-                        style={{ ...INPUT, width: 100, fontSize: 16 }} />
-                    </div>
+                {primeiroMesCopia <= 11 && !comAtualizacao && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button style={BTN_OK} onClick={aplicarCopiaAno}>Copiar {anoAtual - 1}</button>
+                    <button style={{ ...BTN_OK, background: '#fff', color: '#1a56db', border: '1.5px solid #1a56db' }}
+                      onClick={() => setComAtualizacao(true)}>Copiar com atualização de valor</button>
+                    <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {primeiroMesCopia <= 11 && <button style={BTN_OK} onClick={aplicarCopiaAno}>
-                    Confirmar cópia de {anoAtual - 1}{parseBRL(reajPct) > 0 ? ` com ${reajTipo === 'aumento' ? '+' : '−'}${reajPct.trim()}%` : ''}
-                  </button>}
-                  <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
-                </div>
+                {primeiroMesCopia <= 11 && comAtualizacao && (
+                  <>
+                    <div style={{ fontSize: 12, color: '#475569', marginBottom: 10 }}>
+                      Informe quanto cada grupo sobe, em %. Grupo sem percentual é copiado com o mesmo valor.
+                    </div>
+                    <div style={{ overflowX: 'auto', marginBottom: 16 }}>
+                      <table style={{ borderCollapse: 'collapse', fontSize: 13, minWidth: 420, width: '100%' }}>
+                        <thead>
+                          <tr style={{ color: '#475569', fontSize: 12, textAlign: 'left' }}>
+                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Grupo</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'right' }}>Planejado {anoAtual - 1}</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'right' }}>Atualização</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'right' }}>Fica em {anoAtual}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gruposDaCopia.map((g, i) => {
+                            const titulo = i === 0 || gruposDaCopia[i - 1].tipo !== g.tipo
+                            return (
+                              <Fragment key={g.chave}>
+                                {titulo && (
+                                  <tr><td colSpan={4} style={{ padding: '10px 8px 4px', fontSize: 11, fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: .5 }}>
+                                    {g.tipo === 'e' ? 'Receitas' : 'Despesas'}
+                                  </td></tr>
+                                )}
+                                <tr style={{ borderTop: '1px solid #e2e8f0' }}>
+                                  <td style={{ padding: '6px 8px', color: '#0f172a' }}>{g.grupo === SEM_GRUPO ? 'Outras' : g.grupo}</td>
+                                  <td style={{ padding: '6px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#334155' }}>{fmtR(g.total)}</td>
+                                  <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                      <input inputMode="decimal" placeholder="0" aria-label={`Atualização de ${g.grupo === SEM_GRUPO ? 'Outras' : g.grupo} em %`}
+                                        value={pctGrupo[g.chave] ?? ''}
+                                        onChange={e => setPctGrupo(p => ({ ...p, [g.chave]: e.target.value }))}
+                                        style={{ ...INPUT, width: 70, padding: '5px 8px', fontSize: 16, textAlign: 'right' }} />
+                                      <span style={{ color: '#475569' }}>%</span>
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '6px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: '#0f172a' }}>
+                                    {fmtR(g.total * fatorDe(g.chave))}
+                                  </td>
+                                </tr>
+                              </Fragment>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button style={BTN_OK} onClick={aplicarCopiaAno}>Copiar com atualização</button>
+                      <button style={BTN_CANCEL} onClick={() => setComAtualizacao(false)}>Voltar</button>
+                    </div>
+                  </>
+                )}
+                {primeiroMesCopia > 11 && <button style={BTN_CANCEL} onClick={onClose}>Fechar</button>}
               </>
             ) : (
               <>

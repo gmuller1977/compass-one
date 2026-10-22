@@ -1262,11 +1262,14 @@ cadastro — oferecido e não pedido. IPVA pelo final da placa: segunda etapa, s
 fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
 `prova51` (5 invariantes) e `prova53` (8).
 
-**O "Reajuste %" saiu da barra e virou opção do Copiar ano** (22/10/2026,
-pedido do Guilherme): ao copiar o ano anterior, "Reajuste (opcional)" com
-Aumento/Redução e o %, aplicado a cada valor copiado (nos itens, menos os do
-Simulador). Vazio copia igual. A barra ficou com Copiar ano e Zerar; o filtro
-fixas/variáveis e a escolha de meses do reajuste antigo saíram junto.
+**O "Reajuste %" saiu da barra; o Copiar ano tem ATUALIZAÇÃO DE VALOR**
+(22/10/2026, pedido do Guilherme). Copiar ano oferece "Copiar [ano
+anterior]" (mesmos valores) e "Copiar com atualização de valor", que abre
+uma tabela por GRUPO (receitas e despesas): planejado do ano anterior nos
+meses copiados, um % ao lado (só aumento) e "Fica em [ano]". O % vale para
+cada categoria do grupo (nos itens, menos os do Simulador); sem % copia
+igual. A barra ficou com Copiar ano e Zerar; o filtro fixas/variáveis, a
+redução e a escolha de meses do reajuste antigo saíram.
 
 **A barra de ferramentas do Planejamento ficou com Reajuste %, Copiar ano e
 Meta** (a Meta saiu no mesmo dia, ver acima) (13/10/2026, escolha do Guilherme no card). "Copiar mês" e "Aplicar
