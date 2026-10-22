@@ -60,6 +60,8 @@ type SimRow = {
   ativo: boolean
   integrado_planejamento: boolean
   created_at: string
+  /** Só a quitação à vista grava (`modo: 'quitacao'`); ela tem lista própria. */
+  detalhes?: { modo?: string } | null
 }
 
 function simularDivida(saldo0: number, parcela: number, taxa: number): DividaResult {
@@ -311,7 +313,8 @@ export default function Simulacao() {
   useEffect(() => { loadSims() }, [loadSims])
 
   // As compras têm lista própria, com a comparação por loja (SimSalvas).
-  const simListFiltrada = aba === 'compra' || (aba === 'divida' && modoDivida === 'avista') ? [] : simList.filter(s => s.tipo === aba)
+  const simListFiltrada = aba === 'compra' || (aba === 'divida' && modoDivida === 'avista') ? []
+    : simList.filter(s => s.tipo === aba && s.detalhes?.modo !== 'quitacao')
 
   async function excluirSim(id: string) {
     await supabase.from('simulacoes').delete().eq('id', id)
@@ -445,7 +448,7 @@ export default function Simulacao() {
   async function confirmarInclusao(cat: Categoria, descricao: string) {
     // Simulação já salva e ainda fora do plano: o id dela vira o do item, e
     // o Desfazer consegue desmarcá-la também.
-    const simSalvada = simList.find(s => s.tipo === aba && !s.integrado_planejamento)
+    const simSalvada = simList.find(s => s.tipo === aba && s.detalhes?.modo !== 'quitacao' && !s.integrado_planejamento)
     const id = simSalvada?.id ?? novoIdSimulacao()
     const r = incluirNoPlano(planos, cat, parcelasDoCompromisso, descricao, id)
     setPlanos(r.planos as typeof planos)

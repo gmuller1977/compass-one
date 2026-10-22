@@ -1554,6 +1554,11 @@ em [mês]: atualizar o plano" pergunta antes e grava: o mês com o item
 "Desfazer" volta o plano. Nada é lançado. A simulação antiga ficou em "Pagar
 em parcelas". Regras em [`quitacaoDivida.ts`](src/utils/quitacaoDivida.ts);
 `prova95` (39).
+"Salvar simulação" (mesmo dia, pedido dele: "somente salva, sem edição") guarda
+uma FOTO da consulta em `simulacoes` (`tipo: 'divida'`, `detalhes.modo =
+'quitacao'`, sem migração; a lista de "Pagar em parcelas" as ignora). A lista
+embaixo marca duas da MESMA dívida (as outras ficam travadas) e abre o
+comparativo lado a lado com a diferença; só o "cabe hoje" é julgado de novo.
 
 **"Posso comprar?" compara formas de pagamento, não escolhe uma.** A tela
 perguntava "em quantas vezes?" e o usuário escolhia. Mas ninguém chega na loja

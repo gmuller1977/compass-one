@@ -13,6 +13,7 @@ import {
 import { usePlanoDoMes } from './usePlanoDoMes'
 import { GraficosDaSimulacao } from './SimCompra'
 import ModalTopo from '../ModalTopo'
+import { supabase } from '../../lib/supabase'
 
 /**
  * "Quitar à vista": o financiamento já está no Planejamento, o banco deu o
@@ -22,7 +23,37 @@ import ModalTopo from '../ModalTopo'
  * O Simulador sugere o primeiro mês que cabe e mostra os meses seguintes sem
  * a parcela. A pessoa escolhe outro mês se quiser, e só "Atualizar o plano"
  * grava: a quitação no mês escolhido e as parcelas seguintes fora.
+ *
+ * "Salvar simulação" (mesmo dia, pedido dele) guarda uma FOTO em
+ * `simulacoes`: `tipo: 'divida'` com `detalhes.modo = 'quitacao'`, sem
+ * migração (a 019 já tem `detalhes`). Não se edita ("somente salva, sem
+ * edição"): cada consulta ao banco vira uma linha. Marcando duas da MESMA
+ * dívida, aparece o comparativo lado a lado. Só o "hoje cabe?" é julgado de
+ * novo contra o plano atual.
  */
+
+/** O que foi simulado, como estava ao salvar. */
+interface DetalhesQuitacao {
+  modo: 'quitacao'
+  catId: string
+  /** O valor que o banco informou, como digitado. */
+  valor: string
+  faltam: string | null
+  quando: Mes
+  valorMensal: number
+}
+interface QuitacaoSalva {
+  id: string
+  nome: string
+  /** O valor para quitar no mês escolhido. */
+  valor_total: number
+  /** Parcelas que deixam de sair. */
+  resultado_meses: number
+  /** A economia. */
+  juros_pagos: number | null
+  created_at: string
+  detalhes: DetalhesQuitacao | null
+}
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
   'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -50,9 +81,14 @@ const cardAzul: React.CSSProperties = {
 const apoio: React.CSSProperties = { fontSize: 12.5, color: 'rgba(255,255,255,.85)', lineHeight: 1.55 }
 const VERDE = '#86efac'
 const VERMELHO = '#fecaca'
+/** "22/10/2026 às 14:05": duas consultas no mesmo dia se distinguem pela hora. */
+const quandoSalvou = (iso: string) => {
+  const d = new Date(iso)
+  return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+}
 
 export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
-  const { contas, categorias, planos, setPlanos, extratoData, faturaData, saldoInicialDinheiro,
+  const { user, contas, categorias, planos, setPlanos, extratoData, faturaData, saldoInicialDinheiro,
     cenarioPrevisao } = useApp()
   const navigate = useNavigate()
   const hoje = new Date()
@@ -97,7 +133,6 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
 
   const [faltamStr, setFaltamStr] = useState<string | null>(null)
   const base = dividas.find(d => d.cat.id === dividaId) ?? dividas[0]
-  useEffect(() => { setFaltamStr(null) }, [base?.cat.id])
   // Quantas faltam pelo contrato: o plano pode ter o valor repetido além do fim.
   const faltam = Math.floor(Number(faltamStr ?? ''))
   const divida = useMemo(
@@ -105,7 +140,6 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
     [base, faltamStr, faltam, serie],
   )
   const valor = parseValor(valorStr) ?? 0
-  useEffect(() => { setEscolhido(null) }, [dividaId, valor, faltam])
 
   // A parcela deste mês já marcada paga não volta: a quitação tira as seguintes.
   const jaPaga = useMemo(() => {
@@ -158,7 +192,67 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
     })
     setConfirmando(false)
     setValorStr('')
+    setFaltamStr(null)
+    setEscolhido(null)
   }
+
+  // ── Simulações salvas ────────────────────────────────────────────────
+  const [salvas, setSalvas] = useState<QuitacaoSalva[]>([])
+  const [avisoSalvar, setAvisoSalvar] = useState<{ ok: boolean; texto: string } | null>(null)
+  useEffect(() => {
+    if (!user) return
+    supabase.from('simulacoes').select('*').eq('tipo', 'divida').order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error('simulacoes (quitações):', error.message)
+        if (data) setSalvas((data as QuitacaoSalva[]).filter(x => x.detalhes?.modo === 'quitacao'))
+      })
+  }, [user])
+
+  /** Mudou o formulário: a escolha do mês e o aviso de salvo não valem mais. */
+  function mexeu() { setEscolhido(null); setFeito(null); setAvisoSalvar(null) }
+
+  async function salvar() {
+    if (!user || !divida || !r) return
+    const row = {
+      nome: rotuloDa(divida), valor_total: r.valor, parcela: divida.valorMensal, juros: 0,
+      resultado_meses: r.removidas.length, data_conclusao: curto(r.quando),
+      total_pago: valor, juros_pagos: Math.max(0, r.economia),
+      detalhes: { modo: 'quitacao', catId: divida.cat.id, valor: valorStr, faltam: faltamStr,
+        quando: r.quando, valorMensal: divida.valorMensal } as DetalhesQuitacao,
+    }
+    const { data, error } = await supabase.from('simulacoes')
+      .insert([{ ...row, user_id: user.id, tipo: 'divida' }]).select().single()
+    if (error || !data) {
+      console.error('simulacoes (salvar quitação):', error?.message)
+      setAvisoSalvar({ ok: false, texto: 'Não foi possível salvar a simulação. Tente de novo.' })
+      return
+    }
+    setSalvas(prev => [data as QuitacaoSalva, ...prev])
+    setAvisoSalvar({ ok: true, texto: 'Simulação salva. Ela está na lista embaixo.' })
+  }
+
+  async function excluir(sv: QuitacaoSalva) {
+    if (!window.confirm(`Excluir a simulação "${sv.nome}" de ${new Date(sv.created_at).toLocaleDateString('pt-BR')}?`)) return
+    const { error } = await supabase.from('simulacoes').delete().eq('id', sv.id)
+    if (error) { console.error('simulacoes (excluir quitação):', error.message); return }
+    setSalvas(prev => prev.filter(x => x.id !== sv.id))
+  }
+
+  // Só o "cabe" é julgado de novo, no mês que foi salvo: o de semanas atrás
+  // mentiria depois de qualquer lançamento. Os valores ficam os da foto.
+  const avaliadas = useMemo(() => salvas.map(sv => {
+    const d = sv.detalhes
+    const b = d && dividas.find(x => x.cat.id === d.catId)
+    const v = d ? parseValor(d.valor) ?? 0 : 0
+    if (!d || !b || v <= 0) return { sv, r: null }
+    const n = Math.floor(Number(d.faltam ?? ''))
+    const dv = d.faltam && n >= 1 ? comParcelasRestantes(b, n, serie?.fimDoPlano ?? null) : b
+    const paga = resolverFixaDoMes(dv.cat.id, dmsHoje).consolidada
+    const c = serie ? mesesParaQuitar(serie, dv, v, paga) : null
+    // O mês salvo já passou ou saiu do plano: não há o que julgar.
+    const q = c?.meses.some(m => igual(m.quando, d.quando)) ? d.quando : null
+    return { sv, r: serie && q ? simularQuitacao(serie, dv, v, q, paga) : null }
+  }), [salvas, dividas, serie, dmsHoje])
 
   // ── Sem plano, ou sem dívida no plano ────────────────────────────────
   if (!serie) {
@@ -199,7 +293,7 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
             <div style={{ gridColumn: isMobile ? undefined : '1 / -1' }}>
               <label style={labelSt} htmlFor="quitar-divida">Qual dívida?</label>
-              <select id="quitar-divida" value={divida.cat.id} onChange={e => { setDividaId(e.target.value); setFeito(null) }} style={inputSt}>
+              <select id="quitar-divida" value={divida.cat.id} onChange={e => { setDividaId(e.target.value); setFaltamStr(null); mexeu() }} style={inputSt}>
                 {dividas.map(d => (
                   <option key={d.cat.id} value={d.cat.id}>
                     {rotuloDa(d)} · {fmt(d.valorMensal)} por mês
@@ -210,7 +304,7 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
             <div>
               <label style={labelSt} htmlFor="quitar-faltam">Quantas parcelas faltam?</label>
               <input id="quitar-faltam" inputMode="numeric" value={faltamStr ?? String(divida.parcelas.length)}
-                onChange={e => { setFaltamStr(e.target.value.replace(/\D/g, '')); setFeito(null) }}
+                onChange={e => { setFaltamStr(e.target.value.replace(/\D/g, '')); mexeu() }}
                 style={inputSt} />
               <div style={{ ...apoio, marginTop: 6 }}>
                 Em aberto: de {curto(divida.parcelas[0])} a {curto(divida.ultima)}, {fmt(divida.total)} no total.
@@ -221,7 +315,7 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
             <div>
               <label style={labelSt} htmlFor="quitar-valor">Valor para quitar à vista</label>
               <input id="quitar-valor" inputMode="decimal" value={valorStr}
-                onChange={e => { setValorStr(e.target.value); setFeito(null) }}
+                onChange={e => { setValorStr(e.target.value); mexeu() }}
                 placeholder="R$ 15.000,00" style={inputSt} />
               <div style={{ ...apoio, marginTop: 6 }}>
                 O valor que o banco informou para quitar hoje. Ele baixa a cada parcela paga: para os
@@ -235,10 +329,15 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
       {r && divida && candidatos && (
         <Resposta
           divida={divida} r={r} candidatos={candidatos} isMobile={isMobile}
-          onEscolher={setEscolhido} meta={meta} guarda={guarda}
+          onEscolher={m => { setEscolhido(m); setAvisoSalvar(null) }} meta={meta} guarda={guarda}
           detalhes={detalhes} onDetalhes={() => setDetalhes(d => !d)}
           onAtualizar={() => setConfirmando(true)}
+          onSalvar={salvar} aviso={avisoSalvar}
         />
+      )}
+
+      {avaliadas.length > 0 && (
+        <QuitacoesSalvas itens={avaliadas} isMobile={isMobile} onExcluir={excluir} />
       )}
 
       {confirmando && r && divida && (
@@ -260,7 +359,7 @@ const link: React.CSSProperties = {
 
 type Meta = { total: number; antes: number; agora: number; mesDaQuitacaoAbaixo: boolean } | null
 
-function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, detalhes, onDetalhes, onAtualizar }: {
+function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, detalhes, onDetalhes, onAtualizar, onSalvar, aviso }: {
   divida: DividaNoPlano
   r: ReturnType<typeof simularQuitacao>
   candidatos: ReturnType<typeof mesesParaQuitar>
@@ -270,6 +369,8 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
   guarda: ({ guarda: number; sem: number; meta: number } | null)[]
   detalhes: boolean; onDetalhes: () => void
   onAtualizar: () => void
+  onSalvar: () => void
+  aviso: { ok: boolean; texto: string } | null
 }) {
   const { sugerido } = candidatos
   const agora = new Date()
@@ -377,10 +478,149 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
       }}>{detalhes ? '▾ Esconder os números' : '▸ Ver os números em detalhe'}</button>
       {detalhes && <Detalhes r={r} />}
 
-      <button onClick={onAtualizar} style={{ ...botaoBranco, width: '100%', marginTop: 18 }}>
-        <i aria-hidden className="ti ti-calendar-check" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
-        Vou quitar em {MESES[r.quando.mes]}: atualizar o plano
-      </button>
+      <div style={{ display: 'flex', gap: 10, marginTop: 18, flexDirection: isMobile ? 'column' : 'row' }}>
+        <button onClick={onSalvar} style={{ ...botaoContorno, flex: isMobile ? undefined : '0 0 auto' }}>
+          <i aria-hidden className="ti ti-bookmark" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
+          Salvar simulação
+        </button>
+        <button onClick={onAtualizar} style={{ ...botaoBranco, marginTop: 0, flex: 1 }}>
+          <i aria-hidden className="ti ti-calendar-check" style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
+          Vou quitar em {MESES[r.quando.mes]}: atualizar o plano
+        </button>
+      </div>
+      {aviso && (
+        <div role="status" style={{ ...apoio, marginTop: 8, color: aviso.ok ? VERDE : VERMELHO, fontWeight: 600 }}>
+          {aviso.ok ? '✓ ' : ''}{aviso.texto}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const botaoContorno: React.CSSProperties = {
+  padding: '11px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,.6)', background: 'transparent',
+  color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+}
+
+/**
+ * As quitações salvas, a mais recente primeiro. Cada uma é a foto do dia em
+ * que foi salva; marcar duas da MESMA dívida abre o comparativo. Página
+ * clara, cartão branco: verde `#15803d` (5,02) e vermelho `#b91c1c` (6,47).
+ */
+function QuitacoesSalvas({ itens, isMobile, onExcluir }: {
+  itens: { sv: QuitacaoSalva; r: ReturnType<typeof simularQuitacao> | null }[]
+  isMobile: boolean
+  onExcluir: (s: QuitacaoSalva) => void
+}) {
+  const [marcadas, setMarcadas] = useState<string[]>([])
+  const existentes = marcadas.filter(id => itens.some(x => x.sv.id === id))
+  const catMarcada = itens.find(x => x.sv.id === existentes[0])?.sv.detalhes?.catId
+  const alternar = (id: string) => setMarcadas(prev =>
+    prev.includes(id) ? prev.filter(x => x !== id) : [...prev.filter(x => existentes.includes(x)), id].slice(-2))
+  const par = existentes.length === 2
+    ? existentes.map(id => itens.find(x => x.sv.id === id)!)
+        .sort((a, b) => a.sv.created_at.localeCompare(b.sv.created_at))
+    : null
+  const botao: React.CSSProperties = {
+    padding: '6px 9px', borderRadius: 8, border: `1px solid ${COR.borda}`, background: COR.branco,
+    color: COR.texto, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+  }
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 17, fontWeight: 800, color: COR.texto, marginBottom: 4 }}>
+        <i aria-hidden className="ti ti-bookmark" style={{ fontSize: 18, verticalAlign: '-2px', marginRight: 6, color: COR.azul }} />
+        Simulações salvas
+      </div>
+      <div style={{ fontSize: 13, color: COR.textoSuave, marginBottom: 12, lineHeight: 1.5 }}>
+        Cada uma guarda o que o banco informou naquele dia. Marque duas da mesma dívida para comparar.
+      </div>
+      <div style={{ background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14, padding: isMobile ? '4px 14px' : '4px 18px' }}>
+        {itens.map(({ sv, r }, i) => {
+          const d = sv.detalhes
+          const em = quandoSalvou(sv.created_at)
+          const marcada = existentes.includes(sv.id)
+          const bloqueada = !marcada && !!catMarcada && d?.catId !== catMarcada
+          return (
+            <div key={sv.id} style={{
+              display: 'flex', gap: 12, alignItems: 'center',
+              padding: '12px 0', borderTop: i ? `1px solid ${COR.bordaSuave}` : 'none', fontSize: 13.5, color: COR.texto,
+              opacity: bloqueada ? 0.55 : 1,
+            }}>
+              <input type="checkbox" checked={marcada} disabled={bloqueada} onChange={() => alternar(sv.id)}
+                aria-label={`Comparar ${sv.nome} de ${em}`} title={bloqueada ? 'Só compara simulações da mesma dívida' : undefined}
+                style={{ width: 18, height: 18, flexShrink: 0, cursor: bloqueada ? 'not-allowed' : 'pointer' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700 }}>{sv.nome} <span style={{ fontWeight: 500, color: COR.textoSuave }}>· {em}</span></div>
+                <div style={{ color: COR.textoSuave, marginTop: 3, fontSize: 13 }}>
+                  {d && <>Quitar em {mesEAno(d.quando)} por {fmt(sv.valor_total)} · economiza {fmt(sv.juros_pagos ?? 0)}</>}
+                </div>
+                {isMobile && <div style={{ marginTop: 4 }}><Hoje r={r} /></div>}
+              </div>
+              {!isMobile && <Hoje r={r} />}
+              <button onClick={() => onExcluir(sv)} aria-label={`Excluir ${sv.nome} de ${em}`} style={botao}>
+                <i aria-hidden className="ti ti-trash" style={{ fontSize: 14, verticalAlign: '-2px' }} />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      {par && <Comparativo par={par} isMobile={isMobile} />}
+    </div>
+  )
+}
+
+function Hoje({ r }: { r: ReturnType<typeof simularQuitacao> | null }) {
+  if (!r) return <span style={{ color: COR.textoSuave, fontSize: 13 }}>Mês fora do plano</span>
+  return <span style={{ color: r.cabe ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: 13 }}>{r.cabe ? '✓ Cabe hoje' : '✕ Aperta hoje'}</span>
+}
+
+/** As duas fotos lado a lado, a mais antiga primeiro, e a diferença. */
+function Comparativo({ par, isMobile }: {
+  par: { sv: QuitacaoSalva; r: ReturnType<typeof simularQuitacao> | null }[]
+  isMobile: boolean
+}) {
+  const [a, b] = par
+  const data = (x: QuitacaoSalva) => quandoSalvou(x.created_at)
+  const informado = (x: QuitacaoSalva) => parseValor(x.detalhes?.valor ?? '') ?? 0
+  const dif = (va: number, vb: number, menorMelhor: boolean) => {
+    const d = vb - va
+    if (Math.abs(d) < 0.005) return <span style={{ color: COR.textoSuave }}>igual</span>
+    const melhor = menorMelhor ? d < 0 : d > 0
+    return <span style={{ color: melhor ? '#15803d' : '#b91c1c', fontWeight: 700 }}>{d > 0 ? '+ ' : '− '}{fmt(Math.abs(d))}</span>
+  }
+  const linhas: { rot: string; va: React.ReactNode; vb: React.ReactNode; d: React.ReactNode }[] = [
+    { rot: 'Valor informado pelo banco', va: fmt(informado(a.sv)), vb: fmt(informado(b.sv)), d: dif(informado(a.sv), informado(b.sv), true) },
+    { rot: 'Quitar em', va: a.sv.detalhes ? curto(a.sv.detalhes.quando) : '—', vb: b.sv.detalhes ? curto(b.sv.detalhes.quando) : '—', d: '' },
+    { rot: 'Valor para quitar nesse mês', va: fmt(a.sv.valor_total), vb: fmt(b.sv.valor_total), d: dif(a.sv.valor_total, b.sv.valor_total, true) },
+    { rot: 'Parcelas que deixam de sair', va: a.sv.resultado_meses, vb: b.sv.resultado_meses, d: '' },
+    { rot: 'Você economiza', va: fmt(a.sv.juros_pagos ?? 0), vb: fmt(b.sv.juros_pagos ?? 0), d: dif(a.sv.juros_pagos ?? 0, b.sv.juros_pagos ?? 0, false) },
+    { rot: 'Com o plano de hoje', va: <Hoje r={a.r} />, vb: <Hoje r={b.r} />, d: '' },
+  ]
+  const cel: React.CSSProperties = { padding: '9px 8px', borderBottom: `1px solid ${COR.bordaSuave}`, fontSize: 13.5,
+    color: COR.texto, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
+  const cab: React.CSSProperties = { ...cel, fontSize: 12, fontWeight: 700, color: COR.textoSuave }
+  return (
+    <div style={{ marginTop: 12, background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14,
+      padding: isMobile ? '12px 12px' : '14px 18px', overflowX: 'auto' }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: COR.texto, marginBottom: 6 }}>Comparativo · {a.sv.nome}</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420 }}>
+        <thead><tr>
+          <th style={{ ...cab, textAlign: 'left' }} />
+          <th style={cab}>{data(a.sv)}</th>
+          <th style={cab}>{data(b.sv)}</th>
+          <th style={cab}>Diferença</th>
+        </tr></thead>
+        <tbody>
+          {linhas.map(l => (
+            <tr key={l.rot}>
+              <td style={{ ...cel, textAlign: 'left', color: '#475569' }}>{l.rot}</td>
+              <td style={cel}>{l.va}</td>
+              <td style={{ ...cel, fontWeight: 700 }}>{l.vb}</td>
+              <td style={cel}>{l.d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
