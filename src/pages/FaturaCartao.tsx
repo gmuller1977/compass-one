@@ -208,9 +208,16 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     setExtratoData(extrato as unknown as Record<string, ExtratoDadosMes>)
   }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-avança para a aba do mês de vencimento da fatura em aberto
+  // Auto-avança para a aba do mês de vencimento da fatura em aberto — só ao
+  // ABRIR a tela. Trocar de cartão (ou o app reler as contas) mantém o mês
+  // escolhido (22/10/2026, pedido do Guilherme: no cartão B pulava para a
+  // fatura atual).
+  const mesPosicionado = useRef(false)
   useEffect(() => {
+    if (mesPosicionado.current) return
     const conta = contas.find(c => c.id === contaId)
+    if (!conta) return
+    mesPosicionado.current = true
     const diaFech = conta?.diaFechamento ?? 1
     const diaVenc = conta?.diaVencimento ?? 1
     const offset  = diaVenc < diaFech ? 1 : 0
