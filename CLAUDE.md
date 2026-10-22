@@ -3142,6 +3142,15 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
 - **A lista da fatura é por DATA DA COMPRA, a mais recente no topo**, e no
   mesmo dia o último lançado no topo (`compararNaFatura`, celular e computador). Pedido dele no mesmo
   dia: lançando a fatura, a ordem de digitação embaralhava as datas.
+- **"Conciliação" saiu das telas** (22/10/2026, pedido do Guilherme:
+  "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
+  Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",
+  "Saldo na carteira" ou "Fatura do cartão", com o valor informado, a
+  diferença em palavras ("✓ igual ao Compass", "faltam/sobram R$ X no
+  Compass"; no cartão, "falta lançar R$ X") e a pílula "✎ Informar" /
+  "✎ Alterar". O rodapé da fatura diz "Total lançado no Compass — [mês do
+  vencimento]". No celular, "Saldo no app" virou "Saldo no Compass", com a
+  mesma frase da diferença.
 - **Total** ganhou só o topo novo: o conteúdo espera virar painel.
 - **O extrato de Banco e Dinheiro é DECRESCENTE** (22/10/2026, pedido do
   Guilherme: "como no app do banco"), no computador e no celular: do último

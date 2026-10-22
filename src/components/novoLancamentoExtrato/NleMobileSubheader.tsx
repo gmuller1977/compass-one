@@ -85,7 +85,7 @@ export default function NleMobileSubheader({
             {temSaldo && (<>
               <div>
                 <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
-                  {ehMesAtual ? 'Saldo no app' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
+                  {ehMesAtual ? 'Saldo no Compass' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
                 </div>
                 <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
                   color:saldoMes>=0?'#fff':'#fecaca'}}>{fmt(saldoMes)}</div>
@@ -109,7 +109,7 @@ export default function NleMobileSubheader({
                 {diferenca !== null && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
                     background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fecaca'}}>
-                    {conciliado ? '✓ Confere' : `Diferença ${diferenca>0?'+':'−'}${fmt(Math.abs(diferenca))}`}
+                    {conciliado ? '✓ igual ao Compass' : `${diferenca>0?'faltam':'sobram'} ${fmt(Math.abs(diferenca))} no Compass`}
                   </span>
                 )}
               </button>

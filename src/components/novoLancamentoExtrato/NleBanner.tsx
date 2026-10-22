@@ -85,6 +85,36 @@ export default function NleBanner({
           <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
             valueColor={saldoMes >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
+          {/* O saldo que o banco (ou a carteira) mostra, no MESMO cartão dos
+              outros, como a "Fatura do cartão" (22/10/2026, pedido do
+              Guilherme: "Conciliação" confundia). A diferença vai em palavras,
+              contra o Saldo atual ao lado; a pílula diz que o cartão abre a
+              caixa de saldo. #86efac 4,8 e #fecaca 4,6 no #1e40af. */}
+          <div role="button" tabIndex={0} aria-label={isDinheiro ? 'Informar o saldo da carteira' : 'Informar o saldo do banco'}
+            title={isDinheiro ? 'Clique para informar quanto tem na carteira' : 'Clique para informar o saldo que aparece no banco'}
+            onClick={abrirModal}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
+            style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
+            <KpiCard icon={isDinheiro ? 'ti-wallet' : 'ti-building-bank'}
+              label={isDinheiro ? 'Saldo na carteira' : 'Saldo no banco'}
+              value={saldoBancoNum !== null ? fmt(saldoBancoNum) : '—'}
+              style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 12, marginTop: 4, textAlign: 'right',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
+              }}>
+                {diferenca === null ? 'não informado' : conciliado ? '✓ igual ao Compass'
+                  : `${diferenca > 0 ? 'faltam' : 'sobram'} ${fmt(Math.abs(diferenca))} no Compass`}
+              </div>
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <span style={{
+                  display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
+                  background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
+                  borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
+                }}>{saldoBancoNum !== null ? '✎ Alterar' : '✎ Informar'}</span>
+              </div>
+            </KpiCard>
+          </div>
         </div>
 
         {/* Bank selector buttons */}
@@ -110,39 +140,6 @@ export default function NleBanner({
         )}
       </div>
 
-      {/* Right: Conciliação — clique abre modal */}
-      <div
-        onClick={abrirModal}
-        style={{
-          display: 'flex', flexDirection: 'column', gap: 8,
-          background: 'linear-gradient(135deg,#0f2878,#1e40af)',
-          border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '12px 14px',
-          flexShrink: 0, cursor: 'pointer', minWidth: 200,
-          transition: 'opacity .15s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-      >
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: .5 }}><i className="ti ti-arrows-exchange" aria-hidden style={{ fontSize: 11, verticalAlign: -1 }} /> Conciliação</div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>{isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: saldoBancoNum !== null ? '#fff' : 'rgba(255,255,255,.4)', fontVariantNumeric: 'tabular-nums' }}>
-            {saldoBancoNum !== null ? fmt(saldoBancoNum) : <span style={{ fontSize: 11, fontStyle: 'italic' }}>Informar ✎</span>}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.6)' }}>Diferença</span>
-          <span style={{
-            fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, whiteSpace: 'nowrap' as const,
-            background: diferenca === null ? 'rgba(100,116,139,.3)' : conciliado ? 'rgba(34,197,94,.2)' : 'rgba(239,68,68,.2)',
-            color: diferenca === null ? 'rgba(255,255,255,.4)' : conciliado ? '#86efac' : '#fca5a5',
-          }}>
-            {diferenca === null ? '— informar' : conciliado ? '✓ Conciliado' : `${diferenca > 0 ? '+' : '-'}${fmt(Math.abs(diferenca))}`}
-          </span>
-        </div>
-      </div>
     </div>
   )
 }
