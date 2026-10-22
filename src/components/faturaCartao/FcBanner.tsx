@@ -61,19 +61,20 @@ export default function FcBanner({
               com as mesmas letras (pedido do Guilherme, 22/10/2026). Tocar abre
               a janela do valor da fatura. Diferença na paleta do fundo escuro:
               #86efac 4,8 e #fecaca 4,6 no #1e40af. */}
-          <div role="button" tabIndex={0} aria-label="Informar o valor da fatura"
+          <div role="button" tabIndex={0} aria-label="Informar o valor da fatura" title="Clique para informar o valor atual da fatura"
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon="ti-arrows-exchange" label="Conciliação"
-              value={mesDados.faturaAtual || 'Informar ✎'}
+              acao={mesDados.faturaAtual ? '✎ Alterar' : '✎ Informar'}
+              value={mesDados.faturaAtual || '—'}
               valueColor={mesDados.faturaAtual ? '#fff' : 'rgba(255,255,255,.75)'}
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
                 color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
               }}>
-                {diferenca === null ? 'para conferir a diferença' : conciliado ? '✓ Conciliado'
+                {diferenca === null ? 'valor da fatura não informado' : conciliado ? '✓ Conciliado'
                   : `diferença ${diferenca > 0 ? '+' : '-'}${fmt(Math.abs(diferenca))}`}
               </div>
             </KpiCard>
