@@ -3137,6 +3137,13 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   mesmo dia o último lançado no topo (`compararNaFatura`, celular e computador). Pedido dele no mesmo
   dia: lançando a fatura, a ordem de digitação embaralhava as datas.
 - **Total** ganhou só o topo novo: o conteúdo espera virar painel.
+- **O extrato de Banco e Dinheiro é DECRESCENTE** (22/10/2026, pedido do
+  Guilherme: "como no app do banco"), no computador e no celular: do último
+  dia para o primeiro e, no dia, o último lançado no topo. No mês corrente,
+  os dias depois de hoje ficam num acordeão fechado "Lançamentos futuros · N
+  previstos", acima de hoje; quando o dia chega, a conta sai dele. Uma versão
+  só decrescente, com os futuros soltos acima de hoje, foi recusada no mesmo
+  dia. No celular a tela abre no TOPO (saldo à vista), sem rolar até hoje.
 - Computador não mudou (`if (isMobile)` antes de tudo).
 
 **Lançamentos e Planejamento no celular, 13/10/2026** (pedido do Guilherme).
