@@ -90,13 +90,13 @@ export default function NleBanner({
               Guilherme: "Conciliação" confundia). A diferença vai em palavras,
               contra o Saldo atual ao lado; a pílula diz que o cartão abre a
               caixa de saldo. #86efac 4,8 e #fecaca 4,6 no #1e40af. */}
-          <div role="button" tabIndex={0} aria-label={isDinheiro ? 'Informar o saldo da carteira' : 'Informar o saldo do banco'}
-            title={isDinheiro ? 'Clique para informar quanto tem na carteira' : 'Clique para informar o saldo que aparece no banco'}
+          <div role="button" tabIndex={0} aria-label={isDinheiro ? 'Informar o saldo em dinheiro' : 'Informar o saldo do banco'}
+            title={isDinheiro ? 'Clique para informar quanto tem em dinheiro' : 'Clique para informar o saldo que aparece no banco'}
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={isDinheiro ? 'ti-wallet' : 'ti-building-bank'}
-              label={isDinheiro ? 'Saldo na carteira' : 'Saldo no banco'}
+              label={isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}
               value={saldoBancoNum !== null ? fmt(saldoBancoNum) : '—'}
               style={{ flex: 1 }}>
               <div style={{

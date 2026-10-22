@@ -100,7 +100,7 @@ export default function NleMobileSubheader({
                 <i className={`ti ${isDinheiro ? 'ti-wallet' : 'ti-building-bank'}`} aria-hidden style={{fontSize:20,color:'#fff'}} />
                 <span style={{flex:1,minWidth:0}}>
                   <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
-                    {isDinheiro ? 'Na carteira' : `No ${contaInfo?.banco ?? 'banco'}`}
+                    {isDinheiro ? 'Em dinheiro' : `No ${contaInfo?.banco ?? 'banco'}`}
                   </span>
                   <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
                     {diferenca !== null ? fmt(saldoMes + diferenca) : 'Informar saldo ✎'}
