@@ -65,8 +65,7 @@ export default function FcBanner({
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
-            <KpiCard icon="ti-arrows-exchange" label="Conciliação"
-              acao={mesDados.faturaAtual ? '✎ Alterar' : '✎ Informar'}
+            <KpiCard icon="ti-arrows-exchange" label="Fatura do cartão"
               value={mesDados.faturaAtual || '—'}
               valueColor={mesDados.faturaAtual ? '#fff' : 'rgba(255,255,255,.75)'}
               style={{ flex: 1 }}>
@@ -74,8 +73,19 @@ export default function FcBanner({
                 fontSize: 12, marginTop: 4, textAlign: 'right',
                 color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
               }}>
-                {diferenca === null ? 'valor da fatura não informado' : conciliado ? '✓ Conciliado'
-                  : `diferença ${diferenca > 0 ? '+' : '-'}${fmt(Math.abs(diferenca))}`}
+                {/* Contra o total lançado no Compass (o rodapé), nas palavras do
+                    "Confira seus saldos": faltam = o cartão tem mais do que foi
+                    lançado (22/10/2026, "Conciliação" confundia). */}
+                {diferenca === null ? 'não informada' : conciliado ? '✓ igual ao Compass'
+                  : diferenca > 0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
+              </div>
+              {/* A pílula diz que o cartão abre a janela do valor. */}
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <span style={{
+                  display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
+                  background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
+                  borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
+                }}>{mesDados.faturaAtual ? '✎ Alterar' : '✎ Informar'}</span>
               </div>
             </KpiCard>
           </div>

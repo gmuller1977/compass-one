@@ -175,7 +175,7 @@ export default function FcDesktopLeft({
                 rodapé dizia o mês das compras; 22/10/2026). Branco, um ponto
                 maior, pedido do Guilherme. */}
             <div style={{ fontSize: 11, fontWeight: 600, color: '#fff' }}>
-              Total da fatura — {NOMES_MESES[mesVenc]} {anoVenc}
+              Total lançado no Compass — {NOMES_MESES[mesVenc]} {anoVenc}
             </div>
             <div style={{ fontSize: 10, color: '#fff', marginTop: 1 }}>
               Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}

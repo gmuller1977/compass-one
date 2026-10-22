@@ -12,8 +12,6 @@ export interface KpiCardProps {
   /** Quando existe, o cartao vira botao e ganha a seta de expandir. */
   onClick?: () => void
   expandido?: boolean
-  /** Pílula de ação no canto do rótulo (ex.: "✎ Informar"), para o cartão dizer que é clicável. */
-  acao?: string
 }
 
 const KPI_BG = 'linear-gradient(160deg,#0f2878,#1e40af)'
@@ -54,7 +52,7 @@ export function KpiBarra({ perc, cor }: { perc: number; cor: string }) {
 
 export default function KpiCard({
   icon, label, value, sublabel, valueColor = '#fff', children, style,
-  onClick, expandido, acao,
+  onClick, expandido,
 }: KpiCardProps) {
   return (
     <div
@@ -80,13 +78,6 @@ export default function KpiCard({
             : icon ? `${icon} ${label}` : label}
         </span>
         {onClick && <span aria-hidden>{expandido ? '▾' : '▸'}</span>}
-        {acao && (
-          <span style={{
-            textTransform: 'none', letterSpacing: 0, whiteSpace: 'nowrap', color: '#fff',
-            background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
-            borderRadius: 999, padding: '1px 8px', fontSize: 11, fontWeight: 700,
-          }}>{acao}</span>
-        )}
       </div>
       <div style={{ ...VALUE_STYLE, color: valueColor }}>{value}</div>
       {sublabel && <div style={SUBLABEL_STYLE}>{sublabel}</div>}
