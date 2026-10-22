@@ -214,7 +214,7 @@ export default function PlanFerramentas({
                 {primeiroMesCopia <= 11 && comAtualizacao && (
                   <>
                     <div style={{ fontSize: 12, color: '#475569', marginBottom: 10 }}>
-                      Informe quanto cada grupo sobe, em %. Grupo sem percentual é copiado com o mesmo valor.
+                      Informe o % que deseja atualizar cada grupo para o próximo planejamento. Se informar 0% ou deixar em branco, será copiado o mesmo valor do ano anterior.
                     </div>
                     <div style={{ overflowX: 'auto', marginBottom: 16 }}>
                       <table style={{ borderCollapse: 'collapse', fontSize: 13, minWidth: 420, width: '100%' }}>
