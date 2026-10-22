@@ -55,6 +55,9 @@ export default function PlanFerramentas({
   // "s|grupo"; vazio = sem atualização.
   const [comAtualizacao, setComAtualizacao] = useState(false)
   const [pctGrupo, setPctGrupo] = useState<Record<string, string>>({})
+  // Ano de destino com plano: a cópia pergunta antes de substituir (22/10/2026,
+  // pedido dele). Guarda se a cópia pedida era com atualização.
+  const [confirmaCopia, setConfirmaCopia] = useState<boolean | null>(null)
 
   // Zerar: um mês (o primeiro que pode mudar) ou o ano, e um segundo toque
   // para confirmar, porque não há como desfazer.
@@ -64,7 +67,7 @@ export default function PlanFerramentas({
   const [zerarConfirma, setZerarConfirma] = useState(false)
 
   useEffect(() => {
-    setComAtualizacao(false); setPctGrupo({})
+    setComAtualizacao(false); setPctGrupo({}); setConfirmaCopia(null)
     setZerarQual('mes'); setZerarMes(Math.min(primeiroZeravel, 11)); setZerarConfirma(false)
   }, [toolAberta, anoAtual])
 
@@ -118,6 +121,14 @@ export default function PlanFerramentas({
     }
     return linhas
   })()
+
+  /** O destino já tem valor planejado em algum mês que a cópia grava. */
+  const destinoTemPlano = [...dadosAtivos.entradas, ...dadosAtivos.saidas]
+    .some(c => c.v.some((x, mi) => mi >= primeiroMesCopia && x > 0))
+  function pedirCopia(usar: boolean) {
+    if (destinoTemPlano) setConfirmaCopia(usar)
+    else aplicarCopiaAno(usar)
+  }
 
   function aplicarCopiaAno(usar = comAtualizacao) {
     if (!dadosAnoAnterior || primeiroMesCopia > 11) return
@@ -190,13 +201,13 @@ export default function PlanFerramentas({
                 <div style={DESC}>
                   {primeiroMesCopia > 11
                     ? <>Este ano já passou: o plano dele fica como foi medido.</>
-                    : <>Copia os valores planejados de {anoAtual - 1} para {anoAtual}
+                    : <>Copia o planejamento de {anoAtual - 1} para {anoAtual}
                       {primeiroMesCopia > 0 ? `, de ${MESES_FULL[primeiroMesCopia]} a dezembro (os meses que já fecharam não mudam)` : ''}.<br />
-                      Os valores desses meses serão substituídos. Parcelas de compras não são copiadas.</>}
+                      O que já estiver planejado em {anoAtual} será substituído. Parcelas de compras não são copiadas.</>}
                 </div>
-                {primeiroMesCopia <= 11 && !comAtualizacao && (
+                {primeiroMesCopia <= 11 && !comAtualizacao && confirmaCopia === null && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button style={BTN_OK} onClick={() => aplicarCopiaAno(false)}>Copiar {anoAtual - 1}</button>
+                    <button style={BTN_OK} onClick={() => pedirCopia(false)}>Copiar {anoAtual - 1}</button>
                     <button style={BTN_OK} onClick={() => setComAtualizacao(true)}>Copiar com atualização</button>
                     <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
                   </div>
@@ -248,12 +259,23 @@ export default function PlanFerramentas({
                         </tbody>
                       </table>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button style={BTN_OK} onClick={() => aplicarCopiaAno(true)}>Copiar com atualização</button>
-                      <button style={BTN_OK} onClick={() => aplicarCopiaAno(false)}>Copiar sem atualização</button>
+                    {confirmaCopia === null && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button style={BTN_OK} onClick={() => pedirCopia(true)}>Copiar com atualização</button>
+                      <button style={BTN_OK} onClick={() => pedirCopia(false)}>Copiar sem atualização</button>
                       <button style={BTN_CANCEL} onClick={() => setComAtualizacao(false)}>Voltar</button>
-                    </div>
+                    </div>}
                   </>
+                )}
+                {confirmaCopia !== null && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 13, color: '#7f1d1d', fontWeight: 600, marginBottom: 8 }}>
+                      {anoAtual} já possui planejamento. Deseja substituir pelo de {anoAtual - 1}{confirmaCopia ? ' com atualização' : ''}? Isso não dá para desfazer.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button style={{ ...BTN_OK, background: '#b91c1c' }} onClick={() => { const u = confirmaCopia; setConfirmaCopia(null); aplicarCopiaAno(u) }}>Sim, substituir</button>
+                      <button style={BTN_CANCEL} onClick={() => setConfirmaCopia(null)}>Cancelar</button>
+                    </div>
+                  </div>
                 )}
                 {primeiroMesCopia > 11 && <button style={BTN_CANCEL} onClick={onClose}>Fechar</button>}
               </>

@@ -1269,7 +1269,9 @@ uma tabela por GRUPO (receitas e despesas): planejado do ano anterior nos
 meses copiados, um % ao lado (só aumento) e "Fica em [ano]". O % vale para
 cada categoria do grupo (nos itens, menos os do Simulador); sem % copia
 igual. A barra ficou com Copiar ano e Zerar; o filtro fixas/variáveis, a
-redução e a escolha de meses do reajuste antigo saíram.
+redução e a escolha de meses do reajuste antigo saíram. Se o ano de destino já tem
+plano, a cópia pergunta "[ano] já possui planejamento. Deseja substituir?"
+antes de gravar.
 
 **A barra de ferramentas do Planejamento ficou com Reajuste %, Copiar ano e
 Meta** (a Meta saiu no mesmo dia, ver acima) (13/10/2026, escolha do Guilherme no card). "Copiar mês" e "Aplicar
