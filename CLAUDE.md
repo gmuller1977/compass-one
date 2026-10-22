@@ -1264,7 +1264,7 @@ fizer falta (o perfil não tem estado, e o calendário muda por UF e por ano).
 
 **O "Reajuste %" saiu da barra; o Copiar ano tem ATUALIZAÇÃO DE VALOR**
 (22/10/2026, pedido do Guilherme). Copiar ano oferece "Copiar [ano
-anterior]" (mesmos valores) e "Copiar com atualização de valor", que abre
+anterior]" (mesmos valores) e "Copiar com atualização", que abre
 uma tabela por GRUPO (receitas e despesas): planejado do ano anterior nos
 meses copiados, um % ao lado (só aumento) e "Fica em [ano]". O % vale para
 cada categoria do grupo (nos itens, menos os do Simulador); sem % copia

@@ -197,8 +197,7 @@ export default function PlanFerramentas({
                 {primeiroMesCopia <= 11 && !comAtualizacao && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button style={BTN_OK} onClick={() => aplicarCopiaAno(false)}>Copiar {anoAtual - 1}</button>
-                    <button style={{ ...BTN_OK, background: '#fff', color: '#1a56db', border: '1.5px solid #1a56db' }}
-                      onClick={() => setComAtualizacao(true)}>Copiar com atualização de valor</button>
+                    <button style={BTN_OK} onClick={() => setComAtualizacao(true)}>Copiar com atualização</button>
                     <button style={BTN_CANCEL} onClick={onClose}>Cancelar</button>
                   </div>
                 )}
@@ -251,8 +250,7 @@ export default function PlanFerramentas({
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <button style={BTN_OK} onClick={() => aplicarCopiaAno(true)}>Copiar com atualização</button>
-                      <button style={{ ...BTN_OK, background: '#fff', color: '#1a56db', border: '1.5px solid #1a56db' }}
-                        onClick={() => aplicarCopiaAno(false)}>Copiar sem atualização</button>
+                      <button style={BTN_OK} onClick={() => aplicarCopiaAno(false)}>Copiar sem atualização</button>
                       <button style={BTN_CANCEL} onClick={() => setComAtualizacao(false)}>Voltar</button>
                     </div>
                   </>
