@@ -714,8 +714,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         hojeStr={hojeStr}
         confirmarModalFatura={confirmarModalFatura}
         updateMes={updateMes}
-        mesVenc={mesVenc} anoVenc={anoVenc} diaVencimento={diaVencimento}
-        purchaseMes={purchaseMes} diaFechamento={diaFechamento}
+        mesVenc={mesVenc} anoVenc={anoVenc}
       />
       {confirmacao && (
         <FcConfirmModal

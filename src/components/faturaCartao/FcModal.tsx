@@ -16,9 +16,6 @@ type Props = {
   // dúvidas"): o mês em que ela VENCE, como no seletor do topo.
   mesVenc: number
   anoVenc: number
-  diaVencimento: number
-  purchaseMes: number
-  diaFechamento: number
 }
 
 export default function FcModal({
@@ -26,11 +23,10 @@ export default function FcModal({
   modalFaturaValor, setModalFaturaValor,
   contaInfo, hojeStr,
   confirmarModalFatura, updateMes,
-  mesVenc, anoVenc, diaVencimento, purchaseMes, diaFechamento,
+  mesVenc, anoVenc,
 }: Props) {
   if (!modalFatura) return null
   const nomeMes = NOMES_MESES[mesVenc].toLowerCase()
-  const dd = (d: number, m: number) => `${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}`
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
@@ -42,7 +38,7 @@ export default function FcModal({
         onClick={e => e.stopPropagation()}>
         <ModalTopo icone="ti-credit-card" rotulo={contaInfo ? `Cartão · ${contaInfo.apelido ?? contaInfo.banco}` : 'Cartão'}
           titulo={`Qual é o valor atual da fatura de ${nomeMes}?`} id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
-          subtitulo={`Fatura de ${nomeMes} de ${anoVenc} · fecha ${dd(diaFechamento, purchaseMes)} · vence ${dd(diaVencimento, mesVenc)}. Informe o valor que aparece no app do cartão para acompanhar a diferença em relação ao sistema.`} />
+          subtitulo={`Fatura de ${nomeMes} de ${anoVenc}. Informe o valor atual do cartão para verificar se todos os lançamentos foram feitos.`} />
         <div style={{padding:'18px 24px 22px'}}>
         <input inputMode="decimal" autoFocus
           value={modalFaturaValor}
