@@ -285,8 +285,9 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
         </div>
         {!divida ? (
           <div style={apoio}>
-            Aqui aparecem as categorias cadastradas como Parcelada, com parcelas no planejamento. Se o
-            financiamento está como Mensal, troque para Parcelada em Configurações › Categorias. Para
+            Aqui aparecem as contas fixas cadastradas como Parcelada e pagas no banco por débito
+            automático ou boleto, com parcelas no planejamento. Se o financiamento não aparece,
+            confira esses três pontos em Configurações › Categorias. Para
             simular uma dívida fora do plano, use "Pagar em parcelas".
           </div>
         ) : (

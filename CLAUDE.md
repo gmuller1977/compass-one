@@ -1535,7 +1535,7 @@ de cartão — o Planejamento fica sem os gastos no cartão.
 
 **"Quitar dívida" tem "Quitar à vista"** (22/10/2026, pedido do Guilherme:
 quitar o financiamento do Civic, 16 × 1.149,72 já no plano, sem saldo hoje).
-A pessoa escolhe a dívida (categoria de despesa PARCELADA no cadastro, com valor
+A pessoa escolhe a dívida (categoria de despesa FIXA e PARCELADA no cadastro, paga no banco por débito automático ou boleto, `ehDividaQuitavel`, 23/10/2026, pedido dele; cartão, dinheiro, PIX e variável ficam fora; com valor
 no plano do mês corrente em diante; mesmo dia, Guilherme: "fixas não têm fim,
 porque se repetem todos os anos", então fixa mensal não aparece; e só a que JÁ
 COMEÇOU: parcela no mês anterior, item "k de N" com k > 1 ou a deste mês paga. Só parcelas EM ABERTO: a deste mês já paga não entra na lista nem na contagem.
@@ -1553,7 +1553,7 @@ em [mês]: atualizar o plano" pergunta antes e grava: o mês com o item
 "Quitação à vista" (com a parcela, se já paga) e as parcelas seguintes em zero;
 "Desfazer" volta o plano. Nada é lançado. A simulação antiga ficou em "Pagar
 em parcelas". Regras em [`quitacaoDivida.ts`](src/utils/quitacaoDivida.ts);
-`prova95` (39).
+`prova95` (49).
 "Salvar simulação" (mesmo dia, pedido dele: "somente salva, sem edição") guarda
 uma FOTO da consulta em `simulacoes` (`tipo: 'divida'`, `detalhes.modo =
 'quitacao'`, sem migração; a lista de "Pagar em parcelas" as ignora). A lista

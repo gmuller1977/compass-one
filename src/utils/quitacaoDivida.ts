@@ -98,7 +98,19 @@ export function comParcelasRestantes(d: DividaNoPlano, n: number, fim: Mes | nul
 }
 
 /**
- * As dívidas que o plano já carrega: despesa PARCELADA no cadastro, ativa,
+ * Entra na lista só a despesa FIXA, PARCELADA, ativa e paga pelo banco em
+ * débito automático ou boleto (23/10/2026, pedido do Guilherme): é o
+ * desenho de um financiamento ou consórcio. Cartão, dinheiro, PIX e
+ * variável ficam de fora.
+ */
+export function ehDividaQuitavel(cat: Categoria): boolean {
+  return cat.tipo === 'saida' && cat.ativa && cat.fixa && ehParcelada(cat)
+    && cat.tipoMovimento === 'banco'
+    && (cat.formaPagamento === 'automatico' || cat.formaPagamento === 'boleto')
+}
+
+/**
+ * As dívidas que o plano já carrega: `ehDividaQuitavel`,
  * com valor do mês corrente em diante. Fixa mensal não entra: ela se repete
  * todo ano e não tem o que quitar (aluguel, luz).
  *
@@ -118,7 +130,7 @@ export function dividasNoPlano(
   const total = Math.max(0, (fim.ano - de.ano) * 12 + (fim.mes - de.mes) + 1)
   const out: DividaNoPlano[] = []
   for (const cat of categorias) {
-    if (cat.tipo !== 'saida' || !cat.ativa || !ehParcelada(cat)) continue
+    if (!ehDividaQuitavel(cat)) continue
     const todas: ParcelaDaDivida[] = []
     for (let k = 0; k < total; k++) {
       const m = somaMes(de, k)
