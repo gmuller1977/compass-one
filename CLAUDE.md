@@ -311,6 +311,13 @@ variáveis: ainda dá…" do quadro (pedido dele). Consequência aceita: na
 coluna Realizado, inicial + receitas − despesas não dá o saldo final, porque
 a compra no cartão conta na receita/despesa quando acontece e no saldo
 quando a fatura é paga. Isso revê a saída da meta da Início de 13/10.
+No mesmo dia (pedido dele: "chamar mais atenção, seguindo o modelo desta
+tela") o quadro virou um cartão AZUL-ESCURO (`TOPO_AZUL`): "[mês] começou
+com" no subtítulo, o saldo final previsto e realizado em caixas
+translúcidas de 22px, receitas e despesas em tabela (`#86efac` / `#fecaca`)
+e a meta numa caixa com uma barra de atingimento por coluna (trilho escuro,
+borda branca, verde a partir de 100%). Nas caixas, só branco, rótulo a 85%
+e `#fecaca`.
 
 **"Confira o saldo dos bancos" na Início** (18/10/2026, pedidos do
 Guilherme), no computador e no celular, só no mês corrente, LOGO ABAIXO DO

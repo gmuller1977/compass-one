@@ -157,14 +157,11 @@ export default function Bussola() {
 
         {/* ── Resumo do mês: saldos, receitas, despesas e a meta ────── */}
         {/* O mesmo do computador (pedido do Guilherme, 23/10/2026). */}
-        <Cartao>
-          <TituloCartao>Resumo do mês</TituloCartao>
-          <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
-            onDefinirMeta={usaPlanoNoMes ? () => navigate('/planejamento') : undefined}
-            previsto={{ inicial: b.memoria.abertura, receitas: usaPlanoNoMes ? totalPrevE : null,
-              despesas: usaPlanoNoMes ? totalPrevS : null, final: b.fechamento }}
-            realizado={{ inicial: b.memoria.abertura, receitas: totalEntradas, despesas: totalSaidas, final: b.saldoHoje }} />
-        </Cartao>
+        <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
+          onDefinirMeta={usaPlanoNoMes ? () => navigate('/planejamento') : undefined}
+          previsto={{ inicial: b.memoria.abertura, receitas: usaPlanoNoMes ? totalPrevE : null,
+            despesas: usaPlanoNoMes ? totalPrevS : null, final: b.fechamento }}
+          realizado={{ inicial: b.memoria.abertura, receitas: totalEntradas, despesas: totalSaidas, final: b.saldoHoje }} />
 
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}
         {(b.avisos.length > 0 || fechou.texto) && (

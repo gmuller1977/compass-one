@@ -470,12 +470,9 @@ export default function Dashboard() {
           {/* ── Coluna 1: o mês em números ── */}
           <div style={{ display: 'grid', gap: 20 }}>
             {(ehFuturo ? previsao : memoria) && (
-              <Cartao>
-                <TituloCartao>Resumo do mês</TituloCartao>
-                <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
-                  onDefinirMeta={usaPlanoNoMes || ehFuturo ? () => navigate('/planejamento') : undefined}
-                  {...resumo} />
-              </Cartao>
+              <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
+                onDefinirMeta={usaPlanoNoMes || ehFuturo ? () => navigate('/planejamento') : undefined}
+                {...resumo} />
             )}
 
             {ehMesCorrente && (
