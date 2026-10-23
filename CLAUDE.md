@@ -319,6 +319,21 @@ e a meta numa caixa com uma barra de atingimento por coluna (trilho escuro,
 borda branca, verde a partir de 100%). Nas caixas, só branco, rótulo a 85%
 e `#fecaca`.
 
+**"Plano do mês" na Início** (23/10/2026, pedido do Guilherme), no lugar
+da lista "Passou do plano" (as três categorias mais estouradas), no
+computador e no celular, só no mês corrente e com plano. Cartão
+AZUL-ESCURO como o "Resumo do mês": "Passou do plano" (soma do que os
+GRUPOS de despesa passaram, `#fecaca`) × "Abaixo do plano" (soma do que
+falta para os outros grupos chegarem no plano, `#86efac`), a frase "No
+total, você está economizando R$ X" / "gastou R$ X a mais do que o plano",
+e dois acordeões fechados ("Grupos que passaram · N", "Grupos abaixo do
+plano · N", um aberto por vez). O detalhe é o Radar ("Ver o detalhe no
+Radar ›"). Regras em [`balancoDoPlano.ts`](src/utils/balancoDoPlano.ts),
+sobre as linhas de `totaisDoMes` e a régua do cabeçalho do grupo: só linha
+com plano; fixa paga até o previsto não sobra (os centavos não são
+economia); fixa não paga não entra no "abaixo" (ela vence, não sobra), só
+o excesso de fixa paga acima. Grupo vai para um lado só, pelo saldo dele.
+
 **"Confira o saldo dos bancos" na Início** (18/10/2026, pedidos do
 Guilherme), no computador e no celular, só no mês corrente, LOGO ABAIXO DO
 SALDO (primeiro cartão). Uma linha por conta de banco, com o NOME DO BANCO

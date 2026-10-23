@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useMesDaInicio } from '../components/inicio/useMesDaInicio'
@@ -12,10 +12,10 @@ import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
-import { Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, ResumoDoMes, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
-import { M, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
+import PlanoDoMesCard from '../components/inicio/PlanoDoMesCard'
+import { Cartao, Linha, OlhoIcone, Pilula, ResumoDoMes, SeletorCenario, TituloCartao } from '../components/mobile/ui'
+import { M, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
-import { iconeCategoria } from '../utils/categoriaIcone'
 import type { Aviso } from '../utils/avisosDoMes'
 import { COR } from '../utils/cores'
 
@@ -182,44 +182,9 @@ export default function Bussola() {
         )}
 
         {/* ── Onde o gasto passou do plano ───────────────────────────── */}
+        {/* "Plano do mês": passou × abaixo do plano, por grupo (23/10/2026). */}
         {usaPlanoNoMes ? (
-          <Cartao>
-            {b.estouradas.length > 0 ? (
-              <>
-                <TituloCartao direita={<Etiqueta cor={COR.erroTexto} fundo={COR.erroFundo}>{b.estouradas.length === 1 ? '1 categoria' : `${b.estouradas.length} categorias`}</Etiqueta>}>
-                  Passou do plano
-                </TituloCartao>
-                {b.estouradas.map((l, i) => {
-                  const ic = iconeCategoria(categorias, l.nome)
-                  return (
-                    <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
-                      titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
-                      legenda={`${v(l.real)} de ${v(l.prev)}`}
-                      direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
-                  )
-                })}
-              </>
-            ) : (
-              <>
-                <TituloCartao direita={<Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ tudo dentro</Etiqueta>}>
-                  Plano do mês
-                </TituloCartao>
-                {b.perto.length === 0 && (
-                  <div style={{ fontSize: M.corpo, color: COR.textoSuave }}>Ainda sem gasto nas categorias do plano.</div>
-                )}
-                {b.perto.map((l, i) => {
-                  const ic = iconeCategoria(categorias, l.nome)
-                  return (
-                    <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
-                      titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
-                      legenda={`resta ${v(Math.max(0, l.prev - l.real))}`}
-                      direita={<Barrinha p={l.prev > 0 ? l.real / l.prev : 0} />} />
-                  )
-                })}
-              </>
-            )}
-            <button onClick={() => navigate('/radar')} style={linkRodape}>Ver todas no Radar ›</button>
-          </Cartao>
+          <PlanoDoMesCard linhas={linhasSaida} categorias={categorias} oculto={oculto} onRadar={() => navigate('/radar')} />
         ) : (
           <Cartao>
             <TituloCartao>Plano do mês</TituloCartao>
@@ -245,11 +210,6 @@ export default function Bussola() {
 
 
 
-const linkRodape: CSSProperties = {
-  display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',
-  background: 'none', color: COR.azul, fontSize: 15, fontWeight: 700,
-  fontFamily: 'inherit', cursor: 'pointer', textAlign: 'center',
-}
 
 
 

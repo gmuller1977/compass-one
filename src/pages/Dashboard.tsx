@@ -8,8 +8,6 @@ import { contasAVencer, contasDoMes, contasParaPagar } from '../utils/contasAVen
 import { previsaoDoMes } from '../utils/previsaoDoMes'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { avisosDoMes, type Aviso } from '../utils/avisosDoMes'
-import { categoriasEstouradas, maisPertoDoLimite } from '../utils/categoriasEstouradas'
-import { iconeCategoria } from '../utils/categoriaIcone'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { STATUS_HERO, statusDoMes, type CompassStatus } from '../components/inicio/statusHero'
@@ -20,12 +18,13 @@ import { useMesQueFechou } from '../components/inicio/useMesQueFechou'
 import ContasAVencerCard from '../components/ContasAVencerCard'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
+import PlanoDoMesCard from '../components/inicio/PlanoDoMesCard'
 import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
 import AjudaTela from '../components/AjudaTela'
-import { Barrinha, Cartao, Etiqueta, IconeRedondo, Linha, OlhoIcone, Pilula, ResumoDoMes, type ColunaResumo, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
-import { M, ROTULO_TOPO, TOPO_AZUL, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
+import { Cartao, IconeRedondo, Linha, OlhoIcone, Pilula, ResumoDoMes, type ColunaResumo, SeletorCenario, TituloCartao } from '../components/mobile/ui'
+import { M, ROTULO_TOPO, TOPO_AZUL, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
 
@@ -164,10 +163,6 @@ export default function Dashboard() {
   )
 
   // Onde o gasto passou do plano: as linhas do Radar, as mesmas da Bússola.
-  const estouradas = useMemo(() => (ehMesCorrente && usaPlanoNoMes ? categoriasEstouradas(linhasSaida) : []),
-    [ehMesCorrente, usaPlanoNoMes, linhasSaida])
-  const perto = useMemo(() => (ehMesCorrente && usaPlanoNoMes && estouradas.length === 0 ? maisPertoDoLimite(linhasSaida, categorias) : []),
-    [ehMesCorrente, usaPlanoNoMes, estouradas, linhasSaida, categorias])
   // Contas e "passou" têm cartão próprio aqui; o aviso deles não se repete.
   const outrosAvisos = avisos.filter(a => a.id !== 'contas' && a.id !== 'passou')
   // "Outubro fechou": o que vai se repetir entra no plano (utils/mesQueFechou).
@@ -475,44 +470,9 @@ export default function Dashboard() {
                 {...resumo} />
             )}
 
-            {ehMesCorrente && (
-              usaPlanoNoMes ? (
-                <Cartao>
-                  {estouradas.length > 0 ? (
-                    <>
-                      <TituloCartao direita={<Etiqueta cor={COR.erroTexto} fundo={COR.erroFundo}>{estouradas.length === 1 ? '1 categoria' : `${estouradas.length} categorias`}</Etiqueta>}>
-                        Passou do plano
-                      </TituloCartao>
-                      {estouradas.map((l, i) => {
-                        const ic = iconeCategoria(categorias, l.nome)
-                        return (
-                          <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
-                            titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
-                            legenda={`${v(l.real)} de ${v(l.prev)}`}
-                            direita={<Valor cor={COR.erroTexto}>{oculto ? '••••' : `+${fmt(l.excesso)}`}</Valor>} />
-                        )
-                      })}
-                    </>
-                  ) : (
-                    <>
-                      <TituloCartao direita={<Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ tudo dentro</Etiqueta>}>
-                        Plano do mês
-                      </TituloCartao>
-                      {perto.length === 0 && <div style={{ fontSize: M.corpo, color: COR.textoSuave }}>Ainda sem gasto nas categorias do plano.</div>}
-                      {perto.map((l, i) => {
-                        const ic = iconeCategoria(categorias, l.nome)
-                        return (
-                          <Linha key={`${l.nome}||${l.descricao}`} primeira={i === 0} icone={ic.icone} cor={ic.cor}
-                            titulo={l.descricao ? `${l.nome} · ${l.descricao}` : l.nome}
-                            legenda={`resta ${v(Math.max(0, l.prev - l.real))}`}
-                            direita={<Barrinha p={l.prev > 0 ? l.real / l.prev : 0} />} />
-                        )
-                      })}
-                    </>
-                  )}
-                  <button onClick={() => navigate('/radar')} style={linkRodape}>Ver todas no Radar ›</button>
-                </Cartao>
-              ) : null
+            {/* "Plano do mês": passou × abaixo do plano, por grupo (23/10/2026). */}
+            {ehMesCorrente && usaPlanoNoMes && (
+              <PlanoDoMesCard linhas={linhasSaida} categorias={categorias} oculto={oculto} onRadar={() => navigate('/radar')} />
             )}
           </div>
 
@@ -585,8 +545,3 @@ const linkTopo: CSSProperties = {
   textAlign: 'left', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer',
 }
 
-const linkRodape: CSSProperties = {
-  display: 'block', width: '100%', marginTop: 8, padding: '14px 0 0', border: 'none', borderTop: '1px solid #eef2f8',
-  background: 'none', color: COR.azul, fontSize: 15, fontWeight: 700,
-  fontFamily: 'inherit', cursor: 'pointer', textAlign: 'center',
-}
