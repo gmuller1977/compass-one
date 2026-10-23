@@ -293,14 +293,28 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
             <div style={{ gridColumn: isMobile ? undefined : '1 / -1' }}>
-              <label style={labelSt} htmlFor="quitar-divida">Qual dívida?</label>
-              <select id="quitar-divida" value={divida.cat.id} onChange={e => { setDividaId(e.target.value); setFaltamStr(null); mexeu() }} style={inputSt}>
-                {dividas.map(d => (
-                  <option key={d.cat.id} value={d.cat.id}>
-                    {rotuloDa(d)} · {fmt(d.valorMensal)} por mês
-                  </option>
-                ))}
-              </select>
+              <div style={labelSt} id="quitar-divida">Qual dívida?</div>
+              <div role="radiogroup" aria-labelledby="quitar-divida" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                {dividas.map(d => {
+                  const on = d.cat.id === divida.cat.id
+                  return (
+                    <button key={d.cat.id} type="button" role="radio" aria-checked={on}
+                      onClick={() => { if (on) return; setDividaId(d.cat.id); setFaltamStr(null); mexeu() }}
+                      style={{ font: 'inherit', display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '10px 14px',
+                        textAlign: 'left', cursor: 'pointer', borderRadius: 14, background: on ? '#eff6ff' : '#fff',
+                        border: `2px solid ${on ? '#93c5fd' : 'transparent'}`, boxShadow: on ? '0 6px 18px rgba(15,23,42,.25)' : 'none' }}>
+                      <span aria-hidden style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', border: `2px solid ${on ? '#1a56db' : '#94a3b8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
+                        {on && <i className="ti ti-check" style={{ fontSize: 13 }} />}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontWeight: 700, fontSize: 15, color: on ? '#1e3a8a' : COR.texto }}>{rotuloDa(d)}</span>
+                        <span style={{ display: 'block', fontSize: 13, color: '#475569' }}>{fmt(d.valorMensal)} por mês</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <div>
               <label style={labelSt} htmlFor="quitar-faltam">Quantas parcelas faltam?</label>
