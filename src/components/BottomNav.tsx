@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { COR } from '../utils/cores'
 import { useSeloNorte } from './norte/useSeloNorte'
@@ -20,21 +20,20 @@ function useIsMobile() {
  * frente, e o "+" no meio, que abre o lançamento rápido (/lancar). Plano e
  * Config — tarefas de sentar e pensar, mais do computador — foram para "Mais",
  * junto com o Simulador e a tela completa de Lançamentos.
- * Em 18/10/2026, pedido do Guilherme: Início · Lançamentos · + · Radar ·
- * Plano, sem "Mais": as outras telas (Simulador, Configurações)
- * abrem ARRASTANDO a barra para cima, como no Android (pedido dele). O
- * tracinho em cima da barra também abre, para quem toca em vez de arrastar.
- * Arrastar a folha para baixo fecha.
+ * Em 18/10/2026 a barra foi Início · Lançamentos · + · Radar · Plano, com o
+ * resto abrindo ao arrastar a barra para cima. Em 23/10/2026, pedido do
+ * Guilherme ("o menu arrasta no mobile não ficou legal"), o arrastar saiu: o
+ * "Mais" volta no lugar do Plano, e o Planejamento vai para dentro dele.
  */
 const NAV = [
   { icon: 'ti-home', label: 'Início',   path: '/' },
   { icon: 'ti-list-details', label: 'Lançamentos', path: '/novo-lancamento' },
   null, // botão + flutuante
   { icon: 'ti-radar-2', label: 'Radar',    path: '/radar' },
-  { icon: 'ti-calendar-stats', label: 'Plano', path: '/planejamento' },
 ]
 
 const MAIS: { icon: string; label: string; path: string; emBreve?: boolean }[] = [
+  { icon: 'ti-calendar-stats', label: 'Planejamento', path: '/planejamento' },
   ...(NORTE_ATIVO ? [{ icon: 'ti-compass', label: 'Norte', path: '/norte' }] : []),
   { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
   // Menu dos investimentos, ainda sem tela (21/10/2026, como no computador).
@@ -48,15 +47,6 @@ export default function BottomNav() {
   const navigate  = useNavigate()
   const { pathname } = useLocation()
   const [mais, setMais] = useState(false)
-  const toqueY = useRef<number | null>(null)
-  const inicioToque = (e: React.TouchEvent) => { toqueY.current = e.touches[0].clientY }
-  const fimToque = (abrir: boolean) => (e: React.TouchEvent) => {
-    if (toqueY.current == null) return
-    const dy = e.changedTouches[0].clientY - toqueY.current
-    toqueY.current = null
-    if (abrir && dy < -30) setMais(true)
-    if (!abrir && dy > 40) setMais(false)
-  }
   // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
   // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
   const selo = useSeloNorte(NORTE_ATIVO && isMobile && !pathname.startsWith('/norte'))
@@ -98,7 +88,7 @@ export default function BottomNav() {
       {mais && (
         <div role="dialog" aria-modal="true" aria-label="Mais opções" onClick={() => setMais(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 150, display: 'flex', alignItems: 'flex-end' }}>
-          <div onClick={e => e.stopPropagation()} onTouchStart={inicioToque} onTouchEnd={fimToque(false)} style={{
+          <div onClick={e => e.stopPropagation()} style={{
             background: '#fff', width: '100%', borderRadius: '20px 20px 0 0', padding: '10px 0 28px',
             animation: 'slideUp .2s ease',
             fontFamily: "-apple-system,'Inter',sans-serif",
@@ -122,7 +112,7 @@ export default function BottomNav() {
           </div>
         </div>
       )}
-      <div onTouchStart={inicioToque} onTouchEnd={fimToque(true)} style={{
+      <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: '#fff', borderTop: '1px solid #eef2f8', boxShadow: '0 -4px 20px rgba(15,40,120,.06)',
         padding: '8px 0 calc(14px + env(safe-area-inset-bottom))',
@@ -146,21 +136,12 @@ export default function BottomNav() {
                     cursor: 'pointer', flexShrink: 0,
                   }}
                 ><i aria-hidden className="ti ti-plus" /></button>
-                {/* O tracinho de arrastar, embaixo do "+": azul quando a tela aberta é uma do menu. */}
-                <button onClick={() => setMais(true)} aria-label={selo ? `Mais opções, ${selo} ${selo === 1 ? 'aviso novo' : 'avisos novos'}` : 'Mais opções'}
-                  aria-current={maisAtivo ? 'page' : undefined} style={{
-                  width: 58, height: 18, marginTop: 4, padding: 0,
-                  border: 'none', background: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                }}>
-                  <span aria-hidden style={{ width: 40, height: 4, borderRadius: 2, background: maisAtivo ? COR.azul : COR.textoSuave, position: 'relative' }}>
-                    {selo > 0 && <span style={{ position: 'absolute', top: -3, right: -12, width: 10, height: 10, borderRadius: '50%', background: '#b91c1c' }} />}
-                  </span>
-                </button>
               </div>
             )
           }
           return item(n.path, n.icon, n.label, isActive(n.path), () => navigate(n.path))
         })}
+        {item('mais', 'ti-menu-2', 'Mais', maisAtivo, () => setMais(true), selo)}
       </div>
     </>
   )
