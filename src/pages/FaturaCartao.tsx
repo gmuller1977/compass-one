@@ -382,7 +382,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
       if (anoCompraFinal < purchaseAno) return false
       if (mesCompraFinal > purchaseMes) return true
       if (mesCompraFinal < purchaseMes) return false
-      return diaCompraFinal > diaFechamento
+      // No dia do fechamento a compra já vai para a fatura seguinte.
+      return diaCompraFinal >= diaFechamento
     })()
     let targetMes = purchaseMes, targetAno = purchaseAno
     if (routeToNext) {

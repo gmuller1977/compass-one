@@ -4,8 +4,8 @@ import { mesDaFaturaDaCompra } from './lancamentoRapido'
 /**
  * A fatura de uma compra no cartão e o melhor dia para comprar (pedido do
  * Guilherme em 15/10/2026, no Simulador). Mesma regra de mês que
- * `mesDaFaturaDaCompra` e `mesDoGastoNoCartao`: até o dia do fechamento a
- * compra entra na fatura do mês; depois, na seguinte. Fechamento num dia que
+ * `mesDaFaturaDaCompra` e `mesDoGastoNoCartao`: antes do dia do fechamento a
+ * compra entra na fatura do mês; no dia do fechamento ou depois, na seguinte. Fechamento num dia que
  * o mês não tem (31 em fevereiro) cai no último dia dele.
  */
 type Cartao = Pick<Conta, 'diaFechamento' | 'diaVencimento'>
@@ -31,15 +31,15 @@ export const diasParaPagar = (data: Date, fatura: FaturaDaCompra) =>
   Math.round((fatura.venceEm.getTime() - new Date(data.getFullYear(), data.getMonth(), data.getDate()).getTime()) / DIA_MS)
 
 /**
- * O melhor dia para comprar a partir de `desde`: o dia seguinte ao próximo
- * fechamento — a compra vai para a fatura seguinte e ganha o prazo mais longo.
- * Se o fechamento foi ontem, o melhor dia é `desde` mesmo.
+ * O melhor dia para comprar a partir de `desde`: o próprio dia do próximo
+ * fechamento (hoje, se fecha hoje) — a compra vai para a fatura seguinte e
+ * ganha o prazo mais longo.
  */
 export function melhorDiaDeCompra(cartao: Cartao, desde: Date): { data: Date; fatura: FaturaDaCompra; dias: number } {
   const base = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate())
   const ontem = new Date(base.getTime() - DIA_MS)
-  const fecha = faturaDaCompra(cartao, ontem).fechaEm
-  const data = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 1)
+  // A fatura de uma compra de ontem fecha no primeiro fechamento a partir de hoje.
+  const data = faturaDaCompra(cartao, ontem).fechaEm
   const fatura = faturaDaCompra(cartao, data)
   return { data, fatura, dias: diasParaPagar(data, fatura) }
 }

@@ -26,9 +26,11 @@ export function totalComprasFatura(
 }
 
 /**
- * Em que mês de fatura cai uma compra feita hoje. Depois do dia de fechamento
- * ela vai para a fatura seguinte — a mesma regra de `routeToNext` na
- * FaturaCartao.
+ * Em que mês de fatura cai uma compra feita hoje. NO dia do fechamento ou
+ * depois ela vai para a fatura seguinte (23/10/2026, pedido do Guilherme:
+ * "se fecha dia 22, lançamento no dia 22 vai para a próxima fatura") — a
+ * mesma regra de `routeToNext` na FaturaCartao. Fechamento num dia que o mês
+ * não tem (31 em fevereiro) vale no último dia dele.
  */
 export function mesDaFaturaDaCompra(
   cartao: Pick<Conta, 'diaFechamento'>,
@@ -36,7 +38,9 @@ export function mesDaFaturaDaCompra(
   mes: number,
   dia: number,
 ): { ano: number; mes: number } {
-  if (dia <= (cartao.diaFechamento ?? 31)) return { ano, mes }
+  if (cartao.diaFechamento == null) return { ano, mes }
+  const fecha = Math.min(cartao.diaFechamento, new Date(ano, mes + 1, 0).getDate())
+  if (dia < fecha) return { ano, mes }
   return mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 }
 }
 

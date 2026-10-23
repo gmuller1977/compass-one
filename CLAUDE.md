@@ -875,6 +875,15 @@ membro não move, fica com o que o administrador gravar.
 No mesmo dia: a janela "valor da fatura" só abre na fatura EM ABERTO de
 agora (a que fecha no próximo fechamento); futura, fechada ou paga não pede.
 
+**Compra NO DIA do fechamento já vai para a fatura seguinte** (23/10/2026,
+pedido do Guilherme: "se fecha dia 22, lançamento no dia 22 deve ir para a
+próxima fatura"). Antes só a partir do dia seguinte. Uma regra só,
+`mesDaFaturaDaCompra` (`dia < fechamento`; fechamento além do fim do mês vale
+no último dia), lida pelo Lançar, Lançamentos, Norte, primeiro acesso,
+Simulador e `mesDoGastoNoCartao`; a tela da fatura (`routeToNext` e o selo
+"próxima") usa `>=`. O "melhor dia para comprar" do Simulador passou a ser o
+próprio dia do fechamento. Compras já gravadas não mudam de fatura.
+
 **O nome de uma compra PARCELADA se troca pelo plano, e vale para todas as
 parcelas.** Pedido do Guilherme em 11/10/2026: a fatura grava compra sem
 descrição com o nome da categoria (`fDesc.trim() || fCat`), e a revisão copia

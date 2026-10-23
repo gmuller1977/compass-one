@@ -93,7 +93,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
 
   const [ondeId, setOndeId]     = useState('')          // '' = débito/PIX
   // A data da compra (ou do começo da mensalidade). No cartão ela decide a
-  // fatura: depois do fechamento, a compra vai para a seguinte.
+  // fatura: no dia do fechamento ou depois, a compra vai para a seguinte.
   const [dataStr, setDataStr]   = useState(() => isoDe(new Date()))
   const [guardarStr, setGuardar] = useState('')
   const [erro, setErro]         = useState('')
@@ -635,7 +635,7 @@ const dm = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getM
 
 /**
  * Em qual fatura a compra cai, pela data escolhida e o fechamento do cartão,
- * e o melhor dia para comprar — o dia seguinte ao próximo fechamento (pedido
+ * e o melhor dia para comprar — o próprio dia do próximo fechamento (pedido
  * do Guilherme em 15/10/2026). No card azul: branco e branco a 85%.
  */
 function InfoDoCartao({ cartao, data, hoje, onUsar }: {

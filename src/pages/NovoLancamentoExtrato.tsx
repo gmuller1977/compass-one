@@ -1024,7 +1024,7 @@ export default function NovoLancamentoExtrato() {
     const trava = lancamentoAntesDoSaldo(contaSel, ano, mes, diaSel)
     if (trava) { toast(trava, 'error'); return }
     if (contaSel?.tipo === 'cartao') {
-      // Mesmas regras da tela da fatura: depois do fechamento a compra vai
+      // Mesmas regras da tela da fatura: no dia do fechamento ou depois a compra vai
       // para a fatura seguinte, e na fatura compra é `entrada` (lancamentoRapido).
       const fm = mesDaFaturaDaCompra(contaSel, ano, mes, diaSel)
       const fatKey = mesKey(fBancoConsolidado, fm.ano, fm.mes)

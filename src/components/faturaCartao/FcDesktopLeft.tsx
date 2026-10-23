@@ -74,7 +74,7 @@ export default function FcDesktopLeft({
               // informacao vira marcador na propria linha — ela nao podia se perder.
               const posFechamento = ac > purchaseAno
                 || (ac === purchaseAno && mc > purchaseMes)
-                || (ac === purchaseAno && mc === purchaseMes && dc > diaFechamento)
+                || (ac === purchaseAno && mc === purchaseMes && dc >= diaFechamento)
               return (
                 <div key={l.id}
                   onClick={() => { editarLancamento(dia, l); setDiaSel(dia) }}
@@ -119,7 +119,7 @@ export default function FcDesktopLeft({
                   </div>
 
                   {posFechamento && (
-                    <span title="Compra após o fechamento: entra na próxima fatura"
+                    <span title="Compra no dia do fechamento ou depois: entra na próxima fatura"
                       style={{ fontSize: 10, padding: '3px 7px', borderRadius: 6, fontWeight: 700,
                         flexShrink: 0, background: COR.avisoFundo, color: COR.avisoTexto }}>
                       próxima
