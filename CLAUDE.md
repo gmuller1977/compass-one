@@ -327,6 +327,10 @@ em `#86efac` / `#fecaca`, com o valor ao lado. Embaixo do valor da meta
 do realizado, só quando positivo) e a barra de progresso com o percentual
 (trilho escuro, borda branca, verde a partir de 100%); sem guardado, só a
 barra. No mês futuro a barra é a do previsto, sem a frase.
+As caixas do saldo final cabem até −R$ 999.999,99 (mesmo dia, pedido
+dele): a letra fica em 22px e, sem espaço para as duas lado a lado, elas
+descem uma embaixo da outra (`auto-fit` com largura mínima pelo tamanho do
+texto), em vez de cortar o valor. Medido em 375px.
 
 **"Plano do mês" na Início** (23/10/2026, pedido do Guilherme), no lugar
 da lista "Passou do plano" (as três categorias mais estouradas), no
