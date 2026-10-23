@@ -173,7 +173,9 @@ export interface ColunaResumo {
 /**
  * "Resumo do mês" da Início (pedido do Guilherme, 23/10/2026): saldo inicial,
  * receitas, despesas e saldo final, previsto × realizado, e a meta de
- * economia com o atingimento. O atingimento é quanto o saldo subiu no mês
+ * economia com o atingimento. Receitas e despesas são um gráfico de barras
+ * planejado × realizado na mesma escala (mesmo dia, pedido dele: a barra de
+ * atingimento "não faz sentido"); o atingimento ficou só em texto. O atingimento é quanto o saldo subiu no mês
  * (final − inicial) contra a meta, a régua do "guardou de verdade" do
  * Planejamento. Os números chegam prontos; aqui só se divide pela meta.
  * Sem uma das colunas (mês futuro não tem realizado), ela some.
@@ -209,6 +211,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   const atingimento = (c: ColunaResumo) =>
     meta > 0 && c.inicial !== null && c.final !== null ? Math.max(0, Math.round(((c.final - c.inicial) / meta) * 100)) : null
   const mostraMeta = meta > 0 || !!onDefinirMeta
+  const escala = Math.max(0, ...cols.flatMap(({ c }) => [c.receitas ?? 0, c.despesas ?? 0]))
   return (
     <section aria-label={`Resumo de ${mesNome}`} style={{
       background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 20px', boxShadow: M.sombra, color: '#fff',
@@ -241,21 +244,38 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         ))}
       </div>
 
-      {/* Receitas e despesas, previsto × realizado. */}
-      <div role="table" style={{
-        display: 'grid', gridTemplateColumns: `1fr${' auto'.repeat(cols.length)}`, columnGap: 14, rowGap: 10,
-        alignItems: 'baseline', marginTop: 16,
-      }}>
-        <span role="columnheader" />
-        {cols.map(({ rot }) => <span key={rot} role="columnheader" style={{ fontSize: 13, fontWeight: 600, color: ROT, textAlign: 'right' }}>{rot}</span>)}
-        <span style={{ fontSize: M.corpo }}>Receitas</span>
-        {cols.map(({ rot, c }) => <span key={rot} style={{ ...cel, color: '#86efac' }}>{v(c.receitas)}</span>)}
-        <span style={{ fontSize: M.corpo }}>Despesas</span>
-        {cols.map(({ rot, c }) => <span key={rot} style={{ ...cel, color: NEG }}>{v(c.despesas)}</span>)}
-      </div>
+      {/* Receitas e despesas: gráfico de barras, planejado × realizado, na mesma escala. */}
+      <div style={{ fontSize: 13, fontWeight: 600, color: ROT, marginTop: 18, marginBottom: 2 }}>Planejado × realizado</div>
+      {([['Receitas', 'receitas', '#86efac'], ['Despesas', 'despesas', NEG]] as const).map(([nome, campo, cor]) => {
+        const barras = cols.filter(({ c }) => c[campo] !== null)
+        return (
+          <div key={campo} role="group" aria-label={nome} style={{ marginTop: 12 }}>
+            <div style={{ fontSize: M.corpo, fontWeight: 600, marginBottom: 6 }}>{nome}</div>
+            {barras.length === 0 && <div style={{ fontSize: M.legenda, color: ROT }}>sem plano neste mês</div>}
+            {barras.map(({ rot, c }) => {
+              const valor = c[campo] ?? 0
+              const pct = escala > 0 ? Math.max(0, Math.min(100, (valor / escala) * 100)) : 0
+              const planejado = rot === 'Previsto'
+              return (
+                <div key={rot} style={{ display: 'grid', gridTemplateColumns: '72px minmax(0, 1fr) auto', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                  <span style={{ fontSize: M.legenda, color: ROT }}>{planejado ? 'Planejado' : 'Realizado'}</span>
+                  {/* Planejado vazado (borda branca), realizado cheio na cor do tipo: 3:1 de elemento gráfico. */}
+                  <div aria-hidden style={{ height: 14, borderRadius: 999, background: 'rgba(15,23,42,.4)', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${pct}%`, height: '100%', borderRadius: 999, boxSizing: 'border-box',
+                      ...(planejado ? { border: '2px solid #fff', background: 'rgba(255,255,255,.18)' } : { background: cor }),
+                    }} />
+                  </div>
+                  <span style={{ ...cel, fontSize: 14, color: planejado ? '#fff' : cor }}>{v(valor)}</span>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
 
       {mostraMeta && (
-        <div style={{ ...caixa, marginTop: 16 }}>
+        <div style={{ ...caixa, marginTop: 18 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
             <span style={{ fontSize: M.corpo, fontWeight: 600 }}>Meta de economia</span>
             {meta > 0 ? (
@@ -267,33 +287,16 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
               }}>Definir meta</button>
             )}
           </div>
-          {meta > 0 && (
-            <>
-              {cols.map(({ rot, c }) => {
-                const pct = atingimento(c)
-                if (pct === null) return null
-                const ok = pct >= 100
-                return (
-                  <div key={rot} style={{ marginTop: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: ROT_CAIXA }}>
-                      <span>Atingimento · {rot.toLowerCase()}</span>
-                      <b style={{ ...num, color: '#fff' }}>{oculto ? '••' : `${ok ? '✓ ' : ''}${pct}%`}</b>
-                    </div>
-                    {/* Barra no desenho das do Radar: trilho escuro e borda branca nos 100%. */}
-                    <div aria-hidden style={{
-                      height: 10, marginTop: 6, borderRadius: 999, border: '2px solid #fff',
-                      background: 'rgba(15,23,42,.4)', overflow: 'hidden',
-                    }}>
-                      <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: ok ? '#86efac' : '#fff' }} />
-                    </div>
-                  </div>
-                )
-              })}
-              <div style={{ fontSize: M.legenda, color: ROT_CAIXA, marginTop: 10 }}>
-                Quanto o saldo subiu no mês, contra a meta.
+          {meta > 0 && cols.map(({ rot, c }) => {
+            const pct = atingimento(c)
+            if (pct === null) return null
+            return (
+              <div key={rot} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: ROT_CAIXA, marginTop: 8 }}>
+                <span>Atingimento {rot === 'Previsto' ? 'previsto' : 'até agora'}</span>
+                <b style={{ ...num, color: '#fff' }}>{oculto ? '••' : `${pct >= 100 ? '✓ ' : ''}${pct}%`}</b>
               </div>
-            </>
-          )}
+            )
+          })}
         </div>
       )}
     </section>
