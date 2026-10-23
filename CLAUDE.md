@@ -449,6 +449,17 @@ do `auto-fill`). Abrir outro fecha o anterior. No celular, o mesmo: um
 grupo por vez, cabeçalho aberto azul, e a tela rola até o clicado. As
 notas acima sobre "aberto, ocupa a linha" e a borda `#93c5fd` são histórico.
 
+**No Radar, LARANJA no lugar do vermelho, em TESTE** (23/10/2026, pedido do
+Guilherme: "se ficar bom mudamos nas outras telas"). As barras do topo viraram
+**Receitas** (verde `#86efac`) e **Despesas** (laranja `#fdba74`), pelo TIPO,
+como no Resumo do mês da Início; no celular eram "Recebido" e "Gasto" (em
+amarelo). Grupos e categorias: a BARRA é uma só em todo o Radar, preenchimento
+claro (`RADAR_BARRA`: `#4ade80` / `#bbf7d0` / `#fdba74`) sobre trilho
+azul-escuro, inclusive no cartão branco (`RADAR_TRILHO_ESCURO`, `#1e3a8a`); o
+NÚMERO no branco usa `#c2410c` (5,2), porque o laranja claro dá 1,7. As
+constantes `RADAR_COR_*` seguem com o vermelho: outras telas as leem. Rosa e
+roxo foram mostrados e recusados no mesmo dia.
+
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e
 "gráfico"). O azul do `PageHeader` traz a resposta do ano em 40px — "Se o

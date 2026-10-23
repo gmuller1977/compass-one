@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_COR_CLARO, RADAR_COR_AZUL, RADAR_TRILHO_AZUL, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_TRILHO_ESCURO, RADAR_TRILHO_AZUL, RADAR_LARANJA, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -107,9 +107,9 @@ export default function AcMobileView({
       : fixaPaga ? RADAR_COR_CLARO.bom
       : RADAR_COR_CLARO[faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
 
-    const progressColor = isEntrada
-      ? (perc >= 1 ? COR.verde : perc >= 0.5 ? '#4ade80' : '#94a3b8')
-      : (perc > 1  ? COR.vermelho : perc >= 0.8 ? COR.amarelo : COR.verde)
+    // A barra é a do computador: faixa do Radar em tom claro sobre trilho
+    // azul-escuro (antes tinha amarelo e vermelho próprios, 23/10/2026).
+    const progressColor = RADAR_BARRA[fixaPaga ? 'bom' : faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
 
     // Detail: status badge
     let statusLabel: string, statusBg: string, statusColor: string
@@ -177,7 +177,7 @@ export default function AcMobileView({
         {/* PROGRESS BAR */}
         {!naoJulga && (
           <div style={{ margin:'0 14px 12px 62px' }}>
-            <div style={{ background:'#eef2f8', borderRadius:4, height:6, overflow:'hidden' }}>
+            <div style={{ background:RADAR_TRILHO_ESCURO, borderRadius:4, height:6, overflow:'hidden' }}>
               <div style={{ width:`${Math.min(perc,1)*100}%`, height:6, borderRadius:4, background:progressColor }}/>
             </div>
           </div>
@@ -294,6 +294,7 @@ export default function AcMobileView({
       const gCor  = dg.principal === '—' ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
         : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
         : (aberto ? RADAR_COR_AZUL : RADAR_COR_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
+      const gBarra = dg.julgado && dg.principal !== '—' ? RADAR_BARRA[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
@@ -325,8 +326,8 @@ export default function AcMobileView({
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
             <div style={{ flex:1, height:8, borderRadius:4, overflow:'hidden', boxSizing:'border-box',
-              background: aberto ? RADAR_TRILHO_AZUL : '#e2e8f0', border: aberto ? '1px solid #ffffff' : 'none' }}>
-              <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gCor }} />
+              background: aberto ? RADAR_TRILHO_AZUL : RADAR_TRILHO_ESCURO, border: aberto ? '1px solid #ffffff' : 'none' }}>
+              <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gBarra }} />
             </div>
             <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
               {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
@@ -403,10 +404,10 @@ export default function AcMobileView({
         <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18 }}>
           {([
             // Receitas e Despesas, nas cores do "Resumo do mês" da Início: verde
-            // e rosa pelo TIPO (pedido do Guilherme, 23/10/2026). Quem diz se
+            // e laranja pelo TIPO (pedido do Guilherme, 23/10/2026). Quem diz se
             // passou do plano são os grupos logo abaixo.
             ['Receitas', '#86efac', '#86efac', percE, totalRealE, totalPrevE],
-            ['Despesas', '#fecaca', '#fecaca', percS, totalRealS, totalPrevS],
+            ['Despesas', RADAR_LARANJA, RADAR_LARANJA, percS, totalRealS, totalPrevS],
           ] as [string,string,string,number,number,number][]).map(([rot, corRot, corBarra, p, real, prev]) => (
             <div key={rot}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:6 }}>

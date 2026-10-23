@@ -50,6 +50,24 @@ export const RADAR_COR_AZUL = { bom: '#4ade80', atencao: '#bbf7d0', ruim: '#f871
 export const RADAR_COR_CLARO = { bom: '#14532d', atencao: '#18713a', ruim: '#7f1d1d' } as const
 export const RADAR_TRILHO_AZUL = 'rgba(15,23,42,.4)'
 export const RADAR_TRILHO_BRANCO = '#e2e8f0'
+
+/**
+ * Teste do LARANJA no lugar do vermelho, só no Radar (23/10/2026, pedido do
+ * Guilherme: "se ficar bom mudamos nas outras telas"). As constantes acima
+ * seguem com o vermelho porque Lançamentos, Planejamento e o KpiCard as leem.
+ *
+ * A BARRA é a mesma em todo o Radar: preenchimento claro sobre trilho
+ * azul-escuro — no cartão azul o trilho translúcido de sempre, no branco
+ * `RADAR_TRILHO_ESCURO`, como no topo e no Resumo do mês da Início. Contra o
+ * trilho #1e3a8a: #4ade80 7,0 · #bbf7d0 9,2 · #fdba74 6,9.
+ * O NÚMERO no branco não pode ser o laranja claro (1,7:1): usa `#c2410c` (5,2).
+ * No azul, `#fdba74` dá 5,2 no #1e40af.
+ */
+export const RADAR_LARANJA = '#fdba74'
+export const RADAR_BARRA = { bom: '#4ade80', atencao: '#bbf7d0', ruim: RADAR_LARANJA } as const
+export const RADAR_TEXTO_AZUL = { bom: '#4ade80', atencao: '#bbf7d0', ruim: RADAR_LARANJA } as const
+export const RADAR_TEXTO_CLARO = { bom: '#14532d', atencao: '#18713a', ruim: '#c2410c' } as const
+export const RADAR_TRILHO_ESCURO = '#1e3a8a'
 export type FaixaRadar = keyof typeof RADAR_COR_AZUL
 
 /**

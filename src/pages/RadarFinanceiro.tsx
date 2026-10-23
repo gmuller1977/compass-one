@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_COR_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
+import { RADAR_COR_AZUL, RADAR_LARANJA, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
@@ -174,11 +174,11 @@ export default function RadarFinanceiro() {
   // número do rodapé; no rodapé negativo, sobre #991b1b, o vermelho dá 5,74.
   const corSaldo = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim)
   // Receitas e Despesas do topo, nas cores do "Resumo do mês" da Início: verde
-  // e rosa pelo TIPO, número e barra (pedido do Guilherme, 23/10/2026; antes a
+  // e laranja pelo TIPO, número e barra (pedido do Guilherme, 23/10/2026; antes a
   // barra seguia a faixa e o número era #4ade80 / #f87171). Quem diz se passou
-  // do plano são os grupos. Medido no #1e40af: #86efac 4,8 e #fecaca 4,6.
+  // do plano são os grupos. Medido no #1e40af: #86efac 4,8 e #fdba74 5,2.
   const COR_RECEITAS = '#86efac'
-  const COR_DESPESAS = '#fecaca'
+  const COR_DESPESAS = RADAR_LARANJA
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.

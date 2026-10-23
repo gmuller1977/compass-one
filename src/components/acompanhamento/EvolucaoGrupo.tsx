@@ -1,7 +1,7 @@
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { type CatReal } from './AcShared'
-import { RADAR_COR_CLARO, RADAR_COR_AZUL, RADAR_TRILHO_AZUL, faixaRadar, destaqueDoGrupo } from './radarCores'
+import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, RADAR_BARRA, RADAR_TRILHO_AZUL, RADAR_TRILHO_ESCURO, faixaRadar, destaqueDoGrupo } from './radarCores'
 import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 import { IconeRedondo } from '../mobile/ui'
@@ -30,7 +30,6 @@ import { IconeRedondo } from '../mobile/ui'
 const TEXTO  = '#0f172a'
 const ROTULO = '#475569'
 const TRILHO = '#e2e8f0'
-const BORDA_BARRA = '#64748b'
 // Aberto, o cartão fica AZUL-ESCURO (pedido do Guilherme, 21/10/2026), o
 // gradiente dos cartões do topo, que termina no #1e40af. Ali vale a paleta do
 // azul (RADAR_COR_AZUL): verde 5,0, verde-claro 9,1; o vermelho #f87171 dá
@@ -84,7 +83,7 @@ export default function EvolucaoGrupo({
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
   // laranja — o rótulo e a cor discordavam no mesmo cabeçalho.
   const faixa      = faixaRadar(Math.round(perc * 100) / 100, isEntrada)
-  const COR        = aberto ? RADAR_COR_AZUL : RADAR_COR_CLARO
+  const COR        = aberto ? RADAR_TEXTO_AZUL : RADAR_TEXTO_CLARO
   const texto      = aberto ? '#ffffff' : TEXTO
   const rotulo     = aberto ? 'rgba(255,255,255,0.75)' : ROTULO
   const corFaixa   = COR[faixa]
@@ -131,11 +130,11 @@ export default function EvolucaoGrupo({
           fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
           {destaque.principal}
         </div>
-        <div style={{ height: 12, borderRadius: 6, background: aberto ? RADAR_TRILHO_AZUL : TRILHO, overflow: 'hidden', boxSizing: 'border-box',
-          border: `1.5px solid ${aberto ? '#ffffff' : semDados ? '#cbd5e1' : BORDA_BARRA}` }}>
+        <div style={{ height: 12, borderRadius: 6, background: aberto ? RADAR_TRILHO_AZUL : semDados ? TRILHO : RADAR_TRILHO_ESCURO, overflow: 'hidden', boxSizing: 'border-box',
+          border: `1.5px solid ${aberto ? '#ffffff' : semDados ? '#cbd5e1' : RADAR_TRILHO_ESCURO}` }}>
           {!semDados && (
             <div style={{ height: '100%', borderRadius: 6, width: `${percClamp * 100}%`,
-              background: corFaixa, transition: 'width .3s ease' }} />
+              background: RADAR_BARRA[faixa], transition: 'width .3s ease' }} />
           )}
         </div>
         <div style={{ fontSize: 13, color: rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.contexto}</div>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
-import { RADAR_COR_CLARO as COR, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga, semPlano, RADAR_COR_NEUTRA } from './radarCores'
+import { RADAR_TEXTO_CLARO as COR, RADAR_BARRA, RADAR_TRILHO_ESCURO, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga, semPlano, RADAR_COR_NEUTRA } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
@@ -228,11 +228,11 @@ export default function EvolucaoLinha({
           whiteSpace: 'nowrap', minWidth: 150, fontVariantNumeric: 'tabular-nums' }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: cor }}>{destaque.principal}</span>
         </div>
-        <div style={{ width: 200, flexShrink: 0, height: 16, borderRadius: 8, background: TRILHO, overflow: 'hidden',
-          boxSizing: 'border-box', border: `2px solid ${semDados ? '#cbd5e1' : '#64748b'}` }}>
+        <div style={{ width: 200, flexShrink: 0, height: 16, borderRadius: 8, background: semDados ? TRILHO : RADAR_TRILHO_ESCURO, overflow: 'hidden',
+          boxSizing: 'border-box', border: `2px solid ${semDados ? '#cbd5e1' : RADAR_TRILHO_ESCURO}` }}>
           {!semDados && (
             <div style={{ height: '100%', borderRadius: 8, width: `${Math.max(0, percClamp) * 100}%`,
-              background: cor, transition: 'width .3s ease' }} />
+              background: RADAR_BARRA[faixa], transition: 'width .3s ease' }} />
           )}
         </div>
         {/* O espaço do chevron existe sempre, com ou sem lançamentos: é ele
