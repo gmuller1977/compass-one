@@ -322,8 +322,11 @@ Ainda no mesmo dia (Guilherme: "gráfico de atingimento da meta não faz
 sentido; pode ter um gráfico planejado × realizado"), as barras de
 atingimento saíram e a tabela de receitas e despesas virou um gráfico de
 barras, na mesma escala: Planejado vazado (borda branca) e Realizado cheio
-em `#86efac` / `#fecaca`, com o valor ao lado. O atingimento ficou só em
-texto na caixa da meta ("previsto" e "até agora").
+em `#86efac` / `#fecaca`, com o valor ao lado. Embaixo do valor da meta
+(mesmo dia, pedido dele): "Você já guardou R$ X da meta" (final − inicial
+do realizado, só quando positivo) e a barra de progresso com o percentual
+(trilho escuro, borda branca, verde a partir de 100%); sem guardado, só a
+barra. No mês futuro a barra é a do previsto, sem a frase.
 
 **"Plano do mês" na Início** (23/10/2026, pedido do Guilherme), no lugar
 da lista "Passou do plano" (as três categorias mais estouradas), no

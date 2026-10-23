@@ -175,7 +175,8 @@ export interface ColunaResumo {
  * receitas, despesas e saldo final, previsto × realizado, e a meta de
  * economia com o atingimento. Receitas e despesas são um gráfico de barras
  * planejado × realizado na mesma escala (mesmo dia, pedido dele: a barra de
- * atingimento "não faz sentido"); o atingimento ficou só em texto. O atingimento é quanto o saldo subiu no mês
+ * atingimento "não faz sentido"); o atingimento é a barra de progresso
+ * da meta, com "Você já guardou R$ X da meta" quando o realizado subiu. O atingimento é quanto o saldo subiu no mês
  * (final − inicial) contra a meta, a régua do "guardou de verdade" do
  * Planejamento. Os números chegam prontos; aqui só se divide pela meta.
  * Sem uma das colunas (mês futuro não tem realizado), ela some.
@@ -287,16 +288,34 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
               }}>Definir meta</button>
             )}
           </div>
-          {meta > 0 && cols.map(({ rot, c }) => {
-            const pct = atingimento(c)
-            if (pct === null) return null
+          {meta > 0 && (() => {
+            // O que já foi guardado: o realizado; sem ele (mês futuro), o previsto.
+            const c = (realizado ?? previsto)
+            const pct = c ? atingimento(c) : null
+            if (!c || pct === null) return null
+            const guardado = realizado && c.inicial !== null && c.final !== null ? c.final - c.inicial : 0
+            const ok = pct >= 100
             return (
-              <div key={rot} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: ROT_CAIXA, marginTop: 8 }}>
-                <span>Atingimento {rot === 'Previsto' ? 'previsto' : 'até agora'}</span>
-                <b style={{ ...num, color: '#fff' }}>{oculto ? '••' : `${pct >= 100 ? '✓ ' : ''}${pct}%`}</b>
-              </div>
+              <>
+                {guardado > 0 && (
+                  <div style={{ fontSize: 14, color: ROT_CAIXA, marginTop: 8 }}>
+                    Você já guardou <b style={{ ...num, color: '#fff' }}>{v(guardado)}</b> da meta
+                  </div>
+                )}
+                {/* Barra no desenho das do Radar: trilho escuro e borda branca nos 100%. */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                  <div role="progressbar" aria-valuenow={Math.min(100, pct)} aria-valuemin={0} aria-valuemax={100}
+                    aria-label="Atingimento da meta" style={{
+                      flex: 1, height: 12, borderRadius: 999, border: '2px solid #fff',
+                      background: 'rgba(15,23,42,.4)', overflow: 'hidden',
+                    }}>
+                    <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: ok ? '#86efac' : '#fff' }} />
+                  </div>
+                  <b style={{ ...num, fontSize: 14 }}>{oculto ? '••' : `${ok ? '✓ ' : ''}${pct}%`}</b>
+                </div>
+              </>
             )
-          })}
+          })()}
         </div>
       )}
     </section>
