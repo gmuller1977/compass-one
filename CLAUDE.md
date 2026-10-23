@@ -315,9 +315,15 @@ No mesmo dia (pedido dele: "chamar mais atenção, seguindo o modelo desta
 tela") o quadro virou um cartão AZUL-ESCURO (`TOPO_AZUL`): "[mês] começou
 com" no subtítulo, o saldo final previsto e realizado em caixas
 translúcidas de 22px, receitas e despesas em tabela (`#86efac` / `#fecaca`)
-e a meta numa caixa com uma barra de atingimento por coluna (trilho escuro,
-borda branca, verde a partir de 100%). Nas caixas, só branco, rótulo a 85%
+e a meta numa caixa com uma barra de atingimento por coluna (histórico, ver
+abaixo). Nas caixas, só branco, rótulo a 85%
 e `#fecaca`.
+Ainda no mesmo dia (Guilherme: "gráfico de atingimento da meta não faz
+sentido; pode ter um gráfico planejado × realizado"), as barras de
+atingimento saíram e a tabela de receitas e despesas virou um gráfico de
+barras, na mesma escala: Planejado vazado (borda branca) e Realizado cheio
+em `#86efac` / `#fecaca`, com o valor ao lado. O atingimento ficou só em
+texto na caixa da meta ("previsto" e "até agora").
 
 **"Plano do mês" na Início** (23/10/2026, pedido do Guilherme), no lugar
 da lista "Passou do plano" (as três categorias mais estouradas), no
