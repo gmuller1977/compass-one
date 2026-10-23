@@ -67,7 +67,7 @@ export function valoresDoDecimo(valor: number, mesInicio: number): number[] {
   return Array.from({ length: 12 }, (_, i) => ((i === 10 || i === 11) && i >= mesInicio ? Math.round(valor * 50) / 100 : 0))
 }
 
-export type FormaDaConta = 'automatico' | 'manual' | 'cartao' | 'dinheiro'
+export type FormaDaConta = 'automatico' | 'manual' | 'boleto' | 'cartao' | 'dinheiro'
 
 export type ItemPrimeiroAcesso = {
   id: string
@@ -287,14 +287,15 @@ function gerarId() {
 
 /**
  * "Como você paga?" nos campos do cadastro (CfgCategorias): Lançamentos e
- * Forma de lançamento. PIX, boleto, débito e transferência são uma resposta
- * só: nenhum número do app muda entre eles.
+ * Forma de lançamento. 'manual' é PIX; boleto é resposta própria desde
+ * 23/10/2026, porque a lista de dívidas a quitar do Simulador só aceita
+ * débito automático ou boleto.
  */
 function formaParaCategoria(forma: FormaDaConta, idBanco: string | undefined):
   { tipoMovimento: TipoMovimento; formaPagamento?: FormaPagamentoCategoria; contaDebitoId?: string } {
   if (forma === 'cartao') return { tipoMovimento: 'cartao', formaPagamento: 'avista', contaDebitoId: undefined }
   if (forma === 'dinheiro') return { tipoMovimento: 'dinheiro', formaPagamento: undefined, contaDebitoId: undefined }
-  return { tipoMovimento: 'banco', formaPagamento: forma === 'automatico' ? 'automatico' : 'pix', contaDebitoId: idBanco }
+  return { tipoMovimento: 'banco', formaPagamento: forma === 'automatico' ? 'automatico' : forma === 'boleto' ? 'boleto' : 'pix', contaDebitoId: idBanco }
 }
 
 /** O mês ("AAAA-MM") da última de `faltam` parcelas, contando a deste mês. */

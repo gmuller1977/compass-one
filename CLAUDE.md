@@ -2510,7 +2510,7 @@ cheia, sem menu: "Para te ajudar, preciso te conhecer um pouco melhor. Vamos
 lá?", e seis perguntas, uma por tela, tudo aproximado e pulável: banco do
 salário e saldo (+ outros bancos), quanto recebe, o dia e se recebe 13º, cartões e
 vencimento (fechamento = vencimento − 7, ajustável), "Quais contas você paga
-todo mês?" (valor, dia e "Como você paga?": Eu pago (PIX, boleto) · Débito
+todo mês?" (valor, dia e "Como você paga?": PIX · Boleto (separados em 23/10/2026, pedido dele, porque só boleto entra na lista de dívidas a quitar) · Débito
 automático · No cartão · Em dinheiro, + "Outra conta"), o dia a dia num
 passo próprio (chute, + "Outro gasto"), e quanto falta: o financiamento
 marcado nas contas (casa ou carro) aparece pronto, pedindo só quantas

@@ -29,7 +29,8 @@ const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 const TOTAL = 6
 
 const FORMAS: { id: FormaDaConta; rotulo: string }[] = [
-  { id: 'manual', rotulo: 'Eu pago (PIX, boleto)' },
+  { id: 'manual', rotulo: 'PIX' },
+  { id: 'boleto', rotulo: 'Boleto' },
   { id: 'automatico', rotulo: 'Débito automático' },
   { id: 'cartao', rotulo: 'No cartão' },
   { id: 'dinheiro', rotulo: 'Em dinheiro' },
@@ -463,7 +464,7 @@ export default function PrimeiroAcesso() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>{item.rotulo}</div>
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,.85)' }}>
-                    {parseBRL(c.valor) > 0 ? `${R(parseBRL(c.valor))} por mês` : 'Já está nas suas contas do mês'}{` · ${(FORMAS.find(f => f.id === c.forma)?.rotulo ?? '').replace(' (PIX, boleto)', ' (PIX ou boleto)').toLowerCase()}`}
+                    {parseBRL(c.valor) > 0 ? `${R(parseBRL(c.valor))} por mês` : 'Já está nas suas contas do mês'}{` · ${c.forma === 'manual' ? 'por PIX' : c.forma === 'boleto' ? 'no boleto' : (FORMAS.find(f => f.id === c.forma)?.rotulo ?? '').toLowerCase()}`}
                   </div>
                 </div>
               </div>
