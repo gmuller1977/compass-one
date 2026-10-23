@@ -212,8 +212,8 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   const atingimento = (c: ColunaResumo) =>
     meta > 0 && c.inicial !== null && c.final !== null ? Math.max(0, Math.round(((c.final - c.inicial) / meta) * 100)) : null
   const mostraMeta = meta > 0 || !!onDefinirMeta
-  // Largura mínima da caixa do saldo final: ~11,6 px por caractere em 22px/800, mais o recuo.
-  const larguraCaixa = Math.ceil(Math.max(...cols.map(({ c }) => v(c.final).length), 8) * 11.6 + 30)
+  // Cada caractere em 800 ocupa ~0,56 em: o texto inteiro cabe na largura da caixa.
+  const tamanhoSaldo = (t: string) => `min(22px, ${(100 / (Math.max(t.length, 8) * 0.56)).toFixed(2)}cqi)`
   const escala = Math.max(0, ...cols.flatMap(({ c }) => [c.receitas ?? 0, c.despesas ?? 0]))
   return (
     <section aria-label={`Resumo de ${mesNome}`} style={{
@@ -236,13 +236,13 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
 
       {/* O saldo final em destaque: o que o mês deve deixar e o que deixou até agora. */}
       <div style={{ fontSize: 13, fontWeight: 600, color: ROT, marginBottom: 8 }}>Saldo final</div>
-      {/* Até R$ 999.999,99 (pedido do Guilherme, 23/10/2026): sem espaço para as duas
-          caixas lado a lado, elas descem uma embaixo da outra em vez de cortar o valor. */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${larguraCaixa}px), 1fr))`, gap: 10 }}>
+      {/* Até R$ 999.999,99 (pedido do Guilherme, 23/10/2026), sempre lado a lado: a letra
+          encolhe com a largura da caixa (cqi) e o tamanho do texto, até no máximo 22px. */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols.length}, minmax(0, 1fr))`, gap: 10 }}>
         {cols.map(({ rot, c }) => (
-          <div key={rot} style={caixa}>
+          <div key={rot} style={{ ...caixa, containerType: 'inline-size' }}>
             <div style={{ fontSize: M.legenda, color: ROT_CAIXA }}>{rot}</div>
-            <div style={{ ...num, fontSize: 22, fontWeight: 800, marginTop: 4, color: c.final !== null && c.final < 0 ? NEG : '#fff' }}>
+            <div style={{ ...num, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 800, marginTop: 4, color: c.final !== null && c.final < 0 ? NEG : '#fff' }}>
               {v(c.final)}
             </div>
           </div>
