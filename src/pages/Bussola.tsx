@@ -12,7 +12,7 @@ import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
-import { Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
+import { Barrinha, Cartao, Etiqueta, Linha, OlhoIcone, Pilula, ResumoDoMes, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
 import { M, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import { bussolaDoMes } from '../utils/bussolaDoMes'
 import { iconeCategoria } from '../utils/categoriaIcone'
@@ -69,8 +69,7 @@ export default function Bussola() {
   const v = (n: number) => mostrar(n, oculto)
 
   const nome = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || ''
-  const r = b.ritmo
-  const passou = r?.estado === 'passou'
+  const metaDoMes = planos[ano]?.objetivos?.[mes] ?? 0
 
   // As contas da semana moram no Lançar, embaixo das categorias (pedido do
   // Guilherme em 10/10/2026): pagar e lançar são o mesmo gesto do dia.
@@ -156,19 +155,15 @@ export default function Bussola() {
         <ConferirSaldosCard deps={deps} oculto={oculto} />
         <DebitosAutomaticosCard deps={deps} oculto={oculto} />
 
-        {/* ── Previsto × realizado do mês, com o resultado ────────────── */}
+        {/* ── Resumo do mês: saldos, receitas, despesas e a meta ────── */}
+        {/* O mesmo do computador (pedido do Guilherme, 23/10/2026). */}
         <Cartao>
-          <TituloCartao>{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} até agora</TituloCartao>
-          <PrevistoRealizado mesNome={mesNome} oculto={oculto} comPlano={usaPlanoNoMes}
-            linhas={[['Receitas', totalPrevE, totalEntradas], ['Despesas', totalPrevS, totalSaidas]]} />
-          {r && (
-            <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 14, lineHeight: 1.45 }}>
-              {passou
-                ? <>Gastos variáveis: <b style={{ color: COR.erroTexto }}>{v(r.gasto - r.planejado)}</b> acima do planejado.</>
-                : <>Gastos variáveis: ainda dá <b style={{ color: COR.texto }}>{v(r.sobra)}</b>
-                    {r.diasRestantes > 1 ? <>, {v(r.porDia)} por dia até o dia {r.totalDias}.</> : ' até hoje, último dia do mês.'}</>}
-            </div>
-          )}
+          <TituloCartao>Resumo do mês</TituloCartao>
+          <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
+            onDefinirMeta={usaPlanoNoMes ? () => navigate('/planejamento') : undefined}
+            previsto={{ inicial: b.memoria.abertura, receitas: usaPlanoNoMes ? totalPrevE : null,
+              despesas: usaPlanoNoMes ? totalPrevS : null, final: b.fechamento }}
+            realizado={{ inicial: b.memoria.abertura, receitas: totalEntradas, despesas: totalSaidas, final: b.saldoHoje }} />
         </Cartao>
 
         {/* ── O que pede atenção, uma linha cada ─────────────────────── */}

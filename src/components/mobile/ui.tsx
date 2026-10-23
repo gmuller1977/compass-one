@@ -1,4 +1,4 @@
-import { Fragment, type CSSProperties, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
 import { BOLINHA_AZUL, M, mostrar } from './estilo'
 import { IconeCat } from '../IconeCat'
@@ -162,38 +162,95 @@ export function SeletorCenario({ valor, onEscolher }: {
   )
 }
 
+/** Uma coluna do Resumo do mês. `null` deixa a célula vazia. */
+export interface ColunaResumo {
+  inicial: number | null
+  receitas: number | null
+  despesas: number | null
+  final: number | null
+}
+
 /**
- * Previsto × realizado de receitas e despesas, com o resultado. Sem plano, a
- * coluna Previsto fica vazia. Os números chegam prontos (useMesDaInicio).
+ * "Resumo do mês" da Início (pedido do Guilherme, 23/10/2026): saldo inicial,
+ * receitas, despesas e saldo final, previsto × realizado, e a meta de
+ * economia com o atingimento. O atingimento é quanto o saldo subiu no mês
+ * (final − inicial) contra a meta, a régua do "guardou de verdade" do
+ * Planejamento. Os números chegam prontos; aqui só se divide pela meta.
+ * Sem uma das colunas (mês futuro não tem realizado), ela some.
  */
-export function PrevistoRealizado({ mesNome, linhas, comPlano, oculto, rotuloReal = 'Realizado' }: {
+export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefinirMeta }: {
   mesNome: string
-  /** [rótulo, previsto, realizado]: receitas primeiro, despesas depois. */
-  linhas: [[string, number, number], [string, number, number]]
-  comPlano: boolean
+  previsto: ColunaResumo | null
+  realizado: ColunaResumo | null
+  /** Meta de economia do mês (`objetivos`). 0 = sem meta. */
+  meta: number
   oculto: boolean
-  rotuloReal?: string
+  /** Sem meta, mostra "Definir meta". Sem a função, a linha da meta some. */
+  onDefinirMeta?: () => void
 }) {
-  const v = (n: number) => mostrar(n, oculto)
-  const [[, prevE, realE], [, prevS, realS]] = linhas
+  const v = (n: number | null) => (n === null ? '' : mostrar(n, oculto))
+  const cols = [previsto && { rot: 'Previsto', c: previsto }, realizado && { rot: 'Realizado', c: realizado }]
+    .filter((x): x is { rot: string; c: ColunaResumo } => !!x)
   const cab: CSSProperties = { fontSize: 13, fontWeight: 600, color: COR.textoSuave, textAlign: 'right' }
   const cel: CSSProperties = { fontSize: M.corpo, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
-  const linhaTotal: CSSProperties = { borderTop: `1px solid ${COR.borda}`, paddingTop: 10 }
+  // Traço de largura inteira entre os blocos (o columnGap cortaria um borderTop por célula).
+  const traco = <span aria-hidden style={{ gridColumn: '1 / -1', height: 1, background: COR.borda, margin: '2px 0' }} />
+  const rotulo = (t: string, extra?: CSSProperties) => <span style={{ fontSize: M.corpo, color: COR.texto, ...extra }}>{t}</span>
+  const corSaldo = (n: number | null) => (n !== null && n < 0 ? COR.erroTexto : COR.texto)
+  const atingimento = (c: ColunaResumo) =>
+    meta > 0 && c.inicial !== null && c.final !== null ? (c.final - c.inicial) / meta : null
+  const mostraMeta = meta > 0 || !!onDefinirMeta
   return (
-    <div role="table" aria-label={`Previsto e realizado de ${mesNome}`} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 14, rowGap: 10, alignItems: 'baseline' }}>
+    <div role="table" aria-label={`Resumo de ${mesNome}`} style={{
+      display: 'grid', gridTemplateColumns: `1fr${' auto'.repeat(cols.length)}`, columnGap: 14, rowGap: 10, alignItems: 'baseline',
+    }}>
       <span role="columnheader" />
-      <span role="columnheader" style={cab}>{comPlano ? 'Previsto' : ''}</span>
-      <span role="columnheader" style={cab}>{rotuloReal}</span>
-      {linhas.map(([rot, prev, real], i) => (
-        <Fragment key={rot}>
-          <span style={{ fontSize: M.corpo, color: COR.texto }}>{rot}</span>
-          <span style={{ ...cel, color: COR.textoSuave }}>{comPlano ? v(prev) : ''}</span>
-          <span style={{ ...cel, color: i === 0 ? COR.sucessoTexto : COR.erroTexto }}>{v(real)}</span>
-        </Fragment>
-      ))}
-      <span style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto, ...linhaTotal }}>Resultado</span>
-      <span style={{ ...cel, color: COR.textoSuave, ...linhaTotal }}>{comPlano ? v(prevE - prevS) : ''}</span>
-      <span style={{ ...cel, fontWeight: 800, ...linhaTotal, color: realE - realS < 0 ? COR.erroTexto : COR.sucessoTexto }}>{v(realE - realS)}</span>
+      {cols.map(({ rot }) => <span key={rot} role="columnheader" style={cab}>{rot}</span>)}
+
+      {rotulo('Saldo inicial')}
+      {cols.map(({ rot, c }) => <span key={rot} style={{ ...cel, color: corSaldo(c.inicial) }}>{v(c.inicial)}</span>)}
+      {rotulo('Receitas')}
+      {cols.map(({ rot, c }) => <span key={rot} style={{ ...cel, color: COR.sucessoTexto }}>{v(c.receitas)}</span>)}
+      {rotulo('Despesas')}
+      {cols.map(({ rot, c }) => <span key={rot} style={{ ...cel, color: COR.erroTexto }}>{v(c.despesas)}</span>)}
+      {traco}
+      {rotulo('Saldo final', { fontWeight: 700 })}
+      {cols.map(({ rot, c }) => <span key={rot} style={{ ...cel, fontWeight: 800, color: corSaldo(c.final) }}>{v(c.final)}</span>)}
+
+      {mostraMeta && (
+        <>
+          {traco}
+          {rotulo('Meta')}
+          {meta > 0 ? (
+            <span style={{ ...cel, gridColumn: `span ${cols.length}` }}>{v(meta)}</span>
+          ) : (
+            <span style={{ gridColumn: `span ${cols.length}`, textAlign: 'right' }}>
+              <button onClick={onDefinirMeta} style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: M.corpo, fontWeight: 700, color: COR.azul,
+              }}>Definir meta ›</button>
+            </span>
+          )}
+          {meta > 0 && (
+            <>
+              {rotulo('Atingimento')}
+              {cols.map(({ rot, c }) => {
+                const a = atingimento(c)
+                const pct = a === null ? null : Math.max(0, Math.round(a * 100))
+                const ok = pct !== null && pct >= 100
+                return (
+                  <span key={rot} style={{ ...cel, color: ok ? COR.sucessoTexto : COR.texto }}>
+                    {pct === null ? '' : oculto ? '••' : `${ok ? '✓ ' : ''}${pct}%`}
+                  </span>
+                )
+              })}
+              <span style={{ gridColumn: '1 / -1', fontSize: M.legenda, color: COR.textoSuave, marginTop: -4 }}>
+                Quanto o saldo subiu no mês, contra a meta.
+              </span>
+            </>
+          )}
+        </>
+      )}
     </div>
   )
 }

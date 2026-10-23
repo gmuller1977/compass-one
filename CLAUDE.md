@@ -295,6 +295,23 @@ terminar o mês com mais dinheiro do que começou." Mês fechado e futuro têm
 versões próprias. Ponto verde, amarelo ou vermelho ao lado. Nenhum número na
 frase, de propósito.
 
+**"Resumo do mês" na Início** (23/10/2026, pedido do Guilherme; era
+"[mês] até agora"), no computador e no celular, o mesmo `ResumoDoMes`
+(`components/mobile/ui.tsx`). Previsto × Realizado: saldo inicial (a
+abertura real), receitas, despesas, SALDO FINAL (no lugar do "Resultado"),
+e embaixo a meta de economia do mês (`objetivos`, o "Quanto quero guardar")
+com o ATINGIMENTO = (saldo final − saldo inicial) ÷ meta, a régua do
+"guardou de verdade" do Planejamento. Mês corrente: o previsto termina no
+saldo final previsto do topo (`memoria.fechamento`, cenário escolhido) e o
+realizado no saldo de hoje. Mês fechado: realizado no fechamento real,
+previsto pelo plano (abertura + receitas − despesas planejadas). Mês futuro:
+só previsto, de `previsaoDoMes`. Sem meta, "Definir meta ›" abre o
+Planejamento; no mês da chegada a meta não aparece. Saiu a linha "Gastos
+variáveis: ainda dá…" do quadro (pedido dele). Consequência aceita: na
+coluna Realizado, inicial + receitas − despesas não dá o saldo final, porque
+a compra no cartão conta na receita/despesa quando acontece e no saldo
+quando a fatura é paga. Isso revê a saída da meta da Início de 13/10.
+
 **"Confira o saldo dos bancos" na Início** (18/10/2026, pedidos do
 Guilherme), no computador e no celular, só no mês corrente, LOGO ABAIXO DO
 SALDO (primeiro cartão). Uma linha por conta de banco, com o NOME DO BANCO

@@ -24,7 +24,7 @@ import EvolucaoSaldoGrafico from '../components/EvolucaoSaldoGrafico'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import AppHeader from '../components/AppHeader'
 import AjudaTela from '../components/AjudaTela'
-import { Barrinha, Cartao, Etiqueta, IconeRedondo, Linha, OlhoIcone, Pilula, PrevistoRealizado, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
+import { Barrinha, Cartao, Etiqueta, IconeRedondo, Linha, OlhoIcone, Pilula, ResumoDoMes, type ColunaResumo, SeletorCenario, TituloCartao, Valor } from '../components/mobile/ui'
 import { M, ROTULO_TOPO, TOPO_AZUL, fmt, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
@@ -209,8 +209,22 @@ export default function Dashboard() {
       ) : null}
     </div>
   )
-  const r = ritmo
-  const passou = r?.estado === 'passou'
+  // "Resumo do mês" (pedido do Guilherme, 23/10/2026). Mês corrente: o
+  // previsto termina no saldo final previsto do topo (cenário escolhido) e o
+  // realizado no saldo de hoje. Mês fechado: o realizado termina no
+  // fechamento real e o previsto no plano (abertura + receitas − despesas
+  // planejadas, a conta do Planejamento). Mês futuro: só previsto, o da
+  // previsaoDoMes. A meta é a "Quanto quero guardar" do Planejamento.
+  const metaDoMes = planos[viewAno]?.objetivos?.[viewMes] ?? 0
+  const resumo: { previsto: ColunaResumo | null; realizado: ColunaResumo | null } = ehFuturo
+    ? { previsto: previsao ? { inicial: previsao.inicial, receitas: previsao.entradas, despesas: previsao.saidas, final: previsao.final } : null, realizado: null }
+    : !memoria ? { previsto: null, realizado: null }
+    : {
+        previsto: ehMesCorrente
+          ? { inicial: memoria.abertura, receitas: usaPlanoNoMes ? totalPrevE : null, despesas: usaPlanoNoMes ? totalPrevS : null, final: memoria.fechamento }
+          : usaPlanoNoMes ? { inicial: memoria.abertura, receitas: totalPrevE, despesas: totalPrevS, final: memoria.abertura + totalPrevE - totalPrevS } : null,
+        realizado: { inicial: memoria.abertura, receitas: totalEntradas, despesas: totalSaidas, final: ehMesCorrente ? saldoDisponivel : memoria.fechamento },
+      }
 
   const acaoDoAviso: Record<Aviso['id'], { rotulo: string; onClick: () => void }> = {
     parcelas: { rotulo: 'Revisar', onClick: () => setRevisando(true) },
@@ -455,25 +469,12 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, alignItems: 'start' }}>
           {/* ── Coluna 1: o mês em números ── */}
           <div style={{ display: 'grid', gap: 20 }}>
-            {!ehFuturo ? (
+            {(ehFuturo ? previsao : memoria) && (
               <Cartao>
-                <TituloCartao>{ehMesCorrente ? `${mesNome} até agora` : `${mesNome} fechou assim`}</TituloCartao>
-                <PrevistoRealizado mesNome={mesNome} oculto={oculto} comPlano={usaPlanoNoMes}
-                  linhas={[['Receitas', totalPrevE, totalEntradas], ['Despesas', totalPrevS, totalSaidas]]} />
-                {r && (
-                  <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: 14, lineHeight: 1.45 }}>
-                    {passou
-                      ? <>Gastos variáveis: <b style={{ color: COR.erroTexto }}>{v(r.gasto - r.planejado)}</b> acima do planejado. Cada gasto variável agora sai do saldo.</>
-                      : <>Gastos variáveis: ainda dá <b style={{ color: COR.texto }}>{v(r.sobra)}</b>
-                          {r.diasRestantes > 1 ? <>, {v(r.porDia)} por dia até o dia {r.totalDias}.</> : ' até hoje, último dia do mês.'}</>}
-                  </div>
-                )}
-              </Cartao>
-            ) : previsao && (
-              <Cartao>
-                <TituloCartao>{mesNome} previsto</TituloCartao>
-                <PrevistoRealizado mesNome={mesNome} oculto={oculto} comPlano={false} rotuloReal="Nas contas"
-                  linhas={[['Receitas', 0, previsao.entradas], ['Despesas', 0, previsao.saidas]]} />
+                <TituloCartao>Resumo do mês</TituloCartao>
+                <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
+                  onDefinirMeta={usaPlanoNoMes || ehFuturo ? () => navigate('/planejamento') : undefined}
+                  {...resumo} />
               </Cartao>
             )}
 
