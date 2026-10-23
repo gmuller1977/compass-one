@@ -402,8 +402,11 @@ export default function AcMobileView({
 
         <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18 }}>
           {([
-            ['Recebido', '#86efac', '#4ade80', percE, totalRealE, totalPrevE],
-            ['Gasto', '#fecaca', percS<0.8?'#4ade80':percS<1?'#fde047':'#f87171', percS, totalRealS, totalPrevS],
+            // Receitas e Despesas, nas cores do "Resumo do mês" da Início: verde
+            // e rosa pelo TIPO (pedido do Guilherme, 23/10/2026). Quem diz se
+            // passou do plano são os grupos logo abaixo.
+            ['Receitas', '#86efac', '#86efac', percE, totalRealE, totalPrevE],
+            ['Despesas', '#fecaca', '#fecaca', percS, totalRealS, totalPrevS],
           ] as [string,string,string,number,number,number][]).map(([rot, corRot, corBarra, p, real, prev]) => (
             <div key={rot}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:6 }}>
@@ -412,7 +415,7 @@ export default function AcMobileView({
                   <b style={{ color:'#fff' }}>{fmtK(real)}</b>{prev > 0 ? ` de ${fmtK(prev)}` : ''}
                 </span>
               </div>
-              <div style={{ height:8, background:'rgba(255,255,255,.16)', borderRadius:4, overflow:'hidden' }}>
+              <div style={{ height:8, background:'rgba(15,23,42,.4)', borderRadius:4, overflow:'hidden' }}>
                 <div style={{ width:`${Math.min(p,1)*100}%`, height:'100%', borderRadius:4, background:corBarra }}/>
               </div>
             </div>

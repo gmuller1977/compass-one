@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_COR_AZUL, faixaRadar, totaisJulgados } from '../components/acompanhamento/radarCores'
+import { RADAR_COR_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
@@ -173,7 +173,12 @@ export default function RadarFinanceiro() {
   // despesas (RADAR_COR_AZUL). Vale para os dois cartões de saldo e para o
   // número do rodapé; no rodapé negativo, sobre #991b1b, o vermelho dá 5,74.
   const corSaldo = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim)
-  const corBarra = (p: number, isEntrada: boolean) => RADAR_COR_AZUL[faixaRadar(Math.round(p * 100) / 100, isEntrada)]
+  // Receitas e Despesas do topo, nas cores do "Resumo do mês" da Início: verde
+  // e rosa pelo TIPO, número e barra (pedido do Guilherme, 23/10/2026; antes a
+  // barra seguia a faixa e o número era #4ade80 / #f87171). Quem diz se passou
+  // do plano são os grupos. Medido no #1e40af: #86efac 4,8 e #fecaca 4,6.
+  const COR_RECEITAS = '#86efac'
+  const COR_DESPESAS = '#fecaca'
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
@@ -303,10 +308,10 @@ export default function RadarFinanceiro() {
                 embaixo perde espaço). Só descem abaixo de ~1180px de janela. */}
             <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
               {[
-                { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null, ent: false },
-                { rot: '↑ Receitas', v: fmt(totalRealE), cor: RADAR_COR_AZUL.bom, sub: deQuanto(totalPrevE), p: percE, ent: true },
-                { rot: '↓ Despesas', v: fmt(totalRealS), cor: RADAR_COR_AZUL.ruim, sub: deQuanto(totalPrevS), p: percS, ent: false },
-                { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null, ent: false },
+                { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
+                { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
+                { rot: '↓ Despesas', v: fmt(totalRealS), cor: COR_DESPESAS, sub: deQuanto(totalPrevS), p: percS },
+                { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null },
               ].map(k => (
                 <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
                   style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 14,
@@ -321,7 +326,7 @@ export default function RadarFinanceiro() {
                   {k.p !== null && (
                     <div style={{ marginTop: 6, height: 6, borderRadius: 3, overflow: 'hidden',
                       background: RADAR_TRILHO_AZUL, border: '1px solid #fff', boxSizing: 'border-box' }}>
-                      <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: corBarra(k.p, k.ent) }} />
+                      <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: k.cor }} />
                     </div>
                   )}
                 </button>
