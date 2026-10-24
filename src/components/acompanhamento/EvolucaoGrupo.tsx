@@ -1,7 +1,7 @@
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { type CatReal } from './AcShared'
-import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_AZUL, faixaRadar, destaqueDoGrupo } from './radarCores'
+import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, faixaRadar, destaqueDoGrupo } from './radarCores'
 import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 import { IconeRedondo } from '../mobile/ui'
@@ -132,11 +132,12 @@ export default function EvolucaoGrupo({
           fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
           {destaque.principal}
         </div>
-        <div style={{ height: 12, borderRadius: 6, background: aberto ? RADAR_TRILHO_AZUL : TRILHO, overflow: 'hidden', boxSizing: 'border-box',
-          border: `1.5px solid ${aberto ? '#ffffff' : semDados ? '#cbd5e1' : RADAR_BORDA_CLARO}` }}>
+        <div style={{ height: 12, borderRadius: 6, background: aberto ? 'var(--cx-trilho)' : TRILHO, overflow: 'hidden', boxSizing: 'border-box',
+          boxShadow: aberto ? 'var(--cx-trilho-brilho)' : 'none',
+          border: aberto ? 'none' : `1.5px solid ${semDados ? '#cbd5e1' : RADAR_BORDA_CLARO}` }}>
           {!semDados && (
             <div style={{ height: '100%', borderRadius: 6, width: `${percClamp * 100}%`,
-              background: (aberto ? RADAR_BARRA : RADAR_BARRA_CLARO)[faixa], transition: 'width .3s ease' }} />
+              background: aberto ? 'var(--cx-barra)' : RADAR_BARRA_CLARO[faixa], transition: 'width .3s ease' }} />
           )}
         </div>
         <div style={{ fontSize: 13, color: rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.contexto}</div>

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { RADAR_TRILHO_AZUL } from './acompanhamento/radarCores'
 
 export interface KpiCardProps {
   icon?: string
@@ -36,15 +35,15 @@ const SUBLABEL_STYLE: React.CSSProperties = {
  * vermelho do grupo em 2,95) contra ele; o escuro dá 6,35 a 9,14, e a borda
  * branca (8,72 no azul) desenha os 100%. Elemento gráfico: vale 3:1.
  */
-export function KpiBarra({ perc, cor }: { perc: number; cor: string }) {
+export function KpiBarra({ perc }: { perc: number; cor?: string }) {
   return (
     <div style={{
       marginTop: 6, height: 8, borderRadius: 4, overflow: 'hidden',
-      background: RADAR_TRILHO_AZUL, border: '1px solid #fff', boxSizing: 'border-box',
+      background: 'var(--cx-trilho)', boxShadow: 'var(--cx-trilho-brilho)', boxSizing: 'border-box',
     }}>
       <div style={{
         width: `${Math.max(0, Math.min(perc, 1)) * 100}%`, height: '100%',
-        borderRadius: 4, background: cor, transition: 'width .3s',
+        borderRadius: 4, background: 'var(--cx-barra)', transition: 'width .3s',
       }} />
     </div>
   )

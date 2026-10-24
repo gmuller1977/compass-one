@@ -9,5 +9,12 @@ body { font-family: -apple-system, 'Inter', sans-serif; }
   --cx-neon: #22d3ee;
   --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.55), 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(27,53,200,.45), 0 0 22px rgba(34,211,238,.18);
   --cx-brilho-topo: inset 0 -2px 0 rgba(34,211,238,.9), 0 10px 34px rgba(34,211,238,.28);
+  /* Gráfico em card azul (24/10/2026, Guilherme: "nos cards azul, onde tiver
+     gráfico, trilho branco e azul neon"). Preenchimento contra o trilho
+     branco: #2563eb 5,2 e #0891b2 3,7 (gráfico pede 3:1). No azul a barra
+     não diz mais o status: a cor dele fica no número e nos cards brancos. */
+  --cx-trilho: #ffffff;
+  --cx-barra: linear-gradient(90deg, #2563eb 0%, #0891b2 100%);
+  --cx-trilho-brilho: 0 0 10px rgba(34,211,238,.55);
   --cx-bolinha: inset 0 0 0 1.5px rgba(34,211,238,.8), 0 0 18px rgba(34,211,238,.55);
 }

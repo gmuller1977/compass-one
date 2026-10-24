@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_TRILHO_AZUL, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -330,8 +330,8 @@ export default function AcMobileView({
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
             <div style={{ flex:1, height:8, borderRadius:4, overflow:'hidden', boxSizing:'border-box',
-              background: aberto ? RADAR_TRILHO_AZUL : RADAR_TRILHO_BRANCO, border: `1px solid ${aberto ? '#ffffff' : RADAR_BORDA_CLARO}` }}>
-              <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gBarra }} />
+              background: aberto ? 'var(--cx-trilho)' : RADAR_TRILHO_BRANCO, border: aberto ? 'none' : `1px solid ${RADAR_BORDA_CLARO}`, boxShadow: aberto ? 'var(--cx-trilho-brilho)' : 'none' }}>
+              <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background: aberto ? 'var(--cx-barra)' : gBarra }} />
             </div>
             <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
               {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
@@ -413,7 +413,7 @@ export default function AcMobileView({
             // Texto no azul é branco (24/10/2026); a cor fica na barra.
             ['Receitas', '#fff', '#86efac', percE, totalRealE, totalPrevE],
             ['Despesas', '#fff', RADAR_AMARELO, percS, totalRealS, totalPrevS],
-          ] as [string,string,string,number,number,number][]).map(([rot, corRot, corBarra, p, real, prev]) => (
+          ] as [string,string,string,number,number,number][]).map(([rot, corRot, , p, real, prev]) => (
             <div key={rot}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:6 }}>
                 <span style={{ fontSize:14, fontWeight:700, color:corRot }}>{rot}</span>
@@ -421,8 +421,8 @@ export default function AcMobileView({
                   <b style={{ color:'#fff' }}>{fmtK(real)}</b>{prev > 0 ? ` de ${fmtK(prev)}` : ''}
                 </span>
               </div>
-              <div style={{ height:8, background:'rgba(15,23,42,.4)', borderRadius:4, overflow:'hidden' }}>
-                <div style={{ width:`${Math.min(p,1)*100}%`, height:'100%', borderRadius:4, background:corBarra }}/>
+              <div style={{ height:8, background:'var(--cx-trilho)', boxShadow:'var(--cx-trilho-brilho)', borderRadius:4, overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(p,1)*100}%`, height:'100%', borderRadius:4, background:'var(--cx-barra)' }}/>
               </div>
             </div>
           ))}

@@ -201,7 +201,6 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
     .filter((x): x is { rot: string; c: ColunaResumo } => !!x)
   const ROT = 'rgba(255,255,255,.75)'
   const ROT_CAIXA = 'rgba(255,255,255,.85)'
-  const NEG = '#c2410c'
   const caixa: CSSProperties = {
     background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
     padding: '12px 14px', minWidth: 0,
@@ -251,7 +250,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
 
       {/* Receitas e despesas: gráfico de barras, planejado × realizado, na mesma escala. */}
       <div style={{ fontSize: 13, fontWeight: 600, color: ROT, marginTop: 18, marginBottom: 2 }}>Planejado × realizado</div>
-      {([['Receitas', 'receitas', '#86efac'], ['Despesas', 'despesas', NEG]] as const).map(([nome, campo, cor]) => {
+      {([['Receitas', 'receitas'], ['Despesas', 'despesas']] as const).map(([nome, campo]) => {
         const barras = cols.filter(({ c }) => c[campo] !== null)
         return (
           <div key={campo} role="group" aria-label={nome} style={{ marginTop: 12 }}>
@@ -265,10 +264,10 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
                 <div key={rot} style={{ display: 'grid', gridTemplateColumns: '72px minmax(0, 1fr) auto', alignItems: 'center', gap: 10, marginTop: 6 }}>
                   <span style={{ fontSize: M.legenda, color: ROT }}>{planejado ? 'Planejado' : 'Realizado'}</span>
                   {/* Planejado vazado (borda branca), realizado cheio na cor do tipo: 3:1 de elemento gráfico. */}
-                  <div aria-hidden style={{ height: 14, borderRadius: 999, background: 'rgba(15,23,42,.4)', overflow: 'hidden' }}>
+                  <div aria-hidden style={{ height: 14, borderRadius: 999, background: 'var(--cx-trilho)', boxShadow: 'var(--cx-trilho-brilho)', overflow: 'hidden' }}>
                     <div style={{
                       width: `${pct}%`, height: '100%', borderRadius: 999, boxSizing: 'border-box',
-                      ...(planejado ? { border: '2px solid #fff', background: 'rgba(255,255,255,.18)' } : { background: cor }),
+                      ...(planejado ? { border: '2px solid #2563eb', background: 'rgba(37,99,235,.18)' } : { background: 'var(--cx-barra)' }),
                     }} />
                   </div>
                   <span style={{ ...cel, fontSize: 14, color: '#fff' }}>{v(valor)}</span>
@@ -310,10 +309,10 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
                   <div role="progressbar" aria-valuenow={Math.min(100, pct)} aria-valuemin={0} aria-valuemax={100}
                     aria-label="Atingimento da meta" style={{
-                      flex: 1, height: 12, borderRadius: 999, border: '2px solid #fff',
-                      background: 'rgba(15,23,42,.4)', overflow: 'hidden',
+                      flex: 1, height: 12, borderRadius: 999, boxShadow: 'var(--cx-trilho-brilho)',
+                      background: 'var(--cx-trilho)', overflow: 'hidden',
                     }}>
-                    <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: ok ? '#86efac' : '#fff' }} />
+                    <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: 'var(--cx-barra)' }} />
                   </div>
                   <b style={{ ...num, fontSize: 14 }}>{oculto ? '••' : `${ok ? '✓ ' : ''}${pct}%`}</b>
                 </div>

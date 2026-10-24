@@ -21,7 +21,6 @@ import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { resumoDoMes } from '../utils/resumoRadar'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
-import { RADAR_TRILHO_AZUL } from '../components/acompanhamento/radarCores'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 
@@ -322,8 +321,8 @@ export default function RadarFinanceiro() {
                   <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                   {k.p !== null && (
                     <div style={{ marginTop: 6, height: 6, borderRadius: 3, overflow: 'hidden',
-                      background: RADAR_TRILHO_AZUL, border: '1px solid #fff', boxSizing: 'border-box' }}>
-                      <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: k.cor }} />
+                      background: 'var(--cx-trilho)', boxShadow: 'var(--cx-trilho-brilho)', boxSizing: 'border-box' }}>
+                      <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: 'var(--cx-barra)' }} />
                     </div>
                   )}
                 </button>
