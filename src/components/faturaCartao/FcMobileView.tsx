@@ -3,7 +3,7 @@ import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
-  compararNaFatura,
+  compararNaFatura, diaSemanaLongo,
   type TipoLanc, type Lancamento, type DadosMes,
   parseValor,
   REALCE_ERRO,
@@ -567,17 +567,35 @@ export default function FcMobileView({
               )
             }
             allItems.sort(compararNaFatura)
-            return (
-              <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px'}}>
-                {allItems.map(({dia, dc, mc, ac, l}, idx) => {
+            // Agrupadas por dia da compra, como os dias do Banco (24/10/2026, pedido do Guilherme).
+            const grupos: Array<{dc:number;mc:number;ac:number;itens:typeof allItems}> = []
+            for (const it of allItems) {
+              const g = grupos[grupos.length - 1]
+              if (g && g.dc === it.dc && g.mc === it.mc && g.ac === it.ac) g.itens.push(it)
+              else grupos.push({dc:it.dc, mc:it.mc, ac:it.ac, itens:[it]})
+            }
+            return grupos.map(g => {
+              const totalDia = g.itens.reduce((a, {l}) => a + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
+              return (
+              <section key={`${g.ac}-${g.mc}-${g.dc}`}>
+                <div style={{display:'flex',alignItems:'center',gap:8,padding:'0 4px 8px'}}>
+                  <span style={{fontSize:M.corpo,fontWeight:800,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
+                    {String(g.dc).padStart(2,'0')}/{String(g.mc+1).padStart(2,'0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
+                  </span>
+                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1}}>{diaSemanaLongo(g.dc, g.mc, g.ac)}</span>
+                  <span style={{fontSize:M.legenda,color:COR.textoSuave,whiteSpace:'nowrap' as const,fontVariantNumeric:'tabular-nums'}}>
+                    total <b style={{color:COR.texto}}>{fmt(totalDia)}</b>
+                  </span>
+                </div>
+              <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px',border:'2px solid #93c5fd'}}>
+                {g.itens.map(({dia, l}, idx) => {
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)
                   // Título é a categoria ("Grupo · Nome · Variante"), como no
                   // computador e no banco; a descrição vai na linha de baixo.
                   const nomePrimario = lancLabelComGrupo(l, categorias)
-                  // Data primeiro: é por ela que se confere contra a fatura do banco.
+                  // A data está no título do dia.
                   const legenda = [
-                    `${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${ac !== purchaseAno ? `/${ac}` : ''}`,
                     l.parcelas && l.parcelas > 1 ? `${l.parcelaAtual} de ${l.parcelas}` : undefined,
                     hasDesc ? l.descricao : undefined,
                     buscarCategoria(categorias, l.categoria)?.ativa === false ? 'inativa' : undefined,
@@ -607,7 +625,9 @@ export default function FcMobileView({
                   )
                 })}
               </div>
-            )
+              </section>
+              )
+            })
           })()}
         </div>
       )}

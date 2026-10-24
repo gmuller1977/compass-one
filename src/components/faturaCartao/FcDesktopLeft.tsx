@@ -2,7 +2,7 @@ import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, NOMES_MESES, fmt, diaSemana, lancLabel, compararNaFatura,
+  COR, NOMES_MESES, fmt, diaSemanaLongo, lancLabel, compararNaFatura,
   type Lancamento, type DadosMes,
 } from './FcShared'
 import { grupoDoLanc } from './fcRotulo'
@@ -34,9 +34,8 @@ export default function FcDesktopLeft({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Lista plana, por data da compra, a mais recente no topo. Antes era um acordeão por
-          dia de compra: conferir contra a fatura do banco exigia abrir grupo a
-          grupo e a data não aparecia ao lado do lançamento. */}
+      {/* Por data da compra, a mais recente no topo, agrupada por dia (sem acordeão:
+          tudo à vista para conferir contra a fatura do banco). */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
         {(() => {
           const itens: Array<{ dia: number; dc: number; mc: number; ac: number; l: Lancamento }> = []
@@ -61,14 +60,35 @@ export default function FcDesktopLeft({
           }
 
           itens.sort(compararNaFatura)
+          // Agrupadas por DIA DA COMPRA, como os dias do Banco (24/10/2026, pedido do
+          // Guilherme): título "dd/mm semana" com o total do dia e um card com borda.
+          const grupos: Array<{ dc: number; mc: number; ac: number; itens: typeof itens }> = []
+          for (const it of itens) {
+            const g = grupos[grupos.length - 1]
+            if (g && g.dc === it.dc && g.mc === it.mc && g.ac === it.ac) g.itens.push(it)
+            else grupos.push({ dc: it.dc, mc: it.mc, ac: it.ac, itens: [it] })
+          }
 
-          return (
-            <div style={{ background: COR.branco, borderRadius: 12,
-              border: `1.5px solid ${COR.borda}`, overflow: 'hidden' }}>
-            {itens.map(({ dia, dc, mc, ac, l }, idx) => {
+          return grupos.map(g => {
+            const totalDia = g.itens.reduce((a, { l }) => a + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
+            return (
+            <section key={`${g.ac}-${g.mc}-${g.dc}`} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 8px' }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: COR.texto, fontVariantNumeric: 'tabular-nums' }}>
+                  {String(g.dc).padStart(2, '0')}/{String(g.mc + 1).padStart(2, '0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
+                </span>
+                <span style={{ fontSize: 15, fontWeight: 500, color: COR.textoSuave, flex: 1 }}>
+                  {diaSemanaLongo(g.dc, g.mc, g.ac)}
+                </span>
+                <span style={{ fontSize: 13, color: COR.textoSuave, fontVariantNumeric: 'tabular-nums' }}>
+                  total <b style={{ color: COR.texto }}>{fmt(totalDia)}</b>
+                </span>
+              </div>
+            <div style={{ background: COR.branco, borderRadius: 16,
+              border: '2px solid #93c5fd', overflow: 'hidden' }}>
+            {g.itens.map(({ dia, dc, mc, ac, l }, idx) => {
               const catVisual = iconeCategoria(categorias, l.categoria)
               const emEdicao  = editandoId === l.id
-              const outroMes  = mc !== purchaseMes || ac !== purchaseAno
               // O acordeao antigo separava as compras posteriores ao fechamento com um
               // divisor. Numa lista unica por data isso nao cabe, entao a
               // informacao vira marcador na propria linha — ela nao podia se perder.
@@ -82,21 +102,11 @@ export default function FcDesktopLeft({
                     display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
                     padding: '10px 14px',
                     background: emEdicao ? '#eff6ff' : COR.branco,
-                    borderBottom: idx < itens.length - 1 ? `1px solid ${COR.borda}` : 'none',
+                    borderBottom: idx < g.itens.length - 1 ? `1px solid ${COR.borda}` : 'none',
                     borderLeft: emEdicao ? `3px solid ${COR.azul}` : '3px solid transparent',
                   }}
                   onMouseEnter={e => { if (!emEdicao) e.currentTarget.style.background = '#fafbff' }}
                   onMouseLeave={e => { if (!emEdicao) e.currentTarget.style.background = COR.branco }}>
-
-                  {/* Data primeiro: é por ela que se confere contra a fatura do banco */}
-                  <div style={{ minWidth: 46, flexShrink: 0, textAlign: 'center' }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1, color: COR.texto,
-                      fontVariantNumeric: 'tabular-nums' }}>{String(dc).padStart(2, '0')}/{String(mc + 1).padStart(2, '0')}</div>
-                    <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase',
-                      letterSpacing: .3, marginTop: 2 }}>
-                      {outroMes ? (ac !== purchaseAno ? ac : NOMES_MESES[mc].slice(0, 3)) : diaSemana(dc, mc, ac)}
-                    </div>
-                  </div>
 
                   <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: 16, background: catVisual.cor }}>
@@ -163,7 +173,9 @@ export default function FcDesktopLeft({
               )
             })}
             </div>
-          )
+            </section>
+            )
+          })
         })()}
       </div>
 

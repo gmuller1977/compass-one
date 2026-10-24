@@ -78,6 +78,11 @@ export const NOMES_MESES = [
 // ── Funções auxiliares ────────────────────────────────────────────────
 export function diasNoMes(mes: number, ano: number) { return new Date(ano, mes+1, 0).getDate() }
 
+/** Dia da semana por extenso, para o título do dia ("quinta"), como no Banco. */
+export function diaSemanaLongo(d: number, m: number, a: number) {
+  return ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][new Date(a, m, d).getDay()]
+}
+
 export function diaSemana(d: number, m: number, a: number) {
   return ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][new Date(a,m,d).getDay()]
 }
