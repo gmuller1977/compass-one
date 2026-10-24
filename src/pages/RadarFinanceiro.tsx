@@ -280,58 +280,45 @@ export default function RadarFinanceiro() {
             />
           }
         >
-          <div style={{ marginTop: 18, display: 'flex', gap: 24, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 260px', minWidth: 0 }}>
-              {ritmo && resumo ? (<>
-                <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
-                  Ainda dá para gastar nas despesas variáveis até o dia {ritmo.totalDias}
-                </div>
-                <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
-                  color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums' }}>{fmt(ritmo.sobra)}</div>
-                {resumo.detalhe && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.detalhe}</div>}
-              </>) : (<>
-                <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
-                  {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
-                </div>
-                <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
-                  color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums' }}>{fmt(saldoAtual)}</div>
-                {resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
-              </>)}
-            </div>
-            {/* Saldo atual em destaque, fora dos cards, no quadro neon ao lado da
-                frase; embaixo, numa fileira da largura toda, Saldo inicial,
-                Receitas e Despesas (24/10/2026, pedido do Guilherme: em 2 × 2 o
-                saldo parecia repetido e os cards ficavam apertados). */}
-            {/* Sem a frase (mês fechado), o saldo já é o número grande à esquerda. */}
-            {ritmo && resumo && <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-              style={{ flex: '0 1 340px', minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
-                background: 'rgba(255,255,255,.12)', borderRadius: 18, padding: '14px 20px',
-                border: '1.5px solid #22d3ee', boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: ROTULO_TOPO }}>Saldo atual · bancos e dinheiro</div>
-              <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.5px', color: NUMERO_NO_AZUL,
-                fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
-            </button>}
-          </div>
-          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 }}>
+          {/* Uma linha só (24/10/2026, pedido do Guilherme, para o topo ocupar
+              menos): Saldo inicial, Receitas e Despesas em cards à esquerda e,
+              ao lado, o saldo de hoje em bancos e dinheiro, fora de card, em
+              letra grande. Mês fechado: o saldo no fim do mês. */}
+          <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             {[
               { rot: 'Saldo inicial', v: fmt(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
               { rot: '↑ Receitas', v: fmt(totalRealE), sub: deQuanto(totalPrevE), p: percE },
               { rot: '↓ Despesas', v: fmt(totalRealS), sub: deQuanto(totalPrevS), p: percS },
             ].map(k => (
               <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14, border: '1px solid rgba(255,255,255,.16)',
+                style={{ flex: '1 1 220px', maxWidth: 300, background: 'rgba(255,255,255,.12)', borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,.16)',
                   padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
-                  display: 'flex', alignItems: 'center', gap: 14, color: '#fff' }}>
+                  display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
                 {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
-                  {/* Cabe R$ 999.999,99 em 20px de 1280px de janela para cima. */}
-                  <div style={{ fontSize: 20, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
+                  <div style={{ fontSize: 18, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                 </div>
               </button>
             ))}
+            <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
+              style={{ flex: '1 1 260px', minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
+                background: 'none', border: 'none', padding: '0 0 0 8px' }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
+                {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
+              </div>
+              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
+                color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
+              {/* A sobra da variável, quando há, vira uma linha embaixo do saldo. */}
+              {ritmo && resumo
+                ? <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>
+                    Ainda dá para gastar <b style={{ color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums' }}>{fmt(ritmo.sobra)}</b> nas variáveis até o dia {ritmo.totalDias}
+                  </div>
+                : resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
+            </button>
           </div>
         </PageHeader>
       </div>
