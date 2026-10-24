@@ -302,13 +302,14 @@ export default function RadarFinanceiro() {
             </div>
             {/* As caixas ficam AO LADO da frase (pedido do Guilherme, 13/10/2026:
                 embaixo perde espaço), em 2 × 2 desde 24/10/2026: com os anéis,
-                quatro numa fileira ficavam pequenas e R$ 999.999,99 não cabia. */}
+                quatro numa fileira ficavam pequenas e R$ 999.999,99 não cabia. Em cima
+                os saldos, embaixo despesas e receitas (mesmo dia, pedido dele). */}
             <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 10 }}>
               {[
                 { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
-                { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
-                { rot: '↓ Despesas', v: fmt(totalRealS), cor: COR_DESPESAS, sub: deQuanto(totalPrevS), p: percS },
                 { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null },
+                { rot: '↓ Despesas', v: fmt(totalRealS), cor: COR_DESPESAS, sub: deQuanto(totalPrevS), p: percS },
+                { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
               ].map(k => (
                 <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
                   style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14,
