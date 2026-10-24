@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_COR_AZUL, RADAR_LARANJA, totaisJulgados } from '../components/acompanhamento/radarCores'
+import { RADAR_COR_AZUL, RADAR_TEXTO_CLARO, RADAR_TRILHO_BRANCO, RADAR_BORDA_CLARO, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
@@ -21,7 +21,6 @@ import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { resumoDoMes } from '../utils/resumoRadar'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
-import { RADAR_TRILHO_AZUL } from '../components/acompanhamento/radarCores'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 
@@ -177,8 +176,10 @@ export default function RadarFinanceiro() {
   // e laranja pelo TIPO, número e barra (pedido do Guilherme, 23/10/2026; antes a
   // barra seguia a faixa e o número era #4ade80 / #f87171). Quem diz se passou
   // do plano são os grupos. Medido no #1e40af: #86efac 4,8 e #fdba74 5,2.
-  const COR_RECEITAS = '#86efac'
-  const COR_DESPESAS = RADAR_LARANJA
+  // Os quatro cards do topo são BRANCOS dentro do azul (24/10/2026, escolha
+  // do Guilherme no card: o laranja #c2410c some no azul). Tons do branco:
+  // #15803d 5,0 e #c2410c 5,2; rótulo #475569 7,6; barra no trilho claro.
+  const corSaldoBranco = (v: number) => (v >= 0 ? RADAR_TEXTO_CLARO.bom : RADAR_TEXTO_CLARO.ruim)
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
@@ -308,24 +309,24 @@ export default function RadarFinanceiro() {
                 embaixo perde espaço). Só descem abaixo de ~1180px de janela. */}
             <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
               {[
-                { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
-                { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
-                { rot: '↓ Despesas', v: fmt(totalRealS), cor: COR_DESPESAS, sub: deQuanto(totalPrevS), p: percS },
-                { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null },
+                { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldoBranco(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
+                { rot: '↑ Receitas', v: fmt(totalRealE), cor: RADAR_TEXTO_CLARO.bom, sub: deQuanto(totalPrevE), p: percE },
+                { rot: '↓ Despesas', v: fmt(totalRealS), cor: RADAR_TEXTO_CLARO.ruim, sub: deQuanto(totalPrevS), p: percS },
+                { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldoBranco(saldoAtual), sub: 'bancos e dinheiro', p: null },
               ].map(k => (
                 <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                  style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 14,
+                  style={{ background: '#ffffff', border: '1px solid #ffffff', borderRadius: 14,
                     padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
                     // botão centraliza o conteúdo na vertical; as quatro leem pelo topo
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>{k.rot}</div>
                   {/* Acima de R$ 99.999,99 a letra cai para 15px e o valor segue inteiro na caixa. */}
                   <div style={{ fontSize: k.v.length > 12 ? 15 : 17, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
-                  <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
+                  <div style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                   {k.p !== null && (
                     <div style={{ marginTop: 6, height: 6, borderRadius: 3, overflow: 'hidden',
-                      background: RADAR_TRILHO_AZUL, border: '1px solid #fff', boxSizing: 'border-box' }}>
+                      background: RADAR_TRILHO_BRANCO, border: `1px solid ${RADAR_BORDA_CLARO}`, boxSizing: 'border-box' }}>
                       <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: k.cor }} />
                     </div>
                   )}

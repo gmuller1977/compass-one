@@ -405,22 +405,25 @@ export default function AcMobileView({
             color: saldoReal >= 0 ? '#fff' : '#c2410c' }}>{fmt(saldoReal)}</div>
         </div>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18 }}>
+        {/* Numa caixa BRANCA dentro do azul, como os cards do topo do
+            computador (24/10/2026, escolha do Guilherme): o laranja #c2410c
+            some no azul. Verde #15803d 5,0, laranja 5,2, rótulo #475569. */}
+        <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18, background:'#fff', borderRadius:14, padding:'12px 14px' }}>
           {([
             // Receitas e Despesas, nas cores do "Resumo do mês" da Início: verde
             // e laranja pelo TIPO (pedido do Guilherme, 23/10/2026). Quem diz se
             // passou do plano são os grupos logo abaixo.
-            ['Receitas', '#86efac', '#86efac', percE, totalRealE, totalPrevE],
+            ['Receitas', RADAR_COR_CLARO.bom, RADAR_COR_CLARO.bom, percE, totalRealE, totalPrevE],
             ['Despesas', RADAR_LARANJA, RADAR_LARANJA, percS, totalRealS, totalPrevS],
           ] as [string,string,string,number,number,number][]).map(([rot, corRot, corBarra, p, real, prev]) => (
             <div key={rot}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:6 }}>
                 <span style={{ fontSize:14, fontWeight:700, color:corRot }}>{rot}</span>
-                <span style={{ fontSize:14, color:'rgba(255,255,255,.75)', fontVariantNumeric:'tabular-nums' }}>
-                  <b style={{ color:'#fff' }}>{fmtK(real)}</b>{prev > 0 ? ` de ${fmtK(prev)}` : ''}
+                <span style={{ fontSize:14, color:'#475569', fontVariantNumeric:'tabular-nums' }}>
+                  <b style={{ color:corRot }}>{fmtK(real)}</b>{prev > 0 ? ` de ${fmtK(prev)}` : ''}
                 </span>
               </div>
-              <div style={{ height:8, background:'rgba(15,23,42,.4)', borderRadius:4, overflow:'hidden' }}>
+              <div style={{ height:8, background:RADAR_TRILHO_BRANCO, border:`1px solid ${RADAR_BORDA_CLARO}`, boxSizing:'border-box', borderRadius:4, overflow:'hidden' }}>
                 <div style={{ width:`${Math.min(p,1)*100}%`, height:'100%', borderRadius:4, background:corBarra }}/>
               </div>
             </div>

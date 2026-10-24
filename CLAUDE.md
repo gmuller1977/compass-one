@@ -484,6 +484,11 @@ As notas que citam `#fdba74` (abaixo e acima) são histórico.
 No mesmo dia, pedido dele: no Radar o cartão FECHADO do grupo tem borda de
 2px verde (`#15803d`, dentro do plano) ou laranja (`#c2410c`, passou), no
 computador e no celular; sem plano, sem borda; aberto segue azul.
+Ainda no mesmo dia (escolha dele no card, "C · Cards brancos"), os quatro
+cards do topo do Radar no computador são BRANCOS dentro do azul, com
+`#15803d` / `#c2410c` nos números e barras, rótulo `#475569` e trilho claro;
+no celular, Receitas e Despesas do topo ficam numa caixa branca igual.
+Contorno branco nos números e etiqueta branca foram mostrados e preteridos.
 
 **No Radar, UM verde só** (24/10/2026, Guilherme: "parece que tem verdes e
 laranjas diferentes"; escolheu no card "um verde só + número mais vivo").
