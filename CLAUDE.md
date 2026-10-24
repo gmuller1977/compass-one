@@ -478,11 +478,17 @@ laranjas diferentes"; escolheu no card "um verde só + número mais vivo").
 O verde clarinho do "no limite" (`#bbf7d0`) saiu: barra dentro do plano é
 `#4ade80`, passou é `#fdba74`. No cartão branco o número é `#15803d` (5,0)
 e `#c2410c` (5,2); no azul, a cor da barra. Os cortes das faixas seguem.
+No mesmo dia (Guilherme: "a barra laranja pode ser o mesmo laranja do
+número"), no BRANCO a barra tem a cor do número (`RADAR_BARRA_CLARO`):
+`#c2410c` no trilho azul-escuro daria 2,0, então ali o trilho é claro
+(`#e2e8f0`, borda `#64748b`): verde 4,1, laranja 4,2. O verde foi junto,
+porque o `#4ade80` no trilho claro some. No azul nada mudou.
 
-**Sem plano e sem movimento, o Radar diz "nada gasto" / "nada recebido"**
-(24/10/2026, pedido do Guilherme), no grupo e na categoria, no computador e
-no celular, com "sem plano neste mês" embaixo. Antes era um travessão. Cor
-neutra e barra vazia, como antes (`destaqueRadar`, `SEM_MOVIMENTO`).
+**Sem plano e sem movimento, o Radar diz "Sem lançamentos"** (24/10/2026,
+pedido do Guilherme; foi "nada gasto" / "nada recebido" por algumas horas),
+no grupo e na categoria, no computador e no celular, com "sem plano neste
+mês" embaixo. Antes era um travessão. Cor neutra e barra vazia, como antes
+(`destaqueRadar`, `SEM_MOVIMENTO`).
 
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e

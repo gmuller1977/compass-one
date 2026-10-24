@@ -73,6 +73,14 @@ export const RADAR_BARRA = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LAR
 export const RADAR_TEXTO_AZUL = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LARANJA } as const
 export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: '#c2410c' } as const
 export const RADAR_TRILHO_ESCURO = '#1e3a8a'
+// A barra no BRANCO é da cor do número (24/10/2026, Guilherme: "a barra
+// laranja pode ser o mesmo laranja do número"). O #c2410c no trilho
+// azul-escuro daria 2,0 e reprovaria (gráfico pede 3:1), então no branco o
+// trilho é claro: #15803d 4,1 e #c2410c 4,2 no #e2e8f0, com borda #64748b
+// (4,8 no branco) desenhando os 100%. Barra e número, a mesma cor. No azul
+// segue RADAR_BARRA, que já é a cor do número lá.
+export const RADAR_BARRA_CLARO = RADAR_TEXTO_CLARO
+export const RADAR_BORDA_CLARO = '#64748b'
 export type FaixaRadar = keyof typeof RADAR_COR_AZUL
 
 /**
@@ -120,7 +128,7 @@ export function totaisJulgados(linhas: { prev: number; real: number }[]): { prev
  * ainda não paga é "a pagar" (ou "a receber"), e não "resta": ela não sobra,
  * vence.
  */
-export const SEM_MOVIMENTO = ['nada gasto', 'nada recebido']
+export const SEM_MOVIMENTO = ['Sem lançamentos']
 
 export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   opts: { fixa?: boolean; fixaPaga?: boolean } = {}):
@@ -129,7 +137,7 @@ export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   // Sem plano e sem movimento: diz isso em palavras, em vez de um travessão
   // (pedido do Guilherme, 24/10/2026). Mesma cor neutra, sem barra.
   if (prev <= 0.005 && Math.abs(real) <= 0.005)
-    return { principal: isEntrada ? 'nada recebido' : 'nada gasto', contexto: 'sem plano neste mês' }
+    return { principal: 'Sem lançamentos', contexto: 'sem plano neste mês' }
   // Sem plano não há o que julgar: mostra só o realizado, sem "passou" nem
   // vermelho. Decisão do Guilherme em 19/10/2026 (análise da chegada v3, C2):
   // "ele não deve julgar porque não tem plano, somente mostrar o total

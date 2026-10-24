@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_TRILHO_ESCURO, SEM_MOVIMENTO, RADAR_TRILHO_AZUL, RADAR_LARANJA, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_TRILHO_AZUL, RADAR_LARANJA, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -109,7 +109,7 @@ export default function AcMobileView({
 
     // A barra é a do computador: faixa do Radar em tom claro sobre trilho
     // azul-escuro (antes tinha amarelo e vermelho próprios, 23/10/2026).
-    const progressColor = RADAR_BARRA[fixaPaga ? 'bom' : faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
+    const progressColor = RADAR_BARRA_CLARO[fixaPaga ? 'bom' : faixaRadar(Math.round(perc * 100) / 100, isEntrada)]
 
     // Detail: status badge
     let statusLabel: string, statusBg: string, statusColor: string
@@ -177,8 +177,8 @@ export default function AcMobileView({
         {/* PROGRESS BAR */}
         {!naoJulga && (
           <div style={{ margin:'0 14px 12px 62px' }}>
-            <div style={{ background:RADAR_TRILHO_ESCURO, borderRadius:4, height:6, overflow:'hidden' }}>
-              <div style={{ width:`${Math.min(perc,1)*100}%`, height:6, borderRadius:4, background:progressColor }}/>
+            <div style={{ background:RADAR_TRILHO_BRANCO, border:`1px solid ${RADAR_BORDA_CLARO}`, boxSizing:'border-box', borderRadius:4, height:8, overflow:'hidden' }}>
+              <div style={{ width:`${Math.min(perc,1)*100}%`, height:'100%', borderRadius:4, background:progressColor }}/>
             </div>
           </div>
         )}
@@ -294,7 +294,7 @@ export default function AcMobileView({
       const gCor  = SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
         : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
         : (aberto ? RADAR_COR_AZUL : RADAR_COR_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
-      const gBarra = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? RADAR_BARRA[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
+      const gBarra = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? RADAR_BARRA : RADAR_BARRA_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
@@ -326,7 +326,7 @@ export default function AcMobileView({
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
             <div style={{ flex:1, height:8, borderRadius:4, overflow:'hidden', boxSizing:'border-box',
-              background: aberto ? RADAR_TRILHO_AZUL : RADAR_TRILHO_ESCURO, border: aberto ? '1px solid #ffffff' : 'none' }}>
+              background: aberto ? RADAR_TRILHO_AZUL : RADAR_TRILHO_BRANCO, border: `1px solid ${aberto ? '#ffffff' : RADAR_BORDA_CLARO}` }}>
               <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background:gBarra }} />
             </div>
             <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
