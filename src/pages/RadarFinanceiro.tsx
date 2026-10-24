@@ -311,7 +311,7 @@ export default function RadarFinanceiro() {
                 { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null },
               ].map(k => (
                 <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                  style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 14,
+                  style={{ background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 14,
                     padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
                     // botão centraliza o conteúdo na vertical; as quatro leem pelo topo
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>

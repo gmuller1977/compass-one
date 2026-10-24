@@ -66,7 +66,7 @@ export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamen
         // Celular: uma caixa só, uma linha por resposta — rótulo à esquerda,
         // valor à direita e a frase inteira embaixo (lado a lado, as duas
         // caixas espremiam a frase em quatro linhas).
-        <div style={{ flex: '1 1 100%', background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)',
+        <div style={{ flex: '1 1 100%', background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)',
           borderRadius: 14, padding: '4px 14px' }}>
           {caixas.map((k, i) => (
             <div key={k.rot} style={{ padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,.15)' : 'none' }}>
@@ -85,7 +85,7 @@ export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamen
       <div style={{ flex: '1 1 520px', display: 'grid',
         gridTemplateColumns: `repeat(${caixas.length}, minmax(0,1fr))`, gap: 8 }}>
         {caixas.map(k => (
-          <div key={k.rot} style={{ background: 'rgba(15,23,42,.22)', border: '1px solid rgba(255,255,255,.15)',
+          <div key={k.rot} style={{ background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)',
             borderRadius: 14, padding: '10px 14px', minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
