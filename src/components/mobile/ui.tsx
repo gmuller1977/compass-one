@@ -231,26 +231,12 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         </div>
       </div>
 
-      {/* O saldo final em destaque: o que o mês deve deixar e o que deixou até agora. */}
-      <div style={{ fontSize: 13, fontWeight: 600, color: ROT, marginBottom: 8 }}>Saldo final</div>
-      {/* Até R$ 999.999,99 (pedido do Guilherme, 23/10/2026), sempre lado a lado: a letra
-          encolhe com a largura da caixa (cqi) e o tamanho do texto, até no máximo 22px. */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols.length}, minmax(0, 1fr))`, gap: 10 }}>
-        {cols.map(({ rot, c }) => (
-          <div key={rot} style={{ ...caixa, containerType: 'inline-size' }}>
-            <div style={{ fontSize: M.legenda, color: ROT_CAIXA }}>{rot}</div>
-            <div style={{ ...num, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 800, marginTop: 4, color: '#fff' }}>
-              {v(c.final)}
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Receitas e despesas em ANÉIS (24/10/2026, Guilherme escolheu a opção A):
           quanto do planejado já entrou e já saiu, em %. Trilho branco e azul neon,
           o desenho dos gráficos em card azul. Sem plano ou sem realizado, o anel
-          fica vazio e só o valor aparece. */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 18 }}>
+          fica vazio e só o valor aparece. Logo abaixo do título, alinhados com os
+          anéis do "Plano do mês" ao lado (mesmo dia, pedido dele). */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {([['Receitas', 'receitas', 'recebido', '#0891b2'], ['Despesas', 'despesas', 'gasto', '#2563eb']] as const).map(([nome, campo, verbo, cor]) => {
           const plan = previsto?.[campo] ?? null
           const real = realizado?.[campo] ?? null
@@ -268,6 +254,21 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
             </div>
           )
         })}
+      </div>
+
+      {/* O saldo final em destaque: o que o mês deve deixar e o que deixou até agora. */}
+      <div style={{ fontSize: 13, fontWeight: 600, color: ROT, marginTop: 18, marginBottom: 8 }}>Saldo final</div>
+      {/* Até R$ 999.999,99 (pedido do Guilherme, 23/10/2026), sempre lado a lado: a letra
+          encolhe com a largura da caixa (cqi) e o tamanho do texto, até no máximo 22px. */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols.length}, minmax(0, 1fr))`, gap: 10 }}>
+        {cols.map(({ rot, c }) => (
+          <div key={rot} style={{ ...caixa, containerType: 'inline-size' }}>
+            <div style={{ fontSize: M.legenda, color: ROT_CAIXA }}>{rot}</div>
+            <div style={{ ...num, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 800, marginTop: 4, color: '#fff' }}>
+              {v(c.final)}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* A meta no QUADRO NEON (mesmo dia, da opção C): moldura ciano e o
