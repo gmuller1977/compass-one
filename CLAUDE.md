@@ -473,6 +473,11 @@ Ficaram de fora as BORDAS rosadas das caixas de erro (Login, Cadastro,
 Configurações) e os vermelhos (`#f87171`, `#b91c1c`): não eram o rosa.
 Os números das notas abaixo e acima que citam `#fecaca` são histórico.
 
+**Sem plano e sem movimento, o Radar diz "nada gasto" / "nada recebido"**
+(24/10/2026, pedido do Guilherme), no grupo e na categoria, no computador e
+no celular, com "sem plano neste mês" embaixo. Antes era um travessão. Cor
+neutra e barra vazia, como antes (`destaqueRadar`, `SEM_MOVIMENTO`).
+
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e
 "gráfico"). O azul do `PageHeader` traz a resposta do ano em 40px — "Se o

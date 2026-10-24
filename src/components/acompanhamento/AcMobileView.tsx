@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_TRILHO_ESCURO, RADAR_TRILHO_AZUL, RADAR_LARANJA, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_TRILHO_ESCURO, SEM_MOVIMENTO, RADAR_TRILHO_AZUL, RADAR_LARANJA, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -291,10 +291,10 @@ export default function AcMobileView({
       const aberto = abertos.has(gid)
       // Aberto, o cabeçalho fica AZUL-ESCURO, como no computador (21/10/2026),
       // com a paleta do azul (RADAR_COR_AZUL) e rótulo a 75% (5,1).
-      const gCor  = dg.principal === '—' ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
+      const gCor  = SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
         : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
         : (aberto ? RADAR_COR_AZUL : RADAR_COR_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
-      const gBarra = dg.julgado && dg.principal !== '—' ? RADAR_BARRA[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
+      const gBarra = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? RADAR_BARRA[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
