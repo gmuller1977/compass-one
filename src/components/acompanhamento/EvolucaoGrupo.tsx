@@ -111,7 +111,7 @@ export default function EvolucaoGrupo({
             neon, como os gráficos em card azul. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
-            cor={aberto ? '#0891b2' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
+            cor={aberto ? '#0891b2' : atencao ? '#b91c1c' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
             corTexto={aberto ? '#fff' : corNumero} />
           <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -203,7 +203,7 @@ export function AnelGrupo({ pct, pago, cor, trilho, corTexto, alerta = false, ta
       {cheio > 0 && (
         <circle cx="36" cy="36" r={r} stroke={cor} strokeWidth="8" fill="none" strokeLinecap="round"
           strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 36 36)"
-          style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,.9))' }} />
+          style={{ filter: cor === '#b91c1c' ? 'drop-shadow(0 0 4px rgba(239,68,68,.55))' : 'drop-shadow(0 0 4px rgba(34,211,238,.9))' }} />
       )}
       <text x="36" y={pago ? 43 : 41} textAnchor="middle" fill={corTexto}
         fontSize={pago ? 20 : texto.length > 4 ? 13 : 15} fontWeight="800">{texto}</text>

@@ -296,9 +296,11 @@ export default function RadarFinanceiro() {
                   padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
                   display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
                 {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
-                <div style={{ minWidth: 0, flex: 1 }}>
+                {/* A letra encolhe com a largura (cqi): cabe −R$ 999.999,99 (24/10/2026,
+                    regra do Guilherme: todo número pode chegar a isso). */}
+                <div style={{ minWidth: 0, flex: 1, containerType: 'inline-size' }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
+                  <div style={{ fontSize: 'min(18px, calc(100cqi / 8.2))', fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                 </div>
@@ -306,11 +308,11 @@ export default function RadarFinanceiro() {
             ))}
             <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
               style={{ flex: '1 1 260px', minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
-                background: 'none', border: 'none', padding: '0 0 0 8px' }}>
+                background: 'none', border: 'none', padding: '0 0 0 8px', containerType: 'inline-size' }}>
               <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
                 {ehMesCorrente ? 'Hoje no banco e no dinheiro' : `Saldo no fim de ${MESES_FULL[mes].toLowerCase()}`}
               </div>
-              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
+              <div style={{ fontSize: 'min(40px, calc(100cqi / 8.6))', fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
                 color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
               {/* A frase "Ainda dá para gastar" saiu do topo (24/10/2026, pedido do Guilherme). */}
               {!ritmo && resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}

@@ -323,7 +323,7 @@ export default function AcMobileView({
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
               pago={dg.principal.startsWith('✓')}
-              cor={aberto ? '#0891b2' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
+              cor={aberto ? '#0891b2' : gAtencao ? '#b91c1c' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
               corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />
             <div style={{ flex:1, minWidth:0, display:'grid', gap:2 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
