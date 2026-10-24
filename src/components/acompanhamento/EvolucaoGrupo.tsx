@@ -1,6 +1,6 @@
 import type { Categoria } from '../../context/AppContext'
 import { type CatReal } from './AcShared'
-import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, RADAR_BARRA_CLARO, faixaRadar, destaqueDoGrupo } from './radarCores'
+import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo } from './radarCores'
 import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
@@ -28,6 +28,7 @@ import EvolucaoLinha from './EvolucaoLinha'
 const TEXTO  = '#0f172a'
 const ROTULO = '#475569'
 const TRILHO = '#e2e8f0' // trilho do anel fechado
+const AZUL_NUMERO = '#1d4ed8'
 // Aberto, o cartão fica AZUL-ESCURO (pedido do Guilherme, 21/10/2026), o
 // gradiente dos cartões do topo, que termina no #1e40af. Ali vale a paleta do
 // azul (RADAR_COR_AZUL): verde 5,0, verde-claro 9,1; o vermelho #f87171 dá
@@ -81,7 +82,10 @@ export default function EvolucaoGrupo({
   const texto      = aberto ? '#ffffff' : TEXTO
   const rotulo     = aberto ? 'rgba(255,255,255,0.75)' : ROTULO
   const corFaixa   = COR[faixa]
-  const corNumero  = semDados ? texto : corFaixa
+  // Fechado, número e anel são AZUL NEON e só o que passou de 100% leva o
+  // marcador de atenção (24/10/2026, Guilherme). #1d4ed8 no branco: 6,7.
+  const corNumero  = semDados ? texto : aberto ? corFaixa : AZUL_NUMERO
+  const atencao    = !semDados && !isEntrada && perc > 1.005
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = onAlternar
 
@@ -91,7 +95,7 @@ export default function EvolucaoGrupo({
       boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
-      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : RADAR_TEXTO_CLARO[faixa]}`,
+      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : atencao ? '#a16207' : '#93c5fd'}`,
     }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
@@ -106,7 +110,7 @@ export default function EvolucaoGrupo({
             neon, como os gráficos em card azul. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
-            cor={aberto ? '#0891b2' : RADAR_BARRA_CLARO[faixa]} trilho={aberto ? '#fff' : TRILHO}
+            cor={aberto ? '#0891b2' : '#2563eb'} alerta={atencao} trilho={aberto ? '#fff' : TRILHO}
             corTexto={aberto ? '#fff' : corNumero} />
           <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -181,8 +185,10 @@ export function CategoriasDoGrupo({
 }
 
 /** Anel do grupo (opção A): arco até 100%, o texto diz o % real; fixa paga é ✓. */
-export function AnelGrupo({ pct, pago, cor, trilho, corTexto }: {
+export function AnelGrupo({ pct, pago, cor, trilho, corTexto, alerta = false }: {
   pct: number | null; pago: boolean; cor: string; trilho: string; corTexto: string
+  /** Passou de 100%: o marcador de atenção no canto do anel. */
+  alerta?: boolean
 }) {
   const r = 28, c = 2 * Math.PI * r
   const cheio = pago ? 1 : pct === null ? 0 : Math.max(0, Math.min(1, pct))
@@ -192,10 +198,17 @@ export function AnelGrupo({ pct, pago, cor, trilho, corTexto }: {
       <circle cx="36" cy="36" r={r} stroke={trilho} strokeWidth="8" fill="none" />
       {cheio > 0 && (
         <circle cx="36" cy="36" r={r} stroke={cor} strokeWidth="8" fill="none" strokeLinecap="round"
-          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 36 36)" />
+          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 36 36)"
+          style={{ filter: 'drop-shadow(0 0 4px rgba(34,211,238,.9))' }} />
       )}
       <text x="36" y={pago ? 43 : 41} textAnchor="middle" fill={corTexto}
         fontSize={pago ? 20 : texto.length > 4 ? 13 : 15} fontWeight="800">{texto}</text>
+      {alerta && (
+        <g role="img" aria-label="Atenção: passou do plano">
+          <circle cx="62" cy="10" r="11" fill="#fde047" stroke="#fff" strokeWidth="2.5" />
+          <text x="62" y="15" textAnchor="middle" fill="#713f12" fontSize="15" fontWeight="900">!</text>
+        </g>
+      )}
     </svg>
   )
 }

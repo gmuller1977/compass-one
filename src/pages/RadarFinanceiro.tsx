@@ -302,7 +302,7 @@ export default function RadarFinanceiro() {
             </div>
             {/* As caixas ficam AO LADO da frase (pedido do Guilherme, 13/10/2026:
                 embaixo perde espaço). Só descem abaixo de ~1180px de janela. */}
-            <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+            <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,1fr)', gap: 8 }}>
               {[
                 { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
                 { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
@@ -310,21 +310,21 @@ export default function RadarFinanceiro() {
                 { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null },
               ].map(k => (
                 <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                  style={{ background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 14,
+                  style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14,
+                    // Opção A (24/10/2026, Guilherme): anel em Receitas e Despesas e o
+                    // Saldo atual no quadro neon, o padrão da Início.
+                    border: k.rot === 'Saldo atual' ? '1.5px solid #22d3ee' : '1px solid rgba(255,255,255,.16)',
+                    boxShadow: k.rot === 'Saldo atual' ? '0 0 16px rgba(34,211,238,.45)' : 'none',
                     padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
-                    // botão centraliza o conteúdo na vertical; as quatro leem pelo topo
-                    display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    display: 'flex', alignItems: 'center', gap: 10, color: '#fff' }}>
+                  {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
+                  <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
                   {/* Acima de R$ 99.999,99 a letra cai para 15px e o valor segue inteiro na caixa. */}
-                  <div style={{ fontSize: k.v.length > 12 ? 15 : 17, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
+                  <div style={{ fontSize: k.p !== null || k.v.length > 12 ? 15 : 17, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
-                  {k.p !== null && (
-                    <div style={{ marginTop: 6, height: 6, borderRadius: 3, overflow: 'hidden',
-                      background: 'var(--cx-trilho)', boxShadow: 'var(--cx-trilho-brilho)', boxSizing: 'border-box' }}>
-                      <div style={{ width: `${Math.max(0, Math.min(k.p, 1)) * 100}%`, height: '100%', background: 'var(--cx-barra)' }} />
-                    </div>
-                  )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -461,5 +461,22 @@ export default function RadarFinanceiro() {
         )
       })()}
     </div>
+  )
+}
+
+/** Anel pequeno dos cards do topo: trilho branco, azul neon até 100%; o texto é o % real. */
+function AnelTopo({ pct, cor }: { pct: number; cor: string }) {
+  const r = 18, c = 2 * Math.PI * r
+  const cheio = Math.max(0, Math.min(1, pct))
+  const t = `${Math.round(pct * 100)}%`
+  return (
+    <svg width="42" height="42" viewBox="0 0 46 46" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
+      <circle cx="23" cy="23" r={r} stroke="#fff" strokeWidth="6" fill="none" />
+      {cheio > 0 && (
+        <circle cx="23" cy="23" r={r} stroke={cor} strokeWidth="6" fill="none" strokeLinecap="round"
+          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 23 23)" style={{ filter: 'drop-shadow(0 0 4px #22d3ee)' }} />
+      )}
+      <text x="23" y="27" textAnchor="middle" fill="#fff" fontSize={t.length > 4 ? 10 : 11} fontWeight="800">{t}</text>
+    </svg>
   )
 }

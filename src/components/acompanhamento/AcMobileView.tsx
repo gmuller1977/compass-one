@@ -10,7 +10,7 @@ import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -294,14 +294,16 @@ export default function AcMobileView({
       // com a paleta do azul (RADAR_COR_AZUL) e rótulo a 75% (5,1).
       const gCor  = SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
         : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
-        : (aberto ? RADAR_COR_AZUL : RADAR_COR_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
-      const gBarra = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? RADAR_BARRA : RADAR_BARRA_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
+        : aberto ? RADAR_COR_AZUL[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : '#1d4ed8'
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
+      // Fechado: número e anel azul neon; passou de 100%, marcador de atenção
+      // (24/10/2026, Guilherme), igual ao computador.
+      const gAtencao = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) && !isEntrada && gPerc > 1.005
       const gBorda = aberto ? '#1e40af' : !dg.julgado || SEM_MOVIMENTO.includes(dg.principal) ? 'transparent'
-        : RADAR_COR_CLARO[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
+        : gAtencao ? '#a16207' : '#93c5fd'
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
@@ -321,8 +323,8 @@ export default function AcMobileView({
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
               pago={dg.principal.startsWith('✓')}
-              cor={aberto ? '#0891b2' : gBarra} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
-              corTexto={aberto ? '#fff' : gCor} />
+              cor={aberto ? '#0891b2' : '#2563eb'} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
+              corTexto={aberto ? '#fff' : gCor} alerta={gAtencao} />
             <div style={{ flex:1, minWidth:0, display:'grid', gap:2 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
                 <IconeCat icone={grupoIcone} cor={aberto ? '#ffffff' : COR.azul} />

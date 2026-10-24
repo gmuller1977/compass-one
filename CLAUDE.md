@@ -3444,6 +3444,22 @@ brilho de `#1e40af`: branco 8,8:1, rótulo a 75% passa como antes. Azul novo
 usa a variável, nunca o hex. As notas que citam `#0f2878 → #1e40af` são
 histórico. Variantes mostradas: A (mesmo azul + halo) e C (quase preto).
 
+**Anéis, quadro neon e azul nos cards** (24/10/2026, escolhas do Guilherme
+nos cards, mesmo dia do neon). Em card AZUL, todo gráfico tem trilho branco
+e preenchimento azul neon (`--cx-trilho`, `--cx-barra`, `#2563eb → #0891b2`,
+5,2 e 3,7 no branco): a barra no azul não diz mais o status. Cards de topo
+(Radar, Planejamento) no modelo da caixa do saldo final previsto da Início
+(`rgba(255,255,255,.12)` com borda a 16%). "Resumo do mês" e "Plano do mês"
+da Início: ANÉIS (receitas/despesas em % do plano; grupos que passaram e
+abaixo, "1 de 4") e o fecho num QUADRO NEON (borda `#22d3ee` com brilho): a
+meta com velocímetro, e a frase do total. Radar: os 4 cards do topo têm anel
+em Receitas e Despesas e o Saldo atual no quadro neon; cada GRUPO fechado é
+um card branco com anel azul neon e número em `#1d4ed8` (6,7), borda
+`#93c5fd`; despesa acima de 100% ganha o marcador amarelo "!" no anel e
+borda `#a16207`. Categorias, abertas, seguem verde e amarelo-escuro
+(`#15803d` / `#a16207`, `RADAR_TEXTO_CLARO`). As notas acima sobre barras
+verde/laranja no Radar e no Resumo do mês são histórico.
+
 ---
 
 ## Paleta
