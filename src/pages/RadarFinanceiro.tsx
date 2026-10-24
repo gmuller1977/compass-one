@@ -312,12 +312,8 @@ export default function RadarFinanceiro() {
               </div>
               <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
                 color: corSaldo(saldoAtual), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
-              {/* A sobra da variável, quando há, vira uma linha embaixo do saldo. */}
-              {ritmo && resumo
-                ? <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>
-                    Ainda dá para gastar <b style={{ color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums' }}>{fmt(ritmo.sobra)}</b> nas variáveis até o dia {ritmo.totalDias}
-                  </div>
-                : resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
+              {/* A frase "Ainda dá para gastar" saiu do topo (24/10/2026, pedido do Guilherme). */}
+              {!ritmo && resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
             </button>
           </div>
         </PageHeader>
