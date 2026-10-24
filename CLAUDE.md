@@ -481,6 +481,9 @@ EXCEÇÃO À REGRA DE CONTRASTE decidida por ele, avisado do número: no
 (`#7f1d1d → #991b1b`, saldo final previsto negativo no Radar, Lançamentos
 e na memória de cálculo) o número fica BRANCO, porque ali o laranja some.
 As notas que citam `#fdba74` (abaixo e acima) são histórico.
+No mesmo dia, pedido dele: no Radar o cartão FECHADO do grupo tem borda de
+2px verde (`#15803d`, dentro do plano) ou laranja (`#c2410c`, passou), no
+computador e no celular; sem plano, sem borda; aberto segue azul.
 
 **No Radar, UM verde só** (24/10/2026, Guilherme: "parece que tem verdes e
 laranjas diferentes"; escolheu no card "um verde só + número mais vivo").

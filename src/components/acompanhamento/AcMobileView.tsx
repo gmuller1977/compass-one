@@ -298,6 +298,10 @@ export default function AcMobileView({
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
+      // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
+      // plano verde, passou laranja; sem plano, sem borda.
+      const gBorda = aberto ? '#1e40af' : !dg.julgado || SEM_MOVIMENTO.includes(dg.principal) ? 'transparent'
+        : RADAR_COR_CLARO[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)]
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
@@ -306,7 +310,7 @@ export default function AcMobileView({
         <div key={`g-${grupo}`} data-grupo={gid} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
           scrollMarginTop: 12,
           boxShadow: aberto ? '0 6px 22px rgba(30,64,175,.22)' : '0 2px 14px rgba(15,40,120,.07)',
-          border:`2px solid ${aberto ? '#1e40af' : 'transparent'}` }}>
+          border:`2px solid ${gBorda}` }}>
         <button onClick={() => toggleAberto(gid)} aria-expanded={aberto}
           aria-label={`${grupoLabel}: ${dg.principal}`}
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px',

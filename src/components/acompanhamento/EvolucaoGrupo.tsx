@@ -95,7 +95,9 @@ export default function EvolucaoGrupo({
     <div style={{
       background: aberto ? AZUL_ABERTO : '#fff', borderRadius: 20, overflow: 'hidden',
       boxShadow: aberto ? '0 6px 22px rgba(30,64,175,.22)' : '0 2px 14px rgba(15,40,120,.07)',
-      border: `2px solid ${aberto ? '#1e40af' : 'transparent'}`,
+      // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
+      // plano verde, passou laranja; sem plano, sem borda.
+      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : RADAR_TEXTO_CLARO[faixa]}`,
     }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
