@@ -1,7 +1,6 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
-import { RADAR_COR_AZUL } from '../acompanhamento/radarCores'
 import { IconeCat } from '../IconeCat'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
@@ -72,18 +71,17 @@ export default function NleBanner({
       {/* Left: 4 stat boxes + bank selectors */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          {/* Os quatro valores leem a MESMA paleta do Radar: entradas verde,
-              saídas vermelho, e os saldos verde se positivos e vermelho se
-              negativos — pedido do Guilherme, para as duas telas falarem igual. */}
+          {/* Número no cartão azul é BRANCO (24/10/2026, Guilherme: "número
+              branco nos card azul, e onde for branco usamos o verde e laranja"). */}
           <KpiCard icon="ti-wallet" label={saldoBasePrevisto ? 'Saldo inicial previsto' : 'Saldo inicial'} value={fmt(saldoBase)}
-            valueColor={saldoBase >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+            valueColor="#fff"
             sublabel={`${NOMES_MESES[mes]} ${ano}`} style={{ flex: 1 }} />
           <KpiCard icon="ti-arrow-up" label="Entradas" value={fmt(totalEntradas)}
-            valueColor={RADAR_COR_AZUL.bom} sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+            valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="ti-arrow-down" label="Saídas" value={fmt(totalSaidas)}
-            valueColor={RADAR_COR_AZUL.ruim} sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
+            valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
-            valueColor={saldoMes >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim}
+            valueColor="#fff"
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
           {/* O saldo que o banco (ou a carteira) mostra, no MESMO cartão dos
               outros, como a "Fatura do cartão" (22/10/2026, pedido do
@@ -101,7 +99,7 @@ export default function NleBanner({
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#c2410c',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fff',
               }}>
                 {diferenca === null ? 'não informado' : conciliado ? '✓ igual ao Compass'
                   : diferenca > 0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}

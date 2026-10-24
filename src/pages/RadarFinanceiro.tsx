@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_COR_AZUL, RADAR_LARANJA, totaisJulgados } from '../components/acompanhamento/radarCores'
+import { RADAR_LARANJA, NUMERO_NO_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
@@ -169,14 +169,11 @@ export default function RadarFinanceiro() {
   // de grupo: o cartão tem o mesmo fundo azul, e três tons de vermelho na mesma
   // tela (cartão, grupo, categoria) foram o motivo desta troca. Categoria fica
   // com o tom escuro porque o fundo dela é branco — ver radarCores.
-  // Saldo: verde positivo, vermelho negativo — os mesmos tons das receitas e
-  // despesas (RADAR_COR_AZUL). Vale para os dois cartões de saldo e para o
-  // número do rodapé; no rodapé negativo, sobre #991b1b, o vermelho dá 5,74.
-  const corSaldo = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : RADAR_COR_AZUL.ruim)
-  // Receitas e Despesas do topo, nas cores do "Resumo do mês" da Início: verde
-  // e laranja pelo TIPO, número e barra (pedido do Guilherme, 23/10/2026; antes a
-  // barra seguia a faixa e o número era #4ade80 / #f87171). Quem diz se passou
-  // do plano são os grupos. Medido no #1e40af: #86efac 4,8 e #fdba74 5,2.
+  // Desde 24/10/2026 (Guilherme: "número branco nos card azul, e onde for
+  // branco usamos o verde e laranja") todo número no azul é BRANCO, saldos
+  // e rodapé inclusive. Receitas e Despesas levam verde e laranja pelo TIPO
+  // só na BARRA. Quem diz se passou do plano são os grupos.
+  const corSaldo = (_v: number) => NUMERO_NO_AZUL
   const COR_RECEITAS = '#86efac'
   const COR_DESPESAS = RADAR_LARANJA
 
@@ -293,7 +290,7 @@ export default function RadarFinanceiro() {
                   Ainda dá para gastar nas despesas variáveis até o dia {ritmo.totalDias}
                 </div>
                 <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
-                  color: RADAR_COR_AZUL.bom, fontVariantNumeric: 'tabular-nums' }}>{fmt(ritmo.sobra)}</div>
+                  color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums' }}>{fmt(ritmo.sobra)}</div>
                 {resumo.detalhe && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.detalhe}</div>}
               </>) : (<>
                 <div style={{ fontSize: 14, fontWeight: 500, color: ROTULO_TOPO }}>
@@ -320,7 +317,7 @@ export default function RadarFinanceiro() {
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
                   {/* Acima de R$ 99.999,99 a letra cai para 15px e o valor segue inteiro na caixa. */}
-                  <div style={{ fontSize: k.v.length > 12 ? 15 : 17, fontWeight: 800, color: k.cor, fontVariantNumeric: 'tabular-nums',
+                  <div style={{ fontSize: k.v.length > 12 ? 15 : 17, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                   {k.p !== null && (
@@ -447,7 +444,7 @@ export default function RadarFinanceiro() {
                 <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', fontVariantNumeric: 'tabular-nums',
                   // Negativo, a barra do rodapé é VERMELHA e o número fica
                   // BRANCO (8,9): o laranja #c2410c some no #991b1b (24/10/2026).
-                  color: positivo ? RADAR_COR_AZUL.bom : '#ffffff' }}>
+                  color: NUMERO_NO_AZUL }}>
                   {fmt(saldoPrevisto)}
                 </span>
               </div>

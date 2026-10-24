@@ -17,8 +17,9 @@ import type { LinhaDoMes } from '../acompanhamento/evolucaoCalcs'
  * 85%, `#fdba74` e `#86efac` (a paleta de fundo escuro do CLAUDE.md).
  */
 const ROT = 'rgba(255,255,255,.85)'
-const NEG = '#c2410c'
-const POS = '#86efac'
+// Número no azul é BRANCO (24/10/2026, Guilherme); verde e laranja ficam no branco e nas barras.
+const NEG = '#fff'
+const POS = '#fff'
 
 export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: {
   linhas: LinhaDoMes[]; categorias: Categoria[]; oculto: boolean; onRadar: () => void

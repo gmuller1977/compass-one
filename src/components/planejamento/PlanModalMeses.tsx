@@ -295,7 +295,7 @@ export default function PlanModalMeses({
                     <div key={mi} style={{ position: 'sticky', bottom: nivel * H_RODAPE, zIndex: 2, height: H_RODAPE,
                       background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 9px',
                       fontSize: rotulo === 'Resultado' ? 13 : 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-                      color: rotulo === 'Resultado' ? (v >= 0 ? '#86efac' : '#c2410c') : '#fff',
+                      color: '#fff',
                       marginTop: i === 0 ? 12 : 0,
                       borderTopRightRadius: i === 0 && ultimo ? 10 : 0 }}>
                       {rotulo === 'Resultado' && v > 0 ? '+' : ''}{fmt(v, true)}
@@ -321,7 +321,7 @@ export default function PlanModalMeses({
                 <div key={mi} style={{ position: 'sticky', bottom: 0, zIndex: 2, height: H_RODAPE,
                   background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 9px',
                   fontSize: 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: '1px solid rgba(255,255,255,.2)',
-                  color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#c2410c',
+                  color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fff',
                   borderBottomRightRadius: j === meses.length - 1 ? 10 : 0 }}>
                   {!c || fechado ? '—' : c.ok ? '✓ dentro' : fmt(c.falta, true)}
                 </div>

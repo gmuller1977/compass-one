@@ -1,5 +1,4 @@
 import { ROTULO_TOPO } from '../mobile/estilo'
-import { RADAR_COR_AZUL } from '../acompanhamento/radarCores'
 import { fmt, type Saldos } from './types'
 import { mesesDoAno, resumoDoAno } from './anoDoPlano'
 
@@ -32,7 +31,6 @@ export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamen
   const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos })
   const r = resumoDoAno(meses, previsto)
   const passado = anoAtual < new Date().getFullYear()
-  const cor = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : '#c2410c')
 
   const falta = r.metaAno - r.rumo
   const deve = passado ? 'Você guardou' : 'Até dezembro você deve guardar'
@@ -61,7 +59,7 @@ export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamen
           {passado ? `O plano de ${anoAtual} previa terminar com` : `Se o plano se cumprir, ${anoAtual} termina com`}
         </div>
         <div style={{ fontSize: compacto ? 34 : 40, fontWeight: 800, letterSpacing: '-.8px', lineHeight: 1.15,
-          color: cor(r.saldoFinal), fontVariantNumeric: 'tabular-nums' }}>{fmt(r.saldoFinal, true)}</div>
+          color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.saldoFinal, true)}</div>
         <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>na conta em 31 de dezembro</div>
       </div>
       {compacto ? (

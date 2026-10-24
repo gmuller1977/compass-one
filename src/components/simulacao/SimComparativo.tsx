@@ -14,7 +14,7 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 const TEXTO  = '#fff'
 const SUAVE  = 'rgba(255,255,255,.85)'
 const BOM    = '#86efac'
-const RUIM   = '#c2410c'
+const RUIM   = '#fff'  // laranja no azul não se lê (24/10/2026)
 const ALERTA = '#fde047'
 const LINHA  = 'rgba(255,255,255,.16)'
 
@@ -185,10 +185,10 @@ export default function SimComparativo({
                     {l.juroEmbutido === null || Math.abs(l.juroEmbutido) < 0.005
                       ? <span style={{ color: SUAVE }}>—</span>
                       : l.juroEmbutido < 0
-                        ? <span style={{ color: BOM, fontWeight: 700 }} title="Sai mais barato que à vista">
+                        ? <span style={{ color: '#fff', fontWeight: 700 }} title="Sai mais barato que à vista">
                             −{fmt(-l.juroEmbutido)}</span>
                         : <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.25 }}>
-                            <span style={{ color: ALERTA, fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>
+                            <span style={{ color: '#fff', fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>
                             {l.taxaMes !== null && (
                               <span style={{ fontSize: 11, color: SUAVE }}>{fmtTaxa(l.taxaMes)}</span>
                             )}

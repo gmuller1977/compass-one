@@ -402,7 +402,7 @@ export default function AcMobileView({
         <div style={{ marginTop:18 }}>
           <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{ehMesAtual ? `Quanto tenho hoje · dia ${diaHoje} de ${totalDias}` : 'Saldo do mês'}</div>
           <div style={{ fontSize:34, fontWeight:800, letterSpacing:'-.02em', lineHeight:1.15, fontVariantNumeric:'tabular-nums',
-            color: saldoReal >= 0 ? '#fff' : '#c2410c' }}>{fmt(saldoReal)}</div>
+            color: '#fff' }}>{fmt(saldoReal)}</div>
         </div>
 
         <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18 }}>
@@ -410,8 +410,9 @@ export default function AcMobileView({
             // Receitas e Despesas, nas cores do "Resumo do mês" da Início: verde
             // e laranja pelo TIPO (pedido do Guilherme, 23/10/2026). Quem diz se
             // passou do plano são os grupos logo abaixo.
-            ['Receitas', '#86efac', '#86efac', percE, totalRealE, totalPrevE],
-            ['Despesas', RADAR_LARANJA, RADAR_LARANJA, percS, totalRealS, totalPrevS],
+            // Texto no azul é branco (24/10/2026); a cor fica na barra.
+            ['Receitas', '#fff', '#86efac', percE, totalRealE, totalPrevE],
+            ['Despesas', '#fff', RADAR_LARANJA, percS, totalRealS, totalPrevS],
           ] as [string,string,string,number,number,number][]).map(([rot, corRot, corBarra, p, real, prev]) => (
             <div key={rot}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:6 }}>

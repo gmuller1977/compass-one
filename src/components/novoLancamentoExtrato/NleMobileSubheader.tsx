@@ -88,7 +88,7 @@ export default function NleMobileSubheader({
                   {ehMesAtual ? 'Saldo no Compass' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
                 </div>
                 <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
-                  color:saldoMes>=0?'#fff':'#c2410c'}}>{fmt(saldoMes)}</div>
+                  color:'#fff'}}>{fmt(saldoMes)}</div>
               </div>
               {/* Conciliação: o saldo que o banco mostra × o do app. Tocar
                   abre a mesma caixa de antes para informar o saldo. */}
@@ -108,7 +108,7 @@ export default function NleMobileSubheader({
                 </span>
                 {diferenca !== null && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
-                    background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#c2410c'}}>
+                    background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fff'}}>
                     {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
                   </span>
                 )}

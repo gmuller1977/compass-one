@@ -228,7 +228,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
           <h2 style={{ margin: 0, fontSize: M.titulo, fontWeight: 700 }}>Resumo do mês</h2>
           {inicial !== null && (
             <div style={{ fontSize: M.legenda, color: ROT, marginTop: 2 }}>
-              {mesNome} começou com <b style={{ color: inicial < 0 ? NEG : '#fff', ...num }}>{v(inicial)}</b>
+              {mesNome} começou com <b style={{ color: '#fff', ...num }}>{v(inicial)}</b>
             </div>
           )}
         </div>
@@ -242,7 +242,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         {cols.map(({ rot, c }) => (
           <div key={rot} style={{ ...caixa, containerType: 'inline-size' }}>
             <div style={{ fontSize: M.legenda, color: ROT_CAIXA }}>{rot}</div>
-            <div style={{ ...num, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 800, marginTop: 4, color: c.final !== null && c.final < 0 ? NEG : '#fff' }}>
+            <div style={{ ...num, fontSize: tamanhoSaldo(v(c.final)), fontWeight: 800, marginTop: 4, color: '#fff' }}>
               {v(c.final)}
             </div>
           </div>
@@ -271,7 +271,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
                       ...(planejado ? { border: '2px solid #fff', background: 'rgba(255,255,255,.18)' } : { background: cor }),
                     }} />
                   </div>
-                  <span style={{ ...cel, fontSize: 14, color: planejado ? '#fff' : cor }}>{v(valor)}</span>
+                  <span style={{ ...cel, fontSize: 14, color: '#fff' }}>{v(valor)}</span>
                 </div>
               )
             })}

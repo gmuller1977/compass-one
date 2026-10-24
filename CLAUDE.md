@@ -490,6 +490,19 @@ todo o sistema estamos trabalhando com o card azul, o branco não ficou
 legal"). Contorno branco nos números e etiqueta branca também foram
 mostrados e preteridos. Não repetir.
 
+**Número no cartão AZUL é BRANCO; verde e laranja ficam no BRANCO e nas
+barras** (24/10/2026, Guilherme: "acho que vamos usar o número branco nos
+card azul, e onde for branco usamos o verde e laranja"). Revê o "um laranja
+só" acima no azul: o `#c2410c` dava 1,7 ali. Em todas as telas, todo valor
+sobre azul (Início, Bússola, Radar, Lançamentos, fatura, Planejamento,
+Simulador, memória de cálculo, rodapés) é branco, positivo ou negativo, e o
+sinal "−" diz o que sai; texto que era laranja no azul ("não cabe",
+"faltam R$ X", "falta lançar") também é branco. No azul a cor de status
+mora SÓ na barra (`RADAR_BARRA`, Receitas `#86efac` / Despesas `#c2410c`) e
+em palavras verdes curtas ("✓ igual ao Compass", "cabe"). No cartão branco,
+número e barra seguem `#15803d` / `#c2410c`. Token: `NUMERO_NO_AZUL` em
+`radarCores.ts`; `RADAR_TEXTO_AZUL` é branco nas três faixas.
+
 **No Radar, UM verde só** (24/10/2026, Guilherme: "parece que tem verdes e
 laranjas diferentes"; escolheu no card "um verde só + número mais vivo").
 O verde clarinho do "no limite" (`#bbf7d0`) saiu: barra dentro do plano é

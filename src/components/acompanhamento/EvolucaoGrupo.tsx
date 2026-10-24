@@ -119,7 +119,7 @@ export default function EvolucaoGrupo({
             <div style={{ fontSize: 12, color: rotulo, display: 'flex', alignItems: 'center', gap: 4 }}>
               <svg role="img" aria-label={isEntrada ? 'Receita' : 'Despesa'} width={12} height={12} viewBox="0 0 16 16"
                 style={{ transform: isEntrada ? 'none' : 'rotate(180deg)' }}>
-                <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={isEntrada ? COR.bom : COR.ruim}
+                <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={(aberto ? RADAR_BARRA : COR)[isEntrada ? 'bom' : 'ruim']}
                   strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               {isEntrada ? 'receita' : 'despesa'}

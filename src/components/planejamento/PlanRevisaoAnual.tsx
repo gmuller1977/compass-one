@@ -299,7 +299,8 @@ export default function PlanRevisaoAnual({
     ['Despesas', peBase.s, previsto.totalSaidas[mes]],
     ['Resultado', peBase.e - peBase.s, previsto.totalEntradas[mes] - previsto.totalSaidas[mes]],
   ] as const)
-  const corPe = (rot: string, v: number) => rot !== 'Resultado' ? '#fff' : v >= 0 ? '#86efac' : '#c2410c'
+  // Número no azul é BRANCO (24/10/2026, Guilherme).
+  const corPe = (_rot: string, _v: number) => '#fff'
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onFechar() }} style={{

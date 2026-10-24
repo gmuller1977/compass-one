@@ -179,8 +179,8 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
   // passa com folga: branco 10,4:1 e 9,9:1; #86efac 4,8:1 e 7,1:1;
   // #fdba74 5,2:1 e 7,8:1; label a 75% 5,1:1 e 6,1:1.
   const fundo = positivo ? '#0f2878' : '#7f1d1d'
-  // No fundo vermelho o laranja #c2410c some: ali o negativo é branco.
-  const neg = positivo ? '#c2410c' : '#ffffff'
+  // Número no azul (e no vermelho) é BRANCO desde 24/10/2026 (Guilherme:
+  // "número branco nos card azul"); o sinal "−" diz o que sai.
   const previstas: [string, number, string][] = [
     ['Receitas fixas a receber',      m.entradasPrevistas,   'Fixas de entrada que ainda nao foram confirmadas'],
     ['Receitas a receber',            m.receitasAReceber,    'O que o plano espera receber e ainda nao chegou'],
@@ -208,7 +208,7 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
       </div>
       <span style={{fontSize:forte?15:13,fontWeight:forte?800:600,fontVariantNumeric:'tabular-nums',
         whiteSpace:'nowrap',
-        color: forte ? (valor>=0?'#86efac':neg) : valor<0 ? neg : '#fff'}}>
+        color: '#fff'}}>
         {valor<0?'−':''}{fmt(Math.abs(valor))}
       </span>
     </div>
@@ -278,7 +278,7 @@ export default function NleExtrato(props: Props) {
                     </div>
                   </div>
                   <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
-                    color:positivo?'#86efac':'#ffffff'}}>
+                    color:'#ffffff'}}>
                     {fmt(sf)}
                   </span>
                 </div>

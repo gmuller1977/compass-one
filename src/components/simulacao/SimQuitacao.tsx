@@ -80,7 +80,8 @@ const cardAzul: React.CSSProperties = {
 }
 const apoio: React.CSSProperties = { fontSize: 12.5, color: 'rgba(255,255,255,.85)', lineHeight: 1.55 }
 const VERDE = '#86efac'
-const VERMELHO = '#c2410c'
+// Número no azul é BRANCO (24/10/2026, Guilherme): o laranja não se lê ali.
+const VERMELHO = '#fff'
 /** "22/10/2026 às 14:05": duas consultas no mesmo dia se distinguem pela hora. */
 const quandoSalvou = (iso: string) => {
   const d = new Date(iso)
@@ -460,7 +461,7 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
         </div>
         <div style={tile}>
           <div style={tRot}>Você economiza</div>
-          <div style={{ ...tVal, color: VERDE }}>{fmt(Math.max(0, r.economia))}</div>
+          <div style={{ ...tVal, color: '#fff' }}>{fmt(Math.max(0, r.economia))}</div>
           <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.85)', marginTop: 2 }}>
             {r.removidas.length} {r.removidas.length === 1 ? 'parcela soma' : 'parcelas somam'} {fmt(r.removidas.reduce((t, p) => t + p.valor, 0))}
           </div>
@@ -658,7 +659,7 @@ function Detalhes({ r }: { r: ReturnType<typeof simularQuitacao> }) {
           {r.fluxo.map(pt => (
             <tr key={`${pt.ano}-${pt.mes}`}>
               <td style={{ ...td, textAlign: 'left' }}>{curto(pt)}</td>
-              <td style={{ ...td, color: pt.parcela > 0 ? VERMELHO : pt.parcela < 0 ? VERDE : 'rgba(255,255,255,.6)' }}>
+              <td style={{ ...td, color: pt.parcela !== 0 ? '#fff' : 'rgba(255,255,255,.6)' }}>
                 {pt.parcela > 0 ? `− ${fmt(pt.parcela)}` : pt.parcela < 0 ? `+ ${fmt(-pt.parcela)}` : '—'}
               </td>
               <td style={{ ...td, color: pt.semCompra < 0 ? VERMELHO : '#fff' }}>{fmt(pt.semCompra)}</td>

@@ -52,7 +52,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
   // Uma etiqueta no título no lugar da frase: "✓ saldo cobre" ou "faltam R$ X".
   // No azul, a paleta escura do app: #fdba74 5,2 e #86efac 4,8 no #1e40af.
   const etiqueta = saldoHoje === undefined ? null : falta > 0.005
-    ? { texto: `faltam ${v(falta)}`, cor: '#c2410c', fundo: 'rgba(15,23,42,.35)' }
+    ? { texto: `faltam ${v(falta)}`, cor: '#fff', fundo: 'rgba(15,23,42,.35)' }
     : { texto: '✓ saldo cobre', cor: '#86efac', fundo: 'rgba(15,23,42,.35)' }
 
   return (
@@ -70,7 +70,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
         return (
           <LinhaAzul key={`${c.id}-${c.ano}-${c.mes}`} primeira={i === 0} icone={<IconeCat icone={ic.icone} cor={corDoIcone(ic.cor)} />}
             titulo={nome(c)}
-            legenda={<><span style={{ color: c.atrasada ? '#c2410c' : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span> · {v(c.valor)}</>}
+            legenda={<><span style={{ color: c.atrasada ? '#fff' : undefined, fontWeight: c.atrasada ? 700 : undefined }}>{quando(c)}</span> · {v(c.valor)}</>}
             direita={<button onClick={() => setPagando(c)} style={{
               border: 'none', background: '#fff', color: '#1e3a8a', borderRadius: 999, padding: '9px 16px', minHeight: 40,
               fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',

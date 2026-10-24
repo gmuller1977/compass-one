@@ -50,10 +50,10 @@ export default function FcBanner({
           <KpiCard icon="ti-credit-card" label="Limite planejado" value={fmt(totalPrevisto)}
             sublabel="por mês" style={{ flex: 1 }} />
           <KpiCard label="Total de todas as faturas" value={fmt(grandTotalFaturas)}
-            valueColor={grandTotalFaturas > 0 ? '#f87171' : '#4ade80'}
+            valueColor="#fff"
             sublabel="lançado" style={{ flex: 1 }} />
           <KpiCard icon="ti-equal" label="Disponível" value={fmt(disponivel)}
-            valueColor={disponivel >= 0 ? '#4ade80' : '#f87171'}
+            valueColor="#fff"
             sublabel={disponivel >= 0 ? '↑ no limite' : '↓ excedido'} style={{ flex: 1 }} />
           <KpiCard icon={statusSimb} label="Status" value={statusLbl}
             valueColor={statusCor} sublabel={`Vence dia ${diaVencimento}`} style={{ flex: 1 }} />
@@ -71,7 +71,7 @@ export default function FcBanner({
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#c2410c',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fff',
               }}>
                 {/* Contra o total lançado no Compass (o rodapé), nas palavras do
                     "Confira seus saldos": faltam = o cartão tem mais do que foi
