@@ -206,14 +206,12 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
     padding: '12px 14px', minWidth: 0,
   }
   const num: CSSProperties = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
-  const cel: CSSProperties = { ...num, fontSize: M.corpo, fontWeight: 700, textAlign: 'right' }
   const inicial = cols[0]?.c.inicial ?? null
   const atingimento = (c: ColunaResumo) =>
     meta > 0 && c.inicial !== null && c.final !== null ? Math.max(0, Math.round(((c.final - c.inicial) / meta) * 100)) : null
   const mostraMeta = meta > 0 || !!onDefinirMeta
   // Cada caractere em 800 ocupa ~0,56 em: o texto inteiro cabe na largura da caixa.
   const tamanhoSaldo = (t: string) => `min(22px, ${(100 / (Math.max(t.length, 8) * 0.56)).toFixed(2)}cqi)`
-  const escala = Math.max(0, ...cols.flatMap(({ c }) => [c.receitas ?? 0, c.despesas ?? 0]))
   return (
     <section aria-label={`Resumo de ${mesNome}`} style={{
       background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 20px', boxShadow: 'var(--cx-brilho)', color: '#fff',
@@ -248,79 +246,108 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         ))}
       </div>
 
-      {/* Receitas e despesas: gráfico de barras, planejado × realizado, na mesma escala. */}
-      <div style={{ fontSize: 13, fontWeight: 600, color: ROT, marginTop: 18, marginBottom: 2 }}>Planejado × realizado</div>
-      {([['Receitas', 'receitas'], ['Despesas', 'despesas']] as const).map(([nome, campo]) => {
-        const barras = cols.filter(({ c }) => c[campo] !== null)
-        return (
-          <div key={campo} role="group" aria-label={nome} style={{ marginTop: 12 }}>
-            <div style={{ fontSize: M.corpo, fontWeight: 600, marginBottom: 6 }}>{nome}</div>
-            {barras.length === 0 && <div style={{ fontSize: M.legenda, color: ROT }}>sem plano neste mês</div>}
-            {barras.map(({ rot, c }) => {
-              const valor = c[campo] ?? 0
-              const pct = escala > 0 ? Math.max(0, Math.min(100, (valor / escala) * 100)) : 0
-              const planejado = rot === 'Previsto'
-              return (
-                <div key={rot} style={{ display: 'grid', gridTemplateColumns: '72px minmax(0, 1fr) auto', alignItems: 'center', gap: 10, marginTop: 6 }}>
-                  <span style={{ fontSize: M.legenda, color: ROT }}>{planejado ? 'Planejado' : 'Realizado'}</span>
-                  {/* Planejado vazado (borda branca), realizado cheio na cor do tipo: 3:1 de elemento gráfico. */}
-                  <div aria-hidden style={{ height: 14, borderRadius: 999, background: 'var(--cx-trilho)', boxShadow: 'var(--cx-trilho-brilho)', overflow: 'hidden' }}>
-                    <div style={{
-                      width: `${pct}%`, height: '100%', borderRadius: 999, boxSizing: 'border-box',
-                      ...(planejado ? { border: '2px solid #2563eb', background: 'rgba(37,99,235,.18)' } : { background: 'var(--cx-barra)' }),
-                    }} />
-                  </div>
-                  <span style={{ ...cel, fontSize: 14, color: '#fff' }}>{v(valor)}</span>
-                </div>
-              )
-            })}
-          </div>
-        )
-      })}
+      {/* Receitas e despesas em ANÉIS (24/10/2026, Guilherme escolheu a opção A):
+          quanto do planejado já entrou e já saiu, em %. Trilho branco e azul neon,
+          o desenho dos gráficos em card azul. Sem plano ou sem realizado, o anel
+          fica vazio e só o valor aparece. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 18 }}>
+        {([['Receitas', 'receitas', 'recebido', '#0891b2'], ['Despesas', 'despesas', 'gasto', '#2563eb']] as const).map(([nome, campo, verbo, cor]) => {
+          const plan = previsto?.[campo] ?? null
+          const real = realizado?.[campo] ?? null
+          const pct = plan !== null && plan > 0 && real !== null ? Math.round((real / plan) * 100) : null
+          return (
+            <div key={campo} role="group" aria-label={nome} style={{ textAlign: 'center', minWidth: 0 }}>
+              <Anel pct={pct} cor={cor} rotulo={pct === null ? '' : verbo} oculto={oculto} />
+              <div style={{ fontSize: M.legenda, color: ROT, marginTop: 6 }}>{nome}</div>
+              <div style={{ ...num, fontSize: M.corpo, fontWeight: 800 }}>{v(real ?? plan)}</div>
+              {real !== null && plan !== null && plan > 0 && (
+                <div style={{ ...num, fontSize: M.legenda, color: ROT }}>de {v(plan)}</div>
+              )}
+              {real === null && plan !== null && <div style={{ fontSize: M.legenda, color: ROT }}>planejado</div>}
+              {plan === null && real !== null && <div style={{ fontSize: M.legenda, color: ROT }}>sem plano</div>}
+            </div>
+          )
+        })}
+      </div>
 
-      {mostraMeta && (
-        <div style={{ ...caixa, marginTop: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-            <span style={{ fontSize: M.corpo, fontWeight: 600 }}>Meta de economia</span>
-            {meta > 0 ? (
-              <span style={{ ...num, fontSize: 18, fontWeight: 800 }}>{v(meta)}</span>
-            ) : (
-              <button onClick={onDefinirMeta} style={{
-                background: '#fff', color: '#1e3a8a', border: 'none', borderRadius: 999, padding: '6px 14px',
-                fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
-              }}>Definir meta</button>
+      {/* A meta no QUADRO NEON (mesmo dia, da opção C): moldura ciano e o
+          velocímetro do atingimento. */}
+      {mostraMeta && (() => {
+        const c = realizado ?? previsto
+        const pct = meta > 0 && c ? atingimento(c) : null
+        const guardado = realizado && c && c.inicial !== null && c.final !== null ? c.final - c.inicial : 0
+        const ok = pct !== null && pct >= 100
+        return (
+          <div style={{
+            marginTop: 18, padding: '14px 16px', borderRadius: 18, border: '1.5px solid #22d3ee',
+            boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontSize: M.corpo, fontWeight: 600 }}>Meta de economia</span>
+              {meta > 0 ? (
+                <span style={{ ...num, fontSize: 18, fontWeight: 800 }}>{v(meta)}</span>
+              ) : (
+                <button onClick={onDefinirMeta} style={{
+                  background: '#fff', color: '#1e3a8a', border: 'none', borderRadius: 999, padding: '6px 14px',
+                  fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                }}>Definir meta</button>
+              )}
+            </div>
+            {pct !== null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                <Velocimetro pct={pct} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: M.corpo }}>
+                    {oculto ? '••' : ok ? `Meta batida: ${pct}%` : `${pct}% da meta`}
+                  </div>
+                  {guardado > 0 && (
+                    <div style={{ fontSize: 14, color: ROT_CAIXA }}>
+                      Você já guardou <b style={{ ...num, color: '#fff' }}>{v(guardado)}</b>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
-          {meta > 0 && (() => {
-            // O que já foi guardado: o realizado; sem ele (mês futuro), o previsto.
-            const c = (realizado ?? previsto)
-            const pct = c ? atingimento(c) : null
-            if (!c || pct === null) return null
-            const guardado = realizado && c.inicial !== null && c.final !== null ? c.final - c.inicial : 0
-            const ok = pct >= 100
-            return (
-              <>
-                {guardado > 0 && (
-                  <div style={{ fontSize: 14, color: ROT_CAIXA, marginTop: 8 }}>
-                    Você já guardou <b style={{ ...num, color: '#fff' }}>{v(guardado)}</b> da meta
-                  </div>
-                )}
-                {/* Barra no desenho das do Radar: trilho escuro e borda branca nos 100%. */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-                  <div role="progressbar" aria-valuenow={Math.min(100, pct)} aria-valuemin={0} aria-valuemax={100}
-                    aria-label="Atingimento da meta" style={{
-                      flex: 1, height: 12, borderRadius: 999, boxShadow: 'var(--cx-trilho-brilho)',
-                      background: 'var(--cx-trilho)', overflow: 'hidden',
-                    }}>
-                    <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: 'var(--cx-barra)' }} />
-                  </div>
-                  <b style={{ ...num, fontSize: 14 }}>{oculto ? '••' : `${ok ? '✓ ' : ''}${pct}%`}</b>
-                </div>
-              </>
-            )
-          })()}
-        </div>
-      )}
+        )
+      })()}
     </section>
+  )
+}
+
+/** Anel do Resumo do mês: trilho branco, arco azul neon até 100%; o texto diz o % real. */
+function Anel({ pct, cor, rotulo, oculto }: { pct: number | null; cor: string; rotulo: string; oculto: boolean }) {
+  const r = 46, c = 2 * Math.PI * r
+  const arco = pct === null ? 0 : Math.max(0, Math.min(100, pct)) / 100 * c
+  return (
+    <svg width="116" height="116" viewBox="0 0 116 116" role="img"
+      aria-label={pct === null ? 'sem comparação' : `${pct}% ${rotulo}`} style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
+      <circle cx="58" cy="58" r={r} stroke="#fff" strokeWidth="11" fill="none" />
+      {arco > 0 && (
+        <circle cx="58" cy="58" r={r} stroke={cor} strokeWidth="11" fill="none" strokeLinecap="round"
+          strokeDasharray={`${arco} ${c}`} transform="rotate(-90 58 58)" style={{ filter: 'drop-shadow(0 0 5px #22d3ee)' }} />
+      )}
+      {pct !== null && (
+        <>
+          <text x="58" y="58" textAnchor="middle" fill="#fff" fontSize="21" fontWeight="800">{oculto ? '••' : `${pct}%`}</text>
+          <text x="58" y="77" textAnchor="middle" fill="rgba(255,255,255,.8)" fontSize="12">{rotulo}</text>
+        </>
+      )}
+    </svg>
+  )
+}
+
+/** Velocímetro da meta no quadro neon: meio anel, cheio a partir de 100%. */
+function Velocimetro({ pct }: { pct: number }) {
+  const r = 26, c = Math.PI * r
+  const arco = Math.max(0, Math.min(100, pct)) / 100 * c
+  return (
+    <svg width="64" height="40" viewBox="0 0 64 40" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
+      <path d="M6 36a26 26 0 0 1 52 0" stroke="#fff" strokeWidth="8" fill="none" strokeLinecap="round" />
+      {arco > 0 && (
+        <path d="M6 36a26 26 0 0 1 52 0" stroke="#0891b2" strokeWidth="8" fill="none" strokeLinecap="round"
+          strokeDasharray={`${arco} ${c}`} style={{ filter: 'drop-shadow(0 0 4px #22d3ee)' }} />
+      )}
+    </svg>
   )
 }
