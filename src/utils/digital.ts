@@ -77,9 +77,57 @@ export function traduzirErroDigital(e: unknown): string | null {
   return err.message || 'Não foi possível usar a digital. Tente de novo ou entre com a senha.'
 }
 
+// A chave deste aparelho (24/10/2026, pedido do Guilherme: "não dá para ir
+// direto?"). Sem dizer qual chave usar, o Android abre antes da digital a
+// janela "Usar chave de acesso salva?" para a pessoa escolher a conta.
+// Guardamos o id da chave criada ou usada aqui e o passamos ao navegador
+// (allowCredentials), para ele poder ir direto à leitura. O servidor não
+// depende disso: a assinatura vale igual. Se a chave guardada falhar,
+// esquecemos o id e a tentativa seguinte volta à janela de escolha.
+const CHAVE_ID = 'compass-digital-chave-id'
+const paraB64 = (b: ArrayBuffer) =>
+  btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+function deB64(s: string): ArrayBuffer {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4))
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out.buffer
+}
+function lerIdDaChave(): string | null {
+  try { return localStorage.getItem(CHAVE_ID) } catch { return null }
+}
+function guardarIdDaChave(id: string | null) {
+  try { if (id) localStorage.setItem(CHAVE_ID, id); else localStorage.removeItem(CHAVE_ID) } catch { /* segue com a janela */ }
+}
+
+/** Roda `fn` com o navegador avisado da chave deste aparelho, e guarda a que for usada. */
+async function comChaveDoAparelho<T>(fn: (usouId: boolean) => Promise<T>): Promise<T> {
+  const cc = navigator.credentials
+  const getOriginal = cc.get.bind(cc)
+  const createOriginal = cc.create.bind(cc)
+  const id = lerIdDaChave()
+  const guardar = (c: Credential | null) => {
+    if (c && 'rawId' in c) guardarIdDaChave(paraB64((c as PublicKeyCredential).rawId))
+    return c
+  }
+  cc.get = async (opts?: CredentialRequestOptions) => {
+    if (id && opts?.publicKey && !opts.publicKey.allowCredentials?.length) {
+      opts = { ...opts, publicKey: { ...opts.publicKey,
+        allowCredentials: [{ type: 'public-key', id: deB64(id), transports: ['internal'] }] } }
+    }
+    return guardar(await getOriginal(opts))
+  }
+  cc.create = async (opts?: CredentialCreationOptions) => guardar(await createOriginal(opts))
+  try { return await fn(id !== null) } finally { cc.get = getOriginal; cc.create = createOriginal }
+}
+
 export async function entrarComDigital(): Promise<{ ok: boolean; erro: string | null }> {
   try {
-    const { data, error } = await supabase.auth.signInWithPasskey()
+    const { data, error } = await comChaveDoAparelho(async usouId => {
+      const r = await supabase.auth.signInWithPasskey()
+      if ((r.error || !r.data?.session) && usouId) guardarIdDaChave(null)
+      return r
+    })
     if (error || !data?.session) return { ok: false, erro: traduzirErroDigital(error) }
     marcar(CHAVE_CADASTRADA, data.session.user.id)
     return { ok: true, erro: null }
@@ -91,7 +139,7 @@ export async function entrarComDigital(): Promise<{ ok: boolean; erro: string | 
 /** Cadastra a digital deste aparelho para quem está logado. */
 export async function cadastrarDigital(userId: string): Promise<{ ok: boolean; erro: string | null }> {
   try {
-    const { data, error } = await supabase.auth.registerPasskey()
+    const { data, error } = await comChaveDoAparelho(() => supabase.auth.registerPasskey())
     if (error) return { ok: false, erro: traduzirErroDigital(error) }
     marcar(CHAVE_CADASTRADA, userId)
     // O nome é só para a lista do Perfil dizer qual aparelho é qual.
