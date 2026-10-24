@@ -1,10 +1,8 @@
 import type { Categoria } from '../../context/AppContext'
-import { iconeCategoria } from '../../utils/categoriaIcone'
 import { type CatReal } from './AcShared'
-import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, faixaRadar, destaqueDoGrupo } from './radarCores'
+import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, RADAR_BARRA_CLARO, faixaRadar, destaqueDoGrupo } from './radarCores'
 import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
-import { IconeRedondo } from '../mobile/ui'
 
 /**
  * O grupo é um CARTÃO do cardápio (pedido do Guilherme em 12/10/2026: o Radar
@@ -29,7 +27,7 @@ import { IconeRedondo } from '../mobile/ui'
  */
 const TEXTO  = '#0f172a'
 const ROTULO = '#475569'
-const TRILHO = '#e2e8f0'
+const TRILHO = '#e2e8f0' // trilho do anel fechado
 // Aberto, o cartão fica AZUL-ESCURO (pedido do Guilherme, 21/10/2026), o
 // gradiente dos cartões do topo, que termina no #1e40af. Ali vale a paleta do
 // azul (RADAR_COR_AZUL): verde 5,0, verde-claro 9,1; o vermelho #f87171 dá
@@ -62,9 +60,6 @@ export default function EvolucaoGrupo({
   const allCats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
   if (allCats.length === 0) return null
 
-  const primNome = allCats[0]?.nome
-  const grupoIcone = primNome ? iconeCategoria(categorias, primNome).icone : (isEntrada ? '💰' : '📂')
-  const grupoCor = primNome ? iconeCategoria(categorias, primNome).cor : '#94a3b8'
 
   // Fixa paga entra pelo valor pago, e grupo só de fixas pagas é "✓ pago" —
   // senão o grupo dizia "resta R$ 0,28" em cima de categorias "✓ pago".
@@ -77,7 +72,6 @@ export default function EvolucaoGrupo({
   })), isEntrada)
   const semDados   = !destaque.julgado
   const perc       = destaque.prev > 0 ? destaque.real / destaque.prev : 0
-  const percClamp  = Math.min(perc, 1)
   const percLabel  = semDados ? 'sem plano' : `${Math.round(perc * 100)}%`
   // A cor segue o percentual ARREDONDADO, o que está escrito na tela. Com o
   // exato, 89,53% aparecia como "90%" em verde enquanto 90% de verdade é
@@ -105,42 +99,35 @@ export default function EvolucaoGrupo({
         onClick={alternar}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar() } }}
         style={{ cursor: 'pointer', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, color: texto }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* No azul, o ícone ganha um círculo branco: a cor dele foi medida no branco. */}
-          <span style={{ borderRadius: '50%', background: aberto ? '#fff' : 'transparent', display: 'inline-flex', flexShrink: 0 }}>
-            <IconeRedondo icone={grupoIcone} cor={grupoCor} tamanho={42} />
-          </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {grupoLabel}
-            </div>
-            {/* O TIPO é a seta, a mesma dos cartões do topo: ↑ verde receita,
-                ↓ vermelha despesa. Desenhada, porque o caractere é fino. */}
-            <div style={{ fontSize: 12, color: rotulo, display: 'flex', alignItems: 'center', gap: 4 }}>
+        {/* Opção A (24/10/2026, escolha do Guilherme): o % num ANEL à esquerda,
+            no lugar da barra, e ao lado o nome, o "resta/passou" e o "gastou X
+            de Y". O anel ocupa o lugar do ícone. Fechado, o anel tem
+            a cor do número no trilho claro; aberto (azul), trilho branco e azul
+            neon, como os gráficos em card azul. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <AnelGrupo pct={semDados ? null : perc} pago={destaque.principal.startsWith('✓')}
+            cor={aberto ? '#0891b2' : RADAR_BARRA_CLARO[faixa]} trilho={aberto ? '#fff' : TRILHO}
+            corTexto={aberto ? '#fff' : corNumero} />
+          <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+                {grupoLabel}
+              </span>
               <svg role="img" aria-label={isEntrada ? 'Receita' : 'Despesa'} width={12} height={12} viewBox="0 0 16 16"
-                style={{ transform: isEntrada ? 'none' : 'rotate(180deg)' }}>
-                <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={(aberto ? RADAR_BARRA : COR)[isEntrada ? 'bom' : 'ruim']}
+                style={{ transform: isEntrada ? 'none' : 'rotate(180deg)', flexShrink: 0 }}>
+                <path d="M8 14V3M3 7.5 8 2.5l5 5" fill="none" stroke={aberto ? '#fff' : COR[isEntrada ? 'bom' : 'ruim']}
                   strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {isEntrada ? 'receita' : 'despesa'}
+              <span aria-hidden="true" style={{ fontSize: 14, color: rotulo,
+                transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none' }}>▾</span>
             </div>
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
+              fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
+              {destaque.principal}
+            </div>
+            <div style={{ fontSize: 13, color: rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.contexto}</div>
           </div>
-          <span aria-hidden="true" style={{ fontSize: 14, color: rotulo,
-            transition: 'transform .15s', transform: aberto ? 'rotate(180deg)' : 'none' }}>▾</span>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-.3px', color: corNumero,
-          fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
-          {destaque.principal}
-        </div>
-        <div style={{ height: 12, borderRadius: 6, background: aberto ? 'var(--cx-trilho)' : TRILHO, overflow: 'hidden', boxSizing: 'border-box',
-          boxShadow: aberto ? 'var(--cx-trilho-brilho)' : 'none',
-          border: aberto ? 'none' : `1.5px solid ${semDados ? '#cbd5e1' : RADAR_BORDA_CLARO}` }}>
-          {!semDados && (
-            <div style={{ height: '100%', borderRadius: 6, width: `${percClamp * 100}%`,
-              background: aberto ? 'var(--cx-barra)' : RADAR_BARRA_CLARO[faixa], transition: 'width .3s ease' }} />
-          )}
-        </div>
-        <div style={{ fontSize: 13, color: rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.contexto}</div>
       </div>
 
     </div>
@@ -190,5 +177,25 @@ export function CategoriasDoGrupo({
           </div>
         </div>
     </div>
+  )
+}
+
+/** Anel do grupo (opção A): arco até 100%, o texto diz o % real; fixa paga é ✓. */
+export function AnelGrupo({ pct, pago, cor, trilho, corTexto }: {
+  pct: number | null; pago: boolean; cor: string; trilho: string; corTexto: string
+}) {
+  const r = 28, c = 2 * Math.PI * r
+  const cheio = pago ? 1 : pct === null ? 0 : Math.max(0, Math.min(1, pct))
+  const texto = pago ? '✓' : pct === null ? '' : `${Math.round(pct * 100)}%`
+  return (
+    <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
+      <circle cx="36" cy="36" r={r} stroke={trilho} strokeWidth="8" fill="none" />
+      {cheio > 0 && (
+        <circle cx="36" cy="36" r={r} stroke={cor} strokeWidth="8" fill="none" strokeLinecap="round"
+          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 36 36)" />
+      )}
+      <text x="36" y={pago ? 43 : 41} textAnchor="middle" fill={corTexto}
+        fontSize={pago ? 20 : texto.length > 4 ? 13 : 15} fontWeight="800">{texto}</text>
+    </svg>
   )
 }

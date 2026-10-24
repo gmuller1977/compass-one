@@ -9,6 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
+import { AnelGrupo } from './EvolucaoGrupo'
 import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
@@ -297,7 +298,6 @@ export default function AcMobileView({
       const gBarra = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? RADAR_BARRA : RADAR_BARRA_CLARO)[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gCor
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
-      const larguraBarra = gPrev > 0 ? Math.min(gReal / gPrev, 1) * 100 : 0
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
       const gBorda = aberto ? '#1e40af' : !dg.julgado || SEM_MOVIMENTO.includes(dg.principal) ? 'transparent'
@@ -316,27 +316,28 @@ export default function AcMobileView({
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px',
             background: aberto ? 'var(--cx-azul)' : '#fff',
             border:'none', cursor:'pointer', fontFamily:'inherit' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
-            <IconeCat icone={grupoIcone} cor={aberto ? '#ffffff' : COR.azul} />
-            <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
-            {/* O número em destaque na linha do nome, maior que ele (19px; no
-                computador são 24). Pedido do Guilherme em 13/10/2026: maior,
-                "sem exagero", e na mesma linha. */}
-            <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
-              {dg.principal}
-            </span>
-            <span aria-hidden style={{ color:gRotulo, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
-              transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
-            <div style={{ flex:1, height:8, borderRadius:4, overflow:'hidden', boxSizing:'border-box',
-              background: aberto ? 'var(--cx-trilho)' : RADAR_TRILHO_BRANCO, border: aberto ? 'none' : `1px solid ${RADAR_BORDA_CLARO}`, boxShadow: aberto ? 'var(--cx-trilho-brilho)' : 'none' }}>
-              <div style={{ width:`${larguraBarra}%`, height:'100%', borderRadius:4, background: aberto ? 'var(--cx-barra)' : gBarra }} />
+          {/* Opção A (24/10/2026, escolha do Guilherme), a mesma do computador:
+              o % num anel à esquerda, no lugar da barra. */}
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <AnelGrupo pct={dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) ? gPerc : null}
+              pago={dg.principal.startsWith('✓')}
+              cor={aberto ? '#0891b2' : gBarra} trilho={aberto ? '#fff' : RADAR_TRILHO_BRANCO}
+              corTexto={aberto ? '#fff' : gCor} />
+            <div style={{ flex:1, minWidth:0, display:'grid', gap:2 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
+                <IconeCat icone={grupoIcone} cor={aberto ? '#ffffff' : COR.azul} />
+                <span style={{ flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{grupoLabel}</span>
+                <span aria-hidden style={{ color:gRotulo, fontSize:14, transform: aberto ? 'rotate(90deg)' : undefined,
+                  transition:'transform .15s', width:14, textAlign:'center' }}>›</span>
+              </div>
+              <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
+                {dg.principal}
+              </span>
+              <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums', overflow:'hidden', textOverflow:'ellipsis' }}>
+                {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
+                {dg.julgado && Math.abs(dg.fora) > 0.005 ? ` · ${fmtK(dg.fora)} sem plano` : ''}
+              </span>
             </div>
-            <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>
-              {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
-              {dg.julgado && Math.abs(dg.fora) > 0.005 ? ` · ${fmtK(dg.fora)} sem plano` : ''}
-            </span>
           </div>
         </button>
         {aberto && (
