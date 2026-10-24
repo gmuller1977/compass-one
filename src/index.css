@@ -1,36 +1,13 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, 'Inter', sans-serif; }
-/* Azul da identidade (24/10/2026, "ar neon"). Uma fonte só para o gradiente
-   e o brilho; os componentes leem as variáveis. O extremo claro do gradiente
-   não passa do brilho de #1e40af (a regra do CLAUDE.md). */
+/* Azul da identidade (24/10/2026, "ar neon", versão B · Elétrico, escolha do
+   Guilherme). Uma fonte só para o gradiente e o brilho: os componentes leem
+   estas variáveis. O extremo claro (#1b35c8) tem o mesmo brilho de #1e40af
+   (a regra do CLAUDE.md): branco 8,8:1. */
 :root {
-  --cx-azul: linear-gradient(160deg, #0f2878 0%, #1e40af 100%);
-  --cx-neon: #60a5fa;
-  --cx-brilho: 0 2px 14px rgba(15,40,120,.07);
-  --cx-brilho-topo: none;
-  --cx-bolinha: 0 6px 16px rgba(15,40,120,.25);
-}
-/* A: o mesmo azul, com contorno e brilho azul-elétrico */
-html[data-azul="a"] {
-  --cx-azul: linear-gradient(160deg, #0f2878 0%, #1e40af 100%);
-  --cx-neon: #60a5fa;
-  --cx-brilho: inset 0 0 0 1px rgba(96,165,250,.55), 0 0 0 1px rgba(59,130,246,.15), 0 8px 28px rgba(37,99,235,.40);
-  --cx-brilho-topo: inset 0 -2px 0 rgba(96,165,250,.85), 0 10px 32px rgba(37,99,235,.35);
-  --cx-bolinha: inset 0 0 0 1px rgba(147,197,253,.7), 0 0 18px rgba(59,130,246,.65);
-}
-/* B: azul elétrico (mais saturado, mesmo brilho de #1e40af) com neon ciano */
-html[data-azul="b"] {
   --cx-azul: linear-gradient(160deg, #0b1460 0%, #1b35c8 100%);
   --cx-neon: #22d3ee;
   --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.55), 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(27,53,200,.45), 0 0 22px rgba(34,211,238,.18);
   --cx-brilho-topo: inset 0 -2px 0 rgba(34,211,238,.9), 0 10px 34px rgba(34,211,238,.28);
   --cx-bolinha: inset 0 0 0 1.5px rgba(34,211,238,.8), 0 0 18px rgba(34,211,238,.55);
-}
-/* C: noite neon (quase preto azulado) com ciano */
-html[data-azul="c"] {
-  --cx-azul: linear-gradient(160deg, #060b2e 0%, #13227a 100%);
-  --cx-neon: #22d3ee;
-  --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.6), 0 8px 30px rgba(6,11,46,.45), 0 0 26px rgba(34,211,238,.25);
-  --cx-brilho-topo: inset 0 -2px 0 rgba(34,211,238,.95), 0 10px 36px rgba(34,211,238,.32);
-  --cx-bolinha: inset 0 0 0 1.5px rgba(34,211,238,.85), 0 0 20px rgba(34,211,238,.6);
 }
