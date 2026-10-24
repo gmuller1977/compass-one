@@ -461,7 +461,7 @@ export default function Dashboard() {
           </Cartao>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, alignItems: isMobile ? 'start' : 'stretch' }}>
           {/* "Resumo do mês" e "Plano do mês" lado a lado (24/10/2026, pedido do
               Guilherme); o que pede atenção vem depois, na mesma grade. */}
             {(ehFuturo ? previsao : memoria) && (
