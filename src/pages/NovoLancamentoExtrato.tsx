@@ -7,6 +7,7 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import { ehAutomaticoCategoria, ehFixaDeCartao } from '../utils/categoriaIcone'
+import ModalConfirmacao from '../components/ModalConfirmacao'
 import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
@@ -1063,11 +1064,27 @@ export default function NovoLancamentoExtrato() {
     setTimeout(() => categoriaSelectRef.current?.focus(), 80)
   }
 
+  // Excluir pede confirmação numa janela do app (ModalConfirmacao), e não no
+  // window.confirm do navegador (24/10/2026, pedido do Guilherme).
+  const [excluindo, setExcluindo] = useState<{ dia: number; id: string; atual: boolean } | null>(null)
+  const lancamentoExcluindo = excluindo
+    ? (dados[key]?.lancamentos?.[excluindo.dia] ?? []).find(l => l.id === excluindo.id)
+    : undefined
+
   function excluirAtual() {
     if (!editandoId) return
-    if (!window.confirm('Excluir este lançamento?')) return
-    const diaAlvo = editandoDiaOriginal ?? diaSel
-    const idAtual = editandoId
+    setExcluindo({ dia: editandoDiaOriginal ?? diaSel, id: editandoId, atual: true })
+  }
+
+  function confirmarExclusao() {
+    if (!excluindo) return
+    const { dia, id, atual } = excluindo
+    setExcluindo(null)
+    if (atual) excluirConfirmado(dia, id)
+    else excluir(dia, id)
+  }
+
+  function excluirConfirmado(diaAlvo: number, idAtual: string) {
     updateMes(prev => ({
       ...prev,
       lancamentos: { ...prev.lancamentos, [diaAlvo]: (prev.lancamentos[diaAlvo]??[]).filter(l=>l.id!==idAtual) }
@@ -1296,7 +1313,7 @@ export default function NovoLancamentoExtrato() {
               setDiaSel={setDiaSel}
               editarFixa={editarFixa}
               editarLancamento={editarLancamento}
-              excluir={excluir}
+              excluir={(dia: number, id: string) => setExcluindo({ dia, id, atual: false })}
               lancar={lancar}
               desconsolidarFixa={desconsolidarFixa}
               consolidarFixa={consolidarFixa}
@@ -1361,6 +1378,17 @@ export default function NovoLancamentoExtrato() {
       )}
 
       <BottomNav />
+
+      <ModalConfirmacao
+        open={!!excluindo}
+        titulo="Excluir lançamento?"
+        mensagem={lancamentoExcluindo
+          ? `${lancamentoExcluindo.descricao || lancamentoExcluindo.categoria} · ${fmt(lancamentoExcluindo.valor)}`
+          : undefined}
+        detalhe="Ele sai do extrato e do saldo da conta."
+        onConfirmar={confirmarExclusao}
+        onCancelar={() => setExcluindo(null)}
+      />
 
       {escolherContaFixa && (() => {
         const cat = categorias.find(c => c.id === escolherContaFixa)
