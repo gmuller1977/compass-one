@@ -33,7 +33,7 @@ Com a regra, uma paleta única passa em todos os fundos escuros do app:
 |---|---|---|
 | Texto geral | `#ffffff` | 6,7:1 |
 | Receitas / positivos | `#86efac` | 4,8:1 |
-| Despesas / negativos | `#fecaca` | 4,6:1 |
+| Despesas / negativos | `#fdba74` (laranja; era o rosa `#fecaca` até 24/10/2026) | 5,2:1 |
 | Destaque / alerta | `#fde047` | 5,1:1 |
 | Labels secundários | `rgba(255,255,255,0.75)` | 5,1:1 |
 
@@ -459,6 +459,19 @@ azul-escuro, inclusive no cartão branco (`RADAR_TRILHO_ESCURO`, `#1e3a8a`); o
 NÚMERO no branco usa `#c2410c` (5,2), porque o laranja claro dá 1,7. As
 constantes `RADAR_COR_*` seguem com o vermelho: outras telas as leem. Rosa e
 roxo foram mostrados e recusados no mesmo dia.
+
+**O LARANJA substituiu o rosa em TODAS as telas** (24/10/2026, Guilherme:
+"pode usar o laranja ao invés do rosa em todas as telas, em barras e
+números"). Todo `#fecaca` (e o `#fca5a5` do saldo forte de Lançamentos) que
+pintava número ou barra de despesa/negativo sobre azul virou `#fdba74`:
+Início (Resumo do mês, Plano do mês, saldos), Bússola, Lançar, Lançamentos
+(topo, caixa de saldo, fatura), Radar, Planejamento (pé azul, topo do ano,
+revisão anual) e Simulador. Medido: 5,2 no `#1e40af`, 6,1 no `#1e3a8a`,
+4,93 no rodapé vermelho `#991b1b`; nas caixas translúcidas do Resumo do mês
+dá 3,8, que passa porque o número tem 22px em negrito (texto grande).
+Ficaram de fora as BORDAS rosadas das caixas de erro (Login, Cadastro,
+Configurações) e os vermelhos (`#f87171`, `#b91c1c`): não eram o rosa.
+Os números das notas abaixo e acima que citam `#fecaca` são histórico.
 
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e

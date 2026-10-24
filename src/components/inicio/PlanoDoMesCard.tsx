@@ -14,10 +14,10 @@ import type { LinhaDoMes } from '../acompanhamento/evolucaoCalcs'
  * lado. O detalhe por categoria fica no Radar. Contas em utils/balancoDoPlano.
  *
  * O mesmo azul-escuro do "Resumo do mês", logo acima: só branco, rótulo a
- * 85%, `#fecaca` e `#86efac` (a paleta de fundo escuro do CLAUDE.md).
+ * 85%, `#fdba74` e `#86efac` (a paleta de fundo escuro do CLAUDE.md).
  */
 const ROT = 'rgba(255,255,255,.85)'
-const NEG = '#fecaca'
+const NEG = '#fdba74'
 const POS = '#86efac'
 
 export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: {

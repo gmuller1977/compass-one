@@ -14,7 +14,7 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 const TEXTO  = '#fff'
 const SUAVE  = 'rgba(255,255,255,.85)'
 const BOM    = '#86efac'
-const RUIM   = '#fecaca'
+const RUIM   = '#fdba74'
 const ALERTA = '#fde047'
 const LINHA  = 'rgba(255,255,255,.16)'
 

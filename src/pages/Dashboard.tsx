@@ -288,7 +288,7 @@ export default function Dashboard() {
               <div>
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
                 <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
-                  color: grande.valor < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
+                  color: grande.valor < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
                 {linhaDaMeta}
               </div>
 
@@ -306,7 +306,7 @@ export default function Dashboard() {
                   <>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Saldo final previsto</span>
-                      <span style={{ fontSize: 24, fontWeight: 800, color: memoria.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: memoria.fechamento < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
                         {v(memoria.fechamento)}
                       </span>
                     </div>
@@ -315,7 +315,7 @@ export default function Dashboard() {
                 ) : memoria ? (
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                     <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Abriu com</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: memoria.abertura < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: memoria.abertura < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
                       {v(memoria.abertura)}
                     </span>
                   </div>
@@ -339,7 +339,7 @@ export default function Dashboard() {
               <div>
                 <div style={{ fontSize: 16, color: ROTULO_TOPO }}>{grande.rotulo}</div>
                 <div style={{ fontSize: isMobile ? 38 : 48, fontWeight: 800, letterSpacing: '-.02em', marginTop: 4, lineHeight: 1.05,
-                  color: grande.valor < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
+                  color: grande.valor < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(grande.valor)}</div>
                 {linhaDaMeta}
               </div>
 
@@ -379,7 +379,7 @@ export default function Dashboard() {
                   <>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Saldo final previsto</span>
-                      <span style={{ fontSize: 24, fontWeight: 800, color: memoria.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontSize: 24, fontWeight: 800, color: memoria.fechamento < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
                         {v(memoria.fechamento)}
                       </span>
                     </div>
@@ -388,7 +388,7 @@ export default function Dashboard() {
                 ) : memoria ? (
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
                     <span style={{ fontSize: 15, color: ROTULO_TOPO }}>Abriu com</span>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: memoria.abertura < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: memoria.abertura < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
                       {v(memoria.abertura)}
                     </span>
                   </div>

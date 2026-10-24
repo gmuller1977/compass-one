@@ -184,7 +184,7 @@ export interface ColunaResumo {
  * O cartão é o azul-escuro do topo (mesmo dia, pedido dele: "chamar mais
  * atenção, seguindo o modelo desta tela"), com a paleta de fundo escuro do
  * CLAUDE.md. Dentro das caixas translúcidas (mais claras que #1e40af) só vai
- * branco, rótulo a 85% e o #fecaca do negativo: 6,9 / 5,5 / 5,0.
+ * branco, rótulo a 85% e o #fdba74 do negativo: 6,9 / 5,5 / 3,8 (22px em negrito, texto grande).
  */
 export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefinirMeta }: {
   mesNome: string
@@ -201,7 +201,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
     .filter((x): x is { rot: string; c: ColunaResumo } => !!x)
   const ROT = 'rgba(255,255,255,.75)'
   const ROT_CAIXA = 'rgba(255,255,255,.85)'
-  const NEG = '#fecaca'
+  const NEG = '#fdba74'
   const caixa: CSSProperties = {
     background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
     padding: '12px 14px', minWidth: 0,

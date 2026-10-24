@@ -89,7 +89,7 @@ export default function NleBanner({
               outros, como a "Fatura do cartão" (22/10/2026, pedido do
               Guilherme: "Conciliação" confundia). A diferença vai em palavras,
               contra o Saldo atual ao lado; a pílula diz que o cartão abre a
-              caixa de saldo. #86efac 4,8 e #fecaca 4,6 no #1e40af. */}
+              caixa de saldo. #86efac 4,8 e #fdba74 5,2 no #1e40af. */}
           <div role="button" tabIndex={0} aria-label={isDinheiro ? 'Informar o saldo em dinheiro' : 'Informar o saldo do banco'}
             title={isDinheiro ? 'Clique para informar quanto tem em dinheiro' : 'Clique para informar o saldo que aparece no banco'}
             onClick={abrirModal}
@@ -101,7 +101,7 @@ export default function NleBanner({
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fdba74',
               }}>
                 {diferenca === null ? 'não informado' : conciliado ? '✓ igual ao Compass'
                   : diferenca > 0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}

@@ -47,7 +47,7 @@ export default function NleMobileSubheader({
       {/* SUB-HEADER MOBILE: continua o topo azul do NleHeader — contas em
           pílulas, o mês, e o saldo em destaque, como nos apps de banco.
           Sobre #0f2878 → #1e40af, medido no extremo claro: branco 8,72 ·
-          rótulo a 75% 5,1 · #86efac 6,21 · #fecaca 6,03. */}
+          rótulo a 75% 5,1 · #86efac 6,21 · #fdba74 5,17. */}
       {isMobile && tabPrincipal !== 'cartao' && (() => {
         const hoje = new Date()
         const ehMesAtual = mes === hoje.getMonth() && ano === hoje.getFullYear()
@@ -88,7 +88,7 @@ export default function NleMobileSubheader({
                   {ehMesAtual ? 'Saldo no Compass' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
                 </div>
                 <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
-                  color:saldoMes>=0?'#fff':'#fecaca'}}>{fmt(saldoMes)}</div>
+                  color:saldoMes>=0?'#fff':'#fdba74'}}>{fmt(saldoMes)}</div>
               </div>
               {/* Conciliação: o saldo que o banco mostra × o do app. Tocar
                   abre a mesma caixa de antes para informar o saldo. */}
@@ -108,7 +108,7 @@ export default function NleMobileSubheader({
                 </span>
                 {diferenca !== null && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
-                    background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fecaca'}}>
+                    background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fdba74'}}>
                     {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
                   </span>
                 )}

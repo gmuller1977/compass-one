@@ -22,7 +22,7 @@ import { COR } from '../utils/cores'
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
 // Sobre o azul do topo (#0f2878 → #1e40af, medido no extremo claro): branco
-// 8,7; rótulo a 75% 5,1; #fecaca 4,6; #86efac 4,8.
+// 8,7; rótulo a 75% 5,1; #fdba74 5,2; #86efac 4,8.
 const ROTULO = 'rgba(255,255,255,.75)'
 
 /**
@@ -117,13 +117,13 @@ export default function Bussola() {
           <div style={{ marginTop: 24 }}>
             <div style={{ fontSize: 15, color: ROTULO }}>Saldo atual · bancos e dinheiro</div>
             <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-.02em', marginTop: 2, lineHeight: 1.1,
-              color: b.saldoHoje < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(b.saldoHoje)}</div>
+              color: b.saldoHoje < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v(b.saldoHoje)}</div>
           </div>
 
           <div style={{ ...pilulaTopo, alignItems: 'stretch', cursor: 'default', marginTop: 18, gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
               <span style={{ fontSize: 14, color: ROTULO }}>Saldo final previsto</span>
-              <span style={{ fontSize: 22, fontWeight: 800, color: b.fechamento < 0 ? '#fecaca' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: 22, fontWeight: 800, color: b.fechamento < 0 ? '#fdba74' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
                 {v(b.fechamento)}
               </span>
             </div>

@@ -418,7 +418,7 @@ export default function QuickLaunch() {
                 onClick={() => catSel === c.id ? fecharInput() : abrirCat(c)}
                 // Quadro azul como o topo (pedido do Guilherme, 10/10/2026), com
                 // o círculo do ícone em cinza claro. No azul, a paleta escura:
-                // #86efac 4,8 e #fecaca 4,6 no extremo #1e40af; rótulo a 75%.
+                // #86efac 4,8 e #fdba74 5,2 no extremo #1e40af; rótulo a 75%.
                 style={{
                   background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)',
                   border: `2px solid ${active ? '#fff' : 'transparent'}`, boxShadow: '0 4px 14px rgba(15,40,120,.18)',

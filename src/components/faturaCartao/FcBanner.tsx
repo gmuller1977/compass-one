@@ -60,7 +60,7 @@ export default function FcBanner({
           {/* Conciliação: o mesmo cartão dos outros quatro, do mesmo tamanho e
               com as mesmas letras (pedido do Guilherme, 22/10/2026). Tocar abre
               a janela do valor da fatura. Diferença na paleta do fundo escuro:
-              #86efac 4,8 e #fecaca 4,6 no #1e40af. */}
+              #86efac 4,8 e #fdba74 5,2 no #1e40af. */}
           <div role="button" tabIndex={0} aria-label="Informar o valor da fatura" title="Clique para informar o valor atual da fatura"
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
@@ -71,7 +71,7 @@ export default function FcBanner({
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fecaca',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fdba74',
               }}>
                 {/* Contra o total lançado no Compass (o rodapé), nas palavras do
                     "Confira seus saldos": faltam = o cartão tem mais do que foi

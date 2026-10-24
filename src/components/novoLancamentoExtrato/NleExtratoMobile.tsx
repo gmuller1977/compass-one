@@ -305,7 +305,7 @@ export default function NleExtratoMobile({
             </div>
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -.5, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-            color: sf >= 0 ? '#fff' : '#fecaca' }}>{fmt(sf)}</div>
+            color: sf >= 0 ? '#fff' : '#fdba74' }}>{fmt(sf)}</div>
         </button>
         {memoriaAberta && (
           <MemoriaSaldo m={memoria} positivo={sf >= 0} cenario={cenarioPrevisao} onCenario={setCenarioPrevisao} />

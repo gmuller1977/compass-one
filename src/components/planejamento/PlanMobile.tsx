@@ -259,14 +259,14 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
       {secao('Receitas', '#15803d', dados.entradas, 'e')}
       {secao('Despesas', '#b91c1c', dados.saidas, 's')}
 
-      {/* O pé azul do modal. Sobre #1e3a8a: branco 10,4; rótulo a 75% 6,5; #86efac 8,1; #fecaca 9,6. */}
+      {/* O pé azul do modal. Sobre #1e3a8a: branco 10,4; rótulo a 75% 6,5; #86efac 8,1; #fdba74 6,1. */}
       <div style={{ marginTop: 14, background: '#1e3a8a', borderRadius: 12, padding: '6px 14px' }}>
         {([['Receitas', receitas], ['Despesas', despesas], ['Resultado', resultado]] as const).map(([rot, v]) => (
           <div key={rot} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 32 }}>
             <span style={{ fontSize: 12, fontWeight: rot === 'Resultado' ? 800 : 600, textTransform: 'uppercase', letterSpacing: '.4px',
               color: rot === 'Resultado' ? '#fff' : 'rgba(255,255,255,.75)' }}>{rot}</span>
             <span style={{ fontSize: rot === 'Resultado' ? 15 : 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-              color: rot === 'Resultado' ? (v >= 0 ? '#86efac' : '#fecaca') : '#fff' }}>
+              color: rot === 'Resultado' ? (v >= 0 ? '#86efac' : '#fdba74') : '#fff' }}>
               {rot === 'Resultado' && v > 0 ? '+' : ''}{fmt(v, true)}
             </span>
           </div>
@@ -281,7 +281,7 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
               borderTop: '1px solid rgba(255,255,255,.2)', marginTop: 2 }}>
               <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.75)' }}>Falta para a meta</span>
               <span style={{ fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-                color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fecaca' }}>
+                color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fdba74' }}>
                 {!c || fechado ? '—' : c.ok ? '✓ dentro' : fmt(c.falta, true)}
               </span>
             </div>

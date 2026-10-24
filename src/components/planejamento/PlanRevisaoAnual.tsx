@@ -289,7 +289,7 @@ export default function PlanRevisaoAnual({
 
   // Pé: o mês nos dois anos. Realizado = os cartões do Radar daquele mês;
   // plano = os totais do Planejamento (`previsto`). Sobre #1e3a8a: branco
-  // 10,4; rótulo a 75% 6,5; #86efac 8,1; #fecaca 9,6.
+  // 10,4; rótulo a 75% 6,5; #86efac 8,1; #fdba74 6,1.
   // Base que ainda não aconteceu: o pé mostra o plano dela, não um real zerado.
   const semReal = r.estadoBase === 'futuro'
   const planoDaBase = (gs: typeof r.entradas) => gs.reduce((t, g) => t + g.linhas.reduce((u, l) => u + l.planoBase, 0), 0)
@@ -299,7 +299,7 @@ export default function PlanRevisaoAnual({
     ['Despesas', peBase.s, previsto.totalSaidas[mes]],
     ['Resultado', peBase.e - peBase.s, previsto.totalEntradas[mes] - previsto.totalSaidas[mes]],
   ] as const)
-  const corPe = (rot: string, v: number) => rot !== 'Resultado' ? '#fff' : v >= 0 ? '#86efac' : '#fecaca'
+  const corPe = (rot: string, v: number) => rot !== 'Resultado' ? '#fff' : v >= 0 ? '#86efac' : '#fdba74'
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onFechar() }} style={{

@@ -55,7 +55,7 @@ const card: React.CSSProperties = {
  * foi escrito para fundo claro. Pintar o compartilhado quebraria os três.
  *
  * Medido sobre `#1e40af`, o extremo mais claro do gradiente: branco 8,72:1,
- * `#86efac` 6,21:1, `#fecaca` 6,03:1, `#fde047` 6,62:1. O gradiente não pode
+ * `#86efac` 6,21:1, `#fdba74` 6,03:1, `#fde047` 6,62:1. O gradiente não pode
  * clarear além de `#1e40af` — é a regra do CLAUDE.md, e sobre `#1a56db` o
  * verde cairia para 4,40:1.
  */
@@ -588,7 +588,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         </div>
         {(avisoSalvar || incluidoEm) && (
           <div role="status" style={{ marginTop: 10, fontSize: 13, fontWeight: 600, lineHeight: 1.5,
-            color: avisoSalvar && !avisoSalvar.ok ? '#fecaca' : '#86efac' }}>
+            color: avisoSalvar && !avisoSalvar.ok ? '#fdba74' : '#86efac' }}>
             {avisoSalvar && <div>{avisoSalvar.ok ? '✓ ' : '⚠ '}{avisoSalvar.texto}</div>}
             {incluidoEm && <div>✓ {incluidoEm}. Para tirar, use “Desfazer” no topo do Simulador.</div>}
           </div>
@@ -700,15 +700,15 @@ const caixaCartao: React.CSSProperties = {
 const TOM = {
   ok:      { texto: '#86efac' },
   atencao: { texto: '#fde047' },
-  nao:     { texto: '#fecaca' },
+  nao:     { texto: '#fdba74' },
 } as const
 
 // O ponto e elemento grafico (limite 3:1); o texto vai na paleta escura.
 // Placar e detalhe moram dentro do card AZUL: negativo no vermelho-claro de
-// fundo escuro (#fecaca, 6,03:1 no #1e40af) e a área "comprando" num azul
+// fundo escuro (#fdba74, 5,17:1 no #1e40af) e a área "comprando" num azul
 // claro — COR.azul sumia no próprio fundo. Antes eram os tons de fundo claro:
 // rótulos brancos no #f8faff e números marinho no azul, ilegíveis.
-const NEG = '#fecaca'
+const NEG = '#fdba74'
 const COM_COMPRA = '#93c5fd'
 
 export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null, guardaMensal = [] }: {

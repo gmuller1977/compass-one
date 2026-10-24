@@ -80,7 +80,7 @@ const cardAzul: React.CSSProperties = {
 }
 const apoio: React.CSSProperties = { fontSize: 12.5, color: 'rgba(255,255,255,.85)', lineHeight: 1.55 }
 const VERDE = '#86efac'
-const VERMELHO = '#fecaca'
+const VERMELHO = '#fdba74'
 /** "22/10/2026 às 14:05": duas consultas no mesmo dia se distinguem pela hora. */
 const quandoSalvou = (iso: string) => {
   const d = new Date(iso)

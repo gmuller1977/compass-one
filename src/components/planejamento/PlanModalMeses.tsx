@@ -274,7 +274,7 @@ export default function PlanModalMeses({
             {/* O pé: Receitas, Despesas e Resultado de cada mês, presos embaixo
                 ao rolar. Os totais saem de `previsto`, o mesmo dos cartões.
                 Sobre #1e3a8a: branco 10,4; rótulo a 75% 6,5; #86efac 8,1;
-                #fecaca 9,6. */}
+                #fdba74 6,1. */}
             {([
               ['Receitas', (mi: number) => previsto.totalEntradas[mi], 3],
               ['Despesas', (mi: number) => previsto.totalSaidas[mi], 2],
@@ -295,7 +295,7 @@ export default function PlanModalMeses({
                     <div key={mi} style={{ position: 'sticky', bottom: nivel * H_RODAPE, zIndex: 2, height: H_RODAPE,
                       background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 9px',
                       fontSize: rotulo === 'Resultado' ? 13 : 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-                      color: rotulo === 'Resultado' ? (v >= 0 ? '#86efac' : '#fecaca') : '#fff',
+                      color: rotulo === 'Resultado' ? (v >= 0 ? '#86efac' : '#fdba74') : '#fff',
                       marginTop: i === 0 ? 12 : 0,
                       borderTopRightRadius: i === 0 && ultimo ? 10 : 0 }}>
                       {rotulo === 'Resultado' && v > 0 ? '+' : ''}{fmt(v, true)}
@@ -307,7 +307,7 @@ export default function PlanModalMeses({
             {/* Falta para a meta, logo abaixo do Resultado (pedido do Guilherme
                 em 13/10/2026): muda enquanto se edita o plano. Meta − o que o
                 plano guarda; mês fechado ou sem meta, "—". Sobre #1e3a8a:
-                #fecaca 9,6; #86efac 8,1. */}
+                #fdba74 6,1; #86efac 8,1. */}
             <div style={{ position: 'sticky', left: 0, bottom: 0, zIndex: 3, height: H_RODAPE,
               background: '#1e3a8a', display: 'flex', alignItems: 'center', padding: '0 12px',
               fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px',
@@ -321,7 +321,7 @@ export default function PlanModalMeses({
                 <div key={mi} style={{ position: 'sticky', bottom: 0, zIndex: 2, height: H_RODAPE,
                   background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 9px',
                   fontSize: 12, fontWeight: 800, fontVariantNumeric: 'tabular-nums', borderTop: '1px solid rgba(255,255,255,.2)',
-                  color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fecaca',
+                  color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fdba74',
                   borderBottomRightRadius: j === meses.length - 1 ? 10 : 0 }}>
                   {!c || fechado ? '—' : c.ok ? '✓ dentro' : fmt(c.falta, true)}
                 </div>

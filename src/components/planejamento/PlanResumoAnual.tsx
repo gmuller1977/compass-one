@@ -32,7 +32,7 @@ export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamen
   const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos })
   const r = resumoDoAno(meses, previsto)
   const passado = anoAtual < new Date().getFullYear()
-  const cor = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : '#fecaca')
+  const cor = (v: number) => (v >= 0 ? RADAR_COR_AZUL.bom : '#fdba74')
 
   const falta = r.metaAno - r.rumo
   const deve = passado ? 'Você guardou' : 'Até dezembro você deve guardar'

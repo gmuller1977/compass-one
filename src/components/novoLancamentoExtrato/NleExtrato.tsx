@@ -177,7 +177,7 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
   // (#2563eb), mais claro que o limite de #1e40af do CLAUDE.md — sobre ele o
   // verde e o vermelho claro reprovariam. Sobre #0f2878 e #7f1d1d a paleta
   // passa com folga: branco 10,4:1 e 9,9:1; #86efac 4,8:1 e 7,1:1;
-  // #fecaca 4,6:1 e 6,8:1; label a 75% 5,1:1 e 6,1:1.
+  // #fdba74 5,2:1 e 7,8:1; label a 75% 5,1:1 e 6,1:1.
   const fundo = positivo ? '#0f2878' : '#7f1d1d'
   const previstas: [string, number, string][] = [
     ['Receitas fixas a receber',      m.entradasPrevistas,   'Fixas de entrada que ainda nao foram confirmadas'],
@@ -206,7 +206,7 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
       </div>
       <span style={{fontSize:forte?15:13,fontWeight:forte?800:600,fontVariantNumeric:'tabular-nums',
         whiteSpace:'nowrap',
-        color: forte ? (valor>=0?'#86efac':'#fca5a5') : valor<0 ? '#fecaca' : '#fff'}}>
+        color: forte ? (valor>=0?'#86efac':'#fdba74') : valor<0 ? '#fdba74' : '#fff'}}>
         {valor<0?'−':''}{fmt(Math.abs(valor))}
       </span>
     </div>
@@ -276,7 +276,7 @@ export default function NleExtrato(props: Props) {
                     </div>
                   </div>
                   <span style={{fontSize:22,fontWeight:800,letterSpacing:'-.6px',fontVariantNumeric:'tabular-nums',
-                    color:positivo?'#86efac':'#fca5a5'}}>
+                    color:positivo?'#86efac':'#fdba74'}}>
                     {fmt(sf)}
                   </span>
                 </div>
