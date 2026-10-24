@@ -48,6 +48,22 @@ export default function BottomNav() {
   const navigate  = useNavigate()
   const { pathname } = useLocation()
   const [mais, setMais] = useState(false)
+  // A folha aberta é uma entrada no histórico: a seta voltar do Android fecha
+  // a folha, em vez de sair da tela (24/10/2026, relatado pelo Guilherme).
+  const abrirMais = () => {
+    window.history.pushState({ ...window.history.state, maisAberto: true }, '')
+    setMais(true)
+  }
+  const fecharMais = () => {
+    if (window.history.state?.maisAberto) window.history.back()
+    else setMais(false)
+  }
+  useEffect(() => {
+    if (!mais) return
+    const aoVoltar = () => setMais(false)
+    window.addEventListener('popstate', aoVoltar)
+    return () => window.removeEventListener('popstate', aoVoltar)
+  }, [mais])
   const { sairDaConta } = useApp()
   // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
   // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
@@ -88,7 +104,7 @@ export default function BottomNav() {
   return (
     <>
       {mais && (
-        <div role="dialog" aria-modal="true" aria-label="Mais opções" onClick={() => setMais(false)}
+        <div role="dialog" aria-modal="true" aria-label="Mais opções" onClick={fecharMais}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 150, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{
             background: '#fff', width: '100%', borderRadius: '20px 20px 0 0',
@@ -99,7 +115,7 @@ export default function BottomNav() {
           }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: COR.borda, margin: '0 auto 8px' }} />
             {MAIS.map(m => (
-              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); navigate(m.path) }} style={{
+              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); navigate(m.path, { replace: !!window.history.state?.maisAberto }) }} style={{
                 display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 22px',
                 border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
@@ -155,7 +171,7 @@ export default function BottomNav() {
           }
           return item(n.path, n.icon, n.label, isActive(n.path), () => navigate(n.path))
         })}
-        {item('mais', 'ti-menu-2', 'Mais', maisAtivo, () => setMais(true), selo)}
+        {item('mais', 'ti-menu-2', 'Mais', maisAtivo, abrirMais, selo)}
       </div>
     </>
   )

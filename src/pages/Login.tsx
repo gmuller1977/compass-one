@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
 import { urlDoApp } from '../utils/site'
 import { saiuPorInatividade, esquecerSaidaPorInatividade } from '../utils/inatividade'
@@ -127,6 +128,12 @@ const LogoSVG = ({ size = 36 }: { size?: number }) => (
 
 export default function Login() {
   const navigate    = useNavigate()
+  const { user, carregando: carregandoApp } = useApp()
+  // Quem já está logado não fica no login: a seta voltar do celular trazia a
+  // pessoa de volta para cá, parecendo que tinha saído (24/10/2026). `entrando`
+  // segura o redirecionamento enquanto esta tela ainda tem algo a mostrar
+  // (a oferta de cadastrar a digital depois da senha).
+  const entrando = useRef(false)
   const isMobile    = useIsMobile()
   const [email,     setEmail]     = useState('')
   const [senha,     setSenha]     = useState('')
@@ -145,6 +152,9 @@ export default function Login() {
   // Depois de entrar com a senha, oferece cadastrar a digital uma vez.
   const [ofertaDigital, setOfertaDigital] = useState<string | null>(null)
   useEffect(() => { aparelhoTemDigital().then(setTemDigital) }, [])
+  useEffect(() => {
+    if (!carregandoApp && user && !entrando.current && !ofertaDigital) navigate('/', { replace: true })
+  }, [carregandoApp, user, ofertaDigital, navigate])
 
   // Com a digital já usada neste aparelho, a leitura abre sozinha (pedido do
   // Guilherme em 11/10/2026), uma vez por abertura da tela. Não abre logo
@@ -171,7 +181,7 @@ export default function Login() {
     setCarregando(true)
     const r = await entrarComDigital()
     setCarregando(false)
-    if (r.ok) navigate('/')
+    if (r.ok) navigate('/', { replace: true })
     else if (r.erro && !sozinho) setErro(r.erro)
   }
 
@@ -181,13 +191,13 @@ export default function Login() {
     setCarregando(true)
     const r = await cadastrarDigital(ofertaDigital)
     setCarregando(false)
-    if (r.ok || !r.erro) { navigate('/'); return }
+    if (r.ok || !r.erro) { navigate('/', { replace: true }); return }
     setErro(r.erro)
   }
 
   function agoraNao() {
     if (ofertaDigital) recusarDigital(ofertaDigital)
-    navigate('/')
+    navigate('/', { replace: true })
   }
 
   async function handleSubmit() {
@@ -195,13 +205,14 @@ export default function Login() {
     setSucesso('')
     if (!email) { setErro('Digite seu e-mail'); return }
     if (!senha)  { setErro('Digite sua senha');  return }
+    entrando.current = true
     setCarregando(true)
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
       if (error) throw error
       const uid = data.user?.id
       if (uid && temDigital && !digitalCadastradaAqui(uid) && !recusouDigital(uid)) setOfertaDigital(uid)
-      else navigate('/')
+      else navigate('/', { replace: true })
     } catch (e: unknown) {
       let msg = 'Erro desconhecido'
       if (e instanceof Error && e.message && e.message !== '{}') {
