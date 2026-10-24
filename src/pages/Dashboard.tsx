@@ -462,8 +462,8 @@ export default function Dashboard() {
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, alignItems: 'start' }}>
-          {/* ── Coluna 1: o mês em números ── */}
-          <div style={{ display: 'grid', gap: 20 }}>
+          {/* "Resumo do mês" e "Plano do mês" lado a lado (24/10/2026, pedido do
+              Guilherme); o que pede atenção vem depois, na mesma grade. */}
             {(ehFuturo ? previsao : memoria) && (
               <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
                 onDefinirMeta={usaPlanoNoMes || ehFuturo ? () => navigate('/planejamento') : undefined}
@@ -474,10 +474,7 @@ export default function Dashboard() {
             {ehMesCorrente && usaPlanoNoMes && (
               <PlanoDoMesCard linhas={linhasSaida} categorias={categorias} oculto={oculto} onRadar={() => navigate('/radar')} />
             )}
-          </div>
 
-          {/* ── Coluna 2: o que fazer ── */}
-          <div style={{ display: 'grid', gap: 20 }}>
             {ehMesCorrente && (outrosAvisos.length > 0 || fechouTexto) && (
               <Cartao>
                 <TituloCartao>Pede sua atenção</TituloCartao>
@@ -500,7 +497,6 @@ export default function Dashboard() {
               <ContasAVencerCard contas={contasFuturo} categorias={categorias} oculto={oculto}
                 titulo={`Contas de ${mesNome.toLowerCase()}`} onAbrir={() => navigate('/novo-lancamento')} />
             )}
-          </div>
         </div>
 
         {/* ── Um gráfico só: a evolução do saldo mês a mês ── */}

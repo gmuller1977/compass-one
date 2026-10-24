@@ -7,7 +7,8 @@ import CampoMeta from './CampoMeta'
 import PlanBarraFerramentas from './PlanBarraFerramentas'
 import PlanResumoAnual from './PlanResumoAnual'
 import GraficoAnoPlano from './GraficoAnoPlano'
-import MetaNoCartao from './MetaNoCartao'
+import ConteudoCartaoMes from './ConteudoCartaoMes'
+import { bordaDoCartaoMes } from './anoDoPlano'
 import { mesesDoAno, metaContraPlano, type MesDoAno } from './anoDoPlano'
 import { type BulkOp } from './PlanFerramentas'
 import { useAbrirItens, useLancadoNoMes } from './itensContexto'
@@ -41,10 +42,6 @@ import type { Categoria } from '../../context/AppContext'
 
 const AZUL_TOPO = 'var(--cx-azul)'
 // As cores do cartão e do gráfico do computador (PlanAnoVisao), no branco.
-const COR_ATUAL = '#1e3a8a'
-const COR_NEG = '#b91c1c'
-const VERDE = '#14532d'
-const SUAVE = '#475569'
 
 interface Props {
   anoAtual: number
@@ -94,8 +91,6 @@ export default function PlanMobile(p: Props) {
   const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal: p.fechamentoReal,
     inicioReal: p.inicioReal, objetivos: p.objetivos })
   const m = meses[mes]
-  const sem = m.semPlano && !m.fechado ? 'Sem planejamento · toque para planejar' : null
-  const dif = m.real !== undefined ? m.real - m.final : 0
 
   return (
     <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
@@ -135,30 +130,11 @@ export default function PlanMobile(p: Props) {
           <button type="button" onClick={() => andar(-1)} aria-label="Mês anterior" style={BTN_MES}>‹</button>
           <button type="button" onClick={() => setAberto(v => !v)} aria-expanded={aberto} style={{
             all: 'unset', boxSizing: 'border-box', flex: 1, minWidth: 0, cursor: 'pointer',
-            background: m.fechado ? '#f8fafc' : '#fff', borderRadius: 18, padding: '12px 14px', boxShadow: M.sombra,
-            border: m.atual ? '2px solid #3b82f6' : '1.5px solid #c3ccd8',
+            background: '#fff', borderRadius: 18, padding: '12px 14px', boxShadow: M.sombra,
+            border: bordaDoCartaoMes(m),
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{MESES_FULL[mes]}</span>
-              {m.atual && <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                background: '#dbeafe', color: COR_ATUAL }}>ATUAL</span>}
-              {m.fechado && <span aria-label="Mês fechado" style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px',
-                borderRadius: 999, background: '#e2e8f0', color: '#334155' }}>✓</span>}
-            </span>
-            <span style={{ fontSize: 13, color: SUAVE }}>{m.fechado ? 'fechou com' : 'termina com'}</span>
-            <span style={{ fontSize: 22, fontWeight: 800, color: m.valor < 0 ? COR_NEG : VERDE,
-              fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {fmt(m.valor, true)}
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums',
-              color: sem ? SUAVE : m.real !== undefined ? (dif < 0 ? COR_NEG : VERDE) : (m.sobra < 0 ? COR_NEG : VERDE) }}>
-              {sem ?? (m.real !== undefined
-                ? (Math.abs(dif) < 0.005 ? 'igual ao previsto'
-                  : `${dif > 0 ? '▲' : '▼'} ${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'}`)
-                : m.sobra >= 0 ? `+ ${fmt(m.sobra, true)} de sobra` : `− ${fmt(-m.sobra, true)} no mês`)}
-            </span>
-            {!sem && <MetaNoCartao m={m} grande />}
+            <ConteudoCartaoMes m={m} grande />
           </button>
           <button type="button" onClick={() => andar(1)} aria-label="Próximo mês" style={BTN_MES}>›</button>
         </div>

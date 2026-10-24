@@ -100,3 +100,15 @@ export function metaContraPlano(meta: number, planoGuarda: number): { ok: boolea
   const falta = meta - planoGuarda
   return { ok: falta <= 0.005, falta: Math.max(0, falta) }
 }
+
+/** Cartão do mês no padrão do Radar (24/10/2026): atenção quando o mês fica
+ *  abaixo da meta ou termina negativo; a borda segue. */
+export function atencaoDoMes(m: MesDoAno) {
+  const s = situacaoDaMeta(m)
+  return (s !== null && !s.ok) || m.valor < 0
+}
+
+export function bordaDoCartaoMes(m: MesDoAno) {
+  if (atencaoDoMes(m)) return `${m.atual ? 2 : 1.5}px solid #b91c1c`
+  return m.atual ? '2px solid #1d4ed8' : '1.5px solid #93c5fd'
+}

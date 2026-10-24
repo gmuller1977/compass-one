@@ -83,9 +83,10 @@ export default function EvolucaoGrupo({
   const rotulo     = aberto ? 'rgba(255,255,255,0.75)' : ROTULO
   const corFaixa   = COR[faixa]
   // Fechado, número e anel são AZUL NEON e só o que passou de 100% leva o
-  // marcador de atenção (24/10/2026, Guilherme). #1d4ed8 no branco: 6,7.
-  const corNumero  = semDados ? texto : aberto ? corFaixa : AZUL_NUMERO
+  // marcador de atenção (24/10/2026, Guilherme). #1d4ed8 no branco: 6,7. Passou: número e
+  // borda em vermelho #b91c1c (6,47), mesmo dia, pedido dele.
   const atencao    = !semDados && !isEntrada && perc > 1.005
+  const corNumero  = semDados ? texto : aberto ? corFaixa : atencao ? '#b91c1c' : AZUL_NUMERO
   const tipoLabel  = isEntrada ? 'Recebimento' : 'Pagamento'
   const alternar   = onAlternar
 
@@ -95,7 +96,7 @@ export default function EvolucaoGrupo({
       boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
-      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : atencao ? '#a16207' : '#93c5fd'}`,
+      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : atencao ? '#b91c1c' : '#93c5fd'}`,
     }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
@@ -185,16 +186,19 @@ export function CategoriasDoGrupo({
 }
 
 /** Anel do grupo (opção A): arco até 100%, o texto diz o % real; fixa paga é ✓. */
-export function AnelGrupo({ pct, pago, cor, trilho, corTexto, alerta = false }: {
+export function AnelGrupo({ pct, pago, cor, trilho, corTexto, alerta = false, tamanho = 72, rotuloAlerta = 'Atenção: passou do plano' }: {
   pct: number | null; pago: boolean; cor: string; trilho: string; corTexto: string
   /** Passou de 100%: o marcador de atenção no canto do anel. */
   alerta?: boolean
+  /** Lado em px (o desenho escala; o Planejamento usa um anel menor). */
+  tamanho?: number
+  rotuloAlerta?: string
 }) {
   const r = 28, c = 2 * Math.PI * r
   const cheio = pago ? 1 : pct === null ? 0 : Math.max(0, Math.min(1, pct))
   const texto = pago ? '✓' : pct === null ? '' : `${Math.round(pct * 100)}%`
   return (
-    <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
+    <svg width={tamanho} height={tamanho} viewBox="0 0 72 72" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
       <circle cx="36" cy="36" r={r} stroke={trilho} strokeWidth="8" fill="none" />
       {cheio > 0 && (
         <circle cx="36" cy="36" r={r} stroke={cor} strokeWidth="8" fill="none" strokeLinecap="round"
@@ -204,7 +208,7 @@ export function AnelGrupo({ pct, pago, cor, trilho, corTexto, alerta = false }: 
       <text x="36" y={pago ? 43 : 41} textAnchor="middle" fill={corTexto}
         fontSize={pago ? 20 : texto.length > 4 ? 13 : 15} fontWeight="800">{texto}</text>
       {alerta && (
-        <g role="img" aria-label="Atenção: passou do plano">
+        <g role="img" aria-label={rotuloAlerta}>
           <circle cx="62" cy="10" r="11" fill="#fde047" stroke="#fff" strokeWidth="2.5" />
           <text x="62" y="15" textAnchor="middle" fill="#713f12" fontSize="15" fontWeight="900">!</text>
         </g>

@@ -292,18 +292,18 @@ export default function AcMobileView({
       const aberto = abertos.has(gid)
       // Aberto, o cabeçalho fica AZUL-ESCURO, como no computador (21/10/2026),
       // com a paleta do azul (RADAR_COR_AZUL) e rótulo a 75% (5,1).
+      const gAtencao = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) && !isEntrada && gPerc > 1.005
       const gCor  = SEM_MOVIMENTO.includes(dg.principal) ? (aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave)
         : !dg.julgado ? (aberto ? '#ffffff' : RADAR_COR_NEUTRA)
-        : aberto ? RADAR_COR_AZUL[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : '#1d4ed8'
+        : aberto ? RADAR_COR_AZUL[faixaRadar(Math.round(gPerc * 100) / 100, isEntrada)] : gAtencao ? '#b91c1c' : '#1d4ed8'
       const gTexto  = aberto ? '#ffffff' : COR.texto
       const gRotulo = aberto ? 'rgba(255,255,255,0.75)' : COR.textoSuave
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
-      // plano verde, passou laranja; sem plano, sem borda.
+      // plano azul-claro, passou vermelho (borda e número); sem plano, sem borda.
       // Fechado: número e anel azul neon; passou de 100%, marcador de atenção
       // (24/10/2026, Guilherme), igual ao computador.
-      const gAtencao = dg.julgado && !SEM_MOVIMENTO.includes(dg.principal) && !isEntrada && gPerc > 1.005
       const gBorda = aberto ? '#1e40af' : !dg.julgado || SEM_MOVIMENTO.includes(dg.principal) ? 'transparent'
-        : gAtencao ? '#a16207' : '#93c5fd'
+        : gAtencao ? '#b91c1c' : '#93c5fd'
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
