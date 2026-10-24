@@ -301,8 +301,9 @@ export default function RadarFinanceiro() {
               </>)}
             </div>
             {/* As caixas ficam AO LADO da frase (pedido do Guilherme, 13/10/2026:
-                embaixo perde espaço). Só descem abaixo de ~1180px de janela. */}
-            <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,1fr)', gap: 8 }}>
+                embaixo perde espaço), em 2 × 2 desde 24/10/2026: com os anéis,
+                quatro numa fileira ficavam pequenas e R$ 999.999,99 não cabia. */}
+            <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 10 }}>
               {[
                 { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
                 { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
@@ -315,15 +316,15 @@ export default function RadarFinanceiro() {
                     // Saldo atual no quadro neon, o padrão da Início.
                     border: k.rot === 'Saldo atual' ? '1.5px solid #22d3ee' : '1px solid rgba(255,255,255,.16)',
                     boxShadow: k.rot === 'Saldo atual' ? '0 0 16px rgba(34,211,238,.45)' : 'none',
-                    padding: '10px 12px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
-                    display: 'flex', alignItems: 'center', gap: 10, color: '#fff' }}>
+                    padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
+                    display: 'flex', alignItems: 'center', gap: 14, color: '#fff' }}>
                   {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
                   <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
-                  {/* Acima de R$ 99.999,99 a letra cai para 15px e o valor segue inteiro na caixa. */}
-                  <div style={{ fontSize: k.p !== null || k.v.length > 12 ? 15 : 17, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
+                  <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
+                  {/* Cabe R$ 999.999,99 em 20px de 1280px de janela para cima. */}
+                  <div style={{ fontSize: 20, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
-                  <div style={{ fontSize: 12, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
+                  <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
                   </div>
                 </button>
               ))}
@@ -470,7 +471,7 @@ function AnelTopo({ pct, cor }: { pct: number; cor: string }) {
   const cheio = Math.max(0, Math.min(1, pct))
   const t = `${Math.round(pct * 100)}%`
   return (
-    <svg width="42" height="42" viewBox="0 0 46 46" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
+    <svg width="54" height="54" viewBox="0 0 46 46" aria-hidden style={{ flexShrink: 0, overflow: 'visible' }}>
       <circle cx="23" cy="23" r={r} stroke="#fff" strokeWidth="6" fill="none" />
       {cheio > 0 && (
         <circle cx="23" cy="23" r={r} stroke={cor} strokeWidth="6" fill="none" strokeLinecap="round"
