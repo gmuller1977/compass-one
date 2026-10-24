@@ -91,7 +91,9 @@ export default function BottomNav() {
         <div role="dialog" aria-modal="true" aria-label="Mais opções" onClick={() => setMais(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 150, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: '#fff', width: '100%', borderRadius: '20px 20px 0 0', padding: '10px 0 28px',
+            background: '#fff', width: '100%', borderRadius: '20px 20px 0 0',
+            // O Sair é o último: a folha rola e respeita a barra de gestos do aparelho para ele nunca ficar escondido.
+            padding: '10px 0 calc(28px + env(safe-area-inset-bottom))', maxHeight: '88vh', overflowY: 'auto',
             animation: 'slideUp .2s ease',
             fontFamily: "-apple-system,'Inter',sans-serif",
           }}>
