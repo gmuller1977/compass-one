@@ -64,9 +64,14 @@ export const RADAR_TRILHO_BRANCO = '#e2e8f0'
  * No azul, `#fdba74` dá 5,2 no #1e40af.
  */
 export const RADAR_LARANJA = '#fdba74'
-export const RADAR_BARRA = { bom: '#4ade80', atencao: '#bbf7d0', ruim: RADAR_LARANJA } as const
-export const RADAR_TEXTO_AZUL = { bom: '#4ade80', atencao: '#bbf7d0', ruim: RADAR_LARANJA } as const
-export const RADAR_TEXTO_CLARO = { bom: '#14532d', atencao: '#18713a', ruim: '#c2410c' } as const
+//
+// UM verde só (24/10/2026, escolha do Guilherme no card: "verdes e laranjas
+// diferentes"): o "no limite" deixou de ter tom próprio, o "resta R$ X"
+// escrito já diz. Dentro do plano é verde, passou é laranja. No branco o
+// número usa o tom mais vivo que passa: #15803d (5,0) e #c2410c (5,2).
+export const RADAR_BARRA = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LARANJA } as const
+export const RADAR_TEXTO_AZUL = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LARANJA } as const
+export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: '#c2410c' } as const
 export const RADAR_TRILHO_ESCURO = '#1e3a8a'
 export type FaixaRadar = keyof typeof RADAR_COR_AZUL
 

@@ -473,6 +473,12 @@ Ficaram de fora as BORDAS rosadas das caixas de erro (Login, Cadastro,
 Configurações) e os vermelhos (`#f87171`, `#b91c1c`): não eram o rosa.
 Os números das notas abaixo e acima que citam `#fecaca` são histórico.
 
+**No Radar, UM verde só** (24/10/2026, Guilherme: "parece que tem verdes e
+laranjas diferentes"; escolheu no card "um verde só + número mais vivo").
+O verde clarinho do "no limite" (`#bbf7d0`) saiu: barra dentro do plano é
+`#4ade80`, passou é `#fdba74`. No cartão branco o número é `#15803d` (5,0)
+e `#c2410c` (5,2); no azul, a cor da barra. Os cortes das faixas seguem.
+
 **Sem plano e sem movimento, o Radar diz "nada gasto" / "nada recebido"**
 (24/10/2026, pedido do Guilherme), no grupo e na categoria, no computador e
 no celular, com "sem plano neste mês" embaixo. Antes era um travessão. Cor
