@@ -3467,10 +3467,12 @@ vazio sem meta), números `#1d4ed8`, borda `#93c5fd`, e "!" com borda
 vermelha quando fica abaixo da meta ou termina negativo. Na Início do
 computador, "Resumo do mês" e "Plano do mês" ficam LADO A LADO, com a
 mesma altura, e os anéis do Resumo vêm logo abaixo do título (alinhados com
-os do Plano), o saldo final previsto/realizado embaixo deles. Os 4 cards do
-topo do Radar ficam em 2 × 2 ao lado da frase (em cima Saldo inicial e Saldo
-atual, embaixo Despesas e Receitas), valor em 20px: em fileira ficavam
-pequenos para R$ 999.999,99.
+os do Plano), o saldo final previsto/realizado embaixo deles. No topo do Radar
+(mesmo dia, depois de passar por 2 × 2): o Saldo atual fica FORA dos cards,
+em destaque (quadro neon ao lado de "Ainda dá para gastar"; sem a frase, ele
+já é o número grande e o quadro some, senão repetiria), e embaixo uma
+fileira da largura toda com Saldo inicial, Receitas e Despesas, valor em
+20px (cabe R$ 999.999,99).
 
 ---
 
