@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { IconeCat } from '../IconeCat'
 import { M, TOPO_AZUL, mostrar } from '../mobile/estilo'
+import { Anel } from '../mobile/ui'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { balancoDoPlano, type GrupoNoBalanco } from '../../utils/balancoDoPlano'
 import type { LinhaDoMes } from '../acompanhamento/evolucaoCalcs'
@@ -28,10 +29,6 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
   const [aberto, setAberto] = useState<'passaram' | 'abaixo' | null>(null)
   const v = (n: number) => mostrar(n, oculto)
   const num: CSSProperties = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
-  const caixa: CSSProperties = {
-    background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
-    padding: '12px 14px', minWidth: 0,
-  }
 
   const lista = (chave: 'passaram' | 'abaixo', titulo: string, grupos: GrupoNoBalanco[], cor: string, sinal: string) => {
     if (!grupos.length) return null
@@ -88,17 +85,28 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
         <div style={{ fontSize: M.corpo, color: ROT, paddingBottom: 8 }}>Ainda sem despesas planejadas neste mês.</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-            <div style={caixa}>
-              <div style={{ fontSize: M.legenda, color: ROT }}>Passou do plano</div>
-              <div style={{ ...num, fontSize: 22, fontWeight: 800, marginTop: 4, color: b.passou > 0.005 ? NEG : '#fff' }}>{v(b.passou)}</div>
-            </div>
-            <div style={caixa}>
-              <div style={{ fontSize: M.legenda, color: ROT }}>Abaixo do plano</div>
-              <div style={{ ...num, fontSize: 22, fontWeight: 800, marginTop: 4, color: b.falta > 0.005 ? POS : '#fff' }}>{v(b.falta)}</div>
-            </div>
+          {/* Anéis e quadro neon, a mesma ideia do "Resumo do mês" (24/10/2026,
+              pedido do Guilherme). O anel é a parte dos grupos com plano que
+              está de cada lado; o valor vai embaixo. */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {([['Passaram do plano', b.passaram.length, b.passou, '#2563eb'],
+               ['Abaixo do plano', b.abaixo.length, b.falta, '#0891b2']] as const).map(([rot, n, valor, cor]) => {
+              const total = b.passaram.length + b.abaixo.length
+              return (
+                <div key={rot} style={{ textAlign: 'center', minWidth: 0 }}>
+                  <Anel pct={total > 0 ? Math.round((n / total) * 100) : 0} cor={cor} oculto={oculto}
+                    centro={`${n} de ${total}`} rotulo={n === 1 ? 'grupo' : 'grupos'} />
+                  <div style={{ fontSize: M.legenda, color: ROT, marginTop: 6 }}>{rot}</div>
+                  <div style={{ ...num, fontSize: M.corpo, fontWeight: 800 }}>{v(valor)}</div>
+                </div>
+              )
+            })}
           </div>
-          <div style={{ fontSize: M.corpo, margin: '14px 0 10px', lineHeight: 1.45 }}>{frase}</div>
+          <div style={{
+            margin: '16px 0 12px', padding: '14px 16px', borderRadius: 18, border: '1.5px solid #22d3ee',
+            boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)',
+            fontSize: M.corpo, lineHeight: 1.45, fontWeight: 600,
+          }}>{frase}</div>
           {lista('passaram', 'Grupos que passaram', b.passaram, NEG, '+')}
           {lista('abaixo', 'Grupos abaixo do plano', b.abaixo, POS, '')}
         </>

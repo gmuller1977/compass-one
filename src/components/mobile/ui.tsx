@@ -316,12 +316,16 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
 }
 
 /** Anel do Resumo do mês: trilho branco, arco azul neon até 100%; o texto diz o % real. */
-function Anel({ pct, cor, rotulo, oculto }: { pct: number | null; cor: string; rotulo: string; oculto: boolean }) {
+export function Anel({ pct, cor, rotulo, oculto, centro }: {
+  pct: number | null; cor: string; rotulo: string; oculto: boolean
+  /** Texto no meio do anel; sem ele, o próprio %. */
+  centro?: string
+}) {
   const r = 46, c = 2 * Math.PI * r
   const arco = pct === null ? 0 : Math.max(0, Math.min(100, pct)) / 100 * c
   return (
     <svg width="116" height="116" viewBox="0 0 116 116" role="img"
-      aria-label={pct === null ? 'sem comparação' : `${pct}% ${rotulo}`} style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
+      aria-label={pct === null ? 'sem comparação' : `${centro ?? `${pct}%`} ${rotulo}`} style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
       <circle cx="58" cy="58" r={r} stroke="#fff" strokeWidth="11" fill="none" />
       {arco > 0 && (
         <circle cx="58" cy="58" r={r} stroke={cor} strokeWidth="11" fill="none" strokeLinecap="round"
@@ -329,7 +333,7 @@ function Anel({ pct, cor, rotulo, oculto }: { pct: number | null; cor: string; r
       )}
       {pct !== null && (
         <>
-          <text x="58" y="58" textAnchor="middle" fill="#fff" fontSize="21" fontWeight="800">{oculto ? '••' : `${pct}%`}</text>
+          <text x="58" y="58" textAnchor="middle" fill="#fff" fontSize="21" fontWeight="800">{centro ?? (oculto ? '••' : `${pct}%`)}</text>
           <text x="58" y="77" textAnchor="middle" fill="rgba(255,255,255,.8)" fontSize="12">{rotulo}</text>
         </>
       )}
