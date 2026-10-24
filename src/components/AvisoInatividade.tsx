@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import ModalTopo from './ModalTopo'
+import TelaBloqueio from './TelaBloqueio'
 import {
   estadoInatividade, lerUltimaAtividade, marcarAtividade, marcarSaidaPorInatividade,
 } from '../utils/inatividade'
@@ -17,10 +18,24 @@ const INTERVALO_ESCRITA_MS = 15_000
  * Desconecta depois de 30 minutos sem uso, com aviso no último minuto. Montado
  * uma vez, no AppShell — só existe com alguém logado. Regra e motivo em
  * utils/inatividade.
+ *
+ * `bloquear` (celular com a digital cadastrada, 24/10/2026): em vez de sair,
+ * TRAVA a tela, e a digital destrava. A sessão continua, então abrir o app
+ * no dia seguinte é ícone → digital → Início, sem login nem página de
+ * apresentação. Sem aviso no último minuto: travar não perde nada.
  */
-export default function AvisoInatividade() {
+export default function AvisoInatividade({ bloquear = false }: { bloquear?: boolean }) {
   const { sairDaConta } = useApp()
   const [restanteMs, setRestanteMs] = useState<number | null>(null)
+  // Reaberto depois do prazo, já nasce travado: os números não piscam na tela.
+  const [bloqueado, setBloqueado] = useState(() => {
+    const g = lerUltimaAtividade()
+    return bloquear && g !== null && estadoInatividade(Date.now(), g).sair
+  })
+  const bloquearRef = useRef(bloquear)
+  bloquearRef.current = bloquear
+  const bloqueadoRef = useRef(bloqueado)
+  bloqueadoRef.current = bloqueado
 
   // O "Sair" SALVA todos os dados antes de desconectar, lendo o estado do
   // contexto. Uma versão antiga dele, presa no efeito de montagem, salvaria
@@ -33,6 +48,7 @@ export default function AvisoInatividade() {
   const continuarRef = useRef<HTMLButtonElement>(null)
 
   async function sair() {
+    if (bloquearRef.current) { bloqueadoRef.current = true; setBloqueado(true); setRestanteMs(null); return }
     if (saindo.current) return
     saindo.current = true
     marcarSaidaPorInatividade()
@@ -46,26 +62,39 @@ export default function AvisoInatividade() {
     setRestanteMs(null)
   }
 
+  function destravar() {
+    continuar()
+    bloqueadoRef.current = false
+    setBloqueado(false)
+  }
+
   useEffect(() => {
     // Sessão reaberta depois do prazo — navegador fechado e aberto no dia
     // seguinte — sai na hora. Sem carimbo, é sessão nova: começa a contar agora.
     const guardada = lerUltimaAtividade()
     if (guardada === null) marcarAtividade()
-    else if (estadoInatividade(Date.now(), guardada).sair) { void sair(); return }
+    else if (estadoInatividade(Date.now(), guardada).sair) {
+      void sair()
+      // Travado, segue contando depois que a digital destravar.
+      if (!bloquearRef.current) return
+    }
     else ultimaMem.current = guardada
 
     let ultimaEscrita = 0
     const onAtividade = () => {
+      // Tocar na tela travada não é usar o app.
+      if (bloqueadoRef.current) return
       const agora = Date.now()
       ultimaMem.current = agora
       if (agora - ultimaEscrita > INTERVALO_ESCRITA_MS) { marcarAtividade(agora); ultimaEscrita = agora }
     }
     // A maior das duas: a memória desta aba e o carimbo compartilhado das outras.
     const conferir = () => {
+      if (bloqueadoRef.current) return
       const ultima = Math.max(lerUltimaAtividade() ?? 0, ultimaMem.current)
       const e = estadoInatividade(Date.now(), ultima)
       if (e.sair) { void sair(); return }
-      setRestanteMs(e.restanteMs)
+      setRestanteMs(bloquearRef.current ? null : e.restanteMs)
     }
 
     EVENTOS.forEach(ev => window.addEventListener(ev, onAtividade, { passive: true, capture: true }))
@@ -81,6 +110,7 @@ export default function AvisoInatividade() {
   const avisando = restanteMs !== null
   useEffect(() => { if (avisando) continuarRef.current?.focus() }, [avisando])
 
+  if (bloqueado) return <TelaBloqueio onDestravar={destravar} />
   if (!avisando) return null
   const segundos = Math.max(1, Math.ceil(restanteMs / 1000))
 

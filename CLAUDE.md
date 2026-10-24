@@ -3600,6 +3600,20 @@ depois da saída por inatividade. Onde o navegador exige um toque (Safari no
 iPhone), falha calada e fica o botão. A saída
 por inatividade continua: depois dela entra-se de novo com a digital.
 
+**No celular com a digital, a sessão não cai: a tela TRAVA** (24/10/2026,
+pedido do Guilherme: "no mobile, temos que pensar em um mecanismo de acesso
+mais rápido"). Com a digital cadastrada naquele aparelho
+(`digitalCadastradaAqui`), os 30 minutos sem uso, ou reabrir depois deles,
+mostram `TelaBloqueio` (azul, "Olá, X", "Desbloquear") em vez de sair; a
+digital destrava pelo mesmo `signInWithPasskey` do login, e a Início já está
+carregada por baixo. "Entrar com senha ou outra conta" sai. Sem digital, ou
+no computador, a saída de 30 minutos continua igual. Quem já entrou no
+aparelho (`compass-ja-entrou-aqui`) ou abre pelo ícone instalado vai da "/"
+direto ao login, sem a página de apresentação; quem chega pela primeira vez
+(link de indicação) ainda a vê. A Bússola convida a pôr o app na tela inicial
+(`ConviteInstalar`: botão no Android, caminho no iPhone, "Agora não").
+Regras em [`acessoRapido.ts`](src/utils/acessoRapido.ts).
+
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
 grava em produção**. Há mais de um usuário real na base.
 

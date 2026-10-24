@@ -9,6 +9,7 @@ import { guardarCopia, lerCopia, apagarCopias, type LinhasDoBanco } from '../uti
 import { supabase } from '../lib/supabase'
 import { marcarSaida } from '../utils/digital'
 import { limparUltimaAtividade } from '../utils/inatividade'
+import { marcarQueEntrouAqui } from '../utils/acessoRapido'
 import { ajustarDiasDasFaturas } from '../utils/diasDaFatura'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
@@ -461,6 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         everLoadedRef.current = true
         authCarregadoRef.current = u.id
         authIdRef.current = u.id
+        marcarQueEntrouAqui()
         // Carregando JÁ, antes de descobrir o dono: o resolverDono vai à rede,
         // e nesse intervalo havia login sem dados — onboardingCompleto falso
         // e carregando falso. A "/" mandava para o Onboarding, a URL ficava

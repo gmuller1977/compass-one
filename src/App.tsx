@@ -26,6 +26,8 @@ import { CHAVE_PRIMEIRO_ACESSO, vaiParaPrimeiroAcesso } from './utils/primeiroAc
 import { jaViu } from './utils/vistoNaConta'
 import { guardarCodigoRecebido, registrarIndicacaoPendente } from './utils/indicacao'
 import AvisoInatividade from './components/AvisoInatividade'
+import { digitalCadastradaAqui } from './utils/digital'
+import { pulaApresentacao } from './utils/acessoRapido'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
 import ConfirmarDebitoAutomatico from './components/ConfirmarDebitoAutomatico'
@@ -54,7 +56,7 @@ function AppShell({ children }: { children: ReactNode }) {
     registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isMobile) return <>{children}<AvisoInatividade /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
+  if (isMobile) return <>{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
   return (
     <>
       <Sidebar />
@@ -110,7 +112,8 @@ function HomeRoute() {
   const isMobile = useIsMobile()
   const inicioDoNovo = useInicioDoNovo()
   if (carregando) return <LoadingSpinner />
-  if (!user) return <LandingPage />
+  // No celular, quem já usa o app quer entrar: a apresentação fica para quem chega.
+  if (!user) return isMobile && pulaApresentacao() ? <Navigate to="/login" replace /> : <LandingPage />
   if (!onboardingCompleto) return <Navigate to={inicioDoNovo} replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
   return <AppShell><Bussola /></AppShell>

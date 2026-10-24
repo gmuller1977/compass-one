@@ -10,6 +10,7 @@ import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
 import { MemoriaSaldo } from '../components/novoLancamentoExtrato/NleExtrato'
 import BottomNav from '../components/BottomNav'
 import LembreteDiarioCard from '../components/LembreteDiario'
+import ConviteInstalar from '../components/ConviteInstalar'
 import ConferirSaldosCard from '../components/inicio/ConferirSaldosCard'
 import DebitosAutomaticosCard from '../components/inicio/DebitosAutomaticosCard'
 import PlanoDoMesCard from '../components/inicio/PlanoDoMesCard'
@@ -195,6 +196,7 @@ export default function Bussola() {
           </Cartao>
         )}
 
+        <ConviteInstalar />
         <LembreteDiarioCard />
       </div>
 

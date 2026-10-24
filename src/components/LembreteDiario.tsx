@@ -7,6 +7,7 @@ import {
   ativarLembrete, atualizarContasProximas, contasParaLembrete, desativarLembrete, estadoLembrete, type EstadoLembrete,
 } from '../utils/lembretes'
 import { COR } from '../utils/cores'
+import { dispensouInstalar } from '../utils/acessoRapido'
 
 /** As contas dos próximos 7 dias, do jeito que o lembrete lê. */
 function useContasDoLembrete() {
@@ -56,6 +57,8 @@ export default function LembreteDiarioCard() {
     display: 'flex', alignItems: 'center', gap: 12,
   }
   if (estado === 'instalar') {
+    // O convite de instalar (ConviteInstalar) já diz o caminho.
+    if (!dispensouInstalar()) return null
     return (
       <div style={caixa}>
         <i aria-hidden className="ti ti-bell" style={{ fontSize: 22, color: COR.azul }} />
