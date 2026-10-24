@@ -220,7 +220,6 @@ export default function Sidebar() {
 
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
   const email   = user?.email ?? ''
-  const inicial = nome.charAt(0).toUpperCase()
 
   const cartoes = contas.filter(c => c.tipo === 'cartao')
 
@@ -443,12 +442,6 @@ export default function Sidebar() {
           padding: '7px 10px', marginBottom: 2, borderRadius: 8,
           background: 'rgba(255,255,255,0.08)',
         }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(255,255,255,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 11, fontWeight: 700,
-          }}>{inicial}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 11, fontWeight: 700, color: '#ffffff',

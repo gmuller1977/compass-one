@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { COR } from '../utils/cores'
+import { useApp } from '../context/AppContext'
 import { useSeloNorte } from './norte/useSeloNorte'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { BOLINHA_AZUL } from './mobile/estilo'
@@ -47,6 +48,7 @@ export default function BottomNav() {
   const navigate  = useNavigate()
   const { pathname } = useLocation()
   const [mais, setMais] = useState(false)
+  const { sairDaConta } = useApp()
   // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
   // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
   const selo = useSeloNorte(NORTE_ATIVO && isMobile && !pathname.startsWith('/norte'))
@@ -109,6 +111,16 @@ export default function BottomNav() {
                 )}
               </button>
             ))}
+            {/* Sair (24/10/2026, pedido do Guilherme): antes só pelo "G" do topo de Configurações. */}
+            <button onClick={() => { setMais(false); void sairDaConta() }} style={{
+              display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 22px',
+              border: 'none', borderTop: `1px solid ${COR.borda}`, background: 'transparent', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: '#b91c1c', textAlign: 'left', minHeight: 56, marginTop: 4,
+            }}>
+              <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: '#fef2f2', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="ti ti-logout" style={{ color: '#b91c1c', fontSize: 21 }} /></span>Sair
+            </button>
           </div>
         </div>
       )}

@@ -39,20 +39,6 @@ export default function CfgPerfil({
         {/* Dados pessoais */}
         <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:28 }}>
 
-          {/* Avatar */}
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:20 }}>
-            <div style={{ position:'relative' }}>
-              <div style={{ width:80, height:80, borderRadius:'50%',
-                background:`linear-gradient(135deg,${COR.azulEscuro},${COR.azulMedio})`,
-                display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:30, color:'#fff', fontWeight:700 }}>G</div>
-              <div title="Em breve" style={{ position:'absolute', bottom:0, right:0,
-                width:24, height:24, borderRadius:'50%', background:'#e2e8f0',
-                border:`2px solid ${COR.branco}`, display:'flex', alignItems:'center',
-                justifyContent:'center', fontSize:13, color:'#475569', cursor:'not-allowed' }}><i aria-hidden className="ti ti-pencil" /></div>
-            </div>
-          </div>
-
           {/* Mini-stats */}
           <div style={{ display:'flex', marginBottom:22, border:`1px solid ${COR.borda}`, borderRadius:10, overflow:'hidden' }}>
             {[
