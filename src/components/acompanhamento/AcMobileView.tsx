@@ -9,7 +9,7 @@ import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_TRILHO_AZUL, RADAR_LARANJA, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_TRILHO_AZUL, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -412,7 +412,7 @@ export default function AcMobileView({
             // passou do plano são os grupos logo abaixo.
             // Texto no azul é branco (24/10/2026); a cor fica na barra.
             ['Receitas', '#fff', '#86efac', percE, totalRealE, totalPrevE],
-            ['Despesas', '#fff', RADAR_LARANJA, percS, totalRealS, totalPrevS],
+            ['Despesas', '#fff', RADAR_AMARELO, percS, totalRealS, totalPrevS],
           ] as [string,string,string,number,number,number][]).map(([rot, corRot, corBarra, p, real, prev]) => (
             <div key={rot}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:6 }}>

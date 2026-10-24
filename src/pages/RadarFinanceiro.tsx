@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_LARANJA, NUMERO_NO_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
+import { RADAR_AMARELO, NUMERO_NO_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
@@ -175,7 +175,7 @@ export default function RadarFinanceiro() {
   // só na BARRA. Quem diz se passou do plano são os grupos.
   const corSaldo = (_v: number) => NUMERO_NO_AZUL
   const COR_RECEITAS = '#86efac'
-  const COR_DESPESAS = RADAR_LARANJA
+  const COR_DESPESAS = RADAR_AMARELO
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.

@@ -72,14 +72,21 @@ export const RADAR_LARANJA = '#c2410c'
 // card azul, e onde for branco usamos o verde e laranja"). No azul a cor do
 // status mora só na barra; no branco, número e barra levam verde e laranja.
 export const NUMERO_NO_AZUL = '#ffffff'
+// "Passou" no Radar é AMARELO (24/10/2026, Guilherme: "esse amarelo, use nos
+// números que estão em vermelho no radar, no gráfico que passa de 100%, onde
+// está despesas"). No azul, #fde047 nas barras (passou e Despesas): 7,6 no
+// #1b35c8. No branco o #fde047 dá 1,2 e some, então número, barra e borda
+// usam o amarelo escuro #a16207 (4,9 no branco, 3,9 no trilho #e2e8f0).
+export const RADAR_AMARELO = '#fde047'
+export const RADAR_AMARELO_CLARO = '#a16207'
 //
 // UM verde só (24/10/2026, escolha do Guilherme no card: "verdes e laranjas
 // diferentes"): o "no limite" deixou de ter tom próprio, o "resta R$ X"
 // escrito já diz. Dentro do plano é verde, passou é laranja. No branco o
 // número usa o tom mais vivo que passa: #15803d (5,0) e #c2410c (5,2).
-export const RADAR_BARRA = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LARANJA } as const
+export const RADAR_BARRA = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_AMARELO } as const
 export const RADAR_TEXTO_AZUL = { bom: NUMERO_NO_AZUL, atencao: NUMERO_NO_AZUL, ruim: NUMERO_NO_AZUL } as const
-export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: RADAR_LARANJA } as const
+export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: RADAR_AMARELO_CLARO } as const
 export const RADAR_TRILHO_ESCURO = '#1e3a8a'
 // A barra no BRANCO é da cor do número (24/10/2026, Guilherme: "a barra
 // laranja pode ser o mesmo laranja do número"). O #c2410c no trilho
