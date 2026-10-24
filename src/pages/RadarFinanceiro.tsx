@@ -11,7 +11,7 @@ import { saldoBancosEDinheiro, detalharMes, memoriaDoRadar } from '../utils/sald
 import { MemoriaSaldo, ChipCenario } from '../components/novoLancamentoExtrato/NleExtrato'
 import EmptyState from '../components/EmptyState'
 import { fmt, MESES_FULL, diasNoMes } from '../components/acompanhamento/AcShared'
-import { RADAR_AMARELO, NUMERO_NO_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
+import { NUMERO_NO_AZUL, totaisJulgados } from '../components/acompanhamento/radarCores'
 import { nomesDeCartao, gruposDoRadar, totaisDoMes, buildAllCats } from '../components/acompanhamento/evolucaoCalcs'
 import AcMobileView from '../components/acompanhamento/AcMobileView'
 import EvolucaoGrupo, { CategoriasDoGrupo } from '../components/acompanhamento/EvolucaoGrupo'
@@ -173,8 +173,6 @@ export default function RadarFinanceiro() {
   // e rodapé inclusive. Receitas e Despesas levam verde e laranja pelo TIPO
   // só na BARRA. Quem diz se passou do plano são os grupos.
   const corSaldo = (_v: number) => NUMERO_NO_AZUL
-  const COR_RECEITAS = '#86efac'
-  const COR_DESPESAS = RADAR_AMARELO
 
   // O detalhe sai da mesma funcao dos dois cartoes de saldo, entao a linha
   // Total bate com eles por construcao.
@@ -300,36 +298,40 @@ export default function RadarFinanceiro() {
                 {resumo && <div style={{ fontSize: 14, color: ROTULO_TOPO, marginTop: 2 }}>{resumo.titulo}{resumo.detalhe ? ` · ${resumo.detalhe}` : ''}</div>}
               </>)}
             </div>
-            {/* As caixas ficam AO LADO da frase (pedido do Guilherme, 13/10/2026:
-                embaixo perde espaço), em 2 × 2 desde 24/10/2026: com os anéis,
-                quatro numa fileira ficavam pequenas e R$ 999.999,99 não cabia. Em cima
-                os saldos, embaixo despesas e receitas (mesmo dia, pedido dele). */}
-            <div style={{ flex: '1 1 560px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 10 }}>
-              {[
-                { rot: 'Saldo inicial', v: fmt(saldoInicial), cor: corSaldo(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
-                { rot: 'Saldo atual', v: fmt(saldoAtual), cor: corSaldo(saldoAtual), sub: 'bancos e dinheiro', p: null },
-                { rot: '↓ Despesas', v: fmt(totalRealS), cor: COR_DESPESAS, sub: deQuanto(totalPrevS), p: percS },
-                { rot: '↑ Receitas', v: fmt(totalRealE), cor: COR_RECEITAS, sub: deQuanto(totalPrevE), p: percE },
-              ].map(k => (
-                <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
-                  style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14,
-                    // Opção A (24/10/2026, Guilherme): anel em Receitas e Despesas e o
-                    // Saldo atual no quadro neon, o padrão da Início.
-                    border: k.rot === 'Saldo atual' ? '1.5px solid #22d3ee' : '1px solid rgba(255,255,255,.16)',
-                    boxShadow: k.rot === 'Saldo atual' ? '0 0 16px rgba(34,211,238,.45)' : 'none',
-                    padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
-                    display: 'flex', alignItems: 'center', gap: 14, color: '#fff' }}>
-                  {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
-                  <div style={{ minWidth: 0, flex: 1 }}>
+            {/* Saldo atual em destaque, fora dos cards, no quadro neon ao lado da
+                frase; embaixo, numa fileira da largura toda, Saldo inicial,
+                Receitas e Despesas (24/10/2026, pedido do Guilherme: em 2 × 2 o
+                saldo parecia repetido e os cards ficavam apertados). */}
+            {/* Sem a frase (mês fechado), o saldo já é o número grande à esquerda. */}
+            {ritmo && resumo && <button type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
+              style={{ flex: '0 1 340px', minWidth: 0, textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: '#fff',
+                background: 'rgba(255,255,255,.12)', borderRadius: 18, padding: '14px 20px',
+                border: '1.5px solid #22d3ee', boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: ROTULO_TOPO }}>Saldo atual · bancos e dinheiro</div>
+              <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.5px', color: NUMERO_NO_AZUL,
+                fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{fmt(saldoAtual)}</div>
+            </button>}
+          </div>
+          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12 }}>
+            {[
+              { rot: 'Saldo inicial', v: fmt(saldoInicial), sub: `${MESES_FULL[mes]} ${ano}`, p: null as number | null },
+              { rot: '↑ Receitas', v: fmt(totalRealE), sub: deQuanto(totalPrevE), p: percE },
+              { rot: '↓ Despesas', v: fmt(totalRealS), sub: deQuanto(totalPrevS), p: percS },
+            ].map(k => (
+              <button key={k.rot} type="button" onClick={alternarDetalhe} aria-expanded={detalheContas}
+                style={{ background: 'rgba(255,255,255,.12)', borderRadius: 14, border: '1px solid rgba(255,255,255,.16)',
+                  padding: '12px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
+                  display: 'flex', alignItems: 'center', gap: 14, color: '#fff' }}>
+                {k.p !== null && <AnelTopo pct={k.p} cor={k.rot.includes('Receitas') ? '#0891b2' : '#2563eb'} />}
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: ROTULO_TOPO }}>{k.rot}</div>
                   {/* Cabe R$ 999.999,99 em 20px de 1280px de janela para cima. */}
                   <div style={{ fontSize: 20, fontWeight: 800, color: NUMERO_NO_AZUL, fontVariantNumeric: 'tabular-nums',
                     whiteSpace: 'nowrap' }}>{k.v}</div>
                   <div style={{ fontSize: 13, color: ROTULO_TOPO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.sub}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                </div>
+              </button>
+            ))}
           </div>
         </PageHeader>
       </div>
