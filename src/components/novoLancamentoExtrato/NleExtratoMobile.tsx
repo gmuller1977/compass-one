@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Categoria } from '../../context/AppContext'
-import { iconeCategoria, ehCartaoCategoria } from '../../utils/categoriaIcone'
+import { iconeCategoria, ehFixaDeCartao } from '../../utils/categoriaIcone'
 import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import { ehTransferencia } from '../acompanhamento/evolucaoCalcs'
 import { Cartao, IconeRedondo } from '../mobile/ui'
@@ -80,7 +80,7 @@ export default function NleExtratoMobile({
   function fecharForm() { setMobileDiaForm(null); setEditandoId(null); setEditandoFixaId(null) }
 
   const semNada = totalEntradas === 0 && totalSaidas === 0 &&
-    fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria)).length === 0
+    fixas.filter(f => !ehFixaDeCartao(categorias, f)).length === 0
 
   const sf = saldosDia[totalDias] ?? saldoMes
   const editando = !!(editandoId || editandoFixaId)
