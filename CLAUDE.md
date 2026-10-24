@@ -3468,11 +3468,12 @@ vermelha quando fica abaixo da meta ou termina negativo. Na Início do
 computador, "Resumo do mês" e "Plano do mês" ficam LADO A LADO, com a
 mesma altura, e os anéis do Resumo vêm logo abaixo do título (alinhados com
 os do Plano), o saldo final previsto/realizado embaixo deles. No topo do Radar
-(mesmo dia, depois de passar por 2 × 2): o Saldo atual fica FORA dos cards,
-em destaque (quadro neon ao lado de "Ainda dá para gastar"; sem a frase, ele
-já é o número grande e o quadro some, senão repetiria), e embaixo uma
-fileira da largura toda com Saldo inicial, Receitas e Despesas, valor em
-20px (cabe R$ 999.999,99).
+(mesmo dia, depois de passar por 2 × 2 e pelo saldo em quadro neon): UMA
+linha, com Saldo inicial, Receitas e Despesas em cards à esquerda e, ao
+lado, "Hoje no banco e no dinheiro" fora de card, em 40px; a frase "Ainda dá
+para gastar" saiu do topo. As letras encolhem pela largura (`cqi`) e cabem
+−R$ 999.999,99 (regra dele: todo número pode chegar a isso; testar com o
+valor forçado). O anel do grupo que passou também é vermelho.
 
 ---
 
