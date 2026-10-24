@@ -3465,7 +3465,12 @@ mês segue o grupo do Radar (`ConteudoCartaoMes`, computador e celular):
 anel = quanto da meta de economia o mês guarda (✓ cheio ao chegar nela;
 vazio sem meta), números `#1d4ed8`, borda `#93c5fd`, e "!" com borda
 vermelha quando fica abaixo da meta ou termina negativo. Na Início do
-computador, "Resumo do mês" e "Plano do mês" ficam LADO A LADO.
+computador, "Resumo do mês" e "Plano do mês" ficam LADO A LADO, com a
+mesma altura, e os anéis do Resumo vêm logo abaixo do título (alinhados com
+os do Plano), o saldo final previsto/realizado embaixo deles. Os 4 cards do
+topo do Radar ficam em 2 × 2 ao lado da frase (em cima Saldo inicial e Saldo
+atual, embaixo Despesas e Receitas), valor em 20px: em fileira ficavam
+pequenos para R$ 999.999,99.
 
 ---
 
