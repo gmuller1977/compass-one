@@ -155,7 +155,9 @@ export default function NleExtratoMobile({
 
             <Cartao style={{
               padding: '4px 16px',
-              boxShadow: ehHoje ? `0 0 0 2px ${COR.azul}, ${M.sombra}` : M.sombra,
+              // Borda dos cards do Radar (24/10/2026, pedido do Guilherme); hoje, azul forte.
+              border: `2px solid ${ehHoje ? '#1d4ed8' : '#93c5fd'}`,
+              boxShadow: M.sombra,
               animation: highlightDia === dia ? 'rowSaved 1.2s ease-out' : undefined,
             }}>
               {!temItens && (
