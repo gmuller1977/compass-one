@@ -90,7 +90,7 @@ export default function ContasAPagarRapido({ deps, saldoHoje, vazio, oculto = fa
 // gradiente do topo e dos quadros das categorias, com o ícone em círculo cinza.
 const ROTULO = 'rgba(255,255,255,.75)'
 const QUADRO: CSSProperties = {
-  background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', borderRadius: M.raio, padding: '18px 18px',
+  background: 'var(--cx-azul)', borderRadius: M.raio, padding: '18px 18px',
   boxShadow: '0 4px 14px rgba(15,40,120,.18)', color: '#fff',
 }
 const TITULO: CSSProperties = { margin: '0 0 12px', fontSize: M.titulo, fontWeight: 700, color: '#fff' }

@@ -272,7 +272,7 @@ export default function Sidebar() {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, bottom: 0, width: SIDEBAR_W,
-      background: 'linear-gradient(180deg, #0f2878 0%, #1e3a8a 100%)',
+      background: 'var(--cx-azul)', boxShadow: 'inset -1px 0 0 var(--cx-neon)',
       display: 'flex', flexDirection: 'column', zIndex: 100,
       fontFamily: "-apple-system,'Inter',sans-serif",
     }}>

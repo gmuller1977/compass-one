@@ -35,7 +35,7 @@ const TRILHO = '#e2e8f0'
 // azul (RADAR_COR_AZUL): verde 5,0, verde-claro 9,1; o vermelho #f87171 dá
 // 3,15, aceito por ele nos cartões, e o número tem 20px em negrito (texto
 // grande). Rótulo a 75%: 5,1. Barra no trilho escuro com borda branca.
-const AZUL_ABERTO = 'linear-gradient(135deg, #0f2878 0%, #1e40af 100%)'
+const AZUL_ABERTO = 'var(--cx-azul)'
 
 interface EvolucaoGrupoProps {
   tipo: 'saida' | 'entrada'
@@ -94,7 +94,7 @@ export default function EvolucaoGrupo({
   return (
     <div style={{
       background: aberto ? AZUL_ABERTO : '#fff', borderRadius: 20, overflow: 'hidden',
-      boxShadow: aberto ? '0 6px 22px rgba(30,64,175,.22)' : '0 2px 14px rgba(15,40,120,.07)',
+      boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
       border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : RADAR_TEXTO_CLARO[faixa]}`,

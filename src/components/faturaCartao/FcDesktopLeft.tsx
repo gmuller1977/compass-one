@@ -169,7 +169,7 @@ export default function FcDesktopLeft({
 
       {/* Footer: total da fatura */}
       <div style={{ flexShrink: 0, padding: '0 12px 12px' }}>
-        <div style={{ background: totalFatura < 0 ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : `linear-gradient(135deg,#0f2878,#1e40af)`, borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: totalFatura < 0 ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : `var(--cx-azul)`, borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             {/* O mês da fatura é o do VENCIMENTO, como o seletor do topo (o
                 rodapé dizia o mês das compras; 22/10/2026). Branco, um ponto

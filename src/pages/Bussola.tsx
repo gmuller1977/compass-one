@@ -88,8 +88,8 @@ export default function Bussola() {
     <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       {/* ── Topo azul: a resposta do dia ─────────────────────────────── */}
       <header style={{
-        background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', color: '#fff',
-        padding: 'calc(18px + env(safe-area-inset-top)) 20px 64px', borderRadius: '0 0 28px 28px',
+        background: 'var(--cx-azul)', color: '#fff',
+        padding: 'calc(18px + env(safe-area-inset-top)) 20px 64px', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)',
       }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>

@@ -75,7 +75,7 @@ const labelSt: React.CSSProperties = {
 }
 /** O azul dos cards do Simulador (ver `cardAzul` em SimCompra): termina em #1e40af. */
 const cardAzul: React.CSSProperties = {
-  background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
+  background: `var(--cx-azul)`,
   border: '1px solid rgba(255,255,255,.12)', borderRadius: 12, padding: '20px 22px', minWidth: 0,
 }
 const apoio: React.CSSProperties = { fontSize: 12.5, color: 'rgba(255,255,255,.85)', lineHeight: 1.55 }
@@ -726,7 +726,7 @@ function ConfirmarQuitacao({ divida, r, isMobile, onConfirmar, onFechar }: {
             }}>Agora não</button>
             <button onClick={onConfirmar} style={{
               flex: 1, padding: '11px 14px', borderRadius: 10, border: 'none',
-              background: `linear-gradient(135deg, ${COR.azulEscuro}, #1e40af)`,
+              background: `var(--cx-azul)`,
               color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
             }}>Atualizar o plano</button>
           </div>

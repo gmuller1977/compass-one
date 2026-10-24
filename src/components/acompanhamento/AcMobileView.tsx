@@ -309,12 +309,12 @@ export default function AcMobileView({
       return [
         <div key={`g-${grupo}`} data-grupo={gid} style={{ background:'#fff', borderRadius:20, overflow:'hidden',
           scrollMarginTop: 12,
-          boxShadow: aberto ? '0 6px 22px rgba(30,64,175,.22)' : '0 2px 14px rgba(15,40,120,.07)',
+          boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
           border:`2px solid ${gBorda}` }}>
         <button onClick={() => toggleAberto(gid)} aria-expanded={aberto}
           aria-label={`${grupoLabel}: ${dg.principal}`}
           style={{ display:'block', width:'100%', textAlign:'left', padding:'14px 16px 12px',
-            background: aberto ? 'linear-gradient(135deg, #0f2878 0%, #1e40af 100%)' : '#fff',
+            background: aberto ? 'var(--cx-azul)' : '#fff',
             border:'none', cursor:'pointer', fontFamily:'inherit' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:700, color:gTexto }}>
             <IconeCat icone={grupoIcone} cor={aberto ? '#ffffff' : COR.azul} />
@@ -383,7 +383,7 @@ export default function AcMobileView({
       {/* Topo azul, no desenho da Bússola (redesenho de 10/10/2026): o mês
           com setas, o saldo de hoje grande, e as duas barras do mês com
           letra legível. A faixa branca "Quanto tenho" e a marca saíram. */}
-      <div style={{ background:'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', borderRadius:'0 0 28px 28px',
+      <div style={{ background:'var(--cx-azul)', borderRadius:'0 0 28px 28px', boxShadow:'var(--cx-brilho-topo)',
         padding:'calc(16px + env(safe-area-inset-top)) 20px 22px', flexShrink:0 }}>
         {/* Título e o mês com setas ao lado, como Lançamentos e o ano no
             Planejamento (pedido do Guilherme em 13/10/2026). */}
@@ -515,7 +515,7 @@ export default function AcMobileView({
               do rodapé do Radar no computador. Negativo, a caixa fica
               vermelha e o número BRANCO: o laranja #c2410c some no #991b1b. */}
           <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 4px 16px rgba(26,86,219,.25)',
-            background: saldoPrev >= 0 ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
+            background: saldoPrev >= 0 ? 'var(--cx-azul)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
             <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
               width:'100%', padding:'18px 18px', display:'flex', gap:10, alignItems:'center', justifyContent:'space-between',
               background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'left',

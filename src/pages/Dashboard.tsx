@@ -256,7 +256,7 @@ export default function Dashboard() {
           esquerda a saudação com o saldo logo embaixo; à direita os controles
           e, embaixo deles, a caixa do saldo previsto na MESMA largura — a
           borda esquerda alinha com a seta do mês. */}
-      <header style={{ background: TOPO_AZUL, color: '#fff', padding: isMobile ? '18px 16px 60px' : '28px 32px 76px', borderRadius: '0 0 28px 28px' }}>
+      <header style={{ background: TOPO_AZUL, color: '#fff', padding: isMobile ? '18px 16px 60px' : '28px 32px 76px', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)' }}>
         <div style={{ maxWidth: LARGURA - 64, margin: '0 auto' }}>
           {isMobile ? (<>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>

@@ -21,7 +21,7 @@ export default function SeloCompass({ size = 64 }: { size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: size * 0.28, flexShrink: 0,
-      background: 'linear-gradient(135deg, #0f2878, #1a56db)',
+      background: 'var(--cx-azul)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       boxShadow: '0 8px 20px rgba(15,40,120,.25)',
     }}>

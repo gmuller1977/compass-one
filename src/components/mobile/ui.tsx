@@ -86,7 +86,7 @@ export function Atalho({ icone, rotulo, onClick }: { icone: string; rotulo: stri
     }}>
       <span aria-hidden style={{
         width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: BOLINHA_AZUL, boxShadow: '0 6px 16px rgba(15,40,120,.25)',
+        background: BOLINHA_AZUL, boxShadow: 'var(--cx-bolinha)',
       }}><i className={`ti ${icone}`} style={{ color: '#fff', fontSize: 27 }} /></span>
       <span style={{ fontSize: 13, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2 }}>{rotulo}</span>
     </button>
@@ -217,7 +217,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   const escala = Math.max(0, ...cols.flatMap(({ c }) => [c.receitas ?? 0, c.despesas ?? 0]))
   return (
     <section aria-label={`Resumo de ${mesNome}`} style={{
-      background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 20px', boxShadow: M.sombra, color: '#fff',
+      background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 20px', boxShadow: 'var(--cx-brilho)', color: '#fff',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <span aria-hidden style={{

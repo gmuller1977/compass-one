@@ -357,7 +357,7 @@ export default function QuickLaunch() {
 
       {/* Header: título e o gasto de hoje, somando bancos, dinheiro e cartões. */}
       <div style={{
-        background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', borderRadius: '0 0 28px 28px',
+        background: 'var(--cx-azul)', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)',
         padding: 'calc(18px + env(safe-area-inset-top)) 20px 26px', flexShrink: 0,
       }}>
         <div style={{ color: '#fff', fontSize: 22, fontWeight: 700 }}>{saudacao}, {nomeUser} 👋</div>
@@ -420,7 +420,7 @@ export default function QuickLaunch() {
                 // o círculo do ícone em cinza claro. No azul, a paleta escura:
                 // #86efac 4,8 e #fdba74 5,2 no extremo #1e40af; rótulo a 75%.
                 style={{
-                  background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)',
+                  background: 'var(--cx-azul)',
                   border: `2px solid ${active ? '#fff' : 'transparent'}`, boxShadow: '0 4px 14px rgba(15,40,120,.18)',
                   borderRadius: 18, padding: '14px 6px', minHeight: 112, minWidth: 0,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
@@ -632,7 +632,7 @@ export default function QuickLaunch() {
             <div style={{ padding: '12px 20px', borderBottom: `1px solid ${COR.borda}`, flexShrink: 0 }}>
               <button type="button" onClick={() => setNovaCatAberta(true)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', minHeight: 48,
-                border: 'none', borderRadius: 14, background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', cursor: 'pointer',
+                border: 'none', borderRadius: 14, background: 'var(--cx-azul)', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: '#fff',
               }}>
                 <i className="ti ti-plus" aria-hidden style={{ fontSize: 20 }} /> Nova categoria

@@ -39,7 +39,7 @@ export default function AppHeader({ hideBottomTab }: Props) {
       <>
         {/* Top bar compacta */}
         <div style={{
-          background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+          background: 'var(--cx-azul)',
           padding: '0 16px',
           height: 52,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',

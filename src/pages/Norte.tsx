@@ -98,7 +98,7 @@ export default function Norte() {
     <div style={{ minHeight: '100dvh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <header style={{
         position: 'sticky', top: 0, zIndex: 20,
-        background: 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)', color: '#fff',
+        background: 'var(--cx-azul)', color: '#fff',
         padding: 'calc(14px + env(safe-area-inset-top)) 16px 14px', borderRadius: '0 0 24px 24px',
         boxShadow: '0 4px 18px rgba(15,40,120,.18)',
       }}>
@@ -219,7 +219,7 @@ function Bolha({ children }: { children: ReactNode }) {
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
       <span aria-hidden style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-        background: 'linear-gradient(135deg,#0f2878,#1e40af)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}><i className="ti ti-compass" /></span>
+        background: 'var(--cx-azul)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}><i className="ti ti-compass" /></span>
       <div style={{ background: '#fff', borderRadius: '20px 20px 20px 6px', padding: '12px 16px', boxShadow: M.sombra, maxWidth: '86%', minWidth: 0 }}>
         {children}
       </div>

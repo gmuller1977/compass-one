@@ -420,8 +420,8 @@ export default function RadarFinanceiro() {
         const positivo = saldoPrevisto >= 0
         return (
           <div style={{ padding: '10px 24px 14px', flexShrink: 0, background: M.fundo }}>
-            <div style={{ borderRadius: 18, boxShadow: '0 2px 14px rgba(15,40,120,.12)',
-              background: positivo ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
+            <div style={{ borderRadius: 18, boxShadow: positivo ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.12)',
+              background: positivo ? 'var(--cx-azul)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
               <div role="button" tabIndex={0} aria-expanded={memoriaAberta}
                 onClick={() => setMemoriaAberta(v => !v)}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMemoriaAberta(v => !v) } }}

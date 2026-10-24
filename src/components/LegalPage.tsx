@@ -143,7 +143,7 @@ export default function LegalPage({ rawMd }: { rawMd: string }) {
   function hero(compact: boolean) {
     return (
       <div style={{
-        background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+        background: 'var(--cx-azul)',
         padding: compact ? '28px 32px 40px' : '60px 48px',
         flexShrink: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',

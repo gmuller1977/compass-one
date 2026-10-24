@@ -14,7 +14,7 @@ export interface KpiCardProps {
   expandido?: boolean
 }
 
-const KPI_BG = 'linear-gradient(160deg,#0f2878,#1e40af)'
+const KPI_BG = 'var(--cx-azul)'
 const KPI_BORDER = '1px solid rgba(255,255,255,.15)'
 const LABEL_STYLE: React.CSSProperties = {
   fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.75)',
@@ -67,7 +67,7 @@ export default function KpiCard({
         display: 'flex', flexDirection: 'column',
         background: KPI_BG, border: KPI_BORDER,
         borderRadius: 18, padding: '14px 18px',
-        boxShadow: '0 2px 14px rgba(15,40,120,.12)',
+        boxShadow: 'var(--cx-brilho)',
         cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}>

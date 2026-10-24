@@ -290,7 +290,7 @@ export default function NleExtratoMobile({
       {/* O mês termina com — a mesma barra e a mesma memória de antes. No
           computador ela fica presa no pé da tela (NleExtrato). */}
       {!desktop && <div style={{ borderRadius: M.raio, overflow: 'hidden', boxShadow: M.sombra,
-        background: sf < 0 ? 'linear-gradient(135deg,#7f1d1d,#991b1b)' : 'linear-gradient(135deg,#0f2878,#1e40af)' }}>
+        background: sf < 0 ? 'linear-gradient(135deg,#7f1d1d,#991b1b)' : 'var(--cx-azul)' }}>
         <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
           width: '100%', padding: '18px', display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between',
           background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',

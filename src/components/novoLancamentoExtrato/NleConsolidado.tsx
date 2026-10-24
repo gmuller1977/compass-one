@@ -68,7 +68,7 @@ type Props = {
 function SecaoHeader({ icone, titulo, right }: { icone: string; titulo: string; right?: React.ReactNode }) {
   return (
     <div style={{
-      background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+      background: 'var(--cx-azul)',
       padding: '10px 16px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>

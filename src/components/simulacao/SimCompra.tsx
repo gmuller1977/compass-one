@@ -60,7 +60,7 @@ const card: React.CSSProperties = {
  * verde cairia para 4,40:1.
  */
 const cardAzul: React.CSSProperties = {
-  background: `linear-gradient(160deg, ${COR.azulEscuro} 0%, #1e40af 100%)`,
+  background: `var(--cx-azul)`,
   border: '1px solid rgba(255,255,255,.12)', borderRadius: 12, padding: '20px 22px',
   // Sem isto, no celular a tabela (460px) alargava o card além da tela.
   minWidth: 0,

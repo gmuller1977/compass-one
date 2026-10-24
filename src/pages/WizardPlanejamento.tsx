@@ -200,7 +200,7 @@ export default function WizardPlanejamento() {
 
   // ── Header ────────────────────────────────────────────────────────────
   const header = (
-    <div style={{ background:'linear-gradient(135deg,#0f2878,#2563eb)', padding:'12px 20px 20px', flexShrink:0 }}>
+    <div style={{ background:'var(--cx-azul)', padding:'12px 20px 20px', flexShrink:0 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.15)',

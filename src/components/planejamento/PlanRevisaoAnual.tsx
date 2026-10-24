@@ -356,7 +356,7 @@ export default function PlanRevisaoAnual({
             </div>
             {vazias.length > 0 && (
               <button type="button" onClick={preencher} style={{ marginLeft: isMobile ? 0 : 'auto', border: 'none',
-                background: 'linear-gradient(135deg, #0f2878, #1e40af)', color: '#fff', borderRadius: 10, padding: '10px 14px',
+                background: 'var(--cx-azul)', color: '#fff', borderRadius: 10, padding: '10px 14px',
                 fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i aria-hidden className="ti ti-wand" style={{ fontSize: 16 }} />
                 Preencher {vazias.length === 1 ? '1 vazia' : `${vazias.length} vazias`} com a sugestão

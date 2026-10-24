@@ -148,7 +148,7 @@ export default function RedefinirSenha() {
 
   const hero = (compact: boolean) => (
     <div style={{
-      background: 'linear-gradient(135deg,#0f2878,#2563eb)',
+      background: 'var(--cx-azul)',
       padding: compact ? '32px 32px 48px' : '60px 48px',
       flexShrink: 0,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',

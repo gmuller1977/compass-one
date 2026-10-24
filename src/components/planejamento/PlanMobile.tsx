@@ -39,7 +39,7 @@ import type { Categoria } from '../../context/AppContext'
  * gravação é o mesmo `onSave`.
  */
 
-const AZUL_TOPO = 'linear-gradient(160deg,#0f2878 0%,#1e40af 100%)'
+const AZUL_TOPO = 'var(--cx-azul)'
 // As cores do cartão e do gráfico do computador (PlanAnoVisao), no branco.
 const COR_ATUAL = '#1e3a8a'
 const COR_NEG = '#b91c1c'
@@ -100,7 +100,7 @@ export default function PlanMobile(p: Props) {
   return (
     <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
       {/* ── Topo: o do computador (título, ano, "?" e a resposta do ano) ── */}
-      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', padding: '18px 16px 20px' }}>
+      <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)', padding: '18px 16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.5px', color: 'rgba(255,255,255,.75)' }}>TODO ANO</div>

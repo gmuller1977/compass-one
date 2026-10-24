@@ -59,8 +59,8 @@ export default function NleMobileSubheader({
           else setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
         }
         return (
-          <div style={{background:'linear-gradient(180deg,#132f8f,#1e40af)',
-            borderRadius:'0 0 28px 28px',padding:'12px 16px 20px',flexShrink:0,marginBottom:12}}>
+          <div style={{background:'var(--cx-azul)',
+            borderRadius:'0 0 28px 28px',boxShadow:'var(--cx-brilho-topo)',padding:'12px 16px 20px',flexShrink:0,marginBottom:12}}>
             {tabPrincipal === 'extrato' && contasExtrato.length > 1 && (
               <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none' as never,marginBottom:12}}>
                 {contasExtrato.map(c => {

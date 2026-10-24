@@ -578,10 +578,10 @@ export default function Configuracoes() {
                 // a regra do #1e40af): branco 10,4:1, descrição a 75% 5,1:1,
                 // selo verde #86efac 4,8:1 no pior caso.
                 <button key={card.label} onClick={() => navigate(`/configuracoes?aba=${card.aba}`)} style={{
-                  background:'linear-gradient(135deg, #0f2878 0%, #1e40af 100%)', borderRadius:20,
+                  background:'var(--cx-azul)', borderRadius:20,
                   padding: isMobile ? '18px 8px 14px' : '24px 18px 20px',
                   display:'flex', flexDirection:'column', alignItems:'center', gap: isMobile ? 10 : 8,
-                  border:'none', boxShadow:'0 8px 20px rgba(15,40,120,.22)',
+                  border:'none', boxShadow:'var(--cx-brilho)',
                   cursor:'pointer', fontFamily:'inherit', textAlign:'center',
                 }}>
                   <span aria-hidden style={{ width: isMobile ? 46 : 56, height: isMobile ? 46 : 56, borderRadius:16,

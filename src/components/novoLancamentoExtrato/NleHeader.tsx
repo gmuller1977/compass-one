@@ -82,7 +82,7 @@ export default function NleHeader({
   // (ou no topo da fatura, no Cartão), que fecha o bloco com os cantos
   // arredondados.
   return (
-    <div style={{background:'linear-gradient(180deg,#0f2878,#132f8f)',
+    <div style={{background:'var(--cx-azul)',
       padding:'calc(14px + env(safe-area-inset-top)) 16px 4px',flexShrink:0}}>
       {/* Título e o mês com setas ao lado, como o ano no Planejamento (pedido
           do Guilherme em 13/10/2026: o mês ocupava uma linha inteira no meio

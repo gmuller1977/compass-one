@@ -79,9 +79,9 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
     <div style={{
       // O topo azul do celular (12/10/2026: "a mesma identidade para os
       // dois"): gradiente até #1e40af, cantos de 20 e sombra azulada.
-      background: 'linear-gradient(160deg, #0f2878 0%, #1e40af 100%)',
+      background: 'var(--cx-azul)',
       borderRadius: 20,
-      boxShadow: '0 2px 14px rgba(15,40,120,.12)',
+      boxShadow: 'var(--cx-brilho)',
       padding: isMobile ? '14px 16px' : '18px 22px',
       marginBottom: mb,
     }}>

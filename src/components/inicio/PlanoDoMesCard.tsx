@@ -71,7 +71,7 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
 
   return (
     <section aria-label="Plano do mês" style={{
-      background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 12px', boxShadow: M.sombra, color: '#fff',
+      background: TOPO_AZUL, borderRadius: M.raio, padding: '18px 18px 12px', boxShadow: 'var(--cx-brilho)', color: '#fff',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <span aria-hidden style={{

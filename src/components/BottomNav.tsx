@@ -120,7 +120,7 @@ export default function BottomNav() {
                 border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
               }}>
-                <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, flexShrink: 0,
+                <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, boxShadow: 'var(--cx-bolinha)', flexShrink: 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className={`ti ${m.icon}`} style={{ color: '#fff', fontSize: 21 }} /></span>{m.label}
                 {m.emBreve && (
@@ -159,7 +159,7 @@ export default function BottomNav() {
                     width: 58, height: 58, borderRadius: '50%',
                     background: BOLINHA_AZUL,
                     border: '3px solid #fff',
-                    boxShadow: '0 4px 16px rgba(26,86,219,.4)',
+                    boxShadow: 'var(--cx-bolinha)',
                     marginTop: -30,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: '#fff', fontSize: 30,
