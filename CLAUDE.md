@@ -3459,6 +3459,13 @@ um card branco com anel azul neon e número em `#1d4ed8` (6,7), borda
 borda `#a16207`. Categorias, abertas, seguem verde e amarelo-escuro
 (`#15803d` / `#a16207`, `RADAR_TEXTO_CLARO`). As notas acima sobre barras
 verde/laranja no Radar e no Resumo do mês são histórico.
+No mesmo dia (pedidos dele): no Radar o grupo que PASSOU tem borda e número
+em vermelho `#b91c1c` (6,47), com o "!" amarelo; no Planejamento o cartão do
+mês segue o grupo do Radar (`ConteudoCartaoMes`, computador e celular):
+anel = quanto da meta de economia o mês guarda (✓ cheio ao chegar nela;
+vazio sem meta), números `#1d4ed8`, borda `#93c5fd`, e "!" com borda
+vermelha quando fica abaixo da meta ou termina negativo. Na Início do
+computador, "Resumo do mês" e "Plano do mês" ficam LADO A LADO.
 
 ---
 
