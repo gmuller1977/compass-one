@@ -3433,6 +3433,19 @@ que falta ativar.
 
 ---
 
+**O azul da identidade tem ar NEON e mora numa variável** (24/10/2026,
+Guilherme: "deixar o azul com um ar mais futurista, tipo neon"; escolheu a
+versão B · Elétrico entre três). Todo gradiente azul da marca é
+`var(--cx-azul)` (`#0b1460 → #1b35c8`, definido em `src/index.css`), e o
+brilho ciano (`#22d3ee`) vem de `--cx-brilho` (cartões azuis),
+`--cx-brilho-topo` (topos de ponta a ponta), `--cx-bolinha` (bolinhas e o
+"+") e `--cx-neon` (borda da barra lateral). O extremo claro `#1b35c8` tem o
+brilho de `#1e40af`: branco 8,8:1, rótulo a 75% passa como antes. Azul novo
+usa a variável, nunca o hex. As notas que citam `#0f2878 → #1e40af` são
+histórico. Variantes mostradas: A (mesmo azul + halo) e C (quase preto).
+
+---
+
 ## Paleta
 
 `cores.ts` nomeia **86%** das cores usadas no app. Antes de escrever um hex
