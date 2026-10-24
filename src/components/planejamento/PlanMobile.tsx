@@ -266,7 +266,7 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
             <span style={{ fontSize: 12, fontWeight: rot === 'Resultado' ? 800 : 600, textTransform: 'uppercase', letterSpacing: '.4px',
               color: rot === 'Resultado' ? '#fff' : 'rgba(255,255,255,.75)' }}>{rot}</span>
             <span style={{ fontSize: rot === 'Resultado' ? 15 : 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-              color: rot === 'Resultado' ? (v >= 0 ? '#86efac' : '#fdba74') : '#fff' }}>
+              color: rot === 'Resultado' ? (v >= 0 ? '#86efac' : '#c2410c') : '#fff' }}>
               {rot === 'Resultado' && v > 0 ? '+' : ''}{fmt(v, true)}
             </span>
           </div>
@@ -281,7 +281,7 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
               borderTop: '1px solid rgba(255,255,255,.2)', marginTop: 2 }}>
               <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px', color: 'rgba(255,255,255,.75)' }}>Falta para a meta</span>
               <span style={{ fontSize: 14, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-                color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#fdba74' }}>
+                color: !c || fechado ? 'rgba(255,255,255,.75)' : c.ok ? '#86efac' : '#c2410c' }}>
                 {!c || fechado ? '—' : c.ok ? '✓ dentro' : fmt(c.falta, true)}
               </span>
             </div>

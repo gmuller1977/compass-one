@@ -17,7 +17,7 @@ import type { LinhaDoMes } from '../acompanhamento/evolucaoCalcs'
  * 85%, `#fdba74` e `#86efac` (a paleta de fundo escuro do CLAUDE.md).
  */
 const ROT = 'rgba(255,255,255,.85)'
-const NEG = '#fdba74'
+const NEG = '#c2410c'
 const POS = '#86efac'
 
 export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: {

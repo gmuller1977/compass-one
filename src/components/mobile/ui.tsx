@@ -201,7 +201,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
     .filter((x): x is { rot: string; c: ColunaResumo } => !!x)
   const ROT = 'rgba(255,255,255,.75)'
   const ROT_CAIXA = 'rgba(255,255,255,.85)'
-  const NEG = '#fdba74'
+  const NEG = '#c2410c'
   const caixa: CSSProperties = {
     background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 16,
     padding: '12px 14px', minWidth: 0,

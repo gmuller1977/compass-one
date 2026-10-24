@@ -63,7 +63,11 @@ export const RADAR_TRILHO_BRANCO = '#e2e8f0'
  * O NÚMERO no branco não pode ser o laranja claro (1,7:1): usa `#c2410c` (5,2).
  * No azul, `#fdba74` dá 5,2 no #1e40af.
  */
-export const RADAR_LARANJA = '#fdba74'
+// Desde 24/10/2026 o laranja é UM SÓ, #c2410c, no branco e no azul
+// (Guilherme: "quero usar para tudo o #c2410c"). EXCEÇÃO À REGRA DE
+// CONTRASTE decidida por ele, vendo a prévia: no azul dá 1,7:1. Os números
+// de contraste acima citando #fdba74 são histórico.
+export const RADAR_LARANJA = '#c2410c'
 //
 // UM verde só (24/10/2026, escolha do Guilherme no card: "verdes e laranjas
 // diferentes"): o "no limite" deixou de ter tom próprio, o "resta R$ X"
@@ -71,7 +75,7 @@ export const RADAR_LARANJA = '#fdba74'
 // número usa o tom mais vivo que passa: #15803d (5,0) e #c2410c (5,2).
 export const RADAR_BARRA = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LARANJA } as const
 export const RADAR_TEXTO_AZUL = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_LARANJA } as const
-export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: '#c2410c' } as const
+export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: RADAR_LARANJA } as const
 export const RADAR_TRILHO_ESCURO = '#1e3a8a'
 // A barra no BRANCO é da cor do número (24/10/2026, Guilherme: "a barra
 // laranja pode ser o mesmo laranja do número"). O #c2410c no trilho

@@ -588,7 +588,7 @@ export default function SimCompra({ isMobile }: { isMobile: boolean }) {
         </div>
         {(avisoSalvar || incluidoEm) && (
           <div role="status" style={{ marginTop: 10, fontSize: 13, fontWeight: 600, lineHeight: 1.5,
-            color: avisoSalvar && !avisoSalvar.ok ? '#fdba74' : '#86efac' }}>
+            color: avisoSalvar && !avisoSalvar.ok ? '#c2410c' : '#86efac' }}>
             {avisoSalvar && <div>{avisoSalvar.ok ? '✓ ' : '⚠ '}{avisoSalvar.texto}</div>}
             {incluidoEm && <div>✓ {incluidoEm}. Para tirar, use “Desfazer” no topo do Simulador.</div>}
           </div>
@@ -700,7 +700,7 @@ const caixaCartao: React.CSSProperties = {
 const TOM = {
   ok:      { texto: '#86efac' },
   atencao: { texto: '#fde047' },
-  nao:     { texto: '#fdba74' },
+  nao:     { texto: '#c2410c' },
 } as const
 
 // O ponto e elemento grafico (limite 3:1); o texto vai na paleta escura.
@@ -708,7 +708,7 @@ const TOM = {
 // fundo escuro (#fdba74, 5,17:1 no #1e40af) e a área "comprando" num azul
 // claro — COR.azul sumia no próprio fundo. Antes eram os tons de fundo claro:
 // rótulos brancos no #f8faff e números marinho no azul, ilegíveis.
-const NEG = '#fdba74'
+const NEG = '#c2410c'
 const COM_COMPRA = '#93c5fd'
 
 export function Resposta({ nome, r, isMobile, piso, valorTotal, parcelas, mensal = false, meta = null, guardaMensal = [] }: {

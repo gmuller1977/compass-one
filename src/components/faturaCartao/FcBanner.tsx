@@ -71,7 +71,7 @@ export default function FcBanner({
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fdba74',
+                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#c2410c',
               }}>
                 {/* Contra o total lançado no Compass (o rodapé), nas palavras do
                     "Confira seus saldos": faltam = o cartão tem mais do que foi

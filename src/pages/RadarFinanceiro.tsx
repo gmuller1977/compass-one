@@ -445,10 +445,9 @@ export default function RadarFinanceiro() {
                   </div>
                 </div>
                 <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', fontVariantNumeric: 'tabular-nums',
-                  // Negativo, a barra do rodapé é VERMELHA: #f87171 ali dá 3,00 e
-                  // some no fundo. Fica o laranja #fdba74 (4,93; era #fecaca, trocado em 24/10/2026) — o único
-                  // ponto fora do azul, e o número que mais precisa ser lido.
-                  color: positivo ? RADAR_COR_AZUL.bom : '#fdba74' }}>
+                  // Negativo, a barra do rodapé é VERMELHA e o número fica
+                  // BRANCO (8,9): o laranja #c2410c some no #991b1b (24/10/2026).
+                  color: positivo ? RADAR_COR_AZUL.bom : '#ffffff' }}>
                   {fmt(saldoPrevisto)}
                 </span>
               </div>

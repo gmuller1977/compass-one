@@ -398,7 +398,7 @@ export default function AcMobileView({
         <div style={{ marginTop:18 }}>
           <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{ehMesAtual ? `Quanto tenho hoje · dia ${diaHoje} de ${totalDias}` : 'Saldo do mês'}</div>
           <div style={{ fontSize:34, fontWeight:800, letterSpacing:'-.02em', lineHeight:1.15, fontVariantNumeric:'tabular-nums',
-            color: saldoReal >= 0 ? '#fff' : '#fdba74' }}>{fmt(saldoReal)}</div>
+            color: saldoReal >= 0 ? '#fff' : '#c2410c' }}>{fmt(saldoReal)}</div>
         </div>
 
         <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18 }}>
@@ -508,7 +508,7 @@ export default function AcMobileView({
 
           {/* Saldo final previsto: toca e abre a memória de cálculo, a mesma
               do rodapé do Radar no computador. Negativo, a caixa fica
-              vermelha e o número em #fdba74 (4,93 no #991b1b). */}
+              vermelha e o número BRANCO: o laranja #c2410c some no #991b1b. */}
           <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 4px 16px rgba(26,86,219,.25)',
             background: saldoPrev >= 0 ? 'linear-gradient(135deg,#0f2878,#1e40af)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
             <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
@@ -525,7 +525,7 @@ export default function AcMobileView({
                 </div>
               </div>
               <div style={{ fontSize:24, fontWeight:800, letterSpacing:-.5, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap',
-                color:saldoPrev>=0?'#fff':'#fdba74' }}>
+                color:'#fff' }}>
                 {fmt(saldoPrev)}
               </div>
             </button>

@@ -53,7 +53,7 @@ export const COR = {
   // Sobre azul ESCURO (#1e3a8a -> #0f2878)
   sobreAzulEscuro:         '#ffffff',  // 10.4:1
   sobreAzulEscuroVerde:    '#86efac',  //  7.4:1
-  sobreAzulEscuroVermelho: '#fdba74',  //  7.2:1
+  sobreAzulEscuroVermelho: '#c2410c',  //  1,7:1 no #1e40af: exceção decidida pelo Guilherme em 24/10/2026
   sobreAzulEscuroAmarelo:  '#fde047',  //  7.9:1
   sobreAzulEscuroLabel:    'rgba(255,255,255,0.75)',
 

@@ -473,6 +473,15 @@ Ficaram de fora as BORDAS rosadas das caixas de erro (Login, Cadastro,
 Configurações) e os vermelhos (`#f87171`, `#b91c1c`): não eram o rosa.
 Os números das notas abaixo e acima que citam `#fecaca` são histórico.
 
+**Um laranja só, `#c2410c`, em todas as telas** (24/10/2026, Guilherme:
+"quero usar para tudo o #c2410c", depois de ver a prévia lado a lado com o
+`#fdba74`). Barra e número de despesa/negativo, no branco e no azul. É
+EXCEÇÃO À REGRA DE CONTRASTE decidida por ele, avisado do número: no
+`#1e40af` dá 1,7:1. Não "consertar" sem falar com ele. No fundo VERMELHO
+(`#7f1d1d → #991b1b`, saldo final previsto negativo no Radar, Lançamentos
+e na memória de cálculo) o número fica BRANCO, porque ali o laranja some.
+As notas que citam `#fdba74` (abaixo e acima) são histórico.
+
 **No Radar, UM verde só** (24/10/2026, Guilherme: "parece que tem verdes e
 laranjas diferentes"; escolheu no card "um verde só + número mais vivo").
 O verde clarinho do "no limite" (`#bbf7d0`) saiu: barra dentro do plano é

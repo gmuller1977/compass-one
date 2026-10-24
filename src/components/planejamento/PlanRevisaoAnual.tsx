@@ -299,7 +299,7 @@ export default function PlanRevisaoAnual({
     ['Despesas', peBase.s, previsto.totalSaidas[mes]],
     ['Resultado', peBase.e - peBase.s, previsto.totalEntradas[mes] - previsto.totalSaidas[mes]],
   ] as const)
-  const corPe = (rot: string, v: number) => rot !== 'Resultado' ? '#fff' : v >= 0 ? '#86efac' : '#fdba74'
+  const corPe = (rot: string, v: number) => rot !== 'Resultado' ? '#fff' : v >= 0 ? '#86efac' : '#c2410c'
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onFechar() }} style={{
