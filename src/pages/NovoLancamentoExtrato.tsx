@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
-import { ehAutomaticoCategoria, ehCartaoCategoria } from '../utils/categoriaIcone'
+import { ehAutomaticoCategoria, ehFixaDeCartao } from '../utils/categoriaIcone'
 import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
 import FaturaCartao from './FaturaCartao'
@@ -291,16 +291,13 @@ export default function NovoLancamentoExtrato() {
 
   // Mapa de catId → {valor, tipo, diaVencimento, nome} para fixas consolidadas
   const fixasValorPorId = useMemo(() => {
-    const dadosAno = planos[ano]
     const map: Record<string, { valor: number; tipo: string; diaVencimento: number; nome: string }> = {}
     for (const cat of categorias) {
       if (!cat.fixa || !cat.ativa) continue
-      const planList = cat.tipo === 'saida'
-        ? (dadosAno as { saidas?: { nome: string; v: number[] }[] } | undefined)?.saidas
-        : (dadosAno as { entradas?: { nome: string; v: number[] }[] } | undefined)?.entradas
-      const planVal = planList?.find(c => c.nome === cat.nome)?.v[mes] ?? 0
+      // Pelo id e pelo par (nome, variante), como o saldo: só o nome pegava a
+      // primeira linha "Plano de Saúde" do plano, de qualquer variante.
       map[cat.id] = {
-        valor: planVal,
+        valor: valorFixaNoMes(cat, planos[ano], mes, categorias),
         tipo: cat.tipo,
         diaVencimento: cat.diaVencimento ?? 1,
         nome: cat.nome,
@@ -654,7 +651,7 @@ export default function NovoLancamentoExtrato() {
         if (dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true) return true
         return contaDaFixaNoMes(c, a, m, dados, contaPadraoFixas) === contaIdEfetivo
       })
-      .filter(c => !ehCartaoCategoria(categorias, c.nome))
+      .filter(c => c.tipoMovimento !== 'cartao')
       .map(c => ({
         id: c.id, nome: c.nome, categoria: c.nome,
         subtitulo: c.grupo, descricao: c.descricao,
@@ -671,7 +668,7 @@ export default function NovoLancamentoExtrato() {
       .filter(f => semPlanoEIntocada(f, a, m) === false)
 
     // A fatura do cartao tambem entra na cascata: o nome do cartao nao e uma
-    // categoria, entao ela passa pelo filtro de ehCartaoCategoria. Montada aqui
+    // categoria, e o filtro de cartao da cascata e pelo id. Montada aqui
     // para (a, m) pelo mesmo motivo das demais.
     const fatMes: CatFixa[] = isDinheiro ? [] : contas
       .filter(c => c.tipo === 'cartao' && c.diaVencimento)
@@ -875,7 +872,7 @@ export default function NovoLancamentoExtrato() {
     const dadosMesAtual = dados[key]
     const lancs     = (dadosMesAtual ?? { lancamentos:{} }).lancamentos
     const overrides = dadosMesAtual?.fixasMovidas
-    const fc    = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
+    const fc    = fixas.filter(f => !ehFixaDeCartao(categorias, f))
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
       fc.filter(f => diaEfetivoFixa(f,overrides,ehAutomatico(f),mes,ano,totalDias)===d)

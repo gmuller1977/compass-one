@@ -2331,6 +2331,15 @@ Menor, também aberta: Lançamentos decide a conta da fixa por
 `contaDaFixaNoMes` (respeita a troca do mês) e a projeção por
 `contaDaCategoria` (só o cadastro). Muda o endereço, não o total.
 
+**Fixa de cartão se reconhece pelo ID, não pelo nome** (24/10/2026,
+relatado pelo Guilherme: Sicredi R$ 238,25 acima do banco). Lançamentos tirava
+do saldo a fixa cuja categoria "é de cartão" buscando pelo NOME, e a primeira
+"Plano de Saúde" do cadastro era a variante de cartão "· Consulta Médica": a
+fixa de banco "· Plano de Saúde" (PIX) aparecia na lista, mas marcar ou
+desmarcar não mexia no saldo, enquanto o Radar a contava. Hoje é
+`ehFixaDeCartao` (`categoriaIcone.ts`), pelo id; a fatura segue pelo nome. O
+valor das fixas da aba Total também saiu do nome para `valorFixaNoMes`.
+
 **Fixa SEM PLANO e que ninguém tocou não aparece como prevista.** Pedido do
 Guilherme em 15/09/2026. `valorFixaNoMes` devolve 0 quando a categoria não tem
 linha no plano — e devolve 0 para **todas** quando o ano inteiro não foi

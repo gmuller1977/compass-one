@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
-import { ehCartaoCategoria } from '../../utils/categoriaIcone'
+import { ehFixaDeCartao } from '../../utils/categoriaIcone'
 import {
   COR, fmt, NOMES_MESES, formasDoLancamento,
   realcarFoco, removerRealce, diaSemana,
@@ -105,7 +105,7 @@ export default function NleDesktopPanel({
   const [mostrarCalDia, setMostrarCalDia] = useState(false)
 
   // Resumo do mês data
-  const fixasDoMes = fixas.filter(f => !ehCartaoCategoria(categorias, f.categoria))
+  const fixasDoMes = fixas.filter(f => !ehFixaDeCartao(categorias, f))
   const fixasPend        = fixasDoMes.filter(f => mesDados.fixasConsolidadas?.[f.id] !== true)
   const numFixasPendentes = fixasPend.length
   const planejadoTotal   = fixasDoMes.filter(f => f.tipo==='saida')
