@@ -134,7 +134,7 @@ export default function CfgCategorias({
             {categorias.length > 0 && (
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
                 <div style={{ display:'flex', background:'#f1f5f9', borderRadius:8, padding:3 }}>
-                  {([['entrada','↑ Entradas'],['saida','↓ Saídas']] as const).map(([v,l]) => (
+                  {([['entrada','↑ Receitas'],['saida','↓ Despesas']] as const).map(([v,l]) => (
                     <button key={v} onClick={() => setAbaCat(v)} style={{
                       padding:'6px 20px', border:'none', borderRadius:6,
                       cursor:'pointer', fontSize:13, fontWeight:500,
@@ -246,7 +246,7 @@ export default function CfgCategorias({
                   <span style={{ fontSize:10, padding:'2px 8px', borderRadius:6, fontWeight:700,
                     background: formCat.tipo === 'entrada' ? '#dcfce7' : '#fee2e2',
                     color: formCat.tipo === 'entrada' ? COR.verde : COR.vermelho }}>
-                    {formCat.tipo === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                    {formCat.tipo === 'entrada' ? '↑ Receita' : '↓ Despesa'}
                   </span>
                   <span style={{ fontSize:10, padding:'2px 8px', borderRadius:6, fontWeight:700,
                     background: formCat.fixa ? '#fef9c3' : '#f1f5f9',
@@ -262,7 +262,7 @@ export default function CfgCategorias({
               <div>
                 <label style={labelSt}>Movimentação</label>
                 <div style={{ display:'flex', gap:6 }}>
-                  {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l], i) => (
+                  {([['entrada','↑ Receita'],['saida','↓ Despesa']] as const).map(([v,l], i) => (
                     <button key={v}
                       ref={el => { tipoCatRefs.current[i] = el }}
                       tabIndex={formCat.tipo===v ? 0 : -1}
@@ -589,7 +589,7 @@ export default function CfgCategorias({
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:COR.texto }}>{g}</div>
                     <div style={{ fontSize:10, color: tipoG==='entrada' ? COR.verde : COR.vermelho, marginTop:1, fontWeight:500 }}>
-                      {tipoG === 'entrada' ? '↑ Entrada' : '↓ Saída'}
+                      {tipoG === 'entrada' ? '↑ Receita' : '↓ Despesa'}
                     </div>
                   </div>
                   <span style={{ fontSize:11, color:COR.textoSuave, background:'#f1f5f9', padding:'2px 8px', borderRadius:10, flexShrink:0 }}>
@@ -646,7 +646,7 @@ export default function CfgCategorias({
               <div>
                 <label style={labelSt}>Movimentação</label>
                 <div style={{ display:'flex', gap:6 }}>
-                  {([['entrada','↑ Entrada'],['saida','↓ Saída']] as const).map(([v,l]) => {
+                  {([['entrada','↑ Receita'],['saida','↓ Despesa']] as const).map(([v,l]) => {
                     const cur = editGrupo ? editGrupoTipo : novoGrupoTipo
                     const set = editGrupo ? setEditGrupoTipo : setNovoGrupoTipo
                     return (

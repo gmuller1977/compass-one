@@ -117,8 +117,8 @@ export default function WizardPlanejamento() {
   const cartoes     = useMemo(() => contas.filter(c => c.tipo === 'cartao'), [contas])
   const hasCartoes  = cartoes.length > 0
   const stepLabels  = hasCartoes
-    ? ['Objetivo','Saldo inicial','Cartões','Entradas','Saídas','Resumo']
-    : ['Objetivo','Saldo inicial','Entradas','Saídas','Resumo']
+    ? ['Objetivo','Saldo inicial','Cartões','Receitas','Despesas','Resumo']
+    : ['Objetivo','Saldo inicial','Receitas','Despesas','Resumo']
   const totalSteps  = stepLabels.length
 
   const resultadoMensal = totalEntradas - totalSaidas
@@ -576,11 +576,11 @@ export default function WizardPlanejamento() {
             <span style={{ fontSize:13, fontWeight:700, color:'#0f172a' }}>📅 Projeção anual {ANO}</span>
           </div>
           <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid #f8faff' }}>
-            <span style={{ fontSize:12, color:'#64748b' }}>↑ Entradas ({mesesAplicar} meses)</span>
+            <span style={{ fontSize:12, color:'#64748b' }}>↑ Receitas ({mesesAplicar} meses)</span>
             <span style={{ fontSize:13, fontWeight:700, color:'#1a56db' }}>{fmtBRL(entradasAnual)}</span>
           </div>
           <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid #f8faff' }}>
-            <span style={{ fontSize:12, color:'#64748b' }}>↓ Saídas ({mesesAplicar} meses)</span>
+            <span style={{ fontSize:12, color:'#64748b' }}>↓ Despesas ({mesesAplicar} meses)</span>
             <span style={{ fontSize:13, fontWeight:700, color:'#dc2626' }}>{fmtBRL(saidasAnual)}</span>
           </div>
           <div style={{ padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#f8faff' }}>
