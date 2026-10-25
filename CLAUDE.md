@@ -3322,6 +3322,10 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
 - **A lista da fatura é por DATA DA COMPRA, a mais recente no topo**, e no
   mesmo dia o último lançado no topo (`compararNaFatura`, celular e computador). Pedido dele no mesmo
   dia: lançando a fatura, a ordem de digitação embaralhava as datas.
+  Desde 24/10/2026 (pedido dele) a lista é AGRUPADA por dia da compra,
+  como o Banco: título "15/10 quinta" com o total do dia e um card com
+  borda `#93c5fd`; a data saiu da linha. E cada dia de Banco e Dinheiro
+  ganhou a borda do Radar (`#1d4ed8` hoje, `#93c5fd` os outros).
 - **"Conciliação" saiu das telas** (22/10/2026, pedido do Guilherme:
   "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
   Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",
