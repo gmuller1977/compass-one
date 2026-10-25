@@ -1,6 +1,6 @@
 import type { Conta } from '../../context/AppContext'
 import { COR, fmt, type DadosMes } from './NleShared'
-import { IconeCat } from '../IconeCat'
+import { iconeDesenhado } from '../../utils/iconeDesenhado'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -66,16 +66,16 @@ export default function NleMobileSubheader({
                 {contasExtrato.map(c => {
                   const ativo = c.id === contaIdEfetivo
                   return (
-                    <button key={c.id} onClick={() => {
+                    <button key={c.id} aria-pressed={ativo} onClick={() => {
                       setContaId(c.id)
                     }} style={{
                       display:'flex',alignItems:'center',gap:6,minHeight:38,
                       padding:'0 14px',borderRadius:999,flexShrink:0,border:'none',
                       background:ativo?'#fff':'rgba(255,255,255,.14)',
                       cursor:'pointer',whiteSpace:'nowrap',fontFamily:'inherit',
-                      fontSize:14,fontWeight:700,color:ativo?'#1e3a8a':'#fff',
+                      fontSize:14,fontWeight:700,color:ativo?'#1e40af':'#fff',
                     }}>
-                      <IconeCat icone={c.icone} />{c.apelido ?? c.banco}
+                      <i aria-hidden className={`ti ${iconeDesenhado(c.icone) ?? 'ti-building-bank'}`} style={{fontSize:16,lineHeight:1}} />{c.apelido ?? c.banco}
                     </button>
                   )
                 })}

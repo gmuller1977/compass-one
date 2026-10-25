@@ -1,7 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
-import { IconeCat } from '../IconeCat'
+import { iconeDesenhado } from '../../utils/iconeDesenhado'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -121,16 +121,15 @@ export default function NleBanner({
             {contasExtrato.map(c => {
               const ativo = c.id === contaIdEfetivo
               return (
-                <button key={c.id} onClick={() => onContaSelect(c.id)} style={{
+                <button key={c.id} onClick={() => onContaSelect(c.id)} aria-pressed={ativo} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                  border: `1.5px solid ${ativo ? c.cor : '#e2e8f0'}`,
-                  background: ativo ? c.cor + '18' : '#fff',
-                  color: ativo ? c.cor : '#64748b',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s',
+                  border: '1.5px solid #1e40af',
+                  background: ativo ? '#fff' : 'var(--cx-azul)',
+                  color: ativo ? '#1e40af' : '#fff',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.cor, flexShrink: 0 }} />
-                  <IconeCat icone={c.icone} /> {c.banco}
+                  <i aria-hidden className={`ti ${iconeDesenhado(c.icone) ?? 'ti-building-bank'}`} style={{ fontSize: 14, lineHeight: 1 }} /> {c.banco}
                 </button>
               )
             })}
