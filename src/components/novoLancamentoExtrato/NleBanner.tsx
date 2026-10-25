@@ -80,13 +80,13 @@ export default function NleBanner({
             valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="ti-arrow-down" label="Saídas" value={fmt(totalSaidas)}
             valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
-          <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
+          <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo no Compass One'} value={fmt(saldoMes)}
             valueColor="#fff"
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
           {/* O saldo que o banco (ou a carteira) mostra, no MESMO cartão dos
               outros, como a "Fatura do cartão" (22/10/2026, pedido do
               Guilherme: "Conciliação" confundia). A diferença vai em palavras,
-              contra o Saldo atual ao lado; a pílula diz que o cartão abre a
+              contra o Saldo no Compass One ao lado; a pílula diz que o cartão abre a
               caixa de saldo. #86efac 4,8 e #fdba74 5,2 no #1e40af. */}
           <div role="button" tabIndex={0} aria-label={isDinheiro ? 'Informar o saldo em dinheiro' : 'Informar o saldo do banco'}
             title={isDinheiro ? 'Clique para informar quanto tem em dinheiro' : 'Clique para informar o saldo que aparece no banco'}

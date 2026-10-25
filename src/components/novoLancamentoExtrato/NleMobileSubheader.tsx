@@ -85,7 +85,7 @@ export default function NleMobileSubheader({
             {temSaldo && (<>
               <div>
                 <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
-                  {ehMesAtual ? 'Saldo no Compass' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
+                  {ehMesAtual ? 'Saldo no Compass One' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
                 </div>
                 <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
                   color:'#fff'}}>{fmt(saldoMes)}</div>
