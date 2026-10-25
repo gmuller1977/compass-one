@@ -36,20 +36,31 @@ export async function convidar(p: { donoId: string; donoNome: string; donoEmail:
   const { data, error } = await supabase.from('compartilhamentos').insert({
     dono_id: p.donoId, dono_nome: p.donoNome, dono_email: p.donoEmail, email: p.email.trim().toLowerCase(),
   }).select('id').single()
-  if (error) return { erro: motivoDoErro(error), emailEnviado: false }
-  return { erro: '', emailEnviado: await enviarEmailDoConvite(data.id as string) }
+  if (error) return { erro: motivoDoErro(error), envio: 'falha' as EnvioConvite }
+  return { erro: '', envio: await enviarEmailDoConvite(data.id as string) }
 }
+
+/**
+ * 'limite': a função recusou pelo limite de envios (5 por dia, o mesmo
+ * convite a cada 10 minutos; migração 021).
+ */
+export type EnvioConvite = 'enviado' | 'limite' | 'falha'
 
 /**
  * Manda o e-mail do convite (função convite-email, pelo Resend). O convite
  * vale com ou sem ele: a pessoa o vê ao entrar com o e-mail convidado.
  */
-export async function enviarEmailDoConvite(id: string): Promise<boolean> {
+export async function enviarEmailDoConvite(id: string): Promise<EnvioConvite> {
   try {
     const { data, error } = await supabase.functions.invoke('convite-email', { body: { id } })
-    if (error) { console.warn('convite-email', error); return false }
-    return !!(data as { enviado?: boolean } | null)?.enviado
-  } catch (e) { console.warn('convite-email', e); return false }
+    if (error) {
+      const status = (error as { context?: { status?: number } }).context?.status
+      if (status === 429) return 'limite'
+      console.warn('convite-email', error)
+      return 'falha'
+    }
+    return (data as { enviado?: boolean } | null)?.enviado ? 'enviado' : 'falha'
+  } catch (e) { console.warn('convite-email', e); return 'falha' }
 }
 
 export async function removerConvite(id: string) {

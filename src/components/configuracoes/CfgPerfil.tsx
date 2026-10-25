@@ -4,6 +4,7 @@ import type { Conta, Categoria, Perfil } from '../../context/AppContext'
 import PageHeader from '../PageHeader'
 import CfgCompartilhar from '../compartilhar/CfgCompartilhar'
 import CfgDigital from './CfgDigital'
+import CfgMeusDados from './CfgMeusDados'
 import { COR, EmBreve, inputSt, labelSt } from './CfgShared'
 
 interface Props {
@@ -92,6 +93,8 @@ export default function CfgPerfil({
         <CfgCompartilhar />
 
         <CfgDigital />
+
+        <CfgMeusDados />
 
         {/* Segurança */}
         <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:24, opacity:.6 }}>

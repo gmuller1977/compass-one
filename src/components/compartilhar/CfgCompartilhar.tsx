@@ -36,22 +36,26 @@ export default function CfgCompartilhar() {
     if (!emailValido(e)) { setMsg({ ok: false, texto: 'Confira o e-mail.' }); return }
     if (e === (user.email ?? '').toLowerCase()) { setMsg({ ok: false, texto: 'Esse é o seu próprio e-mail.' }); return }
     setOcupado(true)
-    const { erro, emailEnviado } = await convidar({ donoId: user.id, donoNome: perfil.apelido || perfil.nome, donoEmail: user.email ?? '', email: e })
+    const { erro, envio } = await convidar({ donoId: user.id, donoNome: perfil.apelido || perfil.nome, donoEmail: user.email ?? '', email: e })
     setOcupado(false)
     if (erro) { setMsg({ ok: false, texto: erro }); return }
     setEmail('')
-    setMsg({ ok: true, texto: emailEnviado
+    setMsg({ ok: true, texto: envio === 'enviado'
       ? `Convite enviado para ${e}. É só a pessoa entrar no Compass One com esse e-mail: o convite aparece na hora.`
-      : `Convite criado, mas o e-mail não saiu agora. Peça para ${e} entrar no Compass One com esse e-mail: o convite aparece na hora.` })
+      : envio === 'limite'
+        ? `Convite criado. Você chegou ao limite de e-mails de convite por hoje, então peça para ${e} entrar no Compass One com esse e-mail: o convite aparece na hora.`
+        : `Convite criado, mas o e-mail não saiu agora. Peça para ${e} entrar no Compass One com esse e-mail: o convite aparece na hora.` })
     atualizar()
   }
 
   async function reenviar(c: Convite) {
     if (ocupado) return
     setOcupado(true)
-    const ok = await enviarEmailDoConvite(c.id)
+    const envio = await enviarEmailDoConvite(c.id)
     setOcupado(false)
-    setMsg(ok ? { ok: true, texto: `E-mail reenviado para ${c.email}.` } : { ok: false, texto: 'O e-mail não saiu agora. Tente de novo mais tarde.' })
+    setMsg(envio === 'enviado' ? { ok: true, texto: `E-mail reenviado para ${c.email}.` }
+      : envio === 'limite' ? { ok: false, texto: 'Esse convite já foi enviado há pouco, ou você chegou ao limite de e-mails de convite por hoje. O convite continua valendo: a pessoa o vê ao entrar com esse e-mail.' }
+      : { ok: false, texto: 'O e-mail não saiu agora. Tente de novo mais tarde.' })
   }
 
   async function remover(c: Convite) {

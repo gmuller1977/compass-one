@@ -3724,6 +3724,21 @@ Guilherme; o plano gratuito do Supabase não guarda cópia):
 dos logins, trancado com `BACKUP_SENHA`, artefato de 90 dias. Configurar e
 restaurar em [`docs/backup-do-banco.md`](docs/backup-do-banco.md).
 
+**Toda leitura que pode passar de mil linhas usa `lerTudo`** (25/10/2026,
+pacote 2): o Supabase corta em 1.000 linhas SEM erro, e o saldo depende do
+histórico inteiro. Extrato e fatura são lidos em páginas, com ordem pela
+chave inteira ([`lerTudo.ts`](src/utils/lerTudo.ts), `prova96`). Carregar só
+os últimos meses foi descartado: o mês abre com o fechamento do anterior.
+
+**E-mail de convite tem limite** (mesmo dia, migração 021): 5 por dono em 24
+horas e o mesmo convite a cada 10 minutos, contados pela função
+`convite-email` em `envios_convite` (só service_role). Sem a tabela, a
+função não envia; o convite continua valendo.
+
+**"Baixar meus dados"** no Perfil (LGPD): um JSON com todas as tabelas do
+login ([`baixarMeusDados.ts`](src/utils/baixarMeusDados.ts)). Tabela nova
+com dado da pessoa entra em `TABELAS_EXPORTADAS`.
+
 Nunca executar SQL destrutivo direto. Apresentar o SQL para revisão antes de
 qualquer `alter`, `drop` ou `delete`.
 
