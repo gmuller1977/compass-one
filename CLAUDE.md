@@ -3718,6 +3718,12 @@ Regras em [`acessoRapido.ts`](src/utils/acessoRapido.ts).
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
 grava em produção**. Há mais de um usuário real na base.
 
+**Backup do banco é semanal, pelo GitHub** (25/10/2026, escolha do
+Guilherme; o plano gratuito do Supabase não guarda cópia):
+`.github/workflows/backup-banco.yml`, domingo 3h, `pg_dump` do `public` e
+dos logins, trancado com `BACKUP_SENHA`, artefato de 90 dias. Configurar e
+restaurar em [`docs/backup-do-banco.md`](docs/backup-do-banco.md).
+
 Nunca executar SQL destrutivo direto. Apresentar o SQL para revisão antes de
 qualquer `alter`, `drop` ou `delete`.
 
