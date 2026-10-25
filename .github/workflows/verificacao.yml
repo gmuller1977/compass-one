@@ -1,0 +1,19 @@
+# Verificação a cada push e pull request (25/10/2026, revisão técnica):
+# tipos, lint, provas e build. A Vercel também roda as provas antes de
+# publicar (vercel.json); aqui o aviso chega antes, inclusive nos ramos que
+# não publicam.
+name: Verificação
+on:
+  push:
+  pull_request:
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verificar

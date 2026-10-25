@@ -2874,8 +2874,9 @@ barra de baixo usam `BOLINHA_AZUL` (`#0f2878 → #1e40af`, em
 `mobile/estilo.ts`) com ícone Tabler branco (`icone="ti-…"`): Lançar
 `ti-plus`, Planejamento `ti-calendar-stats`, Pagar contas `ti-receipt`, Posso
 comprar? `ti-shopping-cart`, Radar `ti-radar-2`. Emoji em atalho, não. A
-fonte Tabler vem do CDN no `index.html`; a prévia local sem rede precisa
-servir o pacote do npm por `page.route`.
+fonte Tabler vem do pacote `@tabler/icons-webfont` (importado em
+`main.tsx`, servido com o app desde 25/10/2026; antes era o CDN no
+`index.html`), então funciona sem internet e na prévia local.
 A barra de baixo do celular também (mesmo dia): Início `ti-home`, Radar
 `ti-radar-2`, Norte `ti-compass`, Mais `ti-menu-2`, na cor do rótulo (azul
 ativo, `textoSuave` inativo), e o "+" flutuante com `ti-plus` sobre
@@ -3732,3 +3733,31 @@ quando algo dá errado em produção.
 
 `console.log` de diagnóstico vai atrás de `import.meta.env.DEV`: existe no
 localhost e some do bundle publicado. Debug de investigação não fica para trás.
+
+---
+
+## Provas e publicação
+
+**As provas moram em [`provas/`](provas/), no repositório** (25/10/2026,
+revisão técnica). Antes ficavam na pasta temporária de cada sessão e se
+perdiam: das ~95 citadas acima, só a 74, 75, 76, 77 e 95 sobreviveram. Prova
+nova é salva lá, com `console.log('provaNN: X ok, Y falhas')` no fim, e as
+imports relativas (`../src/utils/...`). `npm run provas` roda todas;
+`npm run verificar` faz tipos, lint, provas e build.
+
+A Vercel roda as provas ANTES do build (`buildCommand` no `vercel.json`):
+prova vermelha não publica, e o site fica na versão anterior. O GitHub roda
+`npm run verificar` a cada push (`.github/workflows/verificacao.yml`). Regra
+que muda de propósito muda a prova junto, com um comentário de quando e por
+quê (ex.: a 75 e a 76 em 25/10).
+
+**Ramos `claude/*` não geram deploy na Vercel** (`git.deploymentEnabled` no
+`vercel.json`): o plano gratuito tem limite diário, e só o `main` publica.
+
+**Erro de tela não deixa a página em branco**: `ErroDeTela` (em `App.tsx`,
+por dentro do `AppProvider`, que segue gravando) mostra "Algo deu errado
+nesta tela" com Recarregar e Ir para o início.
+
+O `vercel.json` manda os cabeçalhos de proteção (sem abrir dentro de outro
+site, `nosniff`, `Referrer-Policy`, `Permissions-Policy` com microfone só no
+próprio app, para a voz). Os ícones Tabler vêm do pacote npm, não de CDN.
