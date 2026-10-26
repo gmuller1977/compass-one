@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
@@ -36,15 +36,10 @@ import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
 import AvisoPermissao from './components/compartilhar/AvisoPermissao'
 import ErroDeTela from './components/ErroDeTela'
+import { useLarguraMenorQue } from './utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 function AppShell({ children }: { children: ReactNode }) {

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
 import React from 'react'
 
 // ── Paleta de cores ──────────────────────────────────────────────────
 import { COR } from '../../utils/cores'
+import { useLarguraMenorQue } from '../../utils/larguraTela'
 export { COR }
 
 // ── Tipos ─────────────────────────────────────────────────────────────
@@ -169,13 +169,7 @@ export function formaRecebCategoria(fp: string | undefined, mov: string | undefi
   return 'pix'
 }
 export function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 // ── BadgePag ──────────────────────────────────────────────────────────

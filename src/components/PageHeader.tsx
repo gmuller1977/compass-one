@@ -1,16 +1,10 @@
 import type { ReactNode, CSSProperties } from 'react'
-import { useState, useEffect } from 'react'
 import AjudaTela from './AjudaTela'
 import type { TelaAjuda } from '../utils/ajudaDasTelas'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 export const PH_BTN_WHITE: CSSProperties = {

@@ -17,15 +17,10 @@ import FcModal from '../components/faturaCartao/FcModal'
 import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [m, setM] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const fn = () => setM(window.innerWidth < 640)
-    window.addEventListener('resize', fn)
-    return () => window.removeEventListener('resize', fn)
-  }, [])
-  return m
+  return useLarguraMenorQue(640)
 }
 
 type Props = {

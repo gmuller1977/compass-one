@@ -5,15 +5,10 @@ import { useApp } from '../context/AppContext'
 import { useSeloNorte } from './norte/useSeloNorte'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { BOLINHA_AZUL } from './mobile/estilo'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 /**

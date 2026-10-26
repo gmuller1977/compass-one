@@ -12,6 +12,7 @@ import SeletorMesAno from '../SeletorMesAno'
 import { COR, MESES_FULL, SEM_GRUPO, fmt, nomeExibicao, type AnoData, type Saldos } from './types'
 import { linhasVazias, revisaoDoMes, type GrupoRevisao, type LinhaRevisao, type ModoBase } from './revisaoAnual'
 import type { AbrirItens } from './itensContexto'
+import { useLarguraMenorQue } from '../../utils/larguraTela'
 
 export type OpCelula = { tipo: 'e' | 's'; ri: number; mi: number; valor: number; itens?: ItemPlano[] | null }
 
@@ -20,13 +21,7 @@ const CHAVE_MODO = 'compass:revisao-anual-base'
 const MODOS: { id: ModoBase }[] = [{ id: 'mes' }, { id: 'media' }, { id: 'anterior' }]
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import AvisoSoAdministrador from '../components/compartilhar/AvisoSoAdministrador'
@@ -31,15 +31,10 @@ import { compraDoItem, renomearNaFatura, renomearNosPlanos, type CompraRef } fro
 import type { Categoria, PlanoCat } from '../context/AppContext'
 import type { Deps } from '../utils/saldoConta'
 import type { DadosMes } from '../context/AppContext'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 export default function Planejamento() {
