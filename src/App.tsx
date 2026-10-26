@@ -35,6 +35,7 @@ import { NORTE_ATIVO } from './utils/norteAtivo'
 import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
 import AvisoPermissao from './components/compartilhar/AvisoPermissao'
+import ErroDeTela from './components/ErroDeTela'
 
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
@@ -168,6 +169,7 @@ export default function App() {
   return (
     <AppProvider>
     <ToastProvider>
+      <ErroDeTela>
       <BrowserRouter>
         <Routes>
           <Route path="/login"           element={<Login />} />
@@ -200,6 +202,7 @@ export default function App() {
           <Route path="*"                   element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ErroDeTela>
     </ToastProvider>
     </AppProvider>
   )

@@ -10,8 +10,14 @@
 //
 // O envio é pela API do Resend, com o domínio compass-one.com.br verificado.
 //
+// Limite (25/10/2026, migração 021): até 5 e-mails por dono em 24 horas e o
+// mesmo convite no máximo a cada 10 minutos, contados em `envios_convite`
+// pela service_role. Sem a tabela, a função não envia (falha fechada): o
+// convite continua valendo e aparece quando a pessoa entra.
+//
 // Deploy (uma vez):
 //   supabase secrets set RESEND_API_KEY=re_...
+//   (rodar a migração 021)
 //   supabase functions deploy convite-email
 // ============================================================
 
@@ -23,6 +29,9 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
+const MAX_POR_DIA = 5
+const MINUTOS_ENTRE_REENVIOS = 10
+
 const responder = (status: number, corpo: Record<string, unknown>) =>
   new Response(JSON.stringify(corpo), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
 
@@ -45,6 +54,19 @@ Deno.serve(async (req) => {
   const { data: c } = await db.from('compartilhamentos').select('*').eq('id', id).eq('dono_id', eu.user.id).maybeSingle()
   if (!c) return responder(404, { erro: 'convite não encontrado' })
   if (c.status !== 'pendente') return responder(200, { ok: true, enviado: false })
+
+  const adm = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
+  const desde = new Date(Date.now() - 24 * 3600_000).toISOString()
+  const { data: envios, error: limErr } = await adm.from('envios_convite')
+    .select('convite_id, enviado_em').eq('dono_id', eu.user.id).gte('enviado_em', desde)
+  if (limErr) {
+    console.error('envios_convite', limErr)
+    return responder(503, { erro: 'limite indisponível' })
+  }
+  if ((envios ?? []).length >= MAX_POR_DIA) return responder(429, { erro: 'limite', motivo: 'dia' })
+  const recente = Date.now() - MINUTOS_ENTRE_REENVIOS * 60_000
+  if ((envios ?? []).some(e => e.convite_id === id && new Date(e.enviado_em).getTime() > recente))
+    return responder(429, { erro: 'limite', motivo: 'reenvio' })
 
   const quem = escapar(String(c.dono_nome || c.dono_email || 'Uma pessoa'))
   const emailDono = c.dono_nome && c.dono_email ? ` (${escapar(String(c.dono_email))})` : ''
@@ -81,5 +103,7 @@ Deno.serve(async (req) => {
     console.error('resend', r.status, await r.text())
     return responder(502, { erro: 'falha no envio' })
   }
+  const { error: regErr } = await adm.from('envios_convite').insert({ dono_id: eu.user.id, convite_id: id })
+  if (regErr) console.error('envios_convite registro', regErr)
   return responder(200, { ok: true, enviado: true })
 })

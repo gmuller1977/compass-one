@@ -13,8 +13,11 @@ import { marcarQueEntrouAqui } from '../utils/acessoRapido'
 import { ajustarDiasDasFaturas } from '../utils/diasDaFatura'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
-
+import { lerTudo } from '../utils/lerTudo'
 import type { EstimativasIniciais } from '../utils/primeiroAcesso'
+
+/** Linha de extrato_data / fatura_data como a consulta devolve. */
+type LinhaMes = { conta_id: string; ano: number; mes: number; dados: unknown }
 
 // ── Types compartilhados ─────────────────────────────────────────────
 export type Compartilhamento = { papel: 'proprio' | 'membro'; donoNome: string; donoEmail: string; /** Membros aceitos, para o dono. */ membros: number }
@@ -544,8 +547,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.from('contas').select('*').eq('user_id', userId),
         supabase.from('categorias').select('*').eq('user_id', userId),
         supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
-        supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
-        supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId),
+        lerTudo<LinhaMes>((de, ate) => supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', userId)
+          .order('ano').order('mes').order('conta_id').range(de, ate)),
+        lerTudo<LinhaMes>((de, ate) => supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', userId)
+          .order('ano').order('mes').order('conta_id').range(de, ate)),
         supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', userId),
       ])
       if (import.meta.env.DEV) console.log('📊 [loadData] resultado do banco:', {
@@ -1055,8 +1060,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ] = await Promise.all([
       supabase.from('contas').select('*').eq('user_id', uid),
       supabase.from('categorias').select('*').eq('user_id', uid),
-      supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', uid),
-      supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', uid),
+      lerTudo<LinhaMes>((de, ate) => supabase.from('extrato_data').select('conta_id, ano, mes, dados').eq('user_id', uid)
+          .order('ano').order('mes').order('conta_id').range(de, ate)),
+      lerTudo<LinhaMes>((de, ate) => supabase.from('fatura_data').select('conta_id, ano, mes, dados').eq('user_id', uid)
+          .order('ano').order('mes').order('conta_id').range(de, ate)),
       supabase.from('planejamento_data').select('ano, tipo_plano, dados').eq('user_id', uid).eq('tipo_plano', 'previsto'),
     ])
     if (e1 || e2 || e3 || e4 || e5) { console.warn('recarregarDoBanco: mantendo a cópia local', { e1, e2, e3, e4, e5 }); return }
