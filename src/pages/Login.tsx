@@ -12,13 +12,14 @@ import {
 
 // Tela baixa (iPhone SE no navegador, com as barras dele): o topo e o
 // subtítulo encolhem para o formulário inteiro caber.
-function useTelaBaixa() {
-  const [v, setV] = useState(() => window.innerHeight < 620)
+// No computador, notebook de 768px com as barras do navegador (~650 úteis).
+function useTelaBaixa(limite: number) {
+  const [v, setV] = useState(() => window.innerHeight < limite)
   useEffect(() => {
-    const h = () => setV(window.innerHeight < 620)
+    const h = () => setV(window.innerHeight < limite)
     window.addEventListener('resize', h)
     return () => window.removeEventListener('resize', h)
-  }, [])
+  }, [limite])
   return v
 }
 
@@ -148,7 +149,10 @@ export default function Login() {
   // (a oferta de cadastrar a digital depois da senha).
   const entrando = useRef(false)
   const isMobile    = useIsMobile()
-  const baixa       = useTelaBaixa()
+  const baixa       = useTelaBaixa(620)
+  const pcBaixo     = useTelaBaixa(780) && !isMobile
+  const pcMuitoBaixo = useTelaBaixa(640) && !isMobile
+  const semSubtitulo = baixa || pcMuitoBaixo
   const [email,     setEmail]     = useState('')
   const [senha,     setSenha]     = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -374,11 +378,11 @@ export default function Login() {
   )
 
   const form = ofertaDigital ? telaOferta : (
-    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif",
+    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : (pcMuitoBaixo ? '20px 44px' : pcBaixo ? '28px 44px' : '48px 44px'), fontFamily:"-apple-system,'Inter',sans-serif",
       margin: isMobile ? 'auto 0' : undefined, width: '100%' }}>
-      <div style={{ marginBottom: isMobile ? (baixa ? 12 : 16) : 24 }}>
-        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom: baixa ? 0 : 4 }}>Bem-vindo de volta!</div>
-        {!baixa && <div style={{ fontSize:13, color:'#64748b' }}>Entre com sua conta para continuar</div>}
+      <div style={{ marginBottom: isMobile ? (baixa ? 12 : 16) : (pcBaixo ? 16 : 24) }}>
+        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom: semSubtitulo ? 0 : 4 }}>Bem-vindo de volta!</div>
+        {!semSubtitulo && <div style={{ fontSize:13, color:'#64748b' }}>Entre com sua conta para continuar</div>}
       </div>
 
       {erro && (
@@ -411,11 +415,11 @@ export default function Login() {
       )}
 
       <Campo label="✉️ E-mail" tipo="email" placeholder="seu@email.com"
-        valor={email} onChange={setEmail} icone="✉️" compacto={isMobile} />
+        valor={email} onChange={setEmail} icone="✉️" compacto={isMobile || pcBaixo} />
 
       <Campo label="🔒 Senha" tipo="password" placeholder="Sua senha"
         valor={senha} onChange={setSenha} icone="🔑"
-        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile} />
+        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile || pcBaixo} />
 
       <div style={{ textAlign:'right', marginTop: isMobile ? -6 : -8, marginBottom: isMobile ? (baixa ? 8 : 12) : 20 }}>
         <button onClick={handleResetSenha} style={{
@@ -497,7 +501,7 @@ export default function Login() {
   return (
     <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
       {hero(false)}
-      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 20px' }}>
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding: pcMuitoBaixo ? '8px 20px' : pcBaixo ? '16px 20px' : '40px 20px' }}>
         <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>
           {form}
         </div>
