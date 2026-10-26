@@ -3211,6 +3211,17 @@ semana** (`ContasAPagarRapido`), que saíram da Bússola. `prova69` (22
 invariantes): para três cartões (aberto, fechado, vence no mês seguinte) a
 compra cai no `construirRealizadoMes` exatamente no mês prometido, e o
 controle do dia do fechamento.
+**O mês saiu: agora é DÉBITO ou CRÉDITO** (26/10/2026, Guilherme: com o
+cartão fechado a compra ia para dezembro, e "outubro / novembro"
+confundia). Tocar na categoria abre dois quadros: **Débito** (banco ou
+dinheiro, com o disponível da categoria neste mês; tocar lista as contas
+com o saldo) e **Crédito** (todos os cartões, cada um com "Fatura de
+[mês]", o mês em que a fatura que recebe a compra de hoje VENCE, e o
+disponível da categoria NAQUELE mês; tocar no cartão vai direto ao valor).
+Receita mostra só "Banco ou dinheiro". `bancosDoDebito` e
+`cartoesDoCredito` em `lancarPorMes.ts` (o `formasDoMes` saiu); o parágrafo
+acima sobre os quadros de mês é histórico. `prova98` (10). Sem equivalente
+no computador: lá o lançamento é Lançamentos, por conta.
 
 **O Planejamento no celular é tela própria** (`PlanMobile`, 11/10/2026,
 pedido do Guilherme: "precisa ser revisada"). Antes era a Grade espremida:

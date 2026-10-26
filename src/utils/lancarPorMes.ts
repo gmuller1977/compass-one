@@ -4,21 +4,19 @@ import { ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
 import { ehContaDisponivel } from './saldoConta'
 
 /**
- * O Lançar do celular começa pela CATEGORIA, depois o MÊS, depois a forma de
- * pagar (pedido do Guilherme em 10/10/2026: "ficou meio confuso devido a
- * seleção de contas"). Tocar na categoria mostra o disponível deste mês e do
- * próximo; tocar no mês mostra banco, cartão e dinheiro — só os que fazem a
- * compra de HOJE contar naquele mês.
+ * O Lançar do celular começa pela CATEGORIA e depois pergunta DÉBITO ou
+ * CRÉDITO (26/10/2026, pedido do Guilherme). Antes eram dois quadros de mês,
+ * este e o próximo, e o cartão que já fechou contava em dezembro: o mês
+ * escolhido não era o mês em que a compra caía.
  *
- *   - Banco e dinheiro: o gasto é de hoje, então é deste mês.
- *   - Cartão: conta no mês em que a fatura que recebe a compra VENCE — a
- *     mesma regra de `construirRealizadoMes` (mês da fatura, mais um quando o
- *     vencimento cai no mês seguinte ao fechamento). Cartão que já fechou a
- *     fatura deste mês só aparece no próximo.
+ *   - Débito: banco ou dinheiro, o gasto é de hoje e conta neste mês.
+ *   - Crédito: todos os cartões, cada um com o mês da fatura em que a compra
+ *     de hoje cai — o mês em que a fatura VENCE, a mesma regra de
+ *     `construirRealizadoMes` (mês da fatura, mais um quando o vencimento cai
+ *     no mês seguinte ao fechamento).
  *   - Receita não vai para cartão.
  */
 export type MesRef = { ano: number; mes: number }
-export type QualMes = 'atual' | 'proximo'
 
 export const proximoMes = ({ ano, mes }: MesRef): MesRef => (mes === 11 ? { ano: ano + 1, mes: 0 } : { ano, mes: mes + 1 })
 const indice = (m: MesRef) => m.ano * 12 + m.mes
@@ -32,23 +30,17 @@ export function mesDoGastoNoCartao(
   return venceNoMesSeguinte ? proximoMes(fatura) : fatura
 }
 
-export type FormasDoMes = { mes: MesRef; bancos: Conta[]; cartoes: Conta[]; dinheiro: boolean }
+/** Débito: os bancos do disponível (investimento fica fora) e a carteira. */
+export const bancosDoDebito = (contas: Conta[]): Conta[] => contas.filter(ehContaDisponivel)
 
-export function formasDoMes(contas: Conta[], hoje: Date, qual: QualMes, tipo: 'saida' | 'entrada'): FormasDoMes {
-  const atual = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
-  const doMes = qual === 'atual'
-  const cartoes = tipo === 'entrada' ? [] : contas.filter(c => c.tipo === 'cartao').filter(c => {
-    const m = indice(mesDoGastoNoCartao(c, atual.ano, atual.mes, hoje.getDate()))
-    // O próximo mês recebe também o caso raro de cair dois meses à frente
-    // (fechou e vence no mês seguinte): sumir com o cartão seria pior.
-    return doMes ? m === indice(atual) : m > indice(atual)
-  })
-  return {
-    mes: doMes ? atual : proximoMes(atual),
-    bancos: doMes ? contas.filter(ehContaDisponivel) : [],
-    cartoes,
-    dinheiro: doMes,
-  }
+export type CartaoNoCredito = { cartao: Conta; mes: MesRef }
+
+/** Crédito: cada cartão com o mês da fatura que recebe a compra de hoje. */
+export function cartoesDoCredito(contas: Conta[], hoje: Date, tipo: 'saida' | 'entrada'): CartaoNoCredito[] {
+  if (tipo === 'entrada') return []
+  return contas.filter(c => c.tipo === 'cartao').map(c => ({
+    cartao: c, mes: mesDoGastoNoCartao(c, hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
+  }))
 }
 
 const chave = (conta: string, { ano, mes }: MesRef) => `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
