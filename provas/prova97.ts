@@ -1,8 +1,8 @@
-// prova97 (26/10/2026): débito automático com conta de débito num INVESTIMENTO
+// prova97 (26/10/2026; 19 invariantes): débito automático com conta de débito num INVESTIMENTO
 // (ou numa conta excluída) se confirma no banco preferido, aparece em
 // Lançamentos > Banco e sai do saldo disponível. Relato do Guilherme: "Cotas
 // Sicredi" com ✓ na Início e sem linha no extrato do banco.
-import { debitosParaConfirmar, confirmarDebito, marcasForaDoLugar, porMarca, tirarMarca, debitosDoMes } from '../src/utils/debitoAutomatico'
+import { debitosParaConfirmar, confirmarDebito, marcasForaDoLugar, porMarca, tirarMarca, debitosDoMes, automaticasPagasNoFuturo, tirarPagamento } from '../src/utils/debitoAutomatico'
 import { contaDoPagamento } from '../src/utils/pagarConta'
 import { saldoBancosEDinheiro } from '../src/utils/saldoConta'
 let ok = 0, falha = 0
@@ -43,5 +43,15 @@ t('saldo disponível igual ao confirmado no lugar certo', Math.abs(saldoBancosED
 t('porMarca não passa por cima', porMarca({ lancamentos: {}, saldoBanco: '', fixasConsolidadas: { cotas: false } }, velho['inv-2026-10'], 'cotas').fixasConsolidadas!.cotas === false)
 // Controle: mês fechado não se mexe.
 t('controle: setembro fica onde está', marcasForaDoLugar(deps({ 'inv-2026-09': { lancamentos: {}, saldoBanco: '', fixasConsolidadas: { cotas: true } } }), hoje).length === 0)
+
+// Paga num dia futuro (a Cotas movida de 26 para 27): a marca sai e ela volta a agendada.
+const movida: any = { 'sic-2026-10': { lancamentos: {}, saldoBanco: '', fixasConsolidadas: { cotas: true }, debitosConferidos: { cotas: true }, fixasMovidas: { cotas: 27 } } }
+const fut = automaticasPagasNoFuturo(deps(movida), hoje)
+t('acha a paga no dia 27', fut.length === 1 && fut[0].chave === 'sic-2026-10')
+const limpa: any = { 'sic-2026-10': tirarPagamento(movida['sic-2026-10'], 'cotas') }
+t('volta a agendada', debitosDoMes(deps(limpa), hoje).some(d => d.id === 'cotas' && d.agendado && d.dia === 27))
+t('não confirma antes do dia', debitosParaConfirmar(deps(limpa), hoje).length === 0)
+t('no dia 27 confirma', debitosParaConfirmar(deps(limpa), new Date(2026, 9, 27)).length === 1)
+t('controle: paga hoje fica', automaticasPagasNoFuturo(deps(ext), hoje).length === 0)
 
 console.log(`prova97: ${ok} ok, ${falha} falhas`)

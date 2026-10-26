@@ -7,7 +7,6 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import { ehAutomaticoCategoria, ehFixaDeCartao } from '../utils/categoriaIcone'
-import { ehAutomatica } from '../utils/debitoAutomatico'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
@@ -898,11 +897,11 @@ export default function NovoLancamentoExtrato() {
     if (editandoFixaId) {
       if (valor <= 0) return
       const diaAlvo = diaSel
-      // Automática movida para depois de hoje (26/10/2026, relatado pelo
-      // Guilherme: a Cotas confirmada no dia 26 foi para o 27 e sumiu do
-      // quadro da Início). Ainda não saiu: a marca de paga é tirada, ela
-      // volta a "agendado" e se confirma sozinha no dia novo.
-      const reagendar = eMesAtual && diaAlvo > diaHoje && !!catEditandoFixa && ehAutomatica(catEditandoFixa)
+      // Fixa movida para depois de hoje ainda não saiu (26/10/2026, regra do
+      // Guilherme: "não pode permitir conferência de dia futuro, somente dia
+      // passado ou hoje"). A marca de paga é tirada; a automática volta a
+      // "agendado" e se confirma sozinha no dia novo.
+      const reagendar = ehDiaFuturo(diaAlvo)
       const id = editandoFixaId
       updateMes(prev => ({
         ...prev,

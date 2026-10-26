@@ -183,12 +183,15 @@ export default function NleExtratoMobile({
                     display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', minHeight: 56, cursor: 'pointer',
                     borderTop: idx === 0 ? 'none' : '1px solid #eef2f8', background: emEdicao ? '#f1f5ff' : undefined,
                   }}>
+                    {/* Dia futuro não se marca como paga (26/10/2026, regra do
+                        Guilherme: "somente dia passado ou hoje"). */}
                     <button
-                      aria-label={consolidada ? 'Desmarcar como paga' : 'Marcar como paga'} aria-pressed={consolidada}
-                      onClick={e => { e.stopPropagation(); if (consolidada) desconsolidarFixa(f.id); else consolidarFixa(f.id) }}
+                      aria-label={consolidada ? 'Desmarcar como paga' : diaFuturo ? `Vence em ${dia}/${mes + 1}` : 'Marcar como paga'} aria-pressed={consolidada}
+                      disabled={diaFuturo && !consolidada}
+                      onClick={e => { e.stopPropagation(); if (consolidada) desconsolidarFixa(f.id); else if (!diaFuturo) consolidarFixa(f.id) }}
                       style={{
-                        width: 30, height: 30, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', padding: 0,
-                        border: consolidada ? 'none' : `2px solid #94a3b8`, background: consolidada ? VERDE : '#fff',
+                        width: 30, height: 30, borderRadius: '50%', flexShrink: 0, cursor: diaFuturo && !consolidada ? 'default' : 'pointer', padding: 0,
+                        border: consolidada ? 'none' : `2px ${diaFuturo ? 'dashed' : 'solid'} #94a3b8`, background: consolidada ? VERDE : '#fff',
                         color: '#fff', fontSize: 16, fontWeight: 800, fontFamily: 'inherit', lineHeight: 1,
                       }}>{consolidada ? '✓' : ''}</button>
                     <span style={{ opacity: consolidada ? 1 : 0.6, display: 'flex' }}>

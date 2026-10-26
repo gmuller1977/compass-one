@@ -157,6 +157,34 @@ export function marcasForaDoLugar(deps: Deps, hoje = new Date()): MarcaForaDoLug
   return out
 }
 
+/**
+ * Automática marcada como paga num dia que ainda não chegou, no mês
+ * corrente (26/10/2026, regra do Guilherme: "não pode permitir conferência
+ * de dia futuro, somente dia passado ou hoje"). Aconteceu com a Cotas
+ * movida de 26 para 27 depois de confirmada. A marca sai; ela volta a
+ * "Agendado" e se confirma sozinha no dia.
+ */
+export function automaticasPagasNoFuturo(deps: Deps, hoje = new Date()): { id: string; chave: string }[] {
+  const ano = hoje.getFullYear(), mes = hoje.getMonth()
+  const fim = sufixo(ano, mes)
+  const totalDias = new Date(ano, mes + 1, 0).getDate()
+  const out: { id: string; chave: string }[] = []
+  for (const cat of deps.categorias) {
+    if (!ehAutomatica(cat)) continue
+    for (const [k, dm] of Object.entries(deps.extratoData)) {
+      if (!k.endsWith(fim) || dm?.fixasConsolidadas?.[cat.id] !== true) continue
+      const dia = diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm.fixasMovidas, cat.tipo !== 'entrada', mes, ano, totalDias)
+      if (dia > hoje.getDate()) out.push({ id: cat.id, chave: k })
+    }
+  }
+  return out
+}
+
+/** Tira só a marca de paga e o "conferido" (o valor digitado fica). */
+export function tirarPagamento(dm: DadosMes, id: string): DadosMes {
+  return { ...dm, fixasConsolidadas: semId(dm.fixasConsolidadas, id), debitosConferidos: semId(dm.debitosConferidos, id) }
+}
+
 const semId = <T,>(r: Record<string, T> | undefined, id: string) => {
   if (!r || !(id in r)) return r
   const resto = { ...r }
