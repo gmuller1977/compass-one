@@ -423,11 +423,12 @@ export default function NleExtratoMobile({
                     onKeyDown={e => e.key === 'Enter' && lancar()} />
                 </label>
                 {/* O lancar() grava no diaSel; editando, move do dia de origem. */}
-                <label style={{ width: 112, flexShrink: 0 }}>
+                {/* Com o dia da semana (26/10/2026, pedido do Guilherme). */}
+                <label style={{ width: 136, flexShrink: 0 }}>
                   <span style={rotuloCampo}>Dia</span>
                   <select value={diaSel} onChange={e => setDiaSel(Number(e.target.value))} aria-label="Dia do lançamento" style={campo}>
                     {Array.from({ length: totalDias }, (_, i) => i + 1).map(d =>
-                      <option key={d} value={d}>{String(d).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')}</option>)}
+                      <option key={d} value={d}>{String(d).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')} {DIAS_SEMANA_LONGO[new Date(ano, mes, d).getDay()].slice(0, 3)}</option>)}
                   </select>
                 </label>
               </div>

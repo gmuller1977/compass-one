@@ -141,6 +141,11 @@ não o lista, e o débito saía do saldo dele, não do disponível. Marca do mê
 corrente gravada assim volta sozinha para a conta certa
 (`marcasForaDoLugar`, no `ConfirmarDebitoAutomatico`); mês fechado não se
 mexe. `prova97` (14).
+Automática movida em Lançamentos para DEPOIS de hoje, no mês corrente
+(mesmo dia, ele moveu a Cotas de 26 para 27 e ela sumiu do quadro): a
+marca de paga e o "conferido" saem, ela volta a "Agendado" e se confirma
+sozinha no dia novo. O campo Dia da folha do celular mostra o dia da
+semana ("27/10 ter"), como o painel do computador.
 Na Início (18/10/2026, pedido dele), o quadro **"Débitos automáticos"** fica
 ao lado de "Confira seus saldos" (no celular, embaixo) e NÃO some: os
 vencidos até hoje pedem Confere / Outro valor (`fixasValorOverride`) / Não

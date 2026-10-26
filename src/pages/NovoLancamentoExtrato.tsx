@@ -7,6 +7,7 @@ import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
 import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import { ehAutomaticoCategoria, ehFixaDeCartao } from '../utils/categoriaIcone'
+import { ehAutomatica } from '../utils/debitoAutomatico'
 import ModalConfirmacao from '../components/ModalConfirmacao'
 import { valorFixaNoMes } from '../utils/valorFixa'
 import { faltaVariavelDoMes, saldoRealizadoConta, type Deps as DepsSaldo } from '../utils/saldoConta'
@@ -897,8 +898,18 @@ export default function NovoLancamentoExtrato() {
     if (editandoFixaId) {
       if (valor <= 0) return
       const diaAlvo = diaSel
+      // Automática movida para depois de hoje (26/10/2026, relatado pelo
+      // Guilherme: a Cotas confirmada no dia 26 foi para o 27 e sumiu do
+      // quadro da Início). Ainda não saiu: a marca de paga é tirada, ela
+      // volta a "agendado" e se confirma sozinha no dia novo.
+      const reagendar = eMesAtual && diaAlvo > diaHoje && !!catEditandoFixa && ehAutomatica(catEditandoFixa)
+      const id = editandoFixaId
       updateMes(prev => ({
         ...prev,
+        ...(reagendar && prev.fixasConsolidadas?.[id] === true ? {
+          fixasConsolidadas: Object.fromEntries(Object.entries(prev.fixasConsolidadas).filter(([k]) => k !== id)),
+          debitosConferidos: Object.fromEntries(Object.entries((prev as { debitosConferidos?: Record<string, boolean> }).debitosConferidos ?? {}).filter(([k]) => k !== id)),
+        } : {}),
         fixasMovidas:       { ...prev.fixasMovidas,       [editandoFixaId]: diaAlvo },
         fixasValorOverride: { ...prev.fixasValorOverride, [editandoFixaId]: valor },
         fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
