@@ -11,8 +11,8 @@ import {
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 
-// Tela baixa (iPhone SE no navegador, com as barras dele): o topo e o
-// subtítulo encolhem para o formulário inteiro caber.
+// Tela baixa (iPhone SE no navegador, com as barras dele): o topo e os
+// espaços encolhem para o formulário inteiro caber.
 // No computador, notebook de 768px com as barras do navegador (~650 úteis).
 function useTelaBaixa(limite: number) {
   const [v, setV] = useState(() => window.innerHeight < limite)
@@ -147,7 +147,6 @@ export default function Login() {
   const baixa       = useTelaBaixa(620)
   const pcBaixo     = useTelaBaixa(780) && !isMobile
   const pcMuitoBaixo = useTelaBaixa(640) && !isMobile
-  const semSubtitulo = baixa || pcMuitoBaixo
   const [email,     setEmail]     = useState('')
   const [senha,     setSenha]     = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -333,7 +332,7 @@ export default function Login() {
       cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1,
       boxShadow: destaque ? '0 4px 20px rgba(26,86,219,.35)' : 'none',
       display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-      marginBottom: destaque ? (isMobile ? 12 : 16) : (isMobile ? 0 : 12),
+      marginBottom: destaque ? 12 : 0,
     }}>
       <DigitalSVG cor={destaque ? '#fff' : '#1a56db'}/> {destaque || !isMobile ? 'Entrar com digital' : 'Digital'}
     </button>
@@ -375,10 +374,11 @@ export default function Login() {
   const form = ofertaDigital ? telaOferta : (
     <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : (pcMuitoBaixo ? '20px 44px' : pcBaixo ? '28px 44px' : '48px 44px'), fontFamily:"-apple-system,'Inter',sans-serif",
       margin: isMobile ? 'auto 0' : undefined, width: '100%' }}>
-      <div style={{ marginBottom: isMobile ? (baixa ? 12 : 16) : (pcBaixo ? 16 : 24) }}>
-        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom: semSubtitulo ? 0 : 4 }}>Bem-vindo de volta!</div>
-        {!semSubtitulo && <div style={{ fontSize:13, color:'#64748b' }}>Entre com sua conta para continuar</div>}
-      </div>
+      {/* A sequência segue o modelo pedido pelo Guilherme em 26/10/2026:
+          título, entrar com Google/digital, "ou", e-mail e senha, esqueci,
+          Entrar e o convite para o cadastro. */}
+      <div style={{ fontSize:22, fontWeight:800, color:'#0f172a', textAlign:'center',
+        marginBottom: isMobile ? (baixa ? 12 : 18) : (pcBaixo ? 18 : 24) }}>Acesse sua conta</div>
 
       {erro && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16, textAlign:'center' }}>
@@ -398,29 +398,43 @@ export default function Login() {
         </div>
       )}
 
-      {temDigital && digitalEmDestaque && (
-        <>
-          {botaoDigital(true)}
-          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? (baixa ? 8 : 12) : 16 }}>
-            <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-            <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou use e-mail e senha</span>
-            <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-          </div>
-        </>
-      )}
+      {/* Com a digital já usada no aparelho, ela vem primeiro e em destaque; sem
+          isso, Google e digital dividem a linha no celular. */}
+      {temDigital && digitalEmDestaque && botaoDigital(true)}
+      <div style={isMobile && temDigital && !digitalEmDestaque
+        ? { display:'flex', gap:10 }
+        : { display:'flex', flexDirection:'column', gap:12 }}>
+        <button onClick={handleGoogle} disabled={carregando} style={{
+          width:'100%', padding: isMobile ? '11px' : '13px', border:'1.5px solid #e2e8f0', borderRadius:14,
+          background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
+          cursor:'pointer', fontFamily:'inherit',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+          transition:'all .15s',
+        }}>
+          <GoogleSVG/> {isMobile && temDigital && !digitalEmDestaque ? 'Google' : 'Entrar com Google'}
+        </button>
+        {temDigital && !digitalEmDestaque && botaoDigital(false)}
+      </div>
 
-      <Campo label="✉️ E-mail" tipo="email" placeholder="seu@email.com"
+      <div style={{ display:'flex', alignItems:'center', gap:12,
+        margin: isMobile ? (baixa ? '10px 0' : '14px 0') : (pcBaixo ? '14px 0' : '18px 0') }}>
+        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
+        <span style={{ fontSize:12, color:'#64748b', fontWeight:600 }}>ou</span>
+        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
+      </div>
+
+      <Campo label="E-mail" tipo="email" placeholder="seu@email.com"
         valor={email} onChange={setEmail} icone="✉️" compacto={isMobile || pcBaixo} />
 
-      <Campo label="🔒 Senha" tipo="password" placeholder="Sua senha"
+      <Campo label="Senha" tipo="password" placeholder="Sua senha"
         valor={senha} onChange={setSenha} icone="🔑"
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile || pcBaixo} />
 
-      <div style={{ textAlign:'right', marginTop: isMobile ? -6 : -8, marginBottom: isMobile ? (baixa ? 8 : 12) : 20 }}>
+      <div style={{ marginTop: isMobile ? -6 : -8, marginBottom: isMobile ? (baixa ? 8 : 12) : (pcBaixo ? 14 : 20) }}>
         <button onClick={handleResetSenha} style={{
-          border:'none', background:'transparent', color:'#1a56db',
+          border:'none', background:'transparent', color:'#1a56db', padding:0,
           fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-        }}>Esqueceu a senha?</button>
+        }}>Esqueci minha senha</button>
       </div>
 
       <button onClick={handleSubmit} disabled={carregando} style={{
@@ -433,40 +447,17 @@ export default function Login() {
         boxShadow:'0 4px 20px rgba(26,86,219,.35)',
         transition:'all .15s',
         display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        marginBottom: isMobile ? 12 : 16,
+        marginBottom: isMobile ? (baixa ? 10 : 14) : (pcBaixo ? 14 : 20),
       }}>
-        {carregando ? 'Entrando...' : 'Entrar →'}
+        {carregando ? 'Entrando...' : 'Entrar'}
       </button>
 
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? (baixa ? 8 : 12) : 16 }}>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-        <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou continue com</span>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-      </div>
-
-      {/* No celular, digital e Google dividem a linha: é o que tira a rolagem. */}
-      <div style={isMobile
-        ? { display:'flex', gap:10, marginBottom: baixa ? 10 : 16 }
-        : { marginBottom:24 }}>
-        {temDigital && !digitalEmDestaque && botaoDigital(false)}
-
-        <button onClick={handleGoogle} disabled={carregando} style={{
-          width:'100%', padding: isMobile ? '11px' : '13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-          background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
-          cursor:'pointer', fontFamily:'inherit',
-          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-          transition:'all .15s',
-        }}>
-          <GoogleSVG/> {isMobile && temDigital && !digitalEmDestaque ? 'Google' : 'Entrar com Google'}
-        </button>
-      </div>
-
       <div style={{ textAlign:'center' }}>
-        <span style={{ fontSize:13, color:'#64748b' }}>Não tem uma conta? </span>
+        <span style={{ fontSize:13, color:'#475569' }}>Ainda não possui uma conta? </span>
         <button onClick={() => navigate('/cadastro')} style={{
-          border:'none', background:'transparent', color:'#1a56db',
+          border:'none', background:'transparent', color:'#1a56db', padding:0,
           fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-        }}>Criar conta grátis</button>
+        }}>Faça o cadastro!</button>
       </div>
 
       <div style={{ textAlign:'center', marginTop: isMobile ? (baixa ? 8 : 12) : 20 }}>
