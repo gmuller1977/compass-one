@@ -97,8 +97,12 @@ export function contaDaFixaNoMes(
   mes: number,
   dados: Record<string, DadosMes>,
   contaPadrao: string | undefined,
+  /** Contas que podem receber a fixa (bancos, sem investimento). Conta de
+   *  débito fora delas cai na padrão, como em `contaDoPagamento`. */
+  contasValidas?: { id: string }[],
 ): string | undefined {
-  const origem = cat.contaDebitoId ?? contaPadrao
+  const debito = cat.contaDebitoId
+  const origem = debito && (!contasValidas || contasValidas.some(c => c.id === debito)) ? debito : contaPadrao
   if (!origem) return undefined
   return dados[mesKey(origem, ano, mes)]?.fixasContaOverride?.[cat.id] ?? origem
 }

@@ -123,6 +123,69 @@ function faturasAutomaticas(deps: Deps, hoje: Date) {
   return out
 }
 
+/**
+ * Marcas de fixa de banco gravadas numa conta que não recebe fixa
+ * (investimento ou conta excluída), no mês corrente. Até 26/10/2026
+ * `contaDoPagamento` mandava a confirmação para a conta de débito do
+ * cadastro mesmo quando ela era um investimento: a Início dizia "pago" e a
+ * linha não aparecia em Lançamentos > Banco. Elas voltam para a conta certa
+ * (`moverMarca`), uma vez; mês fechado não se mexe.
+ */
+export type MarcaForaDoLugar = { id: string; de: string; para: string }
+
+export function marcasForaDoLugar(deps: Deps, hoje = new Date()): MarcaForaDoLugar[] {
+  const ano = hoje.getFullYear(), mes = hoje.getMonth()
+  const fim = sufixo(ano, mes)
+  const recebe = (conta: string) => conta === 'dinheiro' || deps.contas.some(c => c.id === conta && c.tipo === 'corrente')
+  const out: MarcaForaDoLugar[] = []
+  for (const [k, dm] of Object.entries(deps.extratoData)) {
+    if (!k.endsWith(fim)) continue
+    const conta = k.slice(0, -fim.length)
+    if (recebe(conta)) continue
+    const ids = new Set([
+      ...Object.keys(dm?.fixasConsolidadas ?? {}),
+      ...Object.keys(dm?.fixasValorOverride ?? {}),
+      ...Object.keys(dm?.debitosConferidos ?? {}),
+    ])
+    for (const id of ids) {
+      const cat = deps.categorias.find(c => c.id === id)
+      if (!cat?.fixa || cat.tipoMovimento !== 'banco') continue
+      const para = contaDoPagamento(id, ano, mes, deps.contas, deps.categorias, deps.extratoData)
+      if (para && para !== conta) out.push({ id, de: k, para: `${para}${fim}` })
+    }
+  }
+  return out
+}
+
+const semId = <T,>(r: Record<string, T> | undefined, id: string) => {
+  if (!r || !(id in r)) return r
+  const resto = { ...r }
+  delete resto[id]
+  return resto
+}
+
+/** Tira a marca da conta errada. */
+export function tirarMarca(dm: DadosMes, id: string): DadosMes {
+  return {
+    ...dm,
+    fixasConsolidadas: semId(dm.fixasConsolidadas, id),
+    fixasValorOverride: semId(dm.fixasValorOverride, id),
+    debitosConferidos: semId(dm.debitosConferidos, id),
+  }
+}
+
+/** Põe na conta certa o que estava na errada, sem passar por cima do que já está lá. */
+export function porMarca(dm: DadosMes | undefined, origem: DadosMes | undefined, id: string): DadosMes {
+  const base = dm ?? { lancamentos: {}, saldoBanco: '' }
+  const c = origem?.fixasConsolidadas?.[id], v = origem?.fixasValorOverride?.[id], d = origem?.debitosConferidos?.[id]
+  return {
+    ...base,
+    ...(c !== undefined && base.fixasConsolidadas?.[id] === undefined ? { fixasConsolidadas: { ...base.fixasConsolidadas, [id]: c } } : {}),
+    ...(v !== undefined && base.fixasValorOverride?.[id] === undefined ? { fixasValorOverride: { ...base.fixasValorOverride, [id]: v } } : {}),
+    ...(d !== undefined && base.debitosConferidos?.[id] === undefined ? { debitosConferidos: { ...base.debitosConferidos, [id]: d } } : {}),
+  }
+}
+
 /** Marca como paga no valor previsto, se ninguém tocou nela ainda. */
 export function confirmarDebito(dm: DadosMes | undefined, d: DebitoParaConfirmar): DadosMes {
   const base = dm ?? { lancamentos: {}, saldoBanco: '' }

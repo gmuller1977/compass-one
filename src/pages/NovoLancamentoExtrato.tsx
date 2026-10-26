@@ -170,7 +170,7 @@ export default function NovoLancamentoExtrato() {
         .some(ct => dados[mesKey(ct.id, ano, mes)]?.fixasConsolidadas?.[c.id] === true)
       if (confirmadaFora) return false
       if (dados[mesKey(contaIdEfetivo, ano, mes)]?.fixasConsolidadas?.[c.id] === true) return true
-      return contaDaFixaNoMes(c, ano, mes, dados, contaPadraoFixas) === contaIdEfetivo
+      return contaDaFixaNoMes(c, ano, mes, dados, contaPadraoFixas, contasExtrato) === contaIdEfetivo
     })
     .map(c => ({
       id: c.id, nome: c.nome, categoria: c.nome,
@@ -519,7 +519,7 @@ export default function NovoLancamentoExtrato() {
     setFPag(mesDados.fixasPagOverride?.[f.id] ?? f.formaPagamento)
     const catFixa = categorias.find(c => c.id === f.id)
     setFContaFixa(catFixa && catFixa.tipoMovimento === 'banco'
-      ? (contaDaFixaNoMes(catFixa, ano, mes, dados, contaPadraoFixas) ?? '')
+      ? (contaDaFixaNoMes(catFixa, ano, mes, dados, contaPadraoFixas, contasExtrato) ?? '')
       : '')
     setTimeout(() => valorInputRef.current?.focus(), 50)
   }
@@ -650,7 +650,7 @@ export default function NovoLancamentoExtrato() {
           .some(ct => dados[mesKey(ct.id, a, m)]?.fixasConsolidadas?.[c.id] === true)
         if (confirmadaFora) return false
         if (dados[mesKey(contaIdEfetivo, a, m)]?.fixasConsolidadas?.[c.id] === true) return true
-        return contaDaFixaNoMes(c, a, m, dados, contaPadraoFixas) === contaIdEfetivo
+        return contaDaFixaNoMes(c, a, m, dados, contaPadraoFixas, contasExtrato) === contaIdEfetivo
       })
       .filter(c => c.tipoMovimento !== 'cartao')
       .map(c => ({

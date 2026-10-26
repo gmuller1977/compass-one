@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useApp, type DadosMes } from '../context/AppContext'
 import type { Deps } from '../utils/saldoConta'
-import { confirmarDebito, debitosParaConfirmar } from '../utils/debitoAutomatico'
+import { confirmarDebito, debitosParaConfirmar, marcasForaDoLugar, porMarca, tirarMarca } from '../utils/debitoAutomatico'
 
 /**
  * Confirma as contas em débito automático e os recebimentos que caem sozinhos
@@ -16,12 +16,23 @@ export default function ConfirmarDebitoAutomatico() {
       extratoData: extratoData as Record<string, DadosMes>, faturaData: faturaData as Deps['faturaData'],
       contas, categorias, planos, saldoInicialDinheiro,
     }
-    return debitosParaConfirmar(deps)
+    return { fora: marcasForaDoLugar(deps), confirmar: debitosParaConfirmar(deps) }
   }, [contas, categorias, extratoData, faturaData, planos, saldoInicialDinheiro])
 
   useEffect(() => {
-    if (!user || carregando || dadosDoAparelho !== null || pendentes.length === 0) return
-    for (const d of pendentes) updateExtratoMes(d.chave, prev => confirmarDebito(prev, d))
-  }, [user, carregando, dadosDoAparelho, pendentes, updateExtratoMes])
+    if (!user || carregando || dadosDoAparelho !== null) return
+    // Primeiro devolve à conta certa a marca gravada num investimento; a
+    // confirmação do dia roda na passagem seguinte, já sobre o lugar certo.
+    if (pendentes.fora.length > 0) {
+      const dados = extratoData as Record<string, DadosMes>
+      for (const m of pendentes.fora) {
+        const origem = dados[m.de]
+        updateExtratoMes(m.para, prev => porMarca(prev, origem, m.id))
+        updateExtratoMes(m.de, prev => tirarMarca(prev, m.id))
+      }
+      return
+    }
+    for (const d of pendentes.confirmar) updateExtratoMes(d.chave, prev => confirmarDebito(prev, d))
+  }, [user, carregando, dadosDoAparelho, pendentes, extratoData, updateExtratoMes])
   return null
 }

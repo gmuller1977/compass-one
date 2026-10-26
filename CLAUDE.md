@@ -132,6 +132,15 @@ mês fechado não se mexe. Desmarcada pela pessoa (`false`) não volta. Fatura
 em débito automático entra desde 19/10 (ver "Contas da semana" abaixo). Débito que falhou ou mudou de valor aparece na conferência do
 saldo dos bancos da Início. Regras em
 [`debitoAutomatico.ts`](src/utils/debitoAutomatico.ts); `prova77` (10).
+**A confirmação cai na conta que aparece em Lançamentos** (26/10/2026,
+relatado pelo Guilherme: "Cotas Sicredi" com ✓ na Início e sem linha em
+Lançamentos > Banco). Conta de débito que é INVESTIMENTO ou foi excluída
+cai na preferida em `contaDoPagamento` e `contaDaFixaNoMes`, como o motor
+já fazia (`debitoOuPadrao`). Antes a marca ia para o investimento: Banco
+não o lista, e o débito saía do saldo dele, não do disponível. Marca do mês
+corrente gravada assim volta sozinha para a conta certa
+(`marcasForaDoLugar`, no `ConfirmarDebitoAutomatico`); mês fechado não se
+mexe. `prova97` (14).
 Na Início (18/10/2026, pedido dele), o quadro **"Débitos automáticos"** fica
 ao lado de "Confira seus saldos" (no celular, embaixo) e NÃO some: os
 vencidos até hoje pedem Confere / Outro valor (`fixasValorOverride`) / Não

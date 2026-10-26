@@ -14,6 +14,13 @@ const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${St
  *     troca do mês (`fixasContaOverride`) valendo por cima — `contaDaFixaNoMes`
  *
  * `undefined` quando não há conta nenhuma para receber o pagamento.
+ *
+ * Conta de débito que é INVESTIMENTO ou que foi excluída cai na preferida,
+ * como no motor (`debitoOuPadrao` em saldoConta). Antes a confirmação
+ * automática gravava a marca no `DadosMes` do investimento: a Início mostrava
+ * "pago", Lançamentos (Banco não lista investimento) não mostrava a linha, e
+ * o débito saía do saldo do investimento em vez do banco (26/10/2026,
+ * relatado pelo Guilherme com "Cotas Sicredi").
  */
 export function contaDoPagamento(
   id: string, ano: number, mes: number,
@@ -27,7 +34,8 @@ export function contaDoPagamento(
   const cat = categorias.find(c => c.id === id)
   if (!cat) return undefined
   if (cat.tipoMovimento === 'dinheiro') return 'dinheiro'
-  const origem = cat.contaDebitoId ?? padrao
+  const debito = cat.contaDebitoId
+  const origem = debito && contas.some(c => c.id === debito && ehContaDisponivel(c)) ? debito : padrao
   if (!origem) return undefined
   return extratoData[chave(origem, ano, mes)]?.fixasContaOverride?.[cat.id] ?? origem
 }
