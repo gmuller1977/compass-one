@@ -1,7 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
-import { IconeCat } from '../IconeCat'
+import { iconeDesenhado } from '../../utils/iconeDesenhado'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -80,13 +80,13 @@ export default function NleBanner({
             valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
           <KpiCard icon="ti-arrow-down" label="Saídas" value={fmt(totalSaidas)}
             valueColor="#fff" sublabel={saldoBasePrevisto ? 'previstas' : 'lançadas'} style={{ flex: 1 }} />
-          <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo atual'} value={fmt(saldoMes)}
+          <KpiCard icon="ti-equal" label={saldoBasePrevisto ? 'Saldo previsto' : 'Saldo no Compass One'} value={fmt(saldoMes)}
             valueColor="#fff"
             sublabel={saldoMes >= 0 ? '↑ positivo' : '↓ negativo'} style={{ flex: 1 }} />
           {/* O saldo que o banco (ou a carteira) mostra, no MESMO cartão dos
               outros, como a "Fatura do cartão" (22/10/2026, pedido do
               Guilherme: "Conciliação" confundia). A diferença vai em palavras,
-              contra o Saldo atual ao lado; a pílula diz que o cartão abre a
+              contra o Saldo no Compass One ao lado; a pílula diz que o cartão abre a
               caixa de saldo. #86efac 4,8 e #fdba74 5,2 no #1e40af. */}
           <div role="button" tabIndex={0} aria-label={isDinheiro ? 'Informar o saldo em dinheiro' : 'Informar o saldo do banco'}
             title={isDinheiro ? 'Clique para informar quanto tem em dinheiro' : 'Clique para informar o saldo que aparece no banco'}
@@ -121,16 +121,15 @@ export default function NleBanner({
             {contasExtrato.map(c => {
               const ativo = c.id === contaIdEfetivo
               return (
-                <button key={c.id} onClick={() => onContaSelect(c.id)} style={{
+                <button key={c.id} onClick={() => onContaSelect(c.id)} aria-pressed={ativo} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                  border: `1.5px solid ${ativo ? c.cor : '#e2e8f0'}`,
-                  background: ativo ? c.cor + '18' : '#fff',
-                  color: ativo ? c.cor : '#64748b',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s',
+                  border: '1.5px solid #1e40af',
+                  background: ativo ? '#fff' : 'var(--cx-azul)',
+                  color: ativo ? '#1e40af' : '#fff',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.cor, flexShrink: 0 }} />
-                  <IconeCat icone={c.icone} /> {c.banco}
+                  <i aria-hidden className={`ti ${iconeDesenhado(c.icone) ?? 'ti-building-bank'}`} style={{ fontSize: 14, lineHeight: 1 }} /> {c.banco}
                 </button>
               )
             })}
