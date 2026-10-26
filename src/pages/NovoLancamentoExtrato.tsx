@@ -547,6 +547,13 @@ export default function NovoLancamentoExtrato() {
   }
 
   function desconsolidarFixa(fixaId: string) {
+    // Em dia futuro, desmarcar só tira a marca: "não saiu" é de dia que já
+    // chegou, e a automática tem de voltar a agendada (26/10/2026).
+    const f = fixas.find(x => x.id === fixaId)
+    if (f && ehDiaFuturo(diaEfetivoFixa(f, mesDados.fixasMovidas, ehAutomatico(f), mes, ano, totalDias))) {
+      updateMes(prev => ({ ...prev, fixasConsolidadas: Object.fromEntries(Object.entries(prev.fixasConsolidadas ?? {}).filter(([k]) => k !== fixaId)) }))
+      return
+    }
     updateMes(prev => ({
       ...prev,
       fixasConsolidadas: { ...prev.fixasConsolidadas, [fixaId]: false },

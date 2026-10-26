@@ -1,4 +1,4 @@
-// prova97 (26/10/2026; 19 invariantes): débito automático com conta de débito num INVESTIMENTO
+// prova97 (26/10/2026; 22 invariantes): débito automático com conta de débito num INVESTIMENTO
 // (ou numa conta excluída) se confirma no banco preferido, aparece em
 // Lançamentos > Banco e sai do saldo disponível. Relato do Guilherme: "Cotas
 // Sicredi" com ✓ na Início e sem linha no extrato do banco.
@@ -52,6 +52,10 @@ const limpa: any = { 'sic-2026-10': tirarPagamento(movida['sic-2026-10'], 'cotas
 t('volta a agendada', debitosDoMes(deps(limpa), hoje).some(d => d.id === 'cotas' && d.agendado && d.dia === 27))
 t('não confirma antes do dia', debitosParaConfirmar(deps(limpa), hoje).length === 0)
 t('no dia 27 confirma', debitosParaConfirmar(deps(limpa), new Date(2026, 9, 27)).length === 1)
+const naoSaiu28: any = { 'sic-2026-10': { lancamentos: {}, saldoBanco: '', fixasConsolidadas: { cotas: false }, fixasMovidas: { cotas: 28 } } }
+t('"não saiu" no dia 28 também sai', automaticasPagasNoFuturo(deps(naoSaiu28), hoje).length === 1)
+t('e volta a agendada', debitosDoMes(deps({ 'sic-2026-10': tirarPagamento(naoSaiu28['sic-2026-10'], 'cotas') }), hoje).some(d => d.id === 'cotas' && d.agendado && !d.naoSaiu))
+t('controle: "não saiu" de hoje fica', automaticasPagasNoFuturo(deps({ 'sic-2026-10': { lancamentos: {}, saldoBanco: '', fixasConsolidadas: { cotas: false } } }), hoje).length === 0)
 t('controle: paga hoje fica', automaticasPagasNoFuturo(deps(ext), hoje).length === 0)
 
 console.log(`prova97: ${ok} ok, ${falha} falhas`)

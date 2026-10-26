@@ -146,7 +146,7 @@ dia passado ou hoje"; a Cotas movida de 26 para 27 sumiu do quadro). Em
 Lançamentos a bolinha do dia futuro fica tracejada e não marca; fixa paga
 movida para depois de hoje perde a marca; e automática paga num dia que não
 chegou perde a marca e o "conferido" sozinha (`automaticasPagasNoFuturo`),
-volta a "Agendado" e se confirma no dia. `prova97` (19). O campo Dia da folha do celular mostra o dia da
+volta a "Agendado" e se confirma no dia; o mesmo com "não saiu" num dia que não chegou, e desmarcar em dia futuro só tira a marca. `prova97` (22). O campo Dia da folha do celular mostra o dia da
 semana ("27/10 ter"), como o painel do computador.
 Na Início (18/10/2026, pedido dele), o quadro **"Débitos automáticos"** fica
 ao lado de "Confira seus saldos" (no celular, embaixo) e NÃO some: os

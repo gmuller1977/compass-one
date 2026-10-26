@@ -161,7 +161,7 @@ export function marcasForaDoLugar(deps: Deps, hoje = new Date()): MarcaForaDoLug
  * Automática marcada como paga num dia que ainda não chegou, no mês
  * corrente (26/10/2026, regra do Guilherme: "não pode permitir conferência
  * de dia futuro, somente dia passado ou hoje"). Aconteceu com a Cotas
- * movida de 26 para 27 depois de confirmada. A marca sai; ela volta a
+ * movida de 26 para 27 depois de confirmada. A marca (paga ou "não saiu") sai; ela volta a
  * "Agendado" e se confirma sozinha no dia.
  */
 export function automaticasPagasNoFuturo(deps: Deps, hoje = new Date()): { id: string; chave: string }[] {
@@ -172,7 +172,9 @@ export function automaticasPagasNoFuturo(deps: Deps, hoje = new Date()): { id: s
   for (const cat of deps.categorias) {
     if (!ehAutomatica(cat)) continue
     for (const [k, dm] of Object.entries(deps.extratoData)) {
-      if (!k.endsWith(fim) || dm?.fixasConsolidadas?.[cat.id] !== true) continue
+      // "Não saiu" num dia que não chegou também sai (mesmo dia, a Cotas no 28
+      // aparecia "não saiu" em vez de agendada).
+      if (!k.endsWith(fim) || dm?.fixasConsolidadas?.[cat.id] === undefined) continue
       const dia = diaEfetivoFixa({ id: cat.id, diaVencimento: cat.diaVencimento ?? 1 }, dm.fixasMovidas, cat.tipo !== 'entrada', mes, ano, totalDias)
       if (dia > hoje.getDate()) out.push({ id: cat.id, chave: k })
     }
