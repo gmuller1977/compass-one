@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type CSSProperties } from 'react'
+import { useState, useMemo, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { saldoBancosEDinheiro, memoriaDoRadar } from '../utils/saldoConta'
@@ -27,15 +27,10 @@ import { Cartao, IconeRedondo, Linha, OlhoIcone, Pilula, ResumoDoMes, type Colun
 import { M, ROTULO_TOPO, TOPO_AZUL, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 

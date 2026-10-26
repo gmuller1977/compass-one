@@ -23,15 +23,10 @@ import { resumoDoMes } from '../utils/resumoRadar'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 export default function RadarFinanceiro() {

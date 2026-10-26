@@ -9,6 +9,7 @@ import {
   acabouDeSair, esquecerSaida, aparelhoTemDigital, algumaDigitalAqui, cadastrarDigital, digitalCadastradaAqui,
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 // Tela baixa (iPhone SE no navegador, com as barras dele): o topo e o
 // subtítulo encolhem para o formulário inteiro caber.
@@ -23,13 +24,7 @@ function useTelaBaixa() {
 }
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 function traduzirErro(msg: string) {

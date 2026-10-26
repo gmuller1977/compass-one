@@ -1,14 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 768)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 768)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(768)
 }
 
 const AZUL_ESCURO = '#0f2878'

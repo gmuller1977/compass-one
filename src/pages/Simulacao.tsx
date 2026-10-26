@@ -18,10 +18,10 @@ import type { Categoria } from '../context/AppContext'
 import { useNavigate } from 'react-router-dom'
 import { mesesQueOPlanoCobre, fimDoPlanejamento } from '../utils/simulacaoCompra'
 import type { PlanoAnoData } from '../context/AppContext'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v] = useState(() => window.innerWidth < 640)
-  return v
+  return useLarguraMenorQue(640)
 }
 
 

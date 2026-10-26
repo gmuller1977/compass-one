@@ -21,15 +21,10 @@ import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategor
 import ModalTopo from '../components/ModalTopo'
 import { grupoDaCategoria } from '../utils/rotuloCategoria'
 import { ehContaDisponivel } from '../utils/saldoConta'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 /** Por onde sai o dinheiro do lançamento: uma conta, um cartão ou a carteira. */

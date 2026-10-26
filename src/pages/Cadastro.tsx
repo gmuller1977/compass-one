@@ -1,17 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { urlDoApp } from '../utils/site'
 import { codigoRecebido } from '../utils/indicacao'
+import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
-  const [v, setV] = useState(() => window.innerWidth < 640)
-  useEffect(() => {
-    const h = () => setV(window.innerWidth < 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
-  return v
+  return useLarguraMenorQue(640)
 }
 
 function traduzirErro(msg: string) {
