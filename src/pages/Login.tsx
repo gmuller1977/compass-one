@@ -10,6 +10,18 @@ import {
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
 
+// Tela baixa (iPhone SE no navegador, com as barras dele): o topo e o
+// subtítulo encolhem para o formulário inteiro caber.
+function useTelaBaixa() {
+  const [v, setV] = useState(() => window.innerHeight < 620)
+  useEffect(() => {
+    const h = () => setV(window.innerHeight < 620)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return v
+}
+
 function useIsMobile() {
   const [v, setV] = useState(() => window.innerWidth < 640)
   useEffect(() => {
@@ -32,11 +44,12 @@ function traduzirErro(msg: string) {
 }
 
 function Campo({
-  label, tipo = 'text', placeholder, valor, onChange, icone, onKeyDown, erroMsg,
+  label, tipo = 'text', placeholder, valor, onChange, icone, onKeyDown, erroMsg, compacto,
 }: {
   label: string; tipo?: string; placeholder: string; valor: string
   onChange: (v: string) => void; icone?: string
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; erroMsg?: string
+  compacto?: boolean
 }) {
   const [focado, setFocado] = useState(false)
   const [verSenha, setVerSenha] = useState(false)
@@ -45,7 +58,7 @@ function Campo({
   const temErro = !!erroMsg
 
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: compacto ? 10 : 14 }}>
       <label style={{
         display: 'block', fontSize: 10, fontWeight: 700, color: '#1a56db',
         textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5,
@@ -68,7 +81,7 @@ function Campo({
           autoComplete={ehSenha ? 'current-password' : tipo === 'email' ? 'email' : undefined}
           style={{
             width: '100%',
-            padding: `13px ${ehSenha ? '44px' : '14px'} 13px ${icone ? '44px' : '14px'}`,
+            padding: `${compacto ? 11 : 13}px ${ehSenha ? '44px' : '14px'} ${compacto ? 11 : 13}px ${icone ? '44px' : '14px'}`,
             border: `1.5px solid ${temErro ? '#dc2626' : focado ? '#1a56db' : '#e2e8f0'}`,
             borderRadius: 14, fontSize: 14, color: '#0f172a',
             background: '#fff', outline: 'none', fontFamily: 'inherit',
@@ -135,6 +148,7 @@ export default function Login() {
   // (a oferta de cadastrar a digital depois da senha).
   const entrando = useRef(false)
   const isMobile    = useIsMobile()
+  const baixa       = useTelaBaixa()
   const [email,     setEmail]     = useState('')
   const [senha,     setSenha]     = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -252,28 +266,55 @@ export default function Login() {
     setCarregando(false)
   }
 
-  const hero = (compact: boolean) => (
+  // No celular o topo é uma faixa baixa, com a logo ao lado do nome: a tela
+  // inteira cabe sem rolar, com digital, e-mail, senha e Google à vista
+  // (pedido do Guilherme em 25/10/2026). Ainda rola se faltar altura (teclado
+  // aberto, aviso de erro).
+  const hero = (compact: boolean) => compact ? (
+    <div style={{
+      background: 'var(--cx-azul)', boxShadow: 'var(--cx-brilho-topo)',
+      padding: `calc(env(safe-area-inset-top, 0px) + ${baixa ? 12 : 18}px) 24px ${baixa ? 12 : 18}px`, flexShrink: 0,
+      display: 'flex', alignItems: 'center', gap: 14, position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position:'absolute', width:160, height:160, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-70, right:-40 }}/>
+      <div style={{
+        width: baixa ? 40 : 48, height: baixa ? 40 : 48, borderRadius: 14, flexShrink: 0,
+        background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 6px 16px rgba(0,0,0,.2)', position: 'relative',
+      }}>
+        <LogoSVG size={26}/>
+      </div>
+      <div style={{ position: 'relative' }}>
+        <div style={{ color:'#fff', fontSize: 22, fontWeight:800, letterSpacing:-.5, lineHeight: 1.1 }}>
+          Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+        </div>
+        <div style={{ color:'rgba(255,255,255,.75)', fontSize:12, fontWeight:500, marginTop:3 }}>
+          Sua bússola financeira
+        </div>
+      </div>
+    </div>
+  ) : (
     <div style={{
       background: 'var(--cx-azul)',
-      padding: compact ? '32px 32px 48px' : '60px 48px',
-      flexShrink: 0,
+      padding: '60px 48px',
+      flex: 1,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       position: 'relative', overflow: 'hidden',
-      ...(compact ? {} : { flex: 1 }),
     }}>
       <div style={{ position:'absolute', width:200, height:200, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-60, right:-60 }}/>
       <div style={{ position:'absolute', width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.04)', bottom:-40, left:-20 }}/>
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, position:'relative', zIndex:1 }}>
         <div style={{
-          width: compact ? 72 : 88, height: compact ? 72 : 88, borderRadius: 20,
+          width: 88, height: 88, borderRadius: 20,
           background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 24px rgba(0,0,0,.2)',
         }}>
-          <LogoSVG size={compact ? 36 : 44}/>
+          <LogoSVG size={44}/>
         </div>
         <div>
-          <div style={{ color:'#fff', fontSize: compact ? 26 : 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
+          <div style={{ color:'#fff', fontSize: 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
             Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
           </div>
           <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
@@ -286,20 +327,22 @@ export default function Login() {
 
   const botaoDigital = (destaque: boolean) => (
     <button onClick={() => handleDigital()} disabled={carregando} style={{
-      width:'100%', padding: destaque ? '15px' : '13px', borderRadius:14, fontFamily:'inherit',
+      width:'100%', padding: destaque ? (isMobile ? '13px' : '15px') : (isMobile ? '11px' : '13px'), borderRadius:14, fontFamily:'inherit',
       border: destaque ? 'none' : '1.5px solid #e2e8f0',
       background: destaque ? 'linear-gradient(135deg,#1a56db,#2563eb)' : '#fff',
       color: destaque ? '#fff' : '#0f172a', fontSize: destaque ? 16 : 14, fontWeight: destaque ? 800 : 600,
       cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1,
       boxShadow: destaque ? '0 4px 20px rgba(26,86,219,.35)' : 'none',
-      display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom: destaque ? 16 : 12,
+      display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+      marginBottom: destaque ? (isMobile ? 12 : 16) : (isMobile ? 0 : 12),
     }}>
-      <DigitalSVG cor={destaque ? '#fff' : '#1a56db'}/> Entrar com digital
+      <DigitalSVG cor={destaque ? '#fff' : '#1a56db'}/> {destaque || !isMobile ? 'Entrar com digital' : 'Digital'}
     </button>
   )
 
   const telaOferta = (
-    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif", textAlign:'center' }}>
+    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif", textAlign:'center',
+      margin: isMobile ? 'auto 0' : undefined }}>
       <div style={{ width:64, height:64, borderRadius:'50%', background:'#eff6ff', margin:'0 auto 16px',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
         <DigitalSVG cor="#1a56db"/>
@@ -331,10 +374,11 @@ export default function Login() {
   )
 
   const form = ofertaDigital ? telaOferta : (
-    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif" }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:4 }}>Bem-vindo de volta!</div>
-        <div style={{ fontSize:13, color:'#64748b' }}>Entre com sua conta para continuar</div>
+    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif",
+      margin: isMobile ? 'auto 0' : undefined, width: '100%' }}>
+      <div style={{ marginBottom: isMobile ? (baixa ? 12 : 16) : 24 }}>
+        <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom: baixa ? 0 : 4 }}>Bem-vindo de volta!</div>
+        {!baixa && <div style={{ fontSize:13, color:'#64748b' }}>Entre com sua conta para continuar</div>}
       </div>
 
       {erro && (
@@ -358,7 +402,7 @@ export default function Login() {
       {temDigital && digitalEmDestaque && (
         <>
           {botaoDigital(true)}
-          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? (baixa ? 8 : 12) : 16 }}>
             <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
             <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou use e-mail e senha</span>
             <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
@@ -367,13 +411,13 @@ export default function Login() {
       )}
 
       <Campo label="✉️ E-mail" tipo="email" placeholder="seu@email.com"
-        valor={email} onChange={setEmail} icone="✉️" />
+        valor={email} onChange={setEmail} icone="✉️" compacto={isMobile} />
 
       <Campo label="🔒 Senha" tipo="password" placeholder="Sua senha"
         valor={senha} onChange={setSenha} icone="🔑"
-        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
+        onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile} />
 
-      <div style={{ textAlign:'right', marginTop:-8, marginBottom:20 }}>
+      <div style={{ textAlign:'right', marginTop: isMobile ? -6 : -8, marginBottom: isMobile ? (baixa ? 8 : 12) : 20 }}>
         <button onClick={handleResetSenha} style={{
           border:'none', background:'transparent', color:'#1a56db',
           fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
@@ -381,7 +425,7 @@ export default function Login() {
       </div>
 
       <button onClick={handleSubmit} disabled={carregando} style={{
-        width:'100%', padding:'15px', border:'none', borderRadius:14,
+        width:'100%', padding: isMobile ? '13px' : '15px', border:'none', borderRadius:14,
         background:'linear-gradient(135deg,#1a56db,#2563eb)',
         color:'#fff', fontSize:16, fontWeight:800,
         cursor: carregando ? 'default' : 'pointer',
@@ -390,28 +434,33 @@ export default function Login() {
         boxShadow:'0 4px 20px rgba(26,86,219,.35)',
         transition:'all .15s',
         display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        marginBottom:16,
+        marginBottom: isMobile ? 12 : 16,
       }}>
         {carregando ? 'Entrando...' : 'Entrar →'}
       </button>
 
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? (baixa ? 8 : 12) : 16 }}>
         <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
         <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>ou continue com</span>
         <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
       </div>
 
-      {temDigital && !digitalEmDestaque && botaoDigital(false)}
+      {/* No celular, digital e Google dividem a linha: é o que tira a rolagem. */}
+      <div style={isMobile
+        ? { display:'flex', gap:10, marginBottom: baixa ? 10 : 16 }
+        : { marginBottom:24 }}>
+        {temDigital && !digitalEmDestaque && botaoDigital(false)}
 
-      <button onClick={handleGoogle} disabled={carregando} style={{
-        width:'100%', padding:'13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-        background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
-        cursor:'pointer', fontFamily:'inherit',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-        transition:'all .15s', marginBottom:24,
-      }}>
-        <GoogleSVG/> Entrar com Google
-      </button>
+        <button onClick={handleGoogle} disabled={carregando} style={{
+          width:'100%', padding: isMobile ? '11px' : '13px', border:'1.5px solid #e2e8f0', borderRadius:14,
+          background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
+          cursor:'pointer', fontFamily:'inherit',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+          transition:'all .15s',
+        }}>
+          <GoogleSVG/> {isMobile && temDigital && !digitalEmDestaque ? 'Google' : 'Entrar com Google'}
+        </button>
+      </div>
 
       <div style={{ textAlign:'center' }}>
         <span style={{ fontSize:13, color:'#64748b' }}>Não tem uma conta? </span>
@@ -421,7 +470,7 @@ export default function Login() {
         }}>Criar conta grátis</button>
       </div>
 
-      <div style={{ textAlign:'center', marginTop:20 }}>
+      <div style={{ textAlign:'center', marginTop: isMobile ? (baixa ? 8 : 12) : 20 }}>
         <span style={{ fontSize:10, color:'#94a3b8', lineHeight:1.5 }}>
           Ao entrar você concorda com os{' '}
           <a href="/termos" target="_blank" rel="noopener noreferrer"
@@ -438,7 +487,7 @@ export default function Login() {
     return (
       <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
-        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none' }}>
+        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', display:'flex', flexDirection:'column' }}>
           {form}
         </div>
       </div>
