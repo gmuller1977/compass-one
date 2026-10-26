@@ -78,7 +78,7 @@ export default function QuickLaunch() {
   // Id da categoria — o nome não basta: variantes (Seguro · Civic, Seguro ·
   // March) têm o mesmo nome e são categorias diferentes.
   const [catSel, setCatSel] = useState<string | null>(null)
-  const [etapa, setEtapa] = useState<'modo' | 'forma' | 'valor'>('modo')
+  const [etapa, setEtapa] = useState<'modo' | 'forma' | 'cartao' | 'valor'>('modo')
   const [forma, setForma] = useState<Forma | null>(null)
   const [quando, setQuando] = useState<'hoje' | 'ontem' | string>('hoje')
   const [parcelas, setParcelas] = useState(1)
@@ -200,7 +200,17 @@ export default function QuickLaunch() {
   }
 
   const bancos = useMemo(() => bancosDoDebito(contas), [contas])
-  const cartoesCredito = catObj?.tipo === 'saida' ? cartoesHoje : []
+  const cartoesCredito = useMemo(() => catObj?.tipo === 'saida' ? cartoesHoje : [], [catObj?.tipo, cartoesHoje])
+  // Os meses das faturas, cada um com os cartões que vencem nele: com um
+  // cartão fechado, são dois meses (pedido do Guilherme, 26/10/2026).
+  const mesesDoCredito = useMemo(() => {
+    const grupos: { m: MesRef; cartoes: Conta[] }[] = []
+    for (const { cartao, mes: m } of cartoesCredito) {
+      const g = grupos.find(x => x.m.ano === m.ano && x.m.mes === m.mes)
+      if (g) g.cartoes.push(cartao); else grupos.push({ m, cartoes: [cartao] })
+    }
+    return grupos.sort((a, b) => (a.m.ano * 12 + a.m.mes) - (b.m.ano * 12 + b.m.mes))
+  }, [cartoesCredito])
   const faturaDe = (c: Conta) => cartoesHoje.find(x => x.cartao.id === c.id)?.mes ?? mesAtual
 
   function abrirCat(c: typeof catsGrid[0]) {
@@ -215,7 +225,7 @@ export default function QuickLaunch() {
     setTimeout(() => valorRef.current?.focus(), 80)
   }
   function voltar() {
-    if (etapa === 'valor' && forma?.tipo !== 'cartao') setEtapa('forma')
+    if (etapa === 'valor') setEtapa(forma?.tipo === 'cartao' ? 'cartao' : 'forma')
     else setEtapa('modo')
   }
 
@@ -319,28 +329,47 @@ export default function QuickLaunch() {
     )
   }
 
-  /** Crédito: cada cartão com a fatura em que a compra de hoje cai. */
-  function QuadroCredito() {
-    if (!catObj) return null
-    return (
-      <div style={cartaoBranco}>
-        <CabecalhoModo icone="ti-credit-card" titulo="Crédito" legenda="A compra entra na fatura de cada cartão" />
-        {cartoesCredito.length === 0 && (
-          <span style={{ fontSize: 13, color: COR.textoSuave, padding: '6px 0' }}>Nenhum cartão cadastrado.</span>
-        )}
-        {cartoesCredito.map(({ cartao, mes: m }) => <LinhaCartao key={cartao.id} cartao={cartao} m={m} />)}
-      </div>
-    )
-  }
-
-  function LinhaCartao({ cartao, m }: { cartao: Conta; m: MesRef }) {
+  /** O disponível da categoria num mês, numa linha (crédito). */
+  function DisponivelNaLinha({ m }: { m: MesRef }) {
     const { prev, real } = linhaDaCategoria(catObj!, m)
     const disp = prev - real
     return (
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 0', borderTop: '1px solid #eef2f8' }}>
+        <span style={{ fontSize: 13, color: COR.textoSuave }}>
+          {prev > 0 ? (disp >= 0 ? 'disponível' : 'passou') : 'sem plano'} em <b style={{ color: COR.texto }}>{nomeMes(m)}{m.ano !== ano ? ` de ${m.ano}` : ''}</b>
+        </span>
+        <span style={{ fontSize: 20, fontWeight: 800, color: prev > 0 ? corDoDisponivel(disp) : COR.texto, letterSpacing: '-.3px', overflowWrap: 'anywhere' }}>
+          {fmt(prev > 0 ? Math.abs(disp) : real)}
+        </span>
+        <span style={{ fontSize: 13, color: COR.textoSuave }}>{prev > 0 ? `gastou ${fmt(real)} de ${fmt(prev)}` : 'gasto no mês'}</span>
+      </span>
+    )
+  }
+
+  /** Crédito: o disponível da categoria em cada mês de fatura. */
+  function QuadroCredito() {
+    if (!catObj) return null
+    const sem = mesesDoCredito.length === 0
+    return (
+      <button onClick={() => !sem && setEtapa('cartao')} disabled={sem}
+        aria-label={`Crédito: ${mesesDoCredito.map(g => nomeMes(g.m)).join(' e ')}`}
+        style={{ ...cartaoBranco, cursor: sem ? 'default' : 'pointer' }}>
+        <CabecalhoModo icone="ti-credit-card" titulo="Crédito"
+          legenda={mesesDoCredito.length > 1 ? 'A compra cai na fatura de um destes meses' : 'A compra cai na fatura do cartão'} />
+        {sem
+          ? <span style={{ fontSize: 13, color: COR.textoSuave }}>Nenhum cartão cadastrado.</span>
+          : mesesDoCredito.map(g => <DisponivelNaLinha key={g.m.ano * 12 + g.m.mes} m={g.m} />)}
+        {!sem && <span style={{ fontSize: 13, fontWeight: 700, color: COR.azul, marginTop: 4 }}>Escolher o cartão ›</span>}
+      </button>
+    )
+  }
+
+  function LinhaCartao({ cartao }: { cartao: Conta }) {
+    return (
       <button onClick={() => escolherForma({ tipo: 'cartao', conta: cartao })}
-        aria-label={`${nomeDaConta(cartao, contas)}: fatura de ${nomeMes(m)}`}
+        aria-label={nomeDaConta(cartao, contas)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '10px 0',
+          display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '10px 4px',
           background: 'none', border: 'none', borderTop: '1px solid #eef2f8', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
         }}>
         <span aria-hidden style={{ width: 42, height: 42, borderRadius: '50%', flexShrink: 0, fontSize: 20, background: '#f5f3ff',
@@ -349,13 +378,9 @@ export default function QuickLaunch() {
         </span>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 600, color: COR.texto, overflowWrap: 'anywhere' }}>{nomeDaConta(cartao, contas)}</span>
-          <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave, marginTop: 2 }}>Fatura de {nomeMes(m)}{m.ano !== ano ? ` de ${m.ano}` : ''}</span>
-        </span>
-        <span style={{ textAlign: 'right', flexShrink: 0, maxWidth: '46%' }}>
-          <span style={{ display: 'block', fontSize: 12, color: COR.textoSuave }}>{prev > 0 ? (disp >= 0 ? 'disponível' : 'passou') : 'sem plano'}</span>
-          <span style={{ display: 'block', fontSize: 15, fontWeight: 800, color: prev > 0 ? corDoDisponivel(disp) : COR.texto, overflowWrap: 'anywhere' }}>
-            {prev > 0 ? fmt(Math.abs(disp)) : `gasto ${fmt(real)}`}
-          </span>
+          {cartao.diaVencimento != null && (
+            <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave, marginTop: 2 }}>vence dia {cartao.diaVencimento}</span>
+          )}
         </span>
         <span aria-hidden style={{ color: COR.textoSuave, fontSize: 20 }}>›</span>
       </button>
@@ -512,6 +537,7 @@ export default function QuickLaunch() {
               icone={<IconeCat icone={catObj.icone || '💰'} cor="#fff" tamanho={22} />}
               rotulo={etapa === 'modo' ? (catObj.tipo === 'entrada' ? 'Onde entrou?' : 'Débito ou crédito?')
                 : etapa === 'forma' ? (catObj.tipo === 'entrada' ? 'Em qual conta?' : 'Débito · de qual conta?')
+                : etapa === 'cartao' ? 'Crédito · qual cartão?'
                 : isCartao && forma?.conta ? `${nomeDaForma(forma)} · fatura de ${nomeMes(faturaDe(forma.conta))}`
                 : `${catObj.tipo === 'entrada' ? '' : 'Débito · '}${forma ? nomeDaForma(forma) : ''}`}
               titulo={catObj.descricao ? `${catObj.nome} · ${catObj.descricao}` : catObj.nome} />
@@ -530,6 +556,20 @@ export default function QuickLaunch() {
                 {bancos.map(c => <LinhaForma key={c.id} f={{ tipo: 'banco', conta: c }} />)}
                 <div style={tituloGrupo}><i className="ti ti-cash" aria-hidden style={{ verticalAlign: -2 }} /> Dinheiro</div>
                 <LinhaForma f={{ tipo: 'dinheiro' }} />
+              </div>
+            )}
+
+            {etapa === 'cartao' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {mesesDoCredito.map(g => (
+                  <div key={g.m.ano * 12 + g.m.mes} style={{ ...cartaoBranco, gap: 0 }}>
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 10 }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: COR.texto }}>Fatura de {nomeMes(g.m)}{g.m.ano !== ano ? ` de ${g.m.ano}` : ''}</span>
+                      <DisponivelDoMes m={g.m} />
+                    </span>
+                    {g.cartoes.map(c => <LinhaCartao key={c.id} cartao={c} />)}
+                  </div>
+                ))}
               </div>
             )}
 

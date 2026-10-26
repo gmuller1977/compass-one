@@ -3215,9 +3215,11 @@ controle do dia do fechamento.
 cartão fechado a compra ia para dezembro, e "outubro / novembro"
 confundia). Tocar na categoria abre dois quadros: **Débito** (banco ou
 dinheiro, com o disponível da categoria neste mês; tocar lista as contas
-com o saldo) e **Crédito** (todos os cartões, cada um com "Fatura de
-[mês]", o mês em que a fatura que recebe a compra de hoje VENCE, e o
-disponível da categoria NAQUELE mês; tocar no cartão vai direto ao valor).
+com o saldo) e **Crédito** (o disponível da categoria em cada mês em que
+caem as faturas: o mês em que a fatura que recebe a compra de hoje VENCE;
+com um cartão já fechado são dois meses). Tocar no Crédito abre um cartão
+por mês, "Fatura de [mês]" com o disponível, e embaixo os cartões que
+vencem nele; tocar no cartão vai ao valor (mesmo dia, pedido dele).
 Receita mostra só "Banco ou dinheiro". `bancosDoDebito` e
 `cartoesDoCredito` em `lancarPorMes.ts` (o `formasDoMes` saiu); o parágrafo
 acima sobre os quadros de mês é histórico. `prova98` (10). Sem equivalente
