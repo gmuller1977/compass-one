@@ -49,6 +49,7 @@ function chip(ativo: boolean): React.CSSProperties {
   }
 }
 const ROXO = '#7c3aed'
+const MAX_ATALHOS = 9
 const corDoDisponivel = (disp: number) => (disp < 0 ? COR.erroTexto : COR.sucessoTexto)
 
 export default function QuickLaunch() {
@@ -154,21 +155,27 @@ export default function QuickLaunch() {
   }, [categorias])
   const catsVariaveis = useMemo(() => catsOrdenadas.filter(c => !c.fixa), [catsOrdenadas])
   const hasAnyPin = useMemo(() => categorias.some(c => c.pinQuick === true), [categorias])
+  // No máximo 9 atalhos, a grade 3 × 3 que cabe na tela (pedido do
+  // Guilherme, 27/10/2026). Quem já tinha mais fica com os 9 primeiros
+  // em ordem alfabética, e o Editar abre com esses 9 marcados.
   const catsGrid = useMemo(() => {
-    if (hasAnyPin) return catsOrdenadas.filter(c => c.ativa && c.pinQuick === true)
-    return catsOrdenadas.filter(c => c.ativa && !c.fixa)
+    const todas = hasAnyPin
+      ? catsOrdenadas.filter(c => c.ativa && c.pinQuick === true)
+      : catsOrdenadas.filter(c => c.ativa && !c.fixa)
+    return todas.slice(0, MAX_ATALHOS)
   }, [catsOrdenadas, hasAnyPin])
 
   function abrirGerenciar() {
-    if (hasAnyPin) {
-      setPinLocal(new Set(categorias.filter(c => c.pinQuick === true).map(c => c.id)))
-    } else {
-      setPinLocal(new Set(categorias.filter(c => c.ativa && !c.fixa).map(c => c.id)))
-    }
+    setPinLocal(new Set(catsGrid.map(c => c.id)))
     setGerenciar(true)
   }
   function toggleLocal(catId: string) {
-    setPinLocal(prev => { const n = new Set(prev); if (n.has(catId)) n.delete(catId); else n.add(catId); return n })
+    setPinLocal(prev => {
+      const n = new Set(prev)
+      if (n.has(catId)) n.delete(catId)
+      else if (n.size < MAX_ATALHOS) n.add(catId)
+      return n
+    })
   }
   function salvarPins() {
     setCategorias(prev => prev.map(c => ({ ...c, pinQuick: pinLocal.has(c.id) })))
@@ -445,7 +452,7 @@ export default function QuickLaunch() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 8 }}>
           {/* As categorias e UM "adicionar": seis quadros vazios empurravam as
               contas da semana para fora da tela. */}
-          {Array.from({ length: catsGrid.length + 1 }, (_, i) => {
+          {Array.from({ length: Math.min(catsGrid.length + 1, MAX_ATALHOS) }, (_, i) => {
             const c = catsGrid[i]
             if (!c) {
               return (
@@ -682,7 +689,7 @@ export default function QuickLaunch() {
         categorias={categorias} onFechar={() => setNovaCatAberta(false)}
         onCriar={c => {
           // Com atalhos escolhidos, a nova entra neles; sem, a grade mostra todas as variáveis.
-          const nova = hasAnyPin ? { ...c, pinQuick: true } : c
+          const nova = hasAnyPin && catsGrid.length < MAX_ATALHOS ? { ...c, pinQuick: true } : c
           setCategorias(prev => [...prev, nova])
           setNovaCatAberta(false); setGerenciar(false)
           abrirCat(nova)
@@ -701,7 +708,7 @@ export default function QuickLaunch() {
             animation: 'slideUp .25s ease',
           }}>
             <ModalTopo raio={20} icone="ti-layout-grid" rotulo="Lançar" titulo="Categorias no Início"
-              subtitulo="Categorias variáveis disponíveis no lançamento rápido" onFechar={() => setGerenciar(false)} />
+              subtitulo="Escolha até 9 categorias para o lançamento rápido" onFechar={() => setGerenciar(false)} />
 
             {/* Fixo acima da lista, que rola sozinha (pedido do Guilherme, 18/10/2026). */}
             <div style={{ padding: '12px 20px', borderBottom: `1px solid ${COR.borda}`, flexShrink: 0 }}>
@@ -732,13 +739,16 @@ export default function QuickLaunch() {
                       </div>
                       {cats.map(c => {
                         const ativo = pinLocal.has(c.id)
+                        const travado = !ativo && pinLocal.size >= MAX_ATALHOS
                         return (
                           <div
                             key={c.id}
                             onClick={() => toggleLocal(c.id)}
+                            aria-disabled={travado || undefined}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 12,
-                              padding: '12px 20px', cursor: 'pointer',
+                              padding: '12px 20px', cursor: travado ? 'default' : 'pointer',
+                              opacity: travado ? .5 : 1,
                               borderBottom: `1px solid ${COR.borda}`,
                               background: ativo ? '#f0f7ff' : '#fff',
                               transition: 'background .15s',
@@ -778,8 +788,10 @@ export default function QuickLaunch() {
             </div>
 
             <div style={{ padding: '12px 20px 20px', borderTop: `1px solid ${COR.borda}` }}>
-              <div style={{ fontSize: 13, color: COR.textoSuave, textAlign: 'center', marginBottom: 10 }}>
-                {pinLocal.size} categoria{pinLocal.size !== 1 ? 's' : ''} selecionada{pinLocal.size !== 1 ? 's' : ''}
+              <div style={{ fontSize: 13, color: pinLocal.size >= MAX_ATALHOS ? COR.texto : COR.textoSuave,
+                fontWeight: pinLocal.size >= MAX_ATALHOS ? 600 : 400, textAlign: 'center', marginBottom: 10 }}>
+                {pinLocal.size} de {MAX_ATALHOS} atalhos
+                {pinLocal.size >= MAX_ATALHOS && <> · desmarque um para escolher outro</>}
               </div>
               <button
                 onClick={salvarPins}
