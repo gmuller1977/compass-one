@@ -8,6 +8,7 @@ import {
   parseValor,
   REALCE_ERRO,
 } from './FcShared'
+import { CalendarioCompra } from './FcCalendarioCompra'
 import { lancLabelComGrupo } from './fcRotulo'
 import { IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
@@ -125,6 +126,7 @@ export default function FcMobileView({
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.
   const valorRuim = parseValor(fValor) === null
+  const [calAberto, setCalAberto] = React.useState(false)
 
   const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
@@ -357,6 +359,7 @@ export default function FcMobileView({
                   <label style={rotuloForm}>
                     Data da compra
                   </label>
+                  <div style={{display:'flex',gap:8,position:'relative'}}>
                   <input ref={dataCompraRef} type="text" value={fDataCompra}
                     onChange={e => setFDataCompra(e.target.value)}
                     onBlur={() => {
@@ -368,10 +371,23 @@ export default function FcMobileView({
                       }
                     }}
                     placeholder={placeholderDataCompra(purchaseAno)}
-                    style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
+                    style={{flex:1,minWidth:0,border:`1.5px solid ${COR.borda}`,borderRadius:12,
                       padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                       fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}
                     onKeyDown={e => { if (e.key==='Enter') (e.target as HTMLInputElement).blur() }}/>
+                  <button type="button" onClick={() => setCalAberto(v => !v)} aria-label="Escolher no calendário"
+                    style={{flex:'0 0 48px',minHeight:48,border:`1.5px solid ${COR.borda}`,borderRadius:12,
+                      background: calAberto ? '#eff6ff' : '#fff',color:COR.azul,cursor:'pointer',fontSize:20}}>
+                    <i className="ti ti-calendar" aria-hidden />
+                  </button>
+                  {calAberto && (
+                    <CalendarioCompra grande selecionada={disp} onFechar={() => setCalAberto(false)}
+                      onEscolher={d => {
+                        setDiaSel(d.dia)
+                        setFDataCompra(`${String(d.dia).padStart(2,'0')}/${String(d.mes+1).padStart(2,'0')}${d.ano !== purchaseAno ? '/'+d.ano : ''}`)
+                      }} />
+                  )}
+                  </div>
                   <div style={{fontSize:13,color:COR.azul,fontWeight:600,marginTop:6}}><i className="ti ti-calendar" aria-hidden style={{verticalAlign:-2}} /> {label}</div>
                 </div>
               )
