@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import type { PlanoAnoData, Categoria } from '../context/AppContext'
 import { GRUPOS_PADRAO } from '../data/categoriasPadrao'
+import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 
 const ANO     = new Date().getFullYear()
 const MES_ATU = new Date().getMonth()
@@ -205,14 +206,10 @@ export default function WizardPlanejamento() {
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,.15)',
             border:'1px solid rgba(255,255,255,.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-              <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-              <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-            </svg>
+            <LogoCompass size={20} />
           </div>
           <span style={{ color:'#fff', fontSize:16, fontWeight:700 }}>
-            Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+            <NomeCompass />
           </span>
         </div>
         <button onClick={() => navigate(-1)} style={{

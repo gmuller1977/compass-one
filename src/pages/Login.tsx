@@ -10,7 +10,7 @@ import {
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass } from '../components/LogoCompass'
+import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 
 // Tela baixa (iPhone SE no navegador, com as barras dele): o topo e os
 // espaços encolhem para o formulário inteiro caber.
@@ -275,7 +275,7 @@ export default function Login() {
       </div>
       <div style={{ position: 'relative' }}>
         <div style={{ color:'#fff', fontSize: 22, fontWeight:800, letterSpacing:-.5, lineHeight: 1.1 }}>
-          Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+          <NomeCompass />
         </div>
         <div style={{ color:'rgba(255,255,255,.75)', fontSize:12, fontWeight:500, marginTop:3 }}>
           Sua bússola financeira
@@ -303,7 +303,7 @@ export default function Login() {
         </div>
         <div>
           <div style={{ color:'#fff', fontSize: 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-            Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+            <NomeCompass />
           </div>
           <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
             Sua bússola financeira

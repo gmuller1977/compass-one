@@ -9,7 +9,7 @@ import { planoDoPrimeiroAcesso, primeiroMesCompleto, ultimoMesDoPlanoInicial } f
 import { AJUDA, type TelaAjuda } from '../utils/ajudaDasTelas'
 import type { OrigemDoSaldo } from '../utils/saldoDesde'
 import { TOPO_AZUL, BOLINHA_AZUL } from '../components/mobile/estilo'
-import { LogoCompass } from '../components/LogoCompass'
+import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 import {
   CONTAS_DO_MES, DIA_A_DIA, financiamentosComFim, aplicarRespostas, resumoDasRespostas, faturasInformadas,
   CHAVE_PRIMEIRO_ACESSO, fixasDoPrimeiroAcesso, faturasDeHoje, type FormaDaConta, type Respostas,
@@ -667,7 +667,7 @@ export default function PrimeiroAcesso() {
                 <i className="ti ti-chevron-left" aria-hidden style={{ fontSize: 18 }} />
               </button>
             )}
-            <i className="ti ti-compass" aria-hidden style={{ fontSize: 20 }} /> Compass One
+            <LogoCompass size={20} /> <NomeCompass />
           </div>
           {passo >= 1 && passo <= TOTAL && (
             <div style={{ display: 'flex', gap: 5, marginTop: 16 }} aria-label={`Pergunta ${passo} de ${TOTAL}`} role="img">

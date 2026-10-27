@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { useApp } from '../context/AppContext'
-import { LogoCompass } from './LogoCompass'
+import { LogoCompass, NomeCompass } from './LogoCompass'
 
 export const SIDEBAR_W = 220
 
@@ -286,7 +286,7 @@ export default function Sidebar() {
           </div>
           <div>
             <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>
-              Compass <span style={{ fontWeight: 300, opacity: .7 }}>One</span>
+              <NomeCompass />
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>
               Sua bússola financeira

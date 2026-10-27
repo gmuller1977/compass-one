@@ -3501,17 +3501,21 @@ brilho de `#1e40af`: branco 8,8:1, rótulo a 75% passa como antes. Azul novo
 usa a variável, nunca o hex. As notas que citam `#0f2878 → #1e40af` são
 histórico. Variantes mostradas: A (mesmo azul + halo) e C (quase preto).
 
-**A logo é UMA só: o "Cristal"** (27/10/2026, Guilherme: "parece que estamos
-usando logos diferentes"; escolheu entre opções no card). Eram três desenhos:
-a rosa de 4 pontas (login, cadastro, nova senha, termos, desbloqueio), só a
-agulha (menu, topo, apresentação) e o ícone antigo em `#1a56db` (favicon, app
-instalado, e-mails). Hoje é um C largo e facetado, aberto para a direita
-(branco → ciano), com a agulha da bússola em pé (norte branco, sul ciano, luz
-e sombra): `LogoCompass` em [`LogoCompass.tsx`](src/components/LogoCompass.tsx),
-e `SeloCompass` (o quadrado azul) fora do azul. `public/icone.svg` e os PNGs
-são o mesmo desenho; os e-mails leem o `icone-192.png` publicado. Uma versão
-com a agulha inclinada atravessando o C foi recusada: "parece um e". Tela nova
-usa o `LogoCompass`, nunca um SVG próprio.
+**A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
+estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
+desenhos: a rosa de 4 pontas (login, cadastro, nova senha, termos,
+desbloqueio), só a agulha (menu, topo, apresentação) e o ícone antigo em
+`#1a56db` (favicon, app instalado, e-mails). Hoje é um anel branco FECHADO
+com uma linha ciano por fora e outra por dentro, e a agulha da bússola em pé
+(norte branco, sul ciano, luz e sombra): `LogoCompass` em
+[`LogoCompass.tsx`](src/components/LogoCompass.tsx), e `SeloCompass` (o
+quadrado azul) fora do azul. O nome acompanha (pedido dele): `NomeCompass`,
+"Compass" branco com o halo ciano e "One" em `#a5f3fc`, herdando o tamanho
+da letra. `public/icone.svg` e os PNGs são o mesmo desenho (links `?v=3`); os
+e-mails leem o `icone-192.png` publicado. Passaram e saíram no mesmo dia: o
+"Cristal" (C facetado aberto, ficou publicado algumas horas), a agulha
+inclinada atravessando o C ("parece um e"), o nome em tubo neon e em caixa
+alta. Tela nova usa `LogoCompass` + `NomeCompass`, nunca SVG ou texto próprio.
 
 **Anéis, quadro neon e azul nos cards** (24/10/2026, escolhas do Guilherme
 nos cards, mesmo dia do neon). Em card AZUL, todo gráfico tem trilho branco

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass } from './LogoCompass'
+import { LogoCompass, NomeCompass } from './LogoCompass'
 
 // ── Breakpoint ────────────────────────────────────────────────────────────
 function useIsMobile() {
@@ -37,7 +37,7 @@ export default function AppHeader({ hideBottomTab }: Props) {
               <LogoCompass size={20} />
             </div>
             <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
-              Compass <span style={{ fontWeight: 300, opacity: .75 }}>One</span>
+              <NomeCompass />
             </span>
           </div>
         </div>

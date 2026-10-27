@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { urlDoApp } from '../utils/site'
 import { codigoRecebido } from '../utils/indicacao'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass } from '../components/LogoCompass'
+import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -206,7 +206,7 @@ export default function Cadastro() {
         </div>
         <div>
           <div style={{ color:'#fff', fontSize: compact ? 26 : 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-            Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+            <NomeCompass />
           </div>
           <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
             Comece a controlar suas finanças

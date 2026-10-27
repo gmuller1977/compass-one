@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass } from '../components/LogoCompass'
+import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -153,7 +153,7 @@ export default function RedefinirSenha() {
         </div>
         <div>
           <div style={{ color:'#fff', fontSize: compact ? 26 : 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-            Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+            <NomeCompass />
           </div>
           <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
             Sua bússola financeira

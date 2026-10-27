@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass } from '../components/LogoCompass'
+import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(768)
@@ -38,7 +38,7 @@ function AppMockup() {
             <LogoCompass size={18} />
           </div>
           <span style={{ color:'#fff', fontSize:14, fontWeight:700 }}>
-            Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+            <NomeCompass />
           </span>
         </div>
         <div style={{
@@ -178,7 +178,7 @@ export default function LandingPage() {
                 <LogoCompass size={32} />
               </div>
               <span style={{ color:'#fff', fontSize:22, fontWeight:700 }}>
-                Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+                <NomeCompass />
               </span>
             </div>
 

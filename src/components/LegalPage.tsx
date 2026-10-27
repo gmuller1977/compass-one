@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLarguraMenorQue } from '../utils/larguraTela'
-import { LogoCompass } from './LogoCompass'
+import { LogoCompass, NomeCompass } from './LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -147,7 +147,7 @@ export default function LegalPage({ rawMd }: { rawMd: string }) {
           </div>
           <div>
             <div style={{ color:'#fff', fontSize: compact ? 22 : 26, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-              Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
+              <NomeCompass />
             </div>
             <div style={{ color:'rgba(255,255,255,.55)', fontSize:11, fontWeight:500, textAlign:'center', marginTop:4 }}>
               Sua bússola financeira
