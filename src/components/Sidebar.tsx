@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { useApp } from '../context/AppContext'
+import { LogoCompass } from './LogoCompass'
 
 export const SIDEBAR_W = 220
 
@@ -77,16 +78,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     ],
   },
 ]
-
-function CompassIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-      <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-      <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-    </svg>
-  )
-}
 
 function NavItemRow({
   icon, label, active, isSair = false, expanded, hasSub, badge, disabled, onClick,
@@ -291,7 +282,7 @@ export default function Sidebar() {
             border: '1px solid rgba(255,255,255,.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <CompassIcon />
+            <LogoCompass size={24} />
           </div>
           <div>
             <div style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', letterSpacing: '-.3px', lineHeight: 1.1 }}>

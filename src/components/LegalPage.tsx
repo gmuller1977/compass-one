@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { LogoCompass } from './LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -118,17 +119,6 @@ function renderMd(md: string): ReactNode[] {
   return nodes
 }
 
-const LogoSVG = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.2"/>
-    <polygon points="10,2.5 11.4,9 10,8 8.6,9" fill="white"/>
-    <polygon points="10,17.5 8.6,11 10,12 11.4,11" fill="white" opacity=".5"/>
-    <polygon points="17.5,10 11,11.4 12,10 11,8.6" fill="white" opacity=".3"/>
-    <polygon points="2.5,10 9,8.6 8,10 9,11.4" fill="white" opacity=".3"/>
-    <circle cx="10" cy="10" r="1.5" fill="white"/>
-  </svg>
-)
-
 export default function LegalPage({ rawMd }: { rawMd: string }) {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
@@ -153,7 +143,7 @@ export default function LegalPage({ rawMd }: { rawMd: string }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 8px 24px rgba(0,0,0,.2)',
           }}>
-            <LogoSVG size={compact ? 32 : 40}/>
+            <LogoCompass size={compact ? 42 : 52}/>
           </div>
           <div>
             <div style={{ color:'#fff', fontSize: compact ? 22 : 26, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>

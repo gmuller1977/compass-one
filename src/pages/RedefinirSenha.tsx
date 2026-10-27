@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { LogoCompass } from '../components/LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -68,17 +69,6 @@ function Campo({
     </div>
   )
 }
-
-const LogoSVG = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.2"/>
-    <polygon points="10,2.5 11.4,9 10,8 8.6,9" fill="white"/>
-    <polygon points="10,17.5 8.6,11 10,12 11.4,11" fill="white" opacity=".5"/>
-    <polygon points="17.5,10 11,11.4 12,10 11,8.6" fill="white" opacity=".3"/>
-    <polygon points="2.5,10 9,8.6 8,10 9,11.4" fill="white" opacity=".3"/>
-    <circle cx="10" cy="10" r="1.5" fill="white"/>
-  </svg>
-)
 
 export default function RedefinirSenha() {
   const navigate    = useNavigate()
@@ -159,7 +149,7 @@ export default function RedefinirSenha() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 24px rgba(0,0,0,.2)',
         }}>
-          <LogoSVG size={compact ? 36 : 44}/>
+          <LogoCompass size={compact ? 48 : 58}/>
         </div>
         <div>
           <div style={{ color:'#fff', fontSize: compact ? 26 : 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>

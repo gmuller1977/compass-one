@@ -1,21 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import BottomNav from './BottomNav'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { LogoCompass } from './LogoCompass'
 
 // ── Breakpoint ────────────────────────────────────────────────────────────
 function useIsMobile() {
   return useLarguraMenorQue(640)
-}
-
-// ── Logo SVG ──────────────────────────────────────────────────────────────
-function CompassSvg({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-      <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-      <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-    </svg>
-  )
 }
 
 // ── Componente principal ──────────────────────────────────────────────────
@@ -44,7 +34,7 @@ export default function AppHeader({ hideBottomTab }: Props) {
             <div style={{ width: 28, height: 28, borderRadius: 8,
               background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CompassSvg size={14} />
+              <LogoCompass size={20} />
             </div>
             <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
               Compass <span style={{ fontWeight: 300, opacity: .75 }}>One</span>

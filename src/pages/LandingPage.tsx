@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { LogoCompass } from '../components/LogoCompass'
 
 function useIsMobile() {
   return useLarguraMenorQue(768)
@@ -9,16 +10,6 @@ function useIsMobile() {
 const AZUL_ESCURO = '#0f2878'
 const AZUL_MEDIO  = '#2563eb'
 const AZUL        = '#1a56db'
-
-function CompassIcon({ size = 24 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.5"/>
-      <polygon points="10,3 11.2,9.4 10,8.5 8.8,9.4" fill="white"/>
-      <polygon points="10,17 8.8,10.6 10,11.5 11.2,10.6" fill="white" opacity=".5"/>
-    </svg>
-  )
-}
 
 function AppMockup() {
   return (
@@ -44,7 +35,7 @@ function AppMockup() {
             background:'rgba(255,255,255,.2)', border:'1px solid rgba(255,255,255,.3)',
             display:'flex', alignItems:'center', justifyContent:'center',
           }}>
-            <CompassIcon size={15} />
+            <LogoCompass size={18} />
           </div>
           <span style={{ color:'#fff', fontSize:14, fontWeight:700 }}>
             Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>
@@ -184,7 +175,7 @@ export default function LandingPage() {
                 background:'rgba(255,255,255,.15)', border:'1.5px solid rgba(255,255,255,.25)',
                 display:'flex', alignItems:'center', justifyContent:'center',
               }}>
-                <CompassIcon size={26} />
+                <LogoCompass size={32} />
               </div>
               <span style={{ color:'#fff', fontSize:22, fontWeight:700 }}>
                 Compass <span style={{ fontWeight:300, opacity:.7 }}>One</span>

@@ -10,6 +10,7 @@ import {
   entrarComDigital, recusarDigital, recusouDigital,
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { LogoCompass } from '../components/LogoCompass'
 
 // Tela baixa (iPhone SE no navegador, com as barras dele): o topo e os
 // espaços encolhem para o formulário inteiro caber.
@@ -121,17 +122,6 @@ const DigitalSVG = ({ cor = 'currentColor' }: { cor?: string }) => (
     <path d="M12 14.5c-.2 2.2-.8 4.3-1.8 6.2"/>
     <path d="M4.6 14.5c.3-1 .4-2 .4-3"/>
     <path d="M14.8 18.5c-.3 1-.6 1.9-1 2.8"/>
-  </svg>
-)
-
-const LogoSVG = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="10" r="8" stroke="white" strokeWidth="1.2"/>
-    <polygon points="10,2.5 11.4,9 10,8 8.6,9" fill="white"/>
-    <polygon points="10,17.5 8.6,11 10,12 11.4,11" fill="white" opacity=".5"/>
-    <polygon points="17.5,10 11,11.4 12,10 11,8.6" fill="white" opacity=".3"/>
-    <polygon points="2.5,10 9,8.6 8,10 9,11.4" fill="white" opacity=".3"/>
-    <circle cx="10" cy="10" r="1.5" fill="white"/>
   </svg>
 )
 
@@ -281,7 +271,7 @@ export default function Login() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: '0 6px 16px rgba(0,0,0,.2)', position: 'relative',
       }}>
-        <LogoSVG size={26}/>
+        <LogoCompass size={30}/>
       </div>
       <div style={{ position: 'relative' }}>
         <div style={{ color:'#fff', fontSize: 22, fontWeight:800, letterSpacing:-.5, lineHeight: 1.1 }}>
@@ -309,7 +299,7 @@ export default function Login() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 24px rgba(0,0,0,.2)',
         }}>
-          <LogoSVG size={44}/>
+          <LogoCompass size={58}/>
         </div>
         <div>
           <div style={{ color:'#fff', fontSize: 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>

@@ -712,7 +712,7 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
         }
         @keyframes pa-agulha { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(14deg) } }
         @keyframes pa-sobe { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
-        .pa-agulha { animation: pa-agulha 4s ease-in-out infinite; transform-origin: center }
+        .pa-agulha { animation: pa-agulha 4s ease-in-out infinite }
         .pa-sobe { animation: pa-sobe .6s ease-out both }
         @media (prefers-reduced-motion: reduce) { .pa-agulha, .pa-sobe { animation: none } }
       `}</style>
@@ -726,7 +726,7 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
           <div className="pa-sobe" style={{ width: 84, height: 84, borderRadius: 26, margin: '6px auto 0', background: 'rgba(255,255,255,.12)',
             border: '1px solid rgba(255,255,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 12px 30px rgba(8,20,70,.35)' }}>
-            <span className="pa-agulha" style={{ display: 'flex' }}><LogoCompass size={48} /></span>
+            <LogoCompass size={56} classeAgulha="pa-agulha" />
           </div>
           <h1 className="pa-sobe" style={{ fontSize: 30, lineHeight: 1.2, margin: '22px 0 0', letterSpacing: '-.4px', animationDelay: '.08s' }}>
             {nome ? `Oi, ${nome}! 👋` : 'Oi! 👋'}<br />Que bom ter você aqui.
