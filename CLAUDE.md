@@ -3246,6 +3246,11 @@ por `dividirParcelas` em `lancamentoRapido.ts`; embaixo, "1ª de R$ X e N× de
 R$ Y · total R$ Z". O computador não mudou (pedido dele), e o Norte segue
 lançando pelo valor da parcela. A nota da Fase 2 sobre o valor da PARCELA é
 histórico. `prova99` (10).
+**No máximo 9 atalhos no Lançar do celular** (27/10/2026, pedido do
+Guilherme): a grade 3 × 3 cabe na tela. Com 9, o "adicionar" some; no
+Editar, "N de 9 atalhos" e as outras ficam travadas até desmarcar uma.
+Quem tinha mais fica com os 9 primeiros em ordem alfabética (`MAX_ATALHOS`
+em `QuickLaunch.tsx`); categoria nova só vira atalho se houver vaga.
 
 **O Planejamento no celular é tela própria** (`PlanMobile`, 11/10/2026,
 pedido do Guilherme: "precisa ser revisada"). Antes era a Grade espremida:
