@@ -1,4 +1,5 @@
 import { saldoInformado, saldoInformadoDaCarteira } from '../utils/saldoInformado'
+import { CARTEIRA, pedeConferencia, ultimaConferencia } from '../utils/conferirSaldos'
 import { parseValor } from '../utils/moeda'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { tipoNaFatura, mesDaFaturaDaCompra } from '../utils/lancamentoRapido'
@@ -895,6 +896,18 @@ export default function NovoLancamentoExtrato() {
   const saldoMes   = saldoBaseExibido + totalEntradas - totalSaidas
   const diferenca  = saldoExtNum !== null ? saldoExtNum - saldoMes : null
   const conciliado = diferenca !== null && Math.abs(diferenca) < 0.01
+  // Conferido na Início ("Confere") grava só a data e limpa o informado:
+  // o saldo do banco É o do Compass. Sem isto o cartão pedia "Informar
+  // saldo" logo depois de a pessoa conferir (27/10/2026, Guilherme). No mês
+  // corrente vale até o próximo dia de movimento, a mesma régua da Início.
+  const conferidoEm = (() => {
+    const data = mesDados.saldoBancoData
+    if (saldoExtNum !== null || !data || mesFuturo) return null
+    if (!eMesAtual) return data
+    const conta = isDinheiro ? CARTEIRA : contaInfo
+    if (!conta) return null
+    return pedeConferencia(conta, ultimaConferencia(conta.id, extratoData), depsSaldo) ? null : data
+  })()
 
   const catEditandoFixa = editandoFixaId ? categorias.find(c => c.id === editandoFixaId) : null
   const fixaEhAutomatica = catEditandoFixa?.tipoMovimento === 'banco' && catEditandoFixa?.formaPagamento === 'automatico'
@@ -1206,6 +1219,7 @@ export default function NovoLancamentoExtrato() {
         saldoMes={saldoMes}
         diferenca={diferenca}
         conciliado={conciliado}
+        conferidoEm={conferidoEm}
         chaveAtual={key}
       />
 
@@ -1273,6 +1287,7 @@ export default function NovoLancamentoExtrato() {
             mes={mes}
             ano={ano}
             saldoBancoNum={saldoExtNum}
+            conferidoEm={conferidoEm}
             setModalSaldo={setModalSaldo}
             setModalSaldoValor={setModalSaldoValor}
             contasExtrato={contasExtrato}

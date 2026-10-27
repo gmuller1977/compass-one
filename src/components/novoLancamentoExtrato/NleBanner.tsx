@@ -2,6 +2,7 @@ import type { Conta } from '../../context/AppContext'
 import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
+import { textoConferido } from '../../utils/conferirSaldos'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -18,6 +19,8 @@ type Props = {
   ano: number
   /** O informado de verdade (utils/saldoInformado), ou null. */
   saldoBancoNum: number | null
+  /** Conferido sem valor digitado ("Confere" na Início): a data, ou null. */
+  conferidoEm?: string | null
   // Modal handlers
   setModalSaldo: (v: ModalSaldoInfo | null) => void
   setModalSaldoValor: (v: string) => void
@@ -31,7 +34,7 @@ export default function NleBanner({
   isMobile, tabPrincipal,
   saldoBase, saldoBasePrevisto, totalEntradas, totalSaidas, saldoMes,
   mes, ano,
-  saldoBancoNum,
+  saldoBancoNum, conferidoEm = null,
   setModalSaldo, setModalSaldoValor,
   contasExtrato, contaIdEfetivo, onContaSelect,
 }: Props) {
@@ -95,13 +98,13 @@ export default function NleBanner({
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={isDinheiro ? 'ti-wallet' : 'ti-building-bank'}
               label={isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}
-              value={saldoBancoNum !== null ? fmt(saldoBancoNum) : '—'}
+              value={saldoBancoNum !== null ? fmt(saldoBancoNum) : conferidoEm ? fmt(saldoMes) : '—'}
               style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null ? 'rgba(255,255,255,.75)' : conciliado ? '#86efac' : '#fff',
+                color: diferenca === null && !conferidoEm ? 'rgba(255,255,255,.75)' : diferenca === null || conciliado ? '#86efac' : '#fff',
               }}>
-                {diferenca === null ? 'não informado' : conciliado ? '✓ igual ao Compass'
+                {diferenca === null ? (conferidoEm ? textoConferido(conferidoEm) : 'não informado') : conciliado ? '✓ igual ao Compass'
                   : diferenca > 0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
               </div>
               <div style={{ textAlign: 'right', marginTop: 6 }}>
@@ -109,7 +112,7 @@ export default function NleBanner({
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{saldoBancoNum !== null ? '✎ Alterar' : '✎ Informar'}</span>
+                }}>{saldoBancoNum !== null || conferidoEm ? '✎ Alterar' : '✎ Informar'}</span>
               </div>
             </KpiCard>
           </div>

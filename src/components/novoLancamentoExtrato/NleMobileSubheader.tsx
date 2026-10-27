@@ -1,6 +1,7 @@
 import type { Conta } from '../../context/AppContext'
 import { COR, fmt, type DadosMes } from './NleShared'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
+import { textoConferido } from '../../utils/conferirSaldos'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -33,6 +34,8 @@ type Props = {
   saldoMes: number
   diferenca: number | null
   conciliado: boolean
+  /** Data em que o saldo foi conferido sem valor digitado ("Confere"), ou null. */
+  conferidoEm: string | null
   chaveAtual: string
 }
 
@@ -40,7 +43,7 @@ export default function NleMobileSubheader({
   isMobile, tabPrincipal,
   contasExtrato, contaIdEfetivo, mes, ano, mesNome,
   setContaId, setModalSaldo, setModalSaldoValor, saldoSugerido,
-  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, chaveAtual,
+  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, conferidoEm, chaveAtual,
 }: Props) {
   return (
     <>
@@ -103,9 +106,15 @@ export default function NleMobileSubheader({
                     {isDinheiro ? 'Em dinheiro' : `No ${contaInfo?.banco ?? 'banco'}`}
                   </span>
                   <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-                    {diferenca !== null ? fmt(saldoMes + diferenca) : 'Informar saldo ✎'}
+                    {diferenca !== null ? fmt(saldoMes + diferenca) : conferidoEm ? fmt(saldoMes) : 'Informar saldo ✎'}
                   </span>
                 </span>
+                {diferenca === null && conferidoEm && (
+                  <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
+                    background:'rgba(15,23,42,.3)',color:'#86efac'}}>
+                    {textoConferido(conferidoEm)} <span aria-hidden style={{color:'rgba(255,255,255,.75)',marginLeft:2}}>✎</span>
+                  </span>
+                )}
                 {diferenca !== null && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
                     background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fff'}}>

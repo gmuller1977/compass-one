@@ -408,6 +408,12 @@ e o "No banco" ficou em 580,76 ("sobram 579,23"), com o Radar somando o
 valor velho no saldo atual. Hoje `marcarConferido` grava a data e limpa
 `saldoBanco`; pedindo conferência, a linha mostra só o "No app"; e a linha
 com diferença ganhou "Já confere". `prova92` (6).
+**Conferido na Início aparece em Lançamentos** (27/10/2026, relatado pelo
+Guilherme: "✓ confere" na Início e "Informar saldo ✎" em Lançamentos >
+Banco). Sem informado e com `saldoBancoData` no mês, o cartão "No [banco]" /
+"Em dinheiro" (celular) e "Saldo no banco" (computador) mostram o saldo do
+Compass com "✓ conferido hoje" / "✓ conferido em 25/10" e o ✎ para alterar.
+No mês corrente vale até a conta pedir conferência de novo (`pedeConferencia`).
 
 **Sem plano, o Radar não julga: só mostra o realizado** (19/10/2026,
 decisão do Guilherme sobre a análise da chegada v3, C2: "ele não deve julgar

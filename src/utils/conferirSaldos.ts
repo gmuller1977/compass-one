@@ -220,3 +220,10 @@ export function marcarConferido(dm: DadosMes, hoje: Date): DadosMes {
 export function informarSaldo(dm: DadosMes, valorFormatado: string, hoje: Date): DadosMes {
   return { ...dm, saldoBanco: valorFormatado, saldoBancoData: dataDeHoje(hoje), saldoBancoInformado: true }
 }
+
+/** "conferido hoje" / "conferido em 25/10", para o cartão de Lançamentos. */
+export function textoConferido(data: string, hoje = new Date()): string {
+  if (data === dataDeHoje(hoje)) return '✓ conferido hoje'
+  const [, m, d] = data.split('-')
+  return `✓ conferido em ${d}/${m}`
+}
