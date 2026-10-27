@@ -3622,6 +3622,10 @@ Guilherme): os dígitos entram pelos centavos, "7399" vira "73,99"
 (`mascaraCentavos` em `moeda.ts`, `prova100`). Só lá, por enquanto: os
 outros campos aceitam conta ("800+300") ou vírgula digitada, e a máscara
 quebraria isso.
+O saldo do banco ganhou a mesma vírgula automática (mesmo dia, pedido
+dele), na caixa de Lançamentos e no "Está diferente" da Início. O banco
+aceita negativo e o teclado numérico não tem "−", então ao lado do campo há
+"+/−" (`trocarSinal`); a carteira não fica negativa e não tem o botão.
 
 Cálculos ficam em `number`, não em centavos inteiros: a deriva medida na cascata
 de 12 meses com 53 categorias é de R$ 1e-10, ~43 milhões de vezes abaixo do

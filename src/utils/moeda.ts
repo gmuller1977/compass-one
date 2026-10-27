@@ -131,8 +131,24 @@ export const parseBRL = (s: string): number => parseValor(s) ?? 0
  * "7399" vira "73,99" e "5" vira "0,05". Tudo que não é dígito é ignorado.
  * O texto devolvido é lido por `parseValor`; sem dígito, campo vazio.
  */
-export function mascaraCentavos(texto: string): string {
+export function mascaraCentavos(texto: string, permiteNegativo = false): string {
   const digitos = texto.replace(/\D/g, '').replace(/^0+/, '').slice(0, 11)
   if (!digitos) return ''
-  return (Number(digitos) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const v = (Number(digitos) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return permiteNegativo && texto.includes('-') ? '-' + v : v
+}
+
+/**
+ * O saldo do banco aceita negativo (cheque especial, 18/10/2026), e o teclado
+ * numérico do celular não tem "−": o campo do saldo leva um botão que troca o
+ * sinal (27/10/2026, vírgula automática no saldo).
+ */
+export function trocarSinal(texto: string): string {
+  if (!texto) return texto
+  return texto.startsWith('-') ? texto.slice(1) : '-' + texto
+}
+
+/** Valor já gravado no formato do campo com vírgula automática ("-1.033,49"). */
+export function valorNaMascara(v: number): string {
+  return mascaraCentavos(Math.round(v * 100).toString(), true)
 }

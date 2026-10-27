@@ -3,6 +3,7 @@ import { fmt, NOMES_MESES } from './NleShared'
 import KpiCard from '../KpiCard'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
 import { textoConferido } from '../../utils/conferirSaldos'
+import { valorNaMascara } from '../../utils/moeda'
 
 type ModalSaldoInfo = { contaId: string; banco: string; icone: string; cor: string; key: string }
 
@@ -60,7 +61,7 @@ export default function NleBanner({
    * O X tem de ser o X que a tela mostra.
    */
   function abrirModal() {
-    setModalSaldoValor(fmt(saldoMes))
+    setModalSaldoValor(isDinheiro ? '' : valorNaMascara(saldoMes))
     if (isDinheiro) {
       setModalSaldo({ contaId: 'dinheiro', banco: 'Dinheiro', icone: '💵', cor: '#16a34a', key: chaveAtual })
     } else if (contaInfo) {

@@ -2,6 +2,7 @@ import type { Conta } from '../../context/AppContext'
 import { COR, fmt, type DadosMes } from './NleShared'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
 import { textoConferido } from '../../utils/conferirSaldos'
+import { mascaraCentavos } from '../../utils/moeda'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -57,7 +58,7 @@ export default function NleMobileSubheader({
         const futuro = ano > hoje.getFullYear() || (ano === hoje.getFullYear() && mes > hoje.getMonth())
         const temSaldo = tabPrincipal === 'extrato' || tabPrincipal === 'dinheiro'
         const abrirSaldo = () => {
-          setModalSaldoValor(isDinheiro ? '' : (saldoSugerido[contaIdEfetivo] ?? ''))
+          setModalSaldoValor(isDinheiro ? '' : mascaraCentavos(saldoSugerido[contaIdEfetivo] ?? '', true))
           if (isDinheiro) setModalSaldo({contaId:'dinheiro', banco:'Dinheiro', icone:'💵', cor:COR.verde, key:chaveAtual})
           else setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
         }

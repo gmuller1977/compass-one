@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext'
 import { Cartao, Etiqueta, Linha, Pilula, TituloCartao } from '../mobile/ui'
 import { M, fmt, mostrar } from '../mobile/estilo'
 import { COR } from '../../utils/cores'
-import { parseValor } from '../../utils/moeda'
+import { mascaraCentavos, parseValor, trocarSinal } from '../../utils/moeda'
 import { CARTEIRA, chaveDoMes, informarSaldo, marcarConferido, saldosDosBancos, type SaldoDoBanco } from '../../utils/conferirSaldos'
 import type { Deps } from '../../utils/saldoConta'
 
@@ -144,8 +144,12 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                   {s.conta.id === CARTEIRA.id ? 'Quanto tem em dinheiro hoje?' : `Quanto tem no ${nome} hoje?`}
                 </label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <input autoFocus inputMode="decimal" value={texto} placeholder="R$ 0,00"
-                    onChange={e => setTexto(e.target.value)}
+                  {s.conta.id !== CARTEIRA.id && (
+                    <button type="button" aria-label="Trocar o sinal (saldo negativo)" title="Saldo negativo"
+                      onClick={() => setTexto(trocarSinal(texto))} style={sinal}>+/−</button>
+                  )}
+                  <input autoFocus inputMode="numeric" value={texto} placeholder="R$ 0,00"
+                    onChange={e => setTexto(mascaraCentavos(e.target.value, s.conta.id !== CARTEIRA.id))}
                     onKeyDown={e => { if (e.key === 'Enter') salvar(s.conta.id) }}
                     style={campo} />
                   <Pilula forte onClick={() => salvar(s.conta.id)}>Salvar</Pilula>
@@ -172,4 +176,9 @@ const campo: CSSProperties = {
 const link: CSSProperties = {
   border: 'none', background: 'none', color: COR.textoSuave, minHeight: 40, padding: '0 6px',
   fontFamily: 'inherit', fontSize: M.legenda, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline',
+}
+
+const sinal: CSSProperties = {
+  flexShrink: 0, minWidth: 44, minHeight: 44, borderRadius: 12, border: `1.5px solid ${COR.borda}`,
+  background: '#fff', color: COR.texto, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 }

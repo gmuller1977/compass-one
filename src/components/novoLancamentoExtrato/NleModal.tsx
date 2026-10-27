@@ -1,4 +1,5 @@
 import ModalTopo from '../ModalTopo'
+import { mascaraCentavos, trocarSinal } from '../../utils/moeda'
 
 type ModalSaldoInfo = {
   contaId: string; banco: string; icone: string; cor: string; key: string
@@ -38,18 +39,29 @@ export default function NleModal({
             ? 'Conte o que está na carteira para conferir se seus lançamentos estão batendo.'
             : 'Informe o saldo real da sua conta para conferir se seus lançamentos estão batendo.'} />
         <div style={{padding:'18px 24px 22px'}}>
-        <input inputMode="decimal" autoFocus
+        {/* Vírgula automática (27/10/2026, pedido do Guilherme). O banco
+            aceita negativo, e o teclado numérico não tem "−": o botão troca o
+            sinal. A carteira não fica negativa, então lá não há botão. */}
+        <div style={{display:'flex',gap:8}}>
+        {!ehDinheiro && (
+          <button type="button" aria-label="Trocar o sinal (saldo negativo)" title="Saldo negativo"
+            onClick={() => setModalSaldoValor(trocarSinal(modalSaldoValor))}
+            style={{flexShrink:0,width:48,borderRadius:8,border:'1.5px solid #e2e8f0',background:'#f8faff',
+              color:'#0f172a',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+/−</button>
+        )}
+        <input inputMode="numeric" autoFocus
           value={modalSaldoValor}
-          onChange={e => setModalSaldoValor(e.target.value)}
+          onChange={e => setModalSaldoValor(mascaraCentavos(e.target.value, !ehDinheiro))}
           onFocus={e => e.target.select()}
           onKeyDown={e => {
             if (e.key === 'Enter') confirmarModalSaldo()
             if (e.key === 'Escape') setModalSaldo(null)
           }}
           placeholder="R$ 0,00"
-          style={{width:'100%',border:`1.5px solid ${modalSaldo.cor}`,borderRadius:8,
+          style={{flex:1,minWidth:0,width:'100%',border:`1.5px solid ${modalSaldo.cor}`,borderRadius:8,
             padding:'10px 14px',fontSize:16,fontWeight:700,color:'#0f172a',
             outline:'none',textAlign:'right',fontFamily:'inherit',boxSizing:'border-box'}}/>
+        </div>
         <div style={{display:'flex',gap:10,marginTop:20}}>
           <button onClick={() => setModalSaldo(null)}
             style={{flex:1,padding:'10px',borderRadius:8,border:`1.5px solid #e2e8f0`,
