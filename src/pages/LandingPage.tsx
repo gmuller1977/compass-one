@@ -71,6 +71,29 @@ const CSS = `
 .lp-bola { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #94a3b8; flex-shrink: 0; }
 .lp-bola.ok { background: #15803d; border-color: #15803d; color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
 
+/* simulador no celular do topo */
+.lp-sim { padding: 18px; }
+.lp-sim-campo { background: #fff; border-radius: 14px; padding: 10px 12px; font-size: 12px; color: #475569; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(30,58,138,.06); }
+.lp-sim-campo b { display: block; font-size: 15px; color: #0f172a; }
+.lp-veredito { border-radius: 16px; padding: 14px; background: var(--cx-azul); color: #fff; box-shadow: var(--cx-brilho); }
+.lp-veredito-t { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
+.lp-veredito-t i { color: #86efac; font-size: 22px; }
+.lp-veredito p { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: rgba(255,255,255,.9); }
+.lp-linha-saldo { margin-top: 10px; }
+
+/* comparativo */
+.lp-comp { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.lp-comp-col { border-radius: 22px; padding: 26px; }
+.lp-comp-col h3 { margin: 0 0 16px; font-size: 20px; }
+.lp-comp-col ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.lp-comp-col li { display: flex; gap: 10px; font-size: 15px; line-height: 1.5; }
+.lp-comp-col li i { font-size: 20px; flex-shrink: 0; }
+.lp-comp-outros { background: #f1f5f9; color: #334155; }
+.lp-comp-outros i { color: #64748b; }
+.lp-comp-nos { background: var(--cx-azul); color: #fff; box-shadow: var(--cx-brilho); }
+.lp-comp-nos i { color: #86efac; }
+.lp-comp-rot { font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 6px; opacity: .8; }
+
 /* como começa */
 .lp-passos { display: grid; grid-template-columns: 1fr; gap: 16px; counter-reset: passo; padding: 0; margin: 0; list-style: none; }
 .lp-passo { border: 1.5px solid #dbe4f3; border-radius: 18px; padding: 22px; background: #fff; }
@@ -153,7 +176,7 @@ const CSS = `
 
 @media (min-width: 640px) {
   .lp-ctas { flex-direction: row; }
-  .lp-passos, .lp-extras { grid-template-columns: repeat(2, 1fr); }
+  .lp-passos, .lp-extras, .lp-comp { grid-template-columns: repeat(2, 1fr); }
   .lp-planos { grid-template-columns: repeat(2, 1fr); }
 }
 @media (min-width: 900px) {
@@ -209,6 +232,59 @@ function CelularInicio() {
             <span className="v" style={{ color: '#c2410c' }}>− R$ 1.650,00</span>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function CelularSimulador() {
+  // Saldo dos próximos meses, sem e com a compra (fictício): nunca fica negativo.
+  const sem = [3900, 4300, 4750, 5200, 5600, 6100]
+  const com = [3540, 3580, 3670, 3760, 3800, 4300]
+  const x = (i: number) => 8 + i * 48
+  const y = (v: number) => 70 - ((v - 3000) / 3400) * 60
+  const linha = (vs: number[]) => vs.map((v, i) => `${i ? 'L' : 'M'}${x(i)},${y(v).toFixed(1)}`).join(' ')
+  return (
+    <div className="lp-cel" role="img" aria-label="Exemplo do Posso comprar? no celular: uma geladeira de R$ 3.600 cabe em 10 vezes sem deixar o saldo negativo">
+      <div className="lp-tela">
+        <div className="lp-tela-topo">
+          <div className="lp-ola">Posso comprar?</div>
+          <div className="lp-status">Veja antes de decidir</div>
+        </div>
+        <div className="lp-sim">
+          <div className="lp-sim-campo">O que você quer comprar<b>Geladeira · R$ 3.600,00</b></div>
+          <div className="lp-sim-campo">Como a loja ofereceu<b>À vista, 10× ou 12×</b></div>
+          <div className="lp-veredito">
+            <div className="lp-veredito-t"><i className="ti ti-circle-check" />Cabe em 10× de R$ 360</div>
+            <p>Seu saldo não fica negativo em nenhum mês até o fim do plano, e a meta de guardar R$ 500 por mês continua de pé.</p>
+            <svg className="lp-linha-saldo" viewBox="0 0 256 76" width="100%" aria-hidden>
+              <path d={linha(sem)} fill="none" stroke="#fff" strokeWidth="2" strokeDasharray="4 4" />
+              <path d={linha(com)} fill="none" stroke="#67e8f9" strokeWidth="3" />
+              {com.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="3.5" fill="#67e8f9" />)}
+            </svg>
+            <p style={{ marginTop: 2 }}>Tracejado: sem a compra · Azul: comprando</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function QuadroPrevisao() {
+  const meses = ['out', 'nov', 'dez', 'jan', 'fev', 'mar']
+  const vals = [3912, 2650, -480, 1200, 2300, 3100]
+  return (
+    <div className="lp-quadro" role="img" aria-label="Exemplo da previsão: o saldo dos próximos meses, com dezembro ficando negativo e marcado em vermelho">
+      <div className="lp-quadro-t">Com quanto cada mês vai terminar</div>
+      <div className="lp-colunas" style={{ alignItems: 'flex-end' }}>
+        {vals.map((v, i) => (
+          <div key={i} style={{ height: `${Math.max(8, Math.abs(v) / 40)}%`, background: v < 0 ? '#fca5a5' : i === 0 ? '#67e8f9' : 'rgba(255,255,255,.85)' }} />
+        ))}
+      </div>
+      <div className="lp-meses">{meses.map(m => <span key={m}>{m}</span>)}</div>
+      <div className="lp-caixa" style={{ marginTop: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 700 }}>Dezembro termina em − R$ 480,00</div>
+        <div style={{ fontSize: 12, marginTop: 4, color: 'rgba(255,255,255,.88)' }}>Você vê hoje, com dois meses para mudar o caminho.</div>
       </div>
     </div>
   )
@@ -280,60 +356,69 @@ function QuadroSimulador() {
 
 const FUNCIONALIDADES = [
   {
-    tag: 'Início', icone: 'ti-home',
-    titulo: 'Tudo o que pede sua atenção, logo na primeira tela',
-    texto: 'Ao abrir o app você vê quanto tem hoje nos bancos e no dinheiro e com quanto deve terminar o mês. O resto vem em ordem: o que conferir e o que pagar.',
+    tag: 'Posso comprar?', icone: 'ti-shopping-cart',
+    titulo: 'Antes de comprar, saiba se cabe',
+    texto: 'Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do seu plano, mês a mês, e mostra a forma mais barata entre as que não apertam o seu bolso.',
     itens: [
-      'Confira seus saldos: compare com o app do banco em um toque',
-      'Salário e débito automático se marcam sozinhos no dia, e você só confere',
-      'Contas da semana (PIX, boleto ou dinheiro) com o botão Pagar',
-      'Resumo do mês: previsto e realizado lado a lado, com a sua meta de economia',
+      'Compara à vista, parcelado e com juros, lado a lado',
+      'Mostra o juro embutido a partir da parcela, sem precisar saber a taxa',
+      'Diz se a sua meta de economia continua de pé com a compra',
+      'Aponta o melhor dia para comprar no cartão e quitar uma dívida à vista',
     ],
-    quadro: <QuadroResumoInicio />,
+    quadro: <QuadroSimulador />,
   },
   {
-    tag: 'Lançar', icone: 'ti-plus',
-    titulo: 'Anote um gasto em segundos',
-    texto: 'Toque na categoria, escolha débito ou crédito e digite o valor. O app já mostra quanto ainda resta para aquela categoria no mês.',
+    tag: 'Previsão', icone: 'ti-telescope',
+    titulo: 'Veja o aperto meses antes de ele chegar',
+    texto: 'Com o que você planejou e o que já está lançado, o Compass calcula com quanto cada mês vai terminar até o fim do plano. Se algum mês ficar no vermelho, você descobre agora, com tempo de mudar.',
     itens: [
-      'Compra parcelada no cartão, à vista ou em até 24×',
-      'O app sabe em qual fatura a compra cai, pelo dia de fechamento',
-      'Banco, cartão e dinheiro no mesmo lugar, com transferência entre contas',
+      'Saldo previsto do fim do mês, com o cálculo aberto linha a linha',
+      'Três cenários: pessimista, moderado ou otimista',
+      'Parcelas e contas que já vêm pela frente entram na conta',
     ],
-    quadro: <QuadroLancar />,
+    quadro: <QuadroPrevisao />,
+  },
+  {
+    tag: 'Planejamento', icone: 'ti-calendar-stats',
+    titulo: 'Um plano para o ano inteiro, no seu ritmo',
+    texto: 'Defina quanto quer gastar em cada categoria e quanto quer guardar por mês. O Compass mostra com quanto o ano termina se o plano se cumprir.',
+    itens: [
+      'Meta de economia mês a mês, com o rumo do ano',
+      'Contas que se repetem todo mês ou em parcelas (IPVA, seguro, matrícula)',
+      'Revisão anual: o mesmo mês do ano passado sugere o plano do próximo',
+    ],
+    quadro: <QuadroPlano />,
+  },
+  {
+    tag: 'Início', icone: 'ti-home',
+    titulo: 'Abriu o app, já sabe como o mês vai terminar',
+    texto: 'A primeira tela mostra quanto você tem hoje e com quanto deve terminar o mês. Depois, o que conferir e o que pagar.',
+    itens: [
+      'Salário e débito automático se marcam sozinhos no dia, e você só confere',
+      'Confira seus saldos com o app do banco em um toque',
+      'Resumo do mês: previsto e realizado, com a sua meta de economia',
+    ],
+    quadro: <CelularInicio />,
   },
   {
     tag: 'Radar financeiro', icone: 'ti-radar-2',
-    titulo: 'O mês em tempo real, grupo por grupo',
-    texto: 'O Radar mostra o que já aconteceu no mês, contra o que você planejou: quanto ainda resta em cada grupo e onde o gasto passou do plano.',
+    titulo: 'Quanto ainda dá para gastar, grupo por grupo',
+    texto: 'O Radar compara o mês com o plano em tempo real: quanto resta em cada grupo e onde o gasto passou, para você decidir enquanto ainda dá tempo.',
     itens: [
-      'Receitas e despesas do mês, com o saldo de hoje',
       'Cada grupo diz "resta", "passou" ou "pago", sem precisar fazer conta',
       'Ajuste o plano dos próximos meses direto da categoria',
     ],
     quadro: <QuadroRadar />,
   },
   {
-    tag: 'Planejamento', icone: 'ti-calendar-stats',
-    titulo: 'Um plano para o ano inteiro, no seu ritmo',
-    texto: 'Defina quanto quer gastar em cada categoria e quanto quer guardar por mês. O app mostra com quanto cada mês termina se o plano se cumprir.',
+    tag: 'Lançar', icone: 'ti-plus',
+    titulo: 'Anotar é rápido, porque o importante vem depois',
+    texto: 'Toque na categoria, escolha débito ou crédito e digite o valor. A compra já entra na previsão dos próximos meses.',
     itens: [
-      'Meta de economia mês a mês, com o rumo do ano',
-      'Contas que se repetem todo mês ou em parcelas (IPVA, seguro, matrícula)',
-      'Copiar o ano com atualização de valores e revisão anual, mês contra mês',
+      'Parcelado no cartão em até 24×, na fatura certa pelo dia de fechamento',
+      'Banco, cartão e dinheiro no mesmo lugar',
     ],
-    quadro: <QuadroPlano />,
-  },
-  {
-    tag: 'Simulador', icone: 'ti-shopping-cart',
-    titulo: 'Posso comprar? Veja antes de decidir',
-    texto: 'Digite o valor e as opções que a loja ofereceu. O simulador compara as formas de pagamento e mostra a mais barata entre as que cabem no seu fluxo até o fim do plano.',
-    itens: [
-      'Juro embutido calculado a partir da parcela, sem precisar saber a taxa',
-      'Mostra se a sua meta de economia continua de pé com a compra',
-      'Quitar uma dívida à vista: o melhor mês e quanto você economiza',
-    ],
-    quadro: <QuadroSimulador />,
+    quadro: <QuadroLancar />,
   },
 ]
 
@@ -364,11 +449,11 @@ export default function LandingPage() {
         </nav>
         <div className="lp-hero">
           <div className="lp-hero-txt">
-            <h1>Saiba hoje com quanto você <em>termina o mês</em>.</h1>
+            <h1>Compre o que você quer <em>sem se apertar</em>.</h1>
             <p>
-              O Compass One é um app de finanças pessoais que junta bancos, cartões e dinheiro
-              num lugar só, mostra o saldo previsto do fim do mês e ajuda a montar um plano para
-              guardar mais. Você decide; o Compass mostra o caminho.
+              A maioria dos apps de finanças anota o que você já gastou. O Compass One olha para
+              frente: mostra com quanto cada mês vai terminar e responde, antes de você comprar,
+              se cabe no seu bolso. Você decide; o Compass mostra o caminho.
             </p>
             <div className="lp-ctas">
               <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar grátis <i className="ti ti-arrow-right" /></Link>
@@ -380,11 +465,42 @@ export default function LandingPage() {
               <li><i className="ti ti-lock" />Não pede a senha do banco</li>
             </ul>
           </div>
-          <CelularInicio />
+          <CelularSimulador />
         </div>
       </header>
 
       <main>
+        <section className="lp-sec" aria-labelledby="diferenca">
+          <div className="lp-in">
+            <div className="lp-centro">
+              <h2 className="lp-h2" id="diferenca">Anotar gastos conta o passado. Planejar muda o futuro.</h2>
+              <p className="lp-sub">Saber onde o dinheiro foi é o começo. O Compass One foi feito para a pergunta que vem depois: e agora, o que eu faço?</p>
+            </div>
+            <div className="lp-comp">
+              <div className="lp-comp-col lp-comp-outros">
+                <div className="lp-comp-rot">Apps de anotação</div>
+                <h3>Olham para trás</h3>
+                <ul>
+                  <li><i className="ti ti-history" />Mostram quanto você já gastou</li>
+                  <li><i className="ti ti-list" />Uma lista de receitas e despesas</li>
+                  <li><i className="ti ti-alert-triangle" />O aperto aparece quando o mês já acabou</li>
+                  <li><i className="ti ti-help" />Comprar ou esperar? A conta fica com você</li>
+                </ul>
+              </div>
+              <div className="lp-comp-col lp-comp-nos">
+                <div className="lp-comp-rot">Compass One</div>
+                <h3>Olha para frente</h3>
+                <ul>
+                  <li><i className="ti ti-circle-check" />Mostra com quanto cada mês vai terminar</li>
+                  <li><i className="ti ti-circle-check" />Um plano do ano, com a sua meta de economia</li>
+                  <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar</li>
+                  <li><i className="ti ti-circle-check" />Responde se a compra cabe, antes de você comprar</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="lp-sec" style={{ background: '#f8faff' }} aria-labelledby="como-comeca">
           <div className="lp-in">
             <div className="lp-centro">
@@ -402,8 +518,8 @@ export default function LandingPage() {
         <section className="lp-sec" aria-labelledby="funcionalidades">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="funcionalidades">O que o Compass One faz por você</h2>
-              <p className="lp-sub">Controle de gastos, orçamento e planejamento financeiro no mesmo app.</p>
+              <h2 className="lp-h2" id="funcionalidades">Planejamento, previsão e decisão no mesmo app</h2>
+              <p className="lp-sub">Do "posso comprar?" ao plano do ano, cada tela ajuda a decidir o próximo passo.</p>
             </div>
             {FUNCIONALIDADES.map((f, i) => (
               <article key={f.tag} className={`lp-func${i % 2 ? ' inv' : ''}`}>
@@ -483,8 +599,8 @@ export default function LandingPage() {
 
         <section className="lp-sec lp-fim" aria-labelledby="comecar">
           <div className="lp-in lp-centro">
-            <h2 className="lp-h2" id="comecar">Sua vida financeira com rumo</h2>
-            <p className="lp-sub">Crie sua conta grátis e veja hoje com quanto o seu mês termina.</p>
+            <h2 className="lp-h2" id="comecar">Decida hoje como será o seu mês que vem</h2>
+            <p className="lp-sub">Crie sua conta grátis e saiba, antes de comprar, se cabe no seu bolso.</p>
             <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar grátis <i className="ti ti-arrow-right" /></Link>
           </div>
         </section>
@@ -498,41 +614,6 @@ export default function LandingPage() {
           <a href="mailto:suporte@compassone.app">Suporte</a>
         </nav>
       </footer>
-    </div>
-  )
-}
-
-/** Na seção da Início o celular já está no topo; aqui vai o Resumo do mês. */
-function QuadroResumoInicio() {
-  const barras: [string, number, number, string, string][] = [
-    ['Receitas', 100, 96, 'R$ 6.200', 'R$ 5.950'],
-    ['Despesas', 78, 64, 'R$ 4.800', 'R$ 3.940'],
-  ]
-  return (
-    <div className="lp-quadro" role="img" aria-label="Exemplo do Resumo do mês: previsto e realizado de receitas e despesas">
-      <div className="lp-quadro-t">Resumo do mês · outubro começou com R$ 2.510,00</div>
-      {barras.map(([nome, prev, real, vp, vr]) => (
-        <div key={nome} style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{nome}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr 76px', gap: 8, alignItems: 'center', fontSize: 11, marginBottom: 5 }}>
-            <span style={{ color: 'rgba(255,255,255,.8)' }}>Previsto</span>
-            <span style={{ height: 10, borderRadius: 99, border: '1.5px solid #fff', width: `${prev}%` }} />
-            <b style={{ textAlign: 'right' }}>{vp}</b>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr 76px', gap: 8, alignItems: 'center', fontSize: 11 }}>
-            <span style={{ color: 'rgba(255,255,255,.8)' }}>Realizado</span>
-            <span style={{ height: 10, borderRadius: 99, background: 'var(--cx-trilho)', width: `${prev}%`, overflow: 'hidden' }}>
-              <span style={{ display: 'block', height: '100%', width: `${(real / prev) * 100}%`, background: 'var(--cx-barra)' }} />
-            </span>
-            <b style={{ textAlign: 'right' }}>{vr}</b>
-          </div>
-        </div>
-      ))}
-      <div className="lp-caixa" style={{ marginTop: 4 }}>
-        <div className="lp-caixa-l">Meta de economia do mês <b>R$ 800,00</b></div>
-        <div style={{ fontSize: 12, marginTop: 6 }}>Você já guardou R$ 610,00 da meta</div>
-        <div className="lp-trilho" style={{ marginTop: 6, background: '#fff' }}><span style={{ width: '76%' }} /></div>
-      </div>
     </div>
   )
 }

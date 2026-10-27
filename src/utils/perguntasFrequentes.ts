@@ -9,6 +9,14 @@ export const PERGUNTAS_FREQUENTES: { pergunta: string; resposta: string }[] = [
     resposta: 'Sim. O plano Grátis tem todas as funcionalidades liberadas, sem limite de uso, sem anúncios e sem pedir cartão de crédito.',
   },
   {
+    pergunta: 'Qual a diferença para um app de anotar gastos?',
+    resposta: 'Anotar mostra o que já aconteceu. O Compass One usa o seu plano e o que já está lançado, como parcelas e contas fixas, para mostrar com quanto cada mês vai terminar e responder, antes de você comprar, se a compra cabe sem apertar o seu bolso.',
+  },
+  {
+    pergunta: 'Como o Compass One sabe se uma compra cabe no meu bolso?',
+    resposta: 'O simulador coloca a compra dentro do seu plano, mês a mês, até o fim do plano. Se nenhum mês fica negativo, ela cabe. Ele compara à vista e parcelado, mostra o juro embutido e diz se a sua meta de economia continua de pé.',
+  },
+  {
     pergunta: 'Preciso informar a senha do meu banco?',
     resposta: 'Não. O Compass One não se conecta ao seu banco. Você informa os saldos e anota os gastos, e o app confere tudo com você.',
   },
