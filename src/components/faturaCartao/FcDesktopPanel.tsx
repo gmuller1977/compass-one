@@ -7,6 +7,7 @@ import {
   parseValor,
   REALCE_ERRO,
 } from './FcShared'
+import { CalendarioCompra } from './FcCalendarioCompra'
 
 type Props = {
   editandoId: string | null
@@ -82,6 +83,7 @@ export default function FcDesktopPanel({
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.
   const valorRuim = parseValor(fValor) === null
+  const [calAberto, setCalAberto] = React.useState(false)
 
   return (
     <div style={{width:340,flexShrink:0,background:COR.branco,
@@ -190,6 +192,7 @@ export default function FcDesktopPanel({
             <div>
               <div style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5,marginBottom:5}}>Data da compra</div>
+              <div style={{display:'flex',gap:6,position:'relative'}}>
               <input
                 ref={dataCompraRef}
                 autoFocus
@@ -209,9 +212,22 @@ export default function FcDesktopPanel({
                 placeholder={placeholderDataCompra(purchaseAno)}
                 style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                   fontSize:13,outline:'none',background:'#fff',
-                  fontFamily:'inherit',color:COR.texto,width:'100%'}}
+                  fontFamily:'inherit',color:COR.texto,flex:1,minWidth:0}}
                 onKeyDown={e => { if (e.key==='Enter') { (e.target as HTMLInputElement).blur() } }}
               />
+              <button type="button" onClick={() => setCalAberto(v => !v)} aria-label="Escolher no calendário"
+                title="Escolher no calendário" style={{flex:'0 0 40px',border:'1.5px solid #e2e8f0',borderRadius:10,
+                  background: calAberto ? '#eff6ff' : '#fff',color:COR.azul,cursor:'pointer',fontSize:16}}>
+                <i className="ti ti-calendar" aria-hidden />
+              </button>
+              {calAberto && (
+                <CalendarioCompra selecionada={disp} onFechar={() => setCalAberto(false)}
+                  onEscolher={d => {
+                    setDiaSel(d.dia)
+                    setFDataCompra(`${String(d.dia).padStart(2,'0')}/${String(d.mes+1).padStart(2,'0')}${d.ano !== purchaseAno ? '/'+d.ano : ''}`)
+                  }} />
+              )}
+              </div>
               <div style={{fontSize:10,color:'#94a3b8',marginTop:4}}>{label}</div>
             </div>
           )
