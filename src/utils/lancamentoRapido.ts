@@ -65,6 +65,8 @@ export function lancarNaFatura(
     categoria: string; subCategoria?: string; descricao: string
     valorParcela: number; parcelas: number
     baseId: string
+    /** Valor de cada parcela, quando não são iguais (ver `dividirParcelas`). */
+    valores?: number[]
   },
 ): Record<string, unknown> {
   const n = Math.max(1, Math.floor(p.parcelas))
@@ -86,7 +88,7 @@ export function lancarNaFatura(
           tipo: tipoNaFatura(p.tipoDaCategoria),
           descricao: p.descricao, categoria: p.categoria,
           ...(p.subCategoria ? { subCategoria: p.subCategoria } : {}),
-          valor: p.valorParcela,
+          valor: p.valores?.[i - 1] ?? p.valorParcela,
           formaPagamento: 'credito', tipoLanc: 'variavel',
           consolidado: i === 1,
           ...(n > 1 ? { parcelas: n, parcelaAtual: i } : {}),
@@ -96,6 +98,19 @@ export function lancarNaFatura(
     }
   }
   return out
+}
+
+/**
+ * Divide o total da compra em N parcelas, ao centavo. Quando a divisão não
+ * fecha, a sobra dos centavos vai na PRIMEIRA (100 em 3× = 33,34 + 33,33 +
+ * 33,33), como as lojas fazem. A soma é sempre o total.
+ */
+export function dividirParcelas(total: number, parcelas: number): number[] {
+  const n = Math.max(1, Math.floor(parcelas))
+  const centavos = Math.round(total * 100)
+  const demais = Math.floor(centavos / n)
+  const primeira = centavos - demais * (n - 1)
+  return [primeira, ...Array(n - 1).fill(demais)].map(c => c / 100)
 }
 
 /** Hoje, ontem ou uma data escolhida ("aaaa-mm-dd"), nunca no futuro. */

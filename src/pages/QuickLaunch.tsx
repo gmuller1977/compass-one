@@ -11,7 +11,7 @@ import { M } from '../components/mobile/estilo'
 import { saldoRealizadoConta, saldoBancosEDinheiro, type Deps } from '../utils/saldoConta'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
-import { lancarNaFatura, lancarNoExtrato, dataDoLancamento } from '../utils/lancamentoRapido'
+import { lancarNaFatura, lancarNoExtrato, dataDoLancamento, dividirParcelas } from '../utils/lancamentoRapido'
 import { bancosDoDebito, cartoesDoCredito, gastoDeHoje, type MesRef } from '../utils/lancarPorMes'
 import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
 import { nomeDaConta } from '../utils/nomeDaConta'
@@ -242,11 +242,13 @@ export default function QuickLaunch() {
 
     if (forma.tipo === 'cartao' && forma.conta) {
       // Mesmo formato da tela da fatura: fechamento, parcelas e compra como
-      // `entrada` — ver lancarNaFatura.
+      // `entrada` — ver lancarNaFatura. O valor digitado é o TOTAL da compra;
+      // os centavos que sobram da divisão vão na 1ª parcela.
+      const valores = dividirParcelas(v, parcelas)
       setFaturaData(prev => lancarNaFatura(prev, {
         cartao: forma.conta!, ano: aL, mes: mL, dia: dL,
         tipoDaCategoria: tipoSel, categoria: catObj.nome, subCategoria: catObj.descricao,
-        descricao, valorParcela: v, parcelas, baseId,
+        descricao, valorParcela: valores[valores.length - 1], valores, parcelas, baseId,
       }))
     } else {
       const fp = forma.tipo === 'dinheiro' ? 'dinheiro'
@@ -620,8 +622,8 @@ export default function QuickLaunch() {
                     value={valor}
                     onChange={e => setValor(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && registrar()}
-                    placeholder={parcelas > 1 ? 'Valor da parcela' : 'R$ 0,00'}
-                    aria-label={parcelas > 1 ? 'Valor de cada parcela' : 'Valor'}
+                    placeholder={parcelas > 1 ? 'Valor total' : 'R$ 0,00'}
+                    aria-label={parcelas > 1 ? 'Valor total da compra' : 'Valor'}
                     inputMode="decimal"
                     style={{
                       flex: '1.2', border: `2px solid ${isCartao ? ROXO : COR.azul}`, borderRadius: 12,
@@ -643,11 +645,17 @@ export default function QuickLaunch() {
                   />
                 </div>
 
-                {parcelas > 1 && parseBRL(valor) > 0 && (
-                  <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: -4, marginBottom: 8, textAlign: 'center' }}>
-                    {parcelas}× de {fmt(parseBRL(valor))} · total {fmt(parseBRL(valor) * parcelas)}
-                  </div>
-                )}
+                {parcelas > 1 && parseBRL(valor) > 0 && (() => {
+                  const [primeira, demais] = dividirParcelas(parseBRL(valor), parcelas)
+                  return (
+                    <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: -4, marginBottom: 8, textAlign: 'center' }}>
+                      {primeira === demais
+                        ? <>{parcelas}× de <b style={{ color: COR.texto }}>{fmt(demais)}</b></>
+                        : <>1ª de <b style={{ color: COR.texto }}>{fmt(primeira)}</b> e {parcelas - 1}× de <b style={{ color: COR.texto }}>{fmt(demais)}</b></>}
+                      {' '}· total {fmt(parseBRL(valor))}
+                    </div>
+                  )
+                })()}
 
                 <button
                   onClick={registrar}

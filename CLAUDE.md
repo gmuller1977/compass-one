@@ -3224,6 +3224,13 @@ Receita mostra só "Banco ou dinheiro". `bancosDoDebito` e
 `cartoesDoCredito` em `lancarPorMes.ts` (o `formasDoMes` saiu); o parágrafo
 acima sobre os quadros de mês é histórico. `prova98` (10). Sem equivalente
 no computador: lá o lançamento é Lançamentos, por conta.
+**No crédito do Lançar, o valor é o TOTAL da compra** (27/10/2026, pedido do
+Guilherme). Digita-se o total e escolhe-se À vista a 24×; a divisão é ao
+centavo e a sobra vai na 1ª parcela (100 em 3× = 33,34 + 33,33 + 33,33),
+por `dividirParcelas` em `lancamentoRapido.ts`; embaixo, "1ª de R$ X e N× de
+R$ Y · total R$ Z". O computador não mudou (pedido dele), e o Norte segue
+lançando pelo valor da parcela. A nota da Fase 2 sobre o valor da PARCELA é
+histórico. `prova99` (10).
 
 **O Planejamento no celular é tela própria** (`PlanMobile`, 11/10/2026,
 pedido do Guilherme: "precisa ser revisada"). Antes era a Grade espremida:
