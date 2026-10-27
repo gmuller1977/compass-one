@@ -2,7 +2,7 @@ import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
+  COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana, dataCompraPadrao, placeholderDataCompra,
   compararNaFatura, diaSemanaLongo,
   type TipoLanc, type Lancamento, type DadosMes,
   parseValor,
@@ -346,9 +346,11 @@ export default function FcMobileView({
             {/* Data da compra */}
             {(() => {
               const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-              const dispDia = parsed?.dia ?? diaSel
-              const dispMes = parsed?.mes ?? purchaseMes
-              const dispAno = parsed?.ano ?? purchaseAno
+              // Vazio: hoje, a mesma data que a compra grava (dataCompraPadrao).
+              const disp = parsed ?? (editandoId ? { dia: diaSel, mes: purchaseMes, ano: purchaseAno } : dataCompraPadrao())
+              const dispDia = disp.dia
+              const dispMes = disp.mes
+              const dispAno = disp.ano
               const label = `${dispDia} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
               return (
                 <div style={{marginBottom:14}}>
@@ -365,7 +367,7 @@ export default function FcMobileView({
                         setFDataCompra(`${String(p.dia).padStart(2,'0')}/${String(p.mes+1).padStart(2,'0')}${acStr}`)
                       }
                     }}
-                    placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
+                    placeholder={placeholderDataCompra(purchaseAno)}
                     style={{width:'100%',border:`1.5px solid ${COR.borda}`,borderRadius:12,
                       padding:'12px 14px',fontSize:16,minHeight:48,outline:'none',background:'#fff',
                       fontFamily:'inherit',color:COR.texto,boxSizing:'border-box' as const}}

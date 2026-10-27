@@ -6,7 +6,7 @@ import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import type { DadosMes as ExtratoDadosMes } from '../context/AppContext'
 import {
   COR, DADOS_MES_VAZIO,
-  diasNoMes, mesKey, fmt, parseBRL, parseDateFatura,
+  diasNoMes, mesKey, fmt, parseBRL, parseDateFatura, dataCompraPadrao,
   type TipoLanc, type FormaPag, type Lancamento, type DadosMes,
 } from '../components/faturaCartao/FcShared'
 import FcMobileView from '../components/faturaCartao/FcMobileView'
@@ -362,8 +362,13 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     const subCatToSave = varianteEscolhida && subDescsDisponiveis.includes(varianteEscolhida)
       ? varianteEscolhida
       : undefined
+    // Campo vazio numa compra nova = HOJE, como se a pessoa tivesse digitado a
+    // data de hoje (o dia do lançamento acompanha, como no onBlur do campo).
+    const compraVazia = !editandoId && !fDataCompra.trim()
     const parsedCompra = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-    const diaCompraFinal = parsedCompra?.dia ?? diaSel
+      ?? (compraVazia ? dataCompraPadrao() : null)
+    const diaLanc = compraVazia ? diaHoje : diaSel
+    const diaCompraFinal = parsedCompra?.dia ?? diaLanc
     const mesCompraFinal = parsedCompra?.mes ?? purchaseMes
     const anoCompraFinal = parsedCompra?.ano ?? purchaseAno
     // Compra antes do valor de fatura informado já está nele (utils/saldoDesde).
@@ -386,15 +391,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     }
 
     if (editandoId) {
-      const diaOrigem = editandoDiaOriginal ?? diaSel
+      const diaOrigem = editandoDiaOriginal ?? diaLanc
       const idAtual   = editandoId
-      const futuroAlvo = ehDiaFuturo(diaSel)
+      const futuroAlvo = ehDiaFuturo(diaLanc)
       setDados(prev => {
         const dmCurrent = prev[key] ?? DADOS_MES_VAZIO
         const listaOrigem = dmCurrent.lancamentos[diaOrigem] ?? []
         const entrada = listaOrigem.find(l => l.id === idAtual)
         if (!entrada) return prev
-        const novoConsolidado = diaOrigem !== diaSel ? !futuroAlvo : entrada.consolidado
+        const novoConsolidado = diaOrigem !== diaLanc ? !futuroAlvo : entrada.consolidado
         const atualizada: Lancamento = {
           ...entrada, tipo:fTipo, descricao:fDesc.trim()||fCat, categoria:fCat,
           subCategoria: subCatToSave,
@@ -402,14 +407,14 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           parcelas:nParcelas>1?nParcelas:undefined, parcelaAtual:entrada.parcelaAtual,
           diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
         }
-        const dmUpdated = diaOrigem === diaSel
+        const dmUpdated = diaOrigem === diaLanc
           ? { ...dmCurrent, lancamentos: { ...dmCurrent.lancamentos, [diaOrigem]: listaOrigem.map(l => l.id===idAtual ? atualizada : l) } }
           : {
               ...dmCurrent,
               lancamentos: {
                 ...dmCurrent.lancamentos,
                 [diaOrigem]: listaOrigem.filter(l => l.id !== idAtual),
-                [diaSel]: [...(dmCurrent.lancamentos[diaSel] ?? []), atualizada],
+                [diaLanc]: [...(dmCurrent.lancamentos[diaLanc] ?? []), atualizada],
               },
             }
         let result = { ...prev, [key]: dmUpdated }
@@ -484,7 +489,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           const dadosMes = result[k] ?? DADOS_MES_VAZIO
           const desc = fDesc.trim() || fCat
           // Dia 29, 30 ou 31 num mês mais curto: o último dia (utils/diasDaFatura).
-          const dP = diaNoMes(diaSel, a, m)
+          const dP = diaNoMes(diaLanc, a, m)
           result = {
             ...result,
             [k]: {
@@ -495,7 +500,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
                   id:`${baseId}-${p}`, tipo:fTipo,
                   descricao:desc, categoria:fCat, subCategoria:subCatToSave,
                   valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
-                  consolidado: p===1 ? !ehDiaFuturo(diaSel) : false,
+                  consolidado: p===1 ? !ehDiaFuturo(diaLanc) : false,
                   parcelas:nParcelas, parcelaAtual:p,
                   diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
                 }],
@@ -515,11 +520,11 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
             ...dm,
             lancamentos: {
               ...dm.lancamentos,
-              [diaSel]: [...(dm.lancamentos[diaSel]??[]), {
+              [diaLanc]: [...(dm.lancamentos[diaLanc]??[]), {
                 id:`${baseId}-1`, tipo:fTipo,
                 descricao:fDesc.trim()||fCat, categoria:fCat, subCategoria:subCatToSave,
                 valor:valorParcela, formaPagamento:'credito' as FormaPag, tipoLanc:'variavel' as const,
-                consolidado: !ehDiaFuturo(diaSel),
+                consolidado: !ehDiaFuturo(diaLanc),
                 diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
               }],
             }

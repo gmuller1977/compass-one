@@ -117,6 +117,20 @@ export function parseDateFatura(s: string, mesDefault: number, anoDefault: numbe
   return null
 }
 
+/** Data da compra quando o campo está vazio: HOJE (27/10/2026, pedido do
+ *  Guilherme: o campo sugeria o dia selecionado no mês da fatura, ex. 24/11).
+ *  Vale para o que aparece embaixo do campo e para o que é gravado. */
+export function dataCompraPadrao(): {dia:number;mes:number;ano:number} {
+  const h = new Date()
+  return { dia: h.getDate(), mes: h.getMonth(), ano: h.getFullYear() }
+}
+
+/** Texto do placeholder: DD/MM, com o ano quando difere do da fatura. */
+export function placeholderDataCompra(anoFatura: number): string {
+  const h = dataCompraPadrao()
+  return `${String(h.dia).padStart(2,'0')}/${String(h.mes+1).padStart(2,'0')}${h.ano !== anoFatura ? '/'+h.ano : ''}`
+}
+
 // ── Focus helpers ─────────────────────────────────────────────────────
 export function realcarFoco(e: React.FocusEvent<HTMLElement>) {
   e.currentTarget.style.border = `1.5px solid ${COR.azul}`

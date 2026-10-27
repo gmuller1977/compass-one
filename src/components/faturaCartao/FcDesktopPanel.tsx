@@ -1,7 +1,7 @@
 import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import {
-  COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana,
+  COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana, dataCompraPadrao, placeholderDataCompra,
   realcarFoco, removerRealce,
   type TipoLanc, type DadosMes,
   parseValor,
@@ -180,9 +180,11 @@ export default function FcDesktopPanel({
         {/* Data da compra — campo livre */}
         {(() => {
           const parsed = parseDateFatura(fDataCompra, purchaseMes, purchaseAno)
-          const dispDia = parsed?.dia ?? diaSel
-          const dispMes = parsed?.mes ?? purchaseMes
-          const dispAno = parsed?.ano ?? purchaseAno
+          // Vazio: hoje, a mesma data que a compra grava (dataCompraPadrao).
+          const disp = parsed ?? (editandoId ? { dia: diaSel, mes: purchaseMes, ano: purchaseAno } : dataCompraPadrao())
+          const dispDia = disp.dia
+          const dispMes = disp.mes
+          const dispAno = disp.ano
           const label = `${String(dispDia).padStart(2,'0')} de ${NOMES_MESES[dispMes]}${dispAno !== purchaseAno ? ' '+dispAno : ''} · ${diaSemana(dispDia,dispMes,dispAno)}`
           return (
             <div>
@@ -204,7 +206,7 @@ export default function FcDesktopPanel({
                   }
                 }}
                 onFocus={realcarFoco}
-                placeholder={`${String(diaSel).padStart(2,'0')}/${String(purchaseMes+1).padStart(2,'0')}`}
+                placeholder={placeholderDataCompra(purchaseAno)}
                 style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                   fontSize:13,outline:'none',background:'#fff',
                   fontFamily:'inherit',color:COR.texto,width:'100%'}}

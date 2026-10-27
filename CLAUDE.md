@@ -1023,6 +1023,12 @@ Simulador e `mesDoGastoNoCartao`; a tela da fatura (`routeToNext` e o selo
 "próxima") usa `>=`. O "melhor dia para comprar" do Simulador passou a ser o
 próprio dia do fechamento. Compras já gravadas não mudam de fatura.
 
+**Na fatura, a data da compra vazia é HOJE** (27/10/2026, bug relatado
+pelo Guilherme: o campo sugeria o dia selecionado no mês da fatura, "24/11").
+Computador e celular: o placeholder e a linha embaixo mostram hoje, e lançar
+com o campo vazio grava como se a data de hoje tivesse sido digitada
+(`dataCompraPadrao` em `FcShared.tsx`); a fatura segue a regra do fechamento.
+
 **O nome de uma compra PARCELADA se troca pelo plano, e vale para todas as
 parcelas.** Pedido do Guilherme em 11/10/2026: a fatura grava compra sem
 descrição com o nome da categoria (`fDesc.trim() || fCat`), e a revisão copia
