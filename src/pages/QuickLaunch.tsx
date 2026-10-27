@@ -596,18 +596,6 @@ export default function QuickLaunch() {
                       style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
                     />
                   </label>
-                  {isCartao && (
-                    <select
-                      value={parcelas}
-                      onChange={e => setParcelas(Number(e.target.value))}
-                      aria-label="Parcelas"
-                      style={{ ...chip(parcelas > 1), appearance: 'none' }}
-                    >
-                      {Array.from({ length: 24 }, (_, i) => i + 1).map(n => (
-                        <option key={n} value={n}>{n === 1 ? 'À vista' : `${n}×`}</option>
-                      ))}
-                    </select>
-                  )}
                   {sugerido !== null && !valor && (
                     <button
                       onClick={() => setValor(sugerido.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))}
@@ -626,25 +614,33 @@ export default function QuickLaunch() {
                     aria-label={parcelas > 1 ? 'Valor total da compra' : 'Valor'}
                     inputMode="decimal"
                     style={{
-                      flex: '1.2', border: `2px solid ${isCartao ? ROXO : COR.azul}`, borderRadius: 12,
+                      flex: 1, border: `2px solid ${isCartao ? ROXO : COR.azul}`, borderRadius: 12,
                       padding: '12px 12px', fontSize: 24, fontWeight: 800, minWidth: 0,
                       color: isCartao ? ROXO : COR.azul, background: isCartao ? '#f5f3ff' : '#eff6ff',
                       outline: 'none', fontFamily: 'inherit', textAlign: 'center',
                     }}
                   />
-                  <input
-                    value={desc}
-                    onChange={e => setDesc(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && registrar()}
-                    placeholder="Descrição (opcional)"
-                    style={{
-                      flex: 1, border: `1.5px solid ${COR.borda}`, borderRadius: 12,
-                      padding: '12px 12px', fontSize: 15, color: COR.texto, minWidth: 0,
-                      background: '#f8fafc', outline: 'none', fontFamily: 'inherit',
-                    }}
-                  />
+                  {/* No crédito, as parcelas ficam ao lado do valor total. */}
+                  {isCartao && (
+                    <label style={{ position: 'relative', flex: '0 0 112px', display: 'flex' }}>
+                      <select
+                        value={parcelas}
+                        onChange={e => setParcelas(Number(e.target.value))}
+                        aria-label="Parcelas"
+                        style={{
+                          width: '100%', appearance: 'none', border: `2px solid ${ROXO}`, borderRadius: 12,
+                          padding: '0 30px 0 12px', fontSize: 17, fontWeight: 800, color: ROXO,
+                          background: '#f5f3ff', fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
+                        }}
+                      >
+                        {Array.from({ length: 24 }, (_, i) => i + 1).map(n => (
+                          <option key={n} value={n}>{n === 1 ? 'À vista' : `${n}×`}</option>
+                        ))}
+                      </select>
+                      <i className="ti ti-chevron-down" aria-hidden style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: ROXO, pointerEvents: 'none' }} />
+                    </label>
+                  )}
                 </div>
-
                 {parcelas > 1 && parseBRL(valor) > 0 && (() => {
                   const [primeira, demais] = dividirParcelas(parseBRL(valor), parcelas)
                   return (
@@ -656,6 +652,18 @@ export default function QuickLaunch() {
                     </div>
                   )
                 })()}
+                <input
+                  value={desc}
+                  onChange={e => setDesc(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && registrar()}
+                  placeholder="Descrição (opcional)"
+                  style={{
+                    width: '100%', boxSizing: 'border-box', border: `1.5px solid ${COR.borda}`, borderRadius: 12,
+                    padding: '12px 12px', fontSize: 16, color: COR.texto, marginBottom: 10,
+                    background: '#f8fafc', outline: 'none', fontFamily: 'inherit',
+                  }}
+                />
+
 
                 <button
                   onClick={registrar}
