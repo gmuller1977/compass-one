@@ -11,6 +11,7 @@ import { M } from '../components/mobile/estilo'
 import { saldoRealizadoConta, saldoBancosEDinheiro, type Deps } from '../utils/saldoConta'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
+import { CalendarioMes } from '../components/CalendarioMes'
 import { lancarNaFatura, lancarNoExtrato, dataDoLancamento, dividirParcelas } from '../utils/lancamentoRapido'
 import { bancosDoDebito, cartoesDoCredito, gastoDeHoje, type MesRef } from '../utils/lancarPorMes'
 import ContasAPagarRapido from '../components/quickLaunch/ContasAPagarRapido'
@@ -81,6 +82,7 @@ export default function QuickLaunch() {
   const [etapa, setEtapa] = useState<'modo' | 'forma' | 'cartao' | 'valor'>('modo')
   const [forma, setForma] = useState<Forma | null>(null)
   const [quando, setQuando] = useState<'hoje' | 'ontem' | string>('hoje')
+  const [calAberto, setCalAberto] = useState(false)
   const [parcelas, setParcelas] = useState(1)
   const [tipoSel, setTipoSel] = useState<'saida' | 'entrada'>('saida')
   const [valor, setValor]   = useState('')
@@ -558,24 +560,28 @@ export default function QuickLaunch() {
             {etapa === 'valor' && (
               <>
                 {/* Quando, parcelas e o último valor da categoria. */}
-                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center', position: 'relative' }}>
                   {(['hoje', 'ontem'] as const).map(q => (
                     <button key={q} onClick={() => setQuando(q)} style={chip(quando === q)}>
                       {q === 'hoje' ? 'Hoje' : 'Ontem'}
                     </button>
                   ))}
-                  <label style={{ ...chip(quando !== 'hoje' && quando !== 'ontem'), position: 'relative', display: 'inline-flex', alignItems: 'center', overflow: 'hidden', height: 40, boxSizing: 'border-box' }}>
+                  {/* Outro dia: o calendário do mês, até hoje (27/10/2026, pedido dele). */}
+                  <button type="button" onClick={() => setCalAberto(v => !v)} aria-label="Escolher outro dia"
+                    style={{ ...chip(quando !== 'hoje' && quando !== 'ontem'), display: 'inline-flex', alignItems: 'center', height: 40, boxSizing: 'border-box' }}>
                     {quando !== 'hoje' && quando !== 'ontem'
                       ? dataDoLancamento(quando).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
                       : <><i className="ti ti-calendar" aria-hidden style={{ marginRight: 4 }} />Outro dia</>}
-                    <input
-                      type="date"
-                      max={`${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`}
-                      onChange={e => e.target.value && setQuando(e.target.value)}
-                      aria-label="Data do lançamento"
-                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                    />
-                  </label>
+                  </button>
+                  {calAberto && (() => {
+                    const sel = dataDoLancamento(quando)
+                    return (
+                      <CalendarioMes grande ate={{ dia, mes, ano }}
+                        selecionada={{ dia: sel.getDate(), mes: sel.getMonth(), ano: sel.getFullYear() }}
+                        onFechar={() => setCalAberto(false)}
+                        onEscolher={d => setQuando(`${d.ano}-${String(d.mes + 1).padStart(2, '0')}-${String(d.dia).padStart(2, '0')}`)} />
+                    )
+                  })()}
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>

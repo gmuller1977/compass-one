@@ -8,7 +8,7 @@ import {
   parseValor,
   REALCE_ERRO,
 } from './FcShared'
-import { CalendarioCompra } from './FcCalendarioCompra'
+import { CalendarioMes } from '../CalendarioMes'
 import { lancLabelComGrupo } from './fcRotulo'
 import { IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
@@ -381,7 +381,7 @@ export default function FcMobileView({
                     <i className="ti ti-calendar" aria-hidden />
                   </button>
                   {calAberto && (
-                    <CalendarioCompra grande selecionada={disp} onFechar={() => setCalAberto(false)}
+                    <CalendarioMes grande selecionada={disp} onFechar={() => setCalAberto(false)}
                       onEscolher={d => {
                         setDiaSel(d.dia)
                         setFDataCompra(`${String(d.dia).padStart(2,'0')}/${String(d.mes+1).padStart(2,'0')}${d.ano !== purchaseAno ? '/'+d.ano : ''}`)

@@ -6,6 +6,7 @@ import { ehTransferencia } from '../acompanhamento/evolucaoCalcs'
 import { Cartao, IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
 import ModalTopo from '../ModalTopo'
+import { CalendarioMes } from '../CalendarioMes'
 import {
   COR, fmt, NOMES_MESES, formasDoLancamento,
   diaEfetivoFixa, formaPagCategoria, formaRecebCategoria,
@@ -65,6 +66,7 @@ export default function NleExtratoMobile({
 }: Props & { desktop?: boolean }) {
   const [memoriaAberta, setMemoriaAberta] = React.useState(false)
   const [futurosAbertos, setFuturosAbertos] = React.useState(false)
+  const [calDiaAberto, setCalDiaAberto] = React.useState(false)
   const valorRuim = parseValor(fValor) === null
   const cartaoNomesExtrato = new Set(contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
 
@@ -417,7 +419,7 @@ export default function NleExtratoMobile({
                 </label>
               )}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, position: 'relative' }}>
                 <label style={{ flex: 1, minWidth: 0 }}>
                   <span style={rotuloCampo}>Valor</span>
                   <input ref={valorInputRef} value={fValor} onChange={e => setFValor(e.target.value)}
@@ -427,13 +429,19 @@ export default function NleExtratoMobile({
                 </label>
                 {/* O lancar() grava no diaSel; editando, move do dia de origem. */}
                 {/* Com o dia da semana (26/10/2026, pedido do Guilherme). */}
-                <label style={{ width: 136, flexShrink: 0 }}>
+                {/* Calendário do mês, como o do computador (27/10/2026, pedido dele). */}
+                <div style={{ width: 136, flexShrink: 0 }}>
                   <span style={rotuloCampo}>Dia</span>
-                  <select value={diaSel} onChange={e => setDiaSel(Number(e.target.value))} aria-label="Dia do lançamento" style={campo}>
-                    {Array.from({ length: totalDias }, (_, i) => i + 1).map(d =>
-                      <option key={d} value={d}>{String(d).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')} {DIAS_SEMANA_LONGO[new Date(ano, mes, d).getDay()].slice(0, 3)}</option>)}
-                  </select>
-                </label>
+                  <button type="button" onClick={() => setCalDiaAberto(v => !v)} aria-label="Dia do lançamento"
+                    style={{ ...campo, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ flex: 1 }}>{String(diaSel).padStart(2, '0')}/{String(mes + 1).padStart(2, '0')} {DIAS_SEMANA_LONGO[new Date(ano, mes, diaSel).getDay()].slice(0, 3)}</span>
+                    <i className="ti ti-calendar" aria-hidden style={{ color: COR.azul }} />
+                  </button>
+                </div>
+                {calDiaAberto && (
+                  <CalendarioMes grande semSetas selecionada={{ dia: diaSel, mes, ano }}
+                    onEscolher={d => setDiaSel(d.dia)} onFechar={() => setCalDiaAberto(false)} />
+                )}
               </div>
 
               <label>

@@ -1029,8 +1029,12 @@ Computador e celular: o placeholder e a linha embaixo mostram hoje, e lançar
 com o campo vazio grava como se a data de hoje tivesse sido digitada
 (`dataCompraPadrao` em `FcShared.tsx`); a fatura segue a regra do fechamento.
 No mesmo dia, pedido dele: ao lado do campo há um botão de calendário que
-abre o mês para clicar no dia (`CalendarioCompra`, o desenho do campo Dia
+abre o mês para clicar no dia (`CalendarioMes`, o desenho do campo Dia
 de Lançamentos, com setas para trocar o mês); escolher é o mesmo que digitar.
+O mesmo calendário, ainda no mesmo dia: no Dia de Lançamentos do celular
+(Banco e Dinheiro, no lugar da lista; só o mês da tela) e no "Outro dia" do
+Lançar (até hoje, no lugar do seletor do sistema). No celular ele abre no
+meio da tela.
 
 **O nome de uma compra PARCELADA se troca pelo plano, e vale para todas as
 parcelas.** Pedido do Guilherme em 11/10/2026: a fatura grava compra sem
