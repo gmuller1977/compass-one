@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
@@ -20,6 +20,7 @@ import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
+import { temApresentacaoEstatica, tirarApresentacaoEstatica } from './utils/apresentacaoEstatica'
 import Indicar             from './pages/Indicar'
 import PrimeiroAcesso      from './pages/PrimeiroAcesso'
 import { CHAVE_PRIMEIRO_ACESSO, vaiParaPrimeiroAcesso } from './utils/primeiroAcesso'
@@ -107,7 +108,9 @@ function HomeRoute() {
   const { user, carregando, onboardingCompleto } = useApp()
   const isMobile = useIsMobile()
   const inicioDoNovo = useInicioDoNovo()
-  if (carregando) return <LoadingSpinner />
+  useLayoutEffect(() => { if (!carregando) tirarApresentacaoEstatica() }, [carregando])
+  // A apresentação pronta no HTML fica à vista enquanto a sessão carrega.
+  if (carregando) return temApresentacaoEstatica() ? null : <LoadingSpinner />
   // No celular, quem já usa o app quer entrar: a apresentação fica para quem chega.
   if (!user) return isMobile && pulaApresentacao() ? <Navigate to="/login" replace /> : <LandingPage />
   if (!onboardingCompleto) return <Navigate to={inicioDoNovo} replace />

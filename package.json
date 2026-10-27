@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "provas": "node provas/rodar.mjs",
-    "verificar": "tsc -b && oxlint src && npm run provas && vite build"
+    "verificar": "tsc -b && oxlint src && npm run provas && vite build && node scripts/prerender.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

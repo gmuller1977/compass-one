@@ -2,6 +2,27 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compass One · App de finanças pessoais e planejamento financeiro</title>
+    <meta name="description" content="Controle de gastos, orçamento e planejamento financeiro num app só. Veja hoje com quanto você termina o mês, anote gastos em segundos e monte um plano para guardar mais. Grátis, sem anúncios e sem pedir a senha do banco." />
+    <link rel="canonical" href="https://www.compass-one.com.br/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Compass One" />
+    <meta property="og:url" content="https://www.compass-one.com.br/" />
+    <meta property="og:title" content="Compass One · Saiba hoje com quanto você termina o mês" />
+    <meta property="og:description" content="App de finanças pessoais: controle de gastos, orçamento e planejamento financeiro. Grátis, sem anúncios e sem pedir a senha do banco." />
+    <meta property="og:image" content="https://www.compass-one.com.br/og-imagem.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Compass One, app de finanças pessoais, com a tela Início no celular" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Compass One · Saiba hoje com quanto você termina o mês" />
+    <meta name="twitter:description" content="App de finanças pessoais: controle de gastos, orçamento e planejamento financeiro. Grátis e sem anúncios." />
+    <meta name="twitter:image" content="https://www.compass-one.com.br/og-imagem.png" />
+
     <link rel="icon" type="image/svg+xml" href="/icone.svg?v=3" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icone-180.png?v=3" />
@@ -9,11 +30,66 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Compass" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Compass One</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.compass-one.com.br/#organizacao",
+            "name": "Compass One",
+            "url": "https://www.compass-one.com.br/",
+            "logo": "https://www.compass-one.com.br/icone-512.png?v=3"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.compass-one.com.br/#site",
+            "name": "Compass One",
+            "url": "https://www.compass-one.com.br/",
+            "inLanguage": "pt-BR",
+            "publisher": { "@id": "https://www.compass-one.com.br/#organizacao" }
+          },
+          {
+            "@type": "WebApplication",
+            "name": "Compass One",
+            "url": "https://www.compass-one.com.br/",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Android, iOS, Windows, macOS",
+            "browserRequirements": "Requer JavaScript",
+            "inLanguage": "pt-BR",
+            "description": "App de finanças pessoais com controle de gastos, orçamento mensal, planejamento financeiro anual, meta de economia e simulador de compras.",
+            "image": "https://www.compass-one.com.br/og-imagem.png",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+            "publisher": { "@id": "https://www.compass-one.com.br/#organizacao" }
+          }
+        ]
+      }
+    </script>
+    <!--perguntas-frequentes-->
+
+    <style>.sem-apresentacao #apresentacao { display: none }</style>
+    <script>
+      // A apresentação pronta no HTML é para quem chega pela primeira vez.
+      // Quem tem sessão salva, abre pelo ícone instalado, já entrou neste
+      // celular, ou abre outro endereço, não a vê (src/utils/apresentacaoEstatica.ts).
+      (function () {
+        try {
+          var esconder = location.pathname !== '/'
+          if (!esconder) for (var i = 0; i < localStorage.length; i++) {
+            if (/^sb-.*-auth-token$/.test(localStorage.key(i) || '')) { esconder = true; break }
+          }
+          var celular = matchMedia('(max-width: 767.98px), (pointer: coarse) and (max-height: 500px)').matches
+          if (!esconder && celular && (localStorage.getItem('compass-ja-entrou-aqui') === '1'
+            || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true)) esconder = true
+          if (esconder) document.documentElement.classList.add('sem-apresentacao')
+        } catch (e) { /* sem armazenamento: fica a apresentação */ }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!--apresentacao-->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
