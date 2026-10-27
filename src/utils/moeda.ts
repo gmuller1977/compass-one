@@ -124,3 +124,15 @@ export function partesDaConta(s: string): number[] | null {
 
 /** Leitura tolerante: vazio ou inválido viram 0. Assinatura das 7 cópias antigas. */
 export const parseBRL = (s: string): number => parseValor(s) ?? 0
+
+/**
+ * Campo de valor com a vírgula automática, como nos apps de banco
+ * (27/10/2026, pedido do Guilherme): os dígitos entram pelos centavos, então
+ * "7399" vira "73,99" e "5" vira "0,05". Tudo que não é dígito é ignorado.
+ * O texto devolvido é lido por `parseValor`; sem dígito, campo vazio.
+ */
+export function mascaraCentavos(texto: string): string {
+  const digitos = texto.replace(/\D/g, '').replace(/^0+/, '').slice(0, 11)
+  if (!digitos) return ''
+  return (Number(digitos) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}

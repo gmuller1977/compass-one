@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { parseBRL } from '../utils/moeda'
+import { parseBRL, mascaraCentavos } from '../utils/moeda'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -173,27 +173,7 @@ export default function QuickLaunch() {
     setGerenciar(false)
   }
 
-  /** O valor do lançamento mais recente da categoria, no extrato ou na fatura. */
-  function ultimoValorCat(catNome: string): number | null {
-    let melhor = -1, valorMelhor: number | null = null
-    const olhar = (fonte: Record<string, unknown>, ehFatura: boolean) => {
-      for (const [k, dm] of Object.entries(fonte)) {
-        const ym = parseInt(k.slice(-7, -3)) * 100 + parseInt(k.slice(-2))
-        for (const [d, lcs] of Object.entries((dm as { lancamentos?: Record<string, { categoria: string; valor: number; tipo: string }[]> }).lancamentos ?? {})) {
-          for (const l of lcs) {
-            if (l.categoria !== catNome || (ehFatura && l.tipo !== 'entrada')) continue
-            const quando = ym * 100 + Number(d)
-            if (quando >= melhor) { melhor = quando; valorMelhor = l.valor }
-          }
-        }
-      }
-    }
-    olhar(extratoData as Record<string, unknown>, false)
-    olhar(faturaData as Record<string, unknown>, true)
-    return valorMelhor
-  }
   const catObj = catSel ? categorias.find(c => c.id === catSel) ?? null : null
-  const sugerido = catObj ? ultimoValorCat(catObj.nome) : null
 
   function linhaDaCategoria(c: { nome: string; descricao?: string; tipo: 'saida' | 'entrada' }, m: MesRef = mesAtual) {
     return linhasPorMes.get(m.ano * 12 + m.mes)?.get(`${c.tipo}|${catKey(c.nome, c.descricao)}`) ?? { prev: 0, real: 0 }
@@ -596,19 +576,13 @@ export default function QuickLaunch() {
                       style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
                     />
                   </label>
-                  {sugerido !== null && !valor && (
-                    <button
-                      onClick={() => setValor(sugerido.toLocaleString('pt-BR', { minimumFractionDigits: 2 }))}
-                      style={{ ...chip(false), marginLeft: 'auto' }}
-                    >Último: {fmt(sugerido)}</button>
-                  )}
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   <input
                     ref={valorRef}
                     value={valor}
-                    onChange={e => setValor(e.target.value)}
+                    onChange={e => setValor(mascaraCentavos(e.target.value))}
                     onKeyDown={e => e.key === 'Enter' && registrar()}
                     placeholder={parcelas > 1 ? 'Valor total' : 'R$ 0,00'}
                     aria-label={parcelas > 1 ? 'Valor total da compra' : 'Valor'}
@@ -647,7 +621,7 @@ export default function QuickLaunch() {
                     <div style={{ fontSize: 14, color: COR.textoSuave, marginTop: -4, marginBottom: 8, textAlign: 'center' }}>
                       {primeira === demais
                         ? <>{parcelas}× de <b style={{ color: COR.texto }}>{fmt(demais)}</b></>
-                        : <>1ª de <b style={{ color: COR.texto }}>{fmt(primeira)}</b> e {parcelas - 1}× de <b style={{ color: COR.texto }}>{fmt(demais)}</b></>}
+                        : <>1ª de <b style={{ color: COR.texto }}>{fmt(primeira)}</b> e {parcelas === 2 ? '2ª' : `mais ${parcelas - 1}×`} de <b style={{ color: COR.texto }}>{fmt(demais)}</b></>}
                       {' '}· total {fmt(parseBRL(valor))}
                     </div>
                   )

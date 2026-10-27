@@ -3018,6 +3018,8 @@ precisar da tela completa de Lançamentos:
 - **Variante**: o lançamento guarda `subCategoria` — a categoria é escolhida
   por id, não pelo nome.
 - **"Último: R$ X"**: o lançamento mais recente da categoria, banco ou fatura.
+  SAIU em 27/10/2026 (Guilherme: "as compras não se repetem"); não existia
+  no computador.
 - **Contas a pagar** (`ContasAPagarRapido`): a lista da Início
   (`contasAVencer`) com "Pagar" — grava `fixasConsolidadas` e, se o valor
   mudou, `fixasValorOverride`, na conta onde a fixa aparece
@@ -3574,6 +3576,12 @@ pedido do Guilherme): valor em dinheiro e percentual com
 Consequência aceita: no teclado decimal não há "+", então a conta
 "800+300" da célula do plano fica para o computador; no celular o
 caminho é "detalhar em itens".
+
+**No Lançar do celular a vírgula é automática** (27/10/2026, pedido do
+Guilherme): os dígitos entram pelos centavos, "7399" vira "73,99"
+(`mascaraCentavos` em `moeda.ts`, `prova100`). Só lá, por enquanto: os
+outros campos aceitam conta ("800+300") ou vírgula digitada, e a máscara
+quebraria isso.
 
 Cálculos ficam em `number`, não em centavos inteiros: a deriva medida na cascata
 de 12 meses com 53 categorias é de R$ 1e-10, ~43 milhões de vezes abaixo do
