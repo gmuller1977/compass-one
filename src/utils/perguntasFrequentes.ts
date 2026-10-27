@@ -10,7 +10,7 @@ export const PERGUNTAS_FREQUENTES: { pergunta: string; resposta: string }[] = [
   },
   {
     pergunta: 'Qual a diferença para um app de anotar gastos?',
-    resposta: 'Anotar mostra o que já aconteceu. O Compass One usa o seu plano e o que já está lançado, como parcelas e contas fixas, para mostrar com quanto cada mês vai terminar e responder, antes de você comprar, se a compra cabe sem apertar o seu bolso.',
+    resposta: 'Anotar mostra o que já aconteceu. O Compass One usa o seu plano e o que já está lançado, como parcelas e contas fixas, para mostrar com quanto cada mês vai terminar e responder, antes de você comprar, se a compra cabe no seu plano.',
   },
   {
     pergunta: 'Como o Compass One sabe se uma compra cabe no meu bolso?',

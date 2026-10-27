@@ -358,7 +358,7 @@ const FUNCIONALIDADES = [
   {
     tag: 'Posso comprar?', icone: 'ti-shopping-cart',
     titulo: 'Antes de comprar, saiba se cabe',
-    texto: 'Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do seu plano, mês a mês, e mostra a forma mais barata entre as que não apertam o seu bolso.',
+    texto: 'Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do seu plano, mês a mês, e mostra a forma mais barata entre as que cabem no seu plano.',
     itens: [
       'Compara à vista, parcelado e com juros, lado a lado',
       'Mostra o juro embutido a partir da parcela, sem precisar saber a taxa',
@@ -449,11 +449,11 @@ export default function LandingPage() {
         </nav>
         <div className="lp-hero">
           <div className="lp-hero-txt">
-            <h1>Compre o que você quer <em>sem se apertar</em>.</h1>
+            <h1>Saiba se cabe no bolso <em>antes de comprar</em>.</h1>
             <p>
               A maioria dos apps de finanças anota o que você já gastou. O Compass One olha para
-              frente: mostra com quanto cada mês vai terminar e responde, antes de você comprar,
-              se cabe no seu bolso. Você decide; o Compass mostra o caminho.
+              frente: mostra com quanto cada um dos próximos meses vai terminar e como uma compra
+              muda esse caminho. Você decide com clareza; o Compass mostra o caminho.
             </p>
             <div className="lp-ctas">
               <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar grátis <i className="ti ti-arrow-right" /></Link>
