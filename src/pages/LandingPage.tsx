@@ -290,25 +290,6 @@ function QuadroPrevisao() {
   )
 }
 
-function QuadroLancar() {
-  const cats = [
-    ['ti-shopping-cart', 'Mercado'], ['ti-gas-station', 'Combustível'], ['ti-tools-kitchen-2', 'Restaurante'],
-    ['ti-pill', 'Farmácia'], ['ti-home', 'Casa'], ['ti-shirt', 'Vestuário'],
-  ]
-  return (
-    <div className="lp-quadro" role="img" aria-label="Exemplo do Lançar: escolha a categoria e depois débito ou crédito">
-      <div className="lp-quadro-t">Lançar · toque na categoria</div>
-      <div className="lp-grade">
-        {cats.map(([ic, nome]) => <div key={nome} className="lp-cat"><i className={`ti ${ic}`} />{nome}</div>)}
-      </div>
-      <div className="lp-forma">
-        <div><b>Débito</b>Banco ou dinheiro · resta R$ 412,00</div>
-        <div><b>Crédito</b>À vista ou até 24× · fatura de novembro</div>
-      </div>
-    </div>
-  )
-}
-
 function QuadroRadar() {
   return (
     <div className="lp-quadro" role="img" aria-label="Exemplo do Radar: quanto resta em cada grupo de gastos">
@@ -354,81 +335,175 @@ function QuadroSimulador() {
   )
 }
 
-const FUNCIONALIDADES = [
-  {
-    tag: 'Posso comprar?', icone: 'ti-shopping-cart',
-    titulo: 'Antes de comprar, saiba se cabe',
-    texto: 'Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do seu plano, mês a mês, e mostra a forma mais barata entre as que cabem no seu plano.',
-    itens: [
-      'Compara à vista, parcelado e com juros, lado a lado',
-      'Mostra o juro embutido a partir da parcela, sem precisar saber a taxa',
-      'Diz se a sua meta de economia continua de pé com a compra',
-      'Aponta o melhor dia para comprar no cartão e quitar uma dívida à vista',
-    ],
-    quadro: <QuadroSimulador />,
-  },
-  {
-    tag: 'Previsão', icone: 'ti-telescope',
-    titulo: 'Veja o aperto meses antes de ele chegar',
-    texto: 'Com o que você planejou e o que já está lançado, o Compass calcula com quanto cada mês vai terminar até o fim do plano. Se algum mês ficar no vermelho, você descobre agora, com tempo de mudar.',
-    itens: [
-      'Saldo previsto do fim do mês, com o cálculo aberto linha a linha',
-      'Três cenários: pessimista, moderado ou otimista',
-      'Parcelas e contas que já vêm pela frente entram na conta',
-    ],
-    quadro: <QuadroPrevisao />,
-  },
-  {
-    tag: 'Planejamento', icone: 'ti-calendar-stats',
-    titulo: 'Um plano para o ano inteiro, no seu ritmo',
-    texto: 'Defina quanto quer gastar em cada categoria e quanto quer guardar por mês. O Compass mostra com quanto o ano termina se o plano se cumprir.',
-    itens: [
-      'Meta de economia mês a mês, com o rumo do ano',
-      'Contas que se repetem todo mês ou em parcelas (IPVA, seguro, matrícula)',
-      'Revisão anual: o mesmo mês do ano passado sugere o plano do próximo',
-    ],
-    quadro: <QuadroPlano />,
-  },
-  {
-    tag: 'Início', icone: 'ti-home',
-    titulo: 'Abriu o app, já sabe como o mês vai terminar',
-    texto: 'A primeira tela mostra quanto você tem hoje e com quanto deve terminar o mês. Depois, o que conferir e o que pagar.',
-    itens: [
-      'Salário e débito automático se marcam sozinhos no dia, e você só confere',
-      'Confira seus saldos com o app do banco em um toque',
-      'Resumo do mês: previsto e realizado, com a sua meta de economia',
-    ],
-    quadro: <CelularInicio />,
-  },
-  {
-    tag: 'Radar financeiro', icone: 'ti-radar-2',
-    titulo: 'Quanto ainda dá para gastar, grupo por grupo',
-    texto: 'O Radar compara o mês com o plano em tempo real: quanto resta em cada grupo e onde o gasto passou, para você decidir enquanto ainda dá tempo.',
-    itens: [
-      'Cada grupo diz "resta", "passou" ou "pago", sem precisar fazer conta',
-      'Ajuste o plano dos próximos meses direto da categoria',
-    ],
-    quadro: <QuadroRadar />,
-  },
-  {
-    tag: 'Lançar', icone: 'ti-plus',
-    titulo: 'Anotar é rápido, porque o importante vem depois',
-    texto: 'Toque na categoria, escolha débito ou crédito e digite o valor. A compra já entra na previsão dos próximos meses.',
-    itens: [
-      'Parcelado no cartão em até 24×, na fatura certa pelo dia de fechamento',
-      'Banco, cartão e dinheiro no mesmo lugar',
-    ],
-    quadro: <QuadroLancar />,
-  },
+// Estrutura da página no modelo da do Organizze (27/10/2026, pedido do
+// Guilherme: "use como modelo, todas as partes da página"), com o conteúdo
+// e a identidade do Compass: menu, topo, destaque novo, destaque da previsão,
+// passo a passo, guia em quatro passos, benefícios, grade de recursos, o
+// comparativo (no lugar de depoimentos, que só entram quando forem reais),
+// planos, perguntas e rodapé.
+const CSS2 = `
+.lp-menu { display: none; gap: 22px; font-size: 15px; font-weight: 600; }
+.lp-menu a { color: rgba(255,255,255,.88) !important; text-decoration: none; }
+.lp-menu a:hover { color: #fff !important; }
+.lp-nav-acoes { display: flex; align-items: center; gap: 10px; }
+.lp-comece { display: none; }
+.lp-selo-novo { display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 5px 12px 5px 5px; background: rgba(255,255,255,.12); border: 1px solid rgba(103,232,249,.5); font-size: 13px; font-weight: 600; margin-bottom: 18px; color: #fff; text-decoration: none; }
+.lp-selo-novo b { background: #22d3ee; color: #0b1460; border-radius: 99px; padding: 2px 9px; font-size: 11px; letter-spacing: .5px; }
+.lp-selo-claro { border-color: #93c5fd; background: #eff6ff; color: #1e3a8a; }
+.lp-hero-visual { position: relative; }
+.lp-desk { display: none; border-radius: 14px; background: #0b1533; padding: 8px; box-shadow: 0 30px 80px rgba(3,10,40,.5), 0 0 0 1px rgba(34,211,238,.3); }
+.lp-desk-barra { display: flex; gap: 6px; padding: 2px 4px 8px; }
+.lp-desk-barra span { width: 9px; height: 9px; border-radius: 50%; background: #334155; }
+.lp-desk-tela { border-radius: 8px; overflow: hidden; background: #f2f5fc; display: grid; grid-template-columns: 120px 1fr; min-height: 300px; }
+.lp-desk-lado { background: #0b1460; padding: 12px 10px; display: grid; align-content: start; gap: 8px; font-size: 10px; color: rgba(255,255,255,.8); }
+.lp-desk-lado b { color: #fff; font-size: 11px; margin-bottom: 6px; }
+.lp-desk-lado span { padding: 5px 7px; border-radius: 6px; }
+.lp-desk-lado span.on { background: rgba(255,255,255,.14); color: #fff; }
+.lp-desk-corpo { padding: 12px; display: grid; gap: 10px; align-content: start; }
+.lp-desk-topo { background: var(--cx-azul); color: #fff; border-radius: 12px; padding: 12px 14px; }
+.lp-desk-topo small { font-size: 10px; color: rgba(255,255,255,.8); }
+.lp-desk-topo b { display: block; font-size: 22px; letter-spacing: -.5px; }
+.lp-desk-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lp-desk-card { background: #fff; border-radius: 12px; padding: 10px; font-size: 10px; color: #475569; box-shadow: 0 2px 8px rgba(30,58,138,.06); }
+.lp-desk-card b { display: block; color: #0f172a; font-size: 12px; margin-bottom: 6px; }
+.lp-anel { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; margin: 4px auto; font-weight: 800; color: #1d4ed8; font-size: 12px; }
+.lp-cel-junto { position: relative; }
+
+.lp-dest { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: center; }
+.lp-dest-itens { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 26px 0; }
+.lp-dest-item { display: flex; gap: 12px; }
+.lp-dest-item h3 { margin: 0 0 3px; font-size: 16px; }
+.lp-dest-item p { margin: 0; font-size: 14px; color: #475569; line-height: 1.5; }
+.lp-dest-item em { color: #1d4ed8; }
+.lp-dest-ic { width: 40px; height: 40px; border-radius: 12px; background: #eff6ff; color: #1d4ed8; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+.lp-dest-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.lp-btn-claro { border: 1.5px solid #1d4ed8; color: #1d4ed8 !important; background: #fff; }
+.lp-escuro { background: var(--cx-azul); color: #fff; box-shadow: var(--cx-brilho-topo); }
+.lp-escuro .lp-sub, .lp-escuro .lp-dest-item p { color: rgba(255,255,255,.88); }
+.lp-escuro .lp-dest-ic { background: rgba(255,255,255,.14); color: #a5f3fc; }
+
+.lp-pp { display: grid; grid-template-columns: 1fr; gap: 18px; counter-reset: pp; }
+.lp-pp-item { background: #fff; border-radius: 20px; border: 1.5px solid #dbe4f3; padding: 20px; display: grid; gap: 14px; align-content: start; }
+.lp-pp-item h3 { margin: 0; font-size: 17px; display: flex; gap: 10px; align-items: center; }
+.lp-pp-item p { margin: 0; font-size: 14px; color: #475569; line-height: 1.55; }
+.lp-pp-mini { border-radius: 14px; background: #f2f5fc; padding: 12px; font-size: 12px; display: grid; gap: 6px; }
+.lp-pp-mini div { background: #fff; border-radius: 10px; padding: 8px 10px; display: flex; justify-content: space-between; gap: 8px; }
+.lp-faixa { margin-top: 36px; text-align: center; }
+.lp-faixa p { font-size: 14px; color: #475569; margin: 0 0 12px; }
+.lp-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.lp-chips span { border: 1.5px solid #dbe4f3; background: #fff; border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #334155; }
+
+.lp-guia { display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center; }
+.lp-guia-rot { font-size: 13px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #1d4ed8; margin-bottom: 8px; }
+.lp-guia ol { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 18px; }
+.lp-guia li { display: flex; gap: 16px; }
+.lp-guia-n { font-size: 26px; font-weight: 800; color: #93c5fd; min-width: 40px; }
+.lp-guia h3 { margin: 0 0 4px; font-size: 17px; }
+.lp-guia p { margin: 0; font-size: 15px; color: #475569; line-height: 1.55; }
+
+.lp-ben { display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center; }
+.lp-ben ul { list-style: none; padding: 0; margin: 22px 0 26px; display: grid; gap: 12px; }
+.lp-ben li { display: flex; gap: 10px; font-size: 16px; color: #334155; }
+.lp-ben li i { color: #15803d; font-size: 21px; }
+.lp-ben-selos { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: #475569; }
+.lp-ben-selos span { display: flex; align-items: center; gap: 6px; }
+.lp-ben-selos i { font-size: 18px; color: #1d4ed8; }
+
+.lp-rec { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.lp-rec-card { background: #fff; border: 1.5px solid #dbe4f3; border-radius: 18px; padding: 20px; }
+.lp-rec-card h3 { margin: 12px 0 6px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.lp-rec-card p { margin: 0; font-size: 14px; color: #475569; line-height: 1.55; }
+.lp-rec-meio { display: none; }
+.lp-novo { font-size: 10px; font-weight: 800; background: #22d3ee; color: #0b1460; border-radius: 99px; padding: 2px 8px; }
+
+.lp-ajuda { max-width: 760px; margin: 22px auto 0; border-radius: 18px; background: #eff6ff; padding: 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+.lp-ajuda b { font-size: 16px; }
+.lp-ajuda p { margin: 2px 0 0; font-size: 14px; color: #475569; }
+
+.lp-rodape2 { background: #0b1460; color: rgba(255,255,255,.85); padding: 40px 16px 28px; font-size: 14px; }
+.lp-rodape2-in { max-width: 1100px; margin: 0 auto; display: grid; gap: 24px; }
+.lp-rodape2 nav { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.lp-rodape2 a { color: rgba(255,255,255,.88) !important; text-decoration: none; }
+.lp-rodape2 a:hover { text-decoration: underline; }
+.lp-rodape2-fim { border-top: 1px solid rgba(255,255,255,.15); padding-top: 18px; display: flex; flex-wrap: wrap; gap: 10px 22px; justify-content: space-between; font-size: 13px; }
+
+@media (min-width: 640px) {
+  .lp-dest-itens, .lp-pp, .lp-rec { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .lp-menu, .lp-comece { display: flex; }
+  .lp-hero-visual { display: grid; grid-template-columns: 1fr; }
+  .lp-desk { display: block; }
+  .lp-hero-visual .lp-cel { position: absolute; right: -24px; bottom: -48px; width: 190px; border-radius: 28px; padding: 7px; }
+  .lp-hero-visual .lp-cel .lp-tela { border-radius: 22px; zoom: .64; }
+  .lp-dest { grid-template-columns: 1.05fr .95fr; gap: 56px; }
+  .lp-dest.inv > :first-child { order: 2; }
+  .lp-pp { grid-template-columns: repeat(3, 1fr); }
+  .lp-guia, .lp-ben { grid-template-columns: 1fr 1fr; gap: 64px; }
+  .lp-guia > :first-child { order: 2; }
+  .lp-rec { grid-template-columns: repeat(4, 1fr); }
+  .lp-rec-meio { display: flex; grid-column: 2 / span 2; grid-row: 2 / span 2; align-items: center; justify-content: center; border-radius: 22px; background: var(--cx-azul); box-shadow: var(--cx-brilho); padding: 24px; }
+  .lp-rec-meio > .lp-quadro { width: 100%; box-shadow: none; }
+  .lp-rodape2-in { grid-template-columns: auto 1fr auto; align-items: center; }
+}
+`
+
+function DesktopInicio() {
+  return (
+    <div className="lp-desk" role="img" aria-label="Exemplo da tela Início do Compass One no computador, com números fictícios">
+      <div className="lp-desk-barra"><span /><span /><span /></div>
+      <div className="lp-desk-tela">
+        <div className="lp-desk-lado">
+          <b>Compass One</b>
+          <span className="on">Início</span><span>Lançamentos</span><span>Radar</span><span>Planejamento</span><span>Simulador</span>
+        </div>
+        <div className="lp-desk-corpo">
+          <div className="lp-desk-topo">
+            <small>Saldo atual · bancos e dinheiro</small><b>R$ 4.820,35</b>
+            <small>Saldo final previsto de outubro: R$ 3.912,10</small>
+          </div>
+          <div className="lp-desk-cards">
+            <div className="lp-desk-card"><b>Resumo do mês</b>
+              <div className="lp-anel" style={{ background: 'conic-gradient(#1d4ed8 0 82%, #e2e8f0 0)', WebkitMask: 'radial-gradient(circle, transparent 54%, #000 55%)' }} />
+              <div style={{ textAlign: 'center' }}>Despesas: 82% do plano</div>
+            </div>
+            <div className="lp-desk-card"><b>Plano do mês</b>
+              <div className="lp-anel" style={{ background: 'conic-gradient(#0891b2 0 75%, #e2e8f0 0)', WebkitMask: 'radial-gradient(circle, transparent 54%, #000 55%)' }} />
+              <div style={{ textAlign: 'center' }}>3 de 4 grupos dentro do plano</div>
+            </div>
+          </div>
+          <div className="lp-desk-card"><b>Contas da semana</b>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Internet · dia 29</span><b style={{ margin: 0, fontSize: 11 }}>R$ 119,90</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const DESTAQUE_SIMULADOR = [
+  { icone: 'ti-message-question', titulo: 'Pergunte do seu jeito', exemplo: '"Posso comprar uma geladeira de R$ 3.600?"' },
+  { icone: 'ti-arrows-diff', titulo: 'Compare as formas de pagar', exemplo: '"À vista, em 10× ou em 12×: qual pesa menos?"' },
+  { icone: 'ti-target-arrow', titulo: 'Veja a sua meta', exemplo: '"Se eu comprar, ainda guardo R$ 500 por mês?"' },
+  { icone: 'ti-user-check', titulo: 'Você no controle', exemplo: 'O Compass mostra o caminho; a decisão é sempre sua.' },
 ]
 
-const EXTRAS = [
-  { icone: 'ti-users', titulo: 'Conta compartilhada', texto: 'Convide quem divide as contas com você. Cada pessoa entra com o próprio login e vê as mesmas finanças.' },
-  { icone: 'ti-fingerprint', titulo: 'Entrar com a digital', texto: 'No celular, a digital ou o rosto abrem o app. Sem uso por 30 minutos, a tela trava sozinha.' },
-  { icone: 'ti-device-mobile', titulo: 'Celular e computador', texto: 'As mesmas informações nos dois. No celular, instale na tela inicial como um aplicativo.' },
-  { icone: 'ti-chart-arrows-vertical', titulo: 'Três cenários de previsão', texto: 'Pessimista, moderado ou otimista: você escolhe como o saldo do fim do mês é calculado.' },
-  { icone: 'ti-credit-card', titulo: 'Cartões e faturas', texto: 'Fechamento, vencimento e parcelas de cada cartão, com a fatura conferida contra a do banco.' },
-  { icone: 'ti-lock', titulo: 'Sem senha do banco', texto: 'O Compass One não se conecta ao seu banco e nunca pede a senha dele. Seus dados ficam só na sua conta.' },
+const DESTAQUE_PREVISAO = [
+  { icone: 'ti-telescope', titulo: 'Os próximos meses, hoje', texto: 'Com quanto cada mês vai terminar, até o fim do seu plano.' },
+  { icone: 'ti-alert-circle', titulo: 'O aperto aparece com antecedência', texto: 'Um mês no vermelho fica marcado no gráfico, com tempo de mudar o caminho.' },
+  { icone: 'ti-list-details', titulo: 'Cálculo aberto, linha a linha', texto: 'Toque no saldo previsto e veja o que entra e o que sai até o fim do mês.' },
+  { icone: 'ti-adjustments', titulo: 'Três cenários', texto: 'Pessimista, moderado ou otimista: você escolhe como a previsão é feita.' },
+]
+
+const RECURSOS = [
+  { icone: 'ti-shopping-cart', titulo: 'Posso comprar?', texto: 'Simule a compra no seu plano antes de decidir, à vista ou parcelado.', novo: true },
+  { icone: 'ti-telescope', titulo: 'Previsão do saldo', texto: 'Com quanto cada mês vai terminar, com o cálculo aberto.' },
+  { icone: 'ti-calendar-stats', titulo: 'Planejamento anual', texto: 'Plano do ano por categoria, com a meta de economia de cada mês.' },
+  { icone: 'ti-radar-2', titulo: 'Radar', texto: 'O mês em tempo real: quanto resta em cada grupo de gastos.' },
+  { icone: 'ti-plus', titulo: 'Lançar rápido', texto: 'Débito ou crédito, parcelado em até 24×, na fatura certa.' },
+  { icone: 'ti-refresh', titulo: 'Automáticos', texto: 'Salário e débito automático se marcam sozinhos; você só confere.' },
+  { icone: 'ti-users', titulo: 'Conta compartilhada', texto: 'As mesmas finanças para a família, cada um com o seu login.' },
+  { icone: 'ti-devices', titulo: 'Celular e computador', texto: 'Instale no celular e entre com a digital.' },
 ]
 
 export default function LandingPage() {
@@ -438,17 +513,29 @@ export default function LandingPage() {
 
   return (
     <div className="lp">
-      <style>{CSS}</style>
+      <style>{CSS + CSS2}</style>
 
+      {/* 1. Menu e 2. topo */}
       <header className="lp-topo">
         <nav className="lp-nav" aria-label="Principal">
           <Link to="/" className="lp-marca" aria-label="Compass One, página inicial">
             <LogoCompass size={36} /><NomeCompass />
           </Link>
-          <Link to="/login" className="lp-entrar">Entrar</Link>
+          <div className="lp-menu">
+            <a href="#posso-comprar">Posso comprar?</a>
+            <a href="#previsao">Previsão</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#planos">Planos</a>
+            <a href="#perguntas">Dúvidas</a>
+          </div>
+          <div className="lp-nav-acoes">
+            <Link to="/login" className="lp-entrar">Entrar</Link>
+            <Link to="/cadastro" className="lp-btn lp-btn-branco lp-comece" style={{ padding: '10px 18px', fontSize: 15 }}>Comece já</Link>
+          </div>
         </nav>
         <div className="lp-hero">
           <div className="lp-hero-txt">
+            <a href="#posso-comprar" className="lp-selo-novo"><b>NOVO</b>Simulador "Posso comprar?"</a>
             <h1>Saiba se cabe no bolso <em>antes de comprar</em>.</h1>
             <p>
               A maioria dos apps de finanças anota o que você já gastou. O Compass One olha para
@@ -456,7 +543,7 @@ export default function LandingPage() {
               muda esse caminho. Você decide com clareza; o Compass mostra o caminho.
             </p>
             <div className="lp-ctas">
-              <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar grátis <i className="ti ti-arrow-right" /></Link>
+              <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar agora <i className="ti ti-arrow-right" /></Link>
               <Link to="/login" className="lp-btn lp-btn-vazado">Já tenho conta</Link>
             </div>
             <ul className="lp-selos">
@@ -465,15 +552,154 @@ export default function LandingPage() {
               <li><i className="ti ti-lock" />Não pede a senha do banco</li>
             </ul>
           </div>
-          <CelularSimulador />
+          <div className="lp-hero-visual">
+            <DesktopInicio />
+            <CelularInicio />
+          </div>
         </div>
       </header>
 
       <main>
-        <section className="lp-sec" aria-labelledby="diferenca">
+        {/* 3. Destaque novo: o simulador */}
+        <section className="lp-sec" id="posso-comprar" aria-labelledby="t-sim" style={{ paddingTop: 110 }}>
+          <div className="lp-in lp-dest">
+            <div>
+              <span className="lp-selo-novo lp-selo-claro"><b>NOVO</b>Posso comprar?</span>
+              <h2 className="lp-h2" id="t-sim">Antes de comprar, pergunte ao seu plano</h2>
+              <p className="lp-sub" style={{ marginBottom: 0 }}>
+                Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do
+                seu plano, mês a mês, e mostra a forma mais barata entre as que cabem nele.
+              </p>
+              <div className="lp-dest-itens">
+                {DESTAQUE_SIMULADOR.map(d => (
+                  <div key={d.titulo} className="lp-dest-item">
+                    <span className="lp-dest-ic"><i className={`ti ${d.icone}`} /></span>
+                    <div><h3>{d.titulo}</h3><p><em>{d.exemplo}</em></p></div>
+                  </div>
+                ))}
+              </div>
+              <div className="lp-dest-btns">
+                <Link to="/cadastro" className="lp-btn lp-btn-azul">Testar grátis</Link>
+                <a href="#como-funciona" className="lp-btn lp-btn-claro">Ver como funciona</a>
+              </div>
+            </div>
+            <CelularSimulador />
+          </div>
+        </section>
+
+        {/* 4. Destaque: a previsão */}
+        <section className="lp-sec lp-escuro" id="previsao" aria-labelledby="t-prev">
+          <div className="lp-in lp-dest inv">
+            <div>
+              <span className="lp-selo-novo"><b>DIFERENCIAL</b>Previsão</span>
+              <h2 className="lp-h2" id="t-prev">Veja o seu futuro financeiro, mês a mês</h2>
+              <p className="lp-sub" style={{ marginBottom: 0 }}>
+                Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o
+                Compass calcula o saldo de cada um dos próximos meses.
+              </p>
+              <div className="lp-dest-itens">
+                {DESTAQUE_PREVISAO.map(d => (
+                  <div key={d.titulo} className="lp-dest-item">
+                    <span className="lp-dest-ic"><i className={`ti ${d.icone}`} /></span>
+                    <div><h3>{d.titulo}</h3><p>{d.texto}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <QuadroPrevisao />
+          </div>
+        </section>
+
+        {/* 5. Passo a passo */}
+        <section className="lp-sec" id="como-funciona" aria-labelledby="t-pp" style={{ background: '#f8faff' }}>
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="diferenca">Anotar gastos conta o passado. Planejar muda o futuro.</h2>
+              <h2 className="lp-h2" id="t-pp">Veja como é fácil começar</h2>
+              <p className="lp-sub">Sem planilha e sem precisar entender de finanças. Tudo pode ser aproximado e ajustado depois.</p>
+            </div>
+            <ol className="lp-pp" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <li className="lp-pp-item">
+                <h3><span className="lp-passo-n" style={{ margin: 0 }}>1</span>Conte um pouco sobre você</h3>
+                <p>Bancos e saldos, quanto recebe, cartões e as contas que paga todo mês. Uma pergunta por tela.</p>
+                <div className="lp-pp-mini"><div><span>Quanto você recebe?</span><b>R$ 5.200</b></div><div><span>Aluguel · dia 10</span><b>R$ 1.650</b></div></div>
+              </li>
+              <li className="lp-pp-item">
+                <h3><span className="lp-passo-n" style={{ margin: 0 }}>2</span>Receba um plano inicial</h3>
+                <p>O Compass monta um plano de 12 meses com o que você contou e mostra quanto sobra por mês.</p>
+                <div className="lp-pp-mini"><div><span>Plano de nov a out</span><b>12 meses</b></div><div><span>Sobra por mês</span><b style={{ color: '#15803d' }}>R$ 640</b></div></div>
+              </li>
+              <li className="lp-pp-item">
+                <h3><span className="lp-passo-n" style={{ margin: 0 }}>3</span>Decida com o plano na mão</h3>
+                <p>Anote os gastos, confira os saldos e, antes de comprar, pergunte ao simulador.</p>
+                <div className="lp-pp-mini"><div><span>Geladeira em 10×</span><b style={{ color: '#15803d' }}>cabe</b></div><div><span>Meta de R$ 500</span><b style={{ color: '#15803d' }}>de pé</b></div></div>
+              </li>
+            </ol>
+            <div className="lp-faixa">
+              <p>Funciona com o seu banco, qualquer que seja, e com o dinheiro da carteira:</p>
+              <div className="lp-chips">
+                {['Nubank', 'Itaú', 'Bradesco', 'Caixa', 'Banco do Brasil', 'Inter', 'Santander', 'Sicredi', 'Sicoob', 'C6', 'Mercado Pago', 'PicPay', 'Dinheiro'].map(b => <span key={b}>{b}</span>)}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 6. Guia em quatro passos */}
+        <section className="lp-sec" aria-labelledby="t-guia">
+          <div className="lp-in lp-guia">
+            <div>
+              <div className="lp-guia-rot">Organize o seu futuro</div>
+              <h2 className="lp-h2" id="t-guia">O caminho para guardar mais</h2>
+              <ol>
+                <li><span className="lp-guia-n">01</span><div><h3>Contas e cartões num só lugar</h3><p>Bancos, cartões e dinheiro, com o saldo de hoje e a fatura de cada cartão.</p></div></li>
+                <li><span className="lp-guia-n">02</span><div><h3>Um plano para o ano</h3><p>Quanto gastar em cada categoria e quanto guardar por mês.</p></div></li>
+                <li><span className="lp-guia-n">03</span><div><h3>Decida antes de comprar</h3><p>A previsão e o simulador mostram como cada escolha muda os próximos meses.</p></div></li>
+                <li><span className="lp-guia-n">04</span><div><h3>Acompanhe e ajuste</h3><p>O Radar mostra o mês em tempo real, e o plano se ajusta para os próximos meses.</p></div></li>
+              </ol>
+            </div>
+            <QuadroPlano />
+          </div>
+        </section>
+
+        {/* 7. Benefícios */}
+        <section className="lp-sec" aria-labelledby="t-ben" style={{ background: '#f8faff' }}>
+          <div className="lp-in lp-ben">
+            <div>
+              <div className="lp-guia-rot">Feito para a sua família</div>
+              <h2 className="lp-h2" id="t-ben">O planejamento financeiro que você sempre quis ter</h2>
+              <ul>
+                {['App sem anúncios', 'Anote um gasto em segundos, no celular ou no computador', 'Faturas de todos os cartões, com o dia de fechamento', 'Contas da semana e débitos automáticos na primeira tela', 'Conta compartilhada com quem divide as despesas com você'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
+              </ul>
+              <Link to="/cadastro" className="lp-btn lp-btn-azul">Começar agora</Link>
+              <div className="lp-ben-selos">
+                <span><i className="ti ti-gift" />Grátis</span>
+                <span><i className="ti ti-fingerprint" />Entrar com a digital</span>
+                <span><i className="ti ti-download" />Baixe seus dados quando quiser</span>
+              </div>
+            </div>
+            <QuadroRadar />
+          </div>
+        </section>
+
+        {/* 8. Grade de recursos */}
+        <section className="lp-sec" id="recursos" aria-labelledby="t-rec">
+          <div className="lp-in">
+            <div className="lp-centro">
+              <h2 className="lp-h2" id="t-rec">Nossos principais recursos</h2>
+              <p className="lp-sub">Planejamento, previsão e decisão no mesmo app.</p>
+            </div>
+            <div className="lp-rec">
+              {RECURSOS.slice(0, 5).map(r => <Recurso key={r.titulo} {...r} />)}
+              <div className="lp-rec-meio"><QuadroSimulador /></div>
+              {RECURSOS.slice(5).map(r => <Recurso key={r.titulo} {...r} />)}
+            </div>
+          </div>
+        </section>
+
+        {/* 9. No lugar dos depoimentos: o comparativo */}
+        <section className="lp-sec" aria-labelledby="t-dif" style={{ background: '#f8faff' }}>
+          <div className="lp-in">
+            <div className="lp-centro">
+              <h2 className="lp-h2" id="t-dif">Anotar gastos conta o passado. Planejar muda o futuro.</h2>
               <p className="lp-sub">Saber onde o dinheiro foi é o começo. O Compass One foi feito para a pergunta que vem depois: e agora, o que eu faço?</p>
             </div>
             <div className="lp-comp">
@@ -494,70 +720,18 @@ export default function LandingPage() {
                   <li><i className="ti ti-circle-check" />Mostra com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
                   <li><i className="ti ti-circle-check" />Um plano do ano, com a sua meta de economia</li>
                   <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar</li>
-                  <li><i className="ti ti-circle-check" />Responde se a compra cabe, antes de você comprar</li>
+                  <li><i className="ti ti-circle-check" />Mostra se a compra cabe no plano, antes de você comprar</li>
                 </ul>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="lp-sec" style={{ background: '#f8faff' }} aria-labelledby="como-comeca">
+        {/* Planos */}
+        <section className="lp-sec" id="planos" aria-labelledby="t-planos">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="como-comeca">Em poucos minutos você já tem um plano</h2>
-              <p className="lp-sub">Sem planilha e sem precisar entender de finanças. Tudo pode ser aproximado e ajustado depois.</p>
-            </div>
-            <ol className="lp-passos">
-              <li className="lp-passo"><div className="lp-passo-n">1</div><h3>Conte um pouco sobre você</h3><p>Bancos e saldos, quanto recebe, cartões e as contas que paga todo mês. Uma pergunta por tela.</p></li>
-              <li className="lp-passo"><div className="lp-passo-n">2</div><h3>Receba um plano inicial</h3><p>O app monta um plano de 12 meses com o que você contou e mostra quanto sobra por mês.</p></li>
-              <li className="lp-passo"><div className="lp-passo-n">3</div><h3>Acompanhe no dia a dia</h3><p>Anote os gastos, confira os saldos e veja no Radar se o mês está dentro do plano.</p></li>
-            </ol>
-          </div>
-        </section>
-
-        <section className="lp-sec" aria-labelledby="funcionalidades">
-          <div className="lp-in">
-            <div className="lp-centro">
-              <h2 className="lp-h2" id="funcionalidades">Planejamento, previsão e decisão no mesmo app</h2>
-              <p className="lp-sub">Do "posso comprar?" ao plano do ano, cada tela ajuda a decidir o próximo passo.</p>
-            </div>
-            {FUNCIONALIDADES.map((f, i) => (
-              <article key={f.tag} className={`lp-func${i % 2 ? ' inv' : ''}`}>
-                <div>
-                  <div className="lp-func-tag"><i className={`ti ${f.icone}`} />{f.tag}</div>
-                  <h3>{f.titulo}</h3>
-                  <p>{f.texto}</p>
-                  <ul className="lp-lista">
-                    {f.itens.map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
-                  </ul>
-                </div>
-                <div>{f.quadro}</div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="lp-sec" style={{ background: '#f8faff' }} aria-labelledby="mais">
-          <div className="lp-in">
-            <div className="lp-centro">
-              <h2 className="lp-h2" id="mais">Feito para o dia a dia de uma família</h2>
-              <p className="lp-sub">Para quem quer sair do vermelho, se organizar ou começar uma reserva.</p>
-            </div>
-            <div className="lp-extras">
-              {EXTRAS.map(e => (
-                <div key={e.titulo} className="lp-extra">
-                  <span className="lp-extra-ic"><i className={`ti ${e.icone}`} /></span>
-                  <div><h3>{e.titulo}</h3><p>{e.texto}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="lp-sec" aria-labelledby="planos">
-          <div className="lp-in">
-            <div className="lp-centro">
-              <h2 className="lp-h2" id="planos">Comece grátis</h2>
+              <h2 className="lp-h2" id="t-planos">Comece grátis</h2>
               <p className="lp-sub">Todas as funcionalidades estão liberadas no plano Grátis. Os outros planos chegam em breve.</p>
             </div>
             <div className="lp-planos">
@@ -566,7 +740,7 @@ export default function LandingPage() {
                 <h3>Grátis</h3>
                 <p>Acesso completo, sem limite de uso e sem cartão de crédito.</p>
                 <ul>
-                  {['Contas, cartões e categorias sem limite', 'Início, Lançar, Radar e Planejamento', 'Simulador de compras e de dívidas', 'Meta de economia', 'Conta compartilhada com a família'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
+                  {['Contas, cartões e categorias sem limite', 'Posso comprar? e previsão do saldo', 'Planejamento anual e meta de economia', 'Início, Lançar e Radar', 'Conta compartilhada com a família'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
                 </ul>
                 <Link to="/cadastro" className="lp-btn lp-btn-azul">Começar grátis</Link>
               </div>
@@ -586,34 +760,63 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="lp-sec" style={{ background: '#f8faff' }} aria-labelledby="perguntas">
+        {/* 10. Perguntas frequentes */}
+        <section className="lp-sec" id="perguntas" aria-labelledby="t-faq" style={{ background: '#f8faff' }}>
           <div className="lp-in">
-            <div className="lp-centro"><h2 className="lp-h2" id="perguntas" style={{ marginBottom: 32 }}>Perguntas frequentes</h2></div>
+            <div className="lp-centro"><h2 className="lp-h2" id="t-faq" style={{ marginBottom: 32 }}>Perguntas frequentes</h2></div>
             <div className="lp-faq">
               {PERGUNTAS_FREQUENTES.map(p => (
                 <details key={p.pergunta}><summary>{p.pergunta}</summary><p>{p.resposta}</p></details>
               ))}
             </div>
+            <div className="lp-ajuda">
+              <div><b>Ainda com dúvidas?</b><p>Escreva para o nosso suporte.</p></div>
+              <a href="mailto:suporte@compassone.app" className="lp-btn lp-btn-claro" style={{ padding: '11px 20px', fontSize: 15 }}>Falar com o suporte</a>
+            </div>
           </div>
         </section>
 
-        <section className="lp-sec lp-fim" aria-labelledby="comecar">
+        {/* 11. Chamada final */}
+        <section className="lp-sec lp-fim" aria-labelledby="t-fim">
           <div className="lp-in lp-centro">
-            <h2 className="lp-h2" id="comecar">Decida hoje como será o seu mês que vem</h2>
+            <h2 className="lp-h2" id="t-fim">Decida hoje como será o seu mês que vem</h2>
             <p className="lp-sub">Crie sua conta grátis e saiba, antes de comprar, se cabe no seu bolso.</p>
-            <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar grátis <i className="ti ti-arrow-right" /></Link>
+            <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar agora <i className="ti ti-arrow-right" /></Link>
           </div>
         </section>
       </main>
 
-      <footer className="lp-rodape">
-        <div>© {ano} Compass One · Finanças pessoais para brasileiros que querem ter o controle da própria vida financeira.</div>
-        <nav aria-label="Rodapé">
-          <Link to="/termos">Termos de uso</Link>
-          <Link to="/privacidade">Privacidade</Link>
-          <a href="mailto:suporte@compassone.app">Suporte</a>
-        </nav>
+      {/* 12. Rodapé */}
+      <footer className="lp-rodape2">
+        <div className="lp-rodape2-in">
+          <Link to="/" className="lp-marca" aria-label="Compass One"><LogoCompass size={30} /><NomeCompass /></Link>
+          <nav aria-label="Rodapé">
+            <a href="#posso-comprar">Posso comprar?</a>
+            <a href="#previsao">Previsão</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#planos">Planos</a>
+            <a href="#perguntas">Dúvidas</a>
+          </nav>
+          <Link to="/cadastro" className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Começar agora</Link>
+        </div>
+        <div className="lp-rodape2-in lp-rodape2-fim" style={{ marginTop: 24 }}>
+          <span>© {ano} Compass One · Finanças pessoais para quem quer decidir com clareza.</span>
+          <span style={{ display: 'flex', gap: 18 }}>
+            <Link to="/privacidade">Política de privacidade</Link>
+            <Link to="/termos">Termos de uso</Link>
+          </span>
+        </div>
       </footer>
+    </div>
+  )
+}
+
+function Recurso({ icone, titulo, texto, novo }: { icone: string; titulo: string; texto: string; novo?: boolean }) {
+  return (
+    <div className="lp-rec-card">
+      <span className="lp-extra-ic"><i className={`ti ${icone}`} /></span>
+      <h3>{titulo}{novo && <span className="lp-novo">NOVO</span>}</h3>
+      <p>{texto}</p>
     </div>
   )
 }
