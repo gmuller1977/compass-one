@@ -481,7 +481,7 @@ export default function LandingPage() {
                 <div className="lp-comp-rot">Apps de anotação</div>
                 <h3>Olham para trás</h3>
                 <ul>
-                  <li><i className="ti ti-history" />Mostram quanto você já gastou</li>
+                  <li><i className="ti ti-history" />Mostram quanto você já gastou e o saldo do mês atual</li>
                   <li><i className="ti ti-list" />Uma lista de receitas e despesas</li>
                   <li><i className="ti ti-alert-triangle" />O aperto aparece quando o mês já acabou</li>
                   <li><i className="ti ti-help" />Comprar ou esperar? A conta fica com você</li>
@@ -491,7 +491,7 @@ export default function LandingPage() {
                 <div className="lp-comp-rot">Compass One</div>
                 <h3>Olha para frente</h3>
                 <ul>
-                  <li><i className="ti ti-circle-check" />Mostra com quanto cada mês vai terminar</li>
+                  <li><i className="ti ti-circle-check" />Mostra com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
                   <li><i className="ti ti-circle-check" />Um plano do ano, com a sua meta de economia</li>
                   <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar</li>
                   <li><i className="ti ti-circle-check" />Responde se a compra cabe, antes de você comprar</li>
