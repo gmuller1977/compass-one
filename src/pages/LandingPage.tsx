@@ -420,6 +420,14 @@ const CSS2 = `
 .lp-ajuda b { font-size: 16px; }
 .lp-ajuda p { margin: 2px 0 0; font-size: 14px; color: #475569; }
 
+.lp-dor { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 900px; margin: 0 auto; padding: 0; list-style: none; }
+.lp-dor li { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1.5px solid #dbe4f3; border-radius: 16px; padding: 16px 18px; font-size: 16px; color: #334155; line-height: 1.5; }
+.lp-dor li i { color: #b45309; font-size: 22px; flex-shrink: 0; }
+.lp-virada { max-width: 760px; margin: 36px auto 0; text-align: center; font-size: 22px; font-weight: 800; letter-spacing: -.4px; line-height: 1.35; color: #0f172a; }
+.lp-virada em { font-style: normal; color: #1d4ed8; }
+.lp-pergunta { display: block; font-size: 14px; font-weight: 800; letter-spacing: .3px; color: #1d4ed8; margin-bottom: 10px; }
+.lp-escuro .lp-pergunta { color: #a5f3fc; }
+
 .lp-rodape2 { background: #0b1460; color: rgba(255,255,255,.85); padding: 40px 16px 28px; font-size: 14px; }
 .lp-rodape2-in { max-width: 1100px; margin: 0 auto; display: grid; gap: 24px; }
 .lp-rodape2 nav { display: flex; flex-wrap: wrap; gap: 14px 22px; }
@@ -428,7 +436,7 @@ const CSS2 = `
 .lp-rodape2-fim { border-top: 1px solid rgba(255,255,255,.15); padding-top: 18px; display: flex; flex-wrap: wrap; gap: 10px 22px; justify-content: space-between; font-size: 13px; }
 
 @media (min-width: 640px) {
-  .lp-dest-itens, .lp-pp, .lp-rec { grid-template-columns: repeat(2, 1fr); }
+  .lp-dest-itens, .lp-pp, .lp-rec, .lp-dor { grid-template-columns: repeat(2, 1fr); }
 }
 @media (min-width: 900px) {
   .lp-menu, .lp-comece { display: flex; }
@@ -522,10 +530,10 @@ export default function LandingPage() {
             <LogoCompass size={36} /><NomeCompass />
           </Link>
           <div className="lp-menu">
-            <a href="#posso-comprar">Posso comprar?</a>
             <a href="#previsao">Previsão</a>
+            <a href="#posso-comprar">Posso comprar?</a>
+            <a href="#sobrar">Fazer sobrar</a>
             <a href="#recursos">Recursos</a>
-            <a href="#planos">Planos</a>
             <a href="#perguntas">Dúvidas</a>
           </div>
           <div className="lp-nav-acoes">
@@ -535,12 +543,12 @@ export default function LandingPage() {
         </nav>
         <div className="lp-hero">
           <div className="lp-hero-txt">
-            <a href="#posso-comprar" className="lp-selo-novo"><b>NOVO</b>Simulador "Posso comprar?"</a>
-            <h1>Saiba se cabe no bolso <em>antes de comprar</em>.</h1>
+            <a href="#previsao" className="lp-selo-novo"><b>PLANEJAMENTO</b>que olha para frente</a>
+            <h1>Cansado de viver no limite? <em>Chegou a hora de saber qual caminho seguir e mudar.</em></h1>
             <p>
-              A maioria dos apps de finanças anota o que você já gastou. O Compass One olha para
-              frente: mostra com quanto cada um dos próximos meses vai terminar e como uma compra
-              muda esse caminho. Você decide com clareza; o Compass mostra o caminho.
+              O Compass One nasceu para ajudar você a prever o seu futuro e seguir um caminho mais
+              tranquilo e seguro: veja hoje como vão ser os seus próximos meses, decida melhor e
+              faça sobrar.
             </p>
             <div className="lp-ctas">
               <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar agora <i className="ti ti-arrow-right" /></Link>
@@ -560,11 +568,57 @@ export default function LandingPage() {
       </header>
 
       <main>
-        {/* 3. Destaque novo: o simulador */}
-        <section className="lp-sec" id="posso-comprar" aria-labelledby="t-sim" style={{ paddingTop: 110 }}>
+        {/* 3. A vida no limite: o problema, antes da ferramenta */}
+        <section className="lp-sec" id="no-limite" aria-labelledby="t-dor" style={{ paddingTop: 110, background: '#f8faff' }}>
+          <div className="lp-in">
+            <div className="lp-centro">
+              <h2 className="lp-h2" id="t-dor">Conhece essa rotina?</h2>
+              <p className="lp-sub">As contas estão em dia. Mesmo assim, todo mês parece uma corrida que termina no zero.</p>
+            </div>
+            <ul className="lp-dor">
+              {[
+                'O salário cai e, antes do fim do mês, já foi embora',
+                'A fatura chega maior do que você imaginava',
+                'Toda compra vem com a dúvida: será que dá?',
+                'Você quer guardar, mas nunca sobra nada para guardar',
+              ].map(t => <li key={t}><i className="ti ti-repeat" />{t}</li>)}
+            </ul>
+            <p className="lp-virada">
+              Não falta esforço. Falta enxergar o que vem pela frente.
+              <br /><em>Como seria a sua vida, e a da sua família, se você pudesse prever os próximos meses?</em>
+            </p>
+          </div>
+        </section>
+
+        {/* 4. Pergunta 1: prever o futuro */}
+        <section className="lp-sec lp-escuro" id="previsao" aria-labelledby="t-prev">
+          <div className="lp-in lp-dest inv">
+            <div>
+              <span className="lp-pergunta">E se você pudesse prever o seu futuro?</span>
+              <h2 className="lp-h2" id="t-prev">Veja hoje com quanto cada mês vai terminar</h2>
+              <p className="lp-sub" style={{ marginBottom: 0 }}>
+                Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o
+                Compass calcula o saldo de cada um dos próximos meses. O aperto deixa de ser
+                surpresa e vira algo que você vê chegar.
+              </p>
+              <div className="lp-dest-itens">
+                {DESTAQUE_PREVISAO.map(d => (
+                  <div key={d.titulo} className="lp-dest-item">
+                    <span className="lp-dest-ic"><i className={`ti ${d.icone}`} /></span>
+                    <div><h3>{d.titulo}</h3><p>{d.texto}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <QuadroPrevisao />
+          </div>
+        </section>
+
+        {/* 5. Pergunta 2: decidir melhor */}
+        <section className="lp-sec" id="posso-comprar" aria-labelledby="t-sim">
           <div className="lp-in lp-dest">
             <div>
-              <span className="lp-selo-novo lp-selo-claro"><b>NOVO</b>Posso comprar?</span>
+              <span className="lp-pergunta">Suas decisões seriam melhores?</span>
               <h2 className="lp-h2" id="t-sim">Antes de comprar, pergunte ao seu plano</h2>
               <p className="lp-sub" style={{ marginBottom: 0 }}>
                 Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do
@@ -587,31 +641,49 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 4. Destaque: a previsão */}
-        <section className="lp-sec lp-escuro" id="previsao" aria-labelledby="t-prev">
-          <div className="lp-in lp-dest inv">
+        {/* 6. Pergunta 3: fazer sobrar */}
+        <section className="lp-sec" id="sobrar" aria-labelledby="t-guia">
+          <div className="lp-in lp-guia">
             <div>
-              <span className="lp-selo-novo"><b>DIFERENCIAL</b>Previsão</span>
-              <h2 className="lp-h2" id="t-prev">Veja o seu futuro financeiro, mês a mês</h2>
+              <span className="lp-pergunta">Conseguiria fazer sobrar mais?</span>
+              <h2 className="lp-h2" id="t-guia">Um plano para o dinheiro sobrar, de propósito</h2>
               <p className="lp-sub" style={{ marginBottom: 0 }}>
-                Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o
-                Compass calcula o saldo de cada um dos próximos meses.
+                Quando você decide antes quanto quer guardar, a sobra deixa de ser o que restou
+                no fim do mês e passa a fazer parte do plano.
               </p>
-              <div className="lp-dest-itens">
-                {DESTAQUE_PREVISAO.map(d => (
-                  <div key={d.titulo} className="lp-dest-item">
-                    <span className="lp-dest-ic"><i className={`ti ${d.icone}`} /></span>
-                    <div><h3>{d.titulo}</h3><p>{d.texto}</p></div>
-                  </div>
-                ))}
-              </div>
+              <ol>
+                <li><span className="lp-guia-n">01</span><div><h3>Contas e cartões num só lugar</h3><p>Bancos, cartões e dinheiro, com o saldo de hoje e a fatura de cada cartão.</p></div></li>
+                <li><span className="lp-guia-n">02</span><div><h3>Um plano para o ano</h3><p>Quanto gastar em cada categoria e a sua meta de quanto guardar por mês.</p></div></li>
+                <li><span className="lp-guia-n">03</span><div><h3>Decida antes de comprar</h3><p>A previsão e o simulador mostram como cada escolha muda os próximos meses.</p></div></li>
+                <li><span className="lp-guia-n">04</span><div><h3>Acompanhe e ajuste</h3><p>O Radar mostra o mês em tempo real, e o plano se ajusta para os próximos meses.</p></div></li>
+              </ol>
             </div>
-            <QuadroPrevisao />
+            <QuadroPlano />
           </div>
         </section>
 
-        {/* 5. Passo a passo */}
-        <section className="lp-sec" id="como-funciona" aria-labelledby="t-pp" style={{ background: '#f8faff' }}>
+        {/* 7. Pergunta 4: sem surpresas */}
+        <section className="lp-sec" aria-labelledby="t-ben" style={{ background: '#f8faff' }}>
+          <div className="lp-in lp-ben">
+            <div>
+              <span className="lp-pergunta">Não teria surpresas ao fechar o mês?</span>
+              <h2 className="lp-h2" id="t-ben">O que vai sair já está na sua frente</h2>
+              <ul>
+                {['Contas da semana e débitos automáticos na primeira tela', 'Parcelas já lançadas nos meses em que vão cair', 'Faturas de todos os cartões, com o dia de fechamento', 'O Radar mostra, no meio do mês, quanto ainda resta em cada grupo', 'Conta compartilhada com quem divide as despesas com você'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
+              </ul>
+              <Link to="/cadastro" className="lp-btn lp-btn-azul">Começar agora</Link>
+              <div className="lp-ben-selos">
+                <span><i className="ti ti-gift" />Grátis</span>
+                <span><i className="ti ti-fingerprint" />Entrar com a digital</span>
+                <span><i className="ti ti-download" />Baixe seus dados quando quiser</span>
+              </div>
+            </div>
+            <QuadroRadar />
+          </div>
+        </section>
+
+        {/* 8. Como começar */}
+        <section className="lp-sec" id="como-funciona" aria-labelledby="t-pp">
           <div className="lp-in">
             <div className="lp-centro">
               <h2 className="lp-h2" id="t-pp">Veja como é fácil começar</h2>
@@ -643,45 +715,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 6. Guia em quatro passos */}
-        <section className="lp-sec" aria-labelledby="t-guia">
-          <div className="lp-in lp-guia">
-            <div>
-              <div className="lp-guia-rot">Organize o seu futuro</div>
-              <h2 className="lp-h2" id="t-guia">O caminho para guardar mais</h2>
-              <ol>
-                <li><span className="lp-guia-n">01</span><div><h3>Contas e cartões num só lugar</h3><p>Bancos, cartões e dinheiro, com o saldo de hoje e a fatura de cada cartão.</p></div></li>
-                <li><span className="lp-guia-n">02</span><div><h3>Um plano para o ano</h3><p>Quanto gastar em cada categoria e quanto guardar por mês.</p></div></li>
-                <li><span className="lp-guia-n">03</span><div><h3>Decida antes de comprar</h3><p>A previsão e o simulador mostram como cada escolha muda os próximos meses.</p></div></li>
-                <li><span className="lp-guia-n">04</span><div><h3>Acompanhe e ajuste</h3><p>O Radar mostra o mês em tempo real, e o plano se ajusta para os próximos meses.</p></div></li>
-              </ol>
-            </div>
-            <QuadroPlano />
-          </div>
-        </section>
-
-        {/* 7. Benefícios */}
-        <section className="lp-sec" aria-labelledby="t-ben" style={{ background: '#f8faff' }}>
-          <div className="lp-in lp-ben">
-            <div>
-              <div className="lp-guia-rot">Feito para a sua família</div>
-              <h2 className="lp-h2" id="t-ben">O planejamento financeiro que você sempre quis ter</h2>
-              <ul>
-                {['App sem anúncios', 'Anote um gasto em segundos, no celular ou no computador', 'Faturas de todos os cartões, com o dia de fechamento', 'Contas da semana e débitos automáticos na primeira tela', 'Conta compartilhada com quem divide as despesas com você'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
-              </ul>
-              <Link to="/cadastro" className="lp-btn lp-btn-azul">Começar agora</Link>
-              <div className="lp-ben-selos">
-                <span><i className="ti ti-gift" />Grátis</span>
-                <span><i className="ti ti-fingerprint" />Entrar com a digital</span>
-                <span><i className="ti ti-download" />Baixe seus dados quando quiser</span>
-              </div>
-            </div>
-            <QuadroRadar />
-          </div>
-        </section>
-
-        {/* 8. Grade de recursos */}
-        <section className="lp-sec" id="recursos" aria-labelledby="t-rec">
+        {/* 9. Grade de recursos */}
+        <section className="lp-sec" id="recursos" aria-labelledby="t-rec" style={{ background: '#f8faff' }}>
           <div className="lp-in">
             <div className="lp-centro">
               <h2 className="lp-h2" id="t-rec">Nossos principais recursos</h2>
@@ -695,32 +730,32 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 9. No lugar dos depoimentos: o comparativo */}
-        <section className="lp-sec" aria-labelledby="t-dif" style={{ background: '#f8faff' }}>
+        {/* 10. No lugar dos depoimentos: o comparativo */}
+        <section className="lp-sec" aria-labelledby="t-dif">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-dif">Anotar gastos conta o passado. Planejar muda o futuro.</h2>
-              <p className="lp-sub">Saber onde o dinheiro foi é o começo. O Compass One foi feito para a pergunta que vem depois: e agora, o que eu faço?</p>
+              <h2 className="lp-h2" id="t-dif">A vida no limite × a vida com previsão</h2>
+              <p className="lp-sub">Anotar gastos conta o passado. Para sair do limite, é preciso enxergar o que vem pela frente.</p>
             </div>
             <div className="lp-comp">
               <div className="lp-comp-col lp-comp-outros">
-                <div className="lp-comp-rot">Apps de anotação</div>
-                <h3>Olham para trás</h3>
+                <div className="lp-comp-rot">No limite</div>
+                <h3>Você descobre depois</h3>
                 <ul>
-                  <li><i className="ti ti-history" />Mostram quanto você já gastou e o saldo do mês atual</li>
-                  <li><i className="ti ti-list" />Uma lista de receitas e despesas</li>
+                  <li><i className="ti ti-history" />Você sabe quanto já gastou, não com quanto vai terminar</li>
                   <li><i className="ti ti-alert-triangle" />O aperto aparece quando o mês já acabou</li>
-                  <li><i className="ti ti-help" />Comprar ou esperar? A conta fica com você</li>
+                  <li><i className="ti ti-help" />Comprar ou esperar? Decide no escuro</li>
+                  <li><i className="ti ti-coin-off" />Guardar fica para quando sobrar, e não sobra</li>
                 </ul>
               </div>
               <div className="lp-comp-col lp-comp-nos">
-                <div className="lp-comp-rot">Compass One</div>
-                <h3>Olha para frente</h3>
+                <div className="lp-comp-rot">Com o Compass One</div>
+                <h3>Você vê antes</h3>
                 <ul>
-                  <li><i className="ti ti-circle-check" />Mostra com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
-                  <li><i className="ti ti-circle-check" />Um plano do ano, com a sua meta de economia</li>
+                  <li><i className="ti ti-circle-check" />Com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
                   <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar</li>
-                  <li><i className="ti ti-circle-check" />Mostra se a compra cabe no plano, antes de você comprar</li>
+                  <li><i className="ti ti-circle-check" />Se a compra cabe no plano, antes de você comprar</li>
+                  <li><i className="ti ti-circle-check" />Guardar vira meta do mês, decidida no começo</li>
                 </ul>
               </div>
             </div>
@@ -728,7 +763,7 @@ export default function LandingPage() {
         </section>
 
         {/* Planos */}
-        <section className="lp-sec" id="planos" aria-labelledby="t-planos">
+        <section className="lp-sec" id="planos" aria-labelledby="t-planos" style={{ background: '#f8faff' }}>
           <div className="lp-in">
             <div className="lp-centro">
               <h2 className="lp-h2" id="t-planos">Comece grátis</h2>
@@ -760,8 +795,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 10. Perguntas frequentes */}
-        <section className="lp-sec" id="perguntas" aria-labelledby="t-faq" style={{ background: '#f8faff' }}>
+        {/* 11. Perguntas frequentes */}
+        <section className="lp-sec" id="perguntas" aria-labelledby="t-faq">
           <div className="lp-in">
             <div className="lp-centro"><h2 className="lp-h2" id="t-faq" style={{ marginBottom: 32 }}>Perguntas frequentes</h2></div>
             <div className="lp-faq">
@@ -776,23 +811,24 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 11. Chamada final */}
+        {/* 12. Chamada final */}
         <section className="lp-sec lp-fim" aria-labelledby="t-fim">
           <div className="lp-in lp-centro">
-            <h2 className="lp-h2" id="t-fim">Decida hoje como será o seu mês que vem</h2>
-            <p className="lp-sub">Crie sua conta grátis e saiba, antes de comprar, se cabe no seu bolso.</p>
+            <h2 className="lp-h2" id="t-fim">Veja hoje como vão ser os seus próximos meses</h2>
+            <p className="lp-sub">Crie sua conta grátis, monte o seu plano e decida com o futuro na sua frente.</p>
             <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar agora <i className="ti ti-arrow-right" /></Link>
           </div>
         </section>
       </main>
 
-      {/* 12. Rodapé */}
+      {/* 13. Rodapé */}
       <footer className="lp-rodape2">
         <div className="lp-rodape2-in">
           <Link to="/" className="lp-marca" aria-label="Compass One"><LogoCompass size={30} /><NomeCompass /></Link>
           <nav aria-label="Rodapé">
-            <a href="#posso-comprar">Posso comprar?</a>
             <a href="#previsao">Previsão</a>
+            <a href="#posso-comprar">Posso comprar?</a>
+            <a href="#sobrar">Fazer sobrar</a>
             <a href="#recursos">Recursos</a>
             <a href="#planos">Planos</a>
             <a href="#perguntas">Dúvidas</a>
@@ -800,7 +836,7 @@ export default function LandingPage() {
           <Link to="/cadastro" className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Começar agora</Link>
         </div>
         <div className="lp-rodape2-in lp-rodape2-fim" style={{ marginTop: 24 }}>
-          <span>© {ano} Compass One · Finanças pessoais para quem quer decidir com clareza.</span>
+          <span>© {ano} Compass One · Planejamento financeiro para quem quer sair do limite.</span>
           <span style={{ display: 'flex', gap: 18 }}>
             <Link to="/privacidade">Política de privacidade</Link>
             <Link to="/termos">Termos de uso</Link>
