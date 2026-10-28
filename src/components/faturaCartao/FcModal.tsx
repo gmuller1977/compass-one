@@ -2,6 +2,7 @@ import React from 'react'
 import type { Conta } from '../../context/AppContext'
 import { COR, NOMES_MESES, type DadosMes } from './FcShared'
 import ModalTopo from '../ModalTopo'
+import { mascaraCentavos } from '../../utils/moeda'
 
 type Props = {
   modalFatura: boolean
@@ -40,9 +41,11 @@ export default function FcModal({
           titulo={`Qual é o valor atual da fatura de ${nomeMes}?`} id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
           subtitulo={`Fatura de ${nomeMes} de ${anoVenc}. Informe o valor atual do cartão para verificar se todos os lançamentos foram feitos.`} />
         <div style={{padding:'18px 24px 22px'}}>
-        <input inputMode="decimal" autoFocus
-          value={modalFaturaValor}
-          onChange={e => setModalFaturaValor(e.target.value)}
+        {/* Vírgula automática, como o saldo do banco (28/10/2026, pedido do
+            Guilherme): "12345" vira "123,45". A fatura não fica negativa. */}
+        <input inputMode="numeric" autoFocus
+          value={mascaraCentavos(modalFaturaValor)}
+          onChange={e => setModalFaturaValor(mascaraCentavos(e.target.value))}
           onFocus={e => e.target.select()}
           onKeyDown={e => {
             if (e.key === 'Enter') confirmarModalFatura()
