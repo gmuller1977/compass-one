@@ -1,13 +1,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, 'Inter', sans-serif; }
-/* Azul da identidade (24/10/2026, "ar neon", versão B · Elétrico, escolha do
-   Guilherme). Uma fonte só para o gradiente e o brilho: os componentes leem
-   estas variáveis. O extremo claro (#1b35c8) tem o mesmo brilho de #1e40af
-   (a regra do CLAUDE.md): branco 8,8:1. */
+/* Azul da identidade (24/10/2026, "ar neon", escolha do Guilherme). Uma
+   fonte só para o gradiente e o brilho: os componentes leem estas variáveis.
+   O fundo ficou mais calmo em 28/10/2026 (Guilherme: "no mobile o azul está
+   muito intenso"; opção A · Marinho suave, no celular e no computador): era
+   #0b1460 → #1b35c8. O brilho ciano não mudou. Extremo claro #26408f: branco
+   9,5:1, rótulo a 75% 6,1:1 (a regra do #1e40af segue). */
 :root {
-  --cx-azul: linear-gradient(160deg, #0b1460 0%, #1b35c8 100%);
+  --cx-azul: linear-gradient(160deg, #101d4f 0%, #26408f 100%);
   --cx-neon: #22d3ee;
-  --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.55), 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(27,53,200,.45), 0 0 22px rgba(34,211,238,.18);
+  --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.55), 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(38,64,143,.45), 0 0 22px rgba(34,211,238,.18);
   --cx-brilho-topo: inset 0 -2px 0 rgba(34,211,238,.9), 0 10px 34px rgba(34,211,238,.28);
   /* Gráfico em card azul (24/10/2026, Guilherme: "nos cards azul, onde tiver
      gráfico, trilho branco e azul neon"). Preenchimento contra o trilho

@@ -3562,6 +3562,11 @@ brilho ciano (`#22d3ee`) vem de `--cx-brilho` (cartões azuis),
 brilho de `#1e40af`: branco 8,8:1, rótulo a 75% passa como antes. Azul novo
 usa a variável, nunca o hex. As notas que citam `#0f2878 → #1e40af` são
 histórico. Variantes mostradas: A (mesmo azul + halo) e C (quase preto).
+**O fundo ficou mais calmo** (28/10/2026, Guilherme: "no mobile o azul está
+muito intenso"; escolheu a A · Marinho suave, nos dois): `--cx-azul` é
+`#101d4f → #26408f` (branco 9,5:1, rótulo a 75% 6,1:1) e a barra do
+sistema (`theme-color`) `#101d4f`. O brilho ciano não mudou. Mostrados e
+preteridos: Azul profundo, Ardósia e Índigo (`analises/azul-celular/`).
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
