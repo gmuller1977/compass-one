@@ -50,6 +50,24 @@ jobs:
           sudo apt-get install -y -qq postgresql-client-17
           /usr/lib/postgresql/17/bin/pg_dump --version
 
+      # Mostra a forma do endereço sem a senha (só o tamanho e se tem símbolos
+      # que quebram a URL), para achar erro de colagem no segredo.
+      - name: Conferir o endereço
+        if: steps.segredos.outputs.ok == 'true'
+        run: |
+          python3 - <<'EOF'
+          import os, urllib.parse as u
+          url = os.environ['DB_URL']
+          p = u.urlsplit(url.strip())
+          senha = p.password or ''
+          print('espaço ou quebra de linha nas pontas:', url != url.strip())
+          print('esquema:', p.scheme, '| usuário:', p.username, '| host:', p.hostname, '| porta:', p.port, '| banco:', p.path)
+          print('senha: tamanho', len(senha), '| colchetes:', '[' in senha or ']' in senha,
+                '| YOUR-PASSWORD:', 'YOUR-PASSWORD' in url.upper(),
+                '| símbolos @#/?%:', any(c in senha for c in '@#/?%:'))
+          print('arrobas no endereço:', url.count('@'))
+          EOF
+
       - name: Copiar o banco
         if: steps.segredos.outputs.ok == 'true'
         run: |
