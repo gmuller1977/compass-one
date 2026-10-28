@@ -8,6 +8,12 @@ body { font-family: -apple-system, 'Inter', sans-serif; }
    9,5:1, rótulo a 75% 6,1:1 (a regra do #1e40af segue). */
 :root {
   --cx-azul: linear-gradient(160deg, #101d4f 0%, #26408f 100%);
+  /* Bloco azul em duas partes (Lançamentos no celular: cabeçalho + saldo ou
+     fatura): a de cima é sólida na cor do início, a de baixo desce dela na
+     vertical. Com o gradiente diagonal nas duas, ele recomeçava embaixo das
+     abas e o azul ficava cortado (28/10/2026, relatado pelo Guilherme). */
+  --cx-azul-inicio: #101d4f;
+  --cx-azul-continua: linear-gradient(180deg, #101d4f 0%, #26408f 100%);
   --cx-neon: #22d3ee;
   --cx-brilho: inset 0 0 0 1px rgba(34,211,238,.55), 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(38,64,143,.45), 0 0 22px rgba(34,211,238,.18);
   --cx-brilho-topo: inset 0 -2px 0 rgba(34,211,238,.9), 0 10px 34px rgba(34,211,238,.28);

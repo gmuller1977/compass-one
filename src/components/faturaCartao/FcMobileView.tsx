@@ -146,7 +146,7 @@ export default function FcMobileView({
 
       {/* TOPO AZUL — continua o cabeçalho de Lançamentos: cartões em
           pílulas, o mês da fatura e o total dela em destaque. */}
-      <div style={{background:'var(--cx-azul)',borderRadius:'0 0 28px 28px',boxShadow:'var(--cx-brilho-topo)',
+      <div style={{background:'var(--cx-azul-continua)',borderRadius:'0 0 28px 28px',boxShadow:'var(--cx-brilho-topo)',
         padding:'12px 16px 20px',flexShrink:0}}>
         {contasCartao.length > 1 && (
           <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none' as const,marginBottom:12}}>

@@ -77,12 +77,14 @@ export default function NleHeader({
     )
   }
 
-  // Celular: o topo azul dos apps de banco, como a Bússola e o Radar
-  // (#0f2878 → #1e40af — a regra do #1e40af). Ele continua no subcabeçalho
-  // (ou no topo da fatura, no Cartão), que fecha o bloco com os cantos
-  // arredondados.
+  // Celular: o topo azul dos apps de banco, como a Bússola e o Radar. Ele
+  // continua no subcabeçalho (ou no topo da fatura, no Cartão), que fecha o
+  // bloco com os cantos arredondados. Sólido na cor de início do gradiente,
+  // que o subcabeçalho continua (--cx-azul-continua, em index.css). Fica por
+  // cima dele: o brilho do subcabeçalho também sobe e clareava a faixa das
+  // abas, desenhando a emenda.
   return (
-    <div style={{background:'var(--cx-azul)',
+    <div style={{background:'var(--cx-azul-inicio)',position:'relative',zIndex:1,
       padding:'calc(14px + env(safe-area-inset-top)) 16px 4px',flexShrink:0}}>
       {/* Título e o mês com setas ao lado, como o ano no Planejamento (pedido
           do Guilherme em 13/10/2026: o mês ocupava uma linha inteira no meio
