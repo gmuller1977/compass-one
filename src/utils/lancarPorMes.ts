@@ -30,6 +30,12 @@ export function mesDoGastoNoCartao(
   return venceNoMesSeguinte ? proximoMes(fatura) : fatura
 }
 
+/** A aba da fatura EM ABERTO do cartão em Lançamentos > Cartão (o mês do vencimento). */
+export const faturaAbertaNaTela = (cartao: Pick<Conta, 'diaFechamento' | 'diaVencimento'>, hoje: Date): MesRef =>
+  mesDoGastoNoCartao(cartao, hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+
+export const mesmoMes = (a: MesRef, b: MesRef) => indice(a) === indice(b)
+
 /** Débito: os bancos do disponível (investimento fica fora) e a carteira. */
 export const bancosDoDebito = (contas: Conta[]): Conta[] => contas.filter(ehContaDisponivel)
 

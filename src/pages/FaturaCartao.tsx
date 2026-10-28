@@ -18,6 +18,7 @@ import FcConfirmModal from '../components/faturaCartao/FcConfirmModal'
 import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -203,25 +204,29 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
     setExtratoData(extrato as unknown as Record<string, ExtratoDadosMes>)
   }, [dados, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-avança para a aba do mês de vencimento da fatura em aberto — só ao
-  // ABRIR a tela. Trocar de cartão (ou o app reler as contas) mantém o mês
-  // escolhido (22/10/2026, pedido do Guilherme: no cartão B pulava para a
-  // fatura atual).
-  const mesPosicionado = useRef(false)
+  // Auto-avança para a aba do mês de vencimento da fatura em aberto ao ABRIR
+  // a tela. Trocar de cartão mantém o mês escolhido (22/10/2026, pedido do
+  // Guilherme: no cartão B pulava para a fatura atual), SALVO quando o mês na
+  // tela era a fatura em aberto do cartão anterior: aí vai para a fatura em
+  // aberto do novo (28/10/2026, pedido dele: Sicredi fechado em dezembro, XP
+  // aberto em novembro, e a troca deixava em dezembro). Mês olhado de
+  // propósito, que não é a fatura em aberto, fica. `faturaAbertaNaTela`.
+  const contaPosicionada = useRef<string | null>(null)
   useEffect(() => {
-    if (mesPosicionado.current) return
     const conta = contas.find(c => c.id === contaId)
     if (!conta) return
-    mesPosicionado.current = true
-    const diaFech = conta?.diaFechamento ?? 1
-    const diaVenc = conta?.diaVencimento ?? 1
-    const offset  = diaVenc < diaFech ? 1 : 0
-    const rawM = (diaHoje >= diaFech ? mesHoje + 1 : mesHoje) + offset
-    let tabMes = rawM, tabAno = anoHoje
-    if (tabMes > 11) { tabMes -= 12; tabAno++ }
-    setMes(tabMes); setAno(tabAno)
-    setDiaSel(diaHoje >= diaFech ? 1 : diaHoje)
-  }, [contaId, contas])
+    const anterior = contaPosicionada.current
+    if (anterior === contaId) return
+    contaPosicionada.current = contaId
+    const aberta = faturaAbertaNaTela(conta, hoje)
+    if (anterior !== null) {
+      const contaAnterior = contas.find(c => c.id === anterior)
+      if (!contaAnterior || !mesmoMes(faturaAbertaNaTela(contaAnterior, hoje), { ano, mes })) return
+      if (mesmoMes(aberta, { ano, mes })) return
+    }
+    setMes(aberta.mes); setAno(aberta.ano)
+    setDiaSel(diaDefaultPara(aberta.mes, aberta.ano))
+  }, [contaId, contas]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (mobileSelecionado) setContaId(mobileSelecionado) }, [mobileSelecionado])
   useEffect(() => { onCartaoChange?.(contaId) }, [contaId]) // eslint-disable-line react-hooks/exhaustive-deps

@@ -1019,6 +1019,12 @@ inexistente é movido ao carregar e volta ao banco na gravação
 membro não move, fica com o que o administrador gravar.
 No mesmo dia: a janela "valor da fatura" só abre na fatura EM ABERTO de
 agora (a que fecha no próximo fechamento); futura, fechada ou paga não pede.
+**Trocar de cartão leva à fatura em aberto do novo, se a tela estava na
+do anterior** (28/10/2026, relatado pelo Guilherme: Sicredi fechado em
+dezembro, XP ainda aberto em novembro, e a troca deixava dezembro). Revê o
+"trocar de cartão mantém o mês" de 22/10 só nesse caso: mês olhado de
+propósito, que não é a fatura em aberto do cartão anterior, fica.
+`faturaAbertaNaTela` em `lancarPorMes.ts`; computador e celular; `prova101` (9).
 
 **Compra NO DIA do fechamento já vai para a fatura seguinte** (23/10/2026,
 pedido do Guilherme: "se fecha dia 22, lançamento no dia 22 deve ir para a
