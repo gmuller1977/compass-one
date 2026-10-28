@@ -86,7 +86,12 @@ export const RADAR_AMARELO_CLARO = '#a16207'
 // número usa o tom mais vivo que passa: #15803d (5,0) e #c2410c (5,2).
 export const RADAR_BARRA = { bom: '#4ade80', atencao: '#4ade80', ruim: RADAR_AMARELO } as const
 export const RADAR_TEXTO_AZUL = { bom: NUMERO_NO_AZUL, atencao: NUMERO_NO_AZUL, ruim: NUMERO_NO_AZUL } as const
-export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: RADAR_AMARELO_CLARO } as const
+// "Passou" no BRANCO é o VERMELHO do grupo, #b91c1c (28/10/2026, Guilherme:
+// a categoria aberta mostrava "passou" em amarelo escuro e o grupo em
+// vermelho; "deve ser o mesmo vermelho do grupo"). 6,5 no branco, 5,0 no
+// trilho #e2e8f0. O amarelo escuro acima segue onde não é o Radar.
+export const RADAR_VERMELHO_CLARO = '#b91c1c'
+export const RADAR_TEXTO_CLARO = { bom: '#15803d', atencao: '#15803d', ruim: RADAR_VERMELHO_CLARO } as const
 export const RADAR_TRILHO_ESCURO = '#1e3a8a'
 // A barra no BRANCO é da cor do número (24/10/2026, Guilherme: "a barra
 // laranja pode ser o mesmo laranja do número"). O #c2410c no trilho
