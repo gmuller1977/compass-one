@@ -37,6 +37,9 @@ const MAIS: { icon: string; label: string; path: string; emBreve?: boolean }[] =
   { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
 ]
 
+/** Rótulo e ícone inativos na barra azul: 75% de branco. */
+const INATIVO = 'rgba(255,255,255,.75)'
+
 export default function BottomNav() {
   const isMobile = useIsMobile()
   const navigate  = useNavigate()
@@ -75,9 +78,10 @@ export default function BottomNav() {
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
       gap: 2, padding: '4px 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
     }}>
-      {/* Ícone desenhado (Tabler), na cor do rótulo: azul ativo, textoSuave
-          inativo (4,76:1 no branco). Pedido do Guilherme em 13/10/2026. */}
-      <span aria-hidden style={{ fontSize: 24, lineHeight: 1, position: 'relative', color: active ? COR.azul : COR.textoSuave }}>
+      {/* Ícone desenhado (Tabler), na cor do rótulo. A barra é azul desde
+          28/10/2026 (pedido do Guilherme: "fundo azul e ícones brancos"):
+          ativo branco, inativo a 75% (5,1:1 no extremo claro, #26408f). */}
+      <span aria-hidden style={{ fontSize: 24, lineHeight: 1, position: 'relative', color: active ? '#fff' : INATIVO }}>
         <i className={`ti ${icon}`} />
         {badge > 0 && (
           // Branco sobre #b91c1c: 6,47:1.
@@ -86,12 +90,11 @@ export default function BottomNav() {
             textAlign: 'center', border: '2px solid #fff' }}>{badge}</span>
         )}
       </span>
-      {/* Inativo em textoSuave (4,76:1 no branco): o #94a3b8 de antes dava 2,6.
-          12 px, não 10: "letras pequenas" foi a queixa do redesenho do celular. */}
-      <span style={{ fontSize: 12, letterSpacing: -0.2, fontWeight: active ? 700 : 500, color: active ? COR.azul : COR.textoSuave, whiteSpace: 'nowrap' }}>
+      {/* 12 px, não 10: "letras pequenas" foi a queixa do redesenho do celular. */}
+      <span style={{ fontSize: 12, letterSpacing: -0.2, fontWeight: active ? 700 : 500, color: active ? '#fff' : INATIVO, whiteSpace: 'nowrap' }}>
         {label}
       </span>
-      {active && <span style={{ width: 4, height: 4, borderRadius: '50%', background: COR.azul, marginTop: 1 }} />}
+      {active && <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', marginTop: 1 }} />}
     </button>
   )
 
@@ -138,7 +141,7 @@ export default function BottomNav() {
       )}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: '#fff', borderTop: '1px solid #eef2f8', boxShadow: '0 -4px 20px rgba(15,40,120,.06)',
+        background: 'var(--cx-azul)', boxShadow: 'inset 0 2px 0 rgba(34,211,238,.9), 0 -6px 24px rgba(34,211,238,.18)',
         padding: '8px 0 calc(14px + env(safe-area-inset-bottom))',
         display: 'flex', zIndex: 100,
       }}>

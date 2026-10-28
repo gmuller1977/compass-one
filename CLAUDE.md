@@ -3396,6 +3396,9 @@ ARRASTANDO a barra para cima; o arrastar saiu. O "Mais" abre a folha com
 Planejamento, Simulador, Investimentos (em breve), Configurações e Indicar
 amigos (o Norte quando religado). As notas abaixo sobre "Comprar?" e Norte
 na barra são histórico.
+A barra é AZUL (`var(--cx-azul)`, linha ciano em cima) com ícones e rótulos
+brancos: ativo branco em negrito com o ponto, inativo a 75% (28/10/2026,
+pedido do Guilherme: "menu celular, fundo azul e ícones branco").
 
 **Lançamentos no celular, no padrão dos apps de banco** (12/10/2026, pedido
 do Guilherme: "o mesmo trabalho que fizemos na tela de Início e Quick"). O
