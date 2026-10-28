@@ -11,7 +11,7 @@ import type { DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import { AnelGrupo } from '../components/acompanhamento/EvolucaoGrupo'
 import {
-  DIAS_PARA_LEMBRAR, caminhoDoObjetivo, diasSemAtualizar, isoDe, movimentosDoMes, rendeuPercentual, resumoDosInvestimentos,
+  DIAS_PARA_LEMBRAR, aplicadoNoMes, caminhoDoObjetivo, diasSemAtualizar, isoDe, movimentosDoMes, rendeuPercentual, resumoDosInvestimentos,
   type HistoricoInvestimento, type MovimentoInvestimento, type Objetivo, type ParteDoObjetivo, type PontoDaSerie,
 } from '../utils/investimentos'
 
@@ -36,7 +36,7 @@ export default function Investimentos() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
-  const { contas, extratoData, user, compartilhamento } = useApp()
+  const { contas, extratoData, user, compartilhamento, planos } = useApp()
   const admin = compartilhamento.papel !== 'membro'
   const { objetivos, faltaMigracao, salvar, excluir } = useObjetivos(user?.id, admin)
   const agora = new Date()
@@ -48,6 +48,13 @@ export default function Investimentos() {
   const [editando, setEditando] = useState<{ item: HistoricoInvestimento; objetivo?: Objetivo } | null>(null)
   const anoHoje = agora.getFullYear()
   const novo = () => navigate('/configuracoes?aba=bancos')
+  // O aplicado do mês conta como guardado na meta de economia (28/10/2026,
+  // pedido do Guilherme: "onde entra a meta mensal do planejamento?").
+  const aplicadoMes = aplicadoNoMes(contas, extratoData as Record<string, DadosMes>, agora.getFullYear(), agora.getMonth(), hoje)
+  const metaMes = planos[agora.getFullYear()]?.objetivos?.[agora.getMonth()] ?? 0
+  const fraseMeta = metaMes > 0
+    ? `Em ${MESES[agora.getMonth()]} você aplicou ${fmt(Math.max(0, aplicadoMes))} da meta de economia de ${fmt(metaMes)}.`
+    : 'O que você aplica conta como guardado na meta de economia do Planejamento.'
 
   const cartao = { background: '#fff', borderRadius: 20, boxShadow: '0 6px 24px rgba(30,64,175,.08)',
     padding: isMobile ? '14px 16px' : '16px 20px', minWidth: 0 } as const
@@ -71,6 +78,10 @@ export default function Investimentos() {
                 whiteSpace: 'nowrap' }}>{fmt(r.total)}</div>
               <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,.8)', marginTop: 4 }}>
                 Fica fora do saldo disponível: não é dinheiro para gastar.</div>
+              {r.itens.length > 0 && (
+                <div style={{ fontSize: 13.5, color: '#fff', fontWeight: 600, marginTop: 8, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                  <i aria-hidden className="ti ti-target-arrow" style={{ marginTop: 2 }} />{fraseMeta}</div>
+              )}
             </div>
             {isMobile ? (
               <div style={{ ...CAIXA, marginTop: 14, padding: '4px 14px' }}>
