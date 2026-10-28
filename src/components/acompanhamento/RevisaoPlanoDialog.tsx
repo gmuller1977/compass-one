@@ -64,7 +64,9 @@ function ParcelasEditaveis({ itens, nomeCat, onRenomeado }: { itens: JaLancado[]
       {parcelas.map((i, n) => {
         const rotulo = `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`
         return i.parcela!.compra ? (
-          <button key={n} type="button" title="Trocar o nome da compra em todas as parcelas"
+          // Fora do Tab: ele anda bolinha → sugerido → próxima bolinha
+          // (pedido do Guilherme em 28/10/2026). O clique segue renomeando.
+          <button key={n} type="button" tabIndex={-1} title="Trocar o nome da compra em todas as parcelas"
             onClick={() => setEditando({ i, texto: i.descricao })} style={PILULA}>
             <i aria-hidden className="ti ti-pencil" style={{ fontSize: 11, color: '#1d4ed8' }} />{rotulo}
           </button>
