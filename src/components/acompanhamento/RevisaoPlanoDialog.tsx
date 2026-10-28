@@ -121,8 +121,10 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
   const linhas = useMemo(() => linhasDeAbertura.map(l => ({
     ...l, itens: l.itens.map(i => (renomes[chaveCompra(i)] ? { ...i, descricao: renomes[chaveCompra(i)] } : i)),
   })), [linhasDeAbertura, renomes])
-  // Só o que o plano resolve vem marcado; o resto aparece com o motivo.
-  const [marcadas, setMarcadas] = useState<Set<string>>(() => new Set(linhas.filter(l => !l.motivo).map(chave)))
+  // Tudo começa DESMARCADO (pedido do Guilherme em 28/10/2026): a bolinha é
+  // a confirmação do sugerido, e digitar um valor e teclar Enter ou Tab
+  // também marca. Linha que o plano não resolve aparece com o motivo.
+  const [marcadas, setMarcadas] = useState<Set<string>>(() => new Set())
   const [textos, setTextos] = useState<Record<string, string>>(
     () => Object.fromEntries(linhas.map(l => [chave(l), paraCampo(l.sugerido)])))
   const fecharRef = useRef(onFechar)
@@ -195,7 +197,19 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
     const abaixo = v !== null && v < l.jaLancado - 0.005
     return (
       <div style={{ textAlign: 'right' }}>
-        <input type="text" inputMode="decimal" value={textos[k] ?? ''} disabled={!marcadas.has(k)}
+        <input type="text" inputMode="decimal" value={textos[k] ?? ''}
+          onKeyDown={e => {
+            if (e.key !== 'Enter' && !(e.key === 'Tab' && !e.shiftKey)) return
+            if (parseConta(textos[k] ?? '') === null) return
+            setMarcadas(s => new Set(s).add(k))
+            if (e.key === 'Enter') {
+              // Enter vai para a bolinha da linha seguinte, como o Tab faria.
+              e.preventDefault()
+              const linhasNaTela = [...document.querySelectorAll<HTMLElement>('[data-revisao-linha]')]
+              const i = linhasNaTela.findIndex(el => el.contains(e.currentTarget))
+              linhasNaTela.slice(i + 1).map(el => el.querySelector<HTMLElement>('button[aria-pressed], input')).find(Boolean)?.focus()
+            }
+          }}
           aria-label={`Valor sugerido para ${nome} em ${MESES[l.mes]}`}
           onChange={e => setTextos(t => ({ ...t, [k]: e.target.value }))}
           style={{ width: 146, boxSizing: 'border-box', padding: '7px 10px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit',
@@ -233,12 +247,14 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#eef2f8', borderRadius: 12,
                 padding: '10px 14px', fontSize: estreito ? 14 : 13 }}>
                 <span style={{ flex: 1 }}>
-                  <b>{escolhidas.length} de {planejaveis.length}</b> {planejaveis.length === 1 ? 'mês marcado' : 'meses marcados'} para revisar
+                  {escolhidas.length === 0
+                    ? <>Toque na <b>○</b> para confirmar o sugerido, ou digite o valor e tecle Enter.</>
+                    : <><b>{escolhidas.length} de {planejaveis.length}</b> {planejaveis.length === 1 ? 'mês confirmado' : 'meses confirmados'}</>}
                 </span>
                 <button type="button" onClick={() => setMarcadas(escolhidas.length ? new Set() : new Set(planejaveis.map(chave)))}
                   style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '4px 0', fontFamily: 'inherit',
                     fontSize: estreito ? 14 : 13, fontWeight: 600, color: COR.azul, whiteSpace: 'nowrap' }}>
-                  {escolhidas.length ? 'Desmarcar todos' : 'Marcar todos'}
+                  {escolhidas.length ? 'Desmarcar todos' : 'Confirmar todos'}
                 </button>
               </div>
             )}
@@ -258,10 +274,9 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
                   {ls.map((l, n) => {
                     const k = chave(l)
                     const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
-                    const apagada = !l.motivo && !marcadas.has(k)
                     return (
                       <div key={k} style={{ borderTop: n || !estreito ? `1px solid ${COR.borda}` : 'none', padding: '12px 14px',
-                        opacity: apagada ? 0.55 : 1 }}>
+                      }} data-revisao-linha="">
                         {estreito ? <>
                           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                             {marca(l, nome)}<div style={{ flex: 1, minWidth: 0 }}>{nomeLinha(l)}</div>
