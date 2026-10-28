@@ -9,6 +9,7 @@ interface Props {
   /** Fechamento real e abertura real de cada mês (bancos e dinheiro). */
   fechamentoReal?: number[]
   inicioReal?: number[]
+  investidoReal?: number[]
   objetivos: number[]
   /** Celular: número menor e as caixas embaixo dele. */
   compacto?: boolean
@@ -27,8 +28,8 @@ interface Props {
  * Os totais de receitas e despesas do ano saíram do topo (a janela "out–dez"
  * de antes). Texto da meta sem "resultado", "receitas" nem "despesas".
  */
-export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos, compacto }: Props) {
-  const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos })
+export default function PlanResumoAnual({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, investidoReal, objetivos, compacto }: Props) {
+  const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, investidoReal, objetivos })
   const r = resumoDoAno(meses, previsto)
   const passado = anoAtual < new Date().getFullYear()
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { comItens, comValor, type ItemPlano } from '../../utils/itensPlano'
 import { useApp } from '../../context/AppContext'
+import { aplicadoNoMes } from '../../utils/investimentos'
 import type { PlanoAnoData } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { calcSaldos, MESES, type AnoData, type AncoraReal } from './types'
@@ -186,6 +187,12 @@ export function usePlanejamento(anoAtual: number) {
     return { saldoInicialReal: si, saldoFinalReal: sf }
   }, [fimReal])
 
+  // Aplicado nos investimentos em cada mês: guardar no investimento é
+  // guardar (28/10/2026), e a aplicação sai do saldo de bancos e dinheiro.
+  const investidoReal = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => aplicadoNoMes(contas, extratoData, anoAtual, i)),
+    [contas, extratoData, anoAtual])
+
   // Meses com dados reais
   const mesTemDadosReais = useMemo(() =>
     Array.from({ length: 12 }, (_, mes) => {
@@ -314,6 +321,7 @@ export function usePlanejamento(anoAtual: number) {
     totaisReais,
     saldoInicialReal,
     saldoFinalReal,
+    investidoReal,
     ancoraMes,
     mesTemDadosReais,
     // Ações

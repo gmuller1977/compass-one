@@ -27,6 +27,7 @@ import { Cartao, IconeRedondo, Linha, OlhoIcone, Pilula, ResumoDoMes, type Colun
 import { M, ROTULO_TOPO, TOPO_AZUL, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/estilo'
 import SeletorMesAno from '../components/SeletorMesAno'
 import { COR } from '../utils/cores'
+import { aplicadoNoMes, isoDe } from '../utils/investimentos'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 
 function useIsMobile() {
@@ -46,7 +47,7 @@ export default function Dashboard() {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
   const {
-    contas, categorias, planos, setPlanos, perfil, user, cenarioPrevisao, setCenarioPrevisao,
+    contas, categorias, planos, setPlanos, perfil, user, cenarioPrevisao, setCenarioPrevisao, extratoData,
   } = useApp()
 
   const hoje = new Date()
@@ -461,6 +462,7 @@ export default function Dashboard() {
               Guilherme); o que pede atenção vem depois, na mesma grade. */}
             {(ehFuturo ? previsao : memoria) && (
               <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
+                investido={ehFuturo ? 0 : aplicadoNoMes(contas, extratoData, viewAno, viewMes, isoDe(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()))}
                 onDefinirMeta={usaPlanoNoMes || ehFuturo ? () => navigate('/planejamento') : undefined}
                 {...resumo} />
             )}

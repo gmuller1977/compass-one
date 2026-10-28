@@ -5,7 +5,7 @@
 // viagem), o rendimento dividido pelo saldo de cada objetivo, e o caminho até
 // o objetivo sem rendimento estimado.
 import type { Conta, DadosMes } from '../src/context/AppContext'
-import { caminhoDoObjetivo, historicoDoInvestimento, movimentosDoMes, resumoDosInvestimentos, type Objetivo } from '../src/utils/investimentos'
+import { aplicadoNoMes, rendeuPercentual, caminhoDoObjetivo, historicoDoInvestimento, movimentosDoMes, resumoDosInvestimentos, type Objetivo } from '../src/utils/investimentos'
 import { ehContaDisponivel } from '../src/utils/saldoConta'
 let ok = 0, falha = 0
 const t = (n: string, c: boolean) => { c ? ok++ : (falha++, console.log('FALHA', n)) }
@@ -54,6 +54,12 @@ t('reserva = 1000 + 500 + 15 − 100', perto(parte('res').saldo, 1415))
 t('viagem = 300 + 3 + 200', perto(parte('via').saldo, 503))
 t('saldo inicial separado: nada sem objetivo', perto(parte('').saldo, 0))
 
+t('reserva: aplicou 500, resgatou 100', perto(parte('res').aplicado, 500) && perto(parte('res').resgatado, 100))
+t('viagem: aplicou 500, resgatou 0', perto(parte('via').aplicado, 500) && perto(parte('via').resgatado, 0))
+// Reserva: 15 sobre 1.400 (1.415 − 15) = 1,07%.
+t('rendeu % sobre o que ficou aplicado', perto(rendeuPercentual(parte('res'))! * 100, 15 / 1400 * 100))
+t('sem dinheiro posto, sem %', rendeuPercentual({ saldo: 0, rendido: 0 }) === null)
+
 // Objetivo apagado: o id some, e o dinheiro dele volta para "sem objetivo".
 const semViagem = historicoDoInvestimento(poup, extrato, hoje, objetivos.filter(o => o.id !== 'via'))
 t('objetivo apagado: o dinheiro fica sem objetivo', perto(semViagem.partes.find(p => p.objetivoId === '')!.saldo, 503))
@@ -91,6 +97,13 @@ t('investimento continua fora do disponível', !ehContaDisponivel(poup))
 const semInfo = { ...extrato, 'poup-2026-09': mes({ 20: [lanc('entrada', 200, 'via')] }) }
 const c = historicoDoInvestimento(poup, semInfo, hoje, objetivos)
 t('controle: sem saldo informado, rendimento zero', c.movimentos.every(m => m.tipo !== 'rendimento') && perto(c.saldo, 1900))
+
+// Meta de economia: o aplicado conta como guardado (28/10/2026). Só a conta
+// de investimento, líquido, sem rendimento, e nada depois de hoje.
+t('aplicado em agosto: 800 (o banco não entra)', perto(aplicadoNoMes([sic, poup], extrato, 2026, 7), 800))
+t('aplicado em setembro: 200, sem o rendimento de 18', perto(aplicadoNoMes([sic, poup], extrato, 2026, 8), 200))
+t('outubro até hoje: só o resgate', perto(aplicadoNoMes([sic, poup], extrato, 2026, 9, hoje), -100))
+t('outubro sem limite: o agendado entra', perto(aplicadoNoMes([sic, poup], extrato, 2026, 9), 899))
 
 console.log(`prova104: ${ok} ok, ${falha} falhas`)
 if (falha) process.exit(1)

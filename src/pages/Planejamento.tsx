@@ -315,6 +315,7 @@ export default function Planejamento() {
           onMetaSave={plan.editarMetas}
           fechamentoReal={plan.saldoFinalReal}
           inicioReal={plan.saldoInicialReal}
+          investidoReal={plan.investidoReal}
           avisos={<>
             <AvisoSoAdministrador />
             {lancadoAcima.length > 0 && <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />}
@@ -346,7 +347,7 @@ export default function Planejamento() {
             rightContent={<SeletorAno ano={anoAtual} onChange={setAnoAtual} />}
           >
             <PlanResumoAnual previsto={plan.previsto} anoAtual={anoAtual} mesAtual={plan.mesAtual}
-              fechamentoReal={plan.saldoFinalReal} inicioReal={plan.saldoInicialReal} objetivos={plan.objetivos} />
+              fechamentoReal={plan.saldoFinalReal} inicioReal={plan.saldoInicialReal} investidoReal={plan.investidoReal} objetivos={plan.objetivos} />
           </PageHeader>
         </div>
       )}
@@ -380,6 +381,7 @@ export default function Planejamento() {
             onMetaSave={plan.editarMetas}
             fechamentoReal={plan.saldoFinalReal}
             inicioReal={plan.saldoInicialReal}
+            investidoReal={plan.investidoReal}
           />
         </AjustePlanoContexto.Provider>
         </LancadoNoMesContexto.Provider></ItensPlanoContexto.Provider>

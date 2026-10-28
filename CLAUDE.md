@@ -236,7 +236,21 @@ pessoa só tem a poupança, mas com objetivos diferentes"): tabela
 investimento, e o rendimento se divide pelo saldo de cada objetivo. O
 caminho até o objetivo conta só o que se aplica: o Compass NUNCA estima
 rendimento futuro. Regras em [`investimentos.ts`](src/utils/investimentos.ts);
-`prova104` (29).
+`prova104` (37).
+No mesmo dia, pedidos dele sobre a prévia: o gráfico fica EM CIMA e a lista
+embaixo, em largura inteira; os botões ficam NA LATERAL, um embaixo do outro
+(no celular, embaixo, dois por linha); cada objetivo é um cartão com ANEL
+(o do grupo do Radar, `AnelGrupo`: quanto do alvo já está lá) e Aplicou ·
+Resgatou · Rendeu, o rendimento também em % sobre o que ficou aplicado
+(`rendeuPercentual`: rendido ÷ (saldo − rendido)). Sem objetivo, os três
+números são da conta.
+**Aplicar é guardar: a meta de economia conta o investido** (mesmo dia,
+Guilherme: "meta é o mesmo que investir"). A aplicação sai do saldo de
+bancos e dinheiro, então o "guardou" (final − inicial) a contava como gasto.
+Hoje o aplicado líquido do mês (aplicações − resgates, sem rendimento,
+`aplicadoNoMes`) soma no realizado do "Resumo do mês" (Início e Bússola: "Você
+já guardou", o % da meta) e no `guardou` dos meses fechados do Planejamento
+(`investidoReal`: topo, "Quanto guarda", "Rumo da meta", pílula do cartão).
 
 Consolidação vive no `DadosMes` de cada **conta**, mas a fixa é do **mês**.
 Somar percorrendo as chaves do extrato conta a mesma fixa uma vez por conta —

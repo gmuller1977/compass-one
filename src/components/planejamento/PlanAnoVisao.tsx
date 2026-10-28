@@ -13,6 +13,7 @@ interface Props {
   fechamentoReal?: number[]
   /** Saldo real com que cada mês abriu. */
   inicioReal?: number[]
+  investidoReal?: number[]
   objetivos: number[]
   onAbrir: (mi: number) => void
 }
@@ -47,9 +48,9 @@ function useColunas() {
   return n
 }
 
-export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos, onAbrir }: Props) {
+export default function PlanAnoVisao({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, investidoReal, objetivos, onAbrir }: Props) {
   const colunas = useColunas()
-  const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, objetivos })
+  const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal, inicioReal, investidoReal, objetivos })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

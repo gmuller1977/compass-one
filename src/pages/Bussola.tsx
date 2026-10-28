@@ -19,6 +19,7 @@ import { M, mostrar, pilulaTopo, useValoresOcultos } from '../components/mobile/
 import { bussolaDoMes } from '../utils/bussolaDoMes'
 import type { Aviso } from '../utils/avisosDoMes'
 import { COR } from '../utils/cores'
+import { aplicadoNoMes, isoDe } from '../utils/investimentos'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
@@ -45,7 +46,7 @@ const ROTULO = 'rgba(255,255,255,.75)'
  */
 export default function Bussola() {
   const navigate = useNavigate()
-  const { categorias, perfil, user, planos, setPlanos, cenarioPrevisao, setCenarioPrevisao } = useApp()
+  const { categorias, perfil, user, planos, setPlanos, cenarioPrevisao, setCenarioPrevisao, contas, extratoData } = useApp()
   const hoje = new Date()
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
   const mesNome = MESES[mes]
@@ -159,6 +160,7 @@ export default function Bussola() {
         {/* ── Resumo do mês: saldos, receitas, despesas e a meta ────── */}
         {/* O mesmo do computador (pedido do Guilherme, 23/10/2026). */}
         <ResumoDoMes mesNome={mesNome} oculto={oculto} meta={metaDoMes}
+          investido={aplicadoNoMes(contas, extratoData, hoje.getFullYear(), mes, isoDe(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()))}
           onDefinirMeta={usaPlanoNoMes ? () => navigate('/planejamento') : undefined}
           previsto={{ inicial: b.memoria.abertura, receitas: usaPlanoNoMes ? totalPrevE : null,
             despesas: usaPlanoNoMes ? totalPrevS : null, final: b.fechamento }}

@@ -66,6 +66,9 @@ export type ParteDoObjetivo = {
   objetivoId: string
   saldo: number
   rendido: number
+  /** Total aplicado e resgatado (positivo), sem o saldo com que começou. */
+  aplicado: number
+  resgatado: number
   /** Aplicado − resgatado em cada mês (AAAA*12+mes), para o ritmo. */
   liquidoPorMes: Map<number, number>
 }
@@ -122,7 +125,7 @@ export function historicoDoInvestimento(
   const partes = new Map<string, ParteDoObjetivo>()
   const parte = (id: string) => {
     let p = partes.get(id)
-    if (!p) { p = { objetivoId: id, saldo: 0, rendido: 0, liquidoPorMes: new Map() }; partes.set(id, p) }
+    if (!p) { p = { objetivoId: id, saldo: 0, rendido: 0, aplicado: 0, resgatado: 0, liquidoPorMes: new Map() }; partes.set(id, p) }
     return p
   }
   parte('').saldo = conta.saldoInicial ?? 0
@@ -171,6 +174,7 @@ export function historicoDoInvestimento(
         const destino = oid && meus.some(o => o.id === oid) ? oid : ''
         const p = parte(destino)
         p.saldo += v
+        if (v > 0) p.aplicado += v; else p.resgatado -= v
         p.liquidoPorMes.set(idx(ano, mes), (p.liquidoPorMes.get(idx(ano, mes)) ?? 0) + v)
         movimentos.push({ contaId: conta.id, ano, mes, dia: d, tipo: v > 0 ? 'aplicacao' : 'resgate',
           valor: v, contraparte: contraparteDe(l.descricao), objetivoId: destino })
@@ -320,4 +324,38 @@ export function movimentosDoMes(r: ResumoDosInvestimentos, ano: number, mes: num
   return r.itens.flatMap(i => i.movimentos)
     .filter(m => m.ano === ano && m.mes === mes)
     .sort((a, b) => b.dia - a.dia || (a.tipo === 'rendimento' ? -1 : 1))
+}
+
+/**
+ * O que foi APLICADO nos investimentos no mês, líquido (aplicações −
+ * resgates), sem rendimento. Guardar no investimento é guardar (28/10/2026,
+ * Guilherme: "meta é o mesmo que investir"): a aplicação sai do saldo
+ * disponível, e sem esta soma a meta de economia contaria o investido como
+ * gasto. Até `hoje`, quando dado ("AAAA-MM-DD").
+ */
+export function aplicadoNoMes(
+  contas: Conta[], extratoData: Record<string, DadosMes>, ano: number, mes: number, hoje?: string,
+): number {
+  let total = 0
+  for (const c of contas) {
+    if (!ehInvestimento(c)) continue
+    const dm = extratoData[`${c.id}-${ano}-${doisDig(mes + 1)}`]
+    for (const [dia, lista] of Object.entries(dm?.lancamentos ?? {})) {
+      if (hoje && isoDe(ano, mes, Number(dia)) > hoje) continue
+      for (const l of lista ?? []) {
+        if (!(l.valor > 0)) continue
+        total += l.tipo === 'entrada' ? l.valor : -l.valor
+      }
+    }
+  }
+  return total
+}
+
+/**
+ * Quanto a parte rendeu em percentual: o rendimento sobre o dinheiro que a
+ * pessoa pôs e deixou lá (saldo − rendido). Sem esse dinheiro, `null`.
+ */
+export function rendeuPercentual(p: Pick<ParteDoObjetivo, 'saldo' | 'rendido'>): number | null {
+  const base = p.saldo - p.rendido
+  return base > 0.005 ? p.rendido / base : null
 }

@@ -186,7 +186,7 @@ export interface ColunaResumo {
  * CLAUDE.md. Dentro das caixas translúcidas (mais claras que #1e40af) só vai
  * branco, rótulo a 85% e o #fdba74 do negativo: 6,9 / 5,5 / 3,8 (22px em negrito, texto grande).
  */
-export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefinirMeta }: {
+export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefinirMeta, investido = 0 }: {
   mesNome: string
   previsto: ColunaResumo | null
   realizado: ColunaResumo | null
@@ -195,6 +195,9 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   oculto: boolean
   /** Sem meta, mostra "Definir meta". Sem a função, a parte da meta some. */
   onDefinirMeta?: () => void
+  /** Aplicado nos investimentos no mês (líquido): conta como guardado no
+   *  realizado (28/10/2026, "meta é o mesmo que investir"). */
+  investido?: number
 }) {
   const v = (n: number | null) => (n === null ? '' : mostrar(n, oculto))
   const cols = [previsto && { rot: 'Previsto', c: previsto }, realizado && { rot: 'Realizado', c: realizado }]
@@ -207,8 +210,12 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
   }
   const num: CSSProperties = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
   const inicial = cols[0]?.c.inicial ?? null
-  const atingimento = (c: ColunaResumo) =>
-    meta > 0 && c.inicial !== null && c.final !== null ? Math.max(0, Math.round(((c.final - c.inicial) / meta) * 100)) : null
+  const guardouNa = (c: ColunaResumo) =>
+    c.inicial !== null && c.final !== null ? c.final - c.inicial + (c === realizado ? investido : 0) : null
+  const atingimento = (c: ColunaResumo) => {
+    const g = guardouNa(c)
+    return meta > 0 && g !== null ? Math.max(0, Math.round((g / meta) * 100)) : null
+  }
   const mostraMeta = meta > 0 || !!onDefinirMeta
   // Cada caractere em 800 ocupa ~0,56 em: o texto inteiro cabe na largura da caixa.
   const tamanhoSaldo = (t: string) => `min(22px, ${(100 / (Math.max(t.length, 8) * 0.56)).toFixed(2)}cqi)`
@@ -276,7 +283,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
       {mostraMeta && (() => {
         const c = realizado ?? previsto
         const pct = meta > 0 && c ? atingimento(c) : null
-        const guardado = realizado && c && c.inicial !== null && c.final !== null ? c.final - c.inicial : 0
+        const guardado = realizado && c ? guardouNa(c) ?? 0 : 0
         const ok = pct !== null && pct >= 100
         return (
           <div style={{
@@ -304,6 +311,7 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
                   {guardado > 0 && (
                     <div style={{ fontSize: 14, color: ROT_CAIXA }}>
                       Você já guardou <b style={{ ...num, color: '#fff' }}>{v(guardado)}</b>
+                      {investido > 0.005 && <> · {v(investido)} em investimentos</>}
                     </div>
                   )}
                 </div>

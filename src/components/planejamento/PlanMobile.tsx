@@ -60,6 +60,7 @@ interface Props {
   onMetaSave: (objetivos: number[]) => void
   fechamentoReal?: number[]
   inicioReal?: number[]
+  investidoReal?: number[]
   /** Faixas que vêm antes das categorias (revisão, só administrador). */
   avisos?: ReactNode
 }
@@ -89,7 +90,7 @@ export default function PlanMobile(p: Props) {
   }
 
   const meses = mesesDoAno({ previsto, anoAtual, mesAtual, fechamentoReal: p.fechamentoReal,
-    inicioReal: p.inicioReal, objetivos: p.objetivos })
+    inicioReal: p.inicioReal, investidoReal: p.investidoReal, objetivos: p.objetivos })
   const m = meses[mes]
 
   return (
@@ -109,7 +110,7 @@ export default function PlanMobile(p: Props) {
           </div>
         </div>
         <PlanResumoAnual previsto={previsto} anoAtual={anoAtual} mesAtual={mesAtual} fechamentoReal={p.fechamentoReal}
-          inicioReal={p.inicioReal} objetivos={p.objetivos} compacto />
+          inicioReal={p.inicioReal} investidoReal={p.investidoReal} objetivos={p.objetivos} compacto />
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>

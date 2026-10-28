@@ -26,6 +26,8 @@ interface Props {
   fechamentoReal?: number[]
   /** Saldo real com que cada mês abriu — para o que o mês guardou de verdade. */
   inicioReal?: number[]
+  /** Aplicado nos investimentos em cada mês: também é guardado. */
+  investidoReal?: number[]
 }
 
 export default function PlanGrade(props: Props) {
@@ -64,6 +66,7 @@ export default function PlanGrade(props: Props) {
         mesAtual={mesAtual}
         fechamentoReal={props.fechamentoReal}
         inicioReal={props.inicioReal}
+        investidoReal={props.investidoReal}
         objetivos={objetivos}
         onAbrir={setModalMes}
       />

@@ -36,6 +36,8 @@ export function mesesDoAno(o: {
   mesAtual: number
   fechamentoReal?: number[]
   inicioReal?: number[]
+  /** Aplicado nos investimentos em cada mês: guardado também (28/10/2026). */
+  investidoReal?: number[]
   objetivos: number[]
 }): MesDoAno[] {
   const anoCorrente = new Date().getFullYear()
@@ -45,7 +47,7 @@ export function mesesDoAno(o: {
     const receitas = o.previsto.totalEntradas[mi]
     const despesas = o.previsto.totalSaidas[mi]
     const real = fechado && o.fechamentoReal ? o.fechamentoReal[mi] : undefined
-    const guardou = real !== undefined && o.inicioReal ? real - o.inicioReal[mi] : undefined
+    const guardou = real !== undefined && o.inicioReal ? real - o.inicioReal[mi] + (o.investidoReal?.[mi] ?? 0) : undefined
     const final = o.previsto.saldoFinal[mi]
     return { mi, fechado, atual, semPlano: receitas === 0 && despesas === 0, real, final,
       sobra: receitas - despesas, guardou, valor: real ?? final, meta: o.objetivos[mi] ?? 0 }
