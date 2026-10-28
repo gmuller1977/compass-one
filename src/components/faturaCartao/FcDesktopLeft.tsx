@@ -7,6 +7,8 @@ import {
 } from './FcShared'
 import { grupoDoLanc } from './fcRotulo'
 import { IconeCat } from '../IconeCat'
+import { BolinhaConferido, ResumoConferidos } from './FcConferir'
+import { textoQtdCompras, estaConferido, alternarConferido, desmarcarTodos, resumoConferidos } from '../../utils/conferirFatura'
 
 type Props = {
   mesDados: DadosMes
@@ -23,13 +25,14 @@ type Props = {
   editarLancamento: (dia: number, l: Lancamento) => void
   excluir: (dia: number, id: string) => void
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
+  updateMes: (fn: (prev: DadosMes) => DadosMes) => void
 }
 
 export default function FcDesktopLeft({
   mesDados, totalDias, purchaseMes, purchaseAno,
   totalFatura, diaFechamento, diaVencimento, mesVenc, anoVenc,
   editandoId, categorias,
-  editarLancamento, excluir, setDiaSel,
+  editarLancamento, excluir, setDiaSel, updateMes,
 }: Props) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -60,6 +63,7 @@ export default function FcDesktopLeft({
           }
 
           itens.sort(compararNaFatura)
+          const conf = resumoConferidos(mesDados, totalDias)
           // Agrupadas por DIA DA COMPRA, como os dias do Banco (24/10/2026, pedido do
           // Guilherme): título "dd/mm semana" com o total do dia e um card com borda.
           const grupos: Array<{ dc: number; mc: number; ac: number; itens: typeof itens }> = []
@@ -69,7 +73,12 @@ export default function FcDesktopLeft({
             else grupos.push({ dc: it.dc, mc: it.mc, ac: it.ac, itens: [it] })
           }
 
-          return grupos.map(g => {
+          return (<>
+          <div style={{ marginBottom: 14 }}>
+            <ResumoConferidos conferidas={conf.conferidas} total={conf.total}
+              onDesmarcar={() => updateMes(desmarcarTodos)} />
+          </div>
+          {grupos.map(g => {
             const totalDia = g.itens.reduce((a, { l }) => a + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
             return (
             <section key={`${g.ac}-${g.mc}-${g.dc}`} style={{ marginBottom: 14 }}>
@@ -78,7 +87,7 @@ export default function FcDesktopLeft({
                   {String(g.dc).padStart(2, '0')}/{String(g.mc + 1).padStart(2, '0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
                 </span>
                 <span style={{ fontSize: 15, fontWeight: 500, color: COR.textoSuave, flex: 1 }}>
-                  {diaSemanaLongo(g.dc, g.mc, g.ac)}
+                  {diaSemanaLongo(g.dc, g.mc, g.ac)} · {textoQtdCompras(g.itens.length)}
                 </span>
                 <span style={{ fontSize: 13, color: COR.textoSuave, fontVariantNumeric: 'tabular-nums' }}>
                   total <b style={{ color: COR.texto }}>{fmt(totalDia)}</b>
@@ -107,6 +116,9 @@ export default function FcDesktopLeft({
                   }}
                   onMouseEnter={e => { if (!emEdicao) e.currentTarget.style.background = '#fafbff' }}
                   onMouseLeave={e => { if (!emEdicao) e.currentTarget.style.background = COR.branco }}>
+
+                  <BolinhaConferido marcado={estaConferido(mesDados, l.id)}
+                    onToggle={() => updateMes(prev => alternarConferido(prev, l.id))} />
 
                   <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: 16, background: catVisual.cor }}>
@@ -175,7 +187,8 @@ export default function FcDesktopLeft({
             </div>
             </section>
             )
-          })
+          })}
+          </>)
         })()}
       </div>
 

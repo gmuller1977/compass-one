@@ -3390,6 +3390,16 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   como o Banco: título "15/10 quinta" com o total do dia e um card com
   borda `#93c5fd`; a data saiu da linha. E cada dia de Banco e Dinheiro
   ganhou a borda do Radar (`#1d4ed8` hoje, `#93c5fd` os outros).
+- **Conferir a fatura com o banco** (28/10/2026, pedido do Guilherme:
+  lançando o que ficou para trás, "preciso descobrir o que falta lançar").
+  O título do dia diz quantas compras tem ("quinta · 3 compras"), para
+  achar o dia que não bate com o banco, e cada compra tem uma bolinha de
+  CONFERIDA (verde `#15803d` com ✓), com "3 de 6 conferidas com o banco" e
+  "Desmarcar todas" no topo da lista, no computador e no celular. A marca
+  mora no mês da fatura (`conferidos[id]`), não no lançamento: membro da
+  conta compartilhada também marca, e a parcela de cada mês se confere à
+  parte. Nenhum número muda. Regras em
+  [`conferirFatura.ts`](src/utils/conferirFatura.ts); `prova101` (9).
 - **"Conciliação" saiu das telas** (22/10/2026, pedido do Guilherme:
   "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
   Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",

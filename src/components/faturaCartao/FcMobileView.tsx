@@ -13,6 +13,8 @@ import { lancLabelComGrupo } from './fcRotulo'
 import { IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
 import { IconeCat } from '../IconeCat'
+import { BolinhaConferido, ResumoConferidos } from './FcConferir'
+import { textoQtdCompras, estaConferido, alternarConferido, desmarcarTodos, resumoConferidos } from '../../utils/conferirFatura'
 
 const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
@@ -585,6 +587,7 @@ export default function FcMobileView({
               )
             }
             allItems.sort(compararNaFatura)
+            const conf = resumoConferidos(mesDados, totalDias)
             // Agrupadas por dia da compra, como os dias do Banco (24/10/2026, pedido do Guilherme).
             const grupos: Array<{dc:number;mc:number;ac:number;itens:typeof allItems}> = []
             for (const it of allItems) {
@@ -592,7 +595,10 @@ export default function FcMobileView({
               if (g && g.dc === it.dc && g.mc === it.mc && g.ac === it.ac) g.itens.push(it)
               else grupos.push({dc:it.dc, mc:it.mc, ac:it.ac, itens:[it]})
             }
-            return grupos.map(g => {
+            return (<>
+            <ResumoConferidos conferidas={conf.conferidas} total={conf.total} fonte={M.legenda + 1}
+              onDesmarcar={() => updateMes(desmarcarTodos)} />
+            {grupos.map(g => {
               const totalDia = g.itens.reduce((a, {l}) => a + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
               return (
               <section key={`${g.ac}-${g.mc}-${g.dc}`}>
@@ -600,7 +606,7 @@ export default function FcMobileView({
                   <span style={{fontSize:M.corpo,fontWeight:800,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
                     {String(g.dc).padStart(2,'0')}/{String(g.mc+1).padStart(2,'0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
                   </span>
-                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1}}>{diaSemanaLongo(g.dc, g.mc, g.ac)}</span>
+                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1}}>{diaSemanaLongo(g.dc, g.mc, g.ac)} · {textoQtdCompras(g.itens.length)}</span>
                   <span style={{fontSize:M.legenda,color:COR.textoSuave,whiteSpace:'nowrap' as const,fontVariantNumeric:'tabular-nums'}}>
                     total <b style={{color:COR.texto}}>{fmt(totalDia)}</b>
                   </span>
@@ -623,6 +629,8 @@ export default function FcMobileView({
                       onClick={() => { editarLancamento(dia, l); setMobileView('form') }}
                       style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',minHeight:56,cursor:'pointer',
                         borderTop: idx === 0 ? 'none' : '1px solid #eef2f8'}}>
+                      <BolinhaConferido marcado={estaConferido(mesDados, l.id)} tamanho={28}
+                        onToggle={() => updateMes(prev => alternarConferido(prev, l.id))} />
                       <IconeRedondo icone={catVisual.icone} cor={catVisual.cor} tamanho={40} />
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:M.corpo,fontWeight:600,color:COR.texto,
@@ -645,7 +653,8 @@ export default function FcMobileView({
               </div>
               </section>
               )
-            })
+            })}
+            </>)
           })()}
         </div>
       )}

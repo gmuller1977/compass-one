@@ -31,6 +31,8 @@ export type DadosMes = {
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>
   fixasPagOverride?: Record<string, FormaPag>
+  /** Compras conferidas com o app do banco, por id (utils/conferirFatura). */
+  conferidos?: Record<string, boolean>
 }
 
 // ── Categoria + variante ──────────────────────────────────────────────

@@ -702,6 +702,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           editarLancamento={editarLancamento}
           excluir={excluir}
           setDiaSel={setDiaSel}
+          updateMes={updateMes}
         />
         <FcDesktopPanel
           editandoId={editandoId} avisoParcelas={avisoParcelas}
