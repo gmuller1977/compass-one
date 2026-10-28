@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { COR } from '../../utils/cores'
+import { BolinhaConferido } from '../faturaCartao/FcConferir'
 import ModalTopo from '../ModalTopo'
 import { parseConta } from '../../utils/moeda'
 import type { Categoria, PlanoAnoData } from '../../context/AppContext'
@@ -59,22 +60,28 @@ function ParcelasEditaveis({ itens, nomeCat, onRenomeado }: { itens: JaLancado[]
     )
   }
   return (
-    <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2, display: 'flex', flexWrap: 'wrap', gap: '2px 8px' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
       {parcelas.map((i, n) => {
         const rotulo = `${i.descricao} ${i.parcela!.atual} de ${i.parcela!.total}`
         return i.parcela!.compra ? (
           <button key={n} type="button" title="Trocar o nome da compra em todas as parcelas"
-            onClick={() => setEditando({ i, texto: i.descricao })}
-            style={{ all: 'unset', cursor: 'pointer', color: COR.azul, textDecoration: 'underline', textUnderlineOffset: 2 }}>
-            ✎ {rotulo}
+            onClick={() => setEditando({ i, texto: i.descricao })} style={PILULA}>
+            <i aria-hidden className="ti ti-pencil" style={{ fontSize: 11, color: '#1d4ed8' }} />{rotulo}
           </button>
-        ) : <span key={n}>{rotulo}</span>
+        ) : <span key={n} style={{ ...PILULA, cursor: 'default' }}>{rotulo}</span>
       })}
     </div>
   )
 }
 
+/** A parcela numa pílula (#1e3a8a no #eef2f8: 9,4). */
+const PILULA: React.CSSProperties = {
+  all: 'unset', cursor: 'pointer', fontSize: 12, color: '#1e3a8a', background: '#eef2f8', borderRadius: 999,
+  padding: '2px 8px', display: 'inline-flex', gap: 4, alignItems: 'center',
+}
+
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
+const MESES_LONGOS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const paraCampo = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 /** De onde veio o sugerido, em poucas palavras (a regra é valorMesAMes). */
@@ -129,8 +136,6 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
   const escolhidas = linhas.filter(l => !l.motivo && marcadas.has(chave(l)))
   const planejaveis = linhas.filter(l => !l.motivo)
   const invalida = escolhidas.some(l => valorDe(l) === null)
-  const anoHoje = new Date().getFullYear()
-  const nomeMes = (l: LinhaRevisao) => (l.ano !== anoHoje ? `${MESES[l.mes]}/${String(l.ano).slice(2)}` : MESES[l.mes])
 
   function confirmar() {
     if (invalida || escolhidas.length === 0) return
@@ -145,153 +150,150 @@ export default function RevisaoPlanoDialog({ acima, deps, planos, setPlanos, cat
     onFechar()
   }
 
-  const th: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: COR.textoSuave, textAlign: 'right', padding: '6px 8px', whiteSpace: 'nowrap' }
-  const td: React.CSSProperties = { fontSize: 13, padding: '8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', borderTop: `1px solid ${COR.borda}`, verticalAlign: 'top' }
+  // Uma caixa por mês, como os dias de Lançamentos (pedido do Guilherme em
+  // 28/10/2026, opção A): "Dezembro 2026 · 3 categorias" e as linhas dentro.
+  const meses = useMemo(() => {
+    const g = new Map<string, LinhaRevisao[]>()
+    for (const l of linhas) {
+      const k = `${l.ano}-${String(l.mes).padStart(2, '0')}`
+      g.set(k, [...(g.get(k) ?? []), l])
+    }
+    return [...g].sort(([x], [y]) => x.localeCompare(y)).map(([, ls]) => ls)
+  }, [linhas])
+  const alternar = (k: string) => setMarcadas(s => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n })
+  const tamNome = estreito ? 15 : 14
+  const colunas = '40px minmax(0, 1fr) 122px 122px 146px'
+  const rotuloCol: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: COR.textoSuave, textAlign: 'right' }
+  const num: React.CSSProperties = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
+
+  const marca = (l: LinhaRevisao, nome: string) => l.motivo
+    ? <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: '50%', boxSizing: 'border-box', flexShrink: 0,
+        border: '2px solid #a16207', background: COR.avisoFundo, color: '#a16207', fontWeight: 800, fontSize: 14,
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>
+    : <BolinhaConferido marcado={marcadas.has(chave(l))} onToggle={() => alternar(chave(l))}
+        rotulo={`${marcadas.has(chave(l)) ? 'Não revisar' : 'Revisar'} ${nome} em ${MESES[l.mes]}`} />
+  const nomeLinha = (l: LinhaRevisao) => (
+    <>
+      <div style={{ fontSize: tamNome }}>
+        {l.grupo && <span style={{ color: COR.textoSuave }}>{l.grupo} · </span>}
+        <b>{l.nome}{l.descricao ? ` · ${l.descricao}` : ''}</b>
+      </div>
+      <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
+    </>
+  )
+  const motivoCaixa = (l: LinhaRevisao) => (
+    <div style={{ fontSize: 12.5, lineHeight: 1.4, color: COR.avisoTexto, background: COR.avisoFundo,
+      border: `1px solid ${COR.avisoBorda}`, borderRadius: 8, padding: '6px 10px', marginTop: estreito ? 8 : 0 }}>
+      Já lançado {fmt(l.jaLancado)}. {l.motivo}
+    </div>
+  )
+  const campoSugerido = (l: LinhaRevisao, nome: string) => {
+    const k = chave(l)
+    const v = valorDe(l)
+    const abaixo = v !== null && v < l.jaLancado - 0.005
+    return (
+      <div style={{ textAlign: 'right' }}>
+        <input type="text" inputMode="decimal" value={textos[k] ?? ''} disabled={!marcadas.has(k)}
+          aria-label={`Valor sugerido para ${nome} em ${MESES[l.mes]}`}
+          onChange={e => setTextos(t => ({ ...t, [k]: e.target.value }))}
+          style={{ width: 146, boxSizing: 'border-box', padding: '7px 10px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit',
+            fontSize: estreito ? 16 : 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: COR.texto, background: COR.branco,
+            border: `1.5px solid ${v === null ? COR.erroTexto : '#1d4ed8'}` }} />
+        {v !== null && !abaixo && Math.abs(v - l.sugerido) < 0.005 && (
+          <div style={{ fontSize: estreito ? 12 : 11, color: COR.textoSuave, marginTop: 3 }}>{origem(l)}</div>
+        )}
+        {v === null && <div style={{ fontSize: estreito ? 12 : 11, color: COR.erroTexto, marginTop: 3 }}>valor inválido</div>}
+        {abaixo && <div style={{ fontSize: estreito ? 12 : 11, color: COR.avisoTexto, marginTop: 3 }}>abaixo do já lançado</div>}
+      </div>
+    )
+  }
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onFechar() }} style={{
       position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 1200,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: estreito ? 0 : 16,
     }}>
       <div role="dialog" aria-modal="true" aria-labelledby="revisao-titulo" style={{
-        background: COR.branco, borderRadius: 16, width: '100%', maxWidth: 680, overflow: 'hidden',
-        boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        background: '#f6f8fd', borderRadius: estreito ? 0 : 16, width: '100%', maxWidth: 760, overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(15,23,42,.25)', color: COR.texto, maxHeight: estreito ? '100%' : '90vh',
+        height: estreito ? '100%' : undefined, display: 'flex', flexDirection: 'column',
       }}>
         <ModalTopo icone="ti-calendar-search" rotulo="Planejamento" titulo="Revisão do planejamento" id="revisao-titulo"
           onFechar={onFechar}
           subtitulo="O que já está lançado passa do plano destes meses. Confira o valor sugerido e confirme." />
-        <div style={{ padding: '4px 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: estreito ? '0 14px 14px' : '0 20px 18px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
 
-        <div style={{ overflow: 'auto', marginTop: 12, flex: 1, minHeight: 0 }}>
+        <div style={{ overflow: 'auto', paddingTop: estreito ? 14 : 18, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {linhas.length === 0 ? (
             <div style={{ fontSize: 14, padding: '16px 0' }}>Nada para revisar ✓</div>
-          ) : estreito ? (
-            // Celular: um cartão por linha, e os três números lado a lado —
-            // a tabela de seis colunas cortava "Plano atual" e "Sugerido".
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {linhas.map(l => {
-                const k = chave(l)
-                const marcada = marcadas.has(k)
-                const v = valorDe(l)
-                const abaixo = v !== null && v < l.jaLancado - 0.005
-                const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
-                const numero = (rotulo: string, valor: ReactNode) => (
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: COR.textoSuave }}>{rotulo}</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{valor}</div>
-                  </div>
-                )
-                return (
-                  <div key={k} style={{ border: `1px solid ${COR.borda}`, borderRadius: 12, padding: '12px 12px',
-                    opacity: l.motivo || marcada ? 1 : 0.55 }}>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      {l.motivo
-                        ? <span aria-hidden="true" style={{ width: 22, textAlign: 'center', color: COR.avisoTexto, fontWeight: 800, fontSize: 16 }}>!</span>
-                        : <input type="checkbox" checked={marcada} aria-label={`Revisar ${nome} em ${MESES[l.mes]}`}
-                            onChange={e => setMarcadas(s => { const n = new Set(s); if (e.target.checked) n.add(k); else n.delete(k); return n })}
-                            style={{ width: 22, height: 22, margin: 0, flexShrink: 0 }} />}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700 }}>{nome} <span style={{ fontWeight: 500, color: COR.textoSuave }}>· {nomeMes(l)}</span></div>
-                        <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
-                      </div>
+          ) : <>
+            {planejaveis.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#eef2f8', borderRadius: 12,
+                padding: '10px 14px', fontSize: estreito ? 14 : 13 }}>
+                <span style={{ flex: 1 }}>
+                  <b>{escolhidas.length} de {planejaveis.length}</b> {planejaveis.length === 1 ? 'mês marcado' : 'meses marcados'} para revisar
+                </span>
+                <button type="button" onClick={() => setMarcadas(escolhidas.length ? new Set() : new Set(planejaveis.map(chave)))}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '4px 0', fontFamily: 'inherit',
+                    fontSize: estreito ? 14 : 13, fontWeight: 600, color: COR.azul, whiteSpace: 'nowrap' }}>
+                  {escolhidas.length ? 'Desmarcar todos' : 'Marcar todos'}
+                </button>
+              </div>
+            )}
+            {meses.map(ls => (
+              <div key={`${ls[0].ano}-${ls[0].mes}`}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, padding: '0 4px 6px' }}>
+                  <b style={{ fontSize: 15 }}>{MESES_LONGOS[ls[0].mes]} {ls[0].ano}</b>
+                  <span style={{ fontSize: 13, color: COR.textoSuave }}>· {ls.length} {ls.length === 1 ? 'categoria' : 'categorias'}</span>
+                </div>
+                <div style={{ border: '1.5px solid #93c5fd', borderRadius: 14, background: COR.branco, overflow: 'hidden' }}>
+                  {!estreito && (
+                    <div style={{ display: 'grid', gridTemplateColumns: colunas, gap: 8, padding: '8px 14px 6px' }}>
+                      <span /><span style={{ ...rotuloCol, textAlign: 'left' }}>Categoria</span>
+                      <span style={rotuloCol}>Já lançado</span><span style={rotuloCol}>Plano atual</span><span style={rotuloCol}>Sugerido</span>
                     </div>
-                    {l.motivo ? (
-                      <div style={{ fontSize: 13, lineHeight: 1.4, color: COR.avisoTexto, background: COR.avisoFundo, marginTop: 10,
-                        border: `1px solid ${COR.avisoBorda}`, borderRadius: 8, padding: '8px 10px' }}>
-                        Já lançado {fmt(l.jaLancado)}. {l.motivo}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 10 }}>
-                        {numero('Já lançado', fmt(l.jaLancado))}
-                        {numero('Plano atual', <span style={{ color: COR.textoSuave }}>{fmt(l.plano)}</span>)}
-                        <div style={{ flex: 1.2, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, color: COR.textoSuave }}>Sugerido</div>
-                          <input type="text" inputMode="decimal" value={textos[k] ?? ''} disabled={!marcada}
-                            aria-label={`Valor sugerido para ${nome} em ${MESES[l.mes]}`}
-                            onChange={e => setTextos(t => ({ ...t, [k]: e.target.value }))}
-                            style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: 8, textAlign: 'right', fontFamily: 'inherit',
-                              fontSize: 16, marginTop: 2, border: `1.5px solid ${v === null ? COR.erroTexto : COR.azul}`, fontWeight: 700,
-                              color: COR.texto, background: COR.branco }} />
-                        </div>
-                      </div>
-                    )}
-                    {!l.motivo && v !== null && !abaixo && Math.abs(v - l.sugerido) < 0.005 && (
-                      <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 4, textAlign: 'right' }}>{origem(l)}</div>
-                    )}
-                    {!l.motivo && v === null && <div style={{ fontSize: 12, color: COR.erroTexto, marginTop: 4, textAlign: 'right' }}>valor inválido</div>}
-                    {!l.motivo && abaixo && <div style={{ fontSize: 12, color: COR.avisoTexto, marginTop: 4, textAlign: 'right' }}>abaixo do já lançado</div>}
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <table style={{ width: '100%', minWidth: 540, borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ ...th, width: 28 }} aria-label="Incluir" />
-                  <th style={{ ...th, textAlign: 'left' }}>Categoria</th>
-                  <th style={{ ...th, textAlign: 'left' }}>Mês</th>
-                  <th style={th}>Já lançado</th>
-                  <th style={th}>Plano atual</th>
-                  <th style={th}>Sugerido</th>
-                </tr>
-              </thead>
-              <tbody>
-                {linhas.map(l => {
-                  const k = chave(l)
-                  const marcada = marcadas.has(k)
-                  const v = valorDe(l)
-                  const abaixo = v !== null && v < l.jaLancado - 0.005
-                  const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
-                  return (
-                    l.motivo ? (
-                      // O plano não resolve: sem caixa, sem valor — o motivo e o que fazer.
-                      <tr key={k}>
-                        <td style={{ ...td, textAlign: 'center', color: COR.avisoTexto, fontWeight: 700 }} aria-hidden="true">!</td>
-                        <td style={{ ...td, textAlign: 'left' }}>
-                          <div style={{ fontWeight: 700 }}>{nome}</div>
-                          <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
-                        </td>
-                        <td style={{ ...td, textAlign: 'left' }}>{nomeMes(l)}</td>
-                        <td style={td}>{fmt(l.jaLancado)}</td>
-                        <td colSpan={2} style={{ ...td, textAlign: 'left' }}>
-                          <div style={{ fontSize: 12, lineHeight: 1.4, color: COR.avisoTexto, background: COR.avisoFundo,
-                            border: `1px solid ${COR.avisoBorda}`, borderRadius: 8, padding: '6px 8px' }}>
-                            {l.motivo}
+                  )}
+                  {ls.map((l, n) => {
+                    const k = chave(l)
+                    const nome = l.descricao ? `${l.nome} · ${l.descricao}` : l.nome
+                    const apagada = !l.motivo && !marcadas.has(k)
+                    return (
+                      <div key={k} style={{ borderTop: n || !estreito ? `1px solid ${COR.borda}` : 'none', padding: '12px 14px',
+                        opacity: apagada ? 0.55 : 1 }}>
+                        {estreito ? <>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            {marca(l, nome)}<div style={{ flex: 1, minWidth: 0 }}>{nomeLinha(l)}</div>
                           </div>
-                        </td>
-                      </tr>
-                    ) :
-                    <tr key={k} style={{ opacity: marcada ? 1 : 0.55 }}>
-                      <td style={{ ...td, textAlign: 'center' }}>
-                        <input type="checkbox" checked={marcada} aria-label={`Revisar ${nome} em ${MESES[l.mes]}`}
-                          onChange={e => setMarcadas(s => { const n = new Set(s); if (e.target.checked) n.add(k); else n.delete(k); return n })} />
-                      </td>
-                      <td style={{ ...td, textAlign: 'left' }}>
-                        <div style={{ fontWeight: 700 }}>{nome}</div>
-                        <ParcelasEditaveis itens={l.itens} nomeCat={l.nome} onRenomeado={(c, novo) => setRenomes(r => ({ ...r, [c]: novo }))} />
-                      </td>
-                      <td style={{ ...td, textAlign: 'left' }}>{nomeMes(l)}</td>
-                      <td style={td}>{fmt(l.jaLancado)}</td>
-                      <td style={{ ...td, color: COR.textoSuave }}>{fmt(l.plano)}</td>
-                      <td style={{ ...td, paddingRight: 0 }}>
-                        <input type="text" inputMode="decimal" value={textos[k] ?? ''} disabled={!marcada}
-                          aria-label={`Valor sugerido para ${nome} em ${MESES[l.mes]}`}
-                          onChange={e => setTextos(t => ({ ...t, [k]: e.target.value }))}
-                          style={{ width: 110, padding: '6px 8px', borderRadius: 8, textAlign: 'right', fontFamily: 'inherit', fontSize: 13,
-                            border: `1.5px solid ${v === null ? COR.erroTexto : COR.azul}`, fontWeight: 700, color: COR.texto, background: COR.branco }} />
-                        {v !== null && !abaixo && Math.abs(v - l.sugerido) < 0.005 && (
-                          <div style={{ fontSize: 11, color: COR.textoSuave, marginTop: 3 }}>{origem(l)}</div>
+                          {l.motivo ? motivoCaixa(l) : (
+                            <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'flex-start' }}>
+                              <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: COR.textoSuave, lineHeight: 1.5, paddingTop: 18 }}>
+                                <div>Já lançado <b style={{ color: COR.texto, ...num }}>{fmt(l.jaLancado)}</b></div>
+                                <div>Plano atual <span style={num}>{fmt(l.plano)}</span></div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 12, color: COR.textoSuave, marginBottom: 2, textAlign: 'right' }}>Sugerido</div>
+                                {campoSugerido(l, nome)}
+                              </div>
+                            </div>
+                          )}
+                        </> : (
+                          <div style={{ display: 'grid', gridTemplateColumns: colunas, gap: 8, alignItems: 'start' }}>
+                            <span style={{ paddingTop: 4 }}>{marca(l, nome)}</span>
+                            <div style={{ minWidth: 0 }}>{nomeLinha(l)}</div>
+                            {l.motivo ? <div style={{ gridColumn: '3 / 6' }}>{motivoCaixa(l)}</div> : <>
+                              <span style={{ ...num, textAlign: 'right', fontSize: 14, fontWeight: 600, paddingTop: 7 }}>{fmt(l.jaLancado)}</span>
+                              <span style={{ ...num, textAlign: 'right', fontSize: 14, color: COR.textoSuave, paddingTop: 7 }}>{fmt(l.plano)}</span>
+                              {campoSugerido(l, nome)}
+                            </>}
+                          </div>
                         )}
-                        {v === null && <div style={{ fontSize: 11, color: COR.erroTexto, marginTop: 3 }}>valor inválido</div>}
-                        {abaixo && <div style={{ fontSize: 11, color: COR.avisoTexto, marginTop: 3 }}>abaixo do já lançado</div>}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </>}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>

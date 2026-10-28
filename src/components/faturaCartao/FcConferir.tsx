@@ -5,16 +5,18 @@ import { COR } from './FcShared'
  * Vazia: borda #64748b (4,8 no branco, passa os 3:1 de gráfico). Marcada:
  * verde #15803d com ✓ branco, o verde do app no branco.
  */
-export function BolinhaConferido({ marcado, onToggle, tamanho = 26 }: {
+export function BolinhaConferido({ marcado, onToggle, tamanho = 26, rotulo }: {
   marcado: boolean
   onToggle: () => void
   tamanho?: number
+  /** Nome para leitor de tela e dica, quando a bolinha não é a da fatura. */
+  rotulo?: string
 }) {
   return (
     <button type="button"
       aria-pressed={marcado}
-      aria-label={marcado ? 'Conferida com o banco. Tocar desmarca.' : 'Marcar como conferida com o banco'}
-      title={marcado ? 'Conferida com o banco' : 'Marcar como conferida com o banco'}
+      aria-label={rotulo ?? (marcado ? 'Conferida com o banco. Tocar desmarca.' : 'Marcar como conferida com o banco')}
+      title={rotulo ?? (marcado ? 'Conferida com o banco' : 'Marcar como conferida com o banco')}
       onClick={e => { e.stopPropagation(); onToggle() }}
       style={{
         // A área de toque é maior que o desenho.
