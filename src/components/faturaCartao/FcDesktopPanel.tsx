@@ -1,4 +1,5 @@
 import React from 'react'
+import { segurarTabSeVazio } from '../../utils/campoObrigatorio'
 import type { Categoria } from '../../context/AppContext'
 import {
   COR, NOMES_MESES, fmt, parseBRL, parseDateFatura, diaSemana, dataCompraPadrao, placeholderDataCompra,
@@ -260,6 +261,7 @@ export default function FcDesktopPanel({
               <>
                 <select ref={categoriaSelectRef} value={fCat}
                   onChange={e => { setFCat(e.target.value); setFDesc(''); setFVariante('') }}
+                  onKeyDown={e => segurarTabSeVazio(e, fCat)}
                   onFocus={realcarFoco} onBlur={removerRealce}
                   style={{border:`1.5px solid #e2e8f0`,borderRadius:10,padding:'9px 12px',
                     fontSize:13,outline:'none',background:'#fff',

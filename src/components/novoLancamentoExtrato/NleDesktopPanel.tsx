@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { segurarTabSeVazio } from '../../utils/campoObrigatorio'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { ehFixaDeCartao } from '../../utils/categoriaIcone'
 import {
@@ -319,6 +320,7 @@ export default function NleDesktopPanel({
                           ? formaRecebCategoria(cat.formaPagamento, cat.tipoMovimento)
                           : formaPagCategoria(cat.formaPagamento, cat.tipoMovimento))
                       }}
+                      onKeyDown={e => segurarTabSeVazio(e, fCat)}
                       onFocus={realcarFoco} onBlur={removerRealce}
                       style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                         fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}>

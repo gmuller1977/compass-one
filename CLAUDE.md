@@ -3400,6 +3400,10 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   conta compartilhada também marca, e a parcela de cada mês se confere à
   parte. Nenhum número muda. Regras em
   [`conferirFatura.ts`](src/utils/conferirFatura.ts); `prova101` (9).
+- **Categoria é obrigatória: com ela vazia, o Tab não sai do campo**
+  (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
+  Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.
+  `segurarTabSeVazio` em [`campoObrigatorio.ts`](src/utils/campoObrigatorio.ts).
 - **"Conciliação" saiu das telas** (22/10/2026, pedido do Guilherme:
   "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
   Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",
