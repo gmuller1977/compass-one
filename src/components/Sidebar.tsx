@@ -53,11 +53,10 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     ],
   },
   {
-    // Menu próprio dos investimentos, ainda sem tela
-    // (21/10/2026, pedido do Guilherme: "coloque em breve").
+    // Menu próprio dos investimentos (21/10/2026); a tela chegou em 28/10/2026.
     label: 'Investimentos',
     items: [
-      { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos', exact: false, badge: 'Em breve', disabled: true },
+      { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos', exact: false },
     ],
   },
   {

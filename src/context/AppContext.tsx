@@ -94,6 +94,8 @@ export type Lancamento = {
   subCategoria?: string
   valor: number; formaPagamento: FormaPagLanc
   tipoLanc: 'fixa' | 'variavel'
+  /** No investimento: para qual objetivo foi a aplicação ou o resgate (utils/investimentos). */
+  objetivoId?: string
 }
 
 export type DadosMes = {

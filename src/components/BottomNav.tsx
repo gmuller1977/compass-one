@@ -32,8 +32,7 @@ const MAIS: { icon: string; label: string; path: string; emBreve?: boolean }[] =
   { icon: 'ti-calendar-stats', label: 'Planejamento', path: '/planejamento' },
   ...(NORTE_ATIVO ? [{ icon: 'ti-compass', label: 'Norte', path: '/norte' }] : []),
   { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
-  // Menu dos investimentos, ainda sem tela (21/10/2026, como no computador).
-  { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos', emBreve: true },
+  { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos' },
   { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
   { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
 ]

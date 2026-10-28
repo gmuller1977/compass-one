@@ -221,6 +221,23 @@ segue em Lançamentos com o saldo dela; transferir para ela tira do
 disponível, resgatar devolve. No menu (computador e celular) há
 "Investimentos" com o selo "Em breve", sem tela ainda.
 
+**A tela de Investimentos** (28/10/2026, pedido do Guilherme, opção B das
+prévias em `analises/investimentos/`). Topo com o total investido e o que
+aplicou, resgatou e rendeu no ano; gráfico do que já aconteceu (aplicado ×
+rendido); a lista com **Aplicar**, **Resgatar** e **Atualizar saldo** À
+VISTA em cada investimento (pedido dele: escondidos não); movimentos do mês.
+Aplicar e resgatar gravam a MESMA transferência de Lançamentos. Atualizar
+saldo grava o informado no campo da caixa de saldo, com a data: a diferença
+para o calculado naquele dia é o RENDIMENTO; aplicação depois soma por cima
+(passagem própria, `historicoDoInvestimento`, não `saldoFinalConta`).
+**Objetivos são SEPARADOS da conta** (escolha dele no card: "às vezes a
+pessoa só tem a poupança, mas com objetivos diferentes"): tabela
+`objetivos_investimento` (migração 022), o `objetivoId` vai no lançamento do
+investimento, e o rendimento se divide pelo saldo de cada objetivo. O
+caminho até o objetivo conta só o que se aplica: o Compass NUNCA estima
+rendimento futuro. Regras em [`investimentos.ts`](src/utils/investimentos.ts);
+`prova104` (29).
+
 Consolidação vive no `DadosMes` de cada **conta**, mas a fixa é do **mês**.
 Somar percorrendo as chaves do extrato conta a mesma fixa uma vez por conta —
 com três contas, triplicava. Usar `resolverFixaDoMes` de

@@ -18,6 +18,7 @@ export const TABELAS_EXPORTADAS: Tabela[] = [
   { nome: 'fatura_data', filtro: { coluna: 'user_id' }, ordem: ['ano', 'mes', 'conta_id'] },
   { nome: 'planejamento_data', filtro: { coluna: 'user_id' }, ordem: ['ano', 'tipo_plano'] },
   { nome: 'simulacoes', filtro: { coluna: 'user_id' }, ordem: ['id'] },
+  { nome: 'objetivos_investimento', filtro: { coluna: 'user_id' }, ordem: ['id'] },
   { nome: 'licoes_aprendidas', filtro: { coluna: 'user_id' }, ordem: ['id'] },
   { nome: 'aurix', filtro: { coluna: 'user_id' }, ordem: ['id'] },
   { nome: 'conquistas', filtro: { coluna: 'user_id' }, ordem: ['id'] },

@@ -15,7 +15,7 @@
 
 export type TelaAjuda =
   | 'inicio' | 'lancamentos' | 'planejamento' | 'radar'
-  | 'configuracoes' | 'simulador'
+  | 'configuracoes' | 'simulador' | 'investimentos'
 
 export type Ajuda = {
   titulo: string
@@ -90,6 +90,17 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
       '"Vou comprar" inclui as parcelas no planejamento, numa categoria que você escolhe.',
     ],
     perguntas: ['Como uso o "Posso comprar?"', 'Como incluo uma compra no planejamento?'],
+  },
+  investimentos: {
+    titulo: 'Investimentos',
+    resumo: 'Quanto você tem investido, para que é cada parte, e quanto já rendeu.',
+    dicas: [
+      'Aplicar e Resgatar viram uma transferência entre o banco e o investimento, em Lançamentos. Não é receita nem despesa.',
+      'Atualizar saldo: digite o saldo do app do banco; a diferença vira o rendimento do mês.',
+      'Objetivo separa o dinheiro de um investimento: a mesma poupança pode guardar a reserva e a viagem.',
+      'O Compass não estima rendimento futuro: o caminho até o objetivo conta só o que você aplica.',
+    ],
+    perguntas: ['Como registro o rendimento?', 'Como separo a poupança em objetivos?'],
   },
 }
 

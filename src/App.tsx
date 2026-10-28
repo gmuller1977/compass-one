@@ -16,6 +16,7 @@ import RadarFinanceiro from './pages/RadarFinanceiro'
 import Configuracoes       from './pages/Configuracoes'
 import WizardPlanejamento  from './pages/WizardPlanejamento'
 import Simulacao           from './pages/Simulacao'
+import Investimentos      from './pages/Investimentos'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
@@ -192,6 +193,7 @@ export default function App() {
           <Route path="/primeiro-acesso"    element={<RotaPrimeiroAcesso />} />
           <Route path="/wizard-planejamento" element={<Protegido><WizardPlanejamento /></Protegido>} />
           <Route path="/simulacao"          element={<Protegido><Simulacao /></Protegido>} />
+          <Route path="/investimentos"      element={<Protegido><Investimentos /></Protegido>} />
           <Route path="/resumo-mensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/revisaomensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/indicar"           element={<Protegido><Indicar /></Protegido>} />
