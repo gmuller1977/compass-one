@@ -1050,6 +1050,13 @@ inexistente é movido ao carregar e volta ao banco na gravação
 membro não move, fica com o que o administrador gravar.
 No mesmo dia: a janela "valor da fatura" só abre na fatura EM ABERTO de
 agora (a que fecha no próximo fechamento); futura, fechada ou paga não pede.
+**A janela do valor da fatura só abre com compra NOVA** (29/10/2026, pedido
+do Guilherme: "para não ficar pedindo sempre"). Uma vez por dia, e só quando
+o total lançado mudou desde a última resposta ou "Pular" (`faturaAtualTotal`
+no mês da fatura); igual ao informado, não pede. `pedeValorDaFatura` em
+[`pedirValorDaFatura.ts`](src/utils/pedirValorDaFatura.ts); `prova105` (9).
+No celular a pílula da diferença tem duas linhas (valor e palavras), no
+Cartão, Banco e Dinheiro: numa linha ela cobria o valor informado.
 **No celular, a fatura também se informa** (29/10/2026, pedido do
 Guilherme, opção A no card: "penso no usuário que irá usar apenas no
 celular"). No topo azul do Cartão, embaixo do total, o botão "Fatura no

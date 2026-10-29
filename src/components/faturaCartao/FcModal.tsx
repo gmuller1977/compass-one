@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Conta } from '../../context/AppContext'
-import { COR, NOMES_MESES, type DadosMes } from './FcShared'
+import { COR, NOMES_MESES } from './FcShared'
 import ModalTopo from '../ModalTopo'
 import { mascaraCentavos } from '../../utils/moeda'
 
@@ -12,7 +12,7 @@ type Props = {
   contaInfo: Conta | undefined
   hojeStr: string
   confirmarModalFatura: () => void
-  updateMes: (fn: (prev: DadosMes) => DadosMes) => void
+  pularModalFatura: () => void
   // De qual fatura se trata (pedido do Guilherme, 22/10/2026: "para evitar
   // dúvidas"): o mês em que ela VENCE, como no seletor do topo.
   mesVenc: number
@@ -24,8 +24,8 @@ type Props = {
 export default function FcModal({
   modalFatura, setModalFatura,
   modalFaturaValor, setModalFaturaValor,
-  contaInfo, hojeStr,
-  confirmarModalFatura, updateMes,
+  contaInfo,
+  confirmarModalFatura, pularModalFatura,
   mesVenc, anoVenc, folha,
 }: Props) {
   if (!modalFatura) return null
@@ -62,7 +62,7 @@ export default function FcModal({
             fontFamily:'inherit',boxSizing:'border-box'}}/>
         <div style={{display:'flex',gap:10,marginTop:20}}>
           <button
-            onClick={() => { updateMes(prev=>({...prev,faturaAtualData:hojeStr})); setModalFatura(false) }}
+            onClick={pularModalFatura}
             style={{flex:1,padding:'10px',borderRadius:8,border:`1.5px solid #e2e8f0`,
               background:'#f8faff',color:'#64748b',fontSize:13,fontWeight:600,
               cursor:'pointer',fontFamily:'inherit'}}>

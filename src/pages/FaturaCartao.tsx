@@ -19,6 +19,7 @@ import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategor
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
+import { pedeValorDaFatura } from '../utils/pedirValorDaFatura'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -235,7 +236,12 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   useEffect(() => {
     if (carregando) return
     const dm = dados[key] ?? DADOS_MES_VAZIO
-    if (dm.faturaAtualData === hojeStr) return
+    if (!pedeValorDaFatura({
+      perguntouHoje: dm.faturaAtualData === hojeStr,
+      totalAgora: totalFatura,
+      totalNaUltimaVez: dm.faturaAtualTotal,
+      informado: parseBRL(dm.faturaAtual ?? ''),
+    })) return
     // Só a fatura EM ABERTO de agora pede o valor: a que fecha no próximo
     // fechamento. Fechada, paga ou futura, não — passando os meses a janela
     // abria em cada um (pedido do Guilherme, 21/10/2026).
@@ -265,12 +271,17 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   function confirmarModalFatura() {
     const n = parseBRL(modalFaturaValor)
     if (modalFaturaValor.trim()) {
-      updateMes(prev => ({...prev, faturaAtual: fmt(n), faturaAtualData: hojeStr}))
+      updateMes(prev => ({...prev, faturaAtual: fmt(n), faturaAtualData: hojeStr, faturaAtualTotal: totalFatura}))
     } else {
-      updateMes(prev => ({...prev, faturaAtualData: hojeStr}))
+      updateMes(prev => ({...prev, faturaAtualData: hojeStr, faturaAtualTotal: totalFatura}))
     }
     setModalFatura(false)
     setTimeout(() => dataCompraRef.current?.focus(), 80)
+  }
+
+  function pularModalFatura() {
+    updateMes(prev => ({...prev, faturaAtualData: hojeStr, faturaAtualTotal: totalFatura}))
+    setModalFatura(false)
   }
 
   function resetarParaNovo(novoDia: number) {
@@ -668,7 +679,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         contaInfo={contaInfo}
         hojeStr={hojeStr}
         confirmarModalFatura={confirmarModalFatura}
-        updateMes={updateMes}
+        pularModalFatura={pularModalFatura}
         mesVenc={mesVenc} anoVenc={anoVenc}
       />
       {confirmacao && (
@@ -756,7 +767,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         contaInfo={contaInfo}
         hojeStr={hojeStr}
         confirmarModalFatura={confirmarModalFatura}
-        updateMes={updateMes}
+        pularModalFatura={pularModalFatura}
         mesVenc={mesVenc} anoVenc={anoVenc}
       />
       {confirmacao && (

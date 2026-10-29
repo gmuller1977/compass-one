@@ -24,6 +24,8 @@ export type DadosMes = {
   lancamentos: Record<number, Lancamento[]>
   faturaAtual: string
   faturaAtualData?: string
+  /** Total lançado quando a janela do valor foi respondida (utils/pedirValorDaFatura). */
+  faturaAtualTotal?: number
   fechamentoOverride?: number
   vencimentoOverride?: number
   fixasConsolidadas?: Record<string, boolean>
