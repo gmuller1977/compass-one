@@ -101,6 +101,11 @@ type Props = {
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
   lancar: () => void
   diaDefaultPara: (mes: number, ano: number) => number
+
+  // Valor da fatura no app do banco × o lançado (o 5º card do computador)
+  diferenca: number | null
+  conciliado: boolean
+  abrirFatura: () => void
 }
 
 export default function FcMobileView({
@@ -123,6 +128,7 @@ export default function FcMobileView({
   categorias, categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
+  diferenca, conciliado, abrirFatura,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
@@ -132,6 +138,7 @@ export default function FcMobileView({
 
   const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
+  const contaAtual = contasCartao.find(c => c.id === contaId)
 
   // Sobre o azul do topo (#0f2878 → #1e40af, medido no extremo claro):
   // branco 8,72 · rótulo a 75% 5,1 · #86efac 6,21 · #fde047 6,62.
@@ -169,6 +176,33 @@ export default function FcMobileView({
             vence {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
           </div>
         </div>
+
+        {/* Fatura no app do banco × o lançado no Compass: o mesmo botão do
+            "No Sicredi" do banco no celular, e as mesmas palavras do 5º card
+            do computador (29/10/2026, opção A do Guilherme). Tocar abre a
+            janela "Qual é o valor atual da fatura de [mês]?". */}
+        <button onClick={abrirFatura} aria-label="Informar o valor da fatura" style={{
+          marginTop:14,width:'100%',display:'flex',flexWrap:'wrap',alignItems:'center',gap:10,
+          padding:'10px 14px',minHeight:48,borderRadius:16,border:'none',cursor:'pointer',
+          background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
+        }}>
+          <i className="ti ti-credit-card" aria-hidden style={{fontSize:20,color:'#fff'}} />
+          {/* Sem minWidth 0: com R$ 999.999,99 nos dois, a pílula desce. */}
+          <span style={{flex:1}}>
+            <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
+              Fatura no {contaAtual?.banco ?? 'cartão'}
+            </span>
+            <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>
+              {mesDados.faturaAtual || 'Informar fatura ✎'}
+            </span>
+          </span>
+          {diferenca !== null && (
+            <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
+              background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fff'}}>
+              {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
+            </span>
+          )}
+        </button>
 
         {/* Fechamento e vencimento do mês — tocar abre o ajuste, como antes. */}
         <div style={{display:'flex',gap:8,marginTop:14}}>

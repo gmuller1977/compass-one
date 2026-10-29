@@ -658,6 +658,18 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         updateMes={updateMes}
         lancar={lancar}
         diaDefaultPara={diaDefaultPara}
+        diferenca={diferenca}
+        conciliado={conciliado}
+        abrirFatura={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
+      />
+      <FcModal folha
+        modalFatura={modalFatura} setModalFatura={setModalFatura}
+        modalFaturaValor={modalFaturaValor} setModalFaturaValor={setModalFaturaValor}
+        contaInfo={contaInfo}
+        hojeStr={hojeStr}
+        confirmarModalFatura={confirmarModalFatura}
+        updateMes={updateMes}
+        mesVenc={mesVenc} anoVenc={anoVenc}
       />
       {confirmacao && (
         <FcConfirmModal
