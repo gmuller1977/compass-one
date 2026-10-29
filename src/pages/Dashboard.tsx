@@ -48,6 +48,7 @@ export default function Dashboard() {
   const isMobile  = useIsMobile()
   const {
     contas, categorias, planos, setPlanos, perfil, user, cenarioPrevisao, setCenarioPrevisao, extratoData,
+    compartilhamento,
   } = useApp()
 
   const hoje = new Date()
@@ -269,9 +270,11 @@ export default function Dashboard() {
                   || (!!fimPlano && a * 12 + m <= fimPlano.ano * 12 + fimPlano.mes)}
                 compacto={isMobile}
               />
+              {!compartilhamento.soVisualizar && (
               <button onClick={() => navigate('/novo-lancamento')} style={{ ...botaoTopo, background: '#fff', color: '#1e3a8a', padding: '0 18px' }}>
                 + Lançar
               </button>
+              )}
               <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}
                 style={{ ...botaoTopo, width: 44, padding: 0 }}>
                 <OlhoIcone fechado={oculto} />
@@ -351,9 +354,11 @@ export default function Dashboard() {
                   || (!!fimPlano && a * 12 + m <= fimPlano.ano * 12 + fimPlano.mes)}
                 compacto={isMobile}
               />
+              {!compartilhamento.soVisualizar && (
               <button onClick={() => navigate('/novo-lancamento')} style={{ ...botaoTopo, background: '#fff', color: '#1e3a8a', padding: '0 18px' }}>
                 + Lançar
               </button>
+              )}
               <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}
                 style={{ ...botaoTopo, width: 44, padding: 0 }}>
                 <OlhoIcone fechado={oculto} />

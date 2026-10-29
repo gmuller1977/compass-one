@@ -1,4 +1,5 @@
 import { diaNoMes } from '../utils/diasDaFatura'
+import PainelSoVisualizar from '../components/compartilhar/PainelSoVisualizar'
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { useToast } from '../components/Toast'
@@ -45,7 +46,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const { toast } = useToast()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
 
-  const { contas, categorias, setCategorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
+  const { contas, categorias, setCategorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando, compartilhamento } = useApp()
   // "+ Nova" categoria, a mesma caixa de Lançamentos, criando categoria de cartão.
   const [novaCatAberta, setNovaCatAberta] = useState(false)
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
@@ -142,6 +143,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   // Sincroniza totais das faturas como lançamentos previstos no extrato bancário
   useEffect(() => {
+    // O Educador Financeiro não grava: a sincronia fica com quem lança.
+    if (compartilhamento.soVisualizar) return
     const extrato = { ...extratoRef.current } as Record<string, { lancamentos: Record<number, unknown[]>; saldoBanco: string }>
 
     for (const fatKey of Object.keys(dados)) {
@@ -234,7 +237,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   // Modal "valor da fatura" — abre uma vez por dia por fatura
   useEffect(() => {
-    if (carregando) return
+    // O Educador Financeiro só visualiza: a janela não abre sozinha para ele.
+    if (carregando || compartilhamento.soVisualizar) return
     const dm = dados[key] ?? DADOS_MES_VAZIO
     if (!pedeValorDaFatura({
       perguntouHoje: dm.faturaAtualData === hojeStr,
@@ -732,6 +736,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           setDiaSel={setDiaSel}
           updateMes={updateMes}
         />
+        {compartilhamento.soVisualizar ? <PainelSoVisualizar /> : (
         <FcDesktopPanel
           editandoId={editandoId} avisoParcelas={avisoParcelas}
           editandoFechamento={editandoFechamento} setEditandoFechamento={setEditandoFechamento}
@@ -760,6 +765,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
           lancar={lancar}
           updateMes={updateMes}
         />
+        )}
       </div>
       <FcModal
         modalFatura={modalFatura} setModalFatura={setModalFatura}

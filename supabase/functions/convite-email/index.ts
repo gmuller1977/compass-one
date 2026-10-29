@@ -77,7 +77,10 @@ Deno.serve(async (req) => {
     titulo: `${quem} convidou você para o Compass One`,
     paragrafos: [
       'Olá!',
-      `<b>${quem}</b>${emailDono} quer dividir a organização das finanças com você. Aceitando, vocês veem e lançam nas mesmas contas, cartões e planejamento, cada um com o próprio login.`,
+      c.acesso === 'visualizar'
+        // Convite de Educador Financeiro (migração 023): só visualiza.
+        ? `<b>${quem}</b>${emailDono} convidou você como <b>Educador Financeiro</b>. Aceitando, você vê as contas, os lançamentos e o planejamento, sem lançar nem alterar nada, com o seu próprio login. ${quem} liga e desliga esse acesso quando quiser.`
+        : `<b>${quem}</b>${emailDono} quer dividir a organização das finanças com você. Aceitando, vocês veem e lançam nas mesmas contas, cartões e planejamento, cada um com o próprio login.`,
       `Para aceitar, entre no Compass One com <b>este e-mail</b> (${escapar(para)}). O convite aparece assim que você entrar.`,
     ],
     botao: { texto: 'Aceitar o convite', url },

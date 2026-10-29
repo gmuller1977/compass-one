@@ -1,4 +1,5 @@
 import { saldoInformado, saldoInformadoDaCarteira } from '../utils/saldoInformado'
+import PainelSoVisualizar from '../components/compartilhar/PainelSoVisualizar'
 import { CARTEIRA, pedeConferencia, ultimaConferencia } from '../utils/conferirSaldos'
 import { parseValor } from '../utils/moeda'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
@@ -81,7 +82,7 @@ export default function NovoLancamentoExtrato() {
   const hojeRef = useRef<HTMLDivElement>(null)
   const categoriaSelectRef = useRef<HTMLSelectElement>(null)
   const valorInputRef = useRef<HTMLInputElement>(null)
-  const { contas, categorias, extratoData, updateExtratoMes, planos, faturaData, setFaturaData, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias } = useApp()
+  const { contas, categorias, extratoData, updateExtratoMes, planos, faturaData, setFaturaData, saldoInicialDinheiro, cenarioPrevisao, setCenarioPrevisao, setCategorias, compartilhamento } = useApp()
 
   // Valor planejado (previsto) para uma categoria no mês/ano atual
   function valorPrevistoCat(catId: string, catNome: string, tipoLanc: TipoLanc): number {
@@ -1146,7 +1147,7 @@ export default function NovoLancamentoExtrato() {
   return (
     // Celular, no Banco, no Cartão e no Dinheiro: a PÁGINA rola, com o topo azul junto,
     // como na Bússola — antes o topo ficava preso e sobrava meia tela de dias.
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',
+    <div style={{height:'calc(100vh - var(--faixa-financas, 0px))',display:'flex',flexDirection:'column',
       background:M.fundo,fontFamily:"-apple-system,'Inter',sans-serif",
       overflow:isMobile&&tabPrincipal!=='consolidado'?'auto':'hidden'}}>
       <style>{`
@@ -1361,6 +1362,7 @@ export default function NovoLancamentoExtrato() {
               ehAutomatico={ehAutomatico}
             />
 
+            {compartilhamento.soVisualizar ? <PainelSoVisualizar /> : (
             <NleDesktopPanel
               isMobile={isMobile}
               destinosTransf={destinosTransf}
@@ -1405,6 +1407,7 @@ export default function NovoLancamentoExtrato() {
               lancar={lancar}
               excluirAtual={excluirAtual}
             />
+            )}
           </div>
         </>
       )}

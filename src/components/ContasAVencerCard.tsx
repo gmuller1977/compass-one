@@ -1,4 +1,4 @@
-import type { Categoria } from '../context/AppContext'
+import { useApp, type Categoria } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import { iconeCategoria } from '../utils/categoriaIcone'
 import type { ContaAVencer } from '../utils/contasAVencer'
@@ -32,6 +32,9 @@ export default function ContasAVencerCard({
   acao?: string
   podePagar?: boolean
 }) {
+  // O Educador Financeiro só visualiza: sem o "Pagar".
+  const { compartilhamento } = useApp()
+  if (compartilhamento.soVisualizar) podePagar = false
   const [pagando, setPagando] = useState<ContaAVencer | null>(null)
   const hoje0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
   const quando = (c: ContaAVencer) => {

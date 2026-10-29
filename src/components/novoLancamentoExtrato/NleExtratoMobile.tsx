@@ -1,5 +1,5 @@
 import React from 'react'
-import type { Categoria } from '../../context/AppContext'
+import { useApp, type Categoria } from '../../context/AppContext'
 import { iconeCategoria, ehFixaDeCartao } from '../../utils/categoriaIcone'
 import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import { ehTransferencia } from '../acompanhamento/evolucaoCalcs'
@@ -46,6 +46,9 @@ const ROTULO_FORMA: Record<string, string> = {
 /** O "+" de cada dia, em destaque: a bolinha azul dos atalhos, com o brilho
  *  ciano (29/10/2026, no lugar do botão grande "Novo lançamento"). */
 export function BotaoMais({ rotulo, onClick }: { rotulo: string; onClick: () => void }) {
+  // O Educador Financeiro só visualiza: sem o "+".
+  const { compartilhamento } = useApp()
+  if (compartilhamento.soVisualizar) return null
   return (
     <button aria-label={rotulo} title={rotulo} onClick={onClick} style={{
       width: 40, height: 40, borderRadius: '50%', border: 'none', background: BOLINHA_AZUL, color: '#fff',

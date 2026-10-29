@@ -37,6 +37,7 @@ import { NORTE_ATIVO } from './utils/norteAtivo'
 import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
 import AvisoPermissao from './components/compartilhar/AvisoPermissao'
+import FaixaDeFinancas from './components/compartilhar/FaixaDeFinancas'
 import ErroDeTela from './components/ErroDeTela'
 import { useLarguraMenorQue } from './utils/larguraTela'
 
@@ -54,12 +55,13 @@ function AppShell({ children }: { children: ReactNode }) {
     registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isMobile) return <>{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
+  if (isMobile) return <><FaixaDeFinancas />{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
   return (
     <>
       <Sidebar />
       <AvisoInatividade />
       <div style={{ marginLeft: SIDEBAR_W }}>
+        <FaixaDeFinancas />
         {children}
       </div>
       <IndicadorGravacao />
@@ -129,6 +131,13 @@ function SoNoCelular({ children, senao }: { children: ReactNode; senao: string }
   return <Protegido>{children}</Protegido>
 }
 
+/** O Educador Financeiro só visualiza: o Lançar volta para a Início. */
+function SoQuemLanca({ children }: { children: ReactNode }) {
+  const { compartilhamento } = useApp()
+  if (compartilhamento.soVisualizar) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
 /**
  * Telas só do computador. A Início do computador (Dashboard) no celular é a
  * Bússola, na "/": link antigo para /dashboard não abre a versão web ali.
@@ -177,7 +186,7 @@ export default function App() {
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
           <Route path="/"                element={<HomeRoute />} />
-          <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
+          <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><SoQuemLanca><QuickLaunch /></SoQuemLanca></SoNoCelular>} />
           <Route path="/norte"           element={NORTE_ATIVO ? <Protegido><Norte /></Protegido> : <Navigate to="/" replace />} />
           <Route path="/posso-comprar"   element={<Navigate to="/simulacao" replace />} />
           <Route path="/dashboard"       element={<SoNoComputador senao="/"><Dashboard /></SoNoComputador>} />

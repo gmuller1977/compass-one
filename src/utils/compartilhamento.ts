@@ -8,6 +8,28 @@ import { supabase } from '../lib/supabase'
 export type Convite = {
   id: string; dono_id: string; dono_nome: string; dono_email: string
   email: string; membro_id: string | null; status: 'pendente' | 'aceito'; criado_em: string
+  /** Sem a migração 023 a coluna não existe: vale 'lancar'. */
+  acesso?: 'lancar' | 'visualizar'
+  /** O dono liga e desliga o acesso (migração 023). Sem a coluna: ligado. */
+  ativo?: boolean
+}
+
+/** Os dois tipos de convite, com o nome que a pessoa vê. */
+export const TIPOS_DE_ACESSO = {
+  lancar: { nome: 'Família', explica: 'Vê tudo e lança os próprios gastos' },
+  visualizar: { nome: 'Educador Financeiro', explica: 'Só vê. Não lança nem altera nada' },
+} as const
+
+/**
+ * Quem entrou em várias contas (o consultor com vários clientes, migração
+ * 023) escolhe qual abrir. Guardado no aparelho, por login: o id do dono, ou
+ * 'proprias' para as finanças do próprio login.
+ */
+export function lerEscolhaDeFinancas(authId: string): string | null {
+  try { return localStorage.getItem(`compass-financas-${authId}`) } catch { return null }
+}
+export function guardarEscolhaDeFinancas(authId: string, escolha: string) {
+  try { localStorage.setItem(`compass-financas-${authId}`, escolha) } catch { /* abre a primeira */ }
 }
 
 /** Erro amigável. Sem a tabela, a migração 015 ainda não foi rodada. */
@@ -32,12 +54,19 @@ export async function listarMembros(donoId: string) {
   return { membros: (data ?? []) as Convite[], erro: error ? motivoDoErro(error) : '' }
 }
 
-export async function convidar(p: { donoId: string; donoNome: string; donoEmail: string; email: string }) {
-  const { data, error } = await supabase.from('compartilhamentos').insert({
-    dono_id: p.donoId, dono_nome: p.donoNome, dono_email: p.donoEmail, email: p.email.trim().toLowerCase(),
-  }).select('id').single()
+const semColunaAcesso = (e: { code?: string; message?: string }) => e.code === '42703' || e.code === 'PGRST204' || /acesso/.test(e.message ?? '')
+const FALTA_023 = 'O convite de Educador Financeiro ainda não foi ativado no banco (migração 023).'
+
+export async function convidar(p: { donoId: string; donoNome: string; donoEmail: string; email: string; acesso: 'lancar' | 'visualizar' }) {
+  const linha = { dono_id: p.donoId, dono_nome: p.donoNome, dono_email: p.donoEmail, email: p.email.trim().toLowerCase() }
+  let { data, error } = await supabase.from('compartilhamentos').insert({ ...linha, acesso: p.acesso }).select('id').single()
+  // Sem a 023: "pode lançar" é o convite de sempre; "só visualizar" não dá para garantir, e não grava.
+  if (error && semColunaAcesso(error)) {
+    if (p.acesso === 'visualizar') return { erro: FALTA_023, envio: 'falha' as EnvioConvite }
+    ;({ data, error } = await supabase.from('compartilhamentos').insert(linha).select('id').single())
+  }
   if (error) return { erro: motivoDoErro(error), envio: 'falha' as EnvioConvite }
-  return { erro: '', envio: await enviarEmailDoConvite(data.id as string) }
+  return { erro: '', envio: await enviarEmailDoConvite((data as { id: string }).id) }
 }
 
 /**
@@ -63,6 +92,22 @@ export async function enviarEmailDoConvite(id: string): Promise<EnvioConvite> {
   } catch (e) { console.warn('convite-email', e); return 'falha' }
 }
 
+/** O dono troca o acesso de um convite, pendente ou aceito; vale na hora. */
+export async function trocarAcesso(id: string, acesso: 'lancar' | 'visualizar') {
+  const { error } = await supabase.rpc('trocar_acesso_convite', { convite: id, novo: acesso })
+  if (!error) return ''
+  if (error.code === 'PGRST202' || /trocar_acesso_convite/.test(error.message ?? '')) return FALTA_023
+  return motivoDoErro(error)
+}
+
+/** O dono liga ou desliga o acesso de um convite ("libera na reunião, desativa ao encerrar"). */
+export async function ativarConvite(id: string, ligado: boolean) {
+  const { error } = await supabase.rpc('ativar_convite', { convite: id, ligado })
+  if (!error) return ''
+  if (error.code === 'PGRST202' || /ativar_convite/.test(error.message ?? '')) return FALTA_023
+  return motivoDoErro(error)
+}
+
 export async function removerConvite(id: string) {
   const { error } = await supabase.from('compartilhamentos').delete().eq('id', id)
   return error ? motivoDoErro(error) : ''
@@ -81,8 +126,8 @@ export async function aceitarConvite(id: string) {
   return error ? motivoDoErro(error) : ''
 }
 
-/** O membro sai da conta compartilhada: volta para as finanças próprias. */
-export async function sairDoCompartilhamento(authId: string) {
-  const { error } = await supabase.from('compartilhamentos').delete().eq('membro_id', authId)
+/** O membro sai da conta compartilhada de um dono: volta para as finanças próprias. */
+export async function sairDoCompartilhamento(authId: string, donoId: string) {
+  const { error } = await supabase.from('compartilhamentos').delete().eq('membro_id', authId).eq('dono_id', donoId)
   return error ? motivoDoErro(error) : ''
 }

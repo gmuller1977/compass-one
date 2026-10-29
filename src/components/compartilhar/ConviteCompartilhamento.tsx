@@ -12,7 +12,7 @@ import { aceitarConvite, convitesParaMim, removerConvite, type Convite } from '.
  * dono; as próprias ficam guardadas como estavam e voltam ao sair.
  */
 export default function ConviteCompartilhamento() {
-  const { user, compartilhamento, recarregarCompartilhamento } = useApp()
+  const { user, compartilhamento, trocarDeFinancas } = useApp()
   const [convite, setConvite] = useState<Convite | null>(null)
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
@@ -20,21 +20,25 @@ export default function ConviteCompartilhamento() {
   const uid = user?.id
 
   useEffect(() => {
-    if (!uid || compartilhamento.papel === 'membro') { setConvite(null); return }
+    // Também para quem já está numa conta compartilhada: o educador
+    // financeiro aceita o convite de cada cliente (migração 023).
+    if (!uid) { setConvite(null); return }
     let vivo = true
     convitesParaMim(uid).then(l => { if (vivo) setConvite(l[0] ?? null) })
     return () => { vivo = false }
-  }, [uid, compartilhamento.papel])
+  }, [uid, compartilhamento.donoId])
 
   if (!convite) return null
   const quem = convite.dono_nome || convite.dono_email
+  const educador = convite.acesso === 'visualizar'
 
   async function aceitar() {
     if (!convite) return
     setOcupado(true); setErro('')
     const e = await aceitarConvite(convite.id)
     if (e) { setErro(e); setOcupado(false); return }
-    await recarregarCompartilhamento()
+    // Abre as finanças de quem convidou.
+    await trocarDeFinancas(convite.dono_id)
     setOcupado(false); setConvite(null)
     // Quem criou a conta só para aceitar estava nos primeiros passos: as finanças do
     // dono já estão prontas, então vai direto para o início.
@@ -52,14 +56,16 @@ export default function ConviteCompartilhamento() {
       background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       fontFamily: "-apple-system,'Inter',sans-serif" }}>
       <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(15,23,42,.3)' }}>
-        <ModalTopo icone="ti-users" rotulo="Convite" titulo={`${quem} quer compartilhar as finanças com você`} id="convite-titulo" />
+        <ModalTopo icone={educador ? 'ti-school' : 'ti-users'} rotulo={educador ? 'Convite · Educador Financeiro' : 'Convite'}
+          titulo={educador ? `${quem} quer mostrar as finanças a você` : `${quem} quer compartilhar as finanças com você`} id="convite-titulo" />
         <div style={{ padding: '18px 24px 24px' }}>
         <p style={{ fontSize: 15, color: COR.texto, lineHeight: 1.55, margin: '0 0 6px' }}>
-          Aceitando, você passa a ver e lançar nas contas, categorias e plano {convite.dono_nome ? `de ${convite.dono_nome}` : 'dessa pessoa'},
-          com o seu próprio login.
+          {educador
+            ? <>Como Educador Financeiro, você vê as contas, os lançamentos e o plano {convite.dono_nome ? `de ${convite.dono_nome}` : 'dessa pessoa'}, sem lançar nem alterar nada. A pessoa liga e desliga o seu acesso.</>
+            : <>Aceitando, você passa a ver e lançar nas contas, categorias e plano {convite.dono_nome ? `de ${convite.dono_nome}` : 'dessa pessoa'}, com o seu próprio login.</>}
         </p>
         <p style={{ fontSize: 14, color: COR.textoSuave, lineHeight: 1.5, margin: '0 0 16px' }}>
-          Se você já tem dados aqui, eles ficam guardados e voltam se você sair do compartilhamento.
+          Suas finanças próprias e as de outras contas ficam guardadas: você troca entre elas no topo da tela e no Perfil.
         </p>
         {erro && <div role="alert" style={{ fontSize: 14, color: COR.erroTexto, background: COR.erroFundo, borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>{erro}</div>}
         <div style={{ display: 'flex', gap: 10 }}>

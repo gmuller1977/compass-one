@@ -10,6 +10,7 @@ export default function AvisoSoAdministrador({ style }: { style?: React.CSSPrope
   const { compartilhamento } = useApp()
   if (compartilhamento.papel !== 'membro') return null
   const dono = compartilhamento.donoNome || compartilhamento.donoEmail || 'o administrador'
+  if (compartilhamento.soVisualizar) return null // a FaixaDeFinancas, no topo, já diz
   return (
     <div role="note" style={{
       background: COR.infoFundo, color: COR.infoTexto, border: '1px solid #bfdbfe', borderRadius: 12,

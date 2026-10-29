@@ -3576,6 +3576,26 @@ que falta ativar.
   cadastro só leitura para o membro, com controle sem a 017: 11 falham) e
   `prova66b` (26, no navegador com o AppContext de verdade: dois logins,
   mesmo mês, cadastro bloqueado ao membro, nome, sair).
+- **Convite "Educador Financeiro"** (29/10/2026, pedido do Guilherme: o
+  Compass gratuito como porta para atendimento de educação financeira).
+  Ao convidar, o dono escolhe **Família** (vê e lança, o de sempre) ou
+  **Educador Financeiro** (só vê), troca o tipo depois e LIGA/DESLIGA o
+  acesso ("libera na reunião, desativa ao encerrar"). Desligado, o
+  convidado não lê nada daquelas finanças. Uma pessoa pode estar em VÁRIAS
+  contas (o educador com vários clientes): a `FaixaDeFinancas`, no topo de
+  todas as telas, diz de quem são as finanças abertas e troca ("Minhas
+  finanças" e cada cliente; a escolha fica no aparelho, por login). O
+  educador não grava nada: `setExtratoData`, `updateExtratoMes` e
+  `setFaturaData` não mudam e avisam (`compass-permissao`, `'visualizar'`),
+  e somem o "+", "+ Lançar", Pagar, Confere, Aplicar e o formulário de
+  Lançamentos do computador (`PainelSoVisualizar`). Ele não guarda cópia
+  das finanças do cliente no aparelho, nem recebe o lembrete das contas
+  dele; o acesso é reconferido a cada minuto. Banco: migração
+  `023_convite_so_visualizar.sql` (colunas `acesso` e `ativo`, funções
+  `trocar_acesso_convite` e `ativar_convite`, sai o limite de uma conta
+  por pessoa); `provas/banco/prova106-banco.sql` (41, num Postgres de
+  verdade). Sem a 023 o app segue igual e o convite de educador avisa que
+  falta ativar.
 
 ---
 

@@ -14,13 +14,31 @@ import { ajustarDiasDasFaturas } from '../utils/diasDaFatura'
 import { mesclar3 } from '../utils/mesclarMes'
 import { carimbarAutor, respeitarAutoria } from '../utils/autorDoLancamento'
 import { lerTudo } from '../utils/lerTudo'
+import { guardarEscolhaDeFinancas, lerEscolhaDeFinancas } from '../utils/compartilhamento'
 import type { EstimativasIniciais } from '../utils/primeiroAcesso'
 
 /** Linha de extrato_data / fatura_data como a consulta devolve. */
 type LinhaMes = { conta_id: string; ano: number; mes: number; dados: unknown }
 
 // ── Types compartilhados ─────────────────────────────────────────────
-export type Compartilhamento = { papel: 'proprio' | 'membro'; donoNome: string; donoEmail: string; /** Membros aceitos, para o dono. */ membros: number }
+export type AcessoCompartilhado = 'lancar' | 'visualizar'
+/** Uma conta de outra pessoa em que este login entrou por convite. */
+export type ContaDeOutro = {
+  donoId: string; donoNome: string; donoEmail: string; acesso: AcessoCompartilhado
+  /** O dono liga e desliga o acesso (migração 023); desligado, não abre. */
+  ativo: boolean
+}
+export type Compartilhamento = {
+  papel: 'proprio' | 'membro'; donoNome: string; donoEmail: string
+  /** Membros aceitos, para o dono. */ membros: number
+  /** De quem são as finanças abertas, quando é membro. */
+  donoId: string | null
+  /** Entrou com "Só visualizar" (migração 023): não grava nada nas finanças do dono. */
+  soVisualizar: boolean
+  /** Todas as contas de outras pessoas que este login aceitou; o app abre uma por vez. */
+  contasDeOutros: ContaDeOutro[]
+}
+const SEM_COMPARTILHAMENTO: Compartilhamento = { papel: 'proprio', donoNome: '', donoEmail: '', membros: 0, donoId: null, soVisualizar: false, contasDeOutros: [] }
 export type Perfil = { nome: string; apelido: string }
 export type TipoConta     = 'corrente' | 'poupanca' | 'cartao'
 export type TipoCategoria = 'entrada' | 'saida'
@@ -172,6 +190,11 @@ type AppCtx = {
   compartilhamento: Compartilhamento
   /** Relê de quem são as finanças — depois de aceitar um convite ou sair. */
   recarregarCompartilhamento: () => Promise<void>
+  /**
+   * Abre as finanças de outra pessoa (o id do dono) ou as próprias (`null`).
+   * A escolha fica guardada no aparelho, por login.
+   */
+  trocarDeFinancas: (donoId: string | null) => Promise<void>
   limparDados: () => Promise<void>
   sairDaConta: () => Promise<void>
   excluirConta: () => Promise<{ error?: string }>
@@ -364,7 +387,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const authIdRef       = useRef<string | null>(null)
   const authCarregadoRef = useRef<string | null>(null)
   const perfilProprioRef = useRef<Perfil | null>(null)
-  const [compartilhamento, setCompartilhamento] = useState<Compartilhamento>({ papel: 'proprio', donoNome: '', donoEmail: '', membros: 0 })
+  /** A conta aberta foi aceita com "Só visualizar" (ver soVisualizar). */
+  const soVisualizarRef = useRef(false)
+  const [compartilhamento, setCompartilhamento] = useState<Compartilhamento>(SEM_COMPARTILHAMENTO)
   // Ids que este aparelho sabe que estão no banco: só esses podem ser apagados
   // ao gravar a lista. Antes apagava tudo o que não estava na lista daqui, e
   // a conta criada no celular da outra pessoa sumia na próxima gravação.
@@ -409,6 +434,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pendentesGuardadosRef = useRef(true)
 
   // ── Cópia no aparelho (ver utils/copiaLocal) ─────────────────────────
+  /**
+   * O Educador Financeiro ("Só visualizar") não guarda cópia das finanças do
+   * cliente no aparelho: desligado o acesso, nada daquelas finanças pode
+   * abrir aqui, nem sem internet.
+   */
+  function guardarCopiaSePode(uid: string, linhas: LinhasDoBanco) {
+    if (!soVisualizar()) void guardarCopia(uid, linhas)
+  }
   // Abrindo sem internet, o app mostra a última cópia guardada em vez da tela
   // vazia. Nesse modo só lançamentos (extrato e fatura, que vão por mês e
   // ficam em pendentesLocais) são gravados; contas, categorias, plano e
@@ -459,7 +492,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loadedUserIdRef.current = null
         userIdRef.current = null; authIdRef.current = null; authCarregadoRef.current = null
         perfilProprioRef.current = null
-        setCompartilhamento({ papel: 'proprio', donoNome: '', donoEmail: '', membros: 0 })
+        setCompartilhamento(SEM_COMPARTILHAMENTO)
+        soVisualizarRef.current = false
         resetState()
         setCarregando(false)
       } else if (wasLoggedOutRef.current || !everLoadedRef.current || authCarregadoRef.current !== u.id) {
@@ -486,39 +520,71 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Conta compartilhada ──────────────────────────────────────────────
   /**
-   * De quem são as finanças que este login vê: do dono que o convidou, se
-   * aceitou um convite; senão, as próprias. Sem a tabela (migração 015 não
-   * rodada) ou sem internet, vale o último dono conhecido neste aparelho.
+   * De quem são as finanças que este login vê. Pode ter aceitado convites de
+   * VÁRIAS pessoas (migração 023: o consultor com vários clientes); abre a
+   * escolhida neste aparelho (`trocarDeFinancas`), senão a primeira, como
+   * antes. "Minhas finanças" é a escolha `proprias`. Sem a tabela (migração
+   * 015 não rodada) ou sem internet, vale o último dono conhecido aqui.
    */
   async function resolverDono(authId: string): Promise<string> {
     const chave = `compass-dono-${authId}`
+    const escolha = lerEscolhaDeFinancas(authId)
     try {
-      const { data, error } = await supabase.from('compartilhamentos')
-        .select('dono_id, dono_nome, dono_email').eq('membro_id', authId).eq('status', 'aceito').maybeSingle()
+      type Linha = { dono_id: string; dono_nome: string | null; dono_email: string | null; acesso?: string | null; ativo?: boolean | null }
+      const ler = (colunas: string) => supabase.from('compartilhamentos').select(colunas)
+        .eq('membro_id', authId).eq('status', 'aceito').order('aceito_em')
+      let { data, error } = await ler('dono_id, dono_nome, dono_email, acesso, ativo')
+      // Sem a migração 023 não há `acesso` nem `ativo`: todo convite é "pode lançar" e ligado.
+      if (error && (error.code === '42703' || /acesso|ativo/.test(error.message ?? ''))) ({ data, error } = await ler('dono_id, dono_nome, dono_email'))
       if (error) throw error
-      if (data?.dono_id) {
+      const outras: ContaDeOutro[] = ((data ?? []) as unknown as Linha[]).map(l => ({
+        donoId: l.dono_id, donoNome: l.dono_nome ?? '', donoEmail: l.dono_email ?? '',
+        acesso: l.acesso === 'visualizar' ? 'visualizar' : 'lancar', ativo: l.ativo !== false,
+      }))
+      const ligadas = outras.filter(o => o.ativo)
+      const aberta = escolha === 'proprias' ? null : (ligadas.find(o => o.donoId === escolha) ?? ligadas[0] ?? null)
+      if (aberta) {
         const { data: meu } = await supabase.from('user_preferences').select('perfil_nome, perfil_apelido').eq('user_id', authId).maybeSingle()
         perfilProprioRef.current = { nome: meu?.perfil_nome ?? '', apelido: meu?.perfil_apelido ?? '' }
-        setCompartilhamento({ papel: 'membro', donoNome: data.dono_nome ?? '', donoEmail: data.dono_email ?? '', membros: 0 })
-        try { localStorage.setItem(chave, JSON.stringify(data)) } catch { /* só não lembra offline */ }
-        return data.dono_id as string
+        soVisualizarRef.current = aberta.acesso === 'visualizar'
+        setCompartilhamento({ papel: 'membro', donoNome: aberta.donoNome, donoEmail: aberta.donoEmail, membros: 0, donoId: aberta.donoId,
+          soVisualizar: soVisualizarRef.current, contasDeOutros: outras })
+        try { localStorage.setItem(chave, JSON.stringify({ aberta, outras })) } catch { /* só não lembra offline */ }
+        return aberta.donoId
       }
       perfilProprioRef.current = null
+      soVisualizarRef.current = false
       const { count } = await supabase.from('compartilhamentos')
         .select('id', { count: 'exact', head: true }).eq('dono_id', authId).eq('status', 'aceito')
-      setCompartilhamento({ papel: 'proprio', donoNome: '', donoEmail: '', membros: count ?? 0 })
-      try { localStorage.removeItem(chave) } catch { /* idem */ }
+      setCompartilhamento({ ...SEM_COMPARTILHAMENTO, membros: count ?? 0, contasDeOutros: outras })
+      try {
+        if (outras.length) localStorage.setItem(chave, JSON.stringify({ aberta: null, outras }))
+        else localStorage.removeItem(chave)
+      } catch { /* idem */ }
       return authId
     } catch {
       try {
-        const v = JSON.parse(localStorage.getItem(chave) ?? 'null') as { dono_id: string; dono_nome?: string; dono_email?: string } | null
-        if (v?.dono_id) {
-          setCompartilhamento({ papel: 'membro', donoNome: v.dono_nome ?? '', donoEmail: v.dono_email ?? '', membros: 0 })
-          return v.dono_id
+        const v = JSON.parse(localStorage.getItem(chave) ?? 'null') as
+          { aberta?: ContaDeOutro | null; outras?: ContaDeOutro[]; dono_id?: string; dono_nome?: string; dono_email?: string } | null
+        // Cópia de antes da 023: { dono_id, dono_nome, dono_email }.
+        const aberta: ContaDeOutro | null | undefined = v?.dono_id ? { donoId: v.dono_id, donoNome: v.dono_nome ?? '', donoEmail: v.dono_email ?? '', acesso: 'lancar', ativo: true } : v?.aberta
+        // "Só visualizar" não abre sem confirmar no banco que o acesso está ligado.
+        if (aberta?.donoId && aberta.acesso !== 'visualizar') {
+          soVisualizarRef.current = false
+          setCompartilhamento({ papel: 'membro', donoNome: aberta.donoNome, donoEmail: aberta.donoEmail, membros: 0, donoId: aberta.donoId,
+            soVisualizar: false, contasDeOutros: v?.outras ?? [aberta] })
+          return aberta.donoId
         }
       } catch { /* sem cópia */ }
       return authId
     }
+  }
+
+  async function trocarDeFinancas(donoId: string | null) {
+    const authId = authIdRef.current
+    if (!authId) return
+    guardarEscolhaDeFinancas(authId, donoId ?? 'proprias')
+    await recarregarCompartilhamento()
   }
 
   async function recarregarCompartilhamento() {
@@ -592,7 +658,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Sem internet, ou depois da última tentativa: abre com a cópia do
       // aparelho, se houver — em vez de esperar e mostrar a tela vazia.
       if (navigator.onLine === false || tentativa > 4) {
-        const copia = await lerCopia(userId)
+        const copia = soVisualizar() ? null : await lerCopia(userId)
         if (copia && userIdRef.current === userId) {
           if (loadRetryRef.current) { clearTimeout(loadRetryRef.current); loadRetryRef.current = null }
           aplicarLinhas(userId, copia.linhas, copia.salvaEm)
@@ -610,7 +676,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return
     }
     aplicarLinhas(userId, linhas, null)
-    guardarCopia(userId, linhas)
+    guardarCopiaSePode(userId, linhas)
   }
 
   /**
@@ -629,7 +695,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!linhas || userIdRef.current !== uid || !modoAparelhoRef.current) return
       await Promise.all([filaExtratoRef.current, filaFaturaRef.current])
       aplicarLinhas(uid, linhas, null)
-      guardarCopia(uid, linhas)
+      guardarCopiaSePode(uid, linhas)
     } finally {
       saindoDoAparelhoRef.current = false
     }
@@ -790,7 +856,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function canSave() { return !!(userIdRef.current && dataLoadedRef.current) }
   /** Entrou por convite na conta de outra pessoa: não é o administrador. */
   function ehMembro() { return !!authIdRef.current && !!userIdRef.current && authIdRef.current !== userIdRef.current }
-  function avisarSoAdmin() { window.dispatchEvent(new CustomEvent('compass-permissao', { detail: 'cadastro' })) }
+  /** Entrou com "Só visualizar": nada se grava nas finanças do dono (migração 023). */
+  function soVisualizar() { return ehMembro() && soVisualizarRef.current }
+  function avisarSoAdmin() { window.dispatchEvent(new CustomEvent('compass-permissao', { detail: soVisualizar() ? 'visualizar' : 'cadastro' })) }
 
   function safeSaveCheck(key: keyof typeof savedCountRef.current, newCount: number): boolean {
     const known = savedCountRef.current[key]
@@ -870,7 +938,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     noBanco: { current: Record<string, unknown> },
     countKey: 'extrato' | 'fatura',
   ) {
-    if (!canSave()) return
+    if (!canSave() || soVisualizar()) return
     const uid = userIdRef.current!
     if (Object.keys(data).length === 0) {
       if (!safeSaveCheck(countKey, 0)) return
@@ -1115,7 +1183,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let saiuEm = 0
     const mudou = () => {
       if (document.visibilityState === 'hidden') { saiuEm = Date.now(); return }
-      if (saiuEm && Date.now() - saiuEm >= 30_000) recarregarDoBanco()
+      if (saiuEm && Date.now() - saiuEm >= 30_000) {
+        if (ehMembro()) {
+          const antes = userIdRef.current
+          void recarregarCompartilhamento().then(() => { if (userIdRef.current === antes) recarregarDoBanco() })
+        } else recarregarDoBanco()
+      }
       saiuEm = 0
     }
     document.addEventListener('visibilitychange', mudou)
@@ -1128,7 +1201,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const compartilhada = compartilhamento.papel === 'membro' || compartilhamento.membros > 0
   useEffect(() => {
     if (!compartilhada) return
-    const t = setInterval(() => { if (document.visibilityState === 'visible') recarregarDoBanco() }, 60_000)
+    // O membro confere antes se o acesso continua ligado (o dono desliga o
+    // Educador Financeiro ao fim da reunião): desligado, volta às próprias.
+    const t = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return
+      if (ehMembro()) { const antes = userIdRef.current; await recarregarCompartilhamento(); if (userIdRef.current !== antes) return }
+      recarregarDoBanco()
+    }, 60_000)
     return () => clearInterval(t)
   }, [compartilhada]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1256,7 +1335,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const uid = userIdRef.current
       if (!uid || !dataLoadedRef.current || modoAparelhoRef.current) return
       const linhas = montarCopiaRef.current()
-      if (linhas) guardarCopia(uid, linhas)
+      if (linhas) guardarCopiaSePode(uid, linhas)
     }, 2000)
   }
 
@@ -1331,9 +1410,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSaldoInicialDinheiroState(v)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function setExtratoData(v: Record<string, DadosMes>) { setExtratoState(v) }
+  // "Só visualizar" (29/10/2026, pedido do Guilherme): o consultor vê as
+  // finanças do cliente e não lança nem edita. Toda mudança de lançamento
+  // passa por aqui; o banco confere de novo (migração 023).
+  function setExtratoData(v: Record<string, DadosMes>) {
+    if (soVisualizar()) { avisarSoAdmin(); return }
+    setExtratoState(v)
+  }
+
+  const setFaturaData = useCallback<Dispatch<SetStateAction<Record<string, unknown>>>>(v => {
+    if (soVisualizar()) { avisarSoAdmin(); return }
+    setFaturaState(v)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function updateExtratoMes(key: string, fn: (prev: DadosMes) => DadosMes) {
+    if (soVisualizar()) { avisarSoAdmin(); return }
     setExtratoState(prev => ({
       ...prev,
       [key]: fn(prev[key] ?? { lancamentos: {}, saldoBanco: '' }),
@@ -1400,7 +1491,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       saldoInicialDinheiro, setSaldoInicialDinheiro, salvarSaldoInicialDinheiro,
       setContas, setCategorias,
       setExtratoData, updateExtratoMes,
-      setFaturaData: setFaturaState,
+      setFaturaData,
       setPlanos,
       setCenarioPrevisao, setPerfil,
       onboardingCompleto, setOnboardingCompleto,
@@ -1408,7 +1499,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       metaSim, setMetaSim,
       gravacao,
       dadosDoAparelho,
-      compartilhamento, recarregarCompartilhamento,
+      compartilhamento, recarregarCompartilhamento, trocarDeFinancas,
       limparDados, sairDaConta, excluirConta,
     }}>
       {children}

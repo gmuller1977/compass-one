@@ -27,13 +27,14 @@ function useContasDoLembrete() {
  * a cópia do aparelho (os números podem ser velhos) nem durante o load.
  */
 export function SincronizarLembrete() {
-  const { user, carregando, dadosDoAparelho } = useApp()
+  const { user, carregando, dadosDoAparelho, compartilhamento } = useApp()
   const lista = useContasDoLembrete()
   useEffect(() => {
-    if (!user || carregando || dadosDoAparelho !== null) return
+    // O Educador Financeiro não recebe o lembrete das contas do cliente.
+    if (!user || carregando || dadosDoAparelho !== null || compartilhamento.soVisualizar) return
     const t = setTimeout(() => atualizarContasProximas(user.id, lista), 3000)
     return () => clearTimeout(t)
-  }, [user, carregando, dadosDoAparelho, lista])
+  }, [user, carregando, dadosDoAparelho, lista, compartilhamento.soVisualizar])
   return null
 }
 

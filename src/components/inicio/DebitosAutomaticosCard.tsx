@@ -16,7 +16,9 @@ import type { Deps } from '../../utils/saldoConta'
  * extrato do banco se saiu e no valor certo. Regras em utils/debitoAutomatico.ts.
  */
 export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; oculto: boolean }) {
-  const { updateExtratoMes } = useApp()
+  const { updateExtratoMes, compartilhamento } = useApp()
+  // O Educador Financeiro só visualiza: a lista sem os toques de conferir.
+  const ver = compartilhamento.soVisualizar
   const debitos = useMemo(() => debitosDoMes(deps), [deps])
   const [editando, setEditando] = useState<string | null>(null)
   const [escolhendo, setEscolhendo] = useState<string | null>(null)
@@ -120,16 +122,16 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
               <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: COR.textoSuave,
                 padding: i === 0 ? '4px 0 0' : '14px 0 0', borderTop: i === 0 ? 'none' : '1px solid #eef2f8' }}>{titulo}</div>
             )}
-            <div onClick={() => { if (!d.agendado && !aberto) setEscolhendo(opcoes ? null : d.id) }} style={{
+            <div onClick={() => { if (!ver && !d.agendado && !aberto) setEscolhendo(opcoes ? null : d.id) }} style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', minHeight: 48,
-              borderTop: titulo ? 'none' : '1px solid #eef2f8', cursor: d.agendado ? undefined : 'pointer',
+              borderTop: titulo ? 'none' : '1px solid #eef2f8', cursor: d.agendado || ver ? undefined : 'pointer',
             }}>
-              <button type="button" disabled={d.agendado}
+              <button type="button" disabled={d.agendado || ver}
                 aria-label={d.agendado ? `${d.nome}: agendado` : d.naoSaiu ? `${d.nome}: não ${saiu}` : conferido ? `Desfazer: ${d.nome} confere` : `${d.nome} confere`}
                 aria-pressed={conferido}
                 onClick={e => {
                   e.stopPropagation()
-                  if (d.agendado) return
+                  if (d.agendado || ver) return
                   if (d.naoSaiu) { setEscolhendo(opcoes ? null : d.id); return }
                   gravar(d, dm => (conferido ? debitoDesconferir(dm, d) : debitoConfere(dm, d)))
                 }}

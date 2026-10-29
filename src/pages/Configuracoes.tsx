@@ -531,7 +531,7 @@ export default function Configuracoes() {
   const nenhumaConta = (aba === 'bancos' || aba === 'cartoes') && !isMobile && contasFiltradas.length === 0
 
   return (
-    <div style={{ height:'100vh', display:'flex', flexDirection:'column',
+    <div style={{ height:'calc(100vh - var(--faixa-financas, 0px))', display:'flex', flexDirection:'column',
       background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
       <style>{`
         .campo-cfg:focus {

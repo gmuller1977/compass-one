@@ -25,17 +25,18 @@ const faltaTabela = (e: { code?: string; message?: string } | null) =>
   !!e && (e.code === '42P01' || e.code === 'PGRST205' || /objetivos_investimento/.test(e.message ?? ''))
 
 /**
- * `userId` é quem fez login. A leitura não filtra: o RLS devolve os do
- * próprio login e, para quem entrou por convite, os do dono. Gravar, só o
- * administrador (`podeGravar`), com o próprio id.
+ * `userId` é quem fez login; `donoId`, de quem são as finanças abertas. A
+ * leitura filtra pelo dono: quem entrou em mais de uma conta (migração 023)
+ * só vê os objetivos da aberta. Gravar, só o administrador (`podeGravar`),
+ * com o próprio id.
  */
-export function useObjetivos(userId: string | undefined, podeGravar: boolean) {
+export function useObjetivos(userId: string | undefined, podeGravar: boolean, donoId: string | undefined = userId) {
   const [objetivos, setObjetivos] = useState<Objetivo[]>([])
   const [faltaMigracao, setFaltaMigracao] = useState(false)
 
   const carregar = useCallback(async () => {
-    if (!userId) return
-    const { data, error } = await supabase.from('objetivos_investimento').select('*').order('created_at')
+    if (!userId || !donoId) return
+    const { data, error } = await supabase.from('objetivos_investimento').select('*').eq('user_id', donoId).order('created_at')
     if (error) {
       if (faltaTabela(error)) setFaltaMigracao(true)
       else console.error('objetivos_investimento (ler):', error.message)
@@ -43,7 +44,7 @@ export function useObjetivos(userId: string | undefined, podeGravar: boolean) {
     }
     setFaltaMigracao(false)
     setObjetivos((data as Linha[]).map(deLinha))
-  }, [userId])
+  }, [userId, donoId])
 
   useEffect(() => { void carregar() }, [carregar])
 

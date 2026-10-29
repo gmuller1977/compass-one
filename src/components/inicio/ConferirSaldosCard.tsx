@@ -18,7 +18,9 @@ import type { Deps } from '../../utils/saldoConta'
  */
 export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; oculto: boolean }) {
   const navigate = useNavigate()
-  const { updateExtratoMes } = useApp()
+  const { updateExtratoMes, compartilhamento } = useApp()
+  // O Educador Financeiro só visualiza: vê o resultado, sem Confere / Está diferente.
+  const ver = compartilhamento.soVisualizar
   const hoje = new Date()
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
 
@@ -98,8 +100,8 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
 
             {pede && !aberto && !explicar && (
               <div style={botoes}>
-                <Pilula forte onClick={() => confere(s.conta.id)}>Confere</Pilula>
-                <Pilula onClick={() => (s.naoMarcadas.length ? setExplicando(s.conta.id) : abrirCampo(s.conta.id))}>Está diferente</Pilula>
+                {!ver && <Pilula forte onClick={() => confere(s.conta.id)}>Confere</Pilula>}
+                {!ver && <Pilula onClick={() => (s.naoMarcadas.length ? setExplicando(s.conta.id) : abrirCampo(s.conta.id))}>Está diferente</Pilula>}
               </div>
             )}
 
@@ -134,7 +136,7 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
                 </Etiqueta>
                 <Pilula onClick={() => verLancamentos(s.conta.id)}>Ver Lançamentos</Pilula>
                 {/* Acertou em Lançamentos, ou o banco mudou depois: o app confere agora. */}
-                <Pilula onClick={() => confere(s.conta.id)}>Já confere</Pilula>
+                {!ver && <Pilula onClick={() => confere(s.conta.id)}>Já confere</Pilula>}
               </div>
             )}
 

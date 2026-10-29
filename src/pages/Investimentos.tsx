@@ -38,7 +38,7 @@ export default function Investimentos() {
   const isMobile = useIsMobile()
   const { contas, extratoData, user, compartilhamento, planos } = useApp()
   const admin = compartilhamento.papel !== 'membro'
-  const { objetivos, faltaMigracao, salvar, excluir } = useObjetivos(user?.id, admin)
+  const { objetivos, faltaMigracao, salvar, excluir } = useObjetivos(user?.id, admin, compartilhamento.donoId ?? user?.id)
   const agora = new Date()
   const hoje = isoDe(agora.getFullYear(), agora.getMonth(), agora.getDate())
   const r = useMemo(() => resumoDosInvestimentos(contas, extratoData as Record<string, DadosMes>, hoje, objetivos),
@@ -141,7 +141,7 @@ export default function Investimentos() {
                 {r.itens.map((it, k) => (
                   <LinhaInvestimento key={it.conta.id} it={it} hoje={hoje} primeira={k === 0}
                     objetivos={objetivos.filter(o => o.contaId === it.conta.id)}
-                    podeObjetivo={admin && !faltaMigracao} celular={isMobile}
+                    podeObjetivo={admin && !faltaMigracao} celular={isMobile} soVer={compartilhamento.soVisualizar}
                     onAcao={a => setAcao({ item: it, acao: a })}
                     onObjetivo={o => setEditando({ item: it, objetivo: o })} />
                 ))}
@@ -190,9 +190,11 @@ const BOTAO = {
   boxShadow: 'none', border: '1.5px solid #bfdbfe',
 } as const
 
-function LinhaInvestimento({ it, hoje, primeira, objetivos, podeObjetivo, celular, onAcao, onObjetivo }: {
+function LinhaInvestimento({ it, hoje, primeira, objetivos, podeObjetivo, celular, onAcao, onObjetivo, soVer }: {
   it: HistoricoInvestimento; hoje: string; primeira: boolean
   objetivos: Objetivo[]; podeObjetivo: boolean
+  /** Educador Financeiro: só visualiza, sem Aplicar, Resgatar e Atualizar saldo. */
+  soVer?: boolean
   /** No celular os botões ficam embaixo, dois por linha; no computador, na lateral. */
   celular: boolean
   onAcao: (a: AcaoInvestimento) => void
@@ -210,7 +212,7 @@ function LinhaInvestimento({ it, hoje, primeira, objetivos, podeObjetivo, celula
   // A conta inteira, para os números quando não há objetivo.
   const daConta = it.partes.reduce((a, p) => ({ saldo: a.saldo + p.saldo, rendido: a.rendido + p.rendido,
     aplicado: a.aplicado + p.aplicado, resgatado: a.resgatado + p.resgatado }), { saldo: 0, rendido: 0, aplicado: 0, resgatado: 0 })
-  const botoes = (
+  const botoes = soVer ? null : (
     <div style={celular
       ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }
       : { display: 'flex', flexDirection: 'column', gap: 8, width: 170, flexShrink: 0 }}>

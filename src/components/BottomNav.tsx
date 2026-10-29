@@ -61,7 +61,7 @@ export default function BottomNav() {
     window.addEventListener('popstate', aoVoltar)
     return () => window.removeEventListener('popstate', aoVoltar)
   }, [mais])
-  const { sairDaConta } = useApp()
+  const { sairDaConta, compartilhamento: { soVisualizar } } = useApp()
   // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
   // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
   const selo = useSeloNorte(NORTE_ATIVO && isMobile && !pathname.startsWith('/norte'))
@@ -146,6 +146,8 @@ export default function BottomNav() {
         display: 'flex', zIndex: 100,
       }}>
         {NAV.map(n => {
+          // O Educador Financeiro só visualiza: sem o "+" de lançar.
+          if (!n && soVisualizar) return <div key="add" style={{ flex: 1 }} />
           if (!n) {
             return (
               <div key="add" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
