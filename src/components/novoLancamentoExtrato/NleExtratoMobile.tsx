@@ -4,7 +4,7 @@ import { iconeCategoria, ehFixaDeCartao } from '../../utils/categoriaIcone'
 import { grupoDaCategoria } from '../../utils/rotuloCategoria'
 import { ehTransferencia } from '../acompanhamento/evolucaoCalcs'
 import { Cartao, IconeRedondo } from '../mobile/ui'
-import { M } from '../mobile/estilo'
+import { M, BOLINHA_AZUL } from '../mobile/estilo'
 import ModalTopo from '../ModalTopo'
 import { CalendarioMes } from '../CalendarioMes'
 import {
@@ -41,6 +41,18 @@ const VERMELHO = '#b91c1c'
 const ROTULO_FORMA: Record<string, string> = {
   debito: 'Débito', automatico: 'Débito automático', credito: 'Crédito', pix: 'Pix',
   transferencia: 'Transferência', dinheiro: 'Dinheiro', boleto: 'Boleto', manual: 'Manual',
+}
+
+/** O "+" de cada dia, em destaque: a bolinha azul dos atalhos, com o brilho
+ *  ciano (29/10/2026, no lugar do botão grande "Novo lançamento"). */
+export function BotaoMais({ rotulo, onClick }: { rotulo: string; onClick: () => void }) {
+  return (
+    <button aria-label={rotulo} title={rotulo} onClick={onClick} style={{
+      width: 40, height: 40, borderRadius: '50%', border: 'none', background: BOLINHA_AZUL, color: '#fff',
+      boxShadow: 'var(--cx-bolinha)', cursor: 'pointer', flexShrink: 0, padding: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}><i aria-hidden className="ti ti-plus" style={{ fontSize: 22 }} /></button>
+  )
 }
 
 const rotuloFixa = (f: CatFixa) => f.id.startsWith('cartao-') ? 'Cartão de Crédito' : f.nome
@@ -89,22 +101,20 @@ export default function NleExtratoMobile({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: desktop ? 0 : '0 16px' }}>
-      {!desktop && <button onClick={() => novoNoDia(eMesAtual ? diaHoje : diaSel)} style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52,
-        border: 'none', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
-        background: `linear-gradient(135deg,${COR.azul},#2563eb)`, color: '#fff',
-        fontSize: 16, fontWeight: 700, boxShadow: '0 6px 18px rgba(26,86,219,.28)',
-      }}>
-        <span aria-hidden style={{ fontSize: 20, lineHeight: 1 }}>＋</span> Novo lançamento
-      </button>}
-
+      {/* O botão grande "Novo lançamento" saiu do celular (29/10/2026, pedido
+          do Guilherme: "para ganhar espaço"); lança-se pelo "+" de cada dia,
+          agora em destaque. */}
       {semNada && (
         <Cartao style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <IconeRedondo icone={<i className="ti ti-bulb" style={{ color: COR.azul }} />} />
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: M.corpo, fontWeight: 700, color: COR.texto }}>Nenhum lançamento este mês</div>
-            <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>Toque em “Novo lançamento” para registrar.</div>
+            <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 2 }}>
+              {eMesAtual ? 'Toque no + de hoje para registrar.' : 'Toque no + para registrar.'}
+            </div>
           </div>
+          {/* Fora do mês corrente não há dia na lista: o "+" fica aqui. */}
+          {!eMesAtual && <BotaoMais rotulo="Lançar neste mês" onClick={() => novoNoDia(diaSel)} />}
         </Cartao>
       )}
 
@@ -149,10 +159,7 @@ export default function NleExtratoMobile({
                 {diaFuturo ? 'previsto ' : 'saldo '}
                 <b style={{ color: saldoDia < 0 ? VERMELHO : COR.texto, fontWeight: 700 }}>{fmt(saldoDia)}</b>
               </span>
-              <button aria-label={`Lançar no dia ${dia}`} onClick={() => novoNoDia(dia)} style={{
-                width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#e8eefc', color: COR.azul,
-                fontSize: 20, fontWeight: 700, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit', lineHeight: 1,
-              }}>+</button>
+              <BotaoMais rotulo={`Lançar no dia ${dia}`} onClick={() => novoNoDia(dia)} />
             </div>
 
             <Cartao style={{

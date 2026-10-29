@@ -3451,6 +3451,16 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
   Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.
   `segurarTabSeVazio` em [`campoObrigatorio.ts`](src/utils/campoObrigatorio.ts).
+- **O "+" de cada dia substituiu o botão grande** (29/10/2026, pedido do
+  Guilherme: "para ganhar espaço"). No celular saíram "Novo lançamento"
+  (Banco e Dinheiro) e "Nova compra" (Cartão); o "+" de cada dia virou a
+  bolinha azul com brilho (`BotaoMais`, também no computador). No Cartão,
+  HOJE aparece sempre na fatura que recebe a compra de hoje
+  (`mesDaFaturaDaCompra`), com "Nenhuma compra hoje ainda", e o "+" de um
+  dia abre a compra já com a data dele. Mês ou fatura sem nada tem o "+"
+  no aviso de vazio. No mesmo dia saiu o "N de M conferidas com o banco"
+  (e o "Desmarcar todas"), no computador e no celular: "não vejo
+  funcionalidade". A bolinha de cada compra fica.
 - **"Conciliação" saiu das telas** (22/10/2026, pedido do Guilherme:
   "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
   Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",
