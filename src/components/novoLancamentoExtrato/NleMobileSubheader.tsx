@@ -117,10 +117,7 @@ export default function NleMobileSubheader({
                   </span>
                 )}
                 {diferenca !== null && (
-                  <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
-                    background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fff'}}>
-                    {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
-                  </span>
+                  <PilulaDiferenca diferenca={diferenca} conciliado={conciliado} />
                 )}
               </button>
             </>)}
@@ -128,5 +125,22 @@ export default function NleMobileSubheader({
         )
       })()}
     </>
+  )
+}
+
+/** Pílula da diferença ao lado do valor do banco ou da fatura (celular).
+ *  Valor e palavras em DUAS linhas e sem encolher: numa linha só, com
+ *  "R$ 30,99 a mais no Compass", ela passava por cima do valor informado
+ *  (29/10/2026, relatado pelo Guilherme). Cabe −R$ 999.999,99 em 375 px. */
+export function PilulaDiferenca({ diferenca, conciliado }: { diferenca: number; conciliado: boolean }) {
+  const base = {flexShrink:0,borderRadius:14,background:'rgba(15,23,42,.3)',textAlign:'right',
+    lineHeight:1.25,padding:'5px 10px',whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'} as const
+  if (conciliado) return <span style={{...base,fontSize:13,fontWeight:700,color:'#86efac'}}>✓ igual ao Compass</span>
+  const valor = <span style={{display:'block',fontSize:14,fontWeight:700,color:'#fff'}}>{fmt(Math.abs(diferenca))}</span>
+  const texto = (t: string) => <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)'}}>{t}</span>
+  return (
+    <span style={base}>
+      {diferenca > 0 ? <>{texto('falta lançar')}{valor}</> : <>{valor}{texto('a mais no Compass')}</>}
+    </span>
   )
 }

@@ -15,6 +15,7 @@ import { M } from '../mobile/estilo'
 import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
+import { PilulaDiferenca } from '../novoLancamentoExtrato/NleMobileSubheader'
 import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
 import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
 
@@ -199,10 +200,7 @@ export default function FcMobileView({
             </span>
           </span>
           {diferenca !== null && (
-            <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
-              background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fff'}}>
-              {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
-            </span>
+            <PilulaDiferenca diferenca={diferenca} conciliado={conciliado} />
           )}
         </button>
 
