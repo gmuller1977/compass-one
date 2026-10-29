@@ -184,17 +184,17 @@ export default function FcMobileView({
             do computador (29/10/2026, opção A do Guilherme). Tocar abre a
             janela "Qual é o valor atual da fatura de [mês]?". */}
         <button onClick={abrirFatura} aria-label="Informar o valor da fatura" style={{
-          marginTop:14,width:'100%',display:'flex',flexWrap:'wrap',alignItems:'center',gap:10,
+          marginTop:14,width:'100%',display:'flex',alignItems:'center',gap:10,
           padding:'10px 14px',minHeight:48,borderRadius:16,border:'none',cursor:'pointer',
           background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
         }}>
           <i className="ti ti-credit-card" aria-hidden style={{fontSize:20,color:'#fff'}} />
-          {/* Sem minWidth 0: com R$ 999.999,99 nos dois, a pílula desce. */}
-          <span style={{flex:1}}>
+          {/* Pílula sempre ao lado, como no banco (pedido do Guilherme). */}
+          <span style={{flex:1,minWidth:0}}>
             <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
-              Fatura no {contaAtual?.banco ?? 'cartão'}
+              No {contaAtual?.banco ?? 'cartão'}
             </span>
-            <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>
+            <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
               {mesDados.faturaAtual || 'Informar fatura ✎'}
             </span>
           </span>
