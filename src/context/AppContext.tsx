@@ -94,8 +94,12 @@ export type Lancamento = {
   subCategoria?: string
   valor: number; formaPagamento: FormaPagLanc
   tipoLanc: 'fixa' | 'variavel'
+  /** Dia que já chegou (Lançamentos grava; dia futuro é falso). */
+  consolidado?: boolean
   /** No investimento: para qual objetivo foi a aplicação ou o resgate (utils/investimentos). */
   objetivoId?: string
+  /** Veio da importação do extrato: o código da linha no banco (utils/importarExtrato). */
+  idBanco?: string
 }
 
 export type DadosMes = {
@@ -107,6 +111,8 @@ export type DadosMes = {
   fixasConsolidadas?: Record<string, boolean>
   /** Débito automático conferido na Início (utils/debitoAutomatico). */
   debitosConferidos?: Record<string, boolean>
+  /** Linhas do extrato do banco já importadas neste mês, pelo código (utils/importarExtrato). */
+  importados?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>

@@ -100,18 +100,19 @@ Saldo no fim do arquivo: **R$ 3.479,15** (3.000 + o que entrou e saiu desde
 | 06/10 | PAGTO FATURA CARTAO XP | −1.240,30 | Pagamento da fatura XP que venceu em 06/10, não despesa |
 | 08/10 | TED ENVIADA CAIXA ANA TESTE | −500,00 | Transferência Sicredi → Caixa |
 | 10/10 | PIX ENVIADO IMOBILIARIA BOA VISTA | −1.800,00 | Confirma a fixa Aluguel |
-| 12/10 | COMPRA DEBITO FARMACIA DROGASIL | −49,80 | Novo, sugere Farmácia. O manual de 48,90 tem outro valor: **não** é o mesmo |
+| 12/10 | COMPRA DEBITO FARMACIA DROGASIL | −49,80 | É o manual "Drogasil" de 48,90 com o valor errado: corrige para 49,80 |
 | 15/10 | DEB AUT CEEE ENERGIA | −196,40 | Luz confirmada com "Outro valor" (previsto 180,00) |
 | 16/10 | COMPRA DEBITO SUPERMERCADO ZAFFARI | −312,45 | Já lançado (manual de 15/10, mesmo valor, 1 dia antes) |
 | 18/10 | SAQUE 24H BANCO24HORAS | −200,00 | Saque: transferência para a carteira |
-| 20/10 | APLICACAO POUPANCA | −300,00 | Aplicação. A Ana não tem conta de investimento: pergunta onde, ou entra como transferência |
+| 20/10 | APLICACAO POUPANCA | −300,00 | Aplicação. A Ana não tem conta de investimento: entra como novo, com o aviso para cadastrar o investimento |
 | 22/10 | COMPRA DEBITO PADARIA SAO JOSE | −18,50 | Novo |
 | 22/10 | COMPRA DEBITO PADARIA SAO JOSE | −18,50 | Novo também (outro código no banco: duas compras de verdade). Escolher a categoria numa vale para a outra |
-| 24/10 | TARIFA PACOTE SERVIÇOS | −34,90 | Novo, sem sugestão. Testa o acento em Windows-1252 |
+| 24/10 | TARIFA PACOTE SERVIÇOS | −34,90 | Novo, sem sugestão (a Ana não tem categoria de tarifa). Testa o acento em Windows-1252 |
 
 Internet (boleto, dia 20) não aparece no arquivo: segue a pagar, nada muda.
 
-**Importar o mesmo arquivo de novo não traz nada.**
+**Importar o mesmo arquivo de novo não traz nada.** A prova é a
+`provas/prova105.ts`, sobre estes mesmos arquivos.
 
 ## Resultado esperado: fatura XP (OFX)
 
@@ -139,9 +140,9 @@ diz "✓ igual ao Compass".
 | Data | No arquivo | Valor | O que a importação faz |
 | --- | --- | --- | --- |
 | 01/10 | SALDO ANTERIOR | — | Ignorado (linha de saldo, sem valor) |
-| 08/10 | TED RECEBIDA SICREDI ANA TESTE | +500,00 | A outra ponta da transferência do Sicredi: uma transferência só |
+| 08/10 | TED RECEBIDA SICREDI ANA TESTE | +500,00 | Importado o Sicredi antes: já está (o espelho da transferência). Caixa antes: vira a transferência, e o Sicredi depois a acha |
 | 11/10 | PIX ENVIADO MARIA DIARISTA | −150,00 | Novo, sem sugestão |
-| 19/10 | COMPRA CARTAO DEBITO PET SHOP AMIGO | −87,35 | Novo, sem sugestão |
+| 19/10 | COMPRA CARTAO DEBITO PET SHOP AMIGO | −87,35 | Novo, sugere Pet |
 
 CSV não tem o código único do banco: importar de novo deve reconhecer pela
 data, valor e descrição.

@@ -38,13 +38,15 @@ type Props = {
   /** Data em que o saldo foi conferido sem valor digitado ("Confere"), ou null. */
   conferidoEm: string | null
   chaveAtual: string
+  /** Abre a janela de importar o extrato (só no Banco). */
+  onImportar?: () => void
 }
 
 export default function NleMobileSubheader({
   isMobile, tabPrincipal,
   contasExtrato, contaIdEfetivo, mes, ano, mesNome,
   setContaId, setModalSaldo, setModalSaldoValor, saldoSugerido,
-  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, conferidoEm, chaveAtual,
+  isDinheiro, contaInfo, saldoMes, diferenca, conciliado, conferidoEm, chaveAtual, onImportar,
 }: Props) {
   return (
     <>
@@ -123,6 +125,15 @@ export default function NleMobileSubheader({
                   </span>
                 )}
               </button>
+              {tabPrincipal === 'extrato' && onImportar && (
+                <button onClick={onImportar} style={{
+                  marginTop:10,width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                  minHeight:44,borderRadius:16,border:'1px solid rgba(255,255,255,.45)',cursor:'pointer',
+                  background:'transparent',fontFamily:'inherit',fontSize:14,fontWeight:700,color:'#fff',
+                }}>
+                  <i className="ti ti-file-import" aria-hidden style={{fontSize:18}} /> Importar extrato do banco
+                </button>
+              )}
             </>)}
           </div>
         )

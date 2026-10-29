@@ -67,6 +67,8 @@ export type Lancamento = {
   valor: number; formaPagamento: FormaPag
   tipoLanc: 'fixa'|'variavel'
   consolidado?: boolean
+  /** Veio da importação do extrato (utils/importarExtrato). */
+  idBanco?: string
 }
 
 export type DadosMes = {

@@ -211,6 +211,27 @@ banco ↔ dinheiro, no computador e no celular, sem categoria (grava
 banco "Depósito"; na carteira vai o nome do banco. Regras em
 [`transferencia.ts`](src/utils/transferencia.ts).
 
+**Importar o extrato do banco** (29/10/2026, pedido do Guilherme, com
+Lançamentos liberado para isso). Em Lançamentos > Banco, "Importar extrato"
+(computador ao lado dos bancos; celular no topo azul) abre a MESMA janela
+`NleImportar`: o arquivo OFX ou CSV do banco, e cada linha com o que vai
+virar, para a pessoa conferir e trocar antes de gravar. Importar é CASAR com
+o que o app já sabe, nesta ordem: fora (antes do `saldoInicialDesde`, data
+futura, já importada pelo código da linha em `importados` do mês);
+pagamento de fatura (confirma `cartao-<id>`, não é despesa); conta fixa do
+mês (confirma no valor e no dia do banco, `fixasValorOverride` /
+`fixasMovidas`, e conta como conferida na Início); já lançado (mesmo valor,
+até 3 dias) ou corrigir (mesmo nome, até 10%: o valor vira o do banco);
+transferência própria, saque (carteira) ou aplicação (investimento, se
+houver), com o espelho na outra conta só se ele ainda não existir; e novo,
+com a categoria sugerida pelo histórico da pessoa ou por um dicionário
+curto. O saldo do arquivo é comparado com o do Compass depois da
+importação; igual, a conta fica conferida. Fatura do cartão em arquivo é
+recusada por ora (próxima etapa). Regras em
+[`importarExtrato.ts`](src/utils/importarExtrato.ts); `prova105` (41),
+sobre a conta de teste "Ana Teste" (`teste/ana.ts`) e os extratos de
+`teste/extratos`.
+
 **Conta de INVESTIMENTO fica fora do disponível** (21/10/2026, pedido do
 Guilherme). O tipo `poupanca` aparece como "Investimento" em Configurações
 (o banco segue gravando `poupanca`) e não soma no saldo atual, no previsto,

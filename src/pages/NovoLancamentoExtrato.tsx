@@ -29,6 +29,7 @@ import NleExtrato         from '../components/novoLancamentoExtrato/NleExtrato'
 import NleDesktopPanel   from '../components/novoLancamentoExtrato/NleDesktopPanel'
 import NleModal           from '../components/novoLancamentoExtrato/NleModal'
 import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategoria'
+import NleImportar from '../components/novoLancamentoExtrato/NleImportar'
 import { IconeCat } from '../components/IconeCat'
 import { corDoIcone } from '../utils/iconeDesenhado'
 import ModalTopo from '../components/ModalTopo'
@@ -70,6 +71,7 @@ export default function NovoLancamentoExtrato() {
   // Criar categoria sem sair do lancamento. A regra e a prova vivem em
   // utils/novaCategoria; aqui so mora o "esta aberta" e a gravacao.
   const [novaCatAberta, setNovaCatAberta] = useState(false)
+  const [importarAberto, setImportarAberto] = useState(false)
   const [modalSaldo, setModalSaldo]   = useState<{contaId:string;banco:string;icone:string;cor:string;key:string}|null>(null)
   const [modalSaldoValor, setModalSaldoValor] = useState('')
   const isMobile = useIsMobile()
@@ -1221,6 +1223,7 @@ export default function NovoLancamentoExtrato() {
         conciliado={conciliado}
         conferidoEm={conferidoEm}
         chaveAtual={key}
+        onImportar={() => setImportarAberto(true)}
       />
 
       {tabPrincipal === 'cartao' ? (
@@ -1293,6 +1296,7 @@ export default function NovoLancamentoExtrato() {
             contasExtrato={contasExtrato}
             contaIdEfetivo={contaIdEfetivo}
             onContaSelect={(id) => navigate(`/novo-lancamento?tipo=banco&conta=${id}`)}
+            onImportar={() => setImportarAberto(true)}
           />
 
           <div style={{flex:isMobile?'none':1,display:'flex',flexDirection:isMobile?'column':'row',overflow:isMobile?'visible':'hidden', paddingBottom:isMobile?120:0}}>
@@ -1482,6 +1486,15 @@ export default function NovoLancamentoExtrato() {
           setFSubDesc('')
           setNovaCatAberta(false)
         }}
+      />
+
+      <NleImportar
+        key={contaIdEfetivo}
+        aberto={importarAberto}
+        onFechar={() => setImportarAberto(false)}
+        isMobile={isMobile}
+        contaId={contaIdEfetivo}
+        contasExtrato={contasExtrato}
       />
 
       <NleModal

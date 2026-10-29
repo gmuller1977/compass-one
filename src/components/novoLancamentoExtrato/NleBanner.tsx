@@ -29,6 +29,8 @@ type Props = {
   contasExtrato: Conta[]
   contaIdEfetivo: string
   onContaSelect: (id: string) => void
+  /** Abre a janela de importar o extrato (só no Banco). */
+  onImportar?: () => void
 }
 
 export default function NleBanner({
@@ -37,7 +39,7 @@ export default function NleBanner({
   mes, ano,
   saldoBancoNum, conferidoEm = null,
   setModalSaldo, setModalSaldoValor,
-  contasExtrato, contaIdEfetivo, onContaSelect,
+  contasExtrato, contaIdEfetivo, onContaSelect, onImportar,
 }: Props) {
   if (isMobile || (tabPrincipal !== 'extrato' && tabPrincipal !== 'dinheiro')) return null
 
@@ -119,9 +121,10 @@ export default function NleBanner({
           </div>
         </div>
 
-        {/* Bank selector buttons */}
+        {/* Bank selector buttons. À direita, importar o extrato do banco
+            aberto (29/10/2026, pedido do Guilherme; NleImportar). */}
         {tabPrincipal === 'extrato' && contasExtrato.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, alignItems: 'center' }}>
             {contasExtrato.map(c => {
               const ativo = c.id === contaIdEfetivo
               return (
@@ -137,6 +140,16 @@ export default function NleBanner({
                 </button>
               )
             })}
+            {onImportar && (
+              <button onClick={onImportar} style={{
+                marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+                border: '1.5px solid #1e40af', background: '#fff', color: '#1e40af',
+                fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
+              }}>
+                <i aria-hidden className="ti ti-file-import" style={{ fontSize: 14, lineHeight: 1 }} /> Importar extrato
+              </button>
+            )}
           </div>
         )}
       </div>
