@@ -456,51 +456,183 @@ const CSS2 = `
 }
 `
 
-function DesktopInicio() {
+// O tema da viagem (29/10/2026, pedido do Guilherme: "como o Compass é uma
+// bússola, quero uma landing page com formato de mapa, com fundo mostrando
+// territórios e uma linha tracejada mostrando o caminho"). A página é uma
+// viagem até o porto seguro, e cada parte é uma parada. A promessa é ver a
+// tempestade antes e ter tempo de desviar, nunca uma viagem sem tempestade.
+const CSS3 = `
+.lp-topo { overflow: hidden; }
+.lp-fundo-mapa { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.lp-nav, .lp-hero { position: relative; z-index: 1; }
+.lp-mapa { position: relative; width: 100%; max-width: 560px; margin: 0 auto; aspect-ratio: 640 / 560; }
+.lp-mapa svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lp-rota-tracejada { stroke-dasharray: 10 9; animation: lp-andar 1.6s linear infinite; }
+@keyframes lp-andar { to { stroke-dashoffset: -19; } }
+@media (prefers-reduced-motion: reduce) { .lp-rota-tracejada { animation: none; } }
+.lp-marco { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; }
+.lp-marco small { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.8); }
+.lp-marco-ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 24px; }
+.lp-marco-ic.partida { width: 22px; height: 22px; background: #fff; box-shadow: 0 0 0 5px rgba(34,211,238,.35), 0 0 18px rgba(34,211,238,.6); }
+.lp-marco-ic.tempestade { background: rgba(15,23,42,.55); border: 1.5px solid rgba(253,224,71,.6); color: #fde047; }
+.lp-marco-ic.porto { width: 56px; height: 56px; font-size: 30px; background: #22d3ee; color: #0b1460; box-shadow: 0 0 0 6px rgba(34,211,238,.25), 0 0 28px rgba(34,211,238,.8); }
+.lp-etiqueta { background: rgba(11,20,96,.88); border: 1px solid rgba(103,232,249,.35); border-radius: 8px; padding: 3px 8px; line-height: 1.35; }
+.lp-marco.partida-l { align-items: flex-start;  flex-direction: row; transform: translate(-11px, -50%); }
+
+.lp-sem-mapa { background: #f8faff; }
+.lp-viagem { background-color: #eef4fb; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg fill='none' stroke='%231d4ed8' stroke-opacity='.08' stroke-width='1.5'%3E%3Cpath d='M0 50 C60 20 130 90 260 40'/%3E%3Cpath d='M0 120 C80 90 170 160 260 115'/%3E%3Cpath d='M0 195 C70 170 160 230 260 190'/%3E%3C/g%3E%3C/svg%3E"); }
+.lp-rota { list-style: none; padding: 0; margin: 0; position: relative; }
+.lp-rota::before { content: ''; position: absolute; left: 23px; top: 24px; bottom: 60px; border-left: 3px dashed #3b82f6; }
+.lp-parada { position: relative; padding-left: 68px; margin-bottom: 64px; }
+.lp-parada:last-child { margin-bottom: 0; }
+.lp-pino { position: absolute; left: 0; top: 0; width: 48px; height: 48px; border-radius: 50%; background: var(--cx-azul); box-shadow: var(--cx-bolinha); color: #fff; font-size: 24px; display: grid; place-items: center; }
+.lp-parada.porto .lp-pino { background: #22d3ee; color: #0b1460; box-shadow: 0 0 0 6px rgba(34,211,238,.25), 0 0 22px rgba(34,211,238,.6); }
+.lp-parada-in { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; }
+.lp-etapa { display: block; font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #1d4ed8; margin: 12px 0 8px; }
+.lp-parada h3 { font-size: 24px; letter-spacing: -.4px; margin: 0 0 12px; line-height: 1.25; }
+.lp-parada p { font-size: 16px; color: #475569; line-height: 1.65; margin: 0; }
+.lp-chegada { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #0e7490; background: #ecfeff; border: 1.5px solid #a5f3fc; border-radius: 99px; padding: 6px 14px; }
+
+@media (min-width: 900px) {
+  .lp-hero { grid-template-columns: 1fr 1fr; }
+  .lp-mapa { max-width: none; }
+  .lp-parada { padding-left: 88px; margin-bottom: 88px; }
+  .lp-rota::before { left: 27px; }
+  .lp-pino { width: 56px; height: 56px; font-size: 27px; }
+  .lp-parada-in { grid-template-columns: 1fr 1fr; gap: 56px; }
+  .lp-parada h3 { font-size: 28px; }
+}
+`
+
+/** Territórios no fundo do topo: só desenho, quase apagado. */
+function FundoMapa() {
   return (
-    <div className="lp-desk" role="img" aria-label="Exemplo da tela Início do Compass One no computador, com números fictícios">
-      <div className="lp-desk-barra"><span /><span /><span /></div>
-      <div className="lp-desk-tela">
-        <div className="lp-desk-lado">
-          <b>Compass One</b>
-          <span className="on">Início</span><span>Lançamentos</span><span>Radar</span><span>Planejamento</span><span>Simulador</span>
-        </div>
-        <div className="lp-desk-corpo">
-          <div className="lp-desk-topo">
-            <small>Saldo atual · bancos e dinheiro</small><b>R$ 4.820,35</b>
-            <small>Saldo final previsto de outubro: R$ 3.912,10</small>
-          </div>
-          <div className="lp-desk-cards">
-            <div className="lp-desk-card"><b>Resumo do mês</b>
-              <div className="lp-anel" style={{ background: 'conic-gradient(#1d4ed8 0 82%, #e2e8f0 0)', WebkitMask: 'radial-gradient(circle, transparent 54%, #000 55%)' }} />
-              <div style={{ textAlign: 'center' }}>Despesas: 82% do plano</div>
-            </div>
-            <div className="lp-desk-card"><b>Plano do mês</b>
-              <div className="lp-anel" style={{ background: 'conic-gradient(#0891b2 0 75%, #e2e8f0 0)', WebkitMask: 'radial-gradient(circle, transparent 54%, #000 55%)' }} />
-              <div style={{ textAlign: 'center' }}>3 de 4 grupos dentro do plano</div>
-            </div>
-          </div>
-          <div className="lp-desk-card"><b>Contas da semana</b>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Internet · dia 29</span><b style={{ margin: 0, fontSize: 11 }}>R$ 119,90</b></div>
-          </div>
-        </div>
+    <svg className="lp-fundo-mapa" viewBox="0 0 1440 760" preserveAspectRatio="xMidYMid slice" aria-hidden>
+      <g stroke="rgba(255,255,255,.05)" strokeWidth="1" strokeDasharray="2 8">
+        {[120, 260, 400, 540, 680].map(y => <line key={y} x1="0" y1={y} x2="1440" y2={y} />)}
+        {[160, 400, 640, 880, 1120, 1360].map(x => <line key={x} x1={x} y1="0" x2={x} y2="760" />)}
+      </g>
+      <g fill="rgba(255,255,255,.035)" stroke="rgba(165,243,252,.14)" strokeWidth="1.5">
+        <path d="M0,0 L420,0 C400,60 330,90 260,110 C180,135 120,190 60,200 C30,205 10,190 0,180 Z" />
+        <path d="M0,560 C80,520 170,540 230,600 C270,640 300,700 290,760 L0,760 Z" />
+        <path d="M560,700 C600,660 680,665 700,710 C710,740 690,760 680,760 L560,760 Z" />
+      </g>
+      <g fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="1">
+        <path d="M0,40 L330,40 C300,80 230,100 170,120 C110,140 60,160 0,150" />
+        <path d="M0,620 C70,590 150,605 200,650 C230,680 250,720 245,760" />
+      </g>
+    </svg>
+  )
+}
+
+/** O mapa da viagem: territórios, a tempestade e o caminho tracejado que a
+ *  contorna até o porto seguro. Os marcos são HTML, para usar os ícones. */
+function MapaDaViagem() {
+  const terras = [
+    { d: 'M0,430 C60,400 120,410 170,440 C220,470 260,520 250,560 L0,560 Z', c: [110, 500] },
+    { d: 'M150,170 C190,130 260,140 280,185 C300,230 250,270 200,262 C150,255 120,210 150,170 Z', c: [212, 202] },
+    { d: 'M640,0 L640,230 C600,240 560,215 545,180 C530,145 500,120 470,95 C440,70 450,20 480,0 Z', c: [570, 100] },
+    { d: 'M380,440 C400,420 440,425 445,450 C450,475 415,490 395,480 C375,470 365,455 380,440 Z', c: [410, 455] },
+  ]
+  const rota = 'M110,470 C170,450 200,420 215,380 C230,330 260,290 310,285 C370,280 380,330 430,320 C480,310 500,250 540,200 C555,182 565,165 578,150'
+  return (
+    <div className="lp-mapa" role="img" aria-label="Mapa de uma viagem: do ponto onde você está, o caminho tracejado contorna uma tempestade e chega ao porto seguro">
+      <svg viewBox="0 0 640 560" aria-hidden>
+        <g stroke="rgba(255,255,255,.08)" strokeWidth="1" strokeDasharray="2 6">
+          {[80, 200, 320, 440].map(y => <line key={y} x1="0" y1={y} x2="640" y2={y} />)}
+          {[80, 240, 400, 560].map(x => <line key={x} x1={x} y1="0" x2={x} y2="560" />)}
+        </g>
+        {terras.map(t => (
+          <g key={t.d}>
+            <path d={t.d} fill="rgba(255,255,255,.08)" stroke="rgba(165,243,252,.45)" strokeWidth="1.5" />
+            <path d={t.d} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="1" transform={`translate(${t.c[0]} ${t.c[1]}) scale(.72) translate(${-t.c[0]} ${-t.c[1]})`} />
+            <path d={t.d} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1" transform={`translate(${t.c[0]} ${t.c[1]}) scale(.45) translate(${-t.c[0]} ${-t.c[1]})`} />
+          </g>
+        ))}
+        {/* a tempestade */}
+        <g opacity=".9">
+          <circle cx="300" cy="375" r="62" fill="rgba(15,23,42,.35)" />
+          <circle cx="300" cy="375" r="62" fill="none" stroke="rgba(253,224,71,.35)" strokeWidth="1.5" strokeDasharray="3 5" />
+          <g stroke="rgba(165,243,252,.45)" strokeWidth="2" strokeLinecap="round">
+            <line x1="276" y1="405" x2="270" y2="420" /><line x1="300" y1="410" x2="294" y2="425" /><line x1="324" y1="405" x2="318" y2="420" />
+          </g>
+        </g>
+        {/* rosa dos ventos */}
+        <g transform="translate(560 470)" opacity=".75">
+          <circle r="34" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="1" />
+          <path d="M0,-30 L6,-6 L0,0 L-6,-6 Z" fill="#fff" /><path d="M0,30 L6,6 L0,0 L-6,6 Z" fill="rgba(255,255,255,.45)" />
+          <path d="M30,0 L6,6 L0,0 L6,-6 Z" fill="rgba(255,255,255,.45)" /><path d="M-30,0 L-6,6 L0,0 L-6,-6 Z" fill="rgba(255,255,255,.45)" />
+          <text y="-38" textAnchor="middle" fontSize="11" fontWeight="700" fill="#fff">N</text>
+        </g>
+        {/* o caminho */}
+        <path d={rota} fill="none" stroke="rgba(34,211,238,.35)" strokeWidth="9" strokeLinecap="round" />
+        <path d={rota} className="lp-rota-tracejada" fill="none" stroke="#67e8f9" strokeWidth="3.5" strokeLinecap="round" />
+        {[[215, 380], [310, 285], [430, 320], [540, 200]].map(([x, y]) => <circle key={x} cx={x} cy={y} r="5" fill="#0b1460" stroke="#67e8f9" strokeWidth="2.5" />)}
+      </svg>
+      <div className="lp-marco partida-l" style={{ left: `${110 / 6.4}%`, top: `${470 / 5.6}%` }}>
+        <span className="lp-marco-ic partida" />
+        <span className="lp-etiqueta" style={{ textAlign: 'left', marginTop: 14 }}>Você está aqui<br /><small>vivendo no limite</small></span>
+      </div>
+      <div className="lp-marco" style={{ left: `${300 / 6.4}%`, top: `${372 / 5.6}%` }}>
+        <span className="lp-marco-ic tempestade"><i className="ti ti-cloud-storm" /></span>
+        <small className="lp-etiqueta">tempestade à vista</small>
+      </div>
+      <div className="lp-marco" style={{ left: `${585 / 6.4}%`, top: `${150 / 5.6}%` }}>
+        <span className="lp-marco-ic porto"><i className="ti ti-building-lighthouse" /></span>
+        <span className="lp-etiqueta">Porto seguro</span>
       </div>
     </div>
   )
 }
 
-const DESTAQUE_SIMULADOR = [
-  { icone: 'ti-message-question', titulo: 'Pergunte do seu jeito', exemplo: '"Posso comprar uma geladeira de R$ 3.600?"' },
-  { icone: 'ti-arrows-diff', titulo: 'Compare as formas de pagar', exemplo: '"À vista, em 10× ou em 12×: qual pesa menos?"' },
-  { icone: 'ti-target-arrow', titulo: 'Veja a sua meta', exemplo: '"Se eu comprar, ainda guardo R$ 500 por mês?"' },
-  { icone: 'ti-user-check', titulo: 'Você no controle', exemplo: 'O Compass mostra o caminho; a decisão é sempre sua.' },
-]
+function QuadroPorto() {
+  // Guardado acumulado no ano contra a meta (fictício): fica no rumo.
+  const guardado = [8, 16, 24, 33, 41, 50, 58, 66, 75, 83, 92, 100]
+  const meses = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+  return (
+    <div className="lp-quadro" role="img" aria-label="Exemplo da meta de economia: R$ 500 por mês, guardados mês a mês até chegar a R$ 6.000 em dezembro">
+      <div className="lp-quadro-t">Meta de economia · R$ 500 por mês</div>
+      <div className="lp-saldo" style={{ marginBottom: 4 }}>R$ 6.000,00</div>
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 14 }}>guardados até dezembro, se o plano se cumprir</div>
+      <div className="lp-colunas">
+        {guardado.map((h, i) => <div key={i} className={i === 11 ? 'atual' : undefined} style={{ height: `${h}%` }} />)}
+      </div>
+      <div className="lp-meses">{meses.map((m, i) => <span key={i}>{m}</span>)}</div>
+    </div>
+  )
+}
 
-const DESTAQUE_PREVISAO = [
-  { icone: 'ti-telescope', titulo: 'Os próximos meses, hoje', texto: 'Com quanto cada mês vai terminar, até o fim do seu plano.' },
-  { icone: 'ti-alert-circle', titulo: 'O aperto aparece com antecedência', texto: 'Um mês no vermelho fica marcado no gráfico, com tempo de mudar o caminho.' },
-  { icone: 'ti-list-details', titulo: 'Cálculo aberto, linha a linha', texto: 'Toque no saldo previsto e veja o que entra e o que sai até o fim do mês.' },
-  { icone: 'ti-adjustments', titulo: 'Três cenários', texto: 'Pessimista, moderado ou otimista: você escolhe como a previsão é feita.' },
+const PARADAS = [
+  {
+    id: 'partida', icone: 'ti-map-pin', etapa: 'Parada 1 · Ponto de partida', titulo: 'Saiba exatamente onde você está',
+    texto: 'Bancos, cartões e dinheiro num só lugar, com o saldo de hoje e as contas do mês. Salário e débito automático se marcam sozinhos: você só confere.',
+    visual: <CelularInicio />,
+  },
+  {
+    id: 'rota', icone: 'ti-route', etapa: 'Parada 2 · A rota', titulo: 'Defina a rota do seu ano',
+    texto: 'Um plano com quanto gastar em cada categoria e quanto guardar por mês. Quem escolhe o destino é você; o Compass desenha o caminho e mostra com quanto o ano termina.',
+    visual: <QuadroPlano />,
+  },
+  {
+    id: 'previsao', icone: 'ti-cloud-storm', etapa: 'Parada 3 · Previsão do tempo', titulo: 'Veja a tempestade antes de chegar nela',
+    texto: 'Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o Compass mostra com quanto cada um dos próximos meses vai terminar. O mês no vermelho aparece com tempo de mudar a rota.',
+    visual: <QuadroPrevisao />,
+  },
+  {
+    id: 'posso-comprar', icone: 'ti-compass', etapa: 'Parada 4 · Antes de mudar o rumo', titulo: 'Antes de comprar, consulte a bússola',
+    texto: 'Digite o valor e as opções da loja. O Compass coloca a compra no seu plano, mês a mês, e mostra se ela tira você do caminho e qual forma de pagar pesa menos.',
+    visual: <CelularSimulador />,
+  },
+  {
+    id: 'diario', icone: 'ti-notebook', etapa: 'Parada 5 · Diário de bordo', titulo: 'Confira se o barco segue na rota',
+    texto: 'Anote um gasto em segundos, no celular ou no computador. O Radar mostra, no meio do mês, quanto ainda resta em cada grupo, e o plano se ajusta para os próximos meses.',
+    visual: <QuadroRadar />,
+  },
+  {
+    id: 'porto', icone: 'ti-building-lighthouse', etapa: 'Destino · Porto seguro', titulo: 'Siga até o seu porto seguro',
+    texto: 'O porto seguro é o dinheiro que sobra de propósito: a meta de economia que você escolhe e acompanha mês a mês. Um caminho mais tranquilo para você e para a sua família.',
+    visual: <QuadroPorto />,
+  },
 ]
 
 const RECURSOS = [
@@ -514,6 +646,14 @@ const RECURSOS = [
   { icone: 'ti-devices', titulo: 'Celular e computador', texto: 'Instale no celular e entre com a digital.' },
 ]
 
+const LINKS = [
+  ['#viagem', 'A viagem'],
+  ['#previsao', 'Previsão'],
+  ['#posso-comprar', 'Posso comprar?'],
+  ['#recursos', 'Recursos'],
+  ['#perguntas', 'Dúvidas'],
+]
+
 export default function LandingPage() {
   const ano = new Date().getFullYear()
   // A versão pré-renderizada sai de cena no mesmo quadro em que esta entra.
@@ -521,20 +661,16 @@ export default function LandingPage() {
 
   return (
     <div className="lp">
-      <style>{CSS + CSS2}</style>
+      <style>{CSS + CSS2 + CSS3}</style>
 
-      {/* 1. Menu e 2. topo */}
       <header className="lp-topo">
+        <FundoMapa />
         <nav className="lp-nav" aria-label="Principal">
           <Link to="/" className="lp-marca" aria-label="Compass One, página inicial">
             <LogoCompass size={36} /><NomeCompass />
           </Link>
           <div className="lp-menu">
-            <a href="#previsao">Previsão</a>
-            <a href="#posso-comprar">Posso comprar?</a>
-            <a href="#sobrar">Fazer sobrar</a>
-            <a href="#recursos">Recursos</a>
-            <a href="#perguntas">Dúvidas</a>
+            {LINKS.map(([h, t]) => <a key={h} href={h}>{t}</a>)}
           </div>
           <div className="lp-nav-acoes">
             <Link to="/login" className="lp-entrar">Entrar</Link>
@@ -543,15 +679,14 @@ export default function LandingPage() {
         </nav>
         <div className="lp-hero">
           <div className="lp-hero-txt">
-            <a href="#previsao" className="lp-selo-novo"><b>PLANEJAMENTO</b>que olha para frente</a>
-            <h1>Cansado de viver no limite? <em>Chegou a hora de saber qual caminho seguir e mudar.</em></h1>
+            <a href="#viagem" className="lp-selo-novo"><b>ROTA</b>Viver no limite não precisa ser o seu normal</a>
+            <h1>Defina a rota mais segura para alcançar <em>os seus objetivos</em>.</h1>
             <p>
               O Compass One nasceu para ajudar você a prever o seu futuro e seguir um caminho mais
-              tranquilo e seguro: veja hoje como vão ser os seus próximos meses, decida melhor e
-              faça sobrar.
+              tranquilo e seguro. Veja as tempestades antes que elas cheguem e ajuste a rota a tempo.
             </p>
             <div className="lp-ctas">
-              <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar agora <i className="ti ti-arrow-right" /></Link>
+              <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></Link>
               <Link to="/login" className="lp-btn lp-btn-vazado">Já tenho conta</Link>
             </div>
             <ul className="lp-selos">
@@ -560,20 +695,17 @@ export default function LandingPage() {
               <li><i className="ti ti-lock" />Não pede a senha do banco</li>
             </ul>
           </div>
-          <div className="lp-hero-visual">
-            <DesktopInicio />
-            <CelularInicio />
-          </div>
+          <MapaDaViagem />
         </div>
       </header>
 
       <main>
-        {/* 3. A vida no limite: o problema, antes da ferramenta */}
-        <section className="lp-sec" id="no-limite" aria-labelledby="t-dor" style={{ paddingTop: 110, background: '#f8faff' }}>
+        {/* Sem mapa: o problema, antes da ferramenta */}
+        <section className="lp-sec lp-sem-mapa" id="no-limite" aria-labelledby="t-dor">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-dor">Conhece essa rotina?</h2>
-              <p className="lp-sub">As contas estão em dia. Mesmo assim, todo mês parece uma corrida que termina no zero.</p>
+              <h2 className="lp-h2" id="t-dor">Navegar sem mapa é assim</h2>
+              <p className="lp-sub">As contas estão em dia. Mesmo assim, todo mês parece uma travessia que termina no zero.</p>
             </div>
             <ul className="lp-dor">
               {[
@@ -581,112 +713,78 @@ export default function LandingPage() {
                 'A fatura chega maior do que você imaginava',
                 'Toda compra vem com a dúvida: será que dá?',
                 'Você quer guardar, mas nunca sobra nada para guardar',
-              ].map(t => <li key={t}><i className="ti ti-repeat" />{t}</li>)}
+              ].map(t => <li key={t}><i className="ti ti-cloud-storm" />{t}</li>)}
             </ul>
             <p className="lp-virada">
-              Não falta esforço. Falta enxergar o que vem pela frente.
-              <br /><em>Como seria a sua vida, e a da sua família, se você pudesse prever os próximos meses?</em>
+              Não falta esforço. Falta um mapa.
+              <br /><em>Viver no limite não precisa ser o seu normal.</em>
             </p>
           </div>
         </section>
 
-        {/* 4. Pergunta 1: prever o futuro */}
-        <section className="lp-sec lp-escuro" id="previsao" aria-labelledby="t-prev">
-          <div className="lp-in lp-dest inv">
-            <div>
-              <span className="lp-pergunta">E se você pudesse prever o seu futuro?</span>
-              <h2 className="lp-h2" id="t-prev">Veja hoje com quanto cada mês vai terminar</h2>
-              <p className="lp-sub" style={{ marginBottom: 0 }}>
-                Com o que você planejou e o que já está lançado, como parcelas e contas fixas, o
-                Compass calcula o saldo de cada um dos próximos meses. O aperto deixa de ser
-                surpresa e vira algo que você vê chegar.
-              </p>
-              <div className="lp-dest-itens">
-                {DESTAQUE_PREVISAO.map(d => (
-                  <div key={d.titulo} className="lp-dest-item">
-                    <span className="lp-dest-ic"><i className={`ti ${d.icone}`} /></span>
-                    <div><h3>{d.titulo}</h3><p>{d.texto}</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <QuadroPrevisao />
-          </div>
-        </section>
-
-        {/* 5. Pergunta 2: decidir melhor */}
-        <section className="lp-sec" id="posso-comprar" aria-labelledby="t-sim">
-          <div className="lp-in lp-dest">
-            <div>
-              <span className="lp-pergunta">Suas decisões seriam melhores?</span>
-              <h2 className="lp-h2" id="t-sim">Antes de comprar, pergunte ao seu plano</h2>
-              <p className="lp-sub" style={{ marginBottom: 0 }}>
-                Digite o valor e as opções que a loja ofereceu. O Compass coloca a compra dentro do
-                seu plano, mês a mês, e mostra a forma mais barata entre as que cabem nele.
-              </p>
-              <div className="lp-dest-itens">
-                {DESTAQUE_SIMULADOR.map(d => (
-                  <div key={d.titulo} className="lp-dest-item">
-                    <span className="lp-dest-ic"><i className={`ti ${d.icone}`} /></span>
-                    <div><h3>{d.titulo}</h3><p><em>{d.exemplo}</em></p></div>
-                  </div>
-                ))}
-              </div>
-              <div className="lp-dest-btns">
-                <Link to="/cadastro" className="lp-btn lp-btn-azul">Testar grátis</Link>
-                <a href="#como-funciona" className="lp-btn lp-btn-claro">Ver como funciona</a>
-              </div>
-            </div>
-            <CelularSimulador />
-          </div>
-        </section>
-
-        {/* 6. Pergunta 3: fazer sobrar */}
-        <section className="lp-sec" id="sobrar" aria-labelledby="t-guia">
-          <div className="lp-in lp-guia">
-            <div>
-              <span className="lp-pergunta">Conseguiria fazer sobrar mais?</span>
-              <h2 className="lp-h2" id="t-guia">Um plano para o dinheiro sobrar, de propósito</h2>
-              <p className="lp-sub" style={{ marginBottom: 0 }}>
-                Quando você decide antes quanto quer guardar, a sobra deixa de ser o que restou
-                no fim do mês e passa a fazer parte do plano.
-              </p>
-              <ol>
-                <li><span className="lp-guia-n">01</span><div><h3>Contas e cartões num só lugar</h3><p>Bancos, cartões e dinheiro, com o saldo de hoje e a fatura de cada cartão.</p></div></li>
-                <li><span className="lp-guia-n">02</span><div><h3>Um plano para o ano</h3><p>Quanto gastar em cada categoria e a sua meta de quanto guardar por mês.</p></div></li>
-                <li><span className="lp-guia-n">03</span><div><h3>Decida antes de comprar</h3><p>A previsão e o simulador mostram como cada escolha muda os próximos meses.</p></div></li>
-                <li><span className="lp-guia-n">04</span><div><h3>Acompanhe e ajuste</h3><p>O Radar mostra o mês em tempo real, e o plano se ajusta para os próximos meses.</p></div></li>
-              </ol>
-            </div>
-            <QuadroPlano />
-          </div>
-        </section>
-
-        {/* 7. Pergunta 4: sem surpresas */}
-        <section className="lp-sec" aria-labelledby="t-ben" style={{ background: '#f8faff' }}>
-          <div className="lp-in lp-ben">
-            <div>
-              <span className="lp-pergunta">Não teria surpresas ao fechar o mês?</span>
-              <h2 className="lp-h2" id="t-ben">O que vai sair já está na sua frente</h2>
-              <ul>
-                {['Contas da semana e débitos automáticos na primeira tela', 'Parcelas já lançadas nos meses em que vão cair', 'Faturas de todos os cartões, com o dia de fechamento', 'O Radar mostra, no meio do mês, quanto ainda resta em cada grupo', 'Conta compartilhada com quem divide as despesas com você'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
-              </ul>
-              <Link to="/cadastro" className="lp-btn lp-btn-azul">Começar agora</Link>
-              <div className="lp-ben-selos">
-                <span><i className="ti ti-gift" />Grátis</span>
-                <span><i className="ti ti-fingerprint" />Entrar com a digital</span>
-                <span><i className="ti ti-download" />Baixe seus dados quando quiser</span>
-              </div>
-            </div>
-            <QuadroRadar />
-          </div>
-        </section>
-
-        {/* 8. Como começar */}
-        <section className="lp-sec" id="como-funciona" aria-labelledby="t-pp">
+        {/* A viagem: uma parada por parte do app */}
+        <section className="lp-sec lp-viagem" id="viagem" aria-labelledby="t-viagem">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-pp">Veja como é fácil começar</h2>
+              <h2 className="lp-h2" id="t-viagem">A viagem até o seu porto seguro</h2>
+              <p className="lp-sub">Cinco paradas até o destino. Em cada uma, o Compass mostra onde você está e para onde está indo.</p>
+            </div>
+            <ol className="lp-rota">
+              {PARADAS.map(p => (
+                <li key={p.id} id={p.id} className={`lp-parada${p.id === 'porto' ? ' porto' : ''}`}>
+                  <span className="lp-pino" aria-hidden><i className={`ti ${p.icone}`} /></span>
+                  <div className="lp-parada-in">
+                    <div>
+                      <span className="lp-etapa">{p.etapa}</span>
+                      <h3>{p.titulo}</h3>
+                      <p>{p.texto}</p>
+                      {p.id === 'porto' && <span className="lp-chegada"><i className="ti ti-anchor" />Você escolhe o destino. O Compass mostra o caminho.</span>}
+                    </div>
+                    {p.visual}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* No lugar dos depoimentos: o comparativo */}
+        <section className="lp-sec" aria-labelledby="t-dif">
+          <div className="lp-in">
+            <div className="lp-centro">
+              <h2 className="lp-h2" id="t-dif">Sem mapa × com bússola</h2>
+              <p className="lp-sub">Anotar gastos conta por onde você já passou. Para sair do limite, é preciso enxergar o caminho à frente.</p>
+            </div>
+            <div className="lp-comp">
+              <div className="lp-comp-col lp-comp-outros">
+                <div className="lp-comp-rot">Sem mapa</div>
+                <h3>A tempestade aparece quando você já está nela</h3>
+                <ul>
+                  <li><i className="ti ti-history" />Você sabe quanto já gastou, não com quanto vai terminar</li>
+                  <li><i className="ti ti-alert-triangle" />O aperto aparece quando o mês já acabou</li>
+                  <li><i className="ti ti-help" />Comprar ou esperar? Decide no escuro</li>
+                  <li><i className="ti ti-coin-off" />Guardar fica para quando sobrar, e não sobra</li>
+                </ul>
+              </div>
+              <div className="lp-comp-col lp-comp-nos">
+                <div className="lp-comp-rot">Com o Compass One</div>
+                <h3>Você vê o caminho antes</h3>
+                <ul>
+                  <li><i className="ti ti-circle-check" />Com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
+                  <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar a rota</li>
+                  <li><i className="ti ti-circle-check" />Se a compra cabe no plano, antes de você comprar</li>
+                  <li><i className="ti ti-circle-check" />Guardar vira meta do mês, decidida no começo</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Como começar */}
+        <section className="lp-sec" id="como-funciona" aria-labelledby="t-pp" style={{ background: '#f8faff' }}>
+          <div className="lp-in">
+            <div className="lp-centro">
+              <h2 className="lp-h2" id="t-pp">Prepare a viagem em três passos</h2>
               <p className="lp-sub">Sem planilha e sem precisar entender de finanças. Tudo pode ser aproximado e ajustado depois.</p>
             </div>
             <ol className="lp-pp" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -696,12 +794,12 @@ export default function LandingPage() {
                 <div className="lp-pp-mini"><div><span>Quanto você recebe?</span><b>R$ 5.200</b></div><div><span>Aluguel · dia 10</span><b>R$ 1.650</b></div></div>
               </li>
               <li className="lp-pp-item">
-                <h3><span className="lp-passo-n" style={{ margin: 0 }}>2</span>Receba um plano inicial</h3>
+                <h3><span className="lp-passo-n" style={{ margin: 0 }}>2</span>Receba a primeira rota</h3>
                 <p>O Compass monta um plano de 12 meses com o que você contou e mostra quanto sobra por mês.</p>
                 <div className="lp-pp-mini"><div><span>Plano de nov a out</span><b>12 meses</b></div><div><span>Sobra por mês</span><b style={{ color: '#15803d' }}>R$ 640</b></div></div>
               </li>
               <li className="lp-pp-item">
-                <h3><span className="lp-passo-n" style={{ margin: 0 }}>3</span>Decida com o plano na mão</h3>
+                <h3><span className="lp-passo-n" style={{ margin: 0 }}>3</span>Navegue com a bússola</h3>
                 <p>Anote os gastos, confira os saldos e, antes de comprar, pergunte ao simulador.</p>
                 <div className="lp-pp-mini"><div><span>Geladeira em 10×</span><b style={{ color: '#15803d' }}>cabe</b></div><div><span>Meta de R$ 500</span><b style={{ color: '#15803d' }}>de pé</b></div></div>
               </li>
@@ -715,49 +813,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 9. Grade de recursos */}
-        <section className="lp-sec" id="recursos" aria-labelledby="t-rec" style={{ background: '#f8faff' }}>
+        {/* Recursos */}
+        <section className="lp-sec" id="recursos" aria-labelledby="t-rec">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-rec">Nossos principais recursos</h2>
+              <h2 className="lp-h2" id="t-rec">O que vai na sua bagagem</h2>
               <p className="lp-sub">Planejamento, previsão e decisão no mesmo app.</p>
             </div>
             <div className="lp-rec">
               {RECURSOS.slice(0, 5).map(r => <Recurso key={r.titulo} {...r} />)}
               <div className="lp-rec-meio"><QuadroSimulador /></div>
               {RECURSOS.slice(5).map(r => <Recurso key={r.titulo} {...r} />)}
-            </div>
-          </div>
-        </section>
-
-        {/* 10. No lugar dos depoimentos: o comparativo */}
-        <section className="lp-sec" aria-labelledby="t-dif">
-          <div className="lp-in">
-            <div className="lp-centro">
-              <h2 className="lp-h2" id="t-dif">A vida no limite × a vida com previsão</h2>
-              <p className="lp-sub">Anotar gastos conta o passado. Para sair do limite, é preciso enxergar o que vem pela frente.</p>
-            </div>
-            <div className="lp-comp">
-              <div className="lp-comp-col lp-comp-outros">
-                <div className="lp-comp-rot">No limite</div>
-                <h3>Você descobre depois</h3>
-                <ul>
-                  <li><i className="ti ti-history" />Você sabe quanto já gastou, não com quanto vai terminar</li>
-                  <li><i className="ti ti-alert-triangle" />O aperto aparece quando o mês já acabou</li>
-                  <li><i className="ti ti-help" />Comprar ou esperar? Decide no escuro</li>
-                  <li><i className="ti ti-coin-off" />Guardar fica para quando sobrar, e não sobra</li>
-                </ul>
-              </div>
-              <div className="lp-comp-col lp-comp-nos">
-                <div className="lp-comp-rot">Com o Compass One</div>
-                <h3>Você vê antes</h3>
-                <ul>
-                  <li><i className="ti ti-circle-check" />Com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
-                  <li><i className="ti ti-circle-check" />O mês no vermelho aparece meses antes, com tempo de mudar</li>
-                  <li><i className="ti ti-circle-check" />Se a compra cabe no plano, antes de você comprar</li>
-                  <li><i className="ti ti-circle-check" />Guardar vira meta do mês, decidida no começo</li>
-                </ul>
-              </div>
             </div>
           </div>
         </section>
@@ -795,7 +861,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 11. Perguntas frequentes */}
+        {/* Perguntas frequentes */}
         <section className="lp-sec" id="perguntas" aria-labelledby="t-faq">
           <div className="lp-in">
             <div className="lp-centro"><h2 className="lp-h2" id="t-faq" style={{ marginBottom: 32 }}>Perguntas frequentes</h2></div>
@@ -811,32 +877,29 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 12. Chamada final */}
-        <section className="lp-sec lp-fim" aria-labelledby="t-fim">
-          <div className="lp-in lp-centro">
-            <h2 className="lp-h2" id="t-fim">Veja hoje como vão ser os seus próximos meses</h2>
-            <p className="lp-sub">Crie sua conta grátis, monte o seu plano e decida com o futuro na sua frente.</p>
-            <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar agora <i className="ti ti-arrow-right" /></Link>
+        {/* Chamada final */}
+        <section className="lp-sec lp-fim" aria-labelledby="t-fim" style={{ position: 'relative', overflow: 'hidden' }}>
+          <FundoMapa />
+          <div className="lp-in lp-centro" style={{ position: 'relative' }}>
+            <span className="lp-marco-ic porto" style={{ margin: '0 auto 20px' }} aria-hidden><i className="ti ti-building-lighthouse" /></span>
+            <h2 className="lp-h2" id="t-fim">Comece hoje a viagem até o seu porto seguro</h2>
+            <p className="lp-sub">Crie sua conta grátis e veja o caminho dos seus próximos meses.</p>
+            <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></Link>
           </div>
         </section>
       </main>
 
-      {/* 13. Rodapé */}
       <footer className="lp-rodape2">
         <div className="lp-rodape2-in">
           <Link to="/" className="lp-marca" aria-label="Compass One"><LogoCompass size={30} /><NomeCompass /></Link>
           <nav aria-label="Rodapé">
-            <a href="#previsao">Previsão</a>
-            <a href="#posso-comprar">Posso comprar?</a>
-            <a href="#sobrar">Fazer sobrar</a>
-            <a href="#recursos">Recursos</a>
+            {LINKS.map(([h, t]) => <a key={h} href={h}>{t}</a>)}
             <a href="#planos">Planos</a>
-            <a href="#perguntas">Dúvidas</a>
           </nav>
           <Link to="/cadastro" className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Começar agora</Link>
         </div>
         <div className="lp-rodape2-in lp-rodape2-fim" style={{ marginTop: 24 }}>
-          <span>© {ano} Compass One · Planejamento financeiro para quem quer sair do limite.</span>
+          <span>© {ano} Compass One · A bússola do seu dinheiro.</span>
           <span style={{ display: 'flex', gap: 18 }}>
             <Link to="/privacidade">Política de privacidade</Link>
             <Link to="/termos">Termos de uso</Link>
