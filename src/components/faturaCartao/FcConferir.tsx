@@ -34,35 +34,3 @@ export function BolinhaConferido({ marcado, onToggle, tamanho = 26, rotulo }: {
     </button>
   )
 }
-
-/** "Conferidas com o banco · 12 de 15", no topo da lista. */
-export function ResumoConferidos({ conferidas, total, onDesmarcar, fonte = 13 }: {
-  conferidas: number
-  total: number
-  onDesmarcar: () => void
-  fonte?: number
-}) {
-  if (total === 0) return null
-  const todas = conferidas === total
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-      background: todas ? COR.sucessoFundo : '#eef2f8', borderRadius: 12, padding: '10px 14px',
-      fontSize: fonte, color: COR.texto,
-    }}>
-      <span style={{ flex: 1, minWidth: 180 }}>
-        {conferidas === 0
-          ? <>Conferindo com o banco? Marque o <b>○</b> de cada compra que você achar lá.</>
-          : <><b style={{ color: todas ? COR.sucessoTexto : COR.texto }}>
-              {todas ? '✓ ' : ''}{conferidas} de {total}
-            </b> conferidas com o banco</>}
-      </span>
-      {conferidas > 0 && (
-        <button type="button" onClick={onDesmarcar} style={{
-          border: 'none', background: 'transparent', cursor: 'pointer', padding: '4px 0',
-          fontFamily: 'inherit', fontSize: fonte, fontWeight: 600, color: COR.azul,
-        }}>Desmarcar todas</button>
-      )}
-    </div>
-  )
-}

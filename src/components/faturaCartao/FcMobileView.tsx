@@ -13,8 +13,10 @@ import { lancLabelComGrupo } from './fcRotulo'
 import { IconeRedondo } from '../mobile/ui'
 import { M } from '../mobile/estilo'
 import { IconeCat } from '../IconeCat'
-import { BolinhaConferido, ResumoConferidos } from './FcConferir'
-import { textoQtdCompras, estaConferido, alternarConferido, desmarcarTodos, resumoConferidos } from '../../utils/conferirFatura'
+import { BolinhaConferido } from './FcConferir'
+import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
+import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
+import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
 
 const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
@@ -101,6 +103,11 @@ type Props = {
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
   lancar: () => void
   diaDefaultPara: (mes: number, ano: number) => number
+
+  // Valor da fatura no app do banco × o lançado (o 5º card do computador)
+  diferenca: number | null
+  conciliado: boolean
+  abrirFatura: () => void
 }
 
 export default function FcMobileView({
@@ -123,6 +130,7 @@ export default function FcMobileView({
   categorias, categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
+  diferenca, conciliado, abrirFatura,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
@@ -132,6 +140,7 @@ export default function FcMobileView({
 
   const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
+  const contaAtual = contasCartao.find(c => c.id === contaId)
 
   // Sobre o azul do topo (#0f2878 → #1e40af, medido no extremo claro):
   // branco 8,72 · rótulo a 75% 5,1 · #86efac 6,21 · #fde047 6,62.
@@ -169,6 +178,33 @@ export default function FcMobileView({
             vence {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
           </div>
         </div>
+
+        {/* Fatura no app do banco × o lançado no Compass: o mesmo botão do
+            "No Sicredi" do banco no celular, e as mesmas palavras do 5º card
+            do computador (29/10/2026, opção A do Guilherme). Tocar abre a
+            janela "Qual é o valor atual da fatura de [mês]?". */}
+        <button onClick={abrirFatura} aria-label="Informar o valor da fatura" style={{
+          marginTop:14,width:'100%',display:'flex',flexWrap:'wrap',alignItems:'center',gap:10,
+          padding:'10px 14px',minHeight:48,borderRadius:16,border:'none',cursor:'pointer',
+          background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
+        }}>
+          <i className="ti ti-credit-card" aria-hidden style={{fontSize:20,color:'#fff'}} />
+          {/* Sem minWidth 0: com R$ 999.999,99 nos dois, a pílula desce. */}
+          <span style={{flex:1}}>
+            <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
+              Fatura no {contaAtual?.banco ?? 'cartão'}
+            </span>
+            <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>
+              {mesDados.faturaAtual || 'Informar fatura ✎'}
+            </span>
+          </span>
+          {diferenca !== null && (
+            <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
+              background:'rgba(15,23,42,.3)',color:conciliado?'#86efac':'#fff'}}>
+              {conciliado ? '✓ igual ao Compass' : diferenca>0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
+            </span>
+          )}
+        </button>
 
         {/* Fechamento e vencimento do mês — tocar abre o ajuste, como antes. */}
         <div style={{display:'flex',gap:8,marginTop:14}}>
@@ -561,13 +597,10 @@ export default function FcMobileView({
       {/* EXTRATO VIEW: lista única, a compra mais recente no topo */}
       {mobileView === 'extrato' && (
         <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
-          <button onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }} style={{
-            display:'flex',alignItems:'center',justifyContent:'center',gap:8,minHeight:52,
-            border:'none',borderRadius:999,cursor:'pointer',fontFamily:'inherit',
-            background:`linear-gradient(135deg,${COR.azul},#2563eb)`,color:'#fff',
-            fontSize:16,fontWeight:700,boxShadow:'0 6px 18px rgba(26,86,219,.28)'}}>
-            <span aria-hidden style={{fontSize:20,lineHeight:1}}>＋</span> Nova compra
-          </button>
+          {/* O botão grande "Nova compra" saiu (29/10/2026, pedido do Guilherme:
+              "para ganhar espaço"). Lança-se pelo "+" de cada dia, em destaque,
+              e HOJE aparece sempre na fatura que recebe a compra de hoje, mesmo
+              sem compra, como no Banco. */}
           {(() => {
             const allItems: Array<{dia:number;dc:number;mc:number;ac:number;l:Lancamento}> = []
             for (let d = 1; d <= totalDias; d++) {
@@ -578,16 +611,27 @@ export default function FcMobileView({
                 allItems.push({dia:d, dc, mc, ac, l})
               }
             }
-            if (allItems.length === 0) {
+            const hojeData = new Date()
+            const hojeD = hojeData.getDate(), hojeM = hojeData.getMonth(), hojeA = hojeData.getFullYear()
+            const faturaDeHoje = mesDaFaturaDaCompra({ diaFechamento }, hojeA, hojeM, hojeD)
+            const hojeAqui = faturaDeHoje.mes === purchaseMes && faturaDeHoje.ano === purchaseAno
+            // O "+" do dia abre a compra já com a data dele; o de hoje, vazio (= hoje).
+            const novaNoDia = (dc: number, mc: number, ac: number) => {
+              resetarParaNovo(diaHoje)
+              if (!(dc === hojeD && mc === hojeM && ac === hojeA))
+                setFDataCompra(`${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${ac !== purchaseAno ? `/${ac}` : ''}`)
+              setMobileView('form')
+            }
+            if (allItems.length === 0 && !hojeAqui) {
               return (
-                <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'22px 18px',
-                  textAlign:'center' as const,color:COR.textoSuave,fontSize:M.corpo}}>
-                  Nenhuma compra nesta fatura.
+                <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'14px 16px',
+                  display:'flex',alignItems:'center',gap:12,color:COR.textoSuave,fontSize:M.corpo}}>
+                  <span style={{flex:1}}>Nenhuma compra nesta fatura.</span>
+                  <BotaoMais rotulo="Lançar compra" onClick={() => { resetarParaNovo(diaHoje); setMobileView('form') }} />
                 </div>
               )
             }
             allItems.sort(compararNaFatura)
-            const conf = resumoConferidos(mesDados, totalDias)
             // Agrupadas por dia da compra, como os dias do Banco (24/10/2026, pedido do Guilherme).
             const grupos: Array<{dc:number;mc:number;ac:number;itens:typeof allItems}> = []
             for (const it of allItems) {
@@ -595,23 +639,37 @@ export default function FcMobileView({
               if (g && g.dc === it.dc && g.mc === it.mc && g.ac === it.ac) g.itens.push(it)
               else grupos.push({dc:it.dc, mc:it.mc, ac:it.ac, itens:[it]})
             }
+            if (hojeAqui && !grupos.some(g => g.dc === hojeD && g.mc === hojeM && g.ac === hojeA))
+              grupos.unshift({dc:hojeD, mc:hojeM, ac:hojeA, itens:[]})
             return (<>
-            <ResumoConferidos conferidas={conf.conferidas} total={conf.total} fonte={M.legenda + 1}
-              onDesmarcar={() => updateMes(desmarcarTodos)} />
             {grupos.map(g => {
               const totalDia = g.itens.reduce((a, {l}) => a + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
+              const ehHoje = g.dc === hojeD && g.mc === hojeM && g.ac === hojeA
               return (
               <section key={`${g.ac}-${g.mc}-${g.dc}`}>
                 <div style={{display:'flex',alignItems:'center',gap:8,padding:'0 4px 8px'}}>
                   <span style={{fontSize:M.corpo,fontWeight:800,color:COR.texto,fontVariantNumeric:'tabular-nums'}}>
                     {String(g.dc).padStart(2,'0')}/{String(g.mc+1).padStart(2,'0')}{g.ac !== purchaseAno ? `/${g.ac}` : ''}
                   </span>
-                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1}}>{diaSemanaLongo(g.dc, g.mc, g.ac)} · {textoQtdCompras(g.itens.length)}</span>
+                  <span style={{fontSize:M.corpo,fontWeight:500,color:COR.textoSuave,flex:1,minWidth:0,
+                    overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>
+                    {diaSemanaLongo(g.dc, g.mc, g.ac)}{g.itens.length > 0 ? ` · ${textoQtdCompras(g.itens.length)}` : ''}
+                  </span>
+                  {ehHoje && (
+                    <span style={{fontSize:12,fontWeight:800,padding:'2px 9px',borderRadius:999,background:COR.azul,color:'#fff'}}>Hoje</span>
+                  )}
+                  {g.itens.length > 0 && (
                   <span style={{fontSize:M.legenda,color:COR.textoSuave,whiteSpace:'nowrap' as const,fontVariantNumeric:'tabular-nums'}}>
                     total <b style={{color:COR.texto}}>{fmt(totalDia)}</b>
                   </span>
+                  )}
+                  <BotaoMais rotulo={`Lançar compra em ${g.dc}/${g.mc+1}`} onClick={() => novaNoDia(g.dc, g.mc, g.ac)} />
                 </div>
-              <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px',border:'2px solid #93c5fd'}}>
+              <div style={{background:COR.branco,borderRadius:M.raio,boxShadow:M.sombra,padding:'4px 16px',
+                border:`2px solid ${ehHoje ? '#1d4ed8' : '#93c5fd'}`}}>
+                {g.itens.length === 0 && (
+                  <div style={{padding:'14px 0',fontSize:M.corpo,color:COR.textoSuave}}>Nenhuma compra hoje ainda.</div>
+                )}
                 {g.itens.map(({dia, l}, idx) => {
                   const catVisual = iconeCategoria(categorias, l.categoria)
                   const hasDesc = !!(l.descricao && l.descricao !== l.categoria)

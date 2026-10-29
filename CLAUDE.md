@@ -1050,6 +1050,13 @@ inexistente é movido ao carregar e volta ao banco na gravação
 membro não move, fica com o que o administrador gravar.
 No mesmo dia: a janela "valor da fatura" só abre na fatura EM ABERTO de
 agora (a que fecha no próximo fechamento); futura, fechada ou paga não pede.
+**No celular, a fatura também se informa** (29/10/2026, pedido do
+Guilherme, opção A no card: "penso no usuário que irá usar apenas no
+celular"). No topo azul do Cartão, embaixo do total, o botão "Fatura no
+[cartão]" no desenho do "No Sicredi" do banco, com as palavras do 5º card do
+computador ("✓ igual ao Compass", "falta lançar R$ X"). Tocar abre a mesma
+`FcModal`, como folha (`folha`). A janela que abre sozinha na fatura em
+aberto já tentava abrir no celular, mas não era desenhada lá.
 **Trocar de cartão leva à fatura em aberto do novo, se a tela estava na
 do anterior** (28/10/2026, relatado pelo Guilherme: Sicredi fechado em
 dezembro, XP ainda aberto em novembro, e a troca deixava dezembro). Revê o
@@ -3444,6 +3451,16 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
   Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.
   `segurarTabSeVazio` em [`campoObrigatorio.ts`](src/utils/campoObrigatorio.ts).
+- **O "+" de cada dia substituiu o botão grande** (29/10/2026, pedido do
+  Guilherme: "para ganhar espaço"). No celular saíram "Novo lançamento"
+  (Banco e Dinheiro) e "Nova compra" (Cartão); o "+" de cada dia virou a
+  bolinha azul com brilho (`BotaoMais`, também no computador). No Cartão,
+  HOJE aparece sempre na fatura que recebe a compra de hoje
+  (`mesDaFaturaDaCompra`), com "Nenhuma compra hoje ainda", e o "+" de um
+  dia abre a compra já com a data dele. Mês ou fatura sem nada tem o "+"
+  no aviso de vazio. No mesmo dia saiu o "N de M conferidas com o banco"
+  (e o "Desmarcar todas"), no computador e no celular: "não vejo
+  funcionalidade". A bolinha de cada compra fica.
 - **"Conciliação" saiu das telas** (22/10/2026, pedido do Guilherme:
   "pense em algo para ficar mais claro"). No computador, Banco, Dinheiro e
   Cartão têm um quinto cartão do mesmo tamanho dos outros: "Saldo no banco",

@@ -7,8 +7,8 @@ import {
 } from './FcShared'
 import { grupoDoLanc } from './fcRotulo'
 import { IconeCat } from '../IconeCat'
-import { BolinhaConferido, ResumoConferidos } from './FcConferir'
-import { textoQtdCompras, estaConferido, alternarConferido, desmarcarTodos, resumoConferidos } from '../../utils/conferirFatura'
+import { BolinhaConferido } from './FcConferir'
+import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
 
 type Props = {
   mesDados: DadosMes
@@ -63,7 +63,6 @@ export default function FcDesktopLeft({
           }
 
           itens.sort(compararNaFatura)
-          const conf = resumoConferidos(mesDados, totalDias)
           // Agrupadas por DIA DA COMPRA, como os dias do Banco (24/10/2026, pedido do
           // Guilherme): título "dd/mm semana" com o total do dia e um card com borda.
           const grupos: Array<{ dc: number; mc: number; ac: number; itens: typeof itens }> = []
@@ -74,10 +73,8 @@ export default function FcDesktopLeft({
           }
 
           return (<>
-          <div style={{ marginBottom: 14 }}>
-            <ResumoConferidos conferidas={conf.conferidas} total={conf.total}
-              onDesmarcar={() => updateMes(desmarcarTodos)} />
-          </div>
+          {/* "N de M conferidas" saiu (29/10/2026, Guilherme: "não vejo
+              funcionalidade"); fica a bolinha de cada compra. */}
           {grupos.map(g => {
             const totalDia = g.itens.reduce((a, { l }) => a + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
             return (
