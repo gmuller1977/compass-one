@@ -1050,6 +1050,13 @@ inexistente é movido ao carregar e volta ao banco na gravação
 membro não move, fica com o que o administrador gravar.
 No mesmo dia: a janela "valor da fatura" só abre na fatura EM ABERTO de
 agora (a que fecha no próximo fechamento); futura, fechada ou paga não pede.
+**No celular, a fatura também se informa** (29/10/2026, pedido do
+Guilherme, opção A no card: "penso no usuário que irá usar apenas no
+celular"). No topo azul do Cartão, embaixo do total, o botão "Fatura no
+[cartão]" no desenho do "No Sicredi" do banco, com as palavras do 5º card do
+computador ("✓ igual ao Compass", "falta lançar R$ X"). Tocar abre a mesma
+`FcModal`, como folha (`folha`). A janela que abre sozinha na fatura em
+aberto já tentava abrir no celular, mas não era desenhada lá.
 **Trocar de cartão leva à fatura em aberto do novo, se a tela estava na
 do anterior** (28/10/2026, relatado pelo Guilherme: Sicredi fechado em
 dezembro, XP ainda aberto em novembro, e a troca deixava dezembro). Revê o
