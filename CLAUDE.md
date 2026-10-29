@@ -3948,6 +3948,13 @@ prova vermelha não publica, e o site fica na versão anterior. O GitHub roda
 que muda de propósito muda a prova junto, com um comentário de quando e por
 quê (ex.: a 75 e a 76 em 25/10).
 
+**A hospedagem está indo para a Cloudflare Pages** (29/10/2026, pedido do
+Guilherme: o gratuito da Vercel proíbe uso comercial e tem limite diário).
+Passo a passo em [`docs/hospedagem-cloudflare.md`](docs/hospedagem-cloudflare.md).
+Enquanto as duas existirem, `public/_headers` e o `vercel.json` têm os mesmos
+cabeçalhos: mudar um é mudar o outro. Na Pages, o build é o mesmo
+(`npm run provas && npm run build`) e só `main` e `teste` publicam.
+
 **Ramos `claude/*` não geram deploy na Vercel** (`git.deploymentEnabled` no
 `vercel.json`): o plano gratuito tem limite diário, e só o `main` publica.
 
