@@ -144,3 +144,15 @@ export function PilulaDiferenca({ diferenca, conciliado }: { diferenca: number; 
     </span>
   )
 }
+
+/** Na fatura, quanto do total do Compass ainda não tem bolinha de conferida
+ *  (30/10/2026). O mesmo desenho da pílula da diferença. */
+export function PilulaFaltaConferir({ falta }: { falta: number }) {
+  return (
+    <span style={{flexShrink:0,borderRadius:14,background:'rgba(15,23,42,.3)',textAlign:'right',
+      lineHeight:1.25,padding:'5px 10px',whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'}}>
+      <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)'}}>falta conferir</span>
+      <span style={{display:'block',fontSize:14,fontWeight:700,color:'#fff'}}>{fmt(falta)}</span>
+    </span>
+  )
+}
