@@ -3454,6 +3454,19 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   conta compartilhada também marca, e a parcela de cada mês se confere à
   parte. Nenhum número muda. Regras em
   [`conferirFatura.ts`](src/utils/conferirFatura.ts); `prova102` (9).
+- **As bolinhas são a conferência da fatura** (30/10/2026, ideia do
+  Guilherme). O botão "No [cartão]" do celular e o 5º card do computador
+  mostram "Conferido com o banco R$ X" e "falta conferir R$ Y" (total do
+  Compass − compras com bolinha; estorno abate), enquanto houver compra sem
+  bolinha. Tudo conferido: "✓ tudo conferido"; com o valor do banco
+  informado, volta a comparar com o banco ("falta lançar", "✓ igual ao
+  Compass"). A janela do valor só abre sozinha em dois momentos, escolha
+  dele no card: tudo conferido ("Tudo conferido! Quer comparar com o total
+  do banco?") ou fatura FECHADA antes do vencimento; uma vez por dia e de
+  novo só se o total mudou. Tocar continua informando a qualquer hora. O
+  valor do banco é o único que acha a compra nunca lançada.
+  `conferenciaDaFatura` em `conferirFatura.ts`, `momentoDePerguntar` em
+  `pedirValorDaFatura.ts`; `prova106` (10), `prova105` (15).
 - **Categoria é obrigatória: com ela vazia, o Tab não sai do campo**
   (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
   Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.

@@ -19,7 +19,8 @@ import NleNovaCategoria from '../components/novoLancamentoExtrato/NleNovaCategor
 import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
-import { pedeValorDaFatura } from '../utils/pedirValorDaFatura'
+import { pedeValorDaFatura, momentoDePerguntar, type MomentoDaFatura } from '../utils/pedirValorDaFatura'
+import { conferenciaDaFatura, resumoConferidos } from '../utils/conferirFatura'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -71,6 +72,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   const [fVariante, setFVariante] = useState('')
   const [modalFatura, setModalFatura]       = useState(false)
   const [modalFaturaValor, setModalFaturaValor] = useState('')
+  // Por que a janela abriu sozinha (muda o título); null = aberta pelo toque.
+  const [modalFaturaMotivo, setModalFaturaMotivo] = useState<MomentoDaFatura>(null)
   const [confirmacao, setConfirmacao] = useState<{ mensagem: string; detalhe?: string; onConfirmar: () => void } | null>(null)
 
   function pedirConfirmacao(mensagem: string, onConfirmar: () => void, detalhe?: string) {
@@ -232,30 +235,6 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
   useEffect(() => { if (mobileSelecionado) setContaId(mobileSelecionado) }, [mobileSelecionado])
   useEffect(() => { onCartaoChange?.(contaId) }, [contaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Modal "valor da fatura" — abre uma vez por dia por fatura
-  useEffect(() => {
-    if (carregando) return
-    const dm = dados[key] ?? DADOS_MES_VAZIO
-    if (!pedeValorDaFatura({
-      perguntouHoje: dm.faturaAtualData === hojeStr,
-      totalAgora: totalFatura,
-      totalNaUltimaVez: dm.faturaAtualTotal,
-      informado: parseBRL(dm.faturaAtual ?? ''),
-    })) return
-    // Só a fatura EM ABERTO de agora pede o valor: a que fecha no próximo
-    // fechamento. Fechada, paga ou futura, não — passando os meses a janela
-    // abria em cada um (pedido do Guilherme, 21/10/2026).
-    if (faturaStatus !== 'aberta') return
-    if (new Date(purchaseAno, purchaseMes - 1, diaFechamentoBase) > hoje) return
-    const t = setTimeout(() => {
-      setModalFaturaValor(dm.faturaAtual ?? '')
-      setModalFatura(true)
-    }, 50)
-    return () => clearTimeout(t)
-  }, [key, carregando, faturaStatus]) // eslint-disable-line react-hooks/exhaustive-deps
-
-
-
   function diaDefaultPara(novoMes: number, novoAno: number) {
     let pMes = novoMes - billingOffset, pAno = novoAno
     if (pMes < 0) { pMes += 12; pAno-- }
@@ -319,8 +298,38 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   const totalFatura  = totalEntradas - totalSaidas
   const faturaExtNum = parseBRL(mesDados.faturaAtual ?? '')
-  const diferenca    = faturaExtNum > 0 ? faturaExtNum - totalFatura : null
-  const conciliado   = diferenca !== null && Math.abs(diferenca) < 0.01
+  const conferencia  = conferenciaDaFatura(mesDados, totalDias, { totalFatura, informado: faturaExtNum })
+  const resumoConf   = resumoConferidos(mesDados, totalDias)
+  function abrirFaturaManual() {
+    setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFaturaMotivo(null); setModalFatura(true)
+  }
+
+  // Modal "valor da fatura": abre sozinha só quando tudo foi conferido ou
+  // quando a fatura fechou e não venceu (pedirValorDaFatura, 30/10/2026).
+  // Uma vez por dia, e só de novo se o total lançado mudou.
+  const momentoFatura = momentoDePerguntar({
+    status: faturaStatus as 'paga' | 'fechada' | 'aberta',
+    tudoConferido: resumoConf.total > 0 && resumoConf.conferidas === resumoConf.total,
+    antesDoVencimento: new Date(anoVenc, mesVenc, diaVencimento) >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
+  })
+  useEffect(() => {
+    if (carregando) return
+    const dm = dados[key] ?? DADOS_MES_VAZIO
+    if (!pedeValorDaFatura({
+      momento: momentoFatura,
+      perguntouHoje: dm.faturaAtualData === hojeStr,
+      totalAgora: totalFatura,
+      totalNaUltimaVez: dm.faturaAtualTotal,
+      informado: parseBRL(dm.faturaAtual ?? ''),
+    })) return
+    const t = setTimeout(() => {
+      setModalFaturaValor(dm.faturaAtual ?? '')
+      setModalFaturaMotivo(momentoFatura)
+      setModalFatura(true)
+    }, 50)
+    return () => clearTimeout(t)
+  }, [key, carregando, momentoFatura]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const totalPrevisto = useMemo(() => {
     const planosAno = (planos as Record<number, { saidas: { nome: string; v: number[] }[] }>)[ano]
@@ -669,9 +678,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         updateMes={updateMes}
         lancar={lancar}
         diaDefaultPara={diaDefaultPara}
-        diferenca={diferenca}
-        conciliado={conciliado}
-        abrirFatura={() => { setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFatura(true) }}
+        conferencia={conferencia}
+        abrirFatura={abrirFaturaManual}
       />
       <FcModal folha
         modalFatura={modalFatura} setModalFatura={setModalFatura}
@@ -681,6 +689,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         confirmarModalFatura={confirmarModalFatura}
         pularModalFatura={pularModalFatura}
         mesVenc={mesVenc} anoVenc={anoVenc}
+        motivo={modalFaturaMotivo}
       />
       {confirmacao && (
         <FcConfirmModal
@@ -709,10 +718,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
         diaVencimento={diaVencimento}
         mesDados={mesDados}
-        diferenca={diferenca}
-        conciliado={conciliado}
-        setModalFatura={setModalFatura}
-        setModalFaturaValor={setModalFaturaValor}
+        conferencia={conferencia}
+        abrirFatura={abrirFaturaManual}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
         <FcDesktopLeft
@@ -769,6 +776,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         confirmarModalFatura={confirmarModalFatura}
         pularModalFatura={pularModalFatura}
         mesVenc={mesVenc} anoVenc={anoVenc}
+        motivo={modalFaturaMotivo}
       />
       {confirmacao && (
         <FcConfirmModal

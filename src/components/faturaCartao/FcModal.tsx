@@ -19,6 +19,8 @@ type Props = {
   anoVenc: number
   /** No celular a janela é uma folha que sobe de baixo (29/10/2026). */
   folha?: boolean
+  /** Por que abriu sozinha (pedirValorDaFatura); null = pelo toque. */
+  motivo?: 'tudo-conferido' | 'fechada' | null
 }
 
 export default function FcModal({
@@ -26,10 +28,18 @@ export default function FcModal({
   modalFaturaValor, setModalFaturaValor,
   contaInfo,
   confirmarModalFatura, pularModalFatura,
-  mesVenc, anoVenc, folha,
+  mesVenc, anoVenc, folha, motivo,
 }: Props) {
   if (!modalFatura) return null
   const nomeMes = NOMES_MESES[mesVenc].toLowerCase()
+  // As palavras dizem por que a janela abriu; a pergunta é sempre opcional
+  // ("Pular"), no tom do app: o Compass oferece, não cobra.
+  const titulo = motivo === 'tudo-conferido' ? 'Tudo conferido! Quer comparar com o total do banco?'
+    : motivo === 'fechada' ? `A fatura de ${nomeMes} fechou. Quer comparar com o total do banco?`
+    : `Qual é o valor atual da fatura de ${nomeMes}?`
+  const subtitulo = motivo
+    ? `Fatura de ${nomeMes} de ${anoVenc}. O valor do banco mostra se ficou alguma compra sem lançar no Compass.`
+    : `Fatura de ${nomeMes} de ${anoVenc}. Informe o valor atual do cartão para verificar se todos os lançamentos foram feitos.`
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:1000,
@@ -42,8 +52,8 @@ export default function FcModal({
             boxShadow:'0 20px 60px rgba(0,0,0,0.25)'}}
         onClick={e => e.stopPropagation()}>
         <ModalTopo raio={folha ? 24 : undefined} icone="ti-credit-card" rotulo={contaInfo ? `Cartão · ${contaInfo.apelido ?? contaInfo.banco}` : 'Cartão'}
-          titulo={`Qual é o valor atual da fatura de ${nomeMes}?`} id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
-          subtitulo={`Fatura de ${nomeMes} de ${anoVenc}. Informe o valor atual do cartão para verificar se todos os lançamentos foram feitos.`} />
+          titulo={titulo} id="fc-fatura-titulo" onFechar={() => setModalFatura(false)}
+          subtitulo={subtitulo} />
         <div style={{padding:'18px 24px 22px'}}>
         {/* Vírgula automática, como o saldo do banco (28/10/2026, pedido do
             Guilherme): "12345" vira "123,45". A fatura não fica negativa. */}

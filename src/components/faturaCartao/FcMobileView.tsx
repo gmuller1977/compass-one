@@ -15,9 +15,9 @@ import { M } from '../mobile/estilo'
 import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
-import { PilulaDiferenca } from '../novoLancamentoExtrato/NleMobileSubheader'
+import { PilulaDiferenca, PilulaFaltaConferir } from '../novoLancamentoExtrato/NleMobileSubheader'
 import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
-import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
+import { textoQtdCompras, estaConferido, alternarConferido, type Conferencia } from '../../utils/conferirFatura'
 
 const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
@@ -106,8 +106,7 @@ type Props = {
   diaDefaultPara: (mes: number, ano: number) => number
 
   // Valor da fatura no app do banco × o lançado (o 5º card do computador)
-  diferenca: number | null
-  conciliado: boolean
+  conferencia: Conferencia
   abrirFatura: () => void
 }
 
@@ -131,7 +130,7 @@ export default function FcMobileView({
   categorias, categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
-  diferenca, conciliado, abrirFatura,
+  conferencia, abrirFatura,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
@@ -190,17 +189,30 @@ export default function FcMobileView({
           background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
         }}>
           <i className="ti ti-credit-card" aria-hidden style={{fontSize:20,color:'#fff'}} />
-          {/* Pílula sempre ao lado, como no banco (pedido do Guilherme). */}
+          {/* As bolinhas fazem a conferência (30/10/2026, ideia do Guilherme):
+              enquanto há compra sem bolinha, o botão mostra quanto do total
+              já foi conferido e a pílula quanto falta. Tudo conferido e o
+              valor do banco informado, volta a comparar com o banco. */}
           <span style={{flex:1,minWidth:0}}>
             <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
-              No {contaAtual?.banco ?? 'cartão'}
+              {conferencia.estado === 'conferindo' || conferencia.estado === 'tudo-conferido'
+                ? 'Conferido com o banco' : `No ${contaAtual?.banco ?? 'cartão'}`}
             </span>
             <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-              {mesDados.faturaAtual || 'Informar fatura ✎'}
+              {conferencia.estado === 'conferindo' || conferencia.estado === 'tudo-conferido'
+                ? fmt(conferencia.conferido) : mesDados.faturaAtual || 'Informar fatura ✎'}
             </span>
           </span>
-          {diferenca !== null && (
-            <PilulaDiferenca diferenca={diferenca} conciliado={conciliado} />
+          {conferencia.estado === 'conferindo' && <PilulaFaltaConferir falta={conferencia.falta} />}
+          {conferencia.estado === 'tudo-conferido' && (
+            <span style={{flexShrink:0,borderRadius:14,background:'rgba(15,23,42,.3)',textAlign:'right',lineHeight:1.25,
+              padding:'5px 10px',whiteSpace:'nowrap'}}>
+              <span style={{display:'block',fontSize:13,fontWeight:700,color:'#86efac'}}>✓ tudo conferido</span>
+              <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)'}}>comparar com o banco ✎</span>
+            </span>
+          )}
+          {conferencia.estado === 'banco' && (
+            <PilulaDiferenca diferenca={conferencia.diferenca} conciliado={conferencia.igual} />
           )}
         </button>
 
