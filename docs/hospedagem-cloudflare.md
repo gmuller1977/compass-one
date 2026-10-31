@@ -25,8 +25,10 @@ O repositório já está pronto:
 
 1. Entre em <https://dash.cloudflare.com/sign-up> com
    **projetocompassone@gmail.com** (a mesma do Supabase).
-2. No menu da esquerda: **Workers e Pages** → **Criar** → aba **Pages** →
-   **Conectar ao Git**.
+2. No menu da esquerda, em **Build**: **Compute** → **Workers & Pages** →
+   botão **Create application**. A tela abre em Workers: embaixo, clique em
+   **"Looking to deploy Pages? Get started"** → **Import an existing Git
+   repository** (Conectar ao Git).
 3. Autorize o GitHub e escolha só o repositório **gmuller1977/compass-one**.
 4. Preencha:
 
