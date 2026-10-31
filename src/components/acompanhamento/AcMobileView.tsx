@@ -219,7 +219,7 @@ export default function AcMobileView({
               </div>
             </div>
             {colunas.length > 0 && (
-              <div style={{ display:'grid', gridTemplateColumns:`repeat(${colunas.length},1fr)`, gap:8 }}>
+              <div style={{ display:'grid', gridTemplateColumns:`repeat(${colunas.length},minmax(0,1fr))`, gap:8 }}>
                 {colunas.map(col => (
                   <div key={col.label}>
                     <div style={{ fontSize:13, fontWeight:700, color:'#64748b', marginBottom:6 }}><i className={`ti ${col.icone}`} aria-hidden style={{ verticalAlign:-2 }} /> {col.label}</div>
@@ -435,7 +435,10 @@ export default function AcMobileView({
       {/* CONTENT */}
       {/* Grade, não flex em coluna: na coluna os cartões (overflow hidden)
           encolhiam até caber na altura da tela e cortavam as linhas. */}
-      <div style={{ padding:'16px 16px 110px', display:'grid', alignContent:'start', gap:16 }}>
+      {/* minmax(0,1fr): sem ele a coluna cresce até o texto mais comprido que
+          não quebra (a descrição de um lançamento, com reticências), e a tela
+          ganhava rolagem para o lado (30/10/2026, relatado pelo Guilherme). */}
+      <div style={{ padding:'16px 16px 110px', display:'grid', gridTemplateColumns:'minmax(0,1fr)', alignContent:'start', gap:16 }}>
         {!dadosAno ? (
           <EmptyState
             icon="ti-radar-2"

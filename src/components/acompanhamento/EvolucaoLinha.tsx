@@ -261,7 +261,7 @@ export default function EvolucaoLinha({
               ))}
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${colunas.length}, 1fr)`, gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${colunas.length}, minmax(0, 1fr))`, gap: 12 }}>
             {colunas.map(col => (
               <div key={col.label}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
