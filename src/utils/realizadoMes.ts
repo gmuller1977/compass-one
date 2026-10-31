@@ -1,6 +1,6 @@
 import type { Conta, Categoria, PlanoAnoData } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
-import { mkCatReal, type CatReal } from '../components/acompanhamento/AcShared'
+import { mkCatReal, type CatReal, type Lanc } from '../components/acompanhamento/AcShared'
 import { catKey, norm, ehTransferencia } from '../components/acompanhamento/evolucaoCalcs'
 import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
 import { valorFixaNoMes } from './valorFixa'
@@ -131,7 +131,7 @@ export function construirRealizadoMes(params: {
       alvo.lancamentos.push({ dia:1, descricao:fixaCat.nome, valor:val, sub:'automático', fonte:'banco' })
     }
 
-    const fat = faturaData as Record<string, { lancamentos: Record<number, { id?: string; tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number }[]> }>
+    const fat = faturaData as Record<string, { lancamentos: Record<number, { id?: string; tipo: string; categoria: string; subCategoria?: string; descricao?: string; valor: number; parcelas?: number; parcelaAtual?: number; diaCompra?: number; mesCompra?: number }[]> }>
     for (const card of contas.filter(c => c.tipo === 'cartao')) {
       const billingOff = (card.diaVencimento ?? 1) < (card.diaFechamento ?? 1) ? 1 : 0
       let pMes = mes - billingOff, pAno = ano
@@ -151,24 +151,34 @@ export function construirRealizadoMes(params: {
             : undefined
           const sub = resolverSub(l.categoria, 'saida', l.subCategoria)
           const { k, variante } = chaveDe(l.categoria, 'saida', sub)
-          const daVariante = { ...(variante ? { variante } : {}), ...(pMes !== mes ? { mesFatura: pMes } : {}) }
+          // A data mostrada é a da COMPRA, a mesma da tela do cartão. A compra
+          // lançada com data de outro mês fica gravada no dia em que foi
+          // lançada, e o Radar mostrava esse dia: a Netflix de 20/09 lançada
+          // em 28/10 aparecia "28/10" aqui e "20/09" na fatura (30/10/2026,
+          // relatado pelo Guilherme). Sem a data gravada, o dia da fatura.
+          const diaMostrado = l.diaCompra ?? d
+          const mesMostrado = l.mesCompra ?? pMes
+          const daVariante = { ...(variante ? { variante } : {}), ...(mesMostrado !== mes ? { mesFatura: mesMostrado } : {}) }
           if (l.tipo === 'entrada') {
             const c = getSaida(k)
             c.total += l.valor; c.totalCart += l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela, ...daVariante })
+            c.lancamentos.push({ dia:diaMostrado, descricao:l.descricao??l.categoria, valor:l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela, ...daVariante })
           } else if (l.tipo === 'saida') {
             // Estorno: abate da categoria de saída
             const c = getSaida(k)
             c.total -= l.valor; c.totalCart -= l.valor
-            c.lancamentos.push({ dia:d, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela, ...daVariante })
+            c.lancamentos.push({ dia:diaMostrado, descricao:l.descricao??l.categoria, valor:-l.valor, sub:card.apelido??card.nome, fonte:'cartao', parcela, ...daVariante })
           }
         }
       }
 
     }
 
-    for (const c of Object.values(saidas))   c.lancamentos.sort((a,b) => a.dia-b.dia)
-    for (const c of Object.values(entradas))  c.lancamentos.sort((a,b) => a.dia-b.dia)
+    // Em ordem de data: a compra de setembro que caiu na fatura de outubro vem
+    // antes dos dias de outubro (o mês conta da distância até o mês do Radar).
+    const ordem = (l: Lanc) => (((l.mesFatura ?? mes) - mes + 18) % 12) * 100 + l.dia
+    for (const c of Object.values(saidas))   c.lancamentos.sort((a,b) => ordem(a)-ordem(b))
+    for (const c of Object.values(entradas))  c.lancamentos.sort((a,b) => ordem(a)-ordem(b))
 
     return { saidasMap: saidas, entradasMap: entradas }
 }
