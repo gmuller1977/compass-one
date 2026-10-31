@@ -3477,7 +3477,8 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   Guilherme). "Lançado no Compass" (com "falta conferir R$ X" / "✓ tudo
   conferido") e "Fatura no banco" / "No [cartão]" (com a diferença, mesmo
   antes de conferir tudo), no celular em duas caixas e no computador em
-  dois cartões; o cartão "Status" saiu: "Aberta / Fechada / Paga" fica AO
+  dois cartões (no computador, a barra azul do rodapé "Total lançado no
+  Compass" saiu no mesmo dia, pedido dele: o cartão já mostra); o cartão "Status" saiu: "Aberta / Fechada / Paga" fica AO
   LADO DO MÊS (pílula junto do seletor no computador; no celular, na linha
   "Fatura de [mês] · Aberta", no lugar do "vence", que já está no botão
   "Vence dia N"). `faturaLadoALado` em `conferirFatura.ts`; `prova108`.

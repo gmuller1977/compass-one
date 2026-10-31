@@ -730,11 +730,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
           totalDias={totalDias}
           purchaseMes={purchaseMes}
           purchaseAno={purchaseAno}
-          totalFatura={totalFatura}
           diaFechamento={diaFechamento}
-          diaVencimento={diaVencimento}
-          mesVenc={mesVenc}
-          anoVenc={anoVenc}
           editandoId={editandoId}
           categorias={categorias}
           editarLancamento={editarLancamento}

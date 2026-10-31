@@ -2,7 +2,7 @@ import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
 import {
-  COR, NOMES_MESES, fmt, diaSemanaLongo, lancLabel, compararNaFatura,
+  COR, fmt, diaSemanaLongo, lancLabel, compararNaFatura,
   type Lancamento, type DadosMes,
 } from './FcShared'
 import { grupoDoLanc } from './fcRotulo'
@@ -15,11 +15,7 @@ type Props = {
   totalDias: number
   purchaseMes: number
   purchaseAno: number
-  totalFatura: number
   diaFechamento: number
-  diaVencimento: number
-  mesVenc: number
-  anoVenc: number
   editandoId: string | null
   categorias: Categoria[]
   editarLancamento: (dia: number, l: Lancamento) => void
@@ -30,7 +26,7 @@ type Props = {
 
 export default function FcDesktopLeft({
   mesDados, totalDias, purchaseMes, purchaseAno,
-  totalFatura, diaFechamento, diaVencimento, mesVenc, anoVenc,
+  diaFechamento,
   editandoId, categorias,
   editarLancamento, excluir, setDiaSel, updateMes,
 }: Props) {
@@ -187,26 +183,6 @@ export default function FcDesktopLeft({
           })}
           </>)
         })()}
-      </div>
-
-      {/* Footer: total da fatura */}
-      <div style={{ flexShrink: 0, padding: '0 12px 12px' }}>
-        <div style={{ background: totalFatura < 0 ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : `var(--cx-azul)`, borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            {/* O mês da fatura é o do VENCIMENTO, como o seletor do topo (o
-                rodapé dizia o mês das compras; 22/10/2026). Branco, um ponto
-                maior, pedido do Guilherme. */}
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#fff' }}>
-              Total lançado no Compass — {NOMES_MESES[mesVenc]} {anoVenc}
-            </div>
-            <div style={{ fontSize: 10, color: '#fff', marginTop: 1 }}>
-              Vence dia {diaVencimento} de {NOMES_MESES[mesVenc]} {anoVenc}
-            </div>
-          </div>
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' as const }}>
-            {fmt(totalFatura)}
-          </span>
-        </div>
       </div>
 
     </div>
