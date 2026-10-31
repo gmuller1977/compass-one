@@ -1,7 +1,7 @@
-# Mudar a hospedagem para a Cloudflare Pages
+# Mudar a hospedagem para a Cloudflare
 
 Por que: o plano gratuito da Vercel proíbe uso comercial e tem limite diário de
-publicações. O gratuito da Cloudflare Pages permite uso comercial e dá 500
+publicações. O gratuito da Cloudflare permite uso comercial e dá 500
 publicações por mês. O Supabase não muda.
 
 O endereço continua **www.compass-one.com.br**. Por isso a digital (passkey),
@@ -11,64 +11,55 @@ ao domínio, não à empresa que hospeda.
 **A Vercel fica no ar até o passo 6.** Nada para de funcionar enquanto a
 Cloudflare é montada e testada.
 
+O app fica num **Worker com arquivos estáticos** (o caminho que a Cloudflare
+oferece hoje no lugar da Pages; também gratuito e com uso comercial). Não há
+código de servidor: ela só serve o `dist/` do build.
+
 O repositório já está pronto:
 
+- `wrangler.jsonc`: diz à Cloudflare para servir o `dist/` e abrir o
+  `index.html` em qualquer endereço do app (`/radar`, `/lancar`…), como a
+  Vercel faz.
 - `public/_headers`: os mesmos cabeçalhos de proteção do `vercel.json`.
-- Qualquer endereço do app (`/radar`, `/lancar`…) abre o `index.html`, como na
-  Vercel. A Pages faz isso sozinha porque o app não tem `404.html`.
 - `.node-version`: a Cloudflare usa o Node 22, o mesmo do GitHub.
-- As provas rodam antes do build: prova vermelha não publica, como hoje.
 
 ---
 
-## 1. Criar a conta e ligar o GitHub (10 min)
+## 1. Criar o projeto e ligar o GitHub (feito em 31/10)
 
-1. Entre em <https://dash.cloudflare.com/sign-up> com
-   **projetocompassone@gmail.com** (a mesma do Supabase).
-2. No menu da esquerda, em **Build**: **Compute** → **Workers & Pages** →
-   botão **Create application**. A tela abre em Workers: embaixo, clique em
-   **"Looking to deploy Pages? Get started"** → **Import an existing Git
-   repository** (Conectar ao Git).
-3. Autorize o GitHub e escolha só o repositório **gmuller1977/compass-one**.
-4. Preencha:
+**Compute** → **Workers & Pages** → **Create application** → importar o
+repositório **gmuller1977/compass-one**, ramo `main`, nome `compass-one`.
 
-   | Campo | Valor |
-   |---|---|
-   | Nome do projeto | `compass-one` |
-   | Ramo de produção | `main` |
-   | Predefinição de framework | Nenhuma |
-   | Comando de build | `npm run provas && npm run build` |
-   | Diretório de saída | `dist` |
+## 2. Ajustar o build
 
-5. Em **Variáveis de ambiente**, antes de salvar, crie as mesmas da Vercel
-   (copie de Vercel → projeto → Settings → Environment Variables, ambiente
-   *Production*):
+Projeto `compass-one` → **Settings** → **Build**:
 
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_VAPID_PUBLIC_KEY` (só se existir na Vercel)
+| Campo | Valor |
+|---|---|
+| Build command | `npm run provas && npm run build` |
+| Deploy command | `npx wrangler deploy` (já está) |
+| Root directory | `/` (já está) |
 
-   Não crie `VITE_GEMINI_API_KEY`: ela não é mais usada e não deve ir para o
-   site.
+Em **Build variables** (é aqui, e não em "Variables and secrets": o app lê
+essas três na hora do build), crie as mesmas da Vercel (Vercel → projeto →
+Settings → Environment Variables, ambiente *Production*):
 
-6. **Salvar e implantar.** Leva uns 2 minutos.
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_VAPID_PUBLIC_KEY` (só se existir na Vercel)
 
-## 2. Não publicar os ramos do Claude
+Não crie `VITE_GEMINI_API_KEY`: ela não é mais usada.
 
-Projeto → **Configurações** → **Builds** → **Controles de ramo**:
+Em **Branch control**, desligue **Builds for non-production branches**:
+assim os ramos `claude/*` não publicam nada, como hoje na Vercel.
 
-- Implantações de produção: **ligado**, ramo `main`.
-- Implantações de visualização: **Ramos personalizados**, incluir só `teste`.
-
-Assim os ramos `claude/*` não publicam nada, como hoje na Vercel.
-
-Para o ramo `teste` usar a base de teste: em **Variáveis de ambiente**, aba
-**Visualização** (Preview), coloque a URL e a chave do projeto
-"compass one teste" do Supabase.
+Depois: **Deployments** → **Retry build** (ou espere o próximo envio ao
+`main`).
 
 ## 3. Testar no endereço provisório
 
-Abra **https://compass-one.pages.dev** (o endereço aparece no fim do build).
+O endereço aparece em **Overview** (algo como
+`compass-one.projetocompassone.workers.dev`).
 
 - A página de apresentação abre; `/radar` abre o login.
 - Entrar com **e-mail e senha** funciona.
@@ -100,11 +91,10 @@ cadastro, nova senha e convite param.
 4. Espere o e-mail "seu domínio está ativo" (de minutos a algumas horas).
 5. Teste um e-mail: peça "esqueci minha senha" com seu e-mail. Chegou, siga.
 
-## 5. Apontar o www para a Cloudflare Pages
+## 5. Apontar o www para a Cloudflare
 
-1. Projeto `compass-one` (Pages) → **Domínios personalizados** →
-   **Configurar um domínio** → `www.compass-one.com.br`. A Cloudflare troca o
-   registro do www sozinha.
+1. Projeto `compass-one` → **Domains** → **Add** → **Custom domain** →
+   `www.compass-one.com.br`. A Cloudflare troca o registro do www sozinha.
 2. Sem o www (compass-one.com.br) para o www: **Regras** → **Regras de
    redirecionamento** → modelo **"Redirecionar da raiz para WWW"** → salvar.
    Se pedir, crie um registro `A` em `@` com `192.0.2.1`, nuvem **laranja**.
@@ -122,8 +112,8 @@ Só depois de um ou dois dias com tudo funcionando:
 
 ## Se algo der errado
 
-- **Build vermelho:** Pages → Implantações → abra a falhada → registro. Se for
+- **Build vermelho:** projeto → Deployments → abra a falhada → registro. Se for
   uma prova, é o mesmo aviso que o GitHub mostra.
-- **Site fora no meio da troca:** em Domínios personalizados, remova o www e
+- **Site fora no meio da troca:** em Domains, remova o www e
   recrie o registro `www` apontando para a Vercel, como era. A Vercel volta a
   atender na hora.
