@@ -138,7 +138,7 @@ export default function FcMobileView({
   diaSel, setDiaSel,
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
   mesDados, totalDias, purchaseMes, purchaseAno,
-  totalPrevisto, grandTotalFaturas, totalFatura,
+  faturaStatus, totalPrevisto, grandTotalFaturas, totalFatura,
   mesVenc, anoVenc,
   categorias, categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
@@ -176,10 +176,14 @@ export default function FcMobileView({
             ))}
           </div>
         )}
-        {/* O mês da fatura anda pelas setas ao lado do título "Lançamentos",
-            e o status dela fica ali, ao lado do mês (31/10/2026). */}
+        {/* O mês da fatura anda pelas setas ao lado do título "Lançamentos".
+            O status fica ao lado do mês da fatura; o vencimento já está no
+            botão "Vence dia N" logo abaixo (31/10/2026, pedido do Guilherme).
+            Sobre o azul: #fde047 6,6 · branco 9,5 · #86efac 7,0. */}
         <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
-          Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''} · vence {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
+          Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''} · <b style={{color:
+            faturaStatus === 'paga' ? '#86efac' : faturaStatus === 'fechada' ? '#fff' : '#fde047'}}>
+            {faturaStatus === 'paga' ? 'Paga' : faturaStatus === 'fechada' ? 'Fechada' : 'Aberta'}</b>
         </div>
 
         {/* O lançado no Compass e a fatura do banco LADO A LADO (31/10/2026,

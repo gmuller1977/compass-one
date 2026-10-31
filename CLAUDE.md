@@ -3478,8 +3478,9 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   conferido") e "Fatura no banco" / "No [cartão]" (com a diferença, mesmo
   antes de conferir tudo), no celular em duas caixas e no computador em
   dois cartões; o cartão "Status" saiu: "Aberta / Fechada / Paga" fica AO
-  LADO DO MÊS (pílula junto do seletor no computador, embaixo do mês nas
-  setas do celular). `faturaLadoALado` em `conferirFatura.ts`; `prova108`.
+  LADO DO MÊS (pílula junto do seletor no computador; no celular, na linha
+  "Fatura de [mês] · Aberta", no lugar do "vence", que já está no botão
+  "Vence dia N"). `faturaLadoALado` em `conferirFatura.ts`; `prova108`.
 - **Categoria é obrigatória: com ela vazia, o Tab não sai do campo**
   (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
   Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.

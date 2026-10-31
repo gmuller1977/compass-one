@@ -21,7 +21,8 @@ type Props = {
   cartaoMes: number
   cartaoAno: number
   onCartaoMesSelect: (mes: number, ano: number) => void
-  /** Status da fatura do mês escolhido, mostrado ao lado do mês no Cartão. */
+  /** Status da fatura do mês escolhido, ao lado do mês no Cartão do computador.
+   *  No celular ele fica na linha "Fatura de [mês]" do topo da fatura. */
   statusFatura?: 'paga' | 'fechada' | 'aberta' | null
 }
 
@@ -126,7 +127,7 @@ export default function NleHeader({
               <span style={{minWidth:58,textAlign:'center',color:'#fff',lineHeight:1.15}}>
                 <span style={{display:'block',fontSize:17,fontWeight:800}}>{NOMES_MESES[m].slice(0,3)}</span>
                 <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)',whiteSpace:'nowrap'}}>
-                  {a}{status && <> · <b style={{color:status.cor}}>{status.rotulo}</b></>}
+                  {a}
                 </span>
               </span>
               <button onClick={() => ir(1)} aria-label="Próximo mês" style={SETA}>›</button>
