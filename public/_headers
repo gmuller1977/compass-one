@@ -1,11 +1,9 @@
-# Cabeçalhos da Cloudflare Pages (29/10/2026). São os mesmos do vercel.json:
+# Cabeçalhos na Cloudflare (29/10/2026). São os mesmos do vercel.json:
 # enquanto as duas hospedagens existirem, mudar um é mudar o outro.
 # A Vercel ignora este arquivo.
 #
-# Não há _redirects de propósito: sem um 404.html na raiz do dist, a Pages
-# serve o index.html em qualquer endereço que não seja arquivo (o mesmo
-# "rewrite para /" do vercel.json). Uma regra "/* /index.html 200" é
-# recusada por ela como laço infinito.
+# Não há _redirects: o "rewrite para /" do vercel.json é o
+# not_found_handling do wrangler.jsonc.
 /*
   X-Frame-Options: DENY
   Content-Security-Policy: frame-ancestors 'none'
