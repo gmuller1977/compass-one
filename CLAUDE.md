@@ -567,6 +567,12 @@ número"), no BRANCO a barra tem a cor do número (`RADAR_BARRA_CLARO`):
 (`#e2e8f0`, borda `#64748b`): verde 4,1, laranja 4,2. O verde foi junto,
 porque o `#4ade80` no trilho claro some. No azul nada mudou.
 
+**No Radar, o grupo aberto separa FIXAS e VARIÁVEIS** (31/10/2026, pedido
+do Guilherme), no computador e no celular: "Fixas · N" e "Variáveis · N",
+cada parte na sua caixa branca, na ordem de sempre. Fixa pelo cadastro
+(`fixasEVariaveis` em `evolucaoCalcs.ts`); sem cadastro, variável. `prova107`.
+E a compra no cartão mostra a DATA DA COMPRA, a mesma da fatura (`prova106`).
+
 **Sem plano e sem movimento, o Radar diz "Sem lançamentos"** (24/10/2026,
 pedido do Guilherme; foi "nada gasto" / "nada recebido" por algumas horas),
 no grupo e na categoria, no computador e no celular, com "sem plano neste

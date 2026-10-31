@@ -290,6 +290,21 @@ export function cadastroDaLinha(l: { nome: string; descricao?: string }, categor
   return categorias.find(c => c.nome === l.nome && (c.descricao ?? '') === (l.descricao ?? ''))
     ?? (categorias.filter(c => c.nome === l.nome).length === 1 ? categorias.find(c => c.nome === l.nome) : undefined)
 }
+/**
+ * As categorias de um grupo aberto no Radar, separadas em FIXAS e VARIÁVEIS
+ * (31/10/2026, pedido do Guilherme), na ordem de sempre dentro de cada parte.
+ * Fixa é o que o cadastro diz (`cadastroDaLinha`, o marcador da linha); sem
+ * cadastro ("Outras", categoria excluída) fica nas variáveis. Parte vazia não vem.
+ */
+export function fixasEVariaveis<T extends { nome: string; descricao?: string }>(
+  cats: T[], categorias: Categoria[],
+): { rotulo: 'Fixas' | 'Variáveis'; cats: T[] }[] {
+  const fixas = cats.filter(c => !!cadastroDaLinha(c, categorias)?.fixa)
+  const variaveis = cats.filter(c => !cadastroDaLinha(c, categorias)?.fixa)
+  return ([['Fixas', fixas], ['Variáveis', variaveis]] as const)
+    .filter(([, l]) => l.length > 0)
+    .map(([rotulo, l]) => ({ rotulo, cats: l }))
+}
 type LadoDoMes = { prev: number; real: number; linhas: LinhaDoMes[] }
 
 /**

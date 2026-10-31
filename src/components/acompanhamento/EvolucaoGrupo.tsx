@@ -1,7 +1,7 @@
 import type { Categoria } from '../../context/AppContext'
 import { type CatReal } from './AcShared'
 import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo } from './radarCores'
-import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
+import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
 /**
@@ -159,8 +159,15 @@ export function CategoriasDoGrupo({
             textTransform: 'uppercase', margin: '0 4px 8px' }}>
             {grupoLabel} · {allCats.length} {allCats.length === 1 ? 'categoria' : 'categorias'}
           </div>
+          {/* Fixas e variáveis separadas, cada parte na sua caixa (31/10/2026,
+              pedido do Guilherme), como no celular. */}
+          {fixasEVariaveis(allCats, categorias).map(parte => (
+          <div key={parte.rotulo} style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#475569', margin: '0 4px 6px' }}>
+            {parte.rotulo} · {parte.cats.length}
+          </div>
           <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #dbe6f8' }}>
-          {allCats.map((cat, idx) => {
+          {parte.cats.map((cat, idx) => {
             const cd = pickReal(realMap, cat.nome, cat.descricao, categorias)
             return (
               <EvolucaoLinha
@@ -180,6 +187,8 @@ export function CategoriasDoGrupo({
             )
           })}
           </div>
+          </div>
+          ))}
         </div>
     </div>
   )

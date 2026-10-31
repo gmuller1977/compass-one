@@ -4,7 +4,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import EmptyState from '../EmptyState'
 import BottomNav from '../BottomNav'
 import { COR, MESES_FULL, fmt, type Lanc, type CatReal } from './AcShared'
-import { buildAllCats, pickReal, cadastroDaLinha, type PlanCat } from './evolucaoCalcs'
+import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
 import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
@@ -348,9 +348,13 @@ export default function AcMobileView({
               textTransform:'uppercase', margin:'0 6px 8px' }}>
               {allCats.length} {allCats.length === 1 ? 'categoria' : 'categorias'}
             </div>
-            <div style={{ background:'#fff', borderRadius:14, overflow:'hidden', border:'1px solid #dbe6f8',
-              marginTop:-1 }}>
-        {allCats.map((cat, idx) => {
+            {fixasEVariaveis(allCats, categorias).map(parte => (
+            <div key={parte.rotulo} style={{ marginTop:8 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'#475569', margin:'0 6px 6px' }}>
+              {parte.rotulo} · {parte.cats.length}
+            </div>
+            <div style={{ background:'#fff', borderRadius:14, overflow:'hidden', border:'1px solid #dbe6f8' }}>
+        {parte.cats.map((cat, idx) => {
           const cd      = pickReal(realMap, cat.nome, cat.descricao, categorias)
           const prev    = cat.v[mes] ?? 0
           // O total da linha, dinheiro incluído, como no Radar do computador.
@@ -369,6 +373,8 @@ export default function AcMobileView({
           )
         })}
             </div>
+            </div>
+            ))}
           </div>
         )}
         </div>,
