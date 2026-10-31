@@ -20,7 +20,7 @@ import { resolverFixaDoMes, dadosBancariosDoMes } from '../utils/fixasDoMes'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
 import { pedeValorDaFatura, momentoDePerguntar, type MomentoDaFatura } from '../utils/pedirValorDaFatura'
-import { conferenciaDaFatura, resumoConferidos } from '../utils/conferirFatura'
+import { faturaLadoALado, resumoConferidos } from '../utils/conferirFatura'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -30,13 +30,15 @@ type Props = {
   mobileSelecionado?: string
   onVoltar?: () => void
   onCartaoChange?: (id: string) => void
+  /** O status da fatura vai ao lado do mês escolhido, no cabeçalho. */
+  onStatusChange?: (s: 'paga' | 'fechada' | 'aberta') => void
   mes: number
   setMes: React.Dispatch<React.SetStateAction<number>>
   ano: number
   setAno: React.Dispatch<React.SetStateAction<number>>
 }
 
-export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, setMes, ano, setAno }: Props) {
+export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStatusChange, mes, setMes, ano, setAno }: Props) {
   const hoje    = new Date()
   const diaHoje = hoje.getDate()
   const mesHoje = hoje.getMonth()
@@ -234,6 +236,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   useEffect(() => { if (mobileSelecionado) setContaId(mobileSelecionado) }, [mobileSelecionado])
   useEffect(() => { onCartaoChange?.(contaId) }, [contaId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onStatusChange?.(faturaStatus as 'paga' | 'fechada' | 'aberta') }, [faturaStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function diaDefaultPara(novoMes: number, novoAno: number) {
     let pMes = novoMes - billingOffset, pAno = novoAno
@@ -298,7 +301,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
 
   const totalFatura  = totalEntradas - totalSaidas
   const faturaExtNum = parseBRL(mesDados.faturaAtual ?? '')
-  const conferencia  = conferenciaDaFatura(mesDados, totalDias, { totalFatura, informado: faturaExtNum })
+  const lado = faturaLadoALado(mesDados, totalDias, {
+    totalFatura, informado: (mesDados.faturaAtual ?? '').trim() ? faturaExtNum : null,
+  })
   const resumoConf   = resumoConferidos(mesDados, totalDias)
   function abrirFaturaManual() {
     setModalFaturaValor(mesDados.faturaAtual ?? ''); setModalFaturaMotivo(null); setModalFatura(true)
@@ -678,7 +683,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         updateMes={updateMes}
         lancar={lancar}
         diaDefaultPara={diaDefaultPara}
-        conferencia={conferencia}
+        lado={lado}
         abrirFatura={abrirFaturaManual}
       />
       <FcModal folha
@@ -715,10 +720,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, mes, s
         onContaSelect={id => { setContaId(id); resetarParaNovo(diaDefaultPara(mes, ano)) }}
         totalPrevisto={totalPrevisto}
         grandTotalFaturas={grandTotalFaturas}
-        faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
-        diaVencimento={diaVencimento}
+        totalFatura={totalFatura}
         mesDados={mesDados}
-        conferencia={conferencia}
+        lado={lado}
         abrirFatura={abrirFaturaManual}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>

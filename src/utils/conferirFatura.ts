@@ -101,3 +101,32 @@ export function conferenciaDaFatura(dm: MesComConferidos, totalDias: number, p: 
 function comBanco(diferenca: number): Conferencia {
   return { estado: 'banco', diferenca, igual: Math.abs(diferenca) < 0.01 }
 }
+
+/**
+ * O topo da fatura com os dois totais LADO A LADO (31/10/2026, pedido do
+ * Guilherme): o lançado no Compass, com o andamento das bolinhas embaixo, e
+ * a fatura do banco, com a diferença embaixo quando ela foi informada. A
+ * diferença aparece mesmo com compra sem bolinha: com os dois números à
+ * vista, esconder a conta deles confundiria.
+ */
+export type LadoCompass =
+  | { estado: 'sem-compras' }
+  | { estado: 'falta-conferir'; falta: number }
+  | { estado: 'tudo-conferido' }
+export type LadoBanco =
+  | { estado: 'nao-informada' }
+  | { estado: 'comparado'; diferenca: number; igual: boolean }
+
+export function faturaLadoALado(dm: MesComConferidos, totalDias: number, p: {
+  totalFatura: number
+  /** Valor informado do banco; null = não informado. */
+  informado: number | null
+}): { compass: LadoCompass; banco: LadoBanco } {
+  const { conferidas, total } = resumoConferidos(dm, totalDias)
+  const compass: LadoCompass = total === 0 ? { estado: 'sem-compras' }
+    : conferidas < total ? { estado: 'falta-conferir', falta: p.totalFatura - valorConferido(dm, totalDias) }
+    : { estado: 'tudo-conferido' }
+  if (p.informado === null) return { compass, banco: { estado: 'nao-informada' } }
+  const diferenca = p.informado - p.totalFatura
+  return { compass, banco: { estado: 'comparado', diferenca, igual: Math.abs(diferenca) < 0.01 } }
+}

@@ -2,7 +2,7 @@ import type { Conta } from '../../context/AppContext'
 import { fmt, type DadosMes } from './FcShared'
 import KpiCard from '../KpiCard'
 import { IconeCat } from '../IconeCat'
-import type { Conferencia } from '../../utils/conferirFatura'
+import type { LadoCompass, LadoBanco } from '../../utils/conferirFatura'
 
 type Props = {
   contasCartao: Conta[]
@@ -10,35 +10,23 @@ type Props = {
   onContaSelect: (id: string) => void
   totalPrevisto: number
   grandTotalFaturas: number
-  faturaStatus: 'paga' | 'fechada' | 'aberta'
-  diaVencimento: number
+  totalFatura: number
   mesDados: DadosMes
-  conferencia: Conferencia
+  lado: { compass: LadoCompass; banco: LadoBanco }
   abrirFatura: () => void
 }
 
 export default function FcBanner({
   contasCartao, contaId, onContaSelect,
   totalPrevisto, grandTotalFaturas,
-  faturaStatus, diaVencimento,
-  mesDados, conferencia, abrirFatura,
+  totalFatura, mesDados, lado, abrirFatura,
 }: Props) {
   const disponivel = totalPrevisto - grandTotalFaturas
 
-  // O status vive dentro de um KpiCard AZUL-ESCURO (#0f2878 -> #1e40af). As cores
-  // antigas eram de fundo claro e sumiam: #16a34a 2,65, #0369a1 1,47 (azul sobre
-  // azul), #b45309 1,74. Estas mantêm o sentido de cada uma e passam no extremo
-  // claro #1e40af: verde 5,01 (o mesmo de Lançamentos e do Radar), azul-claro
-  // 6,14, âmbar-claro 6,05.
-  const statusCor = faturaStatus === 'paga' ? '#4ade80' : faturaStatus === 'fechada' ? '#bfdbfe' : '#fcd34d'
-  const statusLbl = faturaStatus === 'paga' ? 'Paga' : faturaStatus === 'fechada' ? 'Fechada' : 'Aberta'
-  const statusSimb = faturaStatus === 'paga' ? '✓' : faturaStatus === 'fechada' ? '■' : '●'
-
+  // O status saiu daqui para o lado do mês, no cabeçalho (31/10/2026).
   const abrirModal = abrirFatura
-  // As bolinhas fazem a conferência (30/10/2026, ideia do Guilherme): com
-  // compra sem bolinha, o cartão mostra quanto já foi conferido e quanto
-  // falta; tudo conferido e o valor do banco informado, compara com o banco.
-  const pelasBolinhas = conferencia.estado === 'conferindo' || conferencia.estado === 'tudo-conferido'
+  const informada = !!mesDados.faturaAtual
+  const linha = (cor: string): React.CSSProperties => ({ fontSize: 12, marginTop: 4, textAlign: 'right', color: cor })
 
   return (
     <div style={{ background: '#f8faff', borderBottom: '1px solid #e2e8f0', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', flexShrink: 0, gap: 8 }}>
@@ -54,44 +42,36 @@ export default function FcBanner({
           <KpiCard icon="ti-equal" label="Disponível" value={fmt(disponivel)}
             valueColor="#fff"
             sublabel={disponivel >= 0 ? '↑ no limite' : '↓ excedido'} style={{ flex: 1 }} />
-          <KpiCard icon={statusSimb} label="Status" value={statusLbl}
-            valueColor={statusCor} sublabel={`Vence dia ${diaVencimento}`} style={{ flex: 1 }} />
-          {/* Conciliação: o mesmo cartão dos outros quatro, do mesmo tamanho e
-              com as mesmas letras (pedido do Guilherme, 22/10/2026). Tocar abre
-              a janela do valor da fatura. Diferença na paleta do fundo escuro:
-              #86efac 4,8 e #fdba74 5,2 no #1e40af. */}
-          <div role="button" tabIndex={0} aria-label="Informar o valor da fatura" title="Clique para informar o valor atual da fatura"
+          {/* O lançado no Compass e a fatura do banco LADO A LADO (31/10/2026,
+              pedido do Guilherme): embaixo do Compass, o andamento das
+              bolinhas; embaixo do banco, a diferença, nas palavras do
+              "Confira seus saldos". Clicar no banco abre a janela do valor. */}
+          <KpiCard icon="ti-circle-check" label="Lançado no Compass" value={fmt(totalFatura)} style={{ flex: 1 }}>
+            <div style={linha(lado.compass.estado === 'tudo-conferido' ? '#86efac' : lado.compass.estado === 'sem-compras' ? 'rgba(255,255,255,.75)' : '#fff')}>
+              {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
+                : lado.compass.estado === 'tudo-conferido' ? '✓ tudo conferido'
+                : `falta conferir ${fmt(lado.compass.falta)}`}
+            </div>
+          </KpiCard>
+          <div role="button" tabIndex={0} aria-label="Informar o valor da fatura no banco" title="Clique para informar o valor da fatura no banco"
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
-            <KpiCard icon={pelasBolinhas ? 'ti-circle-check' : 'ti-arrows-exchange'}
-              label={pelasBolinhas ? 'Conferido com o banco' : 'Fatura do cartão'}
-              value={conferencia.estado === 'conferindo' || conferencia.estado === 'tudo-conferido'
-                ? fmt(conferencia.conferido) : mesDados.faturaAtual || '—'}
-              valueColor={pelasBolinhas || mesDados.faturaAtual ? '#fff' : 'rgba(255,255,255,.75)'}
-              style={{ flex: 1 }}>
-              <div style={{
-                fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: conferencia.estado === 'tudo-conferido' || conferencia.estado === 'banco' && conferencia.igual ? '#86efac'
-                  : conferencia.estado === 'sem-compras' ? 'rgba(255,255,255,.75)' : '#fff',
-              }}>
-                {/* Contra o total lançado no Compass (o rodapé), nas palavras do
-                    "Confira seus saldos": faltam = o cartão tem mais do que foi
-                    lançado (22/10/2026, "Conciliação" confundia). */}
-                {conferencia.estado === 'sem-compras' ? 'não informada'
-                  : conferencia.estado === 'conferindo' ? `falta conferir ${fmt(conferencia.falta)}`
-                  : conferencia.estado === 'tudo-conferido' ? '✓ tudo conferido'
-                  : conferencia.igual ? '✓ igual ao Compass'
-                  : conferencia.diferenca > 0 ? `falta lançar ${fmt(conferencia.diferenca)}` : `${fmt(-conferencia.diferenca)} a mais no Compass`}
+            <KpiCard icon="ti-building-bank" label="Fatura no banco" value={mesDados.faturaAtual || '—'}
+              valueColor={informada ? '#fff' : 'rgba(255,255,255,.75)'} style={{ flex: 1 }}>
+              <div style={linha(lado.banco.estado === 'comparado' && lado.banco.igual ? '#86efac'
+                : lado.banco.estado === 'nao-informada' ? 'rgba(255,255,255,.75)' : '#fff')}>
+                {lado.banco.estado === 'nao-informada' ? 'não informada'
+                  : lado.banco.igual ? '✓ igual ao Compass'
+                  : lado.banco.diferenca > 0 ? `falta lançar ${fmt(lado.banco.diferenca)}`
+                  : `${fmt(-lado.banco.diferenca)} a mais no Compass`}
               </div>
-              {/* A pílula diz que o cartão abre a janela do valor. */}
               <div style={{ textAlign: 'right', marginTop: 6 }}>
                 <span style={{
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{conferencia.estado === 'tudo-conferido' ? '✎ Comparar com o banco'
-                  : mesDados.faturaAtual ? '✎ Alterar' : '✎ Informar'}</span>
+                }}>{informada ? '✎ Alterar' : '✎ Informar'}</span>
               </div>
             </KpiCard>
           </div>

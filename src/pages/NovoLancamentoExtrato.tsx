@@ -48,6 +48,7 @@ export default function NovoLancamentoExtrato() {
   const [contaId, setContaId] = useState('consolidado')
   const [cartaoNavId,   setCartaoNavId]   = useState<string|undefined>(undefined)
   const [_cartaoAtualId, setCartaoAtualId] = useState<string|undefined>(undefined)
+  const [statusFatura, setStatusFatura] = useState<'paga' | 'fechada' | 'aberta' | null>(null)
   const [mes,     setMes]     = useState(mesHoje)
   const [ano, setAno]          = useState(anoHoje)
   const [cartaoMes,         setCartaoMes]         = useState(mesHoje)
@@ -1170,6 +1171,7 @@ export default function NovoLancamentoExtrato() {
         cartaoMes={cartaoMes}
         cartaoAno={cartaoAno}
         onCartaoMesSelect={onCartaoMesSelect}
+        statusFatura={statusFatura}
       />
 
       <NleMobileWizard
@@ -1227,6 +1229,7 @@ export default function NovoLancamentoExtrato() {
         <FaturaCartao
           mobileSelecionado={isMobile ? (mobileCartaoId ?? undefined) : cartaoNavId}
           onCartaoChange={id => setCartaoAtualId(id)}
+          onStatusChange={setStatusFatura}
           onVoltar={() => setMobileStep('tipo')}
           mes={cartaoMes}
           setMes={setCartaoMes}

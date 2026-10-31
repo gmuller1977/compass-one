@@ -21,7 +21,17 @@ type Props = {
   cartaoMes: number
   cartaoAno: number
   onCartaoMesSelect: (mes: number, ano: number) => void
+  /** Status da fatura do mês escolhido, mostrado ao lado do mês no Cartão. */
+  statusFatura?: 'paga' | 'fechada' | 'aberta' | null
 }
+
+/** Ao lado do mês da fatura (31/10/2026, pedido do Guilherme). Sobre o azul:
+ *  #fde047 6,6 · branco 8,7 · #86efac 6,2 no extremo claro. */
+const STATUS_FATURA = {
+  aberta:  { rotulo: 'Aberta',  cor: '#fde047', simb: '●' },
+  fechada: { rotulo: 'Fechada', cor: '#fff',    simb: '■' },
+  paga:    { rotulo: 'Paga',    cor: '#86efac', simb: '✓' },
+} as const
 
 /** Como o BTN_ANO do Planejamento do celular. */
 const SETA = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.15)',
@@ -32,8 +42,9 @@ export default function NleHeader({
   tabPrincipal, setTabPrincipal,
   contasExtrato, contaId, setContaId, setMobileDiaForm,
   mes, ano, onMesSelect,
-  cartaoMes, cartaoAno, onCartaoMesSelect,
+  cartaoMes, cartaoAno, onCartaoMesSelect, statusFatura,
 }: Props) {
+  const status = tabPrincipal === 'cartao' && statusFatura ? STATUS_FATURA[statusFatura] : null
   if (!isMobile) {
     const isDinheiro    = tabPrincipal === 'dinheiro'
     const isCartao      = tabPrincipal === 'cartao'
@@ -54,7 +65,16 @@ export default function NleHeader({
 
     // Cartão month nav (own calendar popover)
     const cartaoNav = (
-      <SeletorMesAno mes={cartaoMes} ano={cartaoAno} onSelect={onCartaoMesSelect} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {status && (
+          <span title="Status da fatura deste mês" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+            padding: '6px 14px', borderRadius: 999, fontSize: 14, fontWeight: 700,
+            background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.16)', color: status.cor,
+          }}>{status.simb} Fatura {status.rotulo.toLowerCase()}</span>
+        )}
+        <SeletorMesAno mes={cartaoMes} ano={cartaoAno} onSelect={onCartaoMesSelect} />
+      </div>
     )
 
     // Banco/dinheiro month nav
@@ -105,7 +125,9 @@ export default function NleHeader({
               <button onClick={() => ir(-1)} aria-label="Mês anterior" style={SETA}>‹</button>
               <span style={{minWidth:58,textAlign:'center',color:'#fff',lineHeight:1.15}}>
                 <span style={{display:'block',fontSize:17,fontWeight:800}}>{NOMES_MESES[m].slice(0,3)}</span>
-                <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)'}}>{a}</span>
+                <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)',whiteSpace:'nowrap'}}>
+                  {a}{status && <> · <b style={{color:status.cor}}>{status.rotulo}</b></>}
+                </span>
               </span>
               <button onClick={() => ir(1)} aria-label="Próximo mês" style={SETA}>›</button>
             </div>

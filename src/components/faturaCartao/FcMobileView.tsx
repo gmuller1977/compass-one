@@ -15,9 +15,22 @@ import { M } from '../mobile/estilo'
 import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
-import { PilulaDiferenca, PilulaFaltaConferir } from '../novoLancamentoExtrato/NleMobileSubheader'
 import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
-import { textoQtdCompras, estaConferido, alternarConferido, type Conferencia } from '../../utils/conferirFatura'
+import { textoQtdCompras, estaConferido, alternarConferido, type LadoCompass, type LadoBanco } from '../../utils/conferirFatura'
+
+/** As duas caixas lado a lado do topo da fatura: o translúcido da caixa do
+ *  saldo final da Início. Branco 9,5 · rótulo a 75% 6,1 · #86efac 7,0 no
+ *  #26408f (o extremo claro do --cx-azul). */
+const CAIXA_LADO: React.CSSProperties = {
+  containerType: 'inline-size', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
+  minWidth: 0, padding: '10px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,.16)',
+  background: 'rgba(255,255,255,.12)', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer',
+}
+const ROTULO_LADO: React.CSSProperties = { fontSize: 13, color: 'rgba(255,255,255,.75)', whiteSpace: 'nowrap',
+  overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }
+const VALOR_LADO: React.CSSProperties = { fontSize: 'min(22px, 12.5cqi)', fontWeight: 800, color: '#fff',
+  letterSpacing: '-.02em', lineHeight: 1.2, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
+const LINHA_LADO: React.CSSProperties = { fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.3, marginTop: 2 }
 
 const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
@@ -106,7 +119,7 @@ type Props = {
   diaDefaultPara: (mes: number, ano: number) => number
 
   // Valor da fatura no app do banco × o lançado (o 5º card do computador)
-  conferencia: Conferencia
+  lado: { compass: LadoCompass; banco: LadoBanco }
   abrirFatura: () => void
 }
 
@@ -125,12 +138,12 @@ export default function FcMobileView({
   diaSel, setDiaSel,
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
   mesDados, totalDias, purchaseMes, purchaseAno,
-  faturaStatus, totalPrevisto, grandTotalFaturas, totalFatura,
+  totalPrevisto, grandTotalFaturas, totalFatura,
   mesVenc, anoVenc,
   categorias, categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
-  conferencia, abrirFatura,
+  lado, abrirFatura,
 }: Props) {
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
@@ -138,13 +151,9 @@ export default function FcMobileView({
   const valorRuim = parseValor(fValor) === null
   const [calAberto, setCalAberto] = React.useState(false)
 
-  const statusLbl = faturaStatus==='paga' ? 'Paga' : faturaStatus==='fechada' ? 'Fechada' : 'Aberta'
   const disponivel = totalPrevisto - grandTotalFaturas
   const contaAtual = contasCartao.find(c => c.id === contaId)
 
-  // Sobre o azul do topo (#0f2878 → #1e40af, medido no extremo claro):
-  // branco 8,72 · rótulo a 75% 5,1 · #86efac 6,21 · #fde047 6,62.
-  const statusNoAzul = faturaStatus==='paga' ? '#86efac' : faturaStatus==='fechada' ? '#fff' : '#fde047'
   const chipAzul = (ativo: boolean) => ({ display:'flex', alignItems:'center', gap:6, minHeight:38, padding:'0 14px',
     borderRadius:999, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:14, fontWeight:700,
     whiteSpace:'nowrap' as const, flexShrink:0,
@@ -167,54 +176,40 @@ export default function FcMobileView({
             ))}
           </div>
         )}
-        {/* O mês da fatura anda pelas setas ao lado do título "Lançamentos". */}
+        {/* O mês da fatura anda pelas setas ao lado do título "Lançamentos",
+            e o status dela fica ali, ao lado do mês (31/10/2026). */}
         <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
-          Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''} · <b style={{color:statusNoAzul}}>{statusLbl}</b>
-        </div>
-        <div>
-          <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,color:'#fff',
-            fontVariantNumeric:'tabular-nums'}}>{fmt(totalFatura)}</div>
-          <div style={{fontSize:13,color:'rgba(255,255,255,.75)',marginTop:2}}>
-            vence {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
-          </div>
+          Fatura de {NOMES_MESES[mes]}{ano !== anoHoje ? ` ${ano}` : ''} · vence {diaVencimento} de {NOMES_MESES[mesVenc]}{anoVenc !== anoHoje ? ` ${anoVenc}` : ''}
         </div>
 
-        {/* Fatura no app do banco × o lançado no Compass: o mesmo botão do
-            "No Sicredi" do banco no celular, e as mesmas palavras do 5º card
-            do computador (29/10/2026, opção A do Guilherme). Tocar abre a
-            janela "Qual é o valor atual da fatura de [mês]?". */}
-        <button onClick={abrirFatura} aria-label="Informar o valor da fatura" style={{
-          marginTop:14,width:'100%',display:'flex',alignItems:'center',gap:10,
-          padding:'10px 14px',minHeight:48,borderRadius:16,border:'none',cursor:'pointer',
-          background:'rgba(255,255,255,.12)',fontFamily:'inherit',textAlign:'left',
-        }}>
-          <i className="ti ti-credit-card" aria-hidden style={{fontSize:20,color:'#fff'}} />
-          {/* As bolinhas fazem a conferência (30/10/2026, ideia do Guilherme):
-              enquanto há compra sem bolinha, o botão mostra quanto do total
-              já foi conferido e a pílula quanto falta. Tudo conferido e o
-              valor do banco informado, volta a comparar com o banco. */}
-          <span style={{flex:1,minWidth:0}}>
-            <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
-              {conferencia.estado === 'conferindo' || conferencia.estado === 'tudo-conferido'
-                ? 'Conferido com o banco' : `No ${contaAtual?.banco ?? 'cartão'}`}
+        {/* O lançado no Compass e a fatura do banco LADO A LADO (31/10/2026,
+            pedido do Guilherme), no desenho das caixas do saldo final da
+            Início. Embaixo de cada um: o andamento das bolinhas e a diferença
+            com o banco. Tocar no banco abre a janela do valor da fatura. As
+            letras encolhem pela largura (cqi): cabe R$ 999.999,99 em 375px. */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}>
+          <div style={{...CAIXA_LADO,cursor:'default'}}>
+            <span style={ROTULO_LADO}>Lançado no Compass</span>
+            <span style={VALOR_LADO}>{fmt(totalFatura)}</span>
+            <span style={LINHA_LADO}>
+              {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
+                : lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ tudo conferido</b>
+                : <>falta conferir<br /><b style={{color:'#fff'}}>{fmt(lado.compass.falta)}</b></>}
             </span>
-            <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-              {conferencia.estado === 'conferindo' || conferencia.estado === 'tudo-conferido'
-                ? fmt(conferencia.conferido) : mesDados.faturaAtual || 'Informar fatura ✎'}
+          </div>
+          <button onClick={abrirFatura} aria-label="Informar o valor da fatura no banco" style={CAIXA_LADO}>
+            <span style={ROTULO_LADO}>No {contaAtual?.banco ?? 'banco'} ✎</span>
+            <span style={{...VALOR_LADO,...(mesDados.faturaAtual ? {} : {fontSize:15,color:'rgba(255,255,255,.85)'})}}>
+              {mesDados.faturaAtual || 'Informar'}
             </span>
-          </span>
-          {conferencia.estado === 'conferindo' && <PilulaFaltaConferir falta={conferencia.falta} />}
-          {conferencia.estado === 'tudo-conferido' && (
-            <span style={{flexShrink:0,borderRadius:14,background:'rgba(15,23,42,.3)',textAlign:'right',lineHeight:1.25,
-              padding:'5px 10px',whiteSpace:'nowrap'}}>
-              <span style={{display:'block',fontSize:13,fontWeight:700,color:'#86efac'}}>✓ tudo conferido</span>
-              <span style={{display:'block',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)'}}>comparar com o banco ✎</span>
+            <span style={LINHA_LADO}>
+              {lado.banco.estado === 'nao-informada' ? <>o total do app<br />do banco</>
+                : lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
+                : lado.banco.diferenca > 0 ? <>falta lançar<br /><b style={{color:'#fff'}}>{fmt(lado.banco.diferenca)}</b></>
+                : <>a mais no Compass<br /><b style={{color:'#fff'}}>{fmt(-lado.banco.diferenca)}</b></>}
             </span>
-          )}
-          {conferencia.estado === 'banco' && (
-            <PilulaDiferenca diferenca={conferencia.diferenca} conciliado={conferencia.igual} />
-          )}
-        </button>
+          </button>
+        </div>
 
         {/* Fechamento e vencimento do mês — tocar abre o ajuste, como antes. */}
         <div style={{display:'flex',gap:8,marginTop:14}}>

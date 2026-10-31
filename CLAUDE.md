@@ -3473,6 +3473,13 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   valor do banco é o único que acha a compra nunca lançada.
   `conferenciaDaFatura` em `conferirFatura.ts`, `momentoDePerguntar` em
   `pedirValorDaFatura.ts`; `prova108` (10), `prova105` (15).
+- **Compass e banco LADO A LADO no topo da fatura** (31/10/2026, pedido do
+  Guilherme). "Lançado no Compass" (com "falta conferir R$ X" / "✓ tudo
+  conferido") e "Fatura no banco" / "No [cartão]" (com a diferença, mesmo
+  antes de conferir tudo), no celular em duas caixas e no computador em
+  dois cartões; o cartão "Status" saiu: "Aberta / Fechada / Paga" fica AO
+  LADO DO MÊS (pílula junto do seletor no computador, embaixo do mês nas
+  setas do celular). `faturaLadoALado` em `conferirFatura.ts`; `prova108`.
 - **Categoria é obrigatória: com ela vazia, o Tab não sai do campo**
   (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
   Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.
