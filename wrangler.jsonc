@@ -1,0 +1,13 @@
+// Hospedagem na Cloudflare (Workers com arquivos estáticos), 31/10/2026.
+// Não há código de servidor: a Cloudflare só serve o dist/ do build.
+// - single-page-application: qualquer endereço que não seja arquivo abre o
+//   index.html (o "rewrite para /" do vercel.json).
+// - Os cabeçalhos de proteção vêm de public/_headers, copiado para o dist/.
+{
+  "name": "compass-one",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

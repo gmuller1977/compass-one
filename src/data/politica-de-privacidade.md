@@ -53,7 +53,7 @@ Seus dados **não são vendidos, alugados ou compartilhados** com terceiros para
 Compartilhamos dados apenas com:
 
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
-- **Vercel (hospedagem):** hospedagem da aplicação web
+- **Vercel e Cloudflare (hospedagem):** hospedagem da aplicação web
 - **Resend (e-mail):** envio de e-mails transacionais (confirmação de conta, recuperação de senha, convites)
 - **Google (Gemini, inteligência artificial):** **o assistente Norte está desativado no momento, e nenhum dado é enviado ao Google.** Antes de ele voltar, esta política será atualizada para dizer o que é enviado e em que condições.
 
