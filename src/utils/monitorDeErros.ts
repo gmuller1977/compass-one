@@ -33,6 +33,9 @@ export function ligarMonitorDeErros() {
   })
   Sentry.setTag('aparelho', window.matchMedia('(max-width: 768px)').matches ? 'celular' : 'computador')
   ligado = true
+  // Conferência: abrir o app com #teste-monitor no fim do endereço manda um
+  // aviso de teste, para ver se o Sentry está recebendo.
+  if (location.hash === '#teste-monitor') Sentry.captureMessage('Teste do monitor de erros do Compass One')
 }
 
 /** Erro de tela pego pelo ErroDeTela (o Sentry já pega os não tratados). */
