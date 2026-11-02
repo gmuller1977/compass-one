@@ -1,13 +1,15 @@
 import type { ParteDoGrupo } from './radarCores'
 
-const fmtK = (v: number) => (v < 0 ? '−' : '') + 'R$ ' + Math.round(Math.abs(v)).toLocaleString('pt-BR')
+const fmtK = (v: number) => (v < 0 ? '−' : '') + 'R$\u00a0' + Math.round(Math.abs(v)).toLocaleString('pt-BR')
 
 /**
  * Fixas e variáveis do grupo, lado a lado embaixo do anel, no lugar do
  * "gastou X de Y" somado (02/11/2026, pedido do Guilherme). Computador e
  * celular usam este mesmo componente. No branco: rótulo #475569, número
  * #0f172a, passou #b91c1c (6,47), pago #15803d (5,0). Aberto (azul): branco e
- * rótulo a 75%. A letra encolhe pela largura da coluna (cqi) e cabe
+ * rótulo a 75%. O "pago de" / "de R$ Y" em 13–14px negrito (quebra em
+ * duas linhas se não couber), na cor do
+ * estado (#334155 no neutro, 10,4), pedido dele no mesmo dia. A letra encolhe pela largura da coluna (cqi) e cabe
  * R$ 999.999 nas duas. Uma versão com barrinha em cada coluna foi
  * mostrada e preterida (o anel já é o gráfico do grupo).
  */
@@ -26,6 +28,7 @@ export default function PartesDoGrupo({ partes, aberto }: {
           : p.estado === 'pago' ? `pago de ${fmtK(p.prev)}`
           : p.estado === 'passou' ? `passou ${fmtK(p.real - p.prev)}`
           : `de ${fmtK(p.prev)}`
+        const corSub = aberto ? 'rgba(255,255,255,0.9)' : p.estado === 'passou' ? '#b91c1c' : p.estado === 'pago' ? '#15803d' : '#334155'
         return (
           <div key={p.rotulo} style={{ containerType: 'inline-size', minWidth: 0,
             paddingLeft: i > 0 ? 12 : 0, paddingRight: i === 0 ? 12 : 0,
@@ -37,8 +40,7 @@ export default function PartesDoGrupo({ partes, aberto }: {
               fontVariantNumeric: 'tabular-nums', lineHeight: 1.3 }}>
               {p.estado === 'pago' ? '✓ ' : ''}{fmtK(p.estado === 'neutro' ? p.fora : p.real)}
             </div>
-            <div style={{ fontSize: 'min(12px, calc(100cqi / 12))', color: p.estado === 'passou' && !aberto ? '#b91c1c' : rotulo,
-              whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{sub}</div>
+            <div style={{ fontSize: 'min(14px, max(13px, calc(100cqi / 9)))', fontWeight: 700, color: corSub, fontVariantNumeric: 'tabular-nums', lineHeight: 1.35 }}>{sub}</div>
             {p.estado !== 'neutro' && p.fora > 0.005 && (
               <div style={{ fontSize: 'min(12px, calc(100cqi / 12))', color: rotulo, whiteSpace: 'nowrap' }}>+ {fmtK(p.fora)} sem plano</div>
             )}
