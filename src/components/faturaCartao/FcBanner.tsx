@@ -47,31 +47,41 @@ export default function FcBanner({
               bolinhas; embaixo do banco, a diferença, nas palavras do
               "Confira seus saldos". Clicar no banco abre a janela do valor. */}
           <KpiCard icon="ti-circle-check" label="Lançado no Compass" value={fmt(totalFatura)} style={{ flex: 1 }}>
-            <div style={linha(lado.compass.estado === 'tudo-conferido' ? '#86efac' : lado.compass.estado === 'sem-compras' ? 'rgba(255,255,255,.75)' : '#fff')}>
+            <div style={linha(lado.banco.estado === 'comparado' && lado.compass.estado === 'falta-conferir' ? '#fff' : 'rgba(255,255,255,.75)')}>
               {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
-                : lado.compass.estado === 'tudo-conferido' ? '✓ tudo conferido'
-                : <>conferido {fmt(lado.compass.conferido)}<br />falta {fmt(lado.compass.falta)}</>}
+                : lado.banco.estado === 'comparado' && lado.compass.estado === 'falta-conferir'
+                  ? `falta conferir ${fmt(lado.compass.falta)}`
+                : 'soma das compras'}
             </div>
           </KpiCard>
+          {/* Sem o valor do banco, este card SOMA as compras com bolinha
+              (02/11/2026, Guilherme: "os conferidos já iriam somar e mostrar
+              se falta algo"); o valor do banco é pedido no fim. */}
           <div role="button" tabIndex={0} aria-label="Informar o valor da fatura no banco" title="Clique para informar o valor da fatura no banco"
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
-            <KpiCard icon="ti-building-bank" label="Fatura no banco" value={mesDados.faturaAtual || '—'}
-              valueColor={informada ? '#fff' : 'rgba(255,255,255,.75)'} style={{ flex: 1 }}>
-              <div style={linha(lado.banco.estado === 'comparado' && lado.banco.igual ? '#86efac'
-                : lado.banco.estado === 'nao-informada' ? 'rgba(255,255,255,.75)' : '#fff')}>
-                {lado.banco.estado === 'nao-informada' ? 'não informada'
-                  : lado.banco.igual ? '✓ igual ao Compass'
-                  : lado.banco.diferenca > 0 ? `falta lançar ${fmt(lado.banco.diferenca)}`
-                  : `${fmt(-lado.banco.diferenca)} a mais no Compass`}
+            <KpiCard icon={informada ? 'ti-building-bank' : 'ti-circle-check'}
+              label={informada ? 'Fatura no banco' : 'Conferido'}
+              value={informada ? mesDados.faturaAtual! : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
+                : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}
+              valueColor="#fff" style={{ flex: 1 }}>
+              <div style={linha(lado.banco.estado === 'comparado' ? (lado.banco.igual ? '#86efac' : '#fff')
+                : lado.compass.estado === 'tudo-conferido' ? '#86efac' : lado.compass.estado === 'falta-conferir' ? '#fff' : 'rgba(255,255,255,.75)')}>
+                {lado.banco.estado === 'comparado'
+                  ? (lado.banco.igual ? '✓ igual ao Compass'
+                    : lado.banco.diferenca > 0 ? `falta lançar ${fmt(lado.banco.diferenca)}`
+                    : `${fmt(-lado.banco.diferenca)} a mais no Compass`)
+                  : lado.compass.estado === 'tudo-conferido' ? '✓ tudo conferido'
+                  : lado.compass.estado === 'falta-conferir' ? `falta conferir ${fmt(lado.compass.falta)}`
+                  : 'marque as bolinhas'}
               </div>
               <div style={{ textAlign: 'right', marginTop: 6 }}>
                 <span style={{
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{informada ? '✎ Alterar' : '✎ Informar'}</span>
+                }}>{informada ? '✎ Alterar' : '✎ Informar o banco'}</span>
               </div>
             </KpiCard>
           </div>

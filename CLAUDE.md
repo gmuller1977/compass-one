@@ -3482,6 +3482,12 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   LADO DO MÊS (pílula junto do seletor no computador; no celular, na linha
   "Fatura de [mês] · Aberta", no lugar do "vence", que já está no botão
   "Vence dia N"). `faturaLadoALado` em `conferirFatura.ts`; `prova108`.
+  **Sem o valor do banco, a caixa da direita é "Conferido"** (02/11/2026,
+  Guilherme: "os conferidos já iriam somar e mostrar se falta algo"): a
+  SOMA das compras com bolinha e "falta conferir R$ X" / "✓ tudo conferido";
+  a do Compass diz "soma das compras". Tudo conferido, a janela pergunta o
+  valor do banco; informado, a caixa volta a ser "No [cartão]" com a
+  diferença (e o "falta conferir" passa para a caixa do Compass).
 - **Categoria é obrigatória: com ela vazia, o Tab não sai do campo**
   (28/10/2026, pedido do Guilherme), nos formulários de Banco, Dinheiro e
   Cartão do computador; a borda pisca em vermelho. Shift+Tab volta.

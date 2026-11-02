@@ -197,22 +197,33 @@ export default function FcMobileView({
             <span style={VALOR_LADO}>{fmt(totalFatura)}</span>
             <span style={LINHA_LADO}>
               {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
-                : lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ tudo conferido</b>
-                : <>conferido <b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.conferido)}</b><br />
-                  falta <b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>}
+                : lado.banco.estado === 'comparado' && lado.compass.estado === 'falta-conferir'
+                  ? <>falta conferir<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
+                : 'soma das compras'}
             </span>
           </div>
+          {/* Sem o valor do banco, a caixa da direita SOMA as compras com
+              bolinha (02/11/2026, Guilherme: "os conferidos já iriam somar e
+              mostrar se falta algo"). O valor do banco é pedido no fim. */}
           <button onClick={abrirFatura} aria-label="Informar o valor da fatura no banco" style={CAIXA_LADO}>
-            <span style={ROTULO_LADO}>No {contaAtual?.banco ?? 'banco'} ✎</span>
-            <span style={{...VALOR_LADO,...(mesDados.faturaAtual ? {} : {fontSize:15,color:'rgba(255,255,255,.85)'})}}>
-              {mesDados.faturaAtual || 'Informar'}
-            </span>
-            <span style={LINHA_LADO}>
-              {lado.banco.estado === 'nao-informada' ? <>o total do app<br />do banco</>
-                : lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
-                : lado.banco.diferenca > 0 ? <>falta lançar<br /><b style={{color:'#fff'}}>{fmt(lado.banco.diferenca)}</b></>
-                : <>a mais no Compass<br /><b style={{color:'#fff'}}>{fmt(-lado.banco.diferenca)}</b></>}
-            </span>
+            {lado.banco.estado === 'nao-informada' ? <>
+              <span style={ROTULO_LADO}>Conferido ✎</span>
+              <span style={VALOR_LADO}>{fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
+                : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}</span>
+              <span style={LINHA_LADO}>
+                {lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ tudo conferido</b>
+                  : lado.compass.estado === 'falta-conferir' ? <>falta conferir<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
+                  : 'marque as bolinhas'}
+              </span>
+            </> : <>
+              <span style={ROTULO_LADO}>No {contaAtual?.banco ?? 'banco'} ✎</span>
+              <span style={VALOR_LADO}>{mesDados.faturaAtual}</span>
+              <span style={LINHA_LADO}>
+                {lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
+                  : lado.banco.diferenca > 0 ? <>falta lançar<br /><b style={{color:'#fff'}}>{fmt(lado.banco.diferenca)}</b></>
+                  : <>a mais no Compass<br /><b style={{color:'#fff'}}>{fmt(-lado.banco.diferenca)}</b></>}
+              </span>
+            </>}
           </button>
         </div>
 
