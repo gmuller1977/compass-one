@@ -6,7 +6,6 @@ import { serieBaseDoPlano, piorMesDaSerie, fimDoPlanejamento } from '../utils/si
 import { evolucaoDoSaldo } from '../utils/evolucaoSaldo'
 import { contasAVencer, contasDoMes, contasParaPagar } from '../utils/contasAVencer'
 import { previsaoDoMes } from '../utils/previsaoDoMes'
-import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { avisosDoMes, type Aviso } from '../utils/avisosDoMes'
 import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import RevisaoPlanoDialog from '../components/acompanhamento/RevisaoPlanoDialog'
@@ -125,13 +124,6 @@ export default function Dashboard() {
   // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
   const aVencer = useMemo(() => (ehMesCorrente ? contasParaPagar(contasAVencer(deps), categorias, deps.contas) : []), [ehMesCorrente, deps, categorias])
 
-  // Ritmo do mês: só no mês corrente e com plano. Vira a folga do hero ("ainda
-  // dá para gastar") e, acelerado, um aviso. Ver utils/ritmoDoMes.
-  const ritmo = useMemo(
-    () => (ehMesCorrente && usaPlanoNoMes ? ritmoDoMes(linhasSaida, categorias) : null),
-    [ehMesCorrente, usaPlanoNoMes, linhasSaida, categorias],
-  )
-
   // Já lançado acima do plano dos próximos meses (parcelas, quase sempre).
   // Só olhando o mês corrente: é um aviso sobre o que vem pela frente.
   const lancadoAcima = useMemo(() => (ehMesCorrente ? lancadoAcimaDoPlano(deps) : []), [ehMesCorrente, deps])
@@ -145,9 +137,8 @@ export default function Dashboard() {
     contas: aVencer,
     linhasSaida: usaPlanoNoMes ? linhasSaida : [],
     negativo: alertaFuturo?.primeiroNegativo ?? null,
-    ritmo,
     lancadoAcima,
-  }), [aVencer, usaPlanoNoMes, linhasSaida, alertaFuturo, ritmo, lancadoAcima])
+  }), [aVencer, usaPlanoNoMes, linhasSaida, alertaFuturo, lancadoAcima])
 
   const temBanco      = contas.some(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
   const temCategorias = categorias.some(c => c.ativa)
@@ -222,7 +213,6 @@ export default function Dashboard() {
     negativo: { rotulo: 'Ver plano', onClick: () => navigate('/planejamento') },
     contas:   { rotulo: 'Lançamentos', onClick: () => navigate('/novo-lancamento') },
     passou:   { rotulo: 'Radar', onClick: () => navigate('/radar') },
-    ritmo:    { rotulo: 'Radar', onClick: () => navigate('/radar') },
   }
 
   // O número grande do topo e a caixa ao lado, nos três modos do mês.

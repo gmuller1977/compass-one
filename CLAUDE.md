@@ -2158,6 +2158,14 @@ gasto contra as linhas do Radar sem as fixas, a fronteira dos 10 pontos, o
 último dia, o estouro compensado no total e o controle negativo (sem variável
 planejada, sem quadro).
 
+**O aviso "Você está gastando mais rápido que o mês" SAIU** (02/11/2026,
+escolha do Guilherme num card). A compra no cartão conta no mês em que a
+fatura VENCE, então no dia 2 a variável já chegava quase cheia ("90% da
+variável em 7% do mês") e o aviso disparava todo começo de mês, sem ajudar
+a decidir. `ritmoDoMes` fica (o Norte e o `resumoDoMes` leem); nenhuma tela
+mostra mais o estado "acelerado". As notas sobre o ritmo como aviso são
+histórico.
+
 **O motivo de passar do plano é anotado NA HORA, e a Revisão mensal abre
 com ele.** Pedido do Guilherme em 11/10/2026: "fui usar [a Revisão mensal] e
 esqueci o motivo de ter passado do plano". No mês corrente, toda categoria de

@@ -1,6 +1,5 @@
 import type { LinhaDoMes } from '../components/acompanhamento/evolucaoCalcs'
 import type { ContaAVencer } from './contasAVencer'
-import type { RitmoDoMes } from './ritmoDoMes'
 import { categoriasEstouradas } from './categoriasEstouradas'
 import { gruposQuePassaram } from './resumoRadar'
 import type { LancadoAcima } from './lancadoAcimaDoPlano'
@@ -18,14 +17,19 @@ import { textoDaRevisao } from './revisaoDoPlano'
  *   parcelas  → lancadoAcimaDoPlano: o já lançado (parcelas, quase sempre)
  *               passa do plano de um mês que ainda não começou
  *   negativo  → piorMesDaSerie, o mesmo ponto vermelho do gráfico
- *   ritmo     → ritmoDoMes, só no estado "acelerado" (o "passou" o hero já diz)
+ *
+ * O aviso de ritmo ("Você está gastando mais rápido que o mês") SAIU em
+ * 02/11/2026, escolha do Guilherme: a compra no cartão conta no mês em que a
+ * fatura vence, então no dia 2 a variável já vinha quase cheia (90% em 7% do
+ * mês) e o aviso dava alarme falso todo começo de mês. O Radar já mostra o
+ * que resta.
  *
  * A ordem é a da urgência: pagar → corrigir → corrigir o plano adiante →
- * planejar → frear. Com mais de
+ * planejar. Com mais de
  * três, os últimos ficam de fora; tudo continua em Análises.
  */
 export type Aviso = {
-  id: 'contas' | 'passou' | 'parcelas' | 'negativo' | 'ritmo'
+  id: 'contas' | 'passou' | 'parcelas' | 'negativo'
   tom: 'vermelho' | 'ambar'
   tag: string
   titulo: string
@@ -56,7 +60,6 @@ export function avisosDoMes(p: {
   contas: ContaAVencer[]
   linhasSaida: LinhaDoMes[]
   negativo: { ano: number; mes: number; valor: number } | null
-  ritmo: RitmoDoMes | null
   /** Categorias com o já lançado acima do plano de um mês futuro. */
   lancadoAcima?: LancadoAcima[]
   hoje?: Date
@@ -124,15 +127,6 @@ export function avisosDoMes(p: {
       id: 'negativo', tom: 'ambar', tag: 'Mais à frente',
       titulo: `${nome} pode fechar no vermelho: −${reais(p.negativo.valor)}`,
       detalhe: 'É uma previsão do plano. Dá tempo de ajustar.',
-    })
-  }
-
-  // 5. Ritmo acelerado — avisa ANTES de passar.
-  if (p.ritmo?.estado === 'acelerado') {
-    out.push({
-      id: 'ritmo', tom: 'ambar', tag: 'Ritmo do mês',
-      titulo: 'Você está gastando mais rápido que o mês',
-      detalhe: `Já foi ${Math.round(p.ritmo.percGasto * 100)}% da variável em ${Math.round(p.ritmo.percMes * 100)}% do mês.`,
     })
   }
 

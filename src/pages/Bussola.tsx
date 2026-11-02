@@ -82,7 +82,6 @@ export default function Bussola() {
     negativo: { rotulo: 'Ver plano', onClick: () => navigate('/planejamento') },
     contas:   { rotulo: 'Pagar', onClick: irParaContas },
     passou:   { rotulo: 'Radar', onClick: () => navigate('/radar') },
-    ritmo:    { rotulo: 'Radar', onClick: () => navigate('/radar') },
   }
 
   return (

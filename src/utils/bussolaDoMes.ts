@@ -61,7 +61,7 @@ export function bussolaDoMes(p: {
   // o quadro delas foi para o Lançar em 10/10/2026. "Passou" e ritmo têm
   // quadro próprio na Bússola e não repetem.
   const avisos = avisosDoMes({
-    contas, linhasSaida: [], ritmo: null, hoje, lancadoAcima,
+    contas, linhasSaida: [], hoje, lancadoAcima,
     negativo: negativo ? { ano: negativo.ano, mes: negativo.mes, valor: negativo.semCompra } : null,
   })
 
