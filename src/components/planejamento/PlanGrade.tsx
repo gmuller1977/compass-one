@@ -14,8 +14,6 @@ interface Props {
   previsto: Saldos
   planoRef?: AnoData
   categorias: Categoria[]
-  hasFaturaCat: boolean
-  somaCartaoMes: number[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
   onRevisarAno?: () => void
@@ -80,7 +78,6 @@ export default function PlanGrade(props: Props) {
           mesAtual={mesAtual}
           dadosAtivos={dadosPrevisto}
           previsto={planTotais}
-          hasFaturaCat={props.hasFaturaCat}
           categorias={props.categorias}
           onSave={props.onSave}
           onClose={() => setModalMes(null)}

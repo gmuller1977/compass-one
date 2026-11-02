@@ -59,7 +59,7 @@ function porTela(): number {
  * com o primeiro mês da janela como referência.
  */
 export default function PlanModalMeses({
-  mesInicial, anoAtual, mesAtual, dadosAtivos, previsto, hasFaturaCat, categorias, onSave, onClose,
+  mesInicial, anoAtual, mesAtual, dadosAtivos, previsto, categorias, onSave, onClose,
   objetivos, onMetaSave,
 }: {
   mesInicial: number
@@ -68,7 +68,6 @@ export default function PlanModalMeses({
   dadosAtivos: AnoData
   /** Os totais do mês — o MESMO objeto que os cartões leem. */
   previsto: Saldos
-  hasFaturaCat: boolean
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onClose: () => void
@@ -110,11 +109,7 @@ export default function PlanModalMeses({
   const colunas = `${W_NOME}px repeat(${meses.length}, ${W_MES}px)`
 
   const entradas = groupCats(comIndice(dadosAtivos.entradas))
-  // Com a fatura planejada como linha própria, as categorias de cartão não
-  // entram — é o mesmo filtro dos totais (hasFaturaCat), senão contariam duas vezes.
-  const saidas = groupCats(hasFaturaCat
-    ? comIndice(dadosAtivos.saidas).filter(x => x.cat.t !== 'cartao')
-    : comIndice(dadosAtivos.saidas))
+  const saidas = groupCats(comIndice(dadosAtivos.saidas))
 
   function linhaCat({ cat, ri }: CatIdx, tipo: 'e' | 's') {
     const { icone, cor: corCat } = iconeCategoria(categorias, cat.nome)

@@ -127,12 +127,11 @@ export const PREVISTO: React.CSSProperties = { fontStyle: 'italic' }
 export const tituloValor = (real: boolean) =>
   real ? 'Valor realizado' : 'Valor previsto'
 
-export function calcSaldos(data: AnoData, exclCartao = false, ancora?: AncoraReal) {
+export function calcSaldos(data: AnoData, ancora?: AncoraReal) {
   const planE = Array.from({ length: 12 }, (_, i) =>
     data.entradas.reduce((s, c) => s + c.v[i], 0))
   const planS = Array.from({ length: 12 }, (_, i) =>
-    (exclCartao ? data.saidas.filter(c => c.t !== 'cartao') : data.saidas)
-      .reduce((s, c) => s + c.v[i], 0))
+    data.saidas.reduce((s, c) => s + c.v[i], 0))
 
   const fechado = (i: number) => !!ancora && i <= ancora.ateMes
 

@@ -41,7 +41,7 @@ function useIsMobile() {
  * repetição até dezembro do Planejamento.
  */
 export default function PlanRevisaoAnual({
-  alvo, mesInicial, dadosAtivos, previsto, hasFaturaCat, onEditar, abrirItens, onFechar,
+  alvo, mesInicial, dadosAtivos, previsto, onEditar, abrirItens, onFechar,
 }: {
   /** O ano que se monta; a base é o anterior. */
   alvo: number
@@ -49,7 +49,6 @@ export default function PlanRevisaoAnual({
   dadosAtivos: AnoData
   /** Os totais do ano novo — o MESMO objeto dos cartões do Planejamento. */
   previsto: Saldos
-  hasFaturaCat: boolean
   onEditar: (ops: OpCelula[]) => void
   abrirItens: AbrirItens
   onFechar: () => void
@@ -77,10 +76,10 @@ export default function PlanRevisaoAnual({
   }, [])
 
   const r = useMemo(() => revisaoDoMes({
-    alvo, mes, modo, dadosAlvo: dadosAtivos, hasFaturaCat,
+    alvo, mes, modo, dadosAlvo: dadosAtivos,
     extratoData: extratoData as Record<string, DadosMes>, faturaData: faturaData as Record<string, unknown>,
     contas, categorias, planos,
-  }), [alvo, mes, modo, dadosAtivos, hasFaturaCat, extratoData, faturaData, contas, categorias, planos])
+  }), [alvo, mes, modo, dadosAtivos, extratoData, faturaData, contas, categorias, planos])
   const vazias = useMemo(() => linhasVazias(r), [r])
 
   const nomeMes = MESES_FULL[mes]

@@ -50,7 +50,6 @@ interface Props {
   dadosPrevisto: AnoData
   dadosAnoAnterior: AnoData | null
   previsto: Saldos
-  hasFaturaCat: boolean
   categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   onBulkSave: (ops: BulkOp[]) => void
@@ -142,7 +141,7 @@ export default function PlanMobile(p: Props) {
 
         {aberto && (
           <CategoriasDoMes mes={mes} anoAtual={anoAtual} dados={dadosPrevisto} previsto={previsto}
-            hasFaturaCat={p.hasFaturaCat} categorias={p.categorias} onSave={p.onSave}
+            categorias={p.categorias} onSave={p.onSave}
             mesAtual={mesAtual} objetivos={p.objetivos} onMetaSave={p.onMetaSave} />
         )}
       </div>
@@ -157,8 +156,8 @@ export default function PlanMobile(p: Props) {
  * abre o ajuste do Radar, a célula de sempre, e no pé Receitas, Despesas e
  * Resultado do mês (de `previsto`, o mesmo do cartão).
  */
-function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categorias, onSave, mesAtual, objetivos, onMetaSave }: {
-  mes: number; anoAtual: number; dados: AnoData; previsto: Saldos; hasFaturaCat: boolean; categorias: Categoria[]
+function CategoriasDoMes({ mes, anoAtual, dados, previsto, categorias, onSave, mesAtual, objetivos, onMetaSave }: {
+  mes: number; anoAtual: number; dados: AnoData; previsto: Saldos; categorias: Categoria[]
   onSave: (tipo: 'e' | 's', ri: number, mi: number, valor: number) => void
   mesAtual: number; objetivos: number[]; onMetaSave: (objetivos: number[]) => void
 }) {
@@ -212,7 +211,6 @@ function CategoriasDoMes({ mes, anoAtual, dados, previsto, hasFaturaCat, categor
             </div>
           )
         }
-        if (tipo === 's' && hasFaturaCat && l.cat.t === 'cartao') return null
         return linha(l.cat, l.ri, tipo)
       })}
     </>

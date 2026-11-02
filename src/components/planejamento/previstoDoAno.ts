@@ -2,7 +2,7 @@ import type { Categoria, Conta } from '../../context/AppContext'
 import { saldoBancosEDinheiro, type Deps } from '../../utils/saldoConta'
 import { juntarNaMae, somaNaMae } from '../../utils/categoriaMae'
 import {
-  mergeCats, calcSaldos, nomeFaturaCartao, MESES,
+  mergeCats, calcSaldos,
   type Cat, type AnoData, type AncoraReal,
 } from './types'
 
@@ -52,41 +52,16 @@ export function dadosPrevistoDoAno(salvo: AnoData | undefined, base: AnoData, sa
   }
 }
 
-/** Fatura de cartão por mês: informado → lançamentos reais do mês anterior → R$ 0. */
-export function somaCartaoDoAno(dadosPrevisto: AnoData, ano: number, contas: Conta[], faturaData: unknown): number[] {
-  const faturaCatsPlan = dadosPrevisto.saidas.filter(c => c.t === 'fatura_cartao')
-  const cartoesContas = contas.filter(c => c.tipo === 'cartao')
-  const fat = faturaData as Record<string, { lancamentos?: Record<number, { tipo: string; valor: number }[]> }>
-  return MESES.map((_, i) => {
-    const informado = faturaCatsPlan.reduce((s, c) => s + (c.v[i] ?? 0), 0)
-    if (informado > 0) return informado
-    const prevMes = i === 0 ? 11 : i - 1
-    const prevAno = i === 0 ? ano - 1 : ano
-    const prevMesStr = String(prevMes + 1).padStart(2, '0')
-    let calculado = 0
-    for (const cartao of cartoesContas) {
-      const dm = fat[`${cartao.id}-${prevAno}-${prevMesStr}`]
-      if (!dm?.lancamentos) continue
-      const totalDiasM = new Date(prevAno, prevMes + 1, 0).getDate()
-      for (let d = 1; d <= totalDiasM; d++) {
-        ;(dm.lancamentos[d] ?? []).forEach(l => {
-          l.tipo === 'saida' ? calculado += l.valor : calculado -= l.valor
-        })
-      }
-    }
-    return Math.max(0, calculado)
-  })
-}
-
-/** O previsto com a fatura do cartão trocada pelo valor calculado. */
-export function comFaturaCalculada(dadosPrevisto: AnoData, somaCartaoMes: number[], cartaoNomes: Set<string>): AnoData {
-  const isFatura = (cat: Cat) => nomeFaturaCartao(cat.nome, cartaoNomes) || cat.t === 'fatura_cartao'
-  return { ...dadosPrevisto, saidas: dadosPrevisto.saidas.map(cat => (isFatura(cat) ? { ...cat, t: undefined, v: somaCartaoMes } : cat)) }
-}
-
-/** Excluir t='cartao' dos totais só se existir fatura_cartao (evita dupla contagem). */
-export const temFaturaCat = (dadosPrevisto: AnoData, cartaoNomes: Set<string>) =>
-  dadosPrevisto.saidas.some(c => c.t === 'fatura_cartao' || nomeFaturaCartao(c.nome, cartaoNomes))
+/*
+ * A fatura do cartão não tem conta própria no Planejamento (02/11/2026,
+ * revisão técnica). Antes, uma categoria com o nome de um cartão (ou
+ * "Cartão de crédito") virava "a fatura": o valor dela era trocado pelas
+ * compras do mês anterior, lidas com o sinal INVERTIDO (na fatura a compra é
+ * `entrada`), e todas as categorias de cartão saíam dos totais. O resultado
+ * era o Planejamento sem os gastos no cartão. Hoje toda categoria soma pelo
+ * próprio plano, como no motor da previsão (`faltaVariavelDoMes`), e o total
+ * é a soma das linhas que a tela lista. `prova109`.
+ */
 
 /**
  * Último mês fechado. Ano passado → 11; ano corrente → o mês anterior (-1 em
@@ -117,11 +92,9 @@ export function saldoInicialJanDoAno(ano: number, ctx: CtxPlano): number {
 
 /** O `previsto` da tela do Planejamento para um ano qualquer. */
 export function previstoDoAno(ano: number, ctx: CtxPlano) {
-  const cartaoNomes = new Set(ctx.contas.filter(c => c.tipo === 'cartao').map(c => c.nome.toLowerCase()))
   const jan = saldoInicialJanDoAno(ano, ctx)
   const prev = dadosPrevistoDoAno(ctx.planos[ano] as AnoData | undefined, dadosBaseDoPlano(ctx.categorias, jan), jan, ctx.categorias)
-  const final = comFaturaCalculada(prev, somaCartaoDoAno(prev, ano, ctx.contas, ctx.faturaData), cartaoNomes)
   // te/ts não entram no saldo (Receitas e Despesas são sempre o plano).
   const ancora: AncoraReal = { ateMes: mesDaAncora(ano, ctx.anoCorrente, ctx.mesAtual), te: [], ts: [], fim: fimRealDoAno(ano, ctx.depsSaldo) }
-  return calcSaldos(final, temFaturaCat(prev, cartaoNomes), ancora)
+  return calcSaldos(prev, ancora)
 }

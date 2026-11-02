@@ -107,7 +107,6 @@ export function revisaoDoMes(p: {
   modo?: ModoBase
   /** O plano do ano novo como a tela o edita (`plan.dadosPrevistoFinal`). */
   dadosAlvo: AnoData
-  hasFaturaCat: boolean
   extratoData: Record<string, DadosMes>
   faturaData: Record<string, unknown>
   contas: Conta[]
@@ -150,9 +149,6 @@ export function revisaoDoMes(p: {
     const porGrupo = new Map<string, LinhaRevisao[]>()
     let soma = 0
     cats.forEach((cat, ri) => {
-      // Com a fatura planejada como linha própria, as categorias de cartão não
-      // entram — o mesmo filtro do modal do mês e dos totais.
-      if (tipo === 's' && p.hasFaturaCat && cat.t === 'cartao') return
       let real = 0, parcelasBase = 0, planoBase = 0
       for (const b of bases) {
         const crB = pickReal(tipo === 'e' ? b.rb.entradasMap : b.rb.saidasMap, cat.nome, cat.descricao, categorias)

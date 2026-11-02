@@ -1753,10 +1753,12 @@ só com o selo "melhor".
 - categoria com conta de débito EXCLUÍDA (ou apontando para cartão) sumia;
   hoje cai na preferida (`debitoOuPadrao`).
 Diferença que continua legítima: o mês corrente, que no Simulador soma o
-realizado e no Planejamento só o plano. E uma do lado do Planejamento, não
-corrigida: com uma categoria homônima do cartão, `somaCartaoDoAno` lê o sinal
-da fatura invertido (compra é `entrada`) e o `exclCartao` tira as categorias
-de cartão — o Planejamento fica sem os gastos no cartão.
+realizado e no Planejamento só o plano. A do lado do Planejamento foi
+corrigida em 02/11/2026 (revisão técnica): com uma categoria homônima do
+cartão, `somaCartaoDoAno` lia o sinal da fatura invertido e o `exclCartao`
+tirava as categorias de cartão dos totais. Hoje o Planejamento não tem conta
+própria para a fatura: toda categoria soma pelo próprio plano, a de cartão e
+a homônima também, como no motor da previsão. `prova109`.
 
 **"Quitar dívida" tem "Quitar à vista"** (22/10/2026, pedido do Guilherme:
 quitar o financiamento do Civic, 16 × 1.149,72 já no plano, sem saldo hoje).

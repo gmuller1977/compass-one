@@ -248,7 +248,7 @@ export default function Planejamento() {
 
       {revisaoAnual && anoAtual > anoCorrente && (
         <PlanRevisaoAnual alvo={anoAtual} mesInicial={0} dadosAtivos={dadosAtivos} previsto={plan.previsto}
-          hasFaturaCat={plan.hasFaturaCat} onEditar={plan.editarCelulas} abrirItens={abrirItens}
+          onEditar={plan.editarCelulas} abrirItens={abrirItens}
           onFechar={() => setRevisaoAnual(false)} />
       )}
 
@@ -305,7 +305,6 @@ export default function Planejamento() {
           dadosPrevisto={plan.dadosPrevistoFinal}
           dadosAnoAnterior={plan.planoAnoAnterior}
           previsto={plan.previsto}
-          hasFaturaCat={plan.hasFaturaCat}
           categorias={plan.categorias}
           onSave={handleSave}
           onBulkSave={handleBulkSave}
@@ -371,8 +370,6 @@ export default function Planejamento() {
             previsto={plan.previsto}
             planoRef={plan.planoRef}
             categorias={plan.categorias}
-            hasFaturaCat={plan.hasFaturaCat}
-            somaCartaoMes={plan.somaCartaoMes}
             onSave={handleSave}
             onBulkSave={handleBulkSave}
             onRevisarAno={abrirRevisaoAnual}

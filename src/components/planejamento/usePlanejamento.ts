@@ -4,9 +4,9 @@ import { useApp } from '../../context/AppContext'
 import { aplicadoNoMes } from '../../utils/investimentos'
 import type { PlanoAnoData } from '../../context/AppContext'
 import { iconeCategoria } from '../../utils/categoriaIcone'
-import { calcSaldos, MESES, type AnoData, type AncoraReal } from './types'
+import { calcSaldos, type AnoData, type AncoraReal } from './types'
 import {
-  dadosBaseDoPlano, dadosPrevistoDoAno, somaCartaoDoAno, comFaturaCalculada, temFaturaCat,
+  dadosBaseDoPlano, dadosPrevistoDoAno,
   mesDaAncora, fimRealDoAno, saldoInicialJanDoAno,
 } from './previstoDoAno'
 import { acharPlanCat } from '../acompanhamento/evolucaoCalcs'
@@ -61,38 +61,9 @@ export function usePlanejamento(anoAtual: number) {
     (planos[anoAtual] as PlanoAnoData | undefined),
   [planos, anoAtual])
 
-  // Cálculo de fatura de cartão por mês: informado → lançamentos reais mês anterior → R$0
-  const somaCartaoMes = useMemo(
-    () => somaCartaoDoAno(dadosPrevisto, anoAtual, contas, faturaData),
-    [dadosPrevisto, anoAtual, contas, faturaData])
-
-  const somaCartaoBadges = useMemo(() => {
-    const faturaCatsPlan = dadosPrevisto.saidas.filter(c => c.t === 'fatura_cartao')
-    const cartoesContas = contas.filter(c => c.tipo === 'cartao')
-    const fat = faturaData as Record<string, { lancamentos?: Record<number, unknown[]> }>
-    return MESES.map((_, i) => {
-      const informado = faturaCatsPlan.reduce((s, c) => s + (c.v[i] ?? 0), 0)
-      if (informado > 0) return 'informado'
-      const prevMes = i === 0 ? 11 : i - 1
-      const prevAno = i === 0 ? anoAtual - 1 : anoAtual
-      const prevMesStr = String(prevMes + 1).padStart(2, '0')
-      for (const cartao of cartoesContas) {
-        const dm = fat[`${cartao.id}-${prevAno}-${prevMesStr}`]
-        if (dm?.lancamentos && Object.keys(dm.lancamentos).length > 0) return 'calculado'
-      }
-      return 'sem_dados'
-    }) as ('informado' | 'calculado' | 'sem_dados')[]
-  }, [dadosPrevisto, contas, faturaData, anoAtual])
-
-  // dadosPrevisto com fatura de cartão substituída pelo valor calculado
-  const dadosPrevistoFinal: AnoData = useMemo(
-    () => comFaturaCalculada(dadosPrevisto, somaCartaoMes, cartaoNomes),
-    [dadosPrevisto, somaCartaoMes, cartaoNomes])
-
-  // Excluir t='cartao' dos totais só se existir fatura_cartao (evita dupla contagem)
-  // Sem fatura_cartao, as categorias cartao são o único planejamento do cartão
-  const hasFaturaCat = useMemo(() => temFaturaCat(dadosPrevisto, cartaoNomes), [dadosPrevisto, cartaoNomes])
-
+  // Toda categoria soma pelo próprio plano, a de cartão também (02/11/2026,
+  // ver previstoDoAno.ts). O nome segue por compatibilidade com as telas.
+  const dadosPrevistoFinal = dadosPrevisto
 
   // Totais reais (lançamentos do extrato) por mês
   const totaisReais = useMemo(() => {
@@ -176,8 +147,8 @@ export function usePlanejamento(anoAtual: number) {
 
   // Totais para "Meu plano" (previsto) — realizado ate a ancora, plano depois
   const previsto = useMemo(
-    () => calcSaldos(dadosPrevistoFinal, hasFaturaCat, ancora),
-    [dadosPrevistoFinal, hasFaturaCat, ancora])
+    () => calcSaldos(dadosPrevistoFinal, ancora),
+    [dadosPrevistoFinal, ancora])
 
   // Saldo real (calculado dos lançamentos)
   // A mesma fonte, para nao existir uma segunda versao do realizado.
@@ -312,9 +283,6 @@ export function usePlanejamento(anoAtual: number) {
     dadosPrevisto,
     dadosPrevistoFinal,
     planoRef,
-    hasFaturaCat,
-    somaCartaoMes,
-    somaCartaoBadges,
     cartaoNomes,
     // Totais
     previsto,
