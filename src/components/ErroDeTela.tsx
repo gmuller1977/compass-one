@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { COR } from '../utils/cores'
+import { avisarErroDeTela } from '../utils/monitorDeErros'
 
 // Rede de proteção para erro de tela (25/10/2026, revisão técnica, pacote 1).
 // Sem ela, qualquer erro inesperado ao desenhar uma tela — um dado antigo num
@@ -17,6 +18,7 @@ export default class ErroDeTela extends Component<{ children: ReactNode }, { err
 
   componentDidCatch(erro: Error, info: ErrorInfo) {
     console.error('[erro de tela]', erro, info.componentStack)
+    avisarErroDeTela(erro, info.componentStack)
   }
 
   render() {

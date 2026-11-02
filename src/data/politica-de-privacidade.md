@@ -1,6 +1,6 @@
 # Política de Privacidade — Compass One
 
-**Última atualização:** Outubro de 2026
+**Última atualização:** Novembro de 2026
 
 Esta Política de Privacidade descreve como o Compass One ("Plataforma", "nós") coleta, utiliza, armazena e protege seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).
 
@@ -55,6 +55,7 @@ Compartilhamos dados apenas com:
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
 - **Vercel e Cloudflare (hospedagem):** hospedagem da aplicação web
 - **Resend (e-mail):** envio de e-mails transacionais (confirmação de conta, recuperação de senha, convites)
+- **Sentry (monitor de erros):** quando uma tela apresenta um erro, recebe a mensagem técnica do erro, o endereço da tela e o tipo de navegador e aparelho. Não recebe dados financeiros, seu nome, seu e-mail nem identificação da sua conta. Servidores nos Estados Unidos.
 - **Google (Gemini, inteligência artificial):** **o assistente Norte está desativado no momento, e nenhum dado é enviado ao Google.** Antes de ele voltar, esta política será atualizada para dizer o que é enviado e em que condições.
 
 Todos os prestadores acima atuam como operadores de dados e estão sujeitos a obrigações de confidencialidade e segurança.

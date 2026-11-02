@@ -12,6 +12,7 @@
     "verificar": "tsc -b && oxlint src && npm run provas && vite build && node scripts/prerender.mjs"
   },
   "dependencies": {
+    "@sentry/react": "^10.78.0",
     "@supabase/supabase-js": "^2.110.0",
     "@tabler/icons-webfont": "3.24.0",
     "@tailwindcss/vite": "^4.3.2",

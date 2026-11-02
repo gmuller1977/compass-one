@@ -3993,6 +3993,15 @@ estáticos (`wrangler.jsonc`, sem código de servidor), o build é o mesmo
 **Ramos `claude/*` não geram deploy na Vercel** (`git.deploymentEnabled` no
 `vercel.json`): o plano gratuito tem limite diário, e só o `main` publica.
 
+**Monitor de erros: Sentry** (02/11/2026, escolha do Guilherme). Erro de
+tela (`ErroDeTela`) e erro não tratado vão para o Sentry, que avisa por
+e-mail. Liga só no build publicado e com `VITE_SENTRY_DSN` (o DSN é público;
+variável de build na hospedagem). Vai só o erro, a tela sem o que vem depois
+do "?" e o navegador: sem usuário, sem migalhas de console, rede ou clique
+(`monitorDeErros.ts`). `src/ligarMonitor.ts` é o PRIMEIRO import do
+`main.tsx`, para pegar também erro na carga do app. Está na política de
+privacidade.
+
 **Erro de tela não deixa a página em branco**: `ErroDeTela` (em `App.tsx`,
 por dentro do `AppProvider`, que segue gravando) mostra "Algo deu errado
 nesta tela" com Recarregar e Ir para o início.
