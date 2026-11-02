@@ -3485,7 +3485,7 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   **Sem o valor do banco, a caixa da direita é "Conferido"** (02/11/2026,
   Guilherme: "os conferidos já iriam somar e mostrar se falta algo"): a
   SOMA das compras com bolinha e "falta conferir R$ X" / "✓ tudo conferido";
-  a do Compass diz "soma das compras". Tudo conferido, a janela pergunta o
+  a do Compass diz "total das compras no cartão [nome]". Tudo conferido, a janela pergunta o
   valor do banco; informado, a caixa volta a ser "No [cartão]" com a
   diferença (e o "falta conferir" passa para a caixa do Compass).
 - **Categoria é obrigatória: com ela vazia, o Tab não sai do campo**

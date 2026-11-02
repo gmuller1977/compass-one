@@ -53,7 +53,7 @@ export default function FcBanner({
               {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
                 : lado.banco.estado === 'comparado' && lado.compass.estado === 'falta-conferir'
                   ? `falta conferir ${fmt(lado.compass.falta)}`
-                : 'soma das compras'}
+                : `total das compras no cartão ${contasCartao.find(c => c.id === contaId)?.banco ?? ''}`}
             </div>
           </KpiCard>
           {/* Sem o valor do banco, este card SOMA as compras com bolinha

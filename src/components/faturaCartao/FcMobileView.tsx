@@ -199,7 +199,7 @@ export default function FcMobileView({
               {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
                 : lado.banco.estado === 'comparado' && lado.compass.estado === 'falta-conferir'
                   ? <>falta conferir<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
-                : 'soma das compras'}
+                : `total das compras no cartão ${contaAtual?.banco ?? ''}`}
             </span>
           </div>
           {/* Sem o valor do banco, a caixa da direita SOMA as compras com
