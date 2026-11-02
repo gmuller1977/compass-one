@@ -111,7 +111,7 @@ function comBanco(diferenca: number): Conferencia {
  */
 export type LadoCompass =
   | { estado: 'sem-compras' }
-  | { estado: 'falta-conferir'; falta: number }
+  | { estado: 'falta-conferir'; conferido: number; falta: number }
   | { estado: 'tudo-conferido' }
 export type LadoBanco =
   | { estado: 'nao-informada' }
@@ -124,7 +124,12 @@ export function faturaLadoALado(dm: MesComConferidos, totalDias: number, p: {
 }): { compass: LadoCompass; banco: LadoBanco } {
   const { conferidas, total } = resumoConferidos(dm, totalDias)
   const compass: LadoCompass = total === 0 ? { estado: 'sem-compras' }
-    : conferidas < total ? { estado: 'falta-conferir', falta: p.totalFatura - valorConferido(dm, totalDias) }
+    : conferidas < total ? (() => {
+      // O já conferido aparece junto do que falta (02/11/2026, Guilherme:
+      // "não está mostrando o total conferido").
+      const conferido = valorConferido(dm, totalDias)
+      return { estado: 'falta-conferir' as const, conferido, falta: p.totalFatura - conferido }
+    })()
     : { estado: 'tudo-conferido' }
   if (p.informado === null) return { compass, banco: { estado: 'nao-informada' } }
   const diferenca = p.informado - p.totalFatura

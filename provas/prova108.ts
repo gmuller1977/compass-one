@@ -36,7 +36,9 @@ t('999.999,99 sem bolinha', max.estado === 'conferindo' && perto(max.falta, 9999
 // 31/10/2026: os dois totais lado a lado. A diferença com o banco aparece
 // mesmo com compra sem bolinha; o lado do Compass diz quanto falta conferir.
 const l1 = lado(dm({ a: true }), 31, { totalFatura: total, informado: 1080 })
-t('lado: falta conferir 400 e banco +80', l1.compass.estado === 'falta-conferir' && perto(l1.compass.falta, 400)
+// 02/11/2026: o já conferido aparece junto do que falta.
+t('lado: conferido 600, falta conferir 400 e banco +80', l1.compass.estado === 'falta-conferir' && perto(l1.compass.falta, 400)
+  && perto(l1.compass.conferido, total - 400)
   && l1.banco.estado === 'comparado' && perto(l1.banco.diferenca, 80) && !l1.banco.igual)
 const l2 = lado(dm({ a: true, b: true, c: true }), 31, { totalFatura: total, informado: null })
 t('lado: tudo conferido, banco não informado', l2.compass.estado === 'tudo-conferido' && l2.banco.estado === 'nao-informada')

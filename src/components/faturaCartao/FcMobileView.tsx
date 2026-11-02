@@ -198,7 +198,8 @@ export default function FcMobileView({
             <span style={LINHA_LADO}>
               {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
                 : lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ tudo conferido</b>
-                : <>falta conferir<br /><b style={{color:'#fff'}}>{fmt(lado.compass.falta)}</b></>}
+                : <>conferido <b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.conferido)}</b><br />
+                  falta <b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>}
             </span>
           </div>
           <button onClick={abrirFatura} aria-label="Informar o valor da fatura no banco" style={CAIXA_LADO}>

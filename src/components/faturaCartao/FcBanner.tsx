@@ -50,7 +50,7 @@ export default function FcBanner({
             <div style={linha(lado.compass.estado === 'tudo-conferido' ? '#86efac' : lado.compass.estado === 'sem-compras' ? 'rgba(255,255,255,.75)' : '#fff')}>
               {lado.compass.estado === 'sem-compras' ? 'nenhuma compra'
                 : lado.compass.estado === 'tudo-conferido' ? '✓ tudo conferido'
-                : `falta conferir ${fmt(lado.compass.falta)}`}
+                : <>conferido {fmt(lado.compass.conferido)}<br />falta {fmt(lado.compass.falta)}</>}
             </div>
           </KpiCard>
           <div role="button" tabIndex={0} aria-label="Informar o valor da fatura no banco" title="Clique para informar o valor da fatura no banco"
