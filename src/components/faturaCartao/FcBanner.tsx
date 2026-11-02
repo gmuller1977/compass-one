@@ -1,5 +1,5 @@
 import type { Conta } from '../../context/AppContext'
-import { fmt, type DadosMes } from './FcShared'
+import { fmt, NOMES_MESES, type DadosMes } from './FcShared'
 import KpiCard from '../KpiCard'
 import { IconeCat } from '../IconeCat'
 import type { LadoCompass, LadoBanco } from '../../utils/conferirFatura'
@@ -9,6 +9,8 @@ type Props = {
   contaId: string
   onContaSelect: (id: string) => void
   totalPrevisto: number
+  /** Mês da fatura (o do vencimento), 0–11. */
+  mes: number
   grandTotalFaturas: number
   totalFatura: number
   mesDados: DadosMes
@@ -18,7 +20,7 @@ type Props = {
 
 export default function FcBanner({
   contasCartao, contaId, onContaSelect,
-  totalPrevisto, grandTotalFaturas,
+  totalPrevisto, mes, grandTotalFaturas,
   totalFatura, mesDados, lado, abrirFatura,
 }: Props) {
   const disponivel = totalPrevisto - grandTotalFaturas
@@ -35,7 +37,7 @@ export default function FcBanner({
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <KpiCard icon="ti-credit-card" label="Limite planejado" value={fmt(totalPrevisto)}
-            sublabel="por mês" style={{ flex: 1 }} />
+            sublabel={`para o mês de ${NOMES_MESES[mes]}`} style={{ flex: 1 }} />
           <KpiCard label="Total de todas as faturas" value={fmt(grandTotalFaturas)}
             valueColor="#fff"
             sublabel="lançado" style={{ flex: 1 }} />

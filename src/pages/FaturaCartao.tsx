@@ -717,7 +717,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
         contasCartao={contasCartao}
         contaId={contaId}
         onContaSelect={id => { setContaId(id); resetarParaNovo(diaDefaultPara(mes, ano)) }}
-        totalPrevisto={totalPrevisto}
+        totalPrevisto={totalPrevisto} mes={mes}
         grandTotalFaturas={grandTotalFaturas}
         totalFatura={totalFatura}
         mesDados={mesDados}

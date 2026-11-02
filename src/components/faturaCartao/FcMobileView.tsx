@@ -352,7 +352,7 @@ export default function FcMobileView({
       <div style={{margin:'12px 16px 0',padding:'14px 8px',background:COR.branco,borderRadius:M.raio,
         boxShadow:M.sombra,display:'flex'}}>
         {([
-          ['Planejado', totalPrevisto, COR.texto],
+          [`Planejado para ${NOMES_MESES[mes].toLowerCase()}`, totalPrevisto, COR.texto],
           ['Faturas', grandTotalFaturas, '#b91c1c'],
           ['Disponível', disponivel, disponivel >= 0 ? '#15803d' : '#b91c1c'],
         ] as [string, number, string][]).map(([rot, v, cor], i) => (
