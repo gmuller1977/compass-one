@@ -10,7 +10,8 @@ import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
-import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, partesDoGrupo, ehFixaPaga, semPlano } from './radarCores'
+import PartesDoGrupo from './PartesDoGrupo'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -335,12 +336,14 @@ export default function AcMobileView({
               <span style={{ fontSize:19, fontWeight:800, color:gCor, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
                 {dg.principal}
               </span>
-              <span style={{ fontSize:13, color:gRotulo, whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums', overflow:'hidden', textOverflow:'ellipsis' }}>
-                {dg.julgado ? `${fmtK(gReal)} de ${fmtK(gPrev)}` : fmtK(dg.fora)}
-                {dg.julgado && Math.abs(dg.fora) > 0.005 ? ` · ${fmtK(dg.fora)} sem plano` : ''}
-              </span>
+              {SEM_MOVIMENTO.includes(dg.principal) && <span style={{ fontSize:13, color:gRotulo }}>{dg.contexto}</span>}
             </div>
           </div>
+          {!SEM_MOVIMENTO.includes(dg.principal) && (
+            <div style={{ marginTop:12 }}>
+              <PartesDoGrupo partes={partesDoGrupo(linhasGrupo, isEntrada)} aberto={aberto} />
+            </div>
+          )}
         </button>
         {aberto && (
           <div style={{ background:'#eaf1fd', padding:'10px 10px 12px' }}>

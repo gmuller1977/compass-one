@@ -1,6 +1,7 @@
 import type { Categoria } from '../../context/AppContext'
 import { type CatReal } from './AcShared'
-import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo } from './radarCores'
+import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo, partesDoGrupo, SEM_MOVIMENTO } from './radarCores'
+import PartesDoGrupo from './PartesDoGrupo'
 import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
 
@@ -66,11 +67,12 @@ export default function EvolucaoGrupo({
   // senão o grupo dizia "resta R$ 0,28" em cima de categorias "✓ pago".
   // Barra e cor julgam só as linhas COM plano; grupo sem plano nenhum fica
   // neutro e mostra só o realizado (C2, 19/10/2026).
-  const destaque   = destaqueDoGrupo(allCats.map(cat => ({
+  const linhas     = allCats.map(cat => ({
     prev: cat.v[mes] ?? 0,
     real: pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0,
     fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa,
-  })), isEntrada)
+  }))
+  const destaque   = destaqueDoGrupo(linhas, isEntrada)
   const semDados   = !destaque.julgado
   const perc       = destaque.prev > 0 ? destaque.real / destaque.prev : 0
   const percLabel  = semDados ? 'sem plano' : `${Math.round(perc * 100)}%`
@@ -130,9 +132,12 @@ export default function EvolucaoGrupo({
               fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
               {destaque.principal}
             </div>
-            <div style={{ fontSize: 13, color: rotulo, fontVariantNumeric: 'tabular-nums' }}>{destaque.contexto}</div>
+            {SEM_MOVIMENTO.includes(destaque.principal) && <div style={{ fontSize: 13, color: rotulo }}>{destaque.contexto}</div>}
           </div>
         </div>
+        {!SEM_MOVIMENTO.includes(destaque.principal) && (
+          <PartesDoGrupo partes={partesDoGrupo(linhas, isEntrada)} aberto={aberto} />
+        )}
       </div>
 
     </div>

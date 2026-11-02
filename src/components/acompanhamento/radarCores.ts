@@ -219,3 +219,31 @@ export function destaqueDoGrupo(
   const prevEfetivo = planejadas.reduce((s, l, i) => s + (pagas[i] ? l.real : l.prev), 0)
   return { principal: destaqueRadar(prevEfetivo, t.real, isEntrada).principal, contexto, julgado: true, ...t }
 }
+
+/**
+ * O "gastou X de Y" do grupo em DUAS partes, fixas e variáveis (02/11/2026,
+ * pedido do Guilherme: "usou: as duas estão somadas"). Mesmas linhas e mesma
+ * régua de destaqueDoGrupo, só separadas pelo cadastro: julga só o que tem
+ * plano, e o gasto sem plano vai ao lado. Parte sem linha nenhuma não vem.
+ * Estado: 'pago' (todas as fixas planejadas pagas até o previsto), 'passou'
+ * (despesa acima do plano), 'neutro' (sem plano na parte) ou 'ok'.
+ */
+export type ParteDoGrupo = {
+  rotulo: 'Fixas' | 'Variáveis'; prev: number; real: number; fora: number
+  estado: 'ok' | 'passou' | 'pago' | 'neutro'
+}
+export function partesDoGrupo(
+  linhas: { prev: number; real: number; fixa: boolean }[], isEntrada: boolean,
+): ParteDoGrupo[] {
+  return (['Fixas', 'Variáveis'] as const).flatMap(rotulo => {
+    const doLado = linhas.filter(l => l.fixa === (rotulo === 'Fixas'))
+    if (doLado.length === 0) return []
+    const t = totaisJulgados(doLado)
+    const planejadas = doLado.filter(l => !semPlano(l.prev))
+    const estado: ParteDoGrupo['estado'] = semPlano(t.prev) ? 'neutro'
+      : !isEntrada && rotulo === 'Fixas' && planejadas.every(l => ehFixaPaga(l.prev, l.real, isEntrada, true)) ? 'pago'
+      : !isEntrada && Math.round(t.real / t.prev * 100) / 100 > 1 ? 'passou'
+      : 'ok'
+    return [{ rotulo, ...t, estado }]
+  })
+}

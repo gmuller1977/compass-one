@@ -573,6 +573,16 @@ cada parte na sua caixa branca, na ordem de sempre. Fixa pelo cadastro
 (`fixasEVariaveis` em `evolucaoCalcs.ts`); sem cadastro, variável. `prova107`.
 E a compra no cartão mostra a DATA DA COMPRA, a mesma da fatura (`prova106`).
 
+**No Radar, o card FECHADO do grupo também separa FIXAS e VARIÁVEIS**
+(02/11/2026, pedido do Guilherme: "usou: as duas estão somadas"; escolheu a
+versão só com números, sem barrinha). O "gastou X de Y" somado saiu; embaixo
+do anel ficam duas colunas, "Fixas" e "Variáveis", com o gasto e "de R$ Y"
+(fixa toda paga: "✓ R$ X · pago de", verde `#15803d`; parte que passou:
+vermelho `#b91c1c` e "passou R$ Z"; sem plano: "sem plano"). Anel e
+"resta/passou" seguem sendo do grupo inteiro. Mesmo componente no
+computador e no celular (`PartesDoGrupo`), régua de `destaqueDoGrupo`
+dividida por `partesDoGrupo` em `radarCores.ts`. `prova110` (12).
+
 **Sem plano e sem movimento, o Radar diz "Sem lançamentos"** (24/10/2026,
 pedido do Guilherme; foi "nada gasto" / "nada recebido" por algumas horas),
 no grupo e na categoria, no computador e no celular, com "sem plano neste
