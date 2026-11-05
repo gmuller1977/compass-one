@@ -632,7 +632,7 @@ export default function FcMobileView({
       {mobileView === 'extrato' && (
         <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
           <BlocoProgramadas programadas={programadas} categorias={categorias}
-            onAbrir={(dia, l) => { editarLancamento(dia, l); setMobileView('form') }} />
+            onAbrir={(dia, l) => { editarLancamento(dia, l); setMobileView('form') }} onConferir={conferir} />
           {/* O botão grande "Nova compra" saiu (29/10/2026, pedido do Guilherme:
               "para ganhar espaço"). Lança-se pelo "+" de cada dia, em destaque,
               e HOJE aparece sempre na fatura que recebe a compra de hoje, mesmo

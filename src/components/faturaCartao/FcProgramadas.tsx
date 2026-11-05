@@ -4,6 +4,7 @@ import { COR, fmt, lancLabel, type Lancamento } from './FcShared'
 import { fixaOuVariavel } from '../../utils/fixaNoCartao'
 import { iconeCategoria } from '../../utils/categoriaIcone'
 import { IconeRedondo } from '../mobile/ui'
+import { BolinhaConferido } from './FcConferir'
 
 /**
  * Etiqueta "Fixa" / "Variável" em cada compra da fatura (05/11/2026, pedido do
@@ -23,14 +24,16 @@ export function EtiquetaTipo({ l, categorias }: { l: Lancamento; categorias: Cat
 }
 
 /**
- * "Lançamentos fixos programados": as fixas lançadas sozinhas cuja data da
- * compra ainda não chegou. Fora do total da fatura; acordeão fechado, no
- * desenho do "Lançamentos futuros" do Banco. Tocar abre a compra para editar.
+ * "Lançamentos fixos programados": as fixas lançadas sozinhas ainda não
+ * conferidas. Fora do total da fatura; acordeão fechado, no desenho do
+ * "Lançamentos futuros" do Banco. A bolinha confere (e a compra vai para a
+ * lista e o total); tocar na linha abre a compra para editar.
  */
-export function BlocoProgramadas({ programadas, categorias, onAbrir }: {
+export function BlocoProgramadas({ programadas, categorias, onAbrir, onConferir }: {
   programadas: { dia: number; l: Lancamento }[]
   categorias: Categoria[]
   onAbrir: (dia: number, l: Lancamento) => void
+  onConferir: (l: Lancamento) => void
 }) {
   const [aberto, setAberto] = useState(false)
   if (programadas.length === 0) return null
@@ -50,7 +53,7 @@ export function BlocoProgramadas({ programadas, categorias, onAbrir }: {
         <span style={{ flex: 1, minWidth: 0, padding: '8px 0' }}>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: COR.texto }}>Lançamentos fixos programados</span>
           <span style={{ display: 'block', fontSize: 13, color: '#334155', marginTop: 2 }}>
-            {n} {n === 1 ? 'conta' : 'contas'} · {fmt(total)} · entram no total no dia
+            {n} {n === 1 ? 'conta' : 'contas'} · {fmt(total)} · entram no total ao conferir
           </span>
         </span>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#1a56db', whiteSpace: 'nowrap' }}>
@@ -66,13 +69,14 @@ export function BlocoProgramadas({ programadas, categorias, onAbrir }: {
                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', minHeight: 52, cursor: 'pointer',
                 borderTop: idx === 0 ? 'none' : '1px solid #eef2f8',
               }}>
+                <BolinhaConferido marcado={false} onToggle={() => onConferir(l)} tamanho={28} />
                 <IconeRedondo icone={cv.icone} cor={cv.cor} tamanho={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: COR.texto, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {lancLabel(l)}
                   </div>
                   <div style={{ fontSize: 12, color: COR.textoSuave, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
-                    programada para {String(l.diaCompra).padStart(2, '0')}/{String((l.mesCompra ?? 0) + 1).padStart(2, '0')}
+                    no dia {String(l.diaCompra).padStart(2, '0')}/{String((l.mesCompra ?? 0) + 1).padStart(2, '0')}
                   </div>
                 </div>
                 <EtiquetaTipo l={l} categorias={categorias} />

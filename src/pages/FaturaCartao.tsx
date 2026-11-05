@@ -102,8 +102,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   const eMesAtual     = purchaseMes === mesHoje && purchaseAno === anoHoje
   const key           = mesKey(contaId, purchaseAno, purchaseMes)
   const mesDadosReal  = dados[key] ?? DADOS_MES_VAZIO
-  // Fixas programadas (data da compra depois de hoje) ficam fora da lista e
-  // dos totais, num bloco à parte (utils/fixaNoCartao, 05/11/2026).
+  // Fixas lançadas sozinhas e ainda não conferidas ficam fora da lista e dos
+  // totais, num bloco à parte (utils/fixaNoCartao, 05/11/2026).
   const { visivel: mesDados, programadas } = useMemo(
     () => separarProgramadas<Lancamento, DadosMes>(mesDadosReal), [mesDadosReal])
 

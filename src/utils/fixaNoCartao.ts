@@ -138,25 +138,22 @@ export function avisoFixaSemDia(l: { fixaId?: string }, categorias: Categoria[])
 }
 
 /**
- * Lançamentos fixos PROGRAMADOS (05/11/2026, pedido do Guilherme: "não devem
- * somar no lançado no Compass, e devem aparecer como futuro"). A fixa lançada
- * sozinha com a data da compra depois de hoje fica fora da lista e dos totais
- * da fatura (lançado, conferido), num bloco à parte; no dia, entra como
- * qualquer compra. Só a TELA da fatura separa: o lançamento segue gravado e a
- * previsão não muda (ela já conta `plano − o que está nas faturas`).
+ * Lançamentos fixos PROGRAMADOS (05/11/2026, pedidos do Guilherme: "não devem
+ * somar no lançado no Compass" e "somente devem somar quando forem
+ * conferidas, porque no extrato real elas ainda não aparecem; mesmo com dia").
+ * A fixa lançada sozinha (`fixaId`) e ainda SEM a bolinha de conferida fica
+ * fora da lista e dos totais da fatura (lançado, conferido), num bloco à
+ * parte; conferida, entra como qualquer compra. Só a TELA separa: o
+ * lançamento segue gravado e a previsão não muda (ela já conta
+ * `plano − o que está nas faturas`).
  */
-export function ehFixaProgramada(
-  l: { fixaId?: string; diaCompra?: number; mesCompra?: number; anoCompra?: number },
-  hoje: Date = new Date(),
-): boolean {
-  if (!l.fixaId || l.diaCompra == null || l.mesCompra == null || l.anoCompra == null) return false
-  const data = l.anoCompra * 10000 + l.mesCompra * 100 + l.diaCompra
-  return data > hoje.getFullYear() * 10000 + hoje.getMonth() * 100 + hoje.getDate()
+export function ehFixaProgramada(l: { id: string; fixaId?: string }, conferidos?: Record<string, boolean>): boolean {
+  return !!l.fixaId && conferidos?.[l.id] !== true
 }
 
-/** O mês da fatura sem as fixas programadas, e a lista delas. */
-export function separarProgramadas<L extends { fixaId?: string; diaCompra?: number; mesCompra?: number; anoCompra?: number }, T extends { lancamentos: Record<number, L[] | undefined> }>(
-  dm: T, hoje: Date = new Date(),
+/** O mês da fatura sem as fixas programadas, e a lista delas (por data da compra). */
+export function separarProgramadas<L extends { id: string; fixaId?: string; diaCompra?: number; mesCompra?: number; anoCompra?: number }, T extends { lancamentos: Record<number, L[] | undefined>; conferidos?: Record<string, boolean> }>(
+  dm: T,
 ): { visivel: T; programadas: { dia: number; l: L }[] } {
   const programadas: { dia: number; l: L }[] = []
   let mudou = false
@@ -165,13 +162,13 @@ export function separarProgramadas<L extends { fixaId?: string; diaCompra?: numb
     const dia = Number(k)
     const fica: L[] = []
     for (const l of lista ?? []) {
-      if (ehFixaProgramada(l, hoje)) { programadas.push({ dia, l }); mudou = true }
+      if (ehFixaProgramada(l, dm.conferidos)) { programadas.push({ dia, l }); mudou = true }
       else fica.push(l)
     }
     lancamentos[dia] = fica
   }
-  programadas.sort((a, b) =>
-    (a.l.anoCompra! * 10000 + a.l.mesCompra! * 100 + a.l.diaCompra!) - (b.l.anoCompra! * 10000 + b.l.mesCompra! * 100 + b.l.diaCompra!))
+  const data = (x: { dia: number; l: L }) => (x.l.anoCompra ?? 0) * 10000 + (x.l.mesCompra ?? 0) * 100 + (x.l.diaCompra ?? x.dia)
+  programadas.sort((a, b) => data(a) - data(b))
   return { visivel: mudou ? { ...dm, lancamentos } : dm, programadas }
 }
 

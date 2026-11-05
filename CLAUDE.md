@@ -144,16 +144,17 @@ categoria (só o administrador). Fatura passada não se mexe. Nenhum número da
 previsão muda: ela já contava `plano − o que está nas faturas`. Regras em
 [`fixaNoCartao.ts`](src/utils/fixaNoCartao.ts), `LancarFixasNoCartao` no
 AppShell; `prova113` (16).
-**Fixa de cartão com data que não chegou é PROGRAMADA** (05/11/2026,
-Guilherme: "não devem somar no lançado no Compass, e devem aparecer como
-futuro"). Na tela da fatura (computador e celular), a fixa lançada sozinha
-com data da compra depois de hoje sai da lista, do "Lançado no Compass" e da
-conferência, e fica no acordeão fechado "Lançamentos fixos programados" no
-topo (desenho do "Lançamentos futuros" do Banco); no dia, entra como
-qualquer compra. Só a tela separa (`separarProgramadas`): o lançamento segue
-gravado e a previsão não muda. No mesmo dia, cada compra da fatura ganhou a
-etiqueta **Fixa** / **Variável** pelo cadastro (`fixaOuVariavel`; sem
-cadastro ou ambígua, nada). `FcProgramadas.tsx`; `prova114` (17).
+**Fixa lançada sozinha só soma depois de CONFERIDA** (05/11/2026,
+Guilherme: "somente devem somar quando forem conferidas, porque no extrato
+real elas ainda não aparecem; mesmo com dia"). Na tela da fatura
+(computador e celular), a fixa com `fixaId` e sem a bolinha sai da lista, do
+"Lançado no Compass" e da conferência, e fica no acordeão fechado
+"Lançamentos fixos programados" no topo (desenho do "Lançamentos futuros" do
+Banco), com a bolinha para conferir; conferida, entra como qualquer compra.
+Só a tela separa (`separarProgramadas`): o lançamento segue gravado e a
+previsão não muda. No mesmo dia, cada compra da fatura ganhou a etiqueta
+**Fixa** / **Variável** pelo cadastro (`fixaOuVariavel`; sem cadastro ou
+ambígua, nada). `FcProgramadas.tsx`; `prova114` (16).
 **Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
 decisão do Guilherme: "débito automático pode já ser confirmada, e pegamos a
 diferença no valor da conta na tela inicial"). Revê o parágrafo acima só

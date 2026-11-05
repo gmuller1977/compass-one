@@ -53,7 +53,7 @@ export default function FcDesktopLeft({
           tudo à vista para conferir contra a fatura do banco). */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
         <BlocoProgramadas programadas={programadas} categorias={categorias}
-          onAbrir={(dia, l) => { editarLancamento(dia, l); setDiaSel(dia) }} />
+          onAbrir={(dia, l) => { editarLancamento(dia, l); setDiaSel(dia) }} onConferir={conferir} />
         {(() => {
           const itens: Array<{ dia: number; dc: number; mc: number; ac: number; l: Lancamento }> = []
           for (let d = 1; d <= totalDias; d++) {
