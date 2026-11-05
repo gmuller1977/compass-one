@@ -19,6 +19,7 @@ import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
 import { textoQtdCompras, estaConferido, alternarConferido, type LadoCompass, type LadoBanco } from '../../utils/conferirFatura'
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
+import { BlocoProgramadas, EtiquetaTipo } from './FcProgramadas'
 
 /** As duas caixas lado a lado do topo da fatura: o translúcido da caixa do
  *  saldo final da Início. Branco 9,5 · rótulo a 75% 6,1 · #86efac 7,0 no
@@ -92,6 +93,8 @@ type Props = {
   diaVencimentoBase: number
   mesDados: DadosMes
   totalDias: number
+  /** Fixas programadas (data depois de hoje), fora da lista e do total. */
+  programadas: { dia: number; l: Lancamento }[]
   purchaseMes: number
   purchaseAno: number
   faturaStatus: 'paga' | 'fechada' | 'aberta'
@@ -139,7 +142,7 @@ export default function FcMobileView({
   editandoId, editandoDiaOriginal, avisoParcelas,
   diaSel, setDiaSel,
   diaFechamento, diaVencimento, diaFechamentoBase, diaVencimentoBase,
-  mesDados, totalDias, purchaseMes, purchaseAno,
+  mesDados, totalDias, programadas, purchaseMes, purchaseAno,
   faturaStatus, totalPrevisto, grandTotalFaturas, totalFatura,
   mesVenc, anoVenc,
   categorias, categoriasCartao,
@@ -628,6 +631,8 @@ export default function FcMobileView({
       {/* EXTRATO VIEW: lista única, a compra mais recente no topo */}
       {mobileView === 'extrato' && (
         <div style={{padding:'16px 16px 140px',display:'flex',flexDirection:'column',gap:16}}>
+          <BlocoProgramadas programadas={programadas} categorias={categorias}
+            onAbrir={(dia, l) => { editarLancamento(dia, l); setMobileView('form') }} />
           {/* O botão grande "Nova compra" saiu (29/10/2026, pedido do Guilherme:
               "para ganhar espaço"). Lança-se pelo "+" de cada dia, em destaque,
               e HOJE aparece sempre na fatura que recebe a compra de hoje, mesmo
@@ -731,6 +736,7 @@ export default function FcMobileView({
                           {legenda}
                         </div>
                       </div>
+                      <EtiquetaTipo l={l} categorias={categorias} />
                       {/* Na fatura, 'entrada' é COMPRA (dívida) e 'saida' é estorno. */}
                       <div style={{fontSize:M.corpo,fontWeight:700,whiteSpace:'nowrap' as const,flexShrink:0,
                         fontVariantNumeric:'tabular-nums',color:l.tipo==='entrada'?'#b91c1c':'#15803d'}}>

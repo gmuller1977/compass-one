@@ -12,6 +12,7 @@ import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/c
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
+import { BlocoProgramadas, EtiquetaTipo } from './FcProgramadas'
 
 type Props = {
   mesDados: DadosMes
@@ -22,6 +23,8 @@ type Props = {
   editandoId: string | null
   categorias: Categoria[]
   editarLancamento: (dia: number, l: Lancamento) => void
+  /** Fixas programadas (data depois de hoje), fora da lista e do total. */
+  programadas: { dia: number; l: Lancamento }[]
   /** Compra nova já com a data do dia (o "+" do título do dia). */
   novaNoDia: (dc: number, mc: number, ac: number) => void
   excluir: (dia: number, id: string) => void
@@ -33,7 +36,7 @@ export default function FcDesktopLeft({
   mesDados, totalDias, purchaseMes, purchaseAno,
   diaFechamento,
   editandoId, categorias,
-  editarLancamento, novaNoDia, excluir, setDiaSel, updateMes,
+  editarLancamento, programadas, novaNoDia, excluir, setDiaSel, updateMes,
 }: Props) {
   const { toast } = useToast()
   // Fixa lançada sozinha sem dia cadastrado: avisa ao conferir (utils/fixaNoCartao).
@@ -49,6 +52,8 @@ export default function FcDesktopLeft({
       {/* Por data da compra, a mais recente no topo, agrupada por dia (sem acordeão:
           tudo à vista para conferir contra a fatura do banco). */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
+        <BlocoProgramadas programadas={programadas} categorias={categorias}
+          onAbrir={(dia, l) => { editarLancamento(dia, l); setDiaSel(dia) }} />
         {(() => {
           const itens: Array<{ dia: number; dc: number; mc: number; ac: number; l: Lancamento }> = []
           for (let d = 1; d <= totalDias; d++) {
@@ -64,6 +69,7 @@ export default function FcDesktopLeft({
           }
 
           if (itens.length === 0) {
+            if (programadas.length > 0) return null
             return (
               <div style={{ textAlign: 'center', color: COR.textoSuave, padding: 40, fontSize: 13 }}>
                 Nenhum lançamento nesta fatura.
@@ -147,6 +153,8 @@ export default function FcDesktopLeft({
                         overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.descricao}</div>
                     )}
                   </div>
+
+                  <EtiquetaTipo l={l} categorias={categorias} />
 
                   {posFechamento && (
                     <span title="Compra no dia do fechamento ou depois: entra na próxima fatura"

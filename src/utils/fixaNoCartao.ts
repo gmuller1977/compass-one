@@ -136,3 +136,54 @@ export function avisoFixaSemDia(l: { fixaId?: string }, categorias: Categoria[])
   if (!cat || cat.diaVencimento) return null
   return `${cat.nome} não tem dia cadastrado: entrou no dia seguinte ao fechamento. Se a data for outra, mude a data da compra e o dia fica gravado.`
 }
+
+/**
+ * Lançamentos fixos PROGRAMADOS (05/11/2026, pedido do Guilherme: "não devem
+ * somar no lançado no Compass, e devem aparecer como futuro"). A fixa lançada
+ * sozinha com a data da compra depois de hoje fica fora da lista e dos totais
+ * da fatura (lançado, conferido), num bloco à parte; no dia, entra como
+ * qualquer compra. Só a TELA da fatura separa: o lançamento segue gravado e a
+ * previsão não muda (ela já conta `plano − o que está nas faturas`).
+ */
+export function ehFixaProgramada(
+  l: { fixaId?: string; diaCompra?: number; mesCompra?: number; anoCompra?: number },
+  hoje: Date = new Date(),
+): boolean {
+  if (!l.fixaId || l.diaCompra == null || l.mesCompra == null || l.anoCompra == null) return false
+  const data = l.anoCompra * 10000 + l.mesCompra * 100 + l.diaCompra
+  return data > hoje.getFullYear() * 10000 + hoje.getMonth() * 100 + hoje.getDate()
+}
+
+/** O mês da fatura sem as fixas programadas, e a lista delas. */
+export function separarProgramadas<L extends { fixaId?: string; diaCompra?: number; mesCompra?: number; anoCompra?: number }, T extends { lancamentos: Record<number, L[] | undefined> }>(
+  dm: T, hoje: Date = new Date(),
+): { visivel: T; programadas: { dia: number; l: L }[] } {
+  const programadas: { dia: number; l: L }[] = []
+  let mudou = false
+  const lancamentos: Record<number, L[]> = {}
+  for (const [k, lista] of Object.entries(dm.lancamentos ?? {})) {
+    const dia = Number(k)
+    const fica: L[] = []
+    for (const l of lista ?? []) {
+      if (ehFixaProgramada(l, hoje)) { programadas.push({ dia, l }); mudou = true }
+      else fica.push(l)
+    }
+    lancamentos[dia] = fica
+  }
+  programadas.sort((a, b) =>
+    (a.l.anoCompra! * 10000 + a.l.mesCompra! * 100 + a.l.diaCompra!) - (b.l.anoCompra! * 10000 + b.l.mesCompra! * 100 + b.l.diaCompra!))
+  return { visivel: mudou ? { ...dm, lancamentos } : dm, programadas }
+}
+
+/** "Fixa" ou "Variável", pelo cadastro da categoria (a etiqueta da compra). */
+export function fixaOuVariavel(
+  l: { fixaId?: string; categoria: string; subCategoria?: string },
+  categorias: Categoria[],
+): 'Fixa' | 'Variável' | null {
+  if (l.fixaId) return 'Fixa'
+  const variante = (l.subCategoria ?? '').trim()
+  const mesmas = categorias.filter(c => c.nome === l.categoria)
+  const cat = mesmas.find(c => (c.descricao ?? '').trim() === variante) ?? (mesmas.length === 1 ? mesmas[0] : undefined)
+  if (!cat) return null
+  return cat.fixa ? 'Fixa' : 'Variável'
+}

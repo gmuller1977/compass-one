@@ -21,6 +21,7 @@ import { useLarguraMenorQue } from '../utils/larguraTela'
 import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
 import { pedeValorDaFatura, momentoDePerguntar, type MomentoDaFatura } from '../utils/pedirValorDaFatura'
 import { faturaLadoALado, resumoConferidos } from '../utils/conferirFatura'
+import { separarProgramadas } from '../utils/fixaNoCartao'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -100,7 +101,11 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   const totalDias     = diasNoMes(purchaseMes, purchaseAno)
   const eMesAtual     = purchaseMes === mesHoje && purchaseAno === anoHoje
   const key           = mesKey(contaId, purchaseAno, purchaseMes)
-  const mesDados      = dados[key] ?? DADOS_MES_VAZIO
+  const mesDadosReal  = dados[key] ?? DADOS_MES_VAZIO
+  // Fixas programadas (data da compra depois de hoje) ficam fora da lista e
+  // dos totais, num bloco à parte (utils/fixaNoCartao, 05/11/2026).
+  const { visivel: mesDados, programadas } = useMemo(
+    () => separarProgramadas<Lancamento, DadosMes>(mesDadosReal), [mesDadosReal])
 
   const diaFechamento = mesDados.fechamentoOverride ?? diaFechamentoBase
   const diaVencimento = mesDados.vencimentoOverride ?? diaVencimentoBase
@@ -298,14 +303,13 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   }
 
   const { totalEntradas, totalSaidas } = useMemo(() => {
-    const dadosMesAtual = dados[key]
-    const lancs = (dadosMesAtual ?? DADOS_MES_VAZIO).lancamentos
+    const lancs = mesDados.lancamentos
     let te=0, ts=0
     for (let d=1; d<=totalDias; d++) {
       ;(lancs[d]??[]).forEach(l=>{ l.tipo==='entrada'?te+=l.valor:ts+=l.valor })
     }
     return { totalEntradas:te, totalSaidas:ts }
-  }, [dados, key, totalDias])
+  }, [mesDados, totalDias])
 
   const totalFatura  = totalEntradas - totalSaidas
   const faturaExtNum = parseBRL(mesDados.faturaAtual ?? '')
@@ -376,7 +380,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   // Editando a parcela k de N (k < N): avisa que um valor novo vale também
   // para as seguintes, a regra de lancar() (22/10/2026).
   const parcelaEditada = editandoId && editandoDiaOriginal !== null
-    ? (mesDados.lancamentos[editandoDiaOriginal] ?? []).find(l => l.id === editandoId)
+    ? (mesDadosReal.lancamentos[editandoDiaOriginal] ?? []).find(l => l.id === editandoId)
     : undefined
   const avisoParcelas = parcelaEditada?.parcelas && (parcelaEditada.parcelaAtual ?? 1) < parcelaEditada.parcelas
     ? ((parcelaEditada.parcelaAtual ?? 1) + 1 === parcelaEditada.parcelas
@@ -686,7 +690,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
         diaSel={diaSel} setDiaSel={setDiaSel}
         diaFechamento={diaFechamento} diaVencimento={diaVencimento}
         diaFechamentoBase={diaFechamentoBase} diaVencimentoBase={diaVencimentoBase}
-        mesDados={mesDados} totalDias={totalDias}
+        mesDados={mesDados} totalDias={totalDias} programadas={programadas}
         purchaseMes={purchaseMes} purchaseAno={purchaseAno}
         faturaStatus={faturaStatus as 'paga' | 'fechada' | 'aberta'}
         totalPrevisto={totalPrevisto} grandTotalFaturas={grandTotalFaturas}
@@ -755,6 +759,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
           editandoId={editandoId}
           categorias={categorias}
           editarLancamento={editarLancamento}
+          programadas={programadas}
           novaNoDia={novaCompraNoDia}
           excluir={excluir}
           setDiaSel={setDiaSel}
