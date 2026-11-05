@@ -11,6 +11,7 @@ import { BolinhaConferido } from './FcConferir'
 import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
+import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
 
 type Props = {
   mesDados: DadosMes
@@ -21,6 +22,8 @@ type Props = {
   editandoId: string | null
   categorias: Categoria[]
   editarLancamento: (dia: number, l: Lancamento) => void
+  /** Compra nova já com a data do dia (o "+" do título do dia). */
+  novaNoDia: (dc: number, mc: number, ac: number) => void
   excluir: (dia: number, id: string) => void
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
@@ -30,7 +33,7 @@ export default function FcDesktopLeft({
   mesDados, totalDias, purchaseMes, purchaseAno,
   diaFechamento,
   editandoId, categorias,
-  editarLancamento, excluir, setDiaSel, updateMes,
+  editarLancamento, novaNoDia, excluir, setDiaSel, updateMes,
 }: Props) {
   const { toast } = useToast()
   // Fixa lançada sozinha sem dia cadastrado: avisa ao conferir (utils/fixaNoCartao).
@@ -95,6 +98,8 @@ export default function FcDesktopLeft({
                 <span style={{ fontSize: 13, color: COR.textoSuave, fontVariantNumeric: 'tabular-nums' }}>
                   total <b style={{ color: COR.texto }}>{fmt(totalDia)}</b>
                 </span>
+                <BotaoMais rotulo={`Lançar compra em ${String(g.dc).padStart(2, '0')}/${String(g.mc + 1).padStart(2, '0')}`}
+                  onClick={() => novaNoDia(g.dc, g.mc, g.ac)} />
               </div>
             <div style={{ background: COR.branco, borderRadius: 16,
               border: '2px solid #93c5fd', overflow: 'hidden' }}>

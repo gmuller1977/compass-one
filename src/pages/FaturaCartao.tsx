@@ -271,6 +271,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     setTimeout(() => dataCompraRef.current?.focus(), 50)
   }
 
+  // "+" ao lado de um dia já lançado (05/11/2026, pedido do Guilherme, como no
+  // extrato): abre a compra nova com a data daquele dia; hoje fica vazio (= hoje).
+  function novaCompraNoDia(dc: number, mc: number, ac: number) {
+    resetarParaNovo(diaHoje)
+    if (dc === diaHoje && mc === mesHoje && ac === anoHoje) return
+    setFDataCompra(`${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${ac !== purchaseAno ? `/${ac}` : ''}`)
+    setTimeout(() => categoriaSelectRef.current?.focus(), 60)
+  }
+
   function editarLancamento(dia: number, l: Lancamento) {
     setDiaSel(dia); setEditandoId(l.id); setEditandoDiaOriginal(dia)
     setFTipo(l.tipo); setFCat(l.categoria.trim()); setFDesc(l.descricao); setFVariante((l.subCategoria ?? '').trim())
@@ -746,6 +755,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
           editandoId={editandoId}
           categorias={categorias}
           editarLancamento={editarLancamento}
+          novaNoDia={novaCompraNoDia}
           excluir={excluir}
           setDiaSel={setDiaSel}
           updateMes={updateMes}
