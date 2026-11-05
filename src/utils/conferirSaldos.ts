@@ -121,6 +121,8 @@ export type SaldoDoBanco = {
   diasSemConferir: number | null
   /** Ficou `DIAS_PARA_AVISAR` dias ou mais sem conferir, e não pede hoje por movimento. */
   aviso: boolean
+  /** Conferida HOJE com "Confere" (sem valor digitado): a Início oferece "Desfazer". */
+  conferidaHoje: boolean
   /** Contas desta conta que venceram e ninguém marcou: ver `naoMarcadasDaConta`. */
   naoMarcadas: NaoMarcada[]
 }
@@ -191,6 +193,7 @@ export function saldosDosBancos(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
         conta, calculado, informado,
         diferenca: informado === null ? 0 : informado - calculado,
         pendente,
+        conferidaHoje: dm?.saldoBancoData === hojeStr && informado === null,
         diasSemConferir,
         aviso: !pendente && diasSemConferir !== null && diasSemConferir >= DIAS_PARA_AVISAR,
         naoMarcadas: naoMarcadasDaConta(conta.id, deps, hoje),
@@ -213,7 +216,31 @@ export function saldosAConferir(deps: Deps, hoje = new Date()): SaldoDoBanco[] {
  * calculado, que é o número que a pessoa acabou de conferir.
  */
 export function marcarConferido(dm: DadosMes, hoje: Date): DadosMes {
-  return { ...dm, saldoBanco: '', saldoBancoInformado: false, saldoBancoData: dataDeHoje(hoje) }
+  const conferenciaAnterior = {
+    saldoBanco: dm.saldoBanco ?? '',
+    ...(dm.saldoBancoInformado !== undefined ? { saldoBancoInformado: dm.saldoBancoInformado } : {}),
+    ...(dm.saldoBancoData ? { saldoBancoData: dm.saldoBancoData } : {}),
+  }
+  return { ...dm, saldoBanco: '', saldoBancoInformado: false, saldoBancoData: dataDeHoje(hoje), conferenciaAnterior }
+}
+
+/**
+ * "Desfazer" o "Confere" tocado por engano (05/11/2026, relatado pelo
+ * Guilherme). Volta o saldo como estava antes do toque: a data da conferência
+ * anterior e o saldo informado, se havia. Conferência gravada antes desta
+ * regra não tem o "antes": aí só a data deste mês sai, e a conta volta a
+ * pedir conferência (vale a última de outro mês ou o saldo do cadastro).
+ */
+export function desfazerConferencia(dm: DadosMes): DadosMes {
+  const { conferenciaAnterior: antes, saldoBancoData: _data, saldoBancoInformado: _inf, ...resto } = dm
+  void _data; void _inf
+  if (!antes) return { ...resto, saldoBanco: '' }
+  return {
+    ...resto,
+    saldoBanco: antes.saldoBanco,
+    ...(antes.saldoBancoInformado !== undefined ? { saldoBancoInformado: antes.saldoBancoInformado } : {}),
+    ...(antes.saldoBancoData ? { saldoBancoData: antes.saldoBancoData } : {}),
+  }
 }
 
 /** Outro valor: o saldo do banco, com a data — o que a caixa de Lançamentos grava. */

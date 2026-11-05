@@ -104,6 +104,11 @@ export type DadosMes = {
   saldoBancoData?: string
   /** Zero ou negativo em `saldoBanco` foi informado de verdade (utils/saldoInformado). */
   saldoBancoInformado?: boolean
+  /**
+   * Como o saldo estava antes do último "Confere" da Início, para o
+   * "Desfazer" (05/11/2026, utils/conferirSaldos: desfazerConferencia).
+   */
+  conferenciaAnterior?: { saldoBanco: string; saldoBancoInformado?: boolean; saldoBancoData?: string }
   fixasConsolidadas?: Record<string, boolean>
   /** Débito automático conferido na Início (utils/debitoAutomatico). */
   debitosConferidos?: Record<string, boolean>

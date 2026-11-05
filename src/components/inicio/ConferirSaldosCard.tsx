@@ -5,7 +5,7 @@ import { Cartao, Etiqueta, Linha, Pilula, TituloCartao } from '../mobile/ui'
 import { M, fmt, mostrar } from '../mobile/estilo'
 import { COR } from '../../utils/cores'
 import { mascaraCentavos, parseValor, trocarSinal } from '../../utils/moeda'
-import { CARTEIRA, chaveDoMes, informarSaldo, marcarConferido, saldosDosBancos, type SaldoDoBanco } from '../../utils/conferirSaldos'
+import { CARTEIRA, chaveDoMes, desfazerConferencia, informarSaldo, marcarConferido, saldosDosBancos, type SaldoDoBanco } from '../../utils/conferirSaldos'
 import type { Deps } from '../../utils/saldoConta'
 
 /**
@@ -27,6 +27,8 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
   // "Está diferente" numa conta com contas vencidas e não marcadas: antes do
   // campo, a lista do que pode explicar a diferença (conferirSaldos.ts).
   const [explicando, setExplicando] = useState<string | null>(null)
+  // Tocou no "✓ confere" de hoje: a linha pergunta se é para desfazer.
+  const [desfazendo, setDesfazendo] = useState<string | null>(null)
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
 
@@ -42,6 +44,11 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
   const vazio = { lancamentos: {}, saldoBanco: '' }
   const confere = (contaId: string) =>
     updateExtratoMes(chaveDoMes(contaId, ano, mes), prev => marcarConferido(prev ?? vazio, hoje))
+
+  const desfazer = (contaId: string) => {
+    updateExtratoMes(chaveDoMes(contaId, ano, mes), prev => desfazerConferencia(prev ?? vazio))
+    setDesfazendo(null)
+  }
 
   const salvar = (contaId: string) => {
     const n = parseValor(texto)
@@ -84,8 +91,21 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
               legenda={temDif && !pede
                 ? <>No banco: <b style={{ color: COR.texto }}>{mostrar(s.informado!, oculto)}</b><br />No app: {mostrar(s.calculado, oculto)}</>
                 : <>No app: <b style={{ color: s.calculado < 0 ? COR.erroTexto : COR.texto }}>{mostrar(s.calculado, oculto)}</b></>}
-              direita={!pede && !aberto && !temDif &&
-                <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>} />
+              direita={!pede && !aberto && !temDif && (s.conferidaHoje
+                // Conferida hoje: tocar no selo oferece desfazer (05/11/2026, toque por engano).
+                ? <button type="button" aria-label={`Desfazer a conferência de ${nome}`} title="Tocou por engano? Desfazer"
+                    onClick={() => setDesfazendo(desfazendo === s.conta.id ? null : s.conta.id)} style={seloBotao}>
+                    <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>
+                  </button>
+                : <Etiqueta cor={COR.sucessoTexto} fundo={COR.sucessoFundo}>✓ confere</Etiqueta>)} />
+
+            {desfazendo === s.conta.id && !pede && !aberto && !temDif && s.conferidaHoje && (
+              <div style={{ ...botoes, alignItems: 'center' }}>
+                <span style={{ fontSize: M.legenda, color: COR.textoSuave }}>Tocou por engano?</span>
+                <Pilula forte onClick={() => desfazer(s.conta.id)}>Desfazer</Pilula>
+                <button type="button" onClick={() => setDesfazendo(null)} style={link}>Cancelar</button>
+              </div>
+            )}
 
             {s.aviso && !aberto && !explicar && (
               <div style={{ padding: '0 0 8px 56px' }}>
@@ -163,6 +183,12 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
       })}
     </Cartao>
   )
+}
+
+// O selo "✓ confere" vira botão (toque de 44 px), sem mudar o desenho.
+const seloBotao: CSSProperties = {
+  border: 'none', background: 'none', padding: 0, minHeight: 44, display: 'inline-flex', alignItems: 'center',
+  cursor: 'pointer', fontFamily: 'inherit',
 }
 
 const botoes: CSSProperties = { display: 'flex', gap: 8, padding: '0 0 12px 56px', flexWrap: 'wrap' }

@@ -439,6 +439,12 @@ e o "No banco" ficou em 580,76 ("sobram 579,23"), com o Radar somando o
 valor velho no saldo atual. Hoje `marcarConferido` grava a data e limpa
 `saldoBanco`; pedindo conferência, a linha mostra só o "No app"; e a linha
 com diferença ganhou "Já confere". `prova92` (6).
+**"Confere" se desfaz** (05/11/2026, relatado pelo Guilherme: tocou por
+engano). No dia da conferência, tocar no "✓ confere" mostra "Tocou por
+engano? Desfazer" (computador e celular, o mesmo cartão). `marcarConferido`
+guarda em `conferenciaAnterior` a data e o saldo informado de antes, e
+`desfazerConferencia` os devolve; conferência gravada antes disso só perde a
+data do mês e a conta volta a pedir conferência. `prova111` (5).
 **Conferido na Início aparece em Lançamentos** (27/10/2026, relatado pelo
 Guilherme: "✓ confere" na Início e "Informar saldo ✎" em Lançamentos >
 Banco). Sem informado e com `saldoBancoData` no mês, o cartão "No [banco]" /
