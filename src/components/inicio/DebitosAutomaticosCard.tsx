@@ -12,8 +12,9 @@ import type { Deps } from '../../utils/saldoConta'
  * "Débito automático" (18/10/2026, pedido do Guilherme; foi "Automáticos do
  * mês" de 18 a 20/10, quando ele pediu o nome de volta), ao lado de
  * "Confira seus saldos" na Início do computador e embaixo dele na Bússola.
- * O app confirma o débito sozinho no vencimento; aqui a pessoa confere no
- * extrato do banco se saiu e no valor certo. Regras em utils/debitoAutomatico.ts.
+ * Desde 05/11/2026 nada se marca sozinho: vencido, o automático fica "A
+ * conferir"; tocar na bolinha marca aqui e em Lançamentos, e o que foi
+ * marcado em Lançamentos já aparece conferido. Regras em utils/debitoAutomatico.ts.
  */
 export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; oculto: boolean }) {
   const { updateExtratoMes } = useApp()
@@ -61,7 +62,7 @@ export default function DebitosAutomaticosCard({ deps, oculto }: { deps: Deps; o
       </TituloCartao>
       {pendentes > 0 && (
         <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: -4, marginBottom: 6, lineHeight: 1.45 }}>
-          {temEntrada ? 'Já marcamos o que entrou e saiu sozinho.' : 'Já marcamos como pagos.'} Viu no extrato? Toque na bolinha. Valor diferente: toque na linha.
+          Viu no extrato do banco? Toque na bolinha: {temEntrada ? 'marca como recebido ou pago' : 'marca como pago'} aqui e em Lançamentos. Valor diferente: toque na linha.
         </div>
       )}
       {debitos.length === 0 && (

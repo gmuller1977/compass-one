@@ -122,7 +122,7 @@ export default function Dashboard() {
 
   // Contas dos próximos 7 dias: as linhas de fixa e fatura da memória de
   // cálculo, filtradas pelo vencimento. Ver utils/contasAVencer.
-  const aVencer = useMemo(() => (ehMesCorrente ? contasParaPagar(contasAVencer(deps), categorias, deps.contas) : []), [ehMesCorrente, deps, categorias])
+  const aVencer = useMemo(() => (ehMesCorrente ? contasParaPagar(contasAVencer(deps), categorias, deps.contas, deps.extratoData) : []), [ehMesCorrente, deps, categorias])
 
   // Já lançado acima do plano dos próximos meses (parcelas, quase sempre).
   // Só olhando o mês corrente: é um aviso sobre o que vem pela frente.

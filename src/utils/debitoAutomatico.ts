@@ -6,6 +6,15 @@ import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
 import { valorFixaNoMes } from './valorFixa'
 
 /**
+ * ATENÇÃO, 05/11/2026 (pedido do Guilherme): o automático NÃO se confirma
+ * mais sozinho. "Deve vir desmarcado na Início e em Lançamentos. Ao conferir
+ * na Início, marcar os dois. Se foi feito no Lançamento, faz a conferência na
+ * Início." Vencido e sem marca, ele fica "A conferir" no quadro; tocar na
+ * bolinha grava `fixasConsolidadas` (a bolinha de Lançamentos) pelo
+ * `confirmarPagamento`; marcado em Lançamentos já aparece conferido. O
+ * `ConfirmarDebitoAutomatico` não chama mais `debitosParaConfirmar`, que fica
+ * só como a lista do que venceu e não foi marcado. O texto abaixo é histórico.
+ *
  * Conta em DÉBITO AUTOMÁTICO se confirma sozinha no dia do vencimento
  * (18/10/2026, decisão do Guilherme: "débito automático pode já ser
  * confirmada, e pegamos a diferença no valor da conta na tela inicial").
@@ -275,23 +284,25 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
     const previsto = valorFixaNoMes(cat, deps.planos[ano], mes, deps.categorias)
     // Agendado: ativo e com valor no plano, como nas contas a vencer.
     const agendado = dia > hoje.getDate() && !paga && !naoSaiu
-    if (agendado ? !cat.ativa || (override ?? previsto) <= 0 : !paga && !naoSaiu) continue
+    // Sem marca (agendado ou vencido a conferir): ativo e com valor no plano.
+    if (!paga && !naoSaiu && (!cat.ativa || (override ?? previsto) <= 0)) continue
     out.push({
       id: cat.id, nome: cat.descricao ? `${cat.nome} · ${cat.descricao}` : cat.nome,
       contaId, chave, dia, previsto,
       valor: override ?? previsto,
       naoSaiu, agendado, entrada,
-      conferido: dm?.debitosConferidos?.[cat.id] === true,
+      // Marcado (aqui ou em Lançamentos) é conferido; "Não saiu" também já foi visto.
+      conferido: paga || naoSaiu,
     })
   }
   for (const f of faturasAutomaticas(deps, hoje)) {
     const paga = f.marcada === true, naoSaiu = f.marcada === false
     const agendado = f.dia > hoje.getDate() && !paga && !naoSaiu
-    if (agendado ? f.valor <= 0.005 : !paga && !naoSaiu) continue
+    if (!paga && !naoSaiu && f.valor <= 0.005) continue
     out.push({
       id: f.id, nome: f.nome, contaId: f.chave.slice(0, -fim.length), chave: f.chave, dia: f.dia,
       previsto: f.previsto, valor: f.valor, naoSaiu, agendado, entrada: false,
-      conferido: deps.extratoData[f.chave]?.debitosConferidos?.[f.id] === true,
+      conferido: paga || naoSaiu,
     })
   }
   return out.sort((a, b) => a.dia - b.dia || a.nome.localeCompare(b.nome, 'pt-BR'))
@@ -300,9 +311,10 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
 const comConferido = (dm: DadosMes, id: string): DadosMes =>
   ({ ...dm, debitosConferidos: { ...dm.debitosConferidos, [id]: true } })
 
-/** "Confere": saiu no valor que o app mostra. */
+/** "Confere": saiu no valor que o app mostra. Marca a bolinha de Lançamentos junto. */
 export function debitoConfere(dm: DadosMes, d: DebitoDoMes): DadosMes {
-  return comConferido(dm, d.id)
+  const pago = dm.fixasConsolidadas?.[d.id] === true ? dm : confirmarPagamento(dm, d.id, d.valor, d.previsto)
+  return comConferido(pago, d.id)
 }
 
 /** Saiu com outro valor: o valor real, como Lançamentos grava. */
@@ -317,11 +329,9 @@ export function debitoComOutroValor(dm: DadosMes, d: DebitoDoMes, valor: number)
   return comConferido(pago, d.id)
 }
 
-/** Tirar o "confere" (a bolinha de novo vazia): nenhum número muda. */
+/** Tirar o "confere": a bolinha fica vazia aqui e em Lançamentos (o valor digitado fica). */
 export function debitoDesconferir(dm: DadosMes, d: DebitoDoMes): DadosMes {
-  const resto = { ...dm.debitosConferidos }
-  delete resto[d.id]
-  return { ...dm, debitosConferidos: resto }
+  return tirarPagamento(dm, d.id)
 }
 
 /** Depois de um "Não saiu": saiu, sim, no valor previsto. */

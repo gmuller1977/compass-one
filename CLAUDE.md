@@ -120,6 +120,16 @@ uma fixa de R$ 25,00 nunca marcada aparecia como paga num lado e não no outro,
 e o saldo divergia do extrato. Débito automático falha, muda de valor e é
 cancelado; presumir esconde isso. Decidido em 31/08/2026.
 
+**O automático NÃO se marca mais sozinho** (05/11/2026, Guilherme: "deve vir
+desmarcado no Início e Lançamento; ao conferir no Início, marcar os dois; se
+foi feito no Lançamento, faz a conferência no Início"). Débito, recebimento
+e fatura em débito automático, vencidos e sem marca, ficam "A conferir" no
+quadro da Início (fora das contas da semana, que só os recebem com "Não
+saiu"). Tocar na bolinha grava `fixasConsolidadas` (a bolinha de
+Lançamentos) e o conferido; desfazer tira os dois (`tirarPagamento`); marcado
+em Lançamentos aparece conferido. `ConfirmarDebitoAutomatico` só arruma
+marcas (conta errada, dia futuro). Revê o parágrafo abaixo e o do
+recebimento automático: o resto deles é histórico. `prova112` (9).
 **Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
 decisão do Guilherme: "débito automático pode já ser confirmada, e pegamos a
 diferença no valor da conta na tela inicial"). Revê o parágrafo acima só

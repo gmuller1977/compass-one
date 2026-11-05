@@ -85,15 +85,28 @@ function listar(deps: Deps, hoje: Date, inicio: Date, fim: Date, comAtrasadas: b
  * pagar, como sempre. A fatura segue o cadastro do cartão (mesmo dia, pedido
  * dele): em débito automático vai para os automáticos; boleto ou PIX fica.
  * Só filtra a lista; nenhum número muda.
+ *
+ * Desde 05/11/2026 o automático NÃO se marca sozinho (ver debitoAutomatico.ts):
+ * vencido e não marcado ele fica "A conferir" no quadro do débito automático,
+ * e não aparece aqui também. Volta para cá só com "Não saiu" (marca `false`
+ * no mês, lida em `extratoData`).
  */
-export function contasParaPagar(lista: ContaAVencer[], categorias: Categoria[], contas: Conta[]): ContaAVencer[] {
+export function contasParaPagar(lista: ContaAVencer[], categorias: Categoria[], contas: Conta[],
+  extratoData?: Record<string, { fixasConsolidadas?: Record<string, boolean> } | undefined>): ContaAVencer[] {
+  const naoSaiu = (c: ContaAVencer) => {
+    const fim = `-${c.ano}-${String(c.mes + 1).padStart(2, '0')}`
+    return !extratoData || Object.entries(extratoData).some(([k, dm]) => k.endsWith(fim) && dm?.fixasConsolidadas?.[c.id] === false)
+  }
   return lista.filter(c => {
-    if (c.atrasada) return true
+    let automatica: boolean
     if (c.fatura) {
       const cartao = contas.find(x => `cartao-${x.id}` === c.id)
-      return !cartao || !faturaEhAutomatica(cartao)
+      automatica = !!cartao && faturaEhAutomatica(cartao)
+    } else {
+      const cat = categorias.find(x => x.id === c.id)
+      automatica = !!cat && ehDebitoAutomatico(cat)
     }
-    const cat = categorias.find(x => x.id === c.id)
-    return !cat || !ehDebitoAutomatico(cat)
+    if (!automatica) return true
+    return c.atrasada && naoSaiu(c)
   })
 }
