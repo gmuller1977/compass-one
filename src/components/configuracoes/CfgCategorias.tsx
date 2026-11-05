@@ -523,7 +523,7 @@ export default function CfgCategorias({
                     </div>
                   </div>
                   <div>
-                    <label style={labelSt}>Dia da cobrança no cartão</label>
+                    <label style={labelSt}>Dia de lançamento no cartão</label>
                     <input inputMode="numeric" type="number" min="1" max="31"
                       value={formCat.diaVencimento||''}
                       onChange={e => setFormCat(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
