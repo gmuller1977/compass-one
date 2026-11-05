@@ -159,11 +159,11 @@ ambígua, nada). `FcProgramadas.tsx`; `prova114` (16).
 neste mês não acontece, sem "x" nem excluir em Lançamentos). Na edição da
 fixa de banco ou dinheiro (computador e celular), o botão grava
 `fixasNaoOcorre[id]` no mês da conta e tira a marca de paga; a linha fica
-riscada ("Não ocorre em [mês] · o plano segue") e o mesmo botão vira "Voltar
+riscada ("Não vai ocorrer em [mês] · o plano segue") e o mesmo botão vira "Voltar
 a contar neste mês". Sai da cascata, da previsão (`detalharProjecaoDaConta`,
 logo do Radar, da Início e das contas a pagar) e do quadro de débito
 automático; o plano não muda. No Radar (mesmo dia, pedido dele), a linha
-mostra o plano e diz "não gastou" ("plano R$ X · não ocorre neste mês"),
+mostra o plano e diz "não vai ocorrer" ("plano R$ X neste mês"),
 e o grupo a trata como resolvida, como a fixa paga (`ForaDoMesContexto`).
 `fixaNaoOcorre` em `fixasDoMes.ts`; `prova115` (19).
 **Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
@@ -640,6 +640,10 @@ pedido do Guilherme; foi "nada gasto" / "nada recebido" por algumas horas),
 no grupo e na categoria, no computador e no celular, com "sem plano neste
 mês" embaixo. Antes era um travessão. Cor neutra e barra vazia, como antes
 (`destaqueRadar`, `SEM_MOVIMENTO`).
+Em 05/11/2026 (pedido dele) virou **"Sem planejamento"**, e a DESPESA sem
+plano com gasto diz **"Passou do plano"** (com "gastou R$ X · sem plano
+neste mês" embaixo; cor neutra, sem julgar na barra). Receita sem plano
+segue "recebeu R$ X".
 
 **O Planejamento do computador segue o modelo do Radar** (12/10/2026, pedido
 do Guilherme; dos três modelos ele quis dois juntos, "ano inteiro" e

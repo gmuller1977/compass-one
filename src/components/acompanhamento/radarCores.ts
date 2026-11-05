@@ -148,7 +148,7 @@ export function totaisJulgados(linhas: { prev: number; real: number }[]): { prev
  * ainda não paga é "a pagar" (ou "a receber"), e não "resta": ela não sobra,
  * vence.
  */
-export const SEM_MOVIMENTO = ['Sem lançamentos']
+export const SEM_MOVIMENTO = ['Sem planejamento']
 
 export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   opts: { fixa?: boolean; fixaPaga?: boolean; naoOcorre?: boolean } = {}):
@@ -157,17 +157,22 @@ export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
   // Fixa marcada "Não vai ocorrer neste mês" em Lançamentos (05/11/2026,
   // pedido do Guilherme): o plano fica à vista e a linha diz que não gastou.
   if (opts.naoOcorre && prev > 0.005 && Math.abs(real) <= 0.005)
-    return { principal: isEntrada ? 'não recebeu' : 'não gastou', contexto: `plano ${fmt(prev)} · não ocorre neste mês` }
+    return { principal: 'não vai ocorrer', contexto: `plano ${fmt(prev)} neste mês` }
   // Sem plano e sem movimento: diz isso em palavras, em vez de um travessão
   // (pedido do Guilherme, 24/10/2026). Mesma cor neutra, sem barra.
   if (prev <= 0.005 && Math.abs(real) <= 0.005)
-    return { principal: 'Sem lançamentos', contexto: 'sem plano neste mês' }
+    return { principal: 'Sem planejamento', contexto: 'sem plano neste mês' }
   // Sem plano não há o que julgar: mostra só o realizado, sem "passou" nem
   // vermelho. Decisão do Guilherme em 19/10/2026 (análise da chegada v3, C2):
   // "ele não deve julgar porque não tem plano, somente mostrar o total
   // realizado". No fim do mês, o "fechou" da Início (mesQueFechou) oferece
   // esse total como plano do mês seguinte.
-  if (semPlano(prev)) return { principal: `${isEntrada ? 'recebeu' : 'gastou'} ${fmt(real)}`, contexto: 'sem plano neste mês' }
+  // Despesa sem plano e com gasto diz "Passou do plano" (05/11/2026, pedido
+  // do Guilherme), com o gasto embaixo; sem planejamento nenhum, "Sem
+  // planejamento" (era "Sem lançamentos"). A cor segue neutra.
+  if (semPlano(prev)) return isEntrada
+    ? { principal: `recebeu ${fmt(real)}`, contexto: 'sem plano neste mês' }
+    : { principal: 'Passou do plano', contexto: `gastou ${fmt(real)} · sem plano neste mês` }
   if (isEntrada) {
     const contexto = prev > 0.005 ? `recebeu ${fmt(real)} de ${fmt(prev)}` : `recebeu ${fmt(real)} sem plano`
     if (opts.fixa && Math.abs(real) <= 0.005 && prev > 0.005) return { principal: `a receber ${fmt(prev)}`, contexto }

@@ -182,7 +182,7 @@ export default function NleExtratoMobile({
                 const emEdicao = editandoFixaId === f.id
                 const nome = ehFaturaFixa ? 'Cartão de Crédito' : `${f.nome}${f.descricao ? ` · ${f.descricao}` : ''}`
                 const naoOcorre = !!f.naoOcorre && !consolidada
-                const legenda = naoOcorre ? `Não ocorre em ${NOMES_MESES[mes].toLowerCase()} · o plano segue` : [
+                const legenda = naoOcorre ? `Não vai ocorrer em ${NOMES_MESES[mes].toLowerCase()} · o plano segue` : [
                   consolidada ? (automatico ? 'Automática ✓' : (f.tipo === 'entrada' ? 'Recebida ✓' : 'Paga ✓')) : (f.tipo === 'entrada' ? 'A receber' : 'A pagar'),
                   ehFaturaFixa ? f.categoria : f.subtitulo,
                   ROTULO_FORMA[f.formaPagamento],
@@ -196,7 +196,7 @@ export default function NleExtratoMobile({
                     {/* Dia futuro não se marca como paga (26/10/2026, regra do
                         Guilherme: "somente dia passado ou hoje"). */}
                     {naoOcorre ? (
-                      <span aria-hidden title="Não ocorre neste mês" style={{
+                      <span aria-hidden title="Não vai ocorrer neste mês" style={{
                         width: 30, height: 30, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         border: '2px solid #cbd5e1', color: '#64748b', fontSize: 15,
                       }}><i className="ti ti-ban" /></span>
