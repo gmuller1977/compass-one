@@ -348,8 +348,11 @@ export default function RadarFinanceiro() {
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
             {/* O cardápio: um cartão por grupo, receitas e depois despesas, numa
                 grade, na ordem de sempre: abrir não move cartão nenhum. */}
+            {/* stretch: na mesma linha os cartões têm a mesma altura, mesmo o
+                grupo sem lançamentos, que não tem Fixas/Variáveis (05/11/2026,
+                pedido do Guilherme). */}
             <div ref={setGrade} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16,
-              alignItems: 'start', flexShrink: 0 }}>
+              alignItems: 'stretch', flexShrink: 0 }}>
             {(() => {
               const cartoes = [
                 ...((dadosAno.entradas ?? []).length > 0
