@@ -155,6 +155,15 @@ Só a tela separa (`separarProgramadas`): o lançamento segue gravado e a
 previsão não muda. No mesmo dia, cada compra da fatura ganhou a etiqueta
 **Fixa** / **Variável** pelo cadastro (`fixaOuVariavel`; sem cadastro ou
 ambígua, nada). `FcProgramadas.tsx`; `prova114` (16).
+**"Não vai ocorrer neste mês"** (05/11/2026, Guilherme: fixa no plano que
+neste mês não acontece, sem "x" nem excluir em Lançamentos). Na edição da
+fixa de banco ou dinheiro (computador e celular), o botão grava
+`fixasNaoOcorre[id]` no mês da conta e tira a marca de paga; a linha fica
+riscada ("Não ocorre em [mês] · o plano segue") e o mesmo botão vira "Voltar
+a contar neste mês". Sai da cascata, da previsão (`detalharProjecaoDaConta`,
+logo do Radar, da Início e das contas a pagar) e do quadro de débito
+automático; o plano não muda. A linha da categoria no Radar (congelado)
+segue com o plano. `fixaNaoOcorre` em `fixasDoMes.ts`; `prova115` (13).
 **Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
 decisão do Guilherme: "débito automático pode já ser confirmada, e pegamos a
 diferença no valor da conta na tela inicial"). Revê o parágrafo acima só

@@ -75,6 +75,8 @@ export type Props = {
   setEditandoId: (v: string | null) => void
   setEditandoFixaId: (v: string | null) => void
   ehAutomatico: (f: CatFixa) => boolean
+  /** "Não vai ocorrer neste mês" / desfazer (utils/fixasDoMes). */
+  alternarNaoOcorre: (fixaId: string) => void
 }
 
 /**

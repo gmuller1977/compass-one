@@ -33,6 +33,7 @@
 type DadosMesFixas = {
   fixasConsolidadas?: Record<string, boolean>
   fixasValorOverride?: Record<string, number>
+  fixasNaoOcorre?: Record<string, boolean>
 }
 
 export type FixaResolvida = {
@@ -65,4 +66,39 @@ export function dadosBancariosDoMes<T extends DadosMesFixas>(
   return Object.entries(extratoData)
     .filter(([key]) => key.endsWith(sufixo) && !ehChaveDeCartao(key))
     .map(([, dm]) => dm)
+}
+
+/**
+ * "Não vai ocorrer neste mês" (05/11/2026, pedido do Guilherme: a fixa está
+ * no plano, mas neste mês não acontece, e ele quer tirá-la de Lançamentos sem
+ * mexer no planejamento). A marca mora no `DadosMes` da conta onde a fixa
+ * aparece (`fixasNaoOcorre[id] = true`), só naquele mês; o plano não muda.
+ * Marcada, a fixa sai da previsão (`detalharProjecaoDaConta`), das contas a
+ * pagar, do quadro de débito automático e da cascata de Lançamentos, que a
+ * mostra riscada para poder desfazer. Paga vence: a marca de paga sai junto.
+ */
+export function fixaNaoOcorre(fixaId: string, dadosDoMes: (DadosMesFixas | undefined)[]): boolean {
+  if (dadosDoMes.some(dm => dm?.fixasConsolidadas?.[fixaId] === true)) return false
+  return dadosDoMes.some(dm => dm?.fixasNaoOcorre?.[fixaId] === true)
+}
+
+function semChave<V>(r: Record<string, V> | undefined, id: string): Record<string, V> | undefined {
+  if (!r || !(id in r)) return r
+  const { [id]: _fora, ...resto } = r
+  void _fora
+  return resto
+}
+
+/** Marca a fixa como "não vai ocorrer" neste mês e tira a marca de paga. */
+export function marcarNaoOcorre<T extends DadosMesFixas>(dm: T, fixaId: string): T {
+  return {
+    ...dm,
+    fixasConsolidadas: semChave(dm.fixasConsolidadas, fixaId),
+    fixasNaoOcorre: { ...dm.fixasNaoOcorre, [fixaId]: true },
+  }
+}
+
+/** Desfaz: a fixa volta a contar neste mês. */
+export function desfazerNaoOcorre<T extends DadosMesFixas>(dm: T, fixaId: string): T {
+  return { ...dm, fixasNaoOcorre: semChave(dm.fixasNaoOcorre, fixaId) }
 }

@@ -113,6 +113,8 @@ export type DadosMes = {
   /** Débito automático conferido na Início (utils/debitoAutomatico). */
   debitosConferidos?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
+  /** "Não vai ocorrer neste mês" (utils/fixasDoMes: fixaNaoOcorre). */
+  fixasNaoOcorre?: Record<string, boolean>
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>
   fixasPagOverride?: Record<string, string>

@@ -74,7 +74,7 @@ export default function NleExtratoMobile({
   setDiaSel, editarFixa, editarLancamento, excluir, lancar,
   desconsolidarFixa, consolidarFixa, setMobileDiaForm,
   setFTipo, setFCat, setFSubDesc, setFDesc, setFValor, setFPag,
-  setEditandoId, setEditandoFixaId, ehAutomatico, resetarParaNovo, desktop,
+  setEditandoId, setEditandoFixaId, ehAutomatico, resetarParaNovo, desktop, alternarNaoOcorre,
 }: Props & { desktop?: boolean }) {
   const [memoriaAberta, setMemoriaAberta] = React.useState(false)
   const [futurosAbertos, setFuturosAbertos] = React.useState(false)
@@ -181,7 +181,8 @@ export default function NleExtratoMobile({
                 const valor = mesDados.fixasValorOverride?.[f.id] ?? f.valor
                 const emEdicao = editandoFixaId === f.id
                 const nome = ehFaturaFixa ? 'Cartão de Crédito' : `${f.nome}${f.descricao ? ` · ${f.descricao}` : ''}`
-                const legenda = [
+                const naoOcorre = !!f.naoOcorre && !consolidada
+                const legenda = naoOcorre ? `Não ocorre em ${NOMES_MESES[mes].toLowerCase()} · o plano segue` : [
                   consolidada ? (automatico ? 'Automática ✓' : (f.tipo === 'entrada' ? 'Recebida ✓' : 'Paga ✓')) : (f.tipo === 'entrada' ? 'A receber' : 'A pagar'),
                   ehFaturaFixa ? f.categoria : f.subtitulo,
                   ROTULO_FORMA[f.formaPagamento],
@@ -194,6 +195,12 @@ export default function NleExtratoMobile({
                   }}>
                     {/* Dia futuro não se marca como paga (26/10/2026, regra do
                         Guilherme: "somente dia passado ou hoje"). */}
+                    {naoOcorre ? (
+                      <span aria-hidden title="Não ocorre neste mês" style={{
+                        width: 30, height: 30, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid #cbd5e1', color: '#64748b', fontSize: 15,
+                      }}><i className="ti ti-ban" /></span>
+                    ) : (
                     <button
                       aria-label={consolidada ? 'Desmarcar como paga' : diaFuturo ? `Vence em ${dia}/${mes + 1}` : 'Marcar como paga'} aria-pressed={consolidada}
                       disabled={diaFuturo && !consolidada}
@@ -203,7 +210,8 @@ export default function NleExtratoMobile({
                         border: consolidada ? 'none' : `2px ${diaFuturo ? 'dashed' : 'solid'} #94a3b8`, background: consolidada ? VERDE : '#fff',
                         color: '#fff', fontSize: 16, fontWeight: 800, fontFamily: 'inherit', lineHeight: 1,
                       }}>{consolidada ? '✓' : ''}</button>
-                    <span style={{ opacity: consolidada ? 1 : 0.6, display: 'flex' }}>
+                    )}
+                    <span style={{ opacity: consolidada ? 1 : naoOcorre ? 0.4 : 0.6, display: 'flex' }}>
                       <IconeRedondo icone={vis.icone} cor={vis.cor} tamanho={40} />
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -213,7 +221,8 @@ export default function NleExtratoMobile({
                     <div style={{
                       fontSize: M.corpo, fontWeight: 700, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                       color: !consolidada ? COR.textoSuave : f.tipo === 'entrada' ? VERDE : VERMELHO,
-                    }}>{f.tipo === 'entrada' ? '+' : '−'}{fmt(valor)}</div>
+                      textDecoration: naoOcorre ? 'line-through' : undefined,
+                    }}>{f.tipo === 'entrada' ? '+' : '−'}{fmt(naoOcorre ? (f.valorDoPlano ?? 0) : valor)}</div>
                   </div>
                 )
               })}
@@ -462,6 +471,18 @@ export default function NleExtratoMobile({
               marginTop: 20, width: '100%', minHeight: 52, border: 'none', borderRadius: 999, cursor: 'pointer',
               background: `linear-gradient(135deg,${COR.azul},#2563eb)`, color: '#fff', fontSize: 16, fontWeight: 800, fontFamily: 'inherit',
             }}>{editando ? 'Salvar' : 'Lançar'}</button>
+            {editandoFixaId && !editandoFixaId.startsWith('cartao-') && (
+              <>
+                <button onClick={() => alternarNaoOcorre(editandoFixaId)} style={{
+                  marginTop: 8, width: '100%', minHeight: 48, border: `1.5px solid ${COR.borda}`, borderRadius: 999, cursor: 'pointer',
+                  background: '#fff', color: mesDados.fixasNaoOcorre?.[editandoFixaId] === true ? COR.azul : '#334155',
+                  fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+                }}>{mesDados.fixasNaoOcorre?.[editandoFixaId] === true ? 'Voltar a contar neste mês' : 'Não vai ocorrer neste mês'}</button>
+                <div style={{ fontSize: M.legenda, color: COR.textoSuave, marginTop: 6, textAlign: 'center' }}>
+                  Tira a conta só de {NOMES_MESES[mes].toLowerCase()}. O planejamento não muda.
+                </div>
+              </>
+            )}
             {editandoId && (
               <button onClick={() => { excluir(mobileDiaForm, editandoId); setMobileDiaForm(null) }} style={{
                 marginTop: 8, width: '100%', minHeight: 48, border: 'none', borderRadius: 999, cursor: 'pointer',

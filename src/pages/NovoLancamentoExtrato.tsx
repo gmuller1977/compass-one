@@ -34,6 +34,7 @@ import { corDoIcone } from '../utils/iconeDesenhado'
 import ModalTopo from '../components/ModalTopo'
 import { CARTEIRA_ID, descricoesDaTransferencia, destinosDaTransferencia } from '../utils/transferencia'
 import { ehContaDisponivel } from '../utils/saldoConta'
+import { fixaNaoOcorre, marcarNaoOcorre, desfazerNaoOcorre } from '../utils/fixasDoMes'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -115,6 +116,11 @@ export default function NovoLancamentoExtrato() {
    * não confirmada entra valendo 0. É exibição, e por isso cabe na tela
    * congelada.
    */
+  /** "Não vai ocorrer neste mês", marcado nesta conta (utils/fixasDoMes). */
+  function naoOcorreNoMes(id: string, a: number, m: number): boolean {
+    return fixaNaoOcorre(id, [dados[mesKey(contaIdEfetivo, a, m)]])
+  }
+
   function semPlanoEIntocada(f: { id: string; valor: number }, a: number, m: number): boolean {
     if (f.valor !== 0) return false
     const dm = dados[mesKey(contaIdEfetivo, a, m)]
@@ -179,12 +185,15 @@ export default function NovoLancamentoExtrato() {
       subtitulo: c.grupo,
       descricao: c.descricao,
       inativa: !c.ativa,
-      valor: valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc),
+      // "Não vai ocorrer neste mês" vale 0 e fica riscada (utils/fixasDoMes).
+      valor: naoOcorreNoMes(c.id, ano, mes) ? 0 : valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc),
+      naoOcorre: naoOcorreNoMes(c.id, ano, mes) || undefined,
+      valorDoPlano: naoOcorreNoMes(c.id, ano, mes) ? valorPrevistoCat(c.id, c.nome, c.tipo as TipoLanc) : undefined,
       tipo: c.tipo as TipoLanc,
       formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
       diaVencimento: c.diaVencimento ?? 1,
     }))
-    .filter(f => semPlanoEIntocada(f, ano, mes) === false)
+    .filter(f => f.naoOcorre || semPlanoEIntocada(f, ano, mes) === false)
   const fixasCartao: CatFixa[] = useMemo(() => {
     if (isDinheiro) return []
     const faturasDados = faturaData as Record<string, { lancamentos: Record<number, { tipo: string; valor: number }[]> }>
@@ -548,6 +557,18 @@ export default function NovoLancamentoExtrato() {
     return f.ehFaturaCartao === true || ehAutomaticoCategoria(categorias, f.categoria)
   }
 
+  // "Não vai ocorrer neste mês" (05/11/2026, pedido do Guilherme): tira a
+  // fixa deste mês sem mexer no plano. Grava no mês desta conta; desfazer
+  // devolve. A marca de paga sai junto (utils/fixasDoMes).
+  function alternarNaoOcorre(fixaId: string) {
+    const marcada = dados[key]?.fixasNaoOcorre?.[fixaId] === true
+    updateMes(prev => marcada ? desfazerNaoOcorre(prev, fixaId) : marcarNaoOcorre(prev, fixaId))
+    toast(marcada ? 'A conta volta a contar neste mês.' : 'Fora deste mês. O planejamento não mudou.', 'success')
+    setEditandoFixaId(null)
+    setFCat(''); setFSubDesc(''); setFDesc(''); setFValor('')
+    if (isMobile) setMobileDiaForm(null)
+  }
+
   function desconsolidarFixa(fixaId: string) {
     // Em dia futuro, desmarcar só tira a marca: "não saiu" é de dia que já
     // chegou, e a automática tem de voltar a agendada (26/10/2026).
@@ -666,7 +687,8 @@ export default function NovoLancamentoExtrato() {
         id: c.id, nome: c.nome, categoria: c.nome,
         subtitulo: c.grupo, descricao: c.descricao,
         inativa: !c.ativa,
-        valor: valorFixaNoMes(c, planos[a], m, categorias),
+        valor: naoOcorreNoMes(c.id, a, m) ? 0 : valorFixaNoMes(c, planos[a], m, categorias),
+        naoOcorre: naoOcorreNoMes(c.id, a, m) || undefined,
         tipo: c.tipo as TipoLanc,
         formaPagamento: formaPagCategoria(c.formaPagamento, c.tipoMovimento),
         diaVencimento: c.diaVencimento ?? 1,
@@ -675,7 +697,7 @@ export default function NovoLancamentoExtrato() {
       // de concordar: foi a divergencia entre elas que custou 663,00 duas
       // vezes, e as duas vezes o sintoma foi uma parcela que uma tela contava
       // e a outra nao.
-      .filter(f => semPlanoEIntocada(f, a, m) === false)
+      .filter(f => f.naoOcorre || semPlanoEIntocada(f, a, m) === false)
 
     // A fatura do cartao tambem entra na cascata: o nome do cartao nao e uma
     // categoria, e o filtro de cartao da cascata e pelo id. Montada aqui
@@ -815,6 +837,8 @@ export default function NovoLancamentoExtrato() {
       const confirmada = dmMes?.fixasConsolidadas?.[f.id] === true
       const jaPassou = mesPast || (ehCorrente && diaReal <= diaHoje)
       if (!confirmada && mesPast) return []
+      // "Não vai ocorrer neste mês": nada a projetar (utils/fixasDoMes).
+      if (!confirmada && f.naoOcorre) return []
       const valor = jaPassou ? (dmMes?.fixasValorOverride?.[f.id] ?? f.valor) : f.valor
       const dia = (!confirmada && jaPassou) ? diaHoje : diaReal
       return [{ f, dia, confirmada, valor }]
@@ -1362,6 +1386,7 @@ export default function NovoLancamentoExtrato() {
               setEditandoId={setEditandoId}
               setEditandoFixaId={setEditandoFixaId}
               ehAutomatico={ehAutomatico}
+              alternarNaoOcorre={alternarNaoOcorre}
             />
 
             <NleDesktopPanel
@@ -1407,6 +1432,7 @@ export default function NovoLancamentoExtrato() {
               setFValor={setFValor}
               lancar={lancar}
               excluirAtual={excluirAtual}
+              alternarNaoOcorre={alternarNaoOcorre}
             />
           </div>
         </>

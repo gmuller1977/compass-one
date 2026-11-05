@@ -70,6 +70,7 @@ type Props = {
   setFValor: (v: string) => void
   lancar: () => void
   excluirAtual: () => void
+  alternarNaoOcorre: (fixaId: string) => void
 }
 
 export default function NleDesktopPanel({
@@ -82,7 +83,7 @@ export default function NleDesktopPanel({
   categoriaSelectRef, valorInputRef,
   resetarParaNovo,
   setFTipo, setFPag, setFCat, setFSubDesc, setFContaFixa, setFContaDestino, setFDesc, setFValor,
-  lancar, excluirAtual,
+  lancar, excluirAtual, alternarNaoOcorre,
 }: Props) {
   // Foco inicial na categoria, uma vez por painel — e nao por MONTAGEM DO
   // ELEMENTO, que era o que o autoFocus fazia.
@@ -106,7 +107,7 @@ export default function NleDesktopPanel({
   const [mostrarCalDia, setMostrarCalDia] = useState(false)
 
   // Resumo do mês data
-  const fixasDoMes = fixas.filter(f => !ehFixaDeCartao(categorias, f))
+  const fixasDoMes = fixas.filter(f => !ehFixaDeCartao(categorias, f) && !f.naoOcorre)
   const fixasPend        = fixasDoMes.filter(f => mesDados.fixasConsolidadas?.[f.id] !== true)
   const numFixasPendentes = fixasPend.length
   const planejadoTotal   = fixasDoMes.filter(f => f.tipo==='saida')
@@ -427,6 +428,23 @@ export default function NleDesktopPanel({
               {(editandoId || editandoFixaId) ? 'Salvar alterações' : '✓ Lançar'}
             </button>
           </div>
+          {/* Tira a fixa só deste mês; o plano não muda (05/11/2026). */}
+          {editandoFixaId && !editandoFixaId.startsWith('cartao-') && (() => {
+            const marcada = mesDados.fixasNaoOcorre?.[editandoFixaId] === true
+            return (
+              <button onClick={() => alternarNaoOcorre(editandoFixaId)} style={{
+                width:'100%',marginTop:8,padding:11,border:`1.5px solid ${COR.borda}`,borderRadius:10,
+                cursor:'pointer',fontSize:13,fontWeight:600,background:COR.branco,
+                color: marcada ? COR.azul : '#334155',fontFamily:'inherit'}}>
+                {marcada ? 'Voltar a contar neste mês' : 'Não vai ocorrer neste mês'}
+              </button>
+            )
+          })()}
+          {editandoFixaId && !editandoFixaId.startsWith('cartao-') && (
+            <div style={{fontSize:10,color:'#64748b',marginTop:4}}>
+              Tira a conta só de {NOMES_MESES[mes].toLowerCase()}. O planejamento não muda.
+            </div>
+          )}
         </div>
 
         {/* Divisor */}

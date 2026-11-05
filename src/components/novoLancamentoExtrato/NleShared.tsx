@@ -24,6 +24,10 @@ export type CatFixa = {
    * removido, sem nada que explique por quê.
    */
   inativa?: boolean
+  /** "Não vai ocorrer neste mês" (utils/fixasDoMes): vale 0 e aparece riscada. */
+  naoOcorre?: boolean
+  /** Com `naoOcorre`, o valor do plano, só para mostrar riscado. */
+  valorDoPlano?: number
 }
 
 /**
@@ -75,6 +79,8 @@ export type DadosMes = {
   saldoBancoData?: string
   fixasConsolidadas?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
+  /** "Não vai ocorrer neste mês" (utils/fixasDoMes: fixaNaoOcorre). */
+  fixasNaoOcorre?: Record<string, boolean>
   fixasValorOverride?: Record<string, number>
   fixasDescOverride?: Record<string, string>
   fixasPagOverride?: Record<string, FormaPag>

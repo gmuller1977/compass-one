@@ -1,6 +1,7 @@
 import type { Categoria, DadosMes } from '../context/AppContext'
 import { totalFatura, type Deps } from './saldoConta'
 import { contasAVencer } from './contasAVencer'
+import { fixaNaoOcorre } from './fixasDoMes'
 import { confirmarPagamento, contaDoPagamento } from './pagarConta'
 import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
 import { valorFixaNoMes } from './valorFixa'
@@ -274,6 +275,8 @@ export function debitosDoMes(deps: Deps, hoje = new Date()): DebitoDoMes[] {
     const marcas = doMes.map(dm => dm?.fixasConsolidadas?.[cat.id])
     const paga = marcas.includes(true)
     const naoSaiu = !paga && marcas.includes(false)
+    // "Não vai ocorrer neste mês" (Lançamentos): nada a conferir.
+    if (fixaNaoOcorre(cat.id, doMes)) continue
     const contaId = contaDoPagamento(cat.id, ano, mes, deps.contas, deps.categorias, deps.extratoData)
     if (!contaId) continue
     const chave = `${contaId}${fim}`

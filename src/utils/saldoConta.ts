@@ -2,7 +2,7 @@ import { saldoInformado } from './saldoInformado'
 import type { Conta, Categoria, DadosMes, PlanoAnoData } from '../context/AppContext'
 import type { Memoria } from '../components/novoLancamentoExtrato/NleShared'
 import { valorFixaNoMes } from './valorFixa'
-import { resolverFixaDoMes, dadosBancariosDoMes } from './fixasDoMes'
+import { resolverFixaDoMes, dadosBancariosDoMes, fixaNaoOcorre } from './fixasDoMes'
 import { diaEfetivoFixa, faturaEhAutomatica } from './diaDaFixa'
 import { ehAutomaticoCategoria } from './categoriaIcone'
 import { construirRealizadoMes } from './realizadoMes'
@@ -809,6 +809,8 @@ export function detalharProjecaoDaConta(
 
     if (cat.fixa) {
       if (resolverFixaDoMes(cat.id, dms).consolidada) continue
+      // "Não vai ocorrer neste mês": sai da previsão, o plano fica.
+      if (fixaNaoOcorre(cat.id, dms)) continue
       const v = valorFixaNoMes(cat, planos[ano], mes, categorias)
       if (v <= 0) continue
       const item: ItemPrevisto = {
