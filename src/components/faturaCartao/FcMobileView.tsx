@@ -17,6 +17,8 @@ import { BolinhaConferido } from './FcConferir'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
 import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
 import { textoQtdCompras, estaConferido, alternarConferido, type LadoCompass, type LadoBanco } from '../../utils/conferirFatura'
+import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
+import { useToast } from '../Toast'
 
 /** As duas caixas lado a lado do topo da fatura: o translúcido da caixa do
  *  saldo final da Início. Branco 9,5 · rótulo a 75% 6,1 · #86efac 7,0 no
@@ -145,6 +147,14 @@ export default function FcMobileView({
   resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
   lado, abrirFatura,
 }: Props) {
+  const { toast } = useToast()
+  // Fixa lançada sozinha sem dia cadastrado: avisa ao conferir (utils/fixaNoCartao).
+  const conferir = (l: { id: string; fixaId?: string }) => {
+    const marcando = !estaConferido(mesDados, l.id)
+    updateMes(prev => alternarConferido(prev, l.id))
+    const aviso = marcando ? avisoFixaSemDia(l, categorias) : null
+    if (aviso) toast(aviso, 'info')
+  }
   // Texto que nao e um valor: parseValor devolve null. O salvamento ja
   // bloqueava (valor <= 0), mas em silencio — o botao simplesmente nao fazia
   // nada. O realce diz ao usuario por que.
@@ -709,7 +719,7 @@ export default function FcMobileView({
                       style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',minHeight:56,cursor:'pointer',
                         borderTop: idx === 0 ? 'none' : '1px solid #eef2f8'}}>
                       <BolinhaConferido marcado={estaConferido(mesDados, l.id)} tamanho={28}
-                        onToggle={() => updateMes(prev => alternarConferido(prev, l.id))} />
+                        onToggle={() => conferir(l)} />
                       <IconeRedondo icone={catVisual.icone} cor={catVisual.cor} tamanho={40} />
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:M.corpo,fontWeight:600,color:COR.texto,

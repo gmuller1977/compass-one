@@ -9,6 +9,8 @@ import { grupoDoLanc } from './fcRotulo'
 import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
 import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
+import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
+import { useToast } from '../Toast'
 
 type Props = {
   mesDados: DadosMes
@@ -30,6 +32,14 @@ export default function FcDesktopLeft({
   editandoId, categorias,
   editarLancamento, excluir, setDiaSel, updateMes,
 }: Props) {
+  const { toast } = useToast()
+  // Fixa lançada sozinha sem dia cadastrado: avisa ao conferir (utils/fixaNoCartao).
+  const conferir = (l: { id: string; fixaId?: string }) => {
+    const marcando = !estaConferido(mesDados, l.id)
+    updateMes(prev => alternarConferido(prev, l.id))
+    const aviso = marcando ? avisoFixaSemDia(l, categorias) : null
+    if (aviso) toast(aviso, 'info')
+  }
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
@@ -111,7 +121,7 @@ export default function FcDesktopLeft({
                   onMouseLeave={e => { if (!emEdicao) e.currentTarget.style.background = COR.branco }}>
 
                   <BolinhaConferido marcado={estaConferido(mesDados, l.id)}
-                    onToggle={() => updateMes(prev => alternarConferido(prev, l.id))} />
+                    onToggle={() => conferir(l)} />
 
                   <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, display: 'flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: 16, background: catVisual.cor }}>

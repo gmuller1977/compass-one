@@ -130,6 +130,20 @@ Lançamentos) e o conferido; desfazer tira os dois (`tirarPagamento`); marcado
 em Lançamentos aparece conferido. `ConfirmarDebitoAutomatico` só arruma
 marcas (conta errada, dia futuro). Revê o parágrafo abaixo e o do
 recebimento automático: o resto deles é histórico. `prova112` (9).
+**Conta FIXA paga no cartão já entra LANÇADA na fatura** (05/11/2026,
+Guilherme: "muito parecido com o débito automático do banco"; antes só as
+parcelas apareciam). Na fatura EM ABERTO, no começo do ciclo, como as
+parcelas: no dia cadastrado ou, sem dia, no dia seguinte ao fechamento; valor
+do plano no mês em que a compra conta (`mesDoGastoNoCartao`); sem plano, não
+lança. Uma vez por categoria e fatura (`fixasLancadas`; apagada não volta;
+lançada à mão só marca); id `fixa-<cat>-<AAAA-MM>`, `fixaId` no lançamento.
+O cadastro EXIGE o cartão da fixa de cartão (guardado em `contaDebitoId`, sem
+migração; com um cartão só, vale ele) e tem o dia, opcional. Conferir (a
+bolinha) uma fixa sem dia avisa; mudar a data da compra grava o dia na
+categoria (só o administrador). Fatura passada não se mexe. Nenhum número da
+previsão muda: ela já contava `plano − o que está nas faturas`. Regras em
+[`fixaNoCartao.ts`](src/utils/fixaNoCartao.ts), `LancarFixasNoCartao` no
+AppShell; `prova113` (16).
 **Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
 decisão do Guilherme: "débito automático pode já ser confirmada, e pegamos a
 diferença no valor da conta na tela inicial"). Revê o parágrafo acima só

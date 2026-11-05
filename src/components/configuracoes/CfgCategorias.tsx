@@ -86,6 +86,7 @@ export default function CfgCategorias({
   confirmar, fecharConfirm,
 }: Props) {
   // A conta sugerida por padrao nas categorias de banco.
+  const cartoesCad = contas.filter(c => c.tipo === 'cartao')
   const contaFavoritaId = (contas.find(c => ehContaDisponivel(c) && c.preferida)
     ?? contas.find(ehContaDisponivel))?.id
 
@@ -418,7 +419,11 @@ export default function CfgCategorias({
                             formaPagamento: t.id==='dinheiro' ? undefined
                               : t.id==='cartao' ? 'avista'
                               : p.tipo==='entrada' ? 'pix' : 'automatico',
-                            contaDebitoId: t.id==='banco' ? (p.contaDebitoId ?? contaFavoritaId) : undefined,
+                            // Cartão: contaDebitoId guarda o CARTÃO da fixa (utils/fixaNoCartao);
+                            // com um cartão só, ele já vem escolhido.
+                            contaDebitoId: t.id==='banco' ? (p.contaDebitoId ?? contaFavoritaId)
+                              : t.id==='cartao' ? (cartoesCad.length === 1 ? cartoesCad[0].id : undefined)
+                              : undefined,
                           }))}
                           onKeyDown={e => {
                             const total = tiposVisiveis.length
@@ -499,6 +504,35 @@ export default function CfgCategorias({
                     </div>
                   )}
                 </div>
+              )}
+
+              {formCat.tipoMovimento==='cartao' && formCat.fixa && formCat.tipo==='saida' && (
+                <>
+                  <div>
+                    <label style={labelSt}>Cartão *</label>
+                    <select value={cartoesCad.some(c => c.id === formCat.contaDebitoId) ? formCat.contaDebitoId : ''}
+                      onChange={e => setFormCat(p=>({...p, contaDebitoId: e.target.value || undefined}))}
+                      className="campo-cfg" style={inputSt}>
+                      <option value="">Selecione o cartão...</option>
+                      {cartoesCad.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}{c.banco && c.banco !== c.nome ? ` — ${c.banco}` : ''}</option>
+                      ))}
+                    </select>
+                    <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>
+                      A conta já aparece lançada na fatura deste cartão, todo mês.
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelSt}>Dia da cobrança no cartão</label>
+                    <input inputMode="numeric" type="number" min="1" max="31"
+                      value={formCat.diaVencimento||''}
+                      onChange={e => setFormCat(p=>({...p, diaVencimento:parseInt(e.target.value)||undefined}))}
+                      placeholder="Opcional" className="campo-cfg" style={inputSt} />
+                    <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>
+                      Sem o dia, ela entra no dia seguinte ao fechamento da fatura. Mudar a data da compra na fatura grava o dia aqui.
+                    </div>
+                  </div>
+                </>
               )}
 
               {formCat.tipoMovimento==='banco' && (

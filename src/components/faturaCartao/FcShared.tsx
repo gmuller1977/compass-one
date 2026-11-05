@@ -18,6 +18,8 @@ export type Lancamento = {
   parcelas?: number
   parcelaAtual?: number
   diaCompra?: number; mesCompra?: number; anoCompra?: number
+  /** Conta FIXA lançada sozinha na fatura: o id da categoria (utils/fixaNoCartao). */
+  fixaId?: string
 }
 
 export type DadosMes = {
@@ -35,6 +37,9 @@ export type DadosMes = {
   fixasPagOverride?: Record<string, FormaPag>
   /** Compras conferidas com o app do banco, por id (utils/conferirFatura). */
   conferidos?: Record<string, boolean>
+  /** Fixas de cartão já lançadas sozinhas neste mês de fatura, por categoria
+   *  (utils/fixaNoCartao): apagada pela pessoa, não volta. */
+  fixasLancadas?: Record<string, boolean>
 }
 
 // ── Categoria + variante ──────────────────────────────────────────────

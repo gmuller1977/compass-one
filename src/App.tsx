@@ -33,6 +33,7 @@ import { pulaApresentacao } from './utils/acessoRapido'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
 import ConfirmarDebitoAutomatico from './components/ConfirmarDebitoAutomatico'
+import LancarFixasNoCartao from './components/LancarFixasNoCartao'
 import { NORTE_ATIVO } from './utils/norteAtivo'
 import AvisoNovaVersao from './components/AvisoNovaVersao'
 import ConviteCompartilhamento from './components/compartilhar/ConviteCompartilhamento'
@@ -54,7 +55,7 @@ function AppShell({ children }: { children: ReactNode }) {
     registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isMobile) return <>{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
+  if (isMobile) return <>{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><LancarFixasNoCartao /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
   return (
     <>
       <Sidebar />
@@ -65,6 +66,7 @@ function AppShell({ children }: { children: ReactNode }) {
       <IndicadorGravacao />
       <SincronizarLembrete />
       <ConfirmarDebitoAutomatico />
+      <LancarFixasNoCartao />
       <AvisoNovaVersao />
       <ConviteCompartilhamento />
       <AvisoPermissao />

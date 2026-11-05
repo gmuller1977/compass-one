@@ -48,7 +48,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   const { toast } = useToast()
   const [mobileView, setMobileView] = useState<'extrato'|'form'>('extrato')
 
-  const { contas, categorias, setCategorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando } = useApp()
+  const { contas, categorias, setCategorias, planos, faturaData, setFaturaData, extratoData, setExtratoData, carregando, compartilhamento } = useApp()
   // "+ Nova" categoria, a mesma caixa de Lançamentos, criando categoria de cartão.
   const [novaCatAberta, setNovaCatAberta] = useState(false)
   const contasCartao = contas.filter(c => c.tipo === 'cartao')
@@ -417,6 +417,18 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     let targetMes = purchaseMes, targetAno = purchaseAno
     if (routeToNext) {
       targetMes++; if (targetMes > 11) { targetMes = 0; targetAno++ }
+    }
+
+    // Conta fixa lançada sozinha (utils/fixaNoCartao): a data mudada aqui vira
+    // o dia dela no cadastro (05/11/2026, pedido do Guilherme). Só o
+    // administrador mexe no cadastro.
+    if (editandoId && parcelaEditada?.fixaId && compartilhamento.papel !== 'membro') {
+      const fixaId = parcelaEditada.fixaId
+      const cat = categorias.find(c => c.id === fixaId)
+      if (cat && (cat.diaVencimento !== diaCompraFinal) && diaCompraFinal !== parcelaEditada.diaCompra) {
+        setCategorias(prev => prev.map(c => c.id === fixaId ? { ...c, diaVencimento: diaCompraFinal } : c))
+        toast(`Dia ${diaCompraFinal} gravado em ${cat.nome}: os próximos meses entram nesse dia.`, 'info')
+      }
     }
 
     if (editandoId) {

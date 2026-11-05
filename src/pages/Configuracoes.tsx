@@ -383,8 +383,20 @@ export default function Configuracoes() {
     // em nenhuma comparacao por nome, e a categoria sumia do Radar.
     // Nome de categoria que já existe vai com a grafia DELA ("academia" →
     // "Academia"): o app casa por nome exato. Ver utils/nomeCategoria.
+    // Fixa paga no cartão: o cartão é obrigatório (05/11/2026, pedido do
+    // Guilherme), porque ela já entra lançada na fatura dele (utils/fixaNoCartao).
+    // Fica em contaDebitoId; com um cartão só, ele vale sem perguntar.
+    let contaDaCat = formCat.contaDebitoId
+    if (formCat.fixa && formCat.tipo === 'saida' && formCat.tipoMovimento === 'cartao') {
+      const cartoes = contas.filter(c => c.tipo === 'cartao')
+      if (!cartoes.some(c => c.id === contaDaCat)) contaDaCat = cartoes.length === 1 ? cartoes[0].id : undefined
+      if (!contaDaCat) return setErroCat(cartoes.length === 0
+        ? 'Cadastre o cartão em Cartões antes: a conta fixa entra lançada na fatura dele.'
+        : 'Escolha em qual cartão esta conta é paga.')
+    }
     const limpo = {
       ...formCat,
+      contaDebitoId: contaDaCat,
       nome: nomeCanonico(formCat.nome, formCat.tipo, categorias, editCatId),
       descricao: formCat.descricao?.trim() || undefined,
       grupo: formCat.grupo?.trim() || undefined,
