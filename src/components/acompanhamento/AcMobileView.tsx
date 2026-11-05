@@ -12,6 +12,7 @@ import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
 import { AnelGrupo } from './EvolucaoGrupo'
 import { RADAR_TEXTO_CLARO as RADAR_COR_CLARO, RADAR_TEXTO_AZUL as RADAR_COR_AZUL, RADAR_BARRA_CLARO, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO, SEM_MOVIMENTO, RADAR_AMARELO, RADAR_COR_NEUTRA, faixaRadar, destaqueRadar, destaqueDoGrupo, partesDoGrupo, ehFixaPaga, semPlano } from './radarCores'
 import PartesDoGrupo from './PartesDoGrupo'
+import { useForaDoMes } from './foraDoMesContexto'
 import { useAbrirAjuste } from './ajustePlanoContexto'
 import { MemoriaSaldo, ChipCenario } from '../novoLancamentoExtrato/NleExtrato'
 import type { CenarioPrevisao } from '../../utils/saldoConta'
@@ -67,6 +68,7 @@ export default function AcMobileView({
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
+  const foraDoMesIds = useForaDoMes()
   const [memoriaAberta, setMemoriaAberta] = useState(false)
   const diaHoje   = new Date().getDate()
   const ehMesAtual = ano === new Date().getFullYear() && mes === new Date().getMonth()
@@ -100,7 +102,8 @@ export default function AcMobileView({
     // cores são as da paleta clara do Radar, medidas no branco (radarCores).
     const fixa      = !!cadastroDaLinha({ nome, descricao }, categorias)?.fixa
     const fixaPaga  = ehFixaPaga(prev, lancAbs, isEntrada, fixa)
-    const destaque  = destaqueRadar(prev, lancAbs, isEntrada, { fixa, fixaPaga })
+    const naoOcorre = foraDoMesIds.has(cadastroDaLinha({ nome, descricao }, categorias)?.id ?? '')
+    const destaque  = destaqueRadar(prev, lancAbs, isEntrada, { fixa, fixaPaga, naoOcorre })
     // Sem plano no mês não há julgamento: só o realizado, em cor neutra e
     // sem barra (C2, decisão do Guilherme em 19/10/2026).
     const naoJulga  = semPlano(prev)
@@ -278,7 +281,8 @@ export default function AcMobileView({
       const linhasGrupo = allCats.map(cat => {
         const prev = cat.v[mes] ?? 0
         const real = pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0
-        return { prev, real, fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa }
+        const cad = cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)
+        return { prev, real, fixa: !!cad?.fixa, naoOcorre: foraDoMesIds.has(cad?.id ?? '') }
       })
       const dg = destaqueDoGrupo(linhasGrupo, isEntrada)
       // Barra e cor julgam só as linhas COM plano (destaqueDoGrupo); grupo

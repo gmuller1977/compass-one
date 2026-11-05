@@ -22,6 +22,8 @@ import { lancadoAcimaDoPlano } from '../utils/lancadoAcimaDoPlano'
 import { resumoDoMes } from '../utils/resumoRadar'
 import { ritmoDoMes } from '../utils/ritmoDoMes'
 import { AjustePlanoContexto } from '../components/acompanhamento/ajustePlanoContexto'
+import { ForaDoMesContexto } from '../components/acompanhamento/foraDoMesContexto'
+import { dadosBancariosDoMes, fixaNaoOcorre } from '../utils/fixasDoMes'
 import AjustePlanoRadar, { type AjusteAberto } from '../components/acompanhamento/AjustePlanoRadar'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 
@@ -198,10 +200,19 @@ export default function RadarFinanceiro() {
   }
 
   // ── Mobile: early return ───────────────────────────────────────────────
+  // Fixas marcadas "Não vai ocorrer neste mês" em Lançamentos: a linha diz
+  // "não gastou" com o plano à vista (05/11/2026, foraDoMesContexto).
+  const foraDoMes = (() => {
+    const dms = dadosBancariosDoMes(extratoData as Record<string, DadosMes>, `-${ano}-${String(mes + 1).padStart(2, '0')}`,
+      k => contas.some(c => c.tipo === 'cartao' && k.startsWith(c.id)))
+    return new Set(categorias.filter(c => c.fixa && fixaNaoOcorre(c.id, dms)).map(c => c.id))
+  })()
+
   if (isMobile) {
     // O mesmo ajuste do plano e a mesma revisão do computador: a linha da
     // categoria pede o ajuste pelo contexto, como em EvolucaoLinha.
     return (
+      <ForaDoMesContexto.Provider value={foraDoMes}>
       <AjustePlanoContexto.Provider value={dadosAno ? setAjuste : null}>
       <AcMobileView
         mes={mes}
@@ -244,6 +255,7 @@ export default function RadarFinanceiro() {
           ano={ano} mes={mes} categorias={categorias} deps={depsSaldo} />
       )}
       </AjustePlanoContexto.Provider>
+      </ForaDoMesContexto.Provider>
     )
   }
 
@@ -331,6 +343,7 @@ export default function RadarFinanceiro() {
             onAction={() => navigate(`/planejamento?ano=${ano}`)}
           />
         ) : (
+          <ForaDoMesContexto.Provider value={foraDoMes}>
           <AjustePlanoContexto.Provider value={setAjuste}>
             <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={() => setRevisando(true)} />
             {/* O cardápio: um cartão por grupo, receitas e depois despesas, numa
@@ -384,6 +397,7 @@ export default function RadarFinanceiro() {
             })()}
             </div>
           </AjustePlanoContexto.Provider>
+      </ForaDoMesContexto.Provider>
         )}
       </div>
 

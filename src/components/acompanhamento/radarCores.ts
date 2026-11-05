@@ -151,9 +151,13 @@ export function totaisJulgados(linhas: { prev: number; real: number }[]): { prev
 export const SEM_MOVIMENTO = ['Sem lançamentos']
 
 export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
-  opts: { fixa?: boolean; fixaPaga?: boolean } = {}):
+  opts: { fixa?: boolean; fixaPaga?: boolean; naoOcorre?: boolean } = {}):
   { principal: string; contexto: string } {
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  // Fixa marcada "Não vai ocorrer neste mês" em Lançamentos (05/11/2026,
+  // pedido do Guilherme): o plano fica à vista e a linha diz que não gastou.
+  if (opts.naoOcorre && prev > 0.005 && Math.abs(real) <= 0.005)
+    return { principal: isEntrada ? 'não recebeu' : 'não gastou', contexto: `plano ${fmt(prev)} · não ocorre neste mês` }
   // Sem plano e sem movimento: diz isso em palavras, em vez de um travessão
   // (pedido do Guilherme, 24/10/2026). Mesma cor neutra, sem barra.
   if (prev <= 0.005 && Math.abs(real) <= 0.005)
@@ -185,6 +189,11 @@ export function destaqueRadar(prev: number, real: number, isEntrada: boolean,
  * está escrito: 460,94 de 460 aparece "100%" e conta como paga. Uma regra só,
  * para a linha da categoria e para o cabeçalho do grupo.
  */
+/** Fixa marcada "não ocorre neste mês" e sem nada lançado. */
+function foraDoMes(l: { real: number; naoOcorre?: boolean }): boolean {
+  return !!l.naoOcorre && Math.abs(l.real) <= 0.005
+}
+
 export function ehFixaPaga(prev: number, real: number, isEntrada: boolean, fixa: boolean): boolean {
   if (isEntrada || !fixa || real <= 0) return false
   const perc = prev > 0 ? real / prev : 1
@@ -204,7 +213,7 @@ export function ehFixaPaga(prev: number, real: number, isEntrada: boolean, fixa:
  * devolvidos são os da barra.
  */
 export function destaqueDoGrupo(
-  linhas: { prev: number; real: number; fixa: boolean }[], isEntrada: boolean,
+  linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
 ): { principal: string; contexto: string; julgado: boolean; prev: number; real: number; fora: number } {
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   const t = totaisJulgados(linhas)
@@ -214,7 +223,9 @@ export function destaqueDoGrupo(
   const planejadas = linhas.filter(l => !semPlano(l.prev))
   const base = destaqueRadar(t.prev, t.real, isEntrada).contexto
   const contexto = Math.abs(t.fora) > 0.005 ? `${base} · ${fmt(t.fora)} sem plano` : base
-  const pagas = planejadas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa))
+  // A fixa que não ocorre neste mês está resolvida como a paga: não fica "a
+  // pagar" nem vira "resta" (entra pelo realizado, zero).
+  const pagas = planejadas.map(l => ehFixaPaga(l.prev, l.real, isEntrada, l.fixa) || foraDoMes(l))
   if (pagas.every(Boolean)) return { principal: '✓ pago', contexto, julgado: true, ...t }
   const prevEfetivo = planejadas.reduce((s, l, i) => s + (pagas[i] ? l.real : l.prev), 0)
   return { principal: destaqueRadar(prevEfetivo, t.real, isEntrada).principal, contexto, julgado: true, ...t }
@@ -233,7 +244,7 @@ export type ParteDoGrupo = {
   estado: 'ok' | 'passou' | 'pago' | 'neutro'
 }
 export function partesDoGrupo(
-  linhas: { prev: number; real: number; fixa: boolean }[], isEntrada: boolean,
+  linhas: { prev: number; real: number; fixa: boolean; naoOcorre?: boolean }[], isEntrada: boolean,
 ): ParteDoGrupo[] {
   return (['Fixas', 'Variáveis'] as const).flatMap(rotulo => {
     const doLado = linhas.filter(l => l.fixa === (rotulo === 'Fixas'))
@@ -241,7 +252,7 @@ export function partesDoGrupo(
     const t = totaisJulgados(doLado)
     const planejadas = doLado.filter(l => !semPlano(l.prev))
     const estado: ParteDoGrupo['estado'] = semPlano(t.prev) ? 'neutro'
-      : !isEntrada && rotulo === 'Fixas' && planejadas.every(l => ehFixaPaga(l.prev, l.real, isEntrada, true)) ? 'pago'
+      : !isEntrada && rotulo === 'Fixas' && planejadas.every(l => ehFixaPaga(l.prev, l.real, isEntrada, true) || foraDoMes(l)) ? 'pago'
       : !isEntrada && Math.round(t.real / t.prev * 100) / 100 > 1 ? 'passou'
       : 'ok'
     return [{ rotulo, ...t, estado }]

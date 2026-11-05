@@ -7,6 +7,7 @@ import { debitosDoMes } from '../src/utils/debitoAutomatico'
 import { contasAVencer } from '../src/utils/contasAVencer'
 import { confirmarPagamento } from '../src/utils/pagarConta'
 import { saldoTotalNoFim, detalharProjecaoDaConta } from '../src/utils/saldoConta'
+import { destaqueRadar, destaqueDoGrupo, partesDoGrupo } from '../src/components/acompanhamento/radarCores'
 let ok = 0, falha = 0
 const t = (n: string, c: boolean) => { c ? ok++ : (falha++, console.log('FALHA', n)) }
 
@@ -46,6 +47,17 @@ t('paga vence a marca', !fixaNaoOcorre('mas', [{ ...pagaEMarcada, fixasConsolida
 t('automático aparece a conferir (controle)', debitosDoMes(deps({}), hoje).some(x => x.id === 'luz'))
 const luzFora = { 'cx-2026-11': marcarNaoOcorre(vazio, 'luz') }
 t('automático marcado sai do quadro', !debitosDoMes(deps(luzFora), hoje).some(x => x.id === 'luz'))
+
+// Radar: plano à vista e "não gastou", no lugar de "a pagar".
+const dl = destaqueRadar(140, 0, false, { fixa: true, naoOcorre: true })
+t('Radar linha: não gastou', dl.principal === 'não gastou' && dl.contexto.includes('140,00') && dl.contexto.includes('não ocorre'))
+t('Radar linha sem a marca: a pagar (controle)', destaqueRadar(140, 0, false, { fixa: true }).principal.startsWith('a pagar'))
+t('com gasto lançado, a marca não esconde', destaqueRadar(140, 50, false, { fixa: true, naoOcorre: true }).principal.startsWith('resta'))
+const g = destaqueDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }, { prev: 80, real: 80, fixa: true }], false)
+t('grupo só com paga e não ocorre: ✓ pago', g.principal === '✓ pago')
+const g2 = destaqueDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }, { prev: 300, real: 100, fixa: false }], false)
+t('a que não ocorre não vira resta', g2.principal.includes('200,00'))
+t('parte Fixas fica paga', partesDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }], false)[0].estado === 'pago')
 
 console.log(`prova115: ${ok} ok, ${falha} falhas`)
 if (falha) process.exit(1)

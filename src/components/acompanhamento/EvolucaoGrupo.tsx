@@ -4,6 +4,7 @@ import { RADAR_TEXTO_CLARO, RADAR_TEXTO_AZUL, faixaRadar, destaqueDoGrupo, parte
 import PartesDoGrupo from './PartesDoGrupo'
 import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
 import EvolucaoLinha from './EvolucaoLinha'
+import { useForaDoMes } from './foraDoMesContexto'
 
 /**
  * O grupo é um CARTÃO do cardápio (pedido do Guilherme em 12/10/2026: o Radar
@@ -57,6 +58,7 @@ export default function EvolucaoGrupo({
   aberto, onAlternar,
 }: EvolucaoGrupoCartaoProps) {
   const isEntrada = tipo === 'entrada'
+  const foraDoMesIds = useForaDoMes()
   const grupoLabel = grupo === '__sem_grupo__' ? 'Outras' : grupo
 
   const allCats = buildAllCats(tipo, grupo, planCats, realMap, categorias, cartaoNomes)
@@ -71,6 +73,7 @@ export default function EvolucaoGrupo({
     prev: cat.v[mes] ?? 0,
     real: pickReal(realMap, cat.nome, cat.descricao, categorias)?.total ?? 0,
     fixa: !!cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.fixa,
+    naoOcorre: foraDoMesIds.has(cadastroDaLinha({ nome: cat.nome, descricao: cat.descricao }, categorias)?.id ?? ''),
   }))
   const destaque   = destaqueDoGrupo(linhas, isEntrada)
   const semDados   = !destaque.julgado

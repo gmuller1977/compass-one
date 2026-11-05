@@ -4,6 +4,7 @@ import { iconeCategoria } from '../../utils/categoriaIcone'
 import { fmt, type Lanc } from './AcShared'
 import { RADAR_TEXTO_CLARO as COR, RADAR_BORDA_CLARO, RADAR_TRILHO_BRANCO as TRILHO, faixaRadar, destaqueRadar, ehFixaPaga, semPlano, RADAR_COR_NEUTRA } from './radarCores'
 import { useAbrirAjuste } from './ajustePlanoContexto'
+import { useForaDoMes } from './foraDoMesContexto'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 
@@ -57,6 +58,7 @@ export default function EvolucaoLinha({
 }: EvolucaoLinhaProps) {
   const [aberto, setAberto] = useState(false)
   const abrirAjuste = useAbrirAjuste()
+  const foraDoMesIds = useForaDoMes()
   const { icone, cor: corCat } = iconeCategoria(categorias, nome)
   const status = calcStatus(isEntrada, prev, real)
   const dif    = calcDif(isEntrada, prev, real)
@@ -159,15 +161,16 @@ export default function EvolucaoLinha({
   const cadastro = categorias.find(c => c.nome === nome && (c.descricao ?? '') === (descricao ?? ''))
     ?? (categorias.filter(c => c.nome === nome).length === 1 ? categorias.find(c => c.nome === nome) : undefined)
   const fixaPaga = ehFixaPaga(prev, real, isEntrada, !!cadastro?.fixa)
+  const naoOcorre = !!cadastro && foraDoMesIds.has(cadastro.id)
 
-  const faixa = noValorExato || fixaPaga ? 'bom' : faixaRadar(percArred, isEntrada)
+  const faixa = noValorExato || fixaPaga || naoOcorre ? 'bom' : faixaRadar(percArred, isEntrada)
   const cor = semDados ? (Math.abs(real) > 0.005 ? RADAR_COR_NEUTRA : '#94a3b8') : COR[faixa]
   // O número grande é o que importa agora — resta, passou, a pagar, ✓ pago —,
   // e o "gastou X de Y" desce para a linha de baixo. O percentual saiu: a
   // barra já mostra a proporção. Mesma regra do grupo (destaqueRadar), pedido
   // do Guilherme em 06/10/2026. Fixa paga continua sem "disponível": o saldo
   // previsto já não conta nada dela.
-  const destaque = destaqueRadar(prev, real, isEntrada, { fixa: !!cadastro?.fixa, fixaPaga })
+  const destaque = destaqueRadar(prev, real, isEntrada, { fixa: !!cadastro?.fixa, fixaPaga, naoOcorre })
   const alternar = () => temLancamentos && setAberto(v => !v)
 
   return (

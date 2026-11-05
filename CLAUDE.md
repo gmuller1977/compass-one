@@ -162,8 +162,10 @@ fixa de banco ou dinheiro (computador e celular), o botão grava
 riscada ("Não ocorre em [mês] · o plano segue") e o mesmo botão vira "Voltar
 a contar neste mês". Sai da cascata, da previsão (`detalharProjecaoDaConta`,
 logo do Radar, da Início e das contas a pagar) e do quadro de débito
-automático; o plano não muda. A linha da categoria no Radar (congelado)
-segue com o plano. `fixaNaoOcorre` em `fixasDoMes.ts`; `prova115` (13).
+automático; o plano não muda. No Radar (mesmo dia, pedido dele), a linha
+mostra o plano e diz "não gastou" ("plano R$ X · não ocorre neste mês"),
+e o grupo a trata como resolvida, como a fixa paga (`ForaDoMesContexto`).
+`fixaNaoOcorre` em `fixasDoMes.ts`; `prova115` (19).
 **Débito automático se confirma SOZINHO no dia do vencimento** (18/10/2026,
 decisão do Guilherme: "débito automático pode já ser confirmada, e pegamos a
 diferença no valor da conta na tela inicial"). Revê o parágrafo acima só
