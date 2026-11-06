@@ -298,6 +298,9 @@ diferença como linha `Rendimento` (`rendimento: true`, com o `objetivoId`)
 no investimento, sem banco do outro lado; fica fora do realizado, do
 "gasto de hoje" e do aplicado da meta. Aplicar pergunta "De onde vem o
 dinheiro?": De um banco (a transferência) ou Rendimento (a mesma linha).
+No Rendimento, "Pelo saldo atual" (o padrão: a pessoa digita o saldo
+da aplicação no app do banco e o Compass mostra "Rendeu R$ X", a
+diferença para o saldo dele hoje) ou "Quanto rendeu" (o valor direto).
 O saldo informado da conta (o jeito antigo) continua sendo lido. Cada
 movimento tem lixeira com confirmação (`ExcluirMovimentoDialog`):
 aplicação e resgate levam junto a linha do banco (mesmo dia, valor e

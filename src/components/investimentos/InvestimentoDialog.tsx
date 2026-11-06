@@ -72,6 +72,9 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
   const [erro, setErro] = useState('')
   const [objetivo, setObjetivo] = useState(objetivoInicial ?? objetivos[0]?.id ?? '')
   const [origem, setOrigem] = useState<'banco' | 'rendimento'>('banco')
+  // No rendimento, às vezes é preciso fazer conta (06/11/2026, Guilherme): a
+  // pessoa digita o saldo atual da aplicação e o Compass mostra quanto rendeu.
+  const [modoRend, setModoRend] = useState<'saldo' | 'valor'>('saldo')
   const saldoDaParte = (id: string) => partes.find(p => p.objetivoId === id)?.saldo ?? 0
   // As aplicações do "Atualizar saldo": cada objetivo e o que está sem objetivo.
   // Sem objetivo nenhum, a conta inteira numa linha só.
@@ -84,6 +87,9 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
   const t = TEXTOS[acao]
   const nomeInv = conta.apelido || conta.nome
   const v = parseBRL(valor)
+  const saldoDaAplicacao = objetivos.length ? saldoDaParte(objetivo) : saldoCalculado
+  const rendPorSaldo = acao === 'aplicar' && origem === 'rendimento' && modoRend === 'saldo' && valor.trim()
+    ? v - saldoDaAplicacao : null
   const ehHoje = data.dia === hoje.getDate() && data.mes === hoje.getMonth() && data.ano === hoje.getFullYear()
   const difDe = (id: string, saldo: number) => (saldos[id] ?? '').trim() ? parseBRL(saldos[id]) - saldo : null
   const difTotal = aplicacoes.reduce((s, a) => s + (difDe(a.id, a.saldo) ?? 0), 0)
@@ -117,16 +123,23 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
       onFechar()
       return
     }
-    if (!(v > 0)) { setErro('Digite o valor.'); return }
     if (acao === 'aplicar' && origem === 'rendimento') {
-      updateExtratoMes(chave(conta.id, data.ano, data.mes), (dm: DadosMes) => ({
-        ...dm, lancamentos: { ...dm.lancamentos, [data.dia]: [...(dm.lancamentos?.[data.dia] ?? []),
-          linhaRendimento(`r-${Date.now()}`, v, objetivos.find(o => o.id === objetivo)?.nome ?? 'Sem objetivo', objetivo || undefined)] },
+      // Pelo saldo atual: a diferença para o Compass, hoje. Pelo valor: o que rendeu, no dia escolhido.
+      const porSaldo = modoRend === 'saldo'
+      if (!valor.trim()) { setErro(porSaldo ? 'Digite o saldo atual da aplicação.' : 'Digite quanto rendeu.'); return }
+      const rend = porSaldo ? v - saldoDaAplicacao : v
+      if (Math.abs(rend) < 0.005) { setErro('O saldo é igual ao do Compass: não há rendimento para registrar.'); return }
+      if (!porSaldo && !(v > 0)) { setErro('Digite quanto rendeu.'); return }
+      const d = porSaldo ? { dia: hoje.getDate(), mes: hoje.getMonth(), ano: hoje.getFullYear() } : data
+      updateExtratoMes(chave(conta.id, d.ano, d.mes), (dm: DadosMes) => ({
+        ...dm, lancamentos: { ...dm.lancamentos, [d.dia]: [...(dm.lancamentos?.[d.dia] ?? []),
+          linhaRendimento(`r-${Date.now()}`, rend, objetivos.find(o => o.id === objetivo)?.nome ?? 'Sem objetivo', objetivo || undefined)] },
       }))
       toast('Rendimento registrado')
       onFechar()
       return
     }
+    if (!(v > 0)) { setErro('Digite o valor.'); return }
     if (!banco) { setErro('Cadastre um banco para aplicar ou resgatar.'); return }
     if (acao === 'resgatar' && v > saldoCalculado + 0.005) {
       setErro(`O saldo deste investimento no Compass é ${fmt(saldoCalculado)}. Se ele rendeu, atualize o saldo antes de resgatar.`)
@@ -247,11 +260,47 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
                   </div>
                 </>
               )}
-              <label style={rotulo}>{origem === 'rendimento' && acao === 'aplicar' ? 'Quanto rendeu' : 'Valor'}
+              {acao === 'aplicar' && origem === 'rendimento' && (
+                <div role="radiogroup" aria-label="Como informar" style={{ display: 'flex', gap: 6, margin: '0 0 10px' }}>
+                  {([['saldo', 'Pelo saldo atual'], ['valor', 'Quanto rendeu']] as const).map(([k, txt]) => {
+                    const on = modoRend === k
+                    return (
+                      <button key={k} type="button" role="radio" aria-checked={on}
+                        onClick={() => { setModoRend(k); setValor('') }} style={{
+                          flex: 1, minHeight: 38, borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                          fontFamily: 'inherit', border: on ? 'none' : `1.5px solid ${COR.borda}`,
+                          background: on ? '#1e3a8a' : '#fff', color: on ? '#fff' : '#334155',
+                        }}>{txt}</button>
+                    )
+                  })}
+                </div>
+              )}
+              {objetivos.length > 0 && acao === 'aplicar' && origem === 'rendimento' && (
+                <label style={rotulo}>Qual aplicação?
+                  <select value={objetivo} onChange={e => setObjetivo(e.target.value)} style={SELECT}>
+                    {objetivos.map(o => <option key={o.id} value={o.id}>{o.nome} · {fmt(saldoDaParte(o.id))}</option>)}
+                    <option value="">Sem objetivo · {fmt(saldoDaParte(''))}</option>
+                  </select>
+                </label>
+              )}
+              <label style={rotulo}>{origem === 'rendimento' && acao === 'aplicar'
+                ? (modoRend === 'saldo' ? 'Saldo atual, no app do banco' : 'Quanto rendeu') : 'Valor'}
+                {origem === 'rendimento' && acao === 'aplicar' && modoRend === 'saldo' && (
+                  <span style={{ fontWeight: 400 }}> · no Compass {fmt(saldoDaAplicacao)}</span>
+                )}
                 <input value={valor} onChange={e => setValor(mascaraCentavos(e.target.value))}
                   inputMode="numeric" autoFocus={central} placeholder="0,00" style={campo} />
               </label>
-              {objetivos.length > 0 && (
+              {rendPorSaldo !== null && (
+                <div role="status" style={{ background: '#eaf1fd', borderRadius: 12, padding: '10px 12px', fontSize: 14,
+                  color: Math.abs(rendPorSaldo) < 0.005 ? '#15803d' : rendPorSaldo > 0 ? '#1e3a8a' : '#c2410c',
+                  marginBottom: 12, lineHeight: 1.45 }}>
+                  {Math.abs(rendPorSaldo) < 0.005 ? '✓ Igual ao Compass: nada a registrar.'
+                    : rendPorSaldo > 0 ? <>Rendeu <b>{fmt(rendPorSaldo)}</b></>
+                    : <>Ficou <b>{fmt(-rendPorSaldo)}</b> abaixo (rendimento negativo)</>}
+                </div>
+              )}
+              {objetivos.length > 0 && !(acao === 'aplicar' && origem === 'rendimento') && (
                 <label style={rotulo}>{acao === 'aplicar' ? 'Para qual objetivo?' : 'De qual objetivo?'}
                   <select value={objetivo} onChange={e => setObjetivo(e.target.value)} style={SELECT}>
                     {objetivos.map(o => <option key={o.id} value={o.id}>{o.nome} · {fmt(saldoDaParte(o.id))}</option>)}
@@ -266,6 +315,7 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
                   </select>
                 </label>
               )}
+              {!(acao === 'aplicar' && origem === 'rendimento' && modoRend === 'saldo') && (<>
               <div style={rotulo}>Dia</div>
               <button type="button" onClick={() => setCalAberto(a => !a)} style={{
                 display: 'flex', alignItems: 'center', gap: 8, width: '100%', marginTop: 4, marginBottom: 12, minHeight: 44,
@@ -283,9 +333,10 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
                     onEscolher={d => { setData(d); setCalAberto(false) }} />
                 </div>
               )}
+              </>)}
               <p style={{ fontSize: 13, color: COR.textoSuave, margin: '0 0 14px', lineHeight: 1.45 }}>
                 {acao === 'aplicar' && origem === 'rendimento'
-                  ? 'Soma no investimento como rendimento. Não mexe em banco nenhum e não conta como dinheiro guardado da meta.'
+                  ? `${modoRend === 'saldo' ? 'A diferença para o Compass, hoje, vira o rendimento. ' : ''}Não mexe em banco nenhum e não conta como dinheiro guardado da meta.`
                   : 'Vira uma transferência em Lançamentos, no banco escolhido. Não é receita nem despesa.'}
               </p>
             </>
