@@ -22,6 +22,18 @@ import { saldoInformado } from './saldoInformado'
  * em que foi digitado; o que vem depois soma por cima.
  */
 
+/**
+ * O rendimento por aplicação (06/11/2026, Guilherme: "o saldo da aplicação
+ * foi atualizado devido aos rendimentos, preciso atualizar o saldo de uma ou
+ * mais aplicações"). Cada objetivo tem o seu saldo atualizado, e a diferença
+ * vira uma linha 'Rendimento' NO INVESTIMENTO, com o objetivo, sem banco do
+ * outro lado. Ela move o saldo da conta (Lançamentos a mostra) e fica fora
+ * do realizado e do aplicado: não é receita nem dinheiro guardado.
+ * A atualização antiga (saldo informado da conta) continua sendo lida.
+ */
+export const CATEGORIA_RENDIMENTO = 'Rendimento'
+export const ehRendimentoDeInvestimento = (l: { rendimento?: boolean }) => l.rendimento === true
+
 export type TipoMovimento = 'aplicacao' | 'resgate' | 'rendimento'
 
 export type MovimentoInvestimento = {
@@ -36,6 +48,8 @@ export type MovimentoInvestimento = {
   contraparte?: string
   /** Para qual objetivo foi a aplicação ou o resgate ('' = sem objetivo). */
   objetivoId?: string
+  /** Para excluir: o lançamento no investimento (sem ele, é o saldo informado do mês). */
+  lancamentoId?: string
 }
 
 export type FimDoMes = { saldo: number; rendido: number }
@@ -160,6 +174,9 @@ export function historicoDoInvestimento(
     const diaInformado = informado === null ? 0
       : data.startsWith(`${ano}-${doisDig(mes + 1)}-`) ? Number(data.slice(8, 10)) : totalDias
     let temRegistro = informado !== null
+    // Atualização que conferiu sem diferença: só a data, sem saldo.
+    if (informado === null && data.startsWith(`${ano}-${doisDig(mes + 1)}-`) && data <= hoje
+      && (!atualizadoEm || data > atualizadoEm)) atualizadoEm = data
 
     for (let d = 1; d <= totalDias; d++) {
       const iso = isoDe(ano, mes, d)
@@ -174,10 +191,18 @@ export function historicoDoInvestimento(
         const destino = oid && meus.some(o => o.id === oid) ? oid : ''
         const p = parte(destino)
         p.saldo += v
+        if (ehRendimentoDeInvestimento(l)) {
+          p.rendido += v
+          rendido += v
+          if (!atualizadoEm || iso > atualizadoEm) atualizadoEm = iso
+          movimentos.push({ contaId: conta.id, ano, mes, dia: d, tipo: 'rendimento', valor: v,
+            objetivoId: destino, lancamentoId: l.id })
+          continue
+        }
         if (v > 0) p.aplicado += v; else p.resgatado -= v
         p.liquidoPorMes.set(idx(ano, mes), (p.liquidoPorMes.get(idx(ano, mes)) ?? 0) + v)
         movimentos.push({ contaId: conta.id, ano, mes, dia: d, tipo: v > 0 ? 'aplicacao' : 'resgate',
-          valor: v, contraparte: contraparteDe(l.descricao), objetivoId: destino })
+          valor: v, contraparte: contraparteDe(l.descricao), objetivoId: destino, lancamentoId: l.id })
       }
       if (d === diaInformado && informado !== null) {
         const dif = informado - saldo
@@ -343,7 +368,7 @@ export function aplicadoNoMes(
     for (const [dia, lista] of Object.entries(dm?.lancamentos ?? {})) {
       if (hoje && isoDe(ano, mes, Number(dia)) > hoje) continue
       for (const l of lista ?? []) {
-        if (!(l.valor > 0)) continue
+        if (!(l.valor > 0) || ehRendimentoDeInvestimento(l)) continue
         total += l.tipo === 'entrada' ? l.valor : -l.valor
       }
     }
@@ -358,4 +383,53 @@ export function aplicadoNoMes(
 export function rendeuPercentual(p: Pick<ParteDoObjetivo, 'saldo' | 'rendido'>): number | null {
   const base = p.saldo - p.rendido
   return base > 0.005 ? p.rendido / base : null
+}
+
+type LancMin = { id: string; tipo: string; valor: number; categoria?: string; rendimento?: boolean }
+type MesMin = { lancamentos?: Record<number, LancMin[]> }
+const chaveDoMes = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${doisDig(mes + 1)}`
+
+/** O que excluir para desfazer um movimento: linhas de lançamento e/ou o saldo informado do mês. */
+export type Exclusao = {
+  linhas: { chave: string; dia: number; id: string }[]
+  /** A atualização antiga: limpar o saldo informado deste mês do investimento. */
+  limparInformado?: string
+  /** A conta do outro lado da transferência, quando achada. */
+  contraparteId?: string
+}
+
+/**
+ * Desfazer um movimento (06/11/2026, pedido do Guilherme: "preciso ter a
+ * opção de excluir movimentos quando feito errado"). Aplicar e resgatar
+ * gravaram DUAS linhas, a do investimento e a do banco: as duas saem. A do
+ * banco é achada no mesmo dia, categoria 'Transferência', mesmo valor e
+ * sentido oposto, em outra conta; havendo mais de uma, a de id mais perto
+ * (as duas nascem com Date.now() em sequência). Sem par, sai só a do
+ * investimento. Rendimento novo é uma linha só; o antigo limpa o saldo
+ * informado do mês, e o saldo volta ao que o Compass calcula.
+ */
+export function exclusaoDoMovimento(m: MovimentoInvestimento, extratoData: Record<string, MesMin>): Exclusao {
+  const chave = chaveDoMes(m.contaId, m.ano, m.mes)
+  if (!m.lancamentoId) return { linhas: [], limparInformado: chave }
+  const linhas = [{ chave, dia: m.dia, id: m.lancamentoId }]
+  if (m.tipo === 'rendimento') return { linhas }
+  const doInv = extratoData[chave]?.lancamentos?.[m.dia]?.find(l => l.id === m.lancamentoId)
+  if (!doInv) return { linhas }
+  const sufixo = `-${m.ano}-${doisDig(m.mes + 1)}`
+  const num = (id: string) => { const x = /(\d+)$/.exec(id); return x ? Number(x[1]) : NaN }
+  const alvo = num(m.lancamentoId)
+  let melhor: { chave: string; id: string; dist: number } | null = null
+  for (const [k, dm] of Object.entries(extratoData)) {
+    if (k === chave || !k.endsWith(sufixo)) continue
+    for (const l of dm?.lancamentos?.[m.dia] ?? []) {
+      if (!/^transfer[eê]ncia$/i.test((l.categoria ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''))) continue
+      if (l.tipo === doInv.tipo || Math.abs(l.valor - doInv.valor) >= 0.005) continue
+      const dist = Math.abs(num(l.id) - alvo)
+      const d = Number.isFinite(dist) ? dist : Number.MAX_SAFE_INTEGER
+      if (!melhor || d < melhor.dist) melhor = { chave: k, id: l.id, dist: d }
+    }
+  }
+  if (!melhor) return { linhas }
+  return { linhas: [...linhas, { chave: melhor.chave, dia: m.dia, id: melhor.id }],
+    contraparteId: melhor.chave.slice(0, -sufixo.length) }
 }

@@ -290,6 +290,20 @@ embaixo, em largura inteira; os botões ficam NA LATERAL, um embaixo do outro
 Resgatou · Rendeu, o rendimento também em % sobre o que ficou aplicado
 (`rendeuPercentual`: rendido ÷ (saldo − rendido)). Sem objetivo, os três
 números são da conta.
+**Investimentos: rendimento por aplicação e excluir movimento** (06/11/2026,
+Guilherme: errou o fluxo, "o dinheiro pode vir de um banco ou de
+rendimentos" e "preciso atualizar o saldo de uma ou mais aplicações").
+Atualizar saldo pede o saldo de CADA objetivo (vazio não muda) e grava a
+diferença como linha `Rendimento` (`rendimento: true`, com o `objetivoId`)
+no investimento, sem banco do outro lado; fica fora do realizado, do
+"gasto de hoje" e do aplicado da meta. Aplicar pergunta "De onde vem o
+dinheiro?": De um banco (a transferência) ou Rendimento (a mesma linha).
+O saldo informado da conta (o jeito antigo) continua sendo lido. Cada
+movimento tem lixeira com confirmação (`ExcluirMovimentoDialog`):
+aplicação e resgate levam junto a linha do banco (mesmo dia, valor e
+sentido oposto, id mais perto), rendimento antigo limpa o informado do
+mês. `exclusaoDoMovimento` em `investimentos.ts`; `prova117` (15).
+
 **Aplicar é guardar: a meta de economia conta o investido** (mesmo dia,
 Guilherme: "meta é o mesmo que investir"). A aplicação sai do saldo de
 bancos e dinheiro, então o "guardou" (final − inicial) a contava como gasto.

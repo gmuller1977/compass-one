@@ -77,7 +77,7 @@ export function gastoDeHoje(
   for (const id of [...contas.filter(c => c.tipo !== 'cartao').map(c => c.id), 'dinheiro']) {
     for (const l of ext[chave(id, atual)]?.lancamentos?.[dia] ?? []) {
       if (l.tipo !== 'saida') continue
-      if (l.id?.startsWith('fatura-') || ehTransferencia(l.categoria ?? '')) continue
+      if (l.id?.startsWith('fatura-') || ehTransferencia(l.categoria ?? '') || (l as { rendimento?: boolean }).rendimento) continue
       if (cartaoNomes.has((l.categoria ?? '').toLowerCase())) continue
       total += l.valor
     }

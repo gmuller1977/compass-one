@@ -81,6 +81,8 @@ export function construirRealizadoMes(params: {
           // precisa bater entre o Radar e o extrato. Aqui dentro a pergunta é
           // outra: quanto foi realizado contra o que estava planejado.
           if (ehTransferencia(l.categoria)) continue
+          // O rendimento informado no investimento também não é receita (utils/investimentos).
+          if ((l as { rendimento?: boolean }).rendimento) continue
           const fonte = isDinheiroKey ? 'dinheiro' : (l.formaPagamento === 'dinheiro' ? 'dinheiro' : 'banco')
           const sub   = resolverSub(l.categoria, l.tipo === 'saida' ? 'saida' : 'entrada',
             (l as { subCategoria?: string }).subCategoria)

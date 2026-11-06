@@ -5,6 +5,7 @@ import PageHeader from '../components/PageHeader'
 import { useIsMobile } from '../components/configuracoes/CfgShared'
 import InvestimentoDialog, { type AcaoInvestimento } from '../components/investimentos/InvestimentoDialog'
 import ObjetivoDialog from '../components/investimentos/ObjetivoDialog'
+import ExcluirMovimentoDialog from '../components/investimentos/ExcluirMovimentoDialog'
 import { useObjetivos } from '../utils/objetivosBanco'
 import { useApp } from '../context/AppContext'
 import type { DadosMes } from '../context/AppContext'
@@ -45,6 +46,7 @@ export default function Investimentos() {
     [contas, extratoData, hoje, objetivos])
   const [vista, setVista] = useState({ ano: agora.getFullYear(), mes: agora.getMonth() })
   const [acao, setAcao] = useState<{ item: HistoricoInvestimento; acao: AcaoInvestimento; objetivoId?: string } | null>(null)
+  const [excluindo, setExcluindo] = useState<MovimentoInvestimento | null>(null)
   const [editando, setEditando] = useState<{ item: HistoricoInvestimento; objetivo?: Objetivo } | null>(null)
   const anoHoje = agora.getFullYear()
   const novo = () => navigate('/configuracoes?aba=bancos')
@@ -153,7 +155,7 @@ export default function Investimentos() {
             </div>
 
             <div style={{ ...cartao, marginTop: 14 }}>
-              <Movimentos r={r} objetivos={objetivos} ano={vista.ano} mes={vista.mes}
+              <Movimentos r={r} objetivos={objetivos} ano={vista.ano} mes={vista.mes} onExcluir={setExcluindo}
                 podeAvancar={vista.ano * 12 + vista.mes < agora.getFullYear() * 12 + agora.getMonth()}
                 andar={p => setVista(v => { const k = v.ano * 12 + v.mes + p; return { ano: Math.floor(k / 12), mes: k % 12 } })} />
             </div>
@@ -165,6 +167,12 @@ export default function Investimentos() {
         <InvestimentoDialog conta={acao.item.conta} acao={acao.acao} saldoCalculado={acao.item.saldo}
           objetivos={objetivos.filter(o => o.contaId === acao.item.conta.id)} partes={acao.item.partes}
           central={!isMobile} onFechar={() => setAcao(null)} />
+      )}
+      {excluindo && (
+        <ExcluirMovimentoDialog movimento={excluindo} central={!isMobile} onFechar={() => setExcluindo(null)}
+          nomeConta={r.itens.find(i => i.conta.id === excluindo.contaId)?.conta.apelido
+            || r.itens.find(i => i.conta.id === excluindo.contaId)?.conta.nome || ''}
+          nomeObjetivo={excluindo.objetivoId ? objetivos.find(o => o.id === excluindo.objetivoId)?.nome : undefined} />
       )}
       {editando && (
         <ObjetivoDialog contaId={editando.item.conta.id} contaNome={editando.item.conta.apelido || editando.item.conta.nome}
@@ -338,9 +346,11 @@ const ROTULO_MOV: Record<MovimentoInvestimento['tipo'], { t: string; ic: string;
   rendimento: { t: 'Rendimento', ic: 'ti-trending-up', fundo: '#ecfeff', cor: CIANO },
 }
 
-function Movimentos({ r, objetivos, ano, mes, andar, podeAvancar }: {
+function Movimentos({ r, objetivos, ano, mes, andar, podeAvancar, onExcluir }: {
   r: ReturnType<typeof resumoDosInvestimentos>; objetivos: Objetivo[]; ano: number; mes: number
   andar: (p: number) => void; podeAvancar: boolean
+  /** Lixeira em cada linha (06/11/2026, pedido do Guilherme). */
+  onExcluir: (m: MovimentoInvestimento) => void
 }) {
   const lista = movimentosDoMes(r, ano, mes)
   const nomeDe = (id: string) => { const c = r.itens.find(i => i.conta.id === id)?.conta; return c ? (c.apelido || c.nome) : '' }
@@ -365,7 +375,7 @@ function Movimentos({ r, objetivos, ano, mes, andar, podeAvancar }: {
         const d = ROTULO_MOV[m.tipo]
         const perda = m.tipo === 'rendimento' && m.valor < 0
         const sub = m.tipo === 'rendimento'
-          ? `${nomeDe(m.contaId)} · saldo atualizado`
+          ? `${nomeDe(m.contaId)}${objDe(m.objetivoId) ? ` · ${objDe(m.objetivoId)}` : ''} · saldo atualizado`
           : `${nomeDe(m.contaId)}${objDe(m.objetivoId) ? ` · ${objDe(m.objetivoId)}` : ''}${m.contraparte ? ` · ${m.tipo === 'aplicacao' ? 'do' : 'para o'} ${m.contraparte}` : ''}`
         return (
           <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0',
@@ -379,11 +389,16 @@ function Movimentos({ r, objetivos, ano, mes, andar, podeAvancar }: {
             </div>
             <div style={{ fontWeight: 800, whiteSpace: 'nowrap', color: m.valor < 0 ? LARANJA : d.cor,
               fontSize: 'min(15px, calc(100cqi / 14))' }}>{m.valor > 0 ? '+' : ''}{fmt(m.valor)}</div>
+            <button onClick={() => onExcluir(m)} aria-label={`Excluir ${perda ? 'rendimento negativo' : d.t.toLowerCase()} de ${fmt(Math.abs(m.valor))}`}
+              title="Excluir" style={{
+                width: 36, height: 36, borderRadius: '50%', border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569',
+                cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0, marginLeft: -4,
+              }}><i aria-hidden className="ti ti-trash" /></button>
           </div>
         )
       })}
       <div style={{ fontSize: 12, color: '#475569', marginTop: 8 }}>
-        Aplicar e resgatar viram transferência no banco escolhido, em Lançamentos.</div>
+        Aplicar e resgatar viram transferência no banco escolhido, em Lançamentos. Excluir desfaz também a transferência.</div>
     </>
   )
 }

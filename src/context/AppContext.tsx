@@ -96,6 +96,8 @@ export type Lancamento = {
   tipoLanc: 'fixa' | 'variavel'
   /** No investimento: para qual objetivo foi a aplicação ou o resgate (utils/investimentos). */
   objetivoId?: string
+  /** No investimento: rendimento (ou perda) informado, não é aplicação (utils/investimentos). */
+  rendimento?: true
 }
 
 export type DadosMes = {

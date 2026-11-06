@@ -10,12 +10,15 @@ import { nomeDaConta } from '../../utils/nomeDaConta'
 import { ehContaDisponivel } from '../../utils/saldoConta'
 import { descricoesDaTransferencia } from '../../utils/transferencia'
 import { lancamentoAntesDoSaldo } from '../../utils/saldoDesde'
-import { isoDe, type Objetivo, type ParteDoObjetivo } from '../../utils/investimentos'
+import { saldoInformado } from '../../utils/saldoInformado'
+import { CATEGORIA_RENDIMENTO, isoDe, type Objetivo, type ParteDoObjetivo } from '../../utils/investimentos'
 
 export type AcaoInvestimento = 'aplicar' | 'resgatar' | 'atualizar'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const chave = (conta: string, ano: number, mes: number) => `${conta}-${ano}-${String(mes + 1).padStart(2, '0')}`
+/** Sem saldo informado do jeito antigo: a data pode marcar a atualização sem mexer em conta nenhuma. */
+const saldoInformadoVazio = (dm: DadosMes) => saldoInformado(dm) === null
 const DIAS_SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
 const SELECT = {
@@ -35,9 +38,16 @@ const TEXTOS: Record<AcaoInvestimento, { icone: string; rotulo: string; botao: s
  *
  * Aplicar e resgatar gravam a MESMA transferência de Lançamentos: a linha no
  * banco e o espelho no investimento, categoria 'Transferência', fora do
- * realizado. Atualizar saldo grava o informado no mesmo campo da caixa de
- * saldo de Lançamentos, com a data de hoje: a diferença para o calculado é o
- * rendimento (utils/investimentos).
+ * realizado.
+ *
+ * Desde 06/11/2026 (Guilherme: "o dinheiro pode vir de um banco ou de
+ * rendimentos"; "preciso atualizar o saldo de uma ou mais aplicações"):
+ * - Aplicar pergunta de onde vem: de um banco (a transferência) ou do
+ *   rendimento (uma linha 'Rendimento' no investimento, sem banco).
+ * - Atualizar saldo pede o saldo de CADA aplicação (objetivo); vazio não
+ *   muda. A diferença de cada uma vira o rendimento dela, a mesma linha
+ *   'Rendimento' com o objetivo. Antes era um saldo só para a conta, e o
+ *   rendimento se dividia pelo saldo de cada objetivo.
  */
 export default function InvestimentoDialog({ conta, acao, saldoCalculado, objetivos = [], partes = [], objetivoInicial, onFechar, central }: {
   conta: Conta
@@ -61,27 +71,62 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
   const [calAberto, setCalAberto] = useState(false)
   const [erro, setErro] = useState('')
   const [objetivo, setObjetivo] = useState(objetivoInicial ?? objetivos[0]?.id ?? '')
+  const [origem, setOrigem] = useState<'banco' | 'rendimento'>('banco')
   const saldoDaParte = (id: string) => partes.find(p => p.objetivoId === id)?.saldo ?? 0
+  // As aplicações do "Atualizar saldo": cada objetivo e o que está sem objetivo.
+  // Sem objetivo nenhum, a conta inteira numa linha só.
+  const aplicacoes = objetivos.length === 0
+    ? [{ id: '', nome: conta.apelido || conta.nome, saldo: saldoCalculado }]
+    : [...objetivos.map(o => ({ id: o.id, nome: o.nome, saldo: saldoDaParte(o.id) })),
+      ...(Math.abs(saldoDaParte('')) >= 0.005 ? [{ id: '', nome: 'Sem objetivo', saldo: saldoDaParte('') }] : [])]
+  const [saldos, setSaldos] = useState<Record<string, string>>({})
 
   const t = TEXTOS[acao]
   const nomeInv = conta.apelido || conta.nome
   const v = parseBRL(valor)
   const ehHoje = data.dia === hoje.getDate() && data.mes === hoje.getMonth() && data.ano === hoje.getFullYear()
-  const dif = acao === 'atualizar' && valor.trim() ? v - saldoCalculado : null
+  const difDe = (id: string, saldo: number) => (saldos[id] ?? '').trim() ? parseBRL(saldos[id]) - saldo : null
+  const difTotal = aplicacoes.reduce((s, a) => s + (difDe(a.id, a.saldo) ?? 0), 0)
+  const algumDigitado = aplicacoes.some(a => (saldos[a.id] ?? '').trim())
+
+  const linhaRendimento = (id: string, dif: number, nome: string, objetivoId?: string) => ({
+    id, tipo: dif > 0 ? 'entrada' : 'saida', valor: Math.round(Math.abs(dif) * 100) / 100,
+    descricao: objetivos.length ? `Rendimento · ${nome}` : 'Rendimento', categoria: CATEGORIA_RENDIMENTO,
+    formaPagamento: 'debito', tipoLanc: 'variavel', consolidado: true, rendimento: true,
+    ...(objetivoId ? { objetivoId } : {}),
+  }) as Lancamento
 
   function confirmar() {
     setErro('')
     if (acao === 'atualizar') {
-      if (!valor.trim()) { setErro('Digite o saldo que aparece no app do banco.'); return }
-      const iso = isoDe(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+      if (!algumDigitado) { setErro('Digite o saldo de pelo menos uma aplicação, como está no app do banco.'); return }
+      const dia = hoje.getDate()
+      const iso = isoDe(hoje.getFullYear(), hoje.getMonth(), dia)
+      const base = Date.now()
+      const novas = aplicacoes.flatMap((a, i) => {
+        const dif = difDe(a.id, a.saldo)
+        return dif !== null && Math.abs(dif) >= 0.005 ? [linhaRendimento(`r-${base + i}`, dif, a.nome, a.id || undefined)] : []
+      })
       updateExtratoMes(chave(conta.id, hoje.getFullYear(), hoje.getMonth()), dm => ({
-        ...dm, saldoBanco: fmt(v), saldoBancoData: iso, saldoBancoInformado: true,
+        ...dm,
+        // A data marca "atualizado hoje", mesmo quando todas conferem.
+        ...(saldoInformadoVazio(dm) ? { saldoBancoData: iso } : {}),
+        lancamentos: { ...dm.lancamentos, [dia]: [...(dm.lancamentos?.[dia] ?? []), ...novas] },
       }))
-      toast('Saldo atualizado')
+      toast(novas.length ? 'Saldo atualizado' : 'Saldo conferido')
       onFechar()
       return
     }
     if (!(v > 0)) { setErro('Digite o valor.'); return }
+    if (acao === 'aplicar' && origem === 'rendimento') {
+      updateExtratoMes(chave(conta.id, data.ano, data.mes), (dm: DadosMes) => ({
+        ...dm, lancamentos: { ...dm.lancamentos, [data.dia]: [...(dm.lancamentos?.[data.dia] ?? []),
+          linhaRendimento(`r-${Date.now()}`, v, objetivos.find(o => o.id === objetivo)?.nome ?? 'Sem objetivo', objetivo || undefined)] },
+      }))
+      toast('Rendimento registrado')
+      onFechar()
+      return
+    }
     if (!banco) { setErro('Cadastre um banco para aplicar ou resgatar.'); return }
     if (acao === 'resgatar' && v > saldoCalculado + 0.005) {
       setErro(`O saldo deste investimento no Compass é ${fmt(saldoCalculado)}. Se ele rendeu, atualize o saldo antes de resgatar.`)
@@ -139,31 +184,70 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
         <div style={{ padding: central ? '18px 20px 22px' : '16px 16px 28px' }}>
           {acao === 'atualizar' ? (
             <>
-              <label style={rotulo}>Saldo hoje, no app do banco
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input value={valor} onChange={e => setValor(mascaraCentavos(e.target.value, true))}
-                    inputMode="numeric" autoFocus={central} placeholder="0,00" style={{ ...campo, flex: 1 }} />
-                  <button type="button" onClick={() => setValor(trocarSinal(valor))} aria-label="Trocar o sinal" style={{
-                    marginBottom: 12, marginTop: 4, minWidth: 48, minHeight: 48, borderRadius: 12, border: `1.5px solid ${COR.borda}`,
-                    background: '#fff', fontWeight: 700, fontSize: 15, color: COR.texto, cursor: 'pointer', fontFamily: 'inherit',
-                  }}>+/−</button>
-                </div>
-              </label>
-              {dif !== null && Math.abs(dif) >= 0.005 && (
+              <p style={{ fontSize: 14, color: COR.texto, margin: '0 0 12px', lineHeight: 1.45 }}>
+                {aplicacoes.length > 1
+                  ? <>Digite o saldo de cada aplicação como está hoje no app do banco. A que você deixar em branco não muda.</>
+                  : <>Digite o saldo como está hoje no app do banco.</>}
+              </p>
+              {aplicacoes.map(a => {
+                const dif = difDe(a.id, a.saldo)
+                return (
+                  <div key={a.id || 'sem'} style={{ border: `1.5px solid ${COR.borda}`, borderRadius: 14, padding: '10px 12px', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: COR.texto, flex: 1, minWidth: 0 }}>{a.nome}</span>
+                      <span style={{ fontSize: 13, color: '#475569', whiteSpace: 'nowrap' }}>No Compass {fmt(a.saldo)}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input value={saldos[a.id] ?? ''} aria-label={`Saldo de ${a.nome} no banco`}
+                        onChange={e => setSaldos(x => ({ ...x, [a.id]: mascaraCentavos(e.target.value, true) }))}
+                        inputMode="numeric" placeholder="Saldo no banco" style={{ ...campo, flex: 1, margin: 0 }} />
+                      <button type="button" onClick={() => setSaldos(x => ({ ...x, [a.id]: trocarSinal(x[a.id] ?? '') }))}
+                        aria-label="Trocar o sinal" style={{
+                          minWidth: 48, minHeight: 48, borderRadius: 12, border: `1.5px solid ${COR.borda}`, background: '#fff',
+                          fontWeight: 700, fontSize: 15, color: COR.texto, cursor: 'pointer', fontFamily: 'inherit',
+                        }}>+/−</button>
+                    </div>
+                    {dif !== null && (
+                      <div role="status" style={{ fontSize: 13.5, marginTop: 6, lineHeight: 1.4,
+                        color: Math.abs(dif) < 0.005 ? '#15803d' : dif > 0 ? '#1e3a8a' : '#c2410c' }}>
+                        {Math.abs(dif) < 0.005 ? '✓ Igual ao Compass'
+                          : dif > 0 ? <>Rendeu <b>{fmt(dif)}</b></> : <>Ficou <b>{fmt(-dif)}</b> abaixo (rendimento negativo)</>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              {aplicacoes.length > 1 && algumDigitado && Math.abs(difTotal) >= 0.005 && (
                 <div role="status" style={{ background: '#eaf1fd', borderRadius: 12, padding: '10px 12px', fontSize: 14,
-                  color: '#1e3a8a', marginBottom: 14, lineHeight: 1.45 }}>
-                  {dif > 0
-                    ? <>Rendeu <b>{fmt(dif)}</b> desde a última atualização.</>
-                    : <>Ficou <b>{fmt(-dif)}</b> abaixo do que o Compass calculava.</>}
+                  color: '#1e3a8a', marginBottom: 12, lineHeight: 1.45 }}>
+                  No total, {difTotal > 0 ? <>rendeu <b>{fmt(difTotal)}</b></> : <>ficou <b>{fmt(-difTotal)}</b> abaixo</>}.
                 </div>
               )}
               <p style={{ fontSize: 13, color: COR.textoSuave, margin: '0 0 14px', lineHeight: 1.45 }}>
-                A diferença para o saldo do Compass vira o rendimento do mês. Aplicações e resgates feitos depois somam por cima.
+                A diferença vira o rendimento da aplicação. Não mexe em banco nenhum. Se o saldo mudou porque você
+                aplicou ou resgatou, use Aplicar ou Resgatar.
               </p>
             </>
           ) : (
             <>
-              <label style={rotulo}>Valor
+              {acao === 'aplicar' && (
+                <>
+                  <div style={rotulo}>De onde vem o dinheiro?</div>
+                  <div role="radiogroup" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '4px 0 12px' }}>
+                    {([['banco', 'ti-building-bank', 'De um banco'], ['rendimento', 'ti-trending-up', 'Rendimento']] as const).map(([k, ic, txt]) => {
+                      const on = origem === k
+                      return (
+                        <button key={k} type="button" role="radio" aria-checked={on} onClick={() => setOrigem(k)} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 46, borderRadius: 12,
+                          border: on ? '2px solid #1d4ed8' : `1.5px solid ${COR.borda}`, background: on ? '#eff6ff' : '#fff',
+                          color: on ? '#1e3a8a' : COR.texto, fontWeight: 700, fontSize: 14.5, cursor: 'pointer', fontFamily: 'inherit',
+                        }}><i aria-hidden className={`ti ${ic}`} style={{ fontSize: 18 }} />{txt}</button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+              <label style={rotulo}>{origem === 'rendimento' && acao === 'aplicar' ? 'Quanto rendeu' : 'Valor'}
                 <input value={valor} onChange={e => setValor(mascaraCentavos(e.target.value))}
                   inputMode="numeric" autoFocus={central} placeholder="0,00" style={campo} />
               </label>
@@ -175,11 +259,13 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
                   </select>
                 </label>
               )}
-              <label style={rotulo}>{acao === 'aplicar' ? 'Sai de' : 'Vai para'}
-                <select value={banco} onChange={e => setBanco(e.target.value)} style={SELECT}>
-                  {bancos.map(b => <option key={b.id} value={b.id}>{nomeDaConta(b, contas)}</option>)}
-                </select>
-              </label>
+              {!(acao === 'aplicar' && origem === 'rendimento') && (
+                <label style={rotulo}>{acao === 'aplicar' ? 'Sai de' : 'Vai para'}
+                  <select value={banco} onChange={e => setBanco(e.target.value)} style={SELECT}>
+                    {bancos.map(b => <option key={b.id} value={b.id}>{nomeDaConta(b, contas)}</option>)}
+                  </select>
+                </label>
+              )}
               <div style={rotulo}>Dia</div>
               <button type="button" onClick={() => setCalAberto(a => !a)} style={{
                 display: 'flex', alignItems: 'center', gap: 8, width: '100%', marginTop: 4, marginBottom: 12, minHeight: 44,
@@ -198,7 +284,9 @@ export default function InvestimentoDialog({ conta, acao, saldoCalculado, objeti
                 </div>
               )}
               <p style={{ fontSize: 13, color: COR.textoSuave, margin: '0 0 14px', lineHeight: 1.45 }}>
-                Vira uma transferência em Lançamentos, no banco escolhido. Não é receita nem despesa.
+                {acao === 'aplicar' && origem === 'rendimento'
+                  ? 'Soma no investimento como rendimento. Não mexe em banco nenhum e não conta como dinheiro guardado da meta.'
+                  : 'Vira uma transferência em Lançamentos, no banco escolhido. Não é receita nem despesa.'}
               </p>
             </>
           )}
