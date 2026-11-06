@@ -3566,6 +3566,13 @@ conta do `NleExtrato`, e toda ação chama as mesmas funções da página.
   (`alternarConferidaDaCompra`). No mesmo dia: mudar a quantidade de
   parcelas na 1ª, ao editar, refaz a série (`refazerSerieDeParcelas`; antes
   ficava "de 6" sem número e sem as seguintes). `serieDeParcelas.ts`; `prova118`.
+  **O quadro do banco diz de onde vem o valor** (06/11/2026, Guilherme: um
+  valor digitado antes de uma compra nova lia como "a mais no Compass").
+  Título "Fatura no [cartão]" e embaixo "valor manual" (digitado em
+  "Informar o banco") ou "valor conferido" (soma das bolinhas), com só
+  "diferença de R$ X" ou "✓ igual ao Compass". No computador o modo vai no
+  título ("Fatura no XP · manual"). `faturaInformadaEm`/`faturaInformadaTotal`
+  guardam quando foi digitado (o "Pular" não mexe); `prova119`.
 - **As bolinhas são a conferência da fatura** (30/10/2026, ideia do
   Guilherme). O botão "No [cartão]" do celular e o 5º card do computador
   mostram "Conferido com o banco R$ X" e "falta conferir R$ Y" (total do
