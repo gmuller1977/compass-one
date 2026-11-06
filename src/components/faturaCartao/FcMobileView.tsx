@@ -223,26 +223,20 @@ export default function FcMobileView({
               mostrar se falta algo"). O valor do banco é pedido no fim. */}
           <button onClick={abrirFatura} aria-label="Informar o valor da fatura no banco" style={CAIXA_LADO}>
             {lado.banco.estado === 'nao-informada' ? <>
-              <span style={ROTULO_LADO}>Conferido ✎</span>
+              <span style={ROTULO_LADO}>Valor conferido ✎</span>
               <span style={VALOR_LADO}>{fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}</span>
               <span style={LINHA_LADO}>
-                {lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ tudo conferido</b>
-                  : lado.compass.estado === 'falta-conferir' ? <>falta conferir<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
+                {lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
+                  : lado.compass.estado === 'falta-conferir' ? <>diferença de<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
                   : 'marque as bolinhas'}
               </span>
             </> : <>
-              <span style={ROTULO_LADO}>No {contaAtual?.banco ?? 'banco'} ✎</span>
+              <span style={ROTULO_LADO}>Valor manual ✎</span>
               <span style={VALOR_LADO}>{mesDados.faturaAtual}</span>
-              {lado.banco.estado === 'comparado' && lado.banco.informadoEm && (
-                <span style={LINHA_LADO}>você informou em {lado.banco.informadoEm}</span>
-              )}
               <span style={LINHA_LADO}>
-                {lado.banco.estado === 'comparado' && lado.banco.mudouDepois !== null
-                  ? <>depois {lado.banco.mudouDepois > 0 ? 'entraram' : 'saíram'} <b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(Math.abs(lado.banco.mudouDepois))}</b><br /><b style={{color:'#fde047'}}>Tocar para atualizar</b></>
-                : lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
-                  : lado.banco.diferenca > 0 ? <>falta lançar<br /><b style={{color:'#fff'}}>{fmt(lado.banco.diferenca)}</b></>
-                  : <>a mais no Compass<br /><b style={{color:'#fff'}}>{fmt(-lado.banco.diferenca)}</b></>}
+                {lado.banco.estado === 'comparado' && lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
+                  : lado.banco.estado === 'comparado' ? <>diferença de<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(Math.abs(lado.banco.diferenca))}</b></> : null}
               </span>
             </>}
           </button>

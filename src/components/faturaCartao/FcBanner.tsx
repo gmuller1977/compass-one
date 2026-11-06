@@ -64,23 +64,18 @@ export default function FcBanner({
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={informada ? 'ti-building-bank' : 'ti-circle-check'}
-              label={informada ? 'Fatura no banco' : 'Conferido'}
+              label={informada ? 'Valor manual' : 'Valor conferido'}
               value={informada ? mesDados.faturaAtual! : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}
               valueColor="#fff" style={{ flex: 1 }}>
-              {lado.banco.estado === 'comparado' && lado.banco.informadoEm && (
-                <div style={linha('rgba(255,255,255,.75)')}>você informou em {lado.banco.informadoEm}</div>
-              )}
-              <div style={linha(lado.banco.estado === 'comparado' ? (lado.banco.igual ? '#86efac' : '#fff')
-                : lado.compass.estado === 'tudo-conferido' ? '#86efac' : lado.compass.estado === 'falta-conferir' ? '#fff' : 'rgba(255,255,255,.75)')}>
+              {/* Bem simples (06/11/2026, Guilherme): "Valor manual" ou
+                  "Valor conferido", e embaixo só a diferença para o Compass. */}
+              <div style={linha((lado.banco.estado === 'comparado' ? lado.banco.igual : lado.compass.estado === 'tudo-conferido') ? '#86efac'
+                : lado.compass.estado === 'sem-compras' && lado.banco.estado !== 'comparado' ? 'rgba(255,255,255,.75)' : '#fff')}>
                 {lado.banco.estado === 'comparado'
-                  ? (lado.banco.igual ? '✓ igual ao Compass'
-                    : lado.banco.mudouDepois !== null
-                      ? `depois ${lado.banco.mudouDepois > 0 ? 'entraram' : 'saíram'} ${fmt(Math.abs(lado.banco.mudouDepois))} no Compass`
-                    : lado.banco.diferenca > 0 ? `falta lançar ${fmt(lado.banco.diferenca)}`
-                    : `${fmt(-lado.banco.diferenca)} a mais no Compass`)
-                  : lado.compass.estado === 'tudo-conferido' ? '✓ tudo conferido'
-                  : lado.compass.estado === 'falta-conferir' ? `falta conferir ${fmt(lado.compass.falta)}`
+                  ? (lado.banco.igual ? '✓ igual ao Compass' : `diferença de ${fmt(Math.abs(lado.banco.diferenca))}`)
+                  : lado.compass.estado === 'tudo-conferido' ? '✓ igual ao Compass'
+                  : lado.compass.estado === 'falta-conferir' ? `diferença de ${fmt(lado.compass.falta)}`
                   : 'marque as bolinhas'}
               </div>
               <div style={{ textAlign: 'right', marginTop: 6 }}>
@@ -88,8 +83,7 @@ export default function FcBanner({
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{!informada ? '✎ Informar o banco'
-                  : lado.banco.estado === 'comparado' && lado.banco.mudouDepois !== null ? '✎ Atualizar o valor' : '✎ Alterar'}</span>
+                }}>{informada ? '✎ Alterar' : '✎ Informar o banco'}</span>
               </div>
             </KpiCard>
           </div>
