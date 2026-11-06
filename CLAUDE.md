@@ -3609,6 +3609,8 @@ que o usuário rola até o fim"), "Saldo inicial do mês" e "Mês termina com"
 ficam LADO A LADO, em caixas translúcidas, em qualquer mês; o "Mês termina
 com" abre a memória ali mesmo e a caixa do pé da tela saiu. O "Saldo do mês"
 dos outros meses saiu; no corrente, "Quanto tenho hoje" segue grande em cima.
+No mesmo dia (pedido dele) saiu do Radar do celular a frase "Ainda dá para
+gastar" (`ResumoRadarFaixa`), como já tinha saído do computador.
 Planejamento: o topo traz a resposta do ANO (`PlanResumoAnual compacto`, as
 miniaturas em 2 × 2), embaixo o gráfico "Com quanto cada mês termina"
 (`GraficoAno`; tocar na coluna escolhe o mês, o valor do mês escolhido fica

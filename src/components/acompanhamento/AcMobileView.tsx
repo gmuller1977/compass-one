@@ -5,7 +5,6 @@ import EmptyState from '../EmptyState'
 import BottomNav from '../BottomNav'
 import { COR, MESES_FULL, fmt, type Lanc, type CatReal } from './AcShared'
 import { buildAllCats, pickReal, cadastroDaLinha, fixasEVariaveis, type PlanCat } from './evolucaoCalcs'
-import ResumoRadarFaixa from './ResumoRadarFaixa'
 import RevisaoPlanoFaixa from './RevisaoPlanoFaixa'
 import type { ResumoRadar } from '../../utils/resumoRadar'
 import type { LancadoAcima } from '../../utils/lancadoAcimaDoPlano'
@@ -65,7 +64,7 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
-  saldoAtual, saldoInicial, saldoPrevisto, resumo,
+  saldoAtual, saldoInicial, saldoPrevisto,
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
@@ -492,7 +491,7 @@ export default function AcMobileView({
             onAction={() => navigate(`/planejamento?ano=${ano}`)}
           />
         ) : (<>
-          {resumo && <ResumoRadarFaixa resumo={resumo} />}
+          {/* A frase "Ainda dá para gastar" saiu (06/11/2026, pedido do Guilherme), como no computador. */}
           <RevisaoPlanoFaixa acima={lancadoAcima} onRevisar={onRevisar} />
           {(dadosAno.entradas ?? []).length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
