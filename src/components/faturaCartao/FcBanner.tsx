@@ -64,7 +64,7 @@ export default function FcBanner({
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={informada ? 'ti-building-bank' : 'ti-circle-check'}
-              label={informada ? 'Valor manual' : 'Valor conferido'}
+              label={`Fatura no ${contasCartao.find(c => c.id === contaId)?.banco ?? 'banco'} · ${informada ? 'manual' : 'conferido'}`}
               value={informada ? mesDados.faturaAtual! : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}
               valueColor="#fff" style={{ flex: 1 }}>

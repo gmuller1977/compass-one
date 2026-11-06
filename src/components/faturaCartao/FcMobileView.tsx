@@ -223,17 +223,19 @@ export default function FcMobileView({
               mostrar se falta algo"). O valor do banco é pedido no fim. */}
           <button onClick={abrirFatura} aria-label="Informar o valor da fatura no banco" style={CAIXA_LADO}>
             {lado.banco.estado === 'nao-informada' ? <>
-              <span style={ROTULO_LADO}>Valor conferido ✎</span>
+              <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'} ✎</span>
               <span style={VALOR_LADO}>{fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}</span>
+              <span style={{...LINHA_LADO,fontWeight:700,color:'#fff'}}>valor conferido</span>
               <span style={LINHA_LADO}>
                 {lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
                   : lado.compass.estado === 'falta-conferir' ? <>diferença de<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
                   : 'marque as bolinhas'}
               </span>
             </> : <>
-              <span style={ROTULO_LADO}>Valor manual ✎</span>
+              <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'} ✎</span>
               <span style={VALOR_LADO}>{mesDados.faturaAtual}</span>
+              <span style={{...LINHA_LADO,fontWeight:700,color:'#fff'}}>valor manual</span>
               <span style={LINHA_LADO}>
                 {lado.banco.estado === 'comparado' && lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
                   : lado.banco.estado === 'comparado' ? <>diferença de<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(Math.abs(lado.banco.diferenca))}</b></> : null}
