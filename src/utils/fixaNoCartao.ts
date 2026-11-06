@@ -180,7 +180,14 @@ export function fixaOuVariavel(
   if (l.fixaId) return 'Fixa'
   const variante = (l.subCategoria ?? '').trim()
   const mesmas = categorias.filter(c => c.nome === l.categoria)
-  const cat = mesmas.find(c => (c.descricao ?? '').trim() === variante) ?? (mesmas.length === 1 ? mesmas[0] : undefined)
-  if (!cat) return null
-  return cat.fixa ? 'Fixa' : 'Variável'
+  // Com dois cadastros de mesmo nome e variante (um de banco e um de cartão),
+  // vale o de cartão: é a fatura. Se ainda assim discordam, não diz nada
+  // (06/11/2026: pegar o primeiro mostrava "Fixa" numa compra variável).
+  const exatas = mesmas.filter(c => (c.descricao ?? '').trim() === variante)
+  const doCartao = exatas.filter(c => c.tipoMovimento === 'cartao')
+  const candidatas = doCartao.length ? doCartao : exatas.length ? exatas : (mesmas.length === 1 ? mesmas : [])
+  if (!candidatas.length) return null
+  const fixa = candidatas[0].fixa
+  if (candidatas.some(c => c.fixa !== fixa)) return null
+  return fixa ? 'Fixa' : 'Variável'
 }
