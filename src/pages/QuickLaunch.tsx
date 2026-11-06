@@ -271,7 +271,7 @@ export default function QuickLaunch() {
     return prev > 0 ? (
       <>
         <span style={{ fontSize: 13, color: COR.textoSuave }}>
-          {receita ? (disp > 0 ? 'falta receber' : 'recebido') : disp >= 0 ? 'previsto' : 'passou do plano'} em {nomeMes(m)}
+          {receita ? (disp > 0 ? 'falta receber' : 'recebido') : disp >= 0 ? 'disponível' : 'passou do plano'} em {nomeMes(m)}
         </span>
         <span style={{ fontSize: 22, fontWeight: 800, color: receita ? COR.texto : corDoDisponivel(disp), letterSpacing: '-.4px', overflowWrap: 'anywhere' }}>
           {fmt(Math.abs(disp))}
@@ -327,7 +327,7 @@ export default function QuickLaunch() {
     return (
       <span style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 0', borderTop: '1px solid #eef2f8' }}>
         <span style={{ fontSize: 13, color: COR.textoSuave }}>
-          {prev > 0 ? (disp >= 0 ? 'previsto' : 'passou do plano') : 'sem plano'} em <b style={{ color: COR.texto }}>{nomeMes(m)}{m.ano !== ano ? ` de ${m.ano}` : ''}</b>
+          {prev > 0 ? (disp >= 0 ? 'disponível' : 'passou do plano') : 'sem plano'} em <b style={{ color: COR.texto }}>{nomeMes(m)}{m.ano !== ano ? ` de ${m.ano}` : ''}</b>
         </span>
         <span style={{ fontSize: 20, fontWeight: 800, color: prev > 0 ? corDoDisponivel(disp) : COR.texto, letterSpacing: '-.3px', overflowWrap: 'anywhere' }}>
           {fmt(prev > 0 ? Math.abs(disp) : real)}

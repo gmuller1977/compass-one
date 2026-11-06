@@ -743,7 +743,7 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
           display: 'flex', flexDirection: 'column', gap: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: COR.textoSuave }}>Com o tempo, o app responde para você</span>
           {[
-            { icone: 'ti-wallet', t: 'Quanto ainda posso gastar este mês?' },
+            { icone: 'ti-wallet', t: 'Quanto consigo guardar este mês?' },
             { icone: 'ti-compass', t: 'Vou terminar o mês no azul?' },
             { icone: 'ti-chart-pie', t: 'Para onde está indo o meu dinheiro?' },
           ].map(x => (
