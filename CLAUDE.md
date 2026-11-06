@@ -3604,6 +3604,11 @@ DO TÍTULO, como o ano no Planejamento (no Cartão as setas andam a fatura), e
 a linha do mês no meio do azul saiu. O avatar de sair saiu desse topo. O
 Radar do celular ganhou o mesmo título "Radar" com o mês nas setas; o "dia X
 de Y" foi para o rótulo do saldo.
+No topo do Radar do celular (06/11/2026, pedido do Guilherme: "não é sempre
+que o usuário rola até o fim"), "Saldo inicial do mês" e "Mês termina com"
+ficam LADO A LADO, em caixas translúcidas, em qualquer mês; o "Mês termina
+com" abre a memória ali mesmo e a caixa do pé da tela saiu. O "Saldo do mês"
+dos outros meses saiu; no corrente, "Quanto tenho hoje" segue grande em cima.
 Planejamento: o topo traz a resposta do ANO (`PlanResumoAnual compacto`, as
 miniaturas em 2 × 2), embaixo o gráfico "Com quanto cada mês termina"
 (`GraficoAno`; tocar na coluna escolhe o mês, o valor do mês escolhido fica

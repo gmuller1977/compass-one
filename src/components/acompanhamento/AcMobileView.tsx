@@ -45,6 +45,7 @@ interface AcMobileViewProps {
   navigate: (to: string) => void
   /** Os mesmos números do Radar no computador — ver RadarFinanceiro. */
   saldoAtual: number
+  saldoInicial: number
   saldoPrevisto: number
   resumo: ResumoRadar | null
   /** A memória de cálculo do saldo final previsto — a mesma do rodapé do Radar. */
@@ -64,7 +65,7 @@ export default function AcMobileView({
   totalPrevE, totalPrevS, totalRealE, totalRealS, percJulgadoE, percJulgadoS,
   categorias, cartaoNomes,
   abertos, toggleAberto, navigate,
-  saldoAtual, saldoPrevisto, resumo,
+  saldoAtual, saldoInicial, saldoPrevisto, resumo,
   memoria, cenario, onCenario, lancadoAcima, onRevisar,
 }: AcMobileViewProps) {
   const abrirAjuste = useAbrirAjuste()
@@ -415,11 +416,41 @@ export default function AcMobileView({
           </div>
         </div>
 
-        <div style={{ marginTop:18 }}>
-          <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{ehMesAtual ? `Quanto tenho hoje · dia ${diaHoje} de ${totalDias}` : 'Saldo do mês'}</div>
-          <div style={{ fontSize:34, fontWeight:800, letterSpacing:'-.02em', lineHeight:1.15, fontVariantNumeric:'tabular-nums',
-            color: '#fff' }}>{fmt(saldoReal)}</div>
+        {/* Saldo inicial e "Mês termina com" lado a lado, sempre à vista
+            (06/11/2026, Guilherme: "não é sempre que o usuário rola até o
+            fim"). Antes o mês fora do corrente mostrava "Saldo do mês" e o
+            previsto ficava numa caixa no pé da tela. No mês corrente o saldo
+            de hoje segue grande em cima. A letra encolhe pela largura da
+            caixa (cqi) e cabe −R$ 999.999,99 em 375px. */}
+        {ehMesAtual && (
+          <div style={{ marginTop:18 }}>
+            <div style={{ fontSize:15, color:'rgba(255,255,255,.75)' }}>{`Quanto tenho hoje · dia ${diaHoje} de ${totalDias}`}</div>
+            <div style={{ fontSize:34, fontWeight:800, letterSpacing:'-.02em', lineHeight:1.15, fontVariantNumeric:'tabular-nums',
+              color: '#fff' }}>{fmt(saldoReal)}</div>
+          </div>
+        )}
+        <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:10, marginTop:18 }}>
+          <div style={{ ...CAIXA_TOPO }}>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,.85)', fontWeight:600 }}>Saldo inicial do mês</div>
+            <div style={{ ...NUMERO_CAIXA }}>{fmt(saldoInicial)}</div>
+          </div>
+          <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
+            ...CAIXA_TOPO, cursor:'pointer', fontFamily:'inherit', textAlign:'left',
+            ...(saldoPrev < 0 ? { background:'linear-gradient(135deg,#7f1d1d,#991b1b)', borderColor:'rgba(255,255,255,.3)' } : {}),
+          }}>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,.85)', fontWeight:600 }}>Mês termina com</div>
+            <div style={{ ...NUMERO_CAIXA }}>{fmt(saldoPrev)}</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.85)', display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', marginTop:2 }}>
+              <span style={{ textDecoration:'underline', textUnderlineOffset:3 }}>{memoriaAberta ? 'fechar' : 'como cheguei'}</span>
+              <ChipCenario cenario={cenario} />
+            </div>
+          </button>
         </div>
+        {memoriaAberta && (
+          <div style={{ marginTop:10, borderRadius:16, overflow:'hidden' }}>
+            <MemoriaSaldo m={memoria} positivo={saldoPrev >= 0} cenario={cenario} onCenario={onCenario} />
+          </div>
+        )}
 
         <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:18 }}>
           {([
@@ -530,33 +561,6 @@ export default function AcMobileView({
             </div>
           )}
 
-          {/* Saldo final previsto: toca e abre a memória de cálculo, a mesma
-              do rodapé do Radar no computador. Negativo, a caixa fica
-              vermelha e o número BRANCO: o laranja #c2410c some no #991b1b. */}
-          <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 4px 16px rgba(26,86,219,.25)',
-            background: saldoPrev >= 0 ? 'var(--cx-azul)' : 'linear-gradient(135deg,#7f1d1d,#991b1b)' }}>
-            <button onClick={() => setMemoriaAberta(v => !v)} aria-expanded={memoriaAberta} style={{
-              width:'100%', padding:'18px 18px', display:'flex', gap:10, alignItems:'center', justifyContent:'space-between',
-              background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', textAlign:'left',
-            }}>
-              <div>
-                <div style={{ fontSize:15, color:'#fff', fontWeight:700, marginBottom:4 }}>
-                  Mês termina com
-                </div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,.8)', display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-                  <span style={{ textDecoration:'underline', textUnderlineOffset:3 }}>{memoriaAberta ? 'fechar' : 'como cheguei'}</span>
-                  <ChipCenario cenario={cenario} />
-                </div>
-              </div>
-              <div style={{ fontSize:24, fontWeight:800, letterSpacing:-.5, fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap',
-                color:'#fff' }}>
-                {fmt(saldoPrev)}
-              </div>
-            </button>
-            {memoriaAberta && (
-              <MemoriaSaldo m={memoria} positivo={saldoPrev >= 0} cenario={cenario} onCenario={onCenario} />
-            )}
-          </div>
         </>)}
       </div>
 
@@ -564,6 +568,12 @@ export default function AcMobileView({
     </div>
   )
 }
+
+/** Caixas do topo, no modelo da caixa do saldo final previsto da Início. */
+const CAIXA_TOPO = { background:'rgba(255,255,255,.12)', border:'1px solid rgba(255,255,255,.16)', borderRadius:16,
+  padding:'12px 12px', containerType:'inline-size' as const, minWidth:0, color:'#fff' } as const
+const NUMERO_CAIXA = { fontSize:'min(22px, calc(100cqi / 9))', fontWeight:800, letterSpacing:'-.02em', lineHeight:1.2,
+  fontVariantNumeric:'tabular-nums' as const, whiteSpace:'nowrap' as const, color:'#fff', marginTop:4 } as const
 
 /** Como o BTN_ANO do Planejamento do celular. */
 const SETA = { width:40, height:40, borderRadius:'50%', border:'none', background:'rgba(255,255,255,.15)',
