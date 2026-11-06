@@ -3613,6 +3613,14 @@ uma versão com ele lado a lado foi recusada); fica na 1ª linha da memória.
 O "Saldo do mês" dos outros meses saiu. Mês negativo: faixa vermelha.
 No mesmo dia (pedido dele) saiu do Radar do celular a frase "Ainda dá para
 gastar" (`ResumoRadarFaixa`), como já tinha saído do computador.
+Ainda no mesmo dia (Guilherme: "não estimular o uso do cartão"; "fixa é a
+pagar, porque é fixo; variável é planejado, pode acontecer ou não"), a
+memória do saldo (`MemoriaSaldo`, Radar, Início e Lançamentos) junta
+"Compras que faltam no cartão" e "Gastos variáveis a realizar" numa linha
+só: **"Despesas variáveis planejadas"**, "O que está previsto para as
+contas variáveis". Evitar "gastar" / "tem para gastar" nesses textos: o
+termo deve estimular a economia. O motor segue separando cartão e banco
+(`faturaEstimada`, `variaveisARealizar`); nenhum número mudou.
 Planejamento: o topo traz a resposta do ANO (`PlanResumoAnual compacto`, as
 miniaturas em 2 × 2), embaixo o gráfico "Com quanto cada mês termina"
 (`GraficoAno`; tocar na coluna escolhe o mês, o valor do mês escolhido fica
