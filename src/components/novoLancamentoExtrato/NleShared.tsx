@@ -8,6 +8,9 @@ export { COR }
 // ── Tipos ─────────────────────────────────────────────────────────────
 export type TipoLanc = 'entrada' | 'saida'
 export type FormaPag = 'debito' | 'automatico' | 'credito' | 'pix' | 'transferencia' | 'dinheiro' | 'boleto' | 'manual'
+  // Só da tela: gravam como 'transferencia' (06/11/2026, Guilherme: "o termo
+  // mais usado é saque; transferência é entre contas").
+  | 'saque' | 'deposito'
 
 export type CatFixa = {
   id: string; nome: string; categoria: string
@@ -130,13 +133,28 @@ export const FORMAS_ENT: { id: FormaPag; label: string }[] = [
 ]
 
 /**
- * As formas oferecidas no lançamento. No dinheiro só há o próprio dinheiro e
- * a transferência para um banco (depósito); no banco, as de sempre, com a
- * transferência para outro banco ou para o dinheiro (saque).
+ * As formas oferecidas no lançamento. Transferência é só entre bancos; banco
+ * ↔ dinheiro tem nome próprio (06/11/2026, pedido do Guilherme): no banco,
+ * Saque (sai para a carteira) e Depósito (chega da carteira); no dinheiro, o
+ * contrário. Os três gravam a mesma transferência (utils/transferencia).
  */
 export function formasDoLancamento(tipo: 'saida' | 'entrada', isDinheiro: boolean): { id: FormaPag; label: string }[] {
-  if (isDinheiro) return [{ id:'dinheiro', label:'Dinheiro' }, { id:'transferencia', label:'Transferência' }]
-  return (tipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).filter(p => p.id !== 'dinheiro')
+  if (isDinheiro) return [{ id:'dinheiro', label:'Dinheiro' },
+    tipo === 'saida' ? { id:'deposito', label:'Depósito' } : { id:'saque', label:'Saque' }]
+  return [...(tipo === 'entrada' ? FORMAS_ENT : FORMAS_SAI).filter(p => p.id !== 'dinheiro'),
+    tipo === 'saida' ? { id:'saque', label:'Saque' } : { id:'deposito', label:'Depósito' }]
+}
+
+/** Saque, depósito e transferência: o lançamento vai para outra conta, sem categoria. */
+export function ehTransf(fp: FormaPag | string): boolean {
+  return fp === 'transferencia' || fp === 'saque' || fp === 'deposito'
+}
+
+/** O rótulo do campo da outra conta. */
+export function rotuloDaOutraConta(fp: FormaPag | string, tipo: 'saida' | 'entrada', isDinheiro: boolean): string {
+  if (fp === 'transferencia') return tipo === 'saida' ? 'Transferir para' : 'Receber de'
+  if (isDinheiro) return fp === 'deposito' ? 'Depositar em' : 'Sacado de'
+  return tipo === 'saida' ? 'Vai para' : 'Vem de'
 }
 
 // ── Funções auxiliares ────────────────────────────────────────────────
@@ -193,6 +211,8 @@ export function BadgePag({ fp }: { fp: FormaPag }) {
     dinheiro:      {bg:'#f1f5f9',cor:'#475569', label:'Dinheiro'},
     boleto:        {bg:'#fce7f3',cor:'#9d174d', label:'Boleto'},
     manual:        {bg:'#ede9fe',cor:'#6d28d9', label:'Manual'},
+    saque:         {bg:'#e0f2fe',cor:'#0369a1', label:'Saque'},
+    deposito:      {bg:'#e0f2fe',cor:'#0369a1', label:'Depósito'},
   }
   const s = map[fp]
   if (!s) return null

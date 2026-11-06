@@ -9,7 +9,7 @@ import { M, BOLINHA_AZUL } from '../mobile/estilo'
 import ModalTopo from '../ModalTopo'
 import { CalendarioMes } from '../CalendarioMes'
 import {
-  COR, fmt, NOMES_MESES, formasDoLancamento,
+  COR, fmt, NOMES_MESES, formasDoLancamento, ehTransf, rotuloDaOutraConta,
   diaEfetivoFixa, formaPagCategoria, formaRecebCategoria,
   type CatFixa, type FormaPag, parseValor, REALCE_ERRO,
 } from './NleShared'
@@ -41,7 +41,7 @@ const VERMELHO = '#b91c1c'
 
 const ROTULO_FORMA: Record<string, string> = {
   debito: 'Débito', automatico: 'Débito automático', credito: 'Crédito', pix: 'Pix',
-  transferencia: 'Transferência', dinheiro: 'Dinheiro', boleto: 'Boleto', manual: 'Manual',
+  transferencia: 'Transferência', dinheiro: 'Dinheiro', boleto: 'Boleto', manual: 'Manual', saque: 'Saque', deposito: 'Depósito',
 }
 
 /** O "+" de cada dia, em destaque: a bolinha azul dos atalhos, com o brilho
@@ -354,7 +354,7 @@ export default function NleExtratoMobile({
               {(['saida', 'entrada'] as const).map(t => {
                 const on = fTipo === t
                 return (
-                  <button key={t} role="tab" aria-selected={on} onClick={() => { setFTipo(t); if (!isDinheiro && fPag !== 'transferencia') setFPag(t === 'entrada' ? 'pix' : 'debito') }} style={{
+                  <button key={t} role="tab" aria-selected={on} onClick={() => { setFTipo(t); if (!isDinheiro && !ehTransf(fPag)) setFPag(t === 'entrada' ? 'pix' : 'debito'); if (t !== fTipo && (fPag === 'saque' || fPag === 'deposito')) setFPag(fPag === 'saque' ? 'deposito' : 'saque') }} style={{
                     flex: 1, minHeight: 42, border: 'none', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                     fontSize: 15, fontWeight: 700, background: on ? '#fff' : 'transparent',
                     color: on ? (t === 'entrada' ? VERDE : VERMELHO) : '#475569',
@@ -372,7 +372,7 @@ export default function NleExtratoMobile({
                   {formasDoLancamento(fTipo, isDinheiro).map(p => {
                     const on = fPag === p.id
                     return (
-                      <button key={p.id} onClick={() => { setFPag(p.id as FormaPag); if (p.id !== 'transferencia') setFContaDestino('') }} aria-pressed={on} style={{
+                      <button key={p.id} onClick={() => { setFPag(p.id as FormaPag); setFContaDestino(p.id === 'transferencia' || isDinheiro ? '' : ehTransf(p.id) ? 'dinheiro' : '') }} aria-pressed={on} style={{
                         minHeight: 40, padding: '0 16px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                         fontSize: 14, fontWeight: 700, border: on ? 'none' : `1.5px solid ${COR.borda}`,
                         background: on ? COR.azul : '#fff', color: on ? '#fff' : '#475569',
@@ -383,9 +383,9 @@ export default function NleExtratoMobile({
               </div>
 
               {/* Transferência não pede categoria: só a outra conta. */}
-              {fPag === 'transferencia' ? (
+              {ehTransf(fPag) ? (
                 <label>
-                  <span style={rotuloCampo}>{fTipo === 'saida' ? 'Transferir para' : 'Receber de'}</span>
+                  <span style={rotuloCampo}>{rotuloDaOutraConta(fPag, fTipo, isDinheiro)}</span>
                   <select ref={categoriaSelectRef} value={fContaDestino} aria-label="Conta da transferência"
                     onChange={e => { setFContaDestino(e.target.value); if (e.target.value) setTimeout(() => valorInputRef.current?.focus(), 50) }}
                     style={campo}>
@@ -426,7 +426,7 @@ export default function NleExtratoMobile({
                 </select>
               </div>}
 
-              {fPag !== 'transferencia' && subDescsDisponiveis.length > 0 && (
+              {!ehTransf(fPag) && subDescsDisponiveis.length > 0 && (
                 <label>
                   <span style={rotuloCampo}>Variante</span>
                   <select value={fSubDesc} onChange={e => setFSubDesc(e.target.value)} style={campo}>

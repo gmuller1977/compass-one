@@ -3,7 +3,7 @@ import { segurarTabSeVazio } from '../../utils/campoObrigatorio'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { ehFixaDeCartao } from '../../utils/categoriaIcone'
 import {
-  COR, fmt, NOMES_MESES, formasDoLancamento,
+  COR, fmt, NOMES_MESES, formasDoLancamento, ehTransf, rotuloDaOutraConta,
   realcarFoco, removerRealce, diaSemana,
   formaPagCategoria, formaRecebCategoria,
   type CatFixa, type DadosMes, type TipoLanc, type FormaPag,
@@ -225,7 +225,8 @@ export default function NleDesktopPanel({
                 return (
                   <button key={t} onClick={() => {
                     setFTipo(t)
-                    if (!isDinheiro && fPag !== 'transferencia') setFPag(t === 'entrada' ? 'credito' : 'debito')
+                    if (!isDinheiro && !ehTransf(fPag)) setFPag(t === 'entrada' ? 'credito' : 'debito')
+                    if (t !== fTipo && (fPag === 'saque' || fPag === 'deposito')) setFPag(fPag === 'saque' ? 'deposito' : 'saque')
                   }} style={{
                     flex:1,padding:'8px',border:'none',borderRadius:8,cursor:'pointer',
                     fontSize:12,fontWeight:700,fontFamily:'inherit',transition:'all .15s',
@@ -249,7 +250,7 @@ export default function NleDesktopPanel({
               </div>
               <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
                 {formasDoLancamento(fTipo, isDinheiro).map(p => (
-                  <button key={p.id} onClick={() => { setFPag(p.id); if(p.id!=='transferencia') setFContaDestino('') }} style={{
+                  <button key={p.id} onClick={() => { setFPag(p.id); setFContaDestino(p.id==='transferencia'||isDinheiro?'':ehTransf(p.id)?'dinheiro':'') }} style={{
                     padding:'6px 12px',borderRadius:8,
                     border:`1.5px solid ${fPag===p.id?COR.azul:'#e2e8f0'}`,
                     background:fPag===p.id?'#eff6ff':'#fff',
@@ -272,16 +273,16 @@ export default function NleDesktopPanel({
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:5}}>
               <span style={{fontSize:10,fontWeight:700,color:'#1a56db',textTransform:'uppercase',
                 letterSpacing:.5}}>
-                {fPag==='transferencia'?(fTipo==='saida'?'Transferir para':'Receber de'):'Categoria'}
+                {ehTransf(fPag)?rotuloDaOutraConta(fPag,fTipo,isDinheiro):'Categoria'}
               </span>
-              {fPag !== 'transferencia' && !editandoFixaId && (
+              {!ehTransf(fPag) && !editandoFixaId && (
                 <button type="button" onClick={onNovaCategoria} style={{border:'1px solid #bfdbfe',background:'#eff6ff',borderRadius:6,padding:'2px 7px',cursor:'pointer',fontFamily:'inherit',fontSize:10,fontWeight:800,color:'#1a56db',whiteSpace:'nowrap'}}>+ Nova</button>
               )}
             </div>
             {editandoFixaId ? (
               <div style={{border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                 fontSize:13,background:'#f8faff',color:'#64748b',fontFamily:'inherit'}}>{fCat}</div>
-            ) : fPag === 'transferencia' ? (
+            ) : ehTransf(fPag) ? (
               <select ref={categoriaSelectRef} value={fContaDestino}
                 onChange={e => setFContaDestino(e.target.value)}
                 onFocus={realcarFoco} onBlur={removerRealce}
@@ -378,7 +379,7 @@ export default function NleDesktopPanel({
               <span style={{fontWeight:400,color:'#94a3b8',textTransform:'none',fontSize:9}}>(opcional)</span>
             </div>
             <input value={fDesc} onChange={e=>setFDesc(e.target.value)}
-              placeholder={fPag==='transferencia'?'Opcional — ex: Reserva emergência':'Ex: Mercado Extra, Farmácia...'}
+              placeholder={ehTransf(fPag)?'Opcional — ex: Reserva emergência':'Ex: Mercado Extra, Farmácia...'}
               onFocus={realcarFoco} onBlur={removerRealce}
               style={{width:'100%',border:'1.5px solid #e2e8f0',borderRadius:10,padding:'9px 12px',
                 fontSize:13,color:'#0f172a',background:'#fff',outline:'none',fontFamily:'inherit'}}

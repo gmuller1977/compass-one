@@ -256,6 +256,13 @@ banco ↔ dinheiro, no computador e no celular, sem categoria (grava
 "Transferência", fora do realizado). Banco → dinheiro é "Saque", dinheiro →
 banco "Depósito"; na carteira vai o nome do banco. Regras em
 [`transferencia.ts`](src/utils/transferencia.ts).
+**Saque e Depósito são opções próprias** (06/11/2026, Guilherme: "o termo
+mais usado é saque; transferência é entre contas"). No banco: Débito · Pix ·
+Transferência · Saque (saída) / Depósito (entrada); na carteira: Dinheiro ·
+Depósito / Saque. Transferência lista só bancos; Saque e Depósito vão direto
+para a carteira (ou o banco, no dinheiro). Gravam a mesma transferência
+(`formaPagamento: 'transferencia'`); `saque`/`deposito` só existem na tela
+(`ehTransf`, `formasDoLancamento` em `NleShared.tsx`).
 
 **Conta de INVESTIMENTO fica fora do disponível** (21/10/2026, pedido do
 Guilherme). O tipo `poupanca` aparece como "Investimento" em Configurações
