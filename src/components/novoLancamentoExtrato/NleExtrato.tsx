@@ -191,7 +191,7 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
     // Uma linha só para a variável que falta, no cartão ou fora dele
     // (06/11/2026, Guilherme: "não estimular o uso do cartão"). A separação
     // segue no motor, que decide de qual conta o dinheiro sai.
-    ['Despesas variáveis planejadas', -(m.faturaEstimada + m.variaveisARealizar), 'O que falta gastar do plano neste mês'],
+    ['Despesas variáveis planejadas', -(m.faturaEstimada + m.variaveisARealizar), 'O que o plano prevê gastar e pode ou não acontecer'],
   ]
   const linhas: [string, number, string][] = [
     [rotuloAbertura?.[0] ?? 'Saldo inicial do mes', m.abertura, rotuloAbertura?.[1] ?? 'Com quanto a conta abriu'],
