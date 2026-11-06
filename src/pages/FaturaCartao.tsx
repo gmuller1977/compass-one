@@ -440,7 +440,15 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     // Conta fixa lançada sozinha (utils/fixaNoCartao): a data mudada aqui vira
     // o dia dela no cadastro (05/11/2026, pedido do Guilherme). Só o
     // administrador mexe no cadastro.
-    if (editandoId && parcelaEditada?.fixaId && compartilhamento.papel !== 'membro') {
+    // A compra continua sendo a fixa lançada sozinha só se segue na categoria
+    // da fixa. Trocada a categoria ou a variante (06/11/2026, relatado pelo
+    // Guilherme: "Plano de Saúde · Medicamentos" é variável e aparecia
+    // "Fixa"), ela vira uma compra comum: perde o fixaId e não grava dia na
+    // categoria da fixa.
+    const catDaFixa = parcelaEditada?.fixaId ? categorias.find(c => c.id === parcelaEditada.fixaId) : undefined
+    const segueFixa = !!catDaFixa && catDaFixa.nome.trim() === fCat.trim()
+      && (catDaFixa.descricao ?? '').trim() === (subCatToSave ?? '')
+    if (editandoId && parcelaEditada?.fixaId && segueFixa && compartilhamento.papel !== 'membro') {
       const fixaId = parcelaEditada.fixaId
       const cat = categorias.find(c => c.id === fixaId)
       if (cat && (cat.diaVencimento !== diaCompraFinal) && diaCompraFinal !== parcelaEditada.diaCompra) {
@@ -469,6 +477,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
           parcelaAtual:entrada.parcelaAtual,
           diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
         }
+        if (atualizada.fixaId && !segueFixa) delete atualizada.fixaId
         const dmUpdated = diaOrigem === diaLanc
           ? { ...dmCurrent, lancamentos: { ...dmCurrent.lancamentos, [diaOrigem]: listaOrigem.map(l => l.id===idAtual ? atualizada : l) } }
           : {
