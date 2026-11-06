@@ -22,7 +22,7 @@ import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
 import { pedeValorDaFatura, momentoDePerguntar, type MomentoDaFatura } from '../utils/pedirValorDaFatura'
 import { faturaLadoALado, resumoConferidos } from '../utils/conferirFatura'
 import { separarProgramadas } from '../utils/fixaNoCartao'
-import { refazerSerieDeParcelas, emSerie } from '../utils/serieDeParcelas'
+import { refazerSerieDeParcelas, emSerie, alternarConferidaDaCompra } from '../utils/serieDeParcelas'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -297,6 +297,10 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     const acStr = ac !== purchaseAno ? `/${ac}` : ''
     setFDataCompra(`${String(dc).padStart(2,'0')}/${String(mc+1).padStart(2,'0')}${acStr}`)
     setTimeout(() => dataCompraRef.current?.focus(), 50)
+  }
+
+  function alternarConferida(l: Lancamento) {
+    setDados(prev => alternarConferidaDaCompra(prev, { contaId, ano: purchaseAno, mes: purchaseMes, l, vazio: DADOS_MES_VAZIO }))
   }
 
   function updateMes(fn: (prev: DadosMes) => DadosMes) {
@@ -715,7 +719,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
         resetarParaNovo={resetarParaNovo}
         editarLancamento={editarLancamento}
         excluir={excluir}
-        updateMes={updateMes}
+        updateMes={updateMes} alternarConferida={alternarConferida}
         lancar={lancar}
         diaDefaultPara={diaDefaultPara}
         lado={lado}
@@ -774,7 +778,7 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
           novaNoDia={novaCompraNoDia}
           excluir={excluir}
           setDiaSel={setDiaSel}
-          updateMes={updateMes}
+          updateMes={updateMes} alternarConferida={alternarConferida}
         />
         <FcDesktopPanel
           editandoId={editandoId} avisoParcelas={avisoParcelas}

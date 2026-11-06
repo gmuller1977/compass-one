@@ -8,7 +8,7 @@ import {
 import { grupoDoLanc } from './fcRotulo'
 import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
-import { textoQtdCompras, estaConferido, alternarConferido } from '../../utils/conferirFatura'
+import { textoQtdCompras, estaConferido } from '../../utils/conferirFatura'
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
@@ -30,19 +30,21 @@ type Props = {
   excluir: (dia: number, id: string) => void
   setDiaSel: React.Dispatch<React.SetStateAction<number>>
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
+  /** Bolinha de conferida: vale para todas as parcelas da compra (utils/serieDeParcelas). */
+  alternarConferida: (l: Lancamento) => void
 }
 
 export default function FcDesktopLeft({
   mesDados, totalDias, purchaseMes, purchaseAno,
   diaFechamento,
   editandoId, categorias,
-  editarLancamento, programadas, novaNoDia, excluir, setDiaSel, updateMes,
+  editarLancamento, programadas, novaNoDia, excluir, setDiaSel, alternarConferida,
 }: Props) {
   const { toast } = useToast()
   // Fixa lançada sozinha sem dia cadastrado: avisa ao conferir (utils/fixaNoCartao).
-  const conferir = (l: { id: string; fixaId?: string }) => {
+  const conferir = (l: Lancamento) => {
     const marcando = !estaConferido(mesDados, l.id)
-    updateMes(prev => alternarConferido(prev, l.id))
+    alternarConferida(l)
     const aviso = marcando ? avisoFixaSemDia(l, categorias) : null
     if (aviso) toast(aviso, 'info')
   }

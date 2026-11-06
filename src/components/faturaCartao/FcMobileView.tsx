@@ -17,7 +17,7 @@ import { IconeCat } from '../IconeCat'
 import { BolinhaConferido } from './FcConferir'
 import { BotaoMais } from '../novoLancamentoExtrato/NleExtratoMobile'
 import { mesDaFaturaDaCompra } from '../../utils/lancamentoRapido'
-import { textoQtdCompras, estaConferido, alternarConferido, type LadoCompass, type LadoBanco } from '../../utils/conferirFatura'
+import { textoQtdCompras, estaConferido, type LadoCompass, type LadoBanco } from '../../utils/conferirFatura'
 import { avisoFixaSemDia } from '../../utils/fixaNoCartao'
 import { useToast } from '../Toast'
 import { BlocoProgramadas, EtiquetaTipo } from './FcProgramadas'
@@ -121,6 +121,8 @@ type Props = {
   editarLancamento: (dia: number, l: Lancamento) => void
   excluir: (dia: number, id: string) => void
   updateMes: (fn: (prev: DadosMes) => DadosMes) => void
+  /** Bolinha de conferida: vale para todas as parcelas da compra (utils/serieDeParcelas). */
+  alternarConferida: (l: Lancamento) => void
   lancar: () => void
   diaDefaultPara: (mes: number, ano: number) => number
 
@@ -148,14 +150,14 @@ export default function FcMobileView({
   mesVenc, anoVenc,
   categorias, categoriasCartao,
   dataCompraRef, categoriaSelectRef, valorInputRef, parcelasBtnRefs, onNovaCategoria,
-  resetarParaNovo, editarLancamento, excluir, updateMes, lancar, diaDefaultPara,
+  resetarParaNovo, editarLancamento, excluir, updateMes, alternarConferida, lancar, diaDefaultPara,
   lado, abrirFatura,
 }: Props) {
   const { toast } = useToast()
   // Fixa lançada sozinha sem dia cadastrado: avisa ao conferir (utils/fixaNoCartao).
-  const conferir = (l: { id: string; fixaId?: string }) => {
+  const conferir = (l: Lancamento) => {
     const marcando = !estaConferido(mesDados, l.id)
-    updateMes(prev => alternarConferido(prev, l.id))
+    alternarConferida(l)
     const aviso = marcando ? avisoFixaSemDia(l, categorias) : null
     if (aviso) toast(aviso, 'info')
   }

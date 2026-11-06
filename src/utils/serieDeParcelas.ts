@@ -129,9 +129,51 @@ export function refazerSerieDeParcelas<L extends Lanc, M extends Mes<L>>(
       void _fixa
       const nova = { ...semFixa, id, parcelas: n, parcelaAtual: p, consolidado: false } as L
       lancs[dP] = [...(lancs[dP] ?? []), nova]
+      // Compra conferida: a parcela nova nasce conferida (alternarConferidaDaCompra).
+      if (conferidosMae?.[idNovo] === true) conferidos = { ...(conferidos ?? {}), [id]: true }
     }
     if (!existe && p > n) continue
     result = { ...result, [k]: { ...dm, ...(conferidos ? { conferidos } : {}), lancamentos: lancs } }
+  }
+  return result
+}
+
+/**
+ * A bolinha de conferida vale para a COMPRA inteira (06/11/2026, Guilherme:
+ * "uma compra no crédito parcelada que já foi confirmada, as outras parcelas
+ * já devem aparecer confirmadas também"). Marcar ou desmarcar qualquer
+ * parcela marca ou desmarca todas, cada uma no mês da fatura dela. Revê o
+ * "a parcela de cada mês se confere à parte" de 28/10. Compra à vista (ou o
+ * "de N" sem número, o defeito de antes) marca só ela.
+ */
+export function alternarConferidaDaCompra<L extends Lanc, M extends Mes<L>>(
+  dados: Record<string, M>,
+  o: { contaId: string; ano: number; mes: number; l: L; vazio: M },
+): Record<string, M> {
+  const kAqui = chaveDoMes(o.contaId, o.ano, o.mes)
+  const marcar = (dados[kAqui]?.conferidos?.[o.l.id]) !== true
+  const alvos: Array<{ k: string; id: string }> = []
+  if (emSerie(o.l)) {
+    const base = o.l.id.replace(/-\d+$/, '')
+    for (let p = 1; p <= o.l.parcelas!; p++) {
+      let m = o.mes + (p - o.l.parcelaAtual!), a = o.ano
+      while (m < 0) { m += 12; a-- }
+      while (m > 11) { m -= 12; a++ }
+      alvos.push({ k: chaveDoMes(o.contaId, a, m), id: `${base}-${p}` })
+    }
+  } else {
+    alvos.push({ k: kAqui, id: o.l.id })
+  }
+  let result = dados
+  for (const { k, id } of alvos) {
+    const dm = result[k]
+    // Só onde a parcela existe (a de outro mês pode ter sido excluída).
+    const existe = !!dm && Object.values(dm.lancamentos).some(lista => (lista ?? []).some(x => x.id === id))
+    if (!existe) continue
+    const atual = { ...(dm.conferidos ?? {}) }
+    if (marcar) atual[id] = true
+    else delete atual[id]
+    result = { ...result, [k]: { ...dm, conferidos: atual } }
   }
   return result
 }

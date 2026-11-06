@@ -2,7 +2,7 @@
 // parcela na fatura refaz a série. Bug relatado pelo Guilherme: a compra
 // editada para 6× aparecia "de 6", sem "1 de 6", e não ia para os meses
 // seguintes.
-import { refazerSerieDeParcelas, emSerie, chaveDoMes } from '../src/utils/serieDeParcelas'
+import { refazerSerieDeParcelas, emSerie, chaveDoMes, alternarConferidaDaCompra } from '../src/utils/serieDeParcelas'
 import { construirRealizadoMes } from '../src/utils/realizadoMes'
 let ok = 0, falha = 0
 const t = (n: string, c: boolean) => { c ? ok++ : (falha++, console.log('FALHA', n)) }
@@ -80,6 +80,31 @@ const base: Omit<L, 'id'> = { tipo: 'entrada', categoria: 'Saúde', descricao: '
   // Controle: editar a parcela 2 não refaz nada.
   const d2 = refazerSerieDeParcelas(serie, { contaId: 'xp', ano: 2026, mes: 11, idMae: 'v-5-2', antes: { parcelas: 6, parcelaAtual: 2 }, n: 2, novoBase: 'v-9', vazio })
   t('controle: a filha não refaz a série', d2 === serie)
+}
+
+// 4) A bolinha vale para a compra inteira (06/11/2026, pedido do Guilherme).
+{
+  const serie: Record<string, M> = {}
+  for (let p = 1; p <= 4; p++) {
+    let m = 10 + p, a = 2026; while (m > 11) { m -= 12; a++ }
+    serie[k(a, m)] = { ...vazio, lancamentos: { 5: [{ ...base, id: `v-7-${p}`, parcelas: 4, parcelaAtual: p }] } }
+  }
+  const mae = todos(serie, k(2026, 11))[0]
+  const d = alternarConferidaDaCompra(serie, { contaId: 'xp', ano: 2026, mes: 11, l: mae, vazio })
+  const marcadas = [k(2026, 11), k(2027, 0), k(2027, 1), k(2027, 2)].every((x, i) => d[x].conferidos?.[`v-7-${i + 1}`] === true)
+  t('conferir a 1ª marca as 4 parcelas', marcadas)
+  const p3 = todos(d, k(2027, 1))[0]
+  const d2 = alternarConferidaDaCompra(d, { contaId: 'xp', ano: 2027, mes: 1, l: p3, vazio })
+  t('desmarcar a 3ª desmarca todas', [k(2026, 11), k(2027, 0), k(2027, 1), k(2027, 2)].every(x => !d2[x].conferidos?.[Object.keys(d2[x].conferidos ?? {})[0] ?? 'x']))
+  // Controle: compra à vista marca só ela.
+  const av: Record<string, M> = { [k(2026, 11)]: { ...vazio, lancamentos: { 5: [{ ...base, id: 'v-8-1' }, { ...base, id: 'v-8b-1' }] } } }
+  const d3 = alternarConferidaDaCompra(av, { contaId: 'xp', ano: 2026, mes: 11, l: av[k(2026, 11)].lancamentos[5][0], vazio })
+  t('controle: à vista marca só ela', JSON.stringify(d3[k(2026, 11)].conferidos) === '{"v-8-1":true}')
+  // Virar parcelado uma compra já conferida: as novas nascem conferidas.
+  const antes = { ...base, id: 'v-9-1' }
+  const d4 = refazerSerieDeParcelas({ [k(2026, 10)]: { ...vazio, conferidos: { 'v-9-1': true }, lancamentos: { 3: [{ ...antes, parcelas: 3 }] } } },
+    { contaId: 'xp', ano: 2026, mes: 10, idMae: 'v-9-1', antes, n: 3, novoBase: 'v-x', vazio })
+  t('conferida virando 3×: as novas nascem conferidas', d4[k(2026, 11)].conferidos?.['v-9-2'] === true && d4[k(2027, 0)].conferidos?.['v-9-3'] === true)
 }
 
 console.log(`prova118: ${ok} ok, ${falha} falhas`)
