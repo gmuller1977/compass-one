@@ -139,6 +139,16 @@ export function mascaraCentavos(texto: string, permiteNegativo = false): string 
 }
 
 /**
+ * Valor já gravado (editar um lançamento: "12051" ou "12,5") virando o
+ * formato da máscara ("12.051,00"), para a vírgula automática não ler os
+ * reais como centavos ao apagar um dígito (06/11/2026).
+ */
+export function paraMascara(texto: string): string {
+  if (!texto || /,\d{2}$/.test(texto)) return texto
+  return mascaraCentavos(parseBRL(texto).toFixed(2), true)
+}
+
+/**
  * O saldo do banco aceita negativo (cheque especial, 18/10/2026), e o teclado
  * numérico do celular não tem "−": o campo do saldo leva um botão que troca o
  * sinal (27/10/2026, vírgula automática no saldo).

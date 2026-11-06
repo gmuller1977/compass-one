@@ -3819,6 +3819,11 @@ O saldo do banco ganhou a mesma vírgula automática (mesmo dia, pedido
 dele), na caixa de Lançamentos e no "Está diferente" da Início. O banco
 aceita negativo e o teclado numérico não tem "−", então ao lado do campo há
 "+/−" (`trocarSinal`); a carteira não fica negativa e não tem o botão.
+No celular, o Valor de Lançamentos (Banco e Dinheiro) e da fatura também
+(06/11/2026, Guilherme: "não está editando os centavos"); ao editar um
+lançamento, o valor gravado vira "12.051,00" no foco (`paraMascara`), para
+apagar um dígito não ler reais como centavos. O computador segue aceitando
+conta e vírgula digitada. `prova116`.
 
 Cálculos ficam em `number`, não em centavos inteiros: a deriva medida na cascata
 de 12 meses com 53 categorias é de R$ 1e-10, ~43 milhões de vezes abaixo do

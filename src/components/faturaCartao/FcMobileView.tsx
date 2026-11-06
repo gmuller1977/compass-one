@@ -1,3 +1,4 @@
+import { mascaraCentavos, paraMascara } from '../../utils/moeda'
 import React from 'react'
 import type { Conta, Categoria } from '../../context/AppContext'
 import { iconeCategoria, buscarCategoria } from '../../utils/categoriaIcone'
@@ -528,8 +529,9 @@ export default function FcMobileView({
             {/* Valor da parcela */}
             <div style={{marginBottom:14}}>
               <label style={rotuloForm}>Valor da parcela</label>
-              <input inputMode="decimal" ref={valorInputRef} value={fValor}
-                onChange={e => setFValor(e.target.value)}
+              <input inputMode="numeric" ref={valorInputRef} value={fValor}
+                onChange={e => setFValor(mascaraCentavos(e.target.value))}
+                onFocus={() => setFValor(v => paraMascara(v))}
                 placeholder="R$ 0,00"
                 style={{width:'100%',border:`2px solid ${COR.azul}`,borderRadius:12,
                   padding:'12px 14px',fontSize:22,fontWeight:800,color:COR.azul,

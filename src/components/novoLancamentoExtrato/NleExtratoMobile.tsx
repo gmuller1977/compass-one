@@ -1,3 +1,4 @@
+import { mascaraCentavos, paraMascara } from '../../utils/moeda'
 import React from 'react'
 import type { Categoria } from '../../context/AppContext'
 import { iconeCategoria, ehFixaDeCartao } from '../../utils/categoriaIcone'
@@ -438,8 +439,9 @@ export default function NleExtratoMobile({
               <div style={{ display: 'flex', gap: 10, position: 'relative' }}>
                 <label style={{ flex: 1, minWidth: 0 }}>
                   <span style={rotuloCampo}>Valor</span>
-                  <input ref={valorInputRef} value={fValor} onChange={e => setFValor(e.target.value)}
-                    placeholder="R$ 0,00" inputMode="decimal"
+                  <input ref={valorInputRef} value={fValor} onChange={e => setFValor(mascaraCentavos(e.target.value))}
+                    onFocus={() => setFValor(paraMascara(fValor))}
+                    placeholder="R$ 0,00" inputMode="numeric"
                     style={{ ...campo, fontSize: 20, fontWeight: 700, ...(valorRuim ? REALCE_ERRO : {}) }}
                     onKeyDown={e => e.key === 'Enter' && lancar()} />
                 </label>
