@@ -129,8 +129,7 @@ export function contextoNorte(d: DadosNorte, categorias: Categoria[]): string {
     ['receitas variáveis a receber', m.receitasAReceber],
     ['contas fixas a pagar', -m.fixasPrevistas],
     ['fatura do cartão em aberto', -m.faturaEmAberto],
-    ['fatura estimada (o plano ainda vai gastar no cartão)', -m.faturaEstimada],
-    ['gastos variáveis ainda a realizar', -m.variaveisARealizar],
+    ['despesas variáveis planejadas (o que falta gastar do plano)', -(m.faturaEstimada + m.variaveisARealizar)],
   ]
   for (const [rot, v] of linhasMem) if (Math.abs(v) > 0.004) out.push(`  - ${rot}: ${v >= 0 ? '+' : '−'}${R(Math.abs(v))}`)
 

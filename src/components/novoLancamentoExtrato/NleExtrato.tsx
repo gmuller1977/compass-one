@@ -133,7 +133,7 @@ export function ChipCenario({ cenario }: { cenario: CenarioPrevisao }) {
  * A escolha do cenario, no TOPO da memoria.
  *
  * Ela mora aqui porque e aqui que o efeito dela aparece: trocar de cenario move
- * a linha "Gastos variaveis a realizar" e o total, na mesma tela. Em
+ * a linha "Despesas variáveis planejadas" e o total, na mesma tela. Em
  * Preferencias fica a explicacao com exemplo; aqui fica o botao.
  *
  * Estava no rodape e ninguem achava: a barra do saldo vive no PE da tela e o
@@ -188,8 +188,10 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
     ['Receitas a receber',            m.receitasAReceber,    'O que o plano espera receber e ainda nao chegou'],
     ['Despesas fixas a pagar',        -m.fixasPrevistas,     'Fixas ainda nao confirmadas'],
     ['Fatura do cartao',              -m.faturaEmAberto,     'Ja lancada, ainda nao paga'],
-    ['Compras que faltam no cartao',  -m.faturaEstimada,     'O que o plano espera que ainda entre na fatura'],
-    ['Gastos variaveis a realizar',   -m.variaveisARealizar, 'O que falta gastar do plano, fora do cartao'],
+    // Uma linha só para a variável que falta, no cartão ou fora dele
+    // (06/11/2026, Guilherme: "não estimular o uso do cartão"). A separação
+    // segue no motor, que decide de qual conta o dinheiro sai.
+    ['Despesas variáveis planejadas', -(m.faturaEstimada + m.variaveisARealizar), 'O que falta gastar do plano neste mês'],
   ]
   const linhas: [string, number, string][] = [
     [rotuloAbertura?.[0] ?? 'Saldo inicial do mes', m.abertura, rotuloAbertura?.[1] ?? 'Com quanto a conta abriu'],
