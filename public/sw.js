@@ -7,7 +7,7 @@
 //   - /assets/*: cache primeiro (o nome do arquivo muda a cada build)
 //   - push: o lembrete das 21h (supabase/functions/lembrete-diario); tocar
 //     na notificação abre o app na tela que ela indica
-const CACHE = 'compass-shell-v1'
+const CACHE = 'compass-shell-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -27,7 +27,9 @@ self.addEventListener('fetch', e => {
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       try {
-        const resp = await fetch(req)
+        // Sem o cache HTTP do navegador (06/11/2026): o celular abriu dias
+        // com o index.html velho, e a Início seguia no código anterior.
+        const resp = await fetch(req.url, { cache: 'no-store', credentials: 'same-origin' })
         const cache = await caches.open(CACHE)
         cache.put('/', resp.clone())
         return resp

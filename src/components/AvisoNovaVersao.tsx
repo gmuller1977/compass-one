@@ -33,6 +33,10 @@ export default function AvisoNovaVersao() {
         if (m && new URL(m[1], location.href).pathname !== atual) setNova(true)
       } catch { /* sem rede: confere na próxima */ }
     }
+    // Também ao abrir (06/11/2026): o app instalado no celular abriu com a
+    // versão de antes e só conferia depois de 5 minutos ou de sair e voltar;
+    // a Início pedia para conferir o que Lançamentos já mostrava conferido.
+    conferir()
     const t = setInterval(conferir, 5 * 60 * 1000)
     document.addEventListener('visibilitychange', conferir)
     return () => { parado = true; clearInterval(t); document.removeEventListener('visibilitychange', conferir) }
