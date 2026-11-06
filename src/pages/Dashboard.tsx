@@ -429,7 +429,7 @@ export default function Dashboard() {
         {temBanco && temCategorias && !temPlano && (
           <Cartao style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <IconeRedondo icone={<i className="ti ti-clipboard-list" style={{ color: COR.amarelo }} />} cor={COR.amarelo} />
-            <span style={{ flex: 1, fontSize: M.corpo, color: COR.texto }}>Com um plano, a Início diz quanto ainda dá para gastar e com quanto o mês termina.</span>
+            <span style={{ flex: 1, fontSize: M.corpo, color: COR.texto }}>Com um plano, a Início diz com quanto o mês termina e quanto dá para guardar.</span>
             <Pilula forte onClick={() => navigate('/planejamento', { state: { openQuiz: true } })}>Montar meu plano</Pilula>
           </Cartao>
         )}

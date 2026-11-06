@@ -246,7 +246,7 @@ export default function CfgCenarioPrevisao({
                 </td>
               </tr>
               <tr>
-                <td colSpan={3} style={{ ...CEL, color: COR.textoSuave }}>Menos o que ainda vai gastar</td>
+                <td colSpan={3} style={{ ...CEL, color: COR.textoSuave }}>Menos as despesas variáveis previstas</td>
                 <td style={{ ...CEL_N, color: '#b91c1c' }}>− {num(reserva)}</td>
               </tr>
               <tr>

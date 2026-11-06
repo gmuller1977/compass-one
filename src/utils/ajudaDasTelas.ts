@@ -32,11 +32,11 @@ export const AJUDA: Record<TelaAjuda, Ajuda> = {
     titulo: 'Início',
     resumo: 'Mostra com quanto o mês termina e o que pede a sua atenção agora.',
     dicas: [
-      'No topo, o saldo previsto para o fim do mês e quanto ainda dá para gastar nas despesas variáveis.',
+      'No topo, o saldo de hoje e se o mês termina com mais dinheiro do que começou.',
       '"Como cheguei nesse número" abre a conta linha a linha.',
       'Os avisos só aparecem quando há algo a fazer: conta vencendo, grupo que passou do plano, mês negativo à frente.',
     ],
-    perguntas: ['O que significa "ainda dá para gastar"?', 'Como o app calcula o saldo previsto?'],
+    perguntas: ['Como funciona a meta de economia?', 'Como o app calcula o saldo previsto?'],
   },
   lancamentos: {
     titulo: 'Lançamentos',

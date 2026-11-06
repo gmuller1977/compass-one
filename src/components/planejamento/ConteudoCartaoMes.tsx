@@ -40,7 +40,7 @@ export default function ConteudoCartaoMes({ m, grande }: { m: MesDoAno; grande?:
           : m.real !== undefined
             ? (Math.abs(dif) < 0.005 ? 'igual ao previsto'
               : `${dif > 0 ? '▲' : '▼'} ${fmt(Math.abs(dif), true)} ${dif > 0 ? 'acima' : 'abaixo'}`)
-            : m.sobra >= 0 ? `+ ${fmt(m.sobra, true)} de sobra` : `− ${fmt(-m.sobra, true)} no mês`}
+            : m.sobra >= 0 ? `guarda ${fmt(m.sobra, true)}` : `− ${fmt(-m.sobra, true)} no mês`}
       </span>
       {!sem && (
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>

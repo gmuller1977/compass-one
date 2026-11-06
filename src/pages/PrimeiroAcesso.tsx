@@ -541,7 +541,7 @@ export default function PrimeiroAcesso() {
           <p style={ola}>É o que fica {casa ? 'das suas receitas' : 'do seu salário'} depois das contas{s.parcelas ? ', do dia a dia e das parcelas' : ' e do dia a dia'}. Como o dia a dia foi um chute, o Radar vai mostrando, ao longo do mês, quanto você gasta de verdade.</p>
         </>)
       : s.sobra >= 0 ? (<>
-          <Rotulo>Sobra para o dia a dia</Rotulo>
+          <Rotulo>Fica depois das contas</Rotulo>
           <div style={numeroGrande}>{R(s.sobra)}</div>
           <p style={ola}>É o que fica depois das contas{s.parcelas ? ' e das parcelas' : ''}. <b style={{ color: COR.texto }}>Daqui ainda saem</b> mercado, combustível, farmácia e o resto. Anotando os gastos, o Radar mostra quanto vai nisso e quanto sobra de verdade.</p>
         </>)
@@ -570,7 +570,7 @@ export default function PrimeiroAcesso() {
             <Legenda cor={BARRA.contas} rotulo="Contas do mês" valor={s.contas} />
             {s.diaADia > 0 && <Legenda cor={BARRA.dia} rotulo="Dia a dia (estimado)" valor={s.diaADia} />}
             {s.parcelas > 0 && <Legenda cor={BARRA.parcelas} rotulo="Parcelas" valor={s.parcelas} />}
-            <Legenda cor={BARRA.sobra} rotulo={s.diaADia ? 'Sobra' : 'Sobra para o dia a dia'} valor={Math.max(0, s.sobra)} />
+            <Legenda cor={BARRA.sobra} rotulo={s.diaADia ? 'Pode virar economia' : 'Fica depois das contas'} valor={Math.max(0, s.sobra)} />
           </div>
           {antes.total > 0 && (
             <Dica>

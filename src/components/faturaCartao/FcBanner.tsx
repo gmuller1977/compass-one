@@ -36,7 +36,7 @@ export default function FcBanner({
       {/* Left: 4 stat boxes + card pills */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <KpiCard icon="ti-credit-card" label="Limite planejado" value={fmt(totalPrevisto)}
+          <KpiCard icon="ti-credit-card" label="Planejado no cartão" value={fmt(totalPrevisto)}
             sublabel={`para o mês de ${NOMES_MESES[mes]}`} style={{ flex: 1 }} />
           <KpiCard label="Total de todas as faturas" value={fmt(grandTotalFaturas)}
             valueColor="#fff"

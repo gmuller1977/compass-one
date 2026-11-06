@@ -52,7 +52,7 @@ t('automático marcado sai do quadro', !debitosDoMes(deps(luzFora), hoje).some(x
 const dl = destaqueRadar(140, 0, false, { fixa: true, naoOcorre: true })
 t('Radar linha: não vai ocorrer', dl.principal === 'não vai ocorrer' && dl.contexto.includes('140,00'))
 t('Radar linha sem a marca: a pagar (controle)', destaqueRadar(140, 0, false, { fixa: true }).principal.startsWith('a pagar'))
-t('com gasto lançado, a marca não esconde', destaqueRadar(140, 50, false, { fixa: true, naoOcorre: true }).principal.startsWith('resta'))
+t('com gasto lançado, a marca não esconde', destaqueRadar(140, 50, false, { fixa: true, naoOcorre: true }).principal.startsWith('disponível')) // era "resta" até 06/11/2026 (revisão de textos)
 const g = destaqueDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }, { prev: 80, real: 80, fixa: true }], false)
 t('grupo só com paga e não ocorre: ✓ pago', g.principal === '✓ pago')
 const g2 = destaqueDoGrupo([{ prev: 140, real: 0, fixa: true, naoOcorre: true }, { prev: 300, real: 100, fixa: false }], false)
