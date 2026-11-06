@@ -261,7 +261,8 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
     // Vazio ou zero APAGA o valor do banco (31/10/2026, Guilherme: "se eu
     // deixar zero, irá fazer a soma pela conferência"). Antes o vazio
     // mantinha o valor antigo e não havia como tirá-lo.
-    updateMes(prev => ({...prev, faturaAtual: n > 0 ? fmt(n) : '', faturaAtualData: hojeStr, faturaAtualTotal: totalFatura}))
+    updateMes(prev => ({...prev, faturaAtual: n > 0 ? fmt(n) : '', faturaAtualData: hojeStr, faturaAtualTotal: totalFatura,
+      faturaInformadaEm: hojeStr, faturaInformadaTotal: totalFatura}))
     setModalFatura(false)
     setTimeout(() => dataCompraRef.current?.focus(), 80)
   }
@@ -320,6 +321,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
   const faturaExtNum = parseBRL(mesDados.faturaAtual ?? '')
   const lado = faturaLadoALado(mesDados, totalDias, {
     totalFatura, informado: faturaExtNum > 0 ? faturaExtNum : null, // zero = não informado
+    // Valor de antes desta regra: a última resposta da janela vale como data.
+    informadoEm: mesDados.faturaInformadaEm ?? mesDados.faturaAtualData,
+    totalQuandoInformado: mesDados.faturaInformadaEm ? mesDados.faturaInformadaTotal : mesDados.faturaAtualTotal,
   })
   const resumoConf   = resumoConferidos(mesDados, totalDias)
   function abrirFaturaManual() {

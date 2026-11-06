@@ -234,8 +234,13 @@ export default function FcMobileView({
             </> : <>
               <span style={ROTULO_LADO}>No {contaAtual?.banco ?? 'banco'} ✎</span>
               <span style={VALOR_LADO}>{mesDados.faturaAtual}</span>
+              {lado.banco.estado === 'comparado' && lado.banco.informadoEm && (
+                <span style={LINHA_LADO}>você informou em {lado.banco.informadoEm}</span>
+              )}
               <span style={LINHA_LADO}>
-                {lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
+                {lado.banco.estado === 'comparado' && lado.banco.mudouDepois !== null
+                  ? <>depois {lado.banco.mudouDepois > 0 ? 'entraram' : 'saíram'} <b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(Math.abs(lado.banco.mudouDepois))}</b><br /><b style={{color:'#fde047'}}>Tocar para atualizar</b></>
+                : lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
                   : lado.banco.diferenca > 0 ? <>falta lançar<br /><b style={{color:'#fff'}}>{fmt(lado.banco.diferenca)}</b></>
                   : <>a mais no Compass<br /><b style={{color:'#fff'}}>{fmt(-lado.banco.diferenca)}</b></>}
               </span>

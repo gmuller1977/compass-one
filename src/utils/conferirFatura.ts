@@ -115,12 +115,21 @@ export type LadoCompass =
   | { estado: 'tudo-conferido' }
 export type LadoBanco =
   | { estado: 'nao-informada' }
-  | { estado: 'comparado'; diferenca: number; igual: boolean }
+  | { estado: 'comparado'; diferenca: number; igual: boolean
+      /** Dia em que a pessoa informou (DD/MM), se conhecido. */
+      informadoEm: string | null
+      /** Quanto o Compass mudou DEPOIS de informado; null = não mudou ou
+       *  não se sabe. */
+      mudouDepois: number | null }
 
 export function faturaLadoALado(dm: MesComConferidos, totalDias: number, p: {
   totalFatura: number
   /** Valor informado do banco; null = não informado. */
   informado: number | null
+  /** Data em que foi informado (AAAA-MM-DD). */
+  informadoEm?: string
+  /** Total lançado no Compass quando foi informado. */
+  totalQuandoInformado?: number
 }): { compass: LadoCompass; banco: LadoBanco } {
   const { conferidas, total } = resumoConferidos(dm, totalDias)
   const compass: LadoCompass = total === 0 ? { estado: 'sem-compras' }
@@ -133,5 +142,13 @@ export function faturaLadoALado(dm: MesComConferidos, totalDias: number, p: {
     : { estado: 'tudo-conferido' }
   if (p.informado === null) return { compass, banco: { estado: 'nao-informada' } }
   const diferenca = p.informado - p.totalFatura
-  return { compass, banco: { estado: 'comparado', diferenca, igual: Math.abs(diferenca) < 0.01 } }
+  const igual = Math.abs(diferenca) < 0.01
+  // O valor do banco é uma FOTO do dia em que foi digitado (06/11/2026,
+  // Guilherme: compra lançada depois aparecia como "a mais no Compass" sem
+  // dizer que o valor do banco era de antes dela).
+  const informadoEm = p.informadoEm && /^\d{4}-\d{2}-\d{2}/.test(p.informadoEm)
+    ? `${p.informadoEm.slice(8, 10)}/${p.informadoEm.slice(5, 7)}` : null
+  const mudou = p.totalQuandoInformado === undefined ? 0 : p.totalFatura - p.totalQuandoInformado
+  const mudouDepois = !igual && Math.abs(mudou) >= 0.01 ? mudou : null
+  return { compass, banco: { estado: 'comparado', diferenca, igual, informadoEm, mudouDepois } }
 }

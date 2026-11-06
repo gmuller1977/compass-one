@@ -28,6 +28,10 @@ export type DadosMes = {
   faturaAtualData?: string
   /** Total lançado quando a janela do valor foi respondida (utils/pedirValorDaFatura). */
   faturaAtualTotal?: number
+  /** Quando a PESSOA informou o valor do banco (AAAA-MM-DD) e o total
+   *  lançado naquela hora. "Pular" não mexe nestes (06/11/2026). */
+  faturaInformadaEm?: string
+  faturaInformadaTotal?: number
   fechamentoOverride?: number
   vencimentoOverride?: number
   fixasConsolidadas?: Record<string, boolean>

@@ -68,10 +68,15 @@ export default function FcBanner({
               value={informada ? mesDados.faturaAtual! : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}
               valueColor="#fff" style={{ flex: 1 }}>
+              {lado.banco.estado === 'comparado' && lado.banco.informadoEm && (
+                <div style={linha('rgba(255,255,255,.75)')}>você informou em {lado.banco.informadoEm}</div>
+              )}
               <div style={linha(lado.banco.estado === 'comparado' ? (lado.banco.igual ? '#86efac' : '#fff')
                 : lado.compass.estado === 'tudo-conferido' ? '#86efac' : lado.compass.estado === 'falta-conferir' ? '#fff' : 'rgba(255,255,255,.75)')}>
                 {lado.banco.estado === 'comparado'
                   ? (lado.banco.igual ? '✓ igual ao Compass'
+                    : lado.banco.mudouDepois !== null
+                      ? `depois ${lado.banco.mudouDepois > 0 ? 'entraram' : 'saíram'} ${fmt(Math.abs(lado.banco.mudouDepois))} no Compass`
                     : lado.banco.diferenca > 0 ? `falta lançar ${fmt(lado.banco.diferenca)}`
                     : `${fmt(-lado.banco.diferenca)} a mais no Compass`)
                   : lado.compass.estado === 'tudo-conferido' ? '✓ tudo conferido'
@@ -83,7 +88,8 @@ export default function FcBanner({
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{informada ? '✎ Alterar' : '✎ Informar o banco'}</span>
+                }}>{!informada ? '✎ Informar o banco'
+                  : lado.banco.estado === 'comparado' && lado.banco.mudouDepois !== null ? '✎ Atualizar o valor' : '✎ Alterar'}</span>
               </div>
             </KpiCard>
           </div>
