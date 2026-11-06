@@ -22,6 +22,7 @@ import { faturaAbertaNaTela, mesmoMes } from '../utils/lancarPorMes'
 import { pedeValorDaFatura, momentoDePerguntar, type MomentoDaFatura } from '../utils/pedirValorDaFatura'
 import { faturaLadoALado, resumoConferidos } from '../utils/conferirFatura'
 import { separarProgramadas } from '../utils/fixaNoCartao'
+import { refazerSerieDeParcelas, emSerie } from '../utils/serieDeParcelas'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -458,7 +459,10 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
           ...entrada, tipo:fTipo, descricao:fDesc.trim()||fCat, categoria:fCat,
           subCategoria: subCatToSave,
           valor:valorParcela, formaPagamento:'credito', consolidado:novoConsolidado,
-          parcelas:nParcelas>1?nParcelas:undefined, parcelaAtual:entrada.parcelaAtual,
+          // A quantidade de parcelas só muda pela 1ª (a série é refeita
+          // embaixo, utils/serieDeParcelas); a 2ª em diante mantém a dela.
+          parcelas: (entrada.parcelaAtual ?? 1) === 1 ? (nParcelas>1?nParcelas:undefined) : entrada.parcelas,
+          parcelaAtual:entrada.parcelaAtual,
           diaCompra:diaCompraFinal, mesCompra:mesCompraFinal, anoCompra:anoCompraFinal,
         }
         const dmUpdated = diaOrigem === diaLanc
@@ -493,9 +497,9 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
         const ehMae = currentParcela === 1
         const mudouDesc = ehMae && novaDesc !== entrada.descricao
         const mudouValor = valorParcela !== entrada.valor
-        if ((ehMae || mudouValor) && entrada.parcelas && entrada.parcelas > 1) {
+        if ((ehMae || mudouValor) && emSerie(entrada)) {
           const baseId = entrada.id.replace(/-\d+$/, '')
-          const totalParcelas = entrada.parcelas
+          const totalParcelas = entrada.parcelas ?? 1
           let baseMes = purchaseMes - (currentParcela - 1)
           let baseAno = purchaseAno
           while (baseMes < 0) { baseMes += 12; baseAno-- }
@@ -529,6 +533,13 @@ export default function FaturaCartao({ mobileSelecionado, onCartaoChange, onStat
             }
             if (dmChanged) result = { ...result, [sibKey]: { ...sibDm, lancamentos: newLancs } }
           }
+        }
+        // Mudou a quantidade de parcelas na 1ª: a série vai junto (06/11/2026).
+        if (ehMae) {
+          result = refazerSerieDeParcelas(result as Record<string, DadosMes>, {
+            contaId, ano: purchaseAno, mes: purchaseMes, idMae: idAtual,
+            antes: entrada, n: nParcelas, novoBase: baseId, vazio: DADOS_MES_VAZIO,
+          })
         }
         return result
       })
