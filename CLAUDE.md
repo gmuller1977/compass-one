@@ -3605,10 +3605,12 @@ a linha do mês no meio do azul saiu. O avatar de sair saiu desse topo. O
 Radar do celular ganhou o mesmo título "Radar" com o mês nas setas; o "dia X
 de Y" foi para o rótulo do saldo.
 No topo do Radar do celular (06/11/2026, pedido do Guilherme: "não é sempre
-que o usuário rola até o fim"), "Saldo inicial do mês" e "Mês termina com"
-ficam LADO A LADO, em caixas translúcidas, em qualquer mês; o "Mês termina
-com" abre a memória ali mesmo e a caixa do pé da tela saiu. O "Saldo do mês"
-dos outros meses saiu; no corrente, "Quanto tenho hoje" segue grande em cima.
+que o usuário rola até o fim"), "Mês termina com" é uma faixa translúcida
+LOGO ABAIXO do "Quanto tenho hoje" (nos outros meses, logo abaixo do
+título), com o cenário e "como cheguei", que abre a memória ali mesmo; a
+caixa do pé da tela saiu. O saldo inicial NÃO aparece no topo (pedido dele:
+uma versão com ele lado a lado foi recusada); fica na 1ª linha da memória.
+O "Saldo do mês" dos outros meses saiu. Mês negativo: faixa vermelha.
 No mesmo dia (pedido dele) saiu do Radar do celular a frase "Ainda dá para
 gastar" (`ResumoRadarFaixa`), como já tinha saído do computador.
 Planejamento: o topo traz a resposta do ANO (`PlanResumoAnual compacto`, as
