@@ -19,6 +19,7 @@ import {
   contaDaFixaNoMes, diaEfetivoFixa, fmt, parseBRL, diasNoMes, mesKey, type Memoria,
   formaPagCategoria, useIsMobile,
   type TipoLanc, type FormaPag, type CatFixa, type Lancamento, type DadosMes,
+  ehTransf,
 } from '../components/novoLancamentoExtrato/NleShared'
 import NleHeader          from '../components/novoLancamentoExtrato/NleHeader'
 import NleMobileWizard   from '../components/novoLancamentoExtrato/NleMobileWizard'
@@ -147,7 +148,10 @@ export default function NovoLancamentoExtrato() {
   const contaIdEfetivo = isDinheiro ? 'dinheiro' : (contasExtrato.find(c => c.id === contaId)?.id ?? contasExtrato[0]?.id ?? '')
   // Banco transfere para outro banco ou para o dinheiro; o dinheiro, para um banco.
   const contasDaTransferencia = contas.filter(c => c.tipo === 'corrente' || c.tipo === 'poupanca')
+  // Transferência é entre bancos; Saque e Depósito, com a carteira (no
+  // dinheiro, os dois vão para um banco).
   const destinosTransf = destinosDaTransferencia(contasDaTransferencia, contaIdEfetivo)
+    .filter(d => isDinheiro || (fPag === 'transferencia' ? d.id !== CARTEIRA_ID : d.id === CARTEIRA_ID))
   const dados = extratoData as Record<string, DadosMes>
   // Os mesmos Deps que o Radar monta: a cascata e a projecao do saldo tem de
   // olhar exatamente os mesmos dados.
@@ -488,13 +492,18 @@ export default function NovoLancamentoExtrato() {
     if (l.formaPagamento === 'transferencia') {
       const tipoOposto = l.tipo === 'saida' ? 'entrada' : 'saida'
       const mesStr = String(mes+1).padStart(2,'0')
-      const destino = destinosTransf.find(ct => {
+      const destino = destinosDaTransferencia(contasDaTransferencia, contaIdEfetivo).find(ct => {
         const d = (extratoData as Record<string, DadosMes>)[`${ct.id}-${ano}-${mesStr}`]
         return d?.lancamentos?.[dia]?.some(
           lc => lc.valor === l.valor && lc.tipo === tipoOposto && lc.formaPagamento === 'transferencia'
         )
       })
       setFContaDestino(destino?.id ?? '')
+      // Com a carteira de um lado, é saque ou depósito.
+      if (isDinheiro || destino?.id === CARTEIRA_ID) {
+        const paraCarteira = isDinheiro ? l.tipo === 'entrada' : l.tipo === 'saida'
+        setFPag(paraCarteira ? 'saque' : 'deposito')
+      }
     } else {
       setFContaDestino('')
     }
@@ -971,11 +980,11 @@ export default function NovoLancamentoExtrato() {
     // Antes da data do saldo da conta o lançamento já está no saldo
     // (utils/saldoDesde). Editar no mesmo dia não passa por aqui.
     if (!editandoId || (editandoDiaOriginal ?? diaSel) !== diaSel) {
-      const contasDoLanc = fPag === 'transferencia' && !editandoId ? [contaIdEfetivo, fContaDestino] : [contaIdEfetivo]
+      const contasDoLanc = ehTransf(fPag) && !editandoId ? [contaIdEfetivo, fContaDestino] : [contaIdEfetivo]
       const trava = contasDoLanc.map(id => lancamentoAntesDoSaldo(contas.find(c => c.id === id), ano, mes, diaSel)).find(Boolean)
       if (trava) { toast(trava, 'error'); return }
     }
-    if (fPag === 'transferencia' && !editandoId) {
+    if (ehTransf(fPag) && !editandoId) {
       if (valor <= 0 || !fContaDestino) return
       const diaFuturoAlvo = ehDiaFuturo(diaSel)
       const nomeDaConta = (id: string) => id === CARTEIRA_ID ? 'Dinheiro' : (contasDaTransferencia.find(c => c.id === id)?.nome ?? '')
@@ -1008,7 +1017,7 @@ export default function NovoLancamentoExtrato() {
           }],
         },
       }))
-      toast('Transferência registrada')
+      toast(fPag === 'saque' ? 'Saque registrado' : fPag === 'deposito' ? 'Depósito registrado' : 'Transferência registrada')
       setFCat(''); setFSubDesc(''); setFDesc(''); setFValor(''); setFContaDestino('')
       if (isMobile) { setMobileDiaForm(null) } else { setTimeout(() => categoriaSelectRef.current?.focus(), 80) }
       return
@@ -1027,7 +1036,7 @@ export default function NovoLancamentoExtrato() {
         const atualizada: Lancamento = {
           ...entrada, tipo:fTipo, descricao:fDesc.trim()||fCat, categoria:fCat,
           subCategoria: fSubDesc || undefined,
-          valor, formaPagamento:fPag, consolidado:novoConsolidado,
+          valor, formaPagamento: ehTransf(fPag) ? 'transferencia' : fPag, consolidado:novoConsolidado,
         }
         if (diaOrigem === diaSel) {
           return { ...prev, lancamentos: { ...prev.lancamentos, [diaOrigem]: listaOrigem.map(l => l.id===idAtual ? atualizada : l) } }
