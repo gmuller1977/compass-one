@@ -30,6 +30,7 @@ import { guardarCodigoRecebido, registrarIndicacaoPendente } from './utils/indic
 import AvisoInatividade from './components/AvisoInatividade'
 import { digitalCadastradaAqui } from './utils/digital'
 import { pulaApresentacao } from './utils/acessoRapido'
+import { ehHostDoApp } from './utils/site'
 import IndicadorGravacao from './components/IndicadorGravacao'
 import { SincronizarLembrete } from './components/LembreteDiario'
 import ConfirmarDebitoAutomatico from './components/ConfirmarDebitoAutomatico'
@@ -114,8 +115,9 @@ function HomeRoute() {
   useLayoutEffect(() => { if (!carregando) tirarApresentacaoEstatica() }, [carregando])
   // A apresentação pronta no HTML fica à vista enquanto a sessão carrega.
   if (carregando) return temApresentacaoEstatica() ? null : <LoadingSpinner />
-  // No celular, quem já usa o app quer entrar: a apresentação fica para quem chega.
-  if (!user) return isMobile && pulaApresentacao() ? <Navigate to="/login" replace /> : <LandingPage />
+  // No app.compass-one.com.br a apresentação não existe: sem login, é o login
+  // (11/11/2026). No celular, quem já usa o app quer entrar.
+  if (!user) return ehHostDoApp() || (isMobile && pulaApresentacao()) ? <Navigate to="/login" replace /> : <LandingPage />
   if (!onboardingCompleto) return <Navigate to={inicioDoNovo} replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
   return <AppShell><Bussola /></AppShell>

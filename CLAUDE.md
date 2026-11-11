@@ -4060,6 +4060,21 @@ direto ao login, sem a página de apresentação; quem chega pela primeira vez
 (`ConviteInstalar`: botão no Android, caminho no iPhone, "Agora não").
 Regras em [`acessoRapido.ts`](src/utils/acessoRapido.ts).
 
+**Dois endereços, um Worker** (11/11/2026, pedido do Guilherme: "quando o
+usuário fizer login, entrar no app.compass-one.com.br"). O www é a
+apresentação (mais termos, privacidade e o link de indicação `/i/<código>`);
+login, cadastro e o app moram no **app.compass-one.com.br**. O script do
+`index.html` manda do www para o app. no mesmo caminho, antes do app carregar:
+qualquer outra tela, e o "/" de quem tem sessão salva, já entrou no celular ou
+abre pelo ícone. Exceção: lançamento sem internet ainda não gravado (está no
+localStorage do www) roda lá uma vez e grava. No app. o "/" sem login é o
+login, nunca a apresentação, e o `_headers` manda `noindex`. Links que saem do
+aparelho (e-mail, Google, convite) usam `urlDoApp` → app.; os da apresentação,
+`hrefDoApp`, que leva o código de indicação no endereço (`?indicacao=`), porque
+o localStorage de cada endereço é separado. Consequência aceita: quem usava o
+www entra de novo uma vez, e o ícone instalado pelo www deve ser reinstalado.
+Regras em [`site.ts`](src/utils/site.ts); `prova120` (18).
+
 O `.env` local aponta para o **mesmo projeto** da Vercel: **rodar em localhost
 grava em produção**. Há mais de um usuário real na base.
 

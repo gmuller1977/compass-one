@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 import { tirarApresentacaoEstatica } from '../utils/apresentacaoEstatica'
 import { PERGUNTAS_FREQUENTES } from '../utils/perguntasFrequentes'
+import { hrefDoApp } from '../utils/site'
+import { codigoRecebido } from '../utils/indicacaoLocal'
 
 /**
  * A página de apresentação (27/10/2026, pedido do Guilherme: "revisar para
@@ -673,8 +675,8 @@ export default function LandingPage() {
             {LINKS.map(([h, t]) => <a key={h} href={h}>{t}</a>)}
           </div>
           <div className="lp-nav-acoes">
-            <Link to="/login" className="lp-entrar">Entrar</Link>
-            <Link to="/cadastro" className="lp-btn lp-btn-branco lp-comece" style={{ padding: '10px 18px', fontSize: 15 }}>Comece já</Link>
+            <a href={hrefDoApp('/login', codigoRecebido())} className="lp-entrar">Entrar</a>
+            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco lp-comece" style={{ padding: '10px 18px', fontSize: 15 }}>Comece já</a>
           </div>
         </nav>
         <div className="lp-hero">
@@ -686,8 +688,8 @@ export default function LandingPage() {
               tranquilo e seguro. Veja as tempestades antes que elas cheguem e ajuste a rota a tempo.
             </p>
             <div className="lp-ctas">
-              <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></Link>
-              <Link to="/login" className="lp-btn lp-btn-vazado">Já tenho conta</Link>
+              <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></a>
+              <a href={hrefDoApp('/login', codigoRecebido())} className="lp-btn lp-btn-vazado">Já tenho conta</a>
             </div>
             <ul className="lp-selos">
               <li><i className="ti ti-gift" />Grátis</li>
@@ -843,7 +845,7 @@ export default function LandingPage() {
                 <ul>
                   {['Contas, cartões e categorias sem limite', 'Posso comprar? e previsão do saldo', 'Planejamento anual e meta de economia', 'Início, Lançar e Radar', 'Conta compartilhada com a família'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
                 </ul>
-                <Link to="/cadastro" className="lp-btn lp-btn-azul">Começar grátis</Link>
+                <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-azul">Começar grátis</a>
               </div>
               <div className="lp-plano">
                 <span className="lp-plano-selo">EM BREVE</span>
@@ -884,7 +886,7 @@ export default function LandingPage() {
             <span className="lp-marco-ic porto" style={{ margin: '0 auto 20px' }} aria-hidden><i className="ti ti-building-lighthouse" /></span>
             <h2 className="lp-h2" id="t-fim">Comece hoje a viagem até o seu porto seguro</h2>
             <p className="lp-sub">Crie sua conta grátis e veja o caminho dos seus próximos meses.</p>
-            <Link to="/cadastro" className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></Link>
+            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></a>
           </div>
         </section>
       </main>
@@ -896,7 +898,7 @@ export default function LandingPage() {
             {LINKS.map(([h, t]) => <a key={h} href={h}>{t}</a>)}
             <a href="#planos">Planos</a>
           </nav>
-          <Link to="/cadastro" className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Começar agora</Link>
+          <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Começar agora</a>
         </div>
         <div className="lp-rodape2-in lp-rodape2-fim" style={{ marginTop: 24 }}>
           <span>© {ano} Compass One · A bússola do seu dinheiro.</span>

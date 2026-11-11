@@ -70,20 +70,42 @@
 
     <style>.sem-apresentacao #apresentacao { display: none }</style>
     <script>
+      // Dois endereços, um app (11/11/2026, src/utils/site.ts): o www é a
+      // apresentação; login, cadastro e o app moram no app.compass-one.com.br.
+      // Quem abre outra tela no www, ou já tem sessão, já entrou neste celular
+      // ou abre pelo ícone instalado, vai para o app. no mesmo caminho.
+      // Exceção: lançamento feito sem internet ainda não gravado (está no
+      // localStorage DO www); o app roda aqui uma vez, grava, e da próxima
+      // abertura em diante vai para o app.
+      //
       // A apresentação pronta no HTML é para quem chega pela primeira vez.
       // Quem tem sessão salva, abre pelo ícone instalado, já entrou neste
       // celular, ou abre outro endereço, não a vê (src/utils/apresentacaoEstatica.ts).
       (function () {
+        var h = location.hostname, p = location.pathname
+        var site = h === 'www.compass-one.com.br' || h === 'compass-one.com.br'
+        var app = h === 'app.compass-one.com.br'
+        var esconder = p !== '/' || app, sessao = false, pendente = false, jaUsa = false
         try {
-          var esconder = location.pathname !== '/'
-          if (!esconder) for (var i = 0; i < localStorage.length; i++) {
-            if (/^sb-.*-auth-token$/.test(localStorage.key(i) || '')) { esconder = true; break }
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i) || ''
+            if (/^sb-.*-auth-token$/.test(k)) sessao = true
+            if (/^compass-pendentes-/.test(k)) pendente = true
           }
           var celular = matchMedia('(max-width: 767.98px), (pointer: coarse) and (max-height: 500px)').matches
-          if (!esconder && celular && (localStorage.getItem('compass-ja-entrou-aqui') === '1'
-            || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true)) esconder = true
-          if (esconder) document.documentElement.classList.add('sem-apresentacao')
+          jaUsa = celular && (localStorage.getItem('compass-ja-entrou-aqui') === '1'
+            || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true)
         } catch (e) { /* sem armazenamento: fica a apresentação */ }
+        if (sessao || jaUsa) esconder = true
+        if (site && !pendente) {
+          var fica = p === '/termos' || p === '/privacidade' || /^\/i\//.test(p) || (p === '/' && !sessao && !jaUsa)
+          if (!fica) {
+            document.documentElement.classList.add('sem-apresentacao')
+            location.replace('https://app.compass-one.com.br' + p + location.search + location.hash)
+            return
+          }
+        }
+        if (esconder) document.documentElement.classList.add('sem-apresentacao')
       })()
     </script>
   </head>

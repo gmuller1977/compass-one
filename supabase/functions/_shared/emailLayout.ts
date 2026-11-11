@@ -13,6 +13,8 @@
 // ============================================================
 
 export const SITE = 'https://www.compass-one.com.br'
+/** Login e cadastro moram no app. desde 11/11/2026 (src/utils/site.ts). */
+export const APP = 'https://app.compass-one.com.br'
 
 export type Email = {
   preview: string       // a linha cinza que a caixa de entrada mostra

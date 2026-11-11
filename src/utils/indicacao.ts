@@ -18,32 +18,8 @@ import { SITE_URL } from './site'
  *     pode confirmar o e-mail em outro aparelho).
  */
 
-const CHAVE = 'compass-indicacao'
-const VALIDADE_MS = 30 * 86400000
-
-export function normalizarCodigo(s: string): string {
-  return s.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)
-}
-
-export function guardarCodigoRecebido(codigo: string) {
-  const c = normalizarCodigo(codigo)
-  if (!c) return
-  try { localStorage.setItem(CHAVE, JSON.stringify({ c, em: Date.now() })) } catch { /* sem storage */ }
-}
-
-export function codigoRecebido(agora = Date.now()): string | null {
-  try {
-    const raw = localStorage.getItem(CHAVE)
-    if (!raw) return null
-    const { c, em } = JSON.parse(raw) as { c?: string; em?: number }
-    if (!c || !em || agora - em > VALIDADE_MS) return null
-    return c
-  } catch { return null }
-}
-
-export function esquecerCodigoRecebido() {
-  try { localStorage.removeItem(CHAVE) } catch { /* sem storage */ }
-}
+export { normalizarCodigo, guardarCodigoRecebido, codigoRecebido, esquecerCodigoRecebido } from './indicacaoLocal'
+import { codigoRecebido, esquecerCodigoRecebido, normalizarCodigo, CHAVE_INDICACAO as CHAVE } from './indicacaoLocal'
 
 export function linkDeIndicacao(codigo: string, origem = SITE_URL): string {
   return `${origem}/i/${codigo}`

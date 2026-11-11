@@ -14,3 +14,8 @@
 # O nome dos arquivos de /assets muda a cada build.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# O app.compass-one.com.br é o app (login e telas com dado), não página para o
+# Google: só a apresentação no www entra na busca (11/11/2026).
+https://app.compass-one.com.br/*
+  X-Robots-Tag: noindex

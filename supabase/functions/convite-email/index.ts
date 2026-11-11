@@ -22,7 +22,7 @@
 // ============================================================
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { SITE, emailHtml, escapar } from '../_shared/emailLayout.ts'
+import { APP, emailHtml, escapar } from '../_shared/emailLayout.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
   const quem = escapar(String(c.dono_nome || c.dono_email || 'Uma pessoa'))
   const emailDono = c.dono_nome && c.dono_email ? ` (${escapar(String(c.dono_email))})` : ''
   const para = String(c.email)
-  const url = `${SITE}/cadastro?email=${encodeURIComponent(para)}`
+  const url = `${APP}/cadastro?email=${encodeURIComponent(para)}`
   const html = emailHtml({
     preview: `${quem} quer organizar as finanças com você.`,
     titulo: `${quem} convidou você para o Compass One`,
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     ],
     botao: { texto: 'Aceitar o convite', url },
     depois: [
-      `Ainda não tem conta? O botão abre o cadastro: use o e-mail ${escapar(para)}. Já tem? É só <a href="${SITE}/login" style="color:#1a56db;">entrar</a>.`,
+      `Ainda não tem conta? O botão abre o cadastro: use o e-mail ${escapar(para)}. Já tem? É só <a href="${APP}/login" style="color:#1a56db;">entrar</a>.`,
       'Você pode sair da conta compartilhada quando quiser, pelo Perfil. Suas finanças próprias ficam guardadas como estavam.',
     ],
     rodape: `Você recebeu este e-mail porque ${quem} digitou este endereço no Compass One. Se não conhece essa pessoa, é só ignorar: nada muda sem você aceitar.`,
