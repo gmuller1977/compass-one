@@ -43,6 +43,7 @@ t('www/ no celular de quem já usa vai ao app.', abrir({ url: 'https://www.compa
 t('ícone instalado no www vai ao app.', abrir({ url: 'https://www.compass-one.com.br/', celular: true, instalado: true }).destino !== null)
 t('termos, privacidade e indicação ficam no www', ['/termos', '/privacidade', '/i/ABC'].every(p => abrir({ url: 'https://www.compass-one.com.br' + p }).destino === null))
 const pend = abrir({ url: 'https://www.compass-one.com.br/radar', chaves: { ...SESSAO, 'compass-pendentes-u1': '{}' } })
+t('ajuda e aulas ficam no www (reservado)', ['/ajuda', '/ajuda/cartao', '/aulas/1'].every(p => abrir({ url: 'https://www.compass-one.com.br' + p }).destino === null))
 t('lançamento sem internet não gravado: fica no www uma vez', pend.destino === null && pend.escondida)
 t('raiz sem www também vai', abrir({ url: 'https://compass-one.com.br/dashboard' }).destino === 'https://app.compass-one.com.br/dashboard')
 const app = abrir({ url: 'https://app.compass-one.com.br/' })
