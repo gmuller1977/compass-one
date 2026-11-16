@@ -534,7 +534,7 @@ export default function NovoLancamentoExtrato() {
 
   function editarFixa(dia: number, f: CatFixa) {
     setDiaSel(dia); setEditandoId(null); setEditandoDiaOriginal(null); setEditandoFixaId(f.id); if (isMobile) setMobileDiaForm(dia)
-    setFTipo(f.tipo); setFCat(f.categoria)
+    setFTipo(f.tipo); setFCat(f.categoria); setFSubDesc(f.descricao ?? '')
     setFDesc(mesDados.fixasDescOverride?.[f.id] ?? f.nome)
     setFValor(String(mesDados.fixasValorOverride?.[f.id] ?? f.valor).replace('.', ','))
     setFPag(mesDados.fixasPagOverride?.[f.id] ?? f.formaPagamento)
