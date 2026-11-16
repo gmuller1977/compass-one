@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useApp, type DadosMes } from '../context/AppContext'
 import type { Deps } from '../utils/saldoConta'
+import { valoresDigitadosVencidos, semValorDigitado } from '../utils/valorDigitadoFixa'
 import { marcasForaDoLugar, porMarca, tirarMarca, automaticasPagasNoFuturo, tirarPagamento } from '../utils/debitoAutomatico'
 
 /**
@@ -9,7 +10,8 @@ import { marcasForaDoLugar, porMarca, tirarMarca, automaticasPagasNoFuturo, tira
  * chegou. Desde 05/11/2026 NÃO marca mais nada sozinho (pedido do Guilherme:
  * vem desmarcado em Lançamentos e na Início, e conferir num marca o outro).
  * Montado no AppShell, em qualquer tela. Nada com a cópia do aparelho (os
- * números podem ser velhos) nem durante o load.
+ * números podem ser velhos) nem durante o load. Também tira o valor digitado
+ * de fixa não confirmada cujo plano mudou depois (utils/valorDigitadoFixa).
  */
 export default function ConfirmarDebitoAutomatico() {
   const { user, carregando, dadosDoAparelho, contas, categorias, extratoData, faturaData, planos,
@@ -19,7 +21,7 @@ export default function ConfirmarDebitoAutomatico() {
       extratoData: extratoData as Record<string, DadosMes>, faturaData: faturaData as Deps['faturaData'],
       contas, categorias, planos, saldoInicialDinheiro,
     }
-    return { fora: marcasForaDoLugar(deps), futuro: automaticasPagasNoFuturo(deps) }
+    return { fora: marcasForaDoLugar(deps), futuro: automaticasPagasNoFuturo(deps), vencidos: valoresDigitadosVencidos(deps) }
   }, [contas, categorias, extratoData, faturaData, planos, saldoInicialDinheiro])
 
   useEffect(() => {
@@ -36,6 +38,9 @@ export default function ConfirmarDebitoAutomatico() {
       return
     }
     for (const f of pendentes.futuro) updateExtratoMes(f.chave, prev => tirarPagamento(prev, f.id))
+    // Valor digitado numa fixa não confirmada cujo plano mudou depois: a
+    // linha volta a seguir o plano (utils/valorDigitadoFixa).
+    for (const v of pendentes.vencidos) updateExtratoMes(v.chave, prev => semValorDigitado(prev, v.id))
   }, [user, carregando, dadosDoAparelho, pendentes, extratoData, updateExtratoMes])
   return null
 }

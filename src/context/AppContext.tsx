@@ -118,6 +118,8 @@ export type DadosMes = {
   /** "Não vai ocorrer neste mês" (utils/fixasDoMes: fixaNaoOcorre). */
   fixasNaoOcorre?: Record<string, boolean>
   fixasValorOverride?: Record<string, number>
+  /** Plano da fixa quando o valor foi digitado (utils/valorDigitadoFixa). */
+  fixasValorBase?: Record<string, number>
   fixasDescOverride?: Record<string, string>
   fixasPagOverride?: Record<string, string>
   /**

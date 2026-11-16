@@ -130,6 +130,16 @@ Lançamentos) e o conferido; desfazer tira os dois (`tirarPagamento`); marcado
 em Lançamentos aparece conferido. `ConfirmarDebitoAutomatico` só arruma
 marcas (conta errada, dia futuro). Revê o parágrafo abaixo e o do
 recebimento automático: o resto deles é histórico. `prova112` (9).
+**O valor digitado numa fixa NÃO confirmada acompanha o plano** (16/11/2026,
+relatado pelo Guilherme: o 13º da Pricila passou de 2 parcelas para 1, o plano
+de novembro foi a 12.051,57 e Lançamentos seguia com "A receber +R$ 5.774,00").
+Editar a fixa em Lançamentos (dia, descrição) gravava o valor do campo em
+`fixasValorOverride` mesmo sem mudar, e a linha virava foto do plano antigo.
+Hoje valor igual ao plano não grava; outro grava com o plano daquele momento
+(`fixasValorBase`); mudou o plano, o digitado sai (`ConfirmarDebitoAutomatico`,
+do mês corrente em diante) e a linha volta ao plano. Confirmada, vale o real.
+Digitado antes da regra (sem base) e não confirmado também sai. Fatura fora.
+[`valorDigitadoFixa.ts`](src/utils/valorDigitadoFixa.ts); `prova121` (10).
 **Conta FIXA paga no cartão já entra LANÇADA na fatura** (05/11/2026,
 Guilherme: "muito parecido com o débito automático do banco"; antes só as
 parcelas apareciam). Na fatura EM ABERTO, no começo do ciclo, como as

@@ -36,6 +36,7 @@ import ModalTopo from '../components/ModalTopo'
 import { CARTEIRA_ID, descricoesDaTransferencia, destinosDaTransferencia } from '../utils/transferencia'
 import { ehContaDisponivel } from '../utils/saldoConta'
 import { fixaNaoOcorre, marcarNaoOcorre, desfazerNaoOcorre } from '../utils/fixasDoMes'
+import { comValorDigitado } from '../utils/valorDigitadoFixa'
 
 export default function NovoLancamentoExtrato() {
   const { toast } = useToast()
@@ -957,14 +958,20 @@ export default function NovoLancamentoExtrato() {
       // "agendado" e se confirma sozinha no dia novo.
       const reagendar = ehDiaFuturo(diaAlvo)
       const id = editandoFixaId
+      // O valor digitado acompanha o plano até ser confirmado
+      // (utils/valorDigitadoFixa): igual ao plano não grava; outro grava com
+      // o plano de hoje ao lado. A fatura segue como sempre.
+      const fixaEditada = fixasCategoria.find(f => f.id === id)
+      const comValor = (dm: DadosMes): DadosMes => id.startsWith('cartao-') || !fixaEditada
+        ? { ...dm, fixasValorOverride: { ...dm.fixasValorOverride, [id]: valor } }
+        : comValorDigitado(dm, id, valor, fixaEditada.valorDoPlano ?? fixaEditada.valor)
       updateMes(prev => ({
-        ...prev,
+        ...comValor(prev),
         ...(reagendar && prev.fixasConsolidadas?.[id] === true ? {
           fixasConsolidadas: Object.fromEntries(Object.entries(prev.fixasConsolidadas).filter(([k]) => k !== id)),
           debitosConferidos: Object.fromEntries(Object.entries((prev as { debitosConferidos?: Record<string, boolean> }).debitosConferidos ?? {}).filter(([k]) => k !== id)),
         } : {}),
         fixasMovidas:       { ...prev.fixasMovidas,       [editandoFixaId]: diaAlvo },
-        fixasValorOverride: { ...prev.fixasValorOverride, [editandoFixaId]: valor },
         fixasDescOverride:  { ...prev.fixasDescOverride,  [editandoFixaId]: fDesc.trim() },
         fixasPagOverride:   { ...prev.fixasPagOverride,   [editandoFixaId]: fPag },
       }))
