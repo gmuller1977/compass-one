@@ -192,7 +192,7 @@ const CSS = `
   .lp-func.inv > :first-child { order: 2; }
   .lp-func h3 { font-size: 28px; }
   .lp-extras { grid-template-columns: repeat(3, 1fr); }
-  .lp-planos { grid-template-columns: repeat(3, 1fr); }
+  .lp-planos { grid-template-columns: repeat(4, 1fr); }
 }
 `
 
@@ -676,23 +676,23 @@ export default function LandingPage() {
           </div>
           <div className="lp-nav-acoes">
             <a href={hrefDoApp('/login', codigoRecebido())} className="lp-entrar">Entrar</a>
-            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco lp-comece" style={{ padding: '10px 18px', fontSize: 15 }}>Comece já</a>
+            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco lp-comece" style={{ padding: '10px 18px', fontSize: 15 }}>Criar conta grátis</a>
           </div>
         </nav>
         <div className="lp-hero">
           <div className="lp-hero-txt">
-            <a href="#viagem" className="lp-selo-novo"><b>ROTA</b>Viver no limite não precisa ser o seu normal</a>
-            <h1>Defina a rota mais segura para alcançar <em>os seus objetivos</em>.</h1>
+            <a href="#planos" className="lp-selo-novo"><b>GRÁTIS</b>Criado por um educador financeiro</a>
+            <h1>Saiba hoje como o seu mês <em>vai fechar</em>.</h1>
             <p>
-              O Compass One nasceu para ajudar você a prever o seu futuro e seguir um caminho mais
-              tranquilo e seguro. Veja as tempestades antes que elas cheguem e ajuste a rota a tempo.
+              O Compass One junta o seu salário, as suas contas fixas e as suas parcelas e mostra, em
+              qualquer dia, com quanto você termina o mês. Sem surpresa na fatura, sem susto no dia 30.
             </p>
             <div className="lp-ctas">
-              <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></a>
+              <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Criar minha conta grátis <i className="ti ti-arrow-right" /></a>
               <a href={hrefDoApp('/login', codigoRecebido())} className="lp-btn lp-btn-vazado">Já tenho conta</a>
             </div>
             <ul className="lp-selos">
-              <li><i className="ti ti-gift" />Grátis</li>
+              <li><i className="ti ti-gift" />Sem mensalidade</li>
               <li><i className="ti ti-ad-off" />Sem anúncios</li>
               <li><i className="ti ti-lock" />Não pede a senha do banco</li>
             </ul>
@@ -706,8 +706,8 @@ export default function LandingPage() {
         <section className="lp-sec lp-sem-mapa" id="no-limite" aria-labelledby="t-dor">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-dor">Navegar sem mapa é assim</h2>
-              <p className="lp-sub">As contas estão em dia. Mesmo assim, todo mês parece uma travessia que termina no zero.</p>
+              <h2 className="lp-h2" id="t-dor">As contas estão em dia. Então por que nunca sobra?</h2>
+              <p className="lp-sub">Todo mês parece uma travessia que termina no zero.</p>
             </div>
             <ul className="lp-dor">
               {[
@@ -718,7 +718,7 @@ export default function LandingPage() {
               ].map(t => <li key={t}><i className="ti ti-cloud-storm" />{t}</li>)}
             </ul>
             <p className="lp-virada">
-              Não falta esforço. Falta um mapa.
+              Não falta esforço. Falta enxergar o mês antes que ele acabe.
               <br /><em>Viver no limite não precisa ser o seu normal.</em>
             </p>
           </div>
@@ -834,31 +834,31 @@ export default function LandingPage() {
         <section className="lp-sec" id="planos" aria-labelledby="t-planos" style={{ background: '#f8faff' }}>
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-planos">Comece grátis</h2>
-              <p className="lp-sub">Todas as funcionalidades estão liberadas no plano Grátis. Os outros planos chegam em breve.</p>
+              <h2 className="lp-h2" id="t-planos">Como posso te ajudar</h2>
+              <p className="lp-sub">O app é grátis para sempre. Se quiser ajuda, você escolhe o quanto, em pacotes. Sem mensalidade.</p>
             </div>
             <div className="lp-planos">
               <div className="lp-plano ativo">
-                <span className="lp-plano-selo">DISPONÍVEL</span>
-                <h3>Grátis</h3>
-                <p>Acesso completo, sem limite de uso e sem cartão de crédito.</p>
+                <span className="lp-plano-selo">GRÁTIS</span>
+                <h3>App Compass One</h3>
+                <p>Acesso completo, sem limite de uso, sem anúncios e sem cartão de crédito.</p>
                 <ul>
-                  {['Contas, cartões e categorias sem limite', 'Posso comprar? e previsão do saldo', 'Planejamento anual e meta de economia', 'Início, Lançar e Radar', 'Conta compartilhada com a família'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
+                  {['Previsão de como o mês vai fechar', 'Posso comprar? antes de decidir', 'Planejamento anual e meta de economia', 'Conta compartilhada com a família'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}
                 </ul>
-                <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-azul">Começar grátis</a>
+                <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-azul">Criar conta grátis</a>
               </div>
-              <div className="lp-plano">
-                <span className="lp-plano-selo">EM BREVE</span>
-                <h3>Família</h3>
-                <p>Finanças em conjunto, com orçamento por pessoa.</p>
-                <ul>{['Vários perfis', 'Metas da família', 'Relatórios e exportação'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}</ul>
-              </div>
-              <div className="lp-plano">
-                <span className="lp-plano-selo">EM BREVE</span>
-                <h3>Negócio</h3>
-                <p>Para MEI, autônomos e pequenos negócios.</p>
-                <ul>{['Separa pessoal e negócio', 'Fluxo de caixa', 'Relatórios para o contador'].map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}</ul>
-              </div>
+              {[
+                { nome: 'Curso em vídeo', texto: 'Aprenda a montar o seu plano e a usar o app no seu ritmo.', itens: ['Aulas gravadas', 'Passo a passo do primeiro plano', 'Acesso no celular e no computador'] },
+                { nome: 'Grupo de acompanhamento', texto: 'O curso e um grupo para tirar dúvidas com o educador.', itens: ['Tudo do curso em vídeo', 'Grupo de dúvidas', 'Acompanhamento com outras pessoas'] },
+                { nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador para colocar a vida financeira em ordem.', itens: ['Tudo do grupo', 'Encontros individuais', 'Acesso direto ao educador'] },
+              ].map(p => (
+                <div className="lp-plano" key={p.nome}>
+                  <span className="lp-plano-selo">PACOTE · SOB CONSULTA</span>
+                  <h3>{p.nome}</h3>
+                  <p>{p.texto}</p>
+                  <ul>{p.itens.map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}</ul>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -884,9 +884,9 @@ export default function LandingPage() {
           <FundoMapa />
           <div className="lp-in lp-centro" style={{ position: 'relative' }}>
             <span className="lp-marco-ic porto" style={{ margin: '0 auto 20px' }} aria-hidden><i className="ti ti-building-lighthouse" /></span>
-            <h2 className="lp-h2" id="t-fim">Comece hoje a viagem até o seu porto seguro</h2>
-            <p className="lp-sub">Crie sua conta grátis e veja o caminho dos seus próximos meses.</p>
-            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Começar a viagem <i className="ti ti-arrow-right" /></a>
+            <h2 className="lp-h2" id="t-fim">Comece hoje e descubra como o seu mês vai fechar</h2>
+            <p className="lp-sub">Crie a sua conta grátis e veja com quanto termina cada um dos próximos meses.</p>
+            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Criar minha conta grátis <i className="ti ti-arrow-right" /></a>
           </div>
         </section>
       </main>
@@ -896,9 +896,9 @@ export default function LandingPage() {
           <Link to="/" className="lp-marca" aria-label="Compass One"><LogoCompass size={30} /><NomeCompass /></Link>
           <nav aria-label="Rodapé">
             {LINKS.map(([h, t]) => <a key={h} href={h}>{t}</a>)}
-            <a href="#planos">Planos</a>
+            <a href="#planos">Como posso te ajudar</a>
           </nav>
-          <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Começar agora</a>
+          <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco" style={{ padding: '10px 18px', fontSize: 15 }}>Criar conta grátis</a>
         </div>
         <div className="lp-rodape2-in lp-rodape2-fim" style={{ marginTop: 24 }}>
           <span>© {ano} Compass One · A bússola do seu dinheiro.</span>

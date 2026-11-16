@@ -6,7 +6,11 @@
 export const PERGUNTAS_FREQUENTES: { pergunta: string; resposta: string }[] = [
   {
     pergunta: 'O Compass One é grátis?',
-    resposta: 'Sim. O plano Grátis tem todas as funcionalidades liberadas, sem limite de uso, sem anúncios e sem pedir cartão de crédito.',
+    resposta: 'Sim, e para sempre. O app tem todas as funcionalidades liberadas, sem limite de uso, sem anúncios, sem mensalidade e sem pedir cartão de crédito.',
+  },
+  {
+    pergunta: 'Por que o app é grátis?',
+    resposta: 'Porque o Compass One nasceu de um trabalho de educação financeira. O app é a porta de entrada; quem quiser ajuda pessoal contrata as aulas, em pacotes e sem mensalidade. Você nunca paga para usar o app.',
   },
   {
     pergunta: 'Qual a diferença para um app de anotar gastos?',
