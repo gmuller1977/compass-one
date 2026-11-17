@@ -495,24 +495,17 @@ function TopoDasNuvens({ base, cor }: { base: string; cor: string }) {
 
 /**
  * A primeira dobra mostra o app DE VERDADE (17/11/2026, pedido do Guilherme:
- * o quadro "Próximos meses" não existe no app). Capturas das telas reais com
- * a conta fictícia "Ana Teste" (ambiente-teste). No celular, só o celular; no
+ * o quadro "Próximos meses" não existia no app). Capturas reais do
+ * Planejamento, escolhido por ele ("é por onde tudo começa"), com a conta
+ * fictícia "Ana Teste" (ambiente-teste). No celular, só o celular; no
  * computador, a tela do computador atrás e o celular na frente.
- * PRÉVIA: ?dobra=a (Planejamento), b (primeiro acesso), c (Resumo do mês).
  */
-const TELAS_DA_DOBRA = {
-  a: { cel: 'plano-celular', pc: 'plano-computador', alt: 'Tela de Planejamento do Compass One: com quanto o ano termina se o plano se cumprir e com quanto cada mês termina' },
-  b: { cel: 'primeiro-acesso-celular', pc: 'inicio-computador', alt: 'Primeiro acesso do Compass One: com o salário, as contas e o dia a dia, o app mostra quanto sobra no fim do mês' },
-  c: { cel: 'resumo-celular', pc: 'resumo-computador', alt: 'Resumo do mês no Compass One: receitas e despesas contra o plano, saldo final e a meta de economia' },
-} as const
-
 function AppNaDobra() {
-  const q = typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('dobra') ?? ''
-  const t = TELAS_DA_DOBRA[(q in TELAS_DA_DOBRA ? q : 'a') as keyof typeof TELAS_DA_DOBRA]
+  const alt = 'Tela de Planejamento do Compass One: com quanto o ano termina se o plano se cumprir e com quanto cada mês termina'
   return (
-    <figure className="v2-app" aria-label={t.alt}>
-      <div className="v2-app-pc" aria-hidden><img src={`/landing/${t.pc}.webp`} alt="" width={1600} height={1000} /></div>
-      <div className="v2-app-cel"><img src={`/landing/${t.cel}.webp`} alt={t.alt} width={585} height={1266} /></div>
+    <figure className="v2-app" aria-label={alt}>
+      <div className="v2-app-pc" aria-hidden><img src="/landing/plano-computador.webp" alt="" width={1600} height={1000} /></div>
+      <div className="v2-app-cel"><img src="/landing/plano-celular.webp" alt={alt} width={585} height={1266} /></div>
       <figcaption>Tela real do app, com uma conta de exemplo.</figcaption>
     </figure>
   )
