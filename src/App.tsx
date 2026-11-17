@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
@@ -21,6 +21,8 @@ import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
+// A prévia da apresentação nova (o voo) só baixa quem abre /v2.
+const LandingPageV2 = lazy(() => import('./pages/LandingPageV2'))
 import { temApresentacaoEstatica, tirarApresentacaoEstatica } from './utils/apresentacaoEstatica'
 import Indicar             from './pages/Indicar'
 import PrimeiroAcesso      from './pages/PrimeiroAcesso'
@@ -180,6 +182,7 @@ export default function App() {
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
+          <Route path="/v2"              element={<Suspense fallback={null}><LandingPageV2 /></Suspense>} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
           <Route path="/norte"           element={NORTE_ATIVO ? <Protegido><Norte /></Protegido> : <Navigate to="/" replace />} />

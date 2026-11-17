@@ -12,6 +12,8 @@
     "verificar": "tsc -b && oxlint src && npm run provas && vite build && node scripts/prerender.mjs"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@sentry/react": "^10.78.0",
     "@supabase/supabase-js": "^2.110.0",
     "@tabler/icons-webfont": "3.24.0",
