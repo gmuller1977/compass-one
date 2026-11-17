@@ -17,8 +17,12 @@ import { codigoRecebido } from '../utils/indicacaoLocal'
  */
 
 const CSS = `
-.lp { font-family: -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #fff; overflow-x: hidden; }
+.lp { font-family: -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #fff; overflow-x: hidden; overflow-x: clip; }
 .lp * { box-sizing: border-box; }
+.lp ::selection { background: #a5f3fc; color: #0b1460; }
+.lp a:focus-visible, .lp summary:focus-visible { outline: 3px solid #22d3ee; outline-offset: 3px; border-radius: 10px; }
+.lp h1, .lp h2, .lp h3 { text-wrap: balance; }
+.lp p, .lp li { text-wrap: pretty; }
 .lp a { color: inherit; }
 .lp-sec { padding: 72px 16px; }
 .lp-in { max-width: 1100px; margin: 0 auto; }
@@ -26,7 +30,7 @@ const CSS = `
 .lp-sub { font-size: 16px; color: #475569; line-height: 1.6; margin: 0 0 40px; max-width: 640px; }
 .lp-centro { text-align: center; }
 .lp-centro .lp-sub { margin-left: auto; margin-right: auto; }
-.lp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; padding: 15px 30px; font-size: 16px; font-weight: 700; text-decoration: none; transition: transform .2s, box-shadow .2s; }
+.lp-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; padding: 15px 30px; font-size: 16px; font-weight: 700; text-decoration: none; transition: transform .2s, box-shadow .2s; }
 .lp-btn:hover { transform: translateY(-2px); }
 .lp-btn-branco { background: #fff; color: #0b1460 !important; box-shadow: 0 8px 28px rgba(0,0,0,.25), 0 0 18px rgba(34,211,238,.35); }
 .lp-btn-vazado { color: #fff !important; border: 1.5px solid rgba(255,255,255,.45); font-weight: 600; }
@@ -36,7 +40,8 @@ const CSS = `
 .lp-topo { background: var(--cx-azul); box-shadow: var(--cx-brilho-topo); color: #fff; padding: 0 16px 56px; position: relative; }
 .lp-nav { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 18px 0; gap: 12px; }
 .lp-marca { display: flex; align-items: center; gap: 10px; font-size: 20px; text-decoration: none; }
-.lp-entrar { color: #fff !important; text-decoration: none; font-weight: 600; font-size: 15px; border: 1.5px solid rgba(255,255,255,.4); border-radius: 12px; padding: 9px 18px; }
+.lp-marca { min-height: 44px; }
+.lp-entrar { color: #fff !important; text-decoration: none; font-weight: 600; font-size: 15px; border: 1.5px solid rgba(255,255,255,.4); border-radius: 12px; padding: 9px 18px; min-height: 44px; display: inline-flex; align-items: center; }
 .lp-hero { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; padding-top: 24px; }
 .lp-hero h1 { font-size: 36px; line-height: 1.1; letter-spacing: -1.4px; font-weight: 800; margin: 0 0 18px; }
 .lp-hero h1 em { font-style: normal; color: #a5f3fc; text-shadow: 0 0 18px rgba(34,211,238,.55); }
@@ -59,7 +64,7 @@ const CSS = `
 .lp-caixa-l { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: rgba(255,255,255,.85); }
 .lp-caixa-l b { font-size: 16px; color: #fff; font-variant-numeric: tabular-nums; }
 .lp-cen { display: flex; gap: 5px; margin-top: 8px; }
-.lp-cen span { flex: 1; text-align: center; font-size: 10px; font-weight: 700; padding: 5px 0; border-radius: 99px; background: rgba(255,255,255,.14); }
+.lp-cen span { flex: 1; text-align: center; font-size: 11px; font-weight: 700; padding: 5px 0; border-radius: 99px; background: rgba(255,255,255,.14); }
 .lp-cen span:first-child { background: #fff; color: #0b1460; }
 .lp-card { background: #fff; border-radius: 18px; margin: 10px; padding: 14px; box-shadow: 0 4px 16px rgba(30,58,138,.08); }
 .lp-card-t { font-size: 14px; font-weight: 800; margin-bottom: 8px; }
@@ -96,30 +101,12 @@ const CSS = `
 .lp-comp-nos i { color: #86efac; }
 .lp-comp-rot { font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 6px; opacity: .8; }
 
-/* como começa */
-.lp-passos { display: grid; grid-template-columns: 1fr; gap: 16px; counter-reset: passo; padding: 0; margin: 0; list-style: none; }
-.lp-passo { border: 1.5px solid #dbe4f3; border-radius: 18px; padding: 22px; background: #fff; }
+/* como começar */
 .lp-passo-n { width: 36px; height: 36px; border-radius: 50%; background: var(--cx-azul); box-shadow: var(--cx-bolinha); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
-.lp-passo h3 { font-size: 17px; margin: 0 0 6px; }
-.lp-passo p { font-size: 15px; color: #475569; line-height: 1.6; margin: 0; }
 
-/* funcionalidades */
-.lp-func { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; padding: 40px 0; }
-.lp-func + .lp-func { border-top: 1px solid #e6ecf5; }
-.lp-func-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #1d4ed8; margin-bottom: 10px; }
-.lp-func h3 { font-size: 24px; letter-spacing: -.4px; margin: 0 0 12px; line-height: 1.25; }
-.lp-func p { font-size: 16px; color: #475569; line-height: 1.65; margin: 0 0 14px; }
-.lp-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-.lp-lista li { display: flex; gap: 10px; font-size: 15px; color: #334155; line-height: 1.5; }
-.lp-lista i { color: #15803d; font-size: 20px; flex-shrink: 0; }
+/* quadros de exemplo */
 .lp-quadro { background: var(--cx-azul); box-shadow: var(--cx-brilho); border-radius: 24px; padding: 18px; color: #fff; }
 .lp-quadro-t { font-size: 12px; color: rgba(255,255,255,.8); margin-bottom: 10px; }
-.lp-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.lp-cat { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); border-radius: 14px; padding: 12px 6px; text-align: center; font-size: 12px; }
-.lp-cat i { display: block; font-size: 22px; margin-bottom: 4px; color: #a5f3fc; }
-.lp-forma { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-.lp-forma div { background: #fff; color: #0f172a; border-radius: 14px; padding: 10px 12px; font-size: 12px; }
-.lp-forma b { display: block; font-size: 14px; }
 .lp-grupos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .lp-grupo { background: #fff; color: #0f172a; border-radius: 16px; padding: 12px; border: 2px solid #93c5fd; }
 .lp-grupo.passou { border-color: #b91c1c; }
@@ -133,7 +120,7 @@ const CSS = `
 .lp-colunas { display: flex; align-items: flex-end; gap: 6px; height: 130px; padding: 0 2px; }
 .lp-colunas div { flex: 1; border-radius: 6px 6px 2px 2px; background: rgba(255,255,255,.85); position: relative; }
 .lp-colunas div.atual { background: #67e8f9; box-shadow: 0 0 12px rgba(34,211,238,.6); }
-.lp-meses { display: flex; gap: 6px; font-size: 10px; color: rgba(255,255,255,.75); margin-top: 6px; }
+.lp-meses { display: flex; gap: 6px; font-size: 11px; color: rgba(255,255,255,.8); margin-top: 6px; }
 .lp-meses span { flex: 1; text-align: center; }
 .lp-tabela { width: 100%; border-collapse: collapse; background: #fff; color: #0f172a; border-radius: 14px; overflow: hidden; font-size: 13px; }
 .lp-tabela th, .lp-tabela td { padding: 10px 10px; text-align: left; border-bottom: 1px solid #eef2f8; }
@@ -141,26 +128,31 @@ const CSS = `
 .lp-tabela td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lp-cabe { color: #15803d; font-weight: 800; }
 .lp-nao { color: #b91c1c; font-weight: 800; }
-.lp-melhor { font-size: 10px; font-weight: 800; background: #dcfce7; color: #14532d; border-radius: 99px; padding: 2px 8px; margin-left: 6px; }
+.lp-melhor { font-size: 11px; font-weight: 800; background: #dcfce7; color: #14532d; border-radius: 99px; padding: 2px 8px; margin-left: 6px; }
 
-/* extras */
-.lp-extras { display: grid; grid-template-columns: 1fr; gap: 14px; }
-.lp-extra { border-radius: 18px; padding: 20px; background: #fff; border: 1.5px solid #dbe4f3; display: flex; gap: 14px; }
+/* bagagem */
 .lp-extra-ic { width: 44px; height: 44px; border-radius: 50%; background: var(--cx-azul); box-shadow: var(--cx-bolinha); color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.lp-extra h3 { font-size: 16px; margin: 0 0 4px; }
-.lp-extra p { font-size: 14px; color: #475569; line-height: 1.55; margin: 0; }
 
 /* planos */
 .lp-planos { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .lp-plano { border-radius: 20px; border: 1.5px solid #dbe4f3; background: #fff; padding: 22px; display: flex; flex-direction: column; }
 .lp-plano.ativo { border: 2px solid #15803d; box-shadow: 0 10px 32px rgba(21,128,61,.14); }
-.lp-plano-selo { align-self: flex-start; font-size: 10px; font-weight: 800; letter-spacing: .5px; border-radius: 99px; padding: 3px 10px; margin-bottom: 10px; background: #fef9c3; color: #713f12; }
+.lp-plano-selo { align-self: flex-start; font-size: 11px; font-weight: 800; letter-spacing: .5px; border-radius: 99px; padding: 3px 10px; margin-bottom: 10px; background: #fef9c3; color: #713f12; }
 .lp-plano.ativo .lp-plano-selo { background: #dcfce7; color: #14532d; }
 .lp-plano h3 { margin: 0 0 4px; font-size: 18px; }
 .lp-plano > p { margin: 0 0 14px; font-size: 14px; color: #475569; line-height: 1.5; }
 .lp-plano ul { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 8px; flex: 1; align-content: start; }
 .lp-plano li { font-size: 14px; color: #334155; display: flex; gap: 8px; line-height: 1.45; }
 .lp-plano li i { color: #15803d; font-size: 17px; flex-shrink: 0; }
+.lp-pacotes { border-radius: 20px; background: #fff; border: 1.5px solid #dbe4f3; padding: 22px; }
+.lp-pacotes h3 { margin: 0 0 4px; font-size: 18px; }
+.lp-pacotes > p { margin: 0 0 16px; font-size: 14px; color: #475569; line-height: 1.5; }
+.lp-pacotes ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.lp-pacotes li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; padding: 12px; border-radius: 14px; background: #f8faff; }
+.lp-pacotes li i { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #eff6ff; color: #1d4ed8; font-size: 19px; }
+.lp-pacotes li b { display: block; font-size: 15px; color: #0f172a; }
+.lp-pacotes li span { font-size: 14px; color: #475569; line-height: 1.5; }
+.lp-pacotes small { display: block; margin-top: 14px; font-size: 13px; color: #475569; }
 
 /* perguntas */
 .lp-faq { max-width: 760px; margin: 0 auto; display: grid; gap: 10px; }
@@ -173,13 +165,10 @@ const CSS = `
 
 .lp-fim { background: var(--cx-azul); color: #fff; text-align: center; box-shadow: var(--cx-brilho-topo); }
 .lp-fim .lp-sub { color: rgba(255,255,255,.88); }
-.lp-rodape { padding: 28px 16px; text-align: center; font-size: 13px; color: #475569; background: #f8faff; border-top: 1px solid #e2e8f0; }
-.lp-rodape nav { display: flex; justify-content: center; gap: 18px; margin-top: 8px; flex-wrap: wrap; }
 
 @media (min-width: 640px) {
   .lp-ctas { flex-direction: row; }
-  .lp-passos, .lp-extras, .lp-comp { grid-template-columns: repeat(2, 1fr); }
-  .lp-planos { grid-template-columns: repeat(2, 1fr); }
+  .lp-comp { grid-template-columns: repeat(2, 1fr); }
 }
 @media (min-width: 900px) {
   .lp-sec { padding: 96px 24px; }
@@ -187,12 +176,7 @@ const CSS = `
   .lp-hero { grid-template-columns: 1.15fr .85fr; gap: 56px; padding-top: 40px; }
   .lp-hero h1 { font-size: 52px; }
   .lp-h2 { font-size: 36px; }
-  .lp-passos { grid-template-columns: repeat(3, 1fr); }
-  .lp-func { grid-template-columns: 1fr 1fr; gap: 56px; padding: 56px 0; }
-  .lp-func.inv > :first-child { order: 2; }
-  .lp-func h3 { font-size: 28px; }
-  .lp-extras { grid-template-columns: repeat(3, 1fr); }
-  .lp-planos { grid-template-columns: repeat(4, 1fr); }
+  .lp-planos { grid-template-columns: 1fr 1.25fr; align-items: stretch; }
 }
 `
 
@@ -222,15 +206,15 @@ function CelularInicio() {
           </div>
         </div>
         <div className="lp-card">
-          <div className="lp-card-t">Débito automático</div>
+          <div className="lp-card-t">Automáticos do mês</div>
           <div className="lp-lin">
             <span className="lp-bola ok"><i className="ti ti-check" /></span>
-            <span>Salário<small>dia 05</small></span>
+            <span>Salário<small>dia 05 · conferido</small></span>
             <span className="v" style={{ color: '#15803d' }}>+ R$ 5.200,00</span>
           </div>
           <div className="lp-lin">
             <span className="lp-bola" />
-            <span>Aluguel<small>dia 10</small></span>
+            <span>Aluguel<small>dia 10 · a conferir</small></span>
             <span className="v" style={{ color: '#c2410c' }}>− R$ 1.650,00</span>
           </div>
         </div>
@@ -275,17 +259,27 @@ function CelularSimulador() {
 function QuadroPrevisao() {
   const meses = ['out', 'nov', 'dez', 'jan', 'fev', 'mar']
   const vals = [3912, 2650, -480, 1200, 2300, 3100]
+  // Uma escala só, com a linha do zero: o mês negativo DESCE abaixo dela
+  // (antes era a menor barra para cima, e a tempestade parecia o mês mais fraco).
+  const zero = 112, escala = 96 / 3912, larg = 34, passo = 48
   return (
-    <div className="lp-quadro" role="img" aria-label="Exemplo da previsão: o saldo dos próximos meses, com dezembro ficando negativo e marcado em vermelho">
+    <div className="lp-quadro" role="img" aria-label="Exemplo da previsão: o saldo dos próximos meses, com dezembro abaixo de zero, em − R$ 480">
       <div className="lp-quadro-t">Com quanto cada mês vai terminar</div>
-      <div className="lp-colunas" style={{ alignItems: 'flex-end' }}>
-        {vals.map((v, i) => (
-          <div key={i} style={{ height: `${Math.max(8, Math.abs(v) / 40)}%`, background: v < 0 ? '#fca5a5' : i === 0 ? '#67e8f9' : 'rgba(255,255,255,.85)' }} />
-        ))}
-      </div>
-      <div className="lp-meses">{meses.map(m => <span key={m}>{m}</span>)}</div>
-      <div className="lp-caixa" style={{ marginTop: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 700 }}>Dezembro termina em − R$ 480,00</div>
+      <svg className="lp-prev" viewBox="0 0 300 172" aria-hidden>
+        {vals.map((v, i) => {
+          const x = 15 + i * passo, h = Math.abs(v) * escala
+          const cor = v < 0 ? '#fca5a5' : i === 0 ? '#67e8f9' : 'rgba(255,255,255,.85)'
+          return v < 0
+            ? <rect key={i} x={x} y={zero} width={larg} height={h} rx="3" fill={cor} />
+            : <rect key={i} x={x} y={zero - h} width={larg} height={h} rx="3" fill={cor} />
+        })}
+        <line x1="6" x2="294" y1={zero} y2={zero} stroke="rgba(255,255,255,.7)" strokeWidth="1.5" strokeDasharray="4 4" />
+        <text x="294" y={zero - 6} textAnchor="end" className="lp-prev-rot">zero</text>
+        <text x={15 + 2 * passo + larg / 2} y={zero + 480 * escala + 18} textAnchor="middle" className="lp-prev-neg">− R$ 480</text>
+        {meses.map((m, i) => <text key={m} x={15 + i * passo + larg / 2} y="166" textAnchor="middle" className="lp-prev-rot">{m}</text>)}
+      </svg>
+      <div className="lp-caixa" style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><i className="ti ti-cloud-storm" style={{ color: '#fde047', fontSize: 18 }} />Dezembro termina em − R$ 480,00</div>
         <div style={{ fontSize: 12, marginTop: 4, color: 'rgba(255,255,255,.88)' }}>Você vê hoje, com dois meses para mudar o caminho.</div>
       </div>
     </div>
@@ -349,40 +343,10 @@ const CSS2 = `
 .lp-menu a:hover { color: #fff !important; }
 .lp-nav-acoes { display: flex; align-items: center; gap: 10px; }
 .lp-comece { display: none; }
-.lp-selo-novo { display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 5px 12px 5px 5px; background: rgba(255,255,255,.12); border: 1px solid rgba(103,232,249,.5); font-size: 13px; font-weight: 600; margin-bottom: 18px; color: #fff; text-decoration: none; }
+.lp-selo-novo { display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 8px 14px 8px 8px; min-height: 44px; background: rgba(255,255,255,.12); border: 1px solid rgba(103,232,249,.5); font-size: 13px; font-weight: 600; margin-bottom: 18px; color: #fff; text-decoration: none; }
 .lp-selo-novo b { background: #22d3ee; color: #0b1460; border-radius: 99px; padding: 2px 9px; font-size: 11px; letter-spacing: .5px; }
-.lp-selo-claro { border-color: #93c5fd; background: #eff6ff; color: #1e3a8a; }
-.lp-hero-visual { position: relative; }
-.lp-desk { display: none; border-radius: 14px; background: #0b1533; padding: 8px; box-shadow: 0 30px 80px rgba(3,10,40,.5), 0 0 0 1px rgba(34,211,238,.3); }
-.lp-desk-barra { display: flex; gap: 6px; padding: 2px 4px 8px; }
-.lp-desk-barra span { width: 9px; height: 9px; border-radius: 50%; background: #334155; }
-.lp-desk-tela { border-radius: 8px; overflow: hidden; background: #f2f5fc; display: grid; grid-template-columns: 120px 1fr; min-height: 300px; }
-.lp-desk-lado { background: #0b1460; padding: 12px 10px; display: grid; align-content: start; gap: 8px; font-size: 10px; color: rgba(255,255,255,.8); }
-.lp-desk-lado b { color: #fff; font-size: 11px; margin-bottom: 6px; }
-.lp-desk-lado span { padding: 5px 7px; border-radius: 6px; }
-.lp-desk-lado span.on { background: rgba(255,255,255,.14); color: #fff; }
-.lp-desk-corpo { padding: 12px; display: grid; gap: 10px; align-content: start; }
-.lp-desk-topo { background: var(--cx-azul); color: #fff; border-radius: 12px; padding: 12px 14px; }
-.lp-desk-topo small { font-size: 10px; color: rgba(255,255,255,.8); }
-.lp-desk-topo b { display: block; font-size: 22px; letter-spacing: -.5px; }
-.lp-desk-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.lp-desk-card { background: #fff; border-radius: 12px; padding: 10px; font-size: 10px; color: #475569; box-shadow: 0 2px 8px rgba(30,58,138,.06); }
-.lp-desk-card b { display: block; color: #0f172a; font-size: 12px; margin-bottom: 6px; }
-.lp-anel { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; margin: 4px auto; font-weight: 800; color: #1d4ed8; font-size: 12px; }
-.lp-cel-junto { position: relative; }
 
-.lp-dest { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: center; }
-.lp-dest-itens { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 26px 0; }
-.lp-dest-item { display: flex; gap: 12px; }
-.lp-dest-item h3 { margin: 0 0 3px; font-size: 16px; }
-.lp-dest-item p { margin: 0; font-size: 14px; color: #475569; line-height: 1.5; }
-.lp-dest-item em { color: #1d4ed8; }
-.lp-dest-ic { width: 40px; height: 40px; border-radius: 12px; background: #eff6ff; color: #1d4ed8; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
-.lp-dest-btns { display: flex; flex-wrap: wrap; gap: 10px; }
 .lp-btn-claro { border: 1.5px solid #1d4ed8; color: #1d4ed8 !important; background: #fff; }
-.lp-escuro { background: var(--cx-azul); color: #fff; box-shadow: var(--cx-brilho-topo); }
-.lp-escuro .lp-sub, .lp-escuro .lp-dest-item p { color: rgba(255,255,255,.88); }
-.lp-escuro .lp-dest-ic { background: rgba(255,255,255,.14); color: #a5f3fc; }
 
 .lp-pp { display: grid; grid-template-columns: 1fr; gap: 18px; counter-reset: pp; }
 .lp-pp-item { background: #fff; border-radius: 20px; border: 1.5px solid #dbe4f3; padding: 20px; display: grid; gap: 14px; align-content: start; }
@@ -395,28 +359,15 @@ const CSS2 = `
 .lp-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .lp-chips span { border: 1.5px solid #dbe4f3; background: #fff; border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #334155; }
 
-.lp-guia { display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center; }
-.lp-guia-rot { font-size: 13px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #1d4ed8; margin-bottom: 8px; }
-.lp-guia ol { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 18px; }
-.lp-guia li { display: flex; gap: 16px; }
-.lp-guia-n { font-size: 26px; font-weight: 800; color: #93c5fd; min-width: 40px; }
-.lp-guia h3 { margin: 0 0 4px; font-size: 17px; }
-.lp-guia p { margin: 0; font-size: 15px; color: #475569; line-height: 1.55; }
 
-.lp-ben { display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center; }
-.lp-ben ul { list-style: none; padding: 0; margin: 22px 0 26px; display: grid; gap: 12px; }
-.lp-ben li { display: flex; gap: 10px; font-size: 16px; color: #334155; }
-.lp-ben li i { color: #15803d; font-size: 21px; }
-.lp-ben-selos { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: #475569; }
-.lp-ben-selos span { display: flex; align-items: center; gap: 6px; }
-.lp-ben-selos i { font-size: 18px; color: #1d4ed8; }
 
 .lp-rec { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .lp-rec-card { background: #fff; border: 1.5px solid #dbe4f3; border-radius: 18px; padding: 20px; }
-.lp-rec-card h3 { margin: 12px 0 6px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.lp-rec-card { display: grid; grid-template-columns: 44px 1fr; gap: 0 14px; align-items: start; }
+.lp-rec-card h3 { margin: 2px 0 4px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
 .lp-rec-card p { margin: 0; font-size: 14px; color: #475569; line-height: 1.55; }
-.lp-rec-meio { display: none; }
-.lp-novo { font-size: 10px; font-weight: 800; background: #22d3ee; color: #0b1460; border-radius: 99px; padding: 2px 8px; }
+.lp-rec-meio { display: flex; flex-direction: column; justify-content: center; }
+.lp-rec-meio > p { margin: 12px 4px 0; font-size: 14px; color: #475569; line-height: 1.55; }
 
 .lp-ajuda { max-width: 760px; margin: 22px auto 0; border-radius: 18px; background: #eff6ff; padding: 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
 .lp-ajuda b { font-size: 16px; }
@@ -427,33 +378,25 @@ const CSS2 = `
 .lp-dor li i { color: #b45309; font-size: 22px; flex-shrink: 0; }
 .lp-virada { max-width: 760px; margin: 36px auto 0; text-align: center; font-size: 22px; font-weight: 800; letter-spacing: -.4px; line-height: 1.35; color: #0f172a; }
 .lp-virada em { font-style: normal; color: #1d4ed8; }
-.lp-pergunta { display: block; font-size: 14px; font-weight: 800; letter-spacing: .3px; color: #1d4ed8; margin-bottom: 10px; }
-.lp-escuro .lp-pergunta { color: #a5f3fc; }
 
 .lp-rodape2 { background: #0b1460; color: rgba(255,255,255,.85); padding: 40px 16px 28px; font-size: 14px; }
 .lp-rodape2-in { max-width: 1100px; margin: 0 auto; display: grid; gap: 24px; }
-.lp-rodape2 nav { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.lp-rodape2 nav { display: flex; flex-wrap: wrap; gap: 0 22px; }
 .lp-rodape2 a { color: rgba(255,255,255,.88) !important; text-decoration: none; }
 .lp-rodape2 a:hover { text-decoration: underline; }
-.lp-rodape2-fim { border-top: 1px solid rgba(255,255,255,.15); padding-top: 18px; display: flex; flex-wrap: wrap; gap: 10px 22px; justify-content: space-between; font-size: 13px; }
+.lp-rodape2 .lp-btn-branco { color: #0b1460 !important; }
+.lp-rodape2 .lp-btn-branco:hover { text-decoration: none; }
+.lp-rodape2 nav a, .lp-rodape2-fim a { display: inline-flex; align-items: center; min-height: 44px; }
+.lp-rodape2-fim { border-top: 1px solid rgba(255,255,255,.15); padding-top: 8px; display: flex; flex-wrap: wrap; gap: 10px 22px; justify-content: space-between; font-size: 13px; }
 
 @media (min-width: 640px) {
-  .lp-dest-itens, .lp-pp, .lp-rec, .lp-dor { grid-template-columns: repeat(2, 1fr); }
+  .lp-pp, .lp-dor { grid-template-columns: repeat(2, 1fr); }
 }
 @media (min-width: 900px) {
   .lp-menu, .lp-comece { display: flex; }
-  .lp-hero-visual { display: grid; grid-template-columns: 1fr; }
-  .lp-desk { display: block; }
-  .lp-hero-visual .lp-cel { position: absolute; right: -24px; bottom: -48px; width: 190px; border-radius: 28px; padding: 7px; }
-  .lp-hero-visual .lp-cel .lp-tela { border-radius: 22px; zoom: .64; }
-  .lp-dest { grid-template-columns: 1.05fr .95fr; gap: 56px; }
-  .lp-dest.inv > :first-child { order: 2; }
   .lp-pp { grid-template-columns: repeat(3, 1fr); }
-  .lp-guia, .lp-ben { grid-template-columns: 1fr 1fr; gap: 64px; }
-  .lp-guia > :first-child { order: 2; }
-  .lp-rec { grid-template-columns: repeat(4, 1fr); }
-  .lp-rec-meio { display: flex; grid-column: 2 / span 2; grid-row: 2 / span 2; align-items: center; justify-content: center; border-radius: 22px; background: var(--cx-azul); box-shadow: var(--cx-brilho); padding: 24px; }
-  .lp-rec-meio > .lp-quadro { width: 100%; box-shadow: none; }
+  .lp-rec { grid-template-columns: 1.15fr 1fr; }
+  .lp-rec-meio { grid-row: span 3; }
   .lp-rodape2-in { grid-template-columns: auto 1fr auto; align-items: center; }
 }
 `
@@ -484,18 +427,28 @@ const CSS3 = `
 .lp-sem-mapa { background: #f8faff; }
 .lp-viagem { background-color: #eef4fb; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg fill='none' stroke='%231d4ed8' stroke-opacity='.08' stroke-width='1.5'%3E%3Cpath d='M0 50 C60 20 130 90 260 40'/%3E%3Cpath d='M0 120 C80 90 170 160 260 115'/%3E%3Cpath d='M0 195 C70 170 160 230 260 190'/%3E%3C/g%3E%3C/svg%3E"); }
 .lp-rota { list-style: none; padding: 0; margin: 0; position: relative; }
-.lp-rota::before { content: ''; position: absolute; left: 23px; top: 24px; bottom: 60px; border-left: 3px dashed #3b82f6; }
-.lp-parada { position: relative; padding-left: 68px; margin-bottom: 64px; }
+.lp-rota::before { content: ''; position: absolute; left: 19px; top: 24px; bottom: 60px; border-left: 3px dashed #3b82f6; }
+.lp-parada { position: relative; padding-left: 56px; margin-bottom: 64px; }
 .lp-parada:last-child { margin-bottom: 0; }
-.lp-pino { position: absolute; left: 0; top: 0; width: 48px; height: 48px; border-radius: 50%; background: var(--cx-azul); box-shadow: var(--cx-bolinha); color: #fff; font-size: 24px; display: grid; place-items: center; }
+.lp-pino { position: absolute; left: 0; top: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--cx-azul); box-shadow: var(--cx-bolinha); color: #fff; font-size: 21px; display: grid; place-items: center; }
 .lp-parada.porto .lp-pino { background: #22d3ee; color: #0b1460; box-shadow: 0 0 0 6px rgba(34,211,238,.25), 0 0 22px rgba(34,211,238,.6); }
-.lp-parada-in { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; }
+.lp-parada-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: center; }
+.lp-parada-in > * { min-width: 0; }
+.lp-parada .lp-veredito p { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,.9); margin: 6px 0 0; }
 .lp-etapa { display: block; font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #1d4ed8; margin: 12px 0 8px; }
 .lp-parada h3 { font-size: 24px; letter-spacing: -.4px; margin: 0 0 12px; line-height: 1.25; }
 .lp-parada p { font-size: 16px; color: #475569; line-height: 1.65; margin: 0; }
+.lp-prev { display: block; width: 100%; height: auto; overflow: visible; }
+.lp-prev-rot { font-size: 11px; fill: rgba(255,255,255,.8); }
+.lp-prev-neg { font-size: 13px; font-weight: 800; fill: #fff; }
 .lp-chegada { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #0e7490; background: #ecfeff; border: 1.5px solid #a5f3fc; border-radius: 99px; padding: 6px 14px; }
 
+.lp-fixo { position: sticky; bottom: 0; height: 0; z-index: 5; }
+.lp-fixo a { position: absolute; left: 16px; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom)); }
+.lp-fixo .lp-btn-azul { box-shadow: 0 10px 30px rgba(11,20,96,.35), var(--cx-brilho); }
+
 @media (min-width: 900px) {
+  .lp-fixo { display: none; }
   .lp-hero { grid-template-columns: 1fr 1fr; }
   .lp-mapa { max-width: none; }
   .lp-parada { padding-left: 88px; margin-bottom: 88px; }
@@ -607,7 +560,7 @@ function QuadroPorto() {
 const PARADAS = [
   {
     id: 'partida', icone: 'ti-map-pin', etapa: 'Parada 1 · Ponto de partida', titulo: 'Saiba exatamente onde você está',
-    texto: 'Bancos, cartões e dinheiro num só lugar, com o saldo de hoje e as contas do mês. Salário e débito automático se marcam sozinhos: você só confere.',
+    texto: 'Bancos, cartões e dinheiro num só lugar, com o saldo de hoje e as contas do mês. Salário e débito automático aparecem no dia certo: você confere com um toque.',
     visual: <CelularInicio />,
   },
   {
@@ -637,13 +590,10 @@ const PARADAS = [
   },
 ]
 
+// Só o que a viagem não mostrou: Posso comprar?, previsão, plano, Radar e os
+// automáticos já têm parada própria (16/11/2026, revisão da página).
 const RECURSOS = [
-  { icone: 'ti-shopping-cart', titulo: 'Posso comprar?', texto: 'Simule a compra no seu plano antes de decidir, à vista ou parcelado.', novo: true },
-  { icone: 'ti-telescope', titulo: 'Previsão do saldo', texto: 'Com quanto cada mês vai terminar, com o cálculo aberto.' },
-  { icone: 'ti-calendar-stats', titulo: 'Planejamento anual', texto: 'Plano do ano por categoria, com a meta de economia de cada mês.' },
-  { icone: 'ti-radar-2', titulo: 'Radar', texto: 'O mês em tempo real: quanto resta em cada grupo de gastos.' },
   { icone: 'ti-plus', titulo: 'Lançar rápido', texto: 'Débito ou crédito, parcelado em até 24×, na fatura certa.' },
-  { icone: 'ti-refresh', titulo: 'Automáticos', texto: 'Salário e débito automático se marcam sozinhos; você só confere.' },
   { icone: 'ti-users', titulo: 'Conta compartilhada', texto: 'As mesmas finanças para a família, cada um com o seu login.' },
   { icone: 'ti-devices', titulo: 'Celular e computador', texto: 'Instale no celular e entre com a digital.' },
 ]
@@ -688,7 +638,7 @@ export default function LandingPage() {
               qualquer dia, com quanto você termina o mês. Sem surpresa na fatura, sem susto no dia 30.
             </p>
             <div className="lp-ctas">
-              <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Criar minha conta grátis <i className="ti ti-arrow-right" /></a>
+              <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Criar conta grátis <i className="ti ti-arrow-right" /></a>
               <a href={hrefDoApp('/login', codigoRecebido())} className="lp-btn lp-btn-vazado">Já tenho conta</a>
             </div>
             <ul className="lp-selos">
@@ -819,13 +769,15 @@ export default function LandingPage() {
         <section className="lp-sec" id="recursos" aria-labelledby="t-rec">
           <div className="lp-in">
             <div className="lp-centro">
-              <h2 className="lp-h2" id="t-rec">O que vai na sua bagagem</h2>
-              <p className="lp-sub">Planejamento, previsão e decisão no mesmo app.</p>
+              <h2 className="lp-h2" id="t-rec">O que mais vai na bagagem</h2>
+              <p className="lp-sub">Para comparar as formas de pagar, lançar em segundos e dividir as contas com a família.</p>
             </div>
             <div className="lp-rec">
-              {RECURSOS.slice(0, 5).map(r => <Recurso key={r.titulo} {...r} />)}
-              <div className="lp-rec-meio"><QuadroSimulador /></div>
-              {RECURSOS.slice(5).map(r => <Recurso key={r.titulo} {...r} />)}
+              <div className="lp-rec-meio">
+                <QuadroSimulador />
+                <p>Diga o que a loja ofereceu e veja qual forma de pagar pesa menos no seu plano.</p>
+              </div>
+              {RECURSOS.map(r => <Recurso key={r.titulo} {...r} />)}
             </div>
           </div>
         </section>
@@ -847,18 +799,20 @@ export default function LandingPage() {
                 </ul>
                 <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-azul">Criar conta grátis</a>
               </div>
-              {[
-                { nome: 'Curso em vídeo', texto: 'Aprenda a montar o seu plano e a usar o app no seu ritmo.', itens: ['Aulas gravadas', 'Passo a passo do primeiro plano', 'Acesso no celular e no computador'] },
-                { nome: 'Grupo de acompanhamento', texto: 'O curso e um grupo para tirar dúvidas com o educador.', itens: ['Tudo do curso em vídeo', 'Grupo de dúvidas', 'Acompanhamento com outras pessoas'] },
-                { nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador para colocar a vida financeira em ordem.', itens: ['Tudo do grupo', 'Encontros individuais', 'Acesso direto ao educador'] },
-              ].map(p => (
-                <div className="lp-plano" key={p.nome}>
-                  <span className="lp-plano-selo">PACOTE · SOB CONSULTA</span>
-                  <h3>{p.nome}</h3>
-                  <p>{p.texto}</p>
-                  <ul>{p.itens.map(t => <li key={t}><i className="ti ti-circle-check" />{t}</li>)}</ul>
-                </div>
-              ))}
+              {/* Os pacotes numa faixa só, como opção (eram três colunas sem preço
+                  nem botão, que liam como uma pegadinha no "grátis"). */}
+              <div className="lp-pacotes">
+                <h3>Quer ajuda de um educador financeiro?</h3>
+                <p>É opcional. Se quiser, você escolhe o quanto de ajuda, em pacotes, sem mensalidade:</p>
+                <ol>
+                  {[
+                    { icone: 'ti-player-play', nome: 'Curso em vídeo', texto: 'Aulas gravadas para montar o seu plano e usar o app no seu ritmo.' },
+                    { icone: 'ti-messages', nome: 'Grupo de acompanhamento', texto: 'O curso e um grupo para tirar dúvidas com o educador.' },
+                    { icone: 'ti-user-check', nome: 'Acompanhamento individual', texto: 'Encontros só seus com o educador para colocar a vida financeira em ordem.' },
+                  ].map(p => <li key={p.nome}><i className={`ti ${p.icone}`} aria-hidden /><div><b>{p.nome}</b><span>{p.texto}</span></div></li>)}
+                </ol>
+                <small>Pacotes sob consulta. O app continua grátis, com ou sem eles.</small>
+              </div>
             </div>
           </div>
         </section>
@@ -879,6 +833,11 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* No celular, o cadastro fica à mão depois do topo e sai antes da chamada final, que já tem o botão (some no computador). */}
+        <div className="lp-fixo">
+          <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-azul">Criar conta grátis <i className="ti ti-arrow-right" /></a>
+        </div>
+
         {/* Chamada final */}
         <section className="lp-sec lp-fim" aria-labelledby="t-fim" style={{ position: 'relative', overflow: 'hidden' }}>
           <FundoMapa />
@@ -886,9 +845,15 @@ export default function LandingPage() {
             <span className="lp-marco-ic porto" style={{ margin: '0 auto 20px' }} aria-hidden><i className="ti ti-building-lighthouse" /></span>
             <h2 className="lp-h2" id="t-fim">Comece hoje e descubra como o seu mês vai fechar</h2>
             <p className="lp-sub">Crie a sua conta grátis e veja com quanto termina cada um dos próximos meses.</p>
-            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Criar minha conta grátis <i className="ti ti-arrow-right" /></a>
+            <a href={hrefDoApp('/cadastro', codigoRecebido())} className="lp-btn lp-btn-branco">Criar conta grátis <i className="ti ti-arrow-right" /></a>
+            <ul className="lp-selos" style={{ justifyContent: 'center', marginTop: 22 }}>
+              <li><i className="ti ti-gift" />Sem mensalidade</li>
+              <li><i className="ti ti-ad-off" />Sem anúncios</li>
+              <li><i className="ti ti-lock" />Não pede a senha do banco</li>
+            </ul>
           </div>
         </section>
+
       </main>
 
       <footer className="lp-rodape2">
@@ -912,12 +877,11 @@ export default function LandingPage() {
   )
 }
 
-function Recurso({ icone, titulo, texto, novo }: { icone: string; titulo: string; texto: string; novo?: boolean }) {
+function Recurso({ icone, titulo, texto }: { icone: string; titulo: string; texto: string }) {
   return (
     <div className="lp-rec-card">
-      <span className="lp-extra-ic"><i className={`ti ${icone}`} /></span>
-      <h3>{titulo}{novo && <span className="lp-novo">NOVO</span>}</h3>
-      <p>{texto}</p>
+      <span className="lp-extra-ic" aria-hidden><i className={`ti ${icone}`} /></span>
+      <div><h3>{titulo}</h3><p>{texto}</p></div>
     </div>
   )
 }
