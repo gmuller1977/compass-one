@@ -177,6 +177,8 @@ const CSS = `
 .v2-rota h3 { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 24px; }
 .v2-rota-sub { margin: 2px 0 10px; font-size: 15px; color: rgba(255,255,255,.75); }
 .v2-rota svg { display: block; width: 100%; height: auto; overflow: visible; }
+.v2-rota-largo { display: none !important; }
+@media (min-width: 640px) and (max-width: 959px) { .v2-lamps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .v2-rota-linha { stroke-dasharray: 1; stroke-dashoffset: 1; }
 .v2-cabine.on .v2-rota-linha { animation: v2-tracar 2.6s cubic-bezier(.4,0,.2,1) .3s forwards; }
 @keyframes v2-tracar { to { stroke-dashoffset: 0; } }
@@ -388,9 +390,11 @@ const CSS = `
   .v2-cruz-in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; }
   .v2-check li { grid-template-columns: 32px minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; }
   .v2-check-mini { grid-column: 3; }
-  .v2-cabine { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 28px; align-items: start; }
-  .v2-lamps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .v2-lamps li:nth-child(5) { grid-column: 1 / -1; }
+  .v2-cabine { gap: 28px; }
+  .v2-lamps { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+  .v2-lamp-luz { min-height: 70px; font-size: 18px; }
+  .v2-rota-celular { display: none !important; }
+  .v2-rota-largo { display: block !important; }
   .v2-painel, .v2-rota { padding: 26px; }
   .v2-bagagem { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; border-top: 0; }
   .v2-bagagem li { border-top: 1.5px solid #c9daf0; }
@@ -494,42 +498,44 @@ function cumulo(x: number, y: number, largura: number, altura: number, semente: 
 }
 
 /** O que as anotações mostram: o caminho até hoje. Daqui para a frente, neblina. Ilustrativo, sem números. */
-function RotaSemPlano() {
+function RotaSemPlano({ largura = 520, className }: { largura?: number; className?: string }) {
+  const k = largura / 520
+  const X = (x: number) => +(x * k).toFixed(1)
   const pts: [number, number][] = [[24, 70], [52, 78], [74, 72], [100, 116], [126, 110], [150, 128], [176, 122], [204, 168], [228, 160], [252, 176], [278, 170], [300, 186]]
-  const d = 'M' + pts.map(([x, y]) => `${x},${y}`).join(' L')
-  const hoje = 300, zero = 222
+  const d = 'M' + pts.map(([x, y]) => `${X(x)},${y}`).join(' L')
+  const hoje = X(300), fim = X(500), zero = 222
   const futuros = [
-    { d: `M${hoje},186 C350,170 410,130 500,108`, cor: 'rgba(255,255,255,.55)' },
-    { d: `M${hoje},186 C350,196 420,180 500,190`, cor: 'rgba(255,255,255,.55)' },
-    { d: `M${hoje},186 C350,206 420,236 500,262`, cor: '#f87171' },
+    { d: `M${hoje},186 C${X(350)},170 ${X(410)},130 ${fim},108`, cor: 'rgba(255,255,255,.55)' },
+    { d: `M${hoje},186 C${X(350)},196 ${X(420)},180 ${fim},190`, cor: 'rgba(255,255,255,.55)' },
+    { d: `M${hoje},186 C${X(350)},206 ${X(420)},236 ${fim},262`, cor: '#f87171' },
   ]
   return (
-    <svg viewBox="0 0 520 300" role="img" aria-label="Ilustração: as anotações mostram o saldo caindo até hoje; daqui para a frente não dá para ver se o mês termina no azul ou no vermelho.">
+    <svg className={className} viewBox={`0 0 ${largura} 300`} role="img" aria-label="Ilustração: as anotações mostram o saldo caindo desde o início do mês até hoje; daqui para a frente não dá para ver se o mês termina no azul ou no vermelho.">
       <defs>
-        <linearGradient id="v2-vermelho" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(239,68,68,.2)" /><stop offset="1" stopColor="rgba(239,68,68,0)" /></linearGradient>
-        <linearGradient id="v2-neblina" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(160,178,206,0)" /><stop offset=".18" stopColor="rgba(160,178,206,.22)" /><stop offset="1" stopColor="rgba(160,178,206,.3)" /></linearGradient>
-        <filter id="v2-borra"><feGaussianBlur stdDeviation="2.2" /></filter>
+        <linearGradient id={`v2-vermelho-${largura}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(239,68,68,.2)" /><stop offset="1" stopColor="rgba(239,68,68,0)" /></linearGradient>
+        <linearGradient id={`v2-neblina-${largura}`} x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(160,178,206,0)" /><stop offset=".18" stopColor="rgba(160,178,206,.22)" /><stop offset="1" stopColor="rgba(160,178,206,.3)" /></linearGradient>
+        <filter id={`v2-borra-${largura}`}><feGaussianBlur stdDeviation="2.2" /></filter>
       </defs>
-      <rect x="0" y={zero} width="520" height="56" fill="url(#v2-vermelho)" />
-      <line x1="10" y1={zero} x2="510" y2={zero} stroke="rgba(255,255,255,.4)" strokeDasharray="5 6" />
+      <rect x="0" y={zero} width={largura} height="56" fill={`url(#v2-vermelho-${largura})`} />
+      <line x1="10" y1={zero} x2={largura - 10} y2={zero} stroke="rgba(255,255,255,.4)" strokeDasharray="5 6" />
       <text x="12" y={zero - 8} fill="rgba(255,255,255,.7)" fontSize="13" fontWeight="600">zero</text>
-      <text x="24" y="292" fill="rgba(255,255,255,.6)" fontSize="13">dia 1</text>
-      <text x="496" y="292" fill="rgba(255,255,255,.6)" fontSize="13" textAnchor="end">dia 30</text>
+      <text x={X(24)} y="292" fill="rgba(255,255,255,.6)" fontSize="13">dia 1</text>
+      <text x={fim - 4} y="292" fill="rgba(255,255,255,.6)" fontSize="13" textAnchor="end">dia 30</text>
       <g className="v2-rota-marca m3">
-        <g filter="url(#v2-borra)">{futuros.map((f, k) => <path key={k} d={f.d} fill="none" stroke={f.cor} strokeWidth="3" strokeDasharray="7 7" strokeLinecap="round" />)}</g>
-        <rect x={hoje - 6} y="24" width={520 - hoje + 6} height="250" fill="url(#v2-neblina)" />
-        <text x="470" y="130" fill="rgba(255,255,255,.75)" fontSize="34" fontWeight="700">?</text>
-        <text x="420" y="214" fill="rgba(255,255,255,.6)" fontSize="26" fontWeight="700">?</text>
-        <text x="478" y="252" fill="#fca5a5" fontSize="26" fontWeight="700">?</text>
-        <text x="410" y="52" fill="#fff" fontSize="14" fontWeight="700" textAnchor="middle">E daqui pra frente?</text>
+        <g filter={`url(#v2-borra-${largura})`}>{futuros.map((f, n) => <path key={n} d={f.d} fill="none" stroke={f.cor} strokeWidth="3" strokeDasharray="7 7" strokeLinecap="round" />)}</g>
+        <rect x={hoje - 6} y="24" width={largura - hoje + 6} height="250" fill={`url(#v2-neblina-${largura})`} />
+        <text x={fim - 30} y="130" fill="rgba(255,255,255,.75)" fontSize="34" fontWeight="700">?</text>
+        <text x={X(420)} y="214" fill="rgba(255,255,255,.6)" fontSize="26" fontWeight="700">?</text>
+        <text x={fim - 22} y="252" fill="#fca5a5" fontSize="26" fontWeight="700">?</text>
+        <text x={(hoje + largura) / 2} y="52" fill="#fff" fontSize="14" fontWeight="700" textAnchor="middle">E daqui pra frente?</text>
       </g>
       <line x1={hoje} y1="34" x2={hoje} y2="276" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
       <text x={hoje} y="28" fill="rgba(255,255,255,.75)" fontSize="13" fontWeight="700" textAnchor="middle">hoje</text>
       <g className="v2-rota-treme">
         <path className="v2-rota-linha" d={d} pathLength={1} fill="none" stroke="var(--ambar)" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
       </g>
-      <g className="v2-rota-marca m1"><circle cx="24" cy="70" r="6" fill="var(--ambar)" /><text x="38" y="56" fill="#fff" fontSize="14" fontWeight="700">O salário caiu</text></g>
-      <g className="v2-rota-marca m2"><circle cx="204" cy="168" r="6" fill="var(--ambar)" /><text x="196" y="200" fill="#fff" fontSize="14" fontWeight="700" textAnchor="end">A fatura veio maior</text></g>
+      <g className="v2-rota-marca m1"><circle cx={X(24)} cy="70" r="6" fill="var(--ambar)" /><text x={X(24) + 14} y="56" fill="#fff" fontSize="14" fontWeight="700">Início do mês</text></g>
+      <g className="v2-rota-marca m2"><circle cx={X(204)} cy="168" r="6" fill="var(--ambar)" /><text x={X(204) - 8} y="200" fill="#fff" fontSize="14" fontWeight="700" textAnchor="end">A fatura veio maior</text></g>
     </svg>
   )
 }
@@ -562,7 +568,8 @@ function CabineEmTurbulencia() {
       <div className="v2-rota">
         <h3>O que as suas anotações mostram</h3>
         <p className="v2-rota-sub">Só o caminho que já passou. O resto do voo fica na neblina.</p>
-        <RotaSemPlano />
+        <RotaSemPlano className="v2-rota-celular" />
+        <RotaSemPlano className="v2-rota-largo" largura={1040} />
         <p className="v2-rota-nota">Ilustração. No app, a rota é a do seu dinheiro.</p>
       </div>
     </div>
