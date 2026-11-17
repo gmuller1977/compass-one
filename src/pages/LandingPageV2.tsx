@@ -78,16 +78,17 @@ const CSS = `
 .v2-ctas { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
 .v2-pista-svg { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 230px; z-index: 1; }
 
-/* relâmpagos: tempestade à noite, longe, nas bordas do céu */
-.v2-tempestade { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.v2-clarao { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 45% at 12% 18%, rgba(190,210,255,.16), transparent 70%),
-  radial-gradient(ellipse 50% 40% at 88% 10%, rgba(190,210,255,.13), transparent 70%); opacity: 0; animation: v2-clarao 9s infinite; }
-.v2-raio { position: absolute; opacity: 0; }
-.v2-raio.r1 { left: .5%; top: 70px; width: 96px; height: 340px; animation: v2-raio 9s infinite; }
-.v2-raio.r2 { right: .5%; top: 30px; width: 72px; height: 270px; animation: v2-raio 9s 4.6s infinite; }
-@keyframes v2-raio { 0%, 88%, 100% { opacity: 0; } 89% { opacity: .95; } 90.5% { opacity: .15; } 92% { opacity: .85; } 95% { opacity: 0; } }
-@keyframes v2-clarao { 0%, 88%, 100% { opacity: 0; } 89% { opacity: 1; } 90.5% { opacity: .3; } 92% { opacity: .9; } 96% { opacity: 0; }
-  38% { opacity: 0; } 39.5% { opacity: .8; } 41% { opacity: .2; } 42.5% { opacity: .7; } 46% { opacity: 0; } }
+/* neblina: voar às cegas. A névoa cobre o céu e se abre em volta do app,
+   o instrumento que devolve a visão (17/11/2026, no lugar dos relâmpagos). */
+.v2-neblina { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.v2-nevoa { position: absolute; border-radius: 50%; filter: blur(48px); background: rgba(150,170,200,.3); }
+.v2-nevoa.n1 { left: -20%; top: 4%; width: 75%; height: 46%; animation: v2-nevoa 46s ease-in-out infinite alternate; }
+.v2-nevoa.n2 { right: -25%; top: 22%; width: 80%; height: 52%; background: rgba(140,160,195,.2); animation: v2-nevoa 58s ease-in-out infinite alternate-reverse; }
+.v2-nevoa.n3 { left: 5%; bottom: 8%; width: 95%; height: 40%; background: rgba(120,140,175,.32); animation: v2-nevoa 40s ease-in-out infinite alternate; }
+.v2-nevoa.n4 { left: 30%; top: -10%; width: 60%; height: 36%; background: rgba(160,180,210,.16); animation: v2-nevoa 64s ease-in-out infinite alternate-reverse; }
+@keyframes v2-nevoa { from { transform: translateX(-6%); } to { transform: translateX(8%); } }
+.v2-app::before { content: ''; position: absolute; left: 50%; top: 50%; width: 140%; height: 120%; transform: translate(-50%, -50%); z-index: 0;
+  background: radial-gradient(closest-side, rgba(11,19,34,.95) 0%, rgba(11,19,34,.7) 45%, rgba(34,211,238,.10) 70%, transparent 100%); pointer-events: none; }
 
 /* painel de partidas */
 .v2-painel { background: #070d18; border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 24px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); }
@@ -356,7 +357,7 @@ const CSS = `
 @media (min-width: 1240px) { .v2-alt { display: block; } }
 @media (prefers-reduced-motion: reduce) {
   .v2-linha, .v2-alertas i, .v2-nuvens g, .v2-sol-ceu::before { animation: none !important; }
-  .v2-tempestade { display: none; }
+  .v2-nevoa { animation: none !important; }
   .v2-sol-ceu { opacity: 1; transform: none; transition: none; }
   .v2-btn, .v2-fita i, .v2-alt-cel { transition: none; }
 }
@@ -450,20 +451,11 @@ function NuvensEscuras() {
   )
 }
 
-/** Relâmpagos ao longe, nas bordas: o voo começa na tempestade. */
-function Relampagos() {
-  const raio = (cls: string, d: string, vb: string) => (
-    <svg className={`v2-raio ${cls}`} viewBox={vb} preserveAspectRatio="xMidYMin meet">
-      <defs><filter id={`v2-luz-${cls}`} x="-100%" y="-20%" width="300%" height="140%"><feGaussianBlur stdDeviation="5" /></filter></defs>
-      <path d={d} fill="none" stroke="rgba(170,200,255,.7)" strokeWidth="9" strokeLinejoin="round" filter={`url(#v2-luz-${cls})`} />
-      <path d={d} fill="none" stroke="#eef4ff" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  )
+/** Neblina: sem instrumento não se enxerga; ela se abre em volta do app. */
+function Neblina() {
   return (
-    <div className="v2-tempestade" aria-hidden>
-      <div className="v2-clarao" />
-      {raio('r1', 'M52,0 L40,62 L58,70 L30,150 L48,156 L22,236 L40,240 L14,340 M30,150 L70,196 L62,226', '0 0 96 340')}
-      {raio('r2', 'M30,0 L44,58 L28,64 L50,132 L34,138 L56,208 L40,212 L58,270', '0 0 72 270')}
+    <div className="v2-neblina" aria-hidden>
+      <i className="v2-nevoa n1" /><i className="v2-nevoa n2" /><i className="v2-nevoa n3" /><i className="v2-nevoa n4" />
     </div>
   )
 }
@@ -719,7 +711,7 @@ export default function LandingPageV2() {
       </div>
 
       <header className="v2-pista" data-alt="0">
-        <Relampagos />
+        <Neblina />
         <div className="v2-in">
           <nav className="v2-nav" aria-label="Principal">
             <Link to="/" className="v2-marca" aria-label="Compass One, página inicial"><LogoCompass size={34} /><NomeCompass /></Link>
