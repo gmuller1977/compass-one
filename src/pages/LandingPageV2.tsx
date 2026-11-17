@@ -116,6 +116,8 @@ const CSS = `
 .v2-painel small { display: block; margin-top: 12px; font-size: 12px; color: rgba(255,255,255,.65); }
 @keyframes v2-placa { from { transform: rotateX(-75deg); } to { transform: rotateX(0); } }
 
+.v2-hero-sub { font-size: 21px !important; font-weight: 600; color: #fff !important; margin-bottom: 14px !important; }
+
 /* turbulência */
 .v2-turb { background: linear-gradient(180deg, var(--noite2) 0%, #303a50 45%, var(--nuvem) 100%); color: #fff; overflow: hidden; }
 .v2-nuvens { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -126,6 +128,9 @@ const CSS = `
 .v2-alertas { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 48px; max-width: 980px; }
 .v2-alertas li { display: flex; gap: 16px; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 19px; font-weight: 500; line-height: 1.4; }
 .v2-alertas i { flex-shrink: 0; font-size: 30px; color: var(--ambar); animation: v2-trem 2.6s ease-in-out infinite; }
+.v2-alertas b { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 23px; font-weight: 700; letter-spacing: .01em; }
+.v2-alerta-d { display: block; margin-top: 2px; font-size: 17px; font-weight: 400; color: rgba(255,255,255,.85); }
+.v2-alertas li:nth-child(5) i { animation-delay: 2.2s; }
 .v2-alertas li:nth-child(2) i { animation-delay: .5s; } .v2-alertas li:nth-child(3) i { animation-delay: 1.1s; } .v2-alertas li:nth-child(4) i { animation-delay: 1.7s; }
 @keyframes v2-trem { 0%, 70%, 100% { transform: none; } 74% { transform: translate(-2px, 1px) rotate(-4deg); } 78% { transform: translate(2px, -1px) rotate(3deg); } 82% { transform: translate(-1px, 1px) rotate(-2deg); } 86% { transform: none; } }
 .v2-virada { margin: 56px 0 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.12; max-width: 760px; }
@@ -711,11 +716,11 @@ export default function LandingPageV2() {
           </nav>
           <div className="v2-hero">
             <div>
-              <h1>Saiba hoje como o seu mês <em>vai fechar</em>.</h1>
+              <h1>Chega de voar <em>às cegas</em> com o seu dinheiro.</h1>
+              <p className="v2-hero-sub">Assuma o controle da sua vida financeira e faça escolhas melhores para contornar as turbulências.</p>
               <p>
-                O Compass One é um app de planejamento financeiro pessoal, criado por um educador financeiro. Ele junta
-                o seu salário, as contas fixas e as parcelas e mostra, em qualquer dia, com quanto você termina o mês e
-                os próximos. O aperto aparece antes, com tempo de mudar a rota.
+                O Compass One é uma bússola financeira criada por um educador financeiro para ajudar você a encontrar o
+                seu norte, antecipar o que vem pela frente e tomar decisões melhores.
               </p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
@@ -738,14 +743,15 @@ export default function LandingPageV2() {
         <section className="v2-sec v2-turb" id="turbulencia" aria-labelledby="t-turb" data-alt="1200">
           <NuvensEscuras />
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-turb">As contas estão em dia. Então por que nunca sobra?</h2>
-            <p className="v2-lead">Sem um plano, cuidar do dinheiro é como voar dentro da nuvem: o mês chacoalha o tempo todo, e você só vê o saldo quando ele já acabou.</p>
+            <h2 className="v2-h2" id="t-turb">Você já decolou. Mas o voo nunca fica tranquilo.</h2>
+            <p className="v2-lead">Eu sei: você já se organiza por conta própria, anota o que entra e o que sai. Mesmo assim, a viagem é sempre turbulenta, o combustível acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <ul className="v2-alertas">
-              {[['ti-wallet', 'O salário cai e, antes do fim do mês, já foi embora'],
-                ['ti-file-invoice', 'A fatura chega maior do que você imaginava'],
-                ['ti-help-circle', 'Toda compra vem com a dúvida: será que dá?'],
-                ['ti-pig-money', 'Você quer guardar, mas nunca sobra nada para guardar'],
-              ].map(([ic, t]) => <li key={t}><i className={`ti ${ic}`} aria-hidden />{t}</li>)}
+              {[['ti-gas-station', 'Combustível no fim', 'O que você recebe some antes de o mês terminar.'],
+                ['ti-cloud-storm', 'Turbulência inesperada', 'A fatura do cartão chega maior do que você imaginava.'],
+                ['ti-help-circle', 'Voo sem instrumentos', 'Toda compra vem com a dúvida: será que dá?'],
+                ['ti-pig-money', 'Sem reserva de combustível', 'Você quer guardar, mas o dinheiro nunca chega até lá.'],
+                ['ti-route', 'Sem rota definida', 'Você não sabe se o próximo mês vai ser melhor ou pior que este.'],
+              ].map(([ic, t, d]) => <li key={t}><i className={`ti ${ic}`} aria-hidden /><span><b>{t}</b><span className="v2-alerta-d">{d}</span></span></li>)}
             </ul>
             <p className="v2-virada">
               Não falta esforço. Falta enxergar o mês antes que ele acabe.
