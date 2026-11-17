@@ -791,8 +791,9 @@ export default function LandingPageV2() {
               <p>
                 Na vida financeira, a tempestade é a falta de controle e de planejamento. Contas, parcelas e imprevistos
                 formam a tempestade. Com um planejamento financeiro, você decola sabendo por onde passar e onde ela
-                termina. O Compass One é a bússola financeira criada por um educador financeiro para isso. Está na hora
-                de mudar.
+                termina. Está na hora de mudar isso. O Compass One é a bússola financeira criada por um educador
+                financeiro que vai ajudar você a encontrar o seu norte, antecipar o que vem pela frente, tomar decisões
+                melhores e acabar com as suas dúvidas.
               </p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
