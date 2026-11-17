@@ -76,6 +76,10 @@ const CSS = `
 .v2-hero h1 em { font-style: normal; color: var(--ambar); }
 .v2-hero p { font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.88); margin: 0 0 30px; max-width: 520px; }
 .v2-ctas { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+.v2-luzp { opacity: var(--o); animation: v2-luzp 2.6s ease-out infinite; }
+.v2-luzp-halo { opacity: 0; animation: v2-luzp-halo 2.6s ease-out infinite; }
+@keyframes v2-luzp { 0%, 14%, 100% { opacity: var(--o); fill: #f5b942; } 4% { opacity: 1; fill: #fff3cf; } }
+@keyframes v2-luzp-halo { 0%, 16%, 100% { opacity: 0; } 4% { opacity: 1; } }
 .v2-pista-svg { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 230px; z-index: 1; }
 
 /* painel de partidas */
@@ -347,6 +351,7 @@ const CSS = `
 @media (min-width: 1240px) { .v2-alt { display: block; } }
 @media (prefers-reduced-motion: reduce) {
   .v2-linha, .v2-alertas i, .v2-nuvens g, .v2-sol-ceu::before { animation: none !important; }
+  .v2-luzp, .v2-luzp-halo { animation-duration: 4.5s; }
   .v2-sol-ceu { opacity: 1; transform: none; transition: none; }
   .v2-btn, .v2-fita i, .v2-alt-cel { transition: none; }
 }
@@ -354,10 +359,11 @@ const CSS = `
 
 /** Pista à noite em perspectiva: asfalto, faixa central e luzes até o horizonte. */
 function Pista() {
-  const luzes = Array.from({ length: 11 }, (_, i) => i)
+  const N = 15
+  const luzes = Array.from({ length: N }, (_, i) => i)
   // De perto (embaixo) para longe (horizonte): posição e tamanho encolhem.
   const ponto = (lado: -1 | 1, i: number) => {
-    const t = i / 10, y = 230 - t * 170, meia = 640 - t * 600
+    const t = i / (N - 1), y = 230 - t * 170, meia = 640 - t * 600
     return { x: 720 + lado * meia, y, r: 5 - t * 3.6 }
   }
   return (
@@ -366,6 +372,9 @@ function Pista() {
         <linearGradient id="v2-asfalto" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#1b2740" /><stop offset="1" stopColor="#0f1829" />
         </linearGradient>
+        <radialGradient id="v2-halo">
+          <stop offset="0" stopColor="#ffd77a" stopOpacity=".9" /><stop offset="1" stopColor="#f5b942" stopOpacity="0" />
+        </radialGradient>
         <linearGradient id="v2-horiz" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="rgba(120,160,220,0)" /><stop offset="1" stopColor="rgba(120,160,220,.18)" />
         </linearGradient>
@@ -381,7 +390,14 @@ function Pista() {
       })}
       {luzes.map(i => ([-1, 1] as const).map(l => {
         const p = ponto(l, i)
-        return <circle key={`${i}${l}`} cx={p.x} cy={p.y} r={p.r} fill="#f5b942" opacity={1 - i * .05} />
+        // O pulso corre de perto até o horizonte, no sentido da decolagem.
+        const atraso = { animationDelay: `${(i * .11).toFixed(2)}s` }
+        return (
+          <g key={`${i}${l}`}>
+            <circle className="v2-luzp-halo" cx={p.x} cy={p.y} r={p.r * 3.4} fill="url(#v2-halo)" style={atraso} />
+            <circle className="v2-luzp" cx={p.x} cy={p.y} r={p.r} fill="#f5b942" style={{ ...atraso, ['--o' as string]: (.75 - i * .03).toFixed(2) }} />
+          </g>
+        )
       }))}
     </svg>
   )
