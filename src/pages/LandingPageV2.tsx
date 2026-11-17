@@ -159,6 +159,8 @@ const CSS = `
 .v2-virada span { display: block; margin-top: 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 19px; line-height: 1.5; color: rgba(255,255,255,.85); }
 
 /* subida */
+.v2-turb { padding-bottom: 56px; }
+.v2-subida { padding-top: 56px; }
 .v2-subida { background: linear-gradient(180deg, var(--nuvem) 0%, #2e4d7a 22%, var(--subida) 60%, #1d4a8c 100%); color: #fff; padding-bottom: 40px; }
 .v2-subida .v2-lead { color: rgba(255,255,255,.85); }
 .v2-etapas { list-style: none; padding: 0; margin: 64px 0 0; position: relative; }
@@ -889,8 +891,8 @@ export default function LandingPageV2() {
               ].map(([ic, t, d]) => <li key={t}><i className={`ti ${ic}`} aria-hidden /><span><b>{t}</b><span className="v2-alerta-d">{d}</span></span></li>)}
             </ul>
             <p className="v2-virada">
-              Não falta esforço. Falta enxergar o mês antes que ele acabe.
-              <span>Dentro da nuvem, o piloto voa por instrumentos. No seu dinheiro, o instrumento é um planejamento financeiro.</span>
+              Chegou a hora de subir de nível.
+              <span>Comece a pilotar sua vida financeira e contorne as turbulências. Conheça o Compass One.</span>
             </p>
           </div>
         </section>
@@ -898,7 +900,7 @@ export default function LandingPageV2() {
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
             <h2 className="v2-h2" id="t-subida">A subida, instrumento por instrumento</h2>
-            <p className="v2-lead">Cada ferramenta do Compass mostra onde está o seu dinheiro hoje e para onde ele vai, até você sair do aperto.</p>
+            <p className="v2-lead">Cada ferramenta do Compass mostra onde está o seu dinheiro hoje e para onde ele vai, para você decidir com antecedência.</p>
             <ol className="v2-etapas">
               {ETAPAS.map(e => (
                 <li key={e.alt} className="v2-etapa" data-alt={e.alt}>
