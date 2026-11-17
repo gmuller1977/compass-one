@@ -118,6 +118,25 @@ const CSS = `
 
 .v2-hero-sub { font-size: 21px !important; font-weight: 600; color: #fff !important; margin-bottom: 14px !important; }
 
+/* o app na primeira dobra */
+.v2-app { margin: 0; position: relative; display: flex; flex-direction: column; align-items: center; }
+.v2-app-pc { display: none; }
+.v2-app-cel { width: min(300px, 78vw); padding: 10px; border-radius: 44px; background: #05080f;
+  box-shadow: 0 30px 70px rgba(0,0,0,.55), inset 0 0 0 1.5px rgba(255,255,255,.14), 0 0 0 1px rgba(34,211,238,.25); position: relative; z-index: 2; }
+.v2-app-cel img { display: block; width: 100%; height: auto; border-radius: 34px; }
+.v2-app figcaption { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,.65); text-align: center; }
+@media (min-width: 960px) {
+  .v2-app { display: block; min-height: 560px; }
+  .v2-app-pc { display: block; position: absolute; right: -10px; top: 20px; width: 560px; padding: 10px 10px 14px; border-radius: 16px; background: #05080f;
+    box-shadow: 0 30px 70px rgba(0,0,0,.5), inset 0 0 0 1.5px rgba(255,255,255,.12); }
+  .v2-app-pc img { display: block; width: 100%; height: auto; border-radius: 8px; }
+  .v2-app-pc::after { content: ''; position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%); width: 180px; height: 26px;
+    background: linear-gradient(180deg, #1c2333, #0b0f18); clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%); }
+  .v2-app-cel { position: absolute; left: -20px; top: 110px; width: 230px; padding: 8px; border-radius: 38px; }
+  .v2-app-cel img { border-radius: 30px; }
+  .v2-app figcaption { position: absolute; right: 0; top: 430px; width: 300px; text-align: right; }
+}
+
 /* turbulência */
 .v2-turb { background: linear-gradient(180deg, var(--noite2) 0%, #303a50 45%, var(--nuvem) 100%); color: #fff; overflow: hidden; }
 .v2-nuvens { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -474,25 +493,21 @@ function TopoDasNuvens({ base, cor }: { base: string; cor: string }) {
   )
 }
 
-function PainelPartidas() {
-  const linhas: [string, string, string, boolean][] = [
-    ['Novembro', 'R$ 3.912', 'No horário', false],
-    ['Dezembro', '− R$ 480', 'Turbulência', true],
-    ['Janeiro', 'R$ 1.200', 'No horário', false],
-    ['Fevereiro', 'R$ 2.300', 'No horário', false],
-  ]
+/**
+ * A primeira dobra mostra o app DE VERDADE (17/11/2026, pedido do Guilherme:
+ * o quadro "Próximos meses" não existia no app). Capturas reais do
+ * Planejamento, escolhido por ele ("é por onde tudo começa"), com a conta
+ * fictícia "Ana Teste" (ambiente-teste). No celular, só o celular; no
+ * computador, a tela do computador atrás e o celular na frente.
+ */
+function AppNaDobra() {
+  const alt = 'Tela de Planejamento do Compass One: com quanto o ano termina se o plano se cumprir e com quanto cada mês termina'
   return (
-    <div className="v2-painel" role="img" aria-label="Exemplo com números fictícios: com quanto cada um dos próximos meses vai terminar. Novembro R$ 3.912, dezembro menos R$ 480 com turbulência, janeiro R$ 1.200 e fevereiro R$ 2.300.">
-      <div className="v2-painel-t"><span>Próximos meses</span><i className="ti ti-plane-departure" /></div>
-      <div className="v2-linha v2-cab"><span>Mês</span><span className="v">Termina com</span><span className="s">Situação</span></div>
-      {linhas.map(([m, v, s, a]) => (
-        <div key={m} className={`v2-linha${a ? ' alerta' : ''}`}>
-          <span>{m}</span><span className="v">{v}</span>
-          <span className="s">{a && <i className="ti ti-cloud-storm" style={{ fontSize: 18 }} />}{s}</span>
-        </div>
-      ))}
-      <small>Exemplo com números fictícios. No app, os números são os seus.</small>
-    </div>
+    <figure className="v2-app" aria-label={alt}>
+      <div className="v2-app-pc" aria-hidden><img src="/landing/plano-computador.webp" alt="" width={1600} height={1000} /></div>
+      <div className="v2-app-cel"><img src="/landing/plano-celular.webp" alt={alt} width={585} height={1266} /></div>
+      <figcaption>Tela real do app, com uma conta de exemplo.</figcaption>
+    </figure>
   )
 }
 
@@ -733,7 +748,7 @@ export default function LandingPageV2() {
                 <li><i className="ti ti-school" />Criado por um educador financeiro</li>
               </ul>
             </div>
-            <PainelPartidas />
+            <AppNaDobra />
           </div>
         </div>
         <Pista />
