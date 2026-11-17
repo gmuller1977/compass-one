@@ -718,7 +718,7 @@ export default function LandingPageV2() {
           </nav>
           <div className="v2-hero">
             <div>
-              <h1>Chega de voar <em>às cegas</em> com o seu dinheiro.</h1>
+              <h1>Prepare a <em>decolagem</em> da sua vida financeira.</h1>
               <p className="v2-hero-sub">Assuma o controle da sua vida financeira e faça escolhas melhores para contornar as turbulências.</p>
               <p>
                 O Compass One é uma bússola financeira criada por um educador financeiro para ajudar você a encontrar o
