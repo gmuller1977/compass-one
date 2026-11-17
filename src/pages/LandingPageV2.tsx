@@ -787,10 +787,12 @@ export default function LandingPageV2() {
           <div className="v2-hero">
             <div>
               <h1>Prepare a <em>decolagem</em> da sua vida financeira.</h1>
-              <p className="v2-hero-sub">Assuma o controle da sua vida financeira e faça escolhas melhores para contornar as turbulências.</p>
+              <p className="v2-hero-sub">Antes da decolagem sempre bate aquele frio na barriga: será que vai subir?</p>
               <p>
-                O Compass One é uma bússola financeira criada por um educador financeiro para ajudar você a encontrar o
-                seu norte, antecipar o que vem pela frente e tomar decisões melhores.
+                Na vida financeira, a tempestade é a falta de controle e de planejamento. Contas, parcelas e imprevistos
+                formam a tempestade. Com um planejamento financeiro, você decola sabendo por onde passar e onde ela
+                termina. O Compass One é a bússola financeira criada por um educador financeiro para isso. Está na hora
+                de mudar.
               </p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
