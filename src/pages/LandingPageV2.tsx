@@ -139,7 +139,7 @@ const CSS = `
 }
 
 /* turbulência */
-.v2-turb { background: linear-gradient(180deg, var(--noite2) 0%, #161d2d 35%, #262f43 72%, var(--nuvem) 100%); color: #fff; overflow: hidden; }
+.v2-turb { background: linear-gradient(180deg, var(--noite2) 0%, #161d2d 35%, #262f43 70%, #2d3a55 100%); color: #fff; overflow: hidden; }
 .v2-turb > .v2-in { z-index: 1; }
 /* chuva na diagonal e clarões dentro das nuvens */
 .v2-chuva { position: absolute; inset: 0; pointer-events: none;
@@ -147,6 +147,7 @@ const CSS = `
     repeating-linear-gradient(98deg, transparent 0 52px, rgba(190,210,240,.05) 52px 53px, transparent 53px 97px);
   background-size: 400px 400px, 520px 520px; animation: v2-chuva 1.1s linear infinite; }
 @keyframes v2-chuva { to { background-position: -98px 400px, -110px 520px; } }
+.v2-chuva, .v2-nuvens { -webkit-mask-image: linear-gradient(180deg, #000 0, #000 72%, transparent 100%); mask-image: linear-gradient(180deg, #000 0, #000 72%, transparent 100%); }
 .v2-turb-clarao { position: absolute; inset: 0; pointer-events: none; opacity: 0;
   background: radial-gradient(ellipse 38% 30% at 80% 14%, rgba(200,220,255,.22), transparent 70%),
     radial-gradient(ellipse 30% 26% at 12% 62%, rgba(200,220,255,.16), transparent 70%);
@@ -197,13 +198,11 @@ const CSS = `
 .v2-nuvens g:nth-child(2) { animation-duration: 52s; animation-direction: alternate-reverse; }
 @keyframes v2-deriva { to { transform: translateX(-60px); } }
 .v2-turb .v2-lead { color: rgba(255,255,255,.85); }
-.v2-virada { margin: 56px 0 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.12; max-width: 760px; }
-.v2-virada span { display: block; margin-top: 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 19px; line-height: 1.5; color: rgba(255,255,255,.85); }
 
 /* subida */
 .v2-turb { padding-bottom: 56px; }
 .v2-subida { padding-top: 56px; }
-.v2-subida { background: linear-gradient(180deg, var(--nuvem) 0%, #2e4d7a 22%, var(--subida) 60%, #1d4a8c 100%); color: #fff; padding-bottom: 40px; }
+.v2-subida { background: linear-gradient(180deg, #2d3a55 0%, #2e4d7a 22%, var(--subida) 60%, #1d4a8c 100%); color: #fff; padding-bottom: 40px; }
 .v2-subida .v2-lead { color: rgba(255,255,255,.85); }
 .v2-etapas { list-style: none; padding: 0; margin: 64px 0 0; position: relative; }
 .v2-etapas::before { content: ''; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 0; border-left: 2px dashed rgba(255,255,255,.45); }
@@ -378,6 +377,8 @@ const CSS = `
 }
 @media (min-width: 960px) {
   .v2-sec { padding: 128px 0; }
+  .v2-turb { padding-bottom: 72px; }
+  .v2-subida { padding-top: 64px; }
   .v2-h2 { font-size: 56px; }
   .v2-menu, .v2-acoes .v2-btn { display: flex; }
   .v2-hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 64px; padding-top: 56px; }
@@ -400,7 +401,6 @@ const CSS = `
   .v2-bagagem li { border-top: 1.5px solid #c9daf0; }
   .v2-cartao { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
   .v2-canhoto::before { left: -1px; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 3px dashed #dbe6f3; }
-  .v2-virada { font-size: 40px; }
   .v2-fixo { display: none; }
   .v2-fim { padding: 140px 0 260px; }
   .v2-rodape-in { grid-template-columns: auto 1fr auto; align-items: center; }
@@ -949,17 +949,13 @@ export default function LandingPageV2() {
             <h2 className="v2-h2" id="t-turb">Ufa, decolamos. Mas agora aparecem outras panes.</h2>
             <p className="v2-lead">Eu sei: você já se organiza por conta própria, anota o que entra e o que sai. Mesmo assim, a viagem é sempre turbulenta, o combustível acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <CabineEmTurbulencia />
-            <p className="v2-virada">
-              Até agora, você voou às cegas. Está na hora de experimentar o Compass One.
-              <span>A bússola financeira que mostra a direção a seguir para evitar novas turbulências. A única ferramenta de que você vai precisar.</span>
-            </p>
           </div>
         </section>
 
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-subida">A subida, instrumento por instrumento</h2>
-            <p className="v2-lead">Cada ferramenta do Compass mostra onde está o seu dinheiro hoje e para onde ele vai, para você decidir com antecedência.</p>
+            <h2 className="v2-h2" id="t-subida">Até agora, você voou às cegas. Está na hora de experimentar o Compass One.</h2>
+            <p className="v2-lead">A bússola financeira que mostra a direção a seguir para evitar novas turbulências. A única ferramenta de que você vai precisar.</p>
             <ol className="v2-etapas">
               {ETAPAS.map(e => (
                 <li key={e.alt} className="v2-etapa" data-alt={e.alt}>
