@@ -950,8 +950,8 @@ export default function LandingPageV2() {
             <p className="v2-lead">Eu sei: você já se organiza por conta própria, anota o que entra e o que sai. Mesmo assim, a viagem é sempre turbulenta, o combustível acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
             <CabineEmTurbulencia />
             <p className="v2-virada">
-              Chega de ficar na turbulência. Vamos voar acima dela.
-              <span>Quero te apresentar o Compass One e como ele pode te ajudar nesta jornada financeira.</span>
+              Até agora, você voou às cegas. Está na hora de experimentar o Compass One.
+              <span>A bússola financeira que mostra a direção a seguir para evitar novas turbulências. A única ferramenta de que você vai precisar.</span>
             </p>
           </div>
         </section>
