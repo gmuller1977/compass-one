@@ -139,20 +139,62 @@ const CSS = `
 }
 
 /* turbulência */
-.v2-turb { background: linear-gradient(180deg, var(--noite2) 0%, #303a50 45%, var(--nuvem) 100%); color: #fff; overflow: hidden; }
+.v2-turb { background: linear-gradient(180deg, var(--noite2) 0%, #161d2d 35%, #262f43 72%, var(--nuvem) 100%); color: #fff; overflow: hidden; }
+.v2-turb > .v2-in { z-index: 1; }
+/* chuva na diagonal e clarões dentro das nuvens */
+.v2-chuva { position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(104deg, transparent 0 34px, rgba(190,210,240,.07) 34px 35px, transparent 35px 71px),
+    repeating-linear-gradient(98deg, transparent 0 52px, rgba(190,210,240,.05) 52px 53px, transparent 53px 97px);
+  background-size: 400px 400px, 520px 520px; animation: v2-chuva 1.1s linear infinite; }
+@keyframes v2-chuva { to { background-position: -98px 400px, -110px 520px; } }
+.v2-turb-clarao { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse 38% 30% at 80% 14%, rgba(200,220,255,.22), transparent 70%),
+    radial-gradient(ellipse 30% 26% at 12% 62%, rgba(200,220,255,.16), transparent 70%);
+  animation: v2-turb-clarao 7.5s infinite; }
+@keyframes v2-turb-clarao { 0%, 60%, 100% { opacity: 0; } 61% { opacity: 1; } 62.5% { opacity: .2; } 64% { opacity: .85; } 68% { opacity: 0; }
+  86% { opacity: 0; } 87% { opacity: .6; } 90% { opacity: 0; } }
+
+/* painel de alertas e a rota do mês */
+.v2-cabine { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 44px; }
+.v2-painel, .v2-rota { background: linear-gradient(180deg, #0e1526, #080d19); border-radius: 20px; padding: 22px;
+  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.09), 0 30px 60px rgba(0,0,0,.45); }
+.v2-painel-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px;
+  font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+.v2-master { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: .1em; color: #fff;
+  background: #7f1d1d; border-radius: 8px; padding: 7px 12px; box-shadow: inset 0 0 0 1.5px #dc2626; animation: v2-master 1.6s steps(1) infinite; }
+@keyframes v2-master { 50% { background: #b91c1c; box-shadow: inset 0 0 0 1.5px #fca5a5, 0 0 20px rgba(239,68,68,.55); } }
+.v2-lamps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.v2-lamp-luz { display: flex; gap: 10px; align-items: center; padding: 11px 14px; border-radius: 10px;
+  background: rgba(245,185,66,.07); border: 1.5px solid rgba(245,185,66,.32); color: var(--ambar);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: .06em; text-transform: uppercase;
+  animation: v2-lamp 3.5s infinite; }
+.v2-lamp-luz i { font-size: 22px; }
+@keyframes v2-lamp { 0%, 22%, 100% { background: rgba(245,185,66,.07); box-shadow: none; color: var(--ambar); }
+  4%, 16% { background: rgba(245,185,66,.24); box-shadow: 0 0 24px rgba(245,185,66,.38); color: #ffe2a3; } }
+.v2-lamps li:nth-child(2) .v2-lamp-luz { animation-delay: .7s; } .v2-lamps li:nth-child(3) .v2-lamp-luz { animation-delay: 1.4s; }
+.v2-lamps li:nth-child(4) .v2-lamp-luz { animation-delay: 2.1s; } .v2-lamps li:nth-child(5) .v2-lamp-luz { animation-delay: 2.8s; }
+.v2-lamp-d { display: block; margin: 8px 2px 0; font-size: 16px; line-height: 1.45; color: rgba(255,255,255,.85); }
+.v2-rota h3 { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 24px; }
+.v2-rota-sub { margin: 2px 0 10px; font-size: 15px; color: rgba(255,255,255,.75); }
+.v2-rota svg { display: block; width: 100%; height: auto; overflow: visible; }
+.v2-rota-linha { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.v2-cabine.on .v2-rota-linha { animation: v2-tracar 2.6s cubic-bezier(.4,0,.2,1) .3s forwards; }
+@keyframes v2-tracar { to { stroke-dashoffset: 0; } }
+.v2-rota-marca { opacity: 0; transition: opacity .5s ease; }
+.v2-cabine.on .v2-rota-marca { opacity: 1; }
+.v2-cabine.on .v2-rota-marca.m2 { transition-delay: 1.6s; } .v2-cabine.on .v2-rota-marca.m3 { transition: opacity 1.2s ease 2.7s; }
+.v2-cabine.on .v2-rota-marca.m1 { transition-delay: .5s; }
+.v2-rota-treme { animation: v2-sacode 3.8s ease-in-out infinite; }
+@keyframes v2-sacode { 0%, 64%, 100% { transform: none; } 67% { transform: translate(-1.5px, 2px); } 70% { transform: translate(2px, -2px); } 73% { transform: translate(-1px, 1.5px); } 76% { transform: none; } }
+.v2-rota-nota { margin: 10px 0 0; font-size: 13px; color: rgba(255,255,255,.65); }
+.v2-cabine.on { animation: v2-tranco .9s ease-out; }
+@keyframes v2-tranco { 0% { transform: none; } 12% { transform: translate(0, 7px) rotate(.25deg); } 26% { transform: translate(0, -5px) rotate(-.2deg); }
+  42% { transform: translate(0, 3px); } 60% { transform: translate(0, -1.5px); } 100% { transform: none; } }
 .v2-nuvens { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .v2-nuvens g { animation: v2-deriva 38s linear infinite alternate; }
 .v2-nuvens g:nth-child(2) { animation-duration: 52s; animation-direction: alternate-reverse; }
 @keyframes v2-deriva { to { transform: translateX(-60px); } }
 .v2-turb .v2-lead { color: rgba(255,255,255,.85); }
-.v2-alertas { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 48px; max-width: 980px; }
-.v2-alertas li { display: flex; gap: 16px; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 19px; font-weight: 500; line-height: 1.4; }
-.v2-alertas i { flex-shrink: 0; font-size: 30px; color: var(--ambar); animation: v2-trem 2.6s ease-in-out infinite; }
-.v2-alertas b { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 23px; font-weight: 700; letter-spacing: .01em; }
-.v2-alerta-d { display: block; margin-top: 2px; font-size: 17px; font-weight: 400; color: rgba(255,255,255,.85); }
-.v2-alertas li:nth-child(5) i { animation-delay: 2.2s; }
-.v2-alertas li:nth-child(2) i { animation-delay: .5s; } .v2-alertas li:nth-child(3) i { animation-delay: 1.1s; } .v2-alertas li:nth-child(4) i { animation-delay: 1.7s; }
-@keyframes v2-trem { 0%, 70%, 100% { transform: none; } 74% { transform: translate(-2px, 1px) rotate(-4deg); } 78% { transform: translate(2px, -1px) rotate(3deg); } 82% { transform: translate(-1px, 1px) rotate(-2deg); } 86% { transform: none; } }
 .v2-virada { margin: 56px 0 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.12; max-width: 760px; }
 .v2-virada span { display: block; margin-top: 10px; font-family: 'Barlow', sans-serif; font-weight: 500; font-size: 19px; line-height: 1.5; color: rgba(255,255,255,.85); }
 
@@ -346,7 +388,10 @@ const CSS = `
   .v2-cruz-in { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; }
   .v2-check li { grid-template-columns: 32px minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; }
   .v2-check-mini { grid-column: 3; }
-  .v2-alertas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v2-cabine { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .v2-lamps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v2-lamps li:nth-child(5) { grid-column: 1 / -1; }
+  .v2-painel, .v2-rota { padding: 26px; }
   .v2-bagagem { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; border-top: 0; }
   .v2-bagagem li { border-top: 1.5px solid #c9daf0; }
   .v2-cartao { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
@@ -356,9 +401,11 @@ const CSS = `
   .v2-fim { padding: 140px 0 260px; }
   .v2-rodape-in { grid-template-columns: auto 1fr auto; align-items: center; }
 }
-@media (min-width: 1240px) { .v2-alt { display: block; } }
+@media (min-width: 1420px) { .v2-alt { display: block; } }
 @media (prefers-reduced-motion: reduce) {
-  .v2-linha, .v2-alertas i, .v2-nuvens g, .v2-sol-ceu::before { animation: none !important; }
+  .v2-linha, .v2-nuvens g, .v2-sol-ceu::before, .v2-chuva, .v2-turb-clarao, .v2-master, .v2-lamp-luz, .v2-rota-treme, .v2-cabine.on { animation: none !important; }
+  .v2-rota-linha { stroke-dashoffset: 0; animation: none !important; }
+  .v2-rota-marca { opacity: 1; transition: none; }
   .v2-luzp, .v2-luzp-halo { animation-duration: 4.5s; }
   .v2-raio, .v2-clarao { animation: v2-suave 1.1s ease-out forwards; }
   .v2-sol-ceu { opacity: 1; transform: none; transition: none; }
@@ -444,6 +491,82 @@ function banco(largura: number, altura: number, base: number, amp: number, rMin:
 function cumulo(x: number, y: number, largura: number, altura: number, semente: number) {
   const c = cristas(x, x + largura, y, altura * .45, altura * .28, altura * .55, semente)
   return `${c.d} Q${(x + largura / 2).toFixed(1)},${(y + altura * .32).toFixed(1)} ${x},${y} Z`
+}
+
+/** O que as anotações mostram: o caminho até hoje. Daqui para a frente, neblina. Ilustrativo, sem números. */
+function RotaSemPlano() {
+  const pts: [number, number][] = [[24, 70], [52, 78], [74, 72], [100, 116], [126, 110], [150, 128], [176, 122], [204, 168], [228, 160], [252, 176], [278, 170], [300, 186]]
+  const d = 'M' + pts.map(([x, y]) => `${x},${y}`).join(' L')
+  const hoje = 300, zero = 222
+  const futuros = [
+    { d: `M${hoje},186 C350,170 410,130 500,108`, cor: 'rgba(255,255,255,.55)' },
+    { d: `M${hoje},186 C350,196 420,180 500,190`, cor: 'rgba(255,255,255,.55)' },
+    { d: `M${hoje},186 C350,206 420,236 500,262`, cor: '#f87171' },
+  ]
+  return (
+    <svg viewBox="0 0 520 300" role="img" aria-label="Ilustração: as anotações mostram o saldo caindo até hoje; daqui para a frente não dá para ver se o mês termina no azul ou no vermelho.">
+      <defs>
+        <linearGradient id="v2-vermelho" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(239,68,68,.2)" /><stop offset="1" stopColor="rgba(239,68,68,0)" /></linearGradient>
+        <linearGradient id="v2-neblina" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(160,178,206,0)" /><stop offset=".18" stopColor="rgba(160,178,206,.22)" /><stop offset="1" stopColor="rgba(160,178,206,.3)" /></linearGradient>
+        <filter id="v2-borra"><feGaussianBlur stdDeviation="2.2" /></filter>
+      </defs>
+      <rect x="0" y={zero} width="520" height="56" fill="url(#v2-vermelho)" />
+      <line x1="10" y1={zero} x2="510" y2={zero} stroke="rgba(255,255,255,.4)" strokeDasharray="5 6" />
+      <text x="12" y={zero - 8} fill="rgba(255,255,255,.7)" fontSize="13" fontWeight="600">zero</text>
+      <text x="24" y="292" fill="rgba(255,255,255,.6)" fontSize="13">dia 1</text>
+      <text x="496" y="292" fill="rgba(255,255,255,.6)" fontSize="13" textAnchor="end">dia 30</text>
+      <g className="v2-rota-marca m3">
+        <g filter="url(#v2-borra)">{futuros.map((f, k) => <path key={k} d={f.d} fill="none" stroke={f.cor} strokeWidth="3" strokeDasharray="7 7" strokeLinecap="round" />)}</g>
+        <rect x={hoje - 6} y="24" width={520 - hoje + 6} height="250" fill="url(#v2-neblina)" />
+        <text x="470" y="130" fill="rgba(255,255,255,.75)" fontSize="34" fontWeight="700">?</text>
+        <text x="420" y="214" fill="rgba(255,255,255,.6)" fontSize="26" fontWeight="700">?</text>
+        <text x="478" y="252" fill="#fca5a5" fontSize="26" fontWeight="700">?</text>
+        <text x="410" y="52" fill="#fff" fontSize="14" fontWeight="700" textAnchor="middle">E daqui pra frente?</text>
+      </g>
+      <line x1={hoje} y1="34" x2={hoje} y2="276" stroke="rgba(255,255,255,.35)" strokeWidth="1.5" />
+      <text x={hoje} y="28" fill="rgba(255,255,255,.75)" fontSize="13" fontWeight="700" textAnchor="middle">hoje</text>
+      <g className="v2-rota-treme">
+        <path className="v2-rota-linha" d={d} pathLength={1} fill="none" stroke="var(--ambar)" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
+      </g>
+      <g className="v2-rota-marca m1"><circle cx="24" cy="70" r="6" fill="var(--ambar)" /><text x="38" y="56" fill="#fff" fontSize="14" fontWeight="700">O salário caiu</text></g>
+      <g className="v2-rota-marca m2"><circle cx="204" cy="168" r="6" fill="var(--ambar)" /><text x="196" y="200" fill="#fff" fontSize="14" fontWeight="700" textAnchor="end">A fatura veio maior</text></g>
+    </svg>
+  )
+}
+
+/** A segunda tela: painel de alertas da cabine e a rota de um mês sem plano. Dá um tranco ao entrar. */
+function CabineEmTurbulencia() {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') { el?.classList.add('on'); return }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add('on'); io.disconnect() } }, { threshold: 0.3 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  const alertas = [['ti-gas-station', 'Combustível no fim', 'O que você recebe some antes de o mês terminar.'],
+    ['ti-cloud-storm', 'Turbulência inesperada', 'A fatura do cartão chega maior do que você imaginava.'],
+    ['ti-help-circle', 'Voo sem instrumentos', 'Toda compra vem com a dúvida: será que dá?'],
+    ['ti-pig-money', 'Sem reserva', 'Você quer guardar, mas o dinheiro nunca chega até lá.'],
+    ['ti-route', 'Sem rota definida', 'Você não sabe se o próximo mês vai ser melhor ou pior que este.']]
+  return (
+    <div ref={ref} className="v2-cabine">
+      <div className="v2-painel">
+        <div className="v2-painel-topo"><span>Painel de alertas</span><span className="v2-master" aria-hidden>Alerta</span></div>
+        <ul className="v2-lamps">
+          {alertas.map(([ic, t, dsc]) => (
+            <li key={t}><span className="v2-lamp-luz"><i className={`ti ${ic}`} aria-hidden />{t}</span><span className="v2-lamp-d">{dsc}</span></li>
+          ))}
+        </ul>
+      </div>
+      <div className="v2-rota">
+        <h3>O que as suas anotações mostram</h3>
+        <p className="v2-rota-sub">Só o caminho que já passou. O resto do voo fica na neblina.</p>
+        <RotaSemPlano />
+        <p className="v2-rota-nota">Ilustração. No app, a rota é a do seu dinheiro.</p>
+      </div>
+    </div>
+  )
 }
 
 /** Nuvens de tempestade, em camadas que derivam devagar. */
@@ -813,17 +936,12 @@ export default function LandingPageV2() {
       <main>
         <section className="v2-sec v2-turb" id="turbulencia" aria-labelledby="t-turb" data-alt="1200">
           <NuvensEscuras />
+          <div className="v2-chuva" aria-hidden />
+          <div className="v2-turb-clarao" aria-hidden />
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-turb">Você já decolou. Mas o voo nunca fica tranquilo.</h2>
+            <h2 className="v2-h2" id="t-turb">Ufa, decolamos. Mas agora aparecem outras panes.</h2>
             <p className="v2-lead">Eu sei: você já se organiza por conta própria, anota o que entra e o que sai. Mesmo assim, a viagem é sempre turbulenta, o combustível acaba no meio do caminho e, quando você percebe, a conta já está no vermelho.</p>
-            <ul className="v2-alertas">
-              {[['ti-gas-station', 'Combustível no fim', 'O que você recebe some antes de o mês terminar.'],
-                ['ti-cloud-storm', 'Turbulência inesperada', 'A fatura do cartão chega maior do que você imaginava.'],
-                ['ti-help-circle', 'Voo sem instrumentos', 'Toda compra vem com a dúvida: será que dá?'],
-                ['ti-pig-money', 'Sem reserva de combustível', 'Você quer guardar, mas o dinheiro nunca chega até lá.'],
-                ['ti-route', 'Sem rota definida', 'Você não sabe se o próximo mês vai ser melhor ou pior que este.'],
-              ].map(([ic, t, d]) => <li key={t}><i className={`ti ${ic}`} aria-hidden /><span><b>{t}</b><span className="v2-alerta-d">{d}</span></span></li>)}
-            </ul>
+            <CabineEmTurbulencia />
             <p className="v2-virada">
               Chegou a hora de subir de nível.
               <span>Comece a pilotar sua vida financeira e contorne as turbulências. Conheça o Compass One.</span>
