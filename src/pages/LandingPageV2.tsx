@@ -481,6 +481,121 @@ function NuvensEscuras() {
   )
 }
 
+/* ---- o painel da cabine: telas de voo, navegação, motores, manches e manetes ---- */
+function TelaVoo({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  // horizonte artificial levemente inclinado, fitas de velocidade e altitude
+  return (
+    <svg x={x} y={y} width={w} height={h} viewBox="0 0 200 160">
+      <rect width="200" height="160" fill="#05070b" />
+      <g transform="rotate(-8 100 82)">
+        <rect x="-60" y="-80" width="320" height="162" fill="#1d6fd1" />
+        <rect x="-60" y="82" width="320" height="160" fill="#7a4a22" />
+        <line x1="-60" y1="82" x2="260" y2="82" stroke="#fff" strokeWidth="1.6" />
+        {[-30, -15, 15, 30].map(d => <line key={d} x1={d % 30 ? 88 : 80} y1={82 + d} x2={d % 30 ? 112 : 120} y2={82 + d} stroke="#fff" strokeWidth="1.2" />)}
+      </g>
+      <path d="M62 84 H88 V92 M138 84 H112 V92" stroke="#fbbf24" strokeWidth="4" fill="none" />
+      <rect x="97" y="80" width="6" height="6" fill="#fbbf24" />
+      <rect x="0" y="0" width="34" height="160" fill="rgba(60,70,90,.85)" />
+      <rect x="166" y="0" width="34" height="160" fill="rgba(60,70,90,.85)" />
+      {[20, 45, 70, 95, 120, 145].map(t => <g key={t}><line x1="26" y1={t} x2="34" y2={t} stroke="#fff" /><line x1="166" y1={t} x2="174" y2={t} stroke="#fff" /></g>)}
+      <rect x="2" y="74" width="30" height="16" fill="#000" stroke="#fde047" strokeWidth="1.5" />
+      <rect x="168" y="74" width="30" height="16" fill="#000" stroke="#fde047" strokeWidth="1.5" />
+      <text x="17" y="86" fill="#86efac" fontSize="10" textAnchor="middle" fontFamily="monospace">250</text>
+      <text x="183" y="86" fill="#86efac" fontSize="9" textAnchor="middle" fontFamily="monospace">120</text>
+      <rect x="40" y="4" width="120" height="14" fill="#000" />
+      <text x="100" y="15" fill="#86efac" fontSize="9" textAnchor="middle" fontFamily="monospace">SPD   ALT   NAV</text>
+    </svg>
+  )
+}
+function TelaNav({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  // radar meteorológico: o arco com a rota e as células da tempestade à frente
+  return (
+    <svg x={x} y={y} width={w} height={h} viewBox="0 0 200 160">
+      <rect width="200" height="160" fill="#05070b" />
+      <path d="M30 140 A 70 70 0 0 1 170 140" stroke="#e2e8f0" strokeWidth="1.2" fill="none" />
+      <path d="M60 140 A 40 40 0 0 1 140 140" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="3 4" fill="none" />
+      <ellipse cx="78" cy="78" rx="20" ry="13" fill="#16a34a" opacity=".85" />
+      <ellipse cx="82" cy="78" rx="11" ry="7" fill="#facc15" />
+      <ellipse cx="84" cy="78" rx="5" ry="3" fill="#dc2626" />
+      <ellipse cx="135" cy="95" rx="14" ry="8" fill="#16a34a" opacity=".8" />
+      <path d="M100 140 L 108 100 L 126 62 L 132 30" stroke="#e879f9" strokeWidth="2" fill="none" />
+      <path d="M100 132 l -7 12 h 14 z" fill="#fbbf24" />
+      <text x="100" y="16" fill="#86efac" fontSize="10" textAnchor="middle" fontFamily="monospace">HDG 040</text>
+      <text x="12" y="22" fill="#22d3ee" fontSize="8" fontFamily="monospace">WXR</text>
+    </svg>
+  )
+}
+function TelaMotores({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  return (
+    <svg x={x} y={y} width={w} height={h} viewBox="0 0 200 160">
+      <rect width="200" height="160" fill="#05070b" />
+      {[55, 145].map(cx => (
+        <g key={cx}>
+          <path d={`M${cx - 32} 62 A 32 32 0 1 1 ${cx + 30} 54`} stroke="#e2e8f0" strokeWidth="2" fill="none" />
+          <line x1={cx} y1="50" x2={cx + 18} y2="30" stroke="#86efac" strokeWidth="3" />
+          <rect x={cx - 18} y="70" width="36" height="13" fill="#000" stroke="#475569" />
+          <text x={cx} y="80" fill="#86efac" fontSize="9" textAnchor="middle" fontFamily="monospace">84.2</text>
+        </g>
+      ))}
+      {[0, 1, 2, 3].map(k => <rect key={k} x={30 + k * 38} y="110" width="22" height={30 - k * 4} fill="#22d3ee" opacity=".65" />)}
+      <text x="100" y="155" fill="#fde047" fontSize="8" textAnchor="middle" fontFamily="monospace">TURB AHEAD</text>
+    </svg>
+  )
+}
+function Manche({ cx, topo, esc = 1 }: { cx: number; topo: number; esc?: number }) {
+  return (
+    <g transform={`translate(${cx} ${topo}) scale(${esc})`}>
+      <rect x="-9" y="40" width="18" height="140" fill="#05070b" />
+      <path d="M-95 30 Q -100 -10 -70 -12 L 70 -12 Q 100 -10 95 30 L 80 50 Q 60 20 0 22 Q -60 20 -80 50 Z" fill="#0b0f17" stroke="#1f2937" strokeWidth="3" />
+      <rect x="-26" y="-8" width="52" height="20" rx="5" fill="#111827" />
+      <circle cx="-74" cy="-2" r="5" fill="#b91c1c" />
+    </g>
+  )
+}
+function PainelDeVoo({ largura, topo, retrato }: { largura: number; topo: number; retrato?: boolean }) {
+  const meio = largura / 2
+  const fim = retrato ? 1400 : 1000
+  return (
+    <g>
+      {/* proteção contra reflexo e o painel do piloto automático */}
+      <path d={`M0 ${topo + 40} Q ${meio} ${topo - 30} ${largura} ${topo + 40} L ${largura} ${fim} L 0 ${fim} Z`} fill="#0b1019" />
+      <path d={`M0 ${topo + 40} Q ${meio} ${topo - 30} ${largura} ${topo + 40}`} stroke="#1e293b" strokeWidth="6" fill="none" />
+      <rect x={meio - (retrato ? 220 : 330)} y={topo + 6} width={retrato ? 440 : 660} height="38" rx="6" fill="#161e2d" stroke="#273449" />
+      {Array.from({ length: retrato ? 9 : 14 }, (_, k) => {
+        const x0 = meio - (retrato ? 200 : 310) + k * (retrato ? 50 : 48)
+        return <g key={k}><rect x={x0} y={topo + 14} width="28" height="22" rx="3" fill="#0b1019" /><rect x={x0 + 6} y={topo + 18} width="16" height="4" rx="1" fill={k % 4 === 1 ? '#fbbf24' : k % 5 === 2 ? '#86efac' : '#334155'} className={k === 6 ? 'v2-cabine-luz' : undefined} /></g>
+      })}
+      {/* telas */}
+      {retrato ? (
+        <>
+          <rect x="40" y={topo + 90} width="340" height="290" rx="10" fill="#1a2232" />
+          <TelaVoo x={52} y={topo + 102} w={316} h={266} />
+          <rect x="420" y={topo + 90} width="340" height="290" rx="10" fill="#1a2232" />
+          <TelaNav x={432} y={topo + 102} w={316} h={266} />
+          <Manche cx={210} topo={topo + 400} esc={1.35} />
+          <Manche cx={590} topo={topo + 400} esc={1.35} />
+        </>
+      ) : (
+        <>
+          {[[90, 'voo'], [390, 'nav'], [690, 'mot'], [930, 'nav'], [1230, 'voo']].map(([x, t]) => (
+            <g key={x as number}>
+              <rect x={x as number} y={topo + 80} width="280" height="220" rx="10" fill="#1a2232" />
+              {t === 'voo' && <TelaVoo x={(x as number) + 10} y={topo + 90} w={260} h={200} />}
+              {t === 'nav' && <TelaNav x={(x as number) + 10} y={topo + 90} w={260} h={200} />}
+              {t === 'mot' && <TelaMotores x={(x as number) + 10} y={topo + 90} w={260} h={200} />}
+            </g>
+          ))}
+          <Manche cx={260} topo={topo + 300} />
+          <Manche cx={1370} topo={topo + 300} />
+          {/* manetes no pedestal do meio */}
+          <path d={`M680 ${fim} L 700 ${topo + 320} L 900 ${topo + 320} L 920 ${fim} Z`} fill="#0e1420" />
+          {[740, 780, 820, 860].map((x, k) => <g key={x}><rect x={x - 5} y={topo + 300 + (k % 2) * 8} width="10" height="60" fill="#475569" /><rect x={x - 14} y={topo + 292 + (k % 2) * 8} width="28" height="16" rx="4" fill={k < 2 ? '#cbd5e1' : '#334155'} /></g>)}
+        </>
+      )}
+    </g>
+  )
+}
+
 /** A cabine: quem chega olha de dentro do avião, com tempo fechado e
  *  tempestade. A câmera sai da cabine (zoom) e a tempestade se desfaz até
  *  aparecer o texto. Uma vez por visita; um toque, uma tecla ou rolar pula.
@@ -527,18 +642,7 @@ function Cabine() {
         {/* reflexo no vidro */}
         <path d="M260 300 Q 420 200 640 190" stroke="rgba(255,255,255,.07)" strokeWidth="18" fill="none" strokeLinecap="round" />
         <path d="M1340 300 Q 1180 200 960 190" stroke="rgba(255,255,255,.05)" strokeWidth="14" fill="none" strokeLinecap="round" />
-        {/* painel de instrumentos */}
-        <path d="M0 720 Q 800 640 1600 720 L 1600 1000 L 0 1000 Z" fill="#0a0f19" />
-        <path d="M0 720 Q 800 640 1600 720" stroke="rgba(34,211,238,.35)" strokeWidth="2" fill="none" />
-        {[[420, 820], [560, 800], [700, 790], [900, 790], [1040, 800], [1180, 820]].map(([x, y], i) => (
-          <g key={i}>
-            <circle cx={x} cy={y} r="46" fill="#0d1626" stroke="rgba(34,211,238,.45)" strokeWidth="3" />
-            <line x1={x} y1={y} x2={x + (i % 2 ? 26 : -18)} y2={y - 30} stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" />
-            <circle cx={x} cy={y} r="5" fill="#fff" />
-          </g>
-        ))}
-        <rect x="755" y="860" width="90" height="140" rx="10" fill="#111a2c" />
-        <circle cx="800" cy="905" r="7" fill="#ef4444" className="v2-cabine-luz" />
+        <PainelDeVoo largura={1600} topo={640} />
       </svg>
       <svg className="v2-cabine-painel retrato" viewBox="0 0 800 1400" preserveAspectRatio="xMidYMid slice">
         <defs>
@@ -553,17 +657,7 @@ function Cabine() {
         </defs>
         <rect width="800" height="1400" fill="url(#v2-cab-metal-r)" mask="url(#v2-para-brisa-r)" />
         <path d="M120 380 Q 210 290 330 275" stroke="rgba(255,255,255,.07)" strokeWidth="14" fill="none" strokeLinecap="round" />
-        <path d="M0 1010 Q 400 950 800 1010 L 800 1400 L 0 1400 Z" fill="#0a0f19" />
-        <path d="M0 1010 Q 400 950 800 1010" stroke="rgba(34,211,238,.35)" strokeWidth="2" fill="none" />
-        {[[190, 1110], [330, 1090], [470, 1090], [610, 1110]].map(([x, y], i) => (
-          <g key={i}>
-            <circle cx={x} cy={y} r="50" fill="#0d1626" stroke="rgba(34,211,238,.45)" strokeWidth="3" />
-            <line x1={x} y1={y} x2={x + (i % 2 ? 28 : -20)} y2={y - 32} stroke="#fbbf24" strokeWidth="5" strokeLinecap="round" />
-            <circle cx={x} cy={y} r="6" fill="#fff" />
-          </g>
-        ))}
-        <rect x="355" y="1200" width="90" height="200" rx="10" fill="#111a2c" />
-        <circle cx="400" cy="1250" r="8" fill="#ef4444" className="v2-cabine-luz" />
+        <PainelDeVoo largura={800} topo={940} retrato />
       </svg>
     </div>
   )
