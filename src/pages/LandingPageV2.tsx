@@ -87,6 +87,8 @@ const CSS = `
 .v2-nevoa.n3 { left: 5%; bottom: 8%; width: 95%; height: 40%; background: rgba(120,140,175,.32); animation: v2-nevoa 40s ease-in-out infinite alternate; }
 .v2-nevoa.n4 { left: 30%; top: -10%; width: 60%; height: 36%; background: rgba(160,180,210,.16); animation: v2-nevoa 64s ease-in-out infinite alternate-reverse; }
 @keyframes v2-nevoa { from { transform: translateX(-6%); } to { transform: translateX(8%); } }
+.v2-nevoa-tela { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+.v2-pista .v2-nav { position: relative; z-index: 4; }
 .v2-app::before { content: ''; position: absolute; left: 50%; top: 50%; width: 140%; height: 120%; transform: translate(-50%, -50%); z-index: 0;
   background: radial-gradient(closest-side, rgba(11,19,34,.95) 0%, rgba(11,19,34,.7) 45%, rgba(34,211,238,.10) 70%, transparent 100%); pointer-events: none; }
 
@@ -451,12 +453,138 @@ function NuvensEscuras() {
   )
 }
 
-/** Neblina: sem instrumento não se enxerga; ela se abre em volta do app. */
+/** Neblina: sem instrumento não se enxerga. A névoa cobre a primeira dobra e
+ *  se abre por onde o mouse (ou o dedo) passa, mostrando o texto. O texto está
+ *  sempre no HTML: a névoa é só um desenho por cima (Google e leitor de tela
+ *  leem tudo). Sem JavaScript ou com movimento reduzido, não há névoa. */
 function Neblina() {
+  const tela = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const cv = tela.current
+    const pista = cv?.parentElement
+    if (!cv || !pista) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const ctx = cv.getContext('2d')
+    if (!ctx) return
+    const ESCALA = 0.5 // desenha em meia resolução: a névoa é borrada mesmo
+    const toque = window.matchMedia('(hover: none)').matches
+    const textura = document.createElement('canvas')
+    const furos = document.createElement('canvas')
+    let w = 0, h = 0, deriva = 0, densidade = 1, ultimo: [number, number] | null = null
+    let parado = 0, quadro = 0, visivel = true, mexeu = false
+
+    // número pseudoaleatório fixo: a névoa é a mesma a cada visita
+    let semente = 7
+    const sorte = () => { semente = (semente * 16807) % 2147483647; return semente / 2147483647 }
+
+    function montar() {
+      const r = pista!.getBoundingClientRect()
+      w = Math.max(1, Math.round(r.width * ESCALA)); h = Math.max(1, Math.round(r.height * ESCALA))
+      cv!.width = w; cv!.height = h
+      furos.width = w; furos.height = h
+      textura.width = w * 2; textura.height = h
+      const t = textura.getContext('2d')!
+      semente = 7
+      // véu de base: some no topo (o menu fica limpo) e no pé (a pista)
+      const g = t.createLinearGradient(0, 0, 0, h)
+      g.addColorStop(0, 'rgba(176,192,216,0)')
+      g.addColorStop(Math.min(0.9, 80 / (r.height || 1)), 'rgba(176,192,216,0)')
+      g.addColorStop(Math.min(0.95, 150 / (r.height || 1)), 'rgba(176,192,216,.78)')
+      g.addColorStop(0.82, 'rgba(160,178,205,.82)')
+      g.addColorStop(1, 'rgba(160,178,205,0)')
+      t.fillStyle = g; t.fillRect(0, 0, w * 2, h)
+      // nuvens: manchas claras e escuras para a névoa ter corpo
+      for (let i = 0; i < 70; i++) {
+        const x = sorte() * w * 2, y = h * 0.12 + sorte() * h * 0.75
+        const raio = (60 + sorte() * 160) * ESCALA * 2
+        const clara = sorte() > 0.35
+        const rg = t.createRadialGradient(x, y, 0, x, y, raio)
+        const a = 0.12 + sorte() * 0.22
+        rg.addColorStop(0, clara ? `rgba(225,232,244,${a})` : `rgba(90,108,140,${a})`)
+        rg.addColorStop(1, 'rgba(0,0,0,0)')
+        t.fillStyle = rg; t.fillRect(x - raio, y - raio, raio * 2, raio * 2)
+        // repete na outra metade para a deriva emendar sem costura
+        const x2 = x < w ? x + w : x - w
+        const rg2 = t.createRadialGradient(x2, y, 0, x2, y, raio)
+        rg2.addColorStop(0, clara ? `rgba(225,232,244,${a})` : `rgba(90,108,140,${a})`)
+        rg2.addColorStop(1, 'rgba(0,0,0,0)')
+        t.fillStyle = rg2; t.fillRect(x2 - raio, y - raio, raio * 2, raio * 2)
+      }
+    }
+
+    function abrir(x: number, y: number) {
+      const f = furos.getContext('2d')!
+      const raio = (toque ? 110 : 130) * ESCALA
+      const de = ultimo ?? [x, y]
+      const passos = Math.max(1, Math.ceil(Math.hypot(x - de[0], y - de[1]) / (raio / 4)))
+      for (let i = 1; i <= passos; i++) {
+        const px = de[0] + ((x - de[0]) * i) / passos, py = de[1] + ((y - de[1]) * i) / passos
+        const rg = f.createRadialGradient(px, py, 0, px, py, raio)
+        rg.addColorStop(0, 'rgba(0,0,0,.55)')
+        rg.addColorStop(0.5, 'rgba(0,0,0,.3)')
+        rg.addColorStop(1, 'rgba(0,0,0,0)')
+        f.fillStyle = rg; f.fillRect(px - raio, py - raio, raio * 2, raio * 2)
+      }
+      ultimo = [x, y]
+      parado = 0; mexeu = true
+      pedir()
+    }
+
+    function posicao(cx: number, cy: number) {
+      const r = cv!.getBoundingClientRect()
+      return [(cx - r.left) * ESCALA, (cy - r.top) * ESCALA] as const
+    }
+    const aoMover = (e: PointerEvent) => { const [x, y] = posicao(e.clientX, e.clientY); abrir(x, y) }
+    const aoSair = () => { ultimo = null }
+    // quem navega pelo teclado não fica no escuro
+    const aoFocar = () => { densidade = Math.min(densidade, 0.15); pedir() }
+
+    let ultimoTempo = 0
+    function desenhar(agora: number) {
+      quadro = 0
+      const dt = ultimoTempo ? Math.min(64, agora - ultimoTempo) : 16
+      ultimoTempo = agora
+      deriva = (deriva + dt * 0.006 * ESCALA) % w
+      parado += dt
+      // ninguém mexeu: a névoa se dissipa sozinha, devagar (no celular, mais cedo)
+      const espera = toque ? 1200 : mexeu ? 6000 : 3500
+      if (parado > espera) densidade = Math.max(0, densidade - dt / (toque ? 2600 : 4000))
+      ctx!.clearRect(0, 0, w, h)
+      ctx!.globalCompositeOperation = 'source-over'
+      ctx!.globalAlpha = densidade
+      ctx!.drawImage(textura, -deriva, 0)
+      ctx!.globalAlpha = 1
+      ctx!.globalCompositeOperation = 'destination-out'
+      ctx!.drawImage(furos, 0, 0)
+      ctx!.globalCompositeOperation = 'source-over'
+      if (densidade > 0 && visivel) pedir()
+    }
+    function pedir() { if (!quadro && visivel && densidade > 0) quadro = requestAnimationFrame(desenhar) }
+
+    montar(); pedir()
+    const obs = new ResizeObserver(() => { const f = furos; const cp = document.createElement('canvas'); cp.width = f.width; cp.height = f.height; cp.getContext('2d')!.drawImage(f, 0, 0); montar(); furos.getContext('2d')!.drawImage(cp, 0, 0, furos.width, furos.height); pedir() })
+    obs.observe(pista)
+    const io = new IntersectionObserver(([e]) => { visivel = e.isIntersecting; if (visivel) pedir() })
+    io.observe(pista)
+    pista.addEventListener('pointermove', aoMover)
+    pista.addEventListener('pointerdown', aoMover)
+    pista.addEventListener('pointerleave', aoSair)
+    pista.addEventListener('focusin', aoFocar)
+    return () => {
+      cancelAnimationFrame(quadro); obs.disconnect(); io.disconnect()
+      pista.removeEventListener('pointermove', aoMover)
+      pista.removeEventListener('pointerdown', aoMover)
+      pista.removeEventListener('pointerleave', aoSair)
+      pista.removeEventListener('focusin', aoFocar)
+    }
+  }, [])
   return (
-    <div className="v2-neblina" aria-hidden>
-      <i className="v2-nevoa n1" /><i className="v2-nevoa n2" /><i className="v2-nevoa n3" /><i className="v2-nevoa n4" />
-    </div>
+    <>
+      <div className="v2-neblina" aria-hidden>
+        <i className="v2-nevoa n1" /><i className="v2-nevoa n2" /><i className="v2-nevoa n3" /><i className="v2-nevoa n4" />
+      </div>
+      <canvas ref={tela} className="v2-nevoa-tela" aria-hidden />
+    </>
   )
 }
 
