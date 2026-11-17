@@ -61,7 +61,7 @@ const CSS = `
 .v2-alt-cel b { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-variant-numeric: tabular-nums; }
 
 /* pista */
-.v2-pista { background: linear-gradient(180deg, var(--noite) 0%, var(--noite2) 100%); color: #fff; padding: 0 0 210px; overflow: hidden; }
+.v2-pista { position: relative; background: linear-gradient(180deg, var(--noite) 0%, var(--noite2) 100%); color: #fff; padding: 0 0 210px; overflow: hidden; }
 .v2-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
 .v2-marca { display: flex; align-items: center; gap: 10px; font-size: 20px; text-decoration: none; min-height: 44px; }
 .v2-menu { display: none; gap: 26px; font-size: 15px; font-weight: 600; }
@@ -77,6 +77,17 @@ const CSS = `
 .v2-hero p { font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.88); margin: 0 0 30px; max-width: 520px; }
 .v2-ctas { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
 .v2-pista-svg { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 230px; z-index: 1; }
+
+/* relâmpagos: tempestade à noite, longe, nas bordas do céu */
+.v2-tempestade { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.v2-clarao { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 45% at 12% 18%, rgba(190,210,255,.16), transparent 70%),
+  radial-gradient(ellipse 50% 40% at 88% 10%, rgba(190,210,255,.13), transparent 70%); opacity: 0; animation: v2-clarao 9s infinite; }
+.v2-raio { position: absolute; opacity: 0; }
+.v2-raio.r1 { left: .5%; top: 70px; width: 96px; height: 340px; animation: v2-raio 9s infinite; }
+.v2-raio.r2 { right: .5%; top: 30px; width: 72px; height: 270px; animation: v2-raio 9s 4.6s infinite; }
+@keyframes v2-raio { 0%, 88%, 100% { opacity: 0; } 89% { opacity: .95; } 90.5% { opacity: .15; } 92% { opacity: .85; } 95% { opacity: 0; } }
+@keyframes v2-clarao { 0%, 88%, 100% { opacity: 0; } 89% { opacity: 1; } 90.5% { opacity: .3; } 92% { opacity: .9; } 96% { opacity: 0; }
+  38% { opacity: 0; } 39.5% { opacity: .8; } 41% { opacity: .2; } 42.5% { opacity: .7; } 46% { opacity: 0; } }
 
 /* painel de partidas */
 .v2-painel { background: #070d18; border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 24px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); }
@@ -179,6 +190,19 @@ const CSS = `
 .v2-topo-nuvens { display: block; width: 100%; height: 170px; background: linear-gradient(180deg, #1d4a8c 0%, #6f9fd6 55%, var(--claro) 100%); }
 
 /* cruzeiro */
+/* o sol que aparece ao sair das nuvens */
+.v2-sol-ceu { position: absolute; top: -170px; right: -8%; width: min(980px, 140vw); aspect-ratio: 1; pointer-events: none;
+  opacity: 0; transform: translateY(60px) scale(.85); transform-origin: 70% 22%;
+  transition: opacity 1.8s ease, transform 2.6s cubic-bezier(.16,1,.3,1); }
+.v2-sol-ceu.on { opacity: 1; transform: none; }
+.v2-sol-ceu::before { content: ''; position: absolute; inset: 0;
+  background: repeating-conic-gradient(from 0deg at 70% 22%, rgba(255,232,170,.42) 0deg 3.5deg, transparent 3.5deg 11deg);
+  -webkit-mask: radial-gradient(circle at 70% 22%, #000 0, #000 12%, transparent 58%); mask: radial-gradient(circle at 70% 22%, #000 0, #000 12%, transparent 58%);
+  animation: v2-girar 140s linear infinite; transform-origin: 70% 22%; }
+.v2-sol-ceu::after { content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 70% 22%, #fffaf0 0, #fff3d1 3.5%, rgba(255,222,140,.55) 8%, rgba(255,222,140,.18) 20%, transparent 42%); }
+@keyframes v2-girar { to { transform: rotate(360deg); } }
+.v2-cruzeiro > .v2-in { z-index: 1; }
 .v2-cruzeiro { background: linear-gradient(180deg, var(--claro) 0%, var(--claro2) 100%); padding-top: 40px; }
 .v2-cruzeiro .v2-lead, .v2-claro .v2-lead { color: var(--tinta2); }
 .v2-cruz-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; align-items: center; }
@@ -307,7 +331,9 @@ const CSS = `
 }
 @media (min-width: 1240px) { .v2-alt { display: block; } }
 @media (prefers-reduced-motion: reduce) {
-  .v2-linha, .v2-alertas i, .v2-nuvens g { animation: none !important; }
+  .v2-linha, .v2-alertas i, .v2-nuvens g, .v2-sol-ceu::before { animation: none !important; }
+  .v2-tempestade { display: none; }
+  .v2-sol-ceu { opacity: 1; transform: none; transition: none; }
   .v2-btn, .v2-fita i, .v2-alt-cel { transition: none; }
 }
 `
@@ -398,6 +424,37 @@ function NuvensEscuras() {
       </g>
     </svg>
   )
+}
+
+/** Relâmpagos ao longe, nas bordas: o voo começa na tempestade. */
+function Relampagos() {
+  const raio = (cls: string, d: string, vb: string) => (
+    <svg className={`v2-raio ${cls}`} viewBox={vb} preserveAspectRatio="xMidYMin meet">
+      <defs><filter id={`v2-luz-${cls}`} x="-100%" y="-20%" width="300%" height="140%"><feGaussianBlur stdDeviation="5" /></filter></defs>
+      <path d={d} fill="none" stroke="rgba(170,200,255,.7)" strokeWidth="9" strokeLinejoin="round" filter={`url(#v2-luz-${cls})`} />
+      <path d={d} fill="none" stroke="#eef4ff" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
+  return (
+    <div className="v2-tempestade" aria-hidden>
+      <div className="v2-clarao" />
+      {raio('r1', 'M52,0 L40,62 L58,70 L30,150 L48,156 L22,236 L40,240 L14,340 M30,150 L70,196 L62,226', '0 0 96 340')}
+      {raio('r2', 'M30,0 L44,58 L28,64 L50,132 L34,138 L56,208 L40,212 L58,270', '0 0 72 270')}
+    </div>
+  )
+}
+
+/** O sol acima das nuvens: aparece quando o voo chega lá. */
+function SolAcimaDasNuvens() {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') { el?.classList.add('on'); return }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add('on'); io.disconnect() } }, { threshold: 0.15 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return <div ref={ref} className="v2-sol-ceu" aria-hidden />
 }
 
 /** A camada de nuvens vista de cima: onde a subida rompe para o céu claro. */
@@ -623,7 +680,7 @@ export default function LandingPageV2() {
     const antes = existente?.content
     meta.content = 'noindex, nofollow'
     const titulo = document.title
-    document.title = 'Compass One · Saiba hoje como o seu mês vai fechar'
+    document.title = 'Compass One · Planejamento e educação financeira'
     return () => {
       if (antes !== undefined) meta.content = antes
       else meta.remove()
@@ -642,6 +699,7 @@ export default function LandingPageV2() {
       </div>
 
       <header className="v2-pista" data-alt="0">
+        <Relampagos />
         <div className="v2-in">
           <nav className="v2-nav" aria-label="Principal">
             <Link to="/" className="v2-marca" aria-label="Compass One, página inicial"><LogoCompass size={34} /><NomeCompass /></Link>
@@ -655,8 +713,9 @@ export default function LandingPageV2() {
             <div>
               <h1>Saiba hoje como o seu mês <em>vai fechar</em>.</h1>
               <p>
-                O Compass One junta o seu salário, as suas contas fixas e as suas parcelas e mostra, em qualquer dia,
-                com quanto você termina o mês e os próximos. A turbulência aparece antes, com tempo de mudar a rota.
+                O Compass One é um app de planejamento financeiro pessoal, criado por um educador financeiro. Ele junta
+                o seu salário, as contas fixas e as parcelas e mostra, em qualquer dia, com quanto você termina o mês e
+                os próximos. O aperto aparece antes, com tempo de mudar a rota.
               </p>
               <div className="v2-ctas">
                 <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
@@ -666,6 +725,7 @@ export default function LandingPageV2() {
                 <li><i className="ti ti-gift" />Sem mensalidade</li>
                 <li><i className="ti ti-ad-off" />Sem anúncios</li>
                 <li><i className="ti ti-lock" />Não pede a senha do banco</li>
+                <li><i className="ti ti-school" />Criado por um educador financeiro</li>
               </ul>
             </div>
             <PainelPartidas />
@@ -679,7 +739,7 @@ export default function LandingPageV2() {
           <NuvensEscuras />
           <div className="v2-in">
             <h2 className="v2-h2" id="t-turb">As contas estão em dia. Então por que nunca sobra?</h2>
-            <p className="v2-lead">Todo mês parece um voo dentro da nuvem: chacoalha o tempo todo, e você só vê o chão quando o mês já acabou.</p>
+            <p className="v2-lead">Sem um plano, cuidar do dinheiro é como voar dentro da nuvem: o mês chacoalha o tempo todo, e você só vê o saldo quando ele já acabou.</p>
             <ul className="v2-alertas">
               {[['ti-wallet', 'O salário cai e, antes do fim do mês, já foi embora'],
                 ['ti-file-invoice', 'A fatura chega maior do que você imaginava'],
@@ -689,7 +749,7 @@ export default function LandingPageV2() {
             </ul>
             <p className="v2-virada">
               Não falta esforço. Falta enxergar o mês antes que ele acabe.
-              <span>Dentro da nuvem, ninguém voa olhando pela janela. Voa por instrumentos.</span>
+              <span>Dentro da nuvem, o piloto voa por instrumentos. No seu dinheiro, o instrumento é um planejamento financeiro.</span>
             </p>
           </div>
         </section>
@@ -697,7 +757,7 @@ export default function LandingPageV2() {
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
             <h2 className="v2-h2" id="t-subida">A subida, instrumento por instrumento</h2>
-            <p className="v2-lead">Cada parte do Compass mostra onde você está e para onde está indo, até sair das nuvens.</p>
+            <p className="v2-lead">Cada ferramenta do Compass mostra onde está o seu dinheiro hoje e para onde ele vai, até você sair do aperto.</p>
             <ol className="v2-etapas">
               {ETAPAS.map(e => (
                 <li key={e.alt} className="v2-etapa" data-alt={e.alt}>
@@ -719,6 +779,7 @@ export default function LandingPageV2() {
         <TopoDasNuvens base="linear-gradient(180deg, #1d4a8c 0%, #6f9fd6 60%, #c7e0f7 100%)" cor="#dcecfb" />
 
         <section className="v2-sec v2-cruzeiro" id="cruzeiro" aria-labelledby="t-cruz" data-alt="35000">
+          <SolAcimaDasNuvens />
           <div className="v2-in">
             <div className="v2-cruz-in">
               <div>
@@ -734,7 +795,7 @@ export default function LandingPageV2() {
 
             <div className="v2-comp">
               <div className="v2-janela">
-                <h3>Olhando pela janela</h3>
+                <h3>Sem plano, olhando pela janela</h3>
                 <p className="v2-comp-sub">A turbulência aparece quando você já está nela.</p>
                 <ul>
                   <li><i className="ti ti-eye-off" />Você sabe quanto já gastou, não com quanto vai terminar</li>
@@ -744,7 +805,7 @@ export default function LandingPageV2() {
                 </ul>
               </div>
               <div className="v2-instr">
-                <h3>Voando por instrumentos, com o Compass</h3>
+                <h3>Com planejamento, voando por instrumentos</h3>
                 <p className="v2-comp-sub">Você vê a rota antes.</p>
                 <ul>
                   <li><i className="ti ti-circle-check" />Com quanto cada um dos próximos meses vai terminar, pelo seu plano</li>
@@ -792,7 +853,7 @@ export default function LandingPageV2() {
         <section className="v2-sec v2-claro2" id="embarque" aria-labelledby="t-emb">
           <div className="v2-in">
             <h2 className="v2-h2" id="t-emb">O seu cartão de embarque</h2>
-            <p className="v2-lead">O app é grátis para sempre. Se quiser ajuda, você escolhe o quanto, em pacotes. Sem mensalidade.</p>
+            <p className="v2-lead">O app de planejamento é grátis para sempre. Se quiser aprender com um educador financeiro, você escolhe o quanto, em pacotes. Sem mensalidade.</p>
             <div className="v2-cartao">
               <div className="v2-cartao-main">
                 <div className="v2-cartao-topo"><span>Compass One · cartão de embarque</span><i className="ti ti-plane-departure" aria-hidden /></div>
@@ -822,8 +883,8 @@ export default function LandingPageV2() {
             </div>
 
             <div className="v2-copiloto">
-              <h3>Quer um copiloto?</h3>
-              <p>É opcional. Um educador financeiro pode voar junto, no quanto de ajuda que você escolher, em pacotes e sem mensalidade:</p>
+              <h3>Educação financeira: quer um copiloto?</h3>
+              <p>É opcional. Para aprender a cuidar do seu dinheiro, um educador financeiro voa junto, no quanto de ajuda que você escolher, em pacotes e sem mensalidade:</p>
               <ol>
                 {[
                   { icone: 'ti-player-play', nome: 'Curso em vídeo', texto: 'Aulas gravadas para montar o seu plano e usar o app no seu ritmo.' },
@@ -860,7 +921,7 @@ export default function LandingPageV2() {
         <section className="v2-sec v2-fim" aria-labelledby="t-fim">
           <div className="v2-in v2-sol">
             <h2 className="v2-h2" id="t-fim">Comece hoje e descubra como o seu mês vai fechar</h2>
-            <p className="v2-lead">Crie a sua conta grátis e veja com quanto termina cada um dos próximos meses.</p>
+            <p className="v2-lead">Crie a sua conta grátis no app de planejamento financeiro e veja com quanto termina cada um dos próximos meses.</p>
             <a href={cadastro} className="v2-btn v2-btn-claro">Criar conta grátis <i className="ti ti-arrow-right" /></a>
             <ul className="v2-selos">
               <li><i className="ti ti-gift" />Sem mensalidade</li>
