@@ -92,6 +92,32 @@ const CSS = `
 .v2-app::before { content: ''; position: absolute; left: 50%; top: 50%; width: 140%; height: 120%; transform: translate(-50%, -50%); z-index: 0;
   background: radial-gradient(closest-side, rgba(11,19,34,.95) 0%, rgba(11,19,34,.7) 45%, rgba(34,211,238,.10) 70%, transparent 100%); pointer-events: none; }
 
+/* cabine: o voo começa dentro da tempestade (17/11/2026, ideia do Guilherme) */
+.v2-cabine { position: absolute; left: 0; right: 0; top: 0; height: 100vh; height: 100svh; z-index: 6; overflow: hidden; cursor: pointer; }
+.v2-cabine-ceu { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 35%, #3a4660 0%, #1b2233 55%, #0b1018 100%); transition: opacity 1.6s ease .3s; }
+.v2-cabine-chuva { position: absolute; inset: -20% -10%; background: repeating-linear-gradient(105deg, transparent 0 22px, rgba(200,215,240,.3) 22px 23px, transparent 24px 61px);
+  animation: v2-chuva .45s linear infinite; }
+.v2-cabine-chuva.c2 { background: repeating-linear-gradient(100deg, transparent 0 37px, rgba(200,215,240,.14) 37px 38px, transparent 38px 90px); animation-duration: .7s; }
+@keyframes v2-chuva { from { transform: translate(0, 0); } to { transform: translate(-30px, 120px); } }
+.v2-cabine-clarao { position: absolute; inset: 0; background: rgba(220,230,255,.55); opacity: 0; animation: v2-clarao-cab 2.4s ease-out .5s 1 both; }
+@keyframes v2-clarao-cab { 0%, 100% { opacity: 0; } 3% { opacity: .75; } 7% { opacity: .1; } 10% { opacity: .55; } 22% { opacity: 0; } }
+.v2-cabine-painel { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 38%; transition: transform 1.7s cubic-bezier(.55,0,.75,.4), opacity .9s ease .8s; }
+.v2-cabine-painel.retrato { display: none; }
+@media (max-aspect-ratio: 1/1) { .v2-cabine-painel.retrato { display: block; } .v2-cabine-painel.paisagem { display: none; } }
+.v2-cabine-luz { animation: v2-luz 1s steps(2) infinite; }
+@keyframes v2-luz { 50% { opacity: .2; } }
+.v2-cabine.sai { pointer-events: none; }
+.v2-cab-nuvem { position: absolute; border-radius: 50%; filter: blur(30px); background: #0d1220; opacity: .9; animation: v2-cab-nuvem 6s ease-in-out infinite alternate; }
+.v2-cab-nuvem.k1 { left: 0%; top: 10%; width: 55%; height: 38%; }
+.v2-cab-nuvem.k2 { right: -5%; top: 4%; width: 60%; height: 42%; background: #151c2e; animation-duration: 7s; animation-direction: alternate-reverse; }
+.v2-cab-nuvem.k3 { left: 20%; top: 38%; width: 70%; height: 30%; background: #1f2840; opacity: .8; animation-duration: 5s; }
+.v2-cab-nuvem.k4 { left: 40%; top: 18%; width: 30%; height: 20%; background: #5a6886; opacity: .5; filter: blur(40px); }
+@keyframes v2-cab-nuvem { from { transform: translateX(-4%); } to { transform: translateX(4%); } }
+.v2-cab-raio { position: absolute; left: 60%; top: 8%; height: 42%; opacity: 0; filter: drop-shadow(0 0 14px #c7d6ff); animation: v2-clarao-cab 2.4s ease-out .5s 1 both; }
+.v2:has(.v2-cabine:not(.sai)) .v2-alt, .v2:has(.v2-cabine:not(.sai)) .v2-fixo { opacity: 0; pointer-events: none; }
+.v2-cabine.sai .v2-cabine-painel { transform: scale(4.2); opacity: 0; }
+.v2-cabine.sai .v2-cabine-ceu { opacity: 0; }
+
 /* painel de partidas */
 .v2-painel { background: #070d18; border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 24px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); }
 .v2-painel-t { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: .1em;
@@ -455,6 +481,94 @@ function NuvensEscuras() {
   )
 }
 
+/** A cabine: quem chega olha de dentro do avião, com tempo fechado e
+ *  tempestade. A câmera sai da cabine (zoom) e a tempestade se desfaz até
+ *  aparecer o texto. Uma vez por visita; um toque, uma tecla ou rolar pula.
+ *  Sem JavaScript ou com movimento reduzido, não aparece. */
+function Cabine() {
+  const [fase, setFase] = useState<'fora' | 'dentro' | 'saindo'>('fora')
+  useLayoutEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    try { if (sessionStorage.getItem('v2-cabine')) return; sessionStorage.setItem('v2-cabine', '1') } catch { /* sem storage, mostra */ }
+    setFase('dentro')
+  }, [])
+  useEffect(() => {
+    if (fase === 'fora') return
+    if (fase === 'dentro') {
+      const t = setTimeout(() => setFase('saindo'), 2800)
+      const pular = () => setFase('saindo')
+      window.addEventListener('keydown', pular, { once: true })
+      window.addEventListener('wheel', pular, { once: true, passive: true })
+      window.addEventListener('touchmove', pular, { once: true, passive: true })
+      return () => { clearTimeout(t); window.removeEventListener('keydown', pular); window.removeEventListener('wheel', pular); window.removeEventListener('touchmove', pular) }
+    }
+    const t = setTimeout(() => { window.dispatchEvent(new Event('v2-cabine-fim')); setFase('fora') }, 1900)
+    return () => clearTimeout(t)
+  }, [fase])
+  if (fase === 'fora') return null
+  return (
+    <div className={`v2-cabine${fase === 'saindo' ? ' sai' : ''}`} aria-hidden onClick={() => setFase('saindo')}>
+      <div className="v2-cabine-ceu">
+        <i className="v2-cab-nuvem k1" /><i className="v2-cab-nuvem k2" /><i className="v2-cab-nuvem k3" /><i className="v2-cab-nuvem k4" />
+        <svg className="v2-cab-raio" viewBox="0 0 100 300"><path d="M58 0 L36 120 L54 122 L30 300 L74 104 L54 102 L72 0 Z" fill="#eef3ff" /></svg>
+        <i className="v2-cabine-chuva" /><i className="v2-cabine-chuva c2" /><i className="v2-cabine-clarao" /></div>
+      <svg className="v2-cabine-painel paisagem" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <mask id="v2-para-brisa">
+            <rect width="1600" height="1000" fill="#fff" />
+            <path d="M190 250 Q 420 150 770 140 L 770 610 Q 470 620 250 660 Q 170 470 190 250 Z" fill="#000" />
+            <path d="M1410 250 Q 1180 150 830 140 L 830 610 Q 1130 620 1350 660 Q 1430 470 1410 250 Z" fill="#000" />
+          </mask>
+          <linearGradient id="v2-cab-metal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#141b2b" /><stop offset="1" stopColor="#06090f" />
+          </linearGradient>
+        </defs>
+        <rect width="1600" height="1000" fill="url(#v2-cab-metal)" mask="url(#v2-para-brisa)" />
+        {/* reflexo no vidro */}
+        <path d="M260 300 Q 420 200 640 190" stroke="rgba(255,255,255,.07)" strokeWidth="18" fill="none" strokeLinecap="round" />
+        <path d="M1340 300 Q 1180 200 960 190" stroke="rgba(255,255,255,.05)" strokeWidth="14" fill="none" strokeLinecap="round" />
+        {/* painel de instrumentos */}
+        <path d="M0 720 Q 800 640 1600 720 L 1600 1000 L 0 1000 Z" fill="#0a0f19" />
+        <path d="M0 720 Q 800 640 1600 720" stroke="rgba(34,211,238,.35)" strokeWidth="2" fill="none" />
+        {[[420, 820], [560, 800], [700, 790], [900, 790], [1040, 800], [1180, 820]].map(([x, y], i) => (
+          <g key={i}>
+            <circle cx={x} cy={y} r="46" fill="#0d1626" stroke="rgba(34,211,238,.45)" strokeWidth="3" />
+            <line x1={x} y1={y} x2={x + (i % 2 ? 26 : -18)} y2={y - 30} stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" />
+            <circle cx={x} cy={y} r="5" fill="#fff" />
+          </g>
+        ))}
+        <rect x="755" y="860" width="90" height="140" rx="10" fill="#111a2c" />
+        <circle cx="800" cy="905" r="7" fill="#ef4444" className="v2-cabine-luz" />
+      </svg>
+      <svg className="v2-cabine-painel retrato" viewBox="0 0 800 1400" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="v2-cab-metal-r" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#141b2b" /><stop offset="1" stopColor="#06090f" />
+          </linearGradient>
+          <mask id="v2-para-brisa-r">
+            <rect width="800" height="1400" fill="#fff" />
+            <path d="M70 330 Q 200 230 385 220 L 385 880 Q 230 890 110 930 Q 50 640 70 330 Z" fill="#000" />
+            <path d="M730 330 Q 600 230 415 220 L 415 880 Q 570 890 690 930 Q 750 640 730 330 Z" fill="#000" />
+          </mask>
+        </defs>
+        <rect width="800" height="1400" fill="url(#v2-cab-metal-r)" mask="url(#v2-para-brisa-r)" />
+        <path d="M120 380 Q 210 290 330 275" stroke="rgba(255,255,255,.07)" strokeWidth="14" fill="none" strokeLinecap="round" />
+        <path d="M0 1010 Q 400 950 800 1010 L 800 1400 L 0 1400 Z" fill="#0a0f19" />
+        <path d="M0 1010 Q 400 950 800 1010" stroke="rgba(34,211,238,.35)" strokeWidth="2" fill="none" />
+        {[[190, 1110], [330, 1090], [470, 1090], [610, 1110]].map(([x, y], i) => (
+          <g key={i}>
+            <circle cx={x} cy={y} r="50" fill="#0d1626" stroke="rgba(34,211,238,.45)" strokeWidth="3" />
+            <line x1={x} y1={y} x2={x + (i % 2 ? 28 : -20)} y2={y - 32} stroke="#fbbf24" strokeWidth="5" strokeLinecap="round" />
+            <circle cx={x} cy={y} r="6" fill="#fff" />
+          </g>
+        ))}
+        <rect x="355" y="1200" width="90" height="200" rx="10" fill="#111a2c" />
+        <circle cx="400" cy="1250" r="8" fill="#ef4444" className="v2-cabine-luz" />
+      </svg>
+    </div>
+  )
+}
+
 /** Neblina: sem instrumento não se enxerga. A névoa cobre a primeira dobra e
  *  se abre por onde o mouse (ou o dedo) passa, mostrando o texto. O texto está
  *  sempre no HTML: a névoa é só um desenho por cima (Google e leitor de tela
@@ -473,7 +587,7 @@ function Neblina() {
     const textura = document.createElement('canvas')
     const furos = document.createElement('canvas')
     let w = 0, h = 0, deriva = 0, densidade = 1, ultimo: [number, number] | null = null
-    let parado = 0, quadro = 0, visivel = true, mexeu = false
+    let parado = document.querySelector('.v2-cabine') ? -60000 : 0, quadro = 0, visivel = true, mexeu = false
 
     // número pseudoaleatório fixo: a névoa é a mesma a cada visita
     let semente = 7
@@ -540,6 +654,10 @@ function Neblina() {
     const aoSair = () => { ultimo = null }
     // quem navega pelo teclado não fica no escuro
     const aoFocar = () => { densidade = Math.min(densidade, 0.15); pedir() }
+    // a cabine terminou o zoom: a tempestade se desfaz e a névoa vai junto
+    let pressa = false
+    const aoSairDaCabine = () => { pressa = true; parado = 99999; pedir() }
+    window.addEventListener('v2-cabine-fim', aoSairDaCabine)
 
     let ultimoTempo = 0
     function desenhar(agora: number) {
@@ -550,7 +668,7 @@ function Neblina() {
       parado += dt
       // ninguém mexeu: a névoa se dissipa sozinha, devagar (no celular, mais cedo)
       const espera = toque ? 1200 : mexeu ? 6000 : 3500
-      if (parado > espera) densidade = Math.max(0, densidade - dt / (toque ? 2600 : 4000))
+      if (parado > espera) densidade = Math.max(0, densidade - dt / (pressa ? 1800 : toque ? 2600 : 4000))
       ctx!.clearRect(0, 0, w, h)
       ctx!.globalCompositeOperation = 'source-over'
       ctx!.globalAlpha = densidade
@@ -578,6 +696,7 @@ function Neblina() {
       pista.removeEventListener('pointerdown', aoMover)
       pista.removeEventListener('pointerleave', aoSair)
       pista.removeEventListener('focusin', aoFocar)
+      window.removeEventListener('v2-cabine-fim', aoSairDaCabine)
     }
   }, [])
   return (
@@ -842,6 +961,7 @@ export default function LandingPageV2() {
 
       <header className="v2-pista" data-alt="0">
         <Neblina />
+        <Cabine />
         <div className="v2-in">
           <nav className="v2-nav" aria-label="Principal">
             <Link to="/" className="v2-marca" aria-label="Compass One, página inicial"><LogoCompass size={34} /><NomeCompass /></Link>
