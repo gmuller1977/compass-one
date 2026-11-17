@@ -82,6 +82,13 @@ const CSS = `
 @keyframes v2-luzp-halo { 0%, 16%, 100% { opacity: 0; } 4% { opacity: 1; } }
 .v2-pista-svg { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 230px; z-index: 1; }
 
+.v2-tempestade { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.v2-clarao { position: absolute; inset: 0; opacity: 0; animation: v2-clarao .95s ease-out forwards; }
+.v2-raio { position: absolute; opacity: 0; filter: drop-shadow(0 0 14px rgba(170,200,255,.9)); animation: v2-raio .8s ease-out forwards; }
+@keyframes v2-raio { 0% { opacity: 0; } 6% { opacity: 1; } 18% { opacity: .15; } 30% { opacity: .95; } 100% { opacity: 0; } }
+@keyframes v2-clarao { 0% { opacity: 0; } 6% { opacity: 1; } 18% { opacity: .35; } 30% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes v2-suave { 0% { opacity: 0; } 15% { opacity: .8; } 100% { opacity: 0; } }
+
 /* painel de partidas */
 .v2-painel { background: #070d18; border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 24px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); }
 .v2-painel-t { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: .1em;
@@ -352,6 +359,7 @@ const CSS = `
 @media (prefers-reduced-motion: reduce) {
   .v2-linha, .v2-alertas i, .v2-nuvens g, .v2-sol-ceu::before { animation: none !important; }
   .v2-luzp, .v2-luzp-halo { animation-duration: 4.5s; }
+  .v2-raio, .v2-clarao { animation: v2-suave 1.1s ease-out forwards; }
   .v2-sol-ceu { opacity: 1; transform: none; transition: none; }
   .v2-btn, .v2-fita i, .v2-alt-cel { transition: none; }
 }
@@ -453,6 +461,65 @@ function NuvensEscuras() {
         <path d={cumulo(1080, 780, 480, 150, 61)} fill="rgba(7,13,24,.2)" />
       </g>
     </svg>
+  )
+}
+
+const FORMAS_RAIO = [
+  { d: 'M52,0 L40,62 L58,70 L30,150 L48,156 L22,236 L40,240 L14,340 M30,150 L70,196 L62,226', w: 96, h: 340 },
+  { d: 'M30,0 L44,58 L28,64 L50,132 L34,138 L56,208 L40,212 L58,270', w: 72, h: 270 },
+  { d: 'M40,0 L54,70 L34,78 L58,160 L40,166 L66,250 M58,160 L20,214 L28,232', w: 84, h: 250 },
+]
+type Raio = { id: number; x: number; y: number; forma: number; espelho: boolean }
+
+/** Relâmpagos: nascem perto do mouse quando ele se mexe sobre o céu da primeira dobra. */
+function Relampagos() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [raios, setRaios] = useState<Raio[]>([])
+  useEffect(() => {
+    const ceu = ref.current?.parentElement
+    if (!ceu) return
+    let ultimo = 0, seq = 0, px = -1, py = -1
+    const timers: number[] = []
+    const disparar = (cx: number, cy: number) => {
+      const r = ceu.getBoundingClientRect()
+      const x = cx - r.left, y = cy - r.top
+      const id = ++seq
+      const forma = Math.floor(Math.random() * FORMAS_RAIO.length)
+      // O raio cai do alto do céu até perto do mouse, um pouco ao lado dele.
+      const raio = { id, x: x + (Math.random() < .5 ? -1 : 1) * (30 + Math.random() * 50), y: Math.max(0, y - FORMAS_RAIO[forma].h * .85), forma, espelho: Math.random() < .5 }
+      setRaios(rs => [...rs.slice(-2), raio])
+      timers.push(window.setTimeout(() => setRaios(rs => rs.filter(q => q.id !== id)), 1200))
+    }
+    const mover = (e: PointerEvent) => {
+      const agora = performance.now()
+      const dist = px < 0 ? 0 : Math.hypot(e.clientX - px, e.clientY - py)
+      px = e.clientX; py = e.clientY
+      if (e.pointerType === 'mouse' && (dist < 6 || agora - ultimo < 1100)) return
+      if (e.pointerType !== 'mouse' && agora - ultimo < 1100) return
+      ultimo = agora
+      disparar(e.clientX, e.clientY)
+    }
+    const tocar = (e: PointerEvent) => { if (e.pointerType !== 'mouse' && performance.now() - ultimo > 700) { ultimo = performance.now(); disparar(e.clientX, e.clientY) } }
+    ceu.addEventListener('pointermove', mover)
+    ceu.addEventListener('pointerdown', tocar)
+    return () => { ceu.removeEventListener('pointermove', mover); ceu.removeEventListener('pointerdown', tocar); timers.forEach(clearTimeout) }
+  }, [])
+  return (
+    <div ref={ref} className="v2-tempestade" aria-hidden>
+      {raios.map(r => {
+        const f = FORMAS_RAIO[r.forma]
+        return (
+          <div key={r.id}>
+            <div className="v2-clarao" style={{ background: `radial-gradient(circle 420px at ${r.x}px ${r.y + f.h * .5}px, rgba(190,210,255,.26), transparent 70%)` }} />
+            <svg className="v2-raio" viewBox={`0 0 ${f.w} ${f.h}`} width={f.w} height={f.h}
+              style={{ left: r.x - f.w / 2, top: r.y, transform: r.espelho ? 'scaleX(-1)' : undefined }}>
+              <path d={f.d} fill="none" stroke="rgba(170,200,255,.75)" strokeWidth="7" strokeLinejoin="round" />
+              <path d={f.d} fill="none" stroke="#f4f8ff" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+            </svg>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -707,6 +774,7 @@ export default function LandingPageV2() {
       </div>
 
       <header className="v2-pista" data-alt="0">
+        <Relampagos />
         <div className="v2-in">
           <nav className="v2-nav" aria-label="Principal">
             <Link to="/" className="v2-marca" aria-label="Compass One, página inicial"><LogoCompass size={34} /><NomeCompass /></Link>
