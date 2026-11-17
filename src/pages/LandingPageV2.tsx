@@ -126,6 +126,7 @@ const CSS = `
 .v2-app-cel img { display: block; width: 100%; height: auto; border-radius: 34px; }
 .v2-app figcaption { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,.65); text-align: center; }
 @media (min-width: 960px) {
+  .v2-pista { padding-bottom: 115px; }
   .v2-app { display: block; min-height: 560px; }
   .v2-app-pc { display: block; position: absolute; right: -10px; top: 20px; width: 560px; padding: 10px 10px 14px; border-radius: 16px; background: #05080f;
     box-shadow: 0 30px 70px rgba(0,0,0,.5), inset 0 0 0 1.5px rgba(255,255,255,.12); }
