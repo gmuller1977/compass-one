@@ -35,6 +35,13 @@ const ROTULO_LADO: React.CSSProperties = { fontSize: 13, color: 'rgba(255,255,25
 const VALOR_LADO: React.CSSProperties = { fontSize: 'min(22px, 12.5cqi)', fontWeight: 800, color: '#fff',
   letterSpacing: '-.02em', lineHeight: 1.2, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }
 const LINHA_LADO: React.CSSProperties = { fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.3, marginTop: 2 }
+/** "Manual" / "Conferido" em amarelo (18/11/2026, pedido do Guilherme):
+ *  #fde047 dá 6,6 no azul. */
+const SELO_LADO: React.CSSProperties = { fontSize: 12, fontWeight: 800, color: '#fde047', lineHeight: 1.3, marginTop: 2 }
+/** O que o toque faz, como a pílula do card do computador. */
+const PILULA_LADO: React.CSSProperties = { marginTop: 6, whiteSpace: 'nowrap', color: '#fff',
+  background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
+  borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700 }
 
 const rotuloForm: React.CSSProperties = { fontSize:13, fontWeight:600, color:COR.textoSuave, marginBottom:6, display:'block' }
 
@@ -221,25 +228,27 @@ export default function FcMobileView({
           {/* Sem o valor do banco, a caixa da direita SOMA as compras com
               bolinha (02/11/2026, Guilherme: "os conferidos já iriam somar e
               mostrar se falta algo"). O valor do banco é pedido no fim. */}
-          <button onClick={abrirFatura} aria-label="Informar o valor da fatura no banco" style={CAIXA_LADO}>
+          <button onClick={abrirFatura} aria-label={lado.banco.estado === 'nao-informada' ? 'Informar a fatura' : 'Alterar o valor da fatura'} style={CAIXA_LADO}>
             {lado.banco.estado === 'nao-informada' ? <>
-              <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'} ✎</span>
+              <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'}</span>
               <span style={VALOR_LADO}>{fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}</span>
-              <span style={{...LINHA_LADO,fontWeight:700,color:'#fff'}}>valor conferido</span>
+              <span style={SELO_LADO}>Conferido</span>
               <span style={LINHA_LADO}>
                 {lado.compass.estado === 'tudo-conferido' ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
                   : lado.compass.estado === 'falta-conferir' ? <>diferença de<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(lado.compass.falta)}</b></>
                   : 'marque as bolinhas'}
               </span>
+              <span style={PILULA_LADO}>✎ Informar fatura</span>
             </> : <>
-              <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'} ✎</span>
+              <span style={ROTULO_LADO}>Fatura no {contaAtual?.banco ?? 'banco'}</span>
               <span style={VALOR_LADO}>{mesDados.faturaAtual}</span>
-              <span style={{...LINHA_LADO,fontWeight:700,color:'#fff'}}>valor manual</span>
+              <span style={SELO_LADO}>Manual</span>
               <span style={LINHA_LADO}>
                 {lado.banco.estado === 'comparado' && lado.banco.igual ? <b style={{color:'#86efac'}}>✓ igual ao Compass</b>
                   : lado.banco.estado === 'comparado' ? <>diferença de<br /><b style={{color:'#fff',whiteSpace:'nowrap'}}>{fmt(Math.abs(lado.banco.diferenca))}</b></> : null}
               </span>
+              <span style={PILULA_LADO}>✎ Alterar valor</span>
             </>}
           </button>
         </div>

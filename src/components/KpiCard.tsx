@@ -3,6 +3,9 @@ import type { ReactNode } from 'react'
 export interface KpiCardProps {
   icon?: string
   label: string
+  /** Palavra em amarelo depois do rótulo ("Manual", "Conferido"): #fde047
+   *  dá 6,6 no azul (18/11/2026, pedido do Guilherme). */
+  destaque?: string
   value: string
   sublabel?: string
   valueColor?: string
@@ -50,7 +53,7 @@ export function KpiBarra({ perc }: { perc: number; cor?: string }) {
 }
 
 export default function KpiCard({
-  icon, label, value, sublabel, valueColor = '#fff', children, style,
+  icon, label, destaque, value, sublabel, valueColor = '#fff', children, style,
   onClick, expandido,
 }: KpiCardProps) {
   return (
@@ -75,6 +78,7 @@ export default function KpiCard({
           {/* "ti-…" é ícone desenhado (Tabler); outro texto sai como está. */}
           {icon?.startsWith('ti-') ? <><i aria-hidden className={`ti ${icon}`} style={{ verticalAlign: '-2px' }} /> {label}</>
             : icon ? `${icon} ${label}` : label}
+          {destaque && <> · <b style={{ color: '#fde047', fontWeight: 800 }}>{destaque}</b></>}
         </span>
         {onClick && <span aria-hidden>{expandido ? '▾' : '▸'}</span>}
       </div>
