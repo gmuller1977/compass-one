@@ -557,8 +557,10 @@ export default function NovoLancamentoExtrato() {
     const n = parseValor(modalSaldoValor)
     if (modalSaldoValor.trim() && n !== null) {
       updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: fmt(n), saldoBancoData: hojeStr, saldoBancoInformado: true}))
-    } else {
-      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBancoData: hojeStr}))
+    } else if (!modalSaldoValor.trim()) {
+      // Campo apagado = tirar o saldo informado (18/11/2026, relatado pelo
+      // Guilherme: apagava e o valor antigo ficava). Volta a "não informado".
+      updateMesPorKey(modalSaldo.key, prev => ({...prev, saldoBanco: '', saldoBancoInformado: undefined, saldoBancoData: undefined}))
     }
     setModalSaldo(null)
   }

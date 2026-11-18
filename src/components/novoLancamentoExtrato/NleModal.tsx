@@ -51,7 +51,12 @@ export default function NleModal({
         )}
         <input inputMode="numeric" autoFocus
           value={modalSaldoValor}
-          onChange={e => setModalSaldoValor(mascaraCentavos(e.target.value, !ehDinheiro))}
+          onChange={e => {
+            // Saldo ZERO vale (conta zerada): o "0" digitado vira "0,00", e
+            // não campo vazio, que agora quer dizer "tirar o informado".
+            const v = mascaraCentavos(e.target.value, !ehDinheiro)
+            setModalSaldoValor(!v && /^-?0+$/.test(e.target.value) ? '0,00' : v)
+          }}
           onFocus={e => e.target.select()}
           onKeyDown={e => {
             if (e.key === 'Enter') confirmarModalSaldo()
