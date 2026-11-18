@@ -49,7 +49,10 @@ export function CalendarioMes({ selecionada, onEscolher, onFechar, grande, semSe
 
   const conteudo = (
     <>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1399, background: grande ? 'rgba(15,23,42,.35)' : undefined }} onClick={onFechar} />
+      {/* O fundo que fecha fica SEMPRE abaixo da caixa (18/11/2026, bug relatado
+          pelo Guilherme: no computador o fundo era 1399 e a caixa 400, então o
+          clique no dia caía no fundo e só fechava, sem escolher a data). */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: grande ? 1399 : 399, background: grande ? 'rgba(15,23,42,.35)' : undefined }} onClick={onFechar} />
       <div style={grande ? {
         // Celular: no meio da tela, por cima da folha (dentro dela o
         // calendário ficaria preso na rolagem).
