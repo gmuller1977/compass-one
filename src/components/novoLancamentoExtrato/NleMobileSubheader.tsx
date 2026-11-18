@@ -103,17 +103,23 @@ export default function NleMobileSubheader({
               }}>
                 <i className={`ti ${isDinheiro ? 'ti-wallet' : 'ti-building-bank'}`} aria-hidden style={{fontSize:20,color:'#fff'}} />
                 <span style={{flex:1,minWidth:0}}>
+                  {/* Manual (digitado) ou Conferido ("Confere" na Início), em
+                      amarelo como na fatura (18/11/2026, pedido do Guilherme). */}
                   <span style={{display:'block',fontSize:13,color:'rgba(255,255,255,.75)'}}>
                     {isDinheiro ? 'Em dinheiro' : `No ${contaInfo?.banco ?? 'banco'}`}
+                    {(diferenca !== null || conferidoEm) && <> · <b style={{color:'#fde047',fontWeight:800}}>{diferenca !== null ? 'Manual' : 'Conferido'}</b></>}
                   </span>
                   <span style={{display:'block',fontSize:15,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>
-                    {diferenca !== null ? fmt(saldoMes + diferenca) : conferidoEm ? fmt(saldoMes) : 'Informar saldo ✎'}
+                    {diferenca !== null ? fmt(saldoMes + diferenca) : conferidoEm ? fmt(saldoMes) : isDinheiro ? 'Informar saldo ✎' : 'Informar saldo banco ✎'}
                   </span>
+                  {(diferenca !== null || conferidoEm) && (
+                    <span style={{display:'block',fontSize:12,fontWeight:700,color:'rgba(255,255,255,.85)',marginTop:2}}>✎ Alterar valor</span>
+                  )}
                 </span>
                 {diferenca === null && conferidoEm && (
                   <span style={{fontSize:13,fontWeight:700,padding:'5px 10px',borderRadius:999,whiteSpace:'nowrap',
                     background:'rgba(15,23,42,.3)',color:'#86efac'}}>
-                    {textoConferido(conferidoEm)} <span aria-hidden style={{color:'rgba(255,255,255,.75)',marginLeft:2}}>✎</span>
+                    {textoConferido(conferidoEm)}
                   </span>
                 )}
                 {diferenca !== null && (

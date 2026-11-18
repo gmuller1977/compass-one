@@ -59,12 +59,13 @@ export default function FcBanner({
           {/* Sem o valor do banco, este card SOMA as compras com bolinha
               (02/11/2026, Guilherme: "os conferidos já iriam somar e mostrar
               se falta algo"); o valor do banco é pedido no fim. */}
-          <div role="button" tabIndex={0} aria-label="Informar o valor da fatura no banco" title="Clique para informar o valor da fatura no banco"
+          <div role="button" tabIndex={0} aria-label={informada ? 'Alterar o valor da fatura' : 'Informar a fatura'} title="Clique para informar o valor da fatura no banco"
             onClick={abrirModal}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirModal() } }}
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={informada ? 'ti-building-bank' : 'ti-circle-check'}
-              label={`Fatura no ${contasCartao.find(c => c.id === contaId)?.banco ?? 'banco'} · ${informada ? 'manual' : 'conferido'}`}
+              label={`Fatura no ${contasCartao.find(c => c.id === contaId)?.banco ?? 'banco'}`}
+              destaque={informada ? 'Manual' : 'Conferido'}
               value={informada ? mesDados.faturaAtual! : fmt(lado.compass.estado === 'falta-conferir' ? lado.compass.conferido
                 : lado.compass.estado === 'tudo-conferido' ? totalFatura : 0)}
               valueColor="#fff" style={{ flex: 1 }}>
@@ -83,7 +84,7 @@ export default function FcBanner({
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{informada ? '✎ Alterar' : '✎ Informar o banco'}</span>
+                }}>{informada ? '✎ Alterar valor' : '✎ Informar fatura'}</span>
               </div>
             </KpiCard>
           </div>

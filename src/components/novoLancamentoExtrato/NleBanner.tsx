@@ -99,6 +99,7 @@ export default function NleBanner({
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={isDinheiro ? 'ti-wallet' : 'ti-building-bank'}
               label={isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}
+              destaque={saldoBancoNum !== null ? 'Manual' : conferidoEm ? 'Conferido' : undefined}
               value={saldoBancoNum !== null ? fmt(saldoBancoNum) : conferidoEm ? fmt(saldoMes) : '—'}
               style={{ flex: 1 }}>
               <div style={{
@@ -113,7 +114,7 @@ export default function NleBanner({
                   display: 'inline-block', whiteSpace: 'nowrap', color: '#fff',
                   background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.45)',
                   borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700,
-                }}>{saldoBancoNum !== null || conferidoEm ? '✎ Alterar' : '✎ Informar'}</span>
+                }}>{saldoBancoNum !== null || conferidoEm ? '✎ Alterar valor' : isDinheiro ? '✎ Informar saldo' : '✎ Informar saldo banco'}</span>
               </div>
             </KpiCard>
           </div>
