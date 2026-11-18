@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { useApp } from '../context/AppContext'
 import { LogoCompass, NomeCompass } from './LogoCompass'
+import { urlDoSite } from '../utils/site'
 
 export const SIDEBAR_W = 220
 
@@ -74,6 +75,8 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
         ],
       },
       { icon: 'ti-gift', label: 'Indicar amigos', path: '/indicar', exact: false },
+      // A página fica no site público (18/11/2026): abre em outra aba.
+      { icon: 'ti-school', label: 'Fale com o Educador', path: '/educador', exact: true },
     ],
   },
 ]
@@ -363,6 +366,7 @@ export default function Sidebar() {
                     active={parentActive} hasSub={hasSub} expanded={isExpanded}
                     badge={item.badge} disabled={item.disabled}
                     onClick={() => {
+                      if (item.path === '/educador') { window.open(urlDoSite('/educador'), '_blank', 'noopener'); return }
                       if (!hasSub) return navigate(item.path)
                       if (!item.abreTela) return toggleExpand(item.label)
                       navigate(item.path)
