@@ -18,13 +18,15 @@ import { hrefDoApp } from '../utils/site'
  * Nada aqui promete resultado: o que se oferece é aprender e ter clareza.
  * Educação financeira, nunca recomendação de investimento.
  *
- * Enquanto não há loja nem agenda, os botões abrem um e-mail com o assunto
- * pronto (CONTATO). Trocar pelo link de venda, do grupo e da agenda quando
- * existirem.
+ * Sessão e grupo vão para o WhatsApp com a mensagem pronta; o e-book abre um
+ * e-mail (CONTATO) até haver o link de venda.
  */
 
 const CONTATO = 'suporte@compassone.app'
 const email = (assunto: string) => `mailto:${CONTATO}?subject=${encodeURIComponent(assunto)}`
+/** WhatsApp do educador (18/11/2026): agenda a sessão e recebe a lista de espera do grupo. */
+const WHATSAPP = '5547988231323'
+const whatsapp = (texto: string) => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`
 
 type Opcao = {
   id: string
@@ -64,7 +66,7 @@ const OPCOES: Opcao[] = [
     precoNota: 'entre na lista e avisamos quando abrir',
     selo: 'Em breve',
     botao: 'Entrar na lista de espera',
-    href: email('Lista de espera do grupo de estudos'),
+    href: whatsapp('Olá! Quero entrar na lista de espera do grupo de estudos do Compass One.'),
   },
   {
     id: 'diagnostico',
@@ -74,9 +76,9 @@ const OPCOES: Opcao[] = [
     texto: 'Um encontro só seu, de 45 minutos, para olhar a sua situação com o educador e traçar os próximos passos.',
     itens: ['Encontro individual de 45 minutos', 'Online, no horário combinado', 'Seus números vistos com calma'],
     preco: 'R$ 247,00',
-    precoNota: 'por sessão · combinamos o horário por e-mail',
+    precoNota: 'por sessão · combinamos o horário pelo WhatsApp',
     botao: 'Quero agendar',
-    href: email('Quero agendar uma sessão de diagnóstico'),
+    href: whatsapp('Olá! Quero agendar uma sessão de diagnóstico de 45 minutos.'),
   },
 ]
 
@@ -193,7 +195,7 @@ export default function FaleComEducador() {
                 <p>{o.texto}</p>
                 <ul>{o.itens.map(t => <li key={t}><i className="ti ti-circle-check" aria-hidden />{t}</li>)}</ul>
                 <div className="fe-preco"><b>{o.preco}</b><span>{o.precoNota}</span></div>
-                <a href={o.href} className={`fe-btn ${o.id === 'ebook' ? 'fe-btn-escuro' : 'fe-btn-linha'}`}>{o.botao} <i className="ti ti-arrow-right" aria-hidden /></a>
+                <a href={o.href} target={o.href.startsWith('https') ? '_blank' : undefined} rel="noreferrer" className={`fe-btn ${o.id === 'ebook' ? 'fe-btn-escuro' : 'fe-btn-linha'}`}>{o.botao} <i className="ti ti-arrow-right" aria-hidden /></a>
               </section>
             ))}
           </div>
