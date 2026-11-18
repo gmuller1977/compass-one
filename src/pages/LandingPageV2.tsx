@@ -261,16 +261,26 @@ const CSS = `
 
 /* cruzeiro */
 /* o sol que aparece ao sair das nuvens */
-.v2-sol-ceu { position: absolute; top: -170px; right: -8%; width: min(980px, 140vw); aspect-ratio: 1; pointer-events: none;
-  opacity: 0; transform: translateY(60px) scale(.85); transform-origin: 70% 22%;
-  transition: opacity 1.8s ease, transform 2.6s cubic-bezier(.16,1,.3,1); }
+/* camadas: céu (fundo do bloco) → nuvens → sol (na frente delas) → conteúdo */
+.v2-ceu-alto { position: relative; overflow: hidden; margin-top: -2px; /* cobre a emenda com a subida */
+  background: linear-gradient(180deg, #1d4a8c 0, #1d4a8c 14px, #6f9fd6 108px, #c7e0f7 150px, var(--claro) 170px, var(--claro2) 100%); }
+.v2-ceu-alto > .v2-topo-nuvens { position: relative; z-index: 1; clip-path: inset(0 0 2px 0); /* a última linha do SVG desenhava um risco */ }
+.v2-ceu-alto > .v2-cruzeiro { background: transparent; z-index: 1; }
+/* o centro do sol fica logo acima do topo das nuvens (y = 58 no bloco) */
+.v2-sol-ceu { --w: min(980px, 140vw); position: absolute; z-index: 1; top: calc(58px - var(--w) * .22); right: -8%; width: var(--w); aspect-ratio: 1; pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent calc(var(--w) * .22 - 58px), #000 calc(var(--w) * .22 + 12px)); mask-image: linear-gradient(180deg, transparent calc(var(--w) * .22 - 58px), #000 calc(var(--w) * .22 + 12px));
+  opacity: 0; transform: translateY(120px); transform-origin: 70% 22%;
+  transition: opacity 1.4s ease, transform 3.4s cubic-bezier(.22,1,.36,1); }
 .v2-sol-ceu.on { opacity: 1; transform: none; }
 .v2-sol-ceu::before { content: ''; position: absolute; inset: 0;
-  background: repeating-conic-gradient(from 0deg at 70% 22%, rgba(255,232,170,.42) 0deg 3.5deg, transparent 3.5deg 11deg);
-  -webkit-mask: radial-gradient(circle at 70% 22%, #000 0, #000 12%, transparent 58%); mask: radial-gradient(circle at 70% 22%, #000 0, #000 12%, transparent 58%);
-  animation: v2-girar 140s linear infinite; transform-origin: 70% 22%; }
-.v2-sol-ceu::after { content: ''; position: absolute; inset: 0;
-  background: radial-gradient(circle at 70% 22%, #fffaf0 0, #fff3d1 3.5%, rgba(255,222,140,.55) 8%, rgba(255,222,140,.18) 20%, transparent 42%); }
+  background: repeating-conic-gradient(from 0deg at 70% 22%, rgba(255,232,170,.5) 0deg 3.5deg, transparent 3.5deg 11deg);
+  -webkit-mask: radial-gradient(circle at 70% 22%, #000 0, #000 10%, transparent 60%); mask: radial-gradient(circle at 70% 22%, #000 0, #000 10%, transparent 60%);
+  transform-origin: 70% 22%; opacity: 0; transition: opacity 2.4s ease 1.6s; animation: v2-girar 90s linear infinite; }
+.v2-sol-ceu.on::before { opacity: 1; }
+.v2-sol-ceu::after { content: ''; position: absolute; inset: 0; transform-origin: 70% 22%;
+  background: radial-gradient(circle at 70% 22%, #fffaf0 0, #fff3d1 3.5%, rgba(255,222,140,.6) 8%, rgba(255,222,140,.2) 20%, transparent 42%);
+  animation: v2-pulsar 6s ease-in-out infinite; }
+@keyframes v2-pulsar { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .85; } }
 @keyframes v2-girar { to { transform: rotate(360deg); } }
 .v2-cruzeiro > .v2-in { z-index: 1; }
 .v2-cruzeiro { background: linear-gradient(180deg, var(--claro) 0%, var(--claro2) 100%); padding-top: 40px; }
@@ -407,12 +417,11 @@ const CSS = `
 }
 @media (min-width: 1420px) { .v2-alt { display: block; } }
 @media (prefers-reduced-motion: reduce) {
-  .v2-linha, .v2-nuvens g, .v2-sol-ceu::before, .v2-chuva, .v2-turb-clarao, .v2-master, .v2-lamp-luz, .v2-rota-treme, .v2-cabine.on { animation: none !important; }
+  .v2-linha, .v2-nuvens g, .v2-chuva, .v2-turb-clarao, .v2-master, .v2-lamp-luz, .v2-rota-treme, .v2-cabine.on { animation: none !important; }
   .v2-rota-linha { stroke-dashoffset: 0; animation: none !important; }
   .v2-rota-marca { opacity: 1; transition: none; }
   .v2-luzp, .v2-luzp-halo { animation-duration: 4.5s; }
   .v2-raio, .v2-clarao { animation: v2-suave 1.1s ease-out forwards; }
-  .v2-sol-ceu { opacity: 1; transform: none; transition: none; }
   .v2-btn, .v2-fita i, .v2-alt-cel { transition: none; }
 }
 `
@@ -660,8 +669,9 @@ function SolAcimaDasNuvens() {
   useEffect(() => {
     const el = ref.current
     if (!el || typeof IntersectionObserver === 'undefined') { el?.classList.add('on'); return }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add('on'); io.disconnect() } }, { threshold: 0.15 })
-    io.observe(el)
+    // Dispara quando o topo das nuvens já subiu um terço da tela: dá tempo de ver o sol nascer.
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add('on'); io.disconnect() } }, { rootMargin: '0px 0px -35% 0px' })
+    io.observe(el.parentElement ?? el)
     return () => io.disconnect()
   }, [])
   return <div ref={ref} className="v2-sol-ceu" aria-hidden />
@@ -974,10 +984,11 @@ export default function LandingPageV2() {
           </div>
         </section>
 
-        <TopoDasNuvens base="linear-gradient(180deg, #1d4a8c 0%, #6f9fd6 60%, #c7e0f7 100%)" cor="#dcecfb" />
+        <div className="v2-ceu-alto">
+        <TopoDasNuvens base="transparent" cor="#dcecfb" />
+        <SolAcimaDasNuvens />
 
         <section className="v2-sec v2-cruzeiro" id="cruzeiro" aria-labelledby="t-cruz" data-alt="35000">
-          <SolAcimaDasNuvens />
           <div className="v2-in">
             <div className="v2-cruz-in">
               <div>
@@ -1015,6 +1026,7 @@ export default function LandingPageV2() {
             </div>
           </div>
         </section>
+        </div>
 
         <section className="v2-sec v2-claro" id="comecar" aria-labelledby="t-check">
           <div className="v2-in">
