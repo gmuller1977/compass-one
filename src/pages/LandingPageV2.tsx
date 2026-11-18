@@ -954,7 +954,7 @@ export default function LandingPageV2() {
 
         <section className="v2-sec v2-subida" id="instrumentos" aria-labelledby="t-subida">
           <div className="v2-in">
-            <h2 className="v2-h2" id="t-subida">Até agora, você voou às cegas. Está na hora de experimentar o Compass One.</h2>
+            <h2 className="v2-h2" id="t-subida">Até agora, você voou às cegas.<br />Está na hora de experimentar o Compass One.</h2>
             <p className="v2-lead">A bússola financeira que mostra a direção a seguir para evitar novas turbulências. A única ferramenta de que você vai precisar.</p>
             <ol className="v2-etapas">
               {ETAPAS.map(e => (
