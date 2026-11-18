@@ -25,6 +25,8 @@ import LandingPage         from './pages/LandingPage'
 const LandingPageV2 = lazy(() => import('./pages/LandingPageV2'))
 import { temApresentacaoEstatica, tirarApresentacaoEstatica } from './utils/apresentacaoEstatica'
 import Indicar             from './pages/Indicar'
+import Mensagens           from './pages/Mensagens'
+import { aplicarEscolhaPendente } from './utils/ofertasEmail'
 import PrimeiroAcesso      from './pages/PrimeiroAcesso'
 import { CHAVE_PRIMEIRO_ACESSO, vaiParaPrimeiroAcesso } from './utils/primeiroAcesso'
 import { jaViu } from './utils/vistoNaConta'
@@ -56,6 +58,7 @@ function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) return
     registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
+    aplicarEscolhaPendente(user)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isMobile) return <>{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><LancarFixasNoCartao /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
@@ -204,6 +207,7 @@ export default function App() {
           <Route path="/resumo-mensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/revisaomensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/indicar"           element={<Protegido><Indicar /></Protegido>} />
+          <Route path="/mensagens"         element={<Protegido><Mensagens /></Protegido>} />
           <Route path="/aurix"             element={<Navigate to="/indicar" replace />} />
           <Route path="/i/:codigo"         element={<ReceberIndicacao />} />
           <Route path="*"                   element={<Navigate to="/" replace />} />

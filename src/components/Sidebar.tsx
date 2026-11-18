@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { useApp } from '../context/AppContext'
 import { LogoCompass, NomeCompass } from './LogoCompass'
+import { useMensagensNaoLidas } from './mensagens/useMensagensNaoLidas'
+import { textoDoSelo } from '../utils/mensagens'
 
 export const SIDEBAR_W = 220
 
@@ -207,6 +209,7 @@ export default function Sidebar() {
   const navigate              = useNavigate()
   const { pathname, search }  = useLocation()
   const { perfil, user, sairDaConta, contas } = useApp()
+  const naoLidas = useMensagensNaoLidas()
 
   const nome    = perfil.apelido || perfil.nome.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário'
   const email   = user?.email ?? ''
@@ -425,6 +428,37 @@ export default function Sidebar() {
             background: '#16a34a', boxShadow: '0 0 6px rgba(22,163,74,.7)', flexShrink: 0,
           }}/>
         </div>}
+
+        {/* Mensagens (18/11/2026, pedido do Guilherme: "não pode ficar
+            escondido"): logo acima do nome, com o selo de não lidas. */}
+        <button
+          onClick={() => navigate('/mensagens')}
+          aria-label={naoLidas ? `Mensagens, ${naoLidas} não lidas` : 'Mensagens'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 9, width: '100%', textAlign: 'left',
+            padding: '9px 10px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
+            marginBottom: 8, color: '#fff',
+            background: pathname === '/mensagens' ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)',
+            border: '1px solid rgba(34,211,238,.55)', boxShadow: '0 0 10px rgba(34,211,238,.25)',
+            transition: 'background .15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.13)')}
+          onMouseLeave={e => (e.currentTarget.style.background = pathname === '/mensagens' ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)')}
+        >
+          <div style={{
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            background: 'linear-gradient(135deg,#1a56db,#2563eb)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}><i aria-hidden className="ti ti-mail" style={{ color: '#fff', fontSize: 16 }} /></div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700 }}>Mensagens</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.7)', marginTop: 1 }}>Comunicados e suporte</div>
+          </div>
+          {naoLidas > 0 && <span style={{
+            background: '#22d3ee', color: '#0b1460', borderRadius: 999, fontSize: 11, fontWeight: 800,
+            padding: '1px 7px', flexShrink: 0,
+          }}>{textoDoSelo(naoLidas)}</span>}
+        </button>
 
         {/* User info */}
         <div style={{

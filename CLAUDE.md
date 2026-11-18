@@ -3141,6 +3141,26 @@ segundo cabeçalho empilhado.
 claro em Lançamentos. As duas telas divergem por decisão de design, não por
 descuido.
 
+**Caixa de Mensagens** (18/11/2026, pedido do Guilherme; o WhatsApp do
+cadastro foi descartado por ele em 16/11). `/mensagens`: Comunicados (do
+suporte para todos) e Suporte (a conversa de cada LOGIN com o suporte,
+"Respondemos em até 2 dias úteis"), lado a lado no computador e em pílulas
+no celular. Administrador = linha em `suporte_admins` (cadastrada por SQL):
+vê "Novo comunicado para todos" e a lista de conversas, e responde como
+"Suporte Compass One". Não escondida (pedido dele): botão acima do nome no pé
+do menu, envelope ao lado do olho na Bússola e item no "Mais", todos com o
+selo de não lidas (`useMensagensNaoLidas`, ciano `#22d3ee` com `#0b1460`).
+Toda mensagem nova manda e-mail pela função `mensagem-email` (pessoa →
+administradores; resposta → pessoa; comunicado só se marcado e só para quem
+aceitou ofertas), uma vez por mensagem e sem rajada (30 min / até ler).
+Migração 026; regras em [`mensagens.ts`](src/utils/mensagens.ts);
+`prova122` (29) e `prova122-banco.sql` (21, RLS num Postgres 16).
+**Aceite de novidades e ofertas por e-mail** (mesmo dia, Guilherme: "sim,
+mantemos o aceite para mandar ofertas"): caixa DESMARCADA no cadastro (e no
+primeiro acesso para quem entrou pelo Google ou nunca respondeu), com a data,
+em `user_metadata.ofertas_email` / `ofertas_email_em`; muda no Perfil
+(`CfgOfertas`). Está na política de privacidade.
+
 ---
 
 ## Mobile

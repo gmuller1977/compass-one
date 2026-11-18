@@ -20,6 +20,8 @@ import { bussolaDoMes } from '../utils/bussolaDoMes'
 import type { Aviso } from '../utils/avisosDoMes'
 import { COR } from '../utils/cores'
 import { aplicadoNoMes, isoDe } from '../utils/investimentos'
+import { useMensagensNaoLidas } from '../components/mensagens/useMensagensNaoLidas'
+import { textoDoSelo } from '../utils/mensagens'
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
@@ -46,6 +48,7 @@ const ROTULO = 'rgba(255,255,255,.75)'
  */
 export default function Bussola() {
   const navigate = useNavigate()
+  const naoLidas = useMensagensNaoLidas()
   const { categorias, perfil, user, planos, setPlanos, cenarioPrevisao, setCenarioPrevisao, contas, extratoData } = useApp()
   const hoje = new Date()
   const ano = hoje.getFullYear(), mes = hoje.getMonth()
@@ -102,6 +105,26 @@ export default function Bussola() {
                 {chegada ? mensagemDaChegada(MESES[chegada.mes].toLowerCase(), 'corrente') : deAntes ?? status.frase(mesNome, false)}
               </div>
             </div>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {/* Mensagens (18/11/2026, pedido do Guilherme): o envelope com o
+                selo de não lidas, ao lado do olho. Ciano #22d3ee com
+                #0b1460: 11,0:1. */}
+            <button onClick={() => navigate('/mensagens')}
+              aria-label={naoLidas ? `Mensagens, ${naoLidas} não lidas` : 'Mensagens'}
+              style={{
+                width: 44, height: 44, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer', position: 'relative',
+                background: 'rgba(255,255,255,.14)', color: '#fff', fontSize: 22,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+              <i aria-hidden className="ti ti-mail" />
+              {naoLidas > 0 && (
+                <span aria-hidden style={{ position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, padding: '0 4px',
+                  boxSizing: 'border-box', borderRadius: 999, background: '#22d3ee', color: '#0b1460', fontSize: 11, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px #1b2d6e' }}>
+                  {textoDoSelo(naoLidas)}
+                </span>
+              )}
+            </button>
             <button onClick={alternarOculto} aria-label={oculto ? 'Mostrar valores' : 'Esconder valores'} aria-pressed={oculto}
               style={{
                 width: 44, height: 44, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: 'pointer',
@@ -110,6 +133,7 @@ export default function Bussola() {
               }}>
               <OlhoIcone fechado={oculto} />
             </button>
+            </div>
           </div>
 
           {/* ── O resumo do mês (pedido do Guilherme em 10/10/2026): primeiro
