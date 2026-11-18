@@ -210,7 +210,7 @@ const CSS = `
 .v2-etapa:last-child { margin-bottom: 0; }
 .v2-marco { position: absolute; left: 0; top: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--noite); box-shadow: 0 0 0 2px var(--ambar);
   display: grid; place-items: center; color: var(--ambar); font-size: 17px; }
-.v2-etapa-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: center; }
+.v2-etapa-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
 .v2-altura { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: .02em; color: var(--ambar); margin: 0 0 12px; font-variant-numeric: tabular-nums; }
 .v2-altura i { font-size: 18px; }
 .v2-etapa h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; margin: 0 0 10px; }
