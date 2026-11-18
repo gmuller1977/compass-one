@@ -3155,6 +3155,11 @@ administradores; resposta → pessoa; comunicado só se marcado e só para quem
 aceitou ofertas), uma vez por mensagem e sem rajada (30 min / até ler).
 Migração 026; regras em [`mensagens.ts`](src/utils/mensagens.ts);
 `prova122` (29) e `prova122-banco.sql` (21, RLS num Postgres 16).
+Com a tela aberta, o chat é em TEMPO REAL (mesmo dia, Guilherme: "o chat não
+pode demorar"): `ouvirMensagensNovas` assina os INSERTs de `mensagens_suporte`
+(migração 027, publicação `supabase_realtime`; o RLS filtra) e relê na hora;
+a busca de 30 s fica de reserva. O selo do menu segue a cada 2 min, para não
+abrir conexão em todo app aberto (limite de 200 no plano gratuito).
 **Aceite de novidades e ofertas por e-mail** (mesmo dia, Guilherme: "sim,
 mantemos o aceite para mandar ofertas"): caixa DESMARCADA no cadastro (e no
 primeiro acesso para quem entrou pelo Google ou nunca respondeu), com a data,

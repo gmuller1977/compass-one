@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext'
 import { COR } from '../utils/cores'
 import {
   apagarComunicado, ehNovo, enviarMensagem, lerComunicados, lerConversa, lerConversas, LIMITE_TEXTO,
-  marcarComunicadosLidos, marcarConversaLida, publicarComunicado, souSuporte, textoDoSelo,
+  marcarComunicadosLidos, marcarConversaLida, ouvirMensagensNovas, publicarComunicado, souSuporte, textoDoSelo,
   type Comunicado, type Conversa, type MensagemSuporte,
 } from '../utils/mensagens'
 
@@ -161,8 +161,9 @@ function Chat({ conversaDe, comoSuporte, nomeOutro, altura }: { conversaDe: stri
       if (r.lista.some(m => m.autor === outro && !m.lida_em)) marcarConversaLida(conversaDe)
     }
     ler()
+    const parar = ouvirMensagensNovas(conversaDe, ler)
     const t = setInterval(() => { if (document.visibilityState === 'visible') ler() }, 30_000)
-    return () => { vivo = false; clearInterval(t) }
+    return () => { vivo = false; clearInterval(t); parar() }
   }, [conversaDe, comoSuporte])
 
   useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }) }, [msgs.length])
@@ -270,8 +271,9 @@ export default function Mensagens() {
     let vivo = true
     const ler = () => lerConversas().then(l => { if (vivo) setConversas(l) })
     ler()
+    const parar = ouvirMensagensNovas('', ler)
     const t = setInterval(() => { if (document.visibilityState === 'visible') ler() }, 30_000)
-    return () => { vivo = false; clearInterval(t) }
+    return () => { vivo = false; clearInterval(t); parar() }
   }, [admin, conversaAberta, recarregar])
 
   const naoLidasConversas = useMemo(() => conversas.reduce((s, c) => s + c.nao_lidas, 0), [conversas])
