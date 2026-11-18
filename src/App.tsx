@@ -19,12 +19,15 @@ import Simulacao           from './pages/Simulacao'
 import Investimentos      from './pages/Investimentos'
 import RedefinirSenha      from './pages/RedefinirSenha'
 import TermosDeUso         from './pages/TermosDeUso'
+import FaleComEducador     from './pages/FaleComEducador'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import LandingPage         from './pages/LandingPage'
 // A prévia da apresentação nova (o voo) só baixa quem abre /v2.
 const LandingPageV2 = lazy(() => import('./pages/LandingPageV2'))
 import { temApresentacaoEstatica, tirarApresentacaoEstatica } from './utils/apresentacaoEstatica'
 import Indicar             from './pages/Indicar'
+import Mensagens           from './pages/Mensagens'
+import { aplicarEscolhaPendente } from './utils/ofertasEmail'
 import PrimeiroAcesso      from './pages/PrimeiroAcesso'
 import { CHAVE_PRIMEIRO_ACESSO, vaiParaPrimeiroAcesso } from './utils/primeiroAcesso'
 import { jaViu } from './utils/vistoNaConta'
@@ -56,6 +59,7 @@ function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) return
     registrarIndicacaoPendente(user.id, user.user_metadata?.indicado_por)
+    aplicarEscolhaPendente(user)
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isMobile) return <>{children}<AvisoInatividade bloquear={!!user && digitalCadastradaAqui(user.id)} /><IndicadorGravacao /><SincronizarLembrete /><ConfirmarDebitoAutomatico /><LancarFixasNoCartao /><AvisoNovaVersao /><ConviteCompartilhamento /><AvisoPermissao /></>
@@ -182,6 +186,7 @@ export default function App() {
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/termos"          element={<TermosDeUso />} />
           <Route path="/privacidade"     element={<PoliticaPrivacidade />} />
+          <Route path="/educador"        element={<FaleComEducador />} />
           <Route path="/v2"              element={<Suspense fallback={null}><LandingPageV2 /></Suspense>} />
           <Route path="/"                element={<HomeRoute />} />
           <Route path="/lancar"          element={<SoNoCelular senao="/novo-lancamento"><QuickLaunch /></SoNoCelular>} />
@@ -204,6 +209,7 @@ export default function App() {
           <Route path="/resumo-mensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/revisaomensal"      element={<Navigate to="/radar" replace />} />
           <Route path="/indicar"           element={<Protegido><Indicar /></Protegido>} />
+          <Route path="/mensagens"         element={<Protegido><Mensagens /></Protegido>} />
           <Route path="/aurix"             element={<Navigate to="/indicar" replace />} />
           <Route path="/i/:codigo"         element={<ReceberIndicacao />} />
           <Route path="*"                   element={<Navigate to="/" replace />} />

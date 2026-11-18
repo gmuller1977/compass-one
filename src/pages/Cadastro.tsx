@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { aceiteDeOfertas, guardarEscolhaPendente } from '../utils/ofertasEmail'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { urlDoApp } from '../utils/site'
@@ -115,6 +116,8 @@ export default function Cadastro() {
   const [erro,        setErro]        = useState('')
   const [confirmacaoEnviada, setConfirmacaoEnviada] = useState(false)
   const [reenvio, setReenvio] = useState<{ ok: boolean; texto: string } | null>(null)
+  // LGPD: nasce DESMARCADA (utils/ofertasEmail.ts).
+  const [ofertas, setOfertas] = useState(false)
 
   // Validação em tempo real
   const erroEmail    = email.length > 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'E-mail inválido' : ''
@@ -135,7 +138,7 @@ export default function Cadastro() {
         email,
         password: senha,
         options: {
-          data: { nome, indicado_por: codigoRecebido() ?? undefined },
+          data: { nome, indicado_por: codigoRecebido() ?? undefined, ...aceiteDeOfertas(ofertas) },
           emailRedirectTo: urlDoApp('/'),
         },
       })
@@ -168,6 +171,7 @@ export default function Cadastro() {
   async function handleGoogle() {
     setErro('')
     setCarregando(true)
+    guardarEscolhaPendente(ofertas)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: urlDoApp('/') },
@@ -324,6 +328,12 @@ export default function Cadastro() {
         valor={confirmar} onChange={setConfirmar} icone="🔒"
         erroMsg={erroConfirmar}
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} />
+
+      <label style={{ display:'flex', gap:10, alignItems:'flex-start', margin:'2px 0 16px', fontSize:13, color:'#334155', lineHeight:1.45, cursor:'pointer' }}>
+        <input type="checkbox" checked={ofertas} onChange={e => setOfertas(e.target.checked)}
+          style={{ width:18, height:18, marginTop:1, flexShrink:0, accentColor:'#1a56db' }} />
+        <span>Quero receber novidades e ofertas do Compass One por e-mail. Você pode mudar isso quando quiser, no Perfil.</span>
+      </label>
 
       <button onClick={handleSubmit} disabled={carregando} style={{
         width:'100%', padding:'15px', border:'none', borderRadius:14,

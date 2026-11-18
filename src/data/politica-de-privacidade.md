@@ -12,6 +12,8 @@ Esta Política de Privacidade descreve como o Compass One ("Plataforma", "nós")
 - **Dados de cadastro:** nome, e-mail e senha
 - **Dados financeiros:** contas bancárias, cartões de crédito, categorias de despesas, lançamentos, extratos, faturas e planejamentos orçamentários
 - **Preferências:** configurações pessoais da Plataforma
+- **Mensagens ao suporte:** o que você escreve na caixa de Mensagens, com data e hora, e quais comunicados você já leu
+- **Aceite de novidades e ofertas por e-mail:** se você marcou ou não essa opção, e quando
 
 ### 1.2. Dados coletados automaticamente
 - **Dados de acesso:** endereço IP, tipo de navegador, sistema operacional, data e hora de acesso
@@ -32,9 +34,11 @@ Utilizamos seus dados exclusivamente para:
 - Armazenar e exibir seus dados financeiros conforme inseridos por você
 - Gerar relatórios e visualizações para sua organização financeira pessoal
 - Enviar comunicações essenciais (recuperação de senha, atualizações de segurança)
+- Responder às suas mensagens ao suporte e avisar por e-mail quando houver resposta
+- Enviar novidades, comunicados e ofertas do próprio Compass One por e-mail, **somente se você marcou essa opção** no cadastro ou no Perfil. A opção vem desmarcada, e você pode desmarcá-la a qualquer momento em Configurações › Perfil
 - Melhorar a experiência do usuário e corrigir problemas técnicos
 
-**Não utilizamos seus dados para:** publicidade, venda a terceiros, análise de crédito, perfilamento comercial ou qualquer finalidade não descrita acima.
+**Não utilizamos seus dados para:** publicidade de terceiros, venda a terceiros, análise de crédito, perfilamento comercial ou qualquer finalidade não descrita acima.
 
 ## 3. Base Legal para o Tratamento (LGPD Art. 7º)
 
@@ -43,6 +47,8 @@ Utilizamos seus dados exclusivamente para:
 | Cadastro e autenticação | Execução de contrato (Art. 7º, V) |
 | Armazenamento de dados financeiros | Consentimento (Art. 7º, I) |
 | Comunicações essenciais | Legítimo interesse (Art. 7º, IX) |
+| Atendimento pelo suporte (Mensagens) | Execução de contrato (Art. 7º, V) |
+| Novidades e ofertas por e-mail | Consentimento (Art. 7º, I), que pode ser retirado a qualquer momento |
 | Segurança e prevenção de fraude | Legítimo interesse (Art. 7º, IX) |
 | Cumprimento de obrigações legais | Obrigação legal (Art. 7º, II) |
 
@@ -54,7 +60,7 @@ Compartilhamos dados apenas com:
 
 - **Supabase (infraestrutura):** armazenamento do banco de dados e autenticação — atuando como operador sob nossas instruções
 - **Vercel e Cloudflare (hospedagem):** hospedagem da aplicação web
-- **Resend (e-mail):** envio de e-mails transacionais (confirmação de conta, recuperação de senha, convites)
+- **Resend (e-mail):** envio de e-mails (confirmação de conta, recuperação de senha, convites, avisos de mensagens do suporte e, para quem aceitou, novidades e ofertas)
 - **Sentry (monitor de erros):** quando uma tela apresenta um erro, recebe a mensagem técnica do erro, o endereço da tela e o tipo de navegador e aparelho. Não recebe dados financeiros, seu nome, seu e-mail nem identificação da sua conta. Servidores nos Estados Unidos.
 - **Google (Gemini, inteligência artificial):** **o assistente Norte está desativado no momento, e nenhum dado é enviado ao Google.** Antes de ele voltar, esta política será atualizada para dizer o que é enviado e em que condições.
 

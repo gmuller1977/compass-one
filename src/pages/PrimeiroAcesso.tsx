@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { gravarAceiteOfertas, respondeuOfertas } from '../utils/ofertasEmail'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { parseBRL } from '../utils/moeda'
@@ -195,7 +196,7 @@ export default function PrimeiroAcesso() {
 
   let titulo = '', sub = '', corpo: ReactNode = null, pe: ReactNode = null
 
-  if (passo === 0) return <BoasVindas nome={nome} onSeguir={seguir} onSozinho={configurarSozinho} />
+  if (passo === 0) return <BoasVindas nome={nome} onSeguir={seguir} onSozinho={configurarSozinho} perguntarOfertas={!respondeuOfertas(user)} />
 
   if (passo === 1) {
     // Uma lista só: tocar no banco marca e abre a caixa do saldo (pedido do
@@ -695,7 +696,11 @@ export default function PrimeiroAcesso() {
  * exemplo: um "vai sobrar R$ 1.240" criava uma expectativa que a realidade
  * da pessoa pode não cumprir (Guilherme, mesmo dia).
  */
-function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () => void; onSozinho: () => void }) {
+function BoasVindas({ nome, onSeguir, onSozinho, perguntarOfertas }: { nome: string; onSeguir: () => void; onSozinho: () => void; perguntarOfertas: boolean }) {
+  // Quem entrou pelo Google (ou nunca respondeu) vê o aceite de ofertas
+  // aqui, desmarcado (utils/ofertasEmail.ts). Seguir grava a resposta.
+  const [ofertas, setOfertas] = useState(false)
+  const responder = (ir: () => void) => () => { if (perguntarOfertas) void gravarAceiteOfertas(ofertas); ir() }
   return (
     <div className="pa-bv" style={{ background: '#f2f5fc' }}>
       <style>{`
@@ -776,8 +781,17 @@ function BoasVindas({ nome, onSeguir, onSozinho }: { nome: string; onSeguir: () 
           ))}
         </div>
 
+        {perguntarOfertas && (
+          <label className="pa-sobe" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: COR.textoSuave, lineHeight: 1.45,
+            cursor: 'pointer', animationDelay: '.5s' }}>
+            <input type="checkbox" checked={ofertas} onChange={e => setOfertas(e.target.checked)}
+              style={{ width: 20, height: 20, marginTop: 1, flexShrink: 0, accentColor: '#1a56db' }} />
+            <span>Quero receber novidades e ofertas do Compass One por e-mail. Dá para mudar quando quiser, no Perfil.</span>
+          </label>
+        )}
+
         <div className="pa-bv-pe" style={{ marginTop: 'auto', padding: '4px 0 26px' }}>
-          <Pe rotulo="Vamos lá" onSeguir={onSeguir} pular="Prefiro configurar tudo sozinho" onPular={onSozinho} />
+          <Pe rotulo="Vamos lá" onSeguir={responder(onSeguir)} pular="Prefiro configurar tudo sozinho" onPular={responder(onSozinho)} />
         </div>
       </div>
     </div>

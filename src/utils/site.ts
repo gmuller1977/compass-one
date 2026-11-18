@@ -44,3 +44,12 @@ export function hrefDoApp(caminho: string, indicacao: string | null = null, host
   if (host && !ehHostDoSite(host)) return caminho
   return APP_URL + caminho + (indicacao ? `?indicacao=${encodeURIComponent(indicacao)}` : '')
 }
+
+/**
+ * Link do app para uma página do site público (www), como o "Fale com o
+ * Educador". Em localhost e prévias, o próprio endereço.
+ */
+export function urlDoSite(caminho: string, origem = typeof window === 'undefined' ? '' : window.location.origin): string {
+  const local = !/^https:\/\/(app|www)\.compass-one\.com\.br$/.test(origem) && !/^https:\/\/compass-one\.com\.br$/.test(origem)
+  return (local ? origem : SITE_URL) + caminho
+}

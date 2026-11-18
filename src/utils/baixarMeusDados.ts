@@ -26,6 +26,8 @@ export const TABELAS_EXPORTADAS: Tabela[] = [
   { nome: 'indicacao_codigos', filtro: { coluna: 'user_id' }, ordem: ['user_id'] },
   { nome: 'compartilhamentos', filtro: { ou: id => `dono_id.eq.${id},membro_id.eq.${id}` }, ordem: ['id'] },
   { nome: 'indicacoes', filtro: { ou: id => `indicador_id.eq.${id},indicado_id.eq.${id}` }, ordem: ['id'] },
+  { nome: 'mensagens_suporte', filtro: { coluna: 'user_id' }, ordem: ['id'] },
+  { nome: 'comunicados_lidos', filtro: { coluna: 'user_id' }, ordem: ['comunicado_id'] },
 ]
 
 export type MeusDados = {

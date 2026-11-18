@@ -6,6 +6,9 @@ import { useSeloNorte } from './norte/useSeloNorte'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
 import { BOLINHA_AZUL } from './mobile/estilo'
 import { useLarguraMenorQue } from '../utils/larguraTela'
+import { useMensagensNaoLidas } from './mensagens/useMensagensNaoLidas'
+import { textoDoSelo } from '../utils/mensagens'
+import { urlDoSite } from '../utils/site'
 
 function useIsMobile() {
   return useLarguraMenorQue(640)
@@ -34,7 +37,10 @@ const MAIS: { icon: string; label: string; path: string; emBreve?: boolean }[] =
   { icon: 'ti-calculator', label: 'Simulador',             path: '/simulacao' },
   { icon: 'ti-pig-money', label: 'Investimentos', path: '/investimentos' },
   { icon: 'ti-settings', label: 'Configurações',         path: '/configuracoes' },
+  { icon: 'ti-mail', label: 'Mensagens',                 path: '/mensagens' },
   { icon: 'ti-gift', label: 'Indicar amigos',        path: '/indicar' },
+  // No site público (18/11/2026): abre em outra aba.
+  { icon: 'ti-school', label: 'Fale com o Educador', path: '/educador' },
 ]
 
 /** Rótulo e ícone inativos na barra azul: 75% de branco. */
@@ -62,6 +68,7 @@ export default function BottomNav() {
     return () => window.removeEventListener('popstate', aoVoltar)
   }, [mais])
   const { sairDaConta } = useApp()
+  const naoLidas = useMensagensNaoLidas()
   // Fase C do Norte: avisos importantes de hoje ainda não vistos. Na própria
   // tela do Norte o selo não aparece — ela marca tudo como visto ao abrir.
   const selo = useSeloNorte(NORTE_ATIVO && isMobile && !pathname.startsWith('/norte'))
@@ -112,7 +119,7 @@ export default function BottomNav() {
           }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: COR.borda, margin: '0 auto 8px' }} />
             {MAIS.map(m => (
-              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); navigate(m.path, { replace: !!window.history.state?.maisAberto }) }} style={{
+              <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); if (m.path === '/educador') { window.open(urlDoSite('/educador'), '_blank', 'noopener'); return } navigate(m.path, { replace: !!window.history.state?.maisAberto }) }} style={{
                 display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 22px',
                 border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
@@ -120,6 +127,11 @@ export default function BottomNav() {
                 <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, boxShadow: 'var(--cx-bolinha)', flexShrink: 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className={`ti ${m.icon}`} style={{ color: '#fff', fontSize: 21 }} /></span>{m.label}
+                {m.path === '/mensagens' && naoLidas > 0 && (
+                  // Branco sobre #1d4ed8: 6,7:1.
+                  <span aria-label={`${naoLidas} não lidas`} style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 800, padding: '2px 8px',
+                    borderRadius: 999, background: '#1d4ed8', color: '#fff' }}>{textoDoSelo(naoLidas)}</span>
+                )}
                 {m.emBreve && (
                   <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 8,
                     background: '#eef2f8', color: '#475569', textTransform: 'uppercase', letterSpacing: '.4px' }}>Em breve</span>
