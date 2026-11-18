@@ -14,6 +14,7 @@ Esta Política de Privacidade descreve como o Compass One ("Plataforma", "nós")
 - **Preferências:** configurações pessoais da Plataforma
 - **Mensagens ao suporte:** o que você escreve na caixa de Mensagens, com data e hora, e quais comunicados você já leu
 - **Aceite de novidades e ofertas por e-mail:** se você marcou ou não essa opção, e quando
+- **Lista de espera:** nome, e-mail e, se quiser, WhatsApp, quando você entra na lista de espera do grupo de estudos na página Fale com o Educador
 
 ### 1.2. Dados coletados automaticamente
 - **Dados de acesso:** endereço IP, tipo de navegador, sistema operacional, data e hora de acesso
@@ -36,6 +37,7 @@ Utilizamos seus dados exclusivamente para:
 - Enviar comunicações essenciais (recuperação de senha, atualizações de segurança)
 - Responder às suas mensagens ao suporte e avisar por e-mail quando houver resposta
 - Enviar novidades, comunicados e ofertas do próprio Compass One por e-mail, **somente se você marcou essa opção** no cadastro ou no Perfil. A opção vem desmarcada, e você pode desmarcá-la a qualquer momento em Configurações › Perfil
+- Avisar quem entrou na lista de espera, por e-mail ou WhatsApp, quando o grupo de estudos abrir
 - Melhorar a experiência do usuário e corrigir problemas técnicos
 
 **Não utilizamos seus dados para:** publicidade de terceiros, venda a terceiros, análise de crédito, perfilamento comercial ou qualquer finalidade não descrita acima.
@@ -49,6 +51,7 @@ Utilizamos seus dados exclusivamente para:
 | Comunicações essenciais | Legítimo interesse (Art. 7º, IX) |
 | Atendimento pelo suporte (Mensagens) | Execução de contrato (Art. 7º, V) |
 | Novidades e ofertas por e-mail | Consentimento (Art. 7º, I), que pode ser retirado a qualquer momento |
+| Lista de espera do grupo de estudos | Consentimento (Art. 7º, I), que pode ser retirado a qualquer momento pelo suporte |
 | Segurança e prevenção de fraude | Legítimo interesse (Art. 7º, IX) |
 | Cumprimento de obrigações legais | Obrigação legal (Art. 7º, II) |
 

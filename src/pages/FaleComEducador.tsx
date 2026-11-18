@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import '@fontsource/barlow/400.css'
 import '@fontsource/barlow/500.css'
@@ -8,6 +8,7 @@ import '@fontsource/barlow-condensed/700.css'
 import { LogoCompass, NomeCompass } from '../components/LogoCompass'
 import { tirarApresentacaoEstatica } from '../utils/apresentacaoEstatica'
 import { hrefDoApp } from '../utils/site'
+import { entrarNaListaDeEspera, validarInscricao, type Inscricao } from '../utils/listaEspera'
 
 /**
  * "Fale com o Educador" (18/11/2026, pedido do Guilherme): a página do site
@@ -18,8 +19,9 @@ import { hrefDoApp } from '../utils/site'
  * Nada aqui promete resultado: o que se oferece é aprender e ter clareza.
  * Educação financeira, nunca recomendação de investimento.
  *
- * Sessão e grupo vão para o WhatsApp com a mensagem pronta; o e-book abre um
- * e-mail (CONTATO) até haver o link de venda.
+ * A sessão vai para o WhatsApp com a mensagem pronta; o grupo tem a lista de
+ * espera gravada no banco (listaEspera.ts, migração 027), para o aviso quando
+ * abrir; o e-book abre um e-mail (CONTATO) até haver o link de venda.
  */
 
 const CONTATO = 'suporte@compassone.app'
@@ -63,10 +65,10 @@ const OPCOES: Opcao[] = [
     texto: 'Um grupo no WhatsApp para estudar junto com outras pessoas e tirar dúvidas com o educador. Depois, encontros semanais.',
     itens: ['Grupo no WhatsApp com o educador', 'Encontros semanais online', 'Troca com quem está no mesmo caminho'],
     preco: 'Em formação',
-    precoNota: 'entre na lista e avisamos quando abrir',
+    precoNota: 'entre na lista e avisamos por e-mail ou WhatsApp quando abrir',
     selo: 'Em breve',
     botao: 'Entrar na lista de espera',
-    href: whatsapp('Olá! Quero entrar na lista de espera do grupo de estudos do Compass One.'),
+    href: '#lista-grupo',
   },
   {
     id: 'diagnostico',
@@ -129,6 +131,16 @@ const CSS = `
 .fe-btn-escuro { background: var(--noite); color: #fff !important; box-shadow: 0 10px 24px rgba(11,19,34,.22); }
 .fe-btn-linha { color: var(--tinta) !important; border: 1.5px solid var(--tinta); }
 
+.fe-form { display: grid; gap: 10px; }
+.fe-form label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--tinta); }
+.fe-form label small { font-weight: 500; color: var(--tinta2); }
+.fe-form input { min-height: 46px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #9fb6d3; font: inherit; font-size: 16px; color: var(--tinta); background: #fff; }
+.fe-form input:focus { outline: 3px solid var(--ambar); outline-offset: 1px; border-color: var(--tinta); }
+.fe-form button { cursor: pointer; border: none; font-family: inherit; }
+.fe-erro { margin: 0; font-size: 14px; color: #b91c1c; font-weight: 600; }
+.fe-cartao .fe-ok { margin: 0; display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 12px; background: #f0fdf4; color: #14532d; font-size: 15px; line-height: 1.45; }
+.fe-cartao .fe-ok i { font-size: 22px; color: #15803d; flex-shrink: 0; }
+.fe-letra { margin: 0; font-size: 13px; color: var(--tinta2); line-height: 1.45; }
 .fe-sec { padding: 64px 0 24px; }
 .fe-nota { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: center; background: #fff; border-radius: 18px; padding: 24px 22px; border: 1px solid #c9dcf2; }
 .fe-nota h3 { font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-size: 24px; margin: 0 0 6px; }
@@ -195,7 +207,9 @@ export default function FaleComEducador() {
                 <p>{o.texto}</p>
                 <ul>{o.itens.map(t => <li key={t}><i className="ti ti-circle-check" aria-hidden />{t}</li>)}</ul>
                 <div className="fe-preco"><b>{o.preco}</b><span>{o.precoNota}</span></div>
-                <a href={o.href} target={o.href.startsWith('https') ? '_blank' : undefined} rel="noreferrer" className={`fe-btn ${o.id === 'ebook' ? 'fe-btn-escuro' : 'fe-btn-linha'}`}>{o.botao} <i className="ti ti-arrow-right" aria-hidden /></a>
+                {o.id === 'grupo'
+                  ? <ListaDeEspera botao={o.botao} />
+                  : <a href={o.href} target={o.href.startsWith('https') ? '_blank' : undefined} rel="noreferrer" className={`fe-btn ${o.id === 'ebook' ? 'fe-btn-escuro' : 'fe-btn-linha'}`}>{o.botao} <i className="ti ti-arrow-right" aria-hidden /></a>}
               </section>
             ))}
           </div>
@@ -224,5 +238,43 @@ export default function FaleComEducador() {
         </div>
       </footer>
     </div>
+  )
+}
+
+/** O botão do grupo abre o formulário ali mesmo; a inscrição vai para o banco. */
+function ListaDeEspera({ botao }: { botao: string }) {
+  const [aberto, setAberto] = useState(false)
+  const [dados, setDados] = useState<Inscricao>({ nome: '', email: '', whatsapp: '' })
+  const [erro, setErro] = useState<string | null>(null)
+  const [estado, setEstado] = useState<'editando' | 'enviando' | 'pronto'>('editando')
+
+  if (estado === 'pronto') {
+    return (
+      <p className="fe-ok" role="status"><i className="ti ti-circle-check" aria-hidden />
+        <span>Pronto, {dados.nome.trim().split(' ')[0]}! Você está na lista. Avisamos por e-mail{dados.whatsapp.trim() ? ' ou WhatsApp' : ''} quando o grupo abrir.</span></p>
+    )
+  }
+  if (!aberto) {
+    return <button type="button" className="fe-btn fe-btn-linha" style={{ background: 'none', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => setAberto(true)}>{botao} <i className="ti ti-arrow-right" aria-hidden /></button>
+  }
+  const mudar = (campo: keyof Inscricao) => (e: React.ChangeEvent<HTMLInputElement>) => { setDados(d => ({ ...d, [campo]: e.target.value })); setErro(null) }
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault()
+    const problema = validarInscricao(dados)
+    if (problema) { setErro(problema); return }
+    setEstado('enviando')
+    const r = await entrarNaListaDeEspera('grupo', dados)
+    if (r === 'ok') setEstado('pronto')
+    else { setEstado('editando'); setErro('Não deu para salvar agora. Tente de novo em instantes.') }
+  }
+  return (
+    <form className="fe-form" id="lista-grupo" onSubmit={enviar} noValidate>
+      <label>Nome<input value={dados.nome} onChange={mudar('nome')} autoComplete="name" autoFocus /></label>
+      <label>E-mail<input type="email" inputMode="email" value={dados.email} onChange={mudar('email')} autoComplete="email" /></label>
+      <label>WhatsApp <small>(opcional, com DDD)</small><input type="tel" inputMode="numeric" value={dados.whatsapp} onChange={mudar('whatsapp')} autoComplete="tel" placeholder="(47) 99999-9999" /></label>
+      {erro && <p className="fe-erro" role="alert">{erro}</p>}
+      <button type="submit" className="fe-btn fe-btn-escuro" disabled={estado === 'enviando'}>{estado === 'enviando' ? 'Enviando…' : 'Quero ser avisado'}</button>
+      <p className="fe-letra">Usamos esses dados só para avisar sobre o grupo de estudos. Veja a <Link to="/privacidade">política de privacidade</Link>.</p>
+    </form>
   )
 }
