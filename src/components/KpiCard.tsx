@@ -14,6 +14,9 @@ export interface KpiCardProps {
   /** Quando existe, o cartao vira botao e ganha a seta de expandir. */
   onClick?: () => void
   expandido?: boolean
+  /** Caixa translúcida dentro do topo escuro, no estilo da página do
+   *  Educador (19/11/2026): número em Barlow Condensed. */
+  vidro?: boolean
 }
 
 const KPI_BG = 'var(--cx-azul)'
@@ -54,7 +57,7 @@ export function KpiBarra({ perc }: { perc: number; cor?: string }) {
 
 export default function KpiCard({
   icon, label, destaque, value, sublabel, valueColor = '#fff', children, style,
-  onClick, expandido,
+  onClick, expandido, vidro,
 }: KpiCardProps) {
   return (
     <div
@@ -67,9 +70,9 @@ export default function KpiCard({
       } : undefined}
       style={{
         display: 'flex', flexDirection: 'column',
-        background: KPI_BG, border: KPI_BORDER,
+        background: vidro ? 'rgba(255,255,255,.08)' : KPI_BG, border: vidro ? '1px solid rgba(255,255,255,.16)' : KPI_BORDER,
         borderRadius: 18, padding: '14px 18px',
-        boxShadow: 'var(--cx-brilho)',
+        boxShadow: vidro ? 'none' : 'var(--cx-brilho)',
         cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}>
@@ -82,7 +85,7 @@ export default function KpiCard({
         </span>
         {onClick && <span aria-hidden>{expandido ? '▾' : '▸'}</span>}
       </div>
-      <div style={{ ...VALUE_STYLE, color: valueColor }}>{value}</div>
+      <div style={{ ...VALUE_STYLE, color: valueColor, ...(vidro ? { fontFamily: "'Barlow Condensed', 'Barlow', sans-serif", fontSize: 30, fontWeight: 700, letterSpacing: 0, lineHeight: 1.1 } : {}) }}>{value}</div>
       {sublabel && <div style={SUBLABEL_STYLE}>{sublabel}</div>}
       {children}
     </div>

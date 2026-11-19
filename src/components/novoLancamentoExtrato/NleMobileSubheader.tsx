@@ -3,6 +3,8 @@ import { COR, fmt, type DadosMes } from './NleShared'
 import { iconeDesenhado } from '../../utils/iconeDesenhado'
 import { textoConferido } from '../../utils/conferirSaldos'
 import { mascaraCentavos } from '../../utils/moeda'
+import { OndasTopo } from '../mobile/ui'
+import { FONTE_TITULO } from '../mobile/estilo'
 
 type TabPrincipal = 'extrato' | 'cartao' | 'dinheiro' | 'consolidado'
 
@@ -63,8 +65,9 @@ export default function NleMobileSubheader({
           else setModalSaldo({contaId:contaIdEfetivo, banco:contaInfo?.banco??'', icone:contaInfo?.icone??'', cor:contaInfo?.cor??COR.azul, key:chaveAtual})
         }
         return (
-          <div style={{background:'var(--cx-azul-continua)',
-            borderRadius:'0 0 28px 28px',boxShadow:'var(--cx-brilho-topo)',padding:'12px 16px 20px',flexShrink:0,marginBottom:12}}>
+          <div style={{background:'var(--cx-azul-continua)',position:'relative',overflow:'hidden',
+            padding:'12px 16px 64px',flexShrink:0,marginBottom:4}}>
+            <OndasTopo />
             {tabPrincipal === 'extrato' && contasExtrato.length > 1 && (
               <div style={{display:'flex',gap:8,overflowX:'auto',scrollbarWidth:'none' as never,marginBottom:12}}>
                 {contasExtrato.map(c => {
@@ -91,7 +94,7 @@ export default function NleMobileSubheader({
                 <div style={{fontSize:15,color:'rgba(255,255,255,.75)'}}>
                   {ehMesAtual ? 'Saldo no Compass One' : futuro ? 'Saldo previsto' : `Fechou ${mesNome.toLowerCase()} com`}
                 </div>
-                <div style={{fontSize:34,fontWeight:800,letterSpacing:'-.02em',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
+                <div style={{fontFamily:FONTE_TITULO,fontSize:50,fontWeight:700,lineHeight:1.05,marginTop:2,fontVariantNumeric:'tabular-nums',
                   color:'#fff'}}>{fmt(saldoMes)}</div>
               </div>
               {/* Conciliação: o saldo que o banco mostra × o do app. Tocar
