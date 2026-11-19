@@ -267,20 +267,31 @@ export default function Login() {
   // inteira cabe sem rolar, com digital, e-mail, senha e Google à vista
   // (pedido do Guilherme em 25/10/2026). Ainda rola se faltar altura (teclado
   // aberto, aviso de erro).
-  const marca = (grande: boolean) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: grande ? 14 : 12, position: 'relative' }}>
-      <div style={{
-        width: grande ? 52 : (baixa ? 40 : 46), height: grande ? 52 : (baixa ? 40 : 46), borderRadius: 14, flexShrink: 0,
-        background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.22)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <LogoCompass size={grande ? 34 : (baixa ? 27 : 30)}/>
+  // A logo em destaque (19/11/2026, pedido do Guilherme: "vamos valorizar a
+  // logo"): maior, com um halo ciano atrás, sem o quadrado em volta.
+  const marca = (grande: boolean) => {
+    const t = grande ? 76 : (baixa ? 44 : 58)
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: grande ? 18 : 14, position: 'relative' }}>
+        <div style={{ position: 'relative', width: t, height: t, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div aria-hidden style={{ position: 'absolute', inset: -t * .35, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(34,211,238,.28) 0%, rgba(34,211,238,0) 65%)' }}/>
+          <LogoCompass size={t}/>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div style={{ color: '#fff', fontSize: grande ? 34 : (baixa ? 23 : 27), fontWeight: 800, letterSpacing: -.5, lineHeight: 1 }}>
+            <NomeCompass />
+          </div>
+          {!baixa && (
+            <div style={{ color: 'rgba(255,255,255,.75)', fontSize: grande ? 15 : 13, fontWeight: 500, marginTop: 5 }}>
+              Sua bússola financeira
+            </div>
+          )}
+        </div>
       </div>
-      <div style={{ color: '#fff', fontSize: grande ? 24 : 21, fontWeight: 800, letterSpacing: -.4, lineHeight: 1.1 }}>
-        <NomeCompass />
-      </div>
-    </div>
-  )
+    )
+  }
 
   // No celular o topo é baixo: marca, o rótulo âmbar e (com altura) a frase do
   // site; o formulário cabe sem rolar (pedido do Guilherme em 25/10/2026). Ainda
@@ -292,7 +303,7 @@ export default function Login() {
     }}>
       {marca(false)}
       <div style={{ marginTop: baixa ? 10 : 18, position: 'relative' }}>
-        <RotuloTopo icone="ti-compass">Sua bússola financeira</RotuloTopo>
+        <RotuloTopo icone="ti-route">Planeje · preveja · decida</RotuloTopo>
       </div>
       {celAlto && (
         <h1 style={{ margin: '8px 0 0', fontFamily: FONTE_TITULO, fontSize: 34, fontWeight: 700, lineHeight: 1.02,
@@ -308,7 +319,7 @@ export default function Login() {
     }}>
       {marca(true)}
       <div style={{ maxWidth: 520, position: 'relative' }}>
-        <RotuloTopo icone="ti-compass">Sua bússola financeira</RotuloTopo>
+        <RotuloTopo icone="ti-route">Planeje · preveja · decida</RotuloTopo>
         <h1 style={{ margin: '14px 0 16px', fontFamily: FONTE_TITULO, fontSize: pcBaixo ? 50 : 60, fontWeight: 700,
           lineHeight: 1, color: '#fff' }}>Chega de voar às cegas com o seu dinheiro.</h1>
         <p style={{ margin: 0, fontSize: 18, lineHeight: 1.55, color: 'rgba(255,255,255,.85)', maxWidth: 460 }}>
