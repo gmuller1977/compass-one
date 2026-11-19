@@ -1,7 +1,7 @@
 import type { Conta } from '../../context/AppContext'
+import { iconeDesenhado } from '../../utils/iconeDesenhado'
 import { fmt, NOMES_MESES, type DadosMes } from './FcShared'
 import KpiCard from '../KpiCard'
-import { IconeCat } from '../IconeCat'
 import type { LadoCompass, LadoBanco } from '../../utils/conferirFatura'
 
 type Props = {
@@ -96,16 +96,16 @@ export default function FcBanner({
             {contasCartao.map(c => {
               const ativo = c.id === contaId
               return (
-                <button key={c.id} onClick={() => onContaSelect(c.id)} style={{
+                // O mesmo botão do seletor de bancos (NleBanner), 19/11/2026.
+                <button key={c.id} onClick={() => onContaSelect(c.id)} aria-pressed={ativo} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                  border: `1.5px solid ${ativo ? c.cor : '#e2e8f0'}`,
-                  background: ativo ? c.cor + '18' : '#fff',
-                  color: ativo ? c.cor : '#64748b',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit', transition: 'all .15s',
+                  border: '1.5px solid var(--cx-borda)',
+                  background: ativo ? 'var(--cx-borda)' : '#fff',
+                  color: ativo ? '#fff' : 'var(--cx-borda)',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.cor, flexShrink: 0 }} />
-                  <IconeCat icone={c.icone} /> {c.banco}
+                  <i aria-hidden className={`ti ${iconeDesenhado(c.icone) ?? 'ti-credit-card'}`} style={{ fontSize: 14, lineHeight: 1 }} /> {c.banco}
                 </button>
               )
             })}

@@ -129,9 +129,9 @@ export default function NleBanner({
                 <button key={c.id} onClick={() => onContaSelect(c.id)} aria-pressed={ativo} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                  border: '1.5px solid #1e40af',
-                  background: ativo ? '#fff' : 'var(--cx-azul)',
-                  color: ativo ? '#1e40af' : '#fff',
+                  border: '1.5px solid var(--cx-borda)',
+                  background: ativo ? 'var(--cx-borda)' : '#fff',
+                  color: ativo ? '#fff' : 'var(--cx-borda)',
                   fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all .15s',
                 }}>
                   <i aria-hidden className={`ti ${iconeDesenhado(c.icone) ?? 'ti-building-bank'}`} style={{ fontSize: 14, lineHeight: 1 }} /> {c.banco}
