@@ -110,10 +110,10 @@ function NavItemRow({
         color: isSair
           ? (hovered ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)')
           : active
-            ? '#0b2545'
+            ? '#1a56db'
             : disabled
               ? 'rgba(255,255,255,0.3)'
-              : '#f5b942',
+              : 'rgba(255,255,255,0.65)',
         fontSize: 13,
         fontWeight: active ? 700 : 500,
         boxShadow: active ? '0 2px 8px rgba(0,0,0,.15)' : 'none',
@@ -166,7 +166,7 @@ function SubItemRow({
         background: active
           ? 'rgba(255,255,255,.9)'
           : hovered ? 'rgba(255,255,255,.06)' : 'transparent',
-        color: active ? '#0b2545' : hovered ? '#fde7b0' : 'rgba(245,185,66,.8)',
+        color: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.5)',
         fontSize: 12,
         fontWeight: active ? 700 : 400,
         boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
@@ -270,7 +270,7 @@ export default function Sidebar() {
       position: 'fixed', top: 0, left: 0, bottom: 0, width: SIDEBAR_W,
       background: 'var(--cx-azul)', boxShadow: 'inset -1px 0 0 var(--cx-neon)',
       display: 'flex', flexDirection: 'column', zIndex: 100,
-      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
+      fontFamily: "-apple-system,'Inter',sans-serif",
     }}>
 
       {/* ── Logo ── */}
