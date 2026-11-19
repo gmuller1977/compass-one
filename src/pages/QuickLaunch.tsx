@@ -7,7 +7,8 @@ import { lancamentoAntesDoSaldo } from '../utils/saldoDesde'
 import BottomNav from '../components/BottomNav'
 import type { Conta, DadosMes } from '../context/AppContext'
 import { COR } from '../utils/cores'
-import { M } from '../components/mobile/estilo'
+import { M, FONTE_SITE, FONTE_TITULO, NOITE, TINTA, AMBAR, AMBAR_ESCURO, BORDA_CLARA } from '../components/mobile/estilo'
+import { OndasTopo, RotuloTopo } from '../components/mobile/ui'
 import { saldoRealizadoConta, saldoBancosEDinheiro, type Deps } from '../utils/saldoConta'
 import { construirRealizadoMes } from '../utils/realizadoMes'
 import { nomesDeCartao, totaisDoMes, catKey } from '../components/acompanhamento/evolucaoCalcs'
@@ -43,12 +44,11 @@ function fmt(n: number) {
 }
 function chip(ativo: boolean): React.CSSProperties {
   return {
-    border: `1.5px solid ${ativo ? COR.azul : COR.borda}`, background: ativo ? '#eff6ff' : '#fff',
-    color: ativo ? COR.azul : COR.textoSuave, borderRadius: 20, padding: '8px 14px', minHeight: 40,
+    border: `1.5px solid ${ativo ? NOITE : BORDA_CLARA}`, background: ativo ? NOITE : '#fff',
+    color: ativo ? '#fff' : TINTA, borderRadius: 20, padding: '8px 14px', minHeight: 40,
     fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
   }
 }
-const ROXO = '#7c3aed'
 const MAX_ATALHOS = 9
 const corDoDisponivel = (disp: number) => (disp < 0 ? COR.erroTexto : COR.sucessoTexto)
 
@@ -288,18 +288,18 @@ export default function QuickLaunch() {
   }
 
   const cartaoBranco: React.CSSProperties = {
-    width: '100%', textAlign: 'left', background: '#fff', border: `1.5px solid ${COR.borda}`,
+    width: '100%', textAlign: 'left', background: '#fff', border: `1px solid ${BORDA_CLARA}`,
     borderRadius: 18, padding: '14px 14px', fontFamily: 'inherit', boxSizing: 'border-box',
     display: 'flex', flexDirection: 'column', gap: 4, boxShadow: M.sombra,
   }
   const CabecalhoModo = ({ icone, titulo, legenda }: { icone: string; titulo: string; legenda: string }) => (
     <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-      <span aria-hidden style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--cx-azul)', boxShadow: 'var(--cx-bolinha)',
+      <span aria-hidden style={{ width: 40, height: 40, borderRadius: 12, background: NOITE,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <i className={`ti ${icone}`} style={{ color: '#fff', fontSize: 19 }} />
+        <i className={`ti ${icone}`} style={{ color: AMBAR, fontSize: 21 }} />
       </span>
       <span style={{ minWidth: 0 }}>
-        <span style={{ display: 'block', fontSize: 16, fontWeight: 800, color: COR.texto }}>{titulo}</span>
+        <span style={{ display: 'block', fontFamily: FONTE_TITULO, fontSize: 21, fontWeight: 700, lineHeight: 1.1, color: TINTA }}>{titulo}</span>
         <span style={{ display: 'block', fontSize: 13, color: COR.textoSuave }}>{legenda}</span>
       </span>
     </span>
@@ -315,7 +315,7 @@ export default function QuickLaunch() {
         <CabecalhoModo icone="ti-building-bank" titulo={receita ? 'Banco ou dinheiro' : 'Débito'}
           legenda={receita ? 'Entra no banco ou no dinheiro hoje' : 'Sai do banco ou do dinheiro hoje'} />
         <DisponivelDoMes m={mesAtual} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: COR.azul, marginTop: 4 }}>Escolher a conta ›</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: TINTA, marginTop: 4 }}>Escolher a conta ›</span>
       </button>
     )
   }
@@ -350,7 +350,7 @@ export default function QuickLaunch() {
         {sem
           ? <span style={{ fontSize: 13, color: COR.textoSuave }}>Nenhum cartão cadastrado.</span>
           : mesesDoCredito.map(g => <DisponivelNaLinha key={g.m.ano * 12 + g.m.mes} m={g.m} />)}
-        {!sem && <span style={{ fontSize: 13, fontWeight: 700, color: COR.azul, marginTop: 4 }}>Escolher o cartão ›</span>}
+        {!sem && <span style={{ fontSize: 13, fontWeight: 700, color: TINTA, marginTop: 4 }}>Escolher o cartão ›</span>}
       </button>
     )
   }
@@ -412,36 +412,44 @@ export default function QuickLaunch() {
     <div style={{
       minHeight: '100vh', background: M.fundo,
       display: 'flex', flexDirection: 'column',
-      fontFamily: "-apple-system,'Inter',sans-serif",
+      fontFamily: FONTE_SITE,
       paddingBottom: 80,
     }}>
       <style>{`@keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}`}</style>
 
       {/* Header: título e o gasto de hoje, somando bancos, dinheiro e cartões. */}
+      {/* O topo escuro da página do Educador, com as duas ondas (19/11/2026). */}
       <div style={{
-        background: 'var(--cx-azul)', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)',
-        padding: 'calc(18px + env(safe-area-inset-top)) 20px 26px', flexShrink: 0,
+        background: 'linear-gradient(180deg, #070c18 0%, #111c3f 35%, #1e40af 100%)',
+        position: 'relative', overflow: 'hidden',
+        padding: 'calc(16px + env(safe-area-inset-top)) 20px 64px', flexShrink: 0,
       }}>
-        <div style={{ color: '#fff', fontSize: 22, fontWeight: 700 }}>{saudacao}, {nomeUser} 👋</div>
-        <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 15, marginTop: 4 }}>
-          {gastosHoje > 0
-            ? <>Hoje você já gastou <b style={{ color: '#fff' }}>{fmt(gastosHoje)}</b></>
-            : <>{Maiusc(dataHoje)}</>}
+        <div style={{ position: 'relative' }}>
+          <RotuloTopo icone="ti-bolt">Lançamento rápido</RotuloTopo>
+          <h1 style={{ margin: '6px 0 0', fontFamily: FONTE_TITULO, fontSize: 32, fontWeight: 700, lineHeight: 1.05, color: '#fff' }}>{saudacao}, {nomeUser} 👋</h1>
+          <div style={{ color: 'rgba(255,255,255,.78)', fontSize: 15, marginTop: 6 }}>
+            {gastosHoje > 0
+              ? <>Hoje você já gastou <b style={{ color: '#fff' }}>{fmt(gastosHoje)}</b></>
+              : <>{Maiusc(dataHoje)}</>}
+          </div>
         </div>
+        <OndasTopo fundo={M.fundo} />
       </div>
 
       {/* Grid */}
       <div style={{ flex: 1, padding: '16px 16px 6px', overflowY: 'auto' }}>
         <div style={{
-          fontSize: M.titulo, fontWeight: 700, color: COR.texto,
-          marginBottom: 12, marginTop: 10,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 12, marginTop: 2,
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10,
         }}>
-          <span>O que você gastou?</span>
+          <span>
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: AMBAR_ESCURO }}>Seus atalhos</span>
+            <span style={{ display: 'block', fontFamily: FONTE_TITULO, fontSize: 25, fontWeight: 700, lineHeight: 1.05, color: TINTA }}>O que você gastou?</span>
+          </span>
           <button
             onClick={abrirGerenciar}
             style={{
-              border: `1px solid ${COR.borda}`, background: '#fff', color: COR.azul,
+              border: `1.5px solid ${TINTA}`, background: '#fff', color: TINTA,
               fontSize: 14, fontWeight: 700, cursor: 'pointer',
               borderRadius: 20, padding: '7px 14px',
               fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
@@ -482,9 +490,10 @@ export default function QuickLaunch() {
                 // o círculo do ícone em cinza claro. No azul, a paleta escura:
                 // #86efac 4,8 e #fdba74 5,2 no extremo #1e40af; rótulo a 75%.
                 style={{
-                  background: 'var(--cx-azul)',
-                  border: `2px solid ${active ? '#fff' : 'transparent'}`, boxShadow: '0 4px 14px rgba(15,40,120,.18)',
+                  background: '#fff',
+                  border: active ? `2px solid ${TINTA}` : `1px solid ${BORDA_CLARA}`, boxShadow: '0 8px 20px rgba(11,37,69,.08)',
                   borderRadius: 18, padding: '14px 6px', minHeight: 112, minWidth: 0,
+                  fontFamily: 'inherit',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   cursor: 'pointer', transform: active ? 'scale(.95)' : undefined,
                   transition: 'all .15s',
@@ -492,13 +501,13 @@ export default function QuickLaunch() {
               >
                 <span aria-hidden style={{
                   width: 46, height: 46, borderRadius: '50%', fontSize: 24,
-                  background: '#e6ebf1',
+                  background: `${c.cor && c.cor.length === 7 ? c.cor : '#1a56db'}1f`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></span>
                 {/* Nome inteiro, com a variante, e sem valor: o disponível
                     depende do mês em que se paga, que só se escolhe depois
                     (pedido do Guilherme, 14/10/2026). */}
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', textAlign: 'center', lineHeight: 1.25,
+                <span style={{ fontSize: 14, fontWeight: 600, color: TINTA, textAlign: 'center', lineHeight: 1.25,
                   maxWidth: '100%', overflowWrap: 'anywhere', hyphens: 'auto' }}>
                   {c.descricao ? `${c.nome} · ${c.descricao}` : c.nome}
                 </span>
@@ -601,10 +610,10 @@ export default function QuickLaunch() {
                     aria-label={parcelas > 1 ? 'Valor total da compra' : 'Valor'}
                     inputMode="decimal"
                     style={{
-                      flex: 1, border: `2px solid ${isCartao ? ROXO : COR.azul}`, borderRadius: 12,
-                      padding: '12px 12px', fontSize: 24, fontWeight: 800, minWidth: 0,
-                      color: isCartao ? ROXO : COR.azul, background: isCartao ? '#f5f3ff' : '#eff6ff',
-                      outline: 'none', fontFamily: 'inherit', textAlign: 'center',
+                      flex: 1, border: `2px solid ${TINTA}`, borderRadius: 12,
+                      padding: '10px 12px', fontSize: 30, fontWeight: 700, minWidth: 0, fontFamily: FONTE_TITULO,
+                      color: TINTA, background: '#f2f6fc',
+                      outline: 'none', textAlign: 'center',
                     }}
                   />
                   {/* No crédito, as parcelas ficam ao lado do valor total. */}
@@ -615,16 +624,16 @@ export default function QuickLaunch() {
                         onChange={e => setParcelas(Number(e.target.value))}
                         aria-label="Parcelas"
                         style={{
-                          width: '100%', appearance: 'none', border: `2px solid ${ROXO}`, borderRadius: 12,
-                          padding: '0 30px 0 12px', fontSize: 17, fontWeight: 800, color: ROXO,
-                          background: '#f5f3ff', fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
+                          width: '100%', appearance: 'none', border: `2px solid ${TINTA}`, borderRadius: 12,
+                          padding: '0 30px 0 12px', fontSize: 17, fontWeight: 800, color: TINTA,
+                          background: '#f2f6fc', fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
                         }}
                       >
                         {Array.from({ length: 24 }, (_, i) => i + 1).map(n => (
                           <option key={n} value={n}>{n === 1 ? 'À vista' : `${n}×`}</option>
                         ))}
                       </select>
-                      <i className="ti ti-chevron-down" aria-hidden style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: ROXO, pointerEvents: 'none' }} />
+                      <i className="ti ti-chevron-down" aria-hidden style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: TINTA, pointerEvents: 'none' }} />
                     </label>
                   )}
                 </div>
@@ -656,9 +665,7 @@ export default function QuickLaunch() {
                   onClick={registrar}
                   style={{
                     width: '100%', padding: 14, border: 'none', borderRadius: 14,
-                    background: isCartao
-                      ? `linear-gradient(135deg,${ROXO},#a855f7)`
-                      : `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                    background: NOITE,
                     color: '#fff', fontSize: 15, fontWeight: 700, minHeight: 48,
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
@@ -714,7 +721,7 @@ export default function QuickLaunch() {
             <div style={{ padding: '12px 20px', borderBottom: `1px solid ${COR.borda}`, flexShrink: 0 }}>
               <button type="button" onClick={() => setNovaCatAberta(true)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', minHeight: 48,
-                border: 'none', borderRadius: 14, background: 'var(--cx-azul)', cursor: 'pointer',
+                border: 'none', borderRadius: 14, background: NOITE, cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: '#fff',
               }}>
                 <i className="ti ti-plus" aria-hidden style={{ fontSize: 20 }} /> Nova categoria
@@ -797,7 +804,7 @@ export default function QuickLaunch() {
                 onClick={salvarPins}
                 style={{
                   width: '100%', padding: '13px', border: 'none', borderRadius: 14,
-                  background: `linear-gradient(135deg,${COR.azul},${COR.azulMedio})`,
+                  background: NOITE,
                   color: '#fff', fontSize: 15, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
