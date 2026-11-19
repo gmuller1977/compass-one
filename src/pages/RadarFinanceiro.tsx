@@ -276,7 +276,7 @@ export default function RadarFinanceiro() {
         <PageHeader
           site
           icon="ti-radar-2"
-          rotulo="Previsto × realizado"
+          rotulo="Acompanhamento do mês"
           ajuda="radar"
           title="Radar financeiro"
           mb={0}

@@ -408,7 +408,7 @@ export default function AcMobileView({
             Planejamento (pedido do Guilherme em 13/10/2026). */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
           <div style={{ minWidth:0 }}>
-            <RotuloTopo icone="ti-radar-2">Previsto × realizado</RotuloTopo>
+            <RotuloTopo icone="ti-radar-2">Acompanhamento do mês</RotuloTopo>
             <h1 style={{ margin:'4px 0 0', fontFamily:FONTE_TITULO, fontSize:32, fontWeight:700, lineHeight:1, color:'#fff' }}>Radar</h1>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
