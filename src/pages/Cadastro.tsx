@@ -7,7 +7,7 @@ import { codigoRecebido } from '../utils/indicacao'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { CabecalhoCartao } from '../components/mobile/ui'
 import { TINTA, TINTA2, BORDA_CLARA, FONTE_SITE } from '../components/mobile/estilo'
-import { FRASE_ENTRADA, CampoEntrada, TelaEntrada, Separador } from '../components/entrada/Entrada'
+import { CampoEntrada, TelaEntrada, Separador } from '../components/entrada/Entrada'
 import { botaoPrincipal, botaoClaro, linkEntrada } from '../components/entrada/estiloEntrada'
 
 function useIsMobile() {
@@ -129,13 +129,16 @@ export default function Cadastro() {
     setCarregando(false)
   }
 
-  const FRASE = FRASE_ENTRADA
-  const APOIO = 'Monte o seu plano em poucos minutos e acompanhe para onde o seu dinheiro está indo.'
+  // O cadastro tem texto próprio (19/11/2026, Guilherme): parabeniza a
+  // decisão e prepara a decolagem, em vez da frase do login.
+  const FRASE = 'Parabéns pela decisão. Sua viagem começa agora.'
+  const APOIO = 'Em poucos minutos você monta o seu plano e passa a enxergar o caminho do seu dinheiro.'
+  const ROTULO = 'Pronto para decolar'
 
   // Tela de confirmação enviada
   if (confirmacaoEnviada) {
     return (
-      <TelaEntrada frase={FRASE} apoio={APOIO}>
+      <TelaEntrada frase="Check-in feito. Falta só confirmar o seu e-mail." apoio="Abra o e-mail que enviamos e toque no link. Depois é só entrar e decolar." rotulo="Quase decolando" icone="ti-plane-departure">
         <div style={{ padding: isMobile ? '22px 20px 20px' : '36px 40px', fontFamily: FONTE_SITE }}>
           <CabecalhoCartao icone="ti-mail-check" rotulo="Quase lá">Verifique seu e-mail</CabecalhoCartao>
           <div style={{ fontSize:15, color:TINTA2, lineHeight:1.6 }}>Enviamos um link de confirmação para</div>
@@ -160,7 +163,7 @@ export default function Cadastro() {
   }
 
   return (
-    <TelaEntrada frase={FRASE} apoio={APOIO}>
+    <TelaEntrada frase={FRASE} apoio={APOIO} rotulo={ROTULO} icone="ti-plane-departure">
     <div style={{ padding: isMobile ? '20px 20px 18px' : '32px 40px', fontFamily: FONTE_SITE }}>
       <div style={{ marginBottom: 8 }}>
         <CabecalhoCartao icone="ti-user-plus" rotulo="Grátis · sem anúncios">Crie sua conta</CabecalhoCartao>

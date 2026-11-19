@@ -84,7 +84,10 @@ export function CampoEntrada({
 }
 
 /** A frase das telas de entrada (19/11/2026, Guilherme). */
-export const FRASE_ENTRADA = 'O resultado de amanhã depende das suas escolhas hoje.'
+export const FRASE_ENTRADA = 'Não é sobre quanto você ganha. É sobre as escolhas que você faz hoje.'
+
+/** O slogan, no rótulo dourado (19/11/2026, Guilherme). */
+export const SLOGAN = 'Veja o amanhã. Decida hoje.'
 
 /** A logo em destaque, maior e com um halo dourado atrás, sem o quadrado
  *  ("vamos valorizar a logo", 19/11/2026). */
@@ -112,13 +115,27 @@ function Marca({ grande, baixa }: { grande: boolean; baixa: boolean }) {
   )
 }
 
+/** A linha tracejada do caminho, a mesma da página do Educador (19/11/2026,
+ *  pedido do Guilherme): sai de um ponto dourado, passa por um ponto branco e
+ *  chega numa seta. Só desenho, atrás do texto. */
+function Rota({ style }: { style: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 520 300" aria-hidden style={{ position: 'absolute', pointerEvents: 'none', ...style }}>
+      <path d="M20 270 C 140 250, 160 120, 280 130 S 430 60, 500 24" fill="none" stroke="#f5b942" strokeWidth="2.5" strokeDasharray="7 9" strokeLinecap="round"/>
+      <circle cx="20" cy="270" r="6" fill="#f5b942"/>
+      <circle cx="280" cy="130" r="5" fill="#fff"/>
+      <path d="M500 24 l-20 4 l8 6 l-2 12 z" fill="#fff"/>
+    </svg>
+  )
+}
+
 /**
  * A moldura das telas de entrada. No celular, o topo baixo (a frase só com
  * altura de sobra, para o login caber sem rolar) e o cartão por cima das
  * ondas; no computador, o painel escuro à esquerda e o cartão à direita.
  */
-export function TelaEntrada({ children, frase, apoio, rotulo = 'Planeje · preveja · decida' }: {
-  children: ReactNode; frase: string; apoio: string; rotulo?: string
+export function TelaEntrada({ children, frase, apoio, rotulo = SLOGAN, icone = 'ti-route' }: {
+  children: ReactNode; frase: string; apoio: string; rotulo?: string; icone?: string
 }) {
   const isMobile = useCelularEntrada()
   const baixa = useTelaBaixa(620)
@@ -133,9 +150,10 @@ export function TelaEntrada({ children, frase, apoio, rotulo = 'Planeje · preve
           background: 'var(--cx-azul)', position: 'relative', overflow: 'hidden', flexShrink: 0,
           padding: `calc(env(safe-area-inset-top, 0px) + ${baixa ? 12 : 20}px) 22px ${baixa ? 46 : celAlto ? 66 : 56}px`,
         }}>
+          <Rota style={{ right: 6, top: 'calc(env(safe-area-inset-top, 0px) + 6px)', width: 140, height: 81, opacity: .6 }}/>
           <Marca grande={false} baixa={baixa}/>
           <div style={{ marginTop: baixa ? 10 : 18, position: 'relative' }}>
-            <RotuloTopo icone="ti-route">{rotulo}</RotuloTopo>
+            <RotuloTopo icone={icone}>{rotulo}</RotuloTopo>
           </div>
           {celAlto && (
             <h1 style={{ margin: '8px 0 0', fontFamily: FONTE_TITULO, fontSize: 34, fontWeight: 700, lineHeight: 1.02,
@@ -159,9 +177,10 @@ export function TelaEntrada({ children, frase, apoio, rotulo = 'Planeje · preve
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         padding: pcBaixo ? '32px 56px 96px' : '48px 64px 120px',
       }}>
+        <Rota style={{ right: 28, bottom: pcBaixo ? 70 : 90, width: '78%', maxWidth: 560, aspectRatio: '520 / 300', opacity: .55 }}/>
         <Marca grande baixa={false}/>
         <div style={{ maxWidth: 520, position: 'relative' }}>
-          <RotuloTopo icone="ti-route">{rotulo}</RotuloTopo>
+          <RotuloTopo icone={icone}>{rotulo}</RotuloTopo>
           <h1 style={{ margin: '14px 0 16px', fontFamily: FONTE_TITULO, fontSize: pcBaixo ? 50 : 60, fontWeight: 700,
             lineHeight: 1, color: '#fff' }}>{frase}</h1>
           <p style={{ margin: 0, fontSize: 18, lineHeight: 1.55, color: 'rgba(255,255,255,.85)', maxWidth: 460 }}>{apoio}</p>
