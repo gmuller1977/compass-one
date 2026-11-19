@@ -97,8 +97,9 @@ export function Atalho({ icone, rotulo, onClick }: { icone: string; rotulo: stri
 export function Pilula({ children, onClick, forte, disabled }: { children: ReactNode; onClick?: () => void; forte?: boolean; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      border: forte ? 'none' : `1.5px solid ${COR.azul}`, background: forte ? COR.azul : '#eff6ff',
-      color: forte ? '#fff' : COR.azul, borderRadius: 999, padding: '9px 16px', minHeight: 40,
+      // Azul-escuro da paleta do Educador (19/11/2026): branco 15,4:1; no #eef2f8, 13,9:1.
+      border: forte ? 'none' : '1.5px solid var(--cx-borda)', background: forte ? 'var(--cx-borda)' : '#eef2f8',
+      color: forte ? '#fff' : 'var(--cx-borda)', borderRadius: 999, padding: '9px 16px', minHeight: 40,
       fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
     }}>{children}</button>
   )

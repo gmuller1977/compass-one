@@ -9,15 +9,15 @@ body { font-family: -apple-system, 'Inter', sans-serif; }
 :root {
   /* Degradê "noite" da página do Educador e borda azul-escura dos cartões
      (19/11/2026, pedido do Guilherme), sem neon (só na logo). O extremo
-     claro #1b3d80 é mais escuro que #1e40af: a regra do contraste segue. */
+     claro é o próprio #1e40af: a regra do contraste segue. */
   --cx-borda: #0b2545;
-  --cx-azul: linear-gradient(180deg, #0b1322 0%, #18233a 55%, #1b3d80 100%);
+  --cx-azul: linear-gradient(180deg, #070c18 0%, #111c3f 40%, #1e40af 100%);
   /* Bloco azul em duas partes (Lançamentos no celular: cabeçalho + saldo ou
      fatura): a de cima é sólida na cor do início, a de baixo desce dela na
      vertical. Com o gradiente diagonal nas duas, ele recomeçava embaixo das
      abas e o azul ficava cortado (28/10/2026, relatado pelo Guilherme). */
-  --cx-azul-inicio: #0b1322;
-  --cx-azul-continua: linear-gradient(180deg, #0b1322 0%, #18233a 55%, #1b3d80 100%);
+  --cx-azul-inicio: #070c18;
+  --cx-azul-continua: linear-gradient(180deg, #070c18 0%, #111c3f 40%, #1e40af 100%);
   --cx-neon: rgba(255,255,255,.12);
   --cx-brilho: 0 8px 30px rgba(11,19,34,.35);
   --cx-brilho-topo: 0 10px 30px rgba(11,19,34,.28);
