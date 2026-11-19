@@ -500,12 +500,10 @@ export default function QuickLaunch() {
                 }}
               >
                 <span aria-hidden style={{
-                  // Quadrado escuro com o desenho âmbar, como os títulos dos
-                  // cartões do site (19/11/2026, pedido do Guilherme: destacar mais).
-                  width: 54, height: 54, borderRadius: 16, fontSize: 28,
-                  background: NOITE, boxShadow: '0 6px 14px rgba(7,12,24,.25)',
+                  width: 46, height: 46, borderRadius: '50%', fontSize: 24,
+                  background: `${c.cor && c.cor.length === 7 ? c.cor : '#1a56db'}1f`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}><IconeCat icone={c.icone} cor={AMBAR} /></span>
+                }}><IconeCat icone={c.icone} cor={corDoIcone(c.cor)} /></span>
                 {/* Nome inteiro, com a variante, e sem valor: o disponível
                     depende do mês em que se paga, que só se escolhe depois
                     (pedido do Guilherme, 14/10/2026). */}
