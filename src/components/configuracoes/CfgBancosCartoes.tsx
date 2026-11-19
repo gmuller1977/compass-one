@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react'
-import PageHeader, { PH_BTN_SOLID } from '../PageHeader'
 import type { Conta, FormaPagamentoFatura } from '../../context/AppContext'
 import {
   COR, BANCOS, ICONES_CONTA, fmt,
@@ -73,23 +72,6 @@ export default function CfgBancosCartoes({
   return (
     <>
       <div style={{ flex:1, display: (isMobile && mobileView==='form') || nenhumaConta ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
-        <PageHeader
-          icon={aba==='bancos' ? 'ti-building-bank' : 'ti-credit-card'}
-          breadcrumb="CONTA"
-          ajuda="configuracoes"
-          title={aba==='bancos' ? 'Minhas contas' : 'Meus cartões'}
-          subtitle={(() => {
-            const n = contas.filter(c => aba==='bancos' ? c.tipo!=='cartao' : c.tipo==='cartao').length
-            return aba==='bancos'
-              ? `${n} conta${n!==1?'s':''} cadastrada${n!==1?'s':''}`
-              : `${n} cartão${n!==1?'ões':''} cadastrado${n!==1?'s':''}`
-          })()}
-          rightContent={
-            <button onClick={() => { novaConta(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
-              {aba==='bancos' ? '+ Nova conta' : '+ Novo cartão'}
-            </button>
-          }
-        />
 
         <div style={{ overflowY:'auto', flex:1 }}>
           {(aba==='bancos' ? (['corrente','poupanca'] as const) : (['cartao'] as const)).map(tipo => {

@@ -75,7 +75,7 @@ export default function CfgCompartilhar() {
   }
 
   const cartao = { background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14, padding: 24 } as const
-  const titulo = <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}>👥 Compartilhar finanças</h3>
+  const titulo = <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}><i aria-hidden className="ti ti-users" style={{ fontSize: 17, verticalAlign: "-2px", marginRight: 6 }} />Compartilhar finanças</h3>
   const aviso = msg && (
     <div role="status" style={{ marginTop: 12, fontSize: 14, lineHeight: 1.5, borderRadius: 10, padding: '10px 12px',
       color: msg.ok ? COR.sucessoTexto : COR.erroTexto, background: msg.ok ? COR.sucessoFundo : COR.erroFundo }}>{msg.texto}</div>

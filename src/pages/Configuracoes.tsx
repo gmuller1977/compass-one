@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import AppHeader from '../components/AppHeader'
-import PageHeader from '../components/PageHeader'
+import PageHeader, { PH_BTN_SOLID } from '../components/PageHeader'
+import { FONTE_SITE, FONTE_TITULO, NOITE, TINTA, TINTA2, AMBAR, BORDA_CLARA } from '../components/mobile/estilo'
 import ModalTopo from '../components/ModalTopo'
 import BottomNav from '../components/BottomNav'
 import { useToast } from '../components/Toast'
 import { parseValor } from '../utils/moeda'
 import type { Conta, Categoria, TipoCategoria, FormaPagamentoFatura, PlanoCat } from '../context/AppContext'
-import { CATEGORIAS_PADRAO } from '../data/categoriasPadrao'
+import { CATEGORIAS_PADRAO, GRUPOS_PADRAO } from '../data/categoriasPadrao'
 
 const MESES_CURTOS_CFG = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 import ModalConfirmacao from '../components/ModalConfirmacao'
@@ -542,9 +543,47 @@ export default function Configuracoes() {
   const contasFiltradas = contas.filter(c => aba === 'bancos' ? c.tipo !== 'cartao' : c.tipo === 'cartao')
   const nenhumaConta = (aba === 'bancos' || aba === 'cartoes') && !isMobile && contasFiltradas.length === 0
 
+  const nBancosTopo = contas.filter(c => c.tipo !== 'cartao').length
+  const nCartoesTopo = contas.filter(c => c.tipo === 'cartao').length
+  // A mesma lista da aba Grupos (CfgCategorias), sem o do cartão.
+  const nGruposTopo = new Set([
+    ...GRUPOS_PADRAO.filter(g => !gruposOcultos.includes(g)), ...gruposExtra,
+    ...categorias.map(c => c.grupo).filter((g): g is string => !!g),
+  ].filter(g => g !== 'Cartão de Crédito' && (!GRUPOS_PADRAO.includes(g) || !gruposOcultos.includes(g)))).size
+  const pluralTopo = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+  const dadosTopo = aba === 'bancos'
+    ? { icon: 'ti-building-bank', title: 'Minhas contas', subtitle: `${pluralTopo(nBancosTopo, 'conta cadastrada', 'contas cadastradas')}`,
+        botao: <button onClick={() => { novaConta(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>+ Nova conta</button> }
+    : aba === 'cartoes'
+    ? { icon: 'ti-credit-card', title: 'Meus cartões', subtitle: `${pluralTopo(nCartoesTopo, 'cartão cadastrado', 'cartões cadastrados')}`,
+        botao: <button onClick={() => { novaConta(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>+ Novo cartão</button> }
+    : aba === 'categorias' && subAbaCat === 'grupos'
+    ? { icon: 'ti-folders', title: 'Grupos', subtitle: pluralTopo(nGruposTopo, 'grupo', 'grupos'),
+        botao: <button onClick={() => { setEditGrupo(null); setNovoGrupoNome(''); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>+ Novo grupo</button> }
+    : aba === 'categorias'
+    ? { icon: 'ti-category', title: 'Categorias', subtitle: `${categorias.filter(c => c.ativa).length} ativas de ${categorias.length}`,
+        botao: <>
+          {temSugestoesPendentes && !isMobile && (
+            <button onClick={importarSugestoes} style={{
+              background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none',
+              borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}><i aria-hidden className="ti ti-sparkles" style={{ fontSize: 13, verticalAlign: '-2px', marginRight: 4 }} />Sugestões</button>
+          )}
+          <button onClick={() => { novaCategoria(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>+ Nova categoria</button>
+        </> }
+    : aba === 'perfil'
+    ? { icon: 'ti-user-circle', title: 'Perfil', subtitle: user?.email ?? '', botao: null }
+    : { icon: 'ti-adjustments-horizontal', title: 'Preferências', subtitle: 'Personalize o app', botao: null }
+  const topoDaAba = (
+    <PageHeader site fundo={COR.fundo} icon={dadosTopo.icon} rotulo="Configurações" title={dadosTopo.title}
+      subtitle={dadosTopo.subtitle} ajuda="configuracoes" mb={0} rightContent={dadosTopo.botao}
+      voltar={{ texto: isMobile ? 'Voltar' : 'Configurações', onClick: () => navigate('/configuracoes') }} />
+  )
+
   return (
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
-      background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      background:COR.fundo, fontFamily:FONTE_SITE, overflow:'hidden' }}>
       <style>{`
         .campo-cfg:focus {
           border-color: #1a56db !important;
@@ -580,34 +619,31 @@ export default function Configuracoes() {
             status: '', ok: false },
         ]
         return (
-          <div style={{ flex:1, overflowY:'auto', padding: isMobile ? '12px 12px 120px' : 20 }}>
-            <PageHeader icon="ti-settings" breadcrumb="Minha conta" title="Configurações"
-              subtitle="Tudo o que você cadastra no app mora aqui" ajuda="configuracoes" />
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 14 : 18,
-              width:'100%' }}>
+          <div style={{ flex:1, overflowY:'auto', paddingBottom: isMobile ? 120 : 28 }}>
+            <PageHeader site fundo={COR.fundo} icon="ti-settings" rotulo="Minha conta" title="Configurações"
+              subtitle="Tudo o que você cadastra no app mora aqui" ajuda="configuracoes" mb={isMobile ? 4 : 8} />
+            <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)', gap: isMobile ? 12 : 18,
+              padding: isMobile ? '0 14px' : '0 28px', maxWidth: 1180, margin: '0 auto' }}>
               {cards.map(card => (
-                // Caixas no azul-escuro dos cartões do app (#0f2878 → #1e40af,
-                // a regra do #1e40af): branco 10,4:1, descrição a 75% 5,1:1,
-                // selo verde #86efac 4,8:1 no pior caso.
+                // Cartões brancos no estilo da página do Educador (19/11/2026):
+                // borda azul fina, ícone âmbar no quadrado escuro, título em
+                // Barlow Condensed na tinta #0b2545 (14,9:1).
                 <button key={card.label} onClick={() => navigate(`/configuracoes?aba=${card.aba}`)} style={{
-                  background:'var(--cx-azul)', borderRadius:20,
-                  padding: isMobile ? '18px 8px 14px' : '24px 18px 20px',
-                  display:'flex', flexDirection:'column', alignItems:'center', gap: isMobile ? 10 : 8,
-                  border:'none', boxShadow:'var(--cx-brilho)',
-                  cursor:'pointer', fontFamily:'inherit', textAlign:'center',
+                  background:'#fff', borderRadius:20, border:`1px solid ${BORDA_CLARA}`,
+                  boxShadow:'0 10px 28px rgba(11,37,69,.08)',
+                  padding: isMobile ? '16px 14px' : '22px 22px 20px',
+                  display:'flex', flexDirection:'column', alignItems:'flex-start', gap: isMobile ? 8 : 10,
+                  cursor:'pointer', fontFamily:'inherit', textAlign:'left', minWidth:0,
                 }}>
-                  <span aria-hidden style={{ width: isMobile ? 46 : 56, height: isMobile ? 46 : 56, borderRadius:16,
-                    background:'rgba(255,255,255,.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <i className={`ti ${card.icon}`} style={{ color:'#fff', fontSize: isMobile ? 24 : 30 }} />
+                  <span aria-hidden style={{ width: isMobile ? 42 : 48, height: isMobile ? 42 : 48, borderRadius:13,
+                    background:NOITE, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <i className={`ti ${card.icon}`} style={{ color:AMBAR, fontSize: isMobile ? 22 : 25 }} />
                   </span>
-                  <span style={{ fontSize: isMobile ? 13 : 16, fontWeight:700, color:'#fff' }}>{card.label}</span>
-                  {!isMobile && (
-                    <span style={{ fontSize:13, color:'rgba(255,255,255,0.75)', lineHeight:1.4 }}>{card.desc}</span>
-                  )}
-                  {!isMobile && card.status && (
-                    <span style={{ marginTop:4, fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:999,
-                      background:'rgba(15,23,42,.35)',
-                      color: card.ok ? '#86efac' : '#ffffff' }}>
+                  <span style={{ fontFamily:FONTE_TITULO, fontSize: isMobile ? 21 : 25, fontWeight:700, lineHeight:1.05, color:TINTA }}>{card.label}</span>
+                  <span style={{ fontSize: isMobile ? 13 : 14, color:TINTA2, lineHeight:1.4 }}>{card.desc}</span>
+                  {card.status && (
+                    <span style={{ marginTop:'auto', fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:999,
+                      background: card.ok ? '#f0fdf4' : '#eef2f8', color: card.ok ? '#15803d' : TINTA }}>
                       {card.ok ? '✓ ' : ''}{card.status}
                     </span>
                   )}
@@ -618,33 +654,16 @@ export default function Configuracoes() {
         )
       })()}
 
-      {/* VOLTAR para a tela de ícones */}
-      {aba !== 'home' && (
-        <div style={{ background:COR.branco, borderBottom:`1px solid ${COR.borda}`,
-          padding: isMobile ? '10px 16px' : '10px 24px', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-          <button onClick={() => navigate('/configuracoes')} style={{
-            border:'none', background:'transparent', color:COR.azul,
-            fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', padding:0 }}>
-            ‹ {isMobile ? 'Voltar' : 'Configurações'}
-          </button>
-          <span style={{ fontSize:14, fontWeight:700, color:COR.texto, marginLeft:4 }}>
-            <i aria-hidden className={`ti ${aba === 'bancos' ? 'ti-building-bank'
-              : aba === 'cartoes' ? 'ti-credit-card'
-              : aba === 'categorias' ? (subAbaCat === 'grupos' ? 'ti-folders' : 'ti-tag')
-              : aba === 'perfil' ? 'ti-user-circle' : 'ti-adjustments-horizontal'}`} style={{ fontSize: 16, verticalAlign: '-2px', marginRight: 6 }} />
-            {aba === 'bancos' ? 'Minhas contas'
-              : aba === 'cartoes' ? 'Cartões'
-              : aba === 'categorias' ? (subAbaCat === 'grupos' ? 'Grupos' : 'Categorias')
-              : aba === 'perfil' ? 'Perfil' : 'Preferências'}
-          </span>
-        </div>
-      )}
+      {/* O topo escuro da página do Educador (19/11/2026), um só para todas as
+          abas: o título e o botão de cada cadastro moram nele. */}
+      {aba !== 'home' && !isMobile && <div style={{ flexShrink:0 }}>{topoDaAba}</div>}
 
       {(aba === 'bancos' || aba === 'cartoes' || aba === 'categorias' || aba === 'preferencias') && <AvisoSoAdministrador style={{ margin: '0 0 12px' }} />}
 
       {/* CONTEÚDO */}
       {aba !== 'home' && (
-        <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? '12px 12px 120px' : 20, gap:16 }}>
+        <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? '0 12px 120px' : '8px 28px 20px', gap:16 }}>
+          {isMobile && <div style={{ margin:'0 -12px -4px', flexShrink:0 }}>{topoDaAba}</div>}
 
           {(aba==='bancos' || aba==='cartoes') && (
             <CfgBancosCartoes

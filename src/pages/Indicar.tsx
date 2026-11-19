@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
+import { FONTE_SITE, NOITE, BORDA_CLARA, TINTA } from '../components/mobile/estilo'
+import { CabecalhoCartao } from '../components/mobile/ui'
 import { useIsMobile } from '../components/configuracoes/CfgShared'
 import { COR } from '../utils/cores'
 import { linkDeIndicacao, meuCodigo, minhasIndicacoes, textoDoConvite, type Indicado } from '../utils/indicacao'
@@ -44,25 +46,24 @@ export default function Indicar() {
     navigator.share({ title: 'Compass One', text: texto }).catch(() => { /* cancelado */ })
   }
 
-  const cartao = { background: COR.branco, border: `1px solid ${COR.borda}`, borderRadius: 14, padding: isMobile ? 18 : 24 } as const
+  const cartao = { background: COR.branco, border: `1px solid ${BORDA_CLARA}`, borderRadius: 20, boxShadow: '0 10px 28px rgba(11,37,69,.08)', padding: isMobile ? 18 : 24 } as const
   const botao = (solido: boolean) => ({
     padding: '10px 18px', minHeight: 44, borderRadius: 10, fontSize: 14, fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
-    border: solido ? 'none' : `1.5px solid ${COR.borda}`,
-    background: solido ? COR.azul : COR.branco, color: solido ? COR.branco : COR.texto,
+    border: solido ? 'none' : `1.5px solid ${TINTA}`,
+    background: solido ? NOITE : COR.branco, color: solido ? COR.branco : TINTA,
   } as const)
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: FONTE_SITE }}>
       <AppHeader currentPath={pathname} />
-      <div style={{ padding: isMobile ? '12px 14px 0' : '16px 28px 0' }}>
-        <PageHeader icon="ti-gift" breadcrumb="MINHA CONTA" title="Indicar amigos"
-          subtitle="Compartilhe o seu link: quem criar a conta por ele fica registrado como sua indicação" />
-      </div>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 14px 90px' : '24px 28px 40px',
+      {/* O topo escuro da página do Educador (19/11/2026), de ponta a ponta. */}
+      <PageHeader site fundo={COR.fundo} mb={4} icon="ti-gift" rotulo="Compartilhe o Compass One" title="Indicar amigos"
+        subtitle="Compartilhe o seu link: quem criar a conta por ele fica registrado como sua indicação" />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '4px 14px 90px' : '8px 28px 40px',
         display: 'grid', gap: 16 }}>
         <div style={cartao}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}><i aria-hidden className="ti ti-gift" style={{ fontSize: 17, verticalAlign: '-2px', marginRight: 6 }} />Seu link de indicação</h3>
+          <CabecalhoCartao icone="ti-gift" rotulo="Envie para quem quer se organizar">Seu link de indicação</CabecalhoCartao>
           {carregando && <p style={{ fontSize: 14, color: COR.textoSuave, margin: 0 }}>Carregando…</p>}
           {!carregando && erro && (
             <div role="status" style={{ fontSize: 14, lineHeight: 1.5, borderRadius: 10, padding: '10px 12px',
@@ -94,11 +95,11 @@ export default function Indicar() {
 
         {link && (
           <div style={cartao}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 6px' }}>
+            <CabecalhoCartao icone="ti-users" rotulo="Suas indicações">
               {indicados.length === 0 ? 'Nenhuma indicação ainda'
                 : indicados.length === 1 ? '1 pessoa criou a conta pelo seu link'
                 : `${indicados.length} pessoas criaram a conta pelo seu link`}
-            </h3>
+            </CabecalhoCartao>
             {indicados.length === 0 ? (
               <p style={{ fontSize: 14, color: COR.textoSuave, margin: 0, lineHeight: 1.55 }}>
                 Quando alguém se cadastrar pelo seu link, aparece aqui.

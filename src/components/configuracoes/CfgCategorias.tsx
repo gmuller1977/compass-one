@@ -1,5 +1,4 @@
 import React from 'react'
-import PageHeader, { PH_BTN_SOLID } from '../PageHeader'
 import type { Categoria, Conta, TipoCategoria } from '../../context/AppContext'
 import { GRUPOS_PADRAO } from '../../data/categoriasPadrao'
 import {
@@ -72,7 +71,7 @@ export default function CfgCategorias({
   formCat, setFormCat, editCatId, erroCat,
   nomeCatRef, grupoSelectRef,
   tipoCatRefs, freqCatRefs, tipoMovRefs, formaPagCatRefs,
-  catsFiltradas, temSugestoesPendentes,
+  catsFiltradas,
   gruposExtra, setGruposExtra,
   gruposOcultos, setGruposOcultos,
   gruposExtraTipos, setGruposExtraTipos,
@@ -82,7 +81,7 @@ export default function CfgCategorias({
   editGrupoNome, setEditGrupoNome,
   editGrupoTipo, setEditGrupoTipo,
   novaCategoria, editarCategoria, salvarCategoria,
-  excluirCategoria, toggleAtiva, importarSugestoes,
+  excluirCategoria, toggleAtiva,
   confirmar, fecharConfirm,
 }: Props) {
   // A conta sugerida por padrao nas categorias de banco.
@@ -110,27 +109,6 @@ export default function CfgCategorias({
       {subAbaCat === 'categorias' && (
         <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
           <div style={{ flex:1, display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', minWidth:0 }}>
-            <PageHeader
-              icon="ti-category"
-              breadcrumb="CONTA"
-              ajuda="configuracoes"
-              title="Categorias"
-              subtitle={`${categorias.filter(c=>c.ativa).length} ativas de ${categorias.length}`}
-              rightContent={
-                <>
-                  {temSugestoesPendentes && !isMobile && (
-                    <button onClick={importarSugestoes} style={{
-                      background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none',
-                      borderRadius: 8, padding: '6px 12px', fontSize: 11, fontWeight: 500,
-                      cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                    }}><i aria-hidden className="ti ti-sparkles" style={{ fontSize: 13, verticalAlign: '-2px', marginRight: 4 }} />Sugestões</button>
-                  )}
-                  <button onClick={() => { novaCategoria(); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
-                    + Nova categoria
-                  </button>
-                </>
-              }
-            />
 
             {categorias.length > 0 && (
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
@@ -594,17 +572,6 @@ export default function CfgCategorias({
         <div style={{ flex:1, display:'flex', flexDirection: isMobile ? 'column' : 'row', gap:16, minWidth:0, overflow: isMobile ? 'visible' : 'hidden' }}>
           {/* Lista de grupos */}
           <div style={{ flex:1, overflowY:'auto', display: isMobile && mobileView==='form' ? 'none' : 'flex', flexDirection:'column', gap:6 }}>
-            <PageHeader
-              icon="ti-folders"
-              breadcrumb="CONTA"
-              title="Grupos"
-              subtitle={`${todosGrupos.filter(g => g !== 'Cartão de Crédito').length} grupos`}
-              rightContent={
-                <button onClick={() => { setEditGrupo(null); setNovoGrupoNome(''); if (isMobile) setMobileView('form') }} style={PH_BTN_SOLID}>
-                  + Novo grupo
-                </button>
-              }
-            />
             {todosGrupos.filter(g => g !== 'Cartão de Crédito').map(g => {
               const count = categorias.filter(c => c.grupo === g).length
               const isPadrao = GRUPOS_PADRAO.includes(g)
