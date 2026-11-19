@@ -3815,6 +3815,12 @@ título em tinta `#0b2545`). "Resumo do mês" e "Plano do mês" deixaram o azul:
 cartão BRANCO com borda de 2px em tinta, anéis claros (`Anel claro`), verde
 `#15803d` / vermelho `#b91c1c`. Ordem combinada: Início, depois Lançamentos,
 por último o Simulador. Peças em `components/mobile/ui.tsx` e `estilo.ts`.
+**Lançamentos (Banco, Cartão e Dinheiro) também** (19/11/2026, prévia
+aprovada pelo Guilherme): topo escuro com `RotuloTopo` e as duas ondas,
+título em Barlow Condensed, cards do topo em vidro (`KpiCard vidro`),
+pílulas de conta brancas/translúcidas, data do dia em Barlow Condensed. No
+celular o rótulo do topo é a aba (Banco/Cartão/Dinheiro com ícone): "Todo
+dia" não existe mais. Nenhum número mudou.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
