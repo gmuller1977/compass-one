@@ -6,17 +6,20 @@ const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 /**
- * Tudo aqui vive DENTRO do card azul, então vale a paleta de fundo escuro do
- * CLAUDE.md — não a do app. Medido sobre `#1e40af`, o extremo mais claro do
- * gradiente: branco 8,72:1, verde 6,21:1, vermelho 6,03:1, amarelo 6,62:1.
- * Os tons padrão (`#16a34a`, `#dc2626`, `#b45309`) reprovariam aqui.
+ * Desde 19/11/2026 a tabela vive num cartão BRANCO (estilo da página do
+ * Educador): tinta `#0b2545`, apoio `#3d5170`, e o veredito numa pílula
+ * clara — verde `#15803d` (5,0), âmbar `#9a5b00` (5,6), vermelho `#b91c1c` (6,5).
  */
-const TEXTO  = '#fff'
-const SUAVE  = 'rgba(255,255,255,.85)'
-const BOM    = '#86efac'
-const RUIM   = '#fff'  // laranja no azul não se lê (24/10/2026)
-const ALERTA = '#fde047'
-const LINHA  = 'rgba(255,255,255,.16)'
+const TEXTO  = '#0b2545'
+const SUAVE  = '#3d5170'
+const BOM    = '#15803d'
+const RUIM   = '#b91c1c'
+const ALERTA = '#9a5b00'
+const LINHA  = '#e3ecf7'
+const pilula = (cor: string, fundo: string): React.CSSProperties => ({
+  display: 'inline-flex', alignItems: 'center', gap: 4, color: cor, background: fundo,
+  fontWeight: 700, borderRadius: 999, padding: '3px 10px', fontSize: 12,
+})
 
 const fmtCampo = (v: number) => (v ? v.toFixed(2).replace('.', ',') : '')
 
@@ -85,7 +88,7 @@ export default function SimComparativo({
     fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
   }
   const inputSt: React.CSSProperties = {
-    width: 78, textAlign: 'right', border: `1px solid ${COR.borda}`, borderRadius: 7,
+    width: 78, textAlign: 'right', border: '1px solid #c9dcf2', borderRadius: 7,
     padding: '5px 7px', fontSize: 13, color: '#0f172a', background: COR.branco,
     outline: 'none', fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums',
   }
@@ -98,24 +101,15 @@ export default function SimComparativo({
         : <span style={{ color: SUAVE, fontSize: 12 }}>fora do plano</span>
     }
     const { cabe, gravidade } = l.veredito
-    if (!cabe) return <span style={{ color: RUIM, fontWeight: 700 }}>não cabe</span>
+    if (!cabe) return <span style={pilula(RUIM, '#fdecec')}><i aria-hidden className="ti ti-x" />Não cabe</span>
     if (gravidade === 'atencao' || l.veredito.pior.comCompra <= 0) {
-      return <span style={{ color: ALERTA, fontWeight: 700 }}>aperta</span>
+      return <span style={pilula(ALERTA, '#fff4dc')}><i aria-hidden className="ti ti-alert-triangle" />Aperta</span>
     }
-    return <span style={{ color: BOM, fontWeight: 700 }}>cabe</span>
+    return <span style={pilula(BOM, '#e8f7ee')}><i aria-hidden className="ti ti-check" />Cabe</span>
   }
 
   return (
-    <div style={{ marginTop: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: TEXTO }}>
-          Quais opções o vendedor ofereceu?
-        </label>
-        <button onClick={onAdicionar} style={{
-          border: 'none', background: 'none', padding: 0, cursor: 'pointer',
-          fontFamily: 'inherit', fontSize: 12, color: TEXTO, fontWeight: 700,
-        }}>+ Adicionar opção</button>
-      </div>
+    <div>
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: isMobile ? 460 : 0 }}>
@@ -136,13 +130,13 @@ export default function SimComparativo({
               // Só a ESCOLHIDA tem fundo e marca: é a que a resposta ao lado
               // mostra. A recomendada leva só a etiqueta "melhor" (Guilherme,
               // 15/10/2026: à vista e 10× apareciam os dois em destaque).
-              const fundo = ativa ? 'rgba(255,255,255,.20)' : 'transparent'
+              const fundo = ativa ? '#eef4fc' : 'transparent'
               return (
                 <tr key={l.opcao.id}
                   onClick={() => l.veredito && onSelecionar(l.opcao.id)}
                   style={{
                     background: fundo,
-                    boxShadow: ativa ? 'inset 4px 0 0 #fff' : undefined,
+                    boxShadow: ativa ? `inset 4px 0 0 ${TEXTO}` : undefined,
                     borderTop: `1px solid ${LINHA}`,
                     cursor: l.veredito ? 'pointer' : 'default',
                     opacity: l.veredito ? 1 : 0.6,
@@ -161,14 +155,14 @@ export default function SimComparativo({
                     </span>
                     {ativa && (
                       <span style={{
-                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: '#1e3a8a', background: '#fff',
+                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: '#fff', background: TEXTO,
                         borderRadius: 5, padding: '2px 6px', textTransform: 'uppercase', letterSpacing: '.3px',
                       }}>escolhida</span>
                     )}
                     {l.recomendada && (
                       <span style={{
-                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: BOM,
-                        border: `1px solid ${BOM}`, borderRadius: 5, padding: '1px 5px',
+                        marginLeft: 8, fontSize: 9.5, fontWeight: 800, color: ALERTA, background: "#fff4dc",
+                        borderRadius: 5, padding: "2px 6px",
                         textTransform: 'uppercase', letterSpacing: '.3px',
                       }}>melhor</span>
                     )}
@@ -185,10 +179,10 @@ export default function SimComparativo({
                     {l.juroEmbutido === null || Math.abs(l.juroEmbutido) < 0.005
                       ? <span style={{ color: SUAVE }}>—</span>
                       : l.juroEmbutido < 0
-                        ? <span style={{ color: '#fff', fontWeight: 700 }} title="Sai mais barato que à vista">
+                        ? <span style={{ color: TEXTO, fontWeight: 700 }} title="Sai mais barato que à vista">
                             −{fmt(-l.juroEmbutido)}</span>
                         : <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.25 }}>
-                            <span style={{ color: '#fff', fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>
+                            <span style={{ color: TEXTO, fontWeight: 700 }}>+{fmt(l.juroEmbutido)}</span>
                             {l.taxaMes !== null && (
                               <span style={{ fontSize: 11, color: SUAVE }}>{fmtTaxa(l.taxaMes)}</span>
                             )}
@@ -217,6 +211,10 @@ export default function SimComparativo({
           </tbody>
         </table>
       </div>
+      <button onClick={onAdicionar} style={{
+        border: 'none', background: 'none', padding: '10px 0 0', cursor: 'pointer',
+        fontFamily: 'inherit', fontSize: 13, color: TEXTO, fontWeight: 700,
+      }}><i aria-hidden className="ti ti-plus" style={{ verticalAlign: '-2px', marginRight: 6 }} />Adicionar opção</button>
 
       {semAVista && (
         <div style={{ fontSize: 12, color: SUAVE, marginTop: 8, lineHeight: 1.5 }}>

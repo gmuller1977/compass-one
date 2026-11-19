@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import type { DadosMes, PlanoAnoData } from '../../context/AppContext'
 import { COR } from '../../utils/cores'
+import { CabecalhoCartao } from '../mobile/ui'
+import { TINTA, TINTA2, NOITE, BORDA_CLARA } from '../mobile/estilo'
 import { parseValor } from '../../utils/moeda'
 import { serieBaseDoPlano, type Mes } from '../../utils/simulacaoCompra'
 import type { Deps } from '../../utils/saldoConta'
@@ -66,22 +68,21 @@ const seguinte = (m: Mes): Mes => (m.mes === 11 ? { ano: m.ano + 1, mes: 0 } : {
 const rotuloDa = (d: DividaNoPlano) => (d.cat.descricao ? `${d.cat.nome} · ${d.cat.descricao}` : d.cat.nome)
 
 const inputSt: React.CSSProperties = {
-  width: '100%', padding: '11px 14px', border: `1px solid ${COR.borda}`,
+  width: '100%', padding: '11px 14px', border: `1px solid ${BORDA_CLARA}`,
   borderRadius: 10, fontSize: 15, fontFamily: 'inherit', outline: 'none',
   boxSizing: 'border-box', background: COR.branco, color: COR.texto,
 }
 const labelSt: React.CSSProperties = {
-  display: 'block', fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 7,
+  display: 'block', fontSize: 13, fontWeight: 600, color: TINTA, marginBottom: 7,
 }
-/** O azul dos cards do Simulador (ver `cardAzul` em SimCompra): termina em #1e40af. */
+/** O cartão branco do Simulador (ver `cardAzul` em SimCompra; 19/11/2026, estilo do site). */
 const cardAzul: React.CSSProperties = {
-  background: `var(--cx-azul)`,
-  border: '1px solid rgba(255,255,255,.12)', borderRadius: 12, padding: '20px 22px', minWidth: 0,
+  background: COR.branco, border: `1px solid ${BORDA_CLARA}`, borderRadius: 18, padding: '20px 22px', minWidth: 0,
+  boxShadow: '0 10px 28px rgba(11,37,69,.08)',
 }
-const apoio: React.CSSProperties = { fontSize: 12.5, color: 'rgba(255,255,255,.85)', lineHeight: 1.55 }
-const VERDE = '#86efac'
-// Número no azul é BRANCO (24/10/2026, Guilherme): o laranja não se lê ali.
-const VERMELHO = '#fff'
+const apoio: React.CSSProperties = { fontSize: 12.5, color: TINTA2, lineHeight: 1.55 }
+const VERDE = '#15803d'
+const VERMELHO = '#b91c1c'
 /** "22/10/2026 às 14:05": duas consultas no mesmo dia se distinguem pela hora. */
 const quandoSalvou = (iso: string) => {
   const d = new Date(iso)
@@ -259,7 +260,7 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
   if (!serie) {
     return (
       <div style={cardAzul}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Quitar à vista</div>
+        <CabecalhoCartao icone="ti-cash" rotulo="Quitar dívida">Quitar à vista</CabecalhoCartao>
         <div style={apoio}>Para sugerir quando dá para quitar, o Simulador lê o seu planejamento, e ele ainda está vazio.</div>
         <button onClick={() => navigate('/planejamento')} style={botaoBranco}>Ir para o Planejamento</button>
       </div>
@@ -280,8 +281,8 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
       )}
 
       <div style={cardAzul}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Quitar à vista</div>
-        <div style={{ ...apoio, marginBottom: 16 }}>
+        <CabecalhoCartao icone="ti-cash" rotulo="Quitar dívida · passo 1">Quitar à vista</CabecalhoCartao>
+        <div style={{ ...apoio, marginBottom: 16, marginTop: -6 }}>
           Para quem tem o valor de quitação de uma dívida que já está no planejamento.
         </div>
         {!divida ? (
@@ -302,10 +303,10 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
                     <button key={d.cat.id} type="button" role="radio" aria-checked={on}
                       onClick={() => { if (on) return; setDividaId(d.cat.id); setFaltamStr(null); mexeu() }}
                       style={{ font: 'inherit', display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56, padding: '10px 14px',
-                        textAlign: 'left', cursor: 'pointer', borderRadius: 14, background: on ? '#eff6ff' : '#fff',
-                        border: `2px solid ${on ? '#93c5fd' : 'transparent'}`, boxShadow: on ? '0 6px 18px rgba(15,23,42,.25)' : 'none' }}>
+                        textAlign: 'left', cursor: 'pointer', borderRadius: 14, background: on ? '#eef4fc' : '#fff',
+                        border: `2px solid ${on ? TINTA : BORDA_CLARA}`, boxShadow: on ? '0 6px 18px rgba(11,37,69,.12)' : 'none' }}>
                       <span aria-hidden style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', border: `2px solid ${on ? '#1a56db' : '#94a3b8'}`, background: on ? '#1a56db' : 'transparent', color: '#fff' }}>
+                        justifyContent: 'center', border: `2px solid ${on ? NOITE : '#94a3b8'}`, background: on ? NOITE : 'transparent', color: '#ffffff' }}>
                         {on && <i className="ti ti-check" style={{ fontSize: 13 }} />}
                       </span>
                       <span style={{ flex: 1, minWidth: 0 }}>
@@ -365,8 +366,8 @@ export default function SimQuitacao({ isMobile }: { isMobile: boolean }) {
 }
 
 const botaoBranco: React.CSSProperties = {
-  marginTop: 14, padding: '11px 16px', border: 'none', borderRadius: 10, background: COR.branco,
-  color: COR.azulEscuro, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+  marginTop: 14, padding: '11px 16px', border: 'none', borderRadius: 10, background: NOITE,
+  color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 }
 const link: React.CSSProperties = {
   background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
@@ -407,36 +408,38 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
     flex: 1, minWidth: isMobile ? 'calc(50% - 6px)' : 0, background: 'rgba(15,23,42,.25)',
     borderRadius: 10, padding: '10px 12px',
   }
-  const tRot: React.CSSProperties = { fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 3 }
-  const tVal: React.CSSProperties = { fontSize: isMobile ? 16 : 18, fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }
+  const tRot: React.CSSProperties = { fontSize: 12, color: TINTA2, marginBottom: 3 }
+  const tVal: React.CSSProperties = { fontSize: isMobile ? 16 : 18, fontWeight: 800, color: TINTA, fontVariantNumeric: 'tabular-nums' }
 
   return (
-    <div style={cardAzul}>
-      <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, color: '#fff', lineHeight: 1.35 }}>{frase}</div>
+    <div style={{ ...cardAzul, border: `2px solid ${TINTA}` }}>
+      <CabecalhoCartao icone="ti-compass" rotulo="A resposta">
+        <span style={{ fontSize: isMobile ? 22 : 26, lineHeight: 1.15, display: 'block' }}>{frase}</span>
+      </CabecalhoCartao>
       <div style={{ ...apoio, marginTop: 6 }}>
         {r.cabe
           ? <>Pagando {fmt(r.valor)} nesse mês, nenhum mês do seu planejamento fica no vermelho.</>
           : <>{aperto && !igual(aperto, r.quando) ? `Em ${MESES[aperto.mes]}` : 'Nesse mês'} o saldo ficaria em <b style={{ color: VERMELHO }}>{fmt(aperto?.comCompra ?? 0)}</b>.{' '}
             {sugerido
               ? <>O primeiro mês que comporta é {mesEAno(sugerido)}.{' '}
-                  <button onClick={() => onEscolher(sugerido)} style={{ ...link, color: '#fff', fontSize: 12.5 }}>Ver {MESES[sugerido.mes]}</button></>
+                  <button onClick={() => onEscolher(sugerido)} style={{ ...link, color: TINTA, fontSize: 12.5 }}>Ver {MESES[sugerido.mes]}</button></>
               : <>Até {mesEAno(divida.ultima)}, a última parcela, nenhum mês do plano comporta esse valor à vista.</>}
           </>}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: '18px 0 8px' }}>Quando quitar?</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: TINTA, margin: '18px 0 8px' }}>Quando quitar?</div>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
         {candidatos.meses.map(m => {
           const ativo = igual(m.quando, r.quando)
           return (
             <button key={`${m.quando.ano}-${m.quando.mes}`} onClick={() => onEscolher(m.quando)} aria-pressed={ativo} style={{
               flexShrink: 0, minWidth: 64, padding: '7px 10px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
-              border: `1px solid ${ativo ? '#fff' : 'rgba(255,255,255,.25)'}`,
-              background: ativo ? COR.branco : 'rgba(255,255,255,.08)', textAlign: 'center',
+              border: `1px solid ${ativo ? NOITE : BORDA_CLARA}`,
+              background: ativo ? NOITE : '#f2f6fc', textAlign: 'center',
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: ativo ? COR.azulEscuro : '#fff' }}>{curto(m.quando)}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: ativo ? '#ffffff' : TINTA }}>{curto(m.quando)}</div>
               <div style={{ fontSize: 11, fontWeight: 600, marginTop: 1,
-                color: ativo ? (m.cabe ? COR.sucessoTexto : COR.erroTexto) : (m.cabe ? VERDE : VERMELHO) }}>
+                color: ativo ? (m.cabe ? '#86efac' : '#ffffff') : (m.cabe ? VERDE : VERMELHO) }}>
                 {igual(m.quando, sugerido) ? 'sugerido' : m.cabe ? 'cabe' : 'aperta'}
               </div>
             </button>
@@ -448,29 +451,29 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
         <div style={tile}>
           <div style={tRot}>Para quitar em {curto(r.quando)}</div>
           <div style={tVal}>{fmt(r.valor)}</div>
-          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.85)', marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: TINTA2, marginTop: 2 }}>
             {r.quando.ano === hoje.ano && r.quando.mes === hoje.mes ? 'o valor informado' : 'estimado; o banco confirma'}
           </div>
         </div>
         <div style={tile}>
           <div style={tRot}>Deixa de pagar por mês</div>
           <div style={tVal}>{fmt(divida.valorMensal)}</div>
-          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.85)', marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: TINTA2, marginTop: 2 }}>
             {depois.length ? `a partir de ${curto(seguinte(r.quando))}` : 'era a última parcela'}
           </div>
         </div>
         <div style={tile}>
           <div style={tRot}>Você economiza</div>
-          <div style={{ ...tVal, color: '#fff' }}>{fmt(Math.max(0, r.economia))}</div>
-          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.85)', marginTop: 2 }}>
+          <div style={{ ...tVal, color: TINTA }}>{fmt(Math.max(0, r.economia))}</div>
+          <div style={{ fontSize: 11.5, color: TINTA2, marginTop: 2 }}>
             {r.removidas.length} {r.removidas.length === 1 ? 'parcela soma' : 'parcelas somam'} {fmt(r.removidas.reduce((t, p) => t + p.valor, 0))}
           </div>
         </div>
       </div>
 
       {meta && (
-        <div style={{ ...apoio, marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,.08)' }}>
-          <b style={{ color: '#fff' }}>Meta de economia:</b>{' '}
+        <div style={{ ...apoio, marginTop: 14, padding: '10px 12px', borderRadius: 10, background: '#f2f6fc' }}>
+          <b style={{ color: TINTA }}>Meta de economia:</b>{' '}
           {meta.agora > meta.antes
             ? <>sem a parcela, {meta.agora} de {meta.total} {meta.total === 1 ? 'mês' : 'meses'} com meta ficam dentro dela (sem quitar, {meta.antes}).</>
             : meta.agora === meta.total
@@ -490,7 +493,7 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
 
       <button onClick={onDetalhes} style={{
         marginTop: 16, background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-        fontFamily: 'inherit', fontSize: 13, color: '#fff', fontWeight: 600,
+        fontFamily: 'inherit', fontSize: 13, color: TINTA, fontWeight: 600,
       }}>{detalhes ? '▾ Esconder os números' : '▸ Ver os números em detalhe'}</button>
       {detalhes && <Detalhes r={r} />}
 
@@ -514,8 +517,8 @@ function Resposta({ divida, r, candidatos, isMobile, onEscolher, meta, guarda, d
 }
 
 const botaoContorno: React.CSSProperties = {
-  padding: '11px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,.6)', background: 'transparent',
-  color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+  padding: '11px 16px', borderRadius: 10, border: `1.5px solid ${TINTA}`, background: COR.branco,
+  color: TINTA, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 }
 
 /**
@@ -643,9 +646,9 @@ function Comparativo({ par, isMobile }: {
 
 function Detalhes({ r }: { r: ReturnType<typeof simularQuitacao> }) {
   const th: React.CSSProperties = { textAlign: 'right', padding: '6px 8px', fontSize: 11.5, fontWeight: 600,
-    color: 'rgba(255,255,255,.85)', borderBottom: '1px solid rgba(255,255,255,.2)' }
-  const td: React.CSSProperties = { textAlign: 'right', padding: '6px 8px', fontSize: 12.5, color: '#fff',
-    fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid rgba(255,255,255,.08)' }
+    color: TINTA2, borderBottom: `1px solid ${BORDA_CLARA}` }
+  const td: React.CSSProperties = { textAlign: 'right', padding: '6px 8px', fontSize: 12.5, color: TINTA,
+    fontVariantNumeric: 'tabular-nums', borderBottom: '1px solid #eef3fa' }
   return (
     <div style={{ overflowX: 'auto', marginTop: 10 }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 360 }}>
@@ -659,11 +662,11 @@ function Detalhes({ r }: { r: ReturnType<typeof simularQuitacao> }) {
           {r.fluxo.map(pt => (
             <tr key={`${pt.ano}-${pt.mes}`}>
               <td style={{ ...td, textAlign: 'left' }}>{curto(pt)}</td>
-              <td style={{ ...td, color: pt.parcela !== 0 ? '#fff' : 'rgba(255,255,255,.6)' }}>
+              <td style={{ ...td, color: pt.parcela !== 0 ? TINTA : TINTA2 }}>
                 {pt.parcela > 0 ? `− ${fmt(pt.parcela)}` : pt.parcela < 0 ? `+ ${fmt(-pt.parcela)}` : '—'}
               </td>
-              <td style={{ ...td, color: pt.semCompra < 0 ? VERMELHO : '#fff' }}>{fmt(pt.semCompra)}</td>
-              <td style={{ ...td, fontWeight: 700, color: pt.comCompra < 0 ? VERMELHO : '#fff' }}>{fmt(pt.comCompra)}</td>
+              <td style={{ ...td, color: pt.semCompra < 0 ? VERMELHO : TINTA }}>{fmt(pt.semCompra)}</td>
+              <td style={{ ...td, fontWeight: 700, color: pt.comCompra < 0 ? VERMELHO : TINTA }}>{fmt(pt.comCompra)}</td>
             </tr>
           ))}
         </tbody>
@@ -727,7 +730,7 @@ function ConfirmarQuitacao({ divida, r, isMobile, onConfirmar, onFechar }: {
             <button onClick={onConfirmar} style={{
               flex: 1, padding: '11px 14px', borderRadius: 10, border: 'none',
               background: `var(--cx-azul)`,
-              color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              color: TINTA, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
             }}>Atualizar o plano</button>
           </div>
         </div>
