@@ -1,4 +1,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* A Barlow do app, 6% maior (19/11/2026, Guilherme: "parece que está menor,
+   precisa revisar em todo o app"). Medido: a altura do "x" da Barlow é 515/1000,
+   a da letra de antes (Inter) 546; com 106% as duas ficam iguais. Os números
+   seguem mais estreitos que antes (R$ 7.264,59: 5.276 contra 5.639), então o
+   que cabia continua cabendo. Só o texto: os títulos em Barlow Condensed não mudam. */
+@font-face { font-family: 'Barlow App'; font-style: normal; font-weight: 400; font-display: swap; size-adjust: 106%;
+  src: url('@fontsource/barlow/files/barlow-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow App'; font-style: normal; font-weight: 500; font-display: swap; size-adjust: 106%;
+  src: url('@fontsource/barlow/files/barlow-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow App'; font-style: normal; font-weight: 600; font-display: swap; size-adjust: 106%;
+  src: url('@fontsource/barlow/files/barlow-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow App'; font-style: normal; font-weight: 700; font-display: swap; size-adjust: 106%;
+  src: url('@fontsource/barlow/files/barlow-latin-700-normal.woff2') format('woff2'); }
 body { font-family: -apple-system, 'Inter', sans-serif; }
 /* Azul da identidade (24/10/2026, "ar neon", escolha do Guilherme). Uma
    fonte só para o gradiente e o brilho: os componentes leem estas variáveis.

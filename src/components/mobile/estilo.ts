@@ -63,7 +63,7 @@ export const BOLINHA_AZUL = 'var(--cx-azul)'
  * Medido no branco: tinta #0b2545 15,6 · tinta2 #3d5170 8,4 · âmbar-escuro
  * #9a5b00 5,6. Âmbar claro (#f5b942) só no escuro: 10,5 no #070c18.
  */
-export const FONTE_SITE = "'Barlow', -apple-system, 'Segoe UI', Roboto, sans-serif"
+export const FONTE_SITE = "'Barlow App', 'Barlow', -apple-system, 'Segoe UI', Roboto, sans-serif"
 export const FONTE_TITULO = "'Barlow Condensed', 'Barlow', sans-serif"
 export const NOITE = '#070c18'
 export const TINTA = '#0b2545'

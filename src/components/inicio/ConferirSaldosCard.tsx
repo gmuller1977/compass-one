@@ -89,8 +89,8 @@ export default function ConferirSaldosCard({ deps, oculto }: { deps: Deps; ocult
               // Pedindo conferência, a pergunta é se o número do APP confere:
               // um "No banco" digitado antes do último movimento seria velho.
               legenda={temDif && !pede
-                ? <>No banco: <b style={{ color: COR.texto }}>{mostrar(s.informado!, oculto)}</b><br />No app: {mostrar(s.calculado, oculto)}</>
-                : <>No app: <b style={{ color: s.calculado < 0 ? COR.erroTexto : COR.texto }}>{mostrar(s.calculado, oculto)}</b></>}
+                ? <>No banco: <b style={{ color: COR.texto, fontSize: M.corpo, whiteSpace: 'nowrap' }}>{mostrar(s.informado!, oculto)}</b><br />No app: <span style={{ fontSize: M.corpo, whiteSpace: 'nowrap' }}>{mostrar(s.calculado, oculto)}</span></>
+                : <>No app: <b style={{ color: s.calculado < 0 ? COR.erroTexto : COR.texto, fontSize: M.corpo, whiteSpace: 'nowrap' }}>{mostrar(s.calculado, oculto)}</b></>}
               direita={!pede && !aberto && !temDif && (s.conferidaHoje
                 // Conferida hoje: tocar no selo oferece desfazer (05/11/2026, toque por engano).
                 ? <button type="button" aria-label={`Desfazer a conferência de ${nome}`} title="Tocou por engano? Desfazer"
