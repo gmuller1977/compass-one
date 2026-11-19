@@ -3801,6 +3801,20 @@ o marrom saiu ("nunca gostei do marrom"). Mostrados e recusados no mesmo
 dia: âmbar no brilho e nas letras do menu, ícone em quadrado escuro com
 desenho âmbar, letra Barlow, avisos no tom do selo "Em breve". Prints em
 `analises/cores-educador/`. As notas que citam brilho ciano são histórico.
+**A Início ganhou o ESTILO DA PÁGINA DO EDUCADOR** (19/11/2026, Guilherme:
+"o site parece mais bonito que o app"; prévias em
+`analises/cores-educador/estilo-site/`, o Simulador aprovado primeiro como
+modelo). Revê, só na Início, a recusa do âmbar, da Barlow e do ícone em
+quadrado escuro acima: sozinhos não convenceram; juntos com espaço e cartões
+brancos, sim. Letra Barlow (`FONTE_SITE`), títulos e números grandes em
+Barlow Condensed (`FONTE_TITULO`); o topo escuro tem o rótulo âmbar
+(`RotuloTopo`, `#f5b942` 10,5 no escuro) e as DUAS ondas do site no pé
+(`OndasTopo`) no lugar dos cantos redondos; cada cartão tem o cabeçalho
+`CabecalhoCartao` (ícone âmbar em quadrado `#070c18`, rótulo `#9a5b00` 5,6 e
+título em tinta `#0b2545`). "Resumo do mês" e "Plano do mês" deixaram o azul:
+cartão BRANCO com borda de 2px em tinta, anéis claros (`Anel claro`), verde
+`#15803d` / vermelho `#b91c1c`. Ordem combinada: Início, depois Lançamentos,
+por último o Simulador. Peças em `components/mobile/ui.tsx` e `estilo.ts`.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três

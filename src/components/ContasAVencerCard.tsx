@@ -48,7 +48,7 @@ export default function ContasAVencerCard({
 
   return (
     <Cartao>
-      <TituloCartao direita={contas.length === 0 ? null : saldoHoje == null
+      <TituloCartao icone="ti-receipt" rotulo="Para pagar" direita={contas.length === 0 ? null : saldoHoje == null
         ? <Valor>{mostrar(total, oculto)}</Valor>
         : falta > 0
           ? <Etiqueta cor={COR.erroTexto} fundo={COR.erroFundo}>faltam {mostrar(falta, oculto)}</Etiqueta>
