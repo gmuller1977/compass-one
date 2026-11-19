@@ -3836,7 +3836,9 @@ valorizar a logo"; escolheu "1B com círculo" entre seis conceitos e as
 variações com o dourado do site, em `analises/cores-educador/estilo-site/login/`):
 estrela de quatro pontas, norte dourado (`#fde68a`/`#e0a020`), pontas brancas,
 diagonais e anel fino em `#f5b942`, brilho dourado. `NomeCompass`: halo
-dourado e "One" em `#fcd34d`. Ícones regerados (`?v=4`). O parágrafo acima
+dourado e "One" em `#fcd34d`. Ícones regerados (`?v=4`). No mesmo dia
+(Guilherme: "ficou bonita mas não se destaca" na tela do celular), o ÍCONE do
+app ganhou a rosa ocupando quase o quadrado e borda dourada (opção A; `?v=5`). O parágrafo acima
 sobre o "Fechado neon" é histórico; os componentes e a regra continuam.
 
 **Anéis, quadro neon e azul nos cards** (24/10/2026, escolhas do Guilherme
