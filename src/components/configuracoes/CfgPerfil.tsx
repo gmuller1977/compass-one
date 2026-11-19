@@ -1,7 +1,6 @@
 import React from 'react'
 import type { User } from '@supabase/supabase-js'
 import type { Conta, Categoria, Perfil } from '../../context/AppContext'
-import PageHeader from '../PageHeader'
 import CfgCompartilhar from '../compartilhar/CfgCompartilhar'
 import CfgDigital from './CfgDigital'
 import CfgOfertas from './CfgOfertas'
@@ -30,13 +29,6 @@ export default function CfgPerfil({
       <div style={{ display:'flex', justifyContent:'center', padding:'0 0 28px' }}>
       <div style={{ display:'flex', flexDirection:'column', gap:14, width:'100%', maxWidth:500 }}>
 
-        <PageHeader
-          icon="ti-user"
-          breadcrumb="CONTA"
-          ajuda="configuracoes"
-          title="Perfil"
-          subtitle={user?.email ?? ''}
-        />
 
         {/* Dados pessoais */}
         <div style={{ background:COR.branco, border:`1px solid ${COR.borda}`, borderRadius:14, padding:28 }}>

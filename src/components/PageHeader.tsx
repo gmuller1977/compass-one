@@ -74,9 +74,11 @@ type Props = {
   rotulo?: string
   /** Cor da tela embaixo do topo (a onda da frente usa ela). */
   fundo?: string
+  /** Link de volta acima do rótulo, no modo `site` ("‹ Configurações"). */
+  voltar?: { texto: string; onClick: () => void }
 }
 
-export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda, children, site, rotulo, fundo }: Props) {
+export default function PageHeader({ icon, breadcrumb, title, subtitle, rightContent, mb = 20, ajuda, children, site, rotulo, fundo, voltar }: Props) {
   const isMobile = useIsMobile()
 
   if (site) return (
@@ -88,6 +90,12 @@ export default function PageHeader({ icon, breadcrumb, title, subtitle, rightCon
     }}>
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0 }}>
+          {voltar && (
+            <button onClick={voltar.onClick} style={{
+              display: 'block', border: 'none', background: 'transparent', padding: 0, marginBottom: 8,
+              color: 'rgba(255,255,255,.85)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}>‹ {voltar.texto}</button>
+          )}
           <RotuloTopo icone={icon}>{rotulo ?? breadcrumb ?? title}</RotuloTopo>
           <h1 style={{ margin: '6px 0 0', fontFamily: FONTE_TITULO, fontSize: isMobile ? 32 : 36, fontWeight: 700, lineHeight: 1, color: '#fff' }}>{title}</h1>
           {subtitle && <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{subtitle}</div>}

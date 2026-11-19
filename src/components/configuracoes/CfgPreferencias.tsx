@@ -1,4 +1,3 @@
-import PageHeader from '../PageHeader'
 import { NORTE_ATIVO } from '../../utils/norteAtivo'
 import { COR, EmBreve, inputSt } from './CfgShared'
 import CfgCenarioPrevisao from './CfgCenarioPrevisao'
@@ -19,13 +18,6 @@ export default function CfgPreferencias({
       <div style={{ display:'flex', justifyContent:'center', padding:'0 0 28px' }}>
       <div style={{ display:'flex', flexDirection:'column', gap:14, width:'100%', maxWidth:500 }}>
 
-        <PageHeader
-          icon="ti-adjustments"
-          breadcrumb="CONTA"
-          ajuda="configuracoes"
-          title="Preferências"
-          subtitle="Personalize o app"
-        />
 
         <CfgCenarioPrevisao
           cenarioPrevisao={cenarioPrevisao}
