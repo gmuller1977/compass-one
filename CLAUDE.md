@@ -3831,6 +3831,13 @@ e-mails leem o `icone-192.png` publicado. Passaram e saíram no mesmo dia: o
 "Cristal" (C facetado aberto, ficou publicado algumas horas), a agulha
 inclinada atravessando o C ("parece um e"), o nome em tubo neon e em caixa
 alta. Tela nova usa `LogoCompass` + `NomeCompass`, nunca SVG ou texto próprio.
+**A logo virou a ROSA DOS VENTOS dourada** (19/11/2026, Guilherme: "vamos
+valorizar a logo"; escolheu "1B com círculo" entre seis conceitos e as
+variações com o dourado do site, em `analises/cores-educador/estilo-site/login/`):
+estrela de quatro pontas, norte dourado (`#fde68a`/`#e0a020`), pontas brancas,
+diagonais e anel fino em `#f5b942`, brilho dourado. `NomeCompass`: halo
+dourado e "One" em `#fcd34d`. Ícones regerados (`?v=4`). O parágrafo acima
+sobre o "Fechado neon" é histórico; os componentes e a regra continuam.
 
 **Anéis, quadro neon e azul nos cards** (24/10/2026, escolhas do Guilherme
 nos cards, mesmo dia do neon). Em card AZUL, todo gráfico tem trilho branco

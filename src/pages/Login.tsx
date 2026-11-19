@@ -276,7 +276,7 @@ export default function Login() {
         <div style={{ position: 'relative', width: t, height: t, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div aria-hidden style={{ position: 'absolute', inset: -t * .35, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,211,238,.28) 0%, rgba(34,211,238,0) 65%)' }}/>
+            background: 'radial-gradient(circle, rgba(245,185,66,.22) 0%, rgba(245,185,66,0) 65%)' }}/>
           <LogoCompass size={t}/>
         </div>
         <div style={{ position: 'relative' }}>
