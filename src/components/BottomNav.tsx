@@ -4,7 +4,7 @@ import { COR } from '../utils/cores'
 import { useApp } from '../context/AppContext'
 import { useSeloNorte } from './norte/useSeloNorte'
 import { NORTE_ATIVO } from '../utils/norteAtivo'
-import { BOLINHA_AZUL } from './mobile/estilo'
+import { BOLINHA_AZUL, FONTE_SITE, NOITE, AMBAR, AMBAR_ESCURO, TINTA } from './mobile/estilo'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { useMensagensNaoLidas } from './mensagens/useMensagensNaoLidas'
 import { textoDoSelo } from '../utils/mensagens'
@@ -115,18 +115,22 @@ export default function BottomNav() {
             // O Sair é o último: a folha rola e respeita a barra de gestos do aparelho para ele nunca ficar escondido.
             padding: '10px 0 calc(28px + env(safe-area-inset-bottom))', maxHeight: '88vh', overflowY: 'auto',
             animation: 'slideUp .2s ease',
-            fontFamily: "-apple-system,'Inter',sans-serif",
+            fontFamily: FONTE_SITE,
           }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: COR.borda, margin: '0 auto 8px' }} />
+            {/* No estilo da página do Educador (19/11/2026): rótulo âmbar e o
+                ícone âmbar no quadrado escuro, como em Configurações. */}
+            <div style={{ padding: '4px 22px 6px', fontSize: 11, fontWeight: 700, letterSpacing: '.14em',
+              textTransform: 'uppercase', color: AMBAR_ESCURO }}>Mais opções</div>
             {MAIS.map(m => (
               <button key={m.path} disabled={m.emBreve} onClick={() => { setMais(false); if (m.path === '/educador') { window.open(urlDoSite('/educador'), '_blank', 'noopener'); return } navigate(m.path, { replace: !!window.history.state?.maisAberto }) }} style={{
                 display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 22px',
-                border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
-                fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
+                border: 'none', background: isActive(m.path) ? '#eaf4fe' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
+                fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: TINTA, textAlign: 'left', minHeight: 56,
               }}>
-                <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, boxShadow: 'var(--cx-bolinha)', flexShrink: 0,
+                <span aria-hidden style={{ width: 40, height: 40, borderRadius: 12, background: NOITE, flexShrink: 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className={`ti ${m.icon}`} style={{ color: '#fff', fontSize: 21 }} /></span>{m.label}
+                  <i className={`ti ${m.icon}`} style={{ color: AMBAR, fontSize: 21 }} /></span>{m.label}
                 {m.path === '/mensagens' && naoLidas > 0 && (
                   // Branco sobre #1d4ed8: 6,7:1.
                   <span aria-label={`${naoLidas} não lidas`} style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 800, padding: '2px 8px',
@@ -144,7 +148,7 @@ export default function BottomNav() {
               border: 'none', borderTop: `1px solid ${COR.borda}`, background: 'transparent', cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: '#b91c1c', textAlign: 'left', minHeight: 56, marginTop: 4,
             }}>
-              <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: '#fef2f2', flexShrink: 0,
+              <span aria-hidden style={{ width: 40, height: 40, borderRadius: 12, background: '#fef2f2', flexShrink: 0,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="ti ti-logout" style={{ color: '#b91c1c', fontSize: 21 }} /></span>Sair
             </button>

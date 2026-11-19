@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import PageHeader from '../components/PageHeader'
+import { FONTE_SITE, FONTE_TITULO, TINTA, BORDA_CLARA } from '../components/mobile/estilo'
 import { useIsMobile } from '../components/configuracoes/CfgShared'
 import { useApp } from '../context/AppContext'
 import { COR } from '../utils/cores'
@@ -23,7 +24,7 @@ import {
 
 const AZUL = 'var(--cx-azul)'
 const SELO: CSSProperties = { background: '#22d3ee', color: '#0b1460', borderRadius: 999, fontSize: 11, fontWeight: 800, padding: '1px 7px' }
-const CARTAO: CSSProperties = { background: '#fff', borderRadius: 20, boxShadow: '0 4px 18px rgba(30,64,175,.08)' }
+const CARTAO: CSSProperties = { background: '#fff', borderRadius: 20, border: `1px solid ${BORDA_CLARA}`, boxShadow: '0 10px 28px rgba(11,37,69,.08)' }
 
 const dataCurta = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 const dataHora = (iso: string) => `${dataCurta(iso)} · ${new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
@@ -282,14 +283,14 @@ export default function Mensagens() {
     if (await apagarComunicado(id)) setRecarregar(n => n + 1)
   }
 
-  const pad = isMobile ? '12px 14px 0' : '16px 28px 0'
   const corpo: CSSProperties = { maxWidth: 1080, margin: '0 auto', padding: isMobile ? '4px 14px 100px' : '8px 28px 40px' }
-  const tituloCol: CSSProperties = { fontSize: 15, fontWeight: 700, color: COR.texto, margin: '0 0 10px' }
+  const tituloCol: CSSProperties = { fontFamily: FONTE_TITULO, fontSize: 25, fontWeight: 700, lineHeight: 1.05, color: TINTA, margin: '0 0 12px' }
   const alturaChat = isMobile ? 'calc(100vh - 300px)' : 'calc(100vh - 230px)'
 
   const cabecalho = (filhos?: React.ReactNode) => (
-    <div style={{ padding: pad }}>
-      <PageHeader icon="ti-mail" breadcrumb={admin ? 'ADMINISTRADOR · SÓ VOCÊ VÊ' : 'MINHA CONTA'} title="Mensagens"
+    <div>
+      {/* O topo escuro da página do Educador (19/11/2026), de ponta a ponta. */}
+      <PageHeader site fundo={COR.fundo} mb={4} icon="ti-mail" rotulo={admin ? 'Administrador · só você vê' : 'Comunicados e suporte'} title="Mensagens"
         subtitle={admin ? 'Comunicados para todos e as conversas do suporte' : 'Comunicados do Compass One e a sua conversa com o suporte'}>
         {filhos}
       </PageHeader>
@@ -297,7 +298,7 @@ export default function Mensagens() {
   )
 
   if (erro === 'falta-ativar') return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: FONTE_SITE }}>
       <AppHeader currentPath={pathname} />
       {cabecalho()}
       <div style={corpo}><Aviso texto="A caixa de mensagens ainda não foi ativada." /></div>
@@ -334,7 +335,7 @@ export default function Mensagens() {
     ) : <div style={{ ...CARTAO, padding: '18px 20px', fontSize: 14, color: COR.textoSuave }}>Escolha uma conversa.</div>
 
     return (
-      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: FONTE_SITE }}>
         <AppHeader currentPath={pathname} />
         {cabecalho(<Pilulas<AbaAdmin> valor={abaAdmin} onEscolher={v => irPara({ aba: v })}
           itens={[{ id: 'comunicados', rotulo: 'Comunicados' }, { id: 'conversas', rotulo: 'Conversas', selo: naoLidasConversas }]} />)}
@@ -375,7 +376,7 @@ export default function Mensagens() {
   ) : null
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: FONTE_SITE }}>
       <AppHeader currentPath={pathname} />
       {cabecalho(isMobile && admin === false ? (
         <Pilulas<AbaPessoa> valor={abaPessoa} onEscolher={v => irPara({ aba: v })}
