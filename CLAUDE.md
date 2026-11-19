@@ -3788,6 +3788,19 @@ muito intenso"; escolheu a A · Marinho suave, nos dois): `--cx-azul` é
 `#101d4f → #26408f` (branco 9,5:1, rótulo a 75% 6,1:1) e a barra do
 sistema (`theme-color`) `#101d4f`. O brilho ciano não mudou. Mostrados e
 preteridos: Azul profundo, Ardósia e Índigo (`analises/azul-celular/`).
+**O azul virou o degradê "noite" da página do Educador, sem neon**
+(19/11/2026, Guilherme, depois de ver `/educador`): `--cx-azul` é vertical,
+`#070c18 → #111c3f (40%) → #1e40af` (o extremo claro é o próprio limite da
+regra do contraste). O brilho ciano saiu de tudo (`--cx-brilho*`,
+`--cx-bolinha`, quadro neon, anéis, barra de baixo): **neon só na logo**.
+A borda dos cartões é azul-escura FINA (`--cx-borda` `#0b2545`, 1px; a que
+avisa, como vermelho, grupo aberto e hoje, segue 2px). Os botões redondos
+(`Pilula`: Confere, Pagar…) e as caixas de aviso (letra e botão,
+`COR.avisoTexto`) usam o mesmo `#0b2545`; o fundo amarelo do aviso ficou e
+o marrom saiu ("nunca gostei do marrom"). Mostrados e recusados no mesmo
+dia: âmbar no brilho e nas letras do menu, ícone em quadrado escuro com
+desenho âmbar, letra Barlow, avisos no tom do selo "Em breve". Prints em
+`analises/cores-educador/`. As notas que citam brilho ciano são histórico.
 
 **A logo é UMA só: o "Fechado neon"** (27/10/2026, Guilherme: "parece que
 estamos usando logos diferentes"; escolheu entre opções nos cards). Eram três
