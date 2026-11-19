@@ -7,7 +7,7 @@ import { codigoRecebido } from '../utils/indicacao'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { CabecalhoCartao } from '../components/mobile/ui'
 import { TINTA, TINTA2, BORDA_CLARA, FONTE_SITE } from '../components/mobile/estilo'
-import { CampoEntrada, TelaEntrada, Separador } from '../components/entrada/Entrada'
+import { FRASE_ENTRADA, CampoEntrada, TelaEntrada, Separador } from '../components/entrada/Entrada'
 import { botaoPrincipal, botaoClaro, linkEntrada } from '../components/entrada/estiloEntrada'
 
 function useIsMobile() {
@@ -129,7 +129,7 @@ export default function Cadastro() {
     setCarregando(false)
   }
 
-  const FRASE = 'Encontre o seu norte financeiro.'
+  const FRASE = FRASE_ENTRADA
   const APOIO = 'Monte o seu plano em poucos minutos e acompanhe para onde o seu dinheiro está indo.'
 
   // Tela de confirmação enviada

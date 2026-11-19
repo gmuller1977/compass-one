@@ -83,6 +83,9 @@ export function CampoEntrada({
   )
 }
 
+/** A frase das telas de entrada (19/11/2026, Guilherme). */
+export const FRASE_ENTRADA = 'Não é sobre quanto você ganha. É sobre decisões melhores.'
+
 /** A logo em destaque, maior e com um halo dourado atrás, sem o quadrado
  *  ("vamos valorizar a logo", 19/11/2026). */
 function Marca({ grande, baixa }: { grande: boolean; baixa: boolean }) {

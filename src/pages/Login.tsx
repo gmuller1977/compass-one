@@ -11,7 +11,7 @@ import {
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { CabecalhoCartao } from '../components/mobile/ui'
-import { CampoEntrada, TelaEntrada } from '../components/entrada/Entrada'
+import { FRASE_ENTRADA, CampoEntrada, TelaEntrada } from '../components/entrada/Entrada'
 import { useTelaBaixa } from '../components/entrada/estiloEntrada'
 import { FONTE_SITE, FONTE_TITULO, TINTA, TINTA2, BORDA_CLARA } from '../components/mobile/estilo'
 
@@ -339,7 +339,7 @@ export default function Login() {
   )
 
   return (
-    <TelaEntrada frase="Chega de voar às cegas com o seu dinheiro."
+    <TelaEntrada frase={FRASE_ENTRADA}
       apoio="Planeje o mês, veja com quanto ele termina e saiba se cabe no bolso antes de comprar.">
       {form}
     </TelaEntrada>

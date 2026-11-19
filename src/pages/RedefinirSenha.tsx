@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { CabecalhoCartao } from '../components/mobile/ui'
 import { TINTA, TINTA2, FONTE_SITE } from '../components/mobile/estilo'
-import { CampoEntrada, TelaEntrada } from '../components/entrada/Entrada'
+import { FRASE_ENTRADA, CampoEntrada, TelaEntrada } from '../components/entrada/Entrada'
 import { botaoPrincipal, linkEntrada } from '../components/entrada/estiloEntrada'
 
 function useIsMobile() {
@@ -73,7 +73,7 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <TelaEntrada frase="Chega de voar às cegas com o seu dinheiro."
+    <TelaEntrada frase={FRASE_ENTRADA}
       apoio="Planeje o mês, veja com quanto ele termina e saiba se cabe no bolso antes de comprar.">
     <div style={{ padding: isMobile ? '20px 20px 18px' : '36px 40px', fontFamily: FONTE_SITE }}>
       <CabecalhoCartao icone="ti-key" rotulo="Recuperar acesso">Nova senha</CabecalhoCartao>
