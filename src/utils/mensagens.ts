@@ -113,3 +113,21 @@ export async function contarNaoLidas(userId: string, contaCriadaEm: string | und
   const lidos = new Set((l.data ?? []).map(x => x.comunicado_id as number))
   return comunicadosNaoLidos((c.data ?? []) as Comunicado[], lidos, contaCriadaEm) + (m.count ?? 0)
 }
+
+/**
+ * Tempo real (18/11/2026, Guilherme: "o chat não pode demorar"): só com a
+ * tela de Mensagens aberta, o banco avisa quando entra mensagem nova e a tela
+ * relê na hora. O RLS vale também aqui: cada login só é avisado do que pode
+ * ler. Sem a tabela na publicação `supabase_realtime` (migração 027), nada
+ * chega e a tela segue com a busca a cada 30 s. `userId` vazio = todas as
+ * conversas (o administrador, para a lista).
+ */
+export function ouvirMensagensNovas(userId: string, aoChegar: () => void): () => void {
+  const canal = supabase.channel(`mensagens-${userId || 'todas'}-${Math.random().toString(36).slice(2, 8)}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'mensagens_suporte',
+      ...(userId ? { filter: `user_id=eq.${userId}` } : {}),
+    }, () => aoChegar())
+    .subscribe()
+  return () => { supabase.removeChannel(canal) }
+}
