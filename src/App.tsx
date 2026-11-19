@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import type { ReactNode } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import { ToastProvider } from './components/Toast'
 import Sidebar, { SIDEBAR_W } from './components/Sidebar'
@@ -114,6 +114,18 @@ function useInicioDoNovo() {
   }) ? '/primeiro-acesso' : '/configuracoes'
 }
 
+// O celular ABRE no Lançar (19/11/2026, Guilherme: "a pessoa vai acessar
+// geralmente quando está comprando alguma coisa"). Só a primeira vez que a "/"
+// aparece nesta abertura do app: depois, "Início" na barra de baixo é a Bússola.
+let lancarJaAbriu = false
+
+/** Marca a abertura no efeito, não no render: o render pode rodar duas vezes. */
+function AbrirNoLancar() {
+  const navigate = useNavigate()
+  useEffect(() => { lancarJaAbriu = true; navigate('/lancar', { replace: true }) }, [navigate])
+  return null
+}
+
 function HomeRoute() {
   const { user, carregando, onboardingCompleto } = useApp()
   const isMobile = useIsMobile()
@@ -126,6 +138,7 @@ function HomeRoute() {
   if (!user) return ehHostDoApp() || (isMobile && pulaApresentacao()) ? <Navigate to="/login" replace /> : <LandingPage />
   if (!onboardingCompleto) return <Navigate to={inicioDoNovo} replace />
   if (!isMobile) return <Navigate to="/dashboard" replace />
+  if (!lancarJaAbriu) return <AbrirNoLancar />
   return <AppShell><Bussola /></AppShell>
 }
 

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { ocultarValores } from './mobile/estilo'
 import { COR } from '../utils/cores'
 import ModalTopo from './ModalTopo'
 import TelaBloqueio from './TelaBloqueio'
@@ -26,6 +28,7 @@ const INTERVALO_ESCRITA_MS = 15_000
  */
 export default function AvisoInatividade({ bloquear = false }: { bloquear?: boolean }) {
   const { sairDaConta } = useApp()
+  const navigate = useNavigate()
   const [restanteMs, setRestanteMs] = useState<number | null>(null)
   // Reaberto depois do prazo, já nasce travado: os números não piscam na tela.
   const [bloqueado, setBloqueado] = useState(() => {
@@ -66,6 +69,10 @@ export default function AvisoInatividade({ bloquear = false }: { bloquear?: bool
     continuar()
     bloqueadoRef.current = false
     setBloqueado(false)
+    // Destravar é abrir o app de novo (só existe no celular): saldo
+    // escondido e o Lançar na frente, como na abertura (19/11/2026).
+    ocultarValores()
+    navigate('/lancar', { replace: true })
   }
 
   useEffect(() => {

@@ -13,25 +13,30 @@ export const M = {
 export const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 // ── Esconder valores (o "olho" dos apps de banco) ─────────────────────
-// Preferência do aparelho, não da conta: quem mostra o celular a alguém
-// esconde ali. localStorage protegido — sem ele, os valores aparecem.
-const CHAVE_OCULTAR = 'compass-ocultar-valores'
+// Toda abertura do app começa com os valores ESCONDIDOS (19/11/2026,
+// Guilherme: "tem que aparecer o saldo oculto; para visualizar, clicar no
+// olhinho"). Tocar no olho mostra até o app ser fechado ou a tela travar
+// (`ocultarValores`, chamado ao destravar). Fica na memória, não no
+// localStorage: guardar a escolha faria o app abrir com o saldo à vista.
 const EVENTO = 'compass-ocultar'
+let ocultoAgora = true
 
-function lerOcultar(): boolean {
-  try { return localStorage.getItem(CHAVE_OCULTAR) === '1' } catch { return false }
+/** Esconde de novo os valores (tela destravada, app reaberto). */
+export function ocultarValores() {
+  ocultoAgora = true
+  window.dispatchEvent(new Event(EVENTO))
 }
 
 export function useValoresOcultos(): [boolean, () => void] {
-  const [oculto, setOculto] = useState(lerOcultar)
+  const [oculto, setOculto] = useState(ocultoAgora)
   useEffect(() => {
-    const h = () => setOculto(lerOcultar())
+    const h = () => setOculto(ocultoAgora)
     window.addEventListener(EVENTO, h)
     return () => window.removeEventListener(EVENTO, h)
   }, [])
   const alternar = () => {
-    try { localStorage.setItem(CHAVE_OCULTAR, oculto ? '0' : '1') } catch { /* só nesta tela */ }
-    setOculto(!oculto)
+    ocultoAgora = !ocultoAgora
+    setOculto(ocultoAgora)
     window.dispatchEvent(new Event(EVENTO))
   }
   return [oculto, alternar]
