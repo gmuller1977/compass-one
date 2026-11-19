@@ -11,6 +11,12 @@ import {
 } from '../utils/digital'
 import { useLarguraMenorQue } from '../utils/larguraTela'
 import { LogoCompass, NomeCompass } from '../components/LogoCompass'
+import { CabecalhoCartao, OndasTopo, RotuloTopo } from '../components/mobile/ui'
+import { FONTE_SITE, FONTE_TITULO, TINTA, TINTA2, BORDA_CLARA } from '../components/mobile/estilo'
+
+// Estilo da página do Educador (19/11/2026, pedido do Guilherme): topo
+// escuro com as duas ondas, letra Barlow, cartão branco e botão em tinta.
+const FUNDO = '#f3f7fd'
 
 // Tela baixa (iPhone SE no navegador, com as barras dele): o topo e os
 // espaços encolhem para o formulário inteiro caber.
@@ -57,15 +63,15 @@ function Campo({
   return (
     <div style={{ marginBottom: compacto ? 10 : 14 }}>
       <label style={{
-        display: 'block', fontSize: 10, fontWeight: 700, color: '#1a56db',
-        textTransform: 'uppercase', letterSpacing: .5, marginBottom: 5,
+        display: 'block', fontSize: 11, fontWeight: 700, color: TINTA2,
+        textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 5,
       }}>{label}</label>
       <div style={{ position: 'relative' }}>
         {icone && (
-          <span style={{
-            position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-            fontSize: 16, pointerEvents: 'none',
-          }}>{icone}</span>
+          <i aria-hidden className={`ti ${icone}`} style={{
+            position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)',
+            fontSize: 19, pointerEvents: 'none', color: TINTA2,
+          }}/>
         )}
         <input
           type={tipoReal}
@@ -79,25 +85,26 @@ function Campo({
           style={{
             width: '100%',
             padding: `${compacto ? 11 : 13}px ${ehSenha ? '44px' : '14px'} ${compacto ? 11 : 13}px ${icone ? '44px' : '14px'}`,
-            border: `1.5px solid ${temErro ? '#dc2626' : focado ? '#1a56db' : '#e2e8f0'}`,
-            borderRadius: 14, fontSize: 14, color: '#0f172a',
+            border: `1.5px solid ${temErro ? '#b91c1c' : focado ? TINTA : BORDA_CLARA}`,
+            borderRadius: 12, fontSize: 16, color: TINTA,
             background: '#fff', outline: 'none', fontFamily: 'inherit',
             transition: 'all .15s',
-            boxShadow: focado ? '0 0 0 3px rgba(26,86,219,.08)' : 'none',
+            boxShadow: focado ? '0 0 0 3px rgba(11,37,69,.10)' : 'none',
           }}
         />
         {ehSenha && (
-          <span
+          <button type="button" aria-label={verSenha ? 'Esconder a senha' : 'Mostrar a senha'}
             onClick={() => setVerSenha(v => !v)}
             style={{
-              position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 16, cursor: 'pointer', color: '#94a3b8', padding: 4,
+              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              border: 'none', background: 'transparent', cursor: 'pointer', color: TINTA2, padding: 6,
+              display: 'flex',
             }}
-          >{verSenha ? '🙈' : '👁️'}</span>
+          ><i aria-hidden className={`ti ${verSenha ? 'ti-eye-off' : 'ti-eye'}`} style={{ fontSize: 20 }}/></button>
         )}
       </div>
       {temErro && (
-        <div style={{ fontSize: 11, color: '#dc2626', marginTop: 4 }}>{erroMsg}</div>
+        <div style={{ fontSize: 12, color: '#b91c1c', marginTop: 4 }}>{erroMsg}</div>
       )}
     </div>
   )
@@ -137,6 +144,8 @@ export default function Login() {
   const baixa       = useTelaBaixa(620)
   const pcBaixo     = useTelaBaixa(780) && !isMobile
   const pcMuitoBaixo = useTelaBaixa(640) && !isMobile
+  // A frase do topo só aparece no celular quando sobra altura.
+  const celAlto     = !useTelaBaixa(760)
   const [email,     setEmail]     = useState('')
   const [senha,     setSenha]     = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -258,85 +267,84 @@ export default function Login() {
   // inteira cabe sem rolar, com digital, e-mail, senha e Google à vista
   // (pedido do Guilherme em 25/10/2026). Ainda rola se faltar altura (teclado
   // aberto, aviso de erro).
+  const marca = (grande: boolean) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: grande ? 14 : 12, position: 'relative' }}>
+      <div style={{
+        width: grande ? 52 : (baixa ? 40 : 46), height: grande ? 52 : (baixa ? 40 : 46), borderRadius: 14, flexShrink: 0,
+        background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.22)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <LogoCompass size={grande ? 34 : (baixa ? 27 : 30)}/>
+      </div>
+      <div style={{ color: '#fff', fontSize: grande ? 24 : 21, fontWeight: 800, letterSpacing: -.4, lineHeight: 1.1 }}>
+        <NomeCompass />
+      </div>
+    </div>
+  )
+
+  // No celular o topo é baixo: marca, o rótulo âmbar e (com altura) a frase do
+  // site; o formulário cabe sem rolar (pedido do Guilherme em 25/10/2026). Ainda
+  // rola se faltar altura (teclado aberto, aviso de erro).
   const hero = (compact: boolean) => compact ? (
     <div style={{
-      background: 'var(--cx-azul)', boxShadow: 'var(--cx-brilho-topo)',
-      padding: `calc(env(safe-area-inset-top, 0px) + ${baixa ? 12 : 18}px) 24px ${baixa ? 12 : 18}px`, flexShrink: 0,
-      display: 'flex', alignItems: 'center', gap: 14, position: 'relative', overflow: 'hidden',
+      background: 'var(--cx-azul)', position: 'relative', overflow: 'hidden', flexShrink: 0,
+      padding: `calc(env(safe-area-inset-top, 0px) + ${baixa ? 12 : 20}px) 22px ${baixa ? 46 : celAlto ? 66 : 56}px`,
     }}>
-      <div style={{ position:'absolute', width:160, height:160, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-70, right:-40 }}/>
-      <div style={{
-        width: baixa ? 40 : 48, height: baixa ? 40 : 48, borderRadius: 14, flexShrink: 0,
-        background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 6px 16px rgba(0,0,0,.2)', position: 'relative',
-      }}>
-        <LogoCompass size={30}/>
+      {marca(false)}
+      <div style={{ marginTop: baixa ? 10 : 18, position: 'relative' }}>
+        <RotuloTopo icone="ti-compass">Sua bússola financeira</RotuloTopo>
       </div>
-      <div style={{ position: 'relative' }}>
-        <div style={{ color:'#fff', fontSize: 22, fontWeight:800, letterSpacing:-.5, lineHeight: 1.1 }}>
-          <NomeCompass />
-        </div>
-        <div style={{ color:'rgba(255,255,255,.75)', fontSize:12, fontWeight:500, marginTop:3 }}>
-          Sua bússola financeira
-        </div>
-      </div>
+      {celAlto && (
+        <h1 style={{ margin: '8px 0 0', fontFamily: FONTE_TITULO, fontSize: 34, fontWeight: 700, lineHeight: 1.02,
+          color: '#fff', position: 'relative' }}>Chega de voar às cegas com o seu dinheiro.</h1>
+      )}
+      <OndasTopo fundo={FUNDO}/>
     </div>
   ) : (
     <div style={{
-      background: 'var(--cx-azul)',
-      padding: '60px 48px',
-      flex: 1,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden',
+      background: 'var(--cx-azul)', flex: 1, position: 'relative', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      padding: pcBaixo ? '32px 56px 96px' : '48px 64px 120px',
     }}>
-      <div style={{ position:'absolute', width:200, height:200, borderRadius:'50%', background:'rgba(255,255,255,.05)', top:-60, right:-60 }}/>
-      <div style={{ position:'absolute', width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,.04)', bottom:-40, left:-20 }}/>
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, position:'relative', zIndex:1 }}>
-        <div style={{
-          width: 88, height: 88, borderRadius: 20,
-          background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 24px rgba(0,0,0,.2)',
-        }}>
-          <LogoCompass size={58}/>
-        </div>
-        <div>
-          <div style={{ color:'#fff', fontSize: 30, fontWeight:800, letterSpacing:-.5, textAlign:'center' }}>
-            <NomeCompass />
-          </div>
-          <div style={{ color:'rgba(255,255,255,.55)', fontSize:12, fontWeight:500, textAlign:'center', marginTop:4 }}>
-            Sua bússola financeira
-          </div>
-        </div>
+      {marca(true)}
+      <div style={{ maxWidth: 520, position: 'relative' }}>
+        <RotuloTopo icone="ti-compass">Sua bússola financeira</RotuloTopo>
+        <h1 style={{ margin: '14px 0 16px', fontFamily: FONTE_TITULO, fontSize: pcBaixo ? 50 : 60, fontWeight: 700,
+          lineHeight: 1, color: '#fff' }}>Chega de voar às cegas com o seu dinheiro.</h1>
+        <p style={{ margin: 0, fontSize: 18, lineHeight: 1.55, color: 'rgba(255,255,255,.85)', maxWidth: 460 }}>
+          Planeje o mês, veja com quanto ele termina e saiba se cabe no bolso antes de comprar.
+        </p>
       </div>
+      <div/>
+      <OndasTopo fundo={FUNDO}/>
     </div>
   )
 
   const botaoDigital = (destaque: boolean) => (
     <button onClick={() => handleDigital()} disabled={carregando} style={{
       width:'100%', padding: destaque ? (isMobile ? '13px' : '15px') : (isMobile ? '11px' : '13px'), borderRadius:14, fontFamily:'inherit',
-      border: destaque ? 'none' : '1.5px solid #e2e8f0',
-      background: destaque ? 'linear-gradient(135deg,#1a56db,#2563eb)' : '#fff',
-      color: destaque ? '#fff' : '#0f172a', fontSize: destaque ? 16 : 14, fontWeight: destaque ? 800 : 600,
+      border: destaque ? 'none' : `1.5px solid ${BORDA_CLARA}`,
+      background: destaque ? TINTA : '#fff',
+      color: TINTA, fontSize: destaque ? 16 : 15, fontWeight: destaque ? 700 : 600,
+      ...(destaque ? { color: '#fff' } : {}),
       cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1,
-      boxShadow: destaque ? '0 4px 20px rgba(26,86,219,.35)' : 'none',
+      boxShadow: destaque ? '0 6px 18px rgba(11,37,69,.25)' : 'none',
       display:'flex', alignItems:'center', justifyContent:'center', gap:10,
       marginBottom: destaque ? 12 : 0,
     }}>
-      <DigitalSVG cor={destaque ? '#fff' : '#1a56db'}/> {destaque || !isMobile ? 'Entrar com digital' : 'Digital'}
+      <DigitalSVG cor={destaque ? '#fff' : TINTA}/> {destaque || !isMobile ? 'Entrar com digital' : 'Digital'}
     </button>
   )
 
   const telaOferta = (
-    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif", textAlign:'center',
+    <div style={{ padding: isMobile ? '24px 20px 20px' : '40px 40px', fontFamily: FONTE_SITE, textAlign:'center',
       margin: isMobile ? 'auto 0' : undefined }}>
-      <div style={{ width:64, height:64, borderRadius:'50%', background:'#eff6ff', margin:'0 auto 16px',
+      <div style={{ width:56, height:56, borderRadius:15, background:'#070c18', margin:'0 auto 16px',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <DigitalSVG cor="#1a56db"/>
+        <DigitalSVG cor="#f5b942"/>
       </div>
-      <div style={{ fontSize:20, fontWeight:800, color:'#0f172a', marginBottom:8 }}>Entrar com a digital da próxima vez?</div>
-      <div style={{ fontSize:14, color:'#475569', lineHeight:1.55, marginBottom:20 }}>
+      <div style={{ fontFamily: FONTE_TITULO, fontSize:28, fontWeight:700, lineHeight:1.05, color:TINTA, marginBottom:10 }}>Entrar com a digital da próxima vez?</div>
+      <div style={{ fontSize:15, color:TINTA2, lineHeight:1.55, marginBottom:20 }}>
         Você entra só encostando o dedo (ou olhando para a câmera), sem digitar a senha. A digital
         não sai do aparelho: o Compass One só recebe a confirmação de que é você.
       </div>
@@ -347,31 +355,32 @@ export default function Login() {
       )}
       <button onClick={ativarDigital} disabled={carregando} style={{
         width:'100%', padding:'15px', border:'none', borderRadius:14,
-        background:'linear-gradient(135deg,#1a56db,#2563eb)', color:'#fff', fontSize:16, fontWeight:800,
+        background:TINTA, color:'#fff', fontSize:16, fontWeight:700,
         cursor: carregando ? 'default' : 'pointer', opacity: carregando ? .75 : 1, fontFamily:'inherit',
         display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:12,
       }}>
         <DigitalSVG cor="#fff"/> {carregando ? 'Aguardando a digital…' : 'Ativar digital'}
       </button>
       <button onClick={agoraNao} disabled={carregando} style={{
-        width:'100%', padding:'13px', border:'none', background:'transparent', color:'#1a56db',
+        width:'100%', padding:'13px', border:'none', background:'transparent', color:TINTA, textDecoration:'underline',
         fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
       }}>Agora não</button>
-      <div style={{ fontSize:12, color:'#64748b', marginTop:8 }}>Dá para ativar depois em Configurações → Perfil.</div>
+      <div style={{ fontSize:13, color:TINTA2, marginTop:8 }}>Dá para ativar depois em Configurações → Perfil.</div>
     </div>
   )
 
   const form = ofertaDigital ? telaOferta : (
-    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : (pcMuitoBaixo ? '20px 44px' : pcBaixo ? '28px 44px' : '48px 44px'), fontFamily:"-apple-system,'Inter',sans-serif",
-      margin: isMobile ? 'auto 0' : undefined, width: '100%' }}>
+    <div style={{ padding: isMobile ? (baixa ? '14px 18px 12px' : '20px 20px 16px') : (pcMuitoBaixo ? '20px 36px' : pcBaixo ? '26px 38px' : '36px 40px'), fontFamily: FONTE_SITE,
+      width: '100%' }}>
       {/* A sequência segue o modelo pedido pelo Guilherme em 26/10/2026:
           título, entrar com Google/digital, "ou", e-mail e senha, esqueci,
           Entrar e o convite para o cadastro. */}
-      <div style={{ fontSize:22, fontWeight:800, color:'#0f172a', textAlign:'center',
-        marginBottom: isMobile ? (baixa ? 12 : 18) : (pcBaixo ? 18 : 24) }}>Acesse sua conta</div>
+      <div style={{ marginBottom: isMobile ? (baixa ? 0 : 4) : (pcBaixo ? 4 : 10) }}>
+        <CabecalhoCartao icone="ti-login-2" rotulo="Bem-vindo de volta">Acesse sua conta</CabecalhoCartao>
+      </div>
 
       {erro && (
-        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16, textAlign:'center' }}>
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#b91c1c', marginBottom:16, textAlign:'center' }}>
           {erro}
         </div>
       )}
@@ -395,8 +404,8 @@ export default function Login() {
         ? { display:'flex', gap:10 }
         : { display:'flex', flexDirection:'column', gap:12 }}>
         <button onClick={handleGoogle} disabled={carregando} style={{
-          width:'100%', padding: isMobile ? '11px' : '13px', border:'1.5px solid #e2e8f0', borderRadius:14,
-          background:'#fff', color:'#0f172a', fontSize:14, fontWeight:600,
+          width:'100%', padding: isMobile ? '11px' : '13px', border:`1.5px solid ${BORDA_CLARA}`, borderRadius:14,
+          background:'#fff', color:TINTA, fontSize:15, fontWeight:600,
           cursor:'pointer', fontFamily:'inherit',
           display:'flex', alignItems:'center', justifyContent:'center', gap:10,
           transition:'all .15s',
@@ -408,33 +417,33 @@ export default function Login() {
 
       <div style={{ display:'flex', alignItems:'center', gap:12,
         margin: isMobile ? (baixa ? '10px 0' : '14px 0') : (pcBaixo ? '14px 0' : '18px 0') }}>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
-        <span style={{ fontSize:12, color:'#64748b', fontWeight:600 }}>ou</span>
-        <div style={{ flex:1, height:1, background:'#e2e8f0' }}/>
+        <div style={{ flex:1, height:1, background:BORDA_CLARA }}/>
+        <span style={{ fontSize:12, color:TINTA2, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>ou</span>
+        <div style={{ flex:1, height:1, background:BORDA_CLARA }}/>
       </div>
 
       <Campo label="E-mail" tipo="email" placeholder="seu@email.com"
-        valor={email} onChange={setEmail} icone="✉️" compacto={isMobile || pcBaixo} />
+        valor={email} onChange={setEmail} icone="ti-mail" compacto={isMobile || pcBaixo} />
 
       <Campo label="Senha" tipo="password" placeholder="Sua senha"
-        valor={senha} onChange={setSenha} icone="🔑"
+        valor={senha} onChange={setSenha} icone="ti-lock"
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }} compacto={isMobile || pcBaixo} />
 
       <div style={{ marginTop: isMobile ? -6 : -8, marginBottom: isMobile ? (baixa ? 8 : 12) : (pcBaixo ? 14 : 20) }}>
         <button onClick={handleResetSenha} style={{
-          border:'none', background:'transparent', color:'#1a56db', padding:0,
-          fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+          border:'none', background:'transparent', color:TINTA, padding:0, textDecoration:'underline',
+          fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
         }}>Esqueci minha senha</button>
       </div>
 
       <button onClick={handleSubmit} disabled={carregando} style={{
         width:'100%', padding: isMobile ? '13px' : '15px', border:'none', borderRadius:14,
-        background:'linear-gradient(135deg,#1a56db,#2563eb)',
-        color:'#fff', fontSize:16, fontWeight:800,
+        background:TINTA,
+        color:'#fff', fontSize:17, fontWeight:700, letterSpacing:'.02em',
         cursor: carregando ? 'default' : 'pointer',
         opacity: carregando ? .75 : 1,
         fontFamily:'inherit',
-        boxShadow:'0 4px 20px rgba(26,86,219,.35)',
+        boxShadow:'0 6px 18px rgba(11,37,69,.25)',
         transition:'all .15s',
         display:'flex', alignItems:'center', justifyContent:'center', gap:8,
         marginBottom: isMobile ? (baixa ? 10 : 14) : (pcBaixo ? 14 : 20),
@@ -443,21 +452,21 @@ export default function Login() {
       </button>
 
       <div style={{ textAlign:'center' }}>
-        <span style={{ fontSize:13, color:'#475569' }}>Ainda não possui uma conta? </span>
+        <span style={{ fontSize:14, color:TINTA2 }}>Ainda não possui uma conta? </span>
         <button onClick={() => navigate('/cadastro')} style={{
-          border:'none', background:'transparent', color:'#1a56db', padding:0,
-          fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+          border:'none', background:'transparent', color:TINTA, padding:0, textDecoration:'underline',
+          fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
         }}>Faça o cadastro!</button>
       </div>
 
       <div style={{ textAlign:'center', marginTop: isMobile ? (baixa ? 8 : 12) : 20 }}>
-        <span style={{ fontSize:10, color:'#94a3b8', lineHeight:1.5 }}>
+        <span style={{ fontSize:11, color:TINTA2, lineHeight:1.5 }}>
           Ao entrar você concorda com os{' '}
           <a href="/termos" target="_blank" rel="noopener noreferrer"
-            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Termos de Uso</a>
+            style={{ color:TINTA, fontWeight:700 }}>Termos de Uso</a>
           {' '}e{' '}
           <a href="/privacidade" target="_blank" rel="noopener noreferrer"
-            style={{ color:'#1a56db', fontWeight:600, textDecoration:'none' }}>Privacidade</a>
+            style={{ color:TINTA, fontWeight:700 }}>Privacidade</a>
         </span>
       </div>
     </div>
@@ -465,20 +474,22 @@ export default function Login() {
 
   if (isMobile) {
     return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:FUNDO, fontFamily:FONTE_SITE, overflow:'hidden' }}>
         {hero(true)}
-        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', display:'flex', flexDirection:'column' }}>
-          {form}
+        <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', padding: baixa ? '0 12px 10px' : '0 14px 14px', marginTop: baixa ? -28 : -40, position:'relative' }}>
+          <div style={{ background:'#fff', borderRadius:20, border:'1px solid var(--cx-borda)', boxShadow:'0 10px 30px rgba(11,37,69,.10)' }}>
+            {form}
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
+    <div style={{ minHeight:'100vh', display:'flex', fontFamily:FONTE_SITE, background:FUNDO }}>
       {hero(false)}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding: pcMuitoBaixo ? '8px 20px' : pcBaixo ? '16px 20px' : '40px 20px' }}>
-        <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>
+        <div style={{ width:'100%', maxWidth:440, background:'#fff', borderRadius:20, border:'1px solid var(--cx-borda)', boxShadow:'0 12px 40px rgba(11,37,69,.10)', overflow:'hidden' }}>
           {form}
         </div>
       </div>
