@@ -3820,6 +3820,12 @@ o marrom saiu ("nunca gostei do marrom"). Mostrados e recusados no mesmo
 dia: âmbar no brilho e nas letras do menu, ícone em quadrado escuro com
 desenho âmbar, letra Barlow, avisos no tom do selo "Em breve". Prints em
 `analises/cores-educador/`. As notas que citam brilho ciano são histórico.
+**A letra do texto é a Barlow 6% maior** (19/11/2026, Guilherme: "parece
+que está menor, precisa revisar em todo o app"). `FONTE_SITE` usa a face
+`'Barlow App'` (`src/index.css`, `size-adjust: 106%`): o "x" da Barlow mede
+515/1000 e o da Inter de antes 546. Os números seguem mais estreitos que
+antes, então o que cabia continua cabendo. Os títulos em Barlow Condensed
+não mudaram. No "Confira seus saldos" o saldo do banco foi a 15px (`M.corpo`).
 **A Início ganhou o ESTILO DA PÁGINA DO EDUCADOR** (19/11/2026, Guilherme:
 "o site parece mais bonito que o app"; prévias em
 `analises/cores-educador/estilo-site/`, o Simulador aprovado primeiro como
