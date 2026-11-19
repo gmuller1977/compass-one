@@ -53,7 +53,7 @@ export default function PagarContaDialog({ conta: pagando, onFechar, central = f
       <div onClick={e => e.stopPropagation()} style={{
         background: '#fff', width: '100%', maxWidth: central ? 420 : undefined,
         borderRadius: central ? raio : `${raio}px ${raio}px 0 0`, overflow: 'hidden',
-        fontFamily: "-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
+        fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
       }}>
         <ModalTopo icone="ti-receipt" rotulo="Pagar conta" titulo={nome} raio={raio}
           subtitulo={`Previsto ${fmt(pagando.valor)} · ${quandoVence(pagando)}`} onFechar={onFechar} />

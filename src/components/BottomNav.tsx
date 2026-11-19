@@ -115,7 +115,7 @@ export default function BottomNav() {
             // O Sair é o último: a folha rola e respeita a barra de gestos do aparelho para ele nunca ficar escondido.
             padding: '10px 0 calc(28px + env(safe-area-inset-bottom))', maxHeight: '88vh', overflowY: 'auto',
             animation: 'slideUp .2s ease',
-            fontFamily: "-apple-system,'Inter',sans-serif",
+            fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
           }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: COR.borda, margin: '0 auto 8px' }} />
             {MAIS.map(m => (
@@ -124,9 +124,9 @@ export default function BottomNav() {
                 border: 'none', background: isActive(m.path) ? '#eff6ff' : 'transparent', cursor: m.emBreve ? 'default' : 'pointer',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: COR.texto, textAlign: 'left', minHeight: 56,
               }}>
-                <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: BOLINHA_AZUL, boxShadow: 'var(--cx-bolinha)', flexShrink: 0,
+                <span aria-hidden style={{ width: 40, height: 40, borderRadius: 11, background: 'var(--cx-icone-fundo)', flexShrink: 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className={`ti ${m.icon}`} style={{ color: '#fff', fontSize: 21 }} /></span>{m.label}
+                  <i className={`ti ${m.icon}`} style={{ color: 'var(--cx-icone)', fontSize: 21 }} /></span>{m.label}
                 {m.path === '/mensagens' && naoLidas > 0 && (
                   // Branco sobre #1d4ed8: 6,7:1.
                   <span aria-label={`${naoLidas} não lidas`} style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 800, padding: '2px 8px',
@@ -153,7 +153,7 @@ export default function BottomNav() {
       )}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'var(--cx-azul)', boxShadow: 'inset 0 2px 0 rgba(34,211,238,.9), 0 -6px 24px rgba(34,211,238,.18)',
+        background: 'var(--cx-azul)', boxShadow: '0 -6px 20px rgba(11,19,34,.25)',
         padding: '8px 0 calc(14px + env(safe-area-inset-bottom))',
         display: 'flex', zIndex: 100,
       }}>

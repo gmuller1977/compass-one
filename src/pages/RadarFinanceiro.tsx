@@ -261,7 +261,7 @@ export default function RadarFinanceiro() {
 
   return (
     <div style={{height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',background:M.fundo,
-      fontFamily:"-apple-system,'Inter',sans-serif"}}>
+      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif"}}>
       <AppHeader currentPath={pathname} />
 
       {/* CONTEÚDO */}
@@ -475,7 +475,7 @@ function AnelTopo({ pct, cor }: { pct: number; cor: string }) {
       <circle cx="23" cy="23" r={r} stroke="#fff" strokeWidth="6" fill="none" />
       {cheio > 0 && (
         <circle cx="23" cy="23" r={r} stroke={cor} strokeWidth="6" fill="none" strokeLinecap="round"
-          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 23 23)" style={{ filter: 'drop-shadow(0 0 4px #22d3ee)' }} />
+          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 23 23)" />
       )}
       <text x="23" y="27" textAnchor="middle" fill="#fff" fontSize={t.length > 4 ? 10 : 11} fontWeight="800">{t}</text>
     </svg>

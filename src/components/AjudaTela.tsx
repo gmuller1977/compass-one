@@ -46,7 +46,7 @@ export default function AjudaTela({ tela }: { tela: TelaAjuda }) {
           <div style={{
             background: '#fff', borderRadius: 18, maxWidth: 440, width: '100%',
             maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            boxShadow: '0 24px 60px rgba(0,0,0,.4)', fontFamily: "-apple-system,'Inter',sans-serif",
+            boxShadow: '0 24px 60px rgba(0,0,0,.4)', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
           }}>
             <ModalTopo icone="ti-help-circle" rotulo="Como usar" titulo={a.titulo} subtitulo={a.resumo}
               onFechar={() => setAberta(false)} />

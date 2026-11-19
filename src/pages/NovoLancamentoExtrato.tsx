@@ -1190,7 +1190,7 @@ export default function NovoLancamentoExtrato() {
     // Celular, no Banco, no Cartão e no Dinheiro: a PÁGINA rola, com o topo azul junto,
     // como na Bússola — antes o topo ficava preso e sobrava meia tela de dias.
     <div style={{height:'100vh',display:'flex',flexDirection:'column',
-      background:M.fundo,fontFamily:"-apple-system,'Inter',sans-serif",
+      background:M.fundo,fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
       overflow:isMobile&&tabPrincipal!=='consolidado'?'auto':'hidden'}}>
       <style>{`
         @keyframes rowSaved {

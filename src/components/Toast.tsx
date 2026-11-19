@@ -41,7 +41,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 padding: '10px 20px', borderRadius: 10,
                 background: c.bg, border: `1px solid ${c.border}`,
                 color: c.text, fontSize: 13, fontWeight: 500,
-                fontFamily: "-apple-system,'Inter',sans-serif",
+                fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
                 boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
                 whiteSpace: 'nowrap', pointerEvents: 'auto',
                 animation: 'toastIn .18s ease',

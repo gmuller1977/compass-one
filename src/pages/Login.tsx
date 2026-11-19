@@ -329,7 +329,7 @@ export default function Login() {
   )
 
   const telaOferta = (
-    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily:"-apple-system,'Inter',sans-serif", textAlign:'center',
+    <div style={{ padding: isMobile ? '28px 24px 24px' : '48px 44px', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", textAlign:'center',
       margin: isMobile ? 'auto 0' : undefined }}>
       <div style={{ width:64, height:64, borderRadius:'50%', background:'#eff6ff', margin:'0 auto 16px',
         display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -362,7 +362,7 @@ export default function Login() {
   )
 
   const form = ofertaDigital ? telaOferta : (
-    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : (pcMuitoBaixo ? '20px 44px' : pcBaixo ? '28px 44px' : '48px 44px'), fontFamily:"-apple-system,'Inter',sans-serif",
+    <div style={{ padding: isMobile ? (baixa ? '10px 24px 10px' : '20px 24px 16px') : (pcMuitoBaixo ? '20px 44px' : pcBaixo ? '28px 44px' : '48px 44px'), fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
       margin: isMobile ? 'auto 0' : undefined, width: '100%' }}>
       {/* A sequência segue o modelo pedido pelo Guilherme em 26/10/2026:
           título, entrar com Google/digital, "ou", e-mail e senha, esqueci,
@@ -465,7 +465,7 @@ export default function Login() {
 
   if (isMobile) {
     return (
-      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      <div style={{ height:'100dvh', display:'flex', flexDirection:'column', background:'#f8faff', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
         {hero(true)}
         <div style={{ flex:1, overflowY:'auto', scrollbarWidth:'none', display:'flex', flexDirection:'column' }}>
           {form}
@@ -475,7 +475,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', fontFamily:"-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
+    <div style={{ minHeight:'100vh', display:'flex', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", background:'#f8faff' }}>
       {hero(false)}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding: pcMuitoBaixo ? '8px 20px' : pcBaixo ? '16px 20px' : '40px 20px' }}>
         <div style={{ width:'100%', maxWidth:420, background:'#fff', borderRadius:20, boxShadow:'0 8px 40px rgba(0,0,0,.08)', overflow:'hidden' }}>

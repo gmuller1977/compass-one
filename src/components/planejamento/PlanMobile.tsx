@@ -93,7 +93,7 @@ export default function PlanMobile(p: Props) {
   const m = meses[mes]
 
   return (
-    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", paddingBottom: 110 }}>
       {/* ── Topo: o do computador (título, ano, "?" e a resposta do ano) ── */}
       <div style={{ background: AZUL_TOPO, color: '#fff', borderRadius: '0 0 28px 28px', boxShadow: 'var(--cx-brilho-topo)', padding: '18px 16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>

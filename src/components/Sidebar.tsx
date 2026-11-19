@@ -110,10 +110,10 @@ function NavItemRow({
         color: isSair
           ? (hovered ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)')
           : active
-            ? '#1a56db'
+            ? '#0b2545'
             : disabled
               ? 'rgba(255,255,255,0.3)'
-              : 'rgba(255,255,255,0.65)',
+              : '#f5b942',
         fontSize: 13,
         fontWeight: active ? 700 : 500,
         boxShadow: active ? '0 2px 8px rgba(0,0,0,.15)' : 'none',
@@ -166,7 +166,7 @@ function SubItemRow({
         background: active
           ? 'rgba(255,255,255,.9)'
           : hovered ? 'rgba(255,255,255,.06)' : 'transparent',
-        color: active ? '#1a56db' : hovered ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.5)',
+        color: active ? '#0b2545' : hovered ? '#fde7b0' : 'rgba(245,185,66,.8)',
         fontSize: 12,
         fontWeight: active ? 700 : 400,
         boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
@@ -270,7 +270,7 @@ export default function Sidebar() {
       position: 'fixed', top: 0, left: 0, bottom: 0, width: SIDEBAR_W,
       background: 'var(--cx-azul)', boxShadow: 'inset -1px 0 0 var(--cx-neon)',
       display: 'flex', flexDirection: 'column', zIndex: 100,
-      fontFamily: "-apple-system,'Inter',sans-serif",
+      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
     }}>
 
       {/* ── Logo ── */}
@@ -443,7 +443,7 @@ export default function Sidebar() {
             padding: '9px 10px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
             marginBottom: 8, color: '#fff',
             background: pathname === '/mensagens' ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)',
-            border: '1px solid rgba(34,211,238,.55)', boxShadow: '0 0 10px rgba(34,211,238,.25)',
+            border: '1px solid rgba(255,255,255,.18)',
             transition: 'background .15s',
           }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.13)')}
@@ -459,7 +459,7 @@ export default function Sidebar() {
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,.7)', marginTop: 1 }}>Comunicados e suporte</div>
           </div>
           {naoLidas > 0 && <span style={{
-            background: '#22d3ee', color: '#0b1460', borderRadius: 999, fontSize: 11, fontWeight: 800,
+            background: '#f5b942', color: '#0b1322', borderRadius: 999, fontSize: 11, fontWeight: 800,
             padding: '1px 7px', flexShrink: 0,
           }}>{textoDoSelo(naoLidas)}</span>}
         </button>

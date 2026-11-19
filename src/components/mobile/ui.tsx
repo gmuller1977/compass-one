@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from 'react'
 import { COR } from '../../utils/cores'
-import { BOLINHA_AZUL, M, mostrar, TOPO_AZUL } from './estilo'
+import { M, mostrar, TOPO_AZUL } from './estilo'
 import { IconeCat } from '../IconeCat'
 import { corDoIcone } from '../../utils/iconeDesenhado'
 
@@ -23,7 +23,7 @@ import { corDoIcone } from '../../utils/iconeDesenhado'
 export function Cartao({ children, style, onClick }: { children: ReactNode; style?: CSSProperties; onClick?: () => void }) {
   return (
     <div onClick={onClick} style={{
-      background: COR.branco, borderRadius: M.raio, padding: '18px 18px', boxShadow: M.sombra,
+      background: COR.branco, borderRadius: M.raio, padding: '18px 18px', boxShadow: M.sombra, border: '1.5px solid var(--cx-borda)',
       cursor: onClick ? 'pointer' : undefined, ...style,
     }}>{children}</div>
   )
@@ -42,11 +42,14 @@ export function TituloCartao({ children, direita }: { children: ReactNode; direi
 /** Ícone num círculo com o tom da cor (a 12% de opacidade). */
 export function IconeRedondo({ icone, cor = COR.azul, tamanho = 44 }: { icone: ReactNode; cor?: string; tamanho?: number }) {
   // Texto gravado (emoji do cadastro) vira o ícone desenhado, na cor da categoria.
-  const conteudo = typeof icone === 'string' ? <IconeCat icone={icone} cor={corDoIcone(cor)} /> : icone
+  // Paleta da página do Educador (19/11/2026, pedido do Guilherme): quadrado
+  // noite com o ícone âmbar, para todo ícone (a cor da categoria saiu daqui).
+  void cor; void corDoIcone
+  const conteudo = typeof icone === 'string' ? <IconeCat icone={icone} cor="var(--cx-icone)" /> : icone
   return (
     <span aria-hidden style={{
-      width: tamanho, height: tamanho, borderRadius: '50%', flexShrink: 0,
-      background: `${cor.length === 7 ? cor : COR.azul}1f`,
+      width: tamanho, height: tamanho, borderRadius: Math.round(tamanho * 0.28), flexShrink: 0,
+      background: 'var(--cx-icone-fundo)', color: 'var(--cx-icone)',
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(tamanho * 0.48),
     }}>{conteudo}</span>
   )
@@ -85,9 +88,9 @@ export function Atalho({ icone, rotulo, onClick }: { icone: string; rotulo: stri
       background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0,
     }}>
       <span aria-hidden style={{
-        width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: BOLINHA_AZUL, boxShadow: 'var(--cx-bolinha)',
-      }}><i className={`ti ${icone}`} style={{ color: '#fff', fontSize: 27 }} /></span>
+        width: 58, height: 58, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--cx-icone-fundo)', boxShadow: 'var(--cx-bolinha)',
+      }}><i className={`ti ${icone}`} style={{ color: 'var(--cx-icone)', fontSize: 27 }} /></span>
       <span style={{ fontSize: 13, fontWeight: 600, color: COR.texto, textAlign: 'center', lineHeight: 1.2 }}>{rotulo}</span>
     </button>
   )
@@ -287,8 +290,8 @@ export function ResumoDoMes({ mesNome, previsto, realizado, meta, oculto, onDefi
         const ok = pct !== null && pct >= 100
         return (
           <div style={{
-            marginTop: 18, padding: '14px 16px', borderRadius: 18, border: '1.5px solid #22d3ee',
-            boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)',
+            marginTop: 18, padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(255,255,255,.28)',
+            
           }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
               <span style={{ fontSize: M.corpo, fontWeight: 600 }}>Meta de economia</span>
@@ -338,7 +341,7 @@ export function Anel({ pct, cor, rotulo, oculto, centro }: {
       <circle cx="58" cy="58" r={r} stroke="#fff" strokeWidth="11" fill="none" />
       {arco > 0 && (
         <circle cx="58" cy="58" r={r} stroke={cor} strokeWidth="11" fill="none" strokeLinecap="round"
-          strokeDasharray={`${arco} ${c}`} transform="rotate(-90 58 58)" style={{ filter: 'drop-shadow(0 0 5px #22d3ee)' }} />
+          strokeDasharray={`${arco} ${c}`} transform="rotate(-90 58 58)" />
       )}
       {pct !== null && (
         <>
@@ -359,7 +362,7 @@ function Velocimetro({ pct }: { pct: number }) {
       <path d="M6 36a26 26 0 0 1 52 0" stroke="#fff" strokeWidth="8" fill="none" strokeLinecap="round" />
       {arco > 0 && (
         <path d="M6 36a26 26 0 0 1 52 0" stroke="#0891b2" strokeWidth="8" fill="none" strokeLinecap="round"
-          strokeDasharray={`${arco} ${c}`} style={{ filter: 'drop-shadow(0 0 4px #22d3ee)' }} />
+          strokeDasharray={`${arco} ${c}`} />
       )}
     </svg>
   )

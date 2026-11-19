@@ -234,7 +234,7 @@ export default function Dashboard() {
   // cantos de 20 e sombra azulada sobre o fundo azulado, ícone da categoria
   // em círculo. Duas colunas onde o celular tem uma.
   return (
-    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: M.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath="/dashboard" />
 
       {/* ── Topo azul: a resposta do mês ─────────────────────────────── */}

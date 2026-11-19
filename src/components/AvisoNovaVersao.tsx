@@ -48,7 +48,7 @@ export default function AvisoNovaVersao() {
       position: 'fixed', top: 'calc(10px + env(safe-area-inset-top))', left: '50%', transform: 'translateX(-50%)', zIndex: 300,
       display: 'flex', alignItems: 'center', gap: 10, background: '#0f172a', color: '#fff', borderRadius: 999,
       padding: '8px 8px 8px 16px', boxShadow: '0 6px 24px rgba(15,23,42,.3)', fontSize: 14, fontWeight: 600,
-      fontFamily: "-apple-system,'Inter',sans-serif", whiteSpace: 'nowrap',
+      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", whiteSpace: 'nowrap',
     }}>
       Versão nova do app
       <button onClick={() => location.reload()} style={{

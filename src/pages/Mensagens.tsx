@@ -22,7 +22,7 @@ import {
  */
 
 const AZUL = 'var(--cx-azul)'
-const SELO: CSSProperties = { background: '#22d3ee', color: '#0b1460', borderRadius: 999, fontSize: 11, fontWeight: 800, padding: '1px 7px' }
+const SELO: CSSProperties = { background: '#f5b942', color: '#0b1322', borderRadius: 999, fontSize: 11, fontWeight: 800, padding: '1px 7px' }
 const CARTAO: CSSProperties = { background: '#fff', borderRadius: 20, boxShadow: '0 4px 18px rgba(30,64,175,.08)' }
 
 const dataCurta = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
@@ -215,7 +215,7 @@ function Chat({ conversaDe, comoSuporte, nomeOutro, altura }: { conversaDe: stri
           style={{ flex: 1, padding: '12px 14px', border: `1.5px solid ${COR.borda}`, borderRadius: 14, fontSize: 16, fontFamily: 'inherit', resize: 'none', maxHeight: 140, color: COR.texto }} />
         <button type="submit" disabled={!texto.trim() || enviando} aria-label="Enviar" style={{
           width: 48, height: 48, alignSelf: 'flex-end', border: 'none', borderRadius: '50%', flexShrink: 0,
-          background: texto.trim() ? AZUL : '#cbd5e1', boxShadow: texto.trim() ? '0 0 10px rgba(34,211,238,.4)' : 'none',
+          background: texto.trim() ? AZUL : '#cbd5e1', 
           color: '#fff', fontSize: 20, cursor: texto.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}><i aria-hidden className="ti ti-send" /></button>
       </form>
@@ -297,7 +297,7 @@ export default function Mensagens() {
   )
 
   if (erro === 'falta-ativar') return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath={pathname} />
       {cabecalho()}
       <div style={corpo}><Aviso texto="A caixa de mensagens ainda não foi ativada." /></div>
@@ -334,7 +334,7 @@ export default function Mensagens() {
     ) : <div style={{ ...CARTAO, padding: '18px 20px', fontSize: 14, color: COR.textoSuave }}>Escolha uma conversa.</div>
 
     return (
-      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+      <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
         <AppHeader currentPath={pathname} />
         {cabecalho(<Pilulas<AbaAdmin> valor={abaAdmin} onEscolher={v => irPara({ aba: v })}
           itens={[{ id: 'comunicados', rotulo: 'Comunicados' }, { id: 'conversas', rotulo: 'Conversas', selo: naoLidasConversas }]} />)}
@@ -375,7 +375,7 @@ export default function Mensagens() {
   ) : null
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath={pathname} />
       {cabecalho(isMobile && admin === false ? (
         <Pilulas<AbaPessoa> valor={abaPessoa} onEscolher={v => irPara({ aba: v })}

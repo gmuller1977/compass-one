@@ -65,7 +65,7 @@ export default function IndicadorGravacao() {
       background: fundo, color: cor, border: `1px solid ${borda}`,
       borderRadius: 20, padding: '6px 14px',
       fontSize: 12, fontWeight: 700, textAlign: 'center',
-      fontFamily: "-apple-system,'Inter',sans-serif",
+      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
       boxShadow: '0 4px 14px rgba(0,0,0,.10)', pointerEvents: 'none',
     }}>
       {texto}

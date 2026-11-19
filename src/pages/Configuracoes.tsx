@@ -544,7 +544,7 @@ export default function Configuracoes() {
 
   return (
     <div style={{ height:'100vh', display:'flex', flexDirection:'column',
-      background:COR.fundo, fontFamily:"-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
+      background:COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", overflow:'hidden' }}>
       <style>{`
         .campo-cfg:focus {
           border-color: #1a56db !important;

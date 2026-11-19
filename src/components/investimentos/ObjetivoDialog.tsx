@@ -84,7 +84,7 @@ export default function ObjetivoDialog({ contaNome, contaId, objetivo, semObjeti
       <div onClick={e => e.stopPropagation()} style={{
         background: '#fff', width: '100%', maxWidth: central ? 460 : undefined, maxHeight: '92vh', overflowY: 'auto',
         borderRadius: central ? raio : `${raio}px ${raio}px 0 0`,
-        fontFamily: "-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
+        fontFamily: "'Barlow',-apple-system,'Inter',sans-serif", animation: central ? undefined : 'slideUp .2s ease',
       }}>
         <ModalTopo icone="ti-target-arrow" rotulo={objetivo ? 'Objetivo' : 'Novo objetivo'} titulo={objetivo?.nome || 'Para que é esse dinheiro?'}
           subtitulo={contaNome} raio={raio} onFechar={onFechar} />

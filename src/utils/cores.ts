@@ -30,7 +30,8 @@ export const COR = {
   branco: '#ffffff',
 
   // Texto
-  texto:      '#0f172a',  // 17,9:1 sobre branco
+  texto:      '#0b2545',  // tinta da página do Educador (19/11/2026); era #0f172a
+  textoAntigo: '#0f172a',  // 17,9:1 sobre branco
   textoSuave: '#64748b',
   textoMuted: '#94a3b8',
 
@@ -75,9 +76,9 @@ export const COR = {
   sucessoTexto:  '#15803d',  // 4,8:1 — NAO usar COR.verde (#16a34a) aqui,
                              // que da 3,2:1 sobre este fundo e reprova
 
-  avisoFundo:    '#fffbeb',
-  avisoBorda:    '#fde68a',
-  avisoTexto:    '#92400e',  // 6,8:1 sobre avisoFundo
+  avisoFundo:    '#fff4dc',
+  avisoBorda:    '#fff4dc',
+  avisoTexto:    '#9a5b00',  // 6,8:1 sobre avisoFundo
 
   erroFundo:     '#fff1f2',
   erroTexto:     '#b91c1c',  // 5,9:1 — COR.vermelho (#dc2626) da 4,4:1 e

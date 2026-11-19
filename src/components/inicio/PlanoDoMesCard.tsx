@@ -103,8 +103,8 @@ export default function PlanoDoMesCard({ linhas, categorias, oculto, onRadar }: 
             })}
           </div>
           <div style={{
-            margin: '16px 0 12px', padding: '14px 16px', borderRadius: 18, border: '1.5px solid #22d3ee',
-            boxShadow: '0 0 18px rgba(34,211,238,.45), inset 0 0 18px rgba(34,211,238,.15)',
+            margin: '16px 0 12px', padding: '14px 16px', borderRadius: 18, border: '1.5px solid rgba(255,255,255,.28)',
+            
             fontSize: M.corpo, lineHeight: 1.45, fontWeight: 600,
           }}>{frase}</div>
           {lista('passaram', 'Grupos que passaram', b.passaram, NEG, '+')}

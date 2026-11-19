@@ -101,7 +101,7 @@ export default function EvolucaoGrupo({
       boxShadow: aberto ? 'var(--cx-brilho)' : '0 2px 14px rgba(15,40,120,.07)',
       // Borda pelo julgamento (24/10/2026, pedido do Guilherme): dentro do
       // plano verde, passou laranja; sem plano, sem borda.
-      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : atencao ? '#b91c1c' : '#93c5fd'}`,
+      border: `2px solid ${aberto ? '#1e40af' : semDados ? 'transparent' : atencao ? '#b91c1c' : 'var(--cx-borda)'}`,
     }}>
       <div
         role="button" tabIndex={0} aria-expanded={aberto}
@@ -219,8 +219,7 @@ export function AnelGrupo({ pct, pago, cor, trilho, corTexto, alerta = false, ta
       <circle cx="36" cy="36" r={r} stroke={trilho} strokeWidth="8" fill="none" />
       {cheio > 0 && (
         <circle cx="36" cy="36" r={r} stroke={cor} strokeWidth="8" fill="none" strokeLinecap="round"
-          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 36 36)"
-          style={{ filter: cor === '#b91c1c' ? 'drop-shadow(0 0 4px rgba(239,68,68,.55))' : 'drop-shadow(0 0 4px rgba(34,211,238,.9))' }} />
+          strokeDasharray={`${cheio * c} ${c}`} transform="rotate(-90 36 36)" />
       )}
       <text x="36" y={pago ? 43 : 41} textAnchor="middle" fill={corTexto}
         fontSize={pago ? 20 : texto.length > 4 ? 13 : 15} fontWeight="800">{texto}</text>

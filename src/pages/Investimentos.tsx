@@ -68,7 +68,7 @@ export default function Investimentos() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COR.fundo, fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
       <AppHeader currentPath={pathname} />
       <div style={{ padding: isMobile ? '12px 14px 90px' : '16px 28px 40px', maxWidth: 1280, margin: '0 auto' }}>
         <PageHeader icon="ti-pig-money" breadcrumb="TODO ANO" title="Investimentos" ajuda="investimentos" mb={16}>

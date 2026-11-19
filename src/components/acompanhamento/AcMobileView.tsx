@@ -307,7 +307,7 @@ export default function AcMobileView({
       // Fechado: número e anel azul neon; passou de 100%, marcador de atenção
       // (24/10/2026, Guilherme), igual ao computador.
       const gBorda = aberto ? '#1e40af' : !dg.julgado || SEM_MOVIMENTO.includes(dg.principal) ? 'transparent'
-        : gAtencao ? '#b91c1c' : '#93c5fd'
+        : gAtencao ? '#b91c1c' : 'var(--cx-borda)'
       // Uma CAIXA por grupo, como o dia em Lançamentos (pedido do Guilherme
       // em 13/10/2026: aberto, "parece ser tudo grupo"). O cabeçalho é o
       // grupo; aberto, as categorias ficam numa caixa recuada, dentro de uma
@@ -393,7 +393,7 @@ export default function AcMobileView({
     // conteúdo num filho flex:1 rolável — sem minHeight:0 o filho crescia do
     // tamanho do conteúdo, a caixa cortava e nada rolava (relatado pelo
     // Guilherme em 10/10/2026).
-    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily:"-apple-system,'Inter',sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'#f2f5fc', fontFamily: "'Barlow',-apple-system,'Inter',sans-serif" }}>
 
       {/* Topo azul, no desenho da Bússola (redesenho de 10/10/2026): o mês
           com setas, o saldo de hoje grande, e as duas barras do mês com

@@ -330,7 +330,7 @@ export default function Planejamento() {
     <div style={{
       minHeight: '100vh',
       background: COR.fundo,
-      fontFamily: "-apple-system, 'Inter', sans-serif",
+      fontFamily: "'Barlow',-apple-system,'Inter',sans-serif",
       display: 'flex',
       flexDirection: 'column',
     }}>
