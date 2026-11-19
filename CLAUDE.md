@@ -531,6 +531,20 @@ Banco). Sem informado e com `saldoBancoData` no mês, o cartão "No [banco]" /
 "Em dinheiro" (celular) e "Saldo no banco" (computador) mostram o saldo do
 Compass com "✓ conferido hoje" / "✓ conferido em 25/10" e o ✎ para alterar.
 No mês corrente vale até a conta pedir conferência de novo (`pedeConferencia`).
+**Banco igual ao cartão: lançamento futuro só conta no dia, e o conferido
+é pela bolinha** (19/11/2026, Guilherme, escolha "Igual ao cartão, com
+bolinha" no card). O lançamento de banco ou dinheiro com data depois de hoje
+não entra no saldo realizado (`movimentoDoMes` corta em
+`ultimoDiaRealizado`, com `Deps.hoje`): o "Saldo no Compass One" de
+Lançamentos, Início e Radar é o lançado até hoje. Ele entra na previsão
+(`lancadosEntrada`/`lancadosSaida` em `detalharProjecaoDaConta`; na memória,
+"Receitas/Despesas lançadas para depois de hoje"), e o saldo final previsto
+não muda. Cada linha de banco tem a bolinha de CONFERIDO (a da fatura,
+`conferidos[id]` no mês; dia futuro tracejado, não marca), e o card "Saldo no
+banco · Conferido" é o saldo do Compass menos o que, até hoje, está sem
+bolinha (fixa paga conta como conferida), com "falta conferir R$ X" / "✓ tudo
+conferido". Digitado segue "Manual"; o "Confere" da Início segue valendo como
+tudo conferido. Dinheiro não tem bolinha. `conferirExtrato.ts`; `prova123` (15).
 
 **Sem plano, o Radar não julga: só mostra o realizado** (19/10/2026,
 decisão do Guilherme sobre a análise da chegada v3, C2: "ele não deve julgar

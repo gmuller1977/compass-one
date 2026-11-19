@@ -56,6 +56,12 @@ export type Deps = {
   categorias: Categoria[]
   planos: Record<number, PlanoAnoData | undefined>
   saldoInicialDinheiro: number
+  /**
+   * A data de "hoje" para o realizado. Ausente vale `new Date()`. Quem chama
+   * com um `hoje` próprio (as provas, `detalharPrevisto`) passa o mesmo aqui,
+   * para o realizado e a projeção cortarem no mesmo dia.
+   */
+  hoje?: Date
 }
 
 const ym = (ano: number, mes: number) => ano * 100 + (mes + 1)
@@ -118,6 +124,21 @@ export function saldoFinalConta(
   return acc
 }
 
+/**
+ * Até que dia do mês um LANÇAMENTO já aconteceu. No mês corrente, hoje; nos
+ * outros, o mês inteiro (Infinity).
+ *
+ * Lançamento com data futura só entra no saldo quando o dia chega
+ * (19/11/2026, regra do Guilherme: "lançamentos futuros não estão no saldo
+ * Compass, somente quando chegar no dia de hoje"). Até lá ele é PREVISTO:
+ * `detalharProjecaoDaConta` o soma em `lancadosEntrada` / `lancadosSaida`, e
+ * o saldo final previsto não muda. Fixa não passa por aqui: dia futuro não se
+ * marca como paga.
+ */
+export function ultimoDiaRealizado(ano: number, mes: number, hoje: Date = new Date()): number {
+  return ym(ano, mes) === ym(hoje.getFullYear(), hoje.getMonth()) ? hoje.getDate() : Infinity
+}
+
 /** Entradas e saídas de um mês, numa conta: lançamentos + fixas + fatura. */
 function movimentoDoMes(
   dm: DadosMes, ano: number, mes: number, deps: Deps,
@@ -127,9 +148,12 @@ function movimentoDoMes(
   let saidas = 0
   const acumular = (v: number) => { if (v >= 0) entradas += v; else saidas -= v }
 
-  for (const itens of Object.values(dm.lancamentos ?? {}))
+  const ate = ultimoDiaRealizado(ano, mes, deps.hoje)
+  for (const [dia, itens] of Object.entries(dm.lancamentos ?? {})) {
+    if (Number(dia) > ate) continue
     for (const l of itens)
       acumular(l.tipo === 'entrada' ? l.valor : -l.valor)
+  }
 
   for (const [catId, confirmada] of Object.entries(dm.fixasConsolidadas ?? {})) {
     if (!confirmada) continue
@@ -265,6 +289,8 @@ export type PrevistoDetalhe = {
   variaveisEntrada: ItemPrevistoNoMes[]
   variaveisSaida: ItemPrevistoNoMes[]
   faturas: ItemPrevistoNoMes[]
+  lancadosEntrada: ItemPrevistoNoMes[]
+  lancadosSaida: ItemPrevistoNoMes[]
 }
 
 /**
@@ -293,7 +319,8 @@ export function detalharPrevisto(
   deps: Deps,
   opts: { comoAbertura?: boolean; hoje?: Date } = {},
 ): PrevistoDetalhe {
-  const hoje = opts.hoje ?? new Date()
+  const hoje = opts.hoje ?? deps.hoje ?? new Date()
+  deps = { ...deps, hoje }
   const realizado = saldoBancosEDinheiro(ano, mes, deps)
   const alvo = ym(ano, mes)
   const corrente = ym(hoje.getFullYear(), hoje.getMonth())
@@ -303,6 +330,7 @@ export function detalharPrevisto(
     valor: realizado, previsto: false, base: realizado, meses: [],
     entradas: 0, saidas: 0, sobrasVariavel: 0, estourosVariavel: 0,
     fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
+    lancadosEntrada: [], lancadosSaida: [],
   }
   if (!projetar) return out
 
@@ -326,6 +354,8 @@ export function detalharPrevisto(
     out.variaveisEntrada.push(...noMes(p.variaveisEntrada))
     out.variaveisSaida.push(...noMes(p.variaveisSaida))
     out.faturas.push(...noMes(p.faturas))
+    out.lancadosEntrada.push(...noMes(p.lancadosEntrada))
+    out.lancadosSaida.push(...noMes(p.lancadosSaida))
     out.sobrasVariavel += p.sobrasVariavel
     out.estourosVariavel += p.estourosVariavel
     m++
@@ -365,7 +395,8 @@ export function saldoTotalNoFim(
  * liquido` mês a mês, e `realizado + projecao` no fim —, então cada ponto sai
  * idêntico bit a bit ao de `saldoTotalNoFim`.
  */
-export function saldosPrevistosEmSerie(n: number, deps: Deps, hoje: Date = new Date()): number[] {
+export function saldosPrevistosEmSerie(n: number, deps: Deps, hoje: Date = deps.hoje ?? new Date()): number[] {
+  deps = { ...deps, hoje }
   const out: number[] = []
   let projecao = 0
   let a = hoje.getFullYear()
@@ -774,6 +805,12 @@ export type ProjecaoDetalhe = {
   variaveisEntrada: ItemPrevisto[]
   variaveisSaida: ItemPrevisto[]
   faturas: ItemPrevisto[]
+  /**
+   * Lançamentos do mês corrente com data DEPOIS de hoje: já estão gravados,
+   * mas só entram no saldo quando o dia chega (ver `ultimoDiaRealizado`).
+   */
+  lancadosEntrada: ItemPrevisto[]
+  lancadosSaida: ItemPrevisto[]
 }
 
 export function detalharProjecaoDaConta(
@@ -855,10 +892,30 @@ export function detalharProjecaoDaConta(
       })
     }
 
+  // Lançamentos com data futura no mês corrente (ver `ultimoDiaRealizado`).
+  const lancadosEntrada: ItemPrevisto[] = []
+  const lancadosSaida: ItemPrevisto[] = []
+  const ate = ultimoDiaRealizado(ano, mes, hoje)
+  if (Number.isFinite(ate)) {
+    const dmAlvo = extratoData[`${alvo}${sufixo}`]
+    for (const [d, itens] of Object.entries(dmAlvo?.lancamentos ?? {})) {
+      const dia = Number(d)
+      if (!(dia > ate)) continue
+      for (const l of itens) {
+        const item: ItemPrevisto = {
+          balde: l.tipo === 'entrada' ? 'entrada' : 'banco', grupo: '__lancado__',
+          nome: l.categoria, descricao: l.subCategoria, valor: l.valor, id: l.id, dia,
+        }
+        if (l.tipo === 'entrada') { entradas += l.valor; lancadosEntrada.push(item) }
+        else { saidas += l.valor; lancadosSaida.push(item) }
+      }
+    }
+  }
+
   return {
     entradas, saidas,
     sobrasVariavel: falta.sobras, estourosVariavel: falta.estouros,
-    fixasEntrada, fixasSaida, faturas,
+    fixasEntrada, fixasSaida, faturas, lancadosEntrada, lancadosSaida,
     variaveisEntrada: falta.itens.filter(i => i.balde === 'entrada'),
     variaveisSaida:   falta.itens.filter(i => i.balde !== 'entrada'),
   }
@@ -906,6 +963,7 @@ function projecaoDoMes(
   const d: ProjecaoDetalhe & { liquido: number } = {
     liquido: 0, entradas: 0, saidas: 0, sobrasVariavel: 0, estourosVariavel: 0,
     fixasEntrada: [], fixasSaida: [], variaveisEntrada: [], variaveisSaida: [], faturas: [],
+    lancadosEntrada: [], lancadosSaida: [],
   }
   // O rateio da variável é do mês: uma vez para todas as contas.
   const rateio = rateioDoMes(ano, mes, deps, hoje)
@@ -920,6 +978,8 @@ function projecaoDoMes(
     d.variaveisEntrada.push(...c.variaveisEntrada)
     d.variaveisSaida.push(...c.variaveisSaida)
     d.faturas.push(...c.faturas)
+    d.lancadosEntrada.push(...c.lancadosEntrada)
+    d.lancadosSaida.push(...c.lancadosSaida)
     d.sobrasVariavel += c.sobrasVariavel
     d.estourosVariavel += c.estourosVariavel
   }
@@ -971,7 +1031,8 @@ export function saldoContaNoFim(
   deps: Deps,
   opts: { comoAbertura?: boolean; hoje?: Date } = {},
 ): { valor: number; previsto: boolean } {
-  const hoje = opts.hoje ?? new Date()
+  const hoje = opts.hoje ?? deps.hoje ?? new Date()
+  deps = { ...deps, hoje }
   const realizado = saldoRealizadoConta(alvo, ano, mes, deps)
 
   const alvoYM = ym(ano, mes)
@@ -1076,6 +1137,7 @@ export function memoriaDoRadar(
    */
   excessoVariavel: number
 } {
+  if (opts.hoje) deps = { ...deps, hoje: opts.hoje }
   const contas = detalharMes(ano, mes, deps)
   const p = detalharPrevisto(ano, mes, deps, { comoAbertura: true, hoje: opts.hoje })
   const somar = (xs: { valor: number }[]) => xs.reduce((s, x) => s + x.valor, 0)
@@ -1093,6 +1155,8 @@ export function memoriaDoRadar(
     faturaEmAberto:     somar(p.faturas),
     faturaEstimada:     somar(noCartao),
     variaveisARealizar: somar(foraDoCartao),
+    entradasLancadas:   somar(p.lancadosEntrada),
+    saidasLancadas:     somar(p.lancadosSaida),
     fechamento:         p.valor,
     // Sobras e estouros sao a ENTRADA do motor, antes do corte do cenario —
     // nao uma soma paralela. Por isso o excesso e positivo exatamente quando o

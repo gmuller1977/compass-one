@@ -64,6 +64,12 @@ export type Memoria = {
   faturaEstimada: number
   /** O que falta gastar do plano das categorias de banco e dinheiro. */
   variaveisARealizar: number
+  /**
+   * Lançamentos com data DEPOIS de hoje, no mês corrente: gravados, mas só
+   * entram no saldo quando o dia chega (19/11/2026). Opcional: ausente é zero.
+   */
+  entradasLancadas?: number
+  saidasLancadas?: number
   fechamento: number
 }
 
@@ -81,6 +87,8 @@ export type DadosMes = {
   saldoBanco: string
   saldoBancoData?: string
   fixasConsolidadas?: Record<string, boolean>
+  /** Bolinha de conferido com o banco (utils/conferirExtrato). */
+  conferidos?: Record<string, boolean>
   fixasMovidas?: Record<string, number>
   /** "Não vai ocorrer neste mês" (utils/fixasDoMes: fixaNaoOcorre). */
   fixasNaoOcorre?: Record<string, boolean>

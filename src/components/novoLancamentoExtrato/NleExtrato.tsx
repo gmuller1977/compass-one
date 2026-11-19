@@ -77,6 +77,9 @@ export type Props = {
   ehAutomatico: (f: CatFixa) => boolean
   /** "Não vai ocorrer neste mês" / desfazer (utils/fixasDoMes). */
   alternarNaoOcorre: (fixaId: string) => void
+  /** Bolinha de conferido com o banco nos lançamentos (utils/conferirExtrato).
+   *  Ausente: sem bolinha (a carteira). */
+  alternarConferido?: (id: string) => void
 }
 
 /**
@@ -184,6 +187,9 @@ export function MemoriaSaldo({ m, positivo, cenario, onCenario, rotuloAbertura }
   // Número no azul (e no vermelho) é BRANCO desde 24/10/2026 (Guilherme:
   // "número branco nos card azul"); o sinal "−" diz o que sai.
   const previstas: [string, number, string][] = [
+    // Lançado para depois de hoje: só entra no saldo quando o dia chega (19/11/2026).
+    ['Receitas lançadas para depois de hoje', m.entradasLancadas ?? 0, 'Já anotadas, entram no saldo no dia delas'],
+    ['Despesas lançadas para depois de hoje', -(m.saidasLancadas ?? 0), 'Já anotadas, saem do saldo no dia delas'],
     ['Receitas fixas a receber',      m.entradasPrevistas,   'Fixas de entrada que ainda nao foram confirmadas'],
     ['Receitas a receber',            m.receitasAReceber,    'O que o plano espera receber e ainda nao chegou'],
     ['Despesas fixas a pagar',        -m.fixasPrevistas,     'Fixas ainda nao confirmadas'],

@@ -112,6 +112,11 @@ export type DadosMes = {
    */
   conferenciaAnterior?: { saldoBanco: string; saldoBancoInformado?: boolean; saldoBancoData?: string }
   fixasConsolidadas?: Record<string, boolean>
+  /**
+   * Lançamento conferido com o banco (a bolinha): no extrato desde
+   * 19/11/2026 (utils/conferirExtrato), na fatura desde 28/10/2026.
+   */
+  conferidos?: Record<string, boolean>
   /** Débito automático conferido na Início (utils/debitoAutomatico). */
   debitosConferidos?: Record<string, boolean>
   fixasMovidas?: Record<string, number>

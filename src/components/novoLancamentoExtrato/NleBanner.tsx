@@ -23,6 +23,9 @@ type Props = {
   saldoBancoNum: number | null
   /** Conferido sem valor digitado ("Confere" na Início): a data, ou null. */
   conferidoEm?: string | null
+  /** Banco: o que ainda não tem bolinha de conferido (utils/conferirExtrato).
+   *  null na carteira e no mês futuro. */
+  faltaConferir?: { liquido: number; qtd: number } | null
   // Modal handlers
   setModalSaldo: (v: ModalSaldoInfo | null) => void
   setModalSaldoValor: (v: string) => void
@@ -36,7 +39,7 @@ export default function NleBanner({
   isMobile, tabPrincipal,
   saldoBase, saldoBasePrevisto, totalEntradas, totalSaidas, saldoMes,
   mes, ano,
-  saldoBancoNum, conferidoEm = null,
+  saldoBancoNum, conferidoEm = null, faltaConferir = null,
   setModalSaldo, setModalSaldoValor,
   contasExtrato, contaIdEfetivo, onContaSelect,
 }: Props) {
@@ -49,6 +52,14 @@ export default function NleBanner({
 
   const diferenca     = saldoBancoNum !== null ? saldoBancoNum - saldoMes : null
   const conciliado    = diferenca !== null && Math.abs(diferenca) < 0.01
+  // Sem valor digitado, o banco mostra o CONFERIDO pelas bolinhas, como a
+  // fatura (19/11/2026, decisão do Guilherme: "igual ao cartão").
+  const pelasBolinhas = diferenca === null && !conferidoEm && faltaConferir !== null
+  const conferidoValor = pelasBolinhas ? saldoMes - faltaConferir!.liquido : null
+  const tudoConferido = pelasBolinhas && faltaConferir!.qtd === 0
+  const textoFalta = !pelasBolinhas ? '' : tudoConferido ? '✓ tudo conferido'
+    : Math.abs(faltaConferir!.liquido) >= 0.005 ? `falta conferir ${fmt(Math.abs(faltaConferir!.liquido))}`
+    : `falta conferir ${faltaConferir!.qtd} ${faltaConferir!.qtd === 1 ? 'lançamento' : 'lançamentos'}`
 
   /**
    * O modal sugere o SALDO ATUAL — o mesmo numero da caixa logo acima dele.
@@ -101,14 +112,15 @@ export default function NleBanner({
             style={{ flex: 1, display: 'flex', cursor: 'pointer' }}>
             <KpiCard icon={isDinheiro ? 'ti-wallet' : 'ti-building-bank'}
               label={isDinheiro ? 'Saldo em dinheiro' : 'Saldo no banco'}
-              destaque={saldoBancoNum !== null ? 'Manual' : conferidoEm ? 'Conferido' : undefined}
-              value={saldoBancoNum !== null ? fmt(saldoBancoNum) : conferidoEm ? fmt(saldoMes) : '—'}
+              destaque={saldoBancoNum !== null ? 'Manual' : conferidoEm || pelasBolinhas ? 'Conferido' : undefined}
+              value={saldoBancoNum !== null ? fmt(saldoBancoNum) : conferidoEm ? fmt(saldoMes) : conferidoValor !== null ? fmt(conferidoValor) : '—'}
               vidro style={{ flex: 1 }}>
               <div style={{
                 fontSize: 12, marginTop: 4, textAlign: 'right',
-                color: diferenca === null && !conferidoEm ? 'rgba(255,255,255,.75)' : diferenca === null || conciliado ? '#86efac' : '#fff',
+                color: pelasBolinhas ? (tudoConferido ? '#86efac' : '#fff')
+                  : diferenca === null && !conferidoEm ? 'rgba(255,255,255,.75)' : diferenca === null || conciliado ? '#86efac' : '#fff',
               }}>
-                {diferenca === null ? (conferidoEm ? textoConferido(conferidoEm) : 'não informado') : conciliado ? '✓ igual ao Compass'
+                {pelasBolinhas ? textoFalta : diferenca === null ? (conferidoEm ? textoConferido(conferidoEm) : 'não informado') : conciliado ? '✓ igual ao Compass'
                   : diferenca > 0 ? `falta lançar ${fmt(diferenca)}` : `${fmt(-diferenca)} a mais no Compass`}
               </div>
               <div style={{ textAlign: 'right', marginTop: 6 }}>

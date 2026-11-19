@@ -52,10 +52,10 @@ export type PrevisaoDoMes = {
  *     + entradasPrevistasDaMemoria − saidasPrevistasDaMemoria = fechamento
  */
 export function entradasPrevistasDaMemoria(m: Memoria): number {
-  return m.entradasPrevistas + m.receitasAReceber
+  return m.entradasPrevistas + m.receitasAReceber + (m.entradasLancadas ?? 0)
 }
 export function saidasPrevistasDaMemoria(m: Memoria): number {
-  return m.fixasPrevistas + m.faturaEmAberto + m.faturaEstimada + m.variaveisARealizar
+  return m.fixasPrevistas + m.faturaEmAberto + m.faturaEstimada + m.variaveisARealizar + (m.saidasLancadas ?? 0)
 }
 
 export function previsaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date = new Date()): PrevisaoDoMes {
@@ -63,7 +63,7 @@ export function previsaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date =
   const aAnt = mes === 0 ? ano - 1 : ano
   const inicial = saldoTotalNoFim(aAnt, mAnt, deps, { comoAbertura: true, hoje }).valor
   const p = detalharPrevisto(ano, mes, deps, { comoAbertura: true, hoje })
-  const lancado = detalharMes(ano, mes, deps)
+  const lancado = detalharMes(ano, mes, { ...deps, hoje })
 
   const doMes = (xs: ItemPrevistoNoMes[]) => xs.filter(i => i.ano === ano && i.mes === mes)
   const somar = (xs: { valor: number }[]) => xs.reduce((s, x) => s + x.valor, 0)
@@ -87,6 +87,8 @@ export function previsaoDoMes(ano: number, mes: number, deps: Deps, hoje: Date =
     faturaEmAberto: somar(faturas),
     faturaEstimada: somar(variaveisSaida.filter(i => i.balde === 'cartao')),
     variaveisARealizar: somar(variaveisSaida.filter(i => i.balde !== 'cartao')),
+    entradasLancadas: somar(doMes(p.lancadosEntrada)),
+    saidasLancadas: somar(doMes(p.lancadosSaida)),
     fechamento: p.valor,
   }
 
